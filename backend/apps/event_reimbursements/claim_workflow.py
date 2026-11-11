@@ -46,6 +46,8 @@ def save_draft(*, event_id, actor, data, request=None):
         programme, pool, award, claim = lock_claim_parents(ctx.event, owner_id=actor.pk)
         require(award.state in ("accepted", "closed") and ctx.event.ends_at <= timezone.now()
             and ctx.event.status != "cancelled", "claim_closed")
+        # G12: travel the space booked directly was already paid to the vendor; it never takes a claim.
+        require(award.reason_code != "direct_booking", "direct_booking_no_claim")
         require(participating(award.request), "participation_not_accepted")
         require(data["expected_version"] == (claim.version if claim else 0), "stale_version")
         if claim is None:
@@ -82,6 +84,7 @@ def submit(*, event_id, actor, data, request=None):
         ctx.cas(claim)
         require(claim.state in ("draft", "open", "returned_for_info") and award.state in ("accepted", "closed")
             and ctx.event.status != "cancelled", "claim_closed")
+        require(award.reason_code != "direct_booking", "direct_booking_no_claim")
         require(participating(award.request), "participation_not_accepted")
         require(data["current_revision"] == claim.current_revision_id, "stale_claim_revision")
         due = claim.info_due_at if claim.state == "returned_for_info" else claim.effective_due_at

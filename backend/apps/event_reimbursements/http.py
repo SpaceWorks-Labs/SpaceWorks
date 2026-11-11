@@ -27,7 +27,8 @@ class PrivateView(BasePrivateView):
 
 
 def check_read(request, event, *, owner=False):
-    require(getattr(request, "api_client", None) is None
+    # Payee money is session-only (decision 219d): no API client, PAT or OAuth token reads it.
+    require(getattr(request, "api_client", None) is None and getattr(request, "person_credential", None) is None
             and (is_person(request.user) or is_platform(request.user)), "full_session_required", status=403)
     binding(request)
     require(claim_context(request.user) is None, "full_session_required", status=403)

@@ -22,12 +22,12 @@ def lock_pools(programme):
 
 def _choose(rows, programme, kind):
     rows = [row for row in rows if row.currency == programme.currency]
-    crew = next((row for row in rows if row.audience == CREW), None) if kind == "crew" else None
+    crew = next((row for row in rows if row.audience == CREW), None) if kind in ("crew", "staff") else None
     return crew or next(row for row in rows if row.audience == PARTICIPANTS)
 
 
 def pool_for(pools, programme, kind, award=None):
-    """The award's own pool, else the crew pool for a crew request (when one exists), else participants."""
+    """The award's own pool, else the crew pool for a crew or staff request (when one exists), else participants."""
     if award is not None:
         return pools[award.pool_id]
     return _choose(pools.values(), programme, kind)

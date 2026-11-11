@@ -3,6 +3,7 @@ from rest_framework import serializers as s
 from drf_spectacular.utils import extend_schema_serializer
 from .serializers_request import Estimate
 from .serializers_finance import PolicySettings
+from .serializers_staff import ClaimReviewFields, ClaimStaffFields, RequestStaffFields
 
 
 class PoolDetail(s.Serializer):
@@ -51,7 +52,7 @@ class BudgetPreview(s.Serializer):
     available_minor = s.IntegerField()
 
 
-class RequestDetail(s.Serializer):
+class RequestDetail(RequestStaffFields):
     id = s.IntegerField()
     uuid = s.UUIDField()
     version = s.IntegerField()
@@ -154,7 +155,7 @@ class ScreeningReceipt(s.Serializer):
     sha256 = s.CharField()
 
 
-class ClaimSummary(s.Serializer):
+class ClaimSummary(ClaimStaffFields):
     id = s.IntegerField()
     uuid = s.UUIDField()
     version = s.IntegerField()
@@ -174,11 +175,11 @@ class ClaimSummary(s.Serializer):
     payout = PayoutSummary(allow_null=True)
 
 
-class ClaimScreeningDetail(ClaimSummary):
+class ClaimScreeningDetail(ClaimSummary, ClaimReviewFields):
     receipt_metadata = ScreeningReceipt(many=True, required=False)
 
 
-class ClaimFinanceDetail(ClaimSummary):
+class ClaimFinanceDetail(ClaimSummary, ClaimReviewFields):
     draft = s.DictField(allow_null=True)
     revisions = RevisionDetail(many=True)
     decisions = DecisionDetail(many=True)
@@ -189,6 +190,9 @@ class RequestContext(s.Serializer):
     programme_version = s.IntegerField()
     form = s.DictField()
     schema = s.DictField()
+    currency = s.CharField()
+    allowed_categories = s.ListField(child=s.CharField())
+    min_distance_km = s.CharField(allow_null=True)
 
 
 class MemberSummary(s.Serializer):

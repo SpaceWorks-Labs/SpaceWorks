@@ -73,6 +73,12 @@ def canonical_country(*, event, application, registration):
 
 
 def validate_request(programme, value, facts, *, defer_missing=False):
+    if facts.get("staff") is True:
+        # Parity C17: a staff claim (behind `events.staff_claims`) is vetted by the staff who file it, so the
+        # participant country, cohort and distance rules do not apply; categories and currency still do.
+        from apps.makerspaces.platform import feature_enabled
+        require(feature_enabled(programme.event.makerspace, "events.staff_claims"), "staff_claims_disabled", status=403)
+        return validate_categories(programme, value)
     if facts.get("crew") is True:
         # Crew expense claims (lane L21a) need their own switch; participant rules do not apply.
         from apps.makerspaces.platform import feature_enabled

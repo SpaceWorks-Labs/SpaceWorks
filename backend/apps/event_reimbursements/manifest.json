@@ -2565,6 +2565,19 @@
       "authority": "host VIEW_FINANCE with recent reauth (hack-money G12/G14)"
     },
     {
+      "name": "admin-event-reimbursement-staff-claim",
+      "path": "/api/v1/admin/events/{pk}/reimbursements/staff-claims/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.event_reimbursements.views_admin.StaffClaimView",
+      "module": "event_reimbursements",
+      "live_host": true,
+      "session_only": true,
+      "openapi": "extend_schema on every method; api_schema.ERRORS",
+      "authority": "host VIEW_FINANCE or review_reimbursements; behind events.staff_claims (parity C17)"
+    },
+    {
       "name": "admin-event-reimbursement-direct-booking",
       "path": "/api/v1/admin/events/{pk}/reimbursements/requests/<int:request_id>/direct-booking/",
       "methods": [
@@ -2619,6 +2632,7 @@
     "event.reimbursement.request_draft_created",
     "event.reimbursement.request_expired",
     "event.reimbursement.request_withdrawn",
+    "event.reimbursement.staff_claim_filed",
     "event.reimbursement.requested",
     "event.reimbursement.waitlist_preview_available"
   ],
@@ -2639,7 +2653,8 @@
       "reimbursement.claim_reminder",
       "reimbursement.returned_for_info",
       "reimbursement.decision",
-      "reimbursement.queue"
+      "reimbursement.queue",
+      "reimbursement.staff_claim_filed"
     ],
     "payload": "Only IDs, enums, money/currency and UTC deadlines. No need text, vendor, traveller, payee or receipt bytes."
   },
@@ -2754,7 +2769,7 @@
     "ClaimDecision.core_decision_revision": "obligation-local sequence, preserve",
     "ClaimAppeal.resolved_by_cancellation_revision_id": "payments.EventPayoutObligationRevision PK"
   },
-  "cross_lane_callable_contracts": "scratchpad/build/RB3-A-CROSS-LANE.md (exact core signatures and G files); imports are lazy where runtime-only",
+  "cross_lane_callable_contracts": "core signatures are imported lazily where they are only needed at runtime",
   "accepted_policy": "GrantAward.calculation_snapshot pins caps/categories/exclusions/attendance/project/venue policy and UTC claim_due_at; accepted_policy.py reads it. Later programme edits never rewrite accepted terms.",
   "json_shapes": {
     "ReimbursementProgramme.tier_rules": "policy.rules: percentage {basis_points:int 0..10000,cap_minor}; need_based {cap_minor?}; fixed_tier map of {amount_minor}; route_cap map of {amount_minor,priority,origin_country?,destination_country?,region?,mode?}; deterministic distinct priorities",

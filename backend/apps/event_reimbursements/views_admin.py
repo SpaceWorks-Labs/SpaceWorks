@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from .http import PrivateView, body, paginated, admin_event
 from . import serializers as s, serializers_finance as f, serializers_read as reads
 from .api_schema import ERRORS, TAGS, IDEMPOTENCY, REVIEW, CLAIM_DETAIL, REQUEST_PAGE, FINANCE
-from . import programme_workflow, award_workflow, claim_workflow, direct_booking, pools
+from . import programme_workflow, award_workflow, claim_workflow, direct_booking, pools, staff_claims
 from . import serializers_hackmoney as hm
 from .config_models import ReimbursementProgramme
 from .request_models import GrantRequest
@@ -146,3 +146,18 @@ class DirectBookingCancelView(PrivateView):
         get_object_or_404(GrantRequest, pk=request_id, event=event)
         return Response(direct_booking.cancel(request=request, event_id=pk, request_id=request_id,
                                               data=body(request, hm.DirectBookingCancelCommand)))
+
+
+class StaffClaimView(PrivateView):
+    """Parity C17: staff file a travel claim for themselves or for a speaker or volunteer."""
+    @extend_schema(tags=TAGS, parameters=IDEMPOTENCY, request=hm.StaffClaimCommand,
+                   description="Host VIEW_FINANCE or the review_reimbursements grant, and a full browser session. "
+                               "The claim becomes a `kind=staff` request funded from the event's pool (crew pool when "
+                               "there is one); 409 budget_exhausted when the pool cannot cover it, 409 "
+                               "staff_claim_registration_required when the person has no live registration, 404 "
+                               "feature_disabled when events.staff_claims is off.",
+                   responses={201: s.CommandResult, **ERRORS})
+    def post(self, request, pk):
+        admin_event(request, pk)
+        return Response(staff_claims.file_claim(request=request, event_id=pk, data=body(request, hm.StaffClaimCommand)),
+                        status=201)

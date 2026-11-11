@@ -1,4 +1,6 @@
 """Transactional envelopes contain IDs and money, never supporting text or bytes."""
+from django.utils.translation import gettext
+
 from apps.accounts.models import User
 from apps.integrations.notification_outbox import emit
 from apps.integrations.notification_sources import NotificationSource
@@ -8,6 +10,7 @@ from apps.notifications.inbox import eligible_owner
 from .request_models import GrantRequest
 from .award_models import GrantAward
 from .claim_models import ReimbursementClaim
+from apps.integrations.fanout_jobs import deferred_fanout
 
 MODELS = {"request": GrantRequest, "award": GrantAward, "claim": ReimbursementClaim}
 
@@ -18,6 +21,7 @@ def coordinates(row):
     return "claim" if isinstance(row, ReimbursementClaim) else "request", row.event, row.member_id
 
 
+@deferred_fanout()
 def enqueue_locked(row, kind, *, identity="command"):
     key, event, owner_id = coordinates(row)
     space = event.makerspace
@@ -27,26 +31,37 @@ def enqueue_locked(row, kind, *, identity="command"):
     if recipient is None:
         return None
     context = {"event_id": event.pk, "kind": kind, "subject_kind": key, "subject_id": row.pk}
-    text = "Your travel support status has changed. Sign in to review the decision and current deadline."
+    amount = None
+    outcome = None
     if key == "award":
         context.update(amount_minor=row.amount_minor, currency=row.currency, due_at=row.accept_by.isoformat())
         from decimal import Decimal
         from apps.payments.currencies import supported_minor_unit_exponent
         exponent = supported_minor_unit_exponent(row.currency)
         amount = format(Decimal(row.amount_minor) / 10 ** exponent, f".{exponent}f")
-        text = f"Travel support: {amount} {row.currency}. Sign in to review your offer and acceptance deadline."
     elif key == "claim" and row.current_decision_id:
         decision = row.current_decision
         context.update(approved_minor=decision.approved_total_minor, currency=decision.currency, reason_code=decision.reason_code)
-        text = f"Claim decision: {decision.outcome.replace('_', ' ')}. Sign in to review approved amounts and the reason."
+        outcome = decision.outcome.replace("_", " ")
+    def rendered():
+        if kind == "staff_claim_filed":
+            text = gettext("The organisers filed an expense claim for you. Sign in to see it and any offer that follows.")
+        elif amount is not None:
+            text = gettext("Travel support: %(amount)s %(currency)s. Sign in to review your offer and acceptance deadline.") % {
+                "amount": amount, "currency": row.currency}
+        elif outcome is not None:
+            text = gettext("Claim decision: %(outcome)s. Sign in to review approved amounts and the reason.") % {"outcome": outcome}
+        else:
+            text = gettext("Your travel support status has changed. Sign in to review the decision and current deadline.")
+        return {"subject": gettext("Event travel support update"), "text": text,
+                "link": f"/member/events/{event.pk}/reimbursement"}
+
     return emit(makerspace=space, recipient=recipient, feature="events", stream="events",
         event="reimbursement." + kind, audience="member",
         dedup_key=f"reimbursement:{key}:{row.pk}:{row.version}:{kind}:{identity}",
         source_kind="event.reimbursement", source_id=str(row.pk), revision=str(row.version), subject=row,
         context=context,
-        rendered={"subject": "Event travel support update",
-            "text": text,
-            "link": f"/member/events/{event.pk}/reimbursement"})
+        rendered=rendered)
 
 
 def reviewer_preview_locked(ctx, pool):

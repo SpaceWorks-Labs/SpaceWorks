@@ -44,7 +44,8 @@ def authorize(actor, event, *, owner=False, finance=False, permission=None, requ
     require_active_principal(actor, event.makerspace)
     require(not actor.must_change_password, "full_session_required", status=403)
     if request is not None:
-        require(getattr(request, "api_client", None) is None, "full_session_required", status=403)
+        require(getattr(request, "api_client", None) is None and getattr(request, "person_credential", None) is None,
+                "full_session_required", status=403)
         binding(request)
         check_origin(request, event, owner=owner)
     if owner:

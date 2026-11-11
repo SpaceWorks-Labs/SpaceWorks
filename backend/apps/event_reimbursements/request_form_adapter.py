@@ -34,7 +34,10 @@ def schema(programme):
 def context(programme):
     value = schema(programme)
     return {"programme_id": programme.pk, "programme_version": programme.version,
-        "form": {key: value[key] for key in ("schema_version", "form_id", "revision")}, "schema": value}
+        "form": {key: value[key] for key in ("schema_version", "form_id", "revision")}, "schema": value,
+        # The member form keeps estimates in the pool currency and shows the distance rule (decision 296 review).
+        "currency": programme.currency, "allowed_categories": list(programme.allowed_categories),
+        "min_distance_km": str(programme.min_distance_km) if programme.min_distance_km is not None else None}
 
 
 def prepare(*, programme, event, actor, operation_id, block):

@@ -19,7 +19,7 @@ from .request_workflow import reviewed_locked
 
 def cap_for(programme, row, data):
     from .eligibility import request_facts, validate_request
-    facts = request_facts(event=row.event, owner_id=row.member_id)
+    facts = {"staff": True} if row.kind == "staff" else request_facts(event=row.event, owner_id=row.member_id)
     validate_request(programme, {"distance_km": row.distance_km, "estimates": row.category_estimates}, facts)
     rules = programme.tier_rules
     amount = minor(data["amount_minor"])

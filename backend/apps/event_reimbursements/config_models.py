@@ -61,6 +61,6 @@ class ReimbursementProgramme(Versioned):
             models.CheckConstraint(condition=models.Q(required_submission__in=REQUIRED_SUBMISSION),
                                    name="reimb_required_submission"),
             models.CheckConstraint(condition=(~models.Q(required_submission__in=("stage", "shortlisted_at"))
-                | models.Q(required_submission_stage__gte=1, required_submission_stage__lte=10)),
+                | models.Q(required_submission_stage__gte=1, required_submission_stage__lte=50)),
                 name="reimb_required_submission_stage"),
         ]

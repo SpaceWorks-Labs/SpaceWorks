@@ -18,7 +18,10 @@ class GrantRequest(ScopedPiiModelMixin, Versioned):
     creation_operation_id = models.UUIDField(null=True)
     request_phase = models.CharField(max_length=16, choices=[(v, v) for v in ("application", "after_acceptance")])
     #: Lane L21a: `crew` is an organising-crew expense claim (behind `events.crew_claims`).
-    kind = models.CharField(max_length=12, default="participant", choices=[(v, v) for v in ("participant", "crew")])
+    #: Parity C17: `staff` is a claim staff filed for themselves or for someone else (behind `events.staff_claims`).
+    #: Who filed it is in the append-only audit row `event.reimbursement.staff_claim_filed`, not a column.
+    kind = models.CharField(max_length=12, default="participant",
+                            choices=[(v, v) for v in ("participant", "crew", "staff")])
     state = models.CharField(max_length=12, default="draft", choices=[(v, v) for v in (
         "draft", "requested", "waitlisted", "awarded", "declined", "withdrawn", "expired")])
     origin = models.TextField(blank=True)

@@ -52,6 +52,8 @@ def request_detail(row, *, sensitive=False, screening=False):
         value.update(budget={"pool_id": pool.pk, "pool_version": pool.version,
             "available_minor": pool.total_minor - pool.reserved_minor - pool.committed_minor},
             award=award_detail(award) if award else None)
+        from .staff_projection import request_extras
+        value.update(request_extras(row, award))
     return value
 
 
@@ -106,6 +108,9 @@ def claim_detail(row, *, owner=False, finance=False, detail=True):
         value["receipt_metadata"] = [{"line_uuid": str(line.line_uuid), "category": line.category,
             "converted_minor": line.converted_minor, "receipt_present": True, "sha256": line.receipt_hash}
             for line in row.current_revision.lines.order_by("line_uuid")]
+    if not owner:
+        from .staff_projection import claim_extras
+        value.update(claim_extras(row, finance=finance, detail=detail))
     return value
 
 
@@ -134,4 +139,24 @@ def member_summary(event, actor):
         "claim": claim_detail(claim, owner=True) if claim else None,
         "allowed_actions": (["create_request"] if available and row is None else []) +
             (["accept_award", "decline_award"] if available and award and award.state == "offered"
-                and timezone.now() < award.accept_by else [])}
+                and timezone.now() < award.accept_by else []) + member_actions(event, programme, row, award, claim, available)}
+
+
+def member_actions(event, programme, row, award, claim, available):
+    """The owner's next steps the member page offers (decision 296): submit/withdraw a request, start a claim."""
+    from .accepted_policy import claim_due
+    from .attendance import participating
+    now, actions = timezone.now(), []
+    window = (programme is not None and programme.request_phase in ("after_acceptance", "both")
+              and (programme.request_opens_at is None or programme.request_opens_at <= now)
+              and (programme.request_closes_at is None or now < programme.request_closes_at))
+    if available and window and (row is None or row.state == "draft"):
+        actions.append("submit_request")
+    if row is not None and row.state in ("draft", "requested", "waitlisted"):
+        actions.append("withdraw_request")
+    due = claim_due(award, programme) if award is not None and programme is not None else None
+    if (award is not None and claim is None and award.state in ("accepted", "closed") and award.reason_code != "direct_booking"
+            and event.ends_at <= now and event.status != "cancelled" and due is not None and now < due
+            and participating(award.request)):
+        actions.append("create_claim")
+    return actions

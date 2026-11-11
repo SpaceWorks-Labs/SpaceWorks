@@ -15,6 +15,8 @@ type Row = StockTarget & { held: number; available: number; reorder: number; sku
 export function ShopStock({ makerspaceId, access }: { makerspaceId: number; access: ShopAccess }) {
   const client = useQueryClient();
   const [search, setSearch] = useState("");
+  // SH2: only what needs reordering (sold out, or at/below its reorder point).
+  const [lowOnly, setLowOnly] = useState(false);
   const [dialog, setDialog] = useState<{ target: StockTarget; mode: "restock" | "adjust" } | null>(null);
   const [history, setHistory] = useState<StockTarget | null>(null);
   const query = useQuery({ queryKey: staffShopKeys.allProducts(makerspaceId), queryFn: () => listAllProducts(makerspaceId) });
@@ -23,15 +25,18 @@ export function ShopStock({ makerspaceId, access }: { makerspaceId: number; acce
       reorder: variant.reorder_point ?? 0, sku: variant.sku ?? "",
       label: (product.variants?.length ?? 0) > 1 ? `${product.name} · ${variant.name}` : product.name }))), [query.data]);
   const term = search.trim().toLowerCase();
-  const shown = term ? rows.filter(row => row.label.toLowerCase().includes(term) || row.sku.toLowerCase().includes(term)) : rows;
+  const isLow = (row: Row) => row.available <= 0 || (row.reorder > 0 && row.available <= row.reorder);
+  const shown = (term ? rows.filter(row => row.label.toLowerCase().includes(term) || row.sku.toLowerCase().includes(term)) : rows)
+    .filter(row => !lowOnly || isLow(row));
   const move = useMutation({ mutationFn: ({ id, body }: { id: number; body: StockMove }) => moveStock(id, body),
     onSuccess: () => { setDialog(null); void client.invalidateQueries({ queryKey: staffShopKeys.all(makerspaceId) }); } });
   return <>
     <ListLayout header={{ eyebrow: t`Shop`, title: t`Stock`, subtitle: t`Held stock is set aside for orders that are not collected yet.` }}
       state={query.isPending ? { status: "loading" } : query.error ? { status: "error", error: staffShopError(query.error),
         onRetry: () => { void query.refetch(); } } : { status: "ready" }}
-      filters={{ search: { label: t`Find an item`, placeholder: t`Name or SKU`, value: search, onChange: setSearch } }}
-      isEmpty={!shown.length} empty={{ message: t`No products to stock yet.` }} filteredEmpty={{ message: t`No item matches.` }}
+      filters={{ search: { label: t`Find an item`, placeholder: t`Name or SKU`, value: search, onChange: setSearch },
+        views: <button type="button" className={lowOnly ? "desk-button-primary" : "desk-button"} aria-pressed={lowOnly} onClick={() => setLowOnly(value => !value)}>{t`Low stock only`}</button> }}
+      filtered={Boolean(term || lowOnly)} isEmpty={!shown.length} empty={{ message: t`No products to stock yet.` }} filteredEmpty={{ message: t`No item matches.` }}
       body={{ kind: "rows", rows: shown.map(row => {
         const low = row.reorder > 0 && row.available <= row.reorder;
         return <ListRow key={row.variantId} title={row.label}

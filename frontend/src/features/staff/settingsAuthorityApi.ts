@@ -11,7 +11,7 @@ export const MODULE_MANAGER_LABELS: Record<AuthorityModule, string> = {
   events: t`Event settings · Event Managers`,
   bookings: t`Booking settings · Booking Managers`,
   machines: t`Machine settings · Machine Managers`,
-  inventory: t`Lending settings · Inventory Managers`,
+  inventory: t`Inventory settings · Inventory Managers`,
 };
 
 export type SettingsGrant = { id: number; module: AuthorityModule; grantee: number | null; grantee_name: string;

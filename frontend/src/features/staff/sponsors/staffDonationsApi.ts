@@ -9,17 +9,27 @@ export type StaffDonation = {
   currency: string; source: "online" | "desk" | "pledge"; status: "pending" | "paid" | "cancelled";
   wants_tax_receipt: boolean; donor_pan_masked: string; donor_address: string; tax_receipt_number: string;
   payment_id: number | null; payment_status: string; created_at: string; paid_at: string | null;
-  cancelled_at: string | null; pii_masked?: boolean;
+  cancelled_at: string | null; pii_masked?: boolean; recognize_publicly?: boolean;
+  open_claim?: { id: number; reference: string; paid_on: string; status: string } | null;
 };
 export type StaffCampaign = {
   id: number; kind: "campaign" | "fund"; name: string; slug: string; description: string; goal_amount: string | null;
   currency: string; starts_at: string | null; ends_at: string | null; is_active: boolean; is_public: boolean;
+  raised_amount?: string;
 };
-export type CampaignInput = Omit<StaffCampaign, "id" | "currency">;
+export type CampaignInput = Omit<StaffCampaign, "id" | "currency" | "raised_amount">;
+/** Decision 242(m): one tax-exemption registration of the non-profit profile. */
+export type TaxExemption = { scheme: string; number: string; valid_from: string; valid_until: string };
 export type DonationSettings = {
   page_intro: string; suggested_amounts: string[]; minimum_amount: string; tax_exempt_registration_number: string;
   tax_exempt_valid_from: string | null; tax_exempt_valid_until: string | null; tax_exempt_registrant_pan: string;
   tax_exempt_note: string; updated_at?: string;
+  is_nonprofit: boolean; legal_name: string; organization_registration_number: string; tax_exemptions: TaxExemption[];
+  signatory_name: string; signatory_title: string; receipt_footer: string;
+};
+export type StaffDonor = {
+  key: string; name: string; email: string; is_guest: boolean; gift_count: number; totals: Record<string, string>;
+  last_gift_at: string | null; recurring: boolean; recognize_publicly: boolean; pii_masked?: boolean;
 };
 export type StaffPledge = {
   id: number; campaign: number | null; campaign_name: string; donor: number | null; donor_name: string;
@@ -31,6 +41,7 @@ export type Settlement = { method: string; reference: string; received_at: strin
 export type DeskGiftInput = {
   amount: string; donor_name: string; donor_email: string; campaign: number | null; note: string;
   wants_tax_receipt: boolean; donor_pan: string; donor_address: string; settlement: Settlement;
+  recognize_publicly?: boolean;
 };
 
 export const donationStaffKeys = {
@@ -38,6 +49,7 @@ export const donationStaffKeys = {
   campaigns: (id: number) => ["staff-donation-campaigns", id] as const,
   settings: (id: number) => ["staff-donation-settings", id] as const,
   pledges: (id: number) => ["staff-donation-pledges", id] as const,
+  donors: (id: number) => ["staff-donation-donors", id] as const,
 };
 
 const base = (id: number) => `/admin/makerspace/${id}/donations`;
@@ -62,6 +74,22 @@ export const donationStaffApi = {
   pledges: (id: number) => staffRequest<StaffPledge[]>(`${base(id)}/pledges`),
   changePledge: (id: number, pledge: number, action: "pause" | "resume" | "cancel") =>
     staffRequest<StaffPledge>(`${base(id)}/pledges/${pledge}`, json("POST", { action })),
+  // Decision 242(m): the Donations area.
+  donors: (id: number) => staffRequest<StaffDonor[]>(`${base(id)}/donors`),
+  exportCsv: (id: number, filters: string) =>
+    downloadStaffFile(`${base(id)}/export.csv${filters ? `?${filters}` : ""}`, "donations.csv"),
+  reissue: (id: number, gift: number) => staffRequest<StaffDonation>(`${base(id)}/${gift}/receipt/reissue`, json("POST")),
+  decideClaim: (id: number, gift: number, confirm: boolean, note = "") =>
+    staffRequest<unknown>(`${base(id)}/${gift}/claim/${confirm ? "confirm" : "reject"}`, json("POST", { note })),
+  markReceived: (id: number, payment: number, settlement: Settlement) =>
+    staffRequest<unknown>(`/admin/makerspace/${id}/payments/${payment}/mark-offline`, json("POST", { settlement })),
+};
+
+/** `nonprofit.SCHEMES`: the tax-exemption schemes a non-profit profile can list. */
+export const TAX_SCHEMES: Record<string, string> = {
+  in_80g: t`India: section 80G`, in_12a: t`India: section 12A/12AB registration`, us_501c3: t`United States: 501(c)(3)`,
+  uk_charity: t`United Kingdom: registered charity`, ca_charity: t`Canada: registered charity`,
+  au_dgr: t`Australia: deductible gift recipient`, other: t`Other tax-exemption registration`,
 };
 
 export const GIFT_STATUS: Record<StaffDonation["status"], { label: string; tone: "success" | "warn" | "neutral" }> = {

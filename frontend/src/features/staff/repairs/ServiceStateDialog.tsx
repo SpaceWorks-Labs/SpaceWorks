@@ -3,7 +3,29 @@ import { t } from "@lingui/core/macro";
 import { useState } from "react";
 
 import { Modal, SegmentedControl } from "../../../components/ui";
-import { useServiceState, type IssueDetail, type ServiceStateResult } from "./repairsApi";
+import { useRoomOutageImpact, useServiceState, type IssueDetail, type ServiceStateResult } from "./repairsApi";
+
+function iso(value: string) {
+  const date = value ? new Date(value) : null;
+  return date && !Number.isNaN(date.getTime()) ? date.toISOString() : null;
+}
+
+/** Before saving: the bookings and linked events the outage would meet (read-only; nothing is cancelled). */
+export function OutageImpact({ makerspaceId, roomId, back }: { makerspaceId: number; roomId: number; back: string }) {
+  const impact = useRoomOutageImpact(makerspaceId, roomId, iso(back));
+  if (impact.isPending) return <p className="text-sm text-muted" role="status">{t`Checking bookings and events in this time…`}</p>;
+  if (impact.isError) return null;
+  const { booking_count: count, events, other_event_bookings: other } = impact.data;
+  return <section className="grid gap-1 rounded-md border border-line p-2 text-sm" aria-label={t`Outage impact`}>
+    {impact.data.already_out_of_service ? <p role="alert">{t`This room is already out of service.`}</p> : null}
+    <p>{count ? t`${count} pending or confirmed bookings fall in this time.` : t`No bookings fall in this time.`}</p>
+    {impact.data.bookings.map(row => <p key={row.id}>#{row.id} · {new Date(row.starts_at).toLocaleString(formatLocale())} ({row.status})</p>)}
+    {events.length ? <><p className="font-semibold">{t`Events using this room`}</p>
+      <ul className="grid gap-1">{events.map(row => <li key={row.event_id}>{row.title}</li>)}</ul></> : null}
+    {other ? <p>{t`${other} more bookings hold the room for events you cannot see.`}</p> : null}
+    {count ? <p className="text-muted">{t`Nothing is cancelled. Bookers and event organizers are told; staff decide on each booking.`}</p> : null}
+  </section>;
+}
 
 /**
  * Take the issue's subject out of service, or back in (#93, C-6b). A room either blocks new
@@ -41,6 +63,7 @@ export function ServiceStateDialog({ issue, makerspaceId, onClose }: { issue: Is
           onChange={event => setBack(event.target.value)} /></label>
         {room ? <SegmentedControl label={t`New bookings`} value={mode} onChange={value => setMode(value as "block" | "warn")}
           options={[{ value: "block", label: t`Block new bookings` }, { value: "warn", label: t`Only warn` }]} /> : null}
+        {room ? <OutageImpact makerspaceId={makerspaceId} roomId={issue.subject_id} back={back} /> : null}
       </> : null}
       {counted ? <label className="eyebrow grid gap-1">{t`How many units`}<input className="desk-input" type="number" min="1" step="1"
         value={quantity} onChange={event => setQuantity(event.target.value)} /></label> : null}

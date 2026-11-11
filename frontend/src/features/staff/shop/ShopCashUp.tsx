@@ -61,9 +61,9 @@ export function ShopCashUp({ makerspaceId, canManage, onLeave }: { makerspaceId:
     </> : <p>{current.note ? t`Note: ${current.note}. ` : ""}{t`A different staff member checks the count and confirms it.`}{canManage ? "" : t` You cannot confirm your own count.`}</p>}
   </div> : null;
   const next = step === "open"
-    ? { label: t`Open the drawer`, onClick: () => open.mutate(), pending: open.isPending, disabled: !amount(float), disabledReason: amount(float) ? undefined : "Enter the opening float." }
+    ? { label: t`Open the drawer`, onClick: () => open.mutate(), pending: open.isPending, disabled: !amount(float), disabledReason: amount(float) ? undefined : t`Enter the opening float.` }
     : step === "count"
-      ? { label: t`Close and record the count`, onClick: () => close.mutate(), pending: close.isPending, disabled: !amount(counted), disabledReason: amount(counted) ? undefined : "Enter the counted cash." }
+      ? { label: t`Close and record the count`, onClick: () => close.mutate(), pending: close.isPending, disabled: !amount(counted), disabledReason: amount(counted) ? undefined : t`Enter the counted cash.` }
       : { label: t`Confirm the count`, onClick: () => confirm.mutate(), pending: confirm.isPending };
   return <FlowLayout standalone={false} title={t`Cash-up`} subject="The front-desk cash drawer for shop sales." steps={steps} current={step}
     state={query.isPending ? { status: "loading" } : query.error ? { status: "error", error: staffShopError(query.error),

@@ -55,7 +55,7 @@ export function ShopReports({ makerspaceId }: { makerspaceId: number }) {
     ] : []}
     main={report ? [
       { title: t`By channel`, empty, isEmpty: !report.by_channel.length, content: <Table caption={t`By channel`} head={["Channel", "Orders", "Sales"]}
-        rows={report.by_channel.map(row => [CHANNEL_LABELS[row.channel] ?? row.channel, row.orders, money(row.sales)])} /> },
+        rows={report.by_channel.map(row => [CHANNEL_LABELS()[row.channel] ?? row.channel, row.orders, money(row.sales)])} /> },
       { title: t`By payment method`, empty, isEmpty: !report.by_method.length, content: <Table caption={t`By payment method`} head={["Method", "Amount"]}
         rows={report.by_method.map(row => [METHOD_LABELS[row.method] ?? row.method, money(row.amount)])} /> },
       { title: t`By month`, empty, isEmpty: !report.by_month.length, content: <Table caption={t`By month`} head={["Month", "Sales", "Refunds"]}

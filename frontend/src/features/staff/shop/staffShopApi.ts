@@ -84,6 +84,7 @@ const MESSAGES: Record<string, string> = {
   return_exceeds_sold: t`You cannot return more than was sold.`,
   price_changed: t`Prices changed. The basket has been re-priced; check the total and sell again.`,
   charges_off: t`Shop sales are not being recorded. Turn on “Track shop sales” first.`,
+  pickup_interrupted: t`Move this order's pickup before handing it over.`,
 };
 
 export function staffShopError(error: unknown) {
@@ -91,7 +92,7 @@ export function staffShopError(error: unknown) {
   if (!(error instanceof StructuredApiError)) return error instanceof Error ? error.message : t`Something went wrong. Try again.`;
   if (error.code === "out_of_stock") {
     const available = Number(error.body.available ?? 0);
-    return available > 0 ? t`${error.detail ?? "Not enough stock."} Only ${available} left.` : error.detail ?? t`Out of stock.`;
+    return available > 0 ? (error.detail ? t`${error.detail} Only ${available} left.` : t`Not enough stock. Only ${available} left.`) : error.detail ?? t`Out of stock.`;
   }
   return (error.code && MESSAGES[error.code]) || error.detail || error.message;
 }

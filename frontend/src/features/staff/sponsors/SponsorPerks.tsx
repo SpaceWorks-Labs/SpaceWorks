@@ -21,7 +21,7 @@ function PerkRow({ makerspaceId, perk, canRecord }: { makerspaceId: number; perk
     </label>
     <span className={`text-xs ${overdue ? "text-danger" : "text-muted"}`}>
       {perk.fulfilled_at ? t`Done ${new Date(perk.fulfilled_at).toLocaleDateString(formatLocale())}${perk.fulfilled_by_name ? ` by ${perk.fulfilled_by_name}` : ""}`
-        : perk.due_on ? `${overdue ? "Overdue since" : "Due"} ${new Date(perk.due_on).toLocaleDateString(formatLocale())}` : t`No due date`}</span>
+        : perk.due_on ? (overdue ? t`Overdue since ${new Date(perk.due_on).toLocaleDateString(formatLocale())}` : t`Due ${new Date(perk.due_on).toLocaleDateString(formatLocale())}`) : t`No due date`}</span>
     {tick.error ? <span role="alert" className="text-xs text-danger">{financeError(tick.error)}</span> : null}
   </li>;
 }

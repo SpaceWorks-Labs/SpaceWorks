@@ -102,6 +102,22 @@ export type ServiceStateBody = { subject_type: SubjectType; subject_id: number; 
 export type ServiceStateResult = { state: string; outage_id: number | null;
   affected_bookings: { id: number; starts_at: string; ends_at: string; status: string }[] };
 
+/** Read-only preview of what a room outage would meet; event titles only where the viewer may see them. */
+export type RoomOutageImpact = {
+  already_out_of_service: boolean; booking_count: number;
+  bookings: { id: number; starts_at: string; ends_at: string; status: string }[];
+  events: { event_id: number; title: string; event_status: string }[]; other_event_bookings: number;
+};
+
+export function useRoomOutageImpact(msId: number, roomId: number | null, expectedBackAt: string | null) {
+  const params = new URLSearchParams({ room_id: String(roomId ?? 0) });
+  if (expectedBackAt) params.set("expected_back_at", expectedBackAt);
+  return useQuery({
+    queryKey: ["room-outages", "impact", msId, roomId, expectedBackAt], enabled: roomId !== null, retry: false,
+    queryFn: ({ signal }) => staffRequest<RoomOutageImpact>(`/admin/makerspaces/${msId}/room-outages/impact?${params}`, { signal }),
+  });
+}
+
 export function useServiceState(msId: number) {
   const client = useQueryClient();
   return useMutation({

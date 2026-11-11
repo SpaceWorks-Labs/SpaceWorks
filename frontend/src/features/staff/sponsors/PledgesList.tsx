@@ -2,7 +2,8 @@ import { formatLocale } from "../../../lib/format";
 import { t } from "@lingui/core/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { EmptyState, ListRow, StatusPill } from "../../../components/ui";
+import { useState } from "react";
+import { ConfirmDialog, EmptyState, ListRow, StatusPill } from "../../../components/ui";
 import { financeError } from "../../finance/financeApi";
 import { donationStaffApi, donationStaffKeys, type StaffPledge } from "./staffDonationsApi";
 
@@ -11,6 +12,7 @@ const TONE = { active: "success", paused: "warn", cancelled: "neutral" } as cons
 
 function PledgeActions({ makerspaceId, pledge }: { makerspaceId: number; pledge: StaffPledge }) {
   const client = useQueryClient();
+  const [confirming, setConfirming] = useState(false);
   const change = useMutation({
     mutationFn: (action: "pause" | "resume" | "cancel") => donationStaffApi.changePledge(makerspaceId, pledge.id, action),
     onSuccess: () => void client.invalidateQueries({ queryKey: donationStaffKeys.pledges(makerspaceId) }),
@@ -20,8 +22,11 @@ function PledgeActions({ makerspaceId, pledge }: { makerspaceId: number; pledge:
     <button type="button" className="desk-button-ghost" disabled={change.isPending}
       onClick={() => change.mutate(pledge.status === "active" ? "pause" : "resume")}>{pledge.status === "active" ? t`Pause` : t`Resume`}</button>
     <button type="button" className="desk-button-ghost" disabled={change.isPending}
-      onClick={() => { if (window.confirm(t`Cancel this pledge? Gifts already raised stay as they are.`)) change.mutate("cancel"); }}>{t`Cancel`}</button>
-  </div>{change.error ? <p role="alert" className="text-xs text-danger">{financeError(change.error)}</p> : null}</div>;
+      onClick={() => setConfirming(true)}>{t`Cancel`}</button>
+  </div>{change.error ? <p role="alert" className="text-xs text-danger">{financeError(change.error)}</p> : null}
+    <ConfirmDialog open={confirming} tone="danger" title={t`Cancel this pledge?`} confirmLabel={t`Cancel pledge`} cancelLabel={t`Keep pledge`}
+      message={t`Cancel this pledge? Gifts already raised stay as they are.`}
+      onCancel={() => setConfirming(false)} onConfirm={() => { setConfirming(false); change.mutate("cancel"); }} /></div>;
 }
 
 /** Recurring pledges: each period raises one charge the giver pays. Nothing is taken automatically. */

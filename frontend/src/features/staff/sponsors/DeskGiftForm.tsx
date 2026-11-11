@@ -49,11 +49,13 @@ export function DeskGiftForm({ makerspaceId, campaigns, taxOn, onClose }: {
       <Field label={t`Note (optional)`}><input className="desk-input" maxLength={500} value={form.note}
         onChange={event => set({ note: event.target.value })} /></Field>
       {taxOn ? <label className="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" checked={form.wants_tax_receipt}
-        onChange={event => set({ wants_tax_receipt: event.target.checked })} />{t`Issue an 80G receipt`}</label> : null}
+        onChange={event => set({ wants_tax_receipt: event.target.checked })} />{t`Issue a tax receipt`}</label> : null}
+      <label className="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" checked={Boolean(form.recognize_publicly)}
+        onChange={event => set({ recognize_publicly: event.target.checked })} />{t`The giver agreed to be named on the campaign page`}</label>
       {form.wants_tax_receipt ? <div className="grid gap-3 sm:grid-cols-2">
-        <Field label={t`Giver's PAN`} hint={t`Stored encrypted.`}><input className="desk-input uppercase" required maxLength={12}
+        <Field label={t`Giver's PAN (India 80G only)`} hint={t`Stored encrypted.`}><input className="desk-input uppercase" maxLength={12}
           autoComplete="off" value={form.donor_pan} onChange={event => set({ donor_pan: event.target.value })} /></Field>
-        <Field label={t`Giver's postal address`}><input className="desk-input" required maxLength={500} value={form.donor_address}
+        <Field label={t`Giver's postal address`}><input className="desk-input" maxLength={500} value={form.donor_address}
           onChange={event => set({ donor_address: event.target.value })} /></Field>
       </div> : null}
       {save.error ? <p role="alert" className="text-sm text-danger">{financeError(save.error)}</p> : null}

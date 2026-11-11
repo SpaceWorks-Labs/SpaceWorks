@@ -34,7 +34,7 @@ export function ShopSettingsForm({ makerspaceId }: { makerspaceId: number }) {
   return <FormPageLayout header={{ eyebrow: t`Shop`, title: t`Shop settings`, subtitle: t`Features, holds, reminders, returns and what buyers read before ordering.` }}
     state={query.error ? { status: "error", error: staffShopError(query.error), onRetry: () => { void query.refetch(); } }
       : !values ? { status: "loading" } : { status: "ready" }}
-    submit={{ label: t`Save settings`, pending: save.isPending, pendingLabel: "Saving…", onClick: () => { if (!disabled) save.mutate(); },
+    submit={{ label: t`Save settings`, pending: save.isPending, pendingLabel: t`Saving…`, onClick: () => { if (!disabled) save.mutate(); },
       disabled, disabledReason: problem || (!policy || authority.error ? t`Settings access could not be confirmed.` : t`No editable settings have changed.`) }}
     form={values ? <div className="grid gap-6">
       <SettingsSection title={t`Shop features`}><DomainSettingsSection makerspaceId={makerspaceId} domain="shop" /></SettingsSection>

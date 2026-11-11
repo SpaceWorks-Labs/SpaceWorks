@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { staffRequest } from "../../../lib/api";
 
 // Hand-written mirrors of `apps/payments/donations/serializers_sponsors.py` (lane L18).
@@ -69,6 +70,14 @@ export const sponsorApi = {
   unlink: (id: number, link: number) => staffRequest<void>(`${base(id)}/event-links/${link}`, json("DELETE")),
 };
 
-export const PAYMENT_STATUS: Record<string, string> = {
-  pending: "Owed", paid_online: "Paid online", paid_offline: "Paid offline", waived: "Waived", canceled: "Cancelled",
-};
+/** Translated words for a sponsor charge's payment status (a function, so a locale switch re-reads it). */
+export function sponsorPaymentStatusLabel(status: string): string {
+  switch (status) {
+    case "pending": return t`Owed`;
+    case "paid_online": return t`Paid online`;
+    case "paid_offline": return t`Paid offline`;
+    case "waived": return t`Waived`;
+    case "canceled": return t`Cancelled`;
+    default: return status.replace(/_/g, " ");
+  }
+}

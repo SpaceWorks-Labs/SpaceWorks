@@ -1,4 +1,4 @@
-import { t } from "@lingui/core/macro";
+import { plural, t } from "@lingui/core/macro";
 import { useState } from "react";
 
 import { Modal } from "../../../components/ui";
@@ -16,7 +16,7 @@ export function DispatchDialog({ issue, technicians, onClose }: { issue: IssueDe
   const [picked, setPicked] = useState<number[]>(issue.default_contact_ids.filter(id => live.some(row => row.id === id)));
   const [note, setNote] = useState("");
   const toggle = (id: number) => setPicked(current => current.includes(id) ? current.filter(row => row !== id) : [...current, id]);
-  const reach = (row: Technician) => (row.channels as Channel[]).filter(channel => row.consent[channel]).map(channel => CHANNEL_LABELS[channel]);
+  const reach = (row: Technician) => (row.channels as Channel[]).filter(channel => row.consent[channel]).map(channel => CHANNEL_LABELS()[channel]);
   return <Modal open title={t`Send to technicians`} onClose={onClose}>
     <form className="grid gap-3" onSubmit={event => {
       event.preventDefault();
@@ -36,7 +36,7 @@ export function DispatchDialog({ issue, technicians, onClose }: { issue: IssueDe
       <div className="flex flex-wrap justify-end gap-2 border-t border-line pt-3">
         <button type="button" className="desk-button-ghost" onClick={onClose}>{t`Cancel`}</button>
         <button type="submit" className="desk-button-primary" disabled={!picked.length || step.isPending}>
-          {step.isPending ? t`Sending…` : `Send to ${picked.length || ""} technician${picked.length === 1 ? "" : "s"}`.replace("  ", " ")}</button>
+          {step.isPending ? t`Sending…` : (picked.length ? plural(picked.length, { one: "Send to # technician", other: "Send to # technicians" }) : t`Send to technicians`)}</button>
       </div>
     </form>
   </Modal>;

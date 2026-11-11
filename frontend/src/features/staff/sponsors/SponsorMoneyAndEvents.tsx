@@ -2,9 +2,11 @@ import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
+import { ConfirmDialog } from "../../../components/ui";
+import { formatMoney } from "../../../lib/money";
 import { financeError } from "../../finance/financeApi";
 import { useEvents } from "../eventsApi";
-import { PAYMENT_STATUS, sponsorApi, sponsorKeys, type ChargeInput } from "./staffSponsorsApi";
+import { sponsorApi, sponsorPaymentStatusLabel, sponsorKeys, type ChargeInput } from "./staffSponsorsApi";
 
 /** Hack-money G8: the body for "record as owed"; a prize-pool earmark always names its event. */
 export function chargeBody(amount: string, description: string, eventId: string, prizePool: boolean): ChargeInput {
@@ -21,6 +23,7 @@ export function SponsorCharges({ makerspaceId, sponsorId, canRecord }: { makersp
   const [description, setDescription] = useState("");
   const [eventId, setEventId] = useState("");
   const [prizePool, setPrizePool] = useState(false);
+  const [returning, setReturning] = useState<number | null>(null);
   const events = useEvents(makerspaceId);
   const titles = new Map((events.data?.results ?? []).map(row => [row.id, row.title]));
   const raise = useMutation({ mutationFn: () => sponsorApi.raiseCharge(makerspaceId, sponsorId, chargeBody(amount, description, eventId, prizePool)),
@@ -32,15 +35,18 @@ export function SponsorCharges({ makerspaceId, sponsorId, canRecord }: { makersp
     <p className="text-sm text-muted">{t`Settle these under Payments (cash, UPI, bank) or send a pay link. A return opens a refund case that staff decide.`}</p>
     {charges.data?.length ? <ul className="grid gap-2">{charges.data.map(charge => <li key={charge.id}
       className="flex flex-wrap items-center gap-3 text-sm">
-      <span className="font-semibold tabular-nums text-ink">{charge.currency.toUpperCase()} {charge.amount}</span>
+      <span className="font-semibold tabular-nums text-ink">{formatMoney(charge.amount, charge.currency)}</span>
       <span className="text-muted">{charge.description}</span>
       {charge.event ? <span className="text-xs">{titles.get(charge.event) ?? t`Event #${charge.event}`}{charge.earmark === "prize_pool"
         ? t` · prize pool` : ""}</span> : null}
-      <span className="ml-auto text-xs">{PAYMENT_STATUS[charge.payment_status] ?? charge.payment_status}</span>
+      <span className="ml-auto text-xs">{sponsorPaymentStatusLabel(charge.payment_status)}</span>
       {canRecord && ["paid_online", "paid_offline"].includes(charge.payment_status) ? <button type="button"
         className="desk-button-ghost" disabled={back.isPending}
-        onClick={() => { if (window.confirm(t`Open a refund case to return this payment?`)) back.mutate(charge.id); }}>{t`Return…`}</button> : null}
+        onClick={() => setReturning(charge.id)}>{t`Return…`}</button> : null}
     </li>)}</ul> : <p className="text-sm text-muted">{t`Nothing recorded yet.`}</p>}
+    <ConfirmDialog open={returning !== null} title={t`Open a refund case?`} confirmLabel={t`Open refund case`}
+      message={t`Open a refund case to return this payment?`} onCancel={() => setReturning(null)}
+      onConfirm={() => { if (returning !== null) back.mutate(returning); setReturning(null); }} />
     {canRecord ? <form className="flex flex-wrap items-end gap-2" onSubmit={event => { event.preventDefault(); raise.mutate(); }}>
       <label className="grid gap-1 text-sm font-semibold text-ink">{t`Amount`}<input className="desk-input tabular-nums" inputMode="decimal"
         required pattern="[0-9]+(\.[0-9]{1,2})?" value={amount} onChange={event => setAmount(event.target.value)} /></label>

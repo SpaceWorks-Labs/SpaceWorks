@@ -30,8 +30,8 @@ export function IssueDetail({ id, makerspaceId, onBack }: { id: number; makerspa
     identity={{ kind: "icon", icon: "HardHat", tone: "accent" }} state={opsQueryState(query, "this issue")}
     status={issue ? <><StatusPill tone={stateTone(issue.state)} label={STATE_LABELS[issue.state]} />
       {issue.quote_state !== "none" ? <StatusPill tone={issue.quote_state === "approved" ? "success" : issue.quote_state === "declined" ? "danger" : "warn"}
-        label={t`Quote ${issue.quote_state === "pending" ? "awaiting approval" : issue.quote_state}`} /> : null}</> : undefined}
-    meta={issue ? [`${AREA_LABELS[issue.area]}: ${issue.subject_label}`, issue.reporter_name ? `Reported by ${issue.reporter_name}` : "Opened by staff"] : undefined}
+        label={issue.quote_state === "pending" ? t`Quote awaiting approval` : issue.quote_state === "approved" ? t`Quote approved` : t`Quote declined`} /> : null}</> : undefined}
+    meta={issue ? [`${AREA_LABELS[issue.area]}: ${issue.subject_label}`, issue.reporter_name ? t`Reported by ${issue.reporter_name}` : t`Opened by staff`] : undefined}
     actions={actions}
     main={issue ? <div className="grid gap-6">
       {step.error ? <p role="alert" className="text-sm text-danger">{step.error.message}</p> : null}

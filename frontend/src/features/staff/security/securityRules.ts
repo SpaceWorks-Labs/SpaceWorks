@@ -4,7 +4,7 @@
  * platform lock (a floor, #111 Q9). The server re-checks every value; this keeps the controls
  * from offering a value it would refuse.
  */
-import { t } from "@lingui/core/macro";
+import { plural, t } from "@lingui/core/macro";
 import type { SecuritySetting } from "../../../lib/api/securitySettings";
 import { parseCidr, within } from "./cidr";
 
@@ -14,29 +14,36 @@ export const INT_RULES: Record<string, IntRule> = {
   "security.staff_session_max_hours": { min: 1, max: 720, unit: "hours" },
   "security.staff_idle_timeout_minutes": { min: 0, max: 1440, unit: "minutes", zeroOff: true },
 };
-const CHOICE_LABELS: Record<string, string> = { off: t`Off`, after_failures: t`After failed attempts`, always: t`Always` };
+const choiceLabels = (): Record<string, string> => ({ off: t`Off`, after_failures: t`After failed attempts`, always: t`Always` });
 
-export const choiceLabel = (value: unknown) => CHOICE_LABELS[String(value)] ?? String(value);
+export const choiceLabel = (value: unknown) => choiceLabels()[String(value)] ?? String(value);
 export const asList = (value: unknown) => Array.isArray(value) ? value.map(String) : [];
+
+function unitAmount(count: number, unit: string) {
+  if (unit === "days") return plural(count, { one: "# day", other: "# days" });
+  if (unit === "hours") return plural(count, { one: "# hour", other: "# hours" });
+  if (unit === "minutes") return plural(count, { one: "# minute", other: "# minutes" });
+  return `${count} ${unit}`;
+}
 
 /** A value as words: "30 days", "Off", "Any network", "2 networks". */
 export function describeValue(setting: SecuritySetting, value: unknown) {
-  if (setting.kind === "bool") return value ? "On" : "Off";
+  if (setting.kind === "bool") return value ? t`On` : t`Off`;
   if (setting.kind === "choice") return choiceLabel(value);
-  if (setting.kind === "list") { const count = asList(value).length; return count ? `${count} ${count === 1 ? "network" : "networks"}` : "Any network"; }
+  if (setting.kind === "list") { const count = asList(value).length; return count ? plural(count, { one: "# network", other: "# networks" }) : t`Any network`; }
   const rule = INT_RULES[setting.key];
-  if (rule?.zeroOff && Number(value) === 0) return "Off";
-  return rule ? `${String(value)} ${rule.unit}` : String(value);
+  if (rule?.zeroOff && Number(value) === 0) return t`Off`;
+  return rule ? unitAmount(Number(value), rule.unit) : String(value);
 }
 
 /** What a lock allows, e.g. "at most 30 days" or "After failed attempts or stricter". */
 export function describeFloor(setting: SecuritySetting, floor: unknown) {
   if (setting.kind === "bool") return describeValue(setting, floor);
-  if (setting.kind === "choice") return `${choiceLabel(floor)} or stricter`;
-  if (setting.kind === "list") return asList(floor).length ? `only networks within ${asList(floor).join(", ")}` : "any network";
+  if (setting.kind === "choice") return t`${choiceLabel(floor)} or stricter`;
+  if (setting.kind === "list") return asList(floor).length ? t`only networks within ${asList(floor).join(", ")}` : t`any network`;
   const rule = INT_RULES[setting.key];
-  if (rule?.zeroOff && Number(floor) === 0) return "any value";
-  return `at most ${describeValue(setting, floor)}`;
+  if (rule?.zeroOff && Number(floor) === 0) return t`any value`;
+  return t`at most ${describeValue(setting, floor)}`;
 }
 
 /** Null when `value` is valid and at least as strict as the lock's floor; otherwise why not. */

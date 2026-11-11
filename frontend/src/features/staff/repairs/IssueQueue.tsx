@@ -6,6 +6,8 @@ import { ListLayout } from "../../../components/layouts";
 import { ListRow, StatusPill } from "../../../components/ui";
 import type { Makerspace } from "../panels/shared";
 import { opsQueryState } from "../opsPresentation";
+import { useUrlListState } from "../../../lib/useUrlListState";
+import { SavedViewsMenu } from "../SavedViewsMenu";
 import { OpenIssueDialog } from "./OpenIssueDialog";
 import { AREA_LABELS, STATE_LABELS, stateTone, useIssues, useMyJobs, type Issue } from "./repairsApi";
 
@@ -15,12 +17,15 @@ const FILTERS = [
   { key: "done", label: t`Fixed and closed`, query: "state=fixed,closed,rejected" },
 ];
 
-/** The repairs queue (managers) or "My jobs" (a Technician's assigned jobs), 24 per page. */
+/** The repairs queue (managers) or "My jobs" (a Technician's assigned jobs), 24 per page. The state tab
+ * and page live in the URL (`rp_state`, `rp_page`) so a saved view (A17) or a shared link restores them. */
 export function IssueQueue({ makerspace, mine, canOpen, onOpen }: {
   makerspace: Makerspace; mine: boolean; canOpen: boolean; onOpen: (id: number) => void;
 }) {
-  const [filter, setFilter] = useState(FILTERS[0]);
-  const [page, setPage] = useState(1);
+  const list = useUrlListState({ state: "open", page: "1" }, "rp_");
+  const filter = FILTERS.find(row => row.key === list.values.state) ?? FILTERS[0];
+  const page = list.page;
+  const setPage = (next: number) => list.setPage(next);
   const [opening, setOpening] = useState(false);
   const queue = useIssues(makerspace.id, `${filter.query}&page=${page}`, !mine);
   const own = useMyJobs(makerspace.id, page, mine);
@@ -32,7 +37,8 @@ export function IssueQueue({ makerspace, mine, canOpen, onOpen }: {
       : t`Problems members reported and repair jobs staff opened, from report to fix.`,
       primary: canOpen && !mine ? { label: t`New repair job`, icon: "Plus", onClick: () => setOpening(true) } : undefined }}
       tabs={mine ? undefined : FILTERS.map(row => ({ key: row.key, label: row.label }))} activeTab={filter.key}
-      onTabChange={key => { setFilter(FILTERS.find(row => row.key === key) ?? FILTERS[0]); setPage(1); }}
+      onTabChange={key => list.setFilter("state", key)}
+      filters={mine ? undefined : { views: <SavedViewsMenu makerspaceId={makerspace.id} entity="repairs" state={list.values} onRestore={list.restore} /> }}
       state={opsQueryState(query, mine ? "your jobs" : "repairs")} isEmpty={!rows.length}
       empty={{ message: mine ? t`Nothing is assigned to you right now.` : t`No issues here. Members' reports land in this queue.` }}
       pagination={query.data && query.data.count > 24 ? { page, pageSize: 24, count: query.data.count, onChange: setPage } : undefined}

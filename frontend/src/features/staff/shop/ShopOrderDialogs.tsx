@@ -3,7 +3,7 @@ import { useState } from "react";
 
 import { Field, Modal, SegmentedControl } from "../../../components/ui";
 import { shopMoney } from "../../shop/shopApi";
-import { staffShopError } from "./staffShopApi";
+import { errorCode, staffShopError } from "./staffShopApi";
 import type { PayMethod, ShopStaffOrder } from "./staffShopOrdersApi";
 
 type Base = { open: boolean; onClose: () => void; pending: boolean; error: unknown };
@@ -15,15 +15,24 @@ function Footer({ onClose, pending, label, disabled, form }: { onClose: () => vo
   </div>;
 }
 
-/** Handing over: the buyer reads their pickup code aloud or shows it; a wrong code is refused by the server. */
-export function CollectDialog({ open, onClose, pending, error, onSubmit }: Base & { onSubmit: (code: string) => void }) {
+/** Handing over: the buyer reads their pickup code aloud or shows it; a wrong code is refused by the server.
+ * Decision 221(h): an interrupted event pickup is refused until the pickup is moved; `onMovePickup` offers that here. */
+export function CollectDialog({ open, onClose, pending, error, onSubmit, onMovePickup, movePending = false, moveError }: Base & {
+  onSubmit: (code: string) => void; onMovePickup?: () => void; movePending?: boolean; moveError?: unknown;
+}) {
   const [code, setCode] = useState("");
   return <Modal open={open} onClose={onClose} title={t`Hand over the order`}
     footer={<Footer onClose={onClose} pending={pending} label={t`Hand over`} disabled={!code.trim()} form="shop-collect" />}>
     <form id="shop-collect" className="grid gap-3" onSubmit={event => { event.preventDefault(); onSubmit(code.trim()); }}>
-      <Field label={t`Pickup code`} hint={t`Ask the buyer for the code from their order.`}><input className="desk-input min-h-11 font-mono uppercase tracking-widest"
+      <Field label={t`Pickup code`} hint={t`Ask the buyer for the code from their order.`}><input className="desk-input min-h-11 code-text uppercase tracking-widest"
         autoComplete="off" value={code} onChange={event => setCode(event.target.value.toUpperCase())} /></Field>
       {error ? <p role="alert" className="text-sm text-danger">{staffShopError(error)}</p> : null}
+      {errorCode(error) === "pickup_interrupted" && onMovePickup ? <div className="grid gap-2 rounded-xl border border-line p-3">
+        <p className="text-sm text-muted">{t`Confirm the alternate arrangement with the buyer first. Payment, items and hold times stay the same.`}</p>
+        <button type="button" className="desk-button min-h-11 justify-self-start" disabled={movePending || pending} onClick={onMovePickup}>
+          {movePending ? t`Moving pickup…` : t`Move pickup to the makerspace`}</button>
+        {moveError ? <p role="alert" className="text-sm text-danger">{staffShopError(moveError)}</p> : null}
+      </div> : null}
     </form>
   </Modal>;
 }

@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { Card, EmptyState } from "../../../components/ui";
+import { formatMoney } from "../../../lib/money";
 import { financeError } from "../../finance/financeApi";
 import { sponsorApi, sponsorKeys, type Tier } from "./staffSponsorsApi";
 
@@ -15,7 +16,7 @@ function TierPerks({ makerspaceId, tier, perks, canRecord }: {
     onSuccess: () => { setDescription(""); void client.invalidateQueries({ queryKey: ["staff-sponsor-perks", makerspaceId] }); } });
   return <Card><div className="grid gap-3">
     <div className="flex flex-wrap items-baseline justify-between gap-2"><h3 className="title-section">{tier.name}</h3>
-      {tier.amount ? <span className="text-sm tabular-nums text-muted">{tier.currency.toUpperCase()} {tier.amount}</span> : null}</div>
+      {tier.amount ? <span className="text-sm tabular-nums text-muted">{formatMoney(tier.amount, tier.currency)}</span> : null}</div>
     {tier.description ? <p className="text-sm text-muted">{tier.description}</p> : null}
     {perks.length ? <ul className="list-disc pl-5 text-sm">{perks.map(perk => <li key={perk.id}>{perk.description}</li>)}</ul>
       : <p className="text-sm text-muted">{t`No perks in this tier yet.`}</p>}

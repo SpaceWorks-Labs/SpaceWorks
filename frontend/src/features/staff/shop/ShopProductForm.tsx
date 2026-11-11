@@ -24,7 +24,7 @@ export function ShopProductForm({ makerspaceId, productId, access, onDone }: {
     enabled: productId !== null });
   return productId !== null && !query.data
     ? <FormPageLayout header={{ title: t`Product` }} back={{ label: t`Catalogue`, onClick: onDone }} form={null}
-      submit={{ label: t`Save`, disabled: true, disabledReason: "Loading the product." }}
+      submit={{ label: t`Save`, disabled: true, disabledReason: t`Loading the product.` }}
       state={query.error ? { status: "error", error: staffShopError(query.error), onRetry: () => { void query.refetch(); } } : { status: "loading" }} />
     : <ProductEditor key={productId ?? "new"} makerspaceId={makerspaceId} product={query.data} access={access} onDone={onDone}
       onSaved={saved => { client.setQueryData(staffShopKeys.product(makerspaceId, saved.id), saved); void client.invalidateQueries({ queryKey: staffShopKeys.all(makerspaceId) }); }} />;
@@ -56,7 +56,7 @@ function ProductEditor({ makerspaceId, product, access, onDone, onSaved }: {
   return <>
     <FormPageLayout state={{ status: "ready" }} back={{ label: t`Catalogue`, onClick: onDone }}
       header={{ eyebrow: t`Shop`, title: product ? product.name : t`New product`, subtitle: product ? undefined : t`You can add a photo after the first save.` }}
-      submit={{ label: product ? t`Save changes` : t`Create product`, pending: save.isPending, pendingLabel: "Saving…",
+      submit={{ label: product ? t`Save changes` : t`Create product`, pending: save.isPending, pendingLabel: t`Saving…`,
         onClick: () => { setTried(true); if (!problem) save.mutate(); } }}
       cancel={{ label: t`Cancel`, onClick: onDone }}
       form={<div className="grid gap-8">

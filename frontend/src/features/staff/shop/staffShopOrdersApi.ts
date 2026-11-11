@@ -21,14 +21,16 @@ const space = (ms: number) => `/admin/makerspaces/${ms}/shop`;
 const order = (id: number) => `/admin/shop/orders/${id}`;
 
 export const METHOD_LABELS: Record<string, string> = { cash: t`Cash`, upi: "UPI", card_machine: t`Card machine`, online: t`Online` };
-export const CHANNEL_LABELS: Record<string, string> = { online: t`Online`, pos: t`Desk sale` };
+export const CHANNEL_LABELS = (): Record<string, string> => ({ online: t`Online`, pos: t`Desk sale` });
 
-export function listOrders(ms: number, filters: { status?: string; channel?: string; code?: string; page: number }) {
+/** SH2 adds `buyer` (account id) and `product` (catalogue product id) to the queue's filters. */
+export function listOrders(ms: number, filters: { status?: string; channel?: string; code?: string; buyer?: string; product?: string; page: number }) {
   const query = new URLSearchParams({ page: String(filters.page) });
-  for (const key of ["status", "channel", "code"] as const) if (filters[key]) query.set(key, String(filters[key]));
+  for (const key of ["status", "channel", "code", "buyer", "product"] as const) if (filters[key]) query.set(key, String(filters[key]));
   return staffRequest<Paged<ShopStaffOrder>>(`${space(ms)}/orders/?${query}`);
 }
 export const fetchOrder = (id: number) => staffRequest<ShopStaffOrder>(`${order(id)}/`);
+export const movePickupToSpace = (id: number) => staffRequest<ShopStaffOrder>(`${order(id)}/move-pickup-to-space/`, post());
 export const markReady = (id: number) => staffRequest<ShopStaffOrder>(`${order(id)}/ready/`, post());
 export const collectOrder = (id: number, pickupCode: string) =>
   staffRequest<ShopStaffOrder>(`${order(id)}/collect/`, post({ pickup_code: pickupCode }));

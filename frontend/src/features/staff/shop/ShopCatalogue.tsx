@@ -52,7 +52,7 @@ export function ShopCatalogue({ makerspaceId, access }: { makerspaceId: number; 
         </span>}
         onClick={archived ? undefined : () => setEditing(product.id)} />;
     }) }} />
-    <ConfirmDialog open={confirming !== null} tone="danger" title={t`Archive ${confirming?.name ?? "this product"}?`} pending={archive.isPending}
+    <ConfirmDialog open={confirming !== null} tone="danger" title={confirming?.name ? t`Archive ${confirming.name}?` : t`Archive this product?`} pending={archive.isPending}
       message={t`It leaves the shop and the till. Past orders, receipts and stock history keep it.`} confirmLabel={t`Archive product`}
       onCancel={() => setConfirming(null)} onConfirm={() => { if (confirming) archive.mutate(confirming.id); }} />
   </>;

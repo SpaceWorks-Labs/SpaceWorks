@@ -150,6 +150,9 @@ OMITTED_MODELS = {
     "organizations.OrganizationInvitation": (
         "Deployment-local bearer authorization state for a global organization."
     ),
+    "organizations.OrganizationReview": (
+        "Platform review history of a deployment-global organization; never tenant data."
+    ),
     "hosting_requests.HostingRequest": (
         "Deployment-local platform hosting-request coordination; never tenant data."
     ),

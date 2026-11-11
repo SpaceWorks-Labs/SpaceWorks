@@ -21,6 +21,8 @@ OMITTED_MODELS = {
     "managed_hosting.HostingInvoice": "The platform's own invoice to a hosted space; platform finance records.",
     "managed_hosting.HostingInvoiceReceipt": "Append-only receipt of a platform hosting invoice.",
     "managed_hosting.PlatformHostingBillingSettings": "Platform billing switches and encrypted provider keys.",
+    "managed_hosting.PlatformThrottleRate": "A superadmin override of a deployment-wide request rate; platform level.",
+    "managed_hosting.SpaceHostingType": "Decision 236: the platform's own-vs-hosted choice for a space; re-chosen on any target.",
 }
 RELATIONAL_USER_FIELDS = frozenset({
     ("space_controls.SpaceControlState", "suspended_by"),
@@ -33,4 +35,6 @@ RELATIONAL_USER_FIELDS = frozenset({
     ("managed_hosting.HostingInvoice", "created_by"),
     ("managed_hosting.HostingInvoiceReceipt", "recorded_by"),
     ("managed_hosting.PlatformHostingBillingSettings", "updated_by"),
+    ("managed_hosting.PlatformThrottleRate", "updated_by"),
+    ("managed_hosting.SpaceHostingType", "updated_by"),
 })

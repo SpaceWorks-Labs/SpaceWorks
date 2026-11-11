@@ -30,8 +30,8 @@ FIELD_ADDITIONS = {
     "makerspaces.Makerspace": "financial_year_start_month",
     "makerspaces.MembershipPlan": "plan_type fixed_end_date renewal_amount joining_fee rejoin_rule rejoin_after_days "
                                   "payment_timing join_mode application_schema late_renewal slug description sort_order "
-                                  "is_public archived_at",
-    "makerspaces.MembershipTerm": "kind price joining_fee currency plan_type admission_request",
+                                  "is_public archived_at sac_code",
+    "makerspaces.MembershipTerm": "kind price joining_fee currency plan_type admission_request renewal_covered_at",
     "makerspaces.MakerspaceMembership": "member_number source",
     "makerspaces.MakerspaceMembershipSettings": "rejoin_after_days member_number_pattern privacy_notice_version consent_purposes",
 }

@@ -21,9 +21,9 @@ EXPORTED_FIELDS = {
     "maintenance.TechnicianCoverage": "id contact kind machine_type room",
     "maintenance.TechnicianDefault": "id makerspace area machine_type room contact",
     "maintenance.IssueReport": "id makerspace area subject_type machine product asset room source loan booking "
-                               "machine_job reporter reporter_name reporter_email title description state priority "
-                               "work_order resolution quote_state quote_amount quote_currency quote_note "
-                               "quote_contact payout_entry reporter_notified_at fixed_at closed_at created_at "
+                               "machine_job machine_session return_line reporter reporter_name reporter_email title description "
+                               "state priority work_order resolution quote_state quote_amount quote_currency "
+                               "quote_note quote_contact payout_entry reporter_notified_at fixed_at closed_at created_at "
                                "updated_at",
     "maintenance.IssueAssignment": "id issue contact person created_at",
     "maintenance.IssueEvent": "id issue kind actor contact note occurred_on amount currency created_at",

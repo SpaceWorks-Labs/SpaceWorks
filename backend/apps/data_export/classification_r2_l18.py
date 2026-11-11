@@ -15,7 +15,10 @@ from .types import TenantPredicate as P
 EXPORTED_FIELDS = {
     "payments.DonationSettings": "id makerspace page_intro suggested_amounts minimum_amount "
                                  "tax_exempt_registration_number tax_exempt_valid_from tax_exempt_valid_until "
-                                 "tax_exempt_registrant_pan tax_exempt_note updated_by updated_at",
+                                 "tax_exempt_registrant_pan tax_exempt_note updated_by updated_at "
+                                 # Decision 242(m): the non-profit profile (the space's own legal identity).
+                                 "is_nonprofit legal_name organization_registration_number tax_exemptions "
+                                 "signatory_name signatory_title receipt_footer",
     "payments.DonationCampaign": "id makerspace kind name slug description goal_amount currency starts_at ends_at "
                                  "is_active is_public created_by created_at updated_at",
     "payments.DonationPledge": "id makerspace campaign donor donor_name donor_email amount currency interval starts_on "
@@ -23,7 +26,7 @@ EXPORTED_FIELDS = {
                                "created_by created_at updated_at cancelled_at last_reminded_on",
     "payments.Donation": "id makerspace campaign pledge period_start donor donor_name donor_email donor_note amount "
                          "currency source status wants_tax_receipt tax_detail tax_receipt access_secret "
-                         "created_by created_at paid_at cancelled_at",
+                         "created_by created_at paid_at cancelled_at recognize_publicly",
     "payments.DonorTaxDetail": "id makerspace pan address created_at",
     "payments.SponsorTier": "id makerspace name rank amount currency description created_at",
     "payments.Sponsor": "id makerspace name organization tier logo_key website_url blurb contact_name contact_email "
@@ -70,7 +73,8 @@ EXCLUDED_USER_EDGE_REASONS = {
     ("events.PersonalCalendarFeed", "user"): "Source bearer calendar link is omitted; the person re-issues it.",
 }
 # The frozen 80G receipt (registration, number, amounts, dates) and the suggested amounts: no ids.
-JSON_FIELDS = frozenset({("payments.Donation", "tax_receipt"), ("payments.DonationSettings", "suggested_amounts")})
+JSON_FIELDS = frozenset({("payments.Donation", "tax_receipt"), ("payments.DonationSettings", "suggested_amounts"),
+                         ("payments.DonationSettings", "tax_exemptions")})
 
 
 def extend(fields):

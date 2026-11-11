@@ -43,6 +43,12 @@ from .classification_l12 import RELATIONAL_USER_FIELDS as L12_USER_FIELDS  # noq
 RELATIONAL_USER_FIELDS |= L12_USER_FIELDS
 from .classification_l23 import RELATIONAL_USER_FIELDS as L23_USER_FIELDS  # noqa: E402
 RELATIONAL_USER_FIELDS |= L23_USER_FIELDS
+from .classification_guest_passes import RELATIONAL_USER_FIELDS as GUEST_PASS_USER_FIELDS  # noqa: E402
+RELATIONAL_USER_FIELDS |= GUEST_PASS_USER_FIELDS
+from .classification_l3b import RELATIONAL_USER_FIELDS as L3B_USER_FIELDS  # noqa: E402
+RELATIONAL_USER_FIELDS |= L3B_USER_FIELDS
+from .classification_l3a import RELATIONAL_USER_FIELDS as L3A_USER_FIELDS  # noqa: E402
+RELATIONAL_USER_FIELDS |= L3A_USER_FIELDS
 from .classification_l16 import RELATIONAL_USER_FIELDS as L16_USER_FIELDS  # noqa: E402
 RELATIONAL_USER_FIELDS |= L16_USER_FIELDS
 from .classification_l3 import EXCLUDED_USER_EDGE_REASONS as L3_EXCLUDED, RELATIONAL_USER_FIELDS as L3_USER_FIELDS  # noqa: E402
@@ -55,6 +61,8 @@ from .classification_r2_l18 import (  # noqa: E402
 RELATIONAL_USER_FIELDS |= R2_L18_USER_FIELDS
 from .classification_r2_l21a import RELATIONAL_USER_FIELDS as R2_L21A_USER_FIELDS  # noqa: E402
 RELATIONAL_USER_FIELDS |= R2_L21A_USER_FIELDS
+from .classification_r3_events_badges import RELATIONAL_USER_FIELDS as R3_EVENTS_BADGES_USER_FIELDS  # noqa: E402  (parity E-B2)
+RELATIONAL_USER_FIELDS |= R3_EVENTS_BADGES_USER_FIELDS
 from .classification_r2_l22 import RELATIONAL_USER_FIELDS as R2_L22_USER_FIELDS  # noqa: E402
 RELATIONAL_USER_FIELDS |= R2_L22_USER_FIELDS
 from .classification_hackmoney import RELATIONAL_USER_FIELDS as HACKMONEY_USER_FIELDS  # noqa: E402
@@ -183,7 +191,10 @@ for _fidelity in Fidelity:
             ),
         )
     for _model, _field in JSON_FIELDS:
-        if (_model, _field) == ("events.SubmissionSnapshot", "sealed_member_ids"):
+        if (_model, _field) == ("events.EventBookingDecision", "intent"):
+            decision = SourceLocalProvenance(_model, "intent typed IDs",
+                "The creator FK supplies identity closure; event and booking IDs are typed remapped before insert or made unavailable.")
+        elif (_model, _field) == ("events.SubmissionSnapshot", "sealed_member_ids"):
             decision = SemanticUserRef(_model, "sealed_member_ids[]",
                 "Frozen roster members join portable identity closure; readable exports omit this private vector.",
                 included=_fidelity is Fidelity.PORTABLE)

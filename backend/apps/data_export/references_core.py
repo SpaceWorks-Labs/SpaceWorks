@@ -193,6 +193,7 @@ RELATIONAL_USER_FIELDS = frozenset(
         ("organizations.OrganizationMembership", "created_by"),
         ("organizations.OrganizationInvitation", "created_by"),
         ("organizations.OrganizationInvitation", "redeemed_by"),
+        ("organizations.OrganizationReview", "actor"),
         ("hosting_requests.HostingRequest", "invited_by"),
         ("hosting_requests.HostingRequest", "decided_by"),
         ("payments.Payment", "member"),
@@ -257,6 +258,8 @@ _EXCLUDED_USER_EDGE_REASONS = {
 }
 
 RELATIONAL_USER_FIELDS |= frozenset({("bookings.BookingCheckInEvent", "actor"), ("notifications.MemberBroadcast", "created_by"), ("bookings.BookingCalendarFeed", "user")})
+RELATIONAL_USER_FIELDS |= frozenset({("inventory.EquipmentConsumablePlan", "borrower"), ("inventory.EquipmentProposalReceipt", "borrower")})
+RELATIONAL_USER_FIELDS |= frozenset({("inventory.EquipmentProposalReceipt", "creator"), ("inventory.EquipmentConsumableUseReceipt", "creator")})
 _EXCLUDED_USER_EDGE_REASONS[("bookings.BookingCalendarFeed", "user")] = "Source-bound calendar authority is excluded from portable closure."
 from apps.tenant_migration.catalog_p2_bookings import USER_EDGES as P2_BOOKING_USER_EDGES
 RELATIONAL_USER_FIELDS |= P2_BOOKING_USER_EDGES
@@ -268,3 +271,5 @@ _EXCLUDED_USER_EDGE_REASONS.update({
     ("inventory.InventoryWatch", "user"): "Source delivery subscription is omitted.",
     ("maintenance.MaintenanceCalendarFeed", "user"): "Source bearer feed credential is omitted.",
 })
+
+RELATIONAL_USER_FIELDS |= frozenset({("events.EventBookingDecision", "creator")})

@@ -30,7 +30,7 @@ EXPORTED_FIELDS = {
                              "created_at updated_at started_at closed_at",
 }
 FIELD_ADDITIONS = {
-    "inventory.InventoryProduct": "is_consumable public_show_expected_back",
+    "inventory.InventoryProduct": "is_consumable public_show_expected_back event_only",
     "procurement.ToBuyItem": "source_consumable vendor",
     "warranty.Warranty": "vendor",
     "hardware_requests.HardwareRequest": "pickup_from pickup_until",

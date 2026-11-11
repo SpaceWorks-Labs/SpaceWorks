@@ -3,8 +3,9 @@
 from apps.tenant_migration.catalog_events_programme_json import JSON_FIELDS as PROGRAMME_JSON_FIELDS
 
 from apps.tenant_migration.catalog_reimbursements import JSON_FIELDS as REIMBURSEMENT_JSON_FIELDS
+from apps.tenant_migration.catalog_equipment_proposals import JSON_FIELDS as EQUIPMENT_JSON_FIELDS
 
-JSON_REFERENCE_FIELDS = PROGRAMME_JSON_FIELDS | REIMBURSEMENT_JSON_FIELDS | frozenset(
+JSON_REFERENCE_FIELDS = PROGRAMME_JSON_FIELDS | REIMBURSEMENT_JSON_FIELDS | EQUIPMENT_JSON_FIELDS | frozenset(
     {
         # Channel enum names carry no destination, endpoint or account identifiers.
         ("notifications.NotificationPreference", "channels"),
@@ -134,3 +135,6 @@ from .classification_hackmoney import JSON_FIELDS as _HACKMONEY_JSON  # noqa: E4
 JSON_REFERENCE_FIELDS |= _HACKMONEY_JSON
 from .classification_r2_l22 import JSON_FIELDS as _R2_L22_JSON  # noqa: E402
 JSON_REFERENCE_FIELDS |= _R2_L22_JSON
+
+from apps.tenant_migration.catalog_booking_decision import JSON_FIELDS as BOOKING_DECISION_JSON
+JSON_REFERENCE_FIELDS |= BOOKING_DECISION_JSON

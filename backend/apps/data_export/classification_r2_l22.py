@@ -1,6 +1,6 @@
 """Release-2 lane L22 (the per-space shop): literal export classification.
 
-Exported with the space: shop settings, products, variants, kit parts, stock movements,
+Exported with the space: shop settings, products, variants, kit parts, event offers, stock movements,
 checkout holds, orders with their lines and returns, and front-desk cash sessions. A
 guest buyer's name and email are scoped PII (encrypted at rest, `encryption/registry_r2_l22`).
 Every table carries a dataset predicate: the ones that reach their space only through a
@@ -21,12 +21,13 @@ EXPORTED_FIELDS = {
     "shop.ShopVariant": "id makerspace product name options sku price on_hand held reorder_point linked_product "
                         "is_active sort_order archived_at created_at",
     "shop.ShopKitComponent": "id makerspace kit component quantity",
+    "shop.ShopEventOffer": "id makerspace event variant sort_order created_at",
     "shop.ShopStockMovement": "id makerspace variant kind quantity balance_after reason order actor created_at",
     "shop.ShopCheckoutHold": "id makerspace order variant quantity expires_at released_at release_reason created_at",
     "shop.ShopOrder": "id makerspace channel status buyer guest_name guest_email pickup_at pickup_event pickup_code "
                       "currency subtotal discount_total total tax_total amount_due pricing_snapshot digest "
                       "status_secret cash_session created_by created_at expires_at paid_at ready_at collected_at "
-                      "collected_by closed_at close_reason reminders_sent",
+                      "collected_by closed_at close_reason reminders_sent idempotency_key",
     "shop.ShopOrderLine": "id order variant label sku quantity unit_amount discount_amount line_total tax_rate_bps "
                           "hsn_code taxable_amount tax_amount",
     "shop.ShopOrderReturn": "id makerspace order line quantity disposition amount refund_case reason created_by "
@@ -48,6 +49,7 @@ DATASET_SPECS = {
     "shop.ShopProduct": ("shop/products.csv", P(("makerspace",))),
     "shop.ShopVariant": ("shop/variants.csv", P(("makerspace",))),
     "shop.ShopKitComponent": ("shop/kit_components.csv", P(("makerspace",))),
+    "shop.ShopEventOffer": ("shop/event_offers.csv", P(("makerspace",))),
     "shop.ShopStockMovement": ("shop/stock_movements.csv", P(("makerspace",))),
     "shop.ShopCheckoutHold": ("shop/checkout_holds.csv", P(("makerspace",))),
     "shop.ShopOrder": ("shop/orders.csv", P(("makerspace",))),

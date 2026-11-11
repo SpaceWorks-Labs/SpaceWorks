@@ -16,6 +16,15 @@ from .datasets import DATASET_SPECS
 
 
 SUBJECT_PATHS = {
+    "events.EventBookingDecision": ("creator",),
+    "events.EventConsumablePlanContext": ("plan__borrower",),
+    "bookings.BookingConsumablePlanContext": ("plan__borrower",),
+    "inventory.EquipmentConsumablePlan": ("borrower",),
+    "inventory.EquipmentKitAllocation": ("request__requester",),
+    "inventory.EquipmentProposalReceipt": ("borrower",),
+    "events.EventLoanContext": ("request__requester",),
+    "bookings.BookingLoanContext": ("request__requester",),
+    "makerspaces.GuestPass": ("holder",),  # decision 223: the holder's own passes
     "integrations.NotificationEnvelope": ("recipient",),
     "integrations.NotificationDelivery": ("envelope__recipient",),
     "integrations.NotificationEndpoint": ("user",),
@@ -55,6 +64,10 @@ SUBJECT_PATHS = {
     "machines.MachineServiceRequest": ("member",),
     "machines.MachineUsageEntry": ("service_request__member", "member"),
     "machines.CertificationGrant": ("membership__user",),
+    "machines.GuestCertificationGrant": ("user",),  # final audit m22 (L3a): the grantee's own certification
+    "machines.SupervisedParticipant": ("user",),
+    "machines.SupervisedUse": ("user",),
+    "maintenance.Incident": ("involved_user", "sponsor_user"),  # not the reporter: authorship is not ownership
     "machines.ServiceRequestFile": ("owner_user",),
     "machines.ServiceRequestConsumption": ("service_request__member",),
     "makerspaces.MakerspaceMembership": ("user",),
@@ -72,6 +85,8 @@ SUBJECT_PATHS = {
 }
 from apps.tenant_migration.catalog_p2_bookings import SUBJECT_PATHS as _P2_BOOKING_SUBJECTS
 SUBJECT_PATHS.update(_P2_BOOKING_SUBJECTS)
+from .classification_l3b import SUBJECT_PATHS as _L3B_SUBJECTS  # noqa: E402
+SUBJECT_PATHS.update(_L3B_SUBJECTS)
 
 
 def subject_query(model, user, makerspace_id):

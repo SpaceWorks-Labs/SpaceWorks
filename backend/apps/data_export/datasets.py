@@ -29,6 +29,7 @@ DATASET_SPECS = {
     "events.EventBroadcastDelivery": ("events/broadcast_deliveries.csv", P(("campaign__makerspace",))),
     "makerspaces.MembershipAdditionalRole": ("members/additional_roles.csv", P(("membership__makerspace",), ("role__makerspace",))),
     "machines.MembershipMachineTypeScope": ("members/member_machine_type_scopes.csv", P(("membership__makerspace",), ("machine_type__makerspace",))),
+    "machines.MembershipMachineScope": ("members/member_machine_scopes.csv", P(("membership__makerspace",), ("machine__makerspace",))),
     "notifications.MemberNotificationPreference": ("notifications/member_preferences.csv", P(("makerspace",))),
     "notifications.NotificationPreference": ("notifications/personal_preferences.csv", P(("makerspace",))),
     "operations.SavedView": ("preferences/saved_views.csv", P(("makerspace",))),
@@ -206,6 +207,20 @@ from apps.tenant_migration.catalog_events_programme_references import DATASETS a
 DATASET_SPECS.update({label: (path, P((owner,))) for label, (path, owner) in PROGRAMME_DATASETS.items()})
 from apps.tenant_migration.catalog_reimbursements import DATASETS as REIMBURSEMENT_DATASETS
 DATASET_SPECS.update({label: (path, P((owner,))) for label, (path, owner) in REIMBURSEMENT_DATASETS.items()})
+from .classification_loan_context import DATASETS as LOAN_CONTEXT_DATASETS
+DATASET_SPECS.update(LOAN_CONTEXT_DATASETS)
+from .classification_equipment_proposals import DATASETS as EQUIPMENT_PROPOSAL_DATASETS
+DATASET_SPECS.update(EQUIPMENT_PROPOSAL_DATASETS)
+from .classification_guest_passes import DATASETS as GUEST_PASS_DATASETS  # noqa: E402
+DATASET_SPECS.update(GUEST_PASS_DATASETS)
+from .classification_r3_org_units import DATASETS as R3_ORG_UNIT_DATASETS  # noqa: E402
+DATASET_SPECS.update(R3_ORG_UNIT_DATASETS)
+from .classification_r3_org_b4 import DATASETS as R3_ORG_B4_DATASETS  # noqa: E402
+DATASET_SPECS.update(R3_ORG_B4_DATASETS)
+from .classification_l3b import DATASET_SPECS as L3B_DATASETS  # noqa: E402
+DATASET_SPECS.update(L3B_DATASETS)
+from .classification_booking_decision import DATASETS as BOOKING_DECISION_DATASETS
+DATASET_SPECS.update(BOOKING_DECISION_DATASETS)
 DATASETS = {}
 from .datasets_wp3 import wp3_dataset_specs
 DATASET_SPECS.update(wp3_dataset_specs(P))
@@ -230,6 +245,8 @@ from .classification_l12 import DATASET_SPECS as L12_DATASETS  # noqa: E402
 DATASET_SPECS.update(L12_DATASETS)
 from .classification_l23 import DATASET_SPECS as L23_DATASETS  # noqa: E402
 DATASET_SPECS.update(L23_DATASETS)
+from .classification_l3a import DATASET_SPECS as L3A_DATASETS  # noqa: E402
+DATASET_SPECS.update(L3A_DATASETS)
 from .classification_l16 import DATASET_SPECS as L16_DATASETS  # noqa: E402
 DATASET_SPECS.update(L16_DATASETS)
 from .classification_l3 import DATASET_SPECS as L3_DATASETS  # noqa: E402
@@ -240,6 +257,8 @@ from .classification_r2_l18 import DATASET_SPECS as R2_L18_DATASETS  # noqa: E40
 DATASET_SPECS.update(R2_L18_DATASETS)
 from .classification_r2_l21a import DATASET_SPECS as R2_L21A_DATASETS  # noqa: E402
 DATASET_SPECS.update(R2_L21A_DATASETS)
+from .classification_r3_events_badges import DATASET_SPECS as R3_EVENTS_BADGES_DATASETS  # noqa: E402  (parity E-B2)
+DATASET_SPECS.update(R3_EVENTS_BADGES_DATASETS)
 from .classification_r2_l22 import DATASET_SPECS as R2_L22_DATASETS  # noqa: E402
 DATASET_SPECS.update(R2_L22_DATASETS)
 from .classification_hackmoney import DATASET_SPECS as HACKMONEY_DATASETS  # noqa: E402

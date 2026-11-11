@@ -20,7 +20,7 @@ from .types import TenantPredicate as P
 
 EXPORTED_FIELDS = {
     "card_designs.CardDesign": "id makerspace domain name plan title programme organization event ticket_type status "
-                               "document published_document published_revision published_at revision updated_by "
+                               "document published_document published_revision published_at archived_at revision updated_by card_role "
                                "created_at updated_at",
     "card_designs.CardDesignRevision": "id design revision document created_by created_at",
     "card_designs.CardDesignApproval": "id design revision requested_by decided_by decision note created_at decided_at",
@@ -28,13 +28,15 @@ EXPORTED_FIELDS = {
                                     "height_px mean_colour ready uploaded_by created_at",
     "card_designs.CardApprovalSetting": "id makerspace group organization programme event required updated_at",
     "card_designs.CardVerifyCheckDay": "id makerspace day count",
-    "card_designs.CardPhotoRequest": "id makerspace member_card programme_card event_card requested_by reason "
+    "card_designs.CardNumberScheme": "id makerspace title prefix pattern draft_prefix draft_pattern published_at updated_at",
+    "card_designs.CardNumberCounter": "id makerspace scheme_key year next_value",
+    "card_designs.CardPhotoRequest": "id makerspace member_card programme_card event_card staff_card requested_by reason "
                                      "created_at reminded_at resolved_at",
-    "makerspaces.MemberCardSettings": "id makerspace auto_issue email_on_issue public_verify verify_show_plan updated_at",
+    "makerspaces.MemberCardSettings": "id makerspace auto_issue email_on_issue public_verify verify_show_plan verify_show_name updated_at",
     "events.EventCardSettings": "id event extras_visible_to_organizers updated_at",
     "id_programmes.IdProgramme": "id organization makerspace name slug description status registration_open "
                                  "requires_approval id_prefix next_sequence validity_mode valid_until validity_days "
-                                 "photo_mode form_schema public_verify email_daily_cap created_by created_at updated_at",
+                                 "photo_mode form_schema public_verify email_daily_cap archived_at created_by created_at updated_at",
     "id_programmes.IdProgrammeCard": "id programme makerspace user name email email_digest answers photo_object_key "
                                      "photo_content_type photo_size_bytes photo_consent_at photo_consent_version status "
                                      "status_reason source invite_digest id_number sequence issued_at expires_at "
@@ -49,13 +51,16 @@ EXPORTED_FIELDS = {
 }
 FIELD_ADDITIONS = {
     "makerspaces.MemberCard": "revoked_note last_emailed_at verify_show_name verify_show_photo verify_consent_at "
-                              "verify_consent_version email_format",
+                              "verify_consent_version email_format number_text",
 }
 _CREDENTIAL = "Bearer credential material: never exported, reported or shown to staff (SPEC §13)."
 OMITTED_MODELS = {
     "card_designs.CardVerifyToken": _CREDENTIAL,
     "card_designs.WalletPass": _CREDENTIAL,
     "card_designs.WalletDeviceRegistration": _CREDENTIAL,
+    # Decision 223(l): signing keys and certificates; a moved space enters its own again.
+    "card_designs.MakerspaceWalletCredentials": _CREDENTIAL,
+    "card_designs.PlatformWalletCredentials": "Deployment-wide wallet signing credentials never travel.",
     "card_designs.CardHolderExtras": "Opt-in blood group and emergency contact: the holder and the printed card only "
                                      "(Q-I5), never any export.",
     "card_designs.CardJob": "Operational job state; its private result objects expire 7 days after finishing.",
@@ -74,6 +79,8 @@ DATASET_SPECS = {
     "card_designs.CardDesignAsset": ("cards/design_assets.csv", P(("makerspace",))),
     "card_designs.CardApprovalSetting": ("cards/approval_settings.csv", P(("makerspace",))),
     "card_designs.CardVerifyCheckDay": ("cards/verify_checks.csv", P(("makerspace",))),
+    "card_designs.CardNumberScheme": ("cards/number_schemes.csv", P(("makerspace",))),
+    "card_designs.CardNumberCounter": ("cards/number_counters.csv", P(("makerspace",))),
     "card_designs.CardPhotoRequest": ("cards/photo_requests.csv", P(("makerspace",))),
     "makerspaces.MemberCardSettings": ("members/member_card_settings.csv", P(("makerspace",))),
     "id_programmes.IdProgramme": ("id_programmes/programmes.csv", P(("makerspace",))),

@@ -26,6 +26,19 @@ EXPORTED_MODEL_FIELDS = {
     **WP3_EXPORTED_FIELDS,
 }
 extend_event_export_fields(EXPORTED_MODEL_FIELDS)
+from .classification_loan_context import FIELDS as LOAN_CONTEXT_FIELDS
+EXPORTED_MODEL_FIELDS.update(LOAN_CONTEXT_FIELDS)
+from .classification_equipment_proposals import FIELDS as EQUIPMENT_PROPOSAL_FIELDS
+EXPORTED_MODEL_FIELDS.update(EQUIPMENT_PROPOSAL_FIELDS)
+from .classification_guest_passes import FIELDS as GUEST_PASS_FIELDS  # noqa: E402
+EXPORTED_MODEL_FIELDS.update(GUEST_PASS_FIELDS)
+from .classification_r3_org_units import FIELDS as R3_ORG_UNIT_FIELDS  # noqa: E402
+EXPORTED_MODEL_FIELDS.update(R3_ORG_UNIT_FIELDS)
+from .classification_r3_org_b4 import FIELDS as R3_ORG_B4_FIELDS  # noqa: E402
+EXPORTED_MODEL_FIELDS.update(R3_ORG_B4_FIELDS)
+from .classification_l3b import EXPORTED_FIELDS as L3B_FIELDS, OMITTED_MODELS as L3B_OMITTED  # noqa: E402
+EXPORTED_MODEL_FIELDS.update(L3B_FIELDS)
+EXPORTED_MODEL_FIELDS["makerspaces.Makerspace"] += " loan_context_generations"
 from apps.tenant_migration.catalog_broadcasts import EXPORTED_FIELDS as BROADCAST_FIELDS
 EXPORTED_MODEL_FIELDS.update(BROADCAST_FIELDS)
 from apps.tenant_migration.catalog_website import EXPORTED_FIELDS as WEBSITE_FIELDS
@@ -52,6 +65,12 @@ from .classification_r2_l26 import extend as extend_r2_l26  # noqa: E402
 extend_r2_l26(EXPORTED_MODEL_FIELDS)
 from .classification_r2_l9 import extend as extend_r2_l9  # noqa: E402
 extend_r2_l9(EXPORTED_MODEL_FIELDS)
+from .classification_o_b6 import extend as extend_o_b6  # noqa: E402
+extend_o_b6(EXPORTED_MODEL_FIELDS)
+from .classification_o_b2 import extend as extend_o_b2  # noqa: E402
+extend_o_b2(EXPORTED_MODEL_FIELDS)
+from .classification_e_b8 import extend as extend_e_b8  # noqa: E402
+extend_e_b8(EXPORTED_MODEL_FIELDS)
 EXPORTED_MODEL_FIELDS = exported_fields(EXPORTED_MODEL_FIELDS)
 OMITTED_MODELS = {
     **NOTIFICATION_OMITTED,
@@ -70,6 +89,7 @@ EXPORTED_MODEL_FIELDS.update(PROFILE_EXPORTED_FIELDS)
 EXPORTED_MODEL_FIELDS["makerspaces.MemberProfile"] += " " + PROFILE_FIELDS
 EXPORTED_MODEL_FIELDS["makerspaces.MemberProject"] += " " + PROJECT_FIELDS
 OMITTED_MODELS.update(PROFILE_OMITTED_MODELS)
+OMITTED_MODELS.update(L3B_OMITTED)
 from apps.tenant_migration.catalog_p2_events import OMITTED_MODELS as P2_EVENT_OMITTED
 OMITTED_MODELS.update(P2_EVENT_OMITTED)
 from apps.tenant_migration.catalog_p2_presence import classify as classify_presence
@@ -85,6 +105,9 @@ OMITTED_MODELS.update(L12_OMITTED)
 from .classification_l23 import extend as extend_l23, OMITTED_MODELS as L23_OMITTED  # noqa: E402
 extend_l23(EXPORTED_MODEL_FIELDS)
 OMITTED_MODELS.update(L23_OMITTED)
+# Release 0.12.0 lane L3a: induction links, guest certifications, supervised sessions, incidents.
+from .classification_l3a import extend as extend_l3a  # noqa: E402
+extend_l3a(EXPORTED_MODEL_FIELDS)
 from .classification_l16 import extend as extend_l16, OMITTED_MODELS as L16_OMITTED  # noqa: E402
 extend_l16(EXPORTED_MODEL_FIELDS)
 OMITTED_MODELS.update(L16_OMITTED)
@@ -154,12 +177,18 @@ OMITTED_MODELS.update(R2_L8_OMITTED)
 # Lane L21a last: its column additions extend programme and reimbursement models added above.
 from .classification_r2_l21a import extend as extend_r2_l21a  # noqa: E402
 extend_r2_l21a(EXPORTED_MODEL_FIELDS)
+from .classification_r3_events_badges import extend as extend_r3_events_badges  # noqa: E402  (parity E-B2)
+extend_r3_events_badges(EXPORTED_MODEL_FIELDS)
 from .classification_r2_l25 import OMITTED_MODELS as R2_L25_OMITTED  # noqa: E402
 OMITTED_MODELS.update(R2_L25_OMITTED)
 # Lane r2-submit-content (G11): which submission earns travel money.
 EXPORTED_MODEL_FIELDS["event_reimbursements.ReimbursementProgramme"] += " required_submission required_submission_stage"
 from .classification_r2_superadmin import OMITTED_MODELS as R2_SUPERADMIN_OMITTED  # noqa: E402
 OMITTED_MODELS.update(R2_SUPERADMIN_OMITTED)
+from .classification_e_b8 import OMITTED_MODELS as E_B8_OMITTED  # noqa: E402  (parity E-B8)
+OMITTED_MODELS.update(E_B8_OMITTED)
+from .classification_booking_decision import FIELDS as BOOKING_DECISION_FIELDS
+EXPORTED_MODEL_FIELDS.update(BOOKING_DECISION_FIELDS)
 EXPORTED_MODELS = frozenset(EXPORTED_MODEL_FIELDS)
 
 NOT_TENANT_MODELS = {

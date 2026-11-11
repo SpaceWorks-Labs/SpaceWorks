@@ -210,39 +210,7 @@ def validate_user_edges(user_edges=USER_EDGES):
         _equal(f"{fidelity} user-edge decisions", declared, expected)
 
 
-# JSON fields that hold NO object or user references and therefore have no reference
-# schema. Declared here rather than inline so that exempting a field stays a visible,
-# reviewable act: the guard below still demands EXACT equality, so any JSON field that is
-# neither declared in JSON_FIELDS nor listed here still fails discovery.
-NON_REFERENCE_JSON_FIELDS = frozenset({
-    # Stable widget keys map to booleans, never row IDs or person references.
-    ("makerspaces.Makerspace", "public_stats_config"),
-    # Opaque component UUIDs, labels and numeric counts; no model references.
-    ("inventory.InventoryProduct", "kit_components"),
-    ("boxes.Box", "kit_components"),
-    ("hardware_requests.HardwareRequest", "box_issue_checklist"),
-    ("hardware_requests.HardwareRequestItem", "issue_checklist"),
-    ("hardware_requests.ReturnEvent", "kit_checklist"),
-    # Inert filter snapshots; identity filters are not live relation edges. Reset
-    # on tenant import so source identifiers never address unrelated target rows.
-    ("operations.SavedView", "state"),
-    # Controlled metric dimension labels (module key, period, report key) -- never an id.
-    ("operations.ReportMetricRollup", "dimensions"),
-    # Export inputs (dates, day window, payment enums) and staff-entered emails; no ids.
-    ("operations.ReportSchedule", "filters"),
-    ("operations.ReportSchedule", "recipient_emails"),
-    ("operations.ReportSchedule", "condition"),
-    # Slugs and action enums are tenant-local selector labels, never source IDs;
-    # the entire schedule is DROP on tenant import.
-    ("operations.ReportSchedule", "recipient_roles"),
-    ("operations.ReportSchedule", "recipient_actions"),
-})
-
-
-from .classification_wp4 import NON_REFERENCE_JSON_FIELDS as WP4_JSON
-NON_REFERENCE_JSON_FIELDS |= WP4_JSON
-from .classification_r2_l4 import NON_REFERENCE_JSON_FIELDS as R2_L4_JSON  # noqa: E402
-NON_REFERENCE_JSON_FIELDS |= R2_L4_JSON
+from .guards_json import NON_REFERENCE_JSON_FIELDS  # noqa: E402,F401  (monkeypatched by tests via this module)
 
 
 def validate_semantic_references(semantic_references=SEMANTIC_REFERENCES):

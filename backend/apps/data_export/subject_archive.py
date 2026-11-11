@@ -26,6 +26,10 @@ def project_subject_row(dataset, row, subject_id):
     result = {}
     for column in dataset.columns:
         source = column.sources[0]
+        if dataset.model in {"events.EventLoanContext", "bookings.BookingLoanContext"} and source in {"event", "participant_registration", "booking", "revision"}:
+            continue
+        if dataset.model == "events.EventBookingDecision" and source in {"event", "booking", "intent", "operation_id", "generation", "revision"}:
+            continue
         if "__" in source:
             # Derived other-actor names never enter a subject's global-user closure.
             continue

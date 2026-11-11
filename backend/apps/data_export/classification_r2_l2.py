@@ -19,6 +19,8 @@ New columns on exported models: `EventBroadcast.undo_hold` and
 """
 
 OMITTED_MODELS = {
+    "notifications.BrowserFirebaseInstallation": "Platform installation ownership fence; never portable.",
+    "notifications.BrowserFirebaseRegistration": "Firebase registration is a delivery capability; opt in again on target.",
     "events.SubmissionIntegrityCheck": "Job state of the informational GitHub check; the flag row carries the result.",
     "events.SubmissionStorageCleanupReceipt": "Permanent FK-free deployment custody proof; never tenant data.",
     "events.MentorAlertRoute": "Chat-room routing for alerts; target staff choose rooms again.",
@@ -32,6 +34,8 @@ EXTRA_FIELDS = {
     "events.EventBroadcast": "undo_hold",
 }
 RELATIONAL_USER_FIELDS = frozenset({
+    ("notifications.BrowserFirebaseInstallation", "user"),
+    ("notifications.BrowserFirebaseRegistration", "user"),
     ("events.MentorAlertRoute", "created_by"),
     ("notifications.BrowserAlertSubscription", "user"),
     ("integrations.OrganizationEmailSender", "updated_by"),

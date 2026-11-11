@@ -29,6 +29,7 @@ USER_PROJECTIONS = {
 }
 
 ALWAYS_OMITTED = {
+    ("makerspaces.Makerspace", "loan_context_generations"): "Internal concurrency token; destination creates fresh generations.",
     ("makerspaces.Makerspace", "email_provider"): "Reconfigure transport on target.",
     ("makerspaces.Makerspace", "email_provider_config"): "Encrypted transport credentials.",
     ("bookings.Booking", "checkin_token"): "Source arrival bearer credential; target issues a fresh one.",
@@ -168,9 +169,13 @@ SAFE_TRANSFORMS = {
 
 def _field_disposition(fidelity: Fidelity, label: str, field_name: str):
     pair = (label, field_name)
+    if label == "events.EventBookingDecision" and field_name in {"intent", "operation_id", "generation"} and fidelity is Fidelity.REDACTED:
+        return Redacted("decision_private_redacted")
     if pair in ALWAYS_OMITTED:
         return Omitted(ALWAYS_OMITTED[pair])
     from .fields_events_programme import PRIVATE_FIELDS
+    if pair in {("inventory.EquipmentProposalReceipt", "operation_id"), ("inventory.EquipmentProposalReceipt", "payload_sha256"), ("inventory.EquipmentProposalReceipt", "intent_snapshot"), ("inventory.EquipmentConsumableUseReceipt", "operation_id"), ("inventory.EquipmentConsumableUseReceipt", "payload_sha256"), ("inventory.EquipmentConsumableUseReceipt", "intent_snapshot"), ("events.EventConsumablePlanContext", "event"), ("events.EventConsumablePlanContext", "participant_registration"), ("bookings.BookingConsumablePlanContext", "booking")} and fidelity is Fidelity.REDACTED:
+        return Omitted("Private equipment intent and optional source identity are not disclosed in readable exports.")
     if pair in PRIVATE_FIELDS and fidelity is Fidelity.REDACTED:
         return Redacted("programme_private_redacted")
     if pair in FIVE_CONFIG_FIELDS and fidelity is Fidelity.REDACTED:
@@ -205,6 +210,8 @@ from apps.tenant_migration.catalog_events_programme_fields import OMITTED_FIELDS
 ALWAYS_OMITTED.update(PROGRAMME_OMITTED_FIELDS)
 from .classification_l16 import OMITTED_FIELDS as L16_OMITTED_FIELDS  # noqa: E402
 ALWAYS_OMITTED.update(L16_OMITTED_FIELDS)
+from .classification_e_b8 import ALWAYS_OMITTED as E_B8_OMITTED_FIELDS  # noqa: E402  (parity E-B8)
+ALWAYS_OMITTED.update(E_B8_OMITTED_FIELDS)
 FIELDS = {}
 for _fidelity in Fidelity:
     for _label, _names in EXPORTED_MODEL_FIELDS.items():

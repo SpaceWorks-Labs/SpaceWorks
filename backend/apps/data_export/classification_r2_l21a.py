@@ -27,12 +27,13 @@ EXPORTED_FIELDS = {
                                    "reminded_at",
     "events.EventCrewMember": "id makerspace event member origin crew_role state answers dietary show_publicly "
                               "registration decided_by decided_at version created_at",
-    "events.EventCheckInList": "id makerspace event name kind after_entry addon per_person archived_at created_by "
-                               "created_at",
-    "events.EventCheckInListScan": "id makerspace checkin_list registration operation_id actor scanned_at",
+    "events.EventCheckInList": "id makerspace event name kind after_entry addon per_person archived_at position "
+                               "created_by created_at",
+    "events.EventCheckInListScan": "id makerspace checkin_list registration operation_id actor scanned_at undone_at "
+                                   "undone_by",
 }
 FIELD_ADDITIONS = {
-    "events.EventRegistration": "is_crew",
+    "events.EventRegistration": "is_crew pay_by",
     "events.ApplicationDecision": "stage",
     "event_reimbursements.ReimbursementProgramme": "min_application_stage",
     "event_reimbursements.GrantRequest": "kind",
@@ -74,6 +75,7 @@ RELATIONAL_USER_FIELDS = frozenset({
     ("events.EventCrewMember", "decided_by"),
     ("events.EventCheckInList", "created_by"),
     ("events.EventCheckInListScan", "actor"),
+    ("events.EventCheckInListScan", "undone_by"),
 })
 # Stage criteria (keys and labels) and review scores keyed by those criteria: no row ids inside.
 JSON_FIELDS = frozenset({("events.AdmissionStage", "criteria"), ("events.AdmissionStageReview", "scores")})

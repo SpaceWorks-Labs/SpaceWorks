@@ -70,3 +70,7 @@ def validate_credentials(fields=None):
         if isinstance(disposition, Omitted) or (label, field_name) in REVIEWED_NON_CREDENTIAL:
             continue
         raise RegistryError(f"credential-like field not omitted: {fidelity} {label}.{field_name}")
+from .classification_e_b8 import NON_CREDENTIAL as E_B8_NON_CREDENTIAL  # noqa: E402
+REVIEWED_NON_CREDENTIAL.update(E_B8_NON_CREDENTIAL)
+from .classification_r3_events_badges import NON_CREDENTIAL as R3_EVENTS_BADGES_NON_CREDENTIAL  # noqa: E402  (parity E-B2)
+REVIEWED_NON_CREDENTIAL.update(R3_EVENTS_BADGES_NON_CREDENTIAL)

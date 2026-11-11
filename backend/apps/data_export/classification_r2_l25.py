@@ -3,7 +3,8 @@
 Neither row travels. A connection names a database login of THIS deployment and holds its
 Metabase embed secret and the login password as ciphertext under this deployment's key; a
 target space makes its own login and pastes its own secret. The platform connection is not
-tenant data at all.
+tenant data at all. Decision 263 adds the Grafana service-account token (ciphertext) and the
+Grafana dashboards list to the same rows, so they never travel either.
 """
 
 OMITTED_MODELS = {

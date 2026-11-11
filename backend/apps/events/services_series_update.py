@@ -69,7 +69,10 @@ def update_series(series, *, actor, effective_from=None, **changes):
             # Keep those old occurrences as cancelled history; never cascade-delete
             # a private artifact or break a protected template reference.
             website = getattr(event, "website_page", None)
-            keep_history = (event.certificate_template_revisions.exists() or event.certificate_artworks.exists()
+            from .models_booking_decision import EventBookingDecision
+            keep_history = (EventBookingDecision.objects.filter(event_id=event.pk).exists()
+                          or event.machine_booking_links.exists()
+                          or event.certificate_template_revisions.exists() or event.certificate_artworks.exists()
                           or event.hackathon_applications.exists() or event.eventroleassignment_set.exists()
                           or event.registrations.exists() or bool(website and website.revisions.exists()))
             if event.status == Event.Status.PUBLISHED:

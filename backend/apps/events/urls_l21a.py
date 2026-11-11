@@ -7,14 +7,17 @@ API clients and the native decision there.
 from django.urls import path
 
 from .contributions.views_crew import (
-    CrewCateringView, CrewDecisionView, CrewRemoveView, CrewRosterView, CrewSignupView, CrewWithdrawView,
+    CrewCateringView, CrewDecisionView, CrewDetailView, CrewRemoveView, CrewReorderView, CrewRosterView, CrewSignupView, CrewWithdrawView,
     PublicCrewView,
 )
 from .hackathons.views_stage_reviews import MyReviewStagesView, MyStageAssignmentsView, MyStageReviewSubmitView
 from .hackathons.views_stages import (
     StageApplyView, StageDetailView, StageListView, StagePanelView, StagePreviewView, StageProgressView,
 )
-from .views_checkin_lists import CheckInListDetailView, CheckInListLookupView, CheckInListScanView, CheckInListsView
+from .views_checkin_lists import (
+    CheckInListDetailView, CheckInListLookupView, CheckInListReorderView, CheckInListScanUndoView,
+    CheckInListScanView, CheckInListsView,
+)
 from .views_participation import (
     AttendanceMemberView, AttendanceStaffView, ParticipationSettingsView, RegistrationReacceptView,
 )
@@ -40,6 +43,8 @@ ADMIN = [
          name=P + "registration-reaccept"),
     path("events/<int:pk>/crew/", CrewRosterView.as_view(), name=P + "crew"),
     path("events/<int:pk>/crew/catering/", CrewCateringView.as_view(), name=P + "crew-catering"),
+    path("events/<int:pk>/crew/reorder/", CrewReorderView.as_view(), name=P + "crew-reorder"),
+    path("events/<int:pk>/crew/<int:crew_id>/", CrewDetailView.as_view(), name=P + "crew-detail"),
     path("events/<int:pk>/crew/<int:crew_id>/decide/", CrewDecisionView.as_view(), name=P + "crew-decide"),
     path("events/<int:pk>/crew/<int:crew_id>/remove/", CrewRemoveView.as_view(), name=P + "crew-remove"),
     path("events/<int:pk>/checkin-lists/", CheckInListsView.as_view(), name=P + "checkin-lists"),
@@ -47,6 +52,9 @@ ADMIN = [
     path("events/<int:pk>/checkin-lists/<int:list_id>/lookup/", CheckInListLookupView.as_view(),
          name=P + "checkin-list-lookup"),
     path("events/<int:pk>/checkin-lists/<int:list_id>/scan/", CheckInListScanView.as_view(), name=P + "checkin-list-scan"),
+    path("events/<int:pk>/checkin-lists/reorder/", CheckInListReorderView.as_view(), name=P + "checkin-list-reorder"),
+    path("events/<int:pk>/checkin-lists/<int:list_id>/scan/<int:scan_id>/undo/", CheckInListScanUndoView.as_view(),
+         name=P + "checkin-list-scan-undo"),
 ]
 
 MEMBER = [

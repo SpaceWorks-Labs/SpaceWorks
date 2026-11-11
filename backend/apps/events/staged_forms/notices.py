@@ -1,4 +1,5 @@
 """Durable owner-only envelopes with IDs and deadlines, never answer values."""
+from django.utils.translation import gettext
 from apps.accounts.models import User
 from apps.integrations.notification_outbox import emit
 from apps.integrations.notification_sources import NotificationSource
@@ -8,8 +9,10 @@ from apps.notifications.inbox import eligible_owner
 from .response_models import StageFormAssignment
 from .command_values import canonical_utc
 from .trigger_service import participation_live
+from apps.integrations.fanout_jobs import deferred_fanout
 
 
+@deferred_fanout()
 def enqueue_locked(assignment, kind, *, identity=None):
     space = assignment.event.makerspace
     if not module_enabled(space, "notifications"):
@@ -25,7 +28,8 @@ def enqueue_locked(assignment, kind, *, identity=None):
                  "due_revision": assignment.due_revision, "due_at": canonical_utc(assignment.effective_due_at),
                  "kind": kind, "reason_code": assignment.cancellation_reason_code if kind == "cancelled" else
                      assignment.reassignment_reason_code if kind == "reassigned" else ""},
-        rendered={"subject": "Event stage form update", "text": f"Your stage form is {kind.replace('_', ' ')}. Sign in to review its current deadline.",
+        rendered=lambda: {"subject": gettext("Event stage form update"),
+                  "text": gettext("Your stage form is %(state)s. Sign in to review its current deadline.") % {"state": kind.replace("_", " ")},
                   "link": f"/member/events/{assignment.event_id}/stage-forms/{assignment.stage_form_id}"})
 
 
@@ -50,6 +54,7 @@ def eligible(envelope):
 NOTICE_SOURCE = NotificationSource(eligible)
 
 
+@deferred_fanout()
 def enqueue_warning_locked(subject, definition_ids, action):
     if not module_enabled(subject.event.makerspace, "notifications"):
         return
@@ -60,7 +65,7 @@ def enqueue_warning_locked(subject, definition_ids, action):
             revision=str(subject.event.version), subject=subject.event,
             dedup_key=f"stage-warning:{subject.event.pk}:{pk}:{subject.owner_member_id}:{subject.event.version}:{action}",
             context={"event_id": subject.event.pk, "stage_form_id": pk, "action": action},
-            rendered={"subject": "An event form is incomplete", "text": "You may continue. Sign in to review your pending event form.",
+            rendered=lambda: {"subject": gettext("An event form is incomplete"), "text": gettext("You may continue. Sign in to review your pending event form."),
                       "link": f"/member/events/{subject.event.pk}/stage-forms/{pk}"})
 
 

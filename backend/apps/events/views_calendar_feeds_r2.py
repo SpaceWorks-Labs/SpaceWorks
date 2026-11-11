@@ -142,6 +142,10 @@ class PublicCombinedFeedView(_TokenFeedView):
 
     @extend_schema(tags=["Public events"], auth=[], request=None,
                    summary="A person's combined calendar: bookings, events and shifts (bearer link)",
+                   description="Own bookings, registrations and shifts; opaque `Unavailable` / `Space closed` "
+                               "blocks only where they overlap the person's own upcoming bookings; and, for a "
+                               "person with machine scope while `machines.maintenance` is on, the dated "
+                               "maintenance schedules of the machines in that scope.",
                    responses={**CALENDAR_SUCCESS, 404: CALENDAR_ERRORS[404], 429: CALENDAR_ERRORS[429]})
     def get(self, request, makerspace_slug, raw_token):
         return super().get(request, makerspace_slug, raw_token)

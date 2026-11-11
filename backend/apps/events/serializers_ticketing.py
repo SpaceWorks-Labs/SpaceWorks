@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from apps.payments.money_fields import MoneyField
 
 from apps.events.models import EventCategory, EventInvite, EventPromoCode, EventTicketType
 
@@ -25,7 +26,7 @@ class PromoInputSerializer(serializers.Serializer):
     applies_per = serializers.ChoiceField(choices=("ticket", "order"), default="ticket", required=False)
     ticket_type_id = serializers.IntegerField(min_value=1, required=False, allow_null=True)
     percent_off = serializers.IntegerField(min_value=0, max_value=100, default=0, required=False)
-    amount_off = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=0, default=0, required=False)
+    amount_off = MoneyField(max_digits=13, decimal_places=3, min_value=0, default=0, required=False)
     max_uses = serializers.IntegerField(min_value=1, default=1, required=False)
     expires_at = serializers.DateTimeField(allow_null=True, required=False)
 

@@ -1,5 +1,6 @@
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
+from apps.payments.money_fields import MoneyField
 from django.utils import timezone
 
 from apps.events.capacity import (
@@ -23,7 +24,7 @@ PUBLIC_EVENT_FIELDS = (
     'starts_at',
     'ends_at',
     'location',
-    'location_kind',
+    'location_kind', 'venue_address', 'venue_map_url',
     'custom_form',
     'capacity',
     'show_registration_count', 'registration_count',
@@ -104,6 +105,8 @@ class PublicEventSerializer(OrganizationAudienceFields, EventTicketingPublicSeri
     starts_at = serializers.DateTimeField(read_only=True)
     ends_at = serializers.DateTimeField(read_only=True)
     location = serializers.CharField(read_only=True)
+    venue_address = serializers.CharField(read_only=True)
+    venue_map_url = serializers.CharField(read_only=True)
     location_kind = serializers.ChoiceField(
         choices=Event.LocationKind.choices,
         read_only=True,
@@ -112,7 +115,7 @@ class PublicEventSerializer(OrganizationAudienceFields, EventTicketingPublicSeri
     capacity = serializers.IntegerField(min_value=0, read_only=True)
     show_registration_count = serializers.BooleanField(read_only=True)
     registration_count = serializers.SerializerMethodField()
-    payment_amount = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
+    payment_amount = MoneyField(max_digits=13, decimal_places=3, read_only=True)
     currency = serializers.SerializerMethodField()
     availability = serializers.SerializerMethodField()
     registration_requires_approval = serializers.BooleanField(read_only=True)

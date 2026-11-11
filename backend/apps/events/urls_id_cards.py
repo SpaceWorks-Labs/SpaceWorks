@@ -21,3 +21,6 @@ urlpatterns = [
     path("event-id-cards/<int:pk>/photo", EventCardStaffPhotoView.as_view(), name="admin-event-id-card-photo"),
     path("event-id-cards/<int:pk>/download", EventIdCardDownloadView.as_view(), name="admin-event-id-card-download"),
 ]
+
+from .urls_badge_prints import urlpatterns as _badge_patterns  # noqa: E402  (parity E-B2)
+urlpatterns += _badge_patterns

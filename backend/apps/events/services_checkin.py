@@ -1,3 +1,5 @@
+import logging
+
 from django.utils.translation import gettext
 from uuid import uuid4
 
@@ -14,6 +16,8 @@ from apps.events.models import (
 from apps.events.services_station import credential_for_event
 from apps.makerspaces.guards import require_feature_locked
 from .services_write_boundary import event_write
+
+logger = logging.getLogger(__name__)
 
 
 FEATURE_SOURCES = {
@@ -93,6 +97,10 @@ def mark_attended_locked(event, locked, *, actor, source=EventCheckInEvent.Sourc
         # a cached roster is never proof that the form was completed.
         from .staged_forms.admission_hooks import require_action_locked
         require_action_locked(event=event, member_id=locked.member_id, action="check_in")
+        # EV-27: consent that expired or was withdrawn after registration stops attendance on every
+        # source, with the same helper registration uses (a typed CommunityError, e.g. guardian_consent_expired).
+        from apps.makerspaces.minors_guard import require_minor_clearance
+        require_minor_clearance(locked.member, event.makerspace, "event")
 
     occurred_at = attended_at or timezone.now()
     check_in = EventCheckInEvent(
@@ -136,6 +144,8 @@ def mark_attended_locked(event, locked, *, actor, source=EventCheckInEvent.Sourc
     )
     publish_payout_eligibility_locked(event=event, registration=locked, actor=actor)
     services.notify_event_lifecycle(event, "registration_attended", locked.pk)
+    from .guest_pass_adapter import schedule_event_pass  # decision 223: a non-member attendee gets an event pass
+    schedule_event_pass(locked.pk, actor)
     # Station sync always supplies a reported timestamp, even for live scans.
     # The bridge rechecks reported/recorded freshness and attendance after commit.
     if (source == EventCheckInEvent.Source.VENUE_STATION
@@ -181,12 +191,20 @@ def collect_at_desk(registration, *, actor, method="", reference="", received_at
         raise OrderRefused("nothing_to_collect", "This ticket has nothing left to pay.")
     if terminal:
         from apps.payments.availability import online_payments_enabled
-        from apps.payments.services import create_checkout_url
+        from apps.payments.services import PaymentRailConflict, PaymentSettlementPending, create_checkout_url
         if not online_payments_enabled(event.makerspace, "events"):
             # #184: an offline-only events domain never mints a checkout, even when the
             # space's credentials serve another domain; the desk takes a receipt instead.
             raise OrderRefused("online_payments_off", "Online payment is off for events here; record a receipt.")
-        url = create_checkout_url(payment.pk, actor=actor)
+        try:
+            url = create_checkout_url(payment.pk, actor=actor)
+        except PaymentRailConflict:
+            raise OrderRefused("payment_rail_conflict", "This charge already uses a different online payment rail.")
+        except PaymentSettlementPending:
+            raise OrderRefused("payment_settlement_pending", "An 'I paid' claim or proposal is open for this charge.")
+        except Exception:
+            logger.exception("event_desk_checkout_failed", extra={"payment_id": payment.pk})
+            raise OrderRefused("payments_unavailable", "Payments are temporarily unavailable.")
         record(actor, "event.payment_collected_at_desk", makerspace=event.makerspace, target=registration,
                meta={"registration_id": registration.pk, "payment_id": payment.pk, "terminal": True, "method": ""})
         return {"payment": payment, "checkout_url": url}

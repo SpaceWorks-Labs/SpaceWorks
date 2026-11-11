@@ -14,7 +14,7 @@ from apps.forms_schema.validation import validate_form_schema
 
 EVENT_FIELDS = frozenset(
     {'title', 'description', 'starts_at', 'ends_at', 'location',
-     'location_kind', 'custom_form', 'capacity', 'is_public', 'payment_amount',
+     'location_kind', 'venue_address', 'venue_map_url', 'custom_form', 'capacity', 'is_public', 'payment_amount',
      'registration_requires_approval', 'registration_cutoff_at',
      'registration_cutoff_lead_minutes', 'cancellation_cutoff_hours', 'timezone_name',
      'registration_audience', 'category_id', 'tags', 'show_registration_count', 'accent_preset',

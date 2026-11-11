@@ -22,6 +22,7 @@ from apps.events import services_images
 from apps.events.serializers_admin import EventAdminSerializer
 from apps.events.views_admin import _manageable_event
 from apps.events.event_permissions import EDIT_DETAILS
+from apps.events.programme.cover_finalize import convert_to_webp
 from apps.evidence.responses import storage_unavailable_response
 from apps.evidence.storage import StorageUnavailable
 from apps.inventory import public_image_storage
@@ -63,6 +64,8 @@ class EventImageView(APIView):
             event.makerspace_id,
             ext,
         )
+        from apps.makerspaces.limits import check_upload_headroom
+        check_upload_headroom(event.makerspace)  # #234: refuse before the upload when storage is full
         try:
             upload = public_image_storage.presigned_upload(object_key, content_type)
         except StorageUnavailable:
@@ -129,6 +132,10 @@ class EventImageView(APIView):
                 public_image_storage.staging_key(object_key)
             )
             raise ValidationError({"object_key": gettext("Uploaded file is not a valid image.")})
+        try:
+            object_key = convert_to_webp(object_key)
+        except StorageUnavailable:
+            return storage_unavailable_response()
         event = services_images.update_image(event, request.user, object_key)
         return self._response(request, event)
 

@@ -26,6 +26,7 @@ from apps.events.views_admin import (
     EventRegistrationRejectView,
 )
 from apps.events.views_admin_organized import OrganizedEventListView
+from apps.events.views_admin_organized_attendance import OrganizedEventAttendanceView
 from apps.events.views_admin_image import EventImageView
 from apps.events.views_admin_organizers import EventOrganizerView
 from apps.events.views_checkin import EventCheckInResolveView
@@ -45,25 +46,27 @@ from apps.events.views_collaborators import (
     EventCollaborationRespondView,
     EventCollaboratorListView,
 )
-from apps.events.views_series import (
-    EventSeriesCancelView,
-    EventSeriesCompleteView,
-    EventSeriesDetailView,
-    EventSeriesExtendView,
-    EventSeriesListCreateView,
-    EventSeriesOccurrenceListView,
-    EventSeriesPublishView,
-)
-from apps.events.views_series_collaboration import (
-    EventSeriesCollaborationInboxView,
-    EventSeriesCollaborationRemoveView,
-    EventSeriesCollaborationRespondView,
-    EventSeriesCollaboratorListView,
-)
-from apps.events.views_series_image import EventSeriesImageView
 from apps.events.views_badges import EventBadgePdfView, EventBadgeTemplateView
 
+from .views_loan_context import EventLoanContextView
+from .views_booking_decision import EventBookingDecisionView
+from .views_booking_decision_replacement import EventBookingReplacementView
+from .views_machine_booking_links import EventWorkshopMachineReplacementView, EventWorkshopMachinesView
+from .urls_equipment_window import patterns as equipment_window_patterns
+from .urls_venue import patterns as venue_patterns
+from .urls_registration_queue import patterns as registration_queue_patterns
+from .urls_admin_series import patterns as series_patterns
+
 urlpatterns = [
+    path("makerspace/<int:makerspace_id>/events/<int:event_id>/booking-link", EventBookingDecisionView.as_view(), name="admin-event-booking-link"),
+    path("makerspace/<int:makerspace_id>/events/<int:event_id>/booking-link/replacement", EventBookingReplacementView.as_view(), name="admin-event-booking-replacement"),
+    path("makerspace/<int:makerspace_id>/events/<int:event_id>/workshop-machines", EventWorkshopMachinesView.as_view(), name="admin-event-workshop-machines"),
+    path("makerspace/<int:makerspace_id>/events/<int:event_id>/workshop-machines/<int:link_id>/replacement", EventWorkshopMachineReplacementView.as_view(), name="admin-event-workshop-machine-replacement"),
+    path("makerspace/<int:makerspace_id>/requests/<int:request_id>/event-context", EventLoanContextView.as_view(), name="admin-request-event-context"),
+    path("makerspace/<int:makerspace_id>/direct-loans/<int:loan_id>/event-context", EventLoanContextView.as_view(), name="admin-direct-loan-event-context"),
+    *equipment_window_patterns,
+    *venue_patterns,
+    *registration_queue_patterns,
     path("", include("apps.events.urls_credentials")),
     *website_patterns,
     path("", include("apps.events.urls_communications")),
@@ -76,66 +79,7 @@ urlpatterns = [
     path("", include("apps.events.urls_public_surface")),
     # Stage definitions, assignments, milestones and response review (staged_forms/urls_admin.py).
     path("events/<int:pk>/", include("apps.events.staged_forms.urls_admin")),
-    path(
-        'makerspaces/<int:makerspace_id>/event-series/',
-        EventSeriesListCreateView.as_view(),
-        name='admin-event-series-list-create',
-    ),
-    path(
-        'event-series/<int:pk>/',
-        EventSeriesDetailView.as_view(),
-        name='admin-event-series-detail',
-    ),
-    path(
-        'event-series/<int:pk>/occurrences/',
-        EventSeriesOccurrenceListView.as_view(),
-        name='admin-event-series-occurrences',
-    ),
-    path(
-        'event-series/<int:pk>/publish/',
-        EventSeriesPublishView.as_view(),
-        name='admin-event-series-publish',
-    ),
-    path(
-        'event-series/<int:pk>/cancel/',
-        EventSeriesCancelView.as_view(),
-        name='admin-event-series-cancel',
-    ),
-    path(
-        'event-series/<int:pk>/complete/',
-        EventSeriesCompleteView.as_view(),
-        name='admin-event-series-complete',
-    ),
-    path(
-        'event-series/<int:pk>/extend/',
-        EventSeriesExtendView.as_view(),
-        name='admin-event-series-extend',
-    ),
-    path(
-        'event-series/<int:pk>/image',
-        EventSeriesImageView.as_view(),
-        name='admin-event-series-image',
-    ),
-    path(
-        'event-series/<int:pk>/collaborators/',
-        EventSeriesCollaboratorListView.as_view(),
-        name='admin-event-series-collaborators',
-    ),
-    path(
-        'event-series-collaborations/<int:pk>/remove/',
-        EventSeriesCollaborationRemoveView.as_view(),
-        name='admin-event-series-collaboration-remove',
-    ),
-    path(
-        'makerspaces/<int:makerspace_id>/event-series-collaborations/',
-        EventSeriesCollaborationInboxView.as_view(),
-        name='admin-event-series-collaboration-inbox',
-    ),
-    path(
-        'event-series-collaborations/<int:pk>/respond/',
-        EventSeriesCollaborationRespondView.as_view(),
-        name='admin-event-series-collaboration-respond',
-    ),
+    *series_patterns,
     path(
         'makerspaces/<int:makerspace_id>/events/',
         EventListCreateView.as_view(),
@@ -280,5 +224,10 @@ urlpatterns = [
         'organized-events/',
         OrganizedEventListView.as_view(),
         name='admin-organized-event-list',
+    ),
+    path(
+        'organized-events/attendance/',
+        OrganizedEventAttendanceView.as_view(),
+        name='admin-organized-event-attendance',
     ),
 ]

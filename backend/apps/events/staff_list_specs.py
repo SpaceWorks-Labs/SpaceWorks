@@ -18,6 +18,7 @@ class Spec:
     filters: frozenset
     columns: tuple
     pii: tuple = ()
+    extra_columns: object = None  # callable(event) -> ((key, header), ...): columns that depend on the event
 
 
 def _search(params):
@@ -25,21 +26,29 @@ def _search(params):
 
 
 def _guests(event, params):
+    from . import staff_list_guests
     from .models_registration import EventRegistration
     rows = EventRegistration.objects.filter(event=event).select_related("ticket_type").order_by("pk")
     if params.get("status"):
         rows = rows.filter(status=params["status"])
-    query, last = _search(params), 0
+    rows = staff_list_guests.filter_rows(event, rows, params)
+    extra, query, last = staff_list_guests.list_columns(event), _search(params), 0
     while True:  # Names are encrypted at rest, so the search runs per keyset chunk.
         chunk = list(rows.filter(pk__gt=last)[:CHUNK])
         if not chunk:
             return
-        for row in chunk:
+        for row, reply, extras in staff_list_guests.annotate(event, chunk, extra):
             if query and query not in f"{row.name} {row.email}".lower():
                 continue
             yield {"id": row.pk, "name": row.name, "email": row.email, "phone": row.phone, "status": row.status,
-                   "ticket": row.ticket_type.name if row.ticket_type_id else "", "registered_at": row.created_at}
+                   "ticket": row.ticket_type.name if row.ticket_type_id else "", "registered_at": row.created_at,
+                   "reply": reply, **extras}
         last = chunk[-1].pk
+
+
+def _guest_extra(event):
+    from .staff_list_guests import list_columns
+    return tuple(label for _id, label in list_columns(event))
 
 
 def _teams(event, params):
@@ -77,9 +86,12 @@ def _results(event, params):
     rows = latest.awards.order_by("pk")
     if params.get("prize"):
         rows = rows.filter(prize_id=params["prize"])
-    yield from _keyset(rows, lambda a: {"id": a.pk, "prize": a.prize_name, "rank": a.rank,
+    text = (params.get("q") or "").strip().casefold()  # E-B4 (D13): the results search matches project or prize.
+    for row in _keyset(rows, lambda a: {"id": a.pk, "prize": a.prize_name, "rank": a.rank,
                                          "title": runtime().snapshot(a.submission_snapshot_id).title,
-                                         "version": latest.version, "published": published})
+                                         "version": latest.version, "published": published}):
+        if not text or text in row["title"].casefold() or text in row["prize"].casefold():
+            yield row
 
 
 def _progress(event, params):
@@ -111,14 +123,16 @@ def _keyset(rows, project):
 
 
 SPECS = {
-    "guests": (Spec("guests", "manage_registrations", frozenset({"status", "q"}),
-                    ("id", "name", "email", "phone", "status", "ticket", "registered_at"), ("name", "email", "phone")),
+    "guests": (Spec("guests", "manage_registrations", frozenset({"status", "q", "reply", "list", "collected"}),
+                    ("id", "name", "email", "phone", "status", "ticket", "registered_at", "reply"),
+                    ("name", "email", "phone"),
+                    _guest_extra),
                _guests),
     "teams": (Spec("teams", "manage_team", frozenset({"state", "q"}),
                    ("id", "name", "state", "members", "eligibility_issue", "locked_at")), _teams),
     "submissions": (Spec("submissions", "manage_hackathon", frozenset({"state", "triage", "q"}),
                          ("id", "team_id", "title", "state", "triage", "submitted_at")), _submissions),
-    "results": (Spec("results", "manage_hackathon", frozenset({"prize"}),
+    "results": (Spec("results", "manage_hackathon", frozenset({"prize", "q"}),
                      ("id", "prize", "rank", "title", "version", "published")), _results),
     "progress": (Spec("progress", "manage_hackathon", frozenset({"round", "below_target"}),
                       ("id", "round", "title", "reviews", "target")), _progress),

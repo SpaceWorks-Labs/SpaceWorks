@@ -11,7 +11,8 @@ from .hackathons.api_schema import ERRORS
 from .models import EventRegistration
 from .models_checkin_lists import EventCheckInList
 from .serializers_participation import (
-    CheckInListEligibilitySerializer, CheckInListInput, CheckInListScanInput, CheckInListSerializer,
+    CheckInListEligibilitySerializer, CheckInListInput, CheckInListReorderInput, CheckInListScanInput,
+    CheckInListSerializer,
 )
 
 TAGS = ["Event check-in lists"]
@@ -89,6 +90,31 @@ class CheckInListScanView(ListView):
         data.is_valid(raise_exception=True)
         scan, (allowed, used, reason) = checkin_lists.scan(event, actor=request.user, list_id=list_id,
                                                           **data.validated_data)
-        return Response(masked(request, event, {"registration_id": scan.registration_id,
+        return Response(masked(request, event, {"scan_id": scan.pk, "registration_id": scan.registration_id,
+                                                "undo_until": scan.scanned_at + checkin_lists.UNDO_WINDOW,
                                                 "name": scan.registration.name, "allowed": allowed, "used": used,
                                                 "reason": reason}), status=201)
+
+
+class CheckInListReorderView(ListView):
+    @extend_schema(tags=TAGS, request=CheckInListReorderInput, responses={200: CheckInListSerializer(many=True), **ERRORS},
+                   summary="Set the desk order of the open lists (name each open list once)")
+    def post(self, request, pk):
+        event = self.target(request, pk, "manage_registrations")
+        data = CheckInListReorderInput(data=request.data)
+        data.is_valid(raise_exception=True)
+        rows = checkin_lists.reorder(event, actor=request.user, ordered_ids=data.validated_data["ordered_ids"])
+        return Response([checkin_lists.project(row) for row in rows])
+
+
+class CheckInListScanUndoView(ListView):
+    @extend_schema(tags=TAGS, request=None, responses={200: CheckInListEligibilitySerializer, **ERRORS},
+                   summary="Undo a collection within 60 seconds (the record stays, marked undone)")
+    def post(self, request, pk, list_id, scan_id):
+        event = self.target(request, pk, "check_in")
+        scan = checkin_lists.undo(event, actor=request.user, list_id=list_id, scan_id=scan_id)
+        allowed = checkin_lists.allowance(scan.checkin_list, scan.registration)
+        return Response(masked(request, event, {"scan_id": scan.pk, "registration_id": scan.registration_id,
+                                                "name": scan.registration.name, "allowed": allowed,
+                                                "used": checkin_lists.used(scan.checkin_list, scan.registration),
+                                                "reason": None}))

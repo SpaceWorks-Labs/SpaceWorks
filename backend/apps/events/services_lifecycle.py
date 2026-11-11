@@ -52,7 +52,7 @@ def _transition(event, actor, expected, new_status, action):
 
 
 @event_write
-def publish(event, *, actor, publish_website=False, website_revision=None):
+def publish(event, *, actor, publish_website=False, website_revision=None, publish_without_room=False):
     services = _boundary()
     _lock_series_first(event.pk)
     locked = services._locked_event(event.pk)
@@ -69,19 +69,33 @@ def publish(event, *, actor, publish_website=False, website_revision=None):
     require(actor, locked, PUBLISH_SCHEDULE)
     from .registration_access import validate_event_audience
     validate_event_audience(locked)
-    limits.check_quota(locked.makerspace, "events", adding=1)
+    from .audience_default import apply_membership_off_fallback
+    from .venue_publish_check import enforce_on_publish
+    fell_back = apply_membership_off_fallback(locked)  # decision 223: never publish an event nobody can join
+    venue = enforce_on_publish(locked, publish_without_room=publish_without_room)  # decision 223 (g)
+    from apps.managed_hosting.extra_quota_counters import month_start
+    # A draft created this month already counts toward `events_monthly`; one from an earlier month does not.
+    limits.check_quota(locked.makerspace, "events", adding=1,
+                       monthly_adding=0 if locked.created_at >= month_start() else 1)
     locked.status = Event.Status.PUBLISHED
     locked.version += 1
-    locked.save(update_fields=["status", "version", "updated_at"])
+    locked.save(update_fields=["status", "version", "updated_at"] + (["registration_audience"] if fell_back else []))
     if publish_website:
         from .services_website import set_release_locked
         set_release_locked(locked, actor=actor, released=True, revision=website_revision)
     calendar_event_changed(locked)
     meta = {"old_status": Event.Status.DRAFT, "new_status": Event.Status.PUBLISHED}
+    if fell_back:
+        meta["audience_fallback"] = "members_to_accounts"
     services._audit(locked, actor, "event.published", locked, meta)
+    without_room = venue["state"] == "blocked"
+    if without_room:
+        services._audit(locked, actor, "event.published_without_room", locked,
+                        {"venue_reason": venue["reason"], "booking_id": venue["booking_id"]})
     services.notify_event_lifecycle(locked, "published")
-    from .venue_fees import on_event_published  # lane L6: confirming the event charges its venue fee
-    on_event_published(locked, actor)
+    if not without_room:  # never silently charge a venue fee for a room the event does not hold
+        from .venue_fees import on_event_published  # lane L6: confirming the event charges its venue fee
+        on_event_published(locked, actor)
     return services._refresh(locked)
 
 
@@ -139,6 +153,11 @@ def cancel(event, *, actor, notify=True):
     )
     if notify:
         services.notify_event_lifecycle(locked, "cancelled")
+    # Decision 216: the linked booking and loans are told, never cancelled (also for a series cancel).
+    from .linked_change_notices import event_changed
+    event_changed(locked, "cancelled")
+    from .guest_pass_event_changes import schedule_cancelled  # audit M5: its guest passes end with it
+    schedule_cancelled(locked)
     _cancel_open_charges_after_commit(locked, actor)
     from .programme_charges import close_for_cancelled_event  # hack-money G1: entry and team fees too
     close_for_cancelled_event(locked, actor)

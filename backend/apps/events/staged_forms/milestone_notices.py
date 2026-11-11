@@ -1,4 +1,5 @@
 """A published checklist milestone is an owner notice, never an admission offer."""
+from django.utils.translation import gettext
 from apps.accounts.models import User
 from apps.integrations.notification_outbox import emit
 from apps.integrations.notification_sources import NotificationSource
@@ -6,8 +7,10 @@ from apps.makerspaces.platform import module_enabled
 from apps.makerspaces.servability import is_servable
 from apps.notifications.inbox import eligible_owner
 from .milestone_models import EventStageMilestone
+from apps.integrations.fanout_jobs import deferred_fanout
 
 
+@deferred_fanout()
 def enqueue_locked(marker):
     space = marker.event.makerspace
     if not module_enabled(space, "notifications"):
@@ -16,7 +19,7 @@ def enqueue_locked(marker):
         event="stage_form.shortlisted", audience="member", dedup_key=f"stage-shortlist:{marker.pk}:{marker.version}",
         source_kind="event.stage_milestone", source_id=str(marker.pk), revision=str(marker.version), subject=marker,
         context={"event_id": marker.event_id, "milestone_id": marker.pk},
-        rendered={"subject": "Event checklist update", "text": "A shortlist checklist milestone has been published. Sign in to review any event forms.",
+        rendered=lambda: {"subject": gettext("Event checklist update"), "text": gettext("A shortlist checklist milestone has been published. Sign in to review any event forms."),
                   "link": f"/member/events/{marker.event_id}"})
 
 

@@ -30,7 +30,7 @@ from apps.makerspaces.models import Makerspace
 
 
 TEMPLATE_FIELDS = frozenset({
-    "title", "description", "location", "location_kind", "custom_form", "capacity",
+    "title", "description", "location", "location_kind", "venue_address", "venue_map_url", "custom_form", "capacity",
     "payment_amount", "registration_requires_approval", "registration_audience",
     "registration_cutoff_lead_minutes", "cancellation_cutoff_hours", "is_public",
 })
@@ -90,6 +90,8 @@ def _event_values(series, occurrence):
         "ends_at": occurrence.ends_at,
         "location": series.location,
         "location_kind": series.location_kind,
+        "venue_address": series.venue_address,
+        "venue_map_url": series.venue_map_url,
         "custom_form": series.custom_form,
         "capacity": series.capacity,
         "payment_amount": series.payment_amount,

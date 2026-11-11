@@ -34,6 +34,8 @@ from .programme.urls import admin_patterns, series_patterns
 
 from .urls_l21a import ADMIN as L21A_ADMIN, MEMBER as L21A_MEMBER, PUBLIC as L21A_PUBLIC
 from .urls_l21b import ADMIN as L21B_ADMIN
+from .judging.urls_e_b4 import ADMIN as E_B4_ADMIN
+from .urls_e_b7 import ADMIN as E_B7_ADMIN
 
 urlpatterns += [
     # Lane L21a: review stages, participation switches, attendance, re-accept, crew, check-in lists.
@@ -42,6 +44,8 @@ urlpatterns += [
     path("public/", include(L21A_PUBLIC)),
     # Lane L21b: filtered staff lists and their CSV exports.
     path("admin/", include(L21B_ADMIN)),
+    path("admin/", include(E_B4_ADMIN)),  # Parity E-B4: scores CSV, results unpublish, reinstate.
+    path("admin/", include(E_B7_ADMIN)),  # Parity E-B7: space and organisation event insights.
     path("admin/", include(ADMIN)),
     path("member/", include(MEMBER)),
     path("admin/", include(mentoring_completion)),

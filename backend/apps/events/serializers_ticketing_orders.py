@@ -2,6 +2,7 @@
 
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
+from apps.payments.money_fields import MoneyField
 
 from apps.accounts.pii_presentation import PiiMaskingSerializerMixin
 from apps.payments.pricing.serializers import PricingQuoteSerializer
@@ -12,7 +13,7 @@ from .models import EventOrder, EventOrderLine, EventOrderSeat
 class OrderTicketItemSerializer(serializers.Serializer):
     ticket_type_id = serializers.IntegerField(min_value=1)
     quantity = serializers.IntegerField(min_value=1, max_value=100)
-    amount = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=0, required=False,
+    amount = MoneyField(max_digits=13, decimal_places=3, min_value=0, required=False,
                                       help_text="Pay-what-you-want tickets only: the amount chosen.")
 
 
@@ -39,7 +40,7 @@ class OrderRequestSerializer(serializers.Serializer):
 
 class OrderQuoteResponseSerializer(serializers.Serializer):
     quote = PricingQuoteSerializer()
-    promo_saving = serializers.DecimalField(max_digits=12, decimal_places=2, allow_null=True)
+    promo_saving = MoneyField(max_digits=13, decimal_places=3, allow_null=True)
     seats = serializers.IntegerField()
     policy = serializers.JSONField()
 

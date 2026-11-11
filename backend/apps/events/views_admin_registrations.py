@@ -1,5 +1,5 @@
 from django.shortcuts import get_object_or_404
-from drf_spectacular.utils import OpenApiResponse, PolymorphicProxySerializer, extend_schema
+from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, PolymorphicProxySerializer, extend_schema
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -40,20 +40,43 @@ from apps.payments.models import Payment
 from .registration_view_errors import REGISTRATION_ACTION_ERRORS
 
 
+def _filtered_registrations(queryset, params):
+    """Decision 242 (EB5): status, ticket and name filters, so waitlisted and pending rows are findable."""
+    statuses = [value for value in (params.get("status") or "").split(",") if value in EventRegistration.Status.values]
+    if statuses:
+        queryset = queryset.filter(status__in=statuses)
+    if str(params.get("ticket_type", "")).isdigit():
+        queryset = queryset.filter(ticket_type_id=int(params["ticket_type"]))
+    term = (params.get("q") or "").strip()
+    if term:
+        from django.db.models import Q
+        queryset = queryset.filter(
+            Q(member__username__icontains=term) | Q(member__first_name__icontains=term)
+            | Q(member__last_name__icontains=term) | Q(member__email__icontains=term))
+    if params.get("group") == "ticket_type":
+        queryset = queryset.order_by("ticket_type_id", "created_at", "id")
+    return queryset
+
+
 class EventRegistrationListView(APIView):
     permission_classes = [IsActiveStaff]
 
     @extend_schema(
         tags=['Admin events'],
         summary='List event registrations',
+        description=('Decision 242 filters: `status` (one or a comma list), `ticket_type` (id) and `q` (member '
+                     'name, username or email). `group=ticket_type` orders by ticket type, then sign-up time.'),
+        parameters=[OpenApiParameter('status', str, required=False), OpenApiParameter('ticket_type', int, required=False),
+                    OpenApiParameter('q', str, required=False), OpenApiParameter('group', str, required=False, enum=['ticket_type'])],
         request=None,
         responses={200: EventRegistrationListResponseSerializer, **REGISTRATION_ACTION_ERRORS},
     )
     def get(self, request, pk, *args, **kwargs):
         event = _manageable_event(request.user, pk, MANAGE_REGISTRATIONS)
         queryset = annotate_registration_restore_history(
-            EventRegistration.objects.filter(event=event).order_by('created_at', 'id')
+            EventRegistration.objects.filter(event=event).select_related('ticket_type').order_by('created_at', 'id')
         )
+        queryset = _filtered_registrations(queryset, request.query_params)
         paginator = _RegistrationPagination()
         page = paginator.paginate_queryset(queryset, request, view=self)
         from .organization_audience import annotate_roster_eligibility

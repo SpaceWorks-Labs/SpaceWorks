@@ -1,4 +1,5 @@
 """RSVP deadlines have their own canonical identity, even with no stage forms."""
+from django.utils.translation import gettext
 from datetime import timedelta
 from django.utils import timezone
 from apps.events.hackathons.admission_models import HackathonApplication
@@ -47,7 +48,7 @@ def dispatch(space, schedule, message, now, local_tz):
         audience="member", dedup_key=f"event-rsvp:{schedule.pk}", source_kind="events.rsvp_deadline",
         source_id=str(row.pk), revision=str(row.decision_revision), subject=row,
         context={"rsvp_due_at": canonical_utc(row.rsvp_due_at)},
-        rendered={"subject": "Your event RSVP is due", "text": "Sign in to respond to your current offer.",
+        rendered=lambda: {"subject": gettext("Your event RSVP is due"), "text": gettext("Sign in to respond to your current offer."),
                   "link": f"/member/events/{row.event_id}"})
     return NotificationResult(True, {"envelope": 1})
 

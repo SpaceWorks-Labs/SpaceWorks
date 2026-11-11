@@ -165,6 +165,11 @@ def register(
     from .services_registration_admission import require_participant_ticket
     require_participant_ticket(locked, ticket)
     status = fresh_registration_status(locked, ticket)
+    from apps.managed_hosting.extra_quota_counters import month_start
+    from apps.managed_hosting.extra_quotas import check_extra_quota
+    # Decision 284: a cancelled row from this month is already counted when it registers again.
+    check_extra_quota(locked.makerspace, "event_registrations_monthly",
+                      adding=0 if existing and existing.created_at >= month_start() else 1)
     if existing and existing.status == EventRegistration.Status.CANCELLED:
         if member is None:
             existing.member = lock_obligation_owner(existing.member)

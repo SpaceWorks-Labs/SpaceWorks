@@ -15,7 +15,7 @@ SCOPE_RETRIES = 3
 
 
 @contextmanager
-def write_boundary(target, *, actor=None, account_ids=(), tenant_ids=()):
+def write_boundary(target, *, actor=None, account_ids=(), tenant_ids=(), nowait_makerspaces=False, additional_event_ids=()):
     """Discover without locks, then fence, lock resources, and revalidate scope.
 
     A series command declares every occurrence before taking the series lock.
@@ -26,7 +26,16 @@ def write_boundary(target, *, actor=None, account_ids=(), tenant_ids=()):
 
     is_series = isinstance(target, EventSeries)
     series_id = target.pk if is_series else Event.objects.values_list("series_id", flat=True).get(pk=target.pk)
-    event_ids = tuple(Event.objects.filter(series_id=series_id).order_by("pk").values_list("pk", flat=True)) if is_series else (target.pk,)
+    primary_ids = tuple(Event.objects.filter(series_id=series_id).order_by("pk").values_list("pk", flat=True)) if is_series else (target.pk,)
+    event_ids = primary_ids
+    if additional_event_ids:
+        if is_series:
+            raise ProgrammeConflict("scope_changed", "Write scope changed. Retry the whole command.")
+        requested_ids = set(primary_ids) | set(additional_event_ids)
+        event_ids = tuple(Event.objects.filter(pk__in=requested_ids, makerspace_id=target.makerspace_id).order_by("pk").values_list("pk", flat=True))
+        if set(event_ids) != requested_ids:
+            raise ProgrammeConflict("scope_changed", "Write scope changed. Retry the whole command.")
+    event_series = dict(Event.objects.filter(pk__in=event_ids).values_list("pk", "series_id")) if additional_event_ids else {}
     tenants, accounts = set(tenant_ids) | {target.makerspace_id}, set(account_ids)
     if actor is not None:
         accounts.add(actor.pk)
@@ -37,6 +46,8 @@ def write_boundary(target, *, actor=None, account_ids=(), tenant_ids=()):
     declaration = (tuple(sorted(tenants)), tuple(sorted(accounts)))
     held = _held.get()
     if held is not None:
+        if nowait_makerspaces:
+            raise ProgrammeConflict("scope_changed", "Start the decision as a fresh transaction.")
         if (not set(event_ids) <= held[0] or not tenants <= set(held[1][0])
                 or not accounts <= set(held[1][1])):
             raise ProgrammeConflict("scope_changed", "Write scope changed. Retry the whole command.")
@@ -51,16 +62,23 @@ def write_boundary(target, *, actor=None, account_ids=(), tenant_ids=()):
             stack.enter_context(boundary_tenant_write(tenant_id))
         stack.enter_context(transaction.atomic())
         stack.enter_context(fences(tenant_ids=declaration[0], account_ids=declaration[1]))
-        if series_id:
+        if additional_event_ids:
+            series_ids = sorted({value for value in event_series.values() if value is not None})
+            locked_series = list(EventSeries.objects.select_for_update().filter(pk__in=series_ids).order_by("pk"))
+            if len(locked_series) != len(series_ids):
+                raise ProgrammeConflict("scope_changed", "Write scope changed. Retry the whole command.")
+        elif series_id:
             EventSeries.objects.select_for_update().get(pk=series_id)
         events = list(Event.objects.select_for_update().filter(pk__in=event_ids).order_by("pk"))
-        if is_series and tuple(Event.objects.filter(series_id=series_id).order_by("pk").values_list("pk", flat=True)) != event_ids:
+        if additional_event_ids and {event.pk: event.series_id for event in events} != event_series:
+            raise ProgrammeConflict("scope_changed", "Write scope changed. Retry the whole command.")
+        if is_series and tuple(Event.objects.filter(series_id=series_id).order_by("pk").values_list("pk", flat=True)) != primary_ids:
             raise ProgrammeConflict("scope_changed", "Series occurrences changed. Retry the command.")
         for event in events:
             ts, ac = event_scopes(event_id=event.pk)
-            if not set(ts) <= tenants or not set(ac) <= accounts or (not is_series and event.series_id != series_id):
+            if not set(ts) <= tenants or not set(ac) <= accounts or (not is_series and event.pk == target.pk and event.series_id != series_id):
                 raise ProgrammeConflict("scope_changed", "Event participants changed. Retry the command.")
-        list(Makerspace.objects.select_for_update().filter(pk__in=tenants).order_by("pk"))
+        list(Makerspace.objects.select_for_update(nowait=nowait_makerspaces, of=("self",)).filter(pk__in=tenants).order_by("pk"))
         for event in events:
             ts, ac = event_scopes(event_id=event.pk)
             if not set(ts) <= tenants or not set(ac) <= accounts:

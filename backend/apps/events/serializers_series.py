@@ -1,10 +1,12 @@
 from collections.abc import Mapping
 
 from rest_framework import serializers
+from apps.payments.money_fields import MoneyField
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
 
 from apps.events.models import EventSeries
+from .venue import ADDRESS_MAX, validate_map_url
 from apps.forms_schema.serializers import CustomFormSchemaField
 from apps.inventory import public_image_storage
 
@@ -26,14 +28,17 @@ class EventSeriesWriteSerializer(serializers.Serializer):
     title = serializers.CharField(max_length=200)
     description = serializers.CharField(allow_blank=True, default="", required=False)
     location = serializers.CharField(allow_blank=True, default="", max_length=255, required=False)
+    venue_address = serializers.CharField(allow_blank=True, max_length=ADDRESS_MAX, required=False)
+    venue_map_url = serializers.CharField(allow_blank=True, max_length=500, required=False,
+                                          validators=[validate_map_url])
     location_kind = serializers.ChoiceField(
         choices=(('indoor', 'Indoor'), ('outdoor', 'Outdoor'), ('other', 'Other')),
         default="other", required=False,
     )
     custom_form = CustomFormSchemaField(allow_null=True, required=False)
     capacity = serializers.IntegerField(default=0, min_value=0, required=False)
-    payment_amount = serializers.DecimalField(
-        max_digits=12, decimal_places=2, min_value=0, default=0, required=False,
+    payment_amount = MoneyField(
+        max_digits=13, decimal_places=3, min_value=0, default=0, required=False,
     )
     registration_requires_approval = serializers.BooleanField(default=False, required=False)
     cancellation_cutoff_hours = serializers.IntegerField(
@@ -98,6 +103,17 @@ class EventSeriesDetailSerializer(OrganizationAudienceFields, EventSeriesSummary
     created_by_id = serializers.IntegerField(allow_null=True, read_only=True)
     image_url = serializers.SerializerMethodField()
     organization_audience_enabled = serializers.SerializerMethodField()
+    money = serializers.SerializerMethodField()
+
+    @extend_schema_field(serializers.JSONField(allow_null=True))
+    def get_money(self, obj):
+        """Parity C24: the series money card (per currency, over every occurrence), or null when the viewer may
+        not see event money or the space tracks no event payments."""
+        request = self.context.get("request")
+        if request is None or request.method != "GET":
+            return None  # reading the ledger is for the detail read, not every mutation response
+        from apps.operations.reports_events_money import series_money
+        return series_money(obj.makerspace, obj, request.user)
 
     @extend_schema_field(serializers.BooleanField())
     def get_organization_audience_enabled(self, obj):
@@ -107,11 +123,11 @@ class EventSeriesDetailSerializer(OrganizationAudienceFields, EventSeriesSummary
     class Meta(EventSeriesSummarySerializer.Meta):
         fields = EventSeriesSummarySerializer.Meta.fields + (
             "participating_organizations", "audience_label", "organization_admission_blocked", "organization_audience_enabled",
-            "website_enabled", "description", "location", "location_kind", "custom_form", "capacity",
+            "website_enabled", "description", "location", "location_kind", "venue_address", "venue_map_url", "custom_form", "capacity",
             "payment_amount", "registration_requires_approval", "registration_audience",
             "cancellation_cutoff_hours",
             "registration_cutoff_lead_minutes", "is_public", "listing", "created_by_id", "created_at",
-            "image_url",
+            "image_url", "money",
         )
 
     @extend_schema_field(OpenApiTypes.URI)

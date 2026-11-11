@@ -3,6 +3,7 @@ venue fees, orders and desk collection."""
 
 from django.utils.translation import gettext
 from rest_framework import serializers
+from apps.payments.money_fields import MoneyField
 
 from apps.accounts.pii_presentation import PiiMaskingSerializerMixin
 from apps.payments.models import ManualSettlement
@@ -69,7 +70,7 @@ class EventRefundPolicyInputSerializer(serializers.Serializer):
     full_before_minutes = serializers.IntegerField(min_value=0, max_value=525600)
     partial_before_minutes = serializers.IntegerField(min_value=0, max_value=525600)
     partial_percent = serializers.IntegerField(min_value=0, max_value=100)
-    cancellation_fee = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=0)
+    cancellation_fee = MoneyField(max_digits=13, decimal_places=3, min_value=0)
     policy_text = serializers.CharField(max_length=2000, required=False, allow_blank=True, default="")
 
 
@@ -86,7 +87,7 @@ class VenueFeeInputSerializer(serializers.Serializer):
     room_id = serializers.IntegerField(min_value=1, required=False, allow_null=True)
     mode = serializers.ChoiceField(choices=EventVenueFee.Mode.choices)
     basis = serializers.ChoiceField(choices=EventVenueFee.Basis.choices, default="flat")
-    amount = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=0, required=False, allow_null=True)
+    amount = MoneyField(max_digits=13, decimal_places=3, min_value=0, required=False, allow_null=True)
 
 
 class VenueFeeSerializer(PiiMaskingSerializerMixin, serializers.ModelSerializer):

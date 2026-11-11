@@ -77,6 +77,7 @@ class EventOfflineSyncView(APIView):
             actor=request.user,
             source=EventCheckInEvent.Source.OFFLINE_SYNC,
             session_id=lease["lease_id"],
+            badge_receipts=serializer.validated_data.get("badge_receipts"),
         )
         response = Response(OfflineCheckInSyncResponseSerializer(payload).data)
         response["Cache-Control"] = "private, no-store"

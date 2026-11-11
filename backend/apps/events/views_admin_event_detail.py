@@ -24,6 +24,7 @@ from apps.events.serializers_admin import (
 )
 from apps.admin_api.serializers_payment_summary import scoped_payment_context
 from apps.events import services
+from apps.events.serializers_venue_offers import EventAdminWithOffersSerializer, with_offers
 from apps.events.models import Event, EventRegistration
 from apps.events import event_authority
 from apps.events.event_permissions import EDIT_DETAILS, PUBLISH_SCHEDULE, VIEW
@@ -126,7 +127,7 @@ class EventDetailView(APIView):
         responses={200: EventAdminSerializer, **EVENT_SCOPED_ERRORS},
     )
     def get(self, request, pk, *args, **kwargs):
-        return Response(EventAdminSerializer(_manageable_event(request.user, pk, VIEW), context={"request": request}).data)
+        return Response(EventAdminSerializer(_manageable_event(request.user, pk, VIEW), context={"request": request, "with_my_limit": True}).data)
 
     @extend_schema(
         tags=['Admin events'],
@@ -134,7 +135,7 @@ class EventDetailView(APIView):
         request=EventWriteSerializer,
         parameters=[PREVIEW_PARAMETER],
         responses={
-            200: EventAdminSerializer,
+            200: EventAdminWithOffersSerializer,
             400: EVENT_ERROR_400,
             409: EVENT_ERROR_409,
     423: OpenApiResponse(ErrorSerializer, description="Source or protected writes are fenced."),
@@ -171,7 +172,23 @@ class EventDetailView(APIView):
             from .online_delivery import set_online
             event = set_online(event, actor=request.user, delivery_mode=online.get("delivery_mode"),
                                join_url_value=online.get("join_url"))
-        return Response(EventAdminSerializer(event, context={"request": request}).data)
+        if fields & schedule_fields:  # decision 223 (m): a move returns offers to move the room, never acts
+            return Response(with_offers(request, event))
+        return Response(EventAdminSerializer(event, context={"request": request, "with_my_limit": True}).data)
+
+
+    @extend_schema(
+        tags=['Admin events'],
+        summary='Delete an empty draft event',
+        description='Only a draft with no registrations, ticket orders or charges can be deleted; '
+                    'anything else must be cancelled so its history stays on the record.',
+        request=None,
+        responses={204: None, **EVENT_SCOPED_ERRORS, 409: EVENT_ERROR_409},
+    )
+    def delete(self, request, pk, *args, **kwargs):
+        from .services_deletion import delete_draft
+        delete_draft(_manageable_event(request.user, pk, VIEW), actor=request.user)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 def _prepared(request, pk):
@@ -191,7 +208,7 @@ class _EventActionView(APIView):
         event = _manageable_event(request.user, pk, PUBLISH_SCHEDULE)
         _validate_empty_action(request)
         event = self.operation(event, actor=request.user)
-        return Response(EventAdminSerializer(event, context={"request": request}).data)
+        return Response(EventAdminSerializer(event, context={"request": request, "with_my_limit": True}).data)
 
 
 class EventPublishView(_EventActionView):
@@ -208,7 +225,7 @@ class EventPublishView(_EventActionView):
         serializer = EventWebsitePublishInput(data=request.data)
         serializer.is_valid(raise_exception=True)
         event = services.publish(event, actor=request.user, **serializer.validated_data)
-        return Response(EventAdminSerializer(event, context={"request": request}).data)
+        return Response(EventAdminSerializer(event, context={"request": request, "with_my_limit": True}).data)
 
 
 class EventCancelView(_EventActionView):
@@ -218,10 +235,13 @@ class EventCancelView(_EventActionView):
         tags=['Admin events'],
         summary='Cancel an event',
         request=EmptyActionSerializer,
-        responses={200: EventAdminSerializer, **EVENT_SCOPED_ERRORS, 409: EVENT_ERROR_409},
+        responses={200: EventAdminWithOffersSerializer, **EVENT_SCOPED_ERRORS, 409: EVENT_ERROR_409},
     )
     def post(self, request, pk, *args, **kwargs):
-        return self.execute(request, pk)
+        event = _manageable_event(request.user, pk, PUBLISH_SCHEDULE)
+        _validate_empty_action(request)
+        event = services.cancel(event, actor=request.user)
+        return Response(with_offers(request, event))  # decision 223 (m): offers, never automatic action
 
 
 class EventCompleteView(_EventActionView):

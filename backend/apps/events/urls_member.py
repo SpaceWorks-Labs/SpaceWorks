@@ -25,6 +25,7 @@ from apps.events.views_calendar import MemberEventCalendarFeedView, MemberEventC
 
 from .views_registration_calendar import MemberEventRegistrationCalendarView
 from .views_event_history import MemberEventHistoryView
+from .views_equipment_desk import MemberEventEquipmentView
 from .views_speakers import MemberSpeakerClaimView
 
 urlpatterns = [
@@ -33,6 +34,8 @@ urlpatterns = [
     path("event-speaker-claims/", MemberSpeakerClaimView.as_view(), name="member-event-speaker-claim"),
     path("makerspaces/<int:makerspace_id>/event-registrations/<int:pk>/calendar.ics",
          MemberEventRegistrationCalendarView.as_view(), name="member-event-registration-calendar"),
+    path('makerspaces/<int:makerspace_id>/event-registrations/<int:pk>/equipment/',
+         MemberEventEquipmentView.as_view(), name='member-event-equipment'),
     path('makerspaces/<int:makerspace_id>/event-registrations/<int:pk>/ticket/',
          MemberEventTicketView.as_view(), name='member-event-ticket'),
     path('makerspaces/<int:makerspace_id>/event-registrations/<int:pk>/ticket.png',

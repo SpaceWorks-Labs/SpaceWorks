@@ -21,7 +21,7 @@ def update_image(series, actor, object_key):
         locked.makerspace_id, object_key, series_id=locked.pk
     ):
         raise ValidationError({"object_key": gettext("This image is already in use.")})
-    limits.add_storage(locked.makerspace, new_size or 0)
+    limits.charge_upload(locked.makerspace, new_size or 0)
     if old_key:
         public_image_storage.release_public_image_on_commit(locked.makerspace, old_key)
     locked.image_key = object_key

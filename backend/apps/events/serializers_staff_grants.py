@@ -36,6 +36,11 @@ class StaffGrantInviteInputSerializer(StaffGrantPermissionsSerializer):
     email = serializers.EmailField(required=False, allow_blank=True, default="")
     send_email = serializers.BooleanField(default=False)
     role_label = serializers.ChoiceField(choices=RoleLabel.choices, allow_blank=True, default="")
+    # Decision 221(i): omitted, a limited co-organizer's invite inherits their own limit; wider is refused.
+    track_ids = serializers.ListField(child=serializers.IntegerField(min_value=1), required=False, default=list,
+                                      max_length=50)
+    valid_from = serializers.DateTimeField(required=False, allow_null=True, default=None)
+    valid_until = serializers.DateTimeField(required=False, allow_null=True, default=None)
 
 
 class StaffGrantSerializer(serializers.ModelSerializer):
@@ -49,8 +54,8 @@ class StaffGrantSerializer(serializers.ModelSerializer):
 class StaffGrantInviteSerializer(serializers.ModelSerializer):
     class Meta:
         model = EventStaffGrantInvite
-        fields = ("id", "makerspace", "event", "series", "permissions", "role_label", "created_by",
-                  "created_at", "expires_at", "redeemed_at", "revoked_at")
+        fields = ("id", "makerspace", "event", "series", "permissions", "role_label", "track_ids",
+                  "valid_from", "valid_until", "created_by", "created_at", "expires_at", "redeemed_at", "revoked_at")
         read_only_fields = fields
 
 

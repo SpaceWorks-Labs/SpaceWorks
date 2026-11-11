@@ -27,7 +27,7 @@ def create_event(
     registration_audience=None, category_id=None, tags=None, show_registration_count=True,
     organization_ids=None, collaborator_slugs=None, audience_organization_ids=None, accent_preset="",
     listing=Event.Listing.LISTED, page_state=Event.PageState.LIVE, delivery_mode=Event.DeliveryMode.IN_PERSON,
-    join_url="",
+    join_url="", venue_address="", venue_map_url="",
 ):
     """Create a draft; organizers, partners and audience land in the SAME transaction.
 
@@ -52,7 +52,7 @@ def create_event(
         starts_at=starts_at,
         ends_at=ends_at,
         location=location,
-        location_kind=location_kind,
+        location_kind=location_kind, venue_address=venue_address, venue_map_url=venue_map_url,
         custom_form=_canonical_form(custom_form),
         capacity=capacity,
         payment_amount=payment_amount,
@@ -179,7 +179,7 @@ def update_event(event, *, actor, inherit_fields=(), **changes):
         locked.status == Event.Status.PUBLISHED
         and old_ends_at < now <= locked.ends_at
     ):
-        limits.check_quota(locked.makerspace, "events", adding=1)
+        limits.check_quota(locked.makerspace, "events", adding=1, count_monthly=False)  # same event, already counted
 
     if "registration_audience" in changes:
         # Explicit local review resumes admission for existing waiters in this transaction.
@@ -211,6 +211,11 @@ def update_event(event, *, actor, inherit_fields=(), **changes):
             date_changed_locked(event=locked, actor=actor, locks=current_locks(locked.pk))
         if set(changes) & CALENDAR_EVENT_FIELDS:
             calendar_event_changed(locked)
+        if (locked.starts_at, locked.ends_at) != (previous_date_source[0], old_ends_at):
+            from .linked_change_notices import event_changed  # decision 216: flag, never move the booking
+            event_changed(locked, "moved")
+            from .guest_pass_event_changes import schedule_moved  # audit M5: passes follow the new dates
+            schedule_moved(locked)
         if "image_key" in inherit_fields and old_image_key:
             from apps.inventory import public_image_storage
 

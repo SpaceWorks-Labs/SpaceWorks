@@ -15,6 +15,7 @@ from apps.makerspaces.guards import require_module_locked
 from apps.operations.cancellation_restore import record_cancellation
 
 
+from . import pay_window
 from .registration_locks import _boundary, _lock_registration
 from .services_registration_fences import _fence
 from .services_write_boundary import event_write
@@ -57,7 +58,7 @@ def _promote(event, actor, waiters, count=None, *, mode):
         registration.version += 1
         registration.save(update_fields=["status", "version"])
         calendar_registration_changed(registration)
-        create_for_registered_registration(registration, actor)
+        pay_window.open_for(registration, create_for_registered_registration(registration, actor), actor)
         from .services_registration_preparation import issue_ordinary_credential_locked
         issue_ordinary_credential_locked(event, registration, actor=actor)
         meta = {"registration_id": registration.pk, "promotion_mode": mode}
@@ -110,7 +111,7 @@ def approve_registration(registration, *, actor):
     locked.save(update_fields=["status", "version"])
     calendar_registration_changed(locked)
     if new_status == EventRegistration.Status.REGISTERED:
-        create_for_registered_registration(locked, actor)
+        pay_window.open_for(locked, create_for_registered_registration(locked, actor), actor)
         from .services_registration_preparation import issue_ordinary_credential_locked
         issue_ordinary_credential_locked(event, locked, actor=actor)
     services._audit(
@@ -189,11 +190,12 @@ def promote_registration(registration, *, actor):
 
 @event_write(permission="manage_registrations")
 def reaccept_registration(registration, *, actor):
-    """Re-accept a declined (rejected) registration (lane L21a, X42).
+    """Re-accept a declined (rejected) registration (lane L21a, X42; parity E-B5, B16).
 
-    The seat is checked under the event lock like any admission; a full event refuses
-    rather than overbooking. A paid registration goes back through the charge and the
-    payment-link path, exactly as a first approval does.
+    The seat is checked under the event lock like any admission. A full event never overbooks: the
+    guest joins the END of the waitlist instead, and is offered a place in turn like anyone waiting.
+    A paid registration goes back through the charge and the payment-link path exactly as a first
+    approval does, and gets the 24-hour pay window when `events.pay_window` is on.
     """
     services = _boundary()
     event = services._locked_event(registration.event_id, lock_makerspace=False)
@@ -206,12 +208,22 @@ def reaccept_registration(registration, *, actor):
     require_queued_admission(event, locked)
     available = registration_spots_left(event, locked.ticket_type)
     if available is not None and available <= 0:
-        raise CapacityConflict("No event capacity is available.")
+        locked.status = EventRegistration.Status.WAITLISTED
+        locked.waitlist_position_at = timezone.now()  # the tail of the queue, never ahead of anyone waiting
+        locked.version += 1
+        locked.save(update_fields=["status", "version", "waitlist_position_at"])
+        calendar_registration_changed(locked)
+        services._audit(event, actor, "event.registration_reaccepted", locked, {
+            "registration_id": locked.pk, "old_status": EventRegistration.Status.REJECTED,
+            "new_status": EventRegistration.Status.WAITLISTED, "payment_id": None})
+        services.notify_event_lifecycle(event, "registration_approved", locked.pk)
+        return services._refresh(locked)
     locked.status = EventRegistration.Status.REGISTERED
     locked.version += 1
     locked.save(update_fields=["status", "version"])
     calendar_registration_changed(locked)
     payment = create_for_registered_registration(locked, actor)
+    pay_window.open_for(locked, payment, actor)
     from .services_registration_preparation import issue_ordinary_credential_locked
     issue_ordinary_credential_locked(event, locked, actor=actor)
     services._audit(event, actor, "event.registration_reaccepted", locked, {

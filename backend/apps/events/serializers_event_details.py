@@ -31,12 +31,13 @@ class EventAttendanceMarkSerializer(serializers.Serializer):
 
 
 from .serializers_event_authority import EventAuthorityFields
+from .serializers_my_limit import EventMyLimitField
 
 
 from .serializers_organization_audience import OrganizationAudienceFields
 
 
-class EventAdminSerializer(EventPublicSurfaceFields, OrganizationAudienceFields, EventAuthorityFields,
+class EventAdminSerializer(EventPublicSurfaceFields, OrganizationAudienceFields, EventAuthorityFields, EventMyLimitField,
                            serializers.ModelSerializer):
     can_duplicate = serializers.SerializerMethodField(
         help_text="Whether the actor has tenant event-management authority to duplicate this event.",
@@ -46,6 +47,8 @@ class EventAdminSerializer(EventPublicSurfaceFields, OrganizationAudienceFields,
     report_features = serializers.SerializerMethodField()
     ticketing_features = serializers.SerializerMethodField()
     makerspace_id = serializers.IntegerField(read_only=True)
+    # Open items A19/A20: the venue's slug, so a cross-space drawer can load that space's switches.
+    makerspace_slug = serializers.SerializerMethodField()
     created_by_id = serializers.IntegerField(allow_null=True, read_only=True)
     registration_counts = serializers.SerializerMethodField()
     image_url = serializers.SerializerMethodField()
@@ -55,13 +58,15 @@ class EventAdminSerializer(EventPublicSurfaceFields, OrganizationAudienceFields,
     registration_open = serializers.SerializerMethodField()
     series_summary = serializers.SerializerMethodField()
     offline_checkin_enabled = serializers.SerializerMethodField()
+    currency = serializers.SerializerMethodField(
+        help_text="Lowercase ISO code the space charges in; `payment_amount` is in this currency.")
 
     class Meta(OrganizationAudienceFields.Meta):
         model = Event
         fields = (
             'participating_organizations', 'audience_label', 'organization_admission_blocked',
-            'id', 'staff_permissions', 'can_manage_staff', 'can_duplicate',
-            'makerspace_id', 'ticketing_features',
+            'id', 'staff_permissions', 'can_manage_staff', 'my_limit', 'can_duplicate',
+            'makerspace_id', 'makerspace_slug', 'ticketing_features',
             'broadcasts_enabled', 'report_features', 'badge_sensitive_fields_allowed',
             'series_summary',
             'series_revision',
@@ -72,10 +77,10 @@ class EventAdminSerializer(EventPublicSurfaceFields, OrganizationAudienceFields,
             'ends_at',
             'timezone_name', 'accent_preset',
             'location',
-            'location_kind',
+            'location_kind', 'venue_address', 'venue_map_url',
             'custom_form',
             'capacity',
-            'payment_amount',
+            'payment_amount', 'currency',
             'registration_requires_approval',
             'registration_audience', 'category_id', 'tags',
             'cancellation_cutoff_hours',
@@ -161,7 +166,16 @@ class EventAdminSerializer(EventPublicSurfaceFields, OrganizationAudienceFields,
             modules[obj.makerspace_id] = module_enabled(obj.makerspace, "reports")
         if not modules[obj.makerspace_id]:
             return []
-        if not self._report_allowed(actor, obj.makerspace_id):
+        # Decision 248 / EB1: a grantee (co-organizer) with manage_registrations on THIS event gets this event's
+        # analytics and registration export; the report routes re-check the grant per event. The PDF stays
+        # with the managers because its authority is the event manager's alone.
+        tenant_reader = self._report_allowed(actor, obj.makerspace_id)
+        if not tenant_reader and not manager:
+            keys = ["analytics"]
+            if self._feature_enabled(obj, "reports.event_exports"):
+                keys.append("exports")
+            return keys
+        if not tenant_reader:
             return []
         keys = ["analytics"]
         if self._feature_enabled(obj, "reports.event_exports"):
@@ -203,6 +217,21 @@ class EventAdminSerializer(EventPublicSurfaceFields, OrganizationAudienceFields,
     @extend_schema_field(serializers.BooleanField())
     def get_registration_open(self, obj):
         return registration_is_open(obj, timezone.now())
+
+    @extend_schema_field(serializers.CharField())
+    def get_makerspace_slug(self, obj) -> str:
+        # One lookup per venue on a page, like the currency below.
+        cache = self.context.setdefault("event_space_slug", {})
+        if obj.makerspace_id not in cache:
+            cache[obj.makerspace_id] = obj.makerspace.slug
+        return cache[obj.makerspace_id]
+
+    def get_currency(self, obj):
+        from apps.payments.models import MakerspacePaymentSettings
+        cache = self.context.setdefault("event_currency", {})
+        if obj.makerspace_id not in cache:
+            cache[obj.makerspace_id] = MakerspacePaymentSettings.for_makerspace(obj.makerspace).default_currency
+        return cache[obj.makerspace_id]
 
     @extend_schema_field(serializers.BooleanField())
     def get_offline_checkin_enabled(self, obj):

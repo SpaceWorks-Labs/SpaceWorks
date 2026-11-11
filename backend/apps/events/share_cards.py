@@ -71,19 +71,19 @@ def render_png(event):
     image = Image.new("RGB", (WIDTH, HEIGHT), BG)
     draw = ImageDraw.Draw(image)
     draw.rounded_rectangle((48, 48, WIDTH - 48, HEIGHT - 120), radius=28, fill=PANEL, outline=(213, 208, 198), width=2)
-    draw.text((96, 92), event.makerspace.name[:60], font=_font("Gilroy-SemiBold.ttf", 30), fill=MUTED)
-    title_font = _font("Gilroy-Bold.ttf", 64)
+    draw.text((96, 92), event.makerspace.name[:60], font=_font("Outfit-600.ttf", 30), fill=MUTED)
+    title_font = _font("Gilroy-ExtraBold.otf", 64)
     y = 150
     for line in textwrap.wrap(event.title, width=28)[:3]:
         draw.text((96, y), line, font=title_font, fill=INK)
         y += 76
     when, where, chip = _lines(event)
-    detail_font = _font("Gilroy-Medium.ttf", 32)
+    detail_font = _font("Outfit-500.ttf", 32)
     draw.text((96, y + 18), when, font=detail_font, fill=INK)
     if where:
         draw.text((96, y + 66), where, font=detail_font, fill=MUTED)
     if chip:
-        chip_font = _font("Gilroy-SemiBold.ttf", 26)
+        chip_font = _font("Outfit-600.ttf", 26)
         width = int(draw.textlength(chip, font=chip_font)) + 40
         draw.rounded_rectangle((WIDTH - 96 - width, 92, WIDTH - 96, 136), radius=22, fill=(224, 238, 236))
         draw.text((WIDTH - 96 - width + 20, 98), chip, font=chip_font, fill=INK)

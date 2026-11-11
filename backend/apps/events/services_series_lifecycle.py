@@ -27,7 +27,9 @@ def publish_series(series, *, actor):
     events = list(Event.objects.filter(
         series=locked, status=Event.Status.DRAFT, ends_at__gte=timezone.now()
     ).order_by("pk"))
-    limits.check_quota(locked.makerspace, "events", adding=len(events))
+    from apps.managed_hosting.extra_quota_counters import month_start
+    older = sum(1 for event in events if event.created_at < month_start())  # this month's drafts already count
+    limits.check_quota(locked.makerspace, "events", adding=len(events), monthly_adding=older)
     now = timezone.now()
     Event.objects.filter(pk__in=[event.pk for event in events]).update(
         status=Event.Status.PUBLISHED,

@@ -17,6 +17,7 @@ class EventRegistrationAdminSerializer(PaymentSummaryMixin, serializers.ModelSer
     custom_answers = serializers.JSONField(read_only=True, allow_null=True)
     event_id = serializers.IntegerField(read_only=True)
     ticket_type_id = serializers.IntegerField(read_only=True, allow_null=True)
+    ticket_type_name = serializers.SerializerMethodField(help_text="Decision 248: the ticket's name, so the list shows it without a second call.")
     no_longer_eligible = serializers.BooleanField(read_only=True, default=False)
     payment = serializers.SerializerMethodField()
     restore_until = serializers.SerializerMethodField()
@@ -28,10 +29,15 @@ class EventRegistrationAdminSerializer(PaymentSummaryMixin, serializers.ModelSer
         model = EventRegistration
         fields = (
             'no_longer_eligible', 'id', 'event_id', 'name', 'email', 'phone', 'custom_answers',
-            'status', 'created_at', 'payment', 'ticket_type_id', 'quoted_amount', 'discount_amount',
+            'status', 'created_at', 'payment', 'ticket_type_id', 'ticket_type_name', 'quoted_amount', 'discount_amount',
             'cancelled_at', 'status_before_cancel', 'restore_until', 'is_crew', 'attendance_reply',
+            'pay_by',  # Parity E-B5/E-F3: the end of an open pay window, shown beside the guest.
         )
         read_only_fields = fields
+
+    @extend_schema_field(serializers.CharField(allow_null=True))
+    def get_ticket_type_name(self, obj):
+        return obj.ticket_type.name if obj.ticket_type_id else None
 
     @extend_schema_field(AttendanceReplySummarySerializer(allow_null=True))
     def get_attendance_reply(self, obj):

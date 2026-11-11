@@ -52,12 +52,22 @@ ADAPTER = lifecycle.GrantAdapter(
 )
 
 
-def create_invite(target, *, actor, permissions, email="", send_email=False, role_label=""):
+def create_invite(target, *, actor, permissions, email="", send_email=False, role_label="",
+                  track_ids=(), valid_from=None, valid_until=None):
     from .services_write_boundary import write_boundary
+    from . import staff_grant_limits as limits
     with write_boundary(target, actor=actor):
-        return lifecycle.create_invite(
-            ADAPTER, target, actor=actor, permissions=permissions, email=email,
-            send=_send_invite if send_email else None, label=role_label)
+        # Decision 221(i): a limited co-organizer's invite inherits (or narrows) their own limit.
+        tracks, start, end = limits.resolve(actor=actor, event=target, permissions=permissions,
+                                            track_ids=track_ids, valid_from=valid_from, valid_until=valid_until)
+        with limits.limit_in_play(tracks, start, end):
+            row, token = lifecycle.create_invite(
+                ADAPTER, target, actor=actor, permissions=permissions, email=email,
+                send=_send_invite if send_email else None, label=role_label)
+        if tracks or start or end:
+            row.track_ids, row.valid_from, row.valid_until = tracks, start, end
+            row.save(update_fields=["track_ids", "valid_from", "valid_until"])
+        return row, token
 
 
 def update_permissions(grant, *, actor, permissions, role_label=None):
@@ -103,7 +113,9 @@ def redeem_invite(token, *, actor, makerspace_id=None):
         try:
             with write_boundary(_target(invite), actor=actor,
                                 account_ids=tuple(x for x in (invite.created_by_id,) if x)):
-                return lifecycle.redeem_invite(ADAPTER, token, actor=actor, makerspace_id=makerspace_id)
+                from .staff_grant_limits import limit_in_play
+                with limit_in_play(invite.track_ids, invite.valid_from, invite.valid_until):
+                    return lifecycle.redeem_invite(ADAPTER, token, actor=actor, makerspace_id=makerspace_id)
         except ProgrammeConflict as exc:
             if attempt + 1 == attempts or str(exc.detail.get("code")) != "scope_changed":
                 raise

@@ -1,4 +1,5 @@
 import { t } from "@lingui/core/macro";
+import { reportFieldLabel } from "../reportFieldLabels";
 /** Wire contract for catalog chart_spec. All field names refer to typed report rows. */
 export type ChartSpec = {
   kind: "bar" | "line" | "stacked_bar" | "pie" | "multi_line" | "heatmap" | "funnel" | "histogram";
@@ -57,7 +58,7 @@ export function toChartData(spec: ChartSpec, rows: readonly ChartRecord[]): Char
       const id = JSON.stringify([identity, field.field, panelKey]);
       let series = groups.get(id);
       if (!series) {
-        series = { id, label: [...identity, field.label ?? field.field].join(" · "), unit, currency, partition,
+        series = { id, label: [...identity, field.label ?? reportFieldLabel(field.field)].join(" · "), unit, currency, partition,
           valueField: field.field, dimensions: identity, panelKey, points: [] };
         groups.set(id, series);
       }
@@ -90,14 +91,14 @@ export function toChartData(spec: ChartSpec, rows: readonly ChartRecord[]): Char
       return (spec.x.kind !== "time" && spec.sort?.direction === "desc" ? -1 : 1) * difference || compare(a.x, b.x);
     });
   }
-  return { series, summary: chartSummary(spec, series), xKind: spec.x.kind, xLabel: spec.x.label ?? spec.x.field };
+  return { series, summary: chartSummary(spec, series), xKind: spec.x.kind, xLabel: spec.x.label ?? reportFieldLabel(spec.x.field) };
 }
 
 /** Recompute after panel partitioning so summaries describe only the displayed data. */
 export function chartSummary(spec: ChartSpec, series: ChartSeries[]) {
   const replacements: Record<string, string> = {
     series: String(series.length), points: String(series.reduce((sum, item) => sum + item.points.length, 0)),
-    x: spec.x.label ?? spec.x.field, units: [...new Set(series.map((item) => [item.unit, item.currency].filter(Boolean).join(" ")))].join(", "),
+    x: spec.x.label ?? reportFieldLabel(spec.x.field), units: [...new Set(series.map((item) => [item.unit, item.currency].filter(Boolean).join(" ")))].join(", "),
   };
   return spec.alt_text_template.replace(/\{(series|points|x|units)\}/g, (_, key: string) => replacements[key]);
 }

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { EmptyState, ErrorText, ListRow, Modal, OverflowMenu, StatusPill } from "../../../components/ui";
 import type { StaffMembershipRow, StaffRole } from "./rolesApi";
 import { RoleSetPicker } from "./RoleSetPicker";
+import { membershipRoleLabel } from "../../members/membershipLabels";
 
 export function UsersTable({ rows, makerspaceNames, loading, assignableRoles, onRestrict, onRestore, onResetPassword, onRevoke, onChangeRole, onMachineTypes }: {
   rows: StaffMembershipRow[];
@@ -77,9 +78,9 @@ function ChangeRoleModal({ target, roleIds, roles, pending, error, onClose, onCh
 
 function AccessBadge({ status }: { status: string }) {
   const tone = status === "active" ? "success" : status === "restricted" ? "warn" : "danger";
-  return <StatusPill tone={tone} label={status.replace(/_/g, " ")} />;
+  return <StatusPill tone={tone} label={status === "active" ? t`Active` : status === "restricted" ? t`Restricted` : status === "suspended" ? t`Suspended` : status.replace(/_/g, " ")} />;
 }
 
 function roleLabel(membership: StaffMembershipRow) {
-  return membership.roles.map((role) => role.name).join(" + ") || membership.role.replace(/_/g, " ");
+  return membership.roles.map((role) => role.name).join(" + ") || membershipRoleLabel(membership.role);
 }

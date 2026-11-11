@@ -21,8 +21,8 @@ export function ChartFrame({ title, data, children }: ChartProps & { children: R
       </button>
       {table && <div id={`${id}-table`} className="overflow-x-auto">
         <table tabIndex={0} className={`w-full text-left text-sm ${focusClass}`}>
-          <caption>{title} data</caption>
-          <thead><tr>{["Series", data.xLabel, "Value", "Unit", "Currency", "Partition"].map((header) => <th key={header} scope="col" className="p-2">{header}</th>)}</tr></thead>
+          <caption>{t`${title} data`}</caption>
+          <thead><tr>{[t`Series`, data.xLabel, t`Value`, t`Unit`, t`Currency`, t`Partition`].map((header) => <th key={header} scope="col" className="p-2">{header}</th>)}</tr></thead>
           <tbody>{data.series.flatMap((series) => series.points.map((point, index) => <tr key={`${series.id}-${index}`}>
             <th scope="row" className="p-2">{series.label}</th><td className="p-2">{point.label}</td>
             <td className="p-2 tabular-nums">{point.value}</td><td className="p-2">{series.unit}</td>

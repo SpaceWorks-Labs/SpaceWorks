@@ -13,6 +13,7 @@ import { useUrlListState } from "../../../lib/useUrlListState";
 import { usePaginatedQuery } from "../../../lib/usePaginatedQuery";
 import { type Makerspace, useStaffGet } from "./shared";
 import { invalidateInventoryViews } from "../queryInvalidation";
+import { stocktakeStatusLabel } from "./operationsLabels";
 
 type ContainerOption = { id: number; label: string; location?: string };
 type StocktakeRow = { variance_threshold?: number | null; approval_required?: boolean; id: number; status: string; notes: string; container: number | null; started_at?: string; blind?: boolean; lines?: { variance_quantity: number | null }[] };
@@ -86,8 +87,8 @@ export function StocktakePanel({ makerspace, isSuperadmin = false, canConfigure 
     <ErrorText message={actionError} />
   </>;
   if (openId) return <><DetailLayout title={selected?.notes || t`Stocktake session`} back={{ label: t`All counts`, onClick: close }}
-    identity={{ kind: "icon", icon: "Circle", tone: "accent" }} status={selected ? <StatusPill label={selected.status.replace(/_/g, " ")} /> : undefined}
-    meta={selected ? [`#${selected.id}`, selected.started_at ? <>{t`Started `}<RelativeTime date={selected.started_at} /></> : "", selected.blind ? "Blind count" : "Expected shown"] : undefined}
+    identity={{ kind: "icon", icon: "Circle", tone: "accent" }} status={selected ? <StatusPill label={stocktakeStatusLabel(selected.status)} /> : undefined}
+    meta={selected ? [`#${selected.id}`, selected.started_at ? <>{t`Started `}<RelativeTime date={selected.started_at} /></> : "", selected.blind ? t`Blind count` : t`Expected shown`] : undefined}
     state={inventoryQueryState(session, "this count")} actions={{ primary: selected ? nextAction(selected) : undefined }}
     main={<CountSection makerspace={makerspace} stocktakeId={openId} readOnly={selected ? !canCount(selected.status) : undefined} />} />{detail}</>;
   return <ListLayout header={{ title: t`Stocktake`, subtitle: t`Count what's on the shelves and fix the numbers.`, primary: add,
@@ -96,11 +97,11 @@ export function StocktakePanel({ makerspace, isSuperadmin = false, canConfigure 
     state={inventoryQueryState(stocktakes, "stocktake sessions")} isEmpty={!stocktakes.results.length} filtered={Boolean(list.values.status)}
     empty={{ message: t`No counts yet. Start a count to check the shelves against the system.`, action: add }}
     filteredEmpty={{ message: list.values.status === "completed" ? t`Nothing waiting for approval.` : t`No counts in this stage.`, action: { label: t`Clear filters`, href: href("") } }}
-    tabs={["", "draft", "counting", "completed", "approved", "applied", "cancelled"].map(key => ({ key, label: ({ "": "All", draft: "Draft", counting: "Counting", completed: "Needs approval", approved: "Ready to apply", applied: "Applied", cancelled: "Cancelled" } as Record<string, string>)[key], href: href(key) }))} activeTab={list.values.status}
+    tabs={["", "draft", "counting", "completed", "approved", "applied", "cancelled"].map(key => ({ key, label: ({ "": t`All`, draft: t`Draft`, counting: t`Counting`, completed: t`Needs approval`, approved: t`Ready to apply`, applied: t`Applied`, cancelled: t`Cancelled` } as Record<string, string>)[key], href: href(key) }))} activeTab={list.values.status}
     body={{ kind: "rows", rows: stocktakes.results.map(row => <ListRow key={row.id} title={row.notes || t`Count of ${containers.data?.results.find(container => container.id === row.container)?.label ?? "all containers"}`}
       identity={{ kind: "icon", icon: "Circle", tone: "accent" }} meta={<>#{row.id} · {row.container ? containers.data?.results.find(container => container.id === row.container)?.label : t`All containers`}{row.started_at ? <> {t` · Started `}<RelativeTime date={row.started_at} /></> : null}{row.lines ? t` · ${row.lines.length} lines counted` : ""}</>}
       onClick={() => setParams(current => { current.set("session", String(row.id)); return current; })}
-      right={<div className="flex items-center gap-3"><StatusPill label={row.status.replace(/_/g, " ")} />
+      right={<div className="flex items-center gap-3"><StatusPill label={stocktakeStatusLabel(row.status)} />
         {(() => { const next = canCount(row.status) ? undefined : nextAction(row);
           return next ? <button className="desk-button-ghost" disabled={next.pending} onClick={event => { event.stopPropagation(); next.onClick(); }}>{next.label}</button>
             : <button className="desk-button-ghost" onClick={() => setParams(current => { current.set("session", String(row.id)); return current; })}>{canCount(row.status) ? t`Continue` : t`Open count`}</button>; })()}</div>} />) }}

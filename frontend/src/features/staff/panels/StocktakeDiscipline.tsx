@@ -41,6 +41,6 @@ export function StocktakeDiscipline({ makerspaceId }: { makerspaceId: number }) 
       {schedules.results.map(row => <ListRow key={row.id} title={row.name} meta={<>{t`Due `}<RelativeTime date={row.next_due} /> {t` · Every ${row.interval_days} days`}</>}
         right={<div className="flex flex-wrap items-center gap-2"><StatusPill label={row.is_active ? t`Active` : t`Paused`} tone={row.is_active ? "success" : "neutral"} /><button className="desk-button-ghost" disabled={toggle.isPending} onClick={() => toggle.mutate(row)}>{toggle.isPending && toggle.variables?.id === row.id ? t`Updating…` : row.is_active ? t`Pause schedule` : t`Enable schedule`}</button></div>} />)}
       <Pagination page={schedules.page} totalPages={schedules.totalPages} count={schedules.count} pageSize={schedules.pageSize} onChange={schedules.setPage} />
-      {schedules.error ? <ErrorBlock error={schedules.error} resource="schedules" onRetry={() => { void schedules.refetch(); }} /> : null}{toggle.error ? <ErrorBlock error={toggle.error} /> : null}
+      {schedules.error ? <ErrorBlock error={schedules.error} resource={t`schedules`} onRetry={() => { void schedules.refetch(); }} /> : null}{toggle.error ? <ErrorBlock error={toggle.error} /> : null}
     </div> }]} />;
 }

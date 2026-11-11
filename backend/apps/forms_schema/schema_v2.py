@@ -18,7 +18,10 @@ QUESTION_TYPES = (
 CHOICES = {"single_choice", "multi_choice"}
 _ID = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
 _KEYS = {"id", "type", "label", "required", "help", "placeholder", "options", "bounds",
-         "show_if", "disclosure", "profile_field_key", "visibility", "sensitive", "money", "file", "itinerary"}
+         "show_if", "disclosure", "profile_field_key", "visibility", "sensitive", "money", "file", "itinerary",
+         "printable"}
+# O-B4: only plain answers may print on a member card (never sensitive or compound ones).
+PRINTABLE_TYPES = {"short_text", "long_text", "number", "date", "single_choice", "multi_choice", "yes_no"}
 _BOUNDS = {"min_length", "max_length", "min", "max", "min_selections", "max_selections", "other_max_length"}
 
 
@@ -97,6 +100,10 @@ def _question(raw, earlier):
     if type(raw.get("sensitive", False)) is not bool:
         fail("sensitive must be boolean.")
     result["sensitive"] = raw.get("sensitive", False)
+    if type(raw.get("printable", False)) is not bool:
+        fail("printable must be boolean.")
+    if raw.get("printable") and (kind not in PRINTABLE_TYPES or result["sensitive"]):
+        fail("Only plain, non-sensitive questions can print on a member card.")
     for compound, normalizer in (("money", money_schema), ("file", file_schema), ("itinerary", itinerary_schema)):
         if kind == compound:
             try:
@@ -148,7 +155,7 @@ def form_features(schema):
 def validate_schema(raw, *, context=None):
     if context == "stage" and isinstance(raw, dict) and isinstance(raw.get("questions"), list):
         validate_context(raw, context=context)
-    if not isinstance(raw, dict) or set(raw) - {"schema_version", "form_id", "revision", "questions", "event_context"}:
+    if not isinstance(raw, dict) or set(raw) - {"schema_version", "form_id", "revision", "questions", "event_context", "sections"}:
         fail("Unknown form keys.")
     if type(raw.get("schema_version")) is not int or raw["schema_version"] != 2:
         fail("Use schema_version 2.")
@@ -164,6 +171,9 @@ def validate_schema(raw, *, context=None):
         canonical = _question(question, earlier)
         earlier[canonical["id"]] = canonical
     result = {**deepcopy(raw), "questions": list(earlier.values())}
+    if "sections" in raw:  # parity O-B2: headings carry no answer, so they never enter `questions`
+        from .schema_items_static import validate_sections
+        result["sections"] = validate_sections(raw["sections"], set(earlier))
     validate_context(result, context=context)
     validate_sensitive(result["questions"])
     # event_context is descriptive. Domain providers load and bind current values.

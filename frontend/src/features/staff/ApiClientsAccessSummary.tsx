@@ -19,10 +19,10 @@ export function ApiClientsAccessSummary({
   loading?: boolean; error?: Error | null; onRetry?: () => void;
 }) {
   return <QueryContent state={{ status: loading ? "loading" : error ? "error" : "ready", error: t`Couldn't load API settings. Try again.`, onRetry }}><div className="grid gap-4">
-    <Callout size="card" tone="warn" lead="Keep keys in a secret manager." body={t`Never put them in browser code or URLs.`} />
+    <Callout size="card" tone="warn" lead={t`Keep keys in a secret manager.`} body={t`Never put them in browser code or URLs.`} />
     <KeyValueCard title={t`Makerspace API access`} items={[
       { label: t`Makerspace code`, value: settings?.public_code ?? makerspace.public_code },
-      { label: t`Allowed browser origins`, value: isSuperadmin ? (settings?.cors_allowed_origins ?? []).join(", ") || "No active client origins" : "Managed by superadmin" },
+      { label: t`Allowed browser origins`, value: isSuperadmin ? (settings?.cors_allowed_origins ?? []).join(", ") || t`No active client origins` : t`Set by the platform administrator` },
     ]} />
   </div></QueryContent>;
 }

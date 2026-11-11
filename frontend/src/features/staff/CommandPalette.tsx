@@ -11,9 +11,19 @@ import { TAB_LABELS } from "./staffAccess";
 import { staffTabPath } from "./staffTabs";
 import { SIDEBAR_LABELS } from "./sidebarSections";
 import { quickCreateCommands } from "./quickCreate";
+import { reportCommands } from "./reportCommands";
 
 type Hit = { entity: string; id: number; label: string; tab: string; query: Record<string, string> };
 type Command = { key: string; label: string; tab: string; query?: Record<string, string> };
+// Decision 242 (U6): the server adds machine jobs, shop orders, payments, incidents and guest passes, each only
+// for a role holding that area's action. A hit opens its area's page, so it is named by what it is.
+const ENTITY_LABELS = (): Record<string, string> => ({ jobs: t`Machine job`, shop: t`Shop order`, payments: t`Payment`,
+  incidents: t`Incident`, passes: t`Guest pass` });
+const hitCommand = (hit: Hit): Command => {
+  const link = { tab: hit.tab, filters: hit.query ?? {} };
+  const kind = ENTITY_LABELS()[hit.entity] ?? TAB_LABELS[link.tab] ?? hit.entity;
+  return { key: `${hit.entity}-${hit.id}`, label: hit.label.startsWith(kind) ? hit.label : `${kind}: ${hit.label}`, tab: link.tab, query: link.filters };
+};
 
 export function CommandPalette({ makerspaceId, makerspaceSlug, allowedTabs, guestOnly, singleTenantLocked, ownerName, actions = [], isSuperadmin = false, open: controlledOpen, onOpenChange }: {
   makerspaceId: number; makerspaceSlug: string; allowedTabs: readonly string[]; guestOnly: boolean; singleTenantLocked: boolean; ownerName: string;
@@ -33,12 +43,14 @@ export function CommandPalette({ makerspaceId, makerspaceSlug, allowedTabs, gues
     enabled: open && term.length >= 2,
     staleTime: 0,
   });
-  // Match the old tab name and the sidebar's name ("Inbox", "Home", "Job pickups") so either finds the page.
+  // Match the old tab name and the sidebar's name ("Inbox", "Home", "Pickups (Handover)") so either finds the page.
   const needle = search.toLowerCase().trim();
   const commands: Command[] = allowedTabs.filter((tab) => [TAB_LABELS[tab] ?? tab, SIDEBAR_LABELS[tab]].some(name => name?.toLowerCase().includes(needle)))
     .map((tab) => ({ key: `tab-${tab}`, label: t`Go to ${TAB_LABELS[tab] ?? tab}`, tab }));
   commands.push(...quickCreateCommands(actions, allowedTabs, isSuperadmin).filter(command => command.label.toLowerCase().includes(search.toLowerCase().trim())));
-  if (term === search.trim() && term.length >= 2) results.data?.results.filter((hit) => allowedTabs.includes(hit.tab)).forEach((hit) => commands.push({ key: `${hit.entity}-${hit.id}`, label: `${TAB_LABELS[hit.tab] ?? hit.entity}: ${hit.label}`, tab: hit.tab, query: hit.query }));
+  // Reports are listed only once something is typed, so the empty palette stays a short list of pages.
+  if (needle) commands.push(...reportCommands(actions, allowedTabs, isSuperadmin).filter(command => command.label.toLowerCase().includes(needle)));
+  if (term === search.trim() && term.length >= 2) results.data?.results.map(hitCommand).filter((command) => allowedTabs.includes(command.tab)).forEach((command) => commands.push(command));
   const current = Math.min(active, Math.max(0, commands.length - 1));
   useEffect(() => {
     if (open) document.getElementById(`${id}-option-${current}`)?.scrollIntoView?.({ block: "nearest" });

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ErrorBlock, SettingsRow } from "../../components/ui";
 import { DomainSettingsFields } from "./DomainSettingsFields";
 import { SettingLock } from "./SettingLock";
+import { AreaPricingSection } from "./areaPayments/AreaPricingSection";
 import { useEffectiveAuthority } from "./settingsAuthorityApi";
 import {
   DOMAIN_TITLES,
@@ -87,6 +88,7 @@ export function DomainSettingsDisclosure({ makerspaceId, domain }: Props) {
     onToggle={(event) => setOpen(event.currentTarget.open)}>
     <summary className="min-h-11 cursor-pointer bg-surface px-4 py-3 text-sm font-semibold text-ink">{DOMAIN_TITLES[domain]}</summary>
     {/* Mounted only while open, so the console does not fetch settings nobody asked to see. */}
-    {open ? <div className="p-3"><DomainSettingsSection makerspaceId={makerspaceId} domain={domain} /></div> : null}
+    {open ? <div className="grid gap-2 p-3"><DomainSettingsSection makerspaceId={makerspaceId} domain={domain} />
+      <AreaPricingSection makerspaceId={makerspaceId} domain={domain} /></div> : null}
   </details>;
 }

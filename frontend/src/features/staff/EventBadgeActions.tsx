@@ -11,7 +11,7 @@ import {
   useSaveEventBadgeTemplate,
 } from "./eventsBadgeApi";
 import { eventErrorText } from "./eventUi";
-import { DeskBadgePanel } from "./eventCredentials/DeskBadgePanel";
+import { DeskBadgeSwitch } from "./eventBadges/DeskBadgeSwitch";
 
 const BASE_FIELDS = [
   ["name", "Name"], ["event_title", "Event"], ["date_time", "Date and time"],
@@ -67,7 +67,7 @@ export function EventBadgeActions({ event, makerspaceId, selectedIds, includeAtt
     || !["published", "completed"].includes(event.status);
 
   return <div className="my-4 rounded-md border border-line p-4">
-    <DeskBadgePanel key={event.id} eventId={event.id} eventVersion={(event as StaffEvent & { version?: number }).version}
+    <DeskBadgeSwitch key={event.id} eventId={event.id} eventVersion={(event as StaffEvent & { version?: number }).version}
       registrationIds={selectedIds} canEdit={canEdit} canPrint={canPrint} />
     <div className="flex flex-wrap items-center justify-between gap-3">
       <div><h4 className="font-semibold text-ink">{t`Attendee badges`}</h4><p className="text-xs text-muted">{t`Print display fields only. Badges contain no contact details or check-in credentials.`}</p></div>
@@ -90,7 +90,7 @@ export function EventBadgeActions({ event, makerspaceId, selectedIds, includeAtt
         elements={draft.elements} labels={Object.fromEntries(options)} disabled={save.isPending}
         onGridChange={(grid_mm) => setDraft({ ...draft, grid_mm })} onChange={(elements) => setDraft({ ...draft, elements })} />
       <button className="desk-button mt-3" type="button" disabled={save.isPending || !layoutFits(draft.elements, draft.card_width_mm, draft.card_height_mm)} onClick={() => save.mutate({ ...draft, include_qr: false })}>{save.isPending ? t`Saving…` : t`Save template`}</button>
-      {save.isSuccess ? <p className="mt-2 text-xs text-success" role="status">{t`Badge template saved.`}</p> : null}
+      {save.isSuccess ? <p className="mt-2 text-xs text-success-ink" role="status">{t`Badge template saved.`}</p> : null}
     </details> : null}
     {previewUrl ? <div className="mt-3"><iframe className="h-96 w-full border border-line" src={previewUrl} title={t`Attendee badge PDF preview`} /><button className="desk-button mt-2" type="button" onClick={() => setPreviewUrl(null)}>{t`Close preview`}</button></div> : null}
     {error ? <p className="mt-2 text-xs text-danger" role="alert">{eventErrorText(error)}</p> : null}

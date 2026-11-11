@@ -1,7 +1,8 @@
-import { t } from "@lingui/core/macro";
+import { plural, t } from "@lingui/core/macro";
 import { useEffect, useMemo, useState } from "react";
 import { DetailLayout } from "../../components/layouts";
 import { QueryContent } from "../../components/layouts/LayoutFrame";
+import { reviewStatusLabel } from "./lifecycleLabels";
 import { Callout, ConfirmDialog, EmptyState, ErrorBlock, ListRow, OverflowMenu, RelativeTime, StatusPill } from "../../components/ui";
 import { ApiClientScopePicker } from "./ApiClientScopePicker";
 import {
@@ -77,7 +78,7 @@ export function ApiClientListCard({
       <QueryContent state={{ status: requestsLoading ? "loading" : requestsError ? "error" : "ready", error: t`Couldn't load API access requests. Try again.`, onRetry }}>
       {requests?.map(request => <ListRow key={request.id} title={request.label}
         meta={<><RelativeTime date={request.created_at} />{request.resolution_note ? ` · ${request.resolution_note}` : ""}</>}
-        right={<StatusPill label={request.status} />} />)}
+        right={<StatusPill label={reviewStatusLabel(request.status)} />} />)}
       {requests?.length === 0 ? <EmptyState message={t`No API access requests yet. Send a request to connect your tools.`} /> : null}
       </QueryContent>
     </>}
@@ -129,7 +130,7 @@ function ApiClientRow({ client, scopeOptions, scopesLoading, updatePending, upda
         <span>{t`Created `}<RelativeTime date={client.created_at} /> · {client.last_seen_at ? <>{t`Last used `}<RelativeTime date={client.last_seen_at} /></> : t`Never used`}</span></span>}
       right={<div className="flex flex-wrap items-center gap-2"><StatusPill label={client.is_active ? t`Active` : t`Inactive`} tone={client.is_active ? "success" : "neutral"} />
         {client.client_type === "peer" ? <StatusPill label={t`Another space`} /> : null}
-        <StatusPill label={`${client.scopes.length} scopes`} />
+        <StatusPill label={plural(client.scopes.length, { one: "# scope", other: "# scopes" })} />
         {hasLegacy ? <StatusPill label={t`Legacy v1`} tone="warn" /> : null}
         <button className="desk-button" onClick={() => setEditing(true)}>{t`Edit scopes`}</button>
         <OverflowMenu label={t`Actions for ${client.label}`} actions={[

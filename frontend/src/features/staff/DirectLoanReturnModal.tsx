@@ -134,7 +134,7 @@ export function DirectLoanReturnModal({
     onCancel={() => { if (!pending) onCancel(); }}
     footer={{ back: step > 0 ? { label: t`Back`, disabled: pending, onClick: () => setStep(step - 1) } : undefined,
       next: step < 2 ? { label: t`Next`, disabled: pending || (step === 0 ? !fullyResolved || !kits.ready : evidenceId === null || (scanRequired && !qrPayload.trim())), onClick: () => setStep(step + 1) }
-        : { label: t`Submit return`, disabled: !canSubmit, pending, pendingLabel: "Returning…", onClick: () => { if (canSubmit) onSubmit(buildResolutions(), kits.counts); } } }}
+        : { label: t`Submit return`, disabled: !canSubmit, pending, pendingLabel: t`Returning…`, onClick: () => { if (canSubmit) onSubmit(buildResolutions(), kits.counts); } } }}
     error={error ? { size: "inline", tone: "danger", lead: error } : undefined}
     work={<div className="@container grid gap-4">
       <div hidden={step !== 1}>
@@ -209,7 +209,7 @@ export function DirectLoanReturnModal({
       </div>
       <div hidden={step !== 1}>
         <label className="grid gap-1 text-sm">
-          <span className="font-medium text-ink">{t`Return QR scan${scanRequired ? "" : " (optional)"}`}</span>
+          <span className="font-medium text-ink">{scanRequired ? t`Return QR scan` : t`Return QR scan (optional)`}</span>
           <div className="flex flex-col gap-2 @lg:flex-row">
             <input
               className="desk-input w-full min-w-0"

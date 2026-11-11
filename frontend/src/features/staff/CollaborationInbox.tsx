@@ -1,5 +1,6 @@
 import { formatLocale } from "../../lib/format";
 import { t } from "@lingui/core/macro";
+import { invitationStateLabel } from "./lifecycleLabels";
 import {
   useCollaborationInbox,
   useRespondToCollaboration,
@@ -57,7 +58,7 @@ export function CollaborationInbox({ makerspaceId }: { makerspaceId: number }) {
                   {t`Decline`}</button>
               </span>
             ) : (
-              <span className="text-muted">{row.status}</span>
+              <span className="text-muted">{invitationStateLabel(row.status)}</span>
             )}
           </li>
         ))}

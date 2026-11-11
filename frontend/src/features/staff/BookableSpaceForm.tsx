@@ -8,7 +8,7 @@ import type { BookableSpace, BookableSpacePayload } from "./bookingsApi";
 import { getBookingMachineTypes } from "./staffBookingApi";
 
 import { FormPageLayout } from "../../components/layouts";
-import { ErrorBlock, SettingsActions } from "../../components/ui";
+import { ErrorBlock, SettingsActions, PagePager } from "../../components/ui";
 import { BookableSpaceFields } from "./BookableSpaceFields";
 import { useStaffChargesOn } from "./useStaffChargesOn";
 import { BookableSpaceMachine, useMachineTimeBookingOn } from "./BookableSpaceMachine";
@@ -99,17 +99,14 @@ export function BookableSpaceForm({ makerspaceId, initialValues = EMPTY_SPACE_FO
       <BookableSpaceFields values={values} set={set} machineTypes={machineTypes} typesError={types.error?.message}
         changeAvailability={changeAvailability} chargesOn={chargesOn}
         machineTime={{ available: machineTimeOn !== false, picker: pickerId => <BookableSpaceMachine makerspaceId={makerspaceId} id={pickerId}
-          value={values.machine ?? null} onChange={machine => set("machine", machine)} /> }} pagination={<div className="mt-2 flex flex-wrap gap-2">
-          <button className="desk-button-ghost" type="button" disabled={!types.data?.previous || types.isFetching} onClick={() => setTypePage(page => page - 1)}>{t`Previous types`}</button>
-          <button className="desk-button-ghost" type="button" disabled={!types.data?.next || types.isFetching} onClick={() => setTypePage(page => page + 1)}>{t`Next types`}</button>
-        </div>} />
+          value={values.machine ?? null} onChange={machine => set("machine", machine)} /> }} pagination={<PagePager page={typePage} setPage={setTypePage} next={types.data?.next} disabled={types.isFetching} />} />
     </fieldset>
     <CustomFormBuilder value={values.custom_form as CustomFormSchema} onChange={schema => set("custom_form", schema)} disabled={disabled || pending} />
     {error ? <ErrorBlock error={new Error(error)} /> : null}
   </>;
   if (mode === "create") return <FormPageLayout header={{ title: t`New space`, subtitle: t`Create a place your community can book.` }}
     state={{ status: "ready" }} back={{ label: t`Bookings`, onClick: onCancel }} form={fields}
-    submit={{ label: submitLabel, onClick: submitPayload, pending, pendingLabel: "Creating…" }}
+    submit={{ label: submitLabel, onClick: submitPayload, pending, pendingLabel: t`Creating…` }}
     cancel={onCancel ? { label: t`Cancel`, onClick: onCancel } : undefined} />;
   return <form ref={formRef} className="grid gap-6" onSubmit={submit}>
     {fields}

@@ -6,6 +6,8 @@ import { CustomFormFields } from "../forms/CustomFormFields";
 import { customAnswerErrors, validateCustomAnswers, type CustomAnswers } from "../forms/customFormTypes";
 import { StructuredApiError } from "../../lib/api";
 import { ErrorText } from "../../components/ui";
+import { changedConfirmation, StaffPriceConfirmation } from "./StaffPriceConfirmation";
+import type { StaffBookingQuote } from "./staffBookingApi";
 
 export function canMoveBooking(booking: Booking, cutoffHours = 0, now = Date.now()) {
   return canEditBooking(booking)
@@ -31,8 +33,11 @@ export function BookingReservationEditor({ space, booking }: { space: BookableSp
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
+  // 221(d)/226(d): a move that changes the plan term or needs more included hours answers 409 `price_changed`;
+  // the fresh preview is shown and the digest goes back as `price_confirmation` on the next save.
+  const [confirmation, setConfirmation] = useState<StaffBookingQuote | null>(null);
   const edit = useEditBooking(space.makerspace_id, space.id, booking.id);
-  const changeMode = (mode: "details" | "time") => { setOpen(mode); setErrors({}); edit.reset(); };
+  const changeMode = (mode: "details" | "time") => { setOpen(mode); setErrors({}); setConfirmation(null); edit.reset(); };
   if (!canEditBooking(booking)) return null;
   return <div className="grid gap-3">
     <div className="flex flex-wrap gap-2"><button className="desk-button" type="button" onClick={() => changeMode("details")}>{t`Edit note and answers`}</button>
@@ -45,17 +50,21 @@ export function BookingReservationEditor({ space, booking }: { space: BookableSp
         if (!noteChanged && !answersChanged) return;
         edit.mutate({ kind: "details", ...(noteChanged ? { note } : {}), ...(answersChanged ? { custom_answers: answers } : {}) }, { onSuccess: () => setOpen(null) });
       } else {
-        edit.mutate({ kind: "time", starts_at: new Date(start).toISOString(), ends_at: new Date(end).toISOString() }, { onSuccess: () => setOpen(null) });
+        edit.mutate({
+          kind: "time", starts_at: new Date(start).toISOString(), ends_at: new Date(end).toISOString(),
+          ...(confirmation ? { price_confirmation: confirmation.price_confirmation } : {}),
+        }, { onSuccess: () => { setConfirmation(null); setOpen(null); }, onError: (error) => setConfirmation(changedConfirmation(error)) });
       }
     }}>
       {open === "details" ? <><label className="grid gap-1 text-sm font-semibold text-ink">{t`Reservation note`}<textarea className="desk-input w-full min-w-0 font-normal" maxLength={5000} value={note} disabled={edit.isPending} onChange={(event) => setNote(event.target.value)} /></label>
         <CustomFormFields schema={space.custom_form} answers={answers} onChange={setAnswers} disabled={edit.isPending} errors={{ ...errors, ...customAnswerErrors(edit.error instanceof StructuredApiError ? edit.error.body.custom_answers : undefined) }} /></> : <>
         <p className="text-xs text-muted">{t`Current rules and both cancellation cutoffs apply. Status and the flat charge stay the same.`}</p>
-        <div className="grid gap-4 sm:grid-cols-2"><label className="grid gap-1 text-sm font-semibold text-ink">{t`New start (your local time)`}<input className="desk-input w-full min-w-0 font-normal" type="datetime-local" required disabled={edit.isPending} value={start} onChange={(event) => setStart(event.target.value)} /></label>
-        <label className="grid gap-1 text-sm font-semibold text-ink">{t`New end (your local time)`}<input className="desk-input w-full min-w-0 font-normal" type="datetime-local" required min={start} disabled={edit.isPending} value={end} onChange={(event) => setEnd(event.target.value)} /></label></div>
+        <div className="grid gap-4 sm:grid-cols-2"><label className="grid gap-1 text-sm font-semibold text-ink">{t`New start (your local time)`}<input className="desk-input w-full min-w-0 font-normal" type="datetime-local" required disabled={edit.isPending} value={start} onChange={(event) => { setStart(event.target.value); setConfirmation(null); }} /></label>
+        <label className="grid gap-1 text-sm font-semibold text-ink">{t`New end (your local time)`}<input className="desk-input w-full min-w-0 font-normal" type="datetime-local" required min={start} disabled={edit.isPending} value={end} onChange={(event) => { setEnd(event.target.value); setConfirmation(null); }} /></label></div>
       </>}
-      {edit.error ? <ErrorText message={edit.error.message} /> : null}
-      <div className="flex flex-wrap justify-end gap-2"><button type="button" className="desk-button" disabled={edit.isPending} onClick={() => setOpen(null)}>{t`Keep current booking`}</button><button className="desk-button-primary" disabled={edit.isPending || (open === "details" && !noteChanged && !answersChanged)}>{edit.isPending ? t`Saving...` : open === "details" ? t`Save reservation details` : t`Save booking time`}</button></div>
+      {open === "time" && confirmation ? <StaffPriceConfirmation confirmation={confirmation} approval={false} machine={space.kind === "machine"} /> : null}
+      {edit.error ? <ErrorText message={confirmation ? t`The price changed with this move. Review it, then confirm to save the new time.` : edit.error.message} /> : null}
+      <div className="flex flex-wrap justify-end gap-2"><button type="button" className="desk-button" disabled={edit.isPending} onClick={() => setOpen(null)}>{t`Keep current booking`}</button><button className="desk-button-primary" disabled={edit.isPending || (open === "details" && !noteChanged && !answersChanged)}>{edit.isPending ? t`Saving...`   : open === "details" ? t`Save reservation details` : confirmation ? t`Confirm price and save time` : t`Save booking time`}</button></div>
     </form> : null}
   </div>;
 }

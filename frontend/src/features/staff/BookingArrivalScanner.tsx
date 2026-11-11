@@ -5,6 +5,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ScanWorkbench } from "../../components/ui";
 import { BookingPassPrint } from "./BookingPassPrint";
 import { opsStatusLabel } from "./opsPresentation";
+import { waiverStateLabel } from "./checkInLabels";
 import { staffRequest } from "../../lib/api";
 import type { BookingArrival as GeneratedArrival } from "../../generated/api";
 import { DepartureForm, type DepartureInput } from "../bookings/DepartureForm";
@@ -74,9 +75,9 @@ export function BookingArrivalScanner({ makerspaceId, spaceId }: { makerspaceId:
           <p>{result.space_name}</p>
           <p>{time(result.starts_at, result.timezone)} – {time(result.ends_at, result.timezone)} ({result.timezone})</p>
           <p>{opsStatusLabel(result.status)} · {result.arrived_at ? t`Arrival recorded` : t`No active arrival`}{result.departed_at ? t` · Checked out` : ""}</p>
-          <p className="text-base">{t`Waiver: ${result.waiver_state.replace(/_/g, " ")} (advisory)`}</p>
+          <p className="text-base">{t`Waiver: ${waiverStateLabel(result.waiver_state)} (advisory)`}</p>
         </div>,
-        next: canConfirm ? { label: t`Confirm arrival`, onClick: () => confirm.mutate(), disabled: busy, disabledReason: busy ? "Wait for the current request to finish." : undefined }
+        next: canConfirm ? { label: t`Confirm arrival`, onClick: () => confirm.mutate(), disabled: busy, disabledReason: busy ? t`Wait for the current request to finish.` : undefined }
           : { label: t`Scan another`, onClick: clear },
       } : error ? { title: t`Couldn’t record arrival`, tone: "danger", summary: error.message, next: { label: t`Scan another`, onClick: clear } } : undefined}
       controls={result && (result.can_print_pass || result.can_reverse || canConfirm || result.can_depart) ? <div className="flex flex-wrap items-start gap-2">

@@ -1,7 +1,9 @@
 import { t } from "@lingui/core/macro";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
+import { StatusPill } from "../../components/ui";
 import { staffRequest } from "../../lib/api";
+import { formatDate } from "../../lib/format";
 import { EvidenceUpload } from "./panels/EvidenceUpload";
 import { QuantityStepper } from "./QuantityStepper";
 import { WalkInMemberForm } from "./WalkInMemberForm";
@@ -12,6 +14,19 @@ import type {
   ProductOption,
   ScannedPayload,
 } from "./DirectLoansTypes";
+
+/** "Guest pass until <date>" for a guest-pass borrower, or null for a member. */
+export function guestPassLabel(member: DirectLoanMember): string | null {
+  if (!member.is_guest_pass) return null;
+  return member.pass_valid_until ? t`Guest pass until ${formatDate(member.pass_valid_until)}` : t`Guest pass`;
+}
+
+/** Picker text: a guest is marked in the option itself, since an <option> cannot hold a pill. */
+export function borrowerOptionLabel(member: DirectLoanMember): string {
+  const name = member.display_name || member.username;
+  const guest = guestPassLabel(member);
+  return guest ? `${name} · ${guest}` : name;
+}
 
 export function DirectLoanBorrowerFields({
   makerspaceId,
@@ -42,7 +57,7 @@ export function DirectLoanBorrowerFields({
         <option value="">{t`Select an active member`}</option>
         {memberOptions.map((member) => (
           <option key={member.user_id} value={member.user_id}>
-            {member.display_name || member.username}
+            {borrowerOptionLabel(member)}
           </option>
         ))}
       </select>
@@ -61,16 +76,18 @@ export function DirectLoanBorrowerExtras({ makerspaceId, member, onBorrowerIdCha
   makerspaceId: number; member?: DirectLoanMember; onBorrowerIdChange: (value: string) => void;
 }) {
   const queryClient = useQueryClient();
+  const guest = member ? guestPassLabel(member) : null;
   const witnessWaiver = useMutation({
     mutationFn: () => {
-      if (!member) throw new Error(t`Select a member first.`);
+      if (!member || member.membership_id === null) throw new Error(t`Select a member first.`);
       return staffRequest(`/admin/memberships/${member.membership_id}/waiver/witness`, { method: "POST", body: JSON.stringify({}) });
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["members", makerspaceId] }),
   });
   return (
     <>
-      {member ? (
+      {guest ? <div className="mt-2"><StatusPill tone="info" label={guest} /></div> : null}
+      {member && member.membership_id !== null ? (
         <button className="desk-button mt-2" type="button" disabled={witnessWaiver.isPending} onClick={() => witnessWaiver.mutate()}>
           {t`Record witnessed waiver acceptance`}</button>
       ) : null}

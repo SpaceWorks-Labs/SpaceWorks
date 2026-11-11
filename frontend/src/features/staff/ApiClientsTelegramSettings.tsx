@@ -80,7 +80,7 @@ export function ApiClientsTelegramSettings({ makerspace }: { makerspace: Makersp
       <h3 className="title-section">{t`Telegram`}</h3>
       <StatusPill label={settings.data?.telegram_bot_token_set ? t`Token saved` : t`No token saved`} />
       <div className="mt-3 divide-y divide-line">
-        <SettingsRow label={t`Telegram group chat ID`} htmlFor="telegram-group">
+        <SettingsRow label={t`Telegram group chat ID`} htmlFor="telegram-group" helper={t`The group that receives this space's staff alerts. Add the bot to the group first.`}>
           <input
             id="telegram-group" className="desk-input"
             value={settingsForm.telegram_group_chat_id}
@@ -89,7 +89,7 @@ export function ApiClientsTelegramSettings({ makerspace }: { makerspace: Makersp
             }
           />
         </SettingsRow>
-        <SettingsRow label={t`Telegram bot token`} htmlFor="telegram-token">
+        <SettingsRow label={t`Telegram bot token`} htmlFor="telegram-token" helper={t`The token BotFather gave you. It is stored encrypted and never shown again.`}>
           <input
             id="telegram-token" className="desk-input"
             placeholder={settings.data?.telegram_bot_token_set ? t`Telegram bot token set` : undefined}
@@ -117,7 +117,7 @@ export function ApiClientsTelegramSettings({ makerspace }: { makerspace: Makersp
       {clearTelegramToken.error ? <p className="mt-2 text-sm text-danger">{clearTelegramToken.error.message}</p> : null}
       {testTelegram.data ? (
         <p className={`mt-2 text-sm ${testTelegram.data.delivered ? "text-muted" : "text-danger"}`}>
-          {t`Telegram delivered: ${testTelegram.data.delivered ? "yes" : "no"}${!testTelegram.data.delivered && testTelegram.data.detail ? ` - ${testTelegram.data.detail}` : ""}`}
+          {testTelegram.data.delivered ? t`Telegram delivered: yes` : testTelegram.data.detail ? t`Telegram delivered: no - ${testTelegram.data.detail}` : t`Telegram delivered: no`}
         </p>
       ) : null}
       {testTelegram.error ? <p className="mt-2 text-sm text-danger">{testTelegram.error.message}</p> : null}

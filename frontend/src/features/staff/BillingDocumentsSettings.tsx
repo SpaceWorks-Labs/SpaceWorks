@@ -33,7 +33,7 @@ export function BillingDocumentsSettings({ makerspaceId }: { makerspaceId: numbe
 
 
     <button className="desk-button mt-2" type="button" aria-expanded={expanded} onClick={() => setExpanded(!expanded)}>{t`Configure documents`}</button>
-    {expanded ? <SettingsQueryState query={policy} resource="receipt settings"><>
+    {expanded ? <SettingsQueryState query={policy} resource={t`receipt settings`}><>
       {policy.isLoading ? <p>{t`Loading billing settings…`}</p> : null}
       {policy.error || save.error ? <p role="alert" className="text-danger">{(policy.error || save.error)?.message}</p> : null}
       {draft ? <form className="mt-3 grid gap-3" onSubmit={(event) => { event.preventDefault(); save.mutate(); }}>

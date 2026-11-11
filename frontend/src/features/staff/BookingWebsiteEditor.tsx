@@ -50,7 +50,7 @@ function WebsiteForm({ space, saved, onReload }: { space: BookableSpace; saved: 
     <div className="flex flex-wrap items-start justify-between gap-4">
       <div className="min-w-0 flex-1 basis-64"><div className="flex flex-wrap items-center gap-2"><h2 className="title-panel">{t`Resource website`}</h2>
         <StatusPill label={saved.released ? t`Released` : t`Unreleased`} tone={saved.released ? "success" : "neutral"} /></div>
-        <p className="mt-1 text-sm text-muted">{saved.released ? t`Website released` : t`Website unreleased`}. Only published sections appear after release. Rules are still enforced by the booking service.</p></div>
+        <p className="mt-1 text-sm text-muted">{saved.released ? t`Website released. Only published sections appear after release. Rules are still enforced by the booking service.` : t`Website unreleased. Only published sections appear after release. Rules are still enforced by the booking service.`}</p></div>
       <div className="flex flex-wrap gap-2">
         <button className="desk-button" type="button" onClick={() => setPreview(!preview)}>{preview ? t`Edit sections` : t`Private preview`}</button>
         <button className="desk-button" type="button" disabled={mutation.isPending || reloading} onClick={() => { void reload(); }}>{t`Reload website (discard draft)`}</button>

@@ -1,8 +1,11 @@
 import { t } from "@lingui/core/macro";
-import { useState, type ReactNode } from "react";
+import { useContext, useState, type ReactNode } from "react";
 import { useSearchParams } from "react-router-dom";
 
-import { ConfirmDialog, ErrorBlock, Modal, StatusBadge } from "../../components/ui";
+import { ConfirmDialog, ErrorBlock, Modal, SegmentedControl, StatusBadge } from "../../components/ui";
+import { capabilityOn } from "../../lib/features";
+import { StaffListContext } from "./StaffListContext";
+import { StaffOrganizationBookingForm } from "./StaffOrganizationBookingForm";
 import { DetailLayout } from "../../components/layouts";
 import { opsQueryState, useOpsTabs } from "./opsPresentation";
 import { BookingAgenda } from "./BookingAgenda";
@@ -97,6 +100,9 @@ export function BookingDrawer({ makerspaceId, spaceId, onClose, recurringEnabled
     // Requests first: the basic path is apply -> review -> notify.
     !access.reservations ? optionalTabs[0]?.id ?? "settings" : "requests");
   const [createOpen, setCreateOpen] = useState(initialCreateOpen);
+  // Decision 223 P2: a booking for a partner organization, behind `bookings.organization_bookings`.
+  const organizations = capabilityOn(useContext(StaffListContext).makerspace, "bookings.organization_bookings");
+  const [createFor, setCreateFor] = useState<"member" | "organization">("member");
   const openBooking = (bookingId: number) => setParams(current => {
     const next = new URLSearchParams(current);
     next.set("space", String(spaceId));
@@ -114,7 +120,7 @@ export function BookingDrawer({ makerspaceId, spaceId, onClose, recurringEnabled
           identity={{ kind: "icon", icon: "Calendar", tone: "info" }}
           state={opsQueryState(spaceQuery, "this space")} tabs={tabs.tabs} activeTab={tabs.active}
           status={space ? <StatusBadge status={space.is_active ? "active" : "inactive"} label={space.is_active ? t`Active` : t`Inactive`} /> : undefined}
-          meta={space ? [space.location, space.effective_requester_notifications_enabled ? "Requester emails on" : "Requester emails off"] : undefined}
+          meta={space ? [space.location, space.effective_requester_notifications_enabled ? t`Requester emails on` : t`Requester emails off`] : undefined}
           actions={space?.is_active && access.reservations ? { primary: { label: t`New booking`, onClick: () => setCreateOpen(true) } } : undefined}
           danger={space?.is_active && access.manager && tabs.active === "settings" ? [{ title: t`Deactivate space`,
             consequence: "The public page will hide this space and no new bookings can be submitted or approved.",
@@ -132,7 +138,10 @@ export function BookingDrawer({ makerspaceId, spaceId, onClose, recurringEnabled
           </div> : null} />
       </div>
       <Modal open={createOpen && access.reservations} onClose={() => setCreateOpen(false)} title={t`New booking`}>
-        {space && createOpen && access.reservations ? <StaffBookingForm recurringEnabled={recurringEnabled || Boolean(space.recurring_enabled)} makerspaceId={makerspaceId} space={space} /> : null}
+        {space && createOpen && access.reservations && organizations ? <div className="mb-3"><SegmentedControl label={t`Who is this booking for?`} value={createFor}
+          options={[{ value: "member", label: t`Member or house` }, { value: "organization", label: t`Organization` }]} onChange={value => setCreateFor(value as "member" | "organization")} /></div> : null}
+        {space && createOpen && access.reservations && organizations && createFor === "organization" ? <StaffOrganizationBookingForm makerspaceId={makerspaceId} space={space} />
+          : space && createOpen && access.reservations ? <StaffBookingForm recurringEnabled={recurringEnabled || Boolean(space.recurring_enabled)} makerspaceId={makerspaceId} space={space} /> : null}
       </Modal>
       <BookingDecisionDialog key={pendingAction ? `${pendingAction.booking.id}-${pendingAction.action}` : "none"}
         open={pendingAction?.action === "reject" || pendingAction?.action === "cancel"}

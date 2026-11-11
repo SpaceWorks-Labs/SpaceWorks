@@ -2,10 +2,10 @@ import { formatLocale } from "../../lib/format";
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
 
-import { ErrorText, Field, SettingsSection, Skeleton, StatusPill } from "../../components/ui";
+import { ErrorText, Field, SettingsSection, Skeleton, StatusPill, PagePager } from "../../components/ui";
 import { BookingPermissionFields } from "./BookingPermissionFields";
 import { useBookingStaffGrantActions, useBookingStaffGrants, useBookingStaffInvites, type BookingStaffGrant, type StaffGrantTarget } from "./bookingStaffGrantsApi";
-import type { BookingPermission } from "./bookingStaffPermissions";
+import { bookingPermissionLabel, type BookingPermission } from "./bookingStaffPermissions";
 import { eventErrorText } from "./eventUi";
 
 export function BookingStaffAccess({ target }: { target: StaffGrantTarget }) {
@@ -50,7 +50,7 @@ export function BookingStaffAccess({ target }: { target: StaffGrantTarget }) {
           event.preventDefault(); update.mutate({ id: grant.id, permissions: editing.permissions }, { onSuccess: () => setEditing(null) });
         }}><BookingPermissionFields legend={t`Permissions for account #${grant.user}`} value={editing.permissions} disabled={pending} onChange={(next) => setEditing({ ...editing, permissions: next })} />
           <div className="flex flex-wrap gap-2"><button className="desk-button-primary" disabled={pending || !editing.permissions.length}>{t`Save permissions`}</button><button className="desk-button" type="button" onClick={() => setEditing(null)}>{t`Cancel`}</button></div>
-        </form> : <p className="text-sm text-muted">{grant.permissions.map((entry) => entry.replace(/_/g, " ")).join(", ")}</p>}
+        </form> : <p className="text-sm text-muted">{grant.permissions.map(bookingPermissionLabel).join(", ")}</p>}
         {!grant.revoked_at ? <div className="flex flex-wrap gap-2"><button className="desk-button" type="button" disabled={pending} onClick={() => setEditing({ ...grant })}>{t`Edit account #${grant.user}`}</button><button className="desk-button-danger-outline" type="button" disabled={pending} onClick={() => revoke.mutate(grant.id)}>{t`Revoke account #${grant.user}`}</button></div> : null}
       </li>)}</ul>
       <PageControls page={grantPage} previous={grants.data?.previous} next={grants.data?.next} onPage={setGrantPage} label={t`Staff grants`} />
@@ -61,7 +61,7 @@ export function BookingStaffAccess({ target }: { target: StaffGrantTarget }) {
         const state = row.revoked_at ? "Revoked" : row.redeemed_at ? "Redeemed" : new Date(row.expires_at).getTime() <= Date.now() ? "Expired" : "Pending";
         return <li key={row.id} className="flex flex-wrap items-center justify-between gap-3 py-4 text-sm">
           <div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><p className="font-semibold text-ink">{t`Invitation #${row.id}`}</p>
-            <StatusPill label={state} tone={state === "Pending" ? "warn" : state === "Redeemed" ? "success" : "neutral"} /></div>
+            <StatusPill label={({ Pending: t`Pending`, Redeemed: t`Redeemed`, Revoked: t`Revoked`, Expired: t`Expired` } as Record<string, string>)[state] ?? state} tone={state === "Pending" ? "warn" : state === "Redeemed" ? "success" : "neutral"} /></div>
             <p className="mt-1 text-muted">{t`Expires ${new Date(row.expires_at).toLocaleString(formatLocale())}`}</p></div>
           {state === "Pending" ? <button className="desk-button-danger-outline" type="button" disabled={pending} onClick={() => revokeInvite.mutate(row.id)}>{t`Revoke invitation #${row.id}`}</button> : null}
         </li>;
@@ -71,12 +71,8 @@ export function BookingStaffAccess({ target }: { target: StaffGrantTarget }) {
   </SettingsSection>;
 }
 
-function PageControls({ page, previous, next, onPage, label }: {
+function PageControls({ page, next, onPage }: {
   page: number; previous?: string | null; next?: string | null; onPage: (page: number) => void; label: string;
 }) {
-  if (!previous && !next) return null;
-  return <nav className="mt-3 flex flex-wrap items-center justify-end gap-2 text-sm text-muted" aria-label={`${label} pagination`}>
-    <button className="desk-button" type="button" disabled={!previous} onClick={() => onPage(Math.max(1, page - 1))}>{t`Previous`}</button>
-    <span>{t`Page ${page}`}</span><button className="desk-button" type="button" disabled={!next} onClick={() => onPage(page + 1)}>{t`Next`}</button>
-  </nav>;
+  return <div className="mt-3"><PagePager page={page} setPage={onPage} next={next} /></div>;
 }

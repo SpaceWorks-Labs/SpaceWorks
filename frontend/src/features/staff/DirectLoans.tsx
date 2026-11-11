@@ -11,6 +11,7 @@ import { ListLayout } from "../../components/layouts";
 import { useSearchParams } from "react-router-dom";
 import { staffRequest } from "../../lib/api";
 import { usePaginatedQuery } from "../../lib/usePaginatedQuery";
+import { useDebouncedValue } from "../../lib/useDebouncedValue";
 import { DirectLoanList, type DirectLoan } from "./DirectLoanList";
 import { invalidateInventoryViews } from "./queryInvalidation";
 import { DirectLoanReturnModal } from "./DirectLoanReturnModal";
@@ -36,6 +37,12 @@ export function DirectLoans({ makerspace }: { makerspace: Makerspace }) {
   const rawTab = params.get("handout");
   const tab = rawTab === "returned" || rawTab === "claim-codes" ? rawTab : "on-loan";
   const status = tab === "returned" ? "returned" : "checked_out";
+  // IN4: find a borrower's handouts and the overdue ones without paging through every loan.
+  const [search, setSearch] = useState("");
+  const [overdueOnly, setOverdueOnly] = useState(false);
+  const term = useDebouncedValue(search.trim());
+  const overdue = overdueOnly && tab === "on-loan";
+  const loanFilters = `${term ? `&search=${encodeURIComponent(term)}` : ""}${overdue ? "&overdue=true" : ""}`;
   useQuickCreate("request", () => setGuided(true));
   const [borrowerId, setBorrowerId] = useState("");
   const [lineRows, setLineRows] = useState<LineDraft[]>([{ key: 1, productId: "", quantity: "1" }]);
@@ -78,9 +85,10 @@ export function DirectLoans({ makerspace }: { makerspace: Makerspace }) {
   const activeProducts = (products.data?.results ?? []).filter((product) => !product.is_archived);
   const productById = new Map(activeProducts.map((product) => [product.id, product]));
   const loans = usePaginatedQuery<DirectLoan>({
-    key: ["direct-loans", makerspace.id, status],
-    path: `/admin/makerspace/${makerspace.id}/direct-loans?status=${status}`,
-    resetKey: `${makerspace.id}:${status}`,
+    // Unfiltered lists keep the original key so every existing invalidation still reaches them.
+    key: ["direct-loans", makerspace.id, status, ...(loanFilters ? [loanFilters] : [])],
+    path: `/admin/makerspace/${makerspace.id}/direct-loans?status=${status}${loanFilters}`,
+    resetKey: `${makerspace.id}:${status}${loanFilters}`,
     enabled: tab !== "claim-codes",
   });
   const pastedQrPayloads = qrPayloads.split("\n").map((value) => value.trim()).filter(Boolean);
@@ -186,9 +194,12 @@ export function DirectLoans({ makerspace }: { makerspace: Makerspace }) {
     header={{ title: t`Direct handout`, subtitle: t`Lend tools straight from the shelf, without a request.`, primary: { label: t`New handout`, icon: "Plus", onClick: () => setGuided(true) } }}
     state={tab === "claim-codes" ? { status: "ready" } : { status: loans.isLoading || loans.isPlaceholderData ? "loading" : loans.isError ? "error" : "ready", error: t`Couldn't load direct handouts. Try again.`, onRetry: () => void loans.refetch() }}
     tabs={[{ key: "on-loan", label: t`On loan`, count: tab === "on-loan" ? loans.count : undefined, href: tabHref("on-loan") }, { key: "returned", label: t`Returned`, count: tab === "returned" ? loans.count : undefined, href: tabHref("returned") }, { key: "claim-codes", label: t`Claim codes`, href: tabHref("claim-codes") }]} activeTab={tab}
-    isEmpty={tab !== "claim-codes" && !shown.length}
+    isEmpty={tab !== "claim-codes" && !shown.length} filtered={Boolean(term || overdue)}
+    filters={tab === "claim-codes" ? undefined : { search: { label: t`Search borrowers`, value: search, onChange: setSearch },
+      views: tab === "on-loan" ? <button type="button" className={overdueOnly ? "desk-button-primary" : "desk-button"} aria-pressed={overdueOnly} onClick={() => setOverdueOnly(value => !value)}>{t`Overdue only`}</button> : undefined }}
+    filteredEmpty={{ message: t`No handouts match these filters.`, action: { label: t`Clear filters`, onClick: () => { setSearch(""); setOverdueOnly(false); } } }}
     empty={{ message: tab === "returned" ? t`No direct handouts returned yet.` : t`No tools are out on direct handout. Start one with New handout above.`, action: tab === "returned" ? undefined : { label: t`New handout`, onClick: () => setGuided(true) } }}
-    body={{ kind: "rows", rows: tab === "claim-codes" ? <MemberClaimCodes makerspaceId={makerspace.id} members={memberOptions} /> : <DirectLoanList loans={shown} onReturn={returnFlow.openReturnModal} makerspaceId={makerspace.id} /> }}
+    body={{ kind: "rows", rows: tab === "claim-codes" ? <MemberClaimCodes makerspaceId={makerspace.id} members={memberOptions} /> : <DirectLoanList loans={shown} onReturn={returnFlow.openReturnModal} makerspaceId={makerspace.id} modules={makerspace.enabled_modules} unavailable={makerspace.unavailable_apps} /> }}
     pagination={tab === "claim-codes" ? undefined : { page: loans.page, pageSize: loans.pageSize, count: loans.count, onChange: loans.setPage }}
     detail={<>
       {guided ? <DirectHandoverWizard key={makerspace.id} makerspace={makerspace} onClose={() => setGuided(false)} compactWork={compactWork} compactAction={{ label: t`Issue direct handout`, disabled: !canIssue, pending: issue.isPending, onClick: () => issue.mutate() }} /> : null}

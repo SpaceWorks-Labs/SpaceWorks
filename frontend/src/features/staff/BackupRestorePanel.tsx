@@ -33,7 +33,11 @@ import { getBackupSchedule } from "./spaceRestoreApi";
 import { DeploymentNotices } from "../deployment/DeploymentNotices";
 import { SelfHostMoveCard } from "./SelfHostMoveCard";
 
-export function BackupRestorePanel({ makerspaceId, isSuperadmin }: { makerspaceId: number; isSuperadmin: boolean }) {
+/**
+ * `makerspaceId` is the space whose console tab this is. The platform's Data & recovery page
+ * opens it with none: the superadmin picks the whole platform or one space in the scope picker.
+ */
+export function BackupRestorePanel({ makerspaceId, isSuperadmin }: { makerspaceId?: number; isSuperadmin: boolean }) {
   const runtime = useQuery({ queryKey: ["platform-dashboard"], queryFn: getPlatformDashboard, enabled: isSuperadmin });
   const deploymentInfo = runtime.data?.deployment;
   const hostControls = isSuperadmin && deploymentInfo?.mode === "host";
@@ -55,19 +59,19 @@ export function BackupRestorePanel({ makerspaceId, isSuperadmin }: { makerspaceI
   const decision = useMutation({ mutationFn: ({ id, value }: { id: string; value: "proceed" | "reset" | "abort" }) => decideRestore(id, value), onSuccess: () => client.invalidateQueries({ queryKey: ["restore-operations"] }) });
 
   const available = (deployment.data ?? []).filter(row => row.status === "available");
-  const primary = hostControls && scope === "platform" ? { label: t`Create full deployment archive`, onClick: () => createDeployment.mutate(), pending: createDeployment.isPending, pendingLabel: "Requesting…" } : undefined;
+  const primary = hostControls && scope === "platform" ? { label: t`Create full deployment archive`, onClick: () => createDeployment.mutate(), pending: createDeployment.isPending, pendingLabel: t`Requesting…` } : undefined;
   return <>
     <SettingsLayout header={{ title: t`Backup & restore`, subtitle: t`Keep encrypted copies of your space and review every restore before it changes live data.`, primary }}
       state={{ status: "ready" }} sections={[
-        ...(isSuperadmin && runtime.isError ? [{ id: "deployment-status", title: t`Deployment information`, rows: <ErrorText resource="deployment information" onRetry={() => { void runtime.refetch(); }} /> }] : []),
+        ...(isSuperadmin && runtime.isError ? [{ id: "deployment-status", title: t`Deployment information`, rows: <ErrorText resource={t`deployment information`} onRetry={() => { void runtime.refetch(); }} /> }] : []),
         // Managers no longer request or download archives (owner decision #111 Q2): the
         // superadmin backs up and restores; a manager reads the last backup and keeps their
         // own copy through data export.
-        ...(!isSuperadmin ? [{ id: "this-space", title: t`This space`, rows: <div className="grid gap-3">
+        ...(!isSuperadmin && makerspaceId !== undefined ? [{ id: "this-space", title: t`This space`, rows: <div className="grid gap-3">
           <BackupStatusCard makerspaceId={makerspaceId} />
           <p className="text-sm text-muted">{t`The platform backs up and restores this space. For your own copy of its data, use Data export.`}</p>
         </div> }] : []),
-        ...(!isSuperadmin ? [{ id: "self-host-move", title: t`Move to your own server`, rows: <SelfHostMoveCard makerspaceId={makerspaceId} /> }] : []),
+        ...(!isSuperadmin && makerspaceId !== undefined ? [{ id: "self-host-move", title: t`Move to your own server`, rows: <SelfHostMoveCard makerspaceId={makerspaceId} /> }] : []),
         ...(isSuperadmin ? [{ id: "scope", title: t`What to back up or restore`, rows: <label className="grid gap-2 text-sm">{t`Scope`}<select className="desk-input max-w-full" value={String(scope)} onChange={event => setScope(event.target.value === "platform" ? "platform" : Number(event.target.value))}>
             <option value="platform">{t`Whole platform`}</option>
             {(schedule.data?.spaces ?? []).map(space => <option key={space.makerspace_id} value={space.makerspace_id}>{t`One space: ${space.name}`}</option>)}
@@ -78,18 +82,18 @@ export function BackupRestorePanel({ makerspaceId, isSuperadmin }: { makerspaceI
         ...(hostControls && scope === "platform" ? [{ id: "deployment", title: t`Whole platform`, rows: <div className="grid gap-4">
           <ArchiveDisclosure deployment />
           <p className="text-sm text-muted">{t`One space from a whole-platform backup: restore via host command (see docs). It becomes a restore point of that space here.`}</p>
-          <BackupQuery query={settings} resource="backup settings">{settings.data ? <BackupScheduleSettings deployment={deploymentInfo} key={makerspaceId} data={settings.data} pending={saveSettings.isPending} onSave={(value, onSaved) => saveSettings.mutate(value, { onSuccess: onSaved })} /> : null}</BackupQuery>
+          <BackupQuery query={settings} resource={t`backup settings`}>{settings.data ? <BackupScheduleSettings deployment={deploymentInfo} key={makerspaceId ?? "platform"} data={settings.data} pending={saveSettings.isPending} onSave={(value, onSaved) => saveSettings.mutate(value, { onSuccess: onSaved })} /> : null}</BackupQuery>
           {saveSettings.error ? <ErrorText message={saveSettings.error.message} /> : null}
-          <BackupQuery query={deployment} resource="deployment backups"><BackupArchiveRows rows={deployment.data ?? []} onDownload={id => download.mutate(id)} downloading={download.isPending ? download.variables : undefined} /></BackupQuery>
+          <BackupQuery query={deployment} resource={t`deployment backups`}><BackupArchiveRows rows={deployment.data ?? []} onDownload={id => download.mutate(id)} downloading={download.isPending ? download.variables : undefined} /></BackupQuery>
           {createDeployment.error ? <ErrorText message={createDeployment.error.message} /> : null}
           {restoreDetail.data ? <RestoreDecision operation={restoreDetail.data} pending={decision.isPending} onDecide={value => decision.mutate({ id: restoreDetail.data!.id, value })} /> : null}
-          {restores.isError ? <ErrorText resource="restore operations" onRetry={() => { void restores.refetch(); }} /> : null}
-          {restoreDetail.isError ? <ErrorText resource="restore report" onRetry={() => { void restoreDetail.refetch(); }} /> : null}
+          {restores.isError ? <ErrorText resource={t`restore operations`} onRetry={() => { void restores.refetch(); }} /> : null}
+          {restoreDetail.isError ? <ErrorText resource={t`restore report`} onRetry={() => { void restoreDetail.refetch(); }} /> : null}
           {decision.error ? <ErrorText message={decision.error.message} /> : null}
         </div> }] : []),
         ...(download.error ? [{ id: "download-error", title: t`Download`, rows: <ErrorText message={download.error.message} /> }] : []),
-      ]} danger={hostControls && scope === "platform" ? [{ title: t`Restore from a backup`, consequence: "A restore replaces live deployment data. Review the archive and recovery kind before starting.",
-        action: { label: t`Restore from a backup…`, onClick: () => setRestoreOpen(true), disabled: !available.length, disabledReason: "Create a full deployment archive before restoring." } }] : []} />
+      ]} danger={hostControls && scope === "platform" ? [{ title: t`Restore from a backup`, consequence: t`A restore replaces live deployment data. Review the archive and recovery kind before starting.`,
+        action: { label: t`Restore from a backup…`, onClick: () => setRestoreOpen(true), disabled: !available.length, disabledReason: t`Create a full deployment archive before restoring.` } }] : []} />
     {hostControls && restoreOpen ? <BackupRestoreDialog archives={available} pending={startRestore.isPending} error={startRestore.error} onCancel={() => setRestoreOpen(false)} onRestore={(archive, kind) => startRestore.mutate({ archive, kind })} /> : null}
   </>;
 }

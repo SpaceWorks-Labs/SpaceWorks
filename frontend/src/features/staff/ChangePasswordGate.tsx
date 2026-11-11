@@ -30,7 +30,7 @@ export function ChangePasswordGate({ username, onChanged, onSignOut }: ChangePas
   return (
     <CenteredCardLayout state={{ status: "ready" }} media={{ icon: "Lock", tone: "accent" }}
       eyebrow={t`Security`} title={t`Set a new password`} body={<p><strong>{username}</strong> {t` is using a temporary password. Choose your own to continue.`}</p>}
-      primary={{ label: t`Update password`, pending: mutation.isPending, pendingLabel: "Updating…", disabled: !canSubmit, disabledReason: "Enter matching passwords to continue.", onClick: () => (document.getElementById("change-password-form") as HTMLFormElement)?.requestSubmit() }}
+      primary={{ label: t`Update password`, pending: mutation.isPending, pendingLabel: t`Updating…`, disabled: !canSubmit, disabledReason: t`Enter matching passwords to continue.`, onClick: () => (document.getElementById("change-password-form") as HTMLFormElement)?.requestSubmit() }}
       escape={{ label: t`Sign out`, onClick: onSignOut }} content={
       <form
         id="change-password-form" className="grid gap-1"

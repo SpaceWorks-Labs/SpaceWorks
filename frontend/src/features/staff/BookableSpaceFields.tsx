@@ -47,7 +47,7 @@ export function BookableSpaceFields({ values, set, machineTypes, typesError, pag
         value={values.description} onChange={event => set("description", event.target.value)} /></SettingsRow>
     </SettingsSection>
     <SettingsSection title={t`Booking and visibility`} description={t`Space Managers set approval mode, duration limits, buffers and cancellation policy in makerspace booking rules.`}>
-      {chargesOn ? <SettingsRow label={t`Booking price`} htmlFor={id + "-price"} helper={t`Use 0 for no charge.`}><input id={id + "-price"} className="desk-input w-full" type="number" min="0" step="0.01"
+      {chargesOn ? <SettingsRow label={t`Booking price`} htmlFor={id + "-price"} helper={t`Use 0 for no charge.`}><input id={id + "-price"} className="desk-input w-full" type="number" min="0" step="any"
         value={values.payment_amount} onChange={event => set("payment_amount", event.target.value)} /></SettingsRow>
         : <p className="text-sm text-muted">{t`Booking charges are off in this space, so bookings are free.`}</p>}
       <SettingsRow label={t`Requester email`} htmlFor={id + "-email"}><select id={id + "-email"} className="desk-input w-full" value={notificationsValue}

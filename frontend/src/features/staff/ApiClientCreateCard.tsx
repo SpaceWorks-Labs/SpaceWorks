@@ -28,7 +28,7 @@ type Props = {
   onDismissSecret: () => void;
 };
 
-const CLIENT_TYPES: { value: ApiClientType; label: string; hint: string }[] = [
+const clientTypes = (): { value: ApiClientType; label: string; hint: string }[] => [
   { value: "server", label: t`Our own system`, hint: t`A script, an ERP or a backend that signs each request.` },
   { value: "peer", label: t`Another space`, hint: t`Their backend reads only your public catalogue, events and stats.` },
 ];
@@ -69,7 +69,7 @@ export function ApiClientCreateCard({
           </Field>
           <fieldset className="grid gap-2">
             <legend className="font-semibold text-ink">{t`Who will use it?`}</legend>
-            {CLIENT_TYPES.map((option) => (
+            {clientTypes().map((option) => (
               <label key={option.value} className="flex cursor-pointer items-start gap-3 rounded-xl border border-line bg-panel p-3 has-[:checked]:border-accent has-[:checked]:bg-accent-soft">
                 <input type="radio" name="api-client-type" className="mt-1 h-4 w-4 accent-accent" value={option.value}
                   checked={clientType === option.value} disabled={isPending}
@@ -99,7 +99,7 @@ export function ApiClientCreateCard({
                 disabled={isPending}
               />
             ) : null}
-            {scopesError ? <ErrorBlock error={scopesError} resource="API scopes" onRetry={onRetryScopes} /> : null}
+            {scopesError ? <ErrorBlock error={scopesError} resource={t`API scopes`} onRetry={onRetryScopes} /> : null}
           </div>
         </div>
         <button

@@ -12,7 +12,13 @@ import { opsQueryState, opsStatusLabel } from "./opsPresentation";
 import { useSpaceBookings, type BookableSpace, type Booking, type BookingAction, type BookingFilters } from "./bookingsApi";
 import { useUrlListState } from "../../lib/useUrlListState";
 import { BookingCheckout } from "./BookingCheckout";
+import { ExistingBookingReadiness } from "./BookingReadiness";
+import { BookingRowLinks } from "./bookingLinks/BookingRowLinks";
 import { RequestedPrice } from "./pricing/RequestedPrice";
+import { EquipmentSubjectReport } from "./EquipmentSubjectReport";
+import { RelatedFactsPanel } from "./RelatedFactsPanel";
+import { StaffEquipmentProposal } from "./StaffEquipmentProposal";
+import { useStaffIntakeOwners } from "./useStaffIntakeOwners";
 
 type Props = { makerspaceId: number; spaceId: number; space: BookableSpace;
   /** Payment reconciliation is a space-manager power; a resource grant alone does not carry it. */
@@ -25,6 +31,7 @@ function bookingTime(booking: Booking) {
   return format.format(new Date(booking.starts_at)) + " – " + format.format(new Date(booking.ends_at));
 }
 export function BookingRequests({ makerspaceId, spaceId, space, canReconcile, bookings, list, filters, setFilter, page, setPage, onAction }: Props) {
+  const intakeOwner = useStaffIntakeOwners(makerspaceId);
   const [, setParams] = useSearchParams();
   return <section aria-labelledby="space-bookings-title" className="grid gap-4">
     <div><h2 id="space-bookings-title" className="title-panel">{t`Bookings `}<span className="tabular-nums">({bookings.data?.count ?? 0})</span></h2>
@@ -54,9 +61,20 @@ export function BookingRequests({ makerspaceId, spaceId, space, canReconcile, bo
         <div className="grid gap-3 p-4">
           <div className="text-sm"><a className="flex min-h-11 items-center break-all hover:underline" href={"mailto:" + booking.email}>{booking.email}</a>
             <a className="flex min-h-11 items-center text-muted hover:underline" href={"tel:" + booking.phone}>{booking.phone}</a></div>
+          <BookingRowLinks booking={booking} />
+          {booking.is_house ? <p className="text-sm">{t`House booking (no member, no charge)`}</p> : null}
+          {booking.organization_name ? <p className="text-sm">{t`For organization: ${booking.organization_name}`}</p> : null}
+          {booking.linked_event?.event_status === "cancelled" && ["pending", "confirmed"].includes(booking.status) ? <p className="text-sm" role="status">
+            {t`The linked event was cancelled. This booking and its charges are kept; cancel it here if the room is no longer needed.`}</p> : null}
+          <EquipmentSubjectReport tenant={makerspaceId} kind="booking" id={booking.id} />
+          <RelatedFactsPanel tenant={makerspaceId} kind="booking" id={booking.id} />
           <BookingAnswers booking={booking} />
           <RequestedPrice booking={booking} />
+          {/* Decision 216 item 4: what review would meet now, for a booking still ahead. */}
+          {booking.status === "pending" || (booking.status === "confirmed" && new Date(booking.ends_at) > new Date())
+            ? <ExistingBookingReadiness bookingId={booking.id} /> : null}
           <BookingCheckout makerspaceId={makerspaceId} spaceId={spaceId} booking={booking} />
+          {booking.status === "confirmed" && (canReconcile || space.staff_permissions?.includes("manage_reservations")) ? <StaffEquipmentProposal tenant={makerspaceId} domain="booking" resourceId={spaceId} targetId={booking.id} pendingOwner={intakeOwner(`booking:${spaceId}:${booking.id}`)} /> : null}
           {canReconcile ? <PaymentReconcileActions makerspaceId={makerspaceId} payment={booking.payment}
             invalidateKeys={[["booking-space", spaceId, "bookings"], ["booking-space", spaceId]]} /> : null}
           {space.staff_tools_enabled ? <BookingReservationEditor key={`${booking.id}-${booking.starts_at}-${JSON.stringify(booking.custom_answers)}-${booking.note}`} space={space} booking={booking} /> : null}

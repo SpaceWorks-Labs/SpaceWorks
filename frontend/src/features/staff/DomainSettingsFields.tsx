@@ -8,7 +8,7 @@ import type { DomainSettingValues } from "./domainSettingsApi";
 type Field = keyof DomainSettingValues;
 type Draft = Partial<Record<Field, string | boolean>>;
 
-const COPY: Record<Field, { label: string; helper: string }> = {
+const copy = (): Record<Field, { label: string; helper: string }> => ({
   event_default_registration_audience: {
     label: t`Default registration audience`,
     helper: t`New events and recurring series start with this audience. Existing events keep theirs.`,
@@ -29,13 +29,13 @@ const COPY: Record<Field, { label: string; helper: string }> = {
     label: t`Filament low-stock threshold (grams)`,
     helper: t`Spools at or below this weight can suggest a reorder. 0 turns it off.`,
   },
-};
+});
 
-const AUDIENCES = [
-  ["members", "Members"], ["accounts", "Authenticated accounts"], ["invite", "Invited accounts"],
-  ["participating_organizations", "Participating organizations"],
+const audiences = () => [
+  ["members", t`Members`], ["accounts", t`Authenticated accounts`], ["invite", t`Invited accounts`],
+  ["participating_organizations", t`Participating organizations`],
 ] as const;
-const HOURS_ERROR = "Enter unique whole hours from 1 to 8760, separated by commas, or leave blank to disable.";
+const hoursError = () => t`Enter unique whole hours from 1 to 8760, separated by commas, or leave blank to disable.`;
 
 function toDraft(values: DomainSettingValues): Draft {
   return Object.fromEntries(Object.entries(values).map(([key, value]) =>
@@ -58,7 +58,7 @@ function changes(values: DomainSettingValues, initial: Draft, draft: Draft): { p
     if (value === initial[field]) continue;
     if (Array.isArray(values[field])) {
       const hours = parseHours(String(value));
-      if (!hours) return { error: HOURS_ERROR };
+      if (!hours) return { error: hoursError() };
       patch[field] = hours;
     } else if (field === "filament_low_stock_threshold_grams") {
       if (!/^\d+(\.\d{1,2})?$/.test(String(value).trim())) return { error: t`Enter a weight of 0 or more grams.` };
@@ -100,7 +100,7 @@ export function DomainSettingsFields({ values, disabled, pending, error, onSave,
       const inputId = `${id}-${field}`;
       const value = draft[field];
       const fieldDisabled = disabled || (lockedFields?.has(field) ?? false);
-      return <SettingsRow key={field} label={COPY[field].label} helper={COPY[field].helper} htmlFor={inputId}>
+      return <SettingsRow key={field} label={copy()[field].label} helper={copy()[field].helper} htmlFor={inputId}>
         <div className="grid min-w-0 gap-2">
         {typeof value === "boolean" ? (
           <label className="min-h-11 flex items-start gap-3 text-sm text-ink">
@@ -111,7 +111,7 @@ export function DomainSettingsFields({ values, disabled, pending, error, onSave,
         ) : field === "event_default_registration_audience" ? (
           <select id={inputId} className="desk-input w-full min-w-0" value={String(value)} disabled={fieldDisabled}
             onChange={(event) => set(field, event.target.value)}>
-            {AUDIENCES.map(([key, label]) => <option key={key} value={key}>{label}</option>)}
+            {audiences().map(([key, label]) => <option key={key} value={key}>{label}</option>)}
           </select>
         ) : (
           <input id={inputId} className="desk-input w-full min-w-0" value={String(value ?? "")} disabled={fieldDisabled}

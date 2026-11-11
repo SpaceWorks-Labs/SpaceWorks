@@ -64,7 +64,7 @@ export function BookingStaffInvitePage() {
       {authError ? <p className="text-sm text-danger" role="alert">{authError}</p> : null}</div>}
     footer={<button className="desk-button w-full" type="button" onClick={cancel}>{t`Cancel invitation`}</button>}
     onAuthenticated={() => { void authenticated(); }} />;
-  const cancelAction = { label: t`Cancel invitation`, onClick: cancel, disabled: redeem.isPending, disabledReason: redeem.isPending ? "Wait for the invitation to finish accepting." : undefined };
+  const cancelAction = { label: t`Cancel invitation`, onClick: cancel, disabled: redeem.isPending, disabledReason: redeem.isPending ? t`Wait for the invitation to finish accepting.` : undefined };
   return <CenteredCardLayout width={480} state={{ status: restoring ? "loading" : "ready" }}
     media={{ banner: redeem.isSuccess ? "success" : "accent" }}
     title={t`Booking resource staff invitation`}
@@ -76,8 +76,8 @@ export function BookingStaffInvitePage() {
       {redeem.error ? <p className="text-sm text-danger" role="alert">{eventErrorText(redeem.error)}</p> : null}
     </div>}
     primary={redeem.isSuccess ? { label: t`Open helper workspace`, onClick: openStaff }
-      : user ? { label: t`Accept staff invitation`, pending: redeem.isPending, pendingLabel: "Accepting...", onClick: () => redeem.mutate(),
-        disabled: !token, disabledReason: !token ? "Open the original invitation link again." : undefined }
+      : user ? { label: t`Accept staff invitation`, pending: redeem.isPending, pendingLabel: t`Accepting...`, onClick: () => redeem.mutate(),
+        disabled: !token, disabledReason: !token ? t`Open the original invitation link again.` : undefined }
       : cancelAction}
     escape={!redeem.isSuccess && user ? cancelAction : undefined} />;
 }

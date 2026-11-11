@@ -17,7 +17,7 @@ export function BookingDecisionDialog({ action, bookerName, open, pending, onCan
   const [touched, setTouched] = useState(false);
   const required = action === "reject";
   const missing = required && !reason.trim();
-  const title = action === "reject" ? "Reject booking request" : "Cancel booking";
+  const title = action === "reject" ? t`Reject booking request` : t`Cancel booking`;
   const close = () => { setReason(""); setTouched(false); onCancel(); };
   return (
     <Modal open={open} onClose={close} title={title} footer={<div className="flex flex-wrap justify-end gap-2">
@@ -32,7 +32,7 @@ export function BookingDecisionDialog({ action, bookerName, open, pending, onCan
       }}>
         <p className="text-sm">{action === "reject" ? t`Tell ${bookerName} why this request can't be approved.` : t`Cancel the booking for ${bookerName}.`}</p>
         <label htmlFor={`${id}-reason`} className="grid gap-1 text-sm">
-          <span>{t`Reason${required ? " (required)" : " (optional)"} — shown to the requester`}</span>
+          <span>{required ? t`Reason (required) — shown to the requester` : t`Reason (optional) — shown to the requester`}</span>
           <textarea id={`${id}-reason`} className="desk-input min-h-24" maxLength={1000} value={reason}
             aria-invalid={touched && missing} onChange={event => setReason(event.target.value)} />
         </label>

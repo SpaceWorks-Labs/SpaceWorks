@@ -1,7 +1,7 @@
 import { formatLocale } from "../../lib/format";
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
-import { Card, ErrorText, Skeleton, StatusBadge } from "../../components/ui";
+import { Card, ErrorText, Skeleton, StatusBadge, PagePager } from "../../components/ui";
 import { useBookingBroadcasts, type BookingCampaign } from "./bookingBroadcastsApi";
 import { opsStatusLabel } from "./opsPresentation";
 
@@ -57,10 +57,6 @@ export function BookingBroadcastsPanel({ makerspaceId, spaceId }: { makerspaceId
       {preview === row.id ? <div className="whitespace-pre-wrap rounded-control border border-line bg-surface p-3 text-sm text-ink [overflow-wrap:anywhere]"><p className="mb-2 text-muted">{t`Placeholders use current account and reservation data at delivery.`}</p>{row.body}</div> : null}
     </li>)}</ul> : null}
     {history.data?.count === 0 ? <p className="rounded-2xl border border-dashed border-line p-6 text-center text-sm text-muted">{t`No broadcasts yet.`}</p> : null}
-    {history.data?.previous || history.data?.next ? <nav aria-label={t`Broadcast pages`} className="flex flex-wrap items-center justify-end gap-2 text-sm text-muted">
-      <button type="button" className="desk-button" disabled={!history.data?.previous} onClick={() => setPage(page - 1)}>{t`Previous broadcasts`}</button>
-      <span>{t`Page ${page}`}</span>
-      <button type="button" className="desk-button" disabled={!history.data?.next} onClick={() => setPage(page + 1)}>{t`Next broadcasts`}</button>
-    </nav> : null}
+    <PagePager page={page} setPage={setPage} next={history.data?.next} />
   </section>;
 }

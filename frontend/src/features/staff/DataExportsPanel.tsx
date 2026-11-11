@@ -1,5 +1,4 @@
-import { t } from "@lingui/core/macro";
-import { plural } from "../../lib/plural";
+import { plural, t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -44,16 +43,16 @@ export function DataExportsPanel({ makerspaceId }: { makerspaceId: number }) {
   const rows = jobs.data ?? [];
 
   return <ListLayout header={{ title: t`Data export`, subtitle: t`A readable copy of your space's records. Not a backup.`,
-    primary: { label: t`Request export`, pending: requestExport.isPending, pendingLabel: "Requesting…", disabled: jobs.isLoading || jobs.isError || rows.some(isRunning),
-      disabledReason: jobs.isLoading ? "Loading the export history." : jobs.isError ? "Retry loading the export history first." : rows.some(isRunning) ? "An export is already being built." : undefined,
+    primary: { label: t`Request export`, pending: requestExport.isPending, pendingLabel: t`Requesting…`, disabled: jobs.isLoading || jobs.isError || rows.some(isRunning),
+      disabledReason: jobs.isLoading ? t`Loading the export history.` : jobs.isError ? t`Retry loading the export history first.` : rows.some(isRunning) ? t`An export is already being built.` : undefined,
       onClick: () => requestExport.mutate() } }}
     state={adminQueryState(jobs, "exports")} isEmpty={!rows.length}
     empty={{ message: t`No exports yet. Request one when you need a copy of your records.` }}
-    callout={{ size: "banner", tone: "warn", lead: "Exports include member names, emails and phone numbers.", body: t`Handle the file like any personal data.`,
+    callout={{ size: "banner", tone: "warn", lead: t`Exports include member names, emails and phone numbers.`, body: t`Handle the file like any personal data.`,
       action: { label: disclosureOpen ? t`Hide what's included` : t`Read what's included`, onClick: () => setDisclosureOpen(!disclosureOpen) } }}
     body={{ kind: "rows", rows: rows.map(job => <ListRow key={job.id} title={t`Export`} identity={{ kind: "date", date: job.created_at }}
       meta={<><RelativeTime date={job.created_at} /> · <StatusPill label={statusLabel(job)} tone={job.status === "failed" ? "danger" : job.status === "available" ? "success" : "warn"} />
-        {typeof job.manifest.total_rows === "number" ? ` · ${plural(job.manifest.total_rows, "row")}` : ""}
+        {typeof job.manifest.total_rows === "number" ? ` · ${plural(job.manifest.total_rows, { one: "# row", other: "# rows" })}` : ""}
         {job.status === "failed" ? <span className="mt-2 block text-danger" role="alert">{job.failure_code === "deadline_exceeded" ? t`This export took too long. Try again at a quieter time.` : job.failure_detail || t`The export failed. Request a new export to try again.`}</span> : null}
       </>} right={job.status === "available" ? <button className="desk-button" type="button" disabled={download.isPending && download.variables === job.id} onClick={() => download.mutate(job.id)}>
         {download.isPending && download.variables === job.id ? t`Preparing link…` : t`Download`}

@@ -6,7 +6,7 @@ import { getBackupSchedule } from "./spaceRestoreApi";
 /** One schedule view: the whole-platform nightly backup and every space's nightly backup. */
 export function BackupScheduleView({ onPickSpace }: { onPickSpace: (makerspaceId: number) => void }) {
   const schedule = useQuery({ queryKey: ["backup-schedule"], queryFn: getBackupSchedule });
-  if (schedule.isError) return <ErrorText resource="the backup schedule" onRetry={() => { void schedule.refetch(); }} />;
+  if (schedule.isError) return <ErrorText resource={t`the backup schedule`} onRetry={() => { void schedule.refetch(); }} />;
   const data = schedule.data;
   if (!data) return <p role="status" className="text-sm text-muted">{t`Loading the schedule…`}</p>;
   return <div className="grid gap-3 text-sm">

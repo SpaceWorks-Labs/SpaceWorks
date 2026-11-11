@@ -15,8 +15,10 @@ import { ListViewControls } from "./ListViewControls";
 import { useSearchParams } from "react-router-dom";
 import { useQuickCreate } from "./quickCreate";
 import { useDomainSettingsDialog } from "./useDomainSettingsDialog";
+import { useAreaPaymentsDrawer } from "./areaPayments/useAreaPaymentsDrawer";
 import { BookingQueuePanel } from "./BookingQueuePanel";
 import { BookingIssuesList } from "./BookingIssuesList";
+import { spaceKindLabel } from "../bookings/bookingStatusLabel";
 import { useBookingIssues, type QueueStatus } from "./bookingQueueApi";
 
 type PanelView = "requests" | "spaces" | "issues";
@@ -32,6 +34,7 @@ export function BookingsPanel({ makerspaceId, recurringEnabled = false, publicSi
   const [rulesOpen, setRulesOpen] = useState(false);
   useQuickCreate("booking", () => setChoosingBooking(true));
   const domainSettings = useDomainSettingsDialog(makerspaceId, "bookings", true, undefined, publicSiteEnabled);
+  const bookingPayments = useAreaPaymentsDrawer(makerspaceId, "bookings"); // decision 242(a)
   const [selectedId, setSelectedId] = useState<number | null>(() => Number(params.get("space")) || null);
   // "New booking" picks a space, then opens that space with its booking form already up.
   const [bookingSpaceId, setBookingSpaceId] = useState<number | null>(null);
@@ -77,7 +80,7 @@ export function BookingsPanel({ makerspaceId, recurringEnabled = false, publicSi
     primary: unavailable ? undefined : { label: t`New space`, onClick: () => setCreateOpen(true) },
     secondary: unavailable ? undefined : { label: t`New booking`, onClick: () => setChoosingBooking(true) },
     // Booking rules are keyed on manage_bookings, so a Booking Manager edits them here, not in space settings.
-    overflow: unavailable ? undefined : [{ label: t`Booking rules`, icon: "Settings", onClick: () => setRulesOpen(true) }, ...domainSettings.actions] }}
+    overflow: unavailable ? undefined : [{ label: t`Booking rules`, icon: "Settings", onClick: () => setRulesOpen(true) }, ...domainSettings.actions, ...bookingPayments.actions] }}
     tabs={tabs} activeTab={view} onTabChange={key => setParams(current => {
       const next = new URLSearchParams(current); next.delete("status"); if (key === "requests") next.delete("view"); else next.set("view", key); return next;
     })}
@@ -91,7 +94,7 @@ export function BookingsPanel({ makerspaceId, recurringEnabled = false, publicSi
     filteredEmpty={{ message: t`No spaces match your search. Try another name.`, action: { label: t`Clear filters`, onClick: () => list.setFilter("q", "") } }}
     body={{ kind: "rows", rows: queueBody ?? spaces.data?.results.map(space => <ListRow key={space.id} title={space.name}
       identity={{ kind: "icon", icon: "Calendar", tone: "info" }} onClick={() => setSelectedId(space.id)}
-      meta={<>{space.kind.replace(/_/g, " ")} · {space.location || t`No location label`}</>}
+      meta={<>{spaceKindLabel(space.kind)} · {space.location || t`No location label`}</>}
       right={<div className="flex flex-wrap items-center gap-2">
         <StatusPill label={space.approval_mode === "approve" ? t`Staff approval` : t`Instant`} tone="neutral" />
         <StatusPill label={space.is_public ? t`Public` : t`Private`} tone={space.is_public ? "success" : "neutral"} />
@@ -112,5 +115,6 @@ export function BookingsPanel({ makerspaceId, recurringEnabled = false, publicSi
       <MakerspaceBookingRulesSettings makerspace={{ id: makerspaceId }} />
     </Modal>
     {domainSettings.dialog}
+    {bookingPayments.dialog}
   </>;
 }

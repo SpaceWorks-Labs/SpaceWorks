@@ -4,6 +4,8 @@ from django.utils.translation import gettext
 from decimal import Decimal
 
 from rest_framework import serializers
+from apps.payments.money import exponent_ok
+from apps.payments.money_fields import MoneyField
 
 from apps.payments.models_ledger_entries import LedgerEntry, OpeningBalance
 from apps.payments.serializers_l5 import page_of
@@ -38,7 +40,7 @@ class LedgerEntryCreateSerializer(serializers.Serializer):
     event_id = serializers.IntegerField(required=False, allow_null=True)
     category = serializers.ChoiceField(choices=sorted({*LedgerEntry.RECEIPT_CATEGORIES, *LedgerEntry.EXPENSE_CATEGORIES}))
     method = serializers.ChoiceField(choices=LedgerEntry.Method.choices)
-    amount = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal("0.01"))
+    amount = MoneyField(max_digits=13, decimal_places=3, min_value=Decimal("0.001"))
     currency = serializers.RegexField(r"^[a-zA-Z]{3}$")
     entry_date = serializers.DateField()
     description = serializers.CharField(max_length=300)
@@ -52,6 +54,8 @@ class LedgerEntryCreateSerializer(serializers.Serializer):
                    else LedgerEntry.EXPENSE_CATEGORIES)
         if attrs["category"] not in allowed:
             raise serializers.ValidationError({"category": gettext("Choose a category for this kind of entry.")})
+        if not exponent_ok(attrs["amount"], attrs["currency"]):
+            raise serializers.ValidationError({"amount": gettext("This amount has more decimals than the currency allows.")})
         if attrs.get("machine_type_id") and attrs["domain"] != LedgerEntry.Domain.MACHINES:
             raise serializers.ValidationError({"machine_type_id": gettext("Only machines entries name a machine type.")})
         return attrs
@@ -82,8 +86,8 @@ class ReceiptUrlSerializer(serializers.Serializer):
 
 class OpeningBalanceSerializer(serializers.ModelSerializer):
     currency = serializers.RegexField(r"^[a-z]{3}$")
-    cash_amount = serializers.DecimalField(max_digits=12, decimal_places=2, required=False, default=Decimal("0"))
-    bank_amount = serializers.DecimalField(max_digits=12, decimal_places=2, required=False, default=Decimal("0"))
+    cash_amount = MoneyField(max_digits=13, decimal_places=3, required=False, default=Decimal("0"))
+    bank_amount = MoneyField(max_digits=13, decimal_places=3, required=False, default=Decimal("0"))
 
     class Meta:
         model = OpeningBalance

@@ -116,6 +116,11 @@ class SettlementConfirmationListView(APIView):
         rows = rbac.scope_by_action(request.user, rbac.Action.RECORD_PAYMENT, SettlementConfirmation.objects.all(),
                                     field="payment__makerspace_id").filter(
             payment__makerspace_id=makerspace_id).select_related("payment")
+        from apps.payments.unit_payer_scope import payer_user_ids
+
+        payers = payer_user_ids(request.user, makerspace_id, rbac.Action.RECORD_PAYMENT)
+        if payers is not None:  # parity O-B3 (rule 261): a unit-scoped checker sees only their members' proposals
+            rows = rows.filter(payment__member_id__in=payers)
         status = request.query_params.get("status") or SettlementConfirmation.Status.AWAITING
         rows = rows.filter(status=status) if status in SettlementConfirmation.Status.values else rows
         pager = StaffListPagination()

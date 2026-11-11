@@ -6,6 +6,7 @@ from django.utils import timezone
 
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
+from apps.payments.money_fields import MoneyField
 
 from apps.payments.serializers_l5 import LedgerFlagsSerializer
 from apps.payments.models import ManualSettlement, Payment, Refund
@@ -171,8 +172,8 @@ class PaymentOfflineSerializer(serializers.Serializer):
 
 
 class PaymentRefundRequestSerializer(serializers.Serializer):
-    amount = serializers.DecimalField(
-        max_digits=12, decimal_places=2, min_value=Decimal("0.01")
+    amount = MoneyField(
+        max_digits=13, decimal_places=3, min_value=Decimal("0.001")
     )
     reason = serializers.CharField(max_length=255, required=False, allow_blank=True, default="")
 

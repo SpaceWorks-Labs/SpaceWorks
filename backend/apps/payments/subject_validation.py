@@ -163,6 +163,13 @@ def validate_subject(payment, identity_unchanged):
             membership__makerspace_id=payment.makerspace_id,
         ).exists():
             raise ValidationError({"subject_id": gettext("Payment subject must belong to the payment makerspace.")})
+    if payment.subject_type == Payment.SubjectType.GUEST_PASS and payment.subject_id:
+        from apps.makerspaces.models import GuestPass
+
+        if not identity_unchanged and not GuestPass.objects.filter(
+            pk=payment.subject_id, makerspace_id=payment.makerspace_id,
+        ).exists():
+            raise ValidationError({"subject_id": gettext("Payment subject must belong to the payment makerspace.")})
     if payment.subject_type == Payment.SubjectType.MAKERSPACE_MEMBERSHIP and payment.subject_id:
         from apps.makerspaces.models import MakerspaceMembership
 

@@ -28,7 +28,8 @@ def apply_connect_webhook_event(event):
         _value(obj, "id") if str(event_type).startswith("checkout.session.") else None
     )
     intent_id = _value(obj, "payment_intent") or (
-        _value(obj, "id") if event_type == "payment_intent.succeeded" else None
+        # A failed native intent reaches the member's failure notice like a raw-key one.
+        _value(obj, "id") if event_type in {"payment_intent.succeeded", "payment_intent.payment_failed"} else None
     )
     identifiers = Q()
     if session_id:

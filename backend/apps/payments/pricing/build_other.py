@@ -20,7 +20,7 @@ from apps.payments.pricing.quotes import line
 ROOM = PriceOverride.TargetType.BOOKABLE_SPACE
 
 
-def booking_lines(card, space, *, starts_at=None, ends_at=None):
+def booking_lines(card, space, *, starts_at=None, ends_at=None, allowance=None):
     target = {"type": ROOM, "id": space.pk, "label": space.name}
     targets = ((ROOM, space.pk),)
     built = []
@@ -35,11 +35,20 @@ def booking_lines(card, space, *, starts_at=None, ends_at=None):
         billed = math.ceil(minutes / increment) * increment
         days = max(1, math.ceil(minutes / 1440))
         cap = hourly.cap * days if hourly.cap is not None else None
-        built.append(line(component("bookings", "per_hour"), currency=card.currency,
-                          quantity=Decimal(billed) / Decimal(60), unit_amount=hourly.amount,
-                          rate_source=hourly.source, cap=cap, target=target,
-                          detail={"minutes": minutes, "billed_minutes": billed, "increment": increment,
-                                  "cap_per_day": str(hourly.cap) if hourly.cap is not None else None}))
+        # Decision 221(d): the member's plan hours are used first; only the rest is priced.
+        # `allowance` is the per-quote dict from `bookings.included_hours.quote_allowance`;
+        # the builder records what it took in `applied_minutes` for the quote's summary.
+        included = min(int(allowance["available_minutes"]), billed) if allowance else 0
+        if allowance is not None:
+            allowance["applied_minutes"] = included
+        detail = {"minutes": minutes, "billed_minutes": billed - included, "increment": increment,
+                  "cap_per_day": str(hourly.cap) if hourly.cap is not None else None}
+        if included:
+            detail["included_minutes"] = included
+        if billed - included > 0:
+            built.append(line(component("bookings", "per_hour"), currency=card.currency,
+                              quantity=Decimal(billed - included) / Decimal(60), unit_amount=hourly.amount,
+                              rate_source=hourly.source, cap=cap, target=target, detail=detail))
     return built
 
 

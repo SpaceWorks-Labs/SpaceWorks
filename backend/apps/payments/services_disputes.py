@@ -32,7 +32,7 @@ def normalize(provider, raw):
 def _amount(minor, currency, payment):
     if not minor:
         return payment.amount
-    return Decimal(int(minor)).scaleb(-minor_unit_exponent(currency)).quantize(Decimal("0.01"))
+    return Decimal(int(minor)).scaleb(-minor_unit_exponent(currency)).quantize(Decimal("0.001"))
 
 
 def is_disputed(payment):

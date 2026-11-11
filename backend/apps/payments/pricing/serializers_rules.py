@@ -2,6 +2,7 @@
 
 from django.utils.translation import gettext
 from rest_framework import serializers
+from apps.payments.money_fields import MoneyField
 
 from apps.accounts.pii_presentation import PiiMaskingSerializerMixin
 from apps.payments.models_pricing import PriceOverride, PricingDomain
@@ -14,11 +15,11 @@ class PriceOverrideComponentSerializer(serializers.Serializer):
     unit = serializers.CharField()
     has_cap = serializers.BooleanField()
     mode = serializers.ChoiceField(choices=PriceOverride.Mode.choices)
-    amount = serializers.DecimalField(max_digits=12, decimal_places=2, allow_null=True)
-    cap = serializers.DecimalField(max_digits=12, decimal_places=2, allow_null=True)
-    effective_amount = serializers.DecimalField(max_digits=12, decimal_places=2)
+    amount = MoneyField(max_digits=13, decimal_places=3, allow_null=True)
+    cap = MoneyField(max_digits=13, decimal_places=3, allow_null=True)
+    effective_amount = MoneyField(max_digits=13, decimal_places=3)
     effective_source = serializers.CharField()
-    default_amount = serializers.DecimalField(max_digits=12, decimal_places=2)
+    default_amount = MoneyField(max_digits=13, decimal_places=3)
 
 
 class PriceOverrideCardSerializer(serializers.Serializer):
@@ -35,8 +36,8 @@ class PriceOverrideCardSerializer(serializers.Serializer):
 class PriceOverrideWriteSerializer(serializers.Serializer):
     component = serializers.CharField(max_length=32)
     mode = serializers.ChoiceField(choices=PriceOverride.Mode.choices)
-    amount = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=0, required=False, allow_null=True)
-    cap = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=0, required=False, allow_null=True)
+    amount = MoneyField(max_digits=13, decimal_places=3, min_value=0, required=False, allow_null=True)
+    cap = MoneyField(max_digits=13, decimal_places=3, min_value=0, required=False, allow_null=True)
 
     def validate(self, attrs):
         if attrs["mode"] == PriceOverride.Mode.CUSTOM and attrs.get("amount") is None:
@@ -127,7 +128,7 @@ class LoanChargeSerializer(serializers.Serializer):
     subject_type = serializers.CharField()
     subject_id = serializers.IntegerField()
     label = serializers.CharField()
-    amount = serializers.DecimalField(max_digits=12, decimal_places=2)
+    amount = MoneyField(max_digits=13, decimal_places=3)
     currency = serializers.CharField()
     status = serializers.CharField()
     created_at = serializers.DateTimeField()
@@ -139,7 +140,7 @@ class LoanAccountabilityRowSerializer(serializers.Serializer):
     quantity = serializers.IntegerField()
     item_label = serializers.CharField(allow_null=True)
     has_return_photo = serializers.BooleanField()
-    suggested_amount = serializers.DecimalField(max_digits=12, decimal_places=2)
+    suggested_amount = MoneyField(max_digits=13, decimal_places=3)
     suggested_source = serializers.CharField()
     charge = LoanChargeSerializer(allow_null=True)
     no_charge_decided = serializers.BooleanField(help_text="Staff recorded \"no charge\" for this row.")
@@ -160,7 +161,7 @@ class LoanChargesSerializer(serializers.Serializer):
 
 
 class LoanAccountabilityChargeSerializer(serializers.Serializer):
-    amount = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=0)
+    amount = MoneyField(max_digits=13, decimal_places=3, min_value=0)
     note = serializers.CharField(max_length=300, required=False, allow_blank=True, default="")
 
 

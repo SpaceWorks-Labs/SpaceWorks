@@ -87,7 +87,10 @@ class RefundCaseApproveView(APIView):
             "defaults to the due amount, re-clamped to the refundable balance. An online charge raises "
             "a provider refund after commit; if the provider refuses it the case becomes "
             "`approval_failed` (retry or decline). An offline charge requires record_payment and a "
-            "`receipt` (method, reference, refunded_at) and is recorded as a manual refund. Audited."
+            "`receipt` (method, reference, refunded_at) and is recorded as a manual refund. Audited. "
+            "`cancel_tickets` (behind `events.refund_cancels_tickets`, event charges only) also cancels the "
+            "tickets the charge paid for once the approval commits; 400 `refund_cancel_tickets_unavailable` "
+            "or `refund_cancel_tickets_not_event` otherwise. The refunded amount is unchanged."
         ),
         request=RefundCaseApproveSerializer, responses={200: RefundCaseSerializer, **DECIDE_ERRORS},
     )

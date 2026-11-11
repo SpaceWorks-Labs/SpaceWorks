@@ -3,6 +3,7 @@
 from decimal import Decimal
 
 from rest_framework import serializers
+from apps.payments.money_fields import MoneyField
 
 from apps.payments.models import (
     PaymentCaptureFlag, PaymentClaim, PaymentDispute, PaymentDisputeEvent, SettlementConfirmation,
@@ -25,9 +26,18 @@ class OwnClaimSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
+class InstructionsUnitSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+    code = serializers.CharField()
+
+
 class OfflineCollectionSerializer(serializers.Serializer):
-    upi = UpiDetailsSerializer(allow_null=True)
-    instructions = serializers.CharField(allow_blank=True)
+    upi = UpiDetailsSerializer(allow_null=True, help_text="Null when the member's unit has its own instructions.")
+    instructions = serializers.CharField(
+        allow_blank=True, help_text="The member's nearest unit's instructions, else the space-wide ones.")
+    instructions_unit = InstructionsUnitSerializer(
+        allow_null=True, help_text="The unit the instructions came from; null for the space-wide text.")
     claim = OwnClaimSerializer(allow_null=True)
     claimable = serializers.BooleanField()
 
@@ -80,7 +90,7 @@ class ConfirmationSerializer(serializers.ModelSerializer):
 class CaptureFlagSerializer(serializers.ModelSerializer):
     payment_id = serializers.IntegerField(read_only=True)
     subject_label = serializers.CharField(source="payment.subject_label", read_only=True)
-    charge_amount = serializers.DecimalField(source="payment.amount", max_digits=12, decimal_places=2, read_only=True)
+    charge_amount = MoneyField(source="payment.amount", max_digits=13, decimal_places=3, read_only=True)
     charge_currency = serializers.CharField(source="payment.currency", read_only=True)
 
     class Meta:
@@ -96,7 +106,7 @@ class FlagResolveSerializer(serializers.Serializer):
         PaymentCaptureFlag.Resolution.ISSUE_RECEIVED, PaymentCaptureFlag.Resolution.REFUND_CASE,
         PaymentCaptureFlag.Resolution.ACKNOWLEDGED])
     note = serializers.CharField(max_length=500, required=False, allow_blank=True, default="")
-    amount = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal("0.01"), required=False)
+    amount = MoneyField(max_digits=13, decimal_places=3, min_value=Decimal("0.001"), required=False)
 
 
 class DisputeEventSerializer(serializers.ModelSerializer):

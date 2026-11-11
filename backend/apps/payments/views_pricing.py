@@ -55,7 +55,7 @@ class PricingDefaultView(APIView):
 
     @extend_schema(tags=TAGS, summary="Change one area's rate card",
                    description="Settings authority: the Space Manager, or the area's manager holding its "
-                               "settings grant. Lending also writes the deposit and late-fee block (the same "
+                               "settings grant. Inventory (`loans`) also writes the deposit and late-fee block (the same "
                                "columns `payment-settings` edits). Run the impact preview first: items that "
                                "inherit the default change price; custom and Free items never do (A13). "
                                "Membership is read-only here (plans own their prices).",

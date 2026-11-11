@@ -8,6 +8,7 @@ holds prices only -- never hidden counts, storage, box, QR or requester data.
 from django.utils.translation import gettext
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import serializers
+from apps.payments.money_fields import MoneyField
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.throttling import UserRateThrottle
@@ -59,24 +60,24 @@ class PricingQuoteRequestSerializer(serializers.Serializer):
 
 
 class PricingQuoteTaxSerializer(serializers.Serializer):
-    net = serializers.DecimalField(max_digits=12, decimal_places=2)
-    tax = serializers.DecimalField(max_digits=12, decimal_places=2)
-    gross = serializers.DecimalField(max_digits=12, decimal_places=2)
+    net = MoneyField(max_digits=13, decimal_places=3)
+    tax = MoneyField(max_digits=13, decimal_places=3)
+    gross = MoneyField(max_digits=13, decimal_places=3)
     inclusive = serializers.BooleanField()
     mode = serializers.CharField()
 
 
 class PricingQuoteDepositSerializer(serializers.Serializer):
-    amount = serializers.DecimalField(max_digits=12, decimal_places=2)
+    amount = MoneyField(max_digits=13, decimal_places=3)
     refundable = serializers.BooleanField()
 
 
 class PricingQuotePolicySerializer(serializers.Serializer):
-    late_per_day = serializers.DecimalField(max_digits=12, decimal_places=2)
-    late_cap = serializers.DecimalField(max_digits=12, decimal_places=2, allow_null=True)
+    late_per_day = MoneyField(max_digits=13, decimal_places=3)
+    late_cap = MoneyField(max_digits=13, decimal_places=3, allow_null=True)
     grace_days = serializers.IntegerField()
-    damage_default = serializers.DecimalField(max_digits=12, decimal_places=2)
-    lost_default = serializers.DecimalField(max_digits=12, decimal_places=2)
+    damage_default = MoneyField(max_digits=13, decimal_places=3)
+    lost_default = MoneyField(max_digits=13, decimal_places=3)
     damage_lost_text = serializers.CharField()
 
 
@@ -84,7 +85,7 @@ class PricingPublicQuoteSerializer(serializers.Serializer):
     quote = PricingQuoteSerializer()
     digest = serializers.CharField()
     tax = PricingQuoteTaxSerializer()
-    members_total = serializers.DecimalField(max_digits=12, decimal_places=2, allow_null=True)
+    members_total = MoneyField(max_digits=13, decimal_places=3, allow_null=True)
     member_price_applied = serializers.BooleanField()
     deposit = PricingQuoteDepositSerializer(allow_null=True)
     policy = PricingQuotePolicySerializer(allow_null=True)

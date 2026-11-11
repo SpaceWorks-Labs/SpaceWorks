@@ -21,7 +21,7 @@ from django.utils import timezone
 from apps.audit import services as audit
 from apps.payments.exceptions_refunds import RefundNotAllowed, RefundProviderFailure
 from apps.payments.models import Payment, Refund
-from apps.payments.money import to_minor_units
+from apps.payments.money import AmountNotCapturable, quantize_money, to_provider_minor_units
 from apps.payments.providers import PaymentsUnavailable, RefundRequest, get_provider
 from apps.payments.resolution import source_for_payment
 
@@ -39,6 +39,16 @@ def refund_payment(payment, *, amount, reason, actor):
 def dispatch_refund(refund, *, actor):
     """Steps 2 and 3: provider I/O outside every lock, then settle. Returns (refund, failed)."""
     result, failed = _send_to_provider(refund)
+    if failed is None:
+        # Audit 0.12.0 C-1: a timeout, dropped connection or provider 5xx says nothing about
+        # whether the money went back. Marking the row FAILED freed its share of the balance,
+        # so a retry raised a SECOND provider refund (new idempotency key) for the same money.
+        # It stays PENDING and reserved; the provider's webhook binds and settles it.
+        refund = Refund.objects.select_related("payment__makerspace").get(pk=refund.pk)
+        audit.record(actor, "payment.refund_requested", makerspace=refund.payment.makerspace,
+                     target=refund.payment, meta={"payment_id": refund.payment_id, "refund_id": refund.pk,
+                                                  "amount": str(refund.amount), "outcome_unknown": True})
+        return refund, False
     if failed:
         settle_refund(refund, external_refund_id=None, status=Refund.Status.FAILED, actor=actor)
     else:
@@ -49,9 +59,12 @@ def dispatch_refund(refund, *, actor):
 
 def _open_refund(payment, *, amount, reason, actor):
     try:
-        amount = Decimal(amount).quantize(Decimal("0.01"))
+        raw, amount = Decimal(amount), quantize_money(amount, payment.currency)
     except (InvalidOperation, TypeError, ValueError):
         raise RefundNotAllowed("Refund amount is invalid.", "refund_amount_invalid")
+    if raw != amount:
+        # Finer than the charge precision (a yen's decimals, a KWD fils): refuse, never round a refund.
+        raise RefundNotAllowed("Refund amount is invalid for this currency.", "refund_amount_invalid")
     if amount <= 0:
         raise RefundNotAllowed("Refund amount must be positive.", "refund_amount_invalid")
     with transaction.atomic():
@@ -72,6 +85,10 @@ def open_refund_locked(locked, *, amount, reason, actor):
             "Only payments settled online can be refunded through the provider.",
             "refund_not_online",
         )
+    from apps.payments.refund_policy import precision_ok
+    if not precision_ok(amount, locked.currency):
+        # Audit 0.12.0 C-2: JPY 0.50 passed the two-place check and was sent as 1 yen.
+        raise RefundNotAllowed("Refund amount is invalid for this currency.", "refund_amount_invalid")
     if Refund.counted_total(locked) + amount > locked.amount:
         raise RefundNotAllowed(
             "Refund exceeds the refundable balance.", "refund_exceeds_balance"
@@ -87,6 +104,13 @@ def open_refund_locked(locked, *, amount, reason, actor):
     from apps.payments.services_refund_cases import void_exhausted_cases
     void_exhausted_cases(locked, actor=actor)
     return refund
+
+
+def _minor(refund):
+    try:
+        return to_provider_minor_units(refund.amount, refund.currency)
+    except AmountNotCapturable as exc:
+        raise PaymentsUnavailable("The refund amount is finer than the provider can move.") from exc
 
 
 def _send_to_provider(refund):
@@ -105,7 +129,7 @@ def _send_to_provider(refund):
             RefundRequest(
                 payment_id=provider_payment_id or "",
                 # Integer minor units; a float here reconciles as a real money difference.
-                amount_minor=to_minor_units(refund.amount, refund.currency),
+                amount_minor=_minor(refund),
                 currency=refund.currency,
                 reference=str(refund.pk),
                 idempotency_key=f"payment-refund-{refund.pk}",
@@ -119,12 +143,42 @@ def _send_to_provider(refund):
             ),
         )
         return result, False
-    except PaymentsUnavailable:
+    except PaymentsUnavailable as exc:
+        if outcome_unknown(exc):
+            logger.warning("payment_refund_outcome_unknown", extra={"refund_id": refund.pk})
+            return None, None
         logger.warning("payment_refund_provider_failed", extra={"refund_id": refund.pk})
         return None, True
-    except Exception:
+    except Exception as exc:
+        if outcome_unknown(exc):
+            logger.warning("payment_refund_outcome_unknown", extra={"refund_id": refund.pk})
+            return None, None
         logger.exception("payment_refund_provider_error", extra={"refund_id": refund.pk})
         return None, True
+
+
+def outcome_unknown(exc):
+    """True when the provider may have acted: a network failure, timeout or 5xx anywhere in the chain.
+
+    A 4xx is a definitive refusal, and a local precondition (no credentials, no captured id)
+    never reached the provider, so both stay FAILED and the balance is free to retry.
+    """
+    seen, current = set(), exc
+    while current is not None and id(current) not in seen:
+        seen.add(id(current))
+        status = getattr(current, "http_status", None)
+        if status is None:
+            status = getattr(current, "status", None)
+        if isinstance(status, int) and not isinstance(status, bool):
+            if 400 <= status < 500:
+                return False
+            if status >= 500:
+                return True
+        if isinstance(current, (TimeoutError, ConnectionError, OSError)) or type(current).__name__ in (
+                "APIConnectionError", "Timeout", "ReadTimeout", "ConnectTimeout"):
+            return True
+        current = current.__cause__ or current.__context__
+    return False
 
 
 def settle_refund(refund, *, external_refund_id, status, actor):

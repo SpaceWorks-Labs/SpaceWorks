@@ -23,7 +23,7 @@ from django.utils import timezone
 from apps.payments.availability import SUBJECT_DOMAINS
 from apps.payments.models import Payment, Refund
 from apps.payments.models_refund_cases import RefundCase, RefundPolicy
-from apps.payments.money import minor_unit_exponent
+from apps.payments.money import quantum
 
 ZERO = Decimal("0.00")
 POLICY_AREAS = frozenset(RefundPolicy.Area.values)
@@ -33,12 +33,11 @@ FULL_REASONS = {RefundCase.ReasonCode.EVENT_CANCELLED: "event_cancelled_full",
 
 
 def round_down(amount, currency):
-    places = min(minor_unit_exponent(currency), 2)
-    return Decimal(amount).quantize(Decimal(1).scaleb(-places), rounding=ROUND_DOWN)
+    return Decimal(amount).quantize(quantum(currency), rounding=ROUND_DOWN)
 
 
 def precision_ok(amount, currency):
-    """Whether `amount` is expressible in the currency at the stored precision."""
+    """Whether `amount` is expressible in the currency at the charge precision."""
     return round_down(amount, currency) == Decimal(amount)
 
 

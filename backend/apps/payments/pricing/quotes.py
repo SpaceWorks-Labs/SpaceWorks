@@ -59,6 +59,9 @@ class Quote:
     waiver: dict | None = None
     mode: str = "free"
     notes: tuple = ()
+    #: Decision 221(d): plan hours applied before pricing, with the remaining balance
+    #: (None unless the member's term included hours); see `bookings.included_hours`.
+    included_hours: dict | None = None
 
     @property
     def subtotal(self):
@@ -90,6 +93,8 @@ class Quote:
                            (line.target or {}).get("id")] for line in self.lines],
                 "discount": (self.discount or {}).get("id"), "promo": (self.promo or {}).get("id"),
                 "waiver": (self.waiver or {}).get("id")}
+        if self.included_hours:
+            body["included_minutes"] = self.included_hours.get("applied_minutes", 0)
         encoded = json.dumps(body, sort_keys=True, separators=(",", ":")).encode()
         return hashlib.sha256(encoded).hexdigest()
 
@@ -98,7 +103,8 @@ class Quote:
                 "lines": [line.as_json() for line in self.lines], "subtotal": str(self.subtotal),
                 "discount_total": str(self.discount_total), "total": str(self.total),
                 "discount": self.discount, "promo": self.promo, "waiver": self.waiver,
-                "notes": list(self.notes), "digest": self.digest}
+                "notes": list(self.notes), "digest": self.digest,
+                **({"included_hours": self.included_hours} if self.included_hours else {})}
 
     def to_snapshot(self, **extra):
         """What `Payment.pricing_snapshot` freezes. Insert-only on the charge."""

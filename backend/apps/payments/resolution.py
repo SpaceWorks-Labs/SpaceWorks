@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from apps.makerspaces.domain_verification import is_self_host
+from apps.makerspaces.domain_verification import hosts_other_spaces
 from apps.payments.models_settings import (
     MakerspacePaymentSettings,
     PlatformStripeConnectSettings,
@@ -71,7 +71,7 @@ def resolve_payment_source(makerspace) -> PaymentSource | None:
                 publishable_key=merchant.stripe_publishable_key,
             )
 
-    if is_self_host():
+    if not hosts_other_spaces():
         return None
     if not (
         merchant.connect_account_id
@@ -122,7 +122,11 @@ def source_for_payment(payment) -> PaymentSource | None:
             )
         except Exception:
             return None
-    if is_self_host() or not payment.stripe_connected_account_id:
+    # No `hosts_other_spaces()` clause for an EXISTING row (payments audit 0.12.0): that is a
+    # console switch now (#234), and turning it off must not strand refunds, expiry or
+    # settlement of Connect charges already raised. New charges stay gated in
+    # `resolve_payment_source` above.
+    if not payment.stripe_connected_account_id:
         return None
     platform = PlatformStripeConnectSettings.load()
     if not platform.is_configured:

@@ -24,6 +24,8 @@ SUBJECT_ACTIONS = {
     Payment.SubjectType.MEMBERSHIP_REQUEST: rbac.Action.MANAGE_MEMBERS,
     # #184: whoever may open a term (manage_members) settles the charge it raised.
     Payment.SubjectType.MEMBERSHIP_TERM_START: rbac.Action.MANAGE_MEMBERS,
+    # Decision 223(b): whoever may issue guest passes (manage_members) settles a day-pass charge.
+    Payment.SubjectType.GUEST_PASS: rbac.Action.MANAGE_MEMBERS,
     # Loan charges follow the handover job: whoever may issue settles the deposit,
     # whoever may take a return settles the late fee.
     Payment.SubjectType.LOAN_DEPOSIT: rbac.Action.ISSUE_REQUEST,
@@ -38,9 +40,11 @@ SUBJECT_ACTIONS = {
     # Lane L6: event money follows the Event Manager, like a registration charge.
     Payment.SubjectType.EVENT_ORDER: rbac.Action.MANAGE_EVENTS,
     Payment.SubjectType.EVENT_VENUE_FEE: rbac.Action.MANAGE_EVENTS,
-    # Lane L18: no area manager owns gifts or sponsor money; finance staff do.
-    Payment.SubjectType.DONATION: rbac.Action.RECORD_PAYMENT,
-    Payment.SubjectType.SPONSORSHIP: rbac.Action.RECORD_PAYMENT,
+    # Lane L18: no area manager owns gifts or sponsor money. Decision 242(m): whoever runs
+    # donations does (the Fundraising role; the Space Manager through manage_makerspace);
+    # record_payment holders still record cash through `_require_record_authority`.
+    Payment.SubjectType.DONATION: rbac.Action.MANAGE_DONATIONS,
+    Payment.SubjectType.SPONSORSHIP: rbac.Action.MANAGE_DONATIONS,
     # Lane L21b: entry fees and team charges, like every other events charge.
     Payment.SubjectType.SUBMISSION_FEE: rbac.Action.MANAGE_EVENTS,
     Payment.SubjectType.TEAM_REGISTRATION: rbac.Action.MANAGE_EVENTS,
@@ -54,6 +58,12 @@ SUBJECT_ACTIONS = {
 CASH_RECORD_ACTIONS = {
     Payment.SubjectType.SHOP_ORDER: rbac.Action.MANAGE_SHOP,
 }
+# Decision 242(c): every area manager hands back cash on their OWN area's charges, like the shop.
+# Gifts and sponsorship map to `manage_donations`, which no area manager holds: only Fundraising
+# and the Space Manager (decision 252) record their cash. Machine charges are further narrowed
+# to the role's machine types by `_require_subject_authority` at the service.
+CASH_RECORD_ACTIONS |= {subject: action for subject, action in SUBJECT_ACTIONS.items()
+                        if action is not rbac.Action.RECORD_PAYMENT}
 
 
 def may_record_cash(actor, payment):

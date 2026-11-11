@@ -41,16 +41,26 @@ def record_offline_refund(payment, *, amount, reason, receipt, actor, release_de
     )
     if locked is None:
         raise NotFound(gettext("Payment not found."))
+    if not rbac.can(actor, rbac.Action.RECORD_PAYMENT, locked.makerspace_id):
+        # Decision 242(c): an area manager's own cash authority, narrowed by machine type.
+        from apps.payments.reconciliation_authority import _require_subject_authority
+        _require_subject_authority(actor, [locked])
     if release_deposit:
         from apps.hardware_requests.models import HardwareRequest
-        closed = rbac.scope_by_action(
-            actor, rbac.Action.RECORD_PAYMENT, HardwareRequest.objects.all(), field="makerspace_id",
-        ).filter(pk=locked.subject_id, makerspace_id=locked.makerspace_id,
-                 status__in=[HardwareRequest.Status.RETURNED, HardwareRequest.Status.CLOSED_WITH_ISSUE])
+        # Audit 0.12.0 C-3: the loan is read in the payment's own space; the actor's authority
+        # was decided on the charge above. Scoping it by record_payment refused every area owner
+        # (the Inventory Manager releasing a deposit, decision 242(c)) with `deposit_not_returned`.
+        closed = HardwareRequest.objects.filter(
+            pk=locked.subject_id, makerspace_id=locked.makerspace_id,
+            status__in=[HardwareRequest.Status.RETURNED, HardwareRequest.Status.CLOSED_WITH_ISSUE])
         if locked.subject_type != Payment.SubjectType.LOAN_DEPOSIT or not closed.exists():
             raise RefundNotAllowed("A deposit can be released after the loan closes.", "deposit_not_returned")
     if locked.status != Payment.Status.PAID_OFFLINE:
         raise RefundNotAllowed("Only offline-settled payments accept a manual refund.", "refund_not_offline")
+    from apps.payments.refund_policy import precision_ok
+    if not precision_ok(data["amount"], locked.currency):
+        # Audit 0.12.0 C-2: no half yen is handed back over a counter.
+        raise RefundNotAllowed("Refund amount is invalid for this currency.", "refund_amount_invalid")
     if Refund.counted_total(locked) + data["amount"] > locked.amount:
         raise RefundNotAllowed("Refund exceeds the refundable balance.", "refund_exceeds_balance")
     refund = Refund.objects.create(
@@ -84,9 +94,12 @@ def amend_offline_refund(payment, *, refund_id, receipt, actor):
     ).first()
     if locked is None:
         raise NotFound(gettext("Payment not found."))
-    previous = rbac.scope_by_action(
-        actor, rbac.Action.RECORD_PAYMENT, Refund.objects.all(), field="payment__makerspace_id",
-    ).filter(
+    if not rbac.can(actor, rbac.Action.RECORD_PAYMENT, locked.makerspace_id):
+        # Audit 0.12.0 C-4: an area owner who recorded a cash refund (242(c)) may correct its
+        # receipt, under the same subject authority (machine-type narrowed) that recorded it.
+        from apps.payments.reconciliation_authority import _require_subject_authority
+        _require_subject_authority(actor, [locked])
+    previous = Refund.objects.filter(
         pk=refund_id, payment=locked, provider=Refund.Provider.MANUAL, amended_by__isnull=True,
     ).first()
     if previous is None:

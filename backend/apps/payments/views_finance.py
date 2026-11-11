@@ -15,6 +15,7 @@ from django.shortcuts import get_object_or_404
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework import serializers
+from apps.payments.money_fields import MoneyField
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -24,6 +25,7 @@ from apps.audit import services as audit
 from apps.hardware_requests.exceptions import ErrorSerializer
 from apps.makerspaces.local_time import local_day_bounds, local_now
 from apps.payments.l5_gates import finance_space
+from apps.payments.payout_session import full_session, require_full_session, strip_payout_columns
 from apps.payments.reports_finance_ledger import EVENT_FIELDS, FIELDS, build_income_spending, event_finance
 
 ERRORS = {400: OpenApiResponse(ErrorSerializer), 401: OpenApiResponse(ErrorSerializer),
@@ -37,14 +39,14 @@ class SummaryRowSerializer(serializers.Serializer):
     domain = serializers.CharField()
     machine_type = serializers.CharField(allow_blank=True)
     currency = serializers.CharField()
-    income = serializers.DecimalField(max_digits=14, decimal_places=2)
-    other_income = serializers.DecimalField(max_digits=14, decimal_places=2)
-    refunds = serializers.DecimalField(max_digits=14, decimal_places=2)
-    expenses = serializers.DecimalField(max_digits=14, decimal_places=2)
-    payouts = serializers.DecimalField(max_digits=14, decimal_places=2)
-    money_in = serializers.DecimalField(max_digits=14, decimal_places=2)
-    money_out = serializers.DecimalField(max_digits=14, decimal_places=2)
-    net = serializers.DecimalField(max_digits=14, decimal_places=2)
+    income = MoneyField(max_digits=15, decimal_places=3)
+    other_income = MoneyField(max_digits=15, decimal_places=3)
+    refunds = MoneyField(max_digits=15, decimal_places=3)
+    expenses = MoneyField(max_digits=15, decimal_places=3)
+    payouts = MoneyField(max_digits=15, decimal_places=3)
+    money_in = MoneyField(max_digits=15, decimal_places=3)
+    money_out = MoneyField(max_digits=15, decimal_places=3)
+    net = MoneyField(max_digits=15, decimal_places=3)
 
 
 class SummarySerializer(serializers.Serializer):
@@ -57,19 +59,19 @@ class EventFinanceRowSerializer(serializers.Serializer):
     event_id = serializers.IntegerField()
     event = serializers.CharField(allow_blank=True)
     currency = serializers.CharField()
-    income = serializers.DecimalField(max_digits=14, decimal_places=2)
-    refunds = serializers.DecimalField(max_digits=14, decimal_places=2)
-    other_income = serializers.DecimalField(max_digits=14, decimal_places=2)
-    expenses = serializers.DecimalField(max_digits=14, decimal_places=2)
-    payouts = serializers.DecimalField(max_digits=14, decimal_places=2)
-    budget = serializers.DecimalField(max_digits=14, decimal_places=2, allow_null=True)
-    budget_left = serializers.DecimalField(max_digits=14, decimal_places=2, allow_null=True)
-    net = serializers.DecimalField(max_digits=14, decimal_places=2)
+    income = MoneyField(max_digits=15, decimal_places=3)
+    refunds = MoneyField(max_digits=15, decimal_places=3)
+    other_income = MoneyField(max_digits=15, decimal_places=3)
+    expenses = MoneyField(max_digits=15, decimal_places=3)
+    payouts = MoneyField(max_digits=15, decimal_places=3)
+    budget = MoneyField(max_digits=15, decimal_places=3, allow_null=True)
+    budget_left = MoneyField(max_digits=15, decimal_places=3, allow_null=True)
+    net = MoneyField(max_digits=15, decimal_places=3)
 
 
 class EventBudgetSerializer(serializers.Serializer):
     currency = serializers.RegexField(r"^[a-z]{3}$")
-    amount = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=0)
+    amount = MoneyField(max_digits=13, decimal_places=3, min_value=0)
 
 
 def _range(request, space):
@@ -98,7 +100,12 @@ class FinanceSummaryView(APIView):
         space, _view = finance_space(request, makerspace_id)
         start, end, window = _range(request, space)
         result = build_income_spending(space.pk, date_range=window, actor=request.user)
-        return Response({"start": start, "end": end, "rows": result.records})
+        rows = result.records
+        if not full_session(request):
+            # Payee money is session-only (#224c): tokens and OAuth clients get no payout figure,
+            # nor the money-out/net totals that include it.
+            rows = strip_payout_columns(rows)
+        return Response({"start": start, "end": end, "rows": rows})
 
 
 def _event(space, event_id):
@@ -115,6 +122,7 @@ class EventFinanceView(APIView):
                    parameters=[OpenApiParameter("format", OpenApiTypes.STR, enum=["json", "csv"])],
                    responses={200: EventFinanceRowSerializer(many=True), **ERRORS})
     def get(self, request, makerspace_id, event_id):
+        require_full_session(request)  # the whole row is event payout money (#224c)
         space, view = finance_space(request, makerspace_id)
         if not view.sees("events"):
             raise PermissionDenied(gettext("Events money is for the Event Manager and finance staff."))

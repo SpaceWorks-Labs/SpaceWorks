@@ -42,7 +42,9 @@ def _payments(makerspace):
     return rbac.scope_for_scheduled_work(
         Payment.objects.select_related("makerspace"), makerspace_id=makerspace.pk,
     ).filter(makerspace=makerspace, status=Payment.Status.PENDING, due_at__isnull=False,
-             member__isnull=False, member__is_active=True, member__access_status="active")
+             member__isnull=False, member__is_active=True, member__access_status="active").exclude(
+        # Payments audit 0.12.0 (B-7): an unpaid gift is not a debt; pledges remind their giver themselves.
+        subject_type=Payment.SubjectType.DONATION)
 
 
 def discover_payments(makerspace, now, limit, local_tz):

@@ -73,7 +73,7 @@ class RazorpayProvider:
 
     # ---- HTTP ------------------------------------------------------------------
 
-    def _request(self, source, method, path, body=None):
+    def _request(self, source, method, path, body=None, *, idempotency_key=None):
         if not (source.secret_key and source.publishable_key):
             raise PaymentsUnavailable("Razorpay credentials are not configured.")
         # publishable_key carries the key_id, secret_key the key_secret. Reusing the
@@ -90,6 +90,9 @@ class RazorpayProvider:
             headers={
                 "Authorization": f"Basic {token}",
                 "Content-Type": "application/json",
+                # Payments audit 0.12.0 C-9: a retried refund POST must not move the money twice.
+                # Razorpay refund idempotency header (docs: api/refunds/normal-refunds-idempotent).
+                **({"X-Refund-Idempotency": idempotency_key} if idempotency_key else {}),
             },
         )
         try:
@@ -138,6 +141,11 @@ class RazorpayProvider:
             skip += len(items)
 
     def create_checkout(self, source, request: CheckoutRequest) -> CheckoutResult:
+        # Payments audit 0.12.0: Razorpay refuses a reused `reference_id`, so the link raised
+        # after an expired/cancelled one carries the idempotency key's generation. The first
+        # link keeps the bare payment id, exactly as before.
+        generation = (request.idempotency_key or "").rpartition("-")[2]
+        reference = request.reference if generation in ("", "0") else f"{request.reference}-{generation}"[:40]
         payload = {
             "amount": request.amount_minor,
             # Razorpay wants the ISO code uppercase; the rest of this codebase stores
@@ -145,7 +153,7 @@ class RazorpayProvider:
             # provider's spelling into the Payment row.
             "currency": request.currency.upper(),
             "description": request.description[:2048],
-            "reference_id": request.reference,
+            "reference_id": reference,
             "callback_url": request.success_url,
             "callback_method": "get",
             # Razorpay calls it `notes`; it is the `metadata` echo the webhook needs to
@@ -185,6 +193,8 @@ class RazorpayProvider:
                 "receipt": request.reference[:40],
                 "notes": {key: str(value) for key, value in (request.metadata or {}).items()},
             },
+            # The caller keys it on the Refund row (`payment-refund-<pk>`), stable across retries.
+            idempotency_key=request.idempotency_key or None,
         )
         refund_id = result.get("id")
         if not refund_id:

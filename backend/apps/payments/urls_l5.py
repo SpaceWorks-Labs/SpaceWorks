@@ -6,10 +6,14 @@ from django.urls import path
 
 from apps.payments import views_finance as finance, views_flags as flags, views_ledger as ledger
 from apps.payments import views_offline as offline, views_pay_links as pay, views_tax as tax
+from apps.payments.views_event_linked_finance import EventLinkedFinanceView  # decision 216 item 8
+from apps.payments import views_collection_sheet as sheet  # parity O-B3
 
 SPACE = "admin/makerspace/<int:makerspace_id>"
 
 L5_PATTERNS = [
+    path(f"{SPACE}/billing/collection-sheet", sheet.CollectionSheetView.as_view(), name="billing-collection-sheet"),
+    path(f"{SPACE}/billing/cash-handovers", sheet.CashHandoverView.as_view(), name="billing-cash-handover"),
     path(f"{SPACE}/billing/tax", tax.TaxSettingsView.as_view(), name="billing-tax"),
     path(f"{SPACE}/billing/tax/validate-gstin", tax.GstinValidateView.as_view(), name="billing-tax-gstin"),
     path(f"{SPACE}/billing/tax/preview", tax.TaxPreviewView.as_view(), name="billing-tax-preview"),
@@ -43,6 +47,8 @@ L5_PATTERNS = [
     path(f"{SPACE}/finance/events/<int:event_id>", finance.EventFinanceView.as_view(), name="finance-event"),
     path(f"{SPACE}/finance/events/<int:event_id>/budget", finance.EventBudgetView.as_view(),
          name="finance-event-budget"),
+    path(f"{SPACE}/finance/events/<int:event_id>/linked", EventLinkedFinanceView.as_view(),
+         name="finance-event-linked"),
     path("public/pay/<str:token>", pay.PublicPayLinkView.as_view(), name="pay-link"),
     path("public/pay/<str:token>/claim", pay.PublicPayLinkClaimView.as_view(), name="pay-link-claim"),
 ]

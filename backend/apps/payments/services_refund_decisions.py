@@ -25,6 +25,7 @@ from apps.payments.exceptions_refunds import RefundCaseConflict, RefundNotAllowe
 from apps.payments.models import Payment, RefundCase
 from apps.payments.price_drop.approval import is_difference_case, require_decider
 from apps.payments.reconciliation_authority import _require_subject_authority, may_record_cash
+from apps.payments.money import quantize_money
 from apps.payments.refund_policy import precision_ok, refundable_balance
 from apps.payments.services_refund_cases import _lock_payment, _notify, record_case
 
@@ -51,10 +52,14 @@ def _amount(raw, case, payment, balance):
     if amount > balance:
         raise RefundCaseConflict("Refund exceeds the refundable balance.", "refund_exceeds_balance",
                                  balance=str(balance))
-    return amount.quantize(Decimal("0.01"))
+    return quantize_money(amount, payment.currency)
 
 
-def approve_case(case, *, actor, amount=None, reason="", note="", receipt=None, keep_membership=False):
+def approve_case(case, *, actor, amount=None, reason="", note="", receipt=None, keep_membership=False,
+                 cancel_tickets=False):
+    if cancel_tickets:
+        from apps.payments.refund_ticket_cancel import require_cancel_tickets_allowed
+        require_cancel_tickets_allowed(case)
     exhausted = False
     with transaction.atomic():
         payment, locked = _lock_case(case, actor)
@@ -76,6 +81,9 @@ def approve_case(case, *, actor, amount=None, reason="", note="", receipt=None, 
     if not keep_membership and not is_difference_case(locked):
         from apps.payments.refund_membership_term import end_term_after_commit
         end_term_after_commit(locked, payment, actor)
+    if cancel_tickets:
+        from apps.payments.refund_ticket_cancel import cancel_tickets_after_commit
+        cancel_tickets_after_commit(locked, payment, actor)
     return RefundCase.objects.select_related("payment__makerspace", "refund").get(pk=locked.pk)
 
 

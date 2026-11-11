@@ -76,14 +76,14 @@ def set_default(actor, makerspace, domain, *, mode=None, lines=(), loan_block=No
         if spec is None or spec.read_only:
             raise ComponentNotAllowed(component=entry["component"])
         if domain == "loans" and spec.key in LOAN_LEGACY_COMPONENTS:
-            raise ComponentNotAllowed("Set the deposit and late fee in the lending block.", component=spec.key)
+            raise ComponentNotAllowed("Set the deposit and late fee in the deposit and late fee section.", component=spec.key)
         values = {field: entry[field] for field in LINE_FIELDS if field in entry}
         if not spec.has_cap:
             values["cap"] = None
         PricingDefaultLine.objects.update_or_create(default=row, component=spec.key, defaults=values)
     if loan_block:
         if domain != "loans":
-            raise ComponentNotAllowed("The lending block applies to lending only.")
+            raise ComponentNotAllowed("The deposit and late fee section applies to Inventory loans only.")
         legacy_before, legacy_after = write_loan_legacy(space, loan_block)
     after = _summary(row)
     if legacy_after:

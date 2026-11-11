@@ -1,6 +1,7 @@
 """Pricing API shapes: the quote, a domain's rate card, and the impact preview (lane L15)."""
 
 from rest_framework import serializers
+from apps.payments.money_fields import MoneyField
 
 from apps.payments.models_pricing import PricingDefault, PricingDomain
 
@@ -10,10 +11,10 @@ class PricingQuoteLineSerializer(serializers.Serializer):
     label = serializers.CharField()
     subject_type = serializers.CharField(allow_null=True)
     quantity = serializers.DecimalField(max_digits=16, decimal_places=4)
-    unit_amount = serializers.DecimalField(max_digits=12, decimal_places=2)
-    gross = serializers.DecimalField(max_digits=12, decimal_places=2)
-    discount = serializers.DecimalField(max_digits=12, decimal_places=2)
-    net = serializers.DecimalField(max_digits=12, decimal_places=2)
+    unit_amount = MoneyField(max_digits=13, decimal_places=3)
+    gross = MoneyField(max_digits=13, decimal_places=3)
+    discount = MoneyField(max_digits=13, decimal_places=3)
+    net = MoneyField(max_digits=13, decimal_places=3)
     source = serializers.CharField()
     cap_applied = serializers.BooleanField()
     target = serializers.JSONField(allow_null=True)
@@ -24,7 +25,7 @@ class PricingQuoteDiscountSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     name = serializers.CharField()
     audience = serializers.CharField()
-    saving = serializers.DecimalField(max_digits=12, decimal_places=2)
+    saving = MoneyField(max_digits=13, decimal_places=3)
 
 
 class PricingQuoteSerializer(serializers.Serializer):
@@ -32,13 +33,15 @@ class PricingQuoteSerializer(serializers.Serializer):
     currency = serializers.CharField()
     mode = serializers.CharField()
     lines = PricingQuoteLineSerializer(many=True)
-    subtotal = serializers.DecimalField(max_digits=12, decimal_places=2)
-    discount_total = serializers.DecimalField(max_digits=12, decimal_places=2)
-    total = serializers.DecimalField(max_digits=12, decimal_places=2)
+    subtotal = MoneyField(max_digits=13, decimal_places=3)
+    discount_total = MoneyField(max_digits=13, decimal_places=3)
+    total = MoneyField(max_digits=13, decimal_places=3)
     discount = PricingQuoteDiscountSerializer(allow_null=True)
     waiver = serializers.JSONField(allow_null=True)
     notes = serializers.ListField(child=serializers.CharField())
     digest = serializers.CharField()
+    # Decision 221(d): plan included hours applied to a booking quote (absent otherwise).
+    included_hours = serializers.JSONField(required=False, allow_null=True)
 
 
 def quote_payload(quote):
@@ -60,8 +63,8 @@ class PricingRateLineSerializer(serializers.Serializer):
     staff_set = serializers.BooleanField(read_only=True)
     prefill_only = serializers.BooleanField(read_only=True)
     read_only = serializers.BooleanField(read_only=True)
-    amount = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=0)
-    cap = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=0, allow_null=True, required=False)
+    amount = MoneyField(max_digits=13, decimal_places=3, min_value=0)
+    cap = MoneyField(max_digits=13, decimal_places=3, min_value=0, allow_null=True, required=False)
     grace_units = serializers.IntegerField(min_value=0, max_value=365, required=False)
     billing_increment = serializers.IntegerField(min_value=0, max_value=1440, required=False)
     minimum = serializers.IntegerField(min_value=0, max_value=1440, required=False)
@@ -70,10 +73,10 @@ class PricingRateLineSerializer(serializers.Serializer):
 
 class PricingLendingSerializer(serializers.Serializer):
     deposit_mode = serializers.ChoiceField(choices=["none", "fixed", "per_product"], required=False)
-    deposit_amount = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=0, required=False)
+    deposit_amount = MoneyField(max_digits=13, decimal_places=3, min_value=0, required=False)
     deposit_blocks_issue = serializers.BooleanField(required=False)
-    late_per_day = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=0, required=False)
-    late_cap = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=0, required=False)
+    late_per_day = MoneyField(max_digits=13, decimal_places=3, min_value=0, required=False)
+    late_cap = MoneyField(max_digits=13, decimal_places=3, min_value=0, required=False)
     grace_days = serializers.IntegerField(min_value=0, max_value=365, required=False)
 
 
@@ -114,8 +117,8 @@ class PricingImpactChangeSerializer(serializers.Serializer):
     target_id = serializers.IntegerField()
     label = serializers.CharField()
     component = serializers.CharField()
-    before = serializers.DecimalField(max_digits=12, decimal_places=2)
-    after = serializers.DecimalField(max_digits=12, decimal_places=2)
+    before = MoneyField(max_digits=13, decimal_places=3)
+    after = MoneyField(max_digits=13, decimal_places=3)
     source = serializers.CharField()
 
 

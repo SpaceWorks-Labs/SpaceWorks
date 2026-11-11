@@ -8,7 +8,8 @@ from apps.accounts.account_kind_guards import require_member_account
 
 import logging
 
-from django.db import transaction
+from django.core.exceptions import ValidationError
+from django.db import IntegrityError, transaction
 
 from apps.audit import services as audit
 # Re-exported, not used here: tests and callers reach it through this barrel.
@@ -19,6 +20,7 @@ from apps.payments.resolution import resolve_payment_source
 # Re-export barrel: these moved out at the 300-line ceiling.
 from apps.payments.services_checkout import (  # noqa: F401
     PaymentRailConflict,
+    PaymentSettlementPending,
     _application_fee_amount,
     _ConnectAccountCannotCharge,
     create_checkout,
@@ -51,12 +53,20 @@ def create_payment(
     # `(amount, snapshot)`, built from the same engine line by line (`shop/tax_lines.py`).
     # A gift (lane L18) is never a taxable supply.
     from apps.payments.tax.snapshot import freeze_for_charge
+    if frozen_tax is None:
+        # Payments audit 0.12.0 (B-2): the debt is stored in what the provider can capture.
+        # A JPY 1500.50 row was charged 1501 and receipted 1500.50; the tax engine's own
+        # quantum (ISO exponent, capped at the column's 2 places) is the one rounding rule.
+        from apps.payments.tax.engine import q
+        amount = q(amount, currency)
     if frozen_tax is not None:
         amount, tax_snapshot = frozen_tax
     elif subject_type in Payment.UNTAXED_SUBJECT_TYPES:
         tax_snapshot = None
     else:
         amount, tax_snapshot = freeze_for_charge(makerspace, amount, currency, member)
+        from apps.payments.tax.plan_sac import with_plan_sac  # parity O-B3: the plan's own SAC, frozen here
+        tax_snapshot = with_plan_sac(makerspace, subject_type, subject_id, tax_snapshot)
     source = resolve_payment_source(makerspace)
     if source is None:
         vendor = Payment.Provider.UNCLAIMED
@@ -69,29 +79,37 @@ def create_payment(
         connected_account_id = source.connected_account_id
         fee_amount = _application_fee_amount(amount, source.application_fee_bps, currency)
     from apps.payments.due_dates import default_due_at
-    payment = Payment.objects.create(
-        makerspace=makerspace,
-        subject_type=subject_type,
-        subject_id=subject_id,
-        member=member,
-        via_makerspace=via_makerspace,
-        subject_label=(subject_label or "")[:255],
-        amount=amount,
-        currency=currency.lower(),
-        created_by=created_by,
-        due_at=due_at if due_at is not None else default_due_at(makerspace, actor=created_by),
-        # Stamped at creation from whatever resolved NOW, and immutable thereafter: a
-        # space that switches vendor must still settle and expire the charges it raised
-        # under the old one, and moving a row between vendors would point it at a
-        # merchant account that never took the money.
-        provider=vendor,
-        stripe_provider=provider,
-        stripe_connected_account_id=connected_account_id,
-        stripe_application_fee_amount=fee_amount,
-        tax_snapshot=tax_snapshot,
-        # Lane L15: the frozen net quote this amount came from (insert-only).
-        pricing_snapshot=pricing_snapshot or {},
-    )
+    try:
+        payment = Payment.objects.create(
+            makerspace=makerspace,
+            subject_type=subject_type,
+            subject_id=subject_id,
+            member=member,
+            via_makerspace=via_makerspace,
+            subject_label=(subject_label or "")[:255],
+            amount=amount,
+            currency=currency.lower(),
+            created_by=created_by,
+            due_at=due_at if due_at is not None else default_due_at(makerspace, actor=created_by),
+            # Stamped at creation from whatever resolved NOW, and immutable thereafter: a
+            # space that switches vendor must still settle and expire the charges it raised
+            # under the old one, and moving a row between vendors would point it at a
+            # merchant account that never took the money.
+            provider=vendor,
+            stripe_provider=provider,
+            stripe_connected_account_id=connected_account_id,
+            stripe_application_fee_amount=fee_amount,
+            tax_snapshot=tax_snapshot,
+            # Lane L15: the frozen net quote this amount came from (insert-only).
+            pricing_snapshot=pricing_snapshot or {},
+        )
+    except ValidationError as exc:
+        # Payments audit 0.12.0 (B-3): `full_clean` reports an already-raised charge for
+        # this subject as a ValidationError, but every seam's replay/race recovery catches
+        # IntegrityError -- the same duplicate then answered 500 instead of the existing charge.
+        if Payment.objects.filter(makerspace=makerspace, subject_type=subject_type, subject_id=subject_id).exists():
+            raise IntegrityError("payment_one_per_subject") from exc
+        raise
     # Raising a charge is when a member incurs a debt; the log previously recorded
     # only its settlement.
     audit.record(

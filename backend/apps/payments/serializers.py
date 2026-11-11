@@ -2,6 +2,7 @@ from decimal import Decimal
 
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
+from apps.payments.money_fields import MoneyField
 
 from apps.payments.models import Payment
 from apps.payments.subjects import subject_label
@@ -21,7 +22,7 @@ class MemberSettlementSerializer(serializers.Serializer):
 class MemberRefundSerializer(serializers.Serializer):
     """Money sent back on the member's own charge. Never names the staff member."""
 
-    amount = serializers.DecimalField(max_digits=12, decimal_places=2)
+    amount = MoneyField(max_digits=13, decimal_places=3)
     currency = serializers.CharField()
     status = serializers.CharField()
     reason = serializers.CharField()
@@ -114,9 +115,13 @@ class MemberPaymentSerializer(serializers.ModelSerializer):
     def get_checkout_url(self, payment) -> str:
         # Either rail: a Razorpay link lives only in the generic column, and reading the
         # Stripe one alone hid every live Razorpay link from the member who owed it.
+        from apps.payments.checkout_coordination import settlement_in_progress
         from apps.payments.checkout_expiry import live_checkout_url
 
-        return live_checkout_url(payment)
+        live = live_checkout_url(payment)
+        # Payments audit 0.12.0 (D-6): while an "I paid" claim or a maker-checker proposal
+        # is open, a still-live page would take a second payment of the same debt.
+        return "" if live and settlement_in_progress(payment) else live
 
     def get_online_payment_available(self, payment) -> bool:
         """Whether offering to pay online is honest for this charge.

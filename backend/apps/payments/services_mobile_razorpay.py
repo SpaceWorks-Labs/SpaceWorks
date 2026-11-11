@@ -4,7 +4,7 @@ import logging
 
 from apps.audit import services as audit
 from apps.payments.models import Payment
-from apps.payments.money import to_minor_units
+from apps.payments.money import AmountNotCapturable, to_provider_minor_units
 from apps.payments.providers import PaymentsUnavailable, get_provider
 from apps.payments.providers.razorpay import RazorpayRequestError
 from apps.payments.subjects import resolve_subject_labels, subject_label
@@ -17,7 +17,10 @@ def create_mobile_order(payment, source, *, actor):
     receipt = f"sw-pay-{payment.pk}"
     if len(receipt) > 40:
         raise PaymentsUnavailable("The payment receipt exceeds Razorpay's limit.")
-    amount = to_minor_units(payment.amount, payment.currency)
+    try:
+        amount = to_provider_minor_units(payment.amount, payment.currency)
+    except AmountNotCapturable as exc:
+        raise PaymentsUnavailable("The charge amount is finer than Razorpay can capture.") from exc
     currency = payment.currency.upper()
     notes = {"payment_id": str(payment.pk), "makerspace_id": str(payment.makerspace_id)}
 

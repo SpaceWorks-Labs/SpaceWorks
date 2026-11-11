@@ -3,6 +3,7 @@
 from decimal import Decimal
 
 from rest_framework import serializers
+from apps.payments.money_fields import MoneyField
 
 from apps.payments.models import MakerspaceTaxSettings
 from apps.payments.tax.gstin import STATE_NAMES
@@ -48,7 +49,7 @@ class GstinResultSerializer(serializers.Serializer):
 
 
 class TaxPreviewRequestSerializer(serializers.Serializer):
-    amount = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal("0.01"))
+    amount = MoneyField(max_digits=13, decimal_places=3, min_value=Decimal("0.001"))
     currency = serializers.RegexField(r"^[a-zA-Z]{3}$", required=False)
     recipient_state = serializers.ChoiceField(choices=sorted(STATE_NAMES), required=False, allow_blank=True)
     settings = TaxSettingsSerializer(required=False, help_text="Unsaved settings to preview; defaults to saved ones.")
@@ -58,16 +59,16 @@ class TaxComponentSerializer(serializers.Serializer):
     code = serializers.CharField()
     label = serializers.CharField()
     rate_bps = serializers.IntegerField()
-    amount = serializers.DecimalField(max_digits=12, decimal_places=2)
+    amount = MoneyField(max_digits=13, decimal_places=3)
 
 
 class TaxPreviewSerializer(serializers.Serializer):
     title = serializers.CharField()
     currency = serializers.CharField()
-    entered_amount = serializers.DecimalField(max_digits=12, decimal_places=2)
-    taxable = serializers.DecimalField(max_digits=12, decimal_places=2)
-    tax = serializers.DecimalField(max_digits=12, decimal_places=2)
-    gross = serializers.DecimalField(max_digits=12, decimal_places=2)
+    entered_amount = MoneyField(max_digits=13, decimal_places=3)
+    taxable = MoneyField(max_digits=13, decimal_places=3)
+    tax = MoneyField(max_digits=13, decimal_places=3)
+    gross = MoneyField(max_digits=13, decimal_places=3)
     supply_type = serializers.CharField()
     place_of_supply = serializers.CharField(allow_blank=True)
     components = TaxComponentSerializer(many=True)

@@ -11,6 +11,7 @@ from django.db import transaction
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers
+from apps.payments.money_fields import MoneyField
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -30,7 +31,7 @@ class EventMoneySettingsRead(serializers.Serializer):
     version = serializers.IntegerField()
     prize_tds_enabled = serializers.BooleanField()
     prize_tds_rate = serializers.DecimalField(max_digits=5, decimal_places=2)
-    prize_tds_threshold = serializers.DecimalField(max_digits=12, decimal_places=2)
+    prize_tds_threshold = MoneyField(max_digits=13, decimal_places=3)
     payee_templates = serializers.ListField(child=serializers.ListField(child=serializers.CharField()))
     available_payee_templates = serializers.ListField(child=serializers.ListField(child=serializers.CharField()),
                                                       help_text="Country/method pairs inside the deployment ceiling.")
@@ -42,7 +43,7 @@ class EventMoneySettingsInput(serializers.Serializer):
     prize_tds_enabled = serializers.BooleanField(required=False)
     prize_tds_rate = serializers.DecimalField(max_digits=5, decimal_places=2, min_value=Decimal("0"),
                                               max_value=Decimal("100"), required=False)
-    prize_tds_threshold = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal("0"),
+    prize_tds_threshold = MoneyField(max_digits=13, decimal_places=3, min_value=Decimal("0"),
                                                    required=False)
     payee_templates = serializers.ListField(child=serializers.ListField(child=serializers.CharField(max_length=16),
                                                                         min_length=2, max_length=2),

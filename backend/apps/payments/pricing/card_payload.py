@@ -37,7 +37,8 @@ def card_payload(card, actor):
             "source": "default" if stored else ("legacy" if rate.amount > 0 else "none"),
         })
     return {
-        "domain": domain, "label": PricingDomain(domain).label, "enabled": card.enabled,
+        "domain": domain, "label": PricingDomain(domain).label,
+        "enabled": card.enabled,
         "currency": card.currency, "mode": card.mode, "stored": card.row is not None,
         "editable": bool(decision and decision.allowed), "via": decision.via if decision else None,
         "locked": bool(decision and decision.locked), "refusal": decision.code if decision and not decision.allowed else None,

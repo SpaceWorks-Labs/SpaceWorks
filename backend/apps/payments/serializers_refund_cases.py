@@ -4,6 +4,7 @@ from decimal import Decimal
 
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
+from apps.payments.money_fields import MoneyField
 
 from apps.payments.models import RefundCase
 from apps.payments.serializers_reconciliation import RefundSerializer
@@ -16,7 +17,7 @@ class RefundCasePaymentSerializer(serializers.Serializer):
     subject_type = serializers.CharField()
     subject_label = serializers.CharField()
     status = serializers.CharField()
-    amount = serializers.DecimalField(max_digits=12, decimal_places=2)
+    amount = MoneyField(max_digits=13, decimal_places=3)
     currency = serializers.CharField()
     member_name = serializers.CharField(allow_blank=True)
 
@@ -51,7 +52,7 @@ class RefundCaseSerializer(serializers.ModelSerializer):
         from apps.payments.price_drop.approval import needs_finance_approval
         return needs_finance_approval(case)
 
-    @extend_schema_field(serializers.DecimalField(max_digits=12, decimal_places=2))
+    @extend_schema_field(MoneyField(max_digits=13, decimal_places=3))
     def get_refundable_balance(self, case):
         # Read from the prefetched refund lines (`refund_case_access.with_case_rows`), so
         # a page of cases costs no query per row. Same rule as `Refund.counted_total`.
@@ -77,13 +78,15 @@ class RefundCaseFilterSerializer(serializers.Serializer):
 
 class RefundCaseApproveSerializer(serializers.Serializer):
     # Omitted: the case's due amount, re-clamped to the live refundable balance.
-    amount = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal("0.01"), required=False)
+    amount = MoneyField(max_digits=13, decimal_places=3, min_value=Decimal("0.001"), required=False)
     reason = serializers.CharField(max_length=255, required=False, allow_blank=True, default="")
     note = serializers.CharField(max_length=500, required=False, allow_blank=True, default="")
     # Required for a charge settled offline: the money goes back in person.
     receipt = ManualRefundReceiptSerializer(required=False)
     # X21 (L4): approving a membership refund ends the term it paid for unless staff tick this.
     keep_membership = serializers.BooleanField(required=False, default=False)
+    # Parity C18 (behind `events.refund_cancels_tickets`): also cancel the event tickets this charge paid for.
+    cancel_tickets = serializers.BooleanField(required=False, default=False)
 
 
 class RefundCaseDeclineSerializer(serializers.Serializer):

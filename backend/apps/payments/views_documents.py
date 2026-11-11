@@ -60,8 +60,15 @@ def scoped_documents(user, makerspace_id, audience):
     if audience == "staff":
         if not active_user(user):
             raise PermissionDenied(gettext("An active staff account is required."))
-        return rbac.scope_by_action(user, rbac.Action.VIEW_FINANCE,
-                                    PaymentDocument.objects.all(), field="makerspace_id").filter(makerspace_id=makerspace_id)
+        if rbac.can(user, rbac.Action.VIEW_FINANCE, makerspace_id):
+            return rbac.scope_by_action(user, rbac.Action.VIEW_FINANCE, PaymentDocument.objects.all(),
+                                        field="makerspace_id").filter(makerspace_id=makerspace_id)
+        # Audit 0.12.0 C-6 (decisions 241, 242(a)): an area owner who settles or refunds their
+        # own area's charges reads those charges' bills, receipts and credit notes -- the same
+        # rows the own-area queue admits (machine-type narrowed, never donations).
+        from apps.payments.area_queue import area_payments
+        return PaymentDocument.objects.filter(
+            makerspace_id=makerspace_id, payment__in=area_payments(user, makerspace_id).values("pk"))
     if not member_may_see_own_charges(user, makerspace_id):
         raise PermissionDenied(gettext("An active membership or an existing charge is required."))
     return PaymentDocument.objects.filter(payment__in=member_payment_queryset(user, makerspace_id))

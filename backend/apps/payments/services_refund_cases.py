@@ -130,6 +130,7 @@ def mark_approval_failed(cases, refund, *, actor):
         case.status = RefundCase.Status.APPROVAL_FAILED
         case.save(update_fields=["status", "updated_at"])
         record_case(actor, "payment.refund_case_approval_failed", case, refund_id=refund.pk)
+        _notify(case, "refund_approval_failed")
 
 
 def void_exhausted_cases(locked, *, actor, reason="balance_exhausted"):
@@ -147,3 +148,21 @@ def void_exhausted_cases(locked, *, actor, reason="balance_exhausted"):
         record_case(actor, "payment.refund_case_voided", case, reason=reason)
         closed.append(case)
     return closed
+
+
+@transaction.atomic
+def void_reversed_due_case(payment, *, reason_code, actor, reason):
+    """Close the OPEN due case a now-reversed cause opened (a reinstated project). Returns the case, or None.
+
+    Only a case still awaiting staff is voided; one already approved (or failed after approval) is staff's
+    to decline, so the caller refuses the reversal instead of overriding a decision.
+    """
+    locked = _lock_payment(payment.pk)
+    case = RefundCase.objects.select_for_update().filter(
+        payment=locked, kind=RefundCase.Kind.DUE, reason_code=reason_code, status=RefundCase.Status.OPEN).first()
+    if case is None:
+        return None
+    case.status, case.decided_at = RefundCase.Status.VOID, timezone.now()
+    case.save(update_fields=["status", "decided_at", "updated_at"])
+    record_case(actor, "payment.refund_case_voided", case, reason=reason)
+    return case

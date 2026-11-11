@@ -28,7 +28,8 @@ def record_free(quote, *, actor, makerspace, target, subject_type, subject_id):
 
 
 def raise_priced(quote, *, makerspace, subject_type, subject_id, member, created_by, target,
-                 subject_label="", due_at=None, via_makerspace=None, audit_free=True, create=None):
+                 subject_label="", due_at=None, via_makerspace=None, audit_free=True, create=None,
+                 quota_gate=False):
     """The Payment for `quote`, or None (audited) when it costs nothing.
 
     `create` is the caller's own `create_payment` binding, so a domain seam keeps the
@@ -44,6 +45,10 @@ def raise_priced(quote, *, makerspace, subject_type, subject_id, member, created
             record_free(quote, actor=created_by, makerspace=makerspace, target=target,
                         subject_type=subject_type, subject_id=subject_id)
         return None
+    if quota_gate:
+        # Owner 2026-11-11: only the START of a NEW paid transaction can be refused by the monthly payment quota.
+        from apps.managed_hosting.space_quotas import require_payment_capacity
+        require_payment_capacity(makerspace, quote.total, quote.currency)
     return create(
         makerspace=makerspace, subject_type=subject_type, subject_id=subject_id, member=member,
         amount=quote.total, currency=quote.currency, created_by=created_by, via_makerspace=via_makerspace,

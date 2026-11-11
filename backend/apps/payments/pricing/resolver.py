@@ -14,7 +14,8 @@ Targets and params by domain:
 * `machines` -- target: a `MachineServiceRequest`, or None with `params` `machine`,
   `machine_type`, `pool`, `minutes`, `quantity`; plus `outcome` (`completed`|`failed`)
   and `failure_charge` (`none`|`material_only`|`full`, default the space's choice).
-* `bookings` -- target: a `BookableSpace`; params `starts_at`, `ends_at`.
+* `bookings` -- target: a `BookableSpace`; params `starts_at`, `ends_at`; optional
+  `booking`/`included_exempt` (plan included hours, decision 221(d)).
 * `events` -- target: an `Event`; params `ticket` (an `EventTicketType`), or `venue_fee`
   (its `EventVenueFee`, lane L6) for the hosting fee instead of a registration.
 * `membership` -- target: a `MembershipPlan` or None; params `joining`.
@@ -44,8 +45,17 @@ def rate_card(makerspace, domain):
 def quote(makerspace, domain, target=None, member=None, params=None, *, discounts=True, card=None):
     params = dict(params or {})
     card = card or rate_card(makerspace, domain)
+    allowance = None
+    if domain == "bookings" and member is not None and target is not None:
+        # Decision 221(d): plan hours come off the billed time BEFORE the price is built.
+        from apps.bookings.included_hours import quote_allowance
+        allowance = quote_allowance(makerspace, target, member, params)
+        params["included_allowance"] = allowance
     lines, notes = _build(card, domain, target, params)
     result = Quote(domain=domain, currency=card.currency, lines=tuple(lines), mode=card.mode, notes=tuple(notes))
+    if allowance is not None:
+        from apps.bookings.included_hours import summarize
+        result = replace(result, included_hours=summarize(allowance, lines))
     if domain == "loans" and target is not None and getattr(target, "pk", None):
         result = apply_waivers(result, target)
     if discounts and member is not None:
@@ -60,7 +70,8 @@ def _build(card, domain, target, params):
         return _machines(card, target, params)
     if domain == "bookings":
         return build_other.booking_lines(card, target, starts_at=params.get("starts_at"),
-                                         ends_at=params.get("ends_at")), ()
+                                         ends_at=params.get("ends_at"),
+                                         allowance=params.get("included_allowance")), ()
     if domain == "events":
         if params.get("venue_fee") is not None:
             from apps.payments.pricing.build_venue import venue_fee_lines  # lane L6

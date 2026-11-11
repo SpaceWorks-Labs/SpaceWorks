@@ -55,6 +55,8 @@ def list_payments(*, actor, makerspace_id, status=None, subject_type=None, for_r
         queryset = queryset.filter(status=status)
     if subject_type:
         queryset = queryset.filter(subject_type=subject_type)
+    from apps.payments.unit_payer_scope import narrow_payments
+    queryset = narrow_payments(queryset, actor, makerspace_id, action)  # parity O-B3: a unit lead's own members
     from apps.makerspaces.models import Makerspace
     from apps.payments.due_dates import filter_due, order_by_due
     makerspace = rbac.scope_by_action(
@@ -73,7 +75,7 @@ def with_refunds(queryset):
         refunded_amount=Coalesce(
             Sum("refunds__amount", filter=Q(refunds__status=Refund.Status.SUCCEEDED, refunds__amended_by__isnull=True)),
             Value(Decimal("0.00")),
-            output_field=DecimalField(max_digits=12, decimal_places=2),
+            output_field=DecimalField(max_digits=13, decimal_places=3),
         )
     )
 
@@ -177,6 +179,11 @@ def reconcile_payments(
     if len(by_id) != len(requested_ids):
         raise NotFound(gettext("Payment not found."))
 
+    from apps.payments.unit_payer_scope import payer_user_ids
+
+    payers = payer_user_ids(actor, makerspace_id, rbac.Action.RECORD_PAYMENT)
+    if payers is not None and any(payment.member_id not in payers for payment in locked):
+        raise NotFound(gettext("Payment not found."))  # parity O-B3: another unit's charge does not exist for you
     if target_status == Payment.Status.PAID_OFFLINE:
         _require_record_authority(actor, locked)
     else:
@@ -211,6 +218,8 @@ def apply_reconciliation(payment, actor, target_status, settlement=None, *, reco
         issue_receipt(payment, actor=actor, settlement=receipt)
         meta = {"method": receipt.method, "settlement_id": receipt.pk}
     audit.record(actor, action, makerspace=payment.makerspace, target=payment, meta=meta)
+    from apps.payments.settlement_supersede import supersede_open_settlements
+    supersede_open_settlements(payment, actor=actor)
     resume_admission_after_settlement(payment)
     if target_status == Payment.Status.PAID_OFFLINE:
         from apps.payments.notifications import notify_payment

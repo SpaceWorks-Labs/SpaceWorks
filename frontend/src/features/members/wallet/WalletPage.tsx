@@ -62,11 +62,11 @@ function CardEntry({ card }: { card: MyCard }) {
         onClick={() => email.mutate({ card })}>{email.isSuccess ? t`Emailed` : t`Email me my card`}</button> : null}
       {card.wallet_platforms.map((platform) => <button key={platform} type="button" className="desk-button-ghost min-h-11"
         disabled={wallet.isPending} onClick={() => wallet.mutate(platform)}>{WALLET_LABELS[platform] ?? platform}</button>)}
-      <button type="button" className="desk-button-ghost min-h-11" aria-expanded={settings} onClick={() => setSettings((value) => !value)}>
-        {t`Card settings`}</button>
+      {card.kind !== "staff_card" ? <button type="button" className="desk-button-ghost min-h-11" aria-expanded={settings} onClick={() => setSettings((value) => !value)}>
+        {t`Card settings`}</button> : null}
     </div> : null}
     {email.error || wallet.error ? <ErrorText message={(email.error ?? wallet.error)?.message} /> : null}
-    {settings && live ? <CardHolderSettings card={card} /> : null}
+    {settings && live && card.kind !== "staff_card" ? <CardHolderSettings card={card} /> : null}
   </section>;
 }
 

@@ -33,8 +33,8 @@ export function CardPhotoSection({ card }: { card: MyCard }) {
     <label className="flex min-h-11 items-center gap-2 text-sm text-ink"><input type="checkbox" className="h-5 w-5" checked={consent}
       onChange={(event) => setConsent(event.target.checked)} />{t`I agree my photo is stored privately and printed on this card.`}</label>
     <PhotoPicker aspect={card.photo_aspect || 18 / 22} disabled={!consent} busy={state.busy}
-      chooseLabel={card.photo_set ? "Change the photo" : "Choose a photo"} onPhoto={(photo) => void upload(photo)} />
-    <p role="status" aria-live="polite" className="text-sm text-success">{state.done ? t`Photo saved.` : ""}</p>
+      chooseLabel={card.photo_set ? t`Change the photo` : t`Choose a photo`} onPhoto={(photo) => void upload(photo)} />
+    <p role="status" aria-live="polite" className="text-sm text-success-ink">{state.done ? t`Photo saved.` : ""}</p>
     {state.error ? <ErrorText message={state.error} /> : null}
     <PhotoCleanup card={card} />
   </fieldset>;

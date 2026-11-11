@@ -24,8 +24,8 @@ export function MemberWaitlist({ makerspaceId, makerspaceSlug }: { makerspaceId:
     {query.error ? <ErrorText message={t`Couldn't load your waitlist places. Try again later.`} /> : rows.map(entry => <ListRow key={entry.id}
       title={`${entry.product_name} ×${entry.quantity}`}
       identity={{ kind: "icon", icon: entry.status === "offered" ? "CheckCircle" : "Clock", tone: entry.status === "offered" ? "success" : "info" }}
-      meta={entry.status === "offered" && entry.offer_expires_at ? `Held for you until ${formatWhen(entry.offer_expires_at)}`
-        : entry.position ? `Number ${entry.position} in line` : "Waiting"}
+      meta={entry.status === "offered" && entry.offer_expires_at ? t`Held for you until ${formatWhen(entry.offer_expires_at)}`
+        : entry.position ? t`Number ${entry.position} in line` : t`Waiting`}
       right={<div className="grid justify-items-start gap-2">
         <StatusPill label={entry.status === "offered" ? t`Ready for you` : t`Waiting`} tone={entry.status === "offered" ? "success" : "info"} />
         {entry.status === "offered" ? <ClaimOffer entry={entry} makerspaceSlug={makerspaceSlug} onDone={refresh} /> : null}
@@ -33,7 +33,7 @@ export function MemberWaitlist({ makerspaceId, makerspaceSlug }: { makerspaceId:
           {leave.isPending && leave.variables?.id === entry.id ? t`Leaving…` : t`Leave`}</button>
       </div>} />)}
     {leave.error ? <ErrorText message={leave.error.message} /> : null}
-    <ConfirmDialog open={Boolean(leaving)} title={t`Leave the waitlist for ${leaving?.product_name ?? "this item"}?`}
+    <ConfirmDialog open={Boolean(leaving)} title={leaving?.product_name ? t`Leave the waitlist for ${leaving.product_name}?` : t`Leave the waitlist for this item?`}
       message={leaving?.status === "offered" ? t`The items held for you go to the next person in line.` : t`You lose your place in line.`}
       confirmLabel={t`Leave waitlist`} cancelLabel={t`Stay in line`} tone="danger" pending={leave.isPending}
       onConfirm={() => { if (leaving) leave.mutate(leaving); }} onCancel={() => setLeaving(null)} />

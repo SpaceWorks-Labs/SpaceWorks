@@ -6,7 +6,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getAccessToken, memberRequest, memberRequestBlob, refreshAccessToken } from "../../../lib/api";
 import { uploadCardPhoto as uploadMemberPhoto } from "../memberCard/api";
 
-export type CardKind = "member_card" | "programme_card" | "event_card";
+// A staff card has no photo, e-mail or extras (those routes answer 404), so the page hides those actions.
+export type CardKind = "member_card" | "programme_card" | "event_card" | "staff_card";
 export type MyCard = {
   kind: CardKind; id: number; makerspace_id: number; issuer: string; title: string; name: string; number: string;
   label: string; valid_until: string; status: "valid" | "expired" | "revoked"; has_back: boolean; check_url: string;

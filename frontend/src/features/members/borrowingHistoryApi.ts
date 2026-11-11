@@ -13,6 +13,10 @@ export type OwnBorrowing = {
   source: "reviewed_request" | "public_self_checkout" | "admin_direct";
   checked_out_at: string | null; returned_at: string | null;
   items: OwnBorrowingItem[]; returns: { returned_at: string }[];
+  /** Decision 221(a): optional until the borrowing-history payload carries renewal eligibility. */
+  can_renew?: boolean; renewal_refusal?: string | null;
+  /** Renewals this loan may still take; null when renewals are off (#234). */
+  renewals_left?: number | null;
 };
 export type OwnBorrowingPage = { count: number; next: string | null; previous: string | null; results: OwnBorrowing[] };
 

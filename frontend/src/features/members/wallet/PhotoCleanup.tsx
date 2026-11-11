@@ -39,7 +39,7 @@ export function PhotoCleanup({ card }: { card: MyCard }) {
     await memberRequest(`${cardPath(card)}/photo/${keep ? "accept" : "discard"}`, { method: "POST",
       body: JSON.stringify({ job_id: candidate.job }) });
     setCandidate(null);
-    setDone(keep ? "The cleaned photo is on your card now." : "You kept your original photo.");
+    setDone(keep ? t`The cleaned photo is on your card now.` : t`You kept your original photo.`);
     await client.invalidateQueries({ queryKey: myCardsKey });
     await client.invalidateQueries({ queryKey: ["member", "card-image"] });
     await client.invalidateQueries({ queryKey: ["member", "card-face"] });
@@ -59,7 +59,7 @@ export function PhotoCleanup({ card }: { card: MyCard }) {
       </div>
       <p className="text-xs text-muted">{t`Using the cleaned photo deletes the original.`}</p>
     </div> : null}
-    <p role="status" aria-live="polite" className="text-sm text-success">{done ?? ""}</p>
+    <p role="status" aria-live="polite" className="text-sm text-success-ink">{done ?? ""}</p>
     {start.error || decide.error ? <ErrorText message={(start.error ?? decide.error)?.message} /> : null}
   </div>;
 }

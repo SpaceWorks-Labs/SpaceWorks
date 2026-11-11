@@ -1,4 +1,4 @@
-import { formatLocale } from "../../../lib/format";
+import { formatDate } from "../../../lib/format";
 import { t } from "@lingui/core/macro";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
@@ -27,7 +27,9 @@ export function MemberShopOrdersPage() {
   }
   if (orderId && /^\d+$/.test(orderId)) return <MemberShopOrderDetail orderId={Number(orderId)} backHref={tenantPath("member/shop-orders")} />;
   const rows = orders.data?.results ?? [];
-  return <ListLayout header={{ eyebrow: t`Shop`, title: t`My shop orders` }}
+  return <ListLayout header={{ eyebrow: t`Shop`, title: t`My shop orders`,
+    // A standalone page outside the member shell: give the way back and on to the shop.
+    secondary: { label: t`Member area`, href: tenantPath("member") }, primary: { label: t`Visit the shop`, href: tenantPath("shop") } }}
     state={space.loading || orders.isPending ? { status: "loading" } : orders.error ? { status: "error", error: orders.error.message,
       onRetry: () => { void orders.refetch(); } } : { status: "ready" }}
     isEmpty={!rows.length} empty={{ message: t`You have no shop orders yet.`, action: { label: t`Visit the shop`, href: tenantPath("shop") } }}
@@ -38,7 +40,7 @@ export function MemberShopOrdersPage() {
       return <RouteLink key={order.id} href={tenantPath(`member/shop-orders/${order.id}`)}
         className="flex flex-wrap items-center justify-between gap-3 rounded-card border border-line p-4 hover:border-ink focus-visible:outline-2 focus-visible:outline-focus">
         <span className="grid gap-0.5"><span className="font-semibold text-ink">{t`Order #${order.id}`}</span>
-          <span className="text-sm text-muted">{items} {items === 1 ? "item" : "items"} · {shopMoney(order.total, order.currency)} · {new Date(order.created_at).toLocaleDateString(formatLocale())}</span></span>
+          <span className="text-sm text-muted">{items === 1 ? t`1 item` : t`${items} items`} · {shopMoney(order.total, order.currency)} · {formatDate(order.created_at)}</span></span>
         <StatusPill label={status.label} tone={status.tone} />
       </RouteLink>;
     }) }} />;

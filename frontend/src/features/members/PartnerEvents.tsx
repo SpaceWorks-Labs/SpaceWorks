@@ -175,7 +175,7 @@ export function PartnerEvents({
                     });
                   }}
                 >
-                  {!event.registration_open ? t`Registration closed` : mustExpand && !open ? `${event.registration_requires_approval ? "Apply" : "Register"}…` : event.registration_requires_approval ? t`Apply` : t`Register`}
+                  {!event.registration_open ? t`Registration closed` : mustExpand && !open ? (event.registration_requires_approval ? t`Apply…` : t`Register…`) : event.registration_requires_approval ? t`Apply` : t`Register`}
                 </button>
           );
           return (

@@ -3,13 +3,15 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { DetailLayout } from "../../../components/layouts";
 import { RouteLink } from "../../../components/ui/RouteLink";
-import { cancelMemberShopOrder, fetchMemberShopOrder, isUnpaid, shopErrorMessage, shopKeys } from "../../shop/shopApi";
+import { cancelMemberShopOrder, eventPickupRefreshInterval, fetchMemberShopOrder, isUnpaid, shopErrorMessage, shopKeys } from "../../shop/shopApi";
 import { ShopBuyerOrderView } from "../../shop/ShopBuyerOrderView";
 
 /** One of my shop orders. Only an unpaid order can be cancelled here; a paid one is refunded at the desk. */
 export function MemberShopOrderDetail({ orderId, backHref }: { orderId: number; backHref: string }) {
   const client = useQueryClient();
-  const query = useQuery({ queryKey: shopKeys.memberOrder(orderId), queryFn: () => fetchMemberShopOrder(orderId), retry: false });
+  const query = useQuery({ queryKey: shopKeys.memberOrder(orderId), queryFn: () => fetchMemberShopOrder(orderId), retry: false,
+    refetchInterval: ({ state }) => state.error ? false : eventPickupRefreshInterval(state.data),
+    refetchIntervalInBackground: false });
   const cancel = useMutation({
     mutationFn: () => cancelMemberShopOrder(orderId),
     onSuccess: order => {
@@ -17,7 +19,7 @@ export function MemberShopOrderDetail({ orderId, backHref }: { orderId: number; 
       void client.invalidateQueries({ queryKey: ["member-shop-orders"] });
     },
   });
-  const order = query.data;
+  const order = query.error ? undefined : query.data;
   return <DetailLayout back={{ label: t`My shop orders`, href: backHref }} title={order ? t`Order #${order.id}` : t`Order`}
     meta={order ? [order.space_name] : undefined}
     state={query.isPending ? { status: "loading" } : query.error ? { status: "error", error: shopErrorMessage(query.error),

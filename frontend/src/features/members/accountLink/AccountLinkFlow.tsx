@@ -77,7 +77,7 @@ export function AccountLinkFlow({ open, onClose }: { open: boolean; onClose: () 
       disabled: !identifier.trim(), disabledReason: "Enter the other account's username or email." } },
     prove: { back: { label: t`Back`, disabled: prove.isPending, onClick: () => { dropIntent(); setError(null); setStep("start"); } },
       next: { label: t`Verify`, pending: prove.isPending, pendingLabel: "Checking…", onClick: () => prove.mutate(), disabled: !proofReady(method, fields),
-        disabledReason: method === "credentials" ? "Enter the password and the authenticator code." : "Enter both codes." } },
+        disabledReason: method === "credentials" ? t`Enter the password and the authenticator code.` : t`Enter both codes.` } },
     review: { next: { label: t`Continue to confirm`, onClick: () => { setError(null); setStep("confirm"); } } },
     confirm: { back: { label: t`Back to review`, disabled: confirm.isPending, onClick: () => setStep("review") },
       next: { label: t`Link accounts`, pending: confirm.isPending, pendingLabel: "Linking…", disabled: !understood || !preview.data,

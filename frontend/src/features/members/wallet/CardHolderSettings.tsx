@@ -56,7 +56,7 @@ export function CardHolderSettings({ card }: { card: MyCard }) {
         save.mutate(patch, { onSuccess: () => { void client.invalidateQueries({ queryKey: ["member", "card-image"] });
           void client.invalidateQueries({ queryKey: ["member", "card-face"] }); } });
       }}>{save.isPending ? t`Saving…` : t`Save`}</button>
-      {save.isSuccess ? <span role="status" className="text-sm text-success">{t`Saved.`}</span> : null}
+      {save.isSuccess ? <span role="status" className="text-sm text-success-ink">{t`Saved.`}</span> : null}
     </div>
     {save.error ? <ErrorText message={save.error.message} /> : null}
     <CardPhotoSection card={card} />

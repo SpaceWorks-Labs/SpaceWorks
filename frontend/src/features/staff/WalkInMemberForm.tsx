@@ -4,12 +4,16 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { Card } from "../../components/ui";
 import { staffRequest, StructuredApiError } from "../../lib/api";
+import { admissionStateLabel } from "../members/membershipLabels";
 import { CustomFormFields } from "../forms/CustomFormFields";
 import { customAnswerErrors, validateCustomAnswers, type CustomAnswers } from "../forms/customFormTypes";
 import type { AdmissionRequest, PublicAdmission } from "../members/membershipAdmissionApi";
 import { useStaffChargesOn } from "./useStaffChargesOn";
+import { formatMoney, formatPrice } from "../../lib/money";
+import { WalkInGuestPassResult, type WalkInGuestPass } from "../guestPasses/staff/WalkInGuestPassResult";
 
-type WalkInMember = { user_id: number; display_name: string; username: string; admission_request?: AdmissionRequest };
+type WalkInMember = { user_id: number; display_name: string; username: string; admission_request?: AdmissionRequest }
+  | WalkInGuestPass;
 
 /**
  * Name the person at the counter so a handout can be recorded against them.
@@ -35,6 +39,7 @@ export function WalkInMemberForm({
   const [answers, setAnswers] = useState<CustomAnswers>({});
   const [answerErrors, setAnswerErrors] = useState<Record<string, string>>({});
   const [application, setApplication] = useState<AdmissionRequest | null>(null);
+  const [guestPass, setGuestPass] = useState<WalkInGuestPass | null>(null);
   const admission = useQuery({ queryKey: ["walk-in-admission", makerspaceId], queryFn: () => staffRequest<PublicAdmission>(`/admin/makerspaces/${makerspaceId}/walk-in-members`), enabled: open, retry: false });
   const chargesOn = useStaffChargesOn("membership", makerspaceId); // #184: free membership shows no plan price or fee
 
@@ -53,7 +58,9 @@ export function WalkInMemberForm({
       // The dropdown reads this query, so it has to be refetched before the new member
       // can be selected — selecting an id the options don't contain leaves the select blank.
       const refresh = queryClient.invalidateQueries({ queryKey: ["direct-loan-members", makerspaceId] });
-      if (member.admission_request) {
+      // Decision 223 (i): the space may register walk-ins on a guest pass instead of a membership.
+      if ("guest_pass_id" in member) setGuestPass(member);
+      if ("admission_request" in member && member.admission_request) {
         // Pending applicants cannot be selected for a handout. The membership queue
         // owns review and receipt-based settlement before this person becomes eligible.
         setApplication(member.admission_request);
@@ -73,16 +80,17 @@ export function WalkInMemberForm({
     return (
       <>
       {application ? <div className="mt-3 rounded border border-line bg-surface p-3" role="status">
-        <p className="text-sm font-semibold text-ink">{t`Walk-in application #${application.id} · ${application.state.replace(/_/g, " ")}`}</p>
+        <p className="text-sm font-semibold text-ink">{t`Walk-in application #${application.id} · ${admissionStateLabel(application.state)}`}</p>
         <p className="mt-1 text-sm text-muted">{t`Ask a membership manager to review this application`}{application.state === "awaiting_payment" ? t` and record payment with a receipt` : ""} {t` before issuing hardware. Membership activation must finish before selecting this person for the handout.`}</p>
-        {application.admission_payment ? <p className="mt-2 text-sm text-ink">{t`Admission charge: ${application.admission_payment.amount} ${application.admission_payment.currency.toUpperCase()}`}</p> : null}
+        {application.admission_payment ? <p className="mt-2 text-sm text-ink">{t`Admission charge: ${formatMoney(application.admission_payment.amount, application.admission_payment.currency)}`}</p> : null}
       </div> : null}
+      {guestPass ? <WalkInGuestPassResult makerspaceId={makerspaceId} result={guestPass} /> : null}
       <button
         className="desk-button-ghost mt-2 px-0"
         type="button"
-        onClick={() => { setApplication(null); create.reset(); setOpen(true); }}
+        onClick={() => { setApplication(null); setGuestPass(null); create.reset(); setOpen(true); }}
       >
-        {application ? t`Add another walk-in` : t`Not a member yet? Add a walk-in`}
+        {application || guestPass ? t`Add another walk-in` : t`Not a member yet? Add a walk-in`}
       </button>
       </>
     );
@@ -97,8 +105,8 @@ export function WalkInMemberForm({
       {admission.error ? <p className="mt-2 text-sm text-danger" role="alert">{admission.error.message}</p> : null}
       {admission.data?.join_mode === "closed" ? <p className="mt-2 text-sm text-muted">{t`Membership applications are closed.`}</p> : null}
       {admission.data?.join_mode === "vouch" ? <p className="mt-2 text-sm text-muted">{t`This application needs ${admission.data.vouches_required} member vouch(es).`}</p> : null}
-      {admission.data?.default_plan ? <p className="mt-2 text-sm text-ink">{t`Default plan: ${admission.data.default_plan.name}${chargesOn ? ` · ${admission.data.default_plan.amount} ${admission.data.default_plan.currency.toUpperCase()}` : ""}`}</p> : null}
-      {chargesOn && admission.data && Number(admission.data.joining_fee) > 0 ? <p className="mt-2 text-sm text-ink">{t`Joining fee: ${admission.data.joining_fee} ${(admission.data.joining_fee_currency ?? "").toUpperCase()}`}</p> : null}
+      {admission.data?.default_plan ? <p className="mt-2 text-sm text-ink">{t`Default plan: ${admission.data.default_plan.name}${chargesOn ? ` · ${formatPrice(admission.data.default_plan.amount, admission.data.default_plan.currency)}` : ""}`}</p> : null}
+      {chargesOn && admission.data && Number(admission.data.joining_fee) > 0 ? <p className="mt-2 text-sm text-ink">{t`Joining fee: ${formatMoney(admission.data.joining_fee, admission.data.joining_fee_currency ?? "")}`}</p> : null}
       {chargesOn && admission.data?.payment_timing === "before_activation" ? <p className="mt-2 text-sm text-muted">{t`Any admission charge must be settled before membership activates.`}</p> : null}
       <label className="mt-3 block text-sm font-medium text-ink" htmlFor="walk-in-name">
         {t`Name`}</label>

@@ -12,6 +12,9 @@ const STEP: Record<SpaceRestore["stage"], string> = {
 };
 
 /** Preview -> confirm (re-authentication + typed slug) -> live progress, for one restore. */
+const restoreStepLabel = (step: string) => ({ queued: t`queued`, preview: t`preparing the preview`, preview_ready: t`preview ready`,
+  safety_backup: t`taking a safety backup`, restoring: t`restoring`, objects: t`restoring files`, completed: t`completed` } as Record<string, string>)[step] ?? step.replace(/_/g, " ");
+
 export function SpaceRestoreFlow({ restoreId, onClose }: { restoreId: string; onClose: () => void }) {
   const client = useQueryClient();
   const [slug, setSlug] = useState("");
@@ -27,8 +30,8 @@ export function SpaceRestoreFlow({ restoreId, onClose }: { restoreId: string; on
       : all.findIndex(entry => entry.key === step) > index ? "done" as const : "todo" as const }));
   const canConfirm = op?.stage === "preview_ready" && !op.blocked && slug === op.makerspace_slug;
   const next = op?.stage === "preview_ready"
-    ? { label: t`Restore this space`, tone: "danger" as const, disabled: !canConfirm, pending: confirm.isPending, pendingLabel: "Starting…",
-        disabledReason: op.blocked ? "Rows outside this space would dangle; resolve them first." : "Type the space's slug to confirm.", onClick: () => confirm.mutate() }
+    ? { label: t`Restore this space`, tone: "danger" as const, disabled: !canConfirm, pending: confirm.isPending, pendingLabel: t`Starting…`,
+        disabledReason: op.blocked ? t`Rows outside this space would dangle; resolve them first.` : t`Type the space's slug to confirm.`, onClick: () => confirm.mutate() }
     : { label: t`Close`, onClick: onClose, disabled: false };
   return <FlowLayout presentation="dialog" open title={op ? t`Restore ${op.makerspace_name}` : t`Restore a space`}
     subject="Nothing changes until you confirm. A safety backup of the space as it is now is taken first."
@@ -37,7 +40,7 @@ export function SpaceRestoreFlow({ restoreId, onClose }: { restoreId: string; on
     work={op ? <RestoreWork op={op} slug={slug} onSlug={setSlug} /> : null}
     error={confirm.error || abort.error ? { size: "inline", tone: "danger", lead: "That did not work.", body: (confirm.error ?? abort.error)!.message } : undefined}
     footer={{ next, back: ["requested", "staging", "preview_ready"].includes(op?.stage ?? "")
-      ? { label: t`Cancel this restore`, onClick: () => abort.mutate(), pending: abort.isPending, pendingLabel: "Cancelling…" } : undefined }} />;
+      ? { label: t`Cancel this restore`, onClick: () => abort.mutate(), pending: abort.isPending, pendingLabel: t`Cancelling…` } : undefined }} />;
 }
 
 function RestoreWork({ op, slug, onSlug }: { op: SpaceRestore; slug: string; onSlug: (value: string) => void }) {
@@ -46,7 +49,7 @@ function RestoreWork({ op, slug, onSlug }: { op: SpaceRestore; slug: string; onS
   if (op.stage === "applying") return <div role="status" className="grid gap-3">
     <StatusPill label={t`Restoring · ${op.progress.percent ?? 0}%`} tone="warn" />
     <progress className="w-full" max={100} value={op.progress.percent ?? 0} aria-label={t`Restore progress`} />
-    <p className="text-sm text-muted">{t`Step: ${(op.progress.step ?? "queued").replace(/_/g, " ")}. Members cannot change this space until it finishes.`}</p>
+    <p className="text-sm text-muted">{t`Step: ${restoreStepLabel(op.progress.step ?? "queued")}. Members cannot change this space until it finishes.`}</p>
   </div>;
   if (op.stage === "completed") return <Callout size="panel" tone="success" lead="Restored." body={t`${op.makerspace_name} is back at its restore point. ${op.report.money_after_restore_point?.length ?? 0} payment record(s) made after it were kept for review; ${op.report.objects_restored ?? 0} file(s) were restored.`} />;
   if (op.stage === "failed") return <ErrorText message={t`${op.error_detail} Nothing was changed.`} />;

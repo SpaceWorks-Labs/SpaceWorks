@@ -17,7 +17,7 @@ export function SettingsResetAction({ label, consequence, pending, disabled, onC
   return <>
     <DangerZone title={label} consequence={consequence} action={{ label,
       onClick: () => { setError(""); setOpen(true); }, pending, disabled,
-      disabledReason: disabled ? "No saved configuration is available to clear, or another update is in progress." : undefined }} />
+      disabledReason: disabled ? t`No saved configuration is available to clear, or another update is in progress.` : undefined }} />
     <ConfirmDialog open={open} title={`${label}?`} message={error ? `${consequence} ${error}` : consequence}
       confirmLabel={label} tone="danger" pending={pending} onConfirm={() => { void confirm(); }}
       onCancel={() => { if (!pending) setOpen(false); }} />

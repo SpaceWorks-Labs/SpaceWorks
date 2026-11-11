@@ -1,6 +1,6 @@
 import { t } from "@lingui/core/macro";
 import { SettingsQueryState } from "./SettingsQueryState";
-import { ErrorBlock } from "../../components/ui";
+import { ErrorBlock, PagePager } from "../../components/ui";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Field } from "../../components/ui";
@@ -11,7 +11,7 @@ export function SpacePackProfilePicker({ value, onChange, disabled = false, enab
 }) {
   const [page, setPage] = useState(1);
   const profiles = useQuery({ queryKey: ["space-pack-profiles", page], queryFn: () => listPackProfiles(page), enabled });
-  return <SettingsQueryState query={profiles} resource="space pack profile"><div className="grid gap-2">
+  return <SettingsQueryState query={profiles} resource={t`space pack profile`}><div className="grid gap-2">
     <Field label={t`Saved install profile`}>
       <select className="desk-input w-full" value={value} disabled={disabled || profiles.isLoading}
         onChange={(event) => onChange(profiles.data?.results.find((profile) => profile.id === Number(event.target.value)) ?? null)}>
@@ -20,11 +20,6 @@ export function SpacePackProfilePicker({ value, onChange, disabled = false, enab
       </select>
     </Field>
     {profiles.error ? <ErrorBlock error={new Error(t`Couldn't load space pack profile. Try again.`)} onRetry={() => { void profiles.refetch(); }} /> : null}
-    {(profiles.data?.count ?? 0) > 24 ? <div className="flex flex-wrap gap-2">
-      <button type="button" className="desk-button" disabled={disabled || page === 1}
-        onClick={() => { onChange(null); setPage(page - 1); }}>{t`Previous profiles`}</button>
-      <button type="button" className="desk-button" disabled={disabled || !profiles.data?.next}
-        onClick={() => { onChange(null); setPage(page + 1); }}>{t`Next profiles`}</button>
-    </div> : null}
+    <PagePager page={page} setPage={next => { onChange(null); setPage(next); }} count={profiles.data?.count} next={profiles.data?.next} disabled={disabled} />
   </div></SettingsQueryState>;
 }

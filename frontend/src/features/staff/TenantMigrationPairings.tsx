@@ -70,7 +70,7 @@ export function TenantMigrationPairings({ pairings, active = true }: { pairings:
 
       <div className="mt-3 grid gap-3 @2xl:grid-cols-3">
         <label className="text-sm text-ink">{t`Migration/import job ID`}<input className="desk-input mt-1 w-full code-text" value={migrationId} onChange={(event) => setMigrationId(event.target.value)} /></label>
-        <label className="text-sm text-ink">{t`Source tenant ID`}<input className="desk-input mt-1 w-full code-text" value={sourceTenantId} onChange={(event) => setSourceTenantId(event.target.value)} /></label>
+        <label className="text-sm text-ink">{t`Source space ID`}<input className="desk-input mt-1 w-full code-text" value={sourceTenantId} onChange={(event) => setSourceTenantId(event.target.value)} /></label>
         <label className="text-sm text-ink">{t`Archive digest`}<input className="desk-input mt-1 w-full code-text" value={archiveDigest} onChange={(event) => setArchiveDigest(event.target.value)} /></label>
       </div>
       <div className="mt-3 grid gap-3 @xl:grid-cols-2">

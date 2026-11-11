@@ -14,7 +14,7 @@ import { RecoveryQuarantinePanel } from "./RecoveryQuarantinePanel";
 import { StaffAccessDenied } from "./StaffAccessDenied";
 import { MfaEnrollmentScreen, MfaGraceBanner, NoStaffRoleScreen } from "./StaffGateScreens";
 import { StaffWorkspace } from "./StaffWorkspace";
-import { tabFromStaffPath } from "./staffTabs";
+import { SUPERADMIN_GLOBAL_TABS, tabFromStaffPath } from "./staffTabs";
 import { useConsoleSession } from "./useConsoleSession";
 
 /** A whole-screen status between sign-in and the console: the shell is not up yet, so this owns the landmark. */
@@ -64,7 +64,7 @@ export function StaffApp({ guestOnly = false }: { guestOnly?: boolean }) {
   const gate = enrolmentRequired ? "required" : mfaGate(user);
   if (gate === "required") return <MfaEnrollmentScreen memberHref={memberHref} onSignOut={session.signOut} />;
   const routeTab = tabFromStaffPath(location.pathname, guestOnly);
-  const globalRoute = routeTab === "organizations" || (isSuperadmin && (routeTab === "platform-dashboard" || routeTab === "platform-spaces"))
+  const globalRoute = routeTab === "organizations" || (isSuperadmin && SUPERADMIN_GLOBAL_TABS.includes(routeTab))
     || (!isSuperadmin && consoleSpaceIds(user).size === 0);
   if (isSuperadmin && recovery.data?.mode === "quarantined") {
     return <RecoveryQuarantinePanel state={recovery.data} onAcknowledged={(next) => {

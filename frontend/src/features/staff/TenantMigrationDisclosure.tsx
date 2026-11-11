@@ -107,7 +107,7 @@ export function TenantMigrationDisclosure({ makerspaceId, active = true }: { mak
           {activeApproval ? (
             <div className="mt-3 flex flex-wrap items-center gap-3">
               <p className="text-sm text-success-ink">{t`${activeApproval.approved_count} of ${activeApproval.identity_count} identities approved for this digest.`}</p>
-              <ActionControl action={{ label: t`Revoke approval`, tone: "danger", pending: revoke.isPending, pendingLabel: "Revoking…",
+              <ActionControl action={{ label: t`Revoke approval`, tone: "danger", pending: revoke.isPending, pendingLabel: t`Revoking…`,
                 confirm: { title: t`Revoke approval?`, message: t`Exports can no longer be created from this closure until it is reviewed and approved again.`, confirmLabel: t`Revoke approval` },
                 onClick: () => revoke.mutate(activeApproval.id) }} />
             </div>

@@ -11,13 +11,15 @@ import { CommandPalette } from "./CommandPalette";
 import { sidebarSections } from "./sidebarSections";
 import { useUnreadNotifications } from "./useUnreadNotifications";
 import { collectionResults, machineKeys, type MachineCollection, type MachineType } from "./machinesApi";
-import { machineTypeSegment, staffTabPath } from "./staffTabs";
+import { machineTypeSegment, staffTabPath, SUPERADMIN_GLOBAL_TABS } from "./staffTabs";
 import { visibleRequestTabs } from "./panels/requestTabs";
 import { PlatformNoticeBanners } from "../platformNotices/PlatformNoticeBanners";
 import { PausedSpacePage } from "../platformNotices/PausedSpacePage";
 import { SuperadminSpaceGuard } from "../platformNotices/SuperadminSpaceGuard";
 import { spaceNotice, usePlatformNotices } from "../platformNotices/platformNoticesApi";
 import { useCachedQueryData } from "../../lib/useCachedQueryData";
+import { staffBottomNav } from "./staffBottomNav";
+import { nounOf, nounTitleOf, spaceKindOf } from "../../lib/spaceNoun";
 
 type Props = { activeMakerspace?: Makerspace; allowedTabs: readonly string[]; activeTab: string;
   guestOnly: boolean; singleTenantLocked: boolean; handoutOnly: boolean; grantOnly?: boolean; user: StaffAuthUser;
@@ -53,7 +55,7 @@ export function StaffShell(props: Props) {
   const redirectTab = ["direct", "handover"].find(key => allowedTabs.includes(key));
   // "granted" (Assigned resources) is a global tab: event/booking grant holders reach it with no workspace selected.
   const tabs = space ? allowedTabs.filter(key => key !== "requests" || !noQueues || !redirectTab)
-    : allowedTabs.filter(key => ["organizations", "platform-dashboard", "platform-spaces", "granted"].includes(key));
+    : allowedTabs.filter(key => ["organizations", "organized", "organization-analytics", "granted"].includes(key) || (props.isSuperadmin && SUPERADMIN_GLOBAL_TABS.includes(key)));
   // Full-access staff (Space Manager, superadmin) get the task-grouped menu; narrower roles
   // keep their existing, already short one.
   const spaceManager = !!space && (props.isSuperadmin || props.actions.includes("manage_makerspace"));
@@ -69,20 +71,28 @@ export function StaffShell(props: Props) {
       item.children = rows.slice(0, 8).map(type => ({ key: `machines:${type.id}`, label: type.name,
         href: path("machines", machineTypeSegment(type)), icon: Cog, onSelect: () => props.setTab("machines") }));
       if (rows.length > 8) item.children.push({ key: "machines:all", label: t`All types →`, href: path("machines"), icon: Cog });
-      const selectedType = item.children.find(child => child.href?.split("?")[0] === location.pathname);
+      // A type's routed views (`/machines/12-laser/settings`) keep that type highlighted.
+      const selectedType = item.children.find(child => {
+        const base = child.href?.split("?")[0];
+        return base !== undefined && (location.pathname === base || (child.key !== "machines:all" && location.pathname.startsWith(`${base}/`)));
+      });
       if (selectedType) activeKey = selectedType.key;
     }
   }
+  const bottomNav = props.handoutOnly ? undefined : staffBottomNav(nav, spaceManager ? "space" : !space && props.isSuperadmin ? "platform" : null);
+  // Decision 295: the active space's noun (makerspace / organization) drives the switcher wording.
+  const noun = nounOf(space);
+  const switchLabel = space ? t`Switch ${noun}` : t`Switch space`;
   const publicPage = space ? [{ label: t`View public page ↗`, href: singleTenantLocked ? "/" : `/m/${space.slug}` }] : [];
   const menu = !singleTenantLocked ? [
     ...(props.makerspaces.length > 1 ? props.makerspaces.map(row => ({ label: row.name, onClick: () => props.setSelected(row.id) })) : []),
-    ...(props.isSuperadmin ? [{ label: t`Switch makerspace`, onClick: () => props.setSelected(null) }] : []), ...publicPage,
+    ...(props.isSuperadmin ? [{ label: switchLabel, onClick: () => props.setSelected(null) }] : []), ...publicPage,
   ] : [];
   const hasGrants = Boolean(user.event_grants?.length || user.booking_grants?.length);
   // A grant-only console (event/booking grants, no makerspace actions) has no makerspace-wide
   // search, commands or job tray: those read makerspace-scoped data the account cannot see.
   const makerspaceTools = !!space && !props.grantOnly;
-  const workspace: ShellWorkspace | undefined = space ? { name: space.name, subtitle: [space.public_code || space.slug, props.roleName].filter(Boolean).join(" · "),
+  const workspace: ShellWorkspace | undefined = space ? { name: space.name, subtitle: [spaceKindOf(space) === "organization" ? nounTitleOf(space) : "", space.public_code || space.slug, props.roleName].filter(Boolean).join(" · "),
     avatar: { kind: "avatar", name: space.name, seed: space.slug }, menu, locked: singleTenantLocked || props.makerspaces.length === 1 } : props.isSuperadmin ? {
       name: "Choose a space", subtitle: t`Super Admin`, avatar: { kind: "icon", icon: "Settings", tone: "neutral" },
       menu: props.makerspaces.map(row => ({ label: row.name, onClick: () => props.setSelected(row.id) })),
@@ -98,12 +108,14 @@ export function StaffShell(props: Props) {
   if (space && activeTab === "requests" && noQueues && redirectTab) return <Navigate replace to={path(redirectTab)} />;
   return <>
     <AppShell variant="staff" workspace={workspace} nav={nav} activeKey={activeKey}
-      compactNav={props.handoutOnly ? "bottom-tabs" : "drawer"} footerLinks={publicPage}
+      compactNav={props.handoutOnly || bottomNav ? "bottom-tabs" : "drawer"} bottomNav={bottomNav} footerLinks={publicPage}
       search={makerspaceTools ? { label: t`Search and commands`, shortcut: "mod+k", onOpen: () => setPaletteOpen(true) } : undefined}
       status={makerspaceTools ? <JobTrayPill makerspaceId={space.id} /> : null}
       user={{ name: user.username, role: props.roleName, menu: [{ label: t`Account & two-step sign-in`, href: `/mfa?context=${encodeURIComponent(currentSessionContext())}` },
+        // Personal delivery channels belong with the account, not the space's menu (0.12.0 row 10).
+        ...(space && tabs.includes("channels") ? [{ label: t`My notification channels`, href: path("channels") }] : []),
         // #196: platform accounts cannot hold personal tokens, so only people get the link.
-        ...(props.isSuperadmin ? [] : [{ label: t`API access & connected apps`, href: "/account/api-access" }]), ...(!singleTenantLocked && props.isSuperadmin && props.makerspaces.length === 1 ? [{ label: t`Switch makerspace`, onClick: () => props.setSelected(null) }] : [])], onSignOut: () => void props.signOut() }}>
+        ...(props.isSuperadmin ? [] : [{ label: t`API access & connected apps`, href: "/account/api-access" }]), ...(!singleTenantLocked && props.isSuperadmin && props.makerspaces.length === 1 ? [{ label: switchLabel, onClick: () => props.setSelected(null) }] : [])], onSignOut: () => void props.signOut() }}>
       {/* Below lg the sidebar (and its job pill) lives in the drawer, so running jobs surface here.
           Both pills share the job-status query keys, so this adds no polling. */}
       {makerspaceTools ? <div className="mb-4 empty:hidden lg:hidden"><JobTrayPill makerspaceId={space.id} /></div> : null}

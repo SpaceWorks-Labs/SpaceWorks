@@ -1,4 +1,4 @@
-import { t } from "@lingui/core/macro";
+import { plural, t } from "@lingui/core/macro";
 import { useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { CheckCircle2, Circle, Users } from "lucide-react";
@@ -10,7 +10,9 @@ import { hubEntries, searchHub, setupChecklist, type HubEntry, type HubTarget } 
 import { SettingsAuthorityCard } from "./SettingsAuthorityCard";
 
 type Props = { makerspace: Makerspace; sectionIds: readonly string[]; allowedTabs: readonly string[];
-  tabHref: (tab: string) => string };
+  tabHref: (tab: string, view?: string) => string;
+  /** Sections on their own routed subpages: link to them instead of scrolling this page. */
+  sectionHref?: (section: string) => string };
 
 const linkClass = "flex min-h-11 min-w-0 items-center gap-3 rounded-lg px-3 py-2 text-sm hover:bg-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus";
 
@@ -20,8 +22,9 @@ function jump(section: string) {
   target?.focus({ preventScroll: true });
 }
 
-function Destination({ target, tabHref, children }: { target: HubTarget; tabHref: Props["tabHref"]; children: ReactNode }) {
-  if ("tab" in target) return <Link className={linkClass} to={tabHref(target.tab)}>{children}</Link>;
+function Destination({ target, tabHref, sectionHref, children }: { target: HubTarget; tabHref: Props["tabHref"]; sectionHref?: Props["sectionHref"]; children: ReactNode }) {
+  if ("tab" in target) return <Link className={linkClass} to={tabHref(target.tab, target.view)}>{children}</Link>;
+  if (sectionHref) return <Link className={linkClass} to={sectionHref(target.section)}>{children}</Link>;
   return <a className={linkClass} href={`#${target.section}`} onClick={event => { event.preventDefault(); jump(target.section); }}>{children}</a>;
 }
 
@@ -30,7 +33,7 @@ function Destination({ target, tabHref, children }: { target: HubTarget; tabHref
  * settings pages beside it), the setup checklist, and Staff & roles, which a Space Manager
  * needs more often than any switch.
  */
-export function SettingsHub({ makerspace, sectionIds, allowedTabs, tabHref }: Props) {
+export function SettingsHub({ makerspace, sectionIds, allowedTabs, tabHref, sectionHref }: Props) {
   const [query, setQuery] = useState("");
   const notifications = sectionIds.includes("channels");
   const channels = useChannels(makerspace.id, notifications);
@@ -55,18 +58,18 @@ export function SettingsHub({ makerspace, sectionIds, allowedTabs, tabHref }: Pr
         onChange={event => setQuery(event.target.value)} />
     </div>
     {query.trim() ? <section aria-label={t`Search results`} className="grid min-w-0 gap-1">
-      <p aria-live="polite" className="text-sm text-muted">{results.length ? t`${results.length} matching setting${results.length === 1 ? "" : "s"}` : t`No settings match. Try another word.`}</p>
+      <p aria-live="polite" className="text-sm text-muted">{results.length ? plural(results.length, { one: "# matching setting", other: "# matching settings" }) : t`No settings match. Try another word.`}</p>
       <ul className="grid min-w-0 gap-1">{results.map((entry: HubEntry) => <li key={entry.id}>
-        <Destination target={entry.target} tabHref={tabHref}><span className="grid min-w-0 gap-0.5">
+        <Destination target={entry.target} tabHref={tabHref} sectionHref={sectionHref}><span className="grid min-w-0 gap-0.5">
           <span className="font-semibold text-ink">{entry.title}</span><span className="text-muted">{entry.description}</span></span></Destination>
       </li>)}</ul>
     </section> : <>
       <section aria-label={t`Setup checklist`} className="grid min-w-0 gap-2">
         <div className="flex flex-wrap items-baseline justify-between gap-2"><h3 className="title-section">{t`Setup checklist`}</h3>
-          <span className="text-sm text-muted tabular-nums">{done} of {checklist.length} done</span></div>
+          <span className="text-sm text-muted tabular-nums">{t`${done} of ${checklist.length} done`}</span></div>
         <ProgressBar value={checklist.length ? done / checklist.length : 0} label={t`Setup progress`} />
         <ul className="grid min-w-0 gap-1 sm:grid-cols-2">{checklist.map(item => <li key={item.id}>
-          <Destination target={item.target} tabHref={tabHref}>
+          <Destination target={item.target} tabHref={tabHref} sectionHref={sectionHref}>
             {item.done ? <CheckCircle2 aria-hidden="true" size={20} className="shrink-0 text-success-ink" /> : <Circle aria-hidden="true" size={20} className="shrink-0 text-muted" />}
             <span className={item.done ? "text-muted" : "font-semibold text-ink"}>{item.label}<span className="sr-only">{item.done ? t`: done` : t`: to do`}</span></span>
           </Destination></li>)}</ul>
@@ -74,7 +77,7 @@ export function SettingsHub({ makerspace, sectionIds, allowedTabs, tabHref }: Pr
       {pages.length ? <section aria-label={t`More settings pages`} className="grid min-w-0 gap-1">
         <h3 className="title-section">{t`More settings`}</h3>
         <ul className="grid min-w-0 gap-1 sm:grid-cols-2">{pages.map(entry => <li key={entry.id}>
-          <Destination target={entry.target} tabHref={tabHref}><span className="grid min-w-0 gap-0.5">
+          <Destination target={entry.target} tabHref={tabHref} sectionHref={sectionHref}><span className="grid min-w-0 gap-0.5">
             <span className="font-semibold text-ink">{entry.title}</span><span className="text-muted">{entry.description}</span></span></Destination>
         </li>)}</ul>
       </section> : null}

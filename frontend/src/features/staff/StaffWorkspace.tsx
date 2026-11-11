@@ -12,7 +12,7 @@ import { PiiAccessBanner } from "./PiiAccessBanner";
 import { StaffScreenHelp } from "../help/HelpLink";
 import { StaffHelpContext } from "../help/staffHelpContext";
 import { EmptyState } from "../../components/ui/EmptyState";
-import { getStaffAccess, STAFF_TAB_KEYS, TAB_LABELS } from "./staffAccess";
+import { getStaffAccess, STAFF_TAB_KEYS, TAB_LABELS, staffLandingTab } from "./staffAccess";
 import {
   filterTabsByEnabledModules,
   readStoredStaffTab,
@@ -81,12 +81,13 @@ export function StaffWorkspace({
     grantOnly,
     handoutOnly,
     printingOnly,
-  } = getStaffAccess(actions, isSuperadmin, singleTenantLocked, isMachineOnly, Boolean(user.event_grants?.length), Boolean(user.booking_grants?.length));
+  } = getStaffAccess(actions, isSuperadmin, singleTenantLocked, isMachineOnly, Boolean(user.event_grants?.length), Boolean(user.booking_grants?.length),
+    user.has_organizations !== false);
   const visibleMakerspaces =
     singleTenantLocked && activeMakerspace
       ? [activeMakerspace]
       : makerspaces;
-  const moduleAllowedTabs = filterTabsByEnabledModules(allowedTabs, activeMakerspace);
+  const moduleAllowedTabs = filterTabsByEnabledModules(allowedTabs, activeMakerspace, isSuperadmin ? undefined : actions);
   const routeTab = tabFromStaffPath(location.pathname, guestOnly);
   const routeTabDenied =
     !!routeTab && STAFF_TAB_KEYS.includes(routeTab) && !moduleAllowedTabs.includes(routeTab);
@@ -95,7 +96,8 @@ export function StaffWorkspace({
     ? requestedTab
     : moduleAllowedTabs.includes(defaultTab)
       ? defaultTab
-      : moduleAllowedTabs[0] ?? defaultTab;
+      // Decision 217: a module-hidden home falls back by the same per-role landing order.
+      : staffLandingTab(moduleAllowedTabs) ?? defaultTab;
   // Without this the redirect below strips `/admin/machines/12-laser` back to
   // `/admin/machines` on every load, because the two strings differ -- so a per-type deep
   // link could never survive its first render. The rule lives in `keptStaffSubPath` so it
@@ -123,11 +125,14 @@ export function StaffWorkspace({
     normalizedDeniedTabs.has(routeTab) || (isSuperadmin && routeTab === "dashboard")
   );
   if ((!routeTabDenied || normalizeDenied) && location.pathname !== activeTabPath) {
-    return <Navigate replace to={activeTabPath + location.search} />;
+    // Hashes are dropped (W15), except that a pre-split `/admin/settings#section` bookmark
+    // keeps its anchor so the Settings panel can open the subpage that now holds it.
+    const hash = routeTab === "settings" && activeTab === "settings" ? location.hash : "";
+    return <Navigate replace to={activeTabPath + location.search + hash} />;
   }
 
   return (
-    <StaffListContext.Provider value={{ ownerName: user.username, canShare: canManageMakerspace, actions, isSuperadmin }}>
+    <StaffListContext.Provider value={{ ownerName: user.username, actorId: user.id, canShare: canManageMakerspace, actions, isSuperadmin, makerspace: activeMakerspace }}>
     <StaffHelpContext.Provider value={{ makerspace: activeMakerspace, singleTenant: singleTenantLocked, platform: isSuperadmin }}>
       <StaffShell activeMakerspace={activeMakerspace} allowedTabs={moduleAllowedTabs} activeTab={routeTabDenied ? "" : activeTab}
         guestOnly={guestOnly} singleTenantLocked={singleTenantLocked} handoutOnly={handoutOnly} grantOnly={grantOnly} user={user}

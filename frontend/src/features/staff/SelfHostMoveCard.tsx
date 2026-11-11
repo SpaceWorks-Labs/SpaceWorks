@@ -21,7 +21,7 @@ export function SelfHostMoveCard({ makerspaceId }: { makerspaceId: number }) {
     mutationFn: () => requestSelfHostMove(makerspaceId, note.trim()),
     onSuccess: (data) => { client.setQueryData(key, data); setNote(""); },
   });
-  if (status.isError) return <ErrorText resource="move request" onRetry={() => { void status.refetch(); }} />;
+  if (status.isError) return <ErrorText resource={t`move request`} onRetry={() => { void status.refetch(); }} />;
   if (!status.isSuccess) return null;
   const current = status.data.request;
   const open = current ? OPEN.has(current.status) : false;

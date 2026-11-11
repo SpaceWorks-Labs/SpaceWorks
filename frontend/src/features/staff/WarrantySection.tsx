@@ -108,7 +108,7 @@ export function WarrantySection({ hostKind, hostId, disabled = false }: Warranty
       </div>
 
       {warranty.isLoading ? <Skeleton className="mt-4 h-40" /> : null}
-      {warranty.error ? <ErrorBlock resource="warranty details" error={warranty.error} onRetry={() => { void warranty.refetch(); }} /> : null}
+      {warranty.error ? <ErrorBlock resource={t`warranty details`} error={warranty.error} onRetry={() => { void warranty.refetch(); }} /> : null}
 
       <div className="mt-3 divide-y divide-line">
         <WarrantyInput

@@ -1,7 +1,7 @@
 import type { StaffAuthUser } from "../../lib/api";
 import type { Makerspace } from "./panels/shared";
 import { AnalyticsPanel, TenantUsagePanel } from "./StaffTabLoaders";
-import { Users, EmailTemplatesPanel, EmailLogPanel, ApiClientsPanel, PlatformSettingsPanel, MakerspaceSettingsPanel, ModulesPanel, DataExportsPanel, BackupRestorePanel, TenantMigrationPanel, SecuritySettingsPanel } from "./StaffTabLoaders";
+import { Users, EmailTemplatesPanel, EmailLogPanel, ApiClientsPanel, MakerspaceSettingsPanel, ModulesPanel, DataExportsPanel, BackupRestorePanel, TenantMigrationPanel, SecuritySettingsPanel } from "./StaffTabLoaders";
 // Static: StaffWorkspace already ships the banner in the main staff chunk, so a lazy split buys nothing.
 import { PiiAccessBanner } from "./PiiAccessBanner";
 
@@ -44,12 +44,7 @@ export function StaffPlatformTabContent({ activeTab, activeMakerspace, makerspac
       {activeTab === "analytics" && allowedTabs?.includes("analytics") ? (
         <AnalyticsPanel key={`analytics:${makerspaceKey}`} scope={{ kind: "space", makerspaceId: makerspaceKey }} />
       ) : null}
-      {activeTab === "platform-analytics" && isSuperadmin && !singleTenantLocked ? (
-        <AnalyticsPanel key="platform-analytics" scope={{ kind: "platform" }} />
-      ) : null}
-      {activeTab === "platform" ? (
-        <PlatformSettingsPanel platformHosting={Boolean(activeMakerspace.platform_hosting)} unavailableApps={activeMakerspace.unavailable_apps ?? []} />
-      ) : null}
+      {/* Platform settings and platform analytics: platformConsole/PlatformConsoleContent (no space needed). */}
       {activeTab === "users" && canManageMakerspace ? (
         <Users makerspaces={makerspaces} isSuperadmin={isSuperadmin} currentUser={currentUser} onAuthRefresh={onAuthRefresh} />
       ) : null}

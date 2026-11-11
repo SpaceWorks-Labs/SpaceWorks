@@ -35,7 +35,7 @@ export function TenantMigrationImports({ pairings, active = true, phase = "impor
       {active && phase === "import" ? <section aria-labelledby="migration-import-title" className="min-w-0">
       <p className="eyebrow">{t`Target deployment`}</p>
       <h3 className="title-section" id="migration-import-title">{t`Import and verify target`}</h3>
-      <p className="mt-2 text-sm text-ink">{t`Upload the age-encrypted archive and bind it to the digest shown on the source export. Materialization creates an IMPORTING tenant; it is not live until separately activated.`}</p>
+      <p className="mt-2 text-sm text-ink">{t`Upload the encrypted archive (age format) and bind it to the digest shown on the source export. Materialization creates an IMPORTING space; it is not live until separately activated.`}</p>
       <div className="mt-3 grid gap-3 @xl:grid-cols-2">
         <label className="text-sm text-ink">{t`Encrypted archive`}<input className="desk-input mt-1 w-full" type="file" onChange={(event) => setArchive(event.target.files?.[0] ?? null)} /></label>
         <label className="text-sm text-ink">{t`Source archive digest`}<input className="desk-input mt-1 w-full code-text" value={digest} onChange={(event) => setDigest(event.target.value)} /></label>
@@ -132,8 +132,8 @@ function ImportJobCard({ job: listedJob, pairing, drivingUpload, active, phase }
       </div>
       {job.status === "pending" ? <p className="mt-2 text-sm text-warn-ink">{t`Decrypting and verifying the encrypted archive in the background. Identity decisions appear when it finishes.`}</p> : null}
       {job.status === "uploading" ? <ImportUploadResume job={job} driving={drivingUpload} /> : null}
-      {lifecycle === "IMPORTING" ? <p className="mt-2 text-sm text-warn-ink">{importFinalizing ? t`Import finalization is still running. The tenant is not active.` : t`Materialized and verified, but not activated. The tenant remains IMPORTING.`}</p> : null}
-      {lifecycle === "ACTIVE" ? <p className="mt-2 text-sm text-success-ink">{t`Target is ACTIVE. The source cutover receipt was consumed.`}</p> : null}
+      {lifecycle === "IMPORTING" ? <p className="mt-2 text-sm text-warn-ink">{importFinalizing ? t`Import finalization is still running. The space is not active.` : t`Materialized and verified, but not activated. The space remains IMPORTING.`}</p> : null}
+      {lifecycle === "ACTIVE" ? <p className="mt-2 text-sm text-success-ink">{t`Target is ACTIVE. The source switch-over receipt was consumed.`}</p> : null}
       {lifecycle === "ABORTED" ? <p className="mt-2 text-sm text-danger">{t`Target is ABORTED. Transfer its signed abort receipt to recover the archived source.`}</p> : null}
       {job.failure_detail ? <p className="mt-2 text-sm text-danger" role="alert">{job.failure_detail}</p> : null}
       <ErrorText error={detail.error} />
@@ -147,18 +147,18 @@ function ImportJobCard({ job: listedJob, pairing, drivingUpload, active, phase }
       ) : null}
       {phase === "cutover" && job.status === "completed" && pairing && lifecycle === "IMPORTING" ? (
         <div className="mt-3 rounded-md border border-danger-line bg-panel p-3">
-          <h4 className="title-section">{t`One-way target cutover`}</h4>
+          <h4 className="title-section">{t`One-way target switch-over`}</h4>
           <p className="mt-1 text-sm text-ink">{t`Activation and abort are mutually exclusive. Activation cannot be undone from this screen.`}</p>
-          <label className="mt-2 block text-sm text-ink">{t`Source cutover receipt`}<textarea className="desk-input mt-1 min-h-28 w-full code-text text-base md:text-xs" value={sourceReceiptText} onChange={(event) => setSourceReceiptText(event.target.value)} /></label>
-          <DangerZone title={t`Activate target ${tenantName}`} consequence="Activation consumes the source cutover receipt and cannot be undone from this screen."
-            action={{ label: t`Activate target ${tenantName}`, disabled: !sourceReceipt || !verification.data || cutoverPending, disabledReason: "Add a valid source receipt and wait for verification before activating.", pending: activate.isPending, pendingLabel: "Activating target…",
-              onClick: () => { if (sourceReceipt) confirmCutover({ title: t`Activate target ${tenantName}`, name: tenantName, consequence: "This target cutover cannot be undone from this screen.", onConfirm: () => activate.mutate(sourceReceipt) }); } }} />
-          <DangerZone title={t`Abort target ${tenantName}`} consequence="Imported target objects will be rolled back. Transfer the signed abort receipt to recover the source."
-            action={{ label: t`Abort target ${tenantName}`, disabled: cutoverPending, disabledReason: "Wait for the current cutover action.", pending: abort.isPending, pendingLabel: "Aborting target…",
-              onClick: () => confirmCutover({ title: t`Abort target ${tenantName}`, name: tenantName, consequence: "Imported target objects will be rolled back.", onConfirm: () => abort.mutate() }) }} />
+          <label className="mt-2 block text-sm text-ink">{t`Source switch-over receipt`}<textarea className="desk-input mt-1 min-h-28 w-full code-text text-base md:text-xs" value={sourceReceiptText} onChange={(event) => setSourceReceiptText(event.target.value)} /></label>
+          <DangerZone title={t`Activate target ${tenantName}`} consequence={t`Activation consumes the source switch-over receipt and cannot be undone from this screen.`}
+            action={{ label: t`Activate target ${tenantName}`, disabled: !sourceReceipt || !verification.data || cutoverPending, disabledReason: t`Add a valid source receipt and wait for verification before activating.`, pending: activate.isPending, pendingLabel: t`Activating target…`,
+              onClick: () => { if (sourceReceipt) confirmCutover({ title: t`Activate target ${tenantName}`, name: tenantName, consequence: t`This target switch-over cannot be undone from this screen.`, onConfirm: () => activate.mutate(sourceReceipt) }); } }} />
+          <DangerZone title={t`Abort target ${tenantName}`} consequence={t`Imported target objects will be rolled back. Transfer the signed abort receipt to recover the source.`}
+            action={{ label: t`Abort target ${tenantName}`, disabled: cutoverPending, disabledReason: t`Wait for the current switch-over action.`, pending: abort.isPending, pendingLabel: t`Aborting target…`,
+              onClick: () => confirmCutover({ title: t`Abort target ${tenantName}`, name: tenantName, consequence: t`Imported target objects will be rolled back.`, onConfirm: () => abort.mutate() }) }} />
         </div>
       ) : null}
-      {job.status === "completed" && !pairing ? <p className="mt-3 text-sm text-warn-ink">{t`Pin the matching deployment pairing before cutover actions become available.`}</p> : null}
+      {job.status === "completed" && !pairing ? <p className="mt-3 text-sm text-warn-ink">{t`Link the matching server pairing before switch-over actions become available.`}</p> : null}
       <ErrorText error={activate.error ?? abort.error} field="receipt" />
       {confirmation}
       <ReceiptOutput label={t`Target abort receipt — transfer to source`} receipt={abort.data?.receipt} />
@@ -169,8 +169,8 @@ function ImportJobCard({ job: listedJob, pairing, drivingUpload, active, phase }
       <div className="mt-3 rounded-md border border-line bg-bg p-3">
         <h4 className="title-section">{t`Materialize target`}</h4>
         <div className="mt-2 grid gap-3 @xl:grid-cols-2">
-          <label className="text-sm text-ink">{t`Target tenant name (optional)`}<input className="desk-input mt-1 w-full" value={targetName} onChange={(event) => setTargetName(event.target.value)} /></label>
-          <label className="text-sm text-ink">{t`Target tenant slug (optional)`}<input className="desk-input mt-1 w-full" value={targetSlug} onChange={(event) => setTargetSlug(event.target.value)} /></label>
+          <label className="text-sm text-ink">{t`Target space name (optional)`}<input className="desk-input mt-1 w-full" value={targetName} onChange={(event) => setTargetName(event.target.value)} /></label>
+          <label className="text-sm text-ink">{t`Target space slug (optional)`}<input className="desk-input mt-1 w-full" value={targetSlug} onChange={(event) => setTargetSlug(event.target.value)} /></label>
         </div>
         <label className="mt-2 flex min-h-11 items-center gap-2 text-sm text-ink">
           <input className="h-5 w-5 accent-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus" type="checkbox" checked={reviewedIdentities} onChange={(event) => setReviewedIdentities(event.target.checked)} />

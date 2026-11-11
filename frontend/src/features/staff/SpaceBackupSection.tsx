@@ -4,9 +4,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { EmptyState, ErrorText, ListRow, RelativeTime, StatusPill } from "../../components/ui";
 import { ACTIVE_RESTORE_STAGES, listSpaceBackups, listSpaceRestores, requestSpaceBackup, startSpaceRestore } from "./spaceRestoreApi";
 import { SpaceRestoreFlow } from "./SpaceRestoreFlow";
+import { spaceRestoreStageLabel } from "./backupLabels";
 
-const TRIGGER: Record<string, string> = { nightly: "Nightly", on_demand: "Back up now", safety: "Before a restore",
-  extracted: "From a whole-platform backup" };
+const TRIGGER = (): Record<string, string> => ({ nightly: t`Nightly`, on_demand: t`Back up now`, safety: t`Before a restore`,
+  extracted: t`From a whole-platform backup` });
 
 /** One space's restore points, "Back up now" and its restores (superadmin, #111 SEAMLESS). */
 export function SpaceBackupSection({ makerspaceId }: { makerspaceId: number }) {
@@ -30,12 +31,12 @@ export function SpaceBackupSection({ makerspaceId }: { makerspaceId: number }) {
     </div>
     {backupNow.error ? <ErrorText message={backupNow.error.message} /> : null}
     {active ? <ListRow title={t`Restore in progress`} identity={{ kind: "date", date: active.created_at }}
-      meta={<StatusPill label={active.stage.replace(/_/g, " ")} tone="warn" />}
+      meta={<StatusPill label={spaceRestoreStageLabel(active.stage)} tone="warn" />}
       right={<button className="desk-button" type="button" onClick={() => setOpenRestore(active.id)}>{t`Open`}</button>} /> : null}
-    {backups.isError ? <ErrorText resource="restore points" onRetry={() => { void backups.refetch(); }} /> : null}
+    {backups.isError ? <ErrorText resource={t`restore points`} onRetry={() => { void backups.refetch(); }} /> : null}
     {backups.isSuccess && !points.length ? <EmptyState message={t`No restore points for this space yet. Back it up now, or wait for tonight's backup.`} /> : null}
     <ul className="grid gap-3" aria-label={t`Restore points`}>{points.map(row => <li key={row.id}><ListRow
-      title={TRIGGER[row.trigger] ?? t`Backup`} identity={{ kind: "date", date: row.completed_at ?? row.created_at }}
+      title={TRIGGER()[row.trigger] ?? t`Backup`} identity={{ kind: "date", date: row.completed_at ?? row.created_at }}
       meta={<><RelativeTime date={row.completed_at ?? row.created_at} /> · {row.size_bytes ? `${(row.size_bytes / 1024 / 1024).toFixed(1)} MB` : "—"}</>}
       right={row.restorable_in_app
         ? <button className="desk-button-danger-outline" type="button" disabled={Boolean(active) || restore.isPending}

@@ -96,20 +96,20 @@ export function TenantMigrationExports({
       <p className="eyebrow">{t`Source deployment`}</p>
       <h3 className="title-section" id="migration-export-title">{t`Encrypted migration exports`}</h3>
       <p className="mt-2 text-sm text-ink">
-        {t`The target age recipient encrypts the portable archive for one target deployment. Quiescing freezes writes to ${tenantName}. Archiving the source is a one-way cutover action from this screen.`}</p>
+        {t`The new server's encryption key (starts with age1) locks the portable archive so only that one server can open it. Pausing writes freezes changes to ${tenantName}. Archiving the source is a one-way switch-over action from this screen.`}</p>
       <p className="mt-2 text-sm font-semibold text-danger">
-        {t`The source tenant is archived, not deleted, at cutover. Archives are outside the purge guarantee.`}</p>
+        {t`The source space is archived, not deleted, at switch-over. Archives are outside the purge guarantee.`}</p>
 
       {phase === "export" ? <>
       <div className="mt-4 grid gap-3 @xl:grid-cols-2">
         <label className="text-sm text-ink">
-          {t`Approved closure`}<select className="desk-input mt-1 w-full" value={selectedApproval} onChange={(event) => setApprovalId(event.target.value)}>
-            {validApprovals.length === 0 ? <option value="">{t`Approve the current closure first`}</option> : null}
+          {t`Approved list of what moves`}<select className="desk-input mt-1 w-full" value={selectedApproval} onChange={(event) => setApprovalId(event.target.value)}>
+            {validApprovals.length === 0 ? <option value="">{t`Approve the current list first`}</option> : null}
             {validApprovals.map((approval) => <option key={approval.id} value={approval.id}>{t`${approval.approved_count}/${approval.identity_count} disclosed · ${approval.id}`}</option>)}
           </select>
         </label>
         <label className="text-sm text-ink">
-          {t`Target age recipient`}<input className="desk-input mt-1 w-full code-text" value={recipient} onChange={(event) => setRecipient(event.target.value)} placeholder={t`age1…`} />
+          {t`The new server's encryption key (starts with age1)`}<input className="desk-input mt-1 w-full code-text" value={recipient} onChange={(event) => setRecipient(event.target.value)} placeholder={t`age1…`} />
         </label>
       </div>
       <button className="desk-button-primary mt-3" type="button" disabled={!selectedApproval || !recipient.trim() || createExport.isPending} onClick={() => createExport.mutate()}>
@@ -138,28 +138,28 @@ export function TenantMigrationExports({
               {job.failure_detail ? <p className="mt-2 text-sm text-danger" role="alert">{job.failure_detail}</p> : null}
               <ErrorText error={exportDetails[index]?.error} />
               <p className="mt-2 text-xs text-muted">{job.source_retention_notice}</p>
-              {quiesce.isSuccess && quiesce.variables === job.id ? <p className="mt-2 text-sm font-semibold text-danger" role="status">{t`Source writes are frozen for this cutover.`}</p> : null}
+              {quiesce.isSuccess && quiesce.variables === job.id ? <p className="mt-2 text-sm font-semibold text-danger" role="status">{t`Source writes are frozen for this switch-over.`}</p> : null}
               {job.status === "available" ? (
                 <div className="mt-3 flex flex-wrap gap-2">
                   <button className="desk-button" type="button" disabled={download.isPending} onClick={() => download.mutate(job.id)}>{t`Download one-use archive`}</button>
                   {phase === "cutover" ? <div className="w-full">
-                    <DangerZone title={t`Quiesce ${tenantName}`} consequence="Freeze source writes before cutover."
-                      action={{ label: t`Quiesce ${tenantName}`, pending: quiesce.isPending, pendingLabel: "Freezing writes…",
-                        onClick: () => confirmCutover({ title: t`Quiesce ${tenantName}`, name: tenantName, consequence: "This freezes source writes before cutover.", onConfirm: () => quiesce.mutate(job.id) }) }} />
-                    {pairing ? <DangerZone title={t`Archive source ${tenantName}`} consequence="This source cutover cannot be undone from this screen."
-                      action={{ label: t`Archive source ${tenantName}`, pending: archive.isPending, pendingLabel: "Archiving source…",
-                        onClick: () => confirmCutover({ title: t`Archive source ${tenantName}`, name: tenantName, consequence: "This source cutover cannot be undone from this screen.", onConfirm: () => archive.mutate(pairing.id) }) }} /> : null}
+                    <DangerZone title={t`Pause writes to ${tenantName}`} consequence={t`Freeze source writes before switch-over.`}
+                      action={{ label: t`Pause writes to ${tenantName}`, pending: quiesce.isPending, pendingLabel: t`Pausing writes…`,
+                        onClick: () => confirmCutover({ title: t`Pause writes to ${tenantName}`, name: tenantName, consequence: t`This freezes source writes before switch-over.`, onConfirm: () => quiesce.mutate(job.id) }) }} />
+                    {pairing ? <DangerZone title={t`Archive source ${tenantName}`} consequence={t`This source switch-over cannot be undone from this screen.`}
+                      action={{ label: t`Archive source ${tenantName}`, pending: archive.isPending, pendingLabel: t`Archiving source…`,
+                        onClick: () => confirmCutover({ title: t`Archive source ${tenantName}`, name: tenantName, consequence: t`This source switch-over cannot be undone from this screen.`, onConfirm: () => archive.mutate(pairing.id) }) }} /> : null}
                   </div> : null}                </div>
               ) : null}
               {pairing && phase === "cutover" ? (
                 <div className="mt-3 rounded-md border border-line p-3">
-                  <p className="text-xs text-muted">{t`Pinned pairing `}<span className="tabular-nums">{pairing.id}</span></p>
+                  <p className="text-xs text-muted">{t`Linked pairing `}<span className="tabular-nums">{pairing.id}</span></p>
                   <label className="mt-2 block text-sm text-ink">
                     {t`Target ABORTED receipt (only for recovery after target abort)`}<textarea className="desk-input mt-1 min-h-24 w-full code-text text-base md:text-xs" value={abortReceiptText} onChange={(event) => setAbortReceipts((current) => ({ ...current, [pairing.id]: event.target.value }))} />
                   </label>
-                  <DangerZone title={t`Recover source ${tenantName}`} consequence="Recover only after the target is ABORTED and its signed receipt is available."
-                    action={{ label: t`Recover source ${tenantName}`, disabled: !abortReceipt, disabledReason: "Paste a valid signed target ABORTED receipt first.", pending: recover.isPending, pendingLabel: "Recovering source…",
-                      onClick: () => { if (abortReceipt) confirmCutover({ title: t`Recover source ${tenantName}`, name: tenantName, consequence: "Recover only after the target is ABORTED.", onConfirm: () => recover.mutate({ pairingId: pairing.id, receipt: abortReceipt }) }); } }} />
+                  <DangerZone title={t`Recover source ${tenantName}`} consequence={t`Recover only after the target is ABORTED and its signed receipt is available.`}
+                    action={{ label: t`Recover source ${tenantName}`, disabled: !abortReceipt, disabledReason: t`Paste a valid signed target ABORTED receipt first.`, pending: recover.isPending, pendingLabel: t`Recovering source…`,
+                      onClick: () => { if (abortReceipt) confirmCutover({ title: t`Recover source ${tenantName}`, name: tenantName, consequence: t`Recover only after the target is ABORTED.`, onConfirm: () => recover.mutate({ pairingId: pairing.id, receipt: abortReceipt }) }); } }} />
                 </div>
               ) : null}
             </article>
@@ -167,7 +167,7 @@ export function TenantMigrationExports({
         })}
       </div>
       <ErrorText error={download.error ?? quiesce.error ?? archive.error ?? recover.error} field="receipt" />
-      <ReceiptOutput label={t`Source cutover receipt — transfer to target`} receipt={archive.data?.receipt} />
+      <ReceiptOutput label={t`Source switch-over receipt — transfer to target`} receipt={archive.data?.receipt} />
       {recover.data ? <p className="mt-3 text-sm text-success-ink" role="status">{recover.data.message}</p> : null}
       {confirmation}
     </section>

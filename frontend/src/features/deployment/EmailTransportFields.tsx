@@ -21,7 +21,7 @@ export function EmailTransportFields({ form, onChange, platform, disabled, confi
         {provider === "inherit" ? platform ? t`Use deployment environment` : t`Inherit platform email` : provider === "smtp" ? "SMTP" : provider === "ses" ? t`Amazon SES (HTTP)` : `${provider[0].toUpperCase()}${provider.slice(1)} (HTTP)`}
       </option>)}
     </select></Field>
-    <p className="text-sm text-muted">{platform ? t`Password resets and authentication mail always use platform configuration.` : t`Tenant notifications use this sender. Platform authentication mail remains separate.`} {t` A broken explicit transport fails without switching provider.`}</p>
+    <p className="text-sm text-muted">{platform ? t`Password resets and authentication mail always use platform configuration.` : t`Makerspace notifications use this sender. Platform authentication mail remains separate.`} {t` A broken explicit transport fails without switching provider.`}</p>
     {form.provider !== "inherit" ? <Field label={t`From email`} hint={t`Use a sender verified with the selected provider.`}>
       <input className="desk-input" value={form.sender} onChange={event => onChange({ ...form, sender: event.target.value })} />
     </Field> : null}
@@ -39,7 +39,7 @@ export function EmailTransportFields({ form, onChange, platform, disabled, confi
       <label className="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" checked={form.ssl}
         onChange={event => onChange({ ...form, ssl: event.target.checked, tls: event.target.checked ? false : form.tls })} />{t`Use implicit SSL (465)`}</label>
     </> : form.provider !== "inherit" ? <>
-      <p className="text-sm text-muted">{configured ? t`Provider configuration saved. Leave fields blank to keep it; enter all required fields to replace it. Re-enter any account alias and webhook settings too.` : t`Enter the provider configuration.`} {t` Secrets are write-only. Free-account budget configuration is managed by your operator.`}</p>
+      <p className="text-sm text-muted">{configured ? t`Provider configuration saved. Leave fields blank to keep it; enter all required fields to replace it. Re-enter any account alias and webhook settings too.` : t`Enter the provider configuration.`} {t` Secrets are write-only. Your platform operator sets the free-account sending budget.`}</p>
       {form.provider === "ses" ? <label className="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox"
         checked={form.credentials.workload_identity === true} onChange={event => onChange({ ...form, credentials: { workload_identity: event.target.checked } })} />{t`Use dedicated workload identity for SES`}</label> : null}
       {[...PROVIDER_FIELDS[form.provider], ...optionalProviderFields(form.provider)].filter(key => !(form.provider === "ses" && form.credentials.workload_identity

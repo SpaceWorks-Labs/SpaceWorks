@@ -1,7 +1,7 @@
 // Batch print preview: before a "Print sheet" job is queued, the server draws the first sheet
 // (fronts and backs) with the same filter, paper and order, and says how many sheets the job
 // will print. "Start print job" then queues the existing bulk_sheet job with those settings.
-import { t } from "@lingui/core/macro";
+import { plural, t } from "@lingui/core/macro";
 import { useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 
@@ -11,7 +11,6 @@ import { Modal } from "../../components/ui/Modal";
 import { SegmentedControl } from "../../components/ui/SegmentedControl";
 import { Skeleton } from "../../components/ui/Skeleton";
 import { staffRequest } from "../../lib/api";
-import { plural } from "../../lib/plural";
 import { useStartCardJob } from "./cardJobs";
 
 export type SheetFilter = { status?: "active" | "all"; card_ids?: number[]; plan_id?: number; expiring_within_days?: number;
@@ -26,8 +25,10 @@ const PAPER_LABEL: Record<SheetPaper, string> = { a4: "A4", letter: t`Letter` };
 
 export function sheetSummary(preview: SheetPreview) {
   if (!preview.total) return t`No cards match, so there is nothing to print.`;
-  const sheets = plural(preview.sheets, "sheet");
-  return t`${plural(preview.total, "card")} on ${sheets}${preview.back ? ` (+ ${plural(preview.sheets, "back")})` : ""}.`;
+  const cards = plural(preview.total, { one: "# card", other: "# cards" });
+  const sheets = plural(preview.sheets, { one: "# sheet", other: "# sheets" });
+  const backs = plural(preview.sheets, { one: "# back", other: "# backs" });
+  return preview.back ? t`${cards} on ${sheets} (+ ${backs}).` : t`${cards} on ${sheets}.`;
 }
 
 export function SheetPreviewDialog({ open, onClose, previewPath, jobsPath, filter, title = t`Print sheet` }: {
@@ -65,7 +66,7 @@ export function SheetPreviewDialog({ open, onClose, previewPath, jobsPath, filte
       <p className="text-xs text-muted">{order === "duplex" ? t`For printers that print both sides: each back sheet follows its front sheet.`
         : t`For one-sided printers: all fronts first, then turn the stack over for the backs.`}</p>
       {preview.isLoading ? <Skeleton className="h-72 w-full" /> : null}
-      {preview.isError ? <ErrorBlock error={preview.error} resource="sheet preview" onRetry={() => void preview.refetch()} /> : null}
+      {preview.isError ? <ErrorBlock error={preview.error} resource={t`sheet preview`} onRetry={() => void preview.refetch()} /> : null}
       {data ? <div className="grid gap-3" aria-busy={preview.isFetching}>
         <p role="status" className="text-sm font-semibold text-ink">{sheetSummary(data)}
           {data.total ? <span className="font-normal text-muted"> {t` Up to ${data.per_page} cards fit on each ${PAPER_LABEL[data.paper]} sheet.`}</span> : null}</p>
@@ -74,7 +75,7 @@ export function SheetPreviewDialog({ open, onClose, previewPath, jobsPath, filte
         <div className="grid gap-3 md:grid-cols-2">
           {data.front ? <figure className="grid gap-1">
             <img src={data.front} className="mx-auto max-h-[60vh] w-auto max-w-full rounded-control border border-line bg-white"
-              alt={t`The first ${PAPER_LABEL[data.paper]} sheet of card fronts${cropMarks ? ", with crop marks" : ""}.`} />
+              alt={cropMarks ? t`The first ${PAPER_LABEL[data.paper]} sheet of card fronts, with crop marks.` : t`The first ${PAPER_LABEL[data.paper]} sheet of card fronts.`} />
             <figcaption className="text-xs text-muted">{t`Fronts, first sheet`}</figcaption>
           </figure> : null}
           {data.back ? <figure className="grid gap-1">

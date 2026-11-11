@@ -11,11 +11,15 @@ import { useParams } from "react-router-dom";
 import { useDelight, useReducedMotion } from "../../components/delight/DelightProvider";
 import { SpaceWorksLogo } from "../../components/SpaceWorksLogo";
 import { StructuredApiError, publicV1Request } from "../../lib/api";
+import { spaceNounTitle, type SpaceKind } from "../../lib/spaceNoun";
+import { VerifyStaffPanel } from "./VerifyStaffPanel";
 import "./cardVerify.css";
 
 type Verification = {
   status: "valid" | "expired" | "revoked"; valid: boolean;
-  issuer: { kind: "space" | "organisation" | "event"; name: string; logo_url: string | null };
+  // `space_noun` (decision 295) says whether a space issuer is a makerspace or an organization
+  // workspace; typed here until the verify serializer sends it (absent = no kind line).
+  issuer: { kind: "space" | "organisation" | "event"; name: string; logo_url: string | null; space_noun?: SpaceKind };
   label: string | null; number: string | null; valid_until: string | null;
   holder: { name: string | null; photo_url: string | null } | null; note: string; checked_at: string; timezone?: string;
 };
@@ -23,7 +27,7 @@ type Verification = {
 const BANDS: Record<Verification["status"], { icon: LucideIcon; title: string; body: string; className: string }> = {
   valid: { icon: BadgeCheck, title: t`Valid card`, body: t`This card is genuine and in date.`, className: "bg-success text-on-success" },
   expired: { icon: CalendarX, title: t`Expired card`, body: t`This card was genuine but is no longer in date.`, className: "bg-warn-soft text-warn-ink" },
-  revoked: { icon: ShieldOff, title: t`Revoked card`, body: t`This card has been cancelled by its issuer.`, className: "bg-danger/10 text-danger" },
+  revoked: { icon: ShieldOff, title: t`Revoked card`, body: t`This card has been cancelled by its issuer.`, className: "border-b border-danger-line bg-panel text-danger" },
 };
 const LABELS = { space: t`Plan`, organisation: t`Programme`, event: t`Event` } as const;
 
@@ -82,8 +86,8 @@ export function CardVerifyPage() {
   const stamp = data.valid && delight.enabled && !reduced;
   const holderName = data.status === "revoked" ? null : data.holder?.name ?? null;
   // A revoked card shows its issuer alone (SPEC §7), whatever else arrives.
-  const facts = data.status === "revoked" ? [] : [[LABELS[data.issuer.kind], data.label], ["Number", data.number],
-    ["Valid until", data.valid_until]].filter((row): row is [string, string] => Boolean(row[1]));
+  const facts = data.status === "revoked" ? [] : [[LABELS[data.issuer.kind], data.label], [t`Number`, data.number],
+    [t`Valid until`, data.valid_until]].filter((row): row is [string, string] => Boolean(row[1]));
   return <Shell><section className="overflow-hidden rounded-card border border-line bg-panel" aria-labelledby="card-check-title">
     <div className={`grid justify-items-center gap-2 px-6 py-6 text-center ${band.className}`}>
       <Icon size={56} aria-hidden="true" className={stamp ? "sw-verify-stamp" : undefined} />
@@ -99,6 +103,7 @@ export function CardVerifyPage() {
         <div className="grid">
           {holderName ? <p className="text-lg font-semibold">{holderName}</p> : null}
           <p className={holderName ? "text-sm text-muted" : "text-lg font-semibold"}>{data.issuer.name}</p>
+          {data.issuer.kind === "space" && data.issuer.space_noun ? <p className="text-xs text-muted">{spaceNounTitle(data.issuer.space_noun)}</p> : null}
         </div>
       </div>
       {data.note ? <p className="text-sm text-muted">{data.note}</p> : null}
@@ -108,5 +113,7 @@ export function CardVerifyPage() {
       </dl> : null}
       <p className="border-t border-line pt-4 text-xs text-muted">{t`Space Works checks this card against ${data.issuer.name}'s records and shows only what is needed to confirm it. ${checkedLine(data)}`}</p>
     </div>
-  </section></Shell>;
+  </section>
+    <VerifyStaffPanel token={token} onChanged={() => void check.refetch()} />
+  </Shell>;
 }

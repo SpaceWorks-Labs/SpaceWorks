@@ -2,10 +2,15 @@ import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { staffRequest } from "../../../../lib/api";
+import { OwnerScoped, type FeedScope } from "../../../members/calendarFeeds/ownerScope";
 
 export function MaintenanceFeedControl({ makerspaceId }: { makerspaceId: number }) {
+  return <OwnerScoped>{scope => <FeedControl makerspaceId={makerspaceId} scope={scope} />}</OwnerScoped>;
+}
+
+function FeedControl({ makerspaceId, scope }: { makerspaceId: number; scope: FeedScope }) {
   const [url, setUrl] = useState("");
-  const feed = useMutation({ mutationFn: (method: "POST" | "DELETE") => staffRequest<{ feed_url?: string }>(`/admin/makerspaces/${makerspaceId}/maintenance/feed`, { method, ...(method === "POST" ? { body: JSON.stringify({}) } : {}) }), onSuccess: result => setUrl(result?.feed_url ?? "") });
+  const feed = useMutation({ mutationFn: (method: "POST" | "DELETE") => staffRequest<{ feed_url?: string }>(`/admin/makerspaces/${makerspaceId}/maintenance/feed`, { method, ...(method === "POST" ? { body: JSON.stringify({}) } : {}) }), onSuccess: result => { if (scope.admitted()) setUrl(result?.feed_url ?? ""); } });
   return <section className="grid gap-2 rounded border border-line p-3">
     <h3 className="title-section">{t`Maintenance calendar`}</h3>
     <p className="text-sm text-muted">{t`This private URL shows machines you can access. Keep it private; rotating invalidates the old URL. Usage-only schedules have no calendar date.`}</p>

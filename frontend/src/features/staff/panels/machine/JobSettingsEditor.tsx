@@ -5,10 +5,10 @@ import { FILE_GROUPS } from "./jobLabels";
 import { errorCode, useJobSettings, useSaveJobSettings, type JobSettings } from "./machineJobsApi";
 import { useStaffChargesOn } from "../../useStaffChargesOn";
 
-const READ_ONLY: Record<string, string> = {
-  setting_not_delegated: "Only the Space Manager, or a manager they have handed these settings to, can change them.",
-  setting_locked: "The Space Manager has locked these settings, so only they can change them.",
-};
+const READ_ONLY = (): Record<string, string> => ({
+  setting_not_delegated: t`Only the Space Manager, or a manager they have handed these settings to, can change them.`,
+  setting_locked: t`The Space Manager has locked these settings, so only they can change them.`,
+});
 const numberOrNull = (value: string) => value === "" ? null : Number(value);
 
 /** Per-type job settings (#140/#142): intake, quotes, payment timing, failure charging, limits and accepted files. */
@@ -20,7 +20,7 @@ export function JobSettingsEditor({ makerspaceId, machineTypeId, visible = true 
   const chargesOn = useStaffChargesOn("machines", makerspaceId); // #184: free machine jobs have no money settings
   useEffect(() => { if (query.data) setDraft(query.data); }, [query.data]);
   if (!visible) return null;
-  const lockCode = [errorCode(save.error), errorCode(query.error)].find(code => code && READ_ONLY[code]);
+  const lockCode = [errorCode(save.error), errorCode(query.error)].find(code => code && READ_ONLY()[code]);
   const readOnly = !!lockCode;
   const set = (patch: Partial<JobSettings>) => setDraft(current => current ? { ...current, ...patch } : current);
   // The hint sits outside the label so the control's accessible name stays the short label.
@@ -30,11 +30,11 @@ export function JobSettingsEditor({ makerspaceId, machineTypeId, visible = true 
   return <section className="rounded-xl border border-line bg-panel p-3" aria-labelledby={`${id}-title`}>
     <h3 id={`${id}-title`} className="title-panel">{t`Job requests`}</h3>
     <p className="my-2 text-sm text-muted">{t`How members send jobs to this machine type, how they are priced, and what a failed job costs.`}</p>
-    {lockCode ? <p role="status" className="mb-2 rounded-md border border-line bg-surface p-3 text-sm">{READ_ONLY[lockCode]}</p> : null}
+    {lockCode ? <p role="status" className="mb-2 rounded-md border border-line bg-surface p-3 text-sm">{READ_ONLY()[lockCode]}</p> : null}
     {query.isLoading ? <p role="status">{t`Loading job settings…`}</p> : null}
     {draft ? <form className="grid gap-3" onSubmit={event => { event.preventDefault();
       // A refused save shows the stored values read-only, never the edit the server would not take.
-      save.mutate(draft, { onError: error => { if (READ_ONLY[errorCode(error) ?? ""] && query.data) setDraft(query.data); } }); }}>
+      save.mutate(draft, { onError: error => { if (READ_ONLY()[errorCode(error) ?? ""] && query.data) setDraft(query.data); } }); }}>
       <fieldset className="grid gap-3 sm:grid-cols-2" disabled={readOnly || save.isPending}>
         <label className="flex min-h-11 items-center gap-2 text-sm sm:col-span-2"><input type="checkbox" checked={draft.accepts_job_requests}
           onChange={event => set({ accepts_job_requests: event.target.checked })} />{t`Members can send job requests for this type`}</label>
@@ -67,7 +67,7 @@ export function JobSettingsEditor({ makerspaceId, machineTypeId, visible = true 
       {!readOnly ? <button className="desk-button-primary w-fit" disabled={save.isPending}>{save.isPending ? t`Saving…` : t`Save job settings`}</button> : null}
       {save.isSuccess ? <p role="status" className="text-sm">{t`Job settings saved.`}</p> : null}
     </form> : null}
-    {[query.error, save.error].map((error, index) => error instanceof Error && !(errorCode(error) && READ_ONLY[errorCode(error)!])
+    {[query.error, save.error].map((error, index) => error instanceof Error && !(errorCode(error) && READ_ONLY()[errorCode(error)!])
       ? <p className="text-sm text-danger" role="alert" key={index}>{error.message}</p> : null)}
   </section>;
 }

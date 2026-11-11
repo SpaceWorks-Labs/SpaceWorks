@@ -69,7 +69,7 @@ export function ConsumablesTab({ machineId, canEdit, canOperate }: {
   return (
     <section className="grid gap-3">
       <h3 className="title-section">{t`Consumables`}</h3>
-      <MachineTabContent query={consumables} resource="consumables" empty={!items.length} message={t`No consumables linked. Add the first consumable.`}>
+      <MachineTabContent query={consumables} resource={t`consumables`} empty={!items.length} message={t`No consumables linked. Add the first consumable.`}>
       <div className="grid gap-2">
         {items.map((item) => (
           <ConsumableRow key={item.id} item={item} machineId={machineId} canOperate={canOperate}
@@ -117,7 +117,7 @@ export function ConsumablesTab({ machineId, canEdit, canOperate }: {
         </form>
       ) : null}
       {[link.error, unlink.error].map((error, index) => error instanceof Error
-        ? <p key={index} className="text-sm text-danger">{error.message}</p> : null)}
+        ? <p key={index} role="alert" className="text-sm text-danger">{error.message}</p> : null)}
     </section>
   );
 }
@@ -143,7 +143,7 @@ function ConsumableRow({ item, machineId, canOperate, canEdit, removing, onRemov
   return (
     <div className="grid gap-3">
       <ListRow title={item.product_name ?? item.label} meta={<>{item.measurement === "count" ? `${item.available ?? 0} available` : t`${item.remaining ?? "0.00"} g remaining`}{item.note ? <span className="block">{item.note}</span> : null}</>}
-        right={<div className="flex flex-wrap gap-2">{isLow ? <StatusPill label={t`Low`} tone="warn" /> : null}{canEdit ? <OverflowMenu actions={[{ label: t`Unlink`, tone: "danger", disabled: removing, disabledReason: "Wait for the current change to finish.", onClick: onRemove }]} /> : null}</div>} />
+        right={<div className="flex flex-wrap gap-2">{isLow ? <StatusPill label={t`Low`} tone="warn" /> : null}{canEdit ? <OverflowMenu actions={[{ label: t`Unlink`, tone: "danger", disabled: removing, disabledReason: t`Wait for the current change to finish.`, onClick: onRemove }]} /> : null}</div>} />
       {canOperate ? (
         <form className="mt-2 flex flex-wrap items-end gap-2" onSubmit={(event) => { event.preventDefault(); log.mutate(); }}>
           <label className="eyebrow grid gap-1">{t`Use (${item.measurement})`}<input className="desk-input w-32" type="number" min={item.measurement === "count" ? "1" : "0.01"}
@@ -155,7 +155,7 @@ function ConsumableRow({ item, machineId, canOperate, canEdit, removing, onRemov
           </button>
         </form>
       ) : null}
-      {log.error instanceof Error ? <p className="mt-2 text-sm text-danger">{log.error.message}</p> : null}
+      {log.error instanceof Error ? <p role="alert" className="mt-2 text-sm text-danger">{log.error.message}</p> : null}
     </div>
   );
 }

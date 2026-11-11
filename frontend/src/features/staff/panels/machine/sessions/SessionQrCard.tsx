@@ -32,6 +32,6 @@ export function SessionQrCard({ machineId, machineName, basePath }: { machineId:
     <p className="text-sm [overflow-wrap:anywhere]"><a className="underline" href={link}>{link}</a></p>
     {open ? qr.image ? <img className="w-48 rounded-md border border-line bg-white p-2" src={qr.image} alt={t`Session QR for ${machineName}`} />
       : <p role="status" className="text-sm text-muted">{qr.error || t`Drawing the QR…`}</p> : null}
-    <button type="button" className="desk-button w-fit" onClick={() => setOpen(current => !current)}>{open ? t`Hide QR` : t`Show QR`}</button>
+    <button type="button" className="desk-button w-fit" aria-expanded={open} onClick={() => setOpen(current => !current)}>{open ? t`Hide QR` : t`Show QR`}</button>
   </section>;
 }

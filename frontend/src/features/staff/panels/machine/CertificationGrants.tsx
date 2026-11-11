@@ -3,7 +3,7 @@ import { t } from "@lingui/core/macro";
 import { EmptyState } from "../../../../components/ui/EmptyState";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ConfirmDialog } from "../../../../components/ui";
+import { ConfirmDialog, PagePager } from "../../../../components/ui";
 import {
   certificationKeys, getCertificationGrants, getCertificationMembers,
   grantCertification, renewCertification, revokeCertification,
@@ -38,11 +38,11 @@ export function CertificationGrants({ typeId, active }: { typeId: number; active
       {grant.notes ? <p>{grant.notes}</p> : null}
       <div className="mt-2 flex flex-wrap gap-2">{active ? <button className="desk-button-ghost" disabled={mutate.isPending} onClick={() => setAction({ id: grant.id, kind: "renew" })}>{t`Renew`}</button> : null}{!grant.revoked_at ? <button className="desk-button-danger" disabled={mutate.isPending} onClick={() => setAction({ id: grant.id, kind: "revoke" })}>{t`Revoke`}</button> : null}</div>
     </li>)}</ul>
-    {grants.data && grants.data.count > 24 ? <div className="flex flex-wrap gap-2"><button className="desk-button-ghost" disabled={grantPage === 1 || grants.isFetching} onClick={() => setGrantPage(grantPage - 1)}>{t`Previous grants`}</button><button className="desk-button-ghost" disabled={!grants.data.next || grants.isFetching} onClick={() => setGrantPage(grantPage + 1)}>{t`More grants`}</button></div> : null}
+    {grants.data ? <PagePager page={grantPage} setPage={setGrantPage} count={grants.data.count} next={grants.data.next} disabled={grants.isFetching} /> : null}
     <label className="grid gap-1 text-sm">{t`Training notes / revocation reason`}<textarea className="desk-input" value={notes} onChange={(e) => setNotes(e.target.value)} /></label>
     {active ? <form className="grid gap-2" onSubmit={(e) => { e.preventDefault(); mutate.mutate(null); }}>
       <label className="grid gap-1 text-sm">{t`Member`}<select className="desk-input" required value={member} onChange={(e) => setMember(e.target.value)}><option value="">{t`Select a member`}</option>{members.data?.results.map((row) => <option key={row.id} value={row.id}>{row.name}</option>)}</select></label>
-      <div className="flex flex-wrap gap-2"><button type="button" className="desk-button-ghost" disabled={page === 1 || members.isFetching} onClick={() => { setPage(page - 1); setMember(""); }}>{t`Previous members`}</button><button type="button" className="desk-button-ghost" disabled={!members.data?.next || members.isFetching} onClick={() => { setPage(page + 1); setMember(""); }}>{t`More members`}</button></div>
+      <PagePager page={page} setPage={next => { setPage(next); setMember(""); }} next={members.data?.next} disabled={members.isFetching} />
       <button className="desk-button-primary w-fit" disabled={!member || mutate.isPending}>{mutate.isPending ? t`Saving…` : t`Grant certification`}</button>
     </form> : null}
     {[grants.error, members.error, mutate.error].map((error, index) => error instanceof Error ? <p role="alert" className="text-sm text-danger" key={index}>{error.message}</p> : null)}

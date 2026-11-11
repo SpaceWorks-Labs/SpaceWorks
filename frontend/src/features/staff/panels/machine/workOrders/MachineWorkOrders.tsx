@@ -22,7 +22,7 @@ export function MachineWorkOrders({ makerspaceId, machineId, canCreate }: { make
         {canCreate ? <button type="button" className="desk-button-primary" onClick={() => setCreating(true)}>{t`New work order`}</button> : null}
       </div>
     </div>
-    {orders.error ? <ErrorBlock error={orders.error} resource="work orders" onRetry={() => { void orders.refetch(); }} /> : null}
+    {orders.error ? <ErrorBlock error={orders.error} resource={t`work orders`} onRetry={() => { void orders.refetch(); }} /> : null}
     {orders.isLoading ? <p role="status" className="text-sm text-muted">{t`Loading work orders…`}</p> : null}
     {orders.isSuccess && !rows.length ? <EmptyState message={t`No open work orders for this machine.`} /> : null}
     {rows.length ? <div className="grid gap-2">{rows.map(order => <WorkOrderRow key={order.id} order={order} onOpen={() => openScreen(order.id)} />)}</div> : null}

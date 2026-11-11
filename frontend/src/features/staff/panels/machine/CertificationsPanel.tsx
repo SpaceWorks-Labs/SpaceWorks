@@ -6,6 +6,7 @@ import { ConfirmDialog } from "../../../../components/ui";
 import { certificationKeys, createCertificationType, deactivateCertificationType, getCertificationTypes, updateCertificationType, type CertificationInput, type CertificationType } from "../../certificationsApi";
 import { CertificationTypeForm } from "./CertificationTypeForm";
 import { CertificationGrants } from "./CertificationGrants";
+import { InductionEventsSection } from "./InductionEventsSection";
 
 export function CertificationsPanel({ makerspaceId, machineTypeId , visible = true }: { visible?: boolean; makerspaceId: number; machineTypeId: number }) {
   const client = useQueryClient();
@@ -28,6 +29,7 @@ export function CertificationsPanel({ makerspaceId, machineTypeId , visible = tr
       <div className="flex flex-wrap gap-2"><button className="desk-button-ghost" onClick={() => setSelected(selected === row.id ? null : row.id)}>{selected === row.id ? t`Hide grants` : t`View grants`}</button>{row.is_active ? <><button className="desk-button-ghost" onClick={() => setEditing(row)}>{t`Edit type`}</button><button className="desk-button-danger" onClick={() => setDeactivate(row.id)}>{t`Deactivate`}</button></> : null}</div>
       {selected === row.id ? <CertificationGrants key={row.id} typeId={row.id} active={row.is_active} /> : null}
     </article>)}
+    <InductionEventsSection makerspaceId={makerspaceId} machineTypeId={machineTypeId} />
     {editing ? <CertificationTypeForm key={editing === "new" ? "new" : editing.id} initial={initial} pending={save.isPending} onSave={(value) => save.mutate(value)} onCancel={() => setEditing(null)} /> : <button className="desk-button-primary w-fit" onClick={() => setEditing("new")}>{t`New certification type`}</button>}
     {[types.error, save.error, remove.error].map((error, index) => error instanceof Error ? <p role="alert" className="text-sm text-danger" key={index}>{error.message}</p> : null)}
     <ConfirmDialog open={deactivate !== null} title={t`Deactivate certification type?`} message={t`This requirement stops gating requests and bookings. Existing training records remain.`} confirmLabel={t`Deactivate`} tone="danger" pending={remove.isPending} onConfirm={() => { if (deactivate !== null) remove.mutate(deactivate); }} onCancel={() => setDeactivate(null)} />

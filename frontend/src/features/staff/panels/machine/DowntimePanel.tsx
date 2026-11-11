@@ -1,11 +1,11 @@
-import { formatLocale } from "../../../../lib/format";
+import { formatDate, formatDateTime } from "../../../../lib/format";
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
 
 import { ErrorBlock, StatCard, StatusPill } from "../../../../components/ui";
 import { localInputValue, useMachineDowntime, useMachineLockout, useUpdateDowntime, type DowntimePeriod } from "./machineDowntimeApi";
 
-const when = (iso: string | null) => iso ? new Date(iso).toLocaleString(formatLocale(), { dateStyle: "medium", timeStyle: "short" }) : "";
+const when = (iso: string | null) => iso ? formatDateTime(iso) : "";
 
 /** Header badge: shown only while overdue blocking maintenance locks the machine out. */
 export function LockoutBadge({ machineId }: { machineId: number }) {
@@ -16,31 +16,31 @@ export function LockoutBadge({ machineId }: { machineId: number }) {
 /** Why a machine is blocked: the overdue schedules that lock it out (`blocks_use`). */
 export function LockoutNotice({ machineId }: { machineId: number }) {
   const lockout = useMachineLockout(machineId);
-  if (!lockout.data?.locked) return lockout.error ? <ErrorBlock error={lockout.error} resource="lockout state" /> : null;
+  if (!lockout.data?.locked) return lockout.error ? <ErrorBlock error={lockout.error} resource={t`lockout state`} /> : null;
   return <section className="grid gap-2 rounded-xl border border-line bg-surface p-3" aria-label={t`Lockout`}>
     <StatusPill tone="danger" label={t`Locked out`} />
     <p className="text-sm">{t`Jobs cannot start on this machine until this overdue maintenance is done:`}</p>
-    <ul className="grid gap-1 text-sm">{lockout.data.schedules.map(row => <li key={row.id}>{t`${row.description} · due ${new Date(`${row.next_due}T00:00:00`).toLocaleDateString(formatLocale())}`}</li>)}</ul>
+    <ul className="grid gap-1 text-sm">{lockout.data.schedules.map(row => <li key={row.id}>{t`${row.description} · due ${formatDate(new Date(`${row.next_due}T00:00:00`))}`}</li>)}</ul>
   </section>;
 }
 
 /** Uptime, mean time to repair and the downtime periods (maintenance and offline), with the open period editable. */
 export function DowntimePanel({ machineId, canEdit }: { machineId: number; canEdit: boolean }) {
   const downtime = useMachineDowntime(machineId);
-  if (downtime.error) return <ErrorBlock error={downtime.error} resource="downtime" onRetry={() => { void downtime.refetch(); }} />;
+  if (downtime.error) return <ErrorBlock error={downtime.error} resource={t`downtime`} onRetry={() => { void downtime.refetch(); }} />;
   if (!downtime.data) return downtime.isLoading ? <p role="status" className="text-sm text-muted">{t`Loading downtime…`}</p> : null;
   const { summary, periods } = downtime.data;
   return <section className="grid gap-3" aria-labelledby={`downtime-${machineId}`}>
     <h3 id={`downtime-${machineId}`} className="title-section">{t`Downtime`}</h3>
     <div className="grid gap-3 sm:grid-cols-2">
       <StatCard label={t`Uptime, last ${summary.days} days`} value={`${summary.uptime_percent.toFixed(1)}%`} />
-      <StatCard label={t`Average time to repair`} value={summary.mean_hours_to_repair === null ? "No repairs yet" : `${summary.mean_hours_to_repair.toFixed(1)} h`} />
+      <StatCard label={t`Average time to repair`} value={summary.mean_hours_to_repair === null ? t`No repairs yet` : t`${summary.mean_hours_to_repair.toFixed(1)} h`} />
     </div>
     {!periods.length ? <p className="text-sm text-muted">{t`No downtime recorded.`}</p> : <ul className="grid gap-2">{periods.map(period =>
       <li key={period.id} className="grid gap-2 rounded-xl border border-line p-3">
         <div className="flex flex-wrap items-center gap-2">
-          <StatusPill tone={period.ended_at ? "neutral" : "warn"} label={`${period.kind === "offline" ? "Offline" : "Maintenance"}${period.ended_at ? "" : " now"}`} />
-          <span className="text-sm text-muted">{when(period.started_at)}{period.ended_at ? ` to ${when(period.ended_at)}` : ""}</span>
+          <StatusPill tone={period.ended_at ? "neutral" : "warn"} label={period.kind === "offline" ? (period.ended_at ? t`Offline` : t`Offline now`) : (period.ended_at ? t`Maintenance` : t`Maintenance now`)} />
+          <span className="text-sm text-muted">{when(period.started_at)}{period.ended_at ? ` ${t`to`} ${when(period.ended_at)}` : ""}</span>
         </div>
         {!period.ended_at && canEdit ? <OpenPeriodForm key={period.id} machineId={machineId} period={period} /> : <>
           {period.reason ? <p className="text-sm">{period.reason}</p> : null}

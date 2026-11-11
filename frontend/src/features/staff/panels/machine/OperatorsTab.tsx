@@ -47,12 +47,12 @@ export function OperatorsTab({ machineId, canDelegate }: { machineId: number; ca
 
   return (
     <section>
-      <h3 className="title-section mb-3">{t`Operators`}</h3>
-      <MachineTabContent query={operators} resource="operators" empty={!items.length} message={t`No operators assigned. Add the first operator.`}>
+      <h3 className="title-section mb-3">{t`Machine operators`}</h3>
+      <MachineTabContent query={operators} resource={t`operators`} empty={!items.length} message={t`No operators assigned. Add the first operator.`}>
       <div className="grid gap-2">
         {items.map((operator) => (
           <ListRow key={operator.id} title={operator.username} identity={{ kind: "avatar", name: operator.username, seed: String(operator.user) }}
-            meta={operator.access_level} right={canDelegate ? <OverflowMenu actions={[{ label: t`Remove`, tone: "danger", disabled: remove.isPending, disabledReason: "Wait for the current change to finish.", onClick: () => remove.mutate(operator.user) }]} /> : undefined} />
+            meta={operator.access_level} right={canDelegate ? <OverflowMenu actions={[{ label: t`Remove`, tone: "danger", disabled: remove.isPending, disabledReason: t`Wait for the current change to finish.`, onClick: () => remove.mutate(operator.user) }]} /> : undefined} />
         ))}
       </div>
       </MachineTabContent>
@@ -81,9 +81,9 @@ export function OperatorsTab({ machineId, canDelegate }: { machineId: number; ca
           </button>
         </form>
       ) : null}
-      {candidates.error instanceof Error ? <p className="mt-2 text-sm text-danger">{candidates.error.message}</p> : null}
-      {add.error instanceof Error ? <p className="mt-2 text-sm text-danger">{add.error.message}</p> : null}
-      {remove.error instanceof Error ? <p className="mt-2 text-sm text-danger">{remove.error.message}</p> : null}
+      {candidates.error instanceof Error ? <p role="alert" className="mt-2 text-sm text-danger">{candidates.error.message}</p> : null}
+      {add.error instanceof Error ? <p role="alert" className="mt-2 text-sm text-danger">{add.error.message}</p> : null}
+      {remove.error instanceof Error ? <p role="alert" className="mt-2 text-sm text-danger">{remove.error.message}</p> : null}
     </section>
   );
 }

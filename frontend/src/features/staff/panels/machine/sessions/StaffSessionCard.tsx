@@ -7,6 +7,7 @@ import { money } from "../../../../payments/usePriceQuote";
 import { sessionErrorMessage, sessionKeys, staffSessionAction, type StaffSession } from "../../../../machine-sessions/api";
 import { CHARGE_LABELS, duration, SOURCES, STOP_REASONS, when } from "../../../../machine-sessions/sessionFormat";
 import { SessionMemberSelect } from "./SessionMemberSelect";
+import { ChargeSettle } from "../../../areaPayments/ChargeSettle";
 
 type Mode = "idle" | "correct" | "assign";
 
@@ -71,5 +72,8 @@ export function StaffSessionCard({ session, makerspaceId }: { session: StaffSess
       {mode !== "idle" ? <button type="button" className="desk-button" onClick={() => setMode("idle")}>{t`Cancel`}</button> : null}
     </div>
     {action.isError ? <p role="alert" className="text-sm text-danger">{sessionErrorMessage(action.error)}</p> : null}
+    {/* Decision 242(a): settle the session's charge where the session is shown (M5). */}
+    <ChargeSettle makerspaceId={makerspaceId} invalidateKeys={[sessionKeys.staffAll(makerspaceId)]}
+      charge={session.payment ? { ...session.payment, subject_type: "machine_session" } : null} />
   </li>;
 }

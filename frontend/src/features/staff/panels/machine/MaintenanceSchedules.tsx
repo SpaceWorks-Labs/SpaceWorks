@@ -121,7 +121,7 @@ export function MaintenanceSchedules({
           ) : (
             <ListRow title={schedule.description} meta={<span>
                   {schedule.trigger !== "days" && schedule.trigger ? t`Usage: ${[schedule.usage_hours && `${schedule.usage_hours} hours`, schedule.job_count && `${schedule.job_count} jobs`].filter(Boolean).join(" or ")}. ` : ""}
-                  {schedule.trigger !== "usage" ? t`Every ${schedule.interval_days} days (${schedule.anchor === "calendar" ? "fixed calendar" : "from completion"}) · ${formatDate(schedule.next_due)}` : t`Resets when maintenance is completed.`}
+                  {schedule.trigger !== "usage" ? (schedule.anchor === "calendar" ? t`Every ${schedule.interval_days} days (fixed calendar) · ${formatDate(schedule.next_due)}` : t`Every ${schedule.interval_days} days (from completion) · ${formatDate(schedule.next_due)}`) : t`Resets when maintenance is completed.`}
                   {schedule.blocks_use ? t` · Locks the machine when overdue` : ""}
                 </span>}
               right={<div className="flex flex-wrap items-center gap-2"><StatusPill

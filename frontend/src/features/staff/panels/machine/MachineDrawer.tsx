@@ -1,5 +1,4 @@
-import { t } from "@lingui/core/macro";
-import { plural } from "../../../../lib/plural";
+import { plural, t } from "@lingui/core/macro";
 import { machineStatusLabel } from "./machineStatusLabel";
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
@@ -19,11 +18,14 @@ import { OperatorsTab } from "./OperatorsTab";
 import { OverviewTab } from "./OverviewTab";
 import { UsageTab } from "./UsageTab";
 import { WarrantyTab } from "./WarrantyTab";
+import { MachineRelatedTab } from "./MachineRelatedTab";
 import { SessionList } from "./sessions/SessionsScreen";
 import { SessionQrCard } from "./sessions/SessionQrCard";
+import { SupervisedMachineTab } from "../../../supervised-sessions/SupervisedMachineTab";
 
 const BASE_TABS = ["Overview", "Operators", "Consumables", "Usage", "Documents", "Errors"] as const;
-type MachineTab = (typeof BASE_TABS)[number] | "Maintenance" | "Warranty" | "Sessions";
+type MachineTab = (typeof BASE_TABS)[number] | "Maintenance" | "Warranty" | "Sessions" | "Supervised" | "Related";
+const JUMP_TABS: readonly MachineTab[] = ["Maintenance", "Consumables", "Sessions", "Warranty"];
 
 export function MachineDrawer({
   machineId, makerspaceId, canManageMachines, maintenanceEnabled, onClose, enabledFeatures = [], publicBase = "",
@@ -60,6 +62,10 @@ export function MachineDrawer({
     ...(details?.can_edit && enabledFeatures.includes("machines.warranty") ? ["Warranty" as const] : []),
     // Machine sessions (L23): this machine's live and finished sessions.
     ...(canManageMachines && enabledFeatures.includes("machines.sessions") ? ["Sessions" as const] : []),
+    // Decision 223 (d): supervised workshop sessions; operators instruct, managers oversee.
+    ...((canManageMachines || details?.can_operate) && enabledFeatures.includes("machines.supervised_sessions") ? ["Supervised" as const] : []),
+    // MC11: jobs, incidents and links into every other area that touches this machine.
+    "Related" as const,
   ];
 
   return <DetailLayout presentation="drawer" open onClose={onClose} drawerWidth={720}
@@ -67,13 +73,13 @@ export function MachineDrawer({
     identity={details?.image_url ? { kind: "image", src: details.image_url } : { kind: "icon", icon: "Cog", tone: "accent" }}
     status={details ? <><StatusBadge status={details.status} label={machineStatusLabel(details.status)} />{!details.is_active ? <StatusPill label={t`Retired`} tone="warn" /> : null}{maintenanceAllowed ? <LockoutBadge machineId={machineId} /> : null}</> : undefined}
     actions={{ primary: details?.can_operate ? { label: details.status === "idle" ? t`Mark running` : t`Mark idle`, pending: changeStatus.isPending, onClick: () => changeStatus.mutate() } : undefined }}
-    meta={details ? [details.machine_type.name, plural(Number(details.usage_hours), "total hour")] : undefined}
+    meta={details ? [details.machine_type.name, plural(Number(details.usage_hours), { one: "# total hour", other: "# total hours" })] : undefined}
     /* Phones keep the shared tab bar's single scrolling row (eight tabs wrapped into three ragged
        rows there); from `sm` the drawer is wide enough that every tab fits once wrapped, so the
        row wraps instead of hiding tabs behind a scroll. */
     main={details ? <div ref={mainRef} className="grid min-w-0 gap-6 sm:[&_[role=tablist]]:flex-wrap sm:[&_[role=tablist]]:overflow-visible sm:[&_[role=tablist]]:[mask-image:none]">
       {changeStatus.error ? <p role="alert" className="text-sm text-danger">{changeStatus.error.message}</p> : null}
-      <Tabs label={t`Machine details`} tabs={tabs.map(tab => ({ key: tab, label: tab, href: "#" }))} activeKey={activeTab} onChange={key => setActiveTab(key as MachineTab)}>
+      <Tabs label={t`Machine details`} tabs={tabs.map(tab => ({ key: tab, label: tab === "Related" ? t`Related` : tab, href: "#" }))} activeKey={activeTab} onChange={key => setActiveTab(key as MachineTab)}>
             {activeTab === "Overview" ? (
               <OverviewTab
                 publicDetailsEnabled={enabledFeatures.includes("machines.public_detail")}
@@ -122,6 +128,9 @@ export function MachineDrawer({
             </div> : null}
             {activeTab === "Warranty" && details.can_edit ? (
               <WarrantyTab machineId={machineId} />
-            ) : null}</Tabs>
+            ) : null}
+            {activeTab === "Related" ? <MachineRelatedTab machine={details} makerspaceId={makerspaceId} canManageMachines={canManageMachines}
+              jumps={JUMP_TABS.filter(tab => tabs.includes(tab)).map(tab => ({ key: tab, label: tab }))} onJump={key => setActiveTab(key as MachineTab)} /> : null}
+            {activeTab === "Supervised" && tabs.includes("Supervised") ? <SupervisedMachineTab makerspaceId={makerspaceId} machineId={machineId} /> : null}</Tabs>
     </div> : null} />;
 }

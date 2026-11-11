@@ -129,7 +129,7 @@ export function ConsumablePoolList({ makerspaceId, pools, visible = true, draft,
                       match. State lives in the label rather than aria-pressed: carrying both a
                       changing name and a pressed state double-signals the same fact. */}
                   <button
-                    aria-label={t`${isPublic ? "Public" : "Hidden"}: ${label} — activate to ${isPublic ? "hide from" : "show to"} requesters`}
+                    aria-label={isPublic ? t`Public: ${label} — activate to hide from requesters` : t`Hidden: ${label} — activate to show to requesters`}
                     className={isPublic ? "desk-button-warn" : "desk-button-success"}
                     disabled={visibility.isPending}
                     type="button"

@@ -4,7 +4,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 
 import { ListLayout } from "../../../../../components/layouts";
-import { Modal } from "../../../../../components/ui";
+import { useUrlListState } from "../../../../../lib/useUrlListState";
+import { SavedViewsMenu } from "../../../SavedViewsMenu";
+import { SessionFilters, SESSION_FILTERS, sessionFilterQuery } from "./SessionFilters";
+import { Modal, PagePager } from "../../../../../components/ui";
 import { fetchStaffSessions, sessionErrorMessage, sessionKeys, staffStartSession } from "../../../../machine-sessions/api";
 import type { Machine } from "../../../machinesApi";
 import { opsQueryState } from "../../../opsPresentation";
@@ -18,21 +21,21 @@ const FILTERS = [
 ];
 
 /** Live and finished sessions for staff; `machineId` narrows it to one machine (the drawer tab). */
-export function SessionList({ makerspaceId, machineId, status }: { makerspaceId: number; machineId?: number; status: string }) {
+export function SessionList({ makerspaceId, machineId, status, extra = "" }: { makerspaceId: number; machineId?: number; status: string; extra?: string }) {
   const [page, setPage] = useState(1);
-  const filters = new URLSearchParams({ status, page: String(page), ...(machineId ? { machine: String(machineId) } : {}) }).toString();
+  const params = new URLSearchParams({ status, page: String(page), ...(machineId ? { machine: String(machineId) } : {}) });
+  new URLSearchParams(extra).forEach((value, key) => { if (!machineId || key !== "machine") params.set(key, value); });
+  const filters = params.toString();
   const sessions = useQuery({ queryKey: sessionKeys.staff(makerspaceId, filters), queryFn: () => fetchStaffSessions(makerspaceId, filters),
     refetchInterval: status === "live" ? 60_000 : false });
   const rows = sessions.data?.results ?? [];
   return <div className="grid gap-3">
     {sessions.isError ? <p role="alert" className="text-sm text-danger">{sessionErrorMessage(sessions.error)}</p> : null}
-    {sessions.isSuccess && !rows.length ? <p className="text-sm text-muted">{status === "live" ? t`No one is using a machine right now.`
+    {sessions.isSuccess && !rows.length && extra ? <p className="text-sm text-muted">{t`No sessions match these filters. Clear filters to see them all.`}</p> : null}
+    {sessions.isSuccess && !rows.length && !extra ? <p className="text-sm text-muted">{status === "live" ? t`No one is using a machine right now.`
       : status === "review" ? t`Nothing to check. Auto-stopped and unattributed sessions show up here.` : t`No finished sessions yet.`}</p> : null}
     <ul className="grid gap-3">{rows.map(row => <StaffSessionCard key={row.id} session={row} makerspaceId={makerspaceId} />)}</ul>
-    {sessions.data && (sessions.data.next || sessions.data.previous) ? <div className="flex gap-2">
-      <button type="button" className="desk-button" disabled={!sessions.data.previous} onClick={() => setPage(current => current - 1)}>{t`Newer`}</button>
-      <button type="button" className="desk-button" disabled={!sessions.data.next} onClick={() => setPage(current => current + 1)}>{t`Older`}</button>
-    </div> : null}
+    {sessions.data ? <PagePager page={page} setPage={setPage} next={sessions.data.next} /> : null}
   </div>;
 }
 
@@ -57,21 +60,27 @@ function StartForMember({ makerspaceId, machines, onClose }: { makerspaceId: num
   </Modal>;
 }
 
-/** The Machines console Sessions screen (`?view=sessions`): live, to check, closed. */
+/** The Machines console Sessions screen (`?view=sessions`): live, to check, closed, with machine,
+ * type, member, source and date filters (A16) that live in the URL and in saved views (A17). */
 export function SessionsScreen({ makerspaceId, machines, onBack }: { makerspaceId: number; machines: Machine[]; onBack: () => void }) {
   const [params, setParams] = useSearchParams();
   const [starting, setStarting] = useState(false);
   const filter = FILTERS.find(row => row.key === params.get("session_status")) ?? FILTERS[0];
   const active = machines.filter(row => row.is_active);
+  const list = useUrlListState(SESSION_FILTERS, "s_");
+  const extra = sessionFilterQuery(list.values);
   return <>
     <ListLayout header={{ title: t`Machine sessions`, subtitle: t`Who is using which machine, and sessions that need a check.`,
       primary: active.length ? { label: t`Start for a member`, icon: "Plus", onClick: () => setStarting(true) } : undefined,
       secondary: { label: t`All machines`, onClick: onBack } }}
       tabs={FILTERS.map(row => ({ key: row.key, label: row.label, href: "#" }))} activeTab={filter.key}
       onTabChange={key => setParams(current => { const next = new URLSearchParams(current); next.set("session_status", key); return next; })}
+      filters={{ activeCount: extra ? extra.split("&").length : 0, onClear: () => list.update({ ...SESSION_FILTERS }),
+        views: <SavedViewsMenu makerspaceId={makerspaceId} entity="machine_sessions" state={list.values} onRestore={list.restore} />,
+        controls: <SessionFilters machines={machines} values={list.values} onChange={patch => list.update(patch)} /> }}
       state={opsQueryState({ isLoading: false, error: null, refetch: () => undefined }, "sessions")} isEmpty={false}
       empty={{ message: t`No sessions.` }}
-      body={{ kind: "rows", rows: <SessionList key={filter.key} makerspaceId={makerspaceId} status={filter.key} /> }} />
+      body={{ kind: "rows", rows: <SessionList key={`${filter.key}?${extra}`} makerspaceId={makerspaceId} status={filter.key} extra={extra} /> }} />
     {starting ? <StartForMember makerspaceId={makerspaceId} machines={active} onClose={() => setStarting(false)} /> : null}
   </>;
 }

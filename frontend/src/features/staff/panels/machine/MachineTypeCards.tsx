@@ -1,4 +1,4 @@
-import { t } from "@lingui/core/macro";
+import { plural, t } from "@lingui/core/macro";
 import { EmptyState, ListRow, Skeleton, StatusPill } from "../../../../components/ui";
 import type { Identity } from "../../../../components/ui/types";
 import type { Machine, MachineType, MachineStatus } from "../../machinesApi";
@@ -87,7 +87,7 @@ export function MachineTypeCards({
               ) : machinesFailed ? (
                 <span className="tabular-nums text-xs text-muted">{t`count unavailable`}</span>
               ) : (
-                <span className="chip">{owned.length} {owned.length === 1 ? "machine" : "machines"}</span>
+                <span className="chip">{plural(owned.length, { one: "# machine", other: "# machines" })}</span>
               )}
               {!machinesLoading && !machinesFailed
                 ? highlights.map((entry) => (

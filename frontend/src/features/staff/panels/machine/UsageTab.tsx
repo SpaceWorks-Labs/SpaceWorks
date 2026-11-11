@@ -40,7 +40,7 @@ export function UsageTab({ machineId, makerspaceId, canOperate }: {
   return (
     <section>
       <h3 className="title-section mb-3">{t`Usage`}</h3>
-      <MachineTabContent query={usage} resource="usage" empty={!items.length} message={t`No usage logged yet. Add the first entry.`}>
+      <MachineTabContent query={usage} resource={t`usage`} empty={!items.length} message={t`No usage logged yet. Add the first entry.`}>
       <div className="grid gap-2">
         {items.map((entry) => (
           <ListRow key={entry.id} title={`${entry.hours} h`} meta={<>{entry.note ? <span className="block break-words">{entry.note}</span> : null}{entry.source}{entry.logged_by_username ? ` · ${entry.logged_by_username}` : ""}</>}

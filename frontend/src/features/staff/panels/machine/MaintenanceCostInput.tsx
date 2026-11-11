@@ -19,7 +19,7 @@ export function costBody({ cost, method }: CostValue): { cost: string | null; co
 export function MaintenanceCostInput({ value, onChange }: { value: CostValue; onChange: (value: CostValue) => void }) {
   return <>
     <label className="eyebrow grid gap-1">
-      {t`Cost (optional)`}<input className="desk-input" type="number" min="0" step="0.01" value={value.cost} aria-describedby="maintenance-cost-hint"
+      {t`Cost (optional)`}<input className="desk-input" type="number" min="0" step="any" value={value.cost} aria-describedby="maintenance-cost-hint"
         onChange={event => onChange({ ...value, cost: event.target.value })} />
     </label>
     <label className="eyebrow grid gap-1">

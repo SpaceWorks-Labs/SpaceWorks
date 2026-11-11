@@ -30,7 +30,7 @@ export function ErrorsTab({ machineId, canOperate }: { machineId: number; canOpe
   return (
     <section>
       <h3 className="title-section mb-3">{t`Error logs`}</h3>
-      <MachineTabContent query={logs} resource="error logs" empty={!items.length} message={t`No errors logged. Add a log when something needs attention.`}>
+      <MachineTabContent query={logs} resource={t`error logs`} empty={!items.length} message={t`No errors logged. Add a log when something needs attention.`}>
       <div className="grid gap-2">
         {items.map((entry) => (
           <ListRow key={entry.id} title={entry.message} meta={<>{entry.logged_by_username ? t`Logged by ${entry.logged_by_username} · ` : ""}<RelativeTime date={entry.created_at} exact /></>}
@@ -40,8 +40,10 @@ export function ErrorsTab({ machineId, canOperate }: { machineId: number; canOpe
       </MachineTabContent>
       {canOperate ? (
         <form className="mt-3 grid gap-2" onSubmit={(event) => { event.preventDefault(); add.mutate(); }}>
-          <label className="eyebrow grid gap-1">{t`Severity`}<input className="desk-input" maxLength={16} value={severity}
-              onChange={(event) => setSeverity(event.target.value)} required />
+          <label className="eyebrow grid gap-1">{t`Severity`}<select className="desk-input" value={severity}
+              onChange={(event) => setSeverity(event.target.value)} required>
+            <option value="error">{t`Error`}</option><option value="warning">{t`Warning`}</option><option value="info">{t`Info`}</option>
+          </select>
           </label>
           <label className="eyebrow grid gap-1">{t`Message`}<textarea className="desk-input min-h-20" value={message}
               onChange={(event) => setMessage(event.target.value)} required />
@@ -52,7 +54,7 @@ export function ErrorsTab({ machineId, canOperate }: { machineId: number; canOpe
           </button>
         </form>
       ) : null}
-      {add.error instanceof Error ? <p className="mt-2 text-sm text-danger">{add.error.message}</p> : null}
+      {add.error instanceof Error ? <p role="alert" className="mt-2 text-sm text-danger">{add.error.message}</p> : null}
     </section>
   );
 }

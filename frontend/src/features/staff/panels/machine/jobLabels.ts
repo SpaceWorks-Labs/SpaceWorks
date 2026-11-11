@@ -32,9 +32,9 @@ export const AT_RISK_LABELS: Record<string, string> = {
 
 /** Staff-facing explanation for a refused job action, keyed by the API error code. */
 export const ACTION_ERROR_HELP: Record<string, string> = {
-  quote_required: "This machine type needs a quote the member approves first. Send a quote instead.",
-  job_too_long: "This job is longer than this machine type allows. Tick “Accept anyway” to override.",
-  payment_due: "This job’s charge must be paid before pickup. Settle it in Payments, then collect.",
-  machine_locked_out: "This machine is locked out until its overdue maintenance is done.",
-  machine_booked: "Someone else holds a booking on this machine right now. Choose another machine or wait.",
+  quote_required: t`This machine type needs a quote the member approves first. Send a quote instead.`,
+  job_too_long: t`This job is longer than this machine type allows. Tick “Accept anyway” to override.`,
+  payment_due: t`This job’s charge must be paid before pickup. Settle it in Payments, then collect.`,
+  machine_locked_out: t`This machine is locked out until its overdue maintenance is done.`,
+  machine_booked: t`Someone else holds a booking on this machine right now. Choose another machine or wait.`,
 };

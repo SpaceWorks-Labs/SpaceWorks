@@ -47,13 +47,13 @@ export function DocumentsTab({ machineId, canEdit }: { machineId: number; canEdi
   return (
     <section>
       <h3 className="title-section mb-3">{t`Documents`}</h3>
-      <MachineTabContent query={documents} resource="documents" empty={!items.length} message={t`No machine documents uploaded. Upload the first document.`}>
+      <MachineTabContent query={documents} resource={t`documents`} empty={!items.length} message={t`No machine documents uploaded. Upload the first document.`}>
       <div className="grid gap-2">
         {items.map((document) => (
           <ListRow key={document.id} title={document.original_filename} identity={{ kind: "icon", icon: "Wrench", tone: "neutral" }}
             meta={`${document.doc_type} · ${formatBytes(document.size_bytes)}`} right={<div className="flex flex-wrap gap-2">
               <button className="desk-button" type="button" disabled={view.isPending} onClick={() => view.mutate(document.id)}>{t`View`}</button>
-              {canEdit ? <OverflowMenu actions={[{ label: t`Delete`, tone: "danger", disabled: remove.isPending, disabledReason: "Wait for the current change to finish.", onClick: () => remove.mutate(document.id) }]} /> : null}
+              {canEdit ? <OverflowMenu actions={[{ label: t`Delete`, tone: "danger", disabled: remove.isPending, disabledReason: t`Wait for the current change to finish.`, onClick: () => remove.mutate(document.id) }]} /> : null}
             </div>} />
         ))}
       </div>
@@ -74,9 +74,9 @@ export function DocumentsTab({ machineId, canEdit }: { machineId: number; canEdi
           </button>
         </form>
       ) : null}
-      {upload.error instanceof Error ? <p className="mt-2 text-sm text-danger">{upload.error.message}</p> : null}
-      {view.error instanceof Error ? <p className="mt-2 text-sm text-danger">{view.error.message}</p> : null}
-      {remove.error instanceof Error ? <p className="mt-2 text-sm text-danger">{remove.error.message}</p> : null}
+      {upload.error instanceof Error ? <p role="alert" className="mt-2 text-sm text-danger">{upload.error.message}</p> : null}
+      {view.error instanceof Error ? <p role="alert" className="mt-2 text-sm text-danger">{view.error.message}</p> : null}
+      {remove.error instanceof Error ? <p role="alert" className="mt-2 text-sm text-danger">{remove.error.message}</p> : null}
     </section>
   );
 }

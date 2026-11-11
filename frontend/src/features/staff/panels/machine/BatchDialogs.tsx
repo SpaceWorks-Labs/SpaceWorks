@@ -85,7 +85,7 @@ export function BatchCompleteDialog({ batchId, jobs, makerspaceId, typeId, unitL
         <span className="title-section">{job.title}</span>
         {adjust ? <label className="eyebrow grid gap-1">{t`Minutes`}<input className="desk-input" inputMode="decimal" value={value(job.id, "minutes")}
           onChange={event => setManual(current => ({ ...current, [job.id]: { minutes: event.target.value, quantity: value(job.id, "quantity") } }))} /></label>
-          : <span className="text-sm">{minuteSplit[job.id]} min</span>}
+          : <span className="text-sm">{t`${minuteSplit[job.id]} min`}</span>}
         {hasPool && quantity ? adjust ? <label className="eyebrow grid gap-1">{unitLabel}<input className="desk-input" inputMode="decimal" value={value(job.id, "quantity")}
           onChange={event => setManual(current => ({ ...current, [job.id]: { minutes: value(job.id, "minutes"), quantity: event.target.value } }))} /></label>
           : <span className="text-sm">{quantitySplit[job.id]} {unitLabel}</span> : null}

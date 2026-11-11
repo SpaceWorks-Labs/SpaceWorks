@@ -16,6 +16,10 @@ const statuses = [
 /** Status keys a `?job_status=` deep link may open (dashboard work queues link straight to one). */
 export const serviceQueueStatusKeys = statuses.map(item => item.key);
 const matches = (key: string, status: string) => key === "all" || (key === "active" ? ACTIVE.has(status) : status === key);
+/** The same status choices for the cross-type All jobs view (A15) and a job's own label (A18). */
+export const serviceStatusFilters = () => statuses;
+export const matchesServiceStatus = matches;
+export const jobStatusLabel = (status: string) => statuses.find(item => item.key === status)?.label ?? t`Unknown status`;
 const emptyCopy: Record<string, string> = {
   active: t`No jobs waiting, running or needing a reprint. New requests land here.`, all: t`No jobs yet. New requests land here.`,
 };

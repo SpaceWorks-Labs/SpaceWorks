@@ -1,4 +1,4 @@
-import { formatLocale } from "../../../../../lib/format";
+import { formatDate, formatDateTime } from "../../../../../lib/format";
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
 
@@ -11,7 +11,7 @@ import {
 } from "./workOrdersApi";
 import { costBody, EMPTY_COST, MaintenanceCostInput, type CostValue } from "../MaintenanceCostInput";
 
-const date = (iso: string | null) => iso ? new Date(iso).toLocaleString(formatLocale(), { dateStyle: "medium", timeStyle: "short" }) : "Not yet";
+const date = (iso: string | null) => iso ? formatDateTime(iso) : t`Not yet`;
 
 /** One work order: what it is, who has it, and the next step (start, hold, close or cancel). */
 export function WorkOrderDetail({ order, state, onBack }: { order: WorkOrder | undefined; state: QueryState; onBack: () => void }) {
@@ -30,14 +30,14 @@ export function WorkOrderDetail({ order, state, onBack }: { order: WorkOrder | u
     identity={{ kind: "icon", icon: "Wrench", tone: "accent" }} state={order || state.status !== "ready" ? state : { status: "error", error: t`This work order is not in your scope any more.` }}
     status={order ? <><StatusPill tone={statusTone(order.status)} label={STATUS_LABELS[order.status]} />
       <StatusPill tone={priorityTone(order.priority)} label={`${PRIORITY_LABELS[order.priority]} priority`} /></> : undefined}
-    meta={order ? [order.subject_label, order.due_on ? `Due ${new Date(`${order.due_on}T00:00:00`).toLocaleDateString(formatLocale())}` : "No due date"] : undefined}
+    meta={order ? [order.subject_label, order.due_on ? t`Due ${formatDate(new Date(`${order.due_on}T00:00:00`))}` : t`No due date`] : undefined}
     actions={{ primary, overflow }}
     main={order ? <div className="grid gap-6">
       {move.error ? <p role="alert" className="text-sm text-danger">{move.error.message}</p> : null}
       {order.description ? <p className="whitespace-pre-wrap break-words">{order.description}</p> : <p className="text-sm text-muted">{t`No details given.`}</p>}
       <WorkOrderAssignee order={order} disabled={!open} />
       <KeyValueCard title={t`Record`} items={[
-        { label: t`Takes the machine down`, value: order.takes_machine_down ? "Yes, while in progress" : "No" },
+        { label: t`Takes the machine down`, value: order.takes_machine_down ? t`Yes, while in progress` : t`No` },
         { label: t`Opened`, value: date(order.created_at) }, { label: t`Started`, value: date(order.started_at) },
         { label: t`Closed`, value: date(order.closed_at) },
         ...(order.resolution ? [{ label: t`Resolution`, value: order.resolution }] : []),

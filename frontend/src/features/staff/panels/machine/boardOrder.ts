@@ -46,5 +46,5 @@ export function dropPosition(job: StaffJob, target: StaffJob, column: StaffJob[]
 export function splitByEstimate(jobs: Pick<StaffJob, "id" | "estimated_minutes">[], total: number): Record<number, number> {
   const weights = jobs.map(job => job.estimated_minutes || 1);
   const whole = weights.reduce((sum, value) => sum + value, 0);
-  return Object.fromEntries(jobs.map((job, index) => [job.id, Math.round((total * weights[index] / whole) * 100) / 100]));
+  return Object.fromEntries(jobs.map((job, index) => [job.id, Math.round((total * weights[index] / whole) * 1000) / 1000]));
 }

@@ -1,4 +1,4 @@
-import { t } from "@lingui/core/macro";
+import { plural, t } from "@lingui/core/macro";
 import { useState, type ReactNode } from "react";
 
 import type { PrinterPool } from "../../../../generated/api";
@@ -12,7 +12,7 @@ import { JobFilesDialog } from "./filePreview/JobFilesDialog";
 import { JobBoardCard, type CardHandlers } from "./JobBoardCard";
 import type { DialogAction } from "./jobActionBody";
 import { machineStatusLabel } from "./machineStatusLabel";
-import { useJobAction, useJobBoard, type StaffJob } from "./machineJobsApi";
+import { useJobAction, useJobBoard, useJobInvalidation, type StaffJob } from "./machineJobsApi";
 import { poolUnits, unitLabels, usablePools } from "./servicePools";
 
 type Props = {
@@ -24,6 +24,7 @@ type Props = {
 export function JobBoard({ makerspaceId, machineType, machines, pools, batchEnabled, visible = true }: Props) {
   const board = useJobBoard(makerspaceId, machineType.id, visible);
   const direct = useJobAction(makerspaceId, machineType.id);
+  const refresh = useJobInvalidation(makerspaceId, machineType.id);
   const [dialog, setDialog] = useState<{ job: StaffJob; action: DialogAction } | null>(null);
   const [uncollected, setUncollected] = useState<StaffJob | null>(null);
   const [filesOf, setFilesOf] = useState<StaffJob | null>(null);
@@ -44,7 +45,7 @@ export function JobBoard({ makerspaceId, machineType, machines, pools, batchEnab
     onFiles: setFilesOf,
   };
   if (board.isLoading) return <div role="status" aria-label={t`Loading queue board`} className="grid gap-3"><Skeleton className="h-24 w-full" /><Skeleton className="h-40 w-full" /></div>;
-  if (board.error) return <ErrorBlock error={board.error} resource="queue board" onRetry={() => { void board.refetch(); }} />;
+  if (board.error) return <ErrorBlock error={board.error} resource={t`queue board`} onRetry={() => { void board.refetch(); }} />;
   const data = board.data;
   if (!data) return null;
   const overdue = new Set(data.overdue_pickup_ids);
@@ -56,16 +57,19 @@ export function JobBoard({ makerspaceId, machineType, machines, pools, batchEnab
     select={batchEnabled && job.status === "accepted" ? { checked: selected.includes(job.id),
       onChange: checked => setSelected(current => checked ? [...current, job.id] : current.filter(id => id !== job.id)) } : undefined} />;
   const waiting = [...data.queue, ...data.lanes.flatMap(lane => lane.assigned)];
+  // The open files dialog follows the live board, so a file staff just added shows up.
+  const everyJob = [...waiting, ...data.lanes.flatMap(lane => lane.running), ...data.review, ...data.waiting_on_member, ...data.ready];
+  const filesJob = filesOf ? everyJob.find(job => job.id === filesOf.id) ?? filesOf : null;
   const chosen = waiting.filter(job => selected.includes(job.id));
   return <div className="grid gap-6">
     {direct.error ? <ErrorBlock error={direct.error} /> : null}
     <p aria-live="polite" className="sr-only">{drag.announcement}</p>
     {batchEnabled ? <div className="flex flex-wrap items-center gap-3 rounded-xl border border-line bg-surface p-3 text-sm">
-      <span>{chosen.length ? t`${chosen.length} queued job${chosen.length === 1 ? "" : "s"} selected.` : t`Select two or more queued jobs to run them together.`}</span>
+      <span>{chosen.length ? plural(chosen.length, { one: "# queued job selected.", other: "# queued jobs selected." }) : t`Select two or more queued jobs to run them together.`}</span>
       <button type="button" className="desk-button-primary" disabled={chosen.length < 2} onClick={() => setBatching(true)}>{t`Start as batch`}</button>
       {chosen.length ? <button type="button" className="desk-button-ghost" onClick={() => setSelected([])}>{t`Clear selection`}</button> : null}
     </div> : null}
-    <Column title={t`Machines`} count={data.lanes.length} empty="No active machines of this type in your scope.">
+    <Column title={t`Machines`} count={data.lanes.length} empty={t`No active machines of this type in your scope.`}>
       {data.lanes.map(lane => <li key={lane.machine_id} className="grid gap-3 rounded-2xl border border-line bg-surface p-3">
         <div className="flex flex-wrap items-center gap-2"><h4 className="title-section">{lane.machine_name}</h4>
           <StatusPill tone={lane.status === "idle" ? "success" : lane.status === "running" ? "accent" : "neutral"} label={machineStatusLabel(lane.status)} />
@@ -76,11 +80,11 @@ export function JobBoard({ makerspaceId, machineType, machines, pools, batchEnab
       </li>)}
     </Column>
     <div className="grid gap-6 lg:grid-cols-2">
-      <Column title={t`Queue`} count={data.queue.length} empty="No accepted jobs waiting for a machine."
+      <Column title={t`Queue`} count={data.queue.length} empty={t`No accepted jobs waiting for a machine.`}
         hint={data.queue.length > 1 ? t`Drag a job to reorder the queue, or use its move buttons.` : undefined}>{data.queue.map(job => card(job, data.queue))}</Column>
-      <Column title={t`To review`} count={data.review.length} empty="No new requests to review.">{data.review.map(job => card(job))}</Column>
-      <Column title={t`Waiting on member`} count={data.waiting_on_member.length} empty="No jobs waiting for changes or a quote decision.">{data.waiting_on_member.map(job => card(job))}</Column>
-      <Column title={t`Ready to collect`} count={data.ready.length} empty="Nothing waiting for pickup.">{data.ready.map(job => card(job))}</Column>
+      <Column title={t`To review`} count={data.review.length} empty={t`No new requests to review.`}>{data.review.map(job => card(job))}</Column>
+      <Column title={t`Waiting on member`} count={data.waiting_on_member.length} empty={t`No jobs waiting for changes or a quote decision.`}>{data.waiting_on_member.map(job => card(job))}</Column>
+      <Column title={t`Ready to collect`} count={data.ready.length} empty={t`Nothing waiting for pickup.`}>{data.ready.map(job => card(job))}</Column>
     </div>
     {dialog ? <JobActionDialog key={`${dialog.job.id}-${dialog.action}`} job={dialog.job} action={dialog.action} makerspaceId={makerspaceId} typeId={machineType.id}
       machines={machines} pools={poolsFor} unitLabel={unitLabel} hasPool={!!poolUnit} printer={printer} onClose={() => setDialog(null)} /> : null}
@@ -88,7 +92,8 @@ export function JobBoard({ makerspaceId, machineType, machines, pools, batchEnab
       unitLabel={unitLabel} hasPool={!!poolUnit} printer={printer} onClose={done => { setBatching(false); if (done) setSelected([]); }} /> : null}
     {completing ? <BatchCompleteDialog batchId={completing.batchId} jobs={completing.jobs} makerspaceId={makerspaceId} typeId={machineType.id}
       unitLabel={unitLabel} hasPool={!!poolUnit} onClose={() => setCompleting(null)} /> : null}
-    {filesOf ? <JobFilesDialog title={filesOf.title} files={filesOf.files ?? []} onClose={() => setFilesOf(null)} /> : null}
+    {filesJob ? <JobFilesDialog title={filesJob.title} files={filesJob.files ?? []} onClose={() => setFilesOf(null)}
+      upload={{ requestId: filesJob.id, onUploaded: () => { void refresh(); } }} /> : null}
     <ConfirmDialog open={uncollected !== null} title={t`Mark not collected?`} tone="danger" confirmLabel={t`Mark not collected`} pending={direct.isPending}
       message={t`The member did not pick this job up within 14 days. It leaves the pickup shelf and the member is told.`}
       onCancel={() => setUncollected(null)} onConfirm={() => { if (uncollected) direct.mutate({ id: uncollected.id, action: "uncollected" }, { onSuccess: () => setUncollected(null) }); }} />

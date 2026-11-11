@@ -1,5 +1,4 @@
-import { t } from "@lingui/core/macro";
-import { plural } from "../../../../lib/plural";
+import { plural, t } from "@lingui/core/macro";
 import { QueueSummary } from "../../../machine-service/QueueSummary";
 import { machineStatusLabel } from "./machineStatusLabel";
 import { MaterialCataloguePanel } from "./MaterialCataloguePanel";
@@ -8,6 +7,7 @@ import { MachineReminderPolicy } from "./MachineReminderPolicy";
 import { JobBoard } from "./JobBoard";
 import { JobSettingsEditor } from "./JobSettingsEditor";
 import { SessionSettingsEditor } from "./sessions/SessionSettingsEditor";
+import { SavedViewsMenu } from "../../SavedViewsMenu";
 import { EmptyState, StatusBadge, Tabs, DataTable } from "../../../../components/ui";
 import { ImageThumbnail } from "../../../../components/ui/ImageThumbnail";
 import { DetailLayout, FlowLayout } from "../../../../components/layouts";
@@ -24,6 +24,8 @@ import { ConsumablePoolCreateForm } from "./ConsumablePoolCreateForm";
 import { MachineCreateForm } from "./MachineCreateForm";
 import { ConsumablePoolList } from "./SharedConsumablesSection";
 import type { ServiceDraft } from "./serviceDrafts";
+import { PrinterBindingsSection } from "./integrations/PrinterBindingsSection";
+import { TypeIntegrationSection } from "./integrations/TypeIntegrationSection";
 
 type Props = {
   detail?: ReactNode; indexHref?: string; settings?: ReactNode; statusFilter: string; onStatusFilter: (value: "all" | Machine["status"]) => void; onRetry: () => void; poolError?: string; onRetryPools: () => void;
@@ -47,6 +49,12 @@ type Props = {
   setDraft: (update: (draft: ServiceDraft) => ServiceDraft) => void;
   /** Opens the work-order screen (present only when machines.maintenance is on). */
   onWorkOrders?: () => void;
+  /** A16: opens Sessions narrowed to this type (present only when machines.sessions is on). */
+  onSessions?: () => void;
+  /** MANAGE_DEVICES with the devices, machines and machine_service modules on: printer connections. */
+  printerAdapter?: boolean;
+  /** 0.12.0 row 14: the active view comes from the URL path and each tab links to its own path. */
+  routedView?: { active: string; href: (view: string) => string };
 };
 
 
@@ -62,7 +70,7 @@ type Props = {
 export function MachineTypePage({ enabledFeatures = [], makerspaceId, canManage, canConfigureMachineTypes = false,
   machineServiceEnabled, printingEnabled, reportsEnabled = true, machineType, allMachines, visibleMachines,
   typePools, formPools, existingPools, machinesLoading, machinesFailed, onSelectMachine, draft, setDraft,
-  detail, indexHref, settings, statusFilter, onStatusFilter, onRetry, poolError, onRetryPools, onWorkOrders }: Props) {
+  detail, indexHref, settings, statusFilter, onStatusFilter, onRetry, poolError, onRetryPools, onWorkOrders, onSessions, printerAdapter = false, routedView }: Props) {
   const [creating, setCreating] = useState(false);
   const [createdMachineId, setCreatedMachineId] = useState<number | null>(null);
   // Lifted here so the Service queue tab header can open manual usage in one click.
@@ -73,22 +81,29 @@ export function MachineTypePage({ enabledFeatures = [], makerspaceId, canManage,
   const choices = [{ key: "machines", label: t`Machines`, count: allMachines.length },
     ...(service ? [{ key: "queue", label: t`Service queue` }, { key: "board", label: t`Queue board` }, { key: "consumables", label: t`Consumables` }] : []),
     ...(machineType.can_create_machine === true ? [{ key: "certifications", label: t`Certifications` }] : []),
-    ...(canConfigureMachineTypes || settings ? [{ key: "settings", label: t`Settings` }] : [])];
-  const view = useOpsTabs("view", choices, "machines");
+    ...(canConfigureMachineTypes || settings || printerAdapter ? [{ key: "settings", label: t`Settings` }] : [])];
+  const queryView = useOpsTabs("view", choices, "machines");
+  const view = routedView ? {
+    active: choices.some(choice => choice.key === routedView.active) ? routedView.active : "machines",
+    tabs: choices.map(choice => ({ ...choice, href: routedView.href(choice.key) })),
+    onClickCapture: undefined,
+  } : queryView;
   const statuses = ["all", "idle", "running", "reserved", "maintenance", "offline"] as const;
   const main = <>
     {view.active === "machines" ? <section aria-label={`${machineType.name} machines`} className="grid gap-4">
+      {canManage ? <div className="flex justify-end"><SavedViewsMenu makerspaceId={makerspaceId} entity="machines" state={{ status: statusFilter }}
+        onRestore={state => onStatusFilter((statuses as readonly string[]).includes(state.status) ? state.status as "all" | Machine["status"] : "all")} /></div> : null}
       <Tabs label={t`Machine status`} activeKey={statusFilter} onChange={key => onStatusFilter(key as typeof statusFilter & ("all" | Machine["status"]))}
         tabs={statuses.map(key => ({ key, label: key === "all" ? t`All statuses` : key.charAt(0).toUpperCase() + key.slice(1), href: "#" }))}>
       {!allMachines.length ? <EmptyState message={t`No machines are registered for this type. Add the first one with Add machine.`} /> :
         !visibleMachines.length ? <EmptyState message={t`No machines match the selected status. Choose another status.`} /> :
         <DataTable data={visibleMachines} columns={[
-          { key: "name", header: "Name", render: machine => <button className="desk-button-ghost min-h-11 max-w-full justify-start text-left" onClick={() => onSelectMachine(machine.id)}><ImageThumbnail src={machine.image_url} alt={machine.name} className="h-10 w-10 shrink-0" /><span className="min-w-0 break-words">
+          { key: "name", header: t`Name`, render: machine => <button className="desk-button-ghost min-h-11 max-w-full justify-start text-left" onClick={() => onSelectMachine(machine.id)}><ImageThumbnail src={machine.image_url} alt={machine.name} className="h-10 w-10 shrink-0" /><span className="min-w-0 break-words">
             <strong className="block">{machine.name}</strong><span className="block text-sm text-muted">{[machine.type_payload?.model, machine.location || "No location"].filter(Boolean).join(" · ")}</span>
           </span></button> },
-          { key: "status", header: "Status", render: machine => <StatusBadge status={machine.status} label={machineStatusLabel(machine.status)} /> },
-          { key: "usage_hours", header: "Usage", render: machine => <span className="tabular-nums">{machine.usage_hours} h</span> },
-          ...(visibleMachines.some(machine => machine.service_queue_summary) ? [{ key: "service_queue", header: "Service queue",
+          { key: "status", header: t`Status`, render: machine => <StatusBadge status={machine.status} label={machineStatusLabel(machine.status)} /> },
+          { key: "usage_hours", header: t`Usage`, render: machine => <span className="tabular-nums">{machine.usage_hours} h</span> },
+          ...(visibleMachines.some(machine => machine.service_queue_summary) ? [{ key: "service_queue", header: t`Service queue`,
             render: (machine: Machine) => <QueueSummary summary={machine.service_queue_summary} /> }] : []),
         ]} />}
       </Tabs>
@@ -108,6 +123,8 @@ export function MachineTypePage({ enabledFeatures = [], makerspaceId, canManage,
       {canConfigureMachineTypes ? <MachineReminderPolicy visible={view.active === "settings"} makerspaceId={makerspaceId} machineTypeId={machineType.id} /> : null}
       {canConfigureMachineTypes && machineServiceEnabled ? <JobSettingsEditor visible={view.active === "settings"} makerspaceId={makerspaceId} machineTypeId={machineType.id} /> : null}
       {canConfigureMachineTypes && enabledFeatures.includes("machines.sessions") ? <SessionSettingsEditor visible={view.active === "settings"} makerspaceId={makerspaceId} machineTypeId={machineType.id} /> : null}{settings}
+      {printerAdapter && view.active === "settings" ? <PrinterBindingsSection makerspaceId={makerspaceId} machineTypeId={machineType.id} machines={allMachines} /> : null}
+      {printerAdapter && view.active === "settings" && enabledFeatures.includes("machines.integrations") ? <TypeIntegrationSection makerspaceId={makerspaceId} machineTypeId={machineType.id} /> : null}
     </>
     {creating ? <FlowLayout presentation="dialog" open title={t`Add machine`} steps={[]} current="create" state={{ status: "ready" }} onCancel={() => { setCreating(false); setCreatedMachineId(null); }}
       work={<MachineCreateForm makerspaceId={makerspaceId} machineType={machineType} hideSubmit onCreated={setCreatedMachineId}
@@ -119,10 +136,11 @@ export function MachineTypePage({ enabledFeatures = [], makerspaceId, canManage,
   return <div onClickCapture={view.onClickCapture}>
     <DetailLayout title={indexHref ? machineType.name : t`Machines`} identity={machineTypeIdentity(machineType)}
       back={indexHref ? { label: t`All machine types`, href: indexHref } : undefined}
-      meta={[...(indexHref ? [] : [machineType.name]), plural(allMachines.length, "machine"), `${allMachines.filter(machine => machine.status === "running").length} running`]}
+      meta={[...(indexHref ? [] : [machineType.name]), plural(allMachines.length, { one: "# machine", other: "# machines" }), t`${allMachines.filter(machine => machine.status === "running").length} running`]}
       actions={{ primary: canManage && machineType.can_create_machine === true ? { label: t`Add machine`, icon: "Plus", onClick: () => setCreating(true) } : undefined,
         secondary: service && view.active === "queue" ? { label: t`Log usage`, onClick: () => setLogging(true) } : undefined,
-        overflow: onWorkOrders ? [{ label: t`Work orders`, onClick: onWorkOrders }] : undefined }}
+        overflow: onWorkOrders || onSessions ? [...(onWorkOrders ? [{ label: t`Work orders`, onClick: onWorkOrders }] : []),
+          ...(onSessions ? [{ label: t`Sessions`, onClick: onSessions }] : [])] : undefined }}
       banner={poolError ? { size: "banner", tone: "warn", lead: "Couldn’t load consumable pools. Try again before starting work.", action: { label: t`Retry`, onClick: onRetryPools } } : undefined}
       tabs={view.tabs} activeTab={view.active} main={main}
       state={view.active !== "machines" ? { status: "ready" } : machinesLoading ? { status: "loading" } : machinesFailed ? { status: "error", error: t`Couldn't load machines. Try again.`, onRetry } : { status: "ready" }} />

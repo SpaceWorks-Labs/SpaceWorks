@@ -119,7 +119,7 @@ export function OverviewTab({ machine, makerspaceId, canManageMachines, canEdit,
       ) : null}
       <PriceOverrideCard makerspaceId={makerspaceId} targetType="machine" targetId={machine.id} />
       {canChangeLifecycle ? <DangerZone title={machine.is_active ? t`Retire machine` : t`Reactivate machine`}
-        consequence={machine.is_active ? "Takes this machine out of service and off the public page." : "Returns this machine to service."}
+        consequence={machine.is_active ? t`Takes this machine out of service and off the public page.` : t`Returns this machine to service.`}
         action={{ label: machine.is_active ? t`Retire` : t`Reactivate`, pending: lifecycle.isPending, onClick: () => lifecycle.mutate(machine.is_active ? "retire" : "unretire"),
           confirm: machine.is_active
             ? { title: t`Retire ${machine.name}?`, message: t`It stops taking jobs and leaves the public page. You can reactivate it later.` }

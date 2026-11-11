@@ -5,10 +5,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchSessionSettings, saveSessionSettings, sessionErrorMessage, sessionKeys } from "../../../../machine-sessions/api";
 import { errorCode } from "../machineJobsApi";
 
-const READ_ONLY: Record<string, string> = {
-  setting_not_delegated: "Only the Space Manager, or a manager they have handed this setting to, can change it.",
-  setting_locked: "The Space Manager has locked this setting, so only they can change it.",
-};
+const READ_ONLY = (): Record<string, string> => ({
+  setting_not_delegated: t`Only the Space Manager, or a manager they have handed this setting to, can change it.`,
+  setting_locked: t`The Space Manager has locked this setting, so only they can change it.`,
+});
 
 /** Per-type machine-session setting (#158.5): how long a session may run before it stops itself. */
 export function SessionSettingsEditor({ makerspaceId, machineTypeId, visible = true }: { makerspaceId: number; machineTypeId: number; visible?: boolean }) {
@@ -21,7 +21,7 @@ export function SessionSettingsEditor({ makerspaceId, machineTypeId, visible = t
   const [minutes, setMinutes] = useState("");
   useEffect(() => { if (query.data) setMinutes(String(query.data.session_max_minutes)); }, [query.data]);
   if (!visible) return null;
-  const lock = READ_ONLY[errorCode(save.error) ?? ""];
+  const lock = READ_ONLY()[errorCode(save.error) ?? ""];
   return <section className="rounded-xl border border-line bg-panel p-3" aria-labelledby={`${id}-title`}>
     <h3 id={`${id}-title`} className="title-panel">{t`Machine sessions`}</h3>
     <p className="my-2 text-sm text-muted">{t`A session nobody stops ends by itself after this long, at check-out or at closing time, and waits for a staff check.`}</p>

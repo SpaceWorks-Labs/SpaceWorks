@@ -45,7 +45,7 @@ export function MaintenanceTab({
 
   const queryError = schedules.error ?? logs.error;
   if (queryError instanceof Error) {
-    return <ErrorBlock error={queryError} resource="maintenance" onRetry={() => { void schedules.refetch(); void logs.refetch(); }} />;
+    return <ErrorBlock error={queryError} resource={t`maintenance`} onRetry={() => { void schedules.refetch(); void logs.refetch(); }} />;
   }
 
   const scheduleRows = schedules.data?.results ?? [];

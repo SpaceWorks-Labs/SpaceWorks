@@ -6,6 +6,7 @@ import { ErrorText, Modal } from "../../../../../components/ui";
 import type { ServiceFile } from "../../../../../generated/api";
 import { staffRequest } from "../../../../../lib/api";
 import { JobFilePreview } from "./JobFilePreview";
+import { JobFileUpload } from "./JobFileUpload";
 
 const signedUrl = (fileId: number) => staffRequest<{ url: string }>(`/admin/machine-service/files/${fileId}/url`);
 
@@ -19,8 +20,9 @@ export async function loadJobFile(fileId: number, signal: AbortSignal) {
 
 const size = (bytes: number) => bytes >= 1024 ** 2 ? `${(bytes / 1024 ** 2).toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`;
 
-/** A job's files for staff review: download each, and preview the safe formats in the browser. */
-export function JobFilesDialog({ title, files, onClose }: { title: string; files: ServiceFile[]; onClose: () => void }) {
+/** A job's files for staff review: download each, preview the safe formats, and (with `upload`) add one. */
+export function JobFilesDialog({ title, files, onClose, upload }: { title: string; files: ServiceFile[]; onClose: () => void;
+  upload?: { requestId: number; onUploaded: () => void } }) {
   const [error, setError] = useState("");
   const download = async (fileId: number) => {
     setError("");
@@ -31,6 +33,8 @@ export function JobFilesDialog({ title, files, onClose }: { title: string; files
     } catch { setError(t`Couldn't get the file. Try again.`); }
   };
   return <Modal open size="xl" title={t`Files: ${title}`} onClose={onClose}>
+    {upload ? <div className="mb-4"><JobFileUpload requestId={upload.requestId} onUploaded={upload.onUploaded} /></div> : null}
+    {!files.length ? <p className="text-sm text-muted">{t`No files on this job yet.`}</p> : null}
     <ul className="grid gap-4" aria-label={t`Job files`}>
       {files.map(file => <li key={file.id} className="grid gap-3 rounded-xl border border-line bg-surface p-3">
         <div className="flex flex-wrap items-center justify-between gap-2">

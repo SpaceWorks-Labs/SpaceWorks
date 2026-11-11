@@ -21,11 +21,18 @@ from .staff_list_specs import SPECS
 
 PARAMS = [OpenApiParameter("list_key", str, OpenApiParameter.PATH, enum=sorted(SPECS)),
           *[OpenApiParameter(name, str, OpenApiParameter.QUERY) for name in
-            ("q", "status", "state", "triage", "prize", "round", "below_target", "page")]]
+            ("q", "status", "state", "triage", "prize", "round", "below_target", "reply", "list",
+             "collected", "page")]]
 ListPage = inline_serializer(name="EventStaffListPage", fields={
     "count": serializers.IntegerField(), "next": serializers.URLField(allow_null=True),
     "previous": serializers.URLField(allow_null=True), "columns": serializers.ListField(child=serializers.CharField()),
     "results": serializers.ListField(child=serializers.DictField())})
+
+
+PresetList = inline_serializer(name="EventStaffListPresets", fields={"results": serializers.ListField(
+    child=inline_serializer(name="EventStaffListPreset", fields={
+        "key": serializers.CharField(), "label": serializers.CharField(),
+        "filters": serializers.DictField(child=serializers.CharField()), "count": serializers.IntegerField()}))})
 
 
 def safe_cell(value):
@@ -60,7 +67,17 @@ class EventStaffList(PrivateView):
         event, spec, rows, params = resolve(request, pk, list_key)
         masked = spec.pii and not pii_visible(request.user, event.makerspace_id)
         values = [{**row, **({name: MASK for name in spec.pii} if masked else {})} for row in rows(event, params)]
-        return paginated(request, values, None, columns=list(spec.columns), **({"pii_masked": True} if masked else {}))
+        return paginated(request, values, None, columns=columns_for(spec, event),
+                         **({"pii_masked": True} if masked else {}))
+
+
+class EventStaffListPresets(PrivateView):
+    @extend_schema(tags=["Event staff lists"], parameters=PARAMS[:1], responses={200: PresetList, **ERRORS},
+                   description="Ready-made filters for the list with their counts (the guest list only, today).")
+    def get(self, request, pk, list_key):
+        from .staff_list_guests import presets
+        event, spec, _rows, _params = resolve(request, pk, list_key)
+        return Response({"results": presets(event) if spec.key == "guests" else []})
 
 
 class EventStaffListExport(PrivateView):
@@ -76,12 +93,17 @@ class EventStaffListExport(PrivateView):
         with tenant_write(event.makerspace_id):
             record(request.user, "event.export.csv", makerspace=event.makerspace, target=event,
                    meta={"event_id": event.pk, "list": spec.key, "filters": sorted(params)})
-        response = StreamingCsvResponse(_lines(spec, rows(event, params)), content_type="text/csv; charset=utf-8")
+        response = StreamingCsvResponse(_lines(columns_for(spec, event), rows(event, params)),
+                                        content_type="text/csv; charset=utf-8")
         response["Content-Disposition"] = f'attachment; filename="event-{event.pk}-{spec.key}.csv"'
         return response
 
 
-def _lines(spec, rows):
+def columns_for(spec, event):
+    return [*spec.columns, *(spec.extra_columns(event) if spec.extra_columns else ())]
+
+
+def _lines(columns, rows):
     buffer = StringIO()
     writer = csv.writer(buffer)
 
@@ -90,8 +112,8 @@ def _lines(spec, rows):
         buffer.seek(0)
         buffer.truncate()
         return value.encode("utf-8")
-    writer.writerow(spec.columns)
+    writer.writerow(columns)
     yield flush()
     for row in rows:
-        writer.writerow([safe_cell(row.get(column)) for column in spec.columns])
+        writer.writerow([safe_cell(row.get(column)) for column in columns])
         yield flush()

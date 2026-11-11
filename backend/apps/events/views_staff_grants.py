@@ -14,6 +14,7 @@ from apps.makerspaces.origin_scope import (
 )
 
 from . import event_authority, services_staff_grants as services
+from .event_permissions import MANAGE_TEAM
 from .models import Event, EventSeries, EventStaffGrant, EventStaffGrantInvite
 from .serializers_admin import EmptyActionSerializer
 from .serializers_staff_grants import (
@@ -25,6 +26,19 @@ from .serializers_staff_grants import (
 from .views_invites import PAGE_PARAMETERS, paginated
 
 ERRORS = {code: ErrorSerializer for code in (400, 401, 403, 404, 409, 423, 429, 503)}
+# Decision 15: an event co-organizer holding manage_team may delegate helper roles. It reaches
+# these routes for its own event only; the grant adapter's subset validator still decides every
+# write (held permissions, one helper role, the source's whole track/time scope). Series stay
+# full-manager routes, since the validator refuses every non-manager series delegation anyway.
+CO_ORGANIZER_NOTE = (
+    "Full event managers see and manage every row. A co-organizer holding `manage_team` on this "
+    "event (never on a series) may also call it: lists contain only the rows they issued, and "
+    "writes are limited to helper permissions they hold live, event-wide (403 otherwise)."
+)
+
+
+def _delegation_permission(target_is_series):
+    return None if target_is_series else MANAGE_TEAM
 
 
 class StaffGrantRedeemThrottle(SimpleRateThrottle):
@@ -40,27 +54,34 @@ class EventStaffGrantListView(RecentReauthenticationMixin, APIView):
     series = False
 
     def target(self, request, pk):
-        return event_authority.get_event(request.user, pk, None, series=self.series)
+        return event_authority.get_event(
+            request.user, pk, _delegation_permission(self.series), series=self.series)
 
-    def rows(self, model, target):
-        return model.objects.filter(
+    def rows(self, model, target, actor):
+        rows = model.objects.filter(
             **{"series" if self.series else "event": target},
             makerspace_id=target.makerspace_id,
-        ).order_by("id")
+        )
+        if not event_authority.can_manage_grants(actor, target):
+            # A delegated co-organizer never reads broader grants: only what it issued.
+            rows = rows.filter(**{"granted_by" if model is EventStaffGrant else "created_by": actor})
+        return rows.order_by("id")
 
     @extend_schema(tags=["Admin events"], request=None, parameters=PAGE_PARAMETERS,
-                   responses={200: StaffGrantListSerializer, **ERRORS})
+                   description=CO_ORGANIZER_NOTE, responses={200: StaffGrantListSerializer, **ERRORS})
     def get(self, request, pk):
-        return paginated(request, self.rows(EventStaffGrant, self.target(request, pk)), StaffGrantSerializer)
+        rows = self.rows(EventStaffGrant, self.target(request, pk), request.user)
+        return paginated(request, rows, StaffGrantSerializer)
 
 
 class EventStaffInviteListView(EventStaffGrantListView):
     @extend_schema(tags=["Admin events"], request=None, parameters=PAGE_PARAMETERS,
-                   responses={200: StaffGrantInviteListSerializer, **ERRORS})
+                   description=CO_ORGANIZER_NOTE, responses={200: StaffGrantInviteListSerializer, **ERRORS})
     def get(self, request, pk):
-        return paginated(request, self.rows(EventStaffGrantInvite, self.target(request, pk)), StaffGrantInviteSerializer)
+        rows = self.rows(EventStaffGrantInvite, self.target(request, pk), request.user)
+        return paginated(request, rows, StaffGrantInviteSerializer)
 
-    @extend_schema(tags=["Admin events"], request=StaffGrantInviteInputSerializer,
+    @extend_schema(tags=["Admin events"], request=StaffGrantInviteInputSerializer, description=CO_ORGANIZER_NOTE,
                    responses={201: StaffGrantInviteCreatedSerializer, **ERRORS})
     def post(self, request, pk):
         target = self.target(request, pk)
@@ -79,14 +100,15 @@ def _manageable_row(actor, model, pk):
         series_id__in=event_authority.visible_events(actor, EventSeries.objects.all()).values("pk"),
     )
     row = get_object_or_404(rows, pk=pk)
-    event_authority.require(actor, row.event if row.event_id else row.series, None)
+    target = row.event if row.event_id else row.series
+    event_authority.require(actor, target, _delegation_permission(not row.event_id))
     return row
 
 
 class EventStaffGrantDetailView(RecentReauthenticationMixin, APIView):
     permission_classes = [IsActiveStaff]
 
-    @extend_schema(tags=["Admin events"], request=StaffGrantUpdateSerializer,
+    @extend_schema(tags=["Admin events"], request=StaffGrantUpdateSerializer, description=CO_ORGANIZER_NOTE,
                    responses={200: StaffGrantSerializer, **ERRORS})
     def patch(self, request, pk):
         row = _manageable_row(request.user, EventStaffGrant, pk)
@@ -101,7 +123,7 @@ class EventStaffGrantRevokeView(RecentReauthenticationMixin, APIView):
     permission_classes = [IsActiveStaff]
 
     @extend_schema(tags=["Admin events"], request=EmptyActionSerializer,
-                   responses={200: StaffGrantSerializer, **ERRORS})
+                   description=CO_ORGANIZER_NOTE, responses={200: StaffGrantSerializer, **ERRORS})
     def post(self, request, pk):
         row = _manageable_row(request.user, EventStaffGrant, pk)
         EmptyActionSerializer(data=request.data).is_valid(raise_exception=True)
@@ -112,7 +134,7 @@ class EventStaffInviteRevokeView(RecentReauthenticationMixin, APIView):
     permission_classes = [IsActiveStaff]
 
     @extend_schema(tags=["Admin events"], request=EmptyActionSerializer,
-                   responses={200: StaffGrantInviteSerializer, **ERRORS})
+                   description=CO_ORGANIZER_NOTE, responses={200: StaffGrantInviteSerializer, **ERRORS})
     def post(self, request, pk):
         row = _manageable_row(request.user, EventStaffGrantInvite, pk)
         EmptyActionSerializer(data=request.data).is_valid(raise_exception=True)

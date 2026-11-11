@@ -93,9 +93,19 @@ def discover_events(spaces, filters=None):
                                                          registrations__is_crew=False)),
     ).order_by("starts_at", "id")
 
-    from apps.inventory.search import apply_q
+    from apps.inventory.search import apply_q, clean_query
+    from .website_discovery import organizer_name_matches, restrict_by_tag_and_organization
     if filters.get("q"):
-        rows = apply_q(rows, filters["q"], label_field="title")
+        text = clean_query(filters["q"])
+        # Organiser names are matched on the query (they live in another table, so the search vector
+        # cannot hold them); only publicly visible organisations on spaces with the switch on count.
+        by_organizer = organizer_name_matches(spaces, text)
+        searched = apply_q(rows, text, label_field="title")
+        if by_organizer is None:
+            rows = searched
+        else:
+            rows = rows.filter(Q(pk__in=searched.values("pk")) | Q(pk__in=by_organizer)).order_by("starts_at", "id")
+    rows = restrict_by_tag_and_organization(rows, spaces, filters.get("tag"), filters.get("organization"))
     if filters.get("date_from") or filters.get("date_to"):
         from apps.makerspaces.local_time import local_date_expression
         rows = rows.alias(website_local_day=local_date_expression("starts_at", "makerspace__timezone"))

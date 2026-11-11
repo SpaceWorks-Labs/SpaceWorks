@@ -10,6 +10,7 @@ counts; otherwise just "sold out". No hidden counts, stock levels or buyer data.
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import serializers
+from apps.payments.money_fields import MoneyField
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -22,16 +23,16 @@ from apps.makerspaces.platform import feature_enabled
 
 class ShopTierSerializer(serializers.Serializer):
     name = serializers.CharField()
-    amount = serializers.DecimalField(max_digits=12, decimal_places=2)
+    amount = MoneyField(max_digits=13, decimal_places=3)
 
 
 class ShopTicketSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     name = serializers.CharField()
-    amount = serializers.DecimalField(max_digits=12, decimal_places=2)
+    amount = MoneyField(max_digits=13, decimal_places=3)
     audience = serializers.CharField()
     pricing_mode = serializers.CharField()
-    min_amount = serializers.DecimalField(max_digits=12, decimal_places=2)
+    min_amount = MoneyField(max_digits=13, decimal_places=3)
     seats_per_ticket = serializers.IntegerField()
     min_quantity = serializers.IntegerField()
     per_order_limit = serializers.IntegerField()
@@ -51,7 +52,7 @@ class ShopAddonSerializer(serializers.Serializer):
     name = serializers.CharField()
     description = serializers.CharField(allow_blank=True)
     kind = serializers.CharField()
-    amount = serializers.DecimalField(max_digits=12, decimal_places=2)
+    amount = MoneyField(max_digits=13, decimal_places=3)
     per_order_limit = serializers.IntegerField()
     sold_out = serializers.BooleanField()
     variants = ShopVariantSerializer(many=True)
@@ -67,7 +68,7 @@ class TicketShopSerializer(serializers.Serializer):
     currency = serializers.CharField()
     ticket_types = ShopTicketSerializer(many=True)
     addons = ShopAddonSerializer(many=True)
-    booking_fee_fixed = serializers.DecimalField(max_digits=12, decimal_places=2)
+    booking_fee_fixed = MoneyField(max_digits=13, decimal_places=3)
     booking_fee_bps = serializers.IntegerField()
     max_tickets_per_order = serializers.IntegerField()
     promo_codes_enabled = serializers.BooleanField()

@@ -26,7 +26,7 @@ from apps.events.views_feedback_public import feedback_form_payload
 from apps.hardware_requests.exceptions import ErrorSerializer
 from apps.makerspaces.guards import require_module
 from apps.makerspaces.member_activity_service import active_membership
-from apps.presence.guard import MemberPresenceRequired, require_active_member
+from apps.presence.guard import require_active_member
 
 
 ERRORS = {
@@ -41,7 +41,16 @@ ERRORS = {
 def _owned_registration(request, makerspace_id, pk):
     membership = active_membership(request.user, makerspace_id)
     if membership is None:
-        raise MemberPresenceRequired()
+        # Account-only attendee (open item B10): the ticket they hold authorizes its own row only; a
+        # revoked membership is refused inside `participant_space`, never downgraded to account-only.
+        from apps.events.models import EventRegistration
+        from apps.events.participant_access import participant_space
+        space = participant_space(request.user, makerspace_id, pk)
+        registration = EventRegistration.objects.select_related("event__makerspace", "registered_via_makerspace").filter(
+            member=request.user, event__makerspace=space, pk=pk).first()
+        if registration is None:
+            raise NotFound()
+        return registration
     require_module(membership.makerspace, "events")
     require_active_member(request.user, membership.makerspace)
     registration = registrations_for_space(membership.makerspace, request.user).select_related(

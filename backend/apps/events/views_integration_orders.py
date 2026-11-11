@@ -10,6 +10,7 @@ from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers
+from apps.payments.money_fields import MoneyField
 from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 
@@ -26,9 +27,9 @@ class IntegrationOrderLineSerializer(serializers.Serializer):
     kind = serializers.CharField()
     label = serializers.CharField()
     quantity = serializers.IntegerField()
-    unit_amount = serializers.DecimalField(max_digits=12, decimal_places=2)
-    discount_amount = serializers.DecimalField(max_digits=12, decimal_places=2)
-    line_total = serializers.DecimalField(max_digits=12, decimal_places=2)
+    unit_amount = MoneyField(max_digits=13, decimal_places=3)
+    discount_amount = MoneyField(max_digits=13, decimal_places=3)
+    line_total = MoneyField(max_digits=13, decimal_places=3)
     ticket_type_id = serializers.IntegerField(allow_null=True)
     addon_id = serializers.IntegerField(allow_null=True)
 
@@ -40,10 +41,10 @@ class IntegrationOrderSerializer(serializers.Serializer):
     kind = serializers.CharField()
     status = serializers.CharField()
     currency = serializers.CharField()
-    subtotal = serializers.DecimalField(max_digits=12, decimal_places=2)
-    discount_total = serializers.DecimalField(max_digits=12, decimal_places=2)
-    fee_total = serializers.DecimalField(max_digits=12, decimal_places=2)
-    total = serializers.DecimalField(max_digits=12, decimal_places=2)
+    subtotal = MoneyField(max_digits=13, decimal_places=3)
+    discount_total = MoneyField(max_digits=13, decimal_places=3)
+    fee_total = MoneyField(max_digits=13, decimal_places=3)
+    total = MoneyField(max_digits=13, decimal_places=3)
     seats = serializers.IntegerField(source="seat_total")
     seats_claimed = serializers.IntegerField(source="seat_claimed")
     created_at = serializers.DateTimeField()

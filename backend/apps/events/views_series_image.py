@@ -16,6 +16,7 @@ from apps.events import services_series_images
 from apps.events.serializers_series import EventSeriesDetailSerializer
 from apps.events.views_series import manageable_series
 from apps.events.event_permissions import EDIT_DETAILS
+from apps.events.programme.cover_finalize import convert_to_webp
 from apps.evidence.responses import storage_unavailable_response
 from apps.evidence.storage import StorageUnavailable
 from apps.inventory import public_image_storage
@@ -47,6 +48,8 @@ class EventSeriesImageView(APIView):
         content_type = serializer.validated_data["content_type"]
         ext = public_image_storage.ext_for(content_type, serializer.validated_data["filename"])
         object_key = public_image_storage.build_object_key(PREFIX, series.makerspace_id, ext)
+        from apps.makerspaces.limits import check_upload_headroom
+        check_upload_headroom(series.makerspace)  # #234: refuse before the upload when storage is full
         try:
             upload = public_image_storage.presigned_upload(object_key, content_type)
         except StorageUnavailable:
@@ -89,6 +92,10 @@ class EventSeriesImageView(APIView):
                 else public_image_storage.finalize_error_message(result)
             )
             raise ValidationError({"object_key": message})
+        try:
+            object_key = convert_to_webp(object_key)
+        except StorageUnavailable:
+            return storage_unavailable_response()
         series = services_series_images.update_image(series, request.user, object_key)
         return Response(EventSeriesDetailSerializer(series, context={"request": request}).data)
 

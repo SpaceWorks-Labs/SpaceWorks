@@ -78,6 +78,7 @@ class MemberEventTicketView(APIView):
         data["delivery_mode"] = public_mode(registration.event)
         data["join_url"] = join_url_for(registration)
         data["map_url"] = map_url(registration.event)
+        data["pay_by"] = registration.pay_by.isoformat() if registration.pay_by else None
         response = Response(data)
         response["Cache-Control"] = "private, no-store"
         return response

@@ -49,8 +49,11 @@ def write_envelope_inbox(envelope, rendered):
                 "summary": rendered.get("text", "")[:2000], "link": safe_link(rendered.get("link", "")),
             })
         if created:
+            from .browser_firebase_delivery import mark_pending, dispatch_pending
+            firebase_ids = mark_pending(row)
             transaction.on_commit(lambda: _hint(envelope.makerspace_id, envelope.recipient_id), robust=True)
             transaction.on_commit(lambda pk=row.pk: browser_alert(pk), robust=True)
+            transaction.on_commit(lambda ids=firebase_ids: dispatch_pending(ids), robust=True)
     return row
 
 
@@ -102,8 +105,11 @@ def _write_matrix_inbox(makerspace, feature, event, payload, event_key):
                           "summary": delivery.summary[:12000], "link": safe_link(delivery.link)},
             )
             if created:
+                from .browser_firebase_delivery import mark_pending, dispatch_pending
+                firebase_ids = mark_pending(row)
                 transaction.on_commit(lambda uid=user_id: _hint(makerspace.pk, uid), robust=True)
                 transaction.on_commit(lambda pk=row.pk: browser_alert(pk), robust=True)
+                transaction.on_commit(lambda ids=firebase_ids: dispatch_pending(ids), robust=True)
 
 
 def _hint(makerspace_id, user_id):

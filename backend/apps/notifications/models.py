@@ -6,6 +6,7 @@ from .models_broadcasts import MemberBroadcast
 from .models_inbox import MemberNotificationPreference, NotificationInboxRow
 from .models_push import MemberPushDelivery
 from .models_browser_alerts import BrowserAlertSubscription, NotificationEscalation
+from .models_browser_firebase import BrowserFirebaseInstallation, BrowserFirebaseRegistration
 
 
 class Notification(models.Model):

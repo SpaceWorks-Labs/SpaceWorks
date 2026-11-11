@@ -7,6 +7,8 @@ machine/category scope) get a short re-ping that names only the feature and even
 no requester, no message text. Only events that wait on a staff decision escalate.
 """
 
+from config.locale_resolution import override_for
+from django.utils.translation import gettext
 import logging
 from datetime import timedelta
 
@@ -63,10 +65,12 @@ def escalate(space, group):
         return False
     label = f"{group['feature'].replace('_', ' ')}: {group['event'].replace('_', ' ')}"
     posted = 0
+    with override_for(makerspace=space):  # rooms have no single recipient: the makerspace default language
+        room_text = gettext("Still waiting for staff: a %(label)s notice has not been opened for 30 minutes. "
+                            "Open the staff console to act on it.") % {"label": label}
     for room in _rooms(space):
         ok, _error = deliver_text_to_destination(
-            space, room, text=f"Still waiting for staff: a {label} notice has not been opened for 30 minutes. "
-                              "Open the staff console to act on it.",
+            space, room, text=room_text,
             feature=group["feature"], event="escalation", reference=f"escalation-{row.pk}-{room.pk}")
         posted += int(bool(ok))
     for pk in NotificationInboxRow.objects.filter(makerspace=space, event_key=group["event_key"]).values_list(

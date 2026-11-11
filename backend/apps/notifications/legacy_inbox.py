@@ -40,6 +40,9 @@ def mirror_legacy_staff(makerspace, payload, *, source_intent=""):
                 _makerspace_for_manager(user, makerspace.pk)
             except PermissionDenied:
                 continue
+            from apps.notifications.legacy_feed_scope import event_visible
+            if not event_visible(user, makerspace.pk, event, url_path=payload.get("url_path", "")):
+                continue
             if not personal_enabled(makerspace, user.pk, family, "in_app", event=event):
                 continue
             key = (uuid5(NAMESPACE_URL, f"p2:{source_intent}:u:{user.pk}")

@@ -45,6 +45,9 @@ def send_envelope_push(delivery, rendered):
             envelope = delivery.envelope
             if not recipient_allowed(envelope):
                 return ProviderResult(False, error_code="skipped")
+            from apps.managed_hosting.platform_switch import platform_allowed
+            if not platform_allowed(delivery.makerspace, "native_push"):
+                return ProviderResult(False, error_code="skipped")  # decision 281
             return _deliver(delivery, envelope, rendered)
 
 

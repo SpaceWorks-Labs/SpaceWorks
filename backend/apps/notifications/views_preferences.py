@@ -1,7 +1,9 @@
 from django.utils.translation import gettext
 from django.core import signing
+from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework.exceptions import ValidationError
 from rest_framework.parsers import FormParser, JSONParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -11,7 +13,8 @@ from rest_framework.views import APIView
 from apps.accounts import rbac
 from apps.accounts.models import User
 from apps.audit import services as audit
-from apps.integrations.email_preferences import decode_unsubscribe
+from apps.integrations.email_preferences import decode_unsubscribe, unsubscribe_page_url
+from apps.notifications import unsubscribe_landing as landing
 from apps.makerspaces.platform import feature_enabled
 from apps.makerspaces.guards import require_module
 from apps.makerspaces.servability import servable_queryset
@@ -66,7 +69,23 @@ class OneClickUnsubscribeView(APIView):
     authentication_classes = []
     permission_classes = [AllowAny]
     parser_classes = [FormParser, JSONParser]
-    http_method_names = ["post", "options"]
+    http_method_names = ["get", "post", "options"]
+
+    @extend_schema(tags=["Personal notifications"], auth=[], description=(
+        "A person who opens the List-Unsubscribe link in a browser. Changes nothing (mail scanners "
+        "prefetch links): 302 to the website's /unsubscribe/<token> confirm page, or, with no website "
+        "origin configured (API-only), a minimal HTML form that POSTs the RFC 8058 one-click body here."),
+        responses={302: OpenApiResponse(description="Redirect to the website confirm page."),
+                   200: OpenApiResponse(OpenApiTypes.STR, description="API-only HTML confirm form."),
+                   400: OpenApiResponse(OpenApiTypes.STR, description="Invalid or expired token (HTML).")})
+    def get(self, request, token):
+        # Signature/shape only: no tenant, module or user lookup, and never a write.
+        try:
+            decode_unsubscribe(token)
+        except (signing.BadSignature, TypeError, ValueError):
+            return landing.invalid()
+        url = unsubscribe_page_url(token)
+        return HttpResponseRedirect(url) if url else landing.confirm_form()
 
     # A dict ``request`` is a media-type -> schema map, so the body schema is keyed by the
     # two types the parsers accept (RFC 8058 mail clients POST it form-encoded).

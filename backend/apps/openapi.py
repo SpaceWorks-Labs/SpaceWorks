@@ -59,7 +59,7 @@ PUBLIC_REQUEST_CONTACT_SUBMIT_EXAMPLE = OpenApiExample(
 
 PUBLIC_REQUEST_LOOKUP_EXAMPLE = OpenApiExample(
     "Lookup requests by Check-In email or phone",
-    value={"identifier": "shaans@example.com"},
+    value={"identifier": "alex@example.com"},
     request_only=True,
 )
 
@@ -151,7 +151,7 @@ QR_RESOLVE_RESPONSE_EXAMPLE = OpenApiExample(
 PUBLIC_TOOL_SCAN_EXAMPLE = OpenApiExample(
     "Public QR tool return scan",
     value={
-        "identifier": "shaans@example.com",
+        "identifier": "alex@example.com",
         "payload": "BOX-ABC123",
         "evidence_id": 123,
         "remark": "Returned to the electronics shelf in good condition.",
@@ -163,8 +163,8 @@ PUBLIC_TOOL_CHECKOUT_EXAMPLE = OpenApiExample(
     "Public QR tool checkout",
     value={
         "payload": "BOX-ABC123",
-        "requester_name": "Shaan Shoukath",
-        "contact_email": "shaans@example.com",
+        "requester_name": "Alex Rivera",
+        "contact_email": "alex@example.com",
         "contact_phone": "+919876543210",
         "evidence_id": 122,
         "remark": "Borrowing for electronics workshop diagnostics.",

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { staffRequest } from "../../../lib/api";
 import { communicationKeys } from "../eventCommunicationsApi";
@@ -24,4 +25,17 @@ export function useBroadcastTemplates(tenant: number, event: number) {
 }
 export function useBroadcastTallies(tenant: number, event: number, campaign: number, live: boolean) {
   return useQuery({ queryKey: [...communicationKeys.campaigns(tenant, event), "tallies", campaign], queryFn: () => staffRequest<BroadcastTallies>(`/admin/events/${event}/broadcasts/${campaign}/tallies/`), refetchInterval: live ? 5000 : false });
+}
+
+/** Translated wording for a broadcast campaign `status`. */
+export function broadcastStatusLabel(status: string): string {
+  switch (status) {
+    case "draft": return t`Draft`;
+    case "queued": return t`Queued`;
+    case "sending": return t`Sending`;
+    case "sent": return t`Sent`;
+    case "cancelled": return t`Cancelled`;
+    case "failed": return t`Failed`;
+    default: return status.replace(/_/g, " ");
+  }
 }

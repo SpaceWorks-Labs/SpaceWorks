@@ -1,28 +1,35 @@
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
-import { Card, ErrorText, StatusBadge } from "../../../components/ui";
-import { useStaffCommand, useStaffQuery, type CheckInList, type ListEligibility } from "./api";
+import { Card, ErrorText } from "../../../components/ui";
+import { useStaffCommand, useStaffQuery, type CheckInList } from "./api";
+import { CheckInListRow } from "./CheckInListRow";
 
-const REASONS: Record<string, string> = {
-  not_confirmed: "No confirmed place.", entry_required: "Check them in at the door first.",
-  not_eligible: "Did not buy this add-on.", already_collected: "Already collected everything.",
-};
+/** Open lists in desk order, then archived ones (the server returns them oldest first). */
+export function orderLists(rows: CheckInList[]) {
+  const open = rows.filter(row => !row.archived).sort((a, b) => (a.position ?? 0) - (b.position ?? 0) || a.id - b.id);
+  return [...open, ...rows.filter(row => row.archived)];
+}
 
 /**
- * Extra check-in lists (X45): swag, a meal, a workshop. Collecting from a list never changes
- * entry check-in. Online only; an archived list is read-only.
+ * Extra check-in lists (X45): swag, a meal, a workshop. Collecting from a list never changes entry check-in.
+ * Online only; an archived list is read-only until it is restored. Staff who manage registrations set the desk
+ * order (parity E-B5, D22).
  */
 export function CheckInListsPanel({ eventId, canManage, addons }: {
   eventId: number; canManage: boolean; addons: { id: number; name: string }[];
 }) {
   const lists = useStaffQuery<CheckInList[]>(eventId, "/checkin-lists/");
-  const command = useStaffCommand<CheckInList>(eventId), scan = useStaffCommand<ListEligibility>(eventId);
+  const command = useStaffCommand<CheckInList>(eventId), reorder = useStaffCommand<CheckInList[]>(eventId);
   const [name, setName] = useState(""), [kind, setKind] = useState("swag"), [afterEntry, setAfterEntry] = useState(false);
-  const [addon, setAddon] = useState(""), [active, setActive] = useState<number | null>(null), [registration, setRegistration] = useState("");
-  const [result, setResult] = useState<ListEligibility | null>(null);
-  const error = lists.error ?? command.error;
-  const collect = (listId: number) => scan.mutate({ suffix: `/checkin-lists/${listId}/scan/`, body: {
-    operation_id: crypto.randomUUID(), registration_id: Number(registration) } }, { onSuccess: setResult });
+  const [addon, setAddon] = useState("");
+  const rows = orderLists(lists.data ?? []);
+  const open = rows.filter(row => !row.archived);
+  const error = lists.error ?? command.error ?? reorder.error;
+  const move = (index: number, direction: -1 | 1) => {
+    const ids = open.map(row => row.id);
+    [ids[index], ids[index + direction]] = [ids[index + direction], ids[index]];
+    reorder.mutate({ suffix: "/checkin-lists/reorder/", body: { ordered_ids: ids } });
+  };
   return <section className="grid gap-4" aria-labelledby="lists-heading">
     <header className="grid gap-1">
       <h3 id="lists-heading" className="text-lg font-semibold text-ink">{t`Check-in lists`}</h3>
@@ -30,30 +37,11 @@ export function CheckInListsPanel({ eventId, canManage, addons }: {
     </header>
     {error ? <ErrorText message={error.message} /> : null}
     {lists.data?.length === 0 ? <p className="text-sm text-muted">{t`No lists yet.`}</p> : null}
-    <ul className="grid gap-2">{lists.data?.map(list => <li key={list.id}><Card><div className="grid gap-3">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div><p className="font-semibold text-ink">{list.name}</p>
-          <p className="text-sm text-muted">{list.collected} collected{list.after_entry ? t` · after entry` : ""}
-            {list.addon_name ? t` · buyers of ${list.addon_name}` : t` · ${list.per_person} per person`}</p></div>
-        <div className="flex flex-wrap items-center gap-2">
-          {list.archived ? <StatusBadge status="archived" label={t`Archived, read-only`} /> : <>
-            <button type="button" className="desk-button" aria-expanded={active === list.id}
-              onClick={() => { setActive(active === list.id ? null : list.id); setResult(null); }}>{t`Collect`}</button>
-            {canManage ? <button type="button" className="desk-button" disabled={command.isPending}
-              onClick={() => command.mutate({ suffix: `/checkin-lists/${list.id}/`, method: "PATCH", body: { archive: true } })}>{t`Archive`}</button> : null}
-          </>}
-        </div>
-      </div>
-      {active === list.id ? <form className="flex flex-wrap items-end gap-2" onSubmit={event => { event.preventDefault(); collect(list.id); }}>
-        <label className="grid gap-1 text-sm text-ink">{t`Registration number`}<input className="desk-input" inputMode="numeric" required value={registration}
-            onChange={e => setRegistration(e.target.value.replace(/\D/g, ""))} /></label>
-        <button type="submit" className="desk-button" disabled={!registration || scan.isPending}>{t`Record collection`}</button>
-        <div role="status" aria-live="polite" className="text-sm">
-          {result ? <span className="text-ink">{result.name}: {result.used} of {result.allowed} collected.</span> : null}
-          {scan.error ? <span className="text-danger">{REASONS[(scan.error as { code?: string }).code ?? ""] ?? scan.error.message}</span> : null}
-        </div>
-      </form> : null}
-    </div></Card></li>)}</ul>
+    <ul className="grid gap-2">{rows.map(list => {
+      const index = open.findIndex(row => row.id === list.id);
+      return <CheckInListRow key={list.id} eventId={eventId} list={list} canManage={canManage} moving={reorder.isPending}
+        first={index <= 0} last={index === open.length - 1} onMove={direction => move(index, direction)} />;
+    })}</ul>
     {canManage ? <Card><form className="grid gap-3" onSubmit={event => { event.preventDefault();
       command.mutate({ suffix: "/checkin-lists/", body: { name, kind, after_entry: afterEntry, ...(addon ? { addon_id: Number(addon) } : {}) } },
         { onSuccess: () => setName("") }); }}>

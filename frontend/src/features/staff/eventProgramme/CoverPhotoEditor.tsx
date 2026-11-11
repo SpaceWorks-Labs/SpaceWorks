@@ -1,40 +1,103 @@
 import { t } from "@lingui/core/macro";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { RotateCcw, Undo2 } from "lucide-react";
 import { Card } from "../../../components/ui";
-import { DEFAULT_COVER_EDITS, renderCover, type CoverEdits } from "./coverImage";
+import { coverFileName, coverFileProblem, DEFAULT_COVER_EDITS, renderCover, type CoverEdits } from "./coverImage";
+import { CoverCropStage } from "./CoverCropStage";
+import { CoverAdjustControls, CoverCropControls } from "./CoverControls";
 import { isProtectedDenial } from "./sessionScope";
 
-export function CoverPhotoEditor({ onSave, onPendingChange }: { onSave: (file: File, altText: string) => Promise<void>; onPendingChange?: (pending: boolean) => void }) {
+type Props = {
+  onSave: (file: File, altText: string) => Promise<void>;
+  onPendingChange?: (pending: boolean) => void;
+  title?: string;
+  /** Ask for an image description (website images); event and series covers have none. */
+  describe?: boolean;
+  /** Start straight from a file the person already picked. */
+  initialFile?: File | null;
+  onCancel?: () => void;
+};
+
+/**
+ * The full cover editor (parity E-F3, B4): crop to a shape with guides for every place the cover appears,
+ * zoom, rotate, straighten, flip, a preset look and colour sliders, undo. The result is encoded as WebP
+ * where the browser can, and the server re-encodes it to WebP and strips metadata either way.
+ */
+export function CoverPhotoEditor({ onSave, onPendingChange, title = t`Give the event a cover`, describe = true, initialFile = null, onCancel }: Props) {
   const [source, setSource] = useState<File | null>(null);
+  const [src, setSrc] = useState("");
+  const [natural, setNatural] = useState<{ width: number; height: number } | null>(null);
   const [edits, setEdits] = useState<CoverEdits>(DEFAULT_COVER_EDITS);
   const [history, setHistory] = useState<CoverEdits[]>([]);
-  const [rendered, setRendered] = useState<Blob | null>(null);
-  const [preview, setPreview] = useState("");
+  const [guides, setGuides] = useState(true);
   const [alt, setAlt] = useState("");
-  const [working, setWorking] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
+  const current = useRef(edits); current.current = edits;
+  const choose = (file: File) => {
+    const problem = coverFileProblem(file);
+    if (problem) { setError(problem); return; }
+    setError(""); setSource(file); setEdits(DEFAULT_COVER_EDITS); setHistory([]); setSaved(false); setNatural(null);
+  };
+  useEffect(() => { if (initialFile) choose(initialFile); }, [initialFile]);
   useEffect(() => {
+    if (!source) { setSrc(""); return; }
+    const url = URL.createObjectURL(source); setSrc(url);
+    const image = new Image();
+    image.onload = () => setNatural({ width: image.naturalWidth, height: image.naturalHeight });
+    image.onerror = () => setError(t`This image could not be opened. Choose another file.`);
+    image.src = url;
+    return () => { image.onload = null; URL.revokeObjectURL(url); };
+  }, [source]);
+  useEffect(() => { onPendingChange?.(saving); return () => onPendingChange?.(false); }, [saving, onPendingChange]);
+
+  const remember = useCallback(() => setHistory(rows => [...rows.slice(-29), current.current]), []);
+  const live = useCallback((patch: Partial<CoverEdits>) => { setSaved(false); setEdits(value => ({ ...value, ...patch })); }, []);
+  const update = (patch: Partial<CoverEdits>) => { remember(); live(patch); };
+  const forget = () => { setSource(null); setNatural(null); setAlt(""); setHistory([]); setEdits(DEFAULT_COVER_EDITS); };
+  const save = async () => {
     if (!source) return;
-    let active = true; setWorking(true); setRendered(null); setError("");
-    const timer = setTimeout(() => { void renderCover(source, edits).then(blob => { if (active) setRendered(blob); }).catch(reason => { if (active) setError(reason instanceof Error ? reason.message : t`Could not prepare the cover.`); }).finally(() => { if (active) setWorking(false); }); }, 120);
-    return () => { active = false; clearTimeout(timer); };
-  }, [source, edits]);
-  useEffect(() => { if (!rendered) { setPreview(""); return; } const url = URL.createObjectURL(rendered); setPreview(url); return () => URL.revokeObjectURL(url); }, [rendered]);
-  useEffect(() => { onPendingChange?.(working || saving); return () => onPendingChange?.(false); }, [working, saving, onPendingChange]);
-  const update = (patch: Partial<CoverEdits>) => { setHistory([...history.slice(-19), edits]); setEdits({ ...edits, ...patch }); setSaved(false); };
-  return <Card><section className="grid gap-4" aria-label={t`Cover photo editor`}><h3 className="title-section">{t`Give the event a cover`}</h3>
-    <label className="grid gap-1 text-sm font-semibold">{t`Image`}<input type="file" accept="image/jpeg,image/png,image/webp" className="desk-input" onChange={e => { const file = e.target.files?.[0]; if (file) { setSource(file); setHistory([]); setEdits(DEFAULT_COVER_EDITS); setSaved(false); } }} /></label>
-    <label className="grid gap-1 text-sm">{t`Crop ratio`}<select className="desk-input" value={edits.ratio} onChange={e => update({ ratio: e.target.value as CoverEdits["ratio"] })}>{["16:7", "16:9", "1:1"].map(ratio => <option key={ratio}>{ratio}</option>)}</select></label>
-    <div className="grid gap-3 sm:grid-cols-2">{([
-      ["rotation", "Rotate", -180, 180, 1], ["straighten", "Straighten", -15, 15, 0.1], ["brightness", "Brightness (%)", 50, 150, 1], ["contrast", "Contrast (%)", 50, 150, 1], ["x", "Horizontal crop (%)", 0, 100, 1], ["y", "Vertical crop (%)", 0, 100, 1], ["zoom", "Zoom", 1, 3, 0.1],
-    ] as const).map(([key, label, min, max, step]) => <label key={key} className="grid gap-1 text-sm">{label}<input type="number" className="desk-input" min={min} max={max} step={step} value={edits[key]} onChange={e => { const next = Number(e.target.value); if (Number.isFinite(next) && next >= min && next <= max) update({ [key]: next }); }} /></label>)}</div>
-    <div className="flex flex-wrap gap-2"><button className="desk-button" type="button" disabled={!history.length} onClick={() => { setEdits(history[history.length - 1]); setHistory(history.slice(0, -1)); }}><Undo2 size={20} aria-hidden="true" />{t`Undo`}</button><button className="desk-button" type="button" onClick={() => update(DEFAULT_COVER_EDITS)}><RotateCcw size={20} aria-hidden="true" />{t`Reset`}</button></div>
-    <label className="grid gap-1 text-sm">{t`Image description`}<input className="desk-input" maxLength={300} value={alt} onChange={e => setAlt(e.target.value)} placeholder={t`Describe the people, place or work shown`} /></label>
-    {preview ? <div className="grid gap-4 sm:grid-cols-2"><figure><img className="w-full rounded-xl object-cover" src={preview} alt={alt || t`Cover preview`} /><figcaption className="mt-1 text-xs text-muted">{t`Event card preview`}</figcaption></figure><figure><img className="aspect-[1.91] w-full rounded-xl object-cover" src={preview} alt={alt || t`Social cover preview`} /><figcaption className="mt-1 text-xs text-muted">{t`Social crop preview`}</figcaption></figure></div> : null}
-    {working ? <p role="status" className="text-sm">{t`Preparing preview…`}</p> : null}{error ? <p role="alert" className="text-sm text-danger">{error}</p> : null}{saved ? <p role="status" className="text-sm text-success">{t`Cover saved.`}</p> : null}
-    <button className="desk-button-primary justify-self-end" type="button" disabled={!rendered || working || saving} onClick={async () => { if (!rendered) return; setSaving(true); setError(""); try { await onSave(new File([rendered], "event-cover.jpg", { type: "image/jpeg" }), alt.trim()); setSaved(true); } catch (reason) { if (isProtectedDenial(reason)) { setSource(null); setRendered(null); setPreview(""); setAlt(""); setHistory([]); } setError(reason instanceof Error ? reason.message : t`Could not save the cover.`); } finally { setSaving(false); } }}>{saving ? t`Saving cover…` : t`Save cover`}</button>
+    setSaving(true); setError("");
+    try {
+      const blob = await renderCover(source, edits);
+      await onSave(new File([blob], coverFileName(blob), { type: blob.type }), alt.trim());
+      setSaved(true);
+    } catch (reason) {
+      if (isProtectedDenial(reason)) forget();
+      setError(reason instanceof Error ? reason.message : t`Could not save the cover.`);
+    } finally { setSaving(false); }
+  };
+
+  return <Card><section className="grid gap-5" aria-label={t`Cover photo editor`}>
+    <h3 className="title-section">{title}</h3>
+    <label className="grid gap-1 text-sm font-semibold">{source ? t`Choose a different image` : t`Image`}
+      <input type="file" accept="image/jpeg,image/png,image/webp" className="desk-input font-normal" disabled={saving}
+        onChange={event => { const file = event.target.files?.[0]; if (file) choose(file); event.target.value = ""; }} /></label>
+    {source && natural ? <>
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(16rem,2fr)]">
+        <div className="grid content-start gap-3">
+          <CoverCropStage src={src} natural={natural} edits={edits} guides={guides} onBegin={remember} onLive={live} />
+          <label className="flex min-h-11 items-center gap-3 text-sm"><input type="checkbox" className="h-5 w-5 accent-accent" checked={guides}
+            onChange={event => setGuides(event.target.checked)} />{t`Show where cards and social previews crop the cover`}</label>
+        </div>
+        <div className="grid content-start gap-6">
+          <CoverCropControls edits={edits} update={update} />
+          <CoverAdjustControls edits={edits} update={update} />
+        </div>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <button className="desk-button" type="button" disabled={!history.length} onClick={() => { setEdits(history[history.length - 1]); setHistory(history.slice(0, -1)); setSaved(false); }}><Undo2 size={18} aria-hidden="true" />{t`Undo`}</button>
+        <button className="desk-button" type="button" onClick={() => update(DEFAULT_COVER_EDITS)}><RotateCcw size={18} aria-hidden="true" />{t`Reset all`}</button>
+      </div>
+      {describe ? <label className="grid gap-1 text-sm">{t`Image description`}<input className="desk-input" maxLength={300} value={alt} onChange={event => setAlt(event.target.value)}
+        placeholder={t`Describe the people, place or work shown`} /></label> : null}
+    </> : source ? <p role="status" className="text-sm text-muted">{t`Opening the image…`}</p> : null}
+    <div role="status" aria-live="polite" className="text-sm empty:hidden">{saving ? t`Saving cover…` : saved ? <span className="text-success-ink">{t`Cover saved.`}</span> : ""}</div>
+    {error ? <p role="alert" className="text-sm text-danger">{error}</p> : null}
+    <div className="flex flex-wrap justify-end gap-2">
+      {onCancel ? <button className="desk-button" type="button" disabled={saving} onClick={onCancel}>{t`Cancel`}</button> : null}
+      <button className="desk-button-primary" type="button" disabled={!source || !natural || saving} onClick={() => { void save(); }}>{saving ? t`Saving cover…` : t`Save cover`}</button>
+    </div>
   </section></Card>;
 }

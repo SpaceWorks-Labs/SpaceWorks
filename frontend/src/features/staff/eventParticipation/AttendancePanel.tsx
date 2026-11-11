@@ -1,5 +1,5 @@
 import { formatLocale } from "../../../lib/format";
-import { t } from "@lingui/core/macro";
+import { plural, t } from "@lingui/core/macro";
 import { Card, ErrorText, Metric } from "../../../components/ui";
 import { useStaffCommand, useStaffQuery, type AttendanceSummary, type Switches } from "./api";
 
@@ -27,7 +27,9 @@ export function AttendancePanel({ eventId, canConfigure }: { eventId: number; ca
       <Metric label={t`Not coming`} value={data.no} /><Metric label={t`No answer yet`} value={data.pending} />
     </div> : <p role="status">{t`Loading replies…`}</p>}
     {data && (data.released || data.left_to_staff) ? <p className="text-sm text-muted">
-      {data.released} place{data.released === 1 ? "" : "s"} released{data.left_to_staff ? t`; ${data.left_to_staff} from group orders left for you to handle` : ""}.</p> : null}
+      {data.left_to_staff
+        ? plural(data.released, { one: `# place released; ${data.left_to_staff} from group orders left for you to handle.`, other: `# places released; ${data.left_to_staff} from group orders left for you to handle.` })
+        : plural(data.released, { one: "# place released.", other: "# places released." })}</p> : null}
     <Card><div className="flex flex-wrap items-center gap-2">
       <button type="button" className="desk-button" disabled={send.isPending || waiting}
         onClick={() => send.mutate({ suffix: "/attendance-confirmation/", body: { kind: "confirmation" } })}>{t`Ask everyone not yet asked`}</button>

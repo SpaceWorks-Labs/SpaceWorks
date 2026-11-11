@@ -23,12 +23,19 @@ export type Switches = { stage_advanced_email: boolean; attendance_free_on_no: b
 export type AttendanceSummary = { asked: number; yes: number; no: number; pending: number; released: number;
   left_to_staff: number; next_send_at: string | null; free_on_no: boolean;
   rounds: { id: number; kind: string; state: string; recipients: number; sent: number; created_at: string }[] };
+export type CrewKind = "organiser" | "volunteer" | "mentor" | "judge";
+/** E-B3 (C8/C13): `kind` (with `events.crew_kinds`), staff `position` and `staff_hidden` (kept off the public section). */
 export type CrewRow = { id: number; version: number; member_id: number; name: string; crew_role: string;
-  state: string; origin: string; show_publicly: boolean; registration_id: number | null; has_place: boolean };
+  state: string; origin: string; show_publicly: boolean; registration_id: number | null; has_place: boolean;
+  kind?: CrewKind | null; position?: number; staff_hidden?: boolean };
 export type Catering = { approved: number; with_needs: number; needs: { label: string; count: number }[] };
 export type CheckInList = { id: number; event_id: number; name: string; kind: string; after_entry: boolean;
-  addon_id: number | null; addon_name: string | null; per_person: number; archived: boolean; collected: number };
-export type ListEligibility = { registration_id: number; name: string; allowed: number; used: number; reason: string | null };
+  addon_id: number | null; addon_name: string | null; per_person: number; archived: boolean; collected: number;
+  /** Parity E-B5 (D22): desk order and counts (eligible guests, distinct guests who collected). */
+  position?: number; eligible?: number; collected_people?: number; archived_at?: string | null };
+export type ListEligibility = { registration_id: number; name: string; allowed: number; used: number; reason: string | null;
+  /** On a recorded collection: undo it with this id until `undo_until` (60 seconds). */
+  scan_id?: number; undo_until?: string };
 
 export const adminBase = (eventId: number) => "/admin/events/" + eventId;
 

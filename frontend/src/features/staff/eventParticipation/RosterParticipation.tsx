@@ -8,11 +8,11 @@ type Row = { id: number; status: string; is_crew?: boolean; attendance_reply?: R
 /** Crew and "still coming?" chips for the guest list and the desk (lane L21a). */
 export function ParticipationChips({ row }: { row: Row }) {
   const reply = row.attendance_reply;
-  const label = !reply ? null : reply.answer === "yes" ? "Still coming" : reply.answer === "no" ? "Not coming" : "Asked, no answer";
+  const label = !reply ? null : reply.answer === "yes" ? t`Still coming` : reply.answer === "no" ? t`Not coming` : t`Asked, no answer`;
   return <span className="mt-1 flex flex-wrap gap-1">
     {row.is_crew ? <span className="rounded-full border border-info px-2 py-0.5 text-xs font-semibold text-info-ink">{t`Crew`}</span> : null}
     {label ? <span title={reply?.note || undefined}
-      className={`rounded-full border px-2 py-0.5 text-xs font-semibold ${reply?.answer === "no" ? "border-warn text-warn" : "border-line text-muted"}`}>
+      className={`rounded-full border px-2 py-0.5 text-xs font-semibold ${reply?.answer === "no" ? "border-warn text-warn-ink" : "border-line text-muted"}`}>
       {label}{reply?.note ? t` · note` : ""}</span> : null}
   </span>;
 }

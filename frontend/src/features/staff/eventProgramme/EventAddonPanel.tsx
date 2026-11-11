@@ -9,26 +9,28 @@ import type { eventAccess } from "../eventStaffPermissions";
 import { sessionScope } from "./sessionScope";
 import { ClaimReceiptPreview } from "./ClaimReceiptPreview";
 import { StageFormsManager, StageFormBuilder, StageAssignments, StageActivation, StageMilestones, StageResponseDetail } from "../eventStageForms";
-import { ReimbursementRequests, ReimbursementClaims, ClaimReview, ReimbursementProgramme } from "../eventReimbursements";
+import { ReimbursementRequests, ReimbursementClaims, ClaimReview, ReimbursementProgramme, StaffClaimForm } from "../eventReimbursements";
 
 type StageView = { kind: "list" } | { kind: "builder"; id?: number } | { kind: "activate"; id: number }
   | { kind: "assignments" } | { kind: "shortlist" } | { kind: "response"; id: number; finance: boolean };
-type SupportView = { kind: "requests" } | { kind: "claims" } | { kind: "claim"; id: number } | { kind: "programme" };
+type SupportView = { kind: "requests" } | { kind: "claims" } | { kind: "claim"; id: number } | { kind: "programme" } | { kind: "staff-claim" };
 
 /**
  * Stage forms (Events core) and travel support (the event_reimbursements add-on) inside the
  * event drawer. The actions offered here only shape the screen: every list and command is
  * authorized again by the API for this exact event, and finance views need VIEW_FINANCE.
  */
-export function EventAddonPanel({ event, makerspaceId, section, access }: {
+export function EventAddonPanel({ event, makerspaceId, section, access, staffClaims = false }: {
   event: StaffEvent; makerspaceId: number; section: "stage-forms" | "reimbursements"; access: ReturnType<typeof eventAccess>;
+  /** Parity C17: the space's `events.staff_claims` switch. */
+  staffClaims?: boolean;
 }) {
   const account = useQuery({ queryKey: ["event-addon-actor", ...sessionScope()], queryFn: () => staffRequest<AuthUserPayload>("/auth/me"),
     gcTime: 0, retry: false });
   if (account.error) return <ErrorBlock error={account.error} />;
   if (!account.data) return <p role="status">{t`Loading your event access…`}</p>;
   const scope = { actorId: account.data.id, makerspaceId, eventId: event.id };
-  return section === "stage-forms" ? <StagePanel scope={scope} event={event} access={access} /> : <SupportPanel scope={scope} />;
+  return section === "stage-forms" ? <StagePanel scope={scope} event={event} access={access} /> : <SupportPanel scope={scope} staffClaims={staffClaims} />;
 }
 
 type Scope = { actorId: number; makerspaceId: number; eventId: number };
@@ -63,11 +65,12 @@ function StagePanel({ scope, event, access }: { scope: Scope; event: StaffEvent;
   </div>;
 }
 
-function SupportPanel({ scope }: { scope: Scope }) {
+function SupportPanel({ scope, staffClaims }: { scope: Scope; staffClaims: boolean }) {
   const [view, setView] = useState<SupportView>({ kind: "requests" });
   const [receipt, setReceipt] = useState<number | null>(null);
   const tabs: { key: SupportView["kind"]; label: string }[] = [
     { key: "requests", label: t`Requests` }, { key: "claims", label: t`Claims` }, { key: "programme", label: t`Programme and budget` },
+    ...(staffClaims ? [{ key: "staff-claim" as const, label: t`File a claim` }] : []),
   ];
   return <div className="grid gap-4">
     <div className="flex flex-wrap gap-2" role="group" aria-label={t`Travel support views`}>
@@ -80,5 +83,6 @@ function SupportPanel({ scope }: { scope: Scope }) {
     {view.kind === "claim" && receipt !== null
       ? <ClaimReceiptPreview key={receipt} scope={scope} assetId={receipt} onClose={() => setReceipt(null)} /> : null}
     {view.kind === "programme" ? <ReimbursementProgramme scope={scope} /> : null}
+    {view.kind === "staff-claim" && staffClaims ? <StaffClaimForm scope={scope} onFiled={() => setView({ kind: "requests" })} /> : null}
   </div>;
 }

@@ -27,7 +27,7 @@ export function EventParticipationSection({ event, section, access, features }: 
     return <AttendancePanel eventId={event.id} canConfigure={access.manager} />;
   }
   if (section === "crew" && on("events.crew") && access.volunteers) {
-    return <CrewPanel eventId={event.id} signupUrl={`${window.location.origin}/member/events/${event.id}/crew`} />;
+    return <CrewPanel eventId={event.id} signupUrl={`${window.location.origin}/member/events/${event.id}/crew`} kinds={on("events.crew_kinds")} />;
   }
   if (section === "checkin-lists" && on("events.checkin_lists") && access.checkIn) {
     return <CheckInLists eventId={event.id} canManage={access.registrations} withAddons={on("events.addons")} />;

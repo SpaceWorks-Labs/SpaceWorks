@@ -1,8 +1,10 @@
-import { t } from "@lingui/core/macro";
+import { plural, t } from "@lingui/core/macro";
 import { useState } from "react";
 import { Card, ErrorText, StatusBadge } from "../../../components/ui";
 import { StagePlanner } from "./StagePlanner";
 import { useStaffCommand, useStaffQuery, type Stage } from "./api";
+
+const stageStateLabel = (state: Stage["state"]) => ({ draft: t`Draft`, open: t`Open`, closed: t`Closed` })[state];
 
 /** Stable criterion keys (`^[a-z][a-z0-9_]*$`) from the labels staff type, unique within the stage. */
 export function criteriaFrom(labels: string[]) {
@@ -46,11 +48,11 @@ export function ReviewStagesPanel({ eventId }: { eventId: number }) {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="grid gap-0.5">
           <p className="font-semibold text-ink">{stage.position}. {stage.name}</p>
-          <p className="text-sm text-muted">{t`${stage.reviews_per_application} review${stage.reviews_per_application === 1 ? "" : "s"} each · ${stage.criteria.length} criteria`}{stage.blind ? t` · blind` : ""} {t` · ${stage.standing} waiting · panel of ${stage.panel.length}`}</p>
+          <p className="text-sm text-muted">{plural(stage.reviews_per_application, { one: `# review each · ${stage.criteria.length} criteria`, other: `# reviews each · ${stage.criteria.length} criteria` })}{stage.blind ? t` · blind` : ""} {t` · ${stage.standing} waiting · panel of ${stage.panel.length}`}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {stage.frozen ? <StatusBadge status="locked" label={t`Criteria fixed`} /> : null}
-          <StatusBadge status={stage.state} label={stage.state} />
+          <StatusBadge status={stage.state} label={stageStateLabel(stage.state)} />
           {stage.state !== "open" ? <button type="button" className="desk-button" disabled={command.isPending}
             onClick={() => move(stage, "open")}>{t`Open for review`}</button> : null}
           {stage.state === "open" ? <button type="button" className="desk-button" disabled={command.isPending}

@@ -84,8 +84,9 @@ class ProgrammeCardDetailView(APIView):
         return Response(IdProgrammeCardSerializer(cards.edit(request.user, card, data.validated_data),
                                                   context={"request": request}).data)
 
-    @extend_schema(tags=TAGS, summary="Delete a card (its photo goes too)", request=None,
-                   responses={204: None, **errors(401, 403, 404)})
+    @extend_schema(tags=TAGS, summary="Delete a card that was never issued (its photo goes too)", request=None,
+                   description="An issued card answers 409 `revoke_instead`: revoke it; its record is kept.",
+                   responses={204: None, **errors(401, 403, 404, 409)})
     def delete(self, request, pk):
         cards.delete(request.user, card_for(request.user, pk, MANAGE))
         return Response(status=status.HTTP_204_NO_CONTENT)

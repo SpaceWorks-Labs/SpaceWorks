@@ -47,6 +47,10 @@ class IdProgramme(models.Model):
     form_schema = models.JSONField(default=list, blank=True)
     public_verify = models.BooleanField(default=True)
     email_daily_cap = models.PositiveIntegerField(default=200)
+    # Owner decision 219(h): a programme that ever approved a card is archived, never
+    # deleted. Archiving closes it and hides it from active lists; its cards are kept and
+    # keep verifying until revoked or expired, exactly as for a closed programme.
+    archived_at = models.DateTimeField(null=True, blank=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL,
                                    related_name="+")
     created_at = models.DateTimeField(auto_now_add=True)

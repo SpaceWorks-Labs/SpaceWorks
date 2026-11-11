@@ -5,6 +5,7 @@ from apps.card_designs.views_staff_photo import ProgrammeCardStaffPhotoView
 
 from .views import (OrganizationProgrammeListView, ProgrammeApprovalView, ProgrammeDesignView,
                     ProgrammeDetailView)
+from .views_archive import ProgrammeArchiveView, ProgrammeUnarchiveView
 from .views_preview import ProgrammeSheetPreviewView
 from .views_cards import (ProgrammeCardDetailView, ProgrammeCardDownloadView, ProgrammeCardEmailView,
                           ProgrammeCardJobView, ProgrammeCardListView, ProgrammeCardPhotoRequestView,
@@ -18,6 +19,8 @@ urlpatterns = [
          name="admin-organization-id-programmes"),
     path(_PROGRAMME, ProgrammeDetailView.as_view(), name="admin-id-programme"),
     path(f"{_PROGRAMME}/design", ProgrammeDesignView.as_view(), name="admin-id-programme-design"),
+    path(f"{_PROGRAMME}/archive", ProgrammeArchiveView.as_view(), name="admin-id-programme-archive"),
+    path(f"{_PROGRAMME}/unarchive", ProgrammeUnarchiveView.as_view(), name="admin-id-programme-unarchive"),
     path(f"{_PROGRAMME}/approval", ProgrammeApprovalView.as_view(), name="admin-id-programme-approval"),
     path(f"{_PROGRAMME}/cards", ProgrammeCardListView.as_view(), name="admin-id-programme-cards"),
     path(f"{_PROGRAMME}/cards/decide", ProgrammeDecisionView.as_view(), name="admin-id-programme-decide"),

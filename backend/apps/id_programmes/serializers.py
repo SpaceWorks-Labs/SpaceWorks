@@ -22,9 +22,9 @@ class IdProgrammeSerializer(serializers.ModelSerializer):
                   "registration_open",
                   "requires_approval", "id_prefix", "next_sequence", "validity_mode", "valid_until", "validity_days",
                   "photo_mode", "form_schema", "public_verify", "email_daily_cap", "counts", "can_manage",
-                  "created_at", "updated_at")
+                  "archived_at", "created_at", "updated_at")
         read_only_fields = ("id", "organization", "organization_slug", "makerspace", "slug", "next_sequence", "counts",
-                            "can_manage",
+                            "can_manage", "archived_at",
                             "created_at", "updated_at")
 
     def get_counts(self, obj) -> dict:

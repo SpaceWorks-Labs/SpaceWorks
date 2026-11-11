@@ -1,13 +1,15 @@
 """Create, change, close and delete ID programmes (SPEC §4.3, §5.2). Every change audited.
 
 A programme is hosted by a space its organisation OWNS (Q12: not possible otherwise).
-Deleting is allowed only while no card was ever approved; otherwise close it, and its
-cards keep verifying until revoked or expired (Q10).
+Deleting is allowed only while no card was ever approved; otherwise archive it (decision
+219(h)): it is closed and hidden from active lists, and its cards keep verifying until
+revoked or expired (Q10).
 """
 from django.utils.translation import gettext
 from django.db import transaction
+from django.db.models import Q
 from django.utils.text import slugify
-from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.exceptions import APIException, PermissionDenied, ValidationError
 
 from apps.audit import services as audit
 
@@ -80,6 +82,8 @@ def create(actor, organization, makerspace, values):
 @transaction.atomic
 def update(actor, programme, values):
     programme = IdProgramme.objects.select_for_update().get(pk=programme.pk)
+    if programme.archived_at is not None and values.get("status") == IdProgramme.Status.ACTIVE:
+        raise ValidationError({"status": gettext("Restore this programme from the archive before reopening it.")})
     data = _clean(values, programme)
     changed = [key for key, value in data.items() if key in EDITABLE and getattr(programme, key) != value]
     for key in changed:
@@ -99,13 +103,70 @@ def update(actor, programme, values):
     return programme
 
 
+class ArchiveInstead(APIException):
+    status_code = 409
+    default_code = "archive_instead"
+    default_detail = {"code": "archive_instead",
+                      "detail": "Cards in this programme were approved. Archive it instead of deleting it."}
+
+
+def was_used(programme):
+    return IdProgrammeCard.objects.filter(programme=programme, sequence__isnull=False).exists()
+
+
+def _has_published_design(programme):
+    """Deleting a programme cascades its CardDesigns; a published one reached holders (219(h))."""
+    from apps.card_designs.models import CardDesign
+    return CardDesign.objects.filter(programme=programme).filter(
+        Q(published_revision__isnull=False) | Q(published_at__isnull=False)).exists()
+
+
 @transaction.atomic
 def delete(actor, programme):
-    if IdProgrammeCard.objects.filter(programme=programme, sequence__isnull=False).exists():
-        raise ValidationError({"detail": gettext("Cards in this programme were approved. Close it instead.")})
+    """Hard delete only while no card was ever approved (decision 219(h)); else 409."""
+    # Lock the programme and every card first: an approval committing mid-delete would otherwise
+    # cascade an approved card away after was_used() had already said no.
+    programme = IdProgramme.objects.select_for_update().get(pk=programme.pk)
+    list(IdProgrammeCard.objects.select_for_update().filter(programme=programme).values_list("pk", flat=True))
+    if was_used(programme) or _has_published_design(programme):
+        raise ArchiveInstead()
     from apps.card_designs.storage import delete_quietly
     keys = list(programme.cards.exclude(photo_object_key="").values_list("photo_object_key", flat=True))
     audit.record(actor, "id_programme.deleted", makerspace=programme.makerspace, target=programme,
                  meta={"programme_id": programme.pk})
     programme.delete()
     transaction.on_commit(lambda: [delete_quietly(key) for key in keys])
+
+
+@transaction.atomic
+def archive(actor, programme):
+    """Close the programme and hide it from active lists; every card and its history stays."""
+    from django.utils import timezone
+    programme = IdProgramme.objects.select_for_update().get(pk=programme.pk)
+    if programme.archived_at is not None:
+        return programme
+    was_closed = programme.status == IdProgramme.Status.CLOSED
+    programme.archived_at = timezone.now()
+    programme.registration_open = False
+    if programme.status == IdProgramme.Status.ACTIVE:
+        programme.status = IdProgramme.Status.CLOSED
+    programme.save(update_fields=["archived_at", "registration_open", "status", "updated_at"])
+    if not was_closed and programme.status == IdProgramme.Status.CLOSED:
+        audit.record(actor, "id_programme.closed", makerspace=programme.makerspace, target=programme,
+                     meta={"programme_id": programme.pk})
+    audit.record(actor, "id_programme.archived", makerspace=programme.makerspace, target=programme,
+                 meta={"programme_id": programme.pk})
+    return programme
+
+
+@transaction.atomic
+def unarchive(actor, programme):
+    """Back into the active list, still closed: reopening registration is a separate change."""
+    programme = IdProgramme.objects.select_for_update().get(pk=programme.pk)
+    if programme.archived_at is None:
+        return programme
+    programme.archived_at = None
+    programme.save(update_fields=["archived_at", "updated_at"])
+    audit.record(actor, "id_programme.unarchived", makerspace=programme.makerspace, target=programme,
+                 meta={"programme_id": programme.pk})
+    return programme

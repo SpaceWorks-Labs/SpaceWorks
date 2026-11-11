@@ -10,7 +10,7 @@ import json
 from django.db import transaction
 from django.utils import timezone
 from django.utils.crypto import salted_hmac
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import APIException, ValidationError
 
 from apps.audit import services as audit
 from apps.card_designs.lifecycle import on_issue, on_reissue, on_revoke
@@ -45,7 +45,8 @@ def add(actor, programme, *, name, email, answers=None, source=IdProgrammeCard.S
         raise ValidationError({"detail": gettext("You already asked to join this programme.")})
     card = IdProgrammeCard.objects.create(programme=programme, makerspace=programme.makerspace, user=user, name=name,
                                           email=email, email_digest=digest, source=source,
-                                          answers=_store_answers(programme, answers or {}))
+                                          answers=_store_answers(programme, answers or {}),
+                                          verify_show_name=_show_name_default(programme.makerspace_id))
     if source == IdProgrammeCard.Source.FORM:
         audit.record(actor, "id_programme.card_requested", makerspace=programme.makerspace, target=card,
                      meta={"programme_id": programme.pk, "card_id": card.pk})
@@ -74,9 +75,20 @@ def edit(actor, card, values):
     return card
 
 
+class RevokeInstead(APIException):
+    status_code = 409
+    default_code = "revoke_instead"
+    default_detail = {"code": "revoke_instead",
+                      "detail": "This card was issued. Revoke it instead; its record is kept."}
+
+
 @transaction.atomic
 def delete(actor, card):
+    """Only a card that was never issued (no ID number) is deleted (decision 219(h))."""
     from apps.card_designs.photos import remove
+    card = IdProgrammeCard.objects.select_for_update().select_related("makerspace", "programme").get(pk=card.pk)
+    if card.sequence is not None or card.issued_at is not None:
+        raise RevokeInstead()
     if card.photo_object_key:
         remove(actor, "programme_card", card)
     on_revoke("programme_card", card)
@@ -145,3 +157,10 @@ def decide(actor, programme, action, ids, reason=""):
         for card in changed:
             transaction.on_commit(lambda pk=card.pk: programme_decided(pk), robust=True)
     return changed
+
+
+def _show_name_default(makerspace_id):
+    """Decision 290: a new card starts with the holder's name on the public check page (space setting); they may hide it."""
+    from apps.makerspaces.models import MemberCardSettings
+    return bool(MemberCardSettings.objects.filter(makerspace_id=makerspace_id).values_list(
+        "verify_show_name", flat=True).first())

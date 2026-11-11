@@ -2,7 +2,7 @@
 its design, its approval switch. Authority by action on the host space (`access`)."""
 from django.utils.translation import gettext
 from django.shortcuts import get_object_or_404
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -23,10 +23,14 @@ class OrganizationProgrammeListView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(tags=TAGS, summary="Programmes this organisation runs (that you can see)", request=None,
+                   description="Archived programmes are left out unless `archived=true`, which lists only them.",
+                   parameters=[OpenApiParameter("archived", bool, required=False)],
                    responses={200: IdProgrammeSerializer(many=True), **errors(401)})
     def get(self, request, organization_id):
         from apps.card_designs.switches import programmes_on
-        rows = [row for row in programmes_for(request.user).filter(organization_id=organization_id)
+        archived = request.query_params.get("archived") in ("1", "true")
+        rows = [row for row in programmes_for(request.user).filter(organization_id=organization_id,
+                                                                   archived_at__isnull=not archived)
                 if programmes_on(row.makerspace)]
         return Response(IdProgrammeSerializer(rows, many=True, context={"request": request}).data)
 
@@ -67,8 +71,9 @@ class ProgrammeDetailView(APIView):
         programme = services.update(request.user, programme, data.validated_data)
         return Response(IdProgrammeSerializer(programme, context={"request": request}).data)
 
-    @extend_schema(tags=TAGS, summary="Delete a programme that never approved a card (else close it)", request=None,
-                   responses={204: None, **errors(400, 401, 403, 404)})
+    @extend_schema(tags=TAGS, summary="Delete a programme that never approved a card (else archive it)", request=None,
+                   description="A programme that ever approved a card answers 409 `archive_instead`.",
+                   responses={204: None, **errors(401, 403, 404, 409)})
     def delete(self, request, pk):
         services.delete(request.user, programme_for(request.user, pk, MANAGE))
         return Response(status=status.HTTP_204_NO_CONTENT)

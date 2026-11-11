@@ -13,6 +13,7 @@ import {
 import { RevokeWaiverDialog } from "./RevokeWaiverDialog";
 import { WaiveFeesDialog } from "./WaiveFeesDialog";
 import { WaiverHistory } from "./WaiverHistory";
+import { ChargeSettle } from "../areaPayments/ChargeSettle";
 
 type LoanLike = { id: number; status: string; makerspace_id?: number };
 
@@ -30,14 +31,18 @@ export function useLoanCharges(makerspaceId: number, requestId: number) {
   });
 }
 
-function ChargeLine({ charge }: { charge: LoanCharge }) {
+function ChargeLine({ charge, makerspaceId, requestId }: { charge: LoanCharge; makerspaceId: number; requestId: number }) {
   const [label, tone] = chargeStatus(charge.status);
-  return <li className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-line p-3 text-sm">
-    <span className="min-w-0 break-words text-ink">{charge.label}</span>
-    <span className="flex items-center gap-2">
-      <span className="tabular-nums font-semibold text-ink">{formatMoney(charge.amount, charge.currency)}</span>
-      <StatusPill label={label} tone={tone} />
+  return <li className="grid gap-1 rounded-xl border border-line p-3 text-sm">
+    <span className="flex flex-wrap items-center justify-between gap-2">
+      <span className="min-w-0 break-words text-ink">{charge.label}</span>
+      <span className="flex items-center gap-2">
+        <span className="tabular-nums font-semibold text-ink">{formatMoney(charge.amount, charge.currency)}</span>
+        <StatusPill label={label} tone={tone} />
+      </span>
     </span>
+    {/* Decision 242(a), M4: record cash received (with its receipt) or waive this one charge. */}
+    <ChargeSettle makerspaceId={makerspaceId} charge={charge} invalidateKeys={[loanChargesKey(makerspaceId, requestId)]} />
   </li>;
 }
 
@@ -85,7 +90,7 @@ function LoanChargesSection({ makerspaceId, requestId, inDisclosure = false }: {
       {data.can_waive ? <button className="desk-button inline-flex items-center gap-2" type="button" onClick={() => setWaiving(true)}>
         <HandCoins aria-hidden="true" size={16} />{t`Waive fees`}</button> : null}
     </div>
-    {data.charges.length ? <ul className="grid gap-2">{data.charges.map(charge => <ChargeLine key={charge.id} charge={charge} />)}</ul>
+    {data.charges.length ? <ul className="grid gap-2">{data.charges.map(charge => <ChargeLine key={charge.id} charge={charge} makerspaceId={makerspaceId} requestId={requestId} />)}</ul>
       : <p className="text-sm text-muted">{t`No charges on this loan.`}</p>}
     {rows.length ? <section aria-label={t`Damaged and lost items`} className="grid gap-2">
       <h3 className="text-sm font-semibold text-ink">{t`Damaged and lost items`}</h3>

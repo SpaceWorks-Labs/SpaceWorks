@@ -7,12 +7,23 @@ export type SpacePlanUsage = {
   plan: { key: string; name: string; description: string } | null;
   trial_ends_at: string | null;
   read_only_reason: string | null;
-  resources: { key: string; label: string; used: number | null; limit: number | null; unit: "bytes" | "count"; percent: number | null; level: PlanLevel }[];
+  resources: UsageRow[];
   warnings: string[];
+  /** Decision 236: false for an own space (no plan, nothing limited). */
+  hosted?: boolean;
+  /** Decisions 281/284 (every space, own or hosted): platform-credential use and the monthly space quotas. */
+  platform_resources?: UsageRow[];
+  space_quota_resources?: UsageRow[];
+  /** Whether the platform's credentials may serve this space when it has none of its own (default on). */
+  platform_switches?: Partial<Record<PlatformSwitch, boolean>>;
 };
+export type UsageRow = { key: string; label: string; used: number | null; limit: number | null;
+  unit: "bytes" | "count" | "amount" | "per_minute" | (string & {}); percent: number | null; level: PlanLevel; area?: string };
+export type PlatformSwitch = "email" | "sms" | "whatsapp" | "native_push" | "wallet";
+export const spacePlanKey = (makerspaceId: number) => ["space-hosting-plan", makerspaceId] as const;
 
 export function useSpacePlanUsage(makerspaceId: number, enabled: boolean) {
-  return useQuery({ queryKey: ["space-hosting-plan", makerspaceId], enabled,
+  return useQuery({ queryKey: spacePlanKey(makerspaceId), enabled,
     queryFn: () => staffRequest<SpacePlanUsage>(`/admin/makerspace/${makerspaceId}/hosting-plan`), refetchInterval: 5 * 60_000 });
 }
 

@@ -70,9 +70,12 @@ export function useProgrammeOptions(scope: Scope) {
 export function usePrizePayouts(scope: Scope, enabled: boolean) {
   const client = useQueryClient(); const key = [...judgingKey(scope), 'prize-payouts'];
   const list = useQuery({ queryKey: key, enabled, retry: false, queryFn: () => staffRequest<PrizePayoutPage>(path(scope, 'prize-payouts/')) });
-  const record = useMutation({ retry: false, onSuccess: () => client.invalidateQueries({ queryKey: key }),
+  // A payout clears the claim's payee details and moves the pool and outcomes too (decision 296 review).
+  const refresh = () => { for (const part of ['prize-payouts', 'prize-claims', 'prize-pool', 'prize-outcomes'])
+    void client.invalidateQueries({ queryKey: [...judgingKey(scope), part] }); };
+  const record = useMutation({ retry: false, onSuccess: refresh,
     mutationFn: (fields: Record<string, unknown>) => postCommand<PrizePayout>(scope, 'prize-payouts/', 0, fields) });
-  const reverse = useMutation({ retry: false, onSuccess: () => client.invalidateQueries({ queryKey: key }),
+  const reverse = useMutation({ retry: false, onSuccess: refresh,
     mutationFn: ({ id, reason }: { id: number; reason: string }) => postCommand<PrizePayout>(scope, `prize-payouts/${id}/reverse/`, 0, { reason }) });
   return { list, record, reverse };
 }

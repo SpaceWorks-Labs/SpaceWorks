@@ -9,7 +9,7 @@ const STATUS: Record<PrizePayableAwardRead['status'], [string, 'success' | 'warn
   owed: ['Owed', 'warn'], part_paid: ['Partly paid', 'warn'], paid: ['Paid', 'success'], fulfilled: ['Handed over', 'success'],
   sponsor_paid: ['Paid by sponsor', 'success'], forfeited: ['Forfeited', 'neutral'],
 };
-const KINDS: Record<string, string> = { cash: 'Cash', item: 'Item', credit: 'Credit', perk: 'Perk' };
+const KINDS = (): Record<string, string> => ({ cash: t`Cash`, item: t`Item`, credit: t`Credit`, perk: t`Perk` });
 
 /** One announced award: what it is, who shares it, and the one action that settles it. */
 export function PrizeAwardCard({ scope, award, claims, recording, onRecord }: { scope: Scope; award: PrizePayableAwardRead; claims: boolean;
@@ -26,7 +26,7 @@ export function PrizeAwardCard({ scope, award, claims, recording, onRecord }: { 
       <div className="flex flex-wrap gap-2"><StatusPill label={label} tone={tone} />
         {award.open_recoveries ? <StatusPill label={t`${award.open_recoveries} owed back`} tone="danger" /> : null}</div>
     </div>
-    <p className="text-sm">{KINDS[award.kind] ?? award.kind}{award.funding === 'sponsor_direct' ? t` · paid by the sponsor` : ''}
+    <p className="text-sm">{KINDS()[award.kind] ?? award.kind}{award.funding === 'sponsor_direct' ? t` · paid by the sponsor` : ''}
       {award.amount_per_winner && award.kind === 'cash' ? ` · ${award.amount_per_winner}` : ''}{award.value_text ? ` · ${award.value_text}` : ''}</p>
     {award.shares.length ? <ul className="grid gap-1 text-sm" aria-label={t`Shares`}>{award.shares.map(share =>
       <li key={share.id}>{t`Member #${share.member_id ?? '—'}: ${share.amount} · ${share.state}`}{share.paid ? t` · paid` : ''}</li>)}</ul> : null}

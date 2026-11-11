@@ -5,11 +5,12 @@ import type { OutcomeRead } from '../../../generated/api';
 import { today, usePrizeOutcomes, type ResolveInput } from './hackmoneyApi';
 import { METHODS } from './PrizeAwardForms';
 import type { Scope } from './types';
+import { formatMoney } from '../../../lib/money';
 
-const KINDS: Record<string, string> = {
-  fulfilled: 'Handed over', sponsor_paid: 'Paid by sponsor', forfeited: 'Forfeited', recovery_opened: 'Owed back after disqualification',
-  recovery_repaid: 'Repaid', recovery_waived: 'Recovery waived',
-};
+const KINDS = (): Record<string, string> => ({
+  fulfilled: t`Handed over`, sponsor_paid: t`Paid by sponsor`, forfeited: t`Forfeited`, recovery_opened: t`Owed back after disqualification`,
+  recovery_repaid: t`Repaid`, recovery_waived: t`Recovery waived`,
+});
 
 /** Prize outcomes that are not payouts; a recovery (G16) is closed as repaid (a ledger receipt) or waived. Never charges anyone. */
 export function PrizeOutcomesPanel({ scope }: { scope: Scope }) {
@@ -30,9 +31,9 @@ function OutcomeRow({ row, busy, onResolve }: { row: OutcomeRead; busy: boolean;
   const open = row.allowed_actions.includes('resolve');
   const ready = on && (outcome === 'repaid' || note.trim());
   return <article className="grid gap-2 rounded-xl border border-line bg-panel p-4">
-    <div className="flex flex-wrap items-center justify-between gap-2"><p className="font-semibold">{t`Award `}{row.award_id} · {KINDS[row.kind] ?? row.kind}</p>
+    <div className="flex flex-wrap items-center justify-between gap-2"><p className="font-semibold">{t`Award `}{row.award_id} · {KINDS()[row.kind] ?? row.kind}</p>
       <StatusPill label={open ? t`Open` : row.happened_on} tone={open ? 'danger' : 'neutral'} /></div>
-    <p className="text-sm text-muted">{row.amount ? `${row.amount} ${row.currency.toUpperCase()} · ` : ''}{row.method ? `${row.method.replace('_', ' ')} · ` : ''}
+    <p className="text-sm text-muted">{row.amount ? `${formatMoney(row.amount, row.currency)} · ` : ''}{row.method ? `${row.method.replace('_', ' ')} · ` : ''}
       {row.reference ? `${row.reference} · ` : ''}{row.note}</p>
     {open ? <fieldset className="grid gap-3" disabled={busy}><legend className="font-semibold">{t`Close this recovery`}</legend>
       <Field label={t`Outcome`}><select className="desk-input min-h-11" value={outcome} onChange={e => setOutcome(e.target.value as ResolveInput['outcome'])}>

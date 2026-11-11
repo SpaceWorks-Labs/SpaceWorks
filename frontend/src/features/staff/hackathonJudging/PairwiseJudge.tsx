@@ -47,7 +47,7 @@ export function PairwiseJudge({ state, onCommand, pending, error, renderAssets, 
   });
   const progress = `${state.compared} compared · ${state.remaining} still to see`;
   return <section className="grid gap-4" aria-label={t`Pairwise round ${state.round_key}`}>
-    <div className="flex flex-wrap items-start gap-3"><Scale className="mt-1 text-accent" aria-hidden="true" />
+    <div className="flex flex-wrap items-start gap-3"><Scale className="mt-1 text-accent-ink" aria-hidden="true" />
       <div className="min-w-0 flex-1"><h2 className="title-panel">{t`Compare projects · ${state.round_key}`}</h2>
         <p className="text-sm text-muted">{state.guidance}</p></div>
       <p aria-live="polite" className="text-sm font-semibold tabular-nums">{progress}</p></div>

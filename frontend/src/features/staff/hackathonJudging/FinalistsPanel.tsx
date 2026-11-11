@@ -18,7 +18,7 @@ export function FinalistsPanel({ scope, rounds }: { scope: Scope; rounds: Round[
   const targetRound = drafts.find(round => round.id === target);
   const busy = preview.isPending || apply.isPending || publish.isPending;
   return <section className="grid gap-4" aria-label={t`Finalists`}>
-    <div className="flex items-start gap-3"><Trophy className="mt-1 text-accent" aria-hidden="true" /><div>
+    <div className="flex items-start gap-3"><Trophy className="mt-1 text-accent-ink" aria-hidden="true" /><div>
       <h3 className="title-section">{t`Finalists`}</h3>
       <p className="text-sm text-muted">{t`Advance the top projects of a finished round into the next one. Disqualified and withdrawn projects never advance. Results and prizes come from the final round.`}</p></div></div>
     <ErrorBlock error={list.error || preview.error || apply.error || publish.error} />
@@ -42,7 +42,7 @@ export function FinalistsPanel({ scope, rounds }: { scope: Scope; rounds: Round[
     </fieldset>}
     {!list.isLoading && !list.data?.count ? <EmptyState title={t`No finalists yet`} description={t`Advanced finalists appear here, ready to publish.`} /> : null}
     {list.data?.results.map(row => <article key={row.id} className="grid gap-2 rounded-xl border border-line bg-panel p-4">
-      <div className="flex flex-wrap items-center justify-between gap-2"><p className="font-semibold">{row.finalists.length} finalists</p>
+      <div className="flex flex-wrap items-center justify-between gap-2"><p className="font-semibold">{t`${row.finalists.length} finalists`}</p>
         <StatusPill label={row.published_at ? t`Published` : row.current ? t`Current` : t`Replaced`} /></div>
       <ol className="grid gap-1 text-sm">{row.finalists.map(item => <li key={item.snapshot_id}>{item.title}</li>)}</ol>
       {row.allowed_actions.includes('publish') ? <button type="button" className="desk-button-primary min-h-11 justify-self-start" disabled={busy}

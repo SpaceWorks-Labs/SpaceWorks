@@ -89,17 +89,17 @@ export function isHiddenError(error: unknown) {
   return error instanceof StructuredApiError && (error.status === 403 || error.status === 404);
 }
 
-const ERRORS: Record<string, string> = {
-  waiver_reason_required: "Give a reason. It is kept with the waiver for the audit trail.",
-  waiver_exists: "One of these fees is already waived on this loan. Leave it out, or revoke that waiver first.",
-  charge_exists: "This item already has a charge. The panel has been refreshed.",
-  charges_off: "Loan charges are off in this space.",
-  return_photo_required: "This item has no return photo, so only No charge can be saved.",
-};
+const ERRORS = (): Record<string, string> => ({
+  waiver_reason_required: t`Give a reason. It is kept with the waiver for the audit trail.`,
+  waiver_exists: t`One of these fees is already waived on this loan. Leave it out, or revoke that waiver first.`,
+  charge_exists: t`This item already has a charge. The panel has been refreshed.`,
+  charges_off: t`Loan charges are off in this space.`,
+  return_photo_required: t`This item has no return photo, so only No charge can be saved.`,
+});
 
 export function chargeErrorMessage(error: unknown) {
   if (error instanceof StructuredApiError) {
-    if (error.code && ERRORS[error.code]) return ERRORS[error.code];
+    if (error.code && ERRORS()[error.code]) return ERRORS()[error.code];
     if (error.status === 404) return t`This is switched off for the space, or you cannot change this loan's charges.`;
   }
   return error instanceof Error ? error.message : t`That did not work. Try again.`;

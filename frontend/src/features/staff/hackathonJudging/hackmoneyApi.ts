@@ -8,6 +8,7 @@ import type {
 import { judgingKey } from './api';
 import { postCommand } from './l21bApi';
 import type { Scope } from './types';
+import { fixedMoney } from '../../../lib/money';
 
 /** Hack-money (#180, #181) staff hooks. Nothing here moves money: every write records what staff did. */
 const path = (scope: Scope, suffix: string) => `/admin/events/${scope.eventId}/${suffix}`;
@@ -90,7 +91,7 @@ export function useMissingTeamCharges(scope: Scope, enabled: boolean) {
 export function proposedTds(amount: string, proposal: { enabled: boolean; rate: string; threshold: string } | undefined): string {
   const gross = Number(amount);
   if (!proposal?.enabled || !Number.isFinite(gross) || gross <= Number(proposal.threshold)) return '';
-  return (Math.round(gross * Number(proposal.rate)) / 100).toFixed(2);
+  return fixedMoney(Math.round(gross * Number(proposal.rate) * 10) / 1000);
 }
 
 export const today = () => new Date().toISOString().slice(0, 10);

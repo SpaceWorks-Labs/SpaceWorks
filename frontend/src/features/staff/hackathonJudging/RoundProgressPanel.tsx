@@ -23,7 +23,7 @@ export function RoundProgressPanel({ scope, rounds }: { scope: Scope; rounds: Ro
     {data ? <div className="grid gap-5">
       <div><h4 className="font-semibold">{t`Below the review target (${data.target})`}</h4>
         {data.below_target.length ? <ul className="grid gap-1 text-sm">{data.below_target.map(row =>
-          <li key={row.snapshot_id}>{row.title}: {row.reviews} of {row.target} reviews</li>)}</ul>
+          <li key={row.snapshot_id}>{t`${row.title}: ${row.reviews} of ${row.target} reviews`}</li>)}</ul>
           : <p className="text-sm text-muted">{t`Every project has reached the target.`}</p>}</div>
       <div className="overflow-x-auto"><table className="w-full text-left text-sm"><caption className="sr-only">{t`Per-judge completion`}</caption>
         <thead><tr><th scope="col">{t`Judge`}</th><th scope="col">{t`Submitted`}</th><th scope="col">{t`Assigned`}</th><th scope="col">{t`Recused or skipped`}</th><th scope="col">{t`Done`}</th></tr></thead>

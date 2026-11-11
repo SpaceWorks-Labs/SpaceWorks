@@ -1,4 +1,4 @@
-import { t } from "@lingui/core/macro";
+import { plural, t } from "@lingui/core/macro";
 import { useState } from 'react';
 import { Heart } from 'lucide-react';
 import { EmptyState, ErrorBlock, Field, StatusPill } from '../../../components/ui';
@@ -27,13 +27,13 @@ export function PeoplesChoicePanel({ scope, payouts }: { scope: Scope; payouts: 
   if (!row) return <ErrorBlock error={settings.error} onRetry={() => void settings.refetch()} />;
   const final = row.state === 'published';
   return <section className="grid gap-4" aria-label={t`People's choice`}>
-    <div className="flex items-start gap-3"><Heart className="mt-1 text-accent" aria-hidden="true" /><div className="grid gap-1">
+    <div className="flex items-start gap-3"><Heart className="mt-1 text-accent-ink" aria-hidden="true" /><div className="grid gap-1">
       <div className="flex flex-wrap items-center gap-2"><h3 className="title-section">{t`People’s choice`}</h3><StatusPill label={STATE_LABEL[row.state]} tone={row.state === 'open' ? 'success' : 'neutral'} /></div>
       <p className="text-sm text-muted">{t`Signed-in members vote once for their favourite public gallery project. It is an extra award beside judging, which it never changes. Nobody but staff sees a count until you publish.`}</p></div></div>
     <ErrorBlock error={save.error || publish.error} />
     {final ? <p className="text-sm text-muted" role="status">{t`Published. The settings and ballots are final.`}</p>
       : <SettingsForm key={row.version} row={row} scope={scope} pending={save.isPending} onSave={fields => save.mutate({ version: row.version, fields })} />}
-    {row.enabled || final ? <p className="text-sm">{row.ballots} {row.ballots === 1 ? 'ballot' : 'ballots'} counted.</p> : null}
+    {row.enabled || final ? <p className="text-sm">{plural(row.ballots, { one: "# ballot counted.", other: "# ballots counted." })}</p> : null}
     {standings.data ? <Standings data={standings.data} /> : <ErrorBlock error={standings.error} />}
     {row.allowed_actions.includes('publish') ? <div className="grid gap-2 rounded-xl border border-line p-4">
       <p className="text-sm">{t`Publishing freezes this count once, names the winners (joint on a tie) and shows the award on the gallery and the event page.`}</p>

@@ -1,12 +1,15 @@
 import { t } from "@lingui/core/macro";
 import { useState } from 'react';
+import { sentenceCase } from '../../../lib/sentenceCase';
 import { ShieldCheck } from 'lucide-react';
 import { EmptyState, ErrorBlock, Field, StatusPill } from '../../../components/ui';
 import type { RevealRead, StaffClaimRow } from '../../../generated/api';
 import { usePrizeClaims, type RevealReason } from './hackmoneyApi';
 import type { Scope } from './types';
 
-const REASONS: [RevealReason, string][] = [['pay_winner', 'To pay the winner'], ['verify_details', 'To verify the details'], ['record_tax', 'To record tax deducted']];
+const reasons = (): [RevealReason, string][] => [['pay_winner', t`To pay the winner`], ['verify_details', t`To verify the details`], ['record_tax', t`To record tax deducted`]];
+const methodLabel = (method: string) => ({ bank_transfer: t`Bank transfer`, upi: t`UPI`, cash: t`Cash`, cheque: t`Cheque`, card: t`Card`, online: t`Online`, other: t`Other` } as Record<string, string>)[method] ?? sentenceCase(method);
+const detailLabel = (key: string) => ({ upi_id: t`UPI ID`, account_number: t`Account number`, account_holder: t`Account holder`, account_name: t`Account name`, ifsc: t`IFSC`, bank_name: t`Bank name`, iban: t`IBAN`, swift: t`SWIFT`, routing_number: t`Routing number`, phone: t`Phone`, email: t`Email`, address: t`Address` } as Record<string, string>)[key] ?? sentenceCase(key);
 
 /** Winners' payee details and PANs (G4/G7): masked in the list; a reveal is audited and shown once, never cached. */
 export function PrizeClaimsPanel({ scope }: { scope: Scope }) {
@@ -14,7 +17,7 @@ export function PrizeClaimsPanel({ scope }: { scope: Scope }) {
   const [shown, setShown] = useState<RevealRead | null>(null);
   const rows = list.data?.results ?? [];
   return <section className="grid gap-4" aria-label={t`Prize claims`}>
-    <div className="flex items-start gap-3"><ShieldCheck className="mt-1 text-accent" aria-hidden="true" /><div>
+    <div className="flex items-start gap-3"><ShieldCheck className="mt-1 text-accent-ink" aria-hidden="true" /><div>
       <h3 className="title-section">{t`Prize claims`}</h3>
       <p className="text-sm text-muted">{t`Where each winner asked to be paid. Details stay masked; revealing them is recorded in the audit log with your reason.`}</p></div></div>
     <ErrorBlock error={list.error || verify.error || reveal.error} />
@@ -33,12 +36,12 @@ function ClaimRow({ row, busy, onVerify, onReveal }: { row: StaffClaimRow; busy:
     <div className="flex flex-wrap items-center justify-between gap-2">
       <p className="font-semibold">{t`Member #${row.member_id ?? '—'} · award ${row.award_id} · ${row.amount}`}</p>
       <StatusPill label={row.verified ? t`Verified` : given ? t`Given` : t`Not given yet`} tone={row.verified ? 'success' : given ? 'warn' : 'neutral'} /></div>
-    <p className="text-sm text-muted">{t`Share ${row.share_state}${given ? ` · ${row.country} ${row.method.replace('_', ' ')} · ${row.masked_details}` : ''}`}
+    <p className="text-sm text-muted">{t`Share ${sentenceCase(row.share_state)}${given ? ` · ${row.country} ${methodLabel(row.method)} · ${row.masked_details}` : ''}`}
       {row.pan_masked ? t` · PAN ${row.pan_masked}` : ''}</p>
     {given ? <div className="flex flex-wrap items-end gap-2">
       {!row.verified ? <button type="button" className="desk-button min-h-11" disabled={busy} onClick={onVerify}>{t`Mark details verified`}</button> : null}
       <Field label={t`Why reveal`}><select className="desk-input min-h-11" value={reason} onChange={e => setReason(e.target.value as RevealReason)}>
-        {REASONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></Field>
+        {reasons().map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></Field>
       <button type="button" className="desk-button min-h-11" disabled={busy} onClick={() => onReveal(reason)}>{t`Reveal to pay`}</button>
     </div> : null}
   </article>;
@@ -46,10 +49,10 @@ function ClaimRow({ row, busy, onVerify, onReveal }: { row: StaffClaimRow; busy:
 
 function RevealBlock({ data, onClose }: { data: RevealRead; onClose: () => void }) {
   return <div className="grid gap-2 rounded-xl border border-accent p-4" role="region" aria-label={t`Revealed payee details`}>
-    <div className="flex items-center justify-between gap-2"><p className="font-semibold">{t`Share ${data.share_id} · ${data.country} ${data.method.replace('_', ' ')}`}</p>
+    <div className="flex items-center justify-between gap-2"><p className="font-semibold">{t`Share ${data.share_id} · ${data.country} ${methodLabel(data.method)}`}</p>
       <button type="button" className="desk-button min-h-11" onClick={onClose}>{t`Hide details`}</button></div>
     <dl className="grid gap-1 text-sm">{Object.entries(data.details).map(([key, value]) =>
-      <div key={key} className="flex gap-2"><dt className="font-semibold">{key.replace(/_/g, ' ')}</dt><dd>{value}</dd></div>)}
-      {data.pan ? <div className="flex gap-2"><dt className="font-semibold">PAN</dt><dd>{data.pan}</dd></div> : null}</dl>
+      <div key={key} className="flex gap-2"><dt className="font-semibold">{detailLabel(key)}</dt><dd>{value}</dd></div>)}
+      {data.pan ? <div className="flex gap-2"><dt className="font-semibold">{t`PAN`}</dt><dd>{data.pan}</dd></div> : null}</dl>
   </div>;
 }

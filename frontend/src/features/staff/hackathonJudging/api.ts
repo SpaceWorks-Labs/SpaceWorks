@@ -26,11 +26,18 @@ export function useJudging(scope: Scope, enabled = true, resultsEnabled = false,
   const denied = useClearOnAccessLoss(key, [query.error, result.error, mutate.error]);
   return { query, result, mutate, denied };
 }
-export function useAssignments(scope: Scope, page = 1) {
-  const client = useQueryClient(); const key = [...judgingKey(scope), 'own-assignments', page];
+/** E-B4 (D13): `state_counts` counts the search matches per state, so every filter shows its number. */
+export type AssignmentPage = Page<Assignment> & { state_counts?: Partial<Record<AssignmentState, number>> };
+export type AssignmentState = 'assigned' | 'scored' | 'skipped' | 'recused' | 'invalidated';
+export function useAssignments(scope: Scope, page = 1, filters: { state?: AssignmentState | ''; q?: string } = {}) {
+  const client = useQueryClient(); const key = [...judgingKey(scope), 'own-assignments', page, filters.state ?? '', filters.q ?? ''];
   useEffect(() => onSessionCleared(() => client.removeQueries({ queryKey: key })), [client, ...key]);
   useEffect(() => () => { client.removeQueries({ queryKey: key }); }, [client, ...key]);
-  const query = useQuery({ queryKey: key, queryFn: () => staffRequest<Page<Assignment>>(path(scope, `judge-assignments/?page=${page}`)), retry: false });
+  const params = new URLSearchParams({ page: String(page) });
+  if (filters.state) params.set('state', filters.state);
+  if (filters.q?.trim()) params.set('q', filters.q.trim());
+  const query = useQuery({ queryKey: key, queryFn: () => staffRequest<AssignmentPage>(path(scope, `judge-assignments/?${params}`)), retry: false,
+    placeholderData: previous => previous });
   const submit = useMutation({ retry: false, mutationFn: ({ assignment, action, fields }: {
     assignment: Assignment; action: 'score' | 'rank' | 'recuse' | 'skip'; fields: Record<string, unknown>;
   }) => { const body = { ...fields, ...command(assignment.version) };
@@ -39,6 +46,11 @@ export function useAssignments(scope: Scope, page = 1) {
     onSuccess: () => client.invalidateQueries({ queryKey: judgingKey(scope) }) });
   useClearOnAccessLoss(judgingKey(scope), [query.error, submit.error]);
   return { query, submit };
+}
+/** D12: the one project "Score next" opened, read fresh so it is the current version even off this page. */
+export function useAssignment(scope: Scope, id: number | null) {
+  return useQuery({ queryKey: [...judgingKey(scope), 'own-assignment', id], enabled: id !== null, retry: false, staleTime: 0,
+    queryFn: () => staffRequest<Assignment>(path(scope, `judge-assignments/${id}/`)) });
 }
 export function useDefinitions(scope: Scope, page = 1) {
   const key = judgingKey(scope);

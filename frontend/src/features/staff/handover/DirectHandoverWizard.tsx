@@ -1,6 +1,5 @@
-import { formatLocale } from "../../../lib/format";
-import { t } from "@lingui/core/macro";
-import { plural } from "../../../lib/plural";
+import { formatDateTime } from "../../../lib/format";
+import { plural, t } from "@lingui/core/macro";
 import { useContext, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { FlowLayout } from "../../../components/layouts";
@@ -9,13 +8,14 @@ import type { ReactNode } from "react";
 import QrScanner from "../../../components/ui/QrScanner";
 import { staffRequest } from "../../../lib/api";
 import { featureEnabled } from "../../../lib/features";
+import { eligibilityMessage } from "../../../lib/eligibilityCopy";
 import { KitChecklistCapture, useKitChecklist } from "../../inventory/KitChecklist";
 import { StaffListContext } from "../StaffListContext";
 import { useResolveCard } from "../panels/memberCards/api";
 import { EvidenceUpload } from "../panels/EvidenceUpload";
 import { useStaffGet, type Makerspace } from "../panels/shared";
 import type { DirectLoanMemberResponse, ProductOption, QrResolveResponse } from "../DirectLoansTypes";
-import { DirectLoanBorrowerExtras, DirectLoanContainerField } from "../DirectLoanIssueFields";
+import { borrowerOptionLabel, DirectLoanBorrowerExtras, DirectLoanContainerField } from "../DirectLoanIssueFields";
 import { useDirectLoanContainer } from "../useDirectLoanContainer";
 import { QuantityStepper } from "../QuantityStepper";
 
@@ -57,13 +57,13 @@ export function DirectHandoverWizard({ makerspace, onClose, compactWork, compact
       if (!ready) throw new Error(t`Choose a borrower and eligible tools, then upload an issue photo.`);
       return staffRequest<{ id: number }>(`/admin/makerspace/${makerspace.id}/direct-loans`, { method: "POST", body: JSON.stringify({ borrower_id: Number(borrower), evidence_id: evidence, remark: remark.trim(), container_id: containerId, qr_payloads: payloads, items, kit_checklist: kits.counts }) });
     },
-    onSuccess: result => { setReceipt({ id: result.id, at: new Date().toLocaleString(formatLocale()), borrower: memberRows.find(row => String(row.user_id) === borrower)?.display_name ?? borrower, labels: [...(container.label ? [`Container: ${container.label}`] : []), ...items.map(item => `${productRows.find(row => row.id === item.product_id)?.name ?? item.product_id} × ${item.quantity}`)] }); setStep(3); void client.invalidateQueries(); },
+    onSuccess: result => { setReceipt({ id: result.id, at: formatDateTime(new Date()), borrower: memberRows.find(row => String(row.user_id) === borrower)?.display_name ?? borrower, labels: [...(container.label ? [t`Container: ${container.label}`] : []), ...items.map(item => `${productRows.find(row => row.id === item.product_id)?.name ?? item.product_id} × ${item.quantity}`)] }); setStep(3); void client.invalidateQueries(); },
   });
   async function scanCard(payload: string) {
     setBorrower(""); setScanError("");
     try {
       const result = await card.mutateAsync(payload);
-      const member = result.outcome === "ok" ? memberRows.find(row => row.membership_id === result.membership_id) : undefined;
+      const member = result.outcome === "ok" ? memberRows.find(row => row.membership_id !== null && row.membership_id === result.membership_id) : undefined;
       if (!member) throw new Error(t`This card does not identify an eligible borrower here. Select a verified member or ask a manager.`);
       setBorrower(String(member.user_id)); setScanning(null);
     } catch (cause) { setScanError(cause instanceof Error ? cause.message : t`Card could not be checked.`); }
@@ -80,13 +80,13 @@ export function DirectHandoverWizard({ makerspace, onClose, compactWork, compact
   }
   const stepKeys = ["borrower", "tools", "photo", "receipt"];
   return <FlowLayout presentation="dialog" open standalone={false} title={t`Guided direct handout`}
-    subject="Record who borrowed the tools and the evidence of handover."
+    subject={t`Record who borrowed the tools and the evidence of handover.`}
     state={{ status: members.isLoading || products.isLoading ? "loading" : members.error || products.error ? "error" : "ready", error: t`Couldn't load handout details. Try again.`, onRetry: () => { void members.refetch(); void products.refetch(); } }}
-    steps={["Borrower card", "Scan or select tools", "Issue photo", "Receipt"].map((label, index) => ({ key: stepKeys[index], label, state: index < step ? "done" : index === step ? "current" : "todo" }))}
+    steps={[t`Borrower card`, t`Scan or select tools`, t`Issue photo`, t`Receipt`].map((label, index) => ({ key: stepKeys[index], label, state: index < step ? "done" : index === step ? "current" : "todo" }))}
     current={stepKeys[step]} compact={compact}
     onCancel={() => { if (!issue.isPending && !compactAction?.pending) onClose(); }}
     footer={{ back: step > 0 && !compact ? { label: t`Back`, disabled: issue.isPending, onClick: () => setStep(step - 1) } : undefined,
-      next: compact && compactAction ? compactAction : step < 2 ? { label: t`Next`, disabled: step === 0 ? !borrower : !itemsReady, onClick: () => { setStep(step + 1); setScanError(""); } } : { label: t`Confirm handout`, disabled: !ready || issue.isPending, pending: issue.isPending, pendingLabel: "Saving…", onClick: () => issue.mutate() } }}
+      next: compact && compactAction ? compactAction : step < 2 ? { label: t`Next`, disabled: step === 0 ? !borrower : !itemsReady, onClick: () => { setStep(step + 1); setScanError(""); } } : { label: t`Confirm handout`, disabled: !ready || issue.isPending, pending: issue.isPending, pendingLabel: t`Saving…`, onClick: () => issue.mutate() } }}
     result={receipt ? { tone: "success", title: t`Handout #${receipt.id} recorded`, summary: `${receipt.borrower} · ${receipt.at}`,
       children: <><div>{receipt.labels.map((label, index) => <p key={index}>{label}</p>)}<p>{t`${payloads.length} tool QR scans · Evidence photo #`}{evidence}</p>{remark ? <p>{remark}</p> : null}</div><button className="desk-button" onClick={() => window.print()}>{t`Print receipt`}</button></>, next: { label: t`Close receipt`, onClick: onClose } } : undefined}
     work={<>
@@ -95,7 +95,7 @@ export function DirectHandoverWizard({ makerspace, onClose, compactWork, compact
     <fieldset className="grid gap-3" disabled={issue.isPending}><legend className="sr-only">{t`Handout details`}</legend>
       {step === 0 ? <>
         {canScanCard ? <><button className="desk-button" onClick={() => setScanning("card")}>{t`Scan member card`}</button><label className="grid gap-1">{t`Card payload`}<input className="desk-input w-full" autoComplete="off" value={cardPayload} onChange={event => setCardPayload(event.target.value)} /></label><button className="desk-button" disabled={!cardPayload.trim() || card.isPending} onClick={() => void scanCard(cardPayload)}>{t`Check card`}</button></> : null}
-        <label className="grid gap-1">{t`Borrower`}<select className="desk-input w-full" value={borrower} onChange={event => setBorrower(event.target.value)}><option value="">{t`Choose an active member`}</option>{memberRows.map(row => <option key={row.user_id} value={row.user_id}>{row.display_name || row.username}</option>)}</select></label>
+        <label className="grid gap-1">{t`Borrower`}<select className="desk-input w-full" value={borrower} onChange={event => setBorrower(event.target.value)}><option value="">{t`Choose an active member`}</option>{memberRows.map(row => <option key={row.user_id} value={row.user_id}>{borrowerOptionLabel(row)}</option>)}</select></label>
         <DirectLoanBorrowerExtras key={borrower} makerspaceId={makerspace.id} member={memberRows.find(row => String(row.user_id) === borrower)} onBorrowerIdChange={setBorrower} />
       </> : null}
       {step === 1 ? <>
@@ -107,9 +107,9 @@ export function DirectHandoverWizard({ makerspace, onClose, compactWork, compact
       {step === 2 ? <><EvidenceUpload makerspaceId={makerspace.id} evidenceType="issue" onUploaded={setEvidence} />{evidence ? <p>{t`Uploaded photo #${evidence}`}</p> : null}<label className="grid gap-1">{t`Issue remark`}<textarea className="desk-input" value={remark} onChange={event => setRemark(event.target.value)} /></label><KitChecklistCapture checklist={kits} /></> : null}
     </fieldset>
       </>}
-      {issue.error || scanError ? <div role="alert"><Callout size="inline" tone="danger" lead={scanError || issue.error?.message || "Couldn't issue handout. Try again."} /></div> : null}
+      {issue.error || scanError ? <div role="alert"><Callout size="inline" tone="danger" lead={scanError || (issue.error ? eligibilityMessage(issue.error) ?? issue.error.message : "") || t`Couldn't issue handout. Try again.`} /></div> : null}
     {container.scanning ? <QrScanner onScan={payload => void container.scan(payload)} onClose={container.closeScanner} /> : null}
-    {scanning ? <QrScanner feedback={<><p role="status">{scanning === "items" ? `${plural(payloads.length, "tool")} scanned` : t`Check borrower card`}</p>{scanError ? <p role="alert">{scanError}</p> : null}</>} onScan={payload => { if (scanning === "card") { if (!card.isPending) void scanCard(payload); } else void scanItem(payload); }} onClose={() => setScanning(null)} /> : null}
+    {scanning ? <QrScanner feedback={<><p role="status">{scanning === "items" ? plural(payloads.length, { one: "# tool scanned", other: "# tools scanned" }) : t`Check borrower card`}</p>{scanError ? <p role="alert">{scanError}</p> : null}</>} onScan={payload => { if (scanning === "card") { if (!card.isPending) void scanCard(payload); } else void scanItem(payload); }} onClose={() => setScanning(null)} /> : null}
     </>}
   />;
 }

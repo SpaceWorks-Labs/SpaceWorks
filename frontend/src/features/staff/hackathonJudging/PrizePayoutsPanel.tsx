@@ -6,6 +6,7 @@ import { usePrizePayouts } from './l21bApi';
 import { PrizeAwardCard } from './PrizeAwardCard';
 import type { PayoutRead, PrizePayableAwardRead } from '../../../generated/api';
 import type { Scope } from './types';
+import { formatMoney } from '../../../lib/money';
 
 /** Record prize payouts by hand (C-38). Each payout is a ledger expense of the GROSS prize; tax deducted
  * (#181) is recorded beside it. Mistakes are reversed, never edited. */
@@ -13,7 +14,7 @@ export function PrizePayoutsPanel({ scope, claims = false }: { scope: Scope; cla
   const { list, record, reverse } = usePrizePayouts(scope, true);
   const awards: PrizePayableAwardRead[] = list.data?.awards ?? [];
   return <section className="grid gap-4" aria-label={t`Prize payouts`}>
-    <div className="flex items-start gap-3"><Banknote className="mt-1 text-accent" aria-hidden="true" /><div>
+    <div className="flex items-start gap-3"><Banknote className="mt-1 text-accent-ink" aria-hidden="true" /><div>
       <h3 className="title-section">{t`Prize payouts`}</h3>
       <p className="text-sm text-muted">{t`Record what you paid or handed to each winner. Nothing is paid automatically; every cash payout is an expense in the finance ledger.`}</p></div></div>
     <ErrorBlock error={list.error || record.error || reverse.error} />
@@ -29,12 +30,11 @@ export function PrizePayoutsPanel({ scope, claims = false }: { scope: Scope; cla
 
 function PayoutRow({ row, busy, onReverse }: { row: PayoutRead; busy: boolean; onReverse: (reason: string) => void }) {
   const [reason, setReason] = useState('');
-  const money = row.currency.toUpperCase();
   const taxed = Number(row.tds_amount) > 0;
   return <article className="grid gap-2 rounded-xl border border-line bg-panel p-4">
     <div className="flex flex-wrap items-center justify-between gap-2"><p className="font-semibold">{row.prize_name}</p>
       <StatusPill label={row.kind === 'reversal' ? t`Reversal` : row.allowed_actions.includes('reverse') ? t`Paid` : t`Reversed`} /></div>
-    <p className="text-sm">{taxed ? t`Gross ${row.amount} · tax deducted ${row.tds_amount} · net ${row.net_amount} ${money}` : `${row.amount} ${money}`}
+    <p className="text-sm">{taxed ? t`Gross ${formatMoney(row.amount, row.currency)} · tax deducted ${formatMoney(row.tds_amount, row.currency)} · net ${formatMoney(row.net_amount, row.currency)}` : formatMoney(row.amount, row.currency)}
       {` · ${row.method.replace('_', ' ')} · ${row.paid_on}`}{row.reference ? ` · ${row.reference}` : ''}{row.recipient_id ? t` · member #${row.recipient_id}` : ''}</p>
     {row.allowed_actions.includes('reverse') ? <div className="flex flex-wrap items-end gap-2">
       <Field label={t`Reason for reversing`}><input className="desk-input min-h-11" maxLength={300} value={reason} onChange={e => setReason(e.target.value)} /></Field>

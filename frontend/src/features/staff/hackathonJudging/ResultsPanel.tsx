@@ -11,19 +11,21 @@ export function ResultsPanel({ scope, rounds, galleryEnabled = false }: { scope:
   const { result, mutate } = useJudging(scope, true, true); const { prizes } = useDefinitions(scope);
   const [selected, setSelected] = useState<number[]>([]); const [awards, setAwards] = useState<Award[]>([]);
   const [integrity, setIntegrity] = useState(false); const [reason, setReason] = useState('');
-  const [preview, setPreview] = useState(''); const [confirm, setConfirm] = useState<'finalize' | 'publish' | null>(null);
+  const [preview, setPreview] = useState(''); const [confirm, setConfirm] = useState<'finalize' | 'publish' | 'unpublish' | null>(null);
   const current = result.data;
   const version = current?.version ?? 0;
   const snapshots = [...new Set(rounds.filter(row => selected.includes(row.id)).flatMap(row => row.rows.map(row => row.snapshot_id)))];
   const update = (index: number, patch: Partial<Award>) => setAwards(awards.map((row, i) => i === index ? { ...row, ...patch } : row));
-  const submit = (action: 'finalize' | 'publish' | 'preview') => {
+  const saved = (action: string) => action === 'unpublish' ? t`Results withdrawn from the public page. Announce again when ready; nobody is emailed twice.`
+    : action === 'publish' ? t`Results announced.` : t`Result saved.`;
+  const submit = (action: 'finalize' | 'publish' | 'preview' | 'unpublish') => {
     const suffix = action === 'finalize' && version ? 'correct' : action;
-    const fields = action === 'publish' ? { result_revision_id: current?.id } : action === 'preview' ? { round_ids: selected } : {
+    const fields = action === 'publish' ? { result_revision_id: current?.id } : action === 'preview' ? { round_ids: selected } : action === 'unpublish' ? {} : {
       round_ids: selected, awards: awards.map(row => row.tie_reason.trim() ? row : { prize_id: row.prize_id, snapshot_id: row.snapshot_id, rank: row.rank, public_requested: row.public_requested }),
       integrity_reviewed: integrity, ...(reason.trim() ? { reason: reason.trim() } : {}),
     };
     mutate.mutate({ suffix: `results/${suffix}/`, version, fields }, {
-      onSuccess: response => { setConfirm(null); setPreview(action === 'preview' ? JSON.stringify(response.rounds, null, 2) : 'Result saved.'); },
+      onSuccess: response => { setConfirm(null); setPreview(action === 'preview' ? JSON.stringify(response.rounds, null, 2) : saved(action)); },
     });
   };
   if (result.isError) return <ErrorBlock error={result.error} onRetry={() => void result.refetch()} />;
@@ -58,12 +60,17 @@ export function ResultsPanel({ scope, rounds, galleryEnabled = false }: { scope:
       <button type="button" className="desk-button min-h-11" disabled={mutate.isPending || !selected.length} onClick={() => submit('preview')}>{t`Preview calculations`}</button>
       <button type="button" className="desk-button-primary min-h-11" disabled={mutate.isPending || !selected.length || !integrity || (version > 0 && !reason.trim())} onClick={() => setConfirm('finalize')}>{version ? t`Create result correction` : t`Finalize results`}</button>
       <button type="button" className="desk-button-primary min-h-11" disabled={mutate.isPending || !version || current?.state === 'published'} onClick={() => setConfirm('publish')}>{t`Announce results`}</button>
+      {current?.state === 'published' ? <button type="button" className="desk-button-danger-outline min-h-11" disabled={mutate.isPending}
+        onClick={() => setConfirm('unpublish')}>{t`Withdraw announcement`}</button> : null}
     </div>
     <ErrorBlock error={mutate.error} /><p className="whitespace-pre-wrap break-words text-sm text-muted" role="status">{preview}</p>
     {mutate.error ? <p className="text-sm text-muted">{t`Your selections are retained. Refresh the server revision before reapplying a stale change.`}</p> : null}
     {galleryEnabled ? <GalleryPublishPanel scope={scope} snapshots={[...new Set(rounds.flatMap(row => row.rows.map(row => row.snapshot_id)))]} resultRevisionId={current?.id ?? null} /> : null}
-    <ConfirmDialog open={confirm !== null} title={confirm === 'publish' ? t`Announce these results?` : t`Freeze this result revision?`}
-      message={confirm === 'publish' ? t`Participants will be notified. The first announcement starts the file-retention deadline; later corrections do not extend it.` : t`Review selected rounds, prize assignments and tie reasons. This revision becomes immutable.`}
+    <ConfirmDialog open={confirm !== null} title={confirm === 'publish' ? t`Announce these results?` : confirm === 'unpublish' ? t`Withdraw the announced results?` : t`Freeze this result revision?`}
+      message={confirm === 'publish' ? t`Participants will be notified. The first announcement starts the file-retention deadline; later corrections do not extend it.`
+        : confirm === 'unpublish' ? t`The results leave the public page and any announcement email not yet sent is cancelled. The frozen revision stays. Prizes already claimed or paid block this.`
+        : t`Review selected rounds, prize assignments and tie reasons. This revision becomes immutable.`}
+      tone={confirm === 'unpublish' ? 'danger' : 'default'} confirmLabel={confirm === 'unpublish' ? t`Withdraw results` : undefined}
       pending={mutate.isPending} onCancel={() => setConfirm(null)} onConfirm={() => confirm && submit(confirm)} />
   </section>;
 }

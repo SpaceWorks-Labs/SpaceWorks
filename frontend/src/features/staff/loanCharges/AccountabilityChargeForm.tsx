@@ -8,7 +8,7 @@ import {
   type LoanAccountabilityChargeResult, type LoanAccountabilityRow,
 } from "./loanChargesApi";
 
-const AMOUNT = /^\d+(\.\d{1,2})?$/;
+const AMOUNT = /^\d+(\.\d{1,3})?$/;
 
 export function rowTitle(row: Pick<LoanAccountabilityRow, "issue_type" | "quantity" | "item_label">) {
   const what = row.issue_type === "missing" ? "lost" : "damaged";

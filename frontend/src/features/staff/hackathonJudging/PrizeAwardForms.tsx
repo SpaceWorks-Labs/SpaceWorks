@@ -23,7 +23,7 @@ export function PayoutForm({ award, recipients, busy, onSubmit }: { award: Prize
     {needsRecipient ? <Field label={t`Winner`} hint={recipients.length ? undefined : t`No confirmed share is waiting to be paid.`}>
       <select className="desk-input min-h-11" value={recipient} onChange={e => { setRecipient(Number(e.target.value)); setTds(null); }}>
         {recipients.map(row => <option key={row.id} value={row.member_id ?? 0}>{t`Member #`}{row.member_id} · {row.amount}</option>)}</select></Field> : null}
-    <Field label={t`Gross amount paid`} hint={t`Leave empty to use ${share ? 'the share' : 'the prize amount'}${gross ? ` (${gross})` : ''}.`}>
+    <Field label={t`Gross amount paid`} hint={share ? (gross ? t`Leave empty to use the share (${gross}).` : t`Leave empty to use the share.`) : (gross ? t`Leave empty to use the prize amount (${gross}).` : t`Leave empty to use the prize amount.`)}>
       <input className="desk-input min-h-11" inputMode="decimal" value={amount} onChange={e => { setAmount(e.target.value); setTds(null); }} /></Field>
     <Field label={t`Tax deducted (TDS)`} hint={award.tax_proposal.enabled
       ? t`Proposed at ${award.tax_proposal.rate}% above ${award.tax_proposal.threshold}. You deduct and file it outside SpaceWorks; enter 0 for none.`

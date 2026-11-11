@@ -10,6 +10,7 @@ import {
 } from "../membershipLifecycleApi";
 import { ImportFilePicker, ImportIntro, ImportMapping, ImportPreviewTable } from "./ImportSteps";
 import { SheetLinkField, SourcePicker, sheetLinkProblem, type ImportSource } from "./SheetSource";
+import { ImportUnitFields, appendImportUnit, type ImportUnitChoice } from "../units/ImportUnitFields";
 
 const FIELDS: [string, string][] = [
   ["email", "Email (required)"], ["name", "Name"], ["phone", "Phone"], ["member_number", "Member number used before"],
@@ -36,9 +37,10 @@ function form(input: Input, mapping: Record<string, string>, recordOnly: number[
 }
 
 /** Map → preview (a dry run) → result, with the result downloadable as CSV (G18, #128 C-13).
- * With `sheetsEnabled` (`membership.import_sheets`, L13) the rows may come from a public Google Sheet. */
-export function MemberImportWizard({ makerspaceId, open, onClose, sheetsEnabled = false }: {
-  makerspaceId: number; open: boolean; onClose: () => void; sheetsEnabled?: boolean;
+ * With `sheetsEnabled` (`membership.import_sheets`, L13) the rows may come from a public Google Sheet.
+ * With `unitsEnabled` (`membership.units`, parity O-B1) the rows may land in one unit, optionally held for its lead. */
+export function MemberImportWizard({ makerspaceId, open, onClose, sheetsEnabled = false, unitsEnabled = false }: {
+  makerspaceId: number; open: boolean; onClose: () => void; sheetsEnabled?: boolean; unitsEnabled?: boolean;
 }) {
   const client = useQueryClient();
   const [step, setStep] = useState<Step>("upload");
@@ -48,16 +50,17 @@ export function MemberImportWizard({ makerspaceId, open, onClose, sheetsEnabled 
   const [mapping, setMapping] = useState<Record<string, string>>({});
   const [recordOnly, setRecordOnly] = useState<number[]>([]);
   const [skip, setSkip] = useState<number[]>([]);
+  const [unit, setUnit] = useState<ImportUnitChoice>({ unitId: null, verify: false });
   const preview = useMutation({
     mutationFn: () => lifecycleApi.importStep(makerspaceId, "preview", form({ source, file, url }, mapping, [], [])) as Promise<ImportPreview>,
     onSuccess: (data) => { if (!Object.keys(mapping).length) setMapping(data.mapping); setStep("preview"); },
   });
   const apply = useMutation({
     mutationFn: () => lifecycleApi.importStep(makerspaceId, "apply",
-      form({ source, file, url, sheetSha: preview.data?.sheet_sha256 }, mapping, recordOnly, skip)) as Promise<ImportResult>,
+      appendImportUnit(form({ source, file, url, sheetSha: preview.data?.sheet_sha256 }, mapping, recordOnly, skip), unitsEnabled ? unit : { unitId: null, verify: false })) as Promise<ImportResult>,
     onSuccess: () => { setStep("result"); void client.invalidateQueries({ queryKey: lifecycleKeys.imported(makerspaceId) }); },
   });
-  const reset = () => { setStep("upload"); setFile(null); setUrl(""); setSource("file"); setMapping({}); setRecordOnly([]); setSkip([]); preview.reset(); apply.reset(); onClose(); };
+  const reset = () => { setStep("upload"); setFile(null); setUrl(""); setSource("file"); setMapping({}); setRecordOnly([]); setSkip([]); setUnit({ unitId: null, verify: false }); preview.reset(); apply.reset(); onClose(); };
   const fresh = () => { setMapping({}); preview.reset(); apply.reset(); };
   const sheet = sheetsEnabled && source === "google_sheet";
   const result = apply.data;
@@ -84,16 +87,17 @@ export function MemberImportWizard({ makerspaceId, open, onClose, sheetsEnabled 
       summary: <>{t`Invited ${result.counts.invited ?? 0}, record only ${result.counts.record_only ?? 0}, updated ${result.counts.updated ?? 0}, skipped ${result.counts.skipped ?? 0}.`}</>,
       next: { label: t`Done`, onClick: reset }, undo: { label: t`Download result CSV`, onClick: download } } : undefined}
     footer={step === "upload" ? { next: { label: t`Preview`, pending: preview.isPending, disabled: sheet ? Boolean(sheetLinkProblem(url)) : !file,
-      disabledReason: sheet ? "Paste a Google Sheets link first." : "Choose a file first.", onClick: () => preview.mutate() } }
+      disabledReason: sheet ? t`Paste a Google Sheets link first.` : t`Choose a file first.`, onClick: () => preview.mutate() } }
       : { back: { label: t`Back`, onClick: () => setStep("upload") },
         next: { label: t`Import`, pending: apply.isPending, disabled: !preview.data?.counts.create && !preview.data?.counts.update,
-          disabledReason: "Nothing to import.", onClick: () => apply.mutate() } }}
+          disabledReason: t`Nothing to import.`, onClick: () => apply.mutate() } }}
     work={step === "upload" ? <div className="grid gap-4">
       <ScreenHelp screen="members.import" />
       <ImportIntro />
       {sheetsEnabled ? <SourcePicker value={source} onChange={(next) => { setSource(next); fresh(); }} /> : null}
       {sheet ? <SheetLinkField url={url} onUrl={(next) => { setUrl(next); fresh(); }} />
         : <ImportFilePicker file={file} onFile={(next) => { setFile(next); fresh(); }} />}
+      {unitsEnabled ? <ImportUnitFields makerspaceId={makerspaceId} value={unit} onChange={setUnit} /> : null}
     </div>
       : <div className="grid gap-5">
         <ImportMapping fields={FIELDS} headers={preview.data?.headers ?? []} mapping={mapping} onMapping={setMapping}

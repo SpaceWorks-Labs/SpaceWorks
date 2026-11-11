@@ -1,5 +1,5 @@
-import { formatLocale } from "../../../lib/format";
-import { t } from "@lingui/core/macro";
+import { formatDateTime } from "../../../lib/format";
+import { plural, t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ListRow } from "../../../components/ui";
@@ -17,11 +17,12 @@ import { ReturnConfetti } from "../../../components/delight/ReturnConfetti";
 import { HandoverItems, initialResolutions, validResolutions } from "./HandoverItems";
 import { DamageChargeStep, needsDamageCharges } from "../loanCharges/DamageChargeStep";
 
-const steps = ["Scan container", "Check borrower card", "Check items", "Photo and confirmation", "Receipt"];
+const steps = () => [t`Scan container`, t`Check borrower card`, t`Check items`, t`Photo and confirmation`, t`Receipt`];
 export function HandoverWizard({ row, makerspace, mode, canScanCards = false, onClose }: {
   row: HardwareRequest; makerspace: Makerspace; mode: "issue" | "return"; canScanCards?: boolean; onClose: () => void;
 }) {
   const client = useQueryClient();
+  const stepLabels = steps();
   const [step, setStep] = useState(0);
   const [compact, setCompact] = useState(false);
   const [boxCode, setBoxCode] = useState("");
@@ -59,7 +60,7 @@ export function HandoverWizard({ row, makerspace, mode, canScanCards = false, on
       // Confetti only for a clean return on or before its due date (no due date counts as on time).
       setOnTimeReturn(mode === "return" && (!row.return_due_at || now.getTime() <= Date.parse(row.return_due_at))
         && finalResolutions.every(value => value.damaged + value.missing === 0));
-      setReceiptAt(now.toLocaleString(formatLocale())); setStep(4); void client.invalidateQueries();
+      setReceiptAt(formatDateTime(now)); setStep(4); void client.invalidateQueries();
     },
     onError: () => { void client.invalidateQueries(); },
   });
@@ -74,45 +75,45 @@ export function HandoverWizard({ row, makerspace, mode, canScanCards = false, on
     } catch (cause) { setScanError(cause instanceof Error ? cause.message : t`Asset QR could not be checked.`); }
   }
   const nextReady = step === 0 ? Boolean(boxCode) : step === 1 ? borrowerChecked : itemsReady;
-  const blockedReason = step === 0 ? "Scan or check the container QR to continue."
-    : step === 1 ? "Check the borrower against this request to continue."
-    : step === 2 ? "Check the quantities and required asset scans to continue."
-    : "Add the required photo, return remark and kit checklist before confirming.";
+  const blockedReason = step === 0 ? t`Scan or check the container QR to continue.`
+    : step === 1 ? t`Check the borrower against this request to continue.`
+    : step === 2 ? t`Check the quantities and required asset scans to continue.`
+    : t`Add the required photo, return remark and kit checklist before confirming.`;
   const saving = mutation.isPending;
-  return <FlowLayout presentation="dialog" open title={t`${mode === "issue" ? "Issue" : "Return"} request #${row.id}`}
+  return <FlowLayout presentation="dialog" open title={mode === "issue" ? t`Issue request #${row.id}` : t`Return request #${row.id}`}
     subject={row.requester_display || row.requester_username} state={{ status: "ready" }} compact={compact}
-    current={String(step)} steps={steps.map((label, index) => ({ key: String(index), label,
+    current={String(step)} steps={stepLabels.map((label, index) => ({ key: String(index), label,
       state: index < step ? "done" : index === step ? "current" : "todo" }))}
     onStepSelect={key => { if (!saving && Number(key) < step) setStep(Number(key)); }}
     onCancel={() => { if (!saving) onClose(); }}
-    leaveGuard={evidence && step !== 4 ? "Leave handover? Your uploaded photo will stay unattached until you confirm a handover." : undefined}
+    leaveGuard={evidence && step !== 4 ? t`Leave handover? Your uploaded photo will stay unattached until you confirm a handover.` : undefined}
     footer={{ back: step > 0 && step < 4 && !compact ? { label: t`Back`, disabled: saving, onClick: () => setStep(step - 1) } : undefined,
-      next: { label: step < 3 && !compact ? t`Next` : t`Confirm ${mode}`, pending: saving, pendingLabel: "Saving…",
+      next: { label: step < 3 && !compact ? t`Next` : mode === "issue" ? t`Confirm issue` : t`Confirm return`, pending: saving, pendingLabel: t`Saving…`,
         disabled: step < 3 && !compact ? !nextReady : !ready, disabledReason: blockedReason,
         onClick: () => { if (step < 3 && !compact) setStep(step + 1); else mutation.mutate(); } } }}
     result={step === 4 ? { tone: "success", title: mode === "issue" ? t`Issued to ${row.requester_display || row.requester_username}` : t`Return recorded`,
       summary: <>{onTimeReturn ? <ReturnConfetti /> : null}<p>{t`Request #${row.id} · ${receiptAt}`}</p><p>{t`Evidence photo #`}{evidence} {t` · Container ${boxCode}`}</p>{row.items.map(item => {
         const resolution = finalResolutions.find(value => value.item_id === item.id);
-        return <p key={item.id}>{item.product_name}: {mode === "issue" ? `${item.accepted_quantity} issued` : resolution ? t`${resolution.returned} returned, ${resolution.damaged} damaged, ${resolution.missing} missing` : t`No return recorded in this handover`}</p>;
+        return <p key={item.id}>{item.product_name}: {mode === "issue" ? plural(item.accepted_quantity, { one: "# issued", other: "# issued" }) : resolution ? t`${resolution.returned} returned, ${resolution.damaged} damaged, ${resolution.missing} missing` : t`No return recorded in this handover`}</p>;
       })}{remark ? <p>{remark}</p> : null}<button className="desk-button mt-4" type="button" onClick={() => window.print()}>{t`Print receipt`}</button></>,
       children: mode === "return" && needsDamageCharges(makerspace, finalResolutions) ? <DamageChargeStep makerspaceId={makerspace.id} requestId={row.id} /> : undefined,
       next: { label: t`Done`, onClick: onClose } } : undefined}
-    error={mutation.error ? { size: "panel", tone: "danger", lead: boxAssigned && mode === "issue" ? "Box assigned, but issue failed." : `Couldn't confirm ${mode}.`,
-      body: `${mutation.error.message}${boxAssigned && mode === "issue" ? " The request still needs the issue step; retry with the assigned box." : ""}`,
-      action: { label: t`Retry ${mode}`, disabled: saving || !ready, onClick: () => mutation.mutate() } } : undefined}
+    error={mutation.error ? { size: "panel", tone: "danger", lead: boxAssigned && mode === "issue" ? t`Box assigned, but issue failed.` : mode === "issue" ? t`Couldn't confirm the issue.` : t`Couldn't confirm the return.`,
+      body: `${mutation.error.message}${boxAssigned && mode === "issue" ? ` ${t`The request still needs the issue step; retry with the assigned box.`}` : ""}`,
+      action: { label: mode === "issue" ? t`Retry issue` : t`Retry return`, disabled: saving || !ready, onClick: () => mutation.mutate() } } : undefined}
     work={<><button className="desk-button mb-4" type="button" disabled={saving} onClick={() => setCompact(!compact)}>{compact ? t`Guided view` : t`Compact view`}</button>
-    <fieldset className="grid gap-3" disabled={mutation.isPending}><legend className="sr-only">{steps[step]}</legend>
+    <fieldset className="grid gap-3" disabled={mutation.isPending}><legend className="sr-only">{stepLabels[step]}</legend>
       {(compact || step === 0) ? <HandoverBoxScan code={boxCode} onCode={setBoxCode} makerspaceId={makerspace.id} /> : null}
-      {(compact || step === 1) ? <><ListRow title={row.requester_display || row.requester_username} identity={{ kind: "avatar", name: row.requester_display || row.requester_username, seed: row.requester_username }} meta={`Borrower · Request #${row.id}`} />{canScanCards ? <ScanCardBox makerspaceId={makerspace.id} /> : null}<label className="flex min-h-11 items-center gap-2"><input type="checkbox" checked={borrowerChecked} onChange={event => setBorrowerChecked(event.target.checked)} />{t`I checked the borrower against this request`}</label></> : null}
+      {(compact || step === 1) ? <><ListRow title={row.requester_display || row.requester_username} identity={{ kind: "avatar", name: row.requester_display || row.requester_username, seed: row.requester_username }} meta={t`Borrower · Request #${row.id}`} />{canScanCards ? <ScanCardBox makerspaceId={makerspace.id} /> : null}<label className="flex min-h-11 items-center gap-2"><input type="checkbox" checked={borrowerChecked} onChange={event => setBorrowerChecked(event.target.checked)} />{t`I checked the borrower against this request`}</label></> : null}
       {(compact || step === 2) ? <><HandoverItems row={row} mode={mode} resolutions={resolutions} onChange={setResolutions} />{mode === "issue" && requiredAssets > 0 ? <>
         <p>{t`Individual assets: ${assets.length} / ${requiredAssets}`}</p><button className="desk-button" type="button" onClick={() => setScanner(true)}>{t`Scan items continuously`}</button>
         <label className="grid gap-1">{t`Asset QR payload`}<input className="desk-input w-full" autoComplete="off" value={assetInput} onChange={event => setAssetInput(event.target.value)} /></label><button className="desk-button" disabled={!assetInput.trim()} type="button" onClick={() => void scanAsset(assetInput)}>{t`Check asset QR`}</button>
         <ul>{assets.map(payload => <li key={payload} className="flex flex-wrap items-center gap-2 [overflow-wrap:anywhere]">{payload}<button className="desk-button-ghost" type="button" onClick={() => setAssets(assets.filter(value => value !== payload))}>{t`Remove`}</button></li>)}</ul>{scanError ? <p role="alert">{scanError}</p> : null}
       </> : null}{!itemsReady ? <p role="status">{t`Check all quantities and required asset scans before continuing.`}</p> : null}</> : null}
       {(compact || step === 3) ? <><EvidenceUpload makerspaceId={makerspace.id} evidenceType={mode} onUploaded={setEvidence} />{evidence ? <p>{t`Uploaded photo #${evidence}`}</p> : null}<label className="grid gap-1">{mode === "return" ? t`Return remark (required)` : t`Issue remark`}<textarea className="desk-input" value={remark} onChange={event => setRemark(event.target.value)} /></label><KitChecklistCapture checklist={kits} /><p className="[overflow-wrap:anywhere]">{t`Request #${row.id} · Container ${boxCode}. Confirm only after checking the photo and all items.`}</p></> : null}
-      {step === 4 ? <div role="status"><h3 className="title-section">{mode === "issue" ? t`Issue` : t`Return`} recorded</h3><p>{t`Request #${row.id} · ${receiptAt}`}</p><p>{t`Evidence photo #`}{evidence} {t` · Container ${boxCode}`}</p>{row.items.map(item => {
+      {step === 4 ? <div role="status"><h3 className="title-section">{mode === "issue" ? t`Issue recorded` : t`Return recorded`}</h3><p>{t`Request #${row.id} · ${receiptAt}`}</p><p>{t`Evidence photo #`}{evidence} {t` · Container ${boxCode}`}</p>{row.items.map(item => {
         const resolution = finalResolutions.find(value => value.item_id === item.id);
-        return <p key={item.id}>{item.product_name}: {mode === "issue" ? `${item.accepted_quantity} issued` : resolution ? t`${resolution.returned} returned, ${resolution.damaged} damaged, ${resolution.missing} missing` : t`No return recorded in this handover`}</p>;
+        return <p key={item.id}>{item.product_name}: {mode === "issue" ? plural(item.accepted_quantity, { one: "# issued", other: "# issued" }) : resolution ? t`${resolution.returned} returned, ${resolution.damaged} damaged, ${resolution.missing} missing` : t`No return recorded in this handover`}</p>;
       })}{remark ? <p>{remark}</p> : null}</div> : null}
     </fieldset>
     {scanner ? <QrScanner feedback={<><p role="status">{t`Individual assets: ${assets.length} / ${requiredAssets}`}</p>{scanError ? <p role="alert">{scanError}</p> : null}</>} onScan={payload => void scanAsset(payload)} onClose={() => setScanner(false)} /> : null}

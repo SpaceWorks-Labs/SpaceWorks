@@ -1,24 +1,34 @@
 import { t } from "@lingui/core/macro";
-import { useState, type ReactNode } from 'react';
+import { useCallback, useState, type ReactNode } from 'react';
 import { DetailLayout } from '../../../components/layouts';
 import { EmptyState, ErrorBlock, Field, Pagination, StatusPill } from '../../../components/ui';
 import { useAssignments } from './api';
 import { PairwiseDesk } from './PairwiseDesk';
 import { ScoreNextBar } from './ScoreNextBar';
+import { JudgeListFilters, type JudgeFilters } from './JudgeListFilters';
 import { PrivateProgrammeBoundary } from '../../events/hackathonGallery/PrivateProgrammeBoundary';
 import { StructuredApiError } from '../../../lib/api';
 import type { Assignment, Scope } from './types';
 
 function JudgeConsoleContent({ scope, renderAssets, pairwiseEnabled = false }: { scope: Scope; renderAssets: (assetIds: number[]) => ReactNode; pairwiseEnabled?: boolean }) {
-  const [page, setPage] = useState(1); const { query, submit } = useAssignments(scope, page);
+  const [page, setPage] = useState(1); const [filters, setFilters] = useState<JudgeFilters>({ state: '', q: '' });
+  const { query, submit } = useAssignments(scope, page, filters);
   const [resets, setResets] = useState<Record<number, number>>({});
+  const [scoring, setScoring] = useState<number | null>(null);
+  const filter = useCallback((next: JudgeFilters) => { setFilters(next); setPage(1); }, []);
+  const filtered = !!(filters.state || filters.q.trim());
   if (submit.error instanceof StructuredApiError && [401, 403, 404].includes(submit.error.status)) return <ErrorBlock error={submit.error} />;
   return <DetailLayout title={t`Your judging desk`} state={{ status: query.isLoading ? 'loading' : query.isError ? 'error' : 'ready',
     error: query.error?.message, onRetry: () => void query.refetch() }} main={<div className="grid gap-6">
       {pairwiseEnabled ? <PairwiseDesk scope={scope} renderAssets={renderAssets} /> : null}
-      <ScoreNextBar scope={scope} assignments={query.data?.results ?? []} />
-      {!query.data?.count ? <EmptyState title={t`No assigned projects`} description={t`Your projects will appear here when the organizer assigns this round.`} /> : null}
-      {query.data?.results.map(row => <JudgeAssignmentEditor key={`${scope.context}:${scope.actorId}:${row.id}:${resets[row.id] ?? 0}`} assignment={row}
+      <ScoreNextBar scope={scope} assignments={query.data?.results ?? []} onOpen={setScoring}
+        renderEditor={(row, afterSubmit) => <JudgeAssignmentEditor key={`next:${row.id}:${row.version}`} assignment={row}
+          pending={submit.isPending} error={submit.error} renderAssets={renderAssets}
+          onSubmit={(action, fields) => submit.mutate({ assignment: row, action, fields }, { onSuccess: () => afterSubmit(action, fields) })} />} />
+      <JudgeListFilters value={filters} counts={query.data?.state_counts} onChange={filter} />
+      {!query.data?.count ? filtered ? <EmptyState title={t`No projects match`} description={t`Clear the search or choose another filter.`} />
+        : <EmptyState title={t`No assigned projects`} description={t`Your projects will appear here when the organizer assigns this round.`} /> : null}
+      {query.data?.results.filter(row => row.id !== scoring).map(row => <JudgeAssignmentEditor key={`${scope.context}:${scope.actorId}:${row.id}:${resets[row.id] ?? 0}`} assignment={row}
         pending={submit.isPending} error={submit.error} renderAssets={renderAssets}
         onReload={async () => { await query.refetch(); setResets(value => ({ ...value, [row.id]: (value[row.id] ?? 0) + 1 })); }}
         onSubmit={(action, fields) => submit.mutate({ assignment: row, action, fields })} />)}

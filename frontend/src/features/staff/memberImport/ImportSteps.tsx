@@ -2,12 +2,12 @@ import { t } from "@lingui/core/macro";
 import { Field, StatusPill } from "../../../components/ui";
 import type { ImportPreview } from "../membershipLifecycleApi";
 
-const REASONS: Record<string, string> = {
-  email_invalid: "Email missing or invalid", starts_on_invalid: "Start date not understood", ends_on_invalid: "End date not understood",
-  dates_out_of_order: "End is not after start", plan_unknown: "No active plan by that name", duplicate_email: "Email repeated in the file",
-  duplicate_phone: "Phone repeated in the file", duplicate_member_number: "Member number already used",
-  already_member: "Already an active member here",
-};
+const REASONS = (): Record<string, string> => ({
+  email_invalid: t`Email missing or invalid`, starts_on_invalid: t`Start date not understood`, ends_on_invalid: t`End date not understood`,
+  dates_out_of_order: t`End is not after start`, plan_unknown: t`No active plan by that name`, duplicate_email: t`Email repeated in the file`,
+  duplicate_phone: t`Phone repeated in the file`, duplicate_member_number: t`Member number already used`,
+  already_member: t`Already an active member here`,
+});
 
 export function ImportIntro() {
   return <p className="text-sm text-muted">{t`Each row becomes a pending membership. The person gets an emailed invitation and joins by signing in with that email; existing accounts are never linked for them. Rows marked “record only” are kept in the register without an invitation.`}</p>;
@@ -55,7 +55,7 @@ export function ImportPreviewTable({ preview, recordOnly, skip, onRecordOnly, on
       <tbody>{preview.rows.map((item) => <tr key={item.row} className="border-t border-line">
         <td className="p-2">{item.row}</td><td className="p-2 [overflow-wrap:anywhere]">{String(item.data.email ?? "")}</td>
         <td className="p-2"><StatusPill tone={item.action === "skip" ? "warn" : "success"}
-          label={item.action === "skip" ? REASONS[item.reason] ?? item.reason : item.action === "create" ? t`New` : t`Update`} /></td>
+          label={item.action === "skip" ? REASONS()[item.reason] ?? item.reason : item.action === "create" ? t`New` : t`Update`} /></td>
         <td className="p-2"><input className="h-4 w-4" type="checkbox" aria-label={t`Row ${item.row} record only`}
           disabled={item.action !== "create"} checked={recordOnly.includes(item.row) || Boolean(item.data.record_only)}
           onChange={() => onRecordOnly(toggle(recordOnly, item.row))} /></td>

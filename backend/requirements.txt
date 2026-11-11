@@ -81,3 +81,8 @@ pypdf>=6,<7
 # small local model through onnxruntime (MIT), never a hosted API (Q-I3).
 pypdfium2==5.14.0
 onnxruntime==1.31.0
+# Transitive security floors (decision 222(b) image scan, 2026-11-10): certifi
+# GHSA-6q48-6c7w-9gw2, urllib3 and msgpack advisories. Raise with the next scan.
+certifi>=2026.10.18
+urllib3>=2.8.0
+msgpack>=1.2.3

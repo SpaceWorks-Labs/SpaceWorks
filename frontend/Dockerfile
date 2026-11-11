@@ -29,7 +29,7 @@ ENV VITE_PUBLIC_CLIENT_ID=$VITE_PUBLIC_CLIENT_ID
 COPY . .
 RUN npm run build
 
-FROM nginx:1.27-alpine
+FROM nginx:1.30-alpine
 
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY docker-entrypoint.d/30-write-config.sh /docker-entrypoint.d/30-write-config.sh

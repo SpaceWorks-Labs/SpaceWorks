@@ -6,31 +6,27 @@
 @import "./styles/fields.css";
 @config "../tailwind.config.ts";
 
+/* Only Gilroy's free Light (300) and ExtraBold (800) ship (AGPL repo; see public/fonts/README.md).
+   Text and UI at 400-700 use Outfit (OFL, variable). font-synthesis: none on body means a Gilroy
+   request at another weight snaps to the nearest real face instead of being faked. */
 @font-face {
   font-family: "Gilroy";
-  src: url("/fonts/Gilroy-Regular.woff2") format("woff2");
-  font-weight: 400;
+  src: url("/fonts/Gilroy-Light.woff2") format("woff2");
+  font-weight: 300;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
   font-family: "Gilroy";
-  src: url("/fonts/Gilroy-Medium.woff2") format("woff2");
-  font-weight: 500;
+  src: url("/fonts/Gilroy-ExtraBold.woff2") format("woff2");
+  font-weight: 800;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
-  font-family: "Gilroy";
-  src: url("/fonts/Gilroy-SemiBold.woff2") format("woff2");
-  font-weight: 600;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Gilroy";
-  src: url("/fonts/Gilroy-Bold.woff2") format("woff2");
-  font-weight: 700;
+  font-family: "Outfit";
+  src: url("/fonts/Outfit-Variable.woff2") format("woff2");
+  font-weight: 100 900;
   font-style: normal;
   font-display: swap;
 }
@@ -98,11 +94,78 @@
     --color-sidebar: 223 255 143;
     --color-sidebar-hover: 242 255 210;
     --color-sidebar-active: 0 110 99;
+    --color-scrim: 20 44 42;
     --shadow-color: 20 44 42;
   }
-  /* Dark: Deep Ink + Maker Teal (+ Cream) brand-mixes.
-     .sw-island-dark applies the same set to one subtree (the light-mode sign-in brand panel). */
-  :root.dark,
+  /* Dark: true black (decision 225) lit by the brand (0.12.0), layered calm (owner, 2026-11-11: "professional,
+     clean"). The page is #000; three near-black layers carry a faint Maker Teal + Cream lift, so cards and
+     dialogs read as Space Works ink without glowing: surface 10 % + 4 %, panel 14 % + 7 %, hover 20 % + 11 %.
+     Layers are told apart by a quiet hairline (line, Teal 28 % + Cream 18 %, about 2:1 on black); control
+     boundaries that identify an input or button use outline (3:1 or more everywhere). The sidebar is Deep Ink
+     itself (brand p.16). Text is Cream; muted is Cream 70 % + Teal 8 % over black; links and the brand ink are
+     Teal + 50 % Cream; status inks are their brand colour + 30 % Cream so they sit on black without
+     buzzing. Softs are the panel plus 16 % teal or 7 % of their fill. Focus stays Citron. */
+  :root.dark {
+    color-scheme: dark;
+    --color-bg: 0 0 0;
+    --color-surface: 10 21 19;
+    --color-panel: 18 32 30;
+    --color-hover: 28 49 45;
+    --color-line: 46 75 69;
+    --color-outline: 128 155 146;
+    --color-ink: 255 244 232;
+    --color-muted: 179 180 170;
+    --color-focus: 223 255 143;
+    --color-accent: 0 110 99;
+    --color-accent-hover: 2 103 93;
+    --color-accent-active: 4 97 88;
+    --color-on-accent: 255 244 232;
+    --color-accent-soft: 15 44 41;
+    --color-accent-ink: 128 177 166;
+    --color-brand: 0 110 99;
+    --color-brand-hover: 2 103 93;
+    --color-brand-active: 4 97 88;
+    --color-on-brand: 255 244 232;
+    --color-brand-soft: 15 44 41;
+    --color-brand-ink: 128 177 166;
+    --color-brand-boundary: 128 177 166;
+    --color-emphasis: 255 116 71;
+    --color-emphasis-hover: 255 129 87;
+    --color-emphasis-active: 255 142 103;
+    --color-on-emphasis: 20 44 42;
+    --color-emphasis-soft: 35 38 33;
+    --color-success: 223 255 143;
+    --color-success-hover: 203 234 133;
+    --color-success-active: 182 213 123;
+    --color-on-success: 20 44 42;
+    --color-success-soft: 32 48 38;
+    --color-success-ink: 233 252 170;
+    --color-warn: 255 212 71;
+    --color-warn-hover: 232 195 68;
+    --color-warn-active: 208 178 65;
+    --color-on-warn: 20 44 42;
+    --color-warn-soft: 35 45 33;
+    --color-warn-ink: 255 222 119;
+    --color-info: 181 205 255;
+    --color-info-hover: 165 189 234;
+    --color-info-active: 149 173 212;
+    --color-on-info: 20 44 42;
+    --color-info-soft: 29 44 46;
+    --color-info-ink: 203 217 248;
+    --color-danger: 252 165 165;
+    --color-danger-hover: 253 185 182;
+    --color-danger-active: 253 201 195;
+    --color-on-danger: 20 44 42;
+    --color-danger-line: 124 98 97;
+    --color-sidebar: 20 44 42;
+    --color-sidebar-hover: 32 64 60;
+    --color-sidebar-active: 0 110 99;
+    --color-scrim: 0 0 0; /* dims the page behind dialogs; ink is Cream here and would lighten it */
+    --shadow-color: 0 0 0;
+  }
+  /* Deep Ink island: Deep Ink + Maker Teal (+ Cream) brand-mixes for one subtree, the light-mode
+     sign-in brand panel (brand p.1 cover). The dark illustrations and print artwork are drawn in
+     this palette (assets/illustrations/manifest.ts), so it stays as shipped. */
   .sw-island-dark {
     color-scheme: dark;
     --color-bg: 20 44 42;
@@ -163,19 +226,19 @@
 
   body {
     @apply bg-bg text-ink antialiased;
-    font-family: "Gilroy", sans-serif;
+    font-family: "Outfit", ui-sans-serif, system-ui, sans-serif;
     font-synthesis: none;
     /* Long emails, URLs and codes wrap instead of pushing the page sideways. */
     overflow-wrap: break-word;
   }
   h1, h2, h3, h4, h5, h6 {
-    font-family: "Gilroy", sans-serif;
-    font-weight: 600;
+    font-family: "Gilroy", "Outfit", ui-sans-serif, system-ui, sans-serif;
+    font-weight: 800;
     line-height: 1.25;
     letter-spacing: -0.01em;
   }
   code, kbd, samp, pre {
-    font-family: "Gilroy", sans-serif;
+    font-family: "Outfit", ui-sans-serif, system-ui, sans-serif;
     font-variant-numeric: tabular-nums slashed-zero;
     letter-spacing: 0.02em;
     font-size: 1em;

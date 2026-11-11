@@ -1,6 +1,6 @@
 @layer components {
   .code-text {
-    font-family: "Gilroy", sans-serif;
+    font-family: "Outfit", ui-sans-serif, system-ui, sans-serif;
     font-variant-numeric: tabular-nums slashed-zero;
     letter-spacing: 0.02em;
   }

@@ -29,7 +29,7 @@ Use the actual resolved light/dark theme. Do not mount both twins and hide one.
 Prefer the empty label for the screen's heading; context may need different copy.
 `getIllustration(id, theme)` also exposes the metadata for P's shared renderer.
 Keep the aspect ratio. Frontend vectors contain no live text/fonts; all labels
-and controls stay in the caller's Gilroy/Unbounded/lucide component system.
+and controls stay in the caller's Gilroy ExtraBold/Outfit/Unbounded/lucide component system.
 
 All source SVG roots are inert (`aria-hidden`, `focusable=false`), including the
 loader, robot and pass. Meaning belongs to the enclosing image/component. Loader

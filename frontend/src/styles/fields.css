@@ -60,7 +60,7 @@
 }
 
 /* Type steps for fields and heroes (p.12; p.1 draws the accent near 76/80 on the cover). */
-.sw-hero-title { font-family: "Unbounded", "Gilroy", sans-serif; font-weight: 600; font-size: 32px; line-height: 40px;
+.sw-hero-title { font-family: "Unbounded", "Outfit", ui-sans-serif, system-ui, sans-serif; font-weight: 600; font-size: 32px; line-height: 40px;
   letter-spacing: -0.02em; text-wrap: balance; }
 .sw-hero-lede { font-weight: 500; font-size: 16px; line-height: 24px; }
 .sw-field-heading { font-weight: 600; font-size: 32px; line-height: 38px; letter-spacing: -0.015em; text-wrap: balance; }
@@ -89,3 +89,6 @@
   .sw-auth-showcase > :nth-child(2) { animation-delay: 120ms; }
   .sw-auth-showcase > :nth-child(3) { animation-delay: 240ms; }
 }
+
+/* One checkbox/radio size and accent everywhere (44px row targets come from the label). */
+input[type="checkbox"], input[type="radio"] { width: 1.25rem; height: 1.25rem; accent-color: rgb(var(--color-accent)); }

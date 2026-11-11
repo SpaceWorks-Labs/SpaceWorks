@@ -57,6 +57,12 @@ def owner_organization(space):
     return link.organization if link else None
 
 
+def unit_values(membership):
+    """`unit`, `unit_code`, `units`, `level1`..`level4`, read live from the member's unit chain (O-B1)."""
+    from .unit_chain import values
+    return values(membership)
+
+
 def snapshot(card):
     from apps.makerspaces.membership_number import display_number
     from apps.makerspaces.membership_titles import primary_title
@@ -69,7 +75,8 @@ def snapshot(card):
         return {**values, "name": card.printed_name}
     user = membership.user
     values["name"] = card.printed_name or user.display_name or user.get_full_name() or user.username
-    values["number"] = display_number(membership) if membership.member_number else str(card.card_number)
+    values["number"] = card.number_text or (
+        display_number(membership) if membership.member_number else str(card.card_number))
     state, term = term_state(membership)
     values["plan"] = term.plan.name if term else ""
     values["valid_until"] = fmt_date(term.ends_at) if term else ("No end date" if state == "open" else "Expired")
@@ -81,6 +88,9 @@ def snapshot(card):
     from . import tokens
     live = tokens.live("member_card", card)
     values["verify_url"] = tokens.short_url(live.token) if live else ""
+    from .holders_member_answers import printable_values
+    values.update(printable_values(membership))
+    values.update(unit_values(membership))
     from apps.machines.certifications import live_certification_names
     values["certifications"] = ", ".join(live_certification_names(membership))
     return values
@@ -109,7 +119,8 @@ def public_verify(card):
 def issuer(card):
     from apps.inventory import public_image_storage
     space = card.makerspace
-    return {"kind": "space", "name": _space_name(space),
+    from apps.makerspaces.space_kind import space_noun
+    return {"kind": "space", "name": _space_name(space), "space_noun": space_noun(space),
             "logo_url": public_image_storage.public_url(space.logo_key) or None}
 
 

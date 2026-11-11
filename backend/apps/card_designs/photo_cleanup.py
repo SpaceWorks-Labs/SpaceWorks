@@ -22,7 +22,8 @@ def request(actor, kind, card):
         raise ValidationError({"detail": gettext("Photo clean-up is not set up on this server.")})
     if not spec_for(kind).photo_bytes(card):
         raise ValidationError({"detail": gettext("Add a photo first.")})
-    scope = {"member_card": "member_cards", "programme_card": "id_programme", "event_card": "event"}[kind]
+    scope = {"member_card": "member_cards", "programme_card": "id_programme", "event_card": "event",
+             "staff_card": "staff_cards"}[kind]
     job, _created = enqueue(actor, card.makerspace, CardJob.Kind.PHOTO_CLEANUP, scope=scope, targets=[card.pk],
                             params={}, revision=f"{kind}:{card.pk}:{getattr(card, 'photo_object_key', '')}")
     return job

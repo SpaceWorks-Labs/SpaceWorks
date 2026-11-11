@@ -3,6 +3,7 @@ update", job finished, programme decisions. All through the shared fan-out, so
 preferences, consent and channels stay the resolver's job. Bodies never carry a
 check-link token or any sensitive extra; links open authenticated pages.
 """
+from django.utils.translation import gettext
 import logging
 
 from apps.integrations.notification_sources import NotificationSource, register_source
@@ -29,12 +30,17 @@ def _card(kind, card_id, event):
     from apps.accounts.models import User
     owner = User.objects.get(pk=spec.account_id(card))
     values = spec.snapshot(card)
-    text = {"card_issued": "Your card is ready. Open My cards to see, save or download it.",
-            "event_card_issued": f"Your ID card for {values.get('event', 'the event')} is ready in My cards.",
-            "programme_card_decided": "There is news about your ID card request. Open My cards for details."}[event]
+    def copy():
+        text = {"card_issued": lambda: gettext("Your card is ready. Open My cards to see, save or download it."),
+                "event_card_issued": lambda: gettext("Your ID card for %(event)s is ready in My cards.")
+                % {"event": values.get("event", gettext("the event"))},
+                "programme_card_decided": lambda: gettext(
+                    "There is news about your ID card request. Open My cards for details.")}[event]()
+        return body(gettext("%(space)s: your card") % {"space": values.get("space", "Space Works")}, text,
+                    _member_link(card.makerspace))
     return fanout(row=card, space=card.makerspace, feature=FEATURE[kind], stream="membership", event=event,
                   source_kind=CARD_SOURCE, revision=revision(kind, card.pk, event), owner=owner,
-                  owner_body=body(f"{values.get('space', 'Space Works')}: your card", text, _member_link(card.makerspace)),
+                  owner_body=copy,
                   staff=False, context={"card_id": card.pk, "holder_kind": kind})
 
 
@@ -55,9 +61,10 @@ def design_awaiting_approval(approval_id):
     space = row.design.makerspace
     return fanout(row=row, space=space, feature="members", stream="membership", event="card_design_pending",
                   source_kind=DESIGN_SOURCE, revision=revision(row.pk, row.revision),
-                  staff_body=body("A card design is waiting for approval",
-                                  "A card design was submitted for approval. Open Member cards › Card design to review it.",
-                                  staff_link(space, "member-cards")))
+                  staff_body=lambda: body(
+                      gettext("A card design is waiting for approval"),
+                      gettext("A card design was submitted for approval. Open Member cards › Card design to review it."),
+                      staff_link(space, "member-cards")))
 
 
 def design_published(design_id):
@@ -89,15 +96,17 @@ def photo_requested(request_id, reminder=False):
     if card is None or not spec.account_id(card):
         return None
     from apps.accounts.models import User
-    text = ("Reminder: please add a new photo for your card." if reminder else
-            "Please add a new photo for your card. Your card stays valid meanwhile.")
-    if row.reason:
-        text += f" Note from the staff: {row.reason}"
+    def copy():
+        text = (gettext("Reminder: please add a new photo for your card.") if reminder else
+                gettext("Please add a new photo for your card. Your card stays valid meanwhile."))
+        if row.reason:
+            text += " " + gettext("Note from the staff: %(note)s") % {"note": row.reason}
+        return body(gettext("Your card needs a new photo"), text, _member_link(card.makerspace))
     return fanout(row=row, space=card.makerspace, feature=FEATURE[row.holder_kind], stream="membership",
                   event="card_photo_requested", source_kind=PHOTO_SOURCE,
                   revision=revision(row.pk, "reminder" if reminder else "request"),
                   owner=User.objects.get(pk=spec.account_id(card)),
-                  owner_body=body("Your card needs a new photo", text, _member_link(card.makerspace)), staff=False)
+                  owner_body=copy, staff=False)
 
 
 @safe_notification
@@ -106,13 +115,16 @@ def job_finished(job_id):
     job = CardJob.objects.select_related("makerspace", "requested_by").filter(pk=job_id).first()
     if job is None or job.requested_by is None or job.kind not in ("bulk_sheet", "bulk_per_person", "zip", "email"):
         return None
-    text = {"succeeded": "Your card job has finished. The file is ready for 7 days.",
-            "failed": "Your card job could not finish. Try again or narrow the selection.",
-            "cancelled": "Your card job was cancelled."}.get(job.state, "Your card job changed.")
+    def copy():
+        text = {"succeeded": lambda: gettext("Your card job has finished. The file is ready for 7 days."),
+                "failed": lambda: gettext("Your card job could not finish. Try again or narrow the selection."),
+                "cancelled": lambda: gettext("Your card job was cancelled.")}.get(
+            job.state, lambda: gettext("Your card job changed."))()
+        return body(gettext("Card job %(state)s") % {"state": job.get_state_display().lower()}, text,
+                    staff_link(job.makerspace, "member-cards"))
     return fanout(row=job, space=job.makerspace, feature="members", stream="membership", event="card_job_finished",
                   source_kind=JOB_SOURCE, revision=revision(job.pk, job.state), owner=job.requested_by,
-                  owner_body=body("Card job " + job.get_state_display().lower(), text,
-                                  staff_link(job.makerspace, "member-cards")), staff=False)
+                  owner_body=copy, staff=False)
 
 
 def _eligible_card(envelope):

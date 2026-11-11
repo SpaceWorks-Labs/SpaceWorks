@@ -144,7 +144,7 @@ def _photo(canvas, document, side, index, layer, context, box):
         canvas.rect(x, y, w, h, fill=1, stroke=0)
         name = str(context.values.get("name", ""))
         initials = "".join(word[:1] for word in name.split()[:2]).upper() or "·"
-        style = {"font_family": "Gilroy", "font_weight": 700, "font_size_pt": max(6, min(w, h) / 2.2),
+        style = {"font_family": "Outfit", "font_weight": 700, "font_size_pt": max(6, min(w, h) / 2.2),
                  "align": "center", "valign": "middle", "line_height": 1.0, "tracking_pt": 0, "shrink_to_fit": True}
         draw(canvas, initials, style, colour="#000000" if document.get("mono") else INK,
              x=x, top=y + h, box_width=w, box_height=h)
@@ -156,7 +156,7 @@ def _qr(canvas, document, side, index, layer, context, box):
     from reportlab.graphics.barcode.qr import QrCodeWidget
     from reportlab.graphics.shapes import Drawing
     x, y, w, h = box
-    payload = context.desk_qr if layer["kind"] == "desk_qr" else context.verify_qr
+    payload = {"desk_qr": context.desk_qr, "checkin_qr": context.checkin_qr}.get(layer["kind"], context.verify_qr)
     if not payload and not context.preview:
         # No live code of this kind (e.g. the public check is off): print nothing, never a fake QR.
         return
@@ -185,4 +185,5 @@ def _barcode(canvas, document, side, index, layer, context, box):
 
 
 DRAWERS = {"text": _text, "data_field": _text, "shape": _shape, "band": _shape, "perforation": _perforation,
-           "barcode": _barcode, "image": _image, "logo": _logo, "photo": _photo, "desk_qr": _qr, "verify_qr": _qr}
+           "barcode": _barcode, "image": _image, "logo": _logo, "photo": _photo, "desk_qr": _qr, "verify_qr": _qr,
+           "checkin_qr": _qr}

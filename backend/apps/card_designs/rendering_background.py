@@ -97,7 +97,7 @@ def draw_watermark(canvas, document, side, context):
                    height * 0.7, alpha=alpha, grey=document.get("mono", False))
         return
     from .rendering_text import nearest_face
-    found = nearest_face("Gilroy", 700)
+    found = nearest_face("Outfit", 700)
     canvas.saveState()
     canvas.translate(width / 2, height / 2)
     canvas.rotate(-mark["angle_deg"])

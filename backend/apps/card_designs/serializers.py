@@ -2,6 +2,7 @@
 not field by field here; these shapes only carry it."""
 from rest_framework import serializers
 
+from .default_templates import LABELS as TEMPLATE_LABELS
 from .models import CardDesign, CardDesignApproval, CardJob
 
 
@@ -28,13 +29,15 @@ class CardDesignSerializer(serializers.ModelSerializer):
     target_label = serializers.SerializerMethodField()
     answer_fields = serializers.SerializerMethodField(
         help_text="Answers this design may place as {{field:<key>}}: a programme's printed questions.")
+    badge_format = serializers.SerializerMethodField(
+        help_text="`badge_v1` while the design is edited in the badge designer (its layers are compiled); else null.")
 
     class Meta:
         model = CardDesign
         fields = ("id", "domain", "name", "plan_id", "title_id", "programme_id", "organization_id", "event_id",
                   "ticket_type_id", "target_label", "status", "document", "revision", "published_revision",
-                  "published_at", "has_unpublished_changes", "pending_approval", "last_review", "needs_approval",
-                  "can_approve", "can_edit", "answer_fields",
+                  "published_at", "archived_at", "has_unpublished_changes", "pending_approval", "last_review", "needs_approval",
+                  "can_approve", "can_edit", "answer_fields", "card_role", "badge_format",
                   "updated_at")
         read_only_fields = fields
 
@@ -67,6 +70,9 @@ class CardDesignSerializer(serializers.ModelSerializer):
         actor = self._actor()
         return bool(actor and actor.is_authenticated and can_edit(actor, obj))
 
+    def get_badge_format(self, obj) -> str | None:
+        return "badge_v1" if isinstance(obj.document, dict) and obj.document.get("source") else None
+
     def get_answer_fields(self, obj) -> list[dict]:
         """Only questions the programme prints (front or back); hidden answers never reach a card."""
         if obj.domain != "id_programme" or not obj.programme_id:
@@ -95,8 +101,7 @@ class CardDesignCreateSerializer(serializers.Serializer):
     domain = serializers.ChoiceField(choices=CardDesign.Domain.choices, default="member_cards")
     plan_id = serializers.IntegerField(required=False, allow_null=True)
     title_id = serializers.IntegerField(required=False, allow_null=True)
-    template = serializers.ChoiceField(choices=("classic", "bold", "minimal", "community", "student", "event_pass"),
-                                       required=False)
+    template = serializers.ChoiceField(choices=tuple(TEMPLATE_LABELS), required=False)
     theme = serializers.ChoiceField(choices=("light", "dark"), default="light")
 
 
@@ -179,7 +184,7 @@ class CardJobSerializer(serializers.ModelSerializer):
         return (obj.params or {}).get("save_url", "") if obj.kind == "wallet_issue" else ""
 
 
-EVENT_CARD_ROLES = ("attendee", "speaker", "mentor", "judge", "volunteer", "crew")
+EVENT_CARD_ROLES = ("attendee", "speaker", "mentor", "judge", "volunteer", "crew", "organiser")
 
 
 class CardJobCreateSerializer(serializers.Serializer):
@@ -189,10 +194,17 @@ class CardJobCreateSerializer(serializers.Serializer):
     plan_id = serializers.IntegerField(required=False)
     expiring_within_days = serializers.IntegerField(required=False, min_value=1, max_value=90)
     roles = serializers.ListField(child=serializers.ChoiceField(choices=EVENT_CARD_ROLES), required=False,
-                                  max_length=6, help_text="Event cards only: print these roles.")
+                                  max_length=7, help_text="Event cards only: print these roles.")
     checked_in = serializers.BooleanField(required=False, allow_null=True, default=None,
                                           help_text="Event cards only: true = checked in, false = not yet.")
-    paper = serializers.ChoiceField(choices=("a4", "letter"), default="a4")
+    status_set = serializers.ChoiceField(
+        choices=("confirmed", "attendees_without_crew", "crew", "role", "checked_in", "not_checked_in", "all"),
+        required=False, help_text="Event cards only (E-B2): a ready-made audience; combines with roles and checked_in.")
+    filter = serializers.DictField(child=serializers.CharField(allow_blank=True), required=False,
+                                   help_text="Member cards only: the member register filter (q, role, standing, plan, "
+                                             "status, title, ...) instead of card_ids. Resolved server side in your "
+                                             "scope and frozen when the job is queued.")
+    paper = serializers.ChoiceField(choices=("a4", "letter", "per_card"), default="a4")
     order = serializers.ChoiceField(choices=("duplex", "fronts_then_backs"), default="duplex")
     crop_marks = serializers.BooleanField(default=True)
 

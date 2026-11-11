@@ -33,7 +33,7 @@ class WalletPass(HolderCardMixin):
             exactly_one_holder("wallet_pass_one_holder"),
             *[models.UniqueConstraint(fields=[field, "platform"], condition=Q(**{f"{field}__isnull": False}),
                                       name=f"uniq_wallet_pass_{field}")
-              for field in ("member_card", "programme_card", "event_card")],
+              for field in ("member_card", "programme_card", "event_card", "staff_card")],
         ]
 
 

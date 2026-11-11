@@ -20,12 +20,12 @@ class Builder:
         return self
 
     def text(self, name, text, x, y, w, h, *, size=8, weight=400, colour=INK, align="left", upper=False,
-             tracking=0, family="Gilroy", valign="top"):
+             tracking=0, family="Outfit", valign="top"):
         return self._add("text", name, x, y, w, h, text=text, font_family=family, font_weight=weight,
                          font_size_pt=size, align=align, valign=valign, colour=colour, uppercase=upper,
                          tracking_pt=tracking, line_height=1.15, shrink_to_fit=True)
 
-    def field(self, name, field, x, y, w, h, *, size=8, weight=600, colour=INK, align="left", family="Gilroy"):
+    def field(self, name, field, x, y, w, h, *, size=8, weight=600, colour=INK, align="left", family="Outfit"):
         return self._add("data_field", name, x, y, w, h, field=field, font_family=family, font_weight=weight,
                          font_size_pt=size, align=align, valign="top", colour=colour, uppercase=False,
                          tracking_pt=0, line_height=1.15, shrink_to_fit=True)

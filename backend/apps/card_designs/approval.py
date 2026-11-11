@@ -10,7 +10,7 @@ from apps.accounts import rbac
 
 from .models import CardApprovalSetting, CardDesign
 
-MEMBERSHIP_DOMAINS = (CardDesign.Domain.MEMBER_CARDS, CardDesign.Domain.ID_PROGRAMME)
+MEMBERSHIP_DOMAINS = (CardDesign.Domain.MEMBER_CARDS, CardDesign.Domain.ID_PROGRAMME, CardDesign.Domain.STAFF_CARDS)
 DEFAULTS = {CardApprovalSetting.Group.MEMBERSHIP: True, CardApprovalSetting.Group.EVENT: False}
 
 

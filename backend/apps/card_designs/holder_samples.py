@@ -12,7 +12,8 @@ from apps.accounts.pii_presentation import require_pii_access
 
 from .holders import spec_for
 
-DOMAIN_KIND = {"member_cards": "member_card", "id_programme": "programme_card", "event_card": "event_card"}
+DOMAIN_KIND = {"member_cards": "member_card", "id_programme": "programme_card", "event_card": "event_card",
+               "staff_cards": "staff_card"}
 LIMIT = 30
 
 
@@ -25,6 +26,9 @@ def _queryset(design):
     except NotFound:
         return None, None
     if kind == "member_card":
+        rows = model.objects.filter(makerspace_id=design.makerspace_id, revoked_at__isnull=True,
+                                    membership__isnull=False)
+    elif kind == "staff_card":
         rows = model.objects.filter(makerspace_id=design.makerspace_id, revoked_at__isnull=True,
                                     membership__isnull=False)
     elif kind == "programme_card":

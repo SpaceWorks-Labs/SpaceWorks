@@ -1,6 +1,6 @@
 """Rows that hang off ONE holder card of one of the three kinds (SPEC §4.1).
 
-Every such row carries exactly one of `member_card`, `programme_card`, `event_card`.
+Every such row carries exactly one of `member_card`, `programme_card`, `event_card`, `staff_card`.
 The two separable kinds are string references, nullable and tombstone-safe.
 """
 from django.utils.translation import gettext_noop
@@ -10,15 +10,16 @@ from django.db.models import Q
 
 from apps.encryption.mappers import ScopedPiiModelMixin
 
-HOLDER_FIELDS = ("member_card", "programme_card", "event_card")
-HOLDER_KINDS = {"member_card": "member_card", "programme_card": "programme_card", "event_card": "event_card"}
+HOLDER_FIELDS = ("member_card", "programme_card", "event_card", "staff_card")
+HOLDER_KINDS = {field: field for field in HOLDER_FIELDS}
 
 
 def exactly_one_holder(name):
-    return models.CheckConstraint(name=name, condition=(
-        Q(member_card__isnull=False, programme_card__isnull=True, event_card__isnull=True)
-        | Q(member_card__isnull=True, programme_card__isnull=False, event_card__isnull=True)
-        | Q(member_card__isnull=True, programme_card__isnull=True, event_card__isnull=False)))
+    condition = None
+    for chosen in HOLDER_FIELDS:
+        clause = Q(**{f"{field}__isnull": field != chosen for field in HOLDER_FIELDS})
+        condition = clause if condition is None else condition | clause
+    return models.CheckConstraint(name=name, condition=condition)
 
 
 def one_per_holder(prefix, condition=None):
@@ -38,6 +39,9 @@ class HolderCardMixin(models.Model):
     programme_card = models.ForeignKey("id_programmes.IdProgrammeCard", null=True, blank=True,
                                        on_delete=models.CASCADE, related_name="+")
     event_card = models.ForeignKey("events.EventIdCard", null=True, blank=True, on_delete=models.CASCADE,
+                                   related_name="+")
+    # O-B4 part 2: staff ID cards (`models_staff_cards.StaffCard`).
+    staff_card = models.ForeignKey("card_designs.StaffCard", null=True, blank=True, on_delete=models.CASCADE,
                                    related_name="+")
 
     class Meta:

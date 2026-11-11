@@ -11,7 +11,7 @@ from typing import Callable
 
 from rest_framework.exceptions import NotFound
 
-KINDS = ("member_card", "programme_card", "event_card")
+KINDS = ("member_card", "programme_card", "event_card", "staff_card")
 
 
 @dataclass(frozen=True)
@@ -31,6 +31,7 @@ class HolderKind:
     logos: Callable            # (card) -> {"space": bytes, "organisation": bytes, "event": bytes, "symbol": bytes}
     filename: Callable         # (card) -> safe base filename, e.g. "TNK-0042-priya-raman"
     desk_payload: Callable = lambda card: None
+    checkin_payload: Callable = lambda card: None  # E-B1: an event registration's live check-in code
     label: Callable = lambda card: ""           # plan / programme / event name for lists
     redact: Callable = lambda card: None        # erase name/photo on revoke or erasure
     email: Callable = lambda card: ""           # the address "your card" mail goes to

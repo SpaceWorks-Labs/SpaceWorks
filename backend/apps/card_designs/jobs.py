@@ -22,7 +22,8 @@ from .default_templates import REVISION as TEMPLATE_REVISION
 
 RESULT_TTL = timedelta(days=7)
 CAPS = {"bulk_sheet": 1000, "bulk_per_person": 1000, "zip": 300, "email": 2000, "wallet_update": 5000}
-SCOPE_KINDS = {"member_cards": "member_card", "id_programme": "programme_card", "event": "event_card"}
+SCOPE_KINDS = {"member_cards": "member_card", "id_programme": "programme_card", "event": "event_card",
+              "staff_cards": "staff_card"}
 STAFF_KINDS = ("bulk_sheet", "bulk_per_person", "zip", "email")
 
 
@@ -40,9 +41,9 @@ def _key(kind, scope, scope_id, targets, params, revision):
 def clean_params(kind, params):
     params = dict(params or {})
     if kind == "bulk_sheet":
-        if params.get("paper", "a4") not in ("a4", "letter") or params.get("order", "duplex") not in (
+        if params.get("paper", "a4") not in ("a4", "letter", "per_card") or params.get("order", "duplex") not in (
                 "duplex", "fronts_then_backs"):
-            raise ValidationError({"params": gettext("Choose A4 or Letter, and duplex or fronts then backs.")})
+            raise ValidationError({"params": gettext("Choose A4, Letter or one card per page, and duplex or fronts then backs.")})
         return {"paper": params.get("paper", "a4"), "order": params.get("order", "duplex"),
                 "crop_marks": bool(params.get("crop_marks", True))}
     if kind == "email":

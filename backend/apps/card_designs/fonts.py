@@ -2,7 +2,11 @@
 
 Three sources, in order of preference for a (family, weight):
 
-1. Bundled brand faces -- Gilroy 400-700 and Unbounded 400-700 -- shipped in the image.
+1. Bundled brand faces -- Outfit 400-700 (OFL) and Unbounded 400-700 -- shipped in the
+   image. Designs once stored the brand text face as "Gilroy" (which always printed in
+   Outfit: only Gilroy's free Light/ExtraBold may ship and ReportLab cannot embed the CFF
+   ExtraBold). Decision 220(c) renamed the token; `LEGACY_FAMILIES` still reads "Gilroy"
+   as Outfit so old revisions, imports and tenant dumps load unchanged.
 2. Bundled Noto faces the image already carries for print fallback (Latin, Indic,
    Arabic, Hebrew, CJK), Regular and Bold.
 3. Every other family in `font_catalog.json` (the open Google Fonts catalogue). Its
@@ -11,7 +15,7 @@ Three sources, in order of preference for a (family, weight):
    calls Google; the renderer never fetches at render time and falls back to Noto
    until a family is ready.
 
-Staff chrome stays Gilroy/Unbounded; these families exist only inside card designs.
+Staff chrome stays Gilroy ExtraBold/Outfit/Unbounded; these families exist only inside card designs.
 """
 import json
 import re
@@ -20,13 +24,19 @@ from pathlib import Path
 
 BRAND_DIR = Path(__file__).resolve().parent.parent / "events" / "certificates" / "fonts"
 BRAND = {
-    "Gilroy": {400: "Gilroy-Regular.ttf", 500: "Gilroy-Medium.ttf", 600: "Gilroy-SemiBold.ttf", 700: "Gilroy-Bold.ttf"},
+    "Outfit": {weight: f"Outfit-{weight}.ttf" for weight in (400, 500, 600, 700)},
     "Unbounded": {weight: f"Unbounded-{weight}.ttf" for weight in (400, 500, 600, 700)},
 }
+LEGACY_FAMILIES = {"Gilroy": "Outfit"}
 CATEGORIES = ("sans", "serif", "display", "handwriting", "mono")
 # The scripts the SPEC requires the library to cover, shown first in the script filter.
 PRIORITY_SCRIPTS = ("latin", "malayalam", "devanagari", "tamil", "kannada", "telugu", "bengali",
                     "gujarati", "gurmukhi", "arabic")
+
+
+def canonical(family):
+    """The family a stored name means: legacy "Gilroy" is Outfit, anything else is itself."""
+    return LEGACY_FAMILIES.get(family, family) if isinstance(family, str) else family
 
 
 def slug(family):
@@ -60,6 +70,7 @@ def bundled_noto():
 
 
 def bundled_path(family, weight):
+    family = canonical(family)
     if family in BRAND and weight in BRAND[family]:
         return BRAND_DIR / BRAND[family][weight]
     return bundled_noto().get(family, {}).get(weight)
@@ -69,6 +80,7 @@ def family_weights(family):
     """Every weight a design may choose for `family`; empty when it is not in the library."""
     if not isinstance(family, str):
         return ()
+    family = canonical(family)
     weights = set(BRAND.get(family, {})) | set(bundled_noto().get(family, {}))
     weights |= set(catalogue().get(family, {}).get("weights", ()))
     return tuple(sorted(weights))
@@ -79,6 +91,7 @@ def is_bundled(family, weight):
 
 
 def describe(family):
+    family = canonical(family)
     row = catalogue().get(family)
     if family in BRAND:
         return {"family": family, "category": "sans", "weights": family_weights(family),
@@ -94,7 +107,7 @@ def describe(family):
 def search(query="", *, category="", script="", limit=60, offset=0):
     """Brand faces first, then catalogue families by popularity."""
     query = (query or "").strip().lower()
-    names = list(BRAND) + sorted(catalogue(), key=lambda name: (catalogue()[name]["popularity"] or 99999, name))
+    names = list(BRAND) + sorted(set(catalogue()) - set(BRAND), key=lambda name: (catalogue()[name]["popularity"] or 99999, name))
     rows = []
     for name in names:
         row = describe(name)

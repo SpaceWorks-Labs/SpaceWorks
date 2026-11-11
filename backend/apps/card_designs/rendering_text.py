@@ -33,7 +33,8 @@ def face(family, weight):
 
 
 def nearest_face(family, weight):
-    from .fonts import family_weights
+    from .fonts import canonical, family_weights
+    family = canonical(family)
     for candidate in sorted(family_weights(family), key=lambda value: abs(value - weight)):
         found = face(family, candidate)
         if found:

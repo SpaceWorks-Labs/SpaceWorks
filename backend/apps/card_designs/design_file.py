@@ -46,7 +46,7 @@ def _legacy_layers(settings):
         layers.append({"id": str(uuid4()), "kind": kind, "name": element, "x_mm": x, "y_mm": y, "w_mm": w,
                        "h_mm": h, "rotation": 0, "opacity": 100, "locked": False, "hidden": False, **extra})
 
-    text = {"font_family": "Gilroy", "colour": "#142C2A", "align": "left", "valign": "top", "uppercase": False,
+    text = {"font_family": "Outfit", "colour": "#142C2A", "align": "left", "valign": "top", "uppercase": False,
             "tracking_pt": 0, "line_height": 1.2, "shrink_to_fit": True}
     for element, key in _LEGACY_TEXT.items():
         if element in _LEGACY_FIELDS:

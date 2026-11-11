@@ -27,7 +27,7 @@ WATERMARK_KINDS = ("none", "text", "image")
 DEFAULT_WATERMARK = {"kind": "none", "text": "", "asset_id": None, "opacity_pct": 10,
                      "angle_deg": -30, "colour": "#006E63"}
 KEYS = {"version", "stock", "page_width_mm", "page_height_mm", "back_enabled", "mono", "watermark",
-        "front", "back"}
+        "front", "back", "source"}
 
 
 def _colour(value, field):
@@ -119,6 +119,9 @@ def normalize_document(value, *, asset_colours=None, check_contrast=True):
         raise ValidationError({"document": gettext("Use a version 2 card design document.")})
     if len(json.dumps(value, separators=(",", ":"))) > MAX_BYTES:
         raise ValidationError({"document": gettext("The design is larger than 256 KB.")})
+    if value.get("source") is not None:  # E-B1: a badge_v1 design's front is compiled from its settings
+        from .badge_source import expand
+        value = expand(value)
     stock = value.get("stock", stocks.DEFAULT_STOCK)
     width, height = stocks.dimensions(stock, value.get("page_width_mm"), value.get("page_height_mm"))
     for key in ("back_enabled", "mono"):
@@ -130,6 +133,8 @@ def normalize_document(value, *, asset_colours=None, check_contrast=True):
               "back": _side(value.get("back", {}), width, height, stock, "back")}
     if stock == stocks.CUSTOM:
         result["page_width_mm"], result["page_height_mm"] = width, height
+    if value.get("source"):
+        result["source"] = value["source"]
     if check_contrast and not result["mono"]:
         for side in ("front", "back"):
             if side == "back" and not result["back_enabled"]:

@@ -17,6 +17,7 @@ class RenderContext:
     allow_sensitive: bool = False
     desk_qr: str | None = None
     verify_qr: str | None = None
+    checkin_qr: str | None = None  # E-B1: an event registration's live check-in code; never rotated by a print
     photo: bytes | None = field(default=None, repr=False)
     logos: dict = field(default_factory=dict, repr=False)
     assets: dict = field(default_factory=dict, repr=False)

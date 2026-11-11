@@ -37,21 +37,27 @@ def asset_colours(makerspace_id, document):
     return found
 
 
-def validated(makerspace_id, document, *, check_contrast=True):
+def validated(makerspace_id, document, *, check_contrast=True, domain=None):
     """A draft saves with unreadable text (the designer warns as you go); publish and submit refuse it."""
     from .layout import upgrade
     upgraded = upgrade(document)
     colours = asset_colours(makerspace_id, upgraded) if isinstance(upgraded, dict) else {}
-    return normalize_document(upgraded, asset_colours=colours, check_contrast=check_contrast)
+    clean = normalize_document(upgraded, asset_colours=colours, check_contrast=check_contrast)
+    from .badge_source import check_domain  # E-B1: badge_v1 and checkin_qr are event-card only
+    check_domain(clean, domain)
+    return clean
 
 
 
 @transaction.atomic
-def save(actor, design, document, *, expected_revision, acted_for=None):
+def save(actor, design, document, *, expected_revision, acted_for=None, unlock=False):
     design = CardDesign.objects.select_for_update().get(pk=design.pk)
     if expected_revision != design.revision:
         raise DesignConflict({"revision": "Someone else saved this design. Reload to see their changes."})
-    clean = validated(design.makerspace_id, document, check_contrast=False)
+    from .badge_source import ensure_unlocked
+    if not unlock:
+        ensure_unlocked(design.document, document)  # E-B1: a badge_v1 design is edited in the badge designer
+    clean = validated(design.makerspace_id, document, check_contrast=False, domain=design.domain)
     if clean == design.document:
         return design
     design.document = clean
@@ -81,6 +87,8 @@ def _publish(actor, design, revision_document, *, acted_for=None):
     design.save(update_fields=["published_document", "published_revision", "published_at", "status", "updated_at"])
     audit.record(actor, "card_design.published", makerspace=design.makerspace, target=design,
                  meta={"design_id": design.pk, "domain": design.domain, "revision": design.revision, "event_id": design.event_id, "programme_id": design.programme_id, "acted_for_organization_id": acted_for})
+    from .numbering_publish import publish_for
+    publish_for(actor, design)
     from .notifications import design_published
     transaction.on_commit(lambda: design_published(design.pk), robust=True)
 
@@ -90,7 +98,8 @@ def publish(actor, design, *, acted_for=None):
     design = CardDesign.objects.select_for_update().get(pk=design.pk)
     if approval.needs_approval(actor, design):
         raise PermissionDenied(gettext("This design needs approval. Submit it for approval instead."))
-    _publish(actor, design, validated(design.makerspace_id, design.document), acted_for=acted_for)
+    _publish(actor, design, validated(design.makerspace_id, design.document, domain=design.domain),
+             acted_for=acted_for)
     return design
 
 
@@ -101,7 +110,7 @@ def submit(actor, design):
         raise ValidationError({"detail": gettext("You can publish this design directly.")})
     if design.approvals.filter(decision=CardDesignApproval.Decision.PENDING).exists():
         raise ValidationError({"detail": gettext("This design is already waiting for approval.")})
-    validated(design.makerspace_id, design.document)
+    validated(design.makerspace_id, design.document, domain=design.domain)
     row = CardDesignApproval.objects.create(design=design, revision=design.revision, requested_by=actor)
     design.status = CardDesign.Status.PENDING_APPROVAL
     design.save(update_fields=["status", "updated_at"])
@@ -132,7 +141,7 @@ def decide(actor, design, *, approve, note=""):
         audit.record(actor, "card_design.rejected", makerspace=design.makerspace, target=design,
                      meta={"design_id": design.pk, "domain": design.domain, "revision": design.revision, "event_id": design.event_id, "programme_id": design.programme_id, "approval_id": row.pk})
     if approve:
-        _publish(actor, design, validated(design.makerspace_id, design.document))
+        _publish(actor, design, validated(design.makerspace_id, design.document, domain=design.domain))
     else:
         design.status = CardDesign.Status.DRAFT if design.published_document is None else CardDesign.Status.PUBLISHED
         design.save(update_fields=["status", "updated_at"])

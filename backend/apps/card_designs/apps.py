@@ -10,5 +10,7 @@ class CardDesignsConfig(AppConfig):
     def ready(self):
         from .holders_member import register as register_member_holder
         register_member_holder()
+        from .holders_staff import register as register_staff_holder
+        register_staff_holder()
         from .registration import register_runtime
         register_runtime()

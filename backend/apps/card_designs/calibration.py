@@ -23,7 +23,7 @@ TEST_CODE = "SPACEWORKS-CALIBRATION"
 
 def _text(canvas, x, y, value, size=7, bold=False):
     from .rendering_text import draw
-    style = {"font_family": "Gilroy", "font_weight": 700 if bold else 400, "font_size_pt": size, "align": "left",
+    style = {"font_family": "Outfit", "font_weight": 700 if bold else 400, "font_size_pt": size, "align": "left",
              "valign": "top", "line_height": 1.2, "tracking_pt": 0, "shrink_to_fit": False}
     draw(canvas, value, style, colour="#000000", x=x, top=y, box_width=400, box_height=size * 1.4)
 

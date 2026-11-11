@@ -16,9 +16,13 @@ from .rendering import draw_side
 
 MAX_CARDS_PER_PDF = 1000
 ORDERS = ("duplex", "fronts_then_backs")
+# E-B2: one card per page, the page being the card itself (card and label printers, badge desks).
+PER_CARD = "per_card"
 
 
 def grid(paper, card_w_mm, card_h_mm):
+    if paper == PER_CARD:
+        return 1, 1, 0.0, 0.0
     paper_w, paper_h = stocks.PAPERS[paper]
     columns, rows = floor(paper_w / card_w_mm), floor(paper_h / card_h_mm)
     if columns < 1 or rows < 1:
@@ -64,14 +68,15 @@ def render_sheets(cards, *, paper="a4", order="duplex", crop_marks=True, title="
     """`cards` is a list of (document, RenderContext) that all share one stock."""
     from reportlab.pdfgen.canvas import Canvas
     from reportlab.lib.units import mm
-    if paper not in stocks.PAPERS or order not in ORDERS:
+    if (paper not in stocks.PAPERS and paper != PER_CARD) or order not in ORDERS:
         raise ValidationError({"paper": gettext("Choose A4 or Letter, duplex or fronts then backs.")})
     if not 1 <= len(cards) <= MAX_CARDS_PER_PDF:
         raise ValidationError({"cards": gettext('A sheet PDF holds 1-{MAX_CARDS_PER_PDF} cards.').format(MAX_CARDS_PER_PDF=MAX_CARDS_PER_PDF)})
     first = cards[0][0]["front"]
     card_w, card_h = first["page_width_mm"], first["page_height_mm"]
     columns, rows, left, top = grid(paper, card_w, card_h)
-    paper_w, paper_h = stocks.PAPERS[paper]
+    paper_w, paper_h = (card_w, card_h) if paper == PER_CARD else stocks.PAPERS[paper]
+    crop_marks = crop_marks and paper != PER_CARD
     per_page = columns * rows
     pages = [cards[i:i + per_page] for i in range(0, len(cards), per_page)]
     any_back = any(document.get("back_enabled") for document, _context in cards)

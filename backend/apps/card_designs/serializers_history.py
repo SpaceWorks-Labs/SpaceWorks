@@ -56,10 +56,13 @@ class SheetPreviewRequestSerializer(serializers.Serializer):
     plan_id = serializers.IntegerField(required=False, min_value=1)
     expiring_within_days = serializers.IntegerField(required=False, min_value=1, max_value=365)
     roles = serializers.ListField(child=serializers.ChoiceField(choices=EVENT_CARD_ROLES), required=False,
-                                  max_length=6, help_text="Event cards only: print these roles.")
+                                  max_length=7, help_text="Event cards only: print these roles.")
     checked_in = serializers.BooleanField(required=False, allow_null=True, default=None,
                                           help_text="Event cards only: true = checked in, false = not yet.")
-    paper = serializers.ChoiceField(choices=("a4", "letter"), default="a4")
+    status_set = serializers.ChoiceField(
+        choices=("confirmed", "attendees_without_crew", "crew", "role", "checked_in", "not_checked_in", "all"),
+        required=False, help_text="Event cards only (E-B2): a ready-made audience; combines with roles and checked_in.")
+    paper = serializers.ChoiceField(choices=("a4", "letter", "per_card"), default="a4")
     order = serializers.ChoiceField(choices=("duplex", "fronts_then_backs"), default="duplex")
     crop_marks = serializers.BooleanField(default=True)
 

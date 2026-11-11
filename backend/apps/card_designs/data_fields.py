@@ -12,6 +12,12 @@ from rest_framework.exceptions import ValidationError
 TAGS = (
     "name", "number", "plan", "valid_until", "member_since", "role", "title", "team", "track",
     "event", "space", "organisation", "programme", "issued_on", "verify_url", "certifications",
+    # E-B1: event badges print the holder's email and crew kind.
+    "email", "crew_kind",
+    # E-B2 (D17): ticket merge fields.
+    "date", "time", "venue", "price", "order",
+    # O-B4 part 2: member units (`unit_chain`) and staff ID cards (`holders_staff`).
+    "unit", "unit_code", "units", "level1", "level2", "level3", "level4", "roles", "machine_scope",
 )
 SENSITIVE_TAGS = ("blood_group", "emergency_contact")
 ANSWER_PREFIX = "field:"
@@ -24,6 +30,11 @@ SAMPLE_SHORT = {
     "track": "Hardware", "event": "Spring Build Night", "space": "Tinkerspace",
     "organisation": "Makers Guild", "programme": "Student ID", "issued_on": "2 Nov 2026",
     "verify_url": "example.org/verify/c/…", "certifications": "Laser induction", "blood_group": "O+", "emergency_contact": "Arjun · 98765 43210",
+    "email": "priya@example.com", "crew_kind": "Volunteer",
+    "date": "14 Nov 2026", "time": "10:00 – 17:00", "venue": "Tinkerspace, Main Hall", "price": "INR 500",
+    "order": "ORD-1042",
+    "unit": "Kochi", "unit_code": "KOC", "units": "North / Kochi", "level1": "North", "level2": "Kochi",
+    "level3": "", "level4": "", "roles": "Technician", "machine_scope": "Laser cutters",
 }
 SAMPLE_LONG = {
     **SAMPLE_SHORT,
@@ -32,6 +43,9 @@ SAMPLE_LONG = {
     "track": "Assistive technology and accessibility", "event": "Community Hardware Hackathon 2026",
     "space": "Thiruvananthapuram Community Makerspace", "organisation": "International Federation of Community Builders",
     "programme": "Volunteer and mentor identification", "emergency_contact": "Ramachandran Pillai · +91 98765 43210",
+    "email": "alexandra.montgomery-fitzgerald@example.com",
+    "units": "Northern Region / Greater Thiruvananthapuram Chapter", "roles": "Space Manager, Technician, Event Manager",
+    "machine_scope": "Laser cutters, 3D printers and 4 more",
 }
 
 

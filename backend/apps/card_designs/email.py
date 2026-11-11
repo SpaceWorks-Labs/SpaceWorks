@@ -13,6 +13,7 @@ from datetime import timedelta
 
 from django.utils import timezone
 
+from apps.integrations.fanout_jobs import deferred_fanout
 from apps.audit import services as audit
 
 from .holders import registered
@@ -62,7 +63,7 @@ def body_for(kind, card, values):
     lines = [f"Hello {values.get('name', '')},", "", attachment_note(card),
              f"Number: {values.get('number', '')}", f"Valid until: {values.get('valid_until', '')}", "",
              f"See it any time under My cards: {link}"]
-    html = ("<div style=\"font-family:Gilroy,Arial,sans-serif;max-width:420px;border:1px solid #D5D0C6;"
+    html = ("<div style=\"font-family:Outfit,Arial,sans-serif;max-width:420px;border:1px solid #D5D0C6;"
             "border-radius:16px;overflow:hidden\"><div style=\"background:#006E63;color:#FFF4E8;padding:14px 18px\">"
             f"<div style=\"font-size:11px;letter-spacing:.08em;text-transform:uppercase\">{escape(values.get('space', ''))}"
             f"</div><div style=\"font-size:20px;font-weight:700\">{escape(values.get('name', ''))}</div></div>"
@@ -74,9 +75,28 @@ def body_for(kind, card, values):
     return "\n".join(lines), html
 
 
+@deferred_fanout()
+def _queue_card_email(kind, card):
+    """Worker side of send_card_email: render the card email and write its outbox row.
+
+    ``card.updated_at`` and the other state columns are the values at the call (see fanout_codec), so the
+    revision recorded here is the one the caller decided on.
+    """
+    from apps.integrations.dispatch_outbox import dispatch_email
+    spec = registered().get(kind)
+    if spec is None:
+        return
+    values = spec.snapshot(card)
+    text, html = body_for(kind, card, values)
+    dispatch_email(to_email=spec.email(card), subject=subject_for(kind, values), text_body=text, html_body=html,
+                   makerspace=card.makerspace, stream=STREAMS[kind], event="card_issued", audience="requester",
+                   recipient_id=spec.account_id(card), source_kind=SOURCE_KIND, source_id=card.pk,
+                   source_metadata={"holder_kind": kind, "revision": card.updated_at.isoformat(),
+                                    "format": getattr(card, "email_format", "pdf")})
+
+
 def send_card_email(kind, card, *, actor=None, explicit=False):
     """Queue one card email; -> True when it was queued, False when a limit or rule refused it."""
-    from apps.integrations.dispatch_outbox import dispatch_email
     spec = registered().get(kind)
     if spec is None or spec.standing(card) != "valid" or not spec.switched_on(card):
         return False
@@ -88,13 +108,7 @@ def send_card_email(kind, card, *, actor=None, explicit=False):
         return False
     if sent_today(space) >= daily_cap(space):
         return False
-    values = spec.snapshot(card)
-    text, html = body_for(kind, card, values)
-    dispatch_email(to_email=address, subject=subject_for(kind, values), text_body=text, html_body=html,
-                   makerspace=space, stream=STREAMS[kind], event="card_issued", audience="requester",
-                   recipient_id=spec.account_id(card), source_kind=SOURCE_KIND, source_id=card.pk,
-                   source_metadata={"holder_kind": kind, "revision": card.updated_at.isoformat(),
-                                    "format": getattr(card, "email_format", "pdf")})
+    _queue_card_email(kind, card)  # snapshot, body rendering and the outbox row happen in the worker
     type(card).objects.filter(pk=card.pk).update(last_emailed_at=now)
     if kind == "member_card":
         audit.record(actor, "member_card.emailed", makerspace=space, target=card, meta={"card_id": card.pk, "count": 1})

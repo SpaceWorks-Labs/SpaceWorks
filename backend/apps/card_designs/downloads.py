@@ -7,7 +7,7 @@ from apps.audit import services as audit
 
 WINDOW = timedelta(minutes=10)
 ACTIONS = {"member_card": "member_card.downloaded", "programme_card": "id_programme.card_downloaded",
-           "event_card": "event_card.downloaded"}
+           "event_card": "event_card.downloaded", "staff_card": "staff_card.downloaded"}
 
 
 def record_download(actor, kind, card, fmt, side):
@@ -22,6 +22,9 @@ def record_download(actor, kind, card, fmt, side):
                             meta={"card_id": card.pk, "format": fmt, "side": side})
     if kind == "programme_card":
         return audit.record(actor, "id_programme.card_downloaded", makerspace=card.makerspace, target=card,
+                            meta={"card_id": card.pk, "format": fmt, "side": side})
+    if kind == "staff_card":
+        return audit.record(actor, "staff_card.downloaded", makerspace=card.makerspace, target=card,
                             meta={"card_id": card.pk, "format": fmt, "side": side})
     return audit.record(actor, "event_card.downloaded", makerspace=card.makerspace, target=card,
                         meta={"card_id": card.pk, "format": fmt, "side": side})

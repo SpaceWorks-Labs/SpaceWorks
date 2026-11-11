@@ -1,7 +1,7 @@
 """Which design a holder's card renders with (SPEC §4.1 resolution order).
 
 Member cards: the member's primary title override, then their live plan, then the
-space default. Event cards and tickets: ticket type, then event, then the organising
+owner organisation's default (O-B4), then the space default. Event cards and tickets: ticket type, then event, then the organising
 organisation's library default, then the space default. ID programmes: the
 programme's own design. Only PUBLISHED documents reach holders; with nothing
 published yet the domain's shipped template is used.
@@ -22,16 +22,26 @@ def _published(queryset):
 def resolve(makerspace_id, domain, *, plan_id=None, title_id=None, programme_id=None, event_id=None,
             ticket_type_id=None, organization_ids=()):
     """-> (document, design or None). Never None: falls back to the shipped template."""
-    rows = CardDesign.objects.filter(makerspace_id=makerspace_id, domain=domain)
+    # An archived override (decision 219(h)) no longer reaches holders: they fall through.
+    # E-B1: role variants are reached only through resolution_roles.resolve_event_card.
+    rows = CardDesign.objects.filter(makerspace_id=makerspace_id, domain=domain, archived_at__isnull=True,
+                                     card_role__isnull=True)
     chain = []
     if domain == CardDesign.Domain.MEMBER_CARDS:
         if title_id:
             chain.append(rows.filter(title_id=title_id))
         if plan_id:
             chain.append(rows.filter(plan_id=plan_id))
+        # O-B4: the space's owner organisation's default, ahead of the space default. One member card serves
+        # both the space and the organisation, so this is the same card with the organisation's design.
+        from .org_default import owner_organization_id
+        organization_id = owner_organization_id(makerspace_id)
+        if organization_id:
+            chain.append(CardDesign.objects.filter(organization_id=organization_id, domain=domain,
+                                                   event__isnull=True, archived_at__isnull=True))
     elif domain == CardDesign.Domain.ID_PROGRAMME:
         chain.append(rows.filter(programme_id=programme_id))
-    else:
+    elif domain != CardDesign.Domain.STAFF_CARDS:  # staff cards: the space default only (appended below)
         if ticket_type_id:
             chain.append(rows.filter(ticket_type_id=ticket_type_id))
         if event_id:
@@ -52,12 +62,16 @@ def get_or_create(makerspace, domain, *, actor=None, template=None, theme="light
     """The design row for exactly this target, seeded from a template on first use."""
     if set(target) - set(TARGETS):
         raise ValueError("Unknown design target")
-    filters = {f"{key}__isnull": True for key in TARGETS}
+    filters = {f"{key}__isnull": True for key in TARGETS} | {"card_role__isnull": True}
     for key, value in target.items():
         if value is not None:
             filters.pop(f"{key}__isnull")
             filters[key] = value
     existing = CardDesign.objects.filter(makerspace=makerspace, domain=domain, **filters).first()
+    if existing is not None and existing.archived_at is not None:
+        # Asking for this target's design again brings its archived override back.
+        from .archive import unarchive
+        existing = unarchive(actor, existing)
     if existing is not None:
         return existing, False
     from .default_templates import build

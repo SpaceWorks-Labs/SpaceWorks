@@ -11,7 +11,11 @@ from .holders import registered
 MAX_CARDS = 50
 
 
-def own_card(user, kind, card_id):
+def own_card(user, kind, card_id, *, staff_ok=False):
+    """The caller's own card. Staff cards (O-B4) have no photo upload, e-mail or extras, so only the views that
+    pass `staff_ok=True` (face, download, check link, wallet) reach one; the rest answer 404."""
+    if kind == "staff_card" and not staff_ok:
+        raise NotFound()
     spec = registered().get(kind)
     card = spec.model().objects.filter(pk=card_id).first() if spec else None
     if (card is None or spec.account_id(card) != user.pk or not spec.switched_on(card)
@@ -40,8 +44,15 @@ def _event_cards(user):
     return EventIdCard.objects.filter(person=user).select_related("event", "makerspace").order_by("-issued_at")
 
 
+def _staff_cards(user):
+    from .models_staff_cards import StaffCard
+    return StaffCard.objects.filter(membership__user=user, revoked_at__isnull=True).select_related(
+        "makerspace", "membership__user").order_by("-issued_at")
+
+
 def my_cards(user):
-    sources = {"member_card": _member_cards, "programme_card": _programme_cards, "event_card": _event_cards}
+    sources = {"member_card": _member_cards, "programme_card": _programme_cards, "event_card": _event_cards,
+               "staff_card": _staff_cards}
     rows = []
     for kind, source in sources.items():
         spec = registered().get(kind)

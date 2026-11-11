@@ -23,8 +23,15 @@ EVENT_DOMAINS = (CardDesign.Domain.EVENT_CARD, CardDesign.Domain.EVENT_TICKET)
 
 def can_edit(actor, design):
     domain = design.domain
+    if domain == CardDesign.Domain.MEMBER_CARDS and design.organization_id:
+        # O-B4: an organisation default reaches every owned space, so it needs the action in all of them.
+        from .org_default import can_manage
+        return can_manage(actor, design.organization_id)
     if domain == CardDesign.Domain.MEMBER_CARDS:
         return rbac.can(actor, rbac.Action.MANAGE_MEMBER_CARDS, design.makerspace_id)
+    if domain == CardDesign.Domain.STAFF_CARDS:  # O-B4 part 2: the staff design needs card management
+        from .staff_card_services import can_manage
+        return can_manage(actor, design.makerspace_id)
     if domain == CardDesign.Domain.ID_PROGRAMME:
         return rbac.can(actor, rbac.Action.MANAGE_ID_PROGRAMMES, design.makerspace_id)
     if design.event_id:

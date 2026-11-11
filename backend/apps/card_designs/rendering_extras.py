@@ -43,7 +43,7 @@ def draw_barcode(canvas, layer, context, box):
     if text_h:
         from .fonts import BRAND
         from .rendering_text import draw
-        style = {"font_family": "Gilroy", "font_weight": 500 if 500 in BRAND["Gilroy"] else 400,
+        style = {"font_family": "Outfit", "font_weight": 500 if 500 in BRAND["Outfit"] else 400,
                  "font_size_pt": TEXT_PT, "align": "center", "valign": "middle", "line_height": 1.0,
                  "tracking_pt": 0.6, "shrink_to_fit": True}
         label = payload if layer["source"] == "number" else payload.upper()

@@ -46,6 +46,7 @@ def context_for(kind, card, document, *, preview=False, preview_label=""):
     token = tokens.live(kind, card)
     assets, colours = assets_for(card.makerspace_id, document)
     return RenderContext(values=values, allow_sensitive=opted_in, desk_qr=spec.desk_payload(card),
+                         checkin_qr=spec.checkin_payload(card),
                          verify_qr=tokens.url(token.token) if token else None, photo=spec.photo_bytes(card),
                          logos=spec.logos(card), assets=assets, asset_colours=colours, preview=preview,
                          preview_label=preview_label)
@@ -75,6 +76,12 @@ def sample_context(makerspace, document, *, long=False):
     assets, colours = assets_for(makerspace.pk, document)
     values = dict(SAMPLE_LONG if long else SAMPLE_SHORT)
     values["space"] = (makerspace.branding_config or {}).get("display_name") or makerspace.name
+    from .data_fields import ANSWER_PREFIX
+    from .layout import sides
+    for side in sides(document):  # E-B1: an event answer previews as a sample answer
+        for layer in document[side]["layers"]:
+            if layer.get("field", "").startswith(ANSWER_PREFIX):
+                values.setdefault(layer["field"], "Sample answer")
     return RenderContext(values=values, allow_sensitive=True, preview=True, preview_label="PREVIEW",
                          logos={"space": read_public_image(makerspace.logo_key)}, assets=assets,
                          asset_colours=colours)

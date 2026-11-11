@@ -8,6 +8,8 @@ so a base serializer's subclasses keep their own names.
 """
 
 COMPONENT_NAMES = {
+    "apps.events.serializers_loan_context.ContextCAS": "EventLoanContextCAS",
+    "apps.bookings.serializers_loan_context.ContextCAS": "BookingLoanContextCAS",
     "apps.events.contributions.serializers.AggregateSerializer": "EventRoleAggregate",
     "apps.event_reimbursements.serializers.Command": "ReimbursementCommand",
     "apps.events.hackathons.admission_inputs.CommandInput": "HackathonAdmissionCommandInput",
@@ -33,4 +35,6 @@ COMPONENT_NAMES = {
     "apps.admin_api.serializers_roles.RoleSerializer": "MakerspaceRoleDefinition",
     "apps.events.views_short_links_admin.VisitDaySerializer": "ShortLinkVisitDay",
     "apps.operations.platform_insights.WindowSerializer": "PlatformInsightsWindow",
+    "apps.events.views_booking_decision.Window": "EventBookingDecisionWindow",
+    "apps.payments.views_event_linked_finance.VenueFeeSerializer": "EventLinkedVenueFee",
 }

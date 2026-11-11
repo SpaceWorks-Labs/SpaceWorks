@@ -20,6 +20,12 @@ _FALLBACK = tuple((re.compile(pattern), tag) for pattern, tag in (
     (r"^/api/v1/admin/makerspaces/\{[^}]+\}/maintenance/", "Admin maintenance"),
     (r"^/api/v1/admin/makerspace/\{[^}]+\}/stocktake-", "Stocktake"),
     (r"^/api/v1/admin/makerspace/\{[^}]+\}/direct-loan-members", "Admin requests"),
+    (r"^/api/v1/admin/makerspace/\{[^}]+\}/(?:equipment-requests/contextual|(?:requests|direct-loans)/\{[^}]+\}/(?:booking|event)-context)/?$", "Admin requests"),
+    (r"^/api/v1/admin/makerspace/\{[^}]+\}/(?:equipment-kits(?:/\{[^}]+\}(?:/(?:archive|publication|versions))?)?|consumables/\{[^}]+\}/equipment-sources)/?$", "Admin inventory"),
+    (r"^/api/v1/admin/makerspace/\{[^}]+\}/events/\{[^}]+\}/equipment-(?:kits|request-products)/?$", "Admin events"),
+    (r"^/api/v1/admin/makerspace/\{[^}]+\}/events/\{[^}]+\}/(?:booking-link|workshop-machines|venue)(?:/|$)", "Admin events"),
+    (r"^/api/v1/admin/makerspace/\{[^}]+\}/spaces/\{[^}]+\}/equipment-(?:kits|request-products)/?$", "Admin bookings"),
+    (r"^/api/v1/public/\{[^}]+\}/(?:equipment-kits(?:/\{[^}]+\})?|requests/contextual)/?$", "Public inventory"),
     (r"^/api/v1/admin/inventory/", "Admin inventory"),
     (r"^/api/v1/admin/(evidence/|makerspaces/\{[^}]+\}/uploads/evidence-url)", "Evidence"),
 ))
@@ -57,7 +63,7 @@ GROUPS = (
     ("Space administration", "Settings, staff, notifications, integrations, reports and audit.",
      ("admin", "staff", "page editor", "email", "data exports", "notification", "messaging", "telegram",
       "whatsapp", "chat", "analytics", "reports", "dashboard", "api client", "api key", "integration",
-      "audit", "pii", "makerspaces", "accountability")),
+      "audit", "pii", "makerspaces", "accountability", "schedule")),
 )
 
 

@@ -1,4 +1,3 @@
-import { t } from "@lingui/core/macro";
 import { createContext, useContext, useEffect, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 
@@ -110,10 +109,13 @@ export function TenantProvider({ children }: { children: ReactNode }) {
   return <TenantContext.Provider value={value}>{children}</TenantContext.Provider>;
 }
 
+// A developer error (wrong component tree), never shown to people, so it is not translated (decision 285).
+const MISSING_PROVIDER = "useTenant must be used inside TenantProvider";
+
 export function useTenant() {
   const value = useContext(TenantContext);
   if (!value) {
-    throw new Error(t`useTenant must be used inside TenantProvider`);
+    throw new Error(MISSING_PROVIDER);
   }
   return value;
 }

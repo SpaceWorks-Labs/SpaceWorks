@@ -1,3 +1,4 @@
+import { freezeBeforeAuthMutation } from "./authFreeze";
 import { t } from "@lingui/core/macro";
 import { currentSessionContext, type SessionContext } from "./sessionContext";
 import { API_URL, API_V1_URL, authHeaders, publicHeaders, staffFetch } from "./client";
@@ -44,6 +45,7 @@ export async function publicAnonymousRequest<T>(path: string, publishableKey?: s
 }
 
 async function publicV1Json<T>(path: string, options: RequestInit, publishableKey?: string): Promise<T> {
+  await freezeBeforeAuthMutation(path, options.method ?? "GET");
   const response = await fetch(`${API_V1_URL}${path}`, {
     ...options,
     headers: {

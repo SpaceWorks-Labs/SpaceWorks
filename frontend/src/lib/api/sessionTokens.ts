@@ -1,3 +1,5 @@
+import { freezeBeforeAuthMutation, suspendPushForRefresh, resumePushAfterRefresh, queuePrivacyFreeze } from "./authFreeze";
+import { beforeSessionTransition, markSessionUnknown, SessionNavigationInterrupted } from "../telemetry/sessionFence";
 import { removeStorage } from "../safeStorage";
 import { configuredApiUrl } from "../runtimeConfig";
 import { clearOfflineCards, rememberOfflineCardOwner } from "../../features/members/memberCard/offlineCard";
@@ -15,6 +17,8 @@ const session = (context: SessionContext) => {
   return sessions.get(context)!;
 };
 export const getSessionGeneration = (context: SessionContext) => session(context).generation;
+/** In-memory cache privacy identity only; never an authorization decision. */
+export const getSessionOwner = (context: SessionContext) => session(context).owner ?? "";
 export const getAccessToken = (context = currentSessionContext()) => session(context).token;
 /** Cache ownership, not authorization: cookie refresh may establish the identity later. */
 export const hasSessionIdentity = (context = currentSessionContext()) => Boolean(session(context).token || session(context).owner);
@@ -37,6 +41,7 @@ function tokenOwner(token: string): string | undefined {
 }
 
 export function setAccessToken(token: string, context = currentSessionContext()) {
+  if (beforeSessionTransition()) throw new SessionNavigationInterrupted();
   const state = session(context);
   state.generation++;
   state.refresh = null;
@@ -51,6 +56,7 @@ export function setAccessToken(token: string, context = currentSessionContext())
 }
 
 export function clearAccessToken(context = currentSessionContext()) {
+  queuePrivacyFreeze(); markSessionUnknown();
   const state = session(context);
   state.generation++;
   state.token = "";
@@ -96,17 +102,21 @@ export function refreshAccessToken(context = currentSessionContext()): Promise<b
   if (state.refresh) return state.refresh;
   const generation = state.generation;
   const pending = (async () => {
+    const suspended = await suspendPushForRefresh();
     const response = await fetch(authUrl("refresh"), refreshOptions(context)).catch(() => null);
     if (!response?.ok) return false;
     const body = await response.json().catch(() => ({})) as { access?: string };
     if (typeof body.access !== "string" || !body.access || state.generation !== generation) return false;
     const owner = tokenOwner(body.access);
-    if (state.owner && owner && state.owner !== owner) {
+    if (state.owner && owner !== state.owner) {
       // A different tab may have replaced this context's cookie. Never replay the
       // old account's request under that account or retain its cached data.
       expireStaffAuthSession(context);
       return false;
     }
+    if (beforeSessionTransition()) return false;
+    await resumePushAfterRefresh(suspended, body.access);
+    if (state.generation !== generation) return false;
     // Rotation keeps the generation: concurrent requests from this session can retry.
     state.token = body.access;
     state.owner = owner;
@@ -118,6 +128,7 @@ export function refreshAccessToken(context = currentSessionContext()): Promise<b
 }
 
 export async function logout(context = currentSessionContext()): Promise<void> {
+  await freezeBeforeAuthMutation("/auth/logout", "POST");
   // Fence an in-flight refresh before waiting for the server's cookie deletion.
   clearAccessToken(context);
   await fetch(authUrl("logout"), refreshOptions(context));

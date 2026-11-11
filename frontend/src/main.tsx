@@ -6,7 +6,9 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter } from "react-router-dom";
 
 import App from "./App";
-import { WebAnalytics } from "./components/WebAnalytics";
+import { WebTelemetry } from "./components/WebTelemetry";
+import { installSessionTelemetryFence } from "./lib/telemetry/sessionFence";
+import { fenceWebTelemetry, installWebTelemetryBoundary } from "./lib/telemetry/runtime";
 import { installAnalyticsNavigationGuard } from "./lib/webAnalytics";
 import { PwaRegistration } from "./components/PwaRegistration";
 import { ToastHost } from "./components/ui/ToastHost";
@@ -24,6 +26,8 @@ import { replayQueue } from "./features/kiosk/kioskReplayClient";
 
 installLocaleFetch();
 installAnalyticsNavigationGuard();
+installWebTelemetryBoundary();
+installSessionTelemetryFence(fenceWebTelemetry);
 initializeTheme();
 cleanupLegacyAccessToken();
 void pruneExpiredOfflineStates().catch(() => undefined);
@@ -38,7 +42,7 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
       <TenantProvider>
         <BrowserRouter>
           <SessionBoundary>
-          <WebAnalytics />
+          <WebTelemetry />
           <PwaRegistration />
           <ToastHost />
           <App />

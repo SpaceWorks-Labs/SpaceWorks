@@ -46,7 +46,7 @@ export function authErrorMessage(error: unknown, fallback = "Something went wron
   const code = authErrorCode(error);
   if (code === "ip_blocked") {
     const wait = error instanceof StructuredApiError ? error.retryAfterSeconds : undefined;
-    return t`Too many failed sign-ins from your network. Try again ${wait ? formatWait(wait) : "later"}.`;
+    return wait ? t`Too many failed sign-ins from your network. Try again ${formatWait(wait)}.` : t`Too many failed sign-ins from your network. Try again later.`;
   }
   if (code && COPY[code]) return COPY[code];
   if (error instanceof Error && error.message && !/^Request failed \(\d+\)$/.test(error.message)) return error.message;

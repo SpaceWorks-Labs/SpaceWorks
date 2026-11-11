@@ -6,7 +6,7 @@ declare global { interface Window { __WEB_ANALYTICS__?: AnalyticsConfig; plausib
 
 // This allow-list is also the shared extension point for public booking websites.
 export const analyticsPublicRoutes = [
-  "/", "/about", "/o/:organizationSlug", "/m/:slug", "/items/:itemId",
+  "/", "/about", "/inventory", "/m/:slug/inventory", "/shop", "/m/:slug/shop", "/o/:organizationSlug", "/m/:slug", "/items/:itemId",
   "/events", "/events/:id", "/machines", "/stats",
   "/m/:slug/items/:itemId", "/m/:slug/events", "/m/:slug/events/:id",
   "/m/:slug/machines", "/m/:slug/stats", ...bookingAnalyticsRoutes,

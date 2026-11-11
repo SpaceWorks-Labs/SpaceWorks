@@ -21,6 +21,13 @@ export type TenantBootstrap = {
     request_access?: "contact";
     // #77: present only while the closed-for-now banner is switched on and set.
     closed_notice?: { text: string; reopens_on: string | null };
+    // P3-4: present only when the space records opening hours.
+    open_status?: { open_now: boolean; closes_at: string | null; next_opens_at: string | null };
+    // Decision 295: present only for an organization workspace (absent = makerspace). Its /m/
+    // home redirects to /o/<organization_page_slug> while that page is public (null otherwise).
+    kind?: "organization";
+    space_noun?: "organization";
+    organization_page_slug?: string | null;
   };
   frontend: {
     type: string;
@@ -70,6 +77,8 @@ export type StaffAuthUser = {
   is_platform?: boolean;
   has_staff_role?: boolean;
   has_elevated_authority?: boolean;
+  /** 0.12.0: an active membership of an active organization; gates the Organizations group. */
+  has_organizations?: boolean;
   staff_roles?: StaffRoleEntry[];
   session_authority?: "member" | "native_staff" | "platform" | "verification_only";
   /** #128 C-1: when an unenrolled staff person's 3-day two-step grace ends; null otherwise. */

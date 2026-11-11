@@ -39,6 +39,11 @@ export function formatPercent(value: number, options?: Intl.NumberFormatOptions)
   return new Intl.NumberFormat(formatLocale(), { style: "percent", ...options }).format(value);
 }
 
-export function formatCurrency(value: number, currency: string, options?: Intl.NumberFormatOptions): string {
-  return new Intl.NumberFormat(formatLocale(), { style: "currency", currency, ...options }).format(value);
+/** Today as YYYY-MM-DD on the clock of `timeZone` (the space's zone), not the browser's or UTC. */
+export function localDateIn(timeZone?: string, now: Date = new Date()): string {
+  try {
+    return new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
+  } catch {
+    return now.toISOString().slice(0, 10);
+  }
 }

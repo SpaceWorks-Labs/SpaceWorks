@@ -1,4 +1,6 @@
 import { t } from "@lingui/core/macro";
+import { INVENTORY_CHILD_FEATURES } from "./featureGates";
+export { featureEnabled, featureGroup, INVENTORY_CHILD_FEATURES, isSecurityFeature } from "./featureGates";
 export type FeatureDefinition = {
   key: string;
   // null => standalone feature with no parent-module prerequisite (always toggleable).
@@ -15,7 +17,7 @@ export const FEATURE_DEFINITIONS: readonly FeatureDefinition[] = [
   { key: "notifications.digests", parent_module: "notifications", label: t`Daily notification digests` },
   { key: "membership.broadcasts", parent_module: "membership", label: t`Member broadcasts` },
   { key: "bookings.recurring", parent_module: "bookings", label: t`Recurring bookings` },
-  { key: "loans.enabled", parent_module: "staff_admin", label: t`Hardware loans` },
+  { key: "loans.enabled", parent_module: "staff_admin", label: t`Inventory` },
   { key: "inventory.notify_when_back", parent_module: "public_inventory", label: t`Notify when back` },
   { key: "stocktake.discipline", parent_module: "stocktake", label: t`Stocktake discipline` },
   { key: "machines.public_detail", parent_module: "machines", label: t`Public machine details` },
@@ -127,12 +129,24 @@ export const FEATURE_DEFINITIONS: readonly FeatureDefinition[] = [
   { key: "membership.register_tools", parent_module: "membership", label: t`Register filters and export` },
   { key: "membership.insights", parent_module: "membership", label: t`Membership insights` },
   { key: "membership.monthly_summary", parent_module: "membership", label: t`Monthly staff summary` },
+  // Parity O-B1: member units (districts, chapters, branches) and unit-scoped staff.
+  { key: "membership.units", parent_module: "membership", label: t`Member units` },
+  { key: "membership.unit_scoped_staff", parent_module: "membership", label: t`Unit-scoped staff` },
+  // Parity O-B2: the join funnel and the member register.
+  { key: "membership.ask_changes", parent_module: "membership", label: t`Ask applicants for changes` },
+  { key: "membership.join_photo", parent_module: "membership", label: t`Photo on the join form` },
+  { key: "membership.join_contact_fields", parent_module: "membership", label: t`Phone and state on the join form` },
+  { key: "membership.register_bulk", parent_module: "membership", label: t`Bulk actions on the member register` },
   { key: "billing.tax", parent_module: null, label: t`Tax on charges` },
   { key: "billing.maker_checker", parent_module: null, label: t`Two-person check for offline income` },
   { key: "billing.offline_claims", parent_module: null, label: t`UPI QR and “I’ve paid” claims` },
   { key: "billing.pay_links", parent_module: null, label: t`Pay links for people without an account` },
   { key: "billing.disputes", parent_module: null, label: t`Payment disputes` },
   { key: "billing.capture_flags", parent_module: null, label: t`Unexpected online payments` },
+  // Parity O-B3: per-FY receipt numbers without tax, a plan's own SAC code, and the collection sheet.
+  { key: "billing.fy_receipts", parent_module: null, label: t`Receipt numbers per financial year` },
+  { key: "billing.plan_sac", parent_module: null, label: t`SAC code per membership plan` },
+  { key: "billing.collection_sheet", parent_module: null, label: t`Collection sheet` },
   { key: "finance.ledger", parent_module: null, label: t`Finance ledger` },
   { key: "charges.pricing", parent_module: null, label: t`Price lists` },
   { key: "charges.discounts", parent_module: null, label: t`Member discounts` },
@@ -236,22 +250,34 @@ export const FEATURE_DEFINITIONS: readonly FeatureDefinition[] = [
   { key: "payments.shop", parent_module: "shop", label: t`Online shop payments` },
   // L20 (#69, #128 C-31): the in-app help centre.
   { key: "platform.help_centre", parent_module: null, label: t`Help centre` },
+  // Decision 223 (a, b, k): guest passes, day passes, minors, volunteer credit, the join funnel.
+  { key: "membership.guest_passes", parent_module: "membership", label: t`Guest passes` },
+  { key: "membership.day_passes", parent_module: "membership", label: t`Day passes` },
+  { key: "events.guest_passes", parent_module: "events", label: t`Event guest passes` },
+  { key: "membership.minors", parent_module: "membership", label: t`Minors and guardian consent` },
+  { key: "membership.volunteer_credit", parent_module: "membership", label: t`Volunteer hours as membership credit` },
+  { key: "membership.join_funnel", parent_module: "membership", label: t`Attendee join funnel` },
+  { key: "bookings.organization_bookings", parent_module: "bookings", label: t`Organization bookings` },
+  // Decision 223 (k), lane L3a: induction events, supervised sessions, the incident register.
+  { key: "machines.induction_events", parent_module: "machines", label: t`Induction events` },
+  { key: "machines.supervised_sessions", parent_module: "machines", label: t`Supervised workshop sessions` },
+  { key: "safety.incidents", parent_module: null, label: t`Incident register` },
+  // Parity O-B4: card numbering, title-change reissue, desk printing and staff ID cards.
+  { key: "membership.card_numbering", parent_module: "membership", label: t`Card numbering schemes` },
+  { key: "membership.title_card_reissue", parent_module: "membership", label: t`Reissue the card when the title changes` },
+  { key: "membership.card_desk_print", parent_module: "membership", label: t`Desk card printing` },
+  { key: "membership.staff_cards", parent_module: "membership", label: t`Staff ID cards` },
+  { key: "membership.staff_cards_auto_issue", parent_module: "membership", label: t`Issue staff cards automatically` },
+  // Parity E-B1/E-B2: the badge designer, desk badge printing and role badges.
+  { key: "events.badge_designer", parent_module: "events", label: t`Badge designer` },
+  { key: "events.badge_desk_print", parent_module: "events", label: t`Desk badge printing` },
+  { key: "events.role_badges", parent_module: "events", label: t`Role badges` },
+  // Parity E-B6 / E-B8 (UI: E-F5): refunds that cancel tickets, staff claims, sender identity, own legal pages.
+  { key: "events.refund_cancels_tickets", parent_module: "events", label: t`Refund can cancel tickets` },
+  { key: "events.staff_claims", parent_module: "events", label: t`Staff expense claims` },
+  { key: "email.sender_identity", parent_module: "email", label: t`Sender name and reply-to` },
+  { key: "legal.space_pages", parent_module: null, label: t`Own privacy and terms pages` },
 ];
-
-export function featureEnabled(features: Iterable<string>, key: string) {
-  return new Set(features).has(key);
-}
-
-/** Security keys live in the Security panel (Space Manager/superadmin, re-auth, audit), never in Features. */
-export function isSecurityFeature(key: string) {
-  return key.startsWith("security.");
-}
-
-/** The heading a feature is listed under: its parent module, or the parentless families. */
-export function featureGroup(feature: FeatureDefinition) {
-  if (feature.parent_module) return feature.parent_module;
-  return feature.key.startsWith("inventory.") || feature.key.startsWith("loans.") ? "inventory" : "general";
-}
 
 /**
  * Effective switch as the console can see it: stored, and its parent module installed.
@@ -262,6 +288,8 @@ export function capabilityOn(
   makerspace: { enabled_modules?: string[]; enabled_features?: string[] } | undefined, key: string,
 ) {
   if (!makerspace?.enabled_features?.includes(key)) return false;
+  // Decision 254: the Inventory switch is the master of its children (twin of loan_visibility.LOAN_FEATURES).
+  if (INVENTORY_CHILD_FEATURES.has(key) && !makerspace.enabled_features.includes("loans.enabled")) return false;
   const parent = FEATURE_DEFINITIONS.find(feature => feature.key === key)?.parent_module;
   return !parent || (makerspace.enabled_modules ?? []).includes(parent);
 }

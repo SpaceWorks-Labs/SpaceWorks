@@ -1,4 +1,4 @@
-import type { Theme } from "./theme";
+import type { ThemePreference } from "./theme";
 import { chooseTheme } from "./theme";
 import "./themeTransition.css";
 
@@ -29,14 +29,14 @@ function originOf(element?: HTMLElement | null) {
   return { x: box.left + box.width / 2, y: box.top + box.height / 2 };
 }
 
-function fade(theme: Theme) {
+function fade(theme: ThemePreference) {
   const root = document.documentElement;
   root.classList.add("sw-theme-fade");
   chooseTheme(theme);
   window.setTimeout(() => root.classList.remove("sw-theme-fade"), 460);
 }
 
-export function transitionTheme(theme: Theme, element?: HTMLElement | null) {
+export function transitionTheme(theme: ThemePreference, element?: HTMLElement | null) {
   if (prefersReducedMotion()) { chooseTheme(theme); return; }
   const doc = document as TransitionDocument;
   if (typeof doc.startViewTransition !== "function") { fade(theme); return; }

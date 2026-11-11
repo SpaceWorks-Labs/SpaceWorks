@@ -1,3 +1,4 @@
+import { freezeBeforeAuthMutation } from "./authFreeze";
 import { browserSessionIdentity, requestReauthentication } from "./reauthentication";
 import { configuredApiUrl } from "../runtimeConfig";
 import { currentSessionContext, type SessionContext } from "./sessionContext";
@@ -71,6 +72,7 @@ export async function staffFetch(
   includePublicCredentials = false,
   context: SessionContext = currentSessionContext(),
 ): Promise<Response> {
+  await freezeBeforeAuthMutation(path, options.method ?? "GET");
   const generation = getSessionGeneration(context);
   const routeContext = currentSessionContext();
   const isFormData = typeof FormData !== "undefined" && options.body instanceof FormData;

@@ -23,13 +23,14 @@ FIELD_NAMES = {
                                    "reminded_at",
     "events.EventCrewMember": "id makerspace event member origin crew_role state answers dietary show_publicly "
                               "registration decided_by decided_at version created_at",
-    "events.EventCheckInList": "id makerspace event name kind after_entry addon per_person archived_at created_by "
-                               "created_at",
-    "events.EventCheckInListScan": "id makerspace checkin_list registration operation_id actor scanned_at",
+    "events.EventCheckInList": "id makerspace event name kind after_entry addon per_person archived_at position "
+                               "created_by created_at",
+    "events.EventCheckInListScan": "id makerspace checkin_list registration operation_id actor scanned_at undone_at "
+                                   "undone_by",
 }
 FIELD_NAMES = {label: frozenset(names.split()) for label, names in FIELD_NAMES.items()}
 EXTRA_FIELDS = {
-    "events.EventRegistration": frozenset({"is_crew"}),
+    "events.EventRegistration": frozenset({"is_crew", "pay_by"}),
     "events.ApplicationDecision": frozenset({"stage"}),
     "event_reimbursements.ReimbursementProgramme": frozenset({"min_application_stage"}),
     "event_reimbursements.GrantRequest": frozenset({"kind"}),
@@ -55,5 +56,8 @@ def authority_entries(authority, disposition):
         *same("events.EventAttendanceReply", "answer effect", keep, "A person's own answer and what it changed."),
         *same("events.EventCrewMember", "member state show_publicly", holder,
               "A crew role travels with a full user; a stub-linked role does not."),
-        *same("events.EventCheckInList", "after_entry archived_at per_person", keep, "The list's own rules."),
+        *same("events.EventCheckInList", "after_entry archived_at per_person position", keep, "The list's own rules."),
+        *same("events.EventCheckInListScan", "undone_at", keep, "The record that a collection was undone."),
+        *same("events.EventRegistration", "pay_by", disposition.RESET,
+              "A running pay window is not carried to the target; staff re-open the offer there."),
     )

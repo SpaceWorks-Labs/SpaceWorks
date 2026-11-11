@@ -12,6 +12,10 @@ R = AuditReferenceDisposition.REMAP
 UNIFIED_ACCOUNT_AUDIT_EDGES = {
     ("staff_role.granted", "membership_id"): AuditReference(R, "makerspaces.MakerspaceMembership"),
     ("staff_role.granted", "machine_type_ids"): AuditReference(R, "machines.MachineType"),
+    ("staff_role.granted", "machine_ids"): AuditReference(R, "machines.Machine"),
+    ("staff_role.changed", "machine_ids_before"): AuditReference(R, "machines.Machine"),
+    ("staff_role.changed", "machine_ids_after"): AuditReference(R, "machines.Machine"),
+    ("staff_invitation.sent", "machine_ids"): AuditReference(R, "machines.Machine"),
     # Release 2 U-B: staff roles on people and signed-in staff invitations.
     **{(action, "membership_id"): AuditReference(R, "makerspaces.MakerspaceMembership")
        for action in ("staff_role.changed", "staff_role.restored", "staff_role.revoked",

@@ -76,6 +76,14 @@ def final_row(
         from .reimbursement_assets_import import asset_import_row
         row, object_key_map = asset_import_row(label, source, row, object_key_map)
     rewrite_object_fields(model, row, object_key_map)
+    creator_unavailable = False
+    if label in {"inventory.EquipmentProposalReceipt", "inventory.EquipmentConsumableUseReceipt"}:
+        from .equipment_intent_preinsert import prepare_receipt_creator
+        creator_unavailable = prepare_receipt_creator(row, pk_map, references)
+    decision_sticky = False
+    if label == "events.EventBookingDecision":
+        from .booking_decision_import import prepare
+        decision_sticky = prepare(row, job=job, pk_map=pk_map, references=references, target=target)
     if not _remap_foreign_keys(model, source, row, job, pk_map, target, references):
         return None
     if label == "events.EventSession" and "identity_id" not in source:
@@ -84,11 +92,19 @@ def final_row(
     _clear_walk_in_waiver_evidence(label, source, row, job)
     if not remap_semantic_references(label, source, row, pk_map, references):
         return None
+    if label == "events.EventBookingDecision":
+        from .booking_decision_import import finish
+        finish(row, decision_sticky)
     from .public_page_document_remap import remap_documents
     remap_documents(label, row, pk_map)
 
     for mapped in fields_for(model):
         column = model._meta.get_field(mapped.field_name).column
+        if label in {"inventory.EquipmentProposalReceipt", "inventory.EquipmentConsumableUseReceipt"} and mapped.field_name == "intent_snapshot":
+            from .equipment_intent_preinsert import rebind_receipt_before_insert
+            row[column], row["payload_sha256"], row["imported_nonreplayable"] = rebind_receipt_before_insert(
+                model, row[column], source=source, row=row, job=job, target=target, deks=deks, pk_map=pk_map, references=references, creator_unavailable=creator_unavailable)
+            continue
         source_aad = {
             "makerspace_id": int(job.source_makerspace_id),
             "table": model._meta.db_table,

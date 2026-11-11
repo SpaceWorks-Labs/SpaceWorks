@@ -116,6 +116,9 @@ def row_disposition(model_label, row, references):
     if model_label == "payments.Payment" and references.get(
         model_label, source_pk(model_label, row), "subject_id"
     ):
+        if row.get("subject_type") == "event_venue_fee":
+            from .insertion_errors import VenueFeeDebtProvenanceUnavailable
+            raise VenueFeeDebtProvenanceUnavailable()
         return "drop"
     return "insert"
 

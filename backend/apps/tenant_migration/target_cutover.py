@@ -62,6 +62,10 @@ def _activate_target_transaction(*, pairing, import_job, receipt_envelope, actor
             )
         return persisted_envelope(receipt)
 
+    from apps.makerspaces.loan_context_generations import rotate
+    from apps.data_export.loan_context_integrity import validate_loan_context_import
+    validate_loan_context_import(target.pk)
+    rotate(target)
     verify_import_object_ownership(job)
     verify_import_object_journal_state(job)
     if target_state.transition_target(

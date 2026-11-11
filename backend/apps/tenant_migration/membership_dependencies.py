@@ -37,6 +37,10 @@ MEMBERSHIP_DEPENDENT_MODELS = {
         retained_by_import=False,
         reason="Staff authority is dropped on import; every imported membership becomes Member.",
     ),
+    "machines.MembershipMachineScope": MembershipDependency(
+        retained_by_import=False,
+        reason="A staff member's per-machine reach is authority and is dropped on import.",
+    ),
     "machines.MembershipMachineTypeScope": MembershipDependency(
         retained_by_import=False,
         reason="A Machine Manager's per-person type reach is authority and is dropped on import.",

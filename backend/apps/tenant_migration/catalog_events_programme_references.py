@@ -70,6 +70,7 @@ USER_FIELDS = frozenset({
     ('events.SubmissionSnapshot', 'submitted_by'),
     ('events.TeamComment', 'author'),
     ('organizations.OrganizationLeaveReceipt', 'actor'),
+    ('organizations.OrganizationReview', 'actor'),
 })
 
 EXCLUDED_USER_EDGE_REASONS = {
@@ -95,6 +96,7 @@ EXCLUDED_USER_EDGE_REASONS = {
     ('events.MentorAttentionPreference', 'member'): 'Source-local authority, credential or process coordination; target reconstructs explicitly.',
     ('events.MentorImportPreview', 'actor'): 'Source-local authority, credential or process coordination; target reconstructs explicitly.',
     ('organizations.OrganizationLeaveReceipt', 'actor'): 'Global account-owned data and coordination; excluded from all tenant datasets and user closure.',
+    ('organizations.OrganizationReview', 'actor'): 'Global platform review history of a deployment-global organization; never tenant data.',
 }
 
 DATASETS = {

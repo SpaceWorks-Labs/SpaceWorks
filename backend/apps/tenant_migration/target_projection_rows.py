@@ -13,6 +13,7 @@ ROW_POLICIES = {
         condition=("promoted_at", None),
     ),
     "makerspaces.MembershipAdditionalRole": RowPolicy(RowDisposition.DROP, "Imported memberships are reduced to Member; additional authority is dropped.", condition=("_staff_account", False)),
+    "machines.MembershipMachineScope": RowPolicy(RowDisposition.DROP, "Imported memberships carry no machine-management authority.", condition=("_staff_account", False)),
     "machines.MembershipMachineTypeScope": RowPolicy(RowDisposition.DROP, "Imported memberships carry no machine-management authority.", condition=("_staff_account", False)),
     **WP4_ROW_POLICIES,
     "makerspaces.MakerspaceLoanPolicy": RowPolicy(
@@ -54,6 +55,6 @@ ROW_POLICIES = {
     "makerspaces.MembershipRequest": RowPolicy(
         RowDisposition.DROP,
         "Imported invitations are authority the target never authorized and must be re-created.",
-        condition=("state", frozenset({"requested", "invited", "awaiting_vouches"})),
+        condition=("state", frozenset({"requested", "invited", "awaiting_vouches", "changes_requested"})),
     ),
 }

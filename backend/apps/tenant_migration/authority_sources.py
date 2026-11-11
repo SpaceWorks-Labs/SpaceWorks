@@ -15,6 +15,17 @@ from .authority_reimbursements import SOURCE_PATHS as _REIMBURSEMENT_SOURCES
 
 APPS_DIR = Path(project_apps.__file__).resolve().parent
 AUTHORIZATION_SOURCES = (
+    APPS_DIR / "accounts" / "booking_decision_deletion.py",
+    APPS_DIR / "accounts" / "admin_staff_lifecycle.py",
+    APPS_DIR / "events" / "booking_decision_access.py",
+    APPS_DIR / "events" / "booking_decision_service.py",
+    APPS_DIR / "events" / "views_booking_decision.py",
+    APPS_DIR / "events" / "booking_decision_replacement.py",
+    APPS_DIR / "events" / "views_booking_decision_replacement.py",
+    APPS_DIR / "bookings" / "services_replacement.py",
+    APPS_DIR / "hardware_requests" / "contextual_equipment_service.py",
+    APPS_DIR / "hardware_requests" / "contextual_equipment_execution.py",
+    APPS_DIR / "hardware_requests" / "contextual_equipment_common.py",
     APPS_DIR / "accounts" / "surface_policy.py",
     APPS_DIR / "accounts" / "credential_locks.py",
     APPS_DIR / "accounts" / "session_issuance.py",

@@ -25,8 +25,10 @@ FIELD_NAMES = {
     "managed_hosting.HostingInvoiceReceipt": frozenset(
         "id invoice method reference received_on amount_minor note recorded_by recorded_at".split()),
     "managed_hosting.PlatformHostingBillingSettings": frozenset(
-        "id auto_enforce_enabled grace_days provider stripe_secret_key stripe_webhook_secret razorpay_key_id "
+        "id hosting_enabled auto_enforce_enabled grace_days provider stripe_secret_key stripe_webhook_secret razorpay_key_id "
         "razorpay_key_secret razorpay_webhook_secret updated_by updated_at".split()),
+    "managed_hosting.PlatformThrottleRate": frozenset("id scope rate updated_by updated_at".split()),
+    "managed_hosting.SpaceHostingType": frozenset("id makerspace hosting_type updated_by updated_at".split()),
 }
 EXTRA_FIELDS = {
     "hosting_requests.HostingRequest": frozenset({"expected_members"}),

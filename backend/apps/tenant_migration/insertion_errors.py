@@ -5,6 +5,16 @@ class TenantInsertionError(RuntimeError):
     """Base error for raw import infrastructure failures."""
 
 
+class VenueFeeDebtProvenanceUnavailable(TenantInsertionError):
+    """A venue debt cannot be safely attached to a retained fee during import."""
+
+    code = "venue_fee_payment_provenance_unavailable"
+    default_detail = "An event venue payment has no retained fee. Resolve its provenance before import."
+
+    def __init__(self):
+        super().__init__(self.default_detail)
+
+
 class ImportTransactionRequired(TenantInsertionError):
     """The caller did not provide the all-or-nothing import transaction."""
 

@@ -24,6 +24,7 @@ FK_POLICIES = {
         "Revisions only reference promoted artwork; remap its retained identity.",
     ),
     ("makerspaces.MembershipAdditionalRole", "role"): ForeignKeyPolicy(ReferenceDisposition.DROP_ROW, "Source roles never become target authority."),
+    ("machines.MembershipMachineScope", "machine"): ForeignKeyPolicy(ReferenceDisposition.DROP_ROW, "A resolved machine must not revive source authority."),
     ("machines.MembershipMachineTypeScope", "machine_type"): ForeignKeyPolicy(ReferenceDisposition.DROP_ROW, "A resolved type must not revive source authority."),
     ("inventory.InventoryProduct", "category"): ForeignKeyPolicy(ReferenceDisposition.REMAP_RESOLVED, "Use the category slug resolution map."),
     ("integrations.DestinationCategoryScope", "category"): ForeignKeyPolicy(ReferenceDisposition.REMAP_RESOLVED, "Use the category slug resolution map."),

@@ -7,6 +7,8 @@
   key: the Space Manager has no download surface (#111 Q2).
 Delivery failure never fails the move; the audit row is the durable record.
 """
+from config.locale_resolution import override_for
+from django.utils.translation import gettext, gettext_noop
 from apps.accounts import rbac
 from apps.integrations.notification_sources import NotificationSource, register_source
 from apps.operations.notifications_p2 import body, fanout, revision, safe_notification, staff_link
@@ -14,13 +16,13 @@ from apps.operations.notifications_p2 import body, fanout, revision, safe_notifi
 SOURCE = "tenant_migration.selfhost_move"
 EVENT = "selfhost_move_status"
 TEXT = {
-    "requested": "Your request to move {name} to its own server was sent. The platform operator reviews it.",
-    "approved": "The platform operator approved moving {name} to its own server and will run the export.",
-    "rejected": "The platform operator declined the request to move {name} to its own server.",
-    "exporting": "The export of {name} for its new server is running.",
-    "exported": "{name} was exported for its new server. The platform operator hands it to the new server's "
-                "operator; staff and members keep their sign-in there.",
-    "failed": "The export of {name} for its new server did not complete. The platform operator will retry.",
+    "requested": gettext_noop("Your request to move {name} to its own server was sent. The platform operator reviews it."),
+    "approved": gettext_noop("The platform operator approved moving {name} to its own server and will run the export."),
+    "rejected": gettext_noop("The platform operator declined the request to move {name} to its own server."),
+    "exporting": gettext_noop("The export of {name} for its new server is running."),
+    "exported": gettext_noop("{name} was exported for its new server. The platform operator hands it to the new "
+                             "server's operator; staff and members keep their sign-in there."),
+    "failed": gettext_noop("The export of {name} for its new server did not complete. The platform operator will retry."),
 }
 
 
@@ -43,8 +45,9 @@ def eligible(envelope):
 
 def content(move):
     name = move.makerspace.name
-    text = TEXT.get(move.status, "The move of {name} to its own server changed.").format(name=name)
-    return body(f"Moving {name} to its own server: {move.get_status_display().lower()}", text,
+    text = gettext(TEXT.get(move.status, gettext_noop("The move of {name} to its own server changed."))).format(name=name)
+    return body(gettext("Moving %(name)s to its own server: %(status)s") % {
+        "name": name, "status": move.get_status_display().lower()}, text,
                 staff_link(move.makerspace, "settings"))
 
 
@@ -55,12 +58,13 @@ def render(envelope):
 @safe_notification
 def _email(move):
     return fanout(row=move, space=move.makerspace, feature="api_access", stream="makerspace", event=EVENT,
-                  source_kind=SOURCE, revision=source_revision(move), staff_body=content(move), rooms=False)
+                  source_kind=SOURCE, revision=source_revision(move), staff_body=lambda: content(move), rooms=False)
 
 
 def notify_status(move):
     from apps.notifications.models import Notification
-    message = content(move)
+    with override_for(makerspace=move.makerspace):  # a makerspace-wide row has no recipient
+        message = content(move)
     try:
         Notification.objects.create(
             makerspace=move.makerspace, event=f"tenant_migration.{EVENT}",

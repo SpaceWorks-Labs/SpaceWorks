@@ -42,6 +42,7 @@ class AuthorityRegistryError(AssertionError):
 SCANNED_MODEL_LABELS = frozenset({
     "makerspaces.MembershipAdditionalRole",
     "machines.MembershipMachineTypeScope",
+    "machines.MembershipMachineScope",
     "makerspaces.Makerspace",
     "makerspaces.MakerspaceMembership",
     "makerspaces.MakerspaceRole",
@@ -54,6 +55,12 @@ DECLARED_AUTHORITY_FIELDS = {
     **{edge: policy.reason for edge, policy in TARGET_FIELD_PROJECTION.items()},
     **EXPLICIT_AUTHORITY_FIELDS,
 }
+from .catalog_booking_decision import FIELD_NAMES as BOOKING_DECISION_AUTHORITY_FIELDS
+SCANNED_MODEL_LABELS |= BOOKING_DECISION_AUTHORITY_FIELDS.keys()
+DECLARED_AUTHORITY_FIELDS.update({
+    (label, field): "Retained source/actor/CAS identity is remapped under current authority before decision admission."
+    for label, fields in BOOKING_DECISION_AUTHORITY_FIELDS.items() for field in fields if field != "id"
+})
 SCANNED_MODEL_LABELS |= PAGE_EXPORTED_FIELDS.keys()
 DECLARED_AUTHORITY_FIELDS.update({
     (label, field): "Authored page history is remapped with reset publication/disclosures and locked target-side owner authority."

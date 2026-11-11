@@ -24,6 +24,7 @@ SOURCE_LOCAL_AUDIT_EDGES = frozenset(
         ("payment.double_paid_refund_required", "provider_payment_id"),
         ("payment.mobile_order_created", "order_id"),
         ("payment.paid_after_terminal", "event_id"),
+        ("payment.paid_after_terminal", "provider_payment_id"),
         ("payment.paid_online", "event_id"),
         ("payments.connect_authorization_revoked", "connect_account_id"),
         ("payments.connect_previous_authorization_revoked", "connect_account_id"),

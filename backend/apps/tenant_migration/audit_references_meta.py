@@ -80,6 +80,7 @@ AUDIT_META_REFERENCES = {
     **_reference(
         R, "boxes.QrCode", ("asset.issued", "qr_id"),
         ("public_tool.checked_out", "qr_id"), ("public_tool.returned", "qr_id"),
+        ("qr.external_assigned", "qr_id"),
     ),
     **_reference(
         R, "hardware_requests.HardwareRequest",
@@ -248,6 +249,18 @@ from .audit_references_meta_snapshots import SNAPSHOT_AUDIT_EDGES
 AUDIT_META_REFERENCES.update(SNAPSHOT_AUDIT_EDGES)
 AUDIT_META_REFERENCES.update(PHASE5_AUDIT_EDGES)
 AUDIT_META_REFERENCES.update(MEMBERSHIP_AUDIT_EDGES)
+from .audit_references_guest_passes import EDGES as GUEST_PASS_AUDIT_EDGES  # noqa: E402
+AUDIT_META_REFERENCES.update(GUEST_PASS_AUDIT_EDGES)
+from .audit_references_l3b import EDGES as L3B_AUDIT_EDGES  # noqa: E402
+AUDIT_META_REFERENCES.update(L3B_AUDIT_EDGES)
+from .audit_references_r3_org_units import EDGES as R3_ORG_UNITS_AUDIT_EDGES  # noqa: E402
+AUDIT_META_REFERENCES.update(R3_ORG_UNITS_AUDIT_EDGES)
+from .audit_references_r3_org_b4 import EDGES as R3_ORG_B4_AUDIT_EDGES  # noqa: E402
+AUDIT_META_REFERENCES.update(R3_ORG_B4_AUDIT_EDGES)
+from .audit_references_r3_org_money import EDGES as R3_ORG_MONEY_AUDIT_EDGES  # noqa: E402
+AUDIT_META_REFERENCES.update(R3_ORG_MONEY_AUDIT_EDGES)
+from .audit_references_r0120 import EDGES as R0120_AUDIT_EDGES  # noqa: E402
+AUDIT_META_REFERENCES.update(R0120_AUDIT_EDGES)
 AUDIT_META_REFERENCES.update(KIOSK_AUDIT_EDGES)
 AUDIT_META_REFERENCES.update(PAYMENT_AUDIT_EDGES)
 AUDIT_META_REFERENCES.update(REPORT_SCHEDULE_AUDIT_EDGES)

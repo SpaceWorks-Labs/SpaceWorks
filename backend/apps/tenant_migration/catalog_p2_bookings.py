@@ -19,18 +19,26 @@ FIELD_NAMES = {
         "id makerspace booking actor outcome remark source recorded_at".split()),
     "bookings.BookingIssue": frozenset(
         "id makerspace booking departure outcome created_at resolved_at resolved_by resolution_note".split()),
+    # Decision 221(d): the append-only per-term ledger of a plan's included booking hours.
+    "bookings.IncludedHoursUsage": frozenset(
+        "id makerspace term booking kind entry minutes generation reverses created_at".split()),
 }
-BOOKING_EXTRA_FIELDS = frozenset({"decision_reason", "departed_at"})
+# `replaces` (decision 216) is an intra-tenant self-reference: it follows the imported
+# original booking and confers no authority on the target.
+# `is_house` (decision 223 (h)) is a plain flag: a staff-only booking with no member, charge or plan hours.
+BOOKING_EXTRA_FIELDS = frozenset({"decision_reason", "departed_at", "replaces", "is_house"})
 EXPORTED_FIELDS = {label: " ".join(sorted(names)) for label, names in FIELD_NAMES.items()}
 
 DATASETS = {
     "bookings.BookableSpacePhoto": ("bookings/space_photos.csv", ("space__makerspace",)),
     "bookings.BookingDepartureEvent": ("bookings/departure_history.csv", ("makerspace",)),
     "bookings.BookingIssue": ("bookings/issues.csv", ("makerspace",)),
+    "bookings.IncludedHoursUsage": ("bookings/included_hours_usage.csv", ("makerspace",)),
 }
 SUBJECT_PATHS = {
     "bookings.BookingDepartureEvent": ("booking__member",),
     "bookings.BookingIssue": ("booking__member",),
+    "bookings.IncludedHoursUsage": ("booking__member",),
 }
 USER_EDGES = frozenset({
     ("bookings.BookableSpacePhoto", "uploaded_by"),
@@ -59,4 +67,6 @@ def unique_rules(preserve, remap, policy):
             field="object_key", generator=photo_key),
         ("bookings.BookingIssue", "field:departure"): policy(
             remap, "One issue per departure event; follows the imported event."),
+        ("bookings.Booking", "field:replaces"): policy(
+            remap, "One replacement per original booking; follows the imported original."),
     }

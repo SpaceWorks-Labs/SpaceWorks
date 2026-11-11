@@ -26,7 +26,7 @@ FIELD_NAMES = {
         "closed_at".split()),
 }
 EXTRA_FIELDS = {
-    "inventory.InventoryProduct": frozenset({"is_consumable", "public_show_expected_back"}),
+    "inventory.InventoryProduct": frozenset({"is_consumable", "public_show_expected_back", "event_only"}),
     "procurement.ToBuyItem": frozenset({"source_consumable", "vendor"}),
     "warranty.Warranty": frozenset({"vendor"}),
     "hardware_requests.HardwareRequest": frozenset({"pickup_from", "pickup_until"}),
@@ -44,7 +44,7 @@ def authority_entries(authority, disposition):
 
     keep = disposition.PRESERVE
     return (
-        *same("inventory.InventoryProduct", "is_consumable public_show_expected_back", keep,
+        *same("inventory.InventoryProduct", "is_consumable public_show_expected_back event_only", keep,
               "Item configuration is the space's own catalogue data."),
         *same("hardware_requests.HardwareRequest", "pickup_from pickup_until", keep,
               "A request's pickup window is part of its own workflow history."),

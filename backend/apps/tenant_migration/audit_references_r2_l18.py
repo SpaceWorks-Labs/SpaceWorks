@@ -11,12 +11,14 @@ def _remap(model, *edges):
 
 EDGES = {
     **_remap("payments.Donation", ("donation.created", "donation_id"), ("donation.paid", "donation_id"),
-             ("donation.cancelled", "donation_id"), ("pledge.period_raised", "donation_id")),
+             ("donation.cancelled", "donation_id"), ("pledge.period_raised", "donation_id"),
+             ("donation.receipt_reissued", "donation_id")),
     **_remap("payments.Payment", ("donation.created", "payment_id"), ("donation.return_case_opened", "payment_id"),
              ("sponsor.charge_raised", "payment_id"), ("sponsor.charge_paid", "payment_id")),
     **_remap("payments.RefundCase", ("donation.return_case_opened", "case_id")),
     **_remap("payments.DonationCampaign", ("donation.created", "campaign_id"), ("pledge.created", "campaign_id"),
-             ("donation.campaign_created", "campaign_id"), ("donation.campaign_updated", "campaign_id")),
+             ("donation.campaign_created", "campaign_id"), ("donation.campaign_updated", "campaign_id"),
+             ("donation.exported", "campaign_id")),
     **_remap("payments.DonationPledge", ("donation.created", "pledge_id"), *((f"pledge.{action}", "pledge_id") for
                                                                              action in ("created", "paused", "resumed",
                                                                                         "updated", "cancelled",

@@ -9,6 +9,7 @@ _ISSUE_ACTIONS = (
     "issue.dispatched", "issue.closed", "dispatch.sent", "repair.started", "repair.fixed", "repair.visit_logged",
     "repair.remark_logged", "repair.parts_used", "repair.parts_needed", "repair.quote_recorded",
     "repair.quote_approved", "repair.quote_declined", "repair.payout_recorded", "service_state.changed",
+    "repair.loan_handoff",
 )
 _CONTACT_ACTIONS = (
     "issue.assigned", "dispatch.sent", "repair.quote_recorded", "technician.created", "technician.updated",
@@ -25,7 +26,11 @@ EDGES = {
     **_remap("maintenance.IssueReport", *((action, "issue_id") for action in _ISSUE_ACTIONS),
              ("procurement.item_added", "issue_id")),
     **_remap("maintenance.TechnicianContact", *((action, "contact_id") for action in _CONTACT_ACTIONS)),
-    **_remap("maintenance.WorkOrder", ("issue.opened", "work_order_id"), ("issue.triaged", "work_order_id")),
+    **_remap("maintenance.WorkOrder", ("issue.opened", "work_order_id"), ("issue.triaged", "work_order_id"),
+             ("repair.loan_handoff", "work_order_id")),
+    **_remap("hardware_requests.HardwareRequest", ("repair.loan_handoff", "request_id")),
+    **_remap("hardware_requests.RequesterAccountability", ("repair.loan_handoff", "accountability_id")),
+    **_remap("evidence.EvidencePhoto", ("repair.loan_handoff", "evidence_id")),
     **_remap("maintenance.IssueAssignment", ("issue.assigned", "assignment_id"), ("issue.unassigned", "assignment_id")),
     **_remap("maintenance.RepairPart", ("repair.parts_used", "part_id"), ("repair.parts_needed", "part_id")),
     **_remap("inventory.InventoryProduct", ("repair.parts_used", "product_id"), ("repair.parts_needed", "product_id"),

@@ -20,6 +20,8 @@ from .target_projection_events_programme import TARGET_FIELDS as PROGRAMME_TARGE
 from .target_projection_reimbursements import TARGET_FIELDS as REIMBURSEMENT_TARGET_FIELDS
 
 TARGET_FIELD_PROJECTION = {
+    ("inventory.EquipmentKitTemplate", "published_for_contexts"): TargetField(False, reason="Target staff must explicitly republish imported kits."),
+    ("makerspaces.Makerspace", "loan_context_generations"): _default("Target creates fresh context generations."),
     ("accounts.User", "account_restored_at"): TargetField(None, reason="Target issues its own revocable sessions."),
     ("accounts.User", "deletion_username"): TargetField("", reason="Target chooses its own random erasure pseudonym."),
     ("accounts.User", "deletion_email_ciphertext"): TargetField("", reason="Source platform-encrypted erasure address never travels."),

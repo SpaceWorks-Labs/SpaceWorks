@@ -19,7 +19,7 @@ from apps.makerspaces.role_catalog import ROLE_BY_SLUG
 from .insertion_errors import ArchiveFormatError
 
 MEMBERSHIP = "makerspaces.MakerspaceMembership"
-STAFF_CHILD_LABELS = frozenset({"makerspaces.MembershipAdditionalRole", "machines.MembershipMachineTypeScope"})
+STAFF_CHILD_LABELS = frozenset({"makerspaces.MembershipAdditionalRole", "machines.MembershipMachineTypeScope", "machines.MembershipMachineScope"})
 PREFERENCE_LABELS = frozenset({"notifications.MemberNotificationPreference", "notifications.NotificationPreference"})
 STAFF, COMMUNITY = "staff", "community"
 SPLIT_STAFF_KIND = "staff"

@@ -29,4 +29,5 @@ EDGES = {
              ("shop.order_cancelled", "case_id")),
     **_remap("procurement.ToBuyItem", ("shop.stock_restocked", "to_buy_item_id")),
     ("procurement.bought", "credited_shop_variant_id"): AuditReference(R, "shop.ShopVariant"),
+    ("shop.event_offers_set", "event_id"): AuditReference(R, "events.Event"),
 }

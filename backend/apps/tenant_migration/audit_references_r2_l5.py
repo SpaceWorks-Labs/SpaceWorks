@@ -13,9 +13,11 @@ def _remap(model, *pairs):
 
 EDGES = {
     **_remap("payments.PaymentClaim", ("payment.paid_claim_submitted", "claim_id"),
-             ("payment.paid_claim_confirmed", "claim_id"), ("payment.paid_claim_rejected", "claim_id")),
+             ("payment.paid_claim_confirmed", "claim_id"), ("payment.paid_claim_rejected", "claim_id"),
+             ("payment.paid_claim_superseded", "claim_id")),
     **_remap("payments.SettlementConfirmation", ("payment.settlement_awaiting_confirmation", "confirmation_id"),
-             ("payment.settlement_confirmed", "confirmation_id"), ("payment.settlement_rejected", "confirmation_id")),
+             ("payment.settlement_confirmed", "confirmation_id"), ("payment.settlement_rejected", "confirmation_id"),
+             ("payment.settlement_superseded", "confirmation_id")),
     **_remap("payments.ManualSettlement", ("payment.settlement_confirmed", "settlement_id")),
     **_remap("payments.PaymentCaptureFlag", ("payment.capture_flagged", "flag_id"),
              ("payment.capture_flag_resolved", "flag_id"), ("payment.document_held", "flag_id"),

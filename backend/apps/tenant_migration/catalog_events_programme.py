@@ -122,6 +122,7 @@ FIELD_NAMES = {
     'encryption.AccountPiiKey': frozenset('id version wrapped_dek broker_backend broker_key_id status created_at user'.split()),
     'encryption.PiiAccountWriteFence': frozenset('id state epoch claim_id claim_expires_at operation_id updated_at user'.split()),
     'organizations.OrganizationLeaveReceipt': frozenset('id operation_id expected_version created_at organization actor'.split()),
+    'organizations.OrganizationReview': frozenset('id organization action reason actor created_at'.split()),
 }
 
 OMITTED_MODELS = {
@@ -158,6 +159,7 @@ OMITTED_MODELS = {
     'encryption.AccountPiiKey': 'Global account-owned data and coordination; excluded from all tenant datasets and user closure.',
     'encryption.PiiAccountWriteFence': 'Global account-owned data and coordination; excluded from all tenant datasets and user closure.',
     'organizations.OrganizationLeaveReceipt': 'Global account-owned data and coordination; excluded from all tenant datasets and user closure.',
+    'organizations.OrganizationReview': 'Global platform review history of a deployment-global organization; never tenant data.',
 }
 from .catalog_r2_l7 import FIELD_NAMES as _L7_FIELD_NAMES  # noqa: E402
 FIELD_NAMES.update(_L7_FIELD_NAMES)

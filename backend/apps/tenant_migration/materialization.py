@@ -56,6 +56,8 @@ def materialize_tenant(
     if batch_size < 1:
         raise ValueError("batch_size must be positive.")
     try:
+        from .venue_fee_import_preflight import refuse_orphan_venue_payments
+        refuse_orphan_venue_payments(archive)
         object_plan = prepare_import_objects(archive, job)
         with transaction.atomic():
             locked_job = TenantImportJob.objects.select_for_update().get(pk=job.pk)
@@ -114,6 +116,7 @@ def materialize_tenant(
                 identities = resolve_identities(
                     archive, locked_job, pk_map, required_identities, deks
                 )
+                references.bind_equipment_identities(required_identities)
                 installed_versions = install_carried_deks(target, carried)
                 from .semantic_reimbursements import prepare_project_refs, reset_project_refs
                 project_refs = prepare_project_refs(archive, pk_map)

@@ -5,6 +5,8 @@ import json
 from .transaction_state import require_import_transaction
 
 TABLE_NAME = "tenant_import_reference_state"
+EQUIPMENT_RETAINED_FIELD = "__equipment_materialized_v1__"
+EQUIPMENT_INTENT_LABELS = frozenset({"events.Event", "events.EventRegistration", "bookings.Booking", "hardware_requests.LoanWaitlistEntry", "hardware_requests.HardwareRequest", "inventory.InventoryProduct", "inventory.EquipmentKitTemplate", "inventory.EquipmentKitAllocation", "inventory.EquipmentConsumablePlan", "operations.InventoryAdjustment"})
 
 
 class ReferenceState:
@@ -29,6 +31,9 @@ class ReferenceState:
     def _load(self, archive):
         batch = []
         for record in archive.json_lines("migration/reference_provenance.jsonl"):
+            if record["field_name"] == EQUIPMENT_RETAINED_FIELD:
+                from .insertion_errors import ArchiveFormatError
+                raise ArchiveFormatError("Archive uses a reserved internal reference key.")
             batch.append(
                 (
                     record["source_model_label"],
@@ -45,6 +50,9 @@ class ReferenceState:
             self._insert(batch)
         batch = []
         for record in archive.json_lines("migration/external_references.jsonl"):
+            if record["field_name"] == EQUIPMENT_RETAINED_FIELD:
+                from .insertion_errors import ArchiveFormatError
+                raise ArchiveFormatError("Archive uses a reserved internal reference key.")
             batch.append(
                 (
                     record["source_model_label"],
@@ -92,6 +100,38 @@ class ReferenceState:
             "kind": row[0],
             "detail": json.loads(detail) if isinstance(detail, str) else detail,
         }
+
+    def has_any(self, model_label, source_object_ids, field_name):
+        """One indexed lookup for a bounded caller-supplied batch of source IDs."""
+        if not source_object_ids:
+            return False
+        with self.connection.cursor() as cursor:
+            cursor.execute(
+                f"SELECT 1 FROM {TABLE_NAME} WHERE source_model_label=%s "
+                "AND field_name=%s AND source_object_id=ANY(%s) LIMIT 1",
+                [model_label, field_name, [str(value) for value in source_object_ids]],
+            )
+            return cursor.fetchone() is not None
+
+    def record_equipment_materialized(self, label, pairs):
+        """Record only source/target pairs actually inserted in this transaction."""
+        if label not in EQUIPMENT_INTENT_LABELS:
+            raise ValueError("Unexpected equipment intent target model.")
+        self._insert([(label, str(source), EQUIPMENT_RETAINED_FIELD, "equipment_materialized",
+                       json.dumps({"target_pk": str(target)})) for source, target in pairs])
+
+    def equipment_materialized(self, label, source, target):
+        if label not in EQUIPMENT_INTENT_LABELS:
+            return False
+        record = self.get(label, source, EQUIPMENT_RETAINED_FIELD)
+        return bool(record and record["kind"] == "equipment_materialized" and record["detail"] == {"target_pk": str(target)})
+
+    def bind_equipment_identities(self, identities):
+        self._equipment_identities = identities
+
+    def equipment_identity_resolved(self, source, target):
+        identities = getattr(self, "_equipment_identities", None)
+        return bool(identities and identities.was_resolved(source, target))
 
     def external_snapshot(self, model_label, source_object_id, field_name):
         """Return a closure snapshot only when the record declares that shape."""

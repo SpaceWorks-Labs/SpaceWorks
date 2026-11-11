@@ -15,7 +15,8 @@ _ORDER_ACTIONS = ("order_created", "pass_order_created", "order_paid", "order_un
 
 EDGES = {
     **_remap("events.EventOrder", *((f"event.{action}", "order_id") for action in _ORDER_ACTIONS)),
-    **_remap("events.Event", ("event.order_created", "event_id"), ("event.addon_created", "event_id"),
+    **_remap("events.Event", ("shop.order_pickup_moved_to_space", "event_id"),
+             ("event.order_created", "event_id"), ("event.addon_created", "event_id"),
              ("event.addon_deleted", "event_id"), ("event.pass_occurrence_cancelled", "event_id"),
              ("event.venue_fee_configured", "event_id"), ("event.venue_fee_charged", "event_id")),
     **_remap("events.EventSeries", ("event.order_created", "series_id"), ("event.pass_order_created", "series_id"),

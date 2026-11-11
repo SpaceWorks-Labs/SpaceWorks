@@ -21,6 +21,8 @@ def remap_semantic_references(label, source, row, pk_map, references):
     remap_programme(label, source, row, lambda target, value: pk_map.lookup(apps.get_model(target), value))
     from .semantic_reimbursements import remap as remap_reimbursement
     remap_reimbursement(label, source, row, lambda target, value: pk_map.lookup(apps.get_model(target), value))
+    from .semantic_equipment_proposals import remap as remap_equipment
+    remap_equipment(label, source, row, lambda target, value: pk_map.lookup(apps.get_model(target), value))
     if label in {edge[0] for edge in DISCRIMINATOR_REFERENCES}:
         _remap_discriminator(label, source, row, pk_map, references)
     if label == "payments.Payment":

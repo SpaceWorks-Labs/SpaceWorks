@@ -19,6 +19,7 @@ from apps.audit import services as audit
 from . import selfhost_move as moves
 from .admin import ReadOnlyMigrationAdmin
 from .models_selfhost_move import SelfHostMoveRequest
+from django.utils.translation import gettext_lazy
 
 
 class SelfHostMoveRequestAdmin(RecentReauthenticationAdminMixin, ReadOnlyMigrationAdmin):
@@ -27,7 +28,7 @@ class SelfHostMoveRequestAdmin(RecentReauthenticationAdminMixin, ReadOnlyMigrati
     readonly_fields = tuple(field.name for field in SelfHostMoveRequest._meta.fields if field.name != "artifact_path")
     actions = ("approve_moves", "reject_moves")
 
-    @admin.display(description="Export")
+    @admin.display(description=gettext_lazy("Export"))
     def move_page(self, obj):
         from django.utils.html import format_html
         return format_html('<a href="{}">Open</a>', reverse("admin:tenant_migration_selfhostmoverequest_run", args=[obj.pk]))
@@ -42,11 +43,11 @@ class SelfHostMoveRequestAdmin(RecentReauthenticationAdminMixin, ReadOnlyMigrati
         return [path("<uuid:pk>/run/", view(self.run_view), name="tenant_migration_selfhostmoverequest_run"),
                 *super().get_urls()]
 
-    @admin.action(description="Approve the selected move requests", permissions=["view"])
+    @admin.action(description=gettext_lazy("Approve the selected move requests"), permissions=["view"])
     def approve_moves(self, request, queryset):
         self._decide(request, queryset, approve=True)
 
-    @admin.action(description="Reject the selected move requests", permissions=["view"])
+    @admin.action(description=gettext_lazy("Reject the selected move requests"), permissions=["view"])
     def reject_moves(self, request, queryset):
         self._decide(request, queryset, approve=False)
 

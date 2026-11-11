@@ -11,6 +11,10 @@ the reason). New columns on travelling rows:
 """
 
 FIELD_NAMES = {
+    "notifications.BrowserFirebaseInstallation": frozenset("id fid_hmac owner_epoch user updated_at".split()),
+    "notifications.BrowserFirebaseRegistration": frozenset(
+        "id makerspace user project_id fid_ciphertext fid_hmac active created_at confirmed_at revoked_at "
+        "wake_pending_seq wake_sent_seq wake_retry_at".split()),
     "events.SubmissionIntegrityCheck": frozenset(
         "id snapshot event makerspace state attempts next_attempt_at checked_at".split()),
     "events.SubmissionStorageCleanupReceipt": frozenset(

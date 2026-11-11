@@ -89,6 +89,12 @@ def _activate(job):
     verify_import_objects(job)
     _require_activation_ready(job)
     with transaction.atomic():
+        from apps.makerspaces.models import Makerspace
+        from apps.makerspaces.loan_context_generations import rotate
+        target = Makerspace.objects.select_for_update().get(pk=job.target_makerspace_id)
+        from apps.data_export.loan_context_integrity import validate_loan_context_import
+        validate_loan_context_import(target.pk)
+        rotate(target)
         if target_state.transition_target(job.target_makerspace_id, target_state.IMPORTING, target_state.ACTIVE) != 1:
             raise SelfHostImportError("not_importing", "The imported space is not waiting for activation.")
     delete_staging_objects(job)

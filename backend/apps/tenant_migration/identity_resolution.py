@@ -29,11 +29,11 @@ class RequiredIdentitySet:
 
     def __init__(self):
         self.connection = require_import_transaction()
-        self.pending = set()
+        self.pending = {}
         with self.connection.cursor() as cursor:
             cursor.execute(
                 f"CREATE TEMPORARY TABLE {REQUIRED_TABLE} "
-                "(source_user_id text PRIMARY KEY) ON COMMIT DROP"
+                "(source_user_id text PRIMARY KEY, mandatory boolean NOT NULL, resolved_target text) ON COMMIT DROP"
             )
 
     def add_row(self, model, row):
@@ -45,14 +45,16 @@ class RequiredIdentitySet:
                     and field.related_model._meta.label == "accounts.User"
                     and row.get(field.attname)
                 ):
-                    self.add(row[field.attname])
+                    optional_creator = model._meta.label in {"inventory.EquipmentProposalReceipt", "inventory.EquipmentConsumableUseReceipt", "events.EventBookingDecision"} and field.name == "creator"
+                    self.add(row[field.attname], mandatory=not optional_creator)
         if model._meta.label == "machines.ServiceRequestFile" and row.get(
             "owner_user_id"
         ):
             self.add(row["owner_user_id"])
 
-    def add(self, source_user_id):
-        self.pending.add(str(source_user_id))
+    def add(self, source_user_id, *, mandatory=True):
+        key = str(source_user_id)
+        self.pending[key] = self.pending.get(key, False) or mandatory
         if len(self.pending) >= 500:
             self.flush()
 
@@ -61,9 +63,9 @@ class RequiredIdentitySet:
             return
         with self.connection.cursor() as cursor:
             cursor.executemany(
-                f"INSERT INTO {REQUIRED_TABLE} (source_user_id) VALUES (%s) "
-                "ON CONFLICT DO NOTHING",
-                [(value,) for value in self.pending],
+                f"INSERT INTO {REQUIRED_TABLE} (source_user_id, mandatory) VALUES (%s, %s) "
+                f"ON CONFLICT (source_user_id) DO UPDATE SET mandatory = {REQUIRED_TABLE}.mandatory OR EXCLUDED.mandatory",
+                list(self.pending.items()),
             )
         self.pending.clear()
 
@@ -79,8 +81,34 @@ class RequiredIdentitySet:
     def count(self):
         self.flush()
         with self.connection.cursor() as cursor:
-            cursor.execute(f"SELECT COUNT(*) FROM {REQUIRED_TABLE}")
+            cursor.execute(f"SELECT COUNT(*) FROM {REQUIRED_TABLE} WHERE mandatory")
             return cursor.fetchone()[0]
+
+    def mandatory(self, source_user_id):
+        self.flush()
+        with self.connection.cursor() as cursor:
+            cursor.execute(f"SELECT mandatory FROM {REQUIRED_TABLE} WHERE source_user_id=%s", [str(source_user_id)])
+            row = cursor.fetchone()
+        return bool(row and row[0])
+
+    def should_resolve(self, job, source_user_id):
+        if not self.contains(source_user_id):
+            return False
+        return self.mandatory(source_user_id) or job.identity_decisions.filter(source_user_id=str(source_user_id)).exists()
+
+    def mark_resolved(self, source_user_id, target_user_id):
+        self.flush()
+        with self.connection.cursor() as cursor:
+            cursor.execute(f"UPDATE {REQUIRED_TABLE} SET resolved_target=%s WHERE source_user_id=%s", [str(target_user_id), str(source_user_id)])
+            if cursor.rowcount != 1:
+                raise IdentityResolutionError("Resolved identity was not in the source closure.")
+
+    def was_resolved(self, source_user_id, target_user_id):
+        self.flush()
+        with self.connection.cursor() as cursor:
+            cursor.execute(f"SELECT resolved_target FROM {REQUIRED_TABLE} WHERE source_user_id=%s", [str(source_user_id)])
+            row = cursor.fetchone()
+        return bool(row and row[0] == str(target_user_id))
 
 
 def preallocate_walk_in_ids(job, pk_map, required):
@@ -92,7 +120,7 @@ def preallocate_walk_in_ids(job, pk_map, required):
         )
         .values_list("source_user_id", flat=True)
         .iterator(chunk_size=500)
-        if required.contains(source_id)
+        if required.should_resolve(job, source_id)
     )
     pk_map.reserve(User, create_ids)
 
@@ -104,9 +132,9 @@ def resolve_identities(archive, job, pk_map, required, deks=None):
     seen_count = 0
     for source in archive.rows("accounts.User"):
         source_id = source["id"]
-        if not required.contains(source_id):
+        if not required.should_resolve(job, source_id):
             continue
-        seen_count += 1
+        seen_count += int(required.mandatory(source_id))
         decision = _required_decision(job, source_id)
         if source.get("account_kind") in {staff_identity.PLATFORM_KIND, staff_identity.SHELL_KIND} and (
             decision.identity_resolution != decision.IdentityResolution.CREATE_WALK_IN
@@ -146,7 +174,7 @@ def resolve_identities(archive, job, pk_map, required, deks=None):
     credentials = None
     for source in archive.rows("accounts.User"):
         source_id = source["id"]
-        if not required.contains(source_id):
+        if not required.should_resolve(job, source_id):
             continue
         decision = _required_decision(job, source_id)
         if decision.identity_resolution == decision.IdentityResolution.LINK_EXISTING:
@@ -156,6 +184,7 @@ def resolve_identities(archive, job, pk_map, required, deks=None):
                     f"Source user {source_id} has an incomplete LINK_EXISTING decision."
                 )
             pk_map.add_many(user_model, [(source_id, target.pk)])
+            required.mark_resolved(source_id, target.pk)
             linked += 1
             linked_state_fingerprint ^= _authority_record_fingerprint(
                 target.pk, target.is_superuser, target.is_staff, target.role
@@ -183,9 +212,12 @@ def resolve_identities(archive, job, pk_map, required, deks=None):
                 credentials = read_credential_block(archive, job.source_makerspace_id, deks or {})
             installed += create_person(source, pk_map.lookup(user_model, source_id), credentials.get(str(source_id)),
                                         job.target_makerspace)
+        required.mark_resolved(source_id, pk_map.lookup(user_model, source_id))
         created += 1
     from .portable_shells import create_shells
     shells_created, shells_remapped = create_shells(archive, job, pk_map, shells)
+    for source in shells:
+        required.mark_resolved(source["id"], pk_map.lookup(user_model, source["id"]))
     return IdentityResolutionReport(
         linked,
         created + shells_created,

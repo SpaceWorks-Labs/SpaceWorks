@@ -48,6 +48,19 @@ def _report_for(result):
     }
 
 
+def _receipt_last(ordered):
+    labels = {"inventory.EquipmentProposalReceipt", "inventory.EquipmentConsumableUseReceipt", "events.EventBookingDecision"}
+    receipts = [model for model in ordered if model._meta.label in labels]
+    if len(receipts) != 3 or {model._meta.label for model in receipts} != labels:
+        raise ValueError("Equipment receipt models must each be present exactly once.")
+    # Only this model is delayed. Refuse if a future exported model gains an
+    # inbound FK: it would need its own reviewed insert-order treatment.
+    for model in ordered:
+        if model not in receipts and any(field.is_relation and field.related_model in receipts for field in model._meta.local_concrete_fields):
+            raise ValueError("Equipment receipt has an unreviewed inbound dependency.")
+    return [model for model in ordered if model not in receipts] + receipts
+
+
 def _insert_models(
     ordered, archive, job, pk_map, references, target, deks,
     accounting, batch_size, object_key_map,
@@ -55,12 +68,15 @@ def _insert_models(
     repository = RawImportRepository()
     regenerated = set()
     from .import_pointers import PointerDeferral
+    ordered = _receipt_last(ordered)
     pointers = PointerDeferral.begin(ordered)
+    from .reference_state import EQUIPMENT_INTENT_LABELS
     for model in ordered:
         label = model._meta.label
         if label == "makerspaces.Makerspace":
             continue
         pending = []
+        pending_equipment = []
         fresh_values = {}
         for source in pointers.source_rows(model, archive.rows(label)):
             if update_resolved_row(model, source, target):
@@ -87,17 +103,26 @@ def _insert_models(
             ):
                 accounting.increment_field(outcome, label, field_name)
             pending.append(row)
+            if label in EQUIPMENT_INTENT_LABELS:
+                pending_equipment.append((source[model._meta.pk.attname], row[model._meta.pk.column]))
             if len(pending) == batch_size:
-                accounting.increment(
-                    "imported", label, repository.insert_rows(model, pending)
-                )
+                inserted = repository.insert_rows(model, pending)
+                if inserted != len(pending):
+                    raise RuntimeError("Import batch did not insert every planned row.")
+                accounting.increment("imported", label, inserted)
+                if pending_equipment:
+                    references.record_equipment_materialized(label, pending_equipment)
                 regenerated.update((model, name) for _label, name in fresh_values)
                 pending.clear()
+                pending_equipment.clear()
                 fresh_values.clear()
         if pending:
-            accounting.increment(
-                "imported", label, repository.insert_rows(model, pending)
-            )
+            inserted = repository.insert_rows(model, pending)
+            if inserted != len(pending):
+                raise RuntimeError("Import batch did not insert every planned row.")
+            accounting.increment("imported", label, inserted)
+            if pending_equipment:
+                references.record_equipment_materialized(label, pending_equipment)
             regenerated.update((model, name) for _label, name in fresh_values)
     pointers.apply()
     return regenerated

@@ -86,6 +86,8 @@ PAYMENT_SUBJECT_REFERENCES = {
     "makerspace_membership": "makerspaces.MakerspaceMembership",
     "membership_term": "makerspaces.MembershipTerm",
     "membership_term_start": "makerspaces.MembershipTerm",
+    # Decision 223(b): a day-pass charge points at its pass; the ledger row survives a pass purge.
+    "guest_pass": "makerspaces.GuestPass",
     "membership_request": "makerspaces.MembershipRequest",
     "loan_deposit": "hardware_requests.HardwareRequest",
     "loan_late_fee": "hardware_requests.HardwareRequest",

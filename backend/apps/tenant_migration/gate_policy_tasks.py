@@ -109,6 +109,7 @@ TASK_TENANT_RESOLVERS = {
 
 
 TASK_INTERNAL_PARTICIPANTS = {
+    "apps.notifications.browser_firebase_delivery.deliver_registration": "Holds the registration's tenant boundary; a frozen source leaves the wake-up pending.",
     "apps.integrations.notification_tasks.deliver_envelope": (
         "Cutover fence precedes per-leg tenant boundaries; no external call holds an application transaction."
     ),
@@ -192,7 +193,7 @@ TASK_INTERNAL_PARTICIPANTS = {
         "Each profile refresh uses the skip-and-count tenant boundary."
     ),
     "apps.makerspaces.tasks_membership.run_membership_renewals_task": (
-        "Each term expiry and renewal charge uses the skip-and-count tenant boundary."
+        "Each term expiry and renewal charge, each space's guest-pass sweep and each space's join follow-up sweep use the skip-and-count tenant boundary."
     ),
     "apps.apiclients.tasks.flush_api_client_usage_task": (
         "Writes only deployment-local last-seen telemetry on ApiClient rows; it moves no "

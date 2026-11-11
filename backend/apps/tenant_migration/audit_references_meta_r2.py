@@ -12,6 +12,7 @@ def lane_edges():
     from .audit_references_l16 import EDGES as l16
     from .audit_references_l23 import EDGES as l23
     from .audit_references_l3 import EDGES as l3
+    from .audit_references_l3a import EDGES as l3a
     from .audit_references_r2_l5 import EDGES as l5
     from .audit_references_r2_l10 import EDGES as l10
     from .audit_references_r2_l15 import EDGES as l15
@@ -27,8 +28,11 @@ def lane_edges():
     from .audit_references_r2_peoples_choice import EDGES as peoples_choice
     from .audit_references_r2_certificates import EDGES as certificates
     from .audit_references_r2_superadmin import EDGES as superadmin
+    from .audit_references_r3_events_b5 import EDGES as events_b5
+    from .audit_references_r3_events_b6 import EDGES as events_b6
+    from .audit_references_r3_events_badges import EDGES as events_badges
 
     edges = {}
-    for lane in (l5, l15, l10, l12, account_merge, l23, l16, l3, l8, l6, l18, l21a, l21b, l24, l22, submit_content, hackmoney, peoples_choice, certificates, superadmin):
+    for lane in (l5, l15, l10, l12, account_merge, l23, l16, l3, l3a, l8, l6, l18, l21a, l21b, l24, l22, submit_content, hackmoney, peoples_choice, certificates, superadmin, events_b5, events_b6, events_badges):
         edges.update(lane)
     return edges

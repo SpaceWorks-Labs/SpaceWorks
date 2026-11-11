@@ -68,6 +68,7 @@ OMITTED_FIELD_RECONSTRUCTIONS = {
         # the encrypted webhook is removed, even when the source row is inactive.
         ("integrations.NotificationDestination", "webhook_url"),
         ("integrations.NotificationDestination", "signing_secret"),
+        ("integrations.NotificationDestination", "previous_signing_secret"),
     ),
     **_rules(
         FRESH,
@@ -179,3 +180,6 @@ OMITTED_FIELD_RECONSTRUCTIONS.update(_rules(FRESH, ("shop.ShopOrder", "status_se
 OMITTED_FIELD_RECONSTRUCTIONS.update(_rules(
     EMPTY_STRING, ("maintenance.TechnicianContact", "opt_in_digest"),
     ("maintenance.TechnicianContact", "telegram_chat_id")))
+# Loan-context concurrency epochs are deployment-local; the target derives fresh ones
+# from the field default (never the source's epochs).
+OMITTED_FIELD_RECONSTRUCTIONS.update(_rules(DERIVED, ("makerspaces.Makerspace", "loan_context_generations")))

@@ -14,7 +14,7 @@ AUTHORITY_ENTRIES = (
     )) for field in ('staff_makerspace_id', 'credential_generation', 'login_method')),
     *((('accounts.StaffInvitation', field), authority(
         D.DROP, 'Initial-password role/scope/generation proofs are deployment-local and never travel.',
-    )) for field in ('role_snapshot', 'machine_scope_snapshot', 'credential_generation')),
+    )) for field in ('role_snapshot', 'machine_scope_snapshot', 'machine_ids_snapshot', 'credential_generation')),
     *((('notifications.NotificationPreference', field), authority(
         D.PRESERVE, "Staff-track holders' category/channel choices travel without provider endpoints or proof.",
     )) for field in ('makerspace', 'user', 'category', 'channels', 'email_fallback')),
@@ -28,6 +28,9 @@ AUTHORITY_ENTRIES = (
     *((('machines.MembershipMachineTypeScope', field), authority(
         D.PRESERVE, 'Carried staff-track machine reach follows its membership and remapped machine type.',
     )) for field in ('membership', 'machine_type')),
+    *((('machines.MembershipMachineScope', field), authority(
+        D.PRESERVE, 'Carried staff-track machine reach follows its membership and remapped machine.',
+    )) for field in ('membership', 'machine')),
     (("accounts.User", "account_kind"), authority(
         (D.PRESERVE, D.RESET),
         "Keep people; shells and foreign/platform provenance become inert member stubs.",

@@ -30,7 +30,7 @@ def _remap_foreign_keys(model, source, row, job, pk_map, target, references):
             ("makerspaces.MembershipAdditionalRole", "role"),
         }:
             continue
-        if staff and model._meta.label == "machines.MembershipMachineTypeScope":
+        if staff and model._meta.label in {"machines.MembershipMachineTypeScope", "machines.MembershipMachineScope"}:
             edge_policy = None
         if edge_policy and edge_policy.disposition is ReferenceDisposition.DROP_ROW:
             return False

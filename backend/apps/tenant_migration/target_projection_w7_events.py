@@ -7,6 +7,7 @@ EVENT_FIELD_PROJECTION = {
         True, reason="Portable organization references are excluded; staff must explicitly review target-local audience.")
        for label in ("events.Event", "events.EventSeries")},
     **{(label, field): TargetField(use_model_default=True, reason="Source keyed code/contact digests are never target credentials.") for label, field in (("events.EventInvite", "code_digest"), ("events.EventInvite", "email_digest"), ("events.EventPromoCode", "code_digest"))},
+    ("events.EventRegistration", "pay_by"): TargetField(None, reason="A running pay window is not carried to the target."),
     **{(label, "revoked_at"): TargetField(resolver=timezone.now, reason="Source codes cannot grant admission or discounts on target.")
        for label in ("events.EventInvite", "events.EventPromoCode")},
 }

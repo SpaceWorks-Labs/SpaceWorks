@@ -10,6 +10,7 @@ from .insertion_errors import (
     ImportPromotionInProgress,
     MaterializationAlreadyCommitted,
     MaterializationSuperseded,
+    VenueFeeDebtProvenanceUnavailable,
 )
 from .models_import_job import TenantImportJob
 from .object_import import rollback_import_objects
@@ -33,6 +34,9 @@ def handle_materialization_failure(*, job, target, error, run_attempt=None):
     owned = TenantImportJob.objects.filter(pk=job.pk)
     if run_attempt is not None:
         owned = owned.filter(run_attempt=run_attempt)
+    failure = {}
+    if isinstance(error, VenueFeeDebtProvenanceUnavailable):
+        failure = {"failure_code": error.code, "failure_detail": str(error)}
     failed_active = owned.filter(
         status__in=(
             TenantImportJob.Status.MATERIALIZING,
@@ -41,7 +45,7 @@ def handle_materialization_failure(*, job, target, error, run_attempt=None):
     ).update(
         status=TenantImportJob.Status.FAILED,
         terminal_at=now,
-        updated_at=now,
+        updated_at=now, **failure,
     )
     if not failed_active:
         if run_attempt is not None and TenantImportJob.objects.filter(

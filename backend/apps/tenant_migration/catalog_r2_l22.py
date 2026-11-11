@@ -15,12 +15,13 @@ FIELD_NAMES = {
     "shop.ShopVariant": "id makerspace product name options sku price on_hand held reorder_point linked_product "
                         "is_active sort_order archived_at created_at",
     "shop.ShopKitComponent": "id makerspace kit component quantity",
+    "shop.ShopEventOffer": "id makerspace event variant sort_order created_at",
     "shop.ShopStockMovement": "id makerspace variant kind quantity balance_after reason order actor created_at",
     "shop.ShopCheckoutHold": "id makerspace order variant quantity expires_at released_at release_reason created_at",
     "shop.ShopOrder": "id makerspace channel status buyer guest_name guest_email pickup_at pickup_event pickup_code "
                       "currency subtotal discount_total total tax_total amount_due pricing_snapshot digest "
                       "status_secret cash_session created_by created_at expires_at paid_at ready_at collected_at "
-                      "collected_by closed_at close_reason reminders_sent",
+                      "collected_by closed_at close_reason reminders_sent idempotency_key",
     "shop.ShopOrderLine": "id order variant label sku quantity unit_amount discount_amount line_total tax_rate_bps "
                           "hsn_code taxable_amount tax_amount",
     "shop.ShopOrderReturn": "id makerspace order line quantity disposition amount refund_case reason created_by "
@@ -41,7 +42,7 @@ def authority_entries(authority, disposition):
     return (
         *same("shop.ShopOrder", "channel status currency subtotal discount_total total tax_total amount_due "
               "pricing_snapshot digest created_at expires_at paid_at ready_at collected_at closed_at close_reason "
-              "reminders_sent", keep, "An order and its frozen quote are the buyer's money history; never recomputed."),
+              "reminders_sent idempotency_key", keep, "An order and its frozen quote are the buyer's money history; never recomputed."),
         *same("shop.ShopOrderLine", "label sku quantity unit_amount discount_amount line_total tax_rate_bps hsn_code "
               "taxable_amount tax_amount", keep, "The frozen price and tax split a buyer paid per line."),
         *same("shop.ShopOrderReturn", "quantity disposition amount reason created_at", keep,

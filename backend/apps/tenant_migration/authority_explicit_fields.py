@@ -20,6 +20,8 @@ EXPLICIT_AUTHORITY_FIELDS = {
     ("makerspaces.MembershipAdditionalRole", "assigned_at"): "Dropped role assignment time.",
     ("machines.MembershipMachineTypeScope", "membership"): "Dropped membership machine authority.",
     ("machines.MembershipMachineTypeScope", "machine_type"): "Dropped membership type authority.",
+    ("machines.MembershipMachineScope", "membership"): "Dropped membership machine authority.",
+    ("machines.MembershipMachineScope", "machine"): "Dropped membership machine authority.",
     **WP4_AUTHORITY_FIELDS,
     **RESOURCE_AUTHORITY_FIELDS,
     **LOAN_AUTHORITY_FIELDS,
@@ -78,6 +80,12 @@ from .catalog_l12 import POLICY_FIELDS as _L12_POLICY_FIELDS  # noqa: E402
 EXPLICIT_AUTHORITY_FIELDS.update({
     ("machines.MakerspaceMachineTypePolicy", name): "Portable per-type job setting; grants no staff authority."
     for name in _L12_POLICY_FIELDS.split()
+})
+# Release 2 L23: the per-type session length cap travels the same way (catalog_l23).
+from .catalog_l23 import EXTRA_FIELDS as _L23_EXTRA_FIELDS  # noqa: E402
+EXPLICIT_AUTHORITY_FIELDS.update({
+    ("machines.MakerspaceMachineTypePolicy", name): "Portable per-type session length cap; grants no staff authority."
+    for name in _L23_EXTRA_FIELDS["machines.MakerspaceMachineTypePolicy"]
 })
 
 EXPLICIT_AUTHORITY_FIELDS[("makerspaces.Makerspace", "public_stats_config")] = (

@@ -11,6 +11,7 @@ import { SettingsEditorActions } from "./SettingsEditorActions";
 import { SettingsQueryState } from "./SettingsQueryState";
 import { type Makerspace, useStaffGet } from "./StaffPanels";
 import { staffChargesOn } from "./useStaffChargesOn";
+import { TestModeBadge } from "./paymentTestMode";
 
 export function MakerspacePaymentSettings({ makerspace }: { makerspace: Makerspace }) {
   // #95: the provider and its credentials are the online rail, so without the `payments`
@@ -21,6 +22,14 @@ export function MakerspacePaymentSettings({ makerspace }: { makerspace: Makerspa
       ? <MakerspaceLoanSettings makerspaceId={makerspace.id} pricingOn={capabilityOn(makerspace, "charges.pricing")} /> : null;
   }
   return <PaymentSettingsEditor key={makerspace.id} makerspace={makerspace} />;
+}
+
+function connectStatusText(status: string | undefined) {
+  if (status === "pending") return t`Status: Pending`;
+  if (status === "active") return t`Status: Active`;
+  if (status === "restricted") return t`Status: Restricted`;
+  if (status === "disconnected") return t`Status: Disconnected`;
+  return t`Status: Not connected`;
 }
 
 function PaymentSettingsEditor({ makerspace }: { makerspace: Makerspace }) {
@@ -71,12 +80,15 @@ function PaymentSettingsEditor({ makerspace }: { makerspace: Makerspace }) {
   if ((settings.error as { status?: number } | null)?.status === 404) return loans;
 
   return <>
-    <SettingsQueryState query={settings} resource="payment">
+    <SettingsQueryState query={settings} resource={t`payment`}>
       <SettingsRow label={t`Online payments`} helper={t`Choose one provider for this makerspace. Saved credentials are encrypted and never displayed again. Credential changes require recent identity verification.`}>
         <div className="@container grid min-w-0 gap-4">
           <StatusPill label={settings.data?.effective_mode === "raw" ? t`Own credentials`
             : settings.data?.effective_mode === "connect" ? t`Stripe Connect` : t`Unavailable`}
             tone={settings.data?.effective_mode === "unavailable" ? "neutral" : "success"} />
+          {/* Parity C20: read from the public key only (`pk_test_` / `rzp_test_`); null = cannot tell. */}
+          {(settings.data as { test_mode?: boolean | null } | undefined)?.test_mode ? <p className="flex flex-wrap items-center gap-2 text-sm text-ink">
+            <TestModeBadge />{t`These are test keys. Members can try checkout, but no real money moves. Switch to live keys before taking payments.`}</p> : null}
           <Field label={t`Payment provider`}>
             <select className="desk-input" value={provider} disabled={busy}
               onChange={(event) => { setProvider(event.target.value as Provider); setDraft({}); }}>
@@ -99,8 +111,8 @@ function PaymentSettingsEditor({ makerspace }: { makerspace: Makerspace }) {
           {provider === "stripe" && makerspace.platform_hosting ? (
             <div className="rounded-md border border-line bg-surface p-3">
               <p className="font-semibold text-ink">{t`Stripe Connect`}</p>
-              <p className="text-sm text-muted">{t`Status: ${settings.data?.connect_status ?? "unconnected"}`}</p>
-              <button className="desk-button-primary mt-2" disabled={busy || dirty} onClick={() => onboard.mutate()}>
+              <p className="text-sm text-muted">{connectStatusText(settings.data?.connect_status)}</p>
+              <button type="button" className="desk-button-primary mt-2" disabled={busy || dirty} onClick={() => onboard.mutate()}>
                 {settings.data?.connect_status === "unconnected" ? t`Connect Stripe` : t`Reconnect Stripe`}
               </button>
               <p className="mt-2 text-sm text-muted">{t`Own Stripe credentials take precedence. Clearing them restores an available Connect account.`}</p>

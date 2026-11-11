@@ -13,22 +13,24 @@ export type GrantedListFrame = Pick<ListLayoutProps, "header" | "tabs" | "active
  * Assigned resources owns one page heading. An account holding only one kind of grant sees that list as
  * the page; holding both, the two lists become tabs under a single heading instead of two stacked pages.
  */
-export function GrantedResourcesPanel({ eventGrants, bookingGrants, makerspaceId }: {
+export function GrantedResourcesPanel({ eventGrants, bookingGrants, bookingGrantList, makerspaceId }: {
   eventGrants?: StaffAuthUser["event_grants"];
   bookingGrants: boolean;
+  /** The booking grants themselves, so an opened resource can load its own space's switches (A19). */
+  bookingGrantList?: StaffAuthUser["booking_grants"];
   makerspaceId?: number;
 }) {
   const [tab, setTab] = useState("events");
   const events = Boolean(eventGrants?.length);
   if (!events || !bookingGrants) return events
     ? <GrantedEventsPanel grants={eventGrants} makerspaceId={makerspaceId} />
-    : <GrantedBookingSpacesPanel makerspaceId={makerspaceId} />;
+    : <GrantedBookingSpacesPanel makerspaceId={makerspaceId} grants={bookingGrantList} />;
   const frame: GrantedListFrame = {
     header: { title: t`Assigned resources`, subtitle: t`Open an event or a booking resource to use your assigned permissions.` },
     tabs: [{ key: "events", label: t`Events` }, { key: "bookings", label: t`Booking resources` }],
     activeTab: tab, onTabChange: setTab,
   };
   return tab === "bookings"
-    ? <GrantedBookingSpacesPanel makerspaceId={makerspaceId} frame={frame} />
+    ? <GrantedBookingSpacesPanel makerspaceId={makerspaceId} grants={bookingGrantList} frame={frame} />
     : <GrantedEventsPanel grants={eventGrants} makerspaceId={makerspaceId} frame={frame} />;
 }

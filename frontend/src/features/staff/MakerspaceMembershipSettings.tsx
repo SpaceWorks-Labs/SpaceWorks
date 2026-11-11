@@ -45,7 +45,7 @@ export function MakerspaceMembershipSettings({ makerspace, settings, loading }: 
     onMutate: () => invalidateToastUndo(`settings-${makerspace.id}-updateReferrals`),
     onSuccess: async (_data, next) => {
       await (refresh)();
-      toast(t`Member referrals turned ${next ? "on" : "off"}.`, { undoKey: `settings-${makerspace.id}-updateReferrals`, undo: async () => {
+      toast((next ? t`Member referrals turned on.` : t`Member referrals turned off.`), { undoKey: `settings-${makerspace.id}-updateReferrals`, undo: async () => {
         await ((next: boolean) => staffRequest<MakerspaceContract>(`/admin/makerspaces/${makerspace.id}`, {
       method: "PATCH", body: JSON.stringify({ referrals_enabled: next }),
     }))(!next);
@@ -61,7 +61,7 @@ export function MakerspaceMembershipSettings({ makerspace, settings, loading }: 
     onMutate: () => invalidateToastUndo(`settings-${makerspace.id}-updateLapsed`),
     onSuccess: async (_data, next) => {
       await (refresh)();
-      toast(t`Lapsed borrowing restriction turned ${next ? "on" : "off"}.`, { undoKey: `settings-${makerspace.id}-updateLapsed`, undo: async () => {
+      toast((next ? t`Lapsed borrowing restriction turned on.` : t`Lapsed borrowing restriction turned off.`), { undoKey: `settings-${makerspace.id}-updateLapsed`, undo: async () => {
         await ((next: boolean) => staffRequest<MakerspaceContract>(`/admin/makerspaces/${makerspace.id}`, {
       method: "PATCH", body: JSON.stringify({ lapsed_members_cannot_borrow: next }),
     }))(!next);
@@ -117,13 +117,13 @@ export function MakerspaceMembershipSettings({ makerspace, settings, loading }: 
           {updateDues.error ? <p className="text-sm text-danger" role="alert">{updateDues.error.message}</p> : null}
         </div>
         <form ref={duesForm} className="grid gap-2" onSubmit={(event) => { event.preventDefault(); updateDues.mutate(); }}>
-          <label className="grid gap-1 text-sm font-semibold text-ink">{t`Dues amount`}<input className="desk-input" type="number" min="0" step="0.01" value={duesAmount} disabled={loading || updateDues.isPending} onChange={(event) => setDuesAmount(event.target.value)} />
+          <label className="grid gap-1 text-sm font-semibold text-ink">{t`Dues amount`}<input className="desk-input" type="number" min="0" step="any" value={duesAmount} disabled={loading || updateDues.isPending} onChange={(event) => setDuesAmount(event.target.value)} />
           </label>
           {duesAmount !== (settings?.membership_dues_amount ?? makerspace.membership_dues_amount ?? "0.00") || updateDues.isPending ? <div className="sticky bottom-0 z-10 flex flex-wrap justify-end gap-2 border-t border-line bg-panel p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
-            <ActionControl action={{ label: t`Discard`, disabled: updateDues.isPending, disabledReason: updateDues.isPending ? "Wait for the dues update." : undefined,
+            <ActionControl action={{ label: t`Discard`, disabled: updateDues.isPending, disabledReason: updateDues.isPending ? t`Wait for the dues update.` : undefined,
               onClick: () => setDuesAmount(settings?.membership_dues_amount ?? makerspace.membership_dues_amount ?? "0.00") }} />
-            <ActionControl primary action={{ label: t`Save dues`, pending: updateDues.isPending, pendingLabel: "Saving…", disabled: loading,
-              disabledReason: loading ? "Wait for settings to load." : undefined, onClick: () => duesForm.current?.requestSubmit() }} />
+            <ActionControl primary action={{ label: t`Save dues`, pending: updateDues.isPending, pendingLabel: t`Saving…`, disabled: loading,
+              disabledReason: loading ? t`Wait for settings to load.` : undefined, onClick: () => duesForm.current?.requestSubmit() }} />
           </div> : null}
         </form>
       </div>

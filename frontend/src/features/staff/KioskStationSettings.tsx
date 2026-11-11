@@ -80,7 +80,7 @@ export function KioskStationSettings({ makerspace }: { makerspace: Makerspace })
 
     {!stations.isLoading && !stations.error && !stations.data?.length ? <EmptyState message={t`No stations yet. Create your first station.`} /> : null}
     {rotate.error || disable.error ? <p role="alert" className="text-sm text-danger">{(rotate.error ?? disable.error)?.message}</p> : null}
-    <SettingsQueryState query={stations} resource="kiosk stations" />
+    <SettingsQueryState query={stations} resource={t`kiosk stations`} />
     <ul className="mt-4 grid gap-2">
       {(stations.data ?? []).map(station => <li key={station.id}>
         <ListRow title={station.name} meta={<span className="flex flex-wrap items-center gap-2">

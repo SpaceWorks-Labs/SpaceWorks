@@ -20,7 +20,7 @@ function DelayControl({ target, row, revision, disabled }: {
       : t`Changes the draft only. The public programme stays unchanged.`}</p>
     {row.working_slug && row.public_slug && row.working_slug !== row.public_slug ? <p className="text-sm text-muted">{t`Public slug: ${row.public_slug}. Draft slug: ${row.working_slug}.`}</p> : null}
     <label className={websiteLabel}>{t`Delay in minutes`}<input className={websiteInput} type="number" min={0} max={1440} step={1} value={value} onChange={e => setValue(Number(e.target.value))} /></label>
-    <button className="desk-button justify-self-start" type="button" disabled={!Number.isInteger(value) || value < 0 || value > 1440} onClick={() => { if (slug) delay.mutate({ slug, minutes: value, revision, session_id: row.session_id }); }}>{t`Update ${row.public_present ? "live" : "draft"} delay`}</button>
+    <button className="desk-button justify-self-start" type="button" disabled={!Number.isInteger(value) || value < 0 || value > 1440} onClick={() => { if (slug) delay.mutate({ slug, minutes: value, revision, session_id: row.session_id }); }}>{row.public_present ? t`Update live delay` : t`Update draft delay`}</button>
     {delay.error ? <p role="alert" className="text-sm text-danger">{eventErrorText(delay.error)}</p> : null}
   </fieldset>;
 }

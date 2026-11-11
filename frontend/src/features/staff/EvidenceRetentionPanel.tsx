@@ -47,8 +47,8 @@ export function EvidenceRetentionPanel({ makerspaceId }: { makerspaceId: number 
     update.mutate({ object_retention_days: Number(days) });
   };
 
-  if (policy.isLoading) return <SettingsQueryState query={policy} resource="evidence retention" />;
-  if (policy.error) return <SettingsQueryState query={policy} resource="evidence retention" />;
+  if (policy.isLoading) return <SettingsQueryState query={policy} resource={t`evidence retention`} />;
+  if (policy.error) return <SettingsQueryState query={policy} resource={t`evidence retention`} />;
   if (!policy.data) return null;
 
   return (
@@ -81,11 +81,11 @@ export function EvidenceRetentionPanel({ makerspaceId }: { makerspaceId: number 
       <p className="mt-2 text-xs text-muted">
         {policy.data.override_days === null
           ? t`Inherited platform default: ${policy.data.platform_default_days} days.`
-          : t`Tenant override: ${policy.data.override_days} days (platform default ${policy.data.platform_default_days}).`}
-        {t` Automatic expiry is ${policy.data.object_expiry_enabled ? "enabled" : "disabled"}.`}
+          : t`This space keeps photos for ${policy.data.override_days} days (the platform standard is ${policy.data.platform_default_days}).`}
+        {policy.data.object_expiry_enabled ? t` Automatic expiry is enabled.` : t` Automatic expiry is disabled.`}
       </p>
       {update.error ? <p className="mt-2 text-sm text-danger" role="alert">{errorText(update.error)}</p> : null}
-      <SettingsQueryState query={preview} resource="retention preview"><div className="mt-3 rounded-lg border border-line bg-surface p-3 text-sm">
+      <SettingsQueryState query={preview} resource={t`retention preview`}><div className="mt-3 rounded-lg border border-line bg-surface p-3 text-sm">
         {preview.isLoading ? <span className="text-muted">{t`Calculating preview…`}</span> : null}
         {preview.error ? <span className="text-danger">{errorText(preview.error)}</span> : null}
         {preview.data ? (

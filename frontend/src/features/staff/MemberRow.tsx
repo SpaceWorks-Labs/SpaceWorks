@@ -8,6 +8,7 @@ import { MembershipVouchers } from "./MembershipAdmissionReview";
 import { PaymentReconcileActions } from "./PaymentReconcileActions";
 import { MemberRolesControl } from "./panels/MemberRolesControl";
 import { MemberEventsSection } from "./MemberEventsSection";
+import { MemberActivitySection } from "./memberActivity/MemberActivitySection";
 import type { MembershipRoles } from "./panels/roleSets";
 import type { StaffRole } from "./panels/rolesApi";
 
@@ -71,6 +72,7 @@ export function MemberRow({ makerspaceId, member, roles, onAuthRefresh, canManag
         {canViewFinance && member.payment?.status !== "pending" ? <PaymentReconcileActions makerspaceId={makerspaceId} payment={member.payment} canRecordPayment={canRecordPayment || canManageMakerspace} canWaive={canManageMakerspace} invalidateKeys={[["members", makerspaceId]]} /> : null}
         {/* Mounted only while the drawer is open, so the roster never fetches one history per row. */}
         {open ? <MemberEventsSection makerspaceId={makerspaceId} userId={member.user.id} /> : null}
+        {open ? <MemberActivitySection makerspaceId={makerspaceId} userId={member.user.id} /> : null}
       </div>}
       danger={active && manageable ? [{ title: t`Revoke membership`, consequence: "Remove this member's access to the space. A reason is required.", action: { label: t`Revoke`, onClick: () => { setOpen(false); onRevoke(); } } }] : []} />
   </>;

@@ -38,13 +38,13 @@ const MODES: [LoanSettings["loan_deposit_mode"], string][] = [
   ["per_product", "Sum of product deposits"],
 ];
 
-const MONEY = /^\d+(\.\d{1,2})?$/;
+const MONEY = /^\d+(\.\d{1,3})?$/;
 
 /** Field-level problems, keyed by form field; an empty object means the form is valid. */
 export function validateLoanForm(form: LoanForm): Partial<Record<keyof LoanForm, string>> {
   const problems: Partial<Record<keyof LoanForm, string>> = {};
   for (const key of ["loan_deposit_amount", "loan_late_fee_per_day", "loan_late_fee_cap"] as const) {
-    if (!MONEY.test(form[key].trim())) problems[key] = "Enter a non-negative amount with at most two decimals.";
+    if (!MONEY.test(form[key].trim())) problems[key] = "Enter a non-negative amount with no more decimals than the currency has.";
   }
   if (!/^\d+$/.test(form.loan_grace_days.trim())) problems.loan_grace_days = "Enter a whole number of days (0 or more).";
   if (!MODES.some(([mode]) => mode === form.loan_deposit_mode)) problems.loan_deposit_mode = "Choose a deposit mode.";
@@ -72,11 +72,11 @@ const EMPTY: LoanForm = {
 };
 
 /** Render only when the `payments.loans` feature is on; the parent owns that check. With
- * `charges.pricing` on, the same columns are edited in Settings > Pricing > Lending instead. */
+ * `charges.pricing` on, the same columns are edited in Settings > Pricing > Inventory instead. */
 export function MakerspaceLoanSettings({ makerspaceId, pricingOn = false }: { makerspaceId: number; pricingOn?: boolean }) {
   if (pricingOn) {
-    return <SettingsRow label={t`Loans`}>
-      <p className="text-sm text-ink">{t`Deposit, late fee and rental are set in Settings > Pricing > Lending.`}</p>
+    return <SettingsRow label={t`Loans`} helper={t`Money charged for loans is set with the other prices.`}>
+      <p className="text-sm text-ink">{t`Deposit, late fee and rental are set in Settings > Pricing > Inventory.`}</p>
     </SettingsRow>;
   }
   return <LoanSettingsEditor makerspaceId={makerspaceId} />;
@@ -121,7 +121,7 @@ function LoanSettingsEditor({ makerspaceId }: { makerspaceId: number }) {
   const depositOn = form.loan_deposit_mode !== "none";
 
   return (
-    <SettingsQueryState query={settings} resource="loan"><SettingsRow label={t`Loans`} helper={t`Deposits are raised when a request is issued; late fees accrue per day after the grace period once a loan is overdue.`}><form
+    <SettingsQueryState query={settings} resource={t`loan`}><SettingsRow label={t`Loans`} helper={t`Deposits are raised when a request is issued; late fees accrue per day after the grace period once a loan is overdue.`}><form
       className="@container mt-4 rounded-md border border-line bg-surface p-3"
 
       onSubmit={(event) => {

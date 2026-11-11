@@ -82,7 +82,7 @@ export function IntegrationHealthPanel({ makerspace, isSuperadmin = false }: { m
 
   return (
     // A failed background refresh keeps the last known readings; only a first load blanks the row.
-    <SettingsQueryState query={{ isLoading: health.isLoading, error: health.data ? null : health.error, refetch: health.refetch }} resource="integration health"><SettingsRow label={t`Integration health`} helper={t`Check connected services and delivery before sending alerts.`}><div className="@container grid min-w-0 gap-4">
+    <SettingsQueryState query={{ isLoading: health.isLoading, error: health.data ? null : health.error, refetch: health.refetch }} resource={t`integration health`}><SettingsRow label={t`Integration health`} helper={t`Check connected services and delivery before sending alerts.`}><div className="@container grid min-w-0 gap-4">
       {data?.deployment ? <DeploymentPanel data={data.deployment} /> : null}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
@@ -94,7 +94,7 @@ export function IntegrationHealthPanel({ makerspace, isSuperadmin = false }: { m
           {health.error ? <ErrorBlock error={new Error(t`Couldn't load integration health. Try again.`)} onRetry={() => { void health.refetch(); }} /> : null}
         </div>
         <div className="flex flex-wrap gap-2">
-          <Link className="desk-button" to={consoleSessionHref(staffTabPath("email-logs", false, makerspace.slug))}>{t`Email log`}</Link>
+          <Link className="desk-button" to={consoleSessionHref(staffTabPath("email-logs", false, makerspace.slug))}>{t`Delivery log`}</Link>
           {/* The Telegram card (superadmin only) sits on this same page, so jump to it in place. */}
           {isSuperadmin ? <button className="desk-button" type="button" onClick={() => {
             const card = document.getElementById("telegram-settings");

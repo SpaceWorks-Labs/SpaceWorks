@@ -34,7 +34,7 @@ export function MakerspacePublicStatsSettings({ makerspace, settings, loading }:
     onMutate: () => invalidateToastUndo(`settings-${makerspace.id}-updateHolderNames`),
     onSuccess: async (_data, next) => {
       await invalidateSettings();
-      toast(t`Public borrower names turned ${next ? "on" : "off"}.`, { undoKey: `settings-${makerspace.id}-updateHolderNames`, undo: async () => {
+      toast((next ? t`Public borrower names turned on.` : t`Public borrower names turned off.`), { undoKey: `settings-${makerspace.id}-updateHolderNames`, undo: async () => {
         await patchHolderNames(!next);
         await invalidateSettings();
       } });

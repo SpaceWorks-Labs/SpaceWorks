@@ -74,7 +74,7 @@ export function HostingInvitations({ scope }: { scope: HostingScope }) {
         <p className="font-semibold">{t`Copy this link now. It won't be shown again.`}</p>
         <p className="mt-1 break-all code-text text-xs">{created.invite_url}</p>
         <ul className="mt-2 grid gap-1 text-sm">
-          <li>{created.delivery_status === "sent" ? t`Email sent` : t`Email could not be sent — share the link yourself`}</li>
+          <li>{created.delivery_status === "sent" ? t`Email sent` : created.delivery_status === "pending" || created.delivery_status === "sending" ? t`Email queued. It is being sent now` : t`Email could not be sent — share the link yourself`}</li>
           <li>{created.join_offered ? t`They can join your organization` : t`They'll create their own organization`}</li>
         </ul>
         <div className="mt-3 flex flex-wrap gap-2">
@@ -84,7 +84,7 @@ export function HostingInvitations({ scope }: { scope: HostingScope }) {
       </div> : null}
 
       {invitations.isLoading ? <Skeleton className="mt-5 h-24 w-full" /> : null}
-      {invitations.isError ? <ErrorText resource="hosting invitations" onRetry={() => { void invitations.refetch(); }} /> : null}
+      {invitations.isError ? <ErrorText resource={t`hosting invitations`} onRetry={() => { void invitations.refetch(); }} /> : null}
       {cancel.error ? <ErrorText message={cancel.error.message} /> : null}
       {data && !data.results.length ? <EmptyState message={t`No hosting invitations yet.`} /> : null}
       {data?.results.length ? <div className="mt-5 grid gap-3">{data.results.map((invitation) => {
@@ -93,7 +93,7 @@ export function HostingInvitations({ scope }: { scope: HostingScope }) {
           identity={{ kind: "icon", icon: "Building2", tone: "accent" }}
           meta={<>{t`Sent `}<RelativeTime date={invitation.created_at} />{invitation.invite_expires_at ? <> {t` · Link expires `}<RelativeTime date={invitation.invite_expires_at} /></> : null}</>}
           right={<div className="flex flex-wrap items-center gap-3"><StatusPill label={status.label} tone={status.tone} />
-            {cancellable(invitation) ? <ActionControl action={{ label: t`Cancel invitation`, tone: "danger", disabled: cancel.isPending, disabledReason: "Wait for the current cancellation.",
+            {cancellable(invitation) ? <ActionControl action={{ label: t`Cancel invitation`, tone: "danger", disabled: cancel.isPending, disabledReason: t`Wait for the current cancellation.`,
               confirm: { title: t`Cancel this invitation?`, message: t`The link stops working. Send a new invitation if they still want to host here.`, confirmLabel: t`Cancel invitation` },
               onClick: () => cancel.mutate(invitation.id) }} /> : null}</div>} />;
       })}</div> : null}

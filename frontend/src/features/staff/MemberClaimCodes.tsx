@@ -7,11 +7,14 @@ import { staffRequest } from "../../lib/api";
 import { Card, EmptyState, ErrorBlock, ListRow, RelativeTime, StatusPill } from "../../components/ui";
 
 export type ClaimableMember = {
-  membership_id: number;
+  /** Null for a live guest-pass holder (0.12.0), who borrows without a membership. */
+  membership_id: number | null;
   user_id: number;
   display_name: string;
   username: string;
   is_walk_in: boolean;
+  is_guest_pass?: boolean;
+  pass_valid_until?: string | null;
 };
 
 type ClaimCode = {
@@ -75,7 +78,9 @@ export function MemberClaimCodes({
       void queryClient.invalidateQueries({ queryKey });
     },
   });
-  const walkIns = members.filter((member) => member.is_walk_in);
+  // A claim code binds a membership, so guest-pass holders (no membership) are never offered.
+  const walkIns = members.filter((member): member is ClaimableMember & { membership_id: number } =>
+    member.is_walk_in && member.membership_id !== null);
   const error = issue.error ?? revoke.error;
 
   return (
@@ -132,7 +137,7 @@ export function MemberClaimCodes({
         {active.isLoading ? <p className="text-sm text-muted">{t`Loading active claim codes…`}</p> : null}
         {active.isSuccess && !active.data?.length ? <EmptyState message={t`No active claim codes.`} /> : null}
       </div>
-      {active.error ? <ErrorBlock error={active.error} resource="claim codes" onRetry={() => void active.refetch()} /> : null}
+      {active.error ? <ErrorBlock error={active.error} resource={t`claim codes`} onRetry={() => void active.refetch()} /> : null}
       {error ? <p className="mt-3 text-sm text-danger" role="alert">{error.message}</p> : null}
     </Card>
   );

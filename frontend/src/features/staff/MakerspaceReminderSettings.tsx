@@ -42,15 +42,14 @@ function ReminderPolicy({ makerspace, settings, loading, domain }: Props & { dom
     setError("");
     update.mutate(hours);
   }
-  const label = domain === "event" ? "Event" : "Booking";
   return (
-    <SettingsRow label={`${label} reminders`}><form onSubmit={save} className="@container grid gap-3 ">
+    <SettingsRow label={domain === "event" ? t`Event reminders` : t`Booking reminders`} helper={domain === "event" ? t`When people who registered get a reminder before the event.` : t`When the person who booked gets a reminder before their booking.`}><form onSubmit={save} className="@container grid gap-3 ">
 
       <p className="text-sm text-muted">
-        {t`Email members before confirmed ${domain === "event" ? "events" : "bookings"}, using the makerspace timezone. The notification matrix email setting and member opt-out still apply.`}{domain === "booking" ? t` Booking requester emails must also be enabled for the space.` : ""}
+        {domain === "event" ? t`Email members before confirmed events, using the makerspace timezone. The notification matrix email setting and member opt-out still apply.` : t`Email members before confirmed bookings, using the makerspace timezone. The notification matrix email setting and member opt-out still apply.`}{domain === "booking" ? t` Booking requester emails must also be enabled for the space.` : ""}
       </p>
       <label className="grid gap-1 text-sm text-ink">
-        <span>{t`${label} reminder lead hours`}</span>
+        <span>{domain === "event" ? t`Event reminder lead hours` : t`Booking reminder lead hours`}</span>
         <input className="desk-input" value={draft} disabled={loading || update.isPending}
           onChange={(event) => { setDraft(event.target.value); setDirty(true); }} aria-describedby={`${domain}-reminder-help`} />
       </label>

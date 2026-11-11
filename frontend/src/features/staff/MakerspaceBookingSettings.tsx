@@ -30,7 +30,7 @@ export function MakerspaceBookingSettings({ makerspace, settings, loading }: {
         queryClient.invalidateQueries({ queryKey: ["bookings", makerspace.id] }),
       ]);
     })();
-      toast(t`Booking requester emails turned ${next ? "on" : "off"}.`, { undoKey: `settings-${makerspace.id}-update`, undo: async () => {
+      toast((next ? t`Booking requester emails turned on.` : t`Booking requester emails turned off.`), { undoKey: `settings-${makerspace.id}-update`, undo: async () => {
         await ((next: boolean) => staffRequest<Makerspace>("/admin/makerspaces/" + makerspace.id, {
       method: "PATCH",
       body: JSON.stringify({ booking_requester_notifications_enabled: next }),

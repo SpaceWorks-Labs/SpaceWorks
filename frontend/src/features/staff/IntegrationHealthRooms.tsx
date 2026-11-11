@@ -1,5 +1,6 @@
 import { t } from "@lingui/core/macro";
 import { StatusPill as Badge } from "../../components/ui";
+import { channelLabel } from "../notifications/channelCatalog";
 
 // The backend has reported per-room delivery health since the destinations work
 // (`integrations/health.py` -> `chat_destinations`); the console never rendered it, so the
@@ -32,14 +33,6 @@ export type ChatDestinationsHealth = {
   legacy_deliveries?: Record<string, LegacyChannelHealth>;
 };
 
-const CHANNEL_LABELS: Record<string, string> = {
-  telegram: t`Telegram`,
-  slack: t`Slack`,
-  mattermost: t`Mattermost`,
-  discord: t`Discord`,
-  webhook: t`Signed webhook`,
-};
-
 export function IntegrationHealthRooms({
   section,
   formatTime,
@@ -57,7 +50,7 @@ export function IntegrationHealthRooms({
       {rooms.map((room) => (
         <RoomRow
           key={`room-${room.id}`}
-          title={`${CHANNEL_LABELS[room.channel] ?? room.channel} - ${room.label}`}
+          title={`${channelLabel(room.channel)} - ${room.label}`}
           configured={room.configured}
           inactive={!room.is_active}
           health={room}
@@ -67,7 +60,7 @@ export function IntegrationHealthRooms({
       {legacy.map(([channel, health]) => (
         <RoomRow
           key={`legacy-${channel}`}
-          title={`${CHANNEL_LABELS[channel] ?? channel} (space-wide)`}
+          title={t`${channelLabel(channel)} (space-wide)`}
           configured={health.configured}
           inactive={false}
           health={health}

@@ -38,7 +38,7 @@ export function MakerspaceThemeSettings({ makerspace, settings, loading }: Props
     },
   });
   useEffect(() => { save.reset(); }, [makerspace.id]);
-  return <SettingsRow label={t`Public and member colours`}><form className="@container mt-6 space-y-3" onSubmit={(event) => {
+  return <SettingsRow label={t`Public and member colours`} helper={t`The colours of your public pages and the member area. Staff screens keep the standard theme.`}><form className="@container mt-6 space-y-3" onSubmit={(event) => {
     event.preventDefault();
     if (settings && report.valid && changed && !loading && !save.isPending) save.mutate({ id: makerspace.id, slug: makerspace.slug, theme });
   }}>
@@ -64,7 +64,7 @@ export function MakerspaceThemeSettings({ makerspace, settings, loading }: Props
         const worstUI = Math.min(...palette.pairs.filter((pair) => pair.minimum === 3).map((pair) => pair.ratio));
         const surface = BRAND_SURFACES[mode][0].join(" ");
         return <div key={mode} data-testid={`theme-preview-${mode}`} style={{ ...style, backgroundColor: `rgb(${surface})`, color: `rgb(${BODY_TEXT[mode][0].join(" ")})` }} className="">
-          <p className="font-semibold">{mode === "light" ? t`Light` : t`Dark`} preview</p>
+          <p className="font-semibold">{mode === "light" ? t`Light preview` : t`Dark preview`}</p>
           {!report.valid ? <p className="text-xs">{t`Product palette fallback shown; ratios below describe the entered colours.`}</p> : null}
           <a href="#theme-primary" className="my-2 block text-sm underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus" style={{ color: `rgb(${preview.ink.join(" ")})` }}>{t`Example link`}</a>
           <button className="desk-button-brand" type="button">{t`Example action`}</button>

@@ -63,7 +63,7 @@ export function MakerspaceBookingRulesSettings({ makerspace }: { makerspace: Pic
   const activeSpaces = spaces.data?.results.filter((space) => space.is_active) ?? [];
 
   return (
-    <SettingsQueryState query={spaces} resource="booking rules"><SettingsRow label={t`Booking rules per space`} helper={t`Buffers reserve time around each booking. A cancellation cutoff of 0 allows members to cancel any time before the booking starts.`}><div className="@container grid min-w-0 gap-4">
+    <SettingsQueryState query={spaces} resource={t`booking rules`}><SettingsRow label={t`Booking rules per space`} helper={t`Buffers reserve time around each booking. A cancellation cutoff of 0 allows members to cancel any time before the booking starts.`}><div className="@container grid min-w-0 gap-4">
 
 
       {spaces.isLoading ? <p className="mt-3 text-sm text-muted">{t`Loading bookable spaces…`}</p> : null}

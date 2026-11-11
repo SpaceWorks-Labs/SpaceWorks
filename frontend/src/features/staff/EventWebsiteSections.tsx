@@ -1,6 +1,6 @@
 import { t } from "@lingui/core/macro";
 import type { EventWebsite, WebsiteSection, WebsiteTarget } from "../events/websiteTypes";
-import { sponsorTiers } from "../events/websiteTypes";
+import { sponsorTierLabel, sponsorTiers } from "../events/websiteTypes";
 import { websiteCard, websiteInput, websiteLabel, websiteLegend } from "./eventWebsiteFormStyles";
 
 const kinds: WebsiteSection["kind"][] = ["intro", "logo", "highlight", "speaker", "track", "room", "sponsor", "faq", "resource", "prizes", "judges", "mentors", "project_gallery", "results"];
@@ -32,7 +32,7 @@ export function EventWebsiteSections({ page, target, onChange, disabled }: {
           {([['headline', 'Headline'], ['organization', 'Organization']] as const).map(([key, label]) => <label key={key} className={websiteLabel}>{label}<input className={websiteInput} maxLength={200} value={row[key] ?? ""} onChange={(e) => update(index, { [key]: e.target.value })} /></label>)}
           {([['website_url', 'Website'], ['linkedin_url', 'LinkedIn'], ['x_url', 'X profile']] as const).map(([key, label]) => <label key={key} className={websiteLabel}>{label}<input className={websiteInput} type="url" pattern="[Hh][Tt][Tt][Pp][Ss]?://.*" maxLength={500} value={row[key] ?? ""} onChange={(e) => update(index, { [key]: e.target.value })} /></label>)}
         </> : null}
-        {row.kind === "sponsor" ? <label className={websiteLabel}>{t`Sponsor tier`}<select className={websiteInput} value={row.sponsor_tier ?? "community_partner"} onChange={(e) => update(index, { sponsor_tier: e.target.value as WebsiteSection["sponsor_tier"] })}>{sponsorTiers.map((tier) => <option key={tier} value={tier}>{tier.replace(/_/g, " ")}</option>)}</select></label> : null}
+        {row.kind === "sponsor" ? <label className={websiteLabel}>{t`Sponsor tier`}<select className={websiteInput} value={row.sponsor_tier ?? "community_partner"} onChange={(e) => update(index, { sponsor_tier: e.target.value as WebsiteSection["sponsor_tier"] })}>{sponsorTiers.map((tier) => <option key={tier} value={tier}>{sponsorTierLabel(tier)}</option>)}</select></label> : null}
         {row.kind === "highlight" ? <label className={websiteLabel}>{t`Icon (text or emoji)`}<input className={websiteInput} maxLength={40} value={row.icon ?? ""} onChange={(e) => update(index, { icon: e.target.value })} /></label> : null}
         <label className={websiteLabel}>{row.kind === "speaker" ? t`Photo` : row.kind === "sponsor" ? t`Sponsor logo` : t`Image`}<select className={websiteInput} value={row.asset_id ?? ""} onChange={(e) => selectAsset(index, e.target.value)}>
           <option value="">{t`No image`}</option>{page.assets?.map((asset) => <option key={asset.id} value={asset.id}>{asset.alt_text}</option>)}

@@ -16,8 +16,8 @@ type Props = {
 };
 
 /**
- * Default loan days and the rest of the loan policy moved to the Lending section (and the
- * Inventory Manager's Lending settings): they are one policy, edited through one endpoint.
+ * Default loan days and the rest of the loan policy moved to the Inventory section (and the
+ * Inventory Manager's Inventory settings): they are one policy, edited through one endpoint.
  */
 export function MakerspaceGeneralSettings({ makerspace, settings, loading }: Props) {
   const queryClient = useQueryClient();
@@ -39,7 +39,7 @@ export function MakerspaceGeneralSettings({ makerspace, settings, loading }: Pro
     onMutate: () => invalidateToastUndo(`settings-${makerspace.id}-updatePublicInventory`),
     onSuccess: async (_data, next) => {
       await (refreshSettings)();
-      toast(t`Public inventory turned ${next ? "on" : "off"}.`, { undoKey: `settings-${makerspace.id}-updatePublicInventory`, undo: async () => {
+      toast((next ? t`Public inventory turned on.` : t`Public inventory turned off.`), { undoKey: `settings-${makerspace.id}-updatePublicInventory`, undo: async () => {
         await ((next: boolean) =>
       staffRequest<Makerspace>(`/admin/makerspaces/${makerspace.id}`, {
         method: "PATCH",

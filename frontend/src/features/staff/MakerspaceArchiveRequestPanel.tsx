@@ -71,7 +71,7 @@ function AuthorizedArchiveRequestPanel({ makerspaceId }: { makerspaceId: number 
           {t`Filing a request does not archive anything. A superadmin must confirm it first. Once archived, this makerspace disappears from the staff console and you lose access to it, so the outcome will arrive by email.`}</p>
       </div>
 
-      <SettingsQueryState query={requests} resource="archive requests" />
+      <SettingsQueryState query={requests} resource={t`archive requests`} />
 
 
       {requests.isSuccess && pending ? (

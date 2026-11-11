@@ -9,12 +9,13 @@ import { staffRequest } from "../../lib/api";
 import { type Makerspace, useStaffGet } from "./StaffPanels";
 import { EmailTransportFields } from "../deployment/EmailTransportFields";
 import { useEmailSettings } from "../deployment/useEmailSettings";
+import { SpaceEmailSender } from "./SpaceEmailSender";
 
 type NotificationRecipient = {
   id: number;
   username: string;
   email: string;
-  role: "space_manager" | "inventory_manager" | "machine_manager" | "event_manager" | "booking_manager" | "handover" | "technician" | "shop_manager";
+  role: "space_manager" | "inventory_manager" | "machine_manager" | "event_manager" | "booking_manager" | "handover" | "technician" | "shop_manager" | "fundraising";
   receives_notifications: boolean;
 };
 
@@ -63,8 +64,8 @@ function MakerspaceEmailEditor({ makerspace }: { makerspace: Makerspace }) {
   });
 
   return <>
-    <SettingsQueryState query={editor.settings} resource="email settings">
-      <SettingsRow label={t`Email delivery`} helper={t`Select the sender used for tenant notifications.`}>
+    <SettingsQueryState query={editor.settings} resource={t`email settings`}>
+      <SettingsRow label={t`Email delivery`} helper={t`Choose the sender address for this makerspace's notifications.`}>
         <div className="@container grid min-w-0 gap-4">
           <EmailTransportFields form={editor.form} onChange={editor.setForm} platform={false}
             disabled={!editor.settings.isSuccess || editor.save.isPending}
@@ -72,7 +73,9 @@ function MakerspaceEmailEditor({ makerspace }: { makerspace: Makerspace }) {
           {editor.validation ? <p className="text-sm text-danger">{editor.validation}</p> : null}
           {editor.save.error ? <p className="text-sm text-danger" role="alert">{editor.save.error.message}</p> : null}
           <SettingsEditorActions dirty={editor.dirty} onDiscard={editor.discard} pending={editor.save.isPending}
-            disabled={!editor.settings.isSuccess || !!editor.validation} onSave={() => editor.save.mutate()} />
+            disabled={!editor.settings.isSuccess || !!editor.validation}
+            /* A changed SMTP setting clears the verified test, so re-read it. */
+            onSave={() => editor.save.mutate(undefined, { onSuccess: () => { void queryClient.invalidateQueries({ queryKey: ["makerspace-settings", makerspace.id] }); } })} />
           {editor.form.provider === "smtp" ? <SettingsResetAction label={t`Clear SMTP password`}
             consequence="Remove the saved SMTP password. Email delivery may stop until a replacement is saved."
             pending={editor.clearPassword.isPending} disabled={!editor.settings.data?.smtp_password_set || editor.save.isPending}
@@ -81,7 +84,9 @@ function MakerspaceEmailEditor({ makerspace }: { makerspace: Makerspace }) {
         </div>
       </SettingsRow>
     </SettingsQueryState>
-      <SettingsQueryState query={recipients} resource="notification recipients"><SettingsRow label={t`Notification recipients`} helper={t`Unchecked managers will not receive hardware/printing lifecycle emails for this makerspace.`}><div className="@container grid min-w-0 gap-4">
+    {/* Parity E-B8 (A19): the own-SMTP test gate and the sender name / reply-to. */}
+    <SpaceEmailSender makerspaceId={makerspace.id} />
+      <SettingsQueryState query={recipients} resource={t`notification recipients`}><SettingsRow label={t`Notification recipients`} helper={t`Unchecked managers will not receive hardware/printing lifecycle emails for this makerspace.`}><div className="@container grid min-w-0 gap-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="grid max-w-2xl gap-2">
 
@@ -138,5 +143,6 @@ function roleLabel(role: NotificationRecipient["role"]) {
     handover: "Handover",
     technician: "Technician",
     shop_manager: "Shop manager",
+    fundraising: "Fundraising",
   }[role];
 }

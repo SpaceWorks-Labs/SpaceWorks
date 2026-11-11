@@ -42,7 +42,7 @@ export function MakerspaceProfileSettings({ makerspaceId }: { makerspaceId: numb
   });
   useEffect(() => { mutation.reset(); }, [makerspaceId, mutation.reset]);
   const changed = () => { setDirty(true); setSaved(false); setError(null); };
-  return <SettingsQueryState query={query} resource="profile"><><div className="grid min-w-0 gap-4">
+  return <SettingsQueryState query={query} resource={t`profile`}><><div className="grid min-w-0 gap-4">
 
 
     {query.isPending ? <p role="status">{t`Loading profile…`}</p> : null}

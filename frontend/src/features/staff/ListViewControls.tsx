@@ -3,17 +3,19 @@ import type { ReactNode } from "react";
 import { ListFilters, type ListFiltersProps } from "../../components/layouts/ListFilters";
 import { ListSort } from "../../components/layouts/ListSort";
 import type { UrlListState } from "../../lib/useUrlListState";
-import { SavedViewsMenu } from "./SavedViewsMenu";
+import { SavedViewsMenu, type ListPreset } from "./SavedViewsMenu";
 
-export function ListViewControls({ state, makerspaceId, entity, sorts, search = true, searchLabel = "Search", searchControl, controls, activeCount = 0, savedViews = true }: {
+export function ListViewControls({ state, makerspaceId, entity, sorts, search = true, searchLabel = t`Search`, searchControl, controls, activeCount = 0, savedViews = true, viewOptions }: {
   state: UrlListState; makerspaceId: number; entity: string; sorts: readonly (readonly [string, string])[]; search?: boolean;
   searchLabel?: string; searchControl?: ListFiltersProps["search"]; controls?: ReactNode; activeCount?: number;
   /** Off when the actor lacks the entity's list action, so the saved-views request would 403. */
   savedViews?: boolean;
+  /** Event lists: views kept per event, counted presets, and the URL prefix used for "Copy link". */
+  viewOptions?: { eventId?: number; presets?: ListPreset[]; linkPrefix?: string };
 }) {
   return <ListFilters search={searchControl ?? (search ? { label: searchLabel, value: state.values.q ?? "", onChange: value => state.setFilter("q", value) } : undefined)}
     sort={<ListSort value={state.values.ordering} onChange={event => state.setFilter("ordering", event.target.value)} options={sorts} />}
-    views={savedViews ? <SavedViewsMenu makerspaceId={makerspaceId} entity={entity} state={state.values} onRestore={state.restore} /> : undefined}
+    views={savedViews ? <SavedViewsMenu makerspaceId={makerspaceId} entity={entity} state={state.values} onRestore={state.restore} {...viewOptions} /> : undefined}
     controls={controls} activeCount={activeCount}
     chips={state.values.id ? [{ key: "id", label: t`selected result`, onRemove: () => state.setFilter("id", "") }] : []} />;
 }

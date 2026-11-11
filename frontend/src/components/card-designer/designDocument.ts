@@ -85,7 +85,7 @@ export function newLayer(kind: LayerKind, side: Side, stock: string, extra: Part
   const base = { id: newLayerId(), kind, name: "", rotation: 0, opacity: 100, locked: false, hidden: false };
   const at = (w: number, h: number) => ({ w_mm: round1(w), h_mm: round1(h),
     x_mm: round1((width - w) / 2), y_mm: round1((height - h) / 2) });
-  const text = { font_family: "Gilroy", font_weight: 600, font_size_pt: 10, align: "left" as const,
+  const text = { font_family: "Outfit", font_weight: 600, font_size_pt: 10, align: "left" as const,
     valign: "top" as const, colour: "#142C2A", uppercase: false, tracking_pt: 0, line_height: 1.2, shrink_to_fit: true };
   switch (kind) {
     case "text": return { ...base, ...at(width * 0.5, 7), ...text, text: t`Your text`, ...extra };

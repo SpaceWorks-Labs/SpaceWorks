@@ -56,9 +56,9 @@ export function TemplateGallery({ design, values, onAdopt, onError }: {
         </div>
         {templates.isLoading ? <div className="grid gap-3 sm:grid-cols-2">
           {Array.from({ length: 4 }, (_v, index) => <Skeleton key={index} className="h-44 w-full" />)}</div> : null}
-        {templates.isError ? <ErrorBlock error={templates.error} resource="templates" onRetry={() => void templates.refetch()} /> : null}
+        {templates.isError ? <ErrorBlock error={templates.error} resource={t`templates`} onRetry={() => void templates.refetch()} /> : null}
         {templates.data && !shown.length ? <p className="text-sm text-muted">{t`No ${theme} templates are available.`}</p> : null}
-        <ul className="grid gap-3 sm:grid-cols-2" aria-label={`${theme === "light" ? "Light" : "Dark"} templates`}>
+        <ul className="grid gap-3 sm:grid-cols-2" aria-label={theme === "light" ? t`Light templates` : t`Dark templates`}>
           {shown.map((item) => {
             const { front, back, back_enabled: twoSided, mono } = item.document;
             const width = fitInside(box, box * 0.75, front.page_width_mm, front.page_height_mm);
@@ -80,7 +80,7 @@ export function TemplateGallery({ design, values, onAdopt, onError }: {
         </ul>
       </div>
     </Modal>
-    <ConfirmDialog open={chosen !== null} title={t`Start again from ${chosen?.label ?? "this template"}?`}
+    <ConfirmDialog open={chosen !== null} title={chosen?.label ? t`Start again from ${chosen.label}?` : t`Start again from this template?`}
       message={t`Your draft is replaced. Cards keep the published version until you publish again.`}
       confirmLabel={t`Replace the draft`} pending={reset.isPending} onCancel={() => setChosen(null)} onConfirm={apply} />
   </>;

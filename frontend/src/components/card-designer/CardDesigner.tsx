@@ -30,7 +30,7 @@ import { useDesignerKeys } from "./useDesignerKeys";
 export function CardDesigner({ designId, canEdit, title }: { designId: number; canEdit: boolean; title?: string }) {
   const query = useCardDesignQuery(designId);
   if (query.isLoading) return <Skeleton className="h-96 w-full" />;
-  if (query.isError || !query.data) return <ErrorBlock error={query.error} resource="card design" onRetry={() => void query.refetch()} />;
+  if (query.isError || !query.data) return <ErrorBlock error={query.error} resource={t`card design`} onRetry={() => void query.refetch()} />;
   return <DesignerBody design={query.data} canEdit={canEdit} title={title} />;
 }
 
@@ -85,7 +85,7 @@ function DesignerBody({ design, canEdit, title }: { design: CardDesign; canEdit:
             watermark={document.watermark}
             selection={selection} gridMm={view.gridMm} showGrid={view.showGrid} zoom={zoom} readOnly={!canEdit}
             onSelect={setSelection} onPatch={editing.patch} onCheckpoint={working.checkpoint}
-            label={t`${view.side === "front" ? "Front" : "Back"} of the card, ${side.page_width_mm} by ${side.page_height_mm} mm`} />
+            label={view.side === "front" ? t`Front of the card, ${side.page_width_mm} by ${side.page_height_mm} mm` : t`Back of the card, ${side.page_width_mm} by ${side.page_height_mm} mm`} />
         </div>
         <p className="text-center text-xs text-muted">{t`The dashed line is the 3 mm safe area: keep text inside it. Showing ${previewLabel(person)}.`}</p>
       </div>

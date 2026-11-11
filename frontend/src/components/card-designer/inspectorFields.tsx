@@ -36,7 +36,7 @@ export function ColourInput({ label, value, onChange, allowNone, disabled }: {
       <input type="color" aria-label={`${label} picker`} className="h-11 w-11 shrink-0 cursor-pointer rounded-control border border-line bg-panel p-1"
         value={HEX.test(draft) ? draft : "#FFFFFF"} disabled={disabled}
         onChange={(event) => { setDraft(event.target.value.toUpperCase()); onChange(event.target.value.toUpperCase()); }} />
-      <input className="desk-input min-h-11 min-w-0 flex-1 font-mono uppercase" aria-label={`${label} hex`} value={draft}
+      <input className="desk-input min-h-11 min-w-0 flex-1 code-text uppercase" aria-label={`${label} hex`} value={draft}
         placeholder={allowNone ? t`None` : "#RRGGBB"} maxLength={7} disabled={disabled}
         onChange={(event) => {
           const next = event.target.value.startsWith("#") ? event.target.value : `#${event.target.value}`;

@@ -59,7 +59,7 @@ export function HistoryPanel({ designId, canEdit, values, prepare, onRestored, o
   const thumb = document ? fitInside(220, 150, document.front.page_width_mm, document.front.page_height_mm) : 0;
   const preview = chosen !== null ? <div className="mt-1 grid gap-2 rounded-control border border-line bg-surface p-2" aria-live="polite">
     {detail.isLoading ? <Skeleton className="h-32 w-full" /> : null}
-    {detail.isError ? <ErrorBlock error={detail.error} resource="this version" onRetry={() => void detail.refetch()} /> : null}
+    {detail.isError ? <ErrorBlock error={detail.error} resource={t`this version`} onRetry={() => void detail.refetch()} /> : null}
     {document ? <div className="grid justify-items-center gap-2">
       <CardThumbnail side={document.front} designId={designId} values={values} mono={document.mono}
         watermark={document.watermark} width={thumb}
@@ -82,7 +82,7 @@ export function HistoryPanel({ designId, canEdit, values, prepare, onRestored, o
     {outcome && outcome.tone !== "conflict" ? <p role={outcome.tone === "error" ? "alert" : "status"}
       className={`text-sm ${outcome.tone === "error" ? "text-danger" : "text-muted"}`}>{outcome.text}</p> : null}
     {list.isLoading ? <Skeleton className="h-40 w-full" /> : null}
-    {list.isError ? <ErrorBlock error={list.error} resource="version history" onRetry={() => void list.refetch()} /> : null}
+    {list.isError ? <ErrorBlock error={list.error} resource={t`version history`} onRetry={() => void list.refetch()} /> : null}
     {list.data && !rows.length ? <p className="text-sm text-muted">{t`No saved versions yet.`}</p> : null}
     <ul className="grid gap-1" aria-label={t`Versions, newest first`}>
       {rows.map((item) => <li key={item.revision}>

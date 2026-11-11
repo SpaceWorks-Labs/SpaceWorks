@@ -16,7 +16,7 @@ export function Companion() {
   }, [on, enabled, reduced, pose, position]);
   if (!enabled) return null;
   return <div className="grid gap-3">
-    <button type="button" className="desk-button" aria-pressed={on} onClick={() => { setOn(!on); setPose("companionWalk"); }}>{t`Workshop companion: ${on ? "on" : "off"}`}</button>
+    <button type="button" className="desk-button" aria-pressed={on} onClick={() => { setOn(!on); setPose("companionWalk"); }}>{on ? t`Workshop companion: on` : t`Workshop companion: off`}</button>
     {on ? <><div className="relative h-20 overflow-hidden" onPointerMove={event => {
       if (reduced) return;
       const bounds = event.currentTarget.getBoundingClientRect();

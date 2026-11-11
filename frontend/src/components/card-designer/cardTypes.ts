@@ -47,7 +47,7 @@ export type CardDesign = {
   id: number; domain: CardDomain; name: string; plan_id: number | null; title_id: number | null;
   programme_id: number | null; organization_id: number | null; event_id: number | null; ticket_type_id: number | null;
   target_label: string; status: "draft" | "pending_approval" | "published"; document: CardDocument; revision: number;
-  published_revision: number | null; published_at: string | null; has_unpublished_changes: boolean;
+  published_revision: number | null; published_at: string | null; archived_at?: string | null; has_unpublished_changes: boolean;
   pending_approval: CardReview | null; last_review: CardReview | null;
   needs_approval: boolean; can_approve: boolean; can_edit: boolean; updated_at: string;
   /** A programme's printed questions, placeable as {{field:<key>}}. */

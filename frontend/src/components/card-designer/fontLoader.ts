@@ -4,8 +4,13 @@ import { staffRequestBlob } from "../../lib/api";
 
 const loaded = new Map<string, Promise<boolean>>();
 
+/** Decision 220(c): designs stored before the release name Outfit "Gilroy"; it loads as Outfit. */
+export function canonicalFamily(family: string) {
+  return family === "Gilroy" ? "Outfit" : family;
+}
+
 export function cssFamily(family: string) {
-  return `"SW Card ${family}"`;
+  return `"SW Card ${canonicalFamily(family)}"`;
 }
 
 export function fontSlug(family: string) {
@@ -17,7 +22,8 @@ export function loadCardFont(designId: number, family: string, weight: number) {
 }
 
 /** The same registration with another source of the bytes (a holder's own card uses the member route). */
-export function loadCardFontWith(family: string, weight: number, fetchFont: (slug: string) => Promise<Blob>) {
+export function loadCardFontWith(stored: string, weight: number, fetchFont: (slug: string) => Promise<Blob>) {
+  const family = canonicalFamily(stored);
   const key = `${family}:${weight}`;
   if (typeof FontFace === "undefined" || typeof document === "undefined") return Promise.resolve(false);
   if (!loaded.has(key)) {

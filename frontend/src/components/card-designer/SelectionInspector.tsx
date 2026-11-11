@@ -1,6 +1,6 @@
 // The inspector when several layers are selected: what they share, and the actions that
 // apply to all of them at once. Locked layers stay where they are.
-import { t } from "@lingui/core/macro";
+import { plural, t } from "@lingui/core/macro";
 import { ClipboardCopy, Copy, Eye, EyeOff, Group, Lock, LockOpen, Trash2, Ungroup } from "lucide-react";
 
 import type { Side } from "./cardTypes";
@@ -22,7 +22,7 @@ export function SelectionInspector({ side, selection, editing }: { side: Side; s
       <h3 className="text-sm font-semibold text-ink">{t`${layers.length} layers selected`}</h3>
       <p className="text-sm text-muted">
         {groups.length === 1 && layers.every((layer) => layer.group === groups[0]) ? t`Group ${labels[groups[0]]}. ` : ""}
-        {t`Drag any of them to move them together. Use the bar above the card to line them up.`}{locked ? t` ${locked} locked ${locked === 1 ? "layer stays" : "layers stay"} put.` : ""}</p>
+        {t`Drag any of them to move them together. Use the bar above the card to line them up.`}{locked ? ` ${plural(locked, { one: "# locked layer stays put.", other: "# locked layers stay put." })}` : ""}</p>
     </div>
     <ul className="grid max-h-40 gap-1 overflow-y-auto text-sm text-ink" aria-label={t`Selected layers`}>
       {layers.map((layer) => <li key={layer.id} className="truncate">

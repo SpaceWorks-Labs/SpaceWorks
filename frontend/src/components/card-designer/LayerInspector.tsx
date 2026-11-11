@@ -5,6 +5,7 @@ import { qrMinimum } from "./cardGeometry";
 import { layerContrast, MINIMUM_RATIO } from "./contrast";
 import { fieldsFor } from "./dataFields";
 import { BARCODE_MIN_HEIGHT_MM, BARCODE_MIN_WIDTH_MM, layerName } from "./designDocument";
+import { canonicalFamily } from "./fontLoader";
 import { FontPicker } from "./FontPicker";
 import { ColourInput, NumberInput, SelectInput, Toggle } from "./inspectorFields";
 
@@ -125,7 +126,7 @@ function TextSettings({ layer, designId, disabled, onChange, answerFields }: {
         <span className="font-normal">{t`Insert a field with ${"{{name}}"}, ${"{{number}}"}, ${"{{valid_until}}"} and so on.`}</span>
       </label>}
     <div className="grid gap-1 text-xs font-semibold text-muted"><span>{t`Font`}</span>
-      <FontPicker designId={designId} family={layer.font_family ?? "Gilroy"} weight={layer.font_weight ?? 400}
+      <FontPicker designId={designId} family={canonicalFamily(layer.font_family ?? "Outfit")} weight={layer.font_weight ?? 400}
         disabled={disabled} onChange={(font_family, font_weight) => onChange({ font_family, font_weight })} />
     </div>
     <div className="grid grid-cols-2 gap-2">

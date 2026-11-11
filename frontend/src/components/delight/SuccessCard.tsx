@@ -12,7 +12,7 @@ export function DoorSoundControl() {
   if (!enabled) return null;
   return <button className="desk-button" type="button" aria-pressed={on} onClick={() => {
     setDoorSounds(!on);
-  }}>{t`Door sounds: ${on ? "on" : "off"}`}</button>;
+  }}>{on ? t`Door sounds: on` : t`Door sounds: off`}</button>;
 }
 
 export function SuccessCard({ kind, name, message, resultId, accent = true }: {

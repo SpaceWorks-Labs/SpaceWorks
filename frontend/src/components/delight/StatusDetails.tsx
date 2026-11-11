@@ -4,7 +4,8 @@ import { useDelight } from "./DelightProvider";
 
 export function StaffGreeting({ name, now = new Date() }: { name: string; now?: Date }) {
   const hour = now.getHours();
-  return <p className="text-ink">{hour < 12 ? t`Good morning` : hour < 18 ? t`Good afternoon` : t`Good evening`}, {name}. What will you make possible today?</p>;
+  return <p className="text-ink">{hour < 12 ? t`Good morning, ${name}. What will you make possible today?`
+    : hour < 18 ? t`Good afternoon, ${name}. What will you make possible today?` : t`Good evening, ${name}. What will you make possible today?`}</p>;
 }
 export function ConfirmationGreeting({ name }: { name: string }) { return <p className="text-ink">{t`You're in, ${name}.`}</p>; }
 

@@ -12,6 +12,8 @@ export const DATA_FIELDS: { key: string; label: string }[] = [
   { key: "certifications", label: t`Certifications` },
   { key: "blood_group", label: t`Blood group (holder opt-in)` },
   { key: "emergency_contact", label: t`Emergency contact (holder opt-in)` },
+  // E-F1 (append-only): event badges print the holder's email and crew kind.
+  { key: "email", label: t`Email` }, { key: "crew_kind", label: t`Crew kind` },
 ];
 
 /** The built-in fields plus a design's own answer fields (programme questions). */
@@ -20,18 +22,21 @@ export function fieldsFor(answers: { key: string; label: string }[] = []) {
 }
 
 export const SAMPLE_SHORT: Record<string, string> = {
-  name: "Priya Raman", number: "TNK-0042", plan: "Monthly", valid_until: "31 Dec 2026", member_since: "Mar 2024",
-  role: "Member", title: t`Treasurer`, team: "Night Owls", track: "Hardware", event: "Spring Build Night",
-  space: "Tinkerspace", organisation: "Makers Guild", programme: "Student ID", issued_on: "2 Nov 2026",
-  verify_url: "example.org/verify/c/…", certifications: "Laser induction", blood_group: "O+",
-  emergency_contact: "Arjun · 98765 43210",
+  // i18n-ignore: sample person, number, dates, URL and contact are placeholder data, not copy
+  name: "Priya Raman", number: "TNK-0042", valid_until: "31 Dec 2026", member_since: "Mar 2024", issued_on: "2 Nov 2026",
+  // i18n-ignore: placeholder data (see above)
+  verify_url: "example.org/verify/c/…", blood_group: "O+", emergency_contact: "Arjun · 98765 43210",
+  plan: t`Monthly`, role: t`Member`, title: t`Treasurer`, team: t`Night Owls`, track: t`Hardware`, event: t`Spring Build Night`,
+  space: t`Tinkerspace`, organisation: t`Makers Guild`, programme: t`Student ID`, certifications: t`Laser induction`,
 };
 
 export const SAMPLE_LONG: Record<string, string> = {
-  ...SAMPLE_SHORT, name: "Alexandra Montgomery-Fitzgerald", plan: "Annual supporting member (concession)",
-  title: t`Senior Community Partnerships Lead`, team: "The Midnight Debugging Collective",
-  event: "Community Hardware Hackathon 2026", space: "Thiruvananthapuram Community Makerspace",
-  organisation: "International Federation of Community Builders",
+  // i18n-ignore: placeholder person name
+  ...SAMPLE_SHORT, name: "Alexandra Montgomery-Fitzgerald",
+  plan: t`Annual supporting member (concession)`,
+  title: t`Senior Community Partnerships Lead`, team: t`The Midnight Debugging Collective`,
+  event: t`Community Hardware Hackathon 2026`, space: t`Thiruvananthapuram Community Makerspace`,
+  organisation: t`International Federation of Community Builders`,
 };
 
 export function merge(text: string, values: Record<string, string>) {

@@ -43,7 +43,7 @@ export function PreviewAsControl({ design, document, person, onPerson }: {
           <input className="desk-input min-h-11" type="search" value={search} aria-label={t`Search by name or number`}
             placeholder={t`Search by name or number`} onChange={(event) => setSearch(event.target.value)} />
           {holders.isLoading ? <Skeleton className="h-24 w-full" /> : null}
-          {holders.isError ? <ErrorBlock error={holders.error} resource="card holders" onRetry={() => void holders.refetch()} /> : null}
+          {holders.isError ? <ErrorBlock error={holders.error} resource={t`card holders`} onRetry={() => void holders.refetch()} /> : null}
           {holders.data && !holders.data.length ? <p className="text-sm text-muted">{t`No live cards use this design yet.`}</p> : null}
           {holders.data?.length && !rows.length ? <p className="text-sm text-muted">{t`No one matches “${search}”.`}</p> : null}
           <div className="grid max-h-72 gap-1 overflow-y-auto overscroll-contain">
@@ -91,7 +91,7 @@ function ExactPreview({ design, document, person, onClose }: {
     <div className="grid gap-3">
       <p className="text-sm text-muted">{t`Drawn by the print engine for ${previewLabel(person)}, marked PREVIEW. Sensitive extras are never shown.`}</p>
       {state.loading ? <Skeleton className="h-56 w-full" /> : null}
-      {state.error ? <ErrorBlock error={state.error} resource="preview" /> : null}
+      {state.error ? <ErrorBlock error={state.error} resource={t`preview`} /> : null}
       <div className="grid gap-3 md:grid-cols-2">
         {state.urls.map(({ side, url }) => <figure key={side} className="grid gap-1">
           <img src={url} className="w-full rounded-control border border-line bg-white"

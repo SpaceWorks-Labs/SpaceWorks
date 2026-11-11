@@ -74,5 +74,5 @@ export function MakerModePanel({ mode, version }: { mode: ReturnType<typeof useM
 
 export function MakerModeToggle({ mode }: { mode: ReturnType<typeof useMakerMode> }) {
   if (!mode.allowed) return null;
-  return <button type="button" className="desk-button" aria-pressed={mode.active} onClick={mode.toggle}>{t`Maker mode: ${mode.active ? "on" : "off"}`}</button>;
+  return <button type="button" className="desk-button" aria-pressed={mode.active} onClick={mode.toggle}>{mode.active ? t`Maker mode: on` : t`Maker mode: off`}</button>;
 }

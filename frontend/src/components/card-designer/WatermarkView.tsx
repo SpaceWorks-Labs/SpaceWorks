@@ -1,5 +1,5 @@
 // The design's watermark on screen, drawn under every layer exactly as the renderer does
-// (apps/card_designs/rendering_background.draw_watermark): text in Gilroy Bold, centred and
+// (apps/card_designs/rendering_background.draw_watermark): text in Outfit at 700 (the bundled Outfit Bold), centred and
 // turned by its angle, sized from the card; an image contained in the middle 70 %.
 import type { Watermark } from "./cardTypes";
 import { PT_TO_MM } from "./cardGeometry";
@@ -32,7 +32,7 @@ export function WatermarkView({ watermark, widthMm, heightMm, px, mono, designId
   const widthPt = widthMm / PT_TO_MM, heightPt = heightMm / PT_TO_MM;
   const sizePt = Math.min((widthPt / Math.max(4, watermark.text.length)) * 1.6, heightPt * 0.4);
   return <div aria-hidden="true" className="pointer-events-none absolute inset-0 grid place-items-center overflow-hidden">
-    <span className="whitespace-nowrap" style={{ fontFamily: `${cssFamily("Gilroy")}, Gilroy, sans-serif`, fontWeight: 700,
+    <span className="whitespace-nowrap" style={{ fontFamily: `${cssFamily("Outfit")}, Outfit, sans-serif`, fontWeight: 700,
       fontSize: sizePt * PT_TO_MM * px, lineHeight: 1, opacity, color: mono ? monoColour(watermark.colour) : watermark.colour,
       transform: `rotate(${watermark.angle_deg}deg)` }}>{watermark.text}</span>
   </div>;

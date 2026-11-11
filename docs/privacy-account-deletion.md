@@ -38,8 +38,8 @@ or push destinations. Once removal starts, it cannot be undone even if cleanup i
 
 Purge clears account contact details, names and verified identity stamps, replaces the
 username and display name with anonymous placeholders, removes social identities,
-authentication challenges, password-reset envelopes, push destinations and personal
-inbox rows, and deletes maker profiles/projects and their images. It scrubs contact
+authentication challenges, password-reset envelopes, push destinations, push delivery attempts, the daily device-activity
+records of its sign-in grants, and personal inbox rows, and deletes maker profiles/projects and their images. It scrubs contact
 snapshots on hardware requests, bookings, event registrations and owned machine-service
 requests; booking notes and custom answers; registration custom answers; membership
 application answers and invitation addresses; and email-log recipients/content addressed
@@ -61,6 +61,10 @@ The following records remain after account deletion:
 - Staff-addressed notification emails mentioning the member, until EmailLog's existing retention expires.
 - `NotificationDeliveryLog` text, deleted by `notifications/retention.py` on its existing windows.
 - Staff actor snapshots on other people's memberships.
+- Consumable cost records and machine status changes, which carry no person; a machine usage entry keeps its link to the anonymized account.
+- Email-log delivery facts (provider, bounce and complaint times) after the address, subject, body and provider message id are scrubbed.
+- Anonymous outcome records for SMS sends, device-attestation checks and email-provider events.
+- A late return fee that is raised after the account was deleted is still recorded as a debt and audited as `account.obligation_after_deletion`; refunds stay possible.
 
 Backups age out under their own retention. Restoring or importing deletion-requested
 identities keeps them inactive and preserves their deletion timestamps; purged identities

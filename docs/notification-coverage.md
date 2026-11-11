@@ -2,7 +2,7 @@
 
 This is the complete trigger inventory from `audit-spec-notify.out.txt` (2026-10-16).
 Updated for the 2026-10-18 reconciliation source contracts; runtime/provider verification remains
-with the orchestrator. The original inventory date does not establish current rollout success.
+with the release operator. The original inventory date does not establish current rollout success.
 **TRUE means the stated producer/adapter is wired, not a runtime/provider test result.**
 PARTIAL names a remaining part of the target; RETAINED means the existing intentional path.
 All personal rows remain subject to the [integration limits](notification-contract.md#integration-limits-in-this-tree).
@@ -193,3 +193,44 @@ exactly once and a staff member losing machine scope never suppresses a requeste
 request still be the accepted head of its bucket/queue at delivery and is never re-reserved.
 Imported tenants never replay them: markers travel as data and rows imported as accepted carry
 `imported_head_notified`. See `docs/notification-contract.md` ("Owner self-notices").
+
+## Release 0.12.0 coverage by module (decision 221(f))
+
+Every notice below goes through the one pipeline: an envelope with the member's preferences,
+quiet hours and digest behaviour, gated by its source module or capability
+(`EVENT_SOURCES`), so an off module sends nothing. Event-linked loans use the same Inventory loan types
+with the event as context. "Reminder lead" settings are per space: `event_reminder_lead_hours`
+and `booking_reminder_lead_hours` take a list such as `[24, 1]` for a day-ahead and an hour-ahead
+reminder (the default stays `[24]`); the loan ladder uses the loan policy's reminder offsets.
+
+```mermaid
+flowchart LR
+  ev["Something happens<br/>request issued, booking confirmed, payment due"] --> gate{"Source module or capability on?"}
+  gate -- no --> none["Nothing is sent"]
+  gate -- yes --> cat["Catalogue event builds the envelope"]
+  cat --> prefs["Member preferences and quiet hours"]
+  prefs --> dig["Digest behaviour"]
+  dig --> ch["Selected channels with consent<br/>email, in-app, push, SMS, chat apps"]
+  cat --> rooms["Staff rooms: scoped summaries only"]
+```
+
+| Module | Notice (catalogue event) | Reaches | Gate |
+|---|---|---|---|
+| Inventory | request submitted, accepted (collect it, with a pickup window when set), rejected | borrower, staff | `request_workflow` |
+| Inventory | `pickup_expiring`: one reminder before an accepted request lapses (24 h ahead, or half of a window under two days) | borrower | `loans.pickup_windows` |
+| Inventory | issued, due soon / overdue (`return_reminder` ladder), `overdue_escalated` | borrower, staff | `request_workflow` |
+| Inventory | `renewed`: the new due date (staff are told only of a self-renewal) | borrower, staff | `loans.renewals` |
+| Inventory | returned, partially returned, closed with issue: the confirmation names the outcome | borrower, staff | `request_workflow` |
+| Inventory | `waitlist_offer`, `back_available`, `linked_event_changed` | borrower, watcher | `loans.waitlist`, `inventory.notify_when_back`, `events` |
+| Events | registration created, pending, waitlisted, approved, promoted, cancelled, restored, `registration_updated` (changed time), `reminder` (configured leads), event `cancelled` | registrant, organizers | `events` |
+| Events | `linked_booking_changed` (moved, cancelled, rejected, restored): Event/Space Managers, per-event `publish_schedule` delegates, organizer-organization managers from other spaces | organizers | `events` and `bookings` |
+| Bookings | created, confirmed (also sent for a reschedule), rejected, cancelled, restored, `reminder` | booker, booking staff | `bookings` |
+| Bookings | `linked_event_changed`: the booker, booking staff, per-room `manage_reservations` grant holders, and an account-less guest booker by email | as listed | `bookings` and `events` |
+| Bookings | `room_outage`: bookers and booking staff | booker, staff | `bookings.room_repairs` or `bookings.room_maintenance` |
+| Membership | `renewal_due`, `grace_started`, `lapsed`, `renewed`, `renewal_failed`, payment due; payment recorded is the payments `payment_received` notice | member | `membership` |
+| Shop | `shop_order_ready`, `shop_order_reminder`, `shop_order_pickup_moved_to_space`, `shop_order_collected` (handed over), cancelled, lapsed | buyer | `shop` |
+| Machines / repairs | job status (`printing` family: accepted, started, completed, failed, collected), `repair_closed` for the reporter | requester, reporter | `machines`, `*.issue_reporting` or `*.repairs` |
+
+Account reporters and borrowers get the pipeline envelope; an account-less guest keeps one direct
+email to the address on the booking, loan or report. Shop webhook events for these orders belong
+to the integrations catalogue, not to this table.

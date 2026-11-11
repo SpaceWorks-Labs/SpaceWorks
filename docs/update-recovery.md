@@ -110,8 +110,12 @@ and a verified archive, not a SQL dump.
 3. Confirm the database name and server from the **active host database pointer**, and confirm that
    identity is the database captured by the selected dump. H1 recovery can change that pointer:
    `POSTGRES_DB` is not proof of the live application's database. A database owner must review this
-   identity before any drop, create or restore command. Managed/external databases need their provider's
-   restore procedure and pointer/CAS adapter; the bundled-container procedure does not apply to them.
+   identity before any drop, create or restore command. A bundled database restores from `backups/pre-update-<timestamp>.sql.gz`
+   with the bundled-container procedure below. An outside database (`SPACEWORKS_DATABASE=external`) has a
+   `backups/pre-update-<timestamp>.dump` (custom format, taken with the version-matched `pg_dump`): restore it with
+   the same-major `pg_restore --clean --if-exists --no-owner --no-acl` as the owner login on the direct connection,
+   or use your provider's own point-in-time restore and then re-run the grants step. See
+   [Backup and restore](backup-and-restore.md#roll-back-an-upgrade).
 4. Stop the whole application stack, including web front, live streams, workers and
    schedulers. Keep only the database container running. Confirm all writers are disconnected. Check
    the dump's integrity with `gzip -t backups/pre-update-<timestamp>.sql.gz`.
@@ -149,8 +153,9 @@ before allowing normal writes. Interrupted destructive work uses its durable rol
 
 Before any control-state change, snapshot, restore or interrupted rollback, `restore.sh` queries
 the active application's database name, OID and deployment UUID through the committed wrapper,
-and compares them with a direct query of the bundled bootstrap database while holding the host
-operation lock. The complete identities must match. A sibling cutover or external database pointer
+and compares them with a direct query of the bootstrap database (the bundled `db` container, or the outside
+database through the owner login when `SPACEWORKS_DATABASE=external`) while holding the host
+operation lock. The complete identities must match. A pointer that names a different database (a sibling cutover)
 is refused **before any restore effect**; use the supported cutover recovery coordinator instead.
 Every snapshot, replacement, rollback and grant reprovisioning uses that explicitly proven database
 name. Do not reset the pointer to make the check pass.

@@ -7,16 +7,20 @@ This project is Docker-first for operators who do not want to build Django or Vi
 The supported fresh-install path needs no Git clone:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/SpaceWorks-Labs/SpaceWorks/main/install.sh | bash
+curl -fsSL https://github.com/SpaceWorks-Labs/SpaceWorks/releases/latest/download/install.sh | sh
 ```
 
-The installer defaults to `/opt/spaceworks`; override it on the `bash` process with, for example,
-`curl -fsSL https://raw.githubusercontent.com/SpaceWorks-Labs/SpaceWorks/main/install.sh | SPACEWORKS_DIR="$HOME/SpaceWorks" bash`.
+The installer defaults to `/opt/spaceworks`; override it on the `sh` process with, for example,
+`curl -fsSL https://github.com/SpaceWorks-Labs/SpaceWorks/releases/latest/download/install.sh | SPACEWORKS_DIR="$HOME/SpaceWorks" sh`.
 It resolves the latest published, non-draft, non-prerelease GitHub release built from `main`,
-from `SPACEWORKS_REPOSITORY` (default `SpaceWorks-Labs/SpaceWorks`), downloads that tag's archive, and pins the published backend/frontend images to its immutable version.
-The accepted version format is `X.Y.Z-main.<run>.<12-hex sha>`; there is no release channel choice.
+from `SPACEWORKS_REPOSITORY` (default `SpaceWorks-Labs/SpaceWorks`), downloads that release's deploy bundle (verified against its `SHA256SUMS`, and its cosign signature when `cosign` is installed), and pins the published backend/frontend images to its immutable version.
+The accepted version format is `X.Y.Z-main.<run>.<12-hex sha>`; there is no release channel choice;
+`--version` pins one published release (0.12.0 or newer) and an older one is refused over an existing
+install (forward-only). New installs run on Linux or macOS; on Windows use WSL2 or a Linux VM.
 Before mutating the host it checks x86_64/aarch64 support, distribution/dependency handling, Docker,
-8 GiB of free disk, release availability, and existing state. Linux dependency
+8 GiB of free disk (and warns below about 4 GiB RAM), release availability, and existing state;
+`--dry-run` runs those checks and prints the plan without changing anything. Options and the
+troubleshooting table are in [Install and update](install-and-update.md#install-in-one-line). Linux dependency
 installation supports apt, dnf/yum, pacman and zypper families identified from `/etc/os-release`.
 
 Running the installer as a normal sudo-capable user keeps the install owned by that user, including
@@ -116,10 +120,15 @@ unless explicitly invoked with `--allow-production-demo`.
 
 ## API-only and external storage
 
-Choose **No, API only** to host React on Netlify or another service. These installs must use HTTPS
-option 2 (automatic Caddy) or 3 (your own reverse proxy); plain HTTP is not offered. The installer
-sets CORS/CSRF origins and the makerspace's verified `frontend_domain` to the first supplied
-site. Additional origins are public origins; the first is the staff site. A shared multi-tenant staff site
+Choose **API-only** (`--frontend api-only`) for a backend that serves mobile apps and integrations, or
+to host React on Netlify or another service. These installs must use HTTPS
+option 2 (automatic Caddy) or 3 (your own reverse proxy); plain HTTP is not offered. With a website
+elsewhere, the installer sets CORS/CSRF origins and the makerspace's verified `frontend_domain` to the
+first supplied site. With no website (blank answer), CORS/CSRF and `PUBLIC_APP_BASE_URL` are this
+server's own origin and no frontend domain is recorded; emailed links (password resets, invitations)
+then point at a host that answers only the API, so set `PUBLIC_APP_BASE_URL` in `.env` to the website or
+app-link domain that should open them and restart the services. The staff console is the React website:
+without one, use a hosted website pointed at this API, or `/control/` for superadmin work. Additional origins are public origins; the first is the staff site. A shared multi-tenant staff site
 is registered in `PLATFORM_STAFF_ORIGINS`. Set the external frontend's `VITE_API_URL` to
 `https://<server-domain>/api` (for a platform, the apex or first tenant API subdomain works).
 
@@ -235,6 +244,17 @@ source tree can explicitly build locally:
 ```bash
 bash setup.sh --build
 ```
+
+The backend image is built on Ubuntu 24.04 LTS by default. A source build can pick another base with the
+`BASE_OS` build argument: `debian-trixie` (Debian stable) or `debian-forky` (Debian testing, zero known
+findings but a moving target). For example:
+
+```bash
+docker compose -f docker-compose.prod.yml -f docker/compose.build.yml build   --build-arg BASE_OS=debian-forky backend
+```
+
+The published release image uses the default. The trade-offs and how to verify a forky build are in
+[backend-image-cve-notes-0.12.0.md](security/backend-image-cve-notes-0.12.0.md#building-with-zero-known-findings-optional).
 
 For a guided first run that generates secrets, the atomic pointer and `.env`, use the curl installer or
 `setup.sh` at the repo root (see [setup-for-makerspaces.md](setup-for-makerspaces.md)).
@@ -407,8 +427,8 @@ persist it to `.env` and print a `NOTICE:` line. Any other owner, including a fo
 For example:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/SpaceWorks-Labs/SpaceWorks/main/install.sh | \
-  SPACEWORKS_REPOSITORY=YourOwner/YourFork bash
+curl -fsSL https://github.com/YourOwner/YourFork/releases/latest/download/install.sh | \
+  SPACEWORKS_REPOSITORY=YourOwner/YourFork sh
 ```
 
 ### Module changes
@@ -621,8 +641,168 @@ confirm your identity and is audited); `/control/` → Makerspaces offers the sa
 | See how a space is doing | **Health** | State, usage against the limits, last activity, last backup and drill, blocked accounts, open problems, modules on. |
 
 Before purging, export what anyone may need: the purge is permanent. Suspension and read-only also
-apply on a single-space self-host; managed-only items (onboarding requests and the managed-hosting
-limiter, which stays off unless `MANAGED_PLANS_ENABLED` is set on a managed platform) never appear here.
+apply on a single-space self-host. Onboarding requests, plans and per-space limits appear only after
+you switch on **Hosting other makerspaces** (next section).
+
+## Plans and hosting other makerspaces (optional)
+
+Space Works has one deployment mode: you run it yourself. If you also want to run spaces for other
+people (a regional network, a university, a hosting business), switch on **Hosting other makerspaces**.
+It is a setting on a normal install, not a different product. Nothing below is required to run a space.
+
+**Turn it on.** Sign in as superadmin and open **Platform → Spaces → Hosting other makerspaces**. The
+switch is off by default and every action is audited (`managed_hosting.hosting_switch_changed`).
+Switching it off hides everything described here and deletes nothing: plans, invoices, requests,
+overrides and rate settings stay in the database and reappear when you switch it back on.
+
+What the switch turns on:
+
+| Feature | What it gives you |
+| --- | --- |
+| Host-your-makerspace requests | A public form on the platform landing page, plus invitations from an existing space or organization. Applicants confirm their email before a request reaches review. |
+| Plans and fair-use limits | Plan tiers (limits, optional trial, optional recorded invoices) and per-space limits with current usage. |
+| Stripe Connect | Hosting-only: new Connect onboarding and new Connect charges need the switch. A configured Connect platform still settles, refunds and expires charges already raised when the switch is off. |
+| Platform subdomains | `<name>.your-domain` for a space, when a platform domain is set (below). |
+
+### Legacy names
+
+Older installs and cloud recipes use these names. They still work and map to the setting above.
+
+| Name | Meaning |
+| --- | --- |
+| `MANAGED_PLANS_ENABLED` | Optional override. Unset: the console switch decides. `true` or `false` forces it and locks the switch. |
+| `MANAGED_BILLING_ONLINE_ENABLED` | Lets Space Managers pay hosting invoices online (needs the platform's own Stripe or Razorpay keys in **Billing settings**). |
+| `PLATFORM_DOMAIN_SUFFIX` | The domain your spaces live under, for example `space-works.tech`. Needed only for subdomains, custom-domain DNS checks and the built-in default limits. |
+| `docker-compose.managed*.yml`, `render.managed.yaml`, `SPACEWORKS_DEPLOYMENT_MODE=managed` | Presets for provider-run clouds where the provider owns the database and storage. They are packaging, not a separate product. |
+
+### Architecture
+
+One application stack serves every space. There is no database per space: every row is scoped to a
+makerspace and every query goes through the same role checks. Spaces are reached at
+`/m/<slug>`, at a platform subdomain, or at a verified custom domain. A browser staff session is
+bound to its own domain, so a space's domain cannot mint another space's session.
+Plan for one failure and capacity boundary on a single server: scale up first, and move to a managed
+database and object storage before adding application nodes.
+
+### Wildcard DNS and TLS
+
+For platform subdomains, point your domain at the server. On Cloudflare:
+
+| Type | Name | Target | Proxy |
+| --- | --- | --- | --- |
+| A | `space-works.tech` | server IP | Proxied |
+| A | `origin.space-works.tech` | server IP | DNS only |
+| CNAME | `files.space-works.tech` | `space-works.tech` | Proxied |
+| A | `*.space-works.tech` | server IP | Proxied |
+
+Use **Full (strict)** SSL and a Cloudflare Origin CA certificate for the apex and the wildcard, saved as
+`deploy/certs/spaceworks.crt` and `deploy/certs/spaceworks.key` (never commit them). `origin.` must be
+DNS only so tenant custom domains that CNAME to it reach Caddy with their own hostname for on-demand TLS.
+Set `PLATFORM_DOMAIN_SUFFIX`, `PLATFORM_ORIGIN_HOST=origin.space-works.tech`, `BEHIND_TRUSTED_PROXY=true`
+and start the layered stack:
+
+```bash
+SPACEWORKS_COMPOSE_LAYER=saas scripts/spaceworks-compose.sh bundled up -d
+```
+
+Keep the database, Redis, MinIO and backend ports closed; only Caddy is published (80 and 443).
+Set `MINIO_CORS_ALLOWED_ORIGINS` to the platform origins plus each verified custom domain, keep the
+private bucket private, and do not enable credentialed CORS.
+
+### The superadmin workflow
+
+1. **Request.** A visitor files the form (name, contact, expected size, proposed address), or accepts
+   an invitation from a space or organization. The invitation offers "Join" the inviting organization
+   only when the inviter governs it; otherwise only "create my own organization". Requests unverified
+   after 48 hours expire; rejected and withdrawn requests lose the applicant's personal details after 90 days.
+2. **Review.** **Platform → Spaces → Onboarding** (and `/control/` → Hosting requests) shows each request.
+   You can **request changes**, **reject** with a reason (the applicant is emailed), or **approve**.
+3. **Approve and create.** Approval accepts the request and creates the space in one audited step,
+   pre-filled from the request. The owner organization is the inviting one if the applicant chose "Join",
+   otherwise a new one; you can override it. The applicant is invited as Space Manager and Email is turned
+   on for the space. No trial is created unless you assign a plan with one.
+4. **Subdomain.** In the space's detail drawer, **Provision subdomain** assigns `<label>.<platform domain>`.
+   A space owner can instead request a custom domain; they add a TXT record and a CNAME to `origin.`,
+   then verify. A domain changes only after `DOMAIN_CHANGE_COOLDOWN_SECONDS` (default 86400 in the preset).
+5. **Limits and plan.** Assign a plan and, where needed, override single limits (below).
+6. **Onboarding.** The Space Manager signs in and answers the setup questionnaire (areas, not modules);
+   modules are switched on and off from the space's settings. Modules that a limit gates (for example
+   events or email) are installed by you until the limit is lifted.
+7. **Lifecycle.** Suspend, read-only, transfer ownership, scheduled archive and purge, announcements and
+   per-space health are under **Platform → Spaces**. You may act in a paused or read-only space; the
+   console warns first and the action is audited with `bypass_space_control`.
+
+### Plans and limits
+
+The effective limit for a space is, in order: the **space override**, then its **plan**, then the built-in
+fair-use default (only when a platform domain is set), otherwise **unlimited**. A space with no plan and no
+override on a plain install is therefore unrestricted.
+
+Each space is either an **Own space** (no plan, no limits, no hosting billing) or a **Hosted space** (plan, limits,
+trial and hosting billing can apply). The superadmin chooses per space; one install can mix both.
+
+```mermaid
+flowchart TD
+  sw{"Hosting other makerspaces switched on?"}
+  sw -- no --> all["Every space behaves as Own: unlimited"]
+  sw -- yes --> type{"Hosting type of the space"}
+  type -- "Own space" --> own["Plans, limits and hosting invoices do not apply"]
+  type -- "Hosted space" --> hosted["Plan, trial and hosting billing apply"]
+  hosted --> lim{"Limit set by a plan or an override?"}
+  lim -- yes --> enf["That limit is enforced"]
+  lim -- no --> unl["Unlimited (the default)"]
+```
+
+* **Plans.** Create, edit and archive plans in **Platform → Spaces → Plans**; assign one from a space's
+  Manage menu. A plan may set any numeric limit, monthly allowances (email, SMS, WhatsApp, events) and
+  the modules it allows. Overdue invoices restrict a space (read-only after the grace period) only while
+  **Auto-enforce** is on; trials end read-only.
+* **Per-space overrides.** Open a space in **Platform → Spaces → Health → Details → Limits**. Each row shows
+  the effective value, where it comes from (override, plan, default, unlimited) and current usage.
+  Limits cover products, assets, machines, events, bookings, staff, members, storage, monthly print
+  requests, daily email and each notification channel, signed webhooks, API clients, machine-service
+  requests, data exports and **guest and day passes per day**. `-1` means unlimited; a blank field
+  follows the plan. The `custom_domain` switch allows a custom domain.
+* **Request rate limits.** The deployment-wide API throttles (login, OTP, uploads and so on) are
+  listed under **Platform → Spaces → Request rate limits**. The environment variable (`THROTTLE_<SCOPE>`)
+  remains the default; you may override a scope within 10 times either side of it. **Use default** removes the override.
+  Every change is audited (`managed_hosting.throttle_rate_changed`).
+* **Messages.** A person who hits a limit sees which limit and, where a plan applies, its name.
+* **Storage counter.** When you switch hosting on for a database that already holds objects, run
+  `manage.py recompute_storage` once, and again occasionally to repair drift.
+
+### Per-space integrations and the platform fallback
+
+Each space brings its own Stripe or Razorpay account, SMTP/email, Slack/Discord/Telegram and
+other integration credentials; these are stored encrypted per space and are never visible to
+another space. The platform's own SMS, push, WhatsApp, app-attestation and Stripe Connect credentials
+(the platform provider settings in the console) are used only where a space has none, on every install, whatever the Hosting other makerspaces switch says
+(decision 240; a space's own credentials always win). The one hosting-only piece is Stripe Connect: new Connect
+onboarding and new Connect charges need the switch, but a configured Connect platform keeps settling, refunding and
+expiring charges already raised with the switch off (decision 260). Usage of the platform credentials can be capped per space (own or hosted) by the superadmin: monthly emails, SMS,
+WhatsApp, push, wallet passes and online payments through the platform rail (count and amount). There is no limit
+until a value is set, and a space's own credentials are never counted. At the limit a message channel is skipped with a
+recorded reason (the in-app inbox still delivers) and a new platform-rail payment page answers 409
+`platform_rail_limit_reached`; offline settlement keeps working. Platform OTP caps (`otp_email`, `otp_sms`) protect your sending reputation and cost.
+
+### Backups and tenant migration
+
+Back up the whole install as usual (see **Backups**). To move one space, use tenant export and
+**Move a space to this server**: a space travels without platform records (plans, invoices, requests,
+throttle overrides), which belong to the platform. Archiving a space never strands its members' money.
+Purge is permanent: export first.
+
+### Support and abuse
+
+Suspend a space for abuse or non-payment (reversible, reason recorded, Space Manager emailed). Use
+**Platform → Accounts** and IP rules for hostile accounts, announcements for planned work, and the audit
+log for evidence. Tighten a throttle scope under **Request rate limits** during an attack, then restore the default.
+
+### Upgrade path
+
+Upgrade like any install (see **Updating**). The migrations for this section are additive; switching
+the feature on or off never needs a migration. To go from the legacy presets to this model, remove
+`MANAGED_PLANS_ENABLED` from the environment so the console switch takes over, or keep it to pin the behaviour.
 
 ## Custom domain (self-host)
 
@@ -683,7 +863,7 @@ every variable the backend reads, with its default — is
 | `ALLOWED_HOSTS` | yes | Comma-separated hostnames the backend will serve |
 | `DATABASE_URL` | no | Never put this in static `.env`; the atomic ops pointer is its only Compose source |
 | `CORS_ALLOWED_ORIGINS` | no | Browser origins allowed to call the API |
-| `PLATFORM_STAFF_ORIGINS` | yes for the superadmin | The only origins the platform superadmin can sign in from (release 2). The installer writes your site's own origin, and the 0.11.0 updater adds it to an older self-host that lacks it; without it the superadmin cannot reach the web console |
+| `PLATFORM_STAFF_ORIGINS` | yes for the superadmin | The only origins the platform superadmin can sign in from (release 2). The installer writes your site's own origin, and the 0.12.0 updater adds it to an older self-host that lacks it; without it the superadmin cannot reach the web console |
 | `API_CLIENT_ENC_KEY` | recommended | Fernet key encrypting integration secrets at rest |
 | `MINIO_ROOT_USER` | yes | MinIO/S3 access key used by the backend |
 | `MINIO_ROOT_PASSWORD` | yes | MinIO/S3 secret key used by the backend |
@@ -754,6 +934,10 @@ console binds to `127.0.0.1:9001` by default; keep it private or put it behind a
 access.
 
 ## Backups
+
+The single guide to what is backed up, how often, offsite copies, restore (bundled and outside database), rolling
+back an upgrade and verifying a backup is [Backup and restore](backup-and-restore.md); this section keeps the
+host commands.
 
 Operational data lives in Postgres and object files live in the `minio_data` Docker volume. Back up
 both before upgrades:

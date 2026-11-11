@@ -1,6 +1,19 @@
 # Space Works mobile apps — PRD and build plan (Android + iOS)
 
-Version 3 | 2026-10-18 · Owner: Shaan (Space Works) · Builder: app developer + Codex
+Version 4 | 2026-11-09 · Owner: Shaan (Space Works) · Builder: app developer
+
+Version 4 adds the release 0.12.0 surfaces (§7 "Release 0.12.0 additions"): contextual
+equipment requests and kits, loan context, staff booking price confirmation and readiness,
+event venue booking links, related facts, linked event finance, loan repair handoff, shop
+pickup moves, personal calendar feeds, member-eligibility refusal copy and the web-only browser
+push routes. It also corrects the `X-Makerspace-Id` rule in §7 "Transport". Generate against the
+0.12.0 schema: it renames five operation IDs and two enums (listed in that section).
+
+Version 4 changelog (2026-11-09, native-client contract fixes): routes that name the space by
+slug now accept a matching `X-Makerspace-Id` (no more "omit it on slug routes" rule); the
+member shop order list is typed as the page envelope and the shop order POST is typed as
+optional bearer auth, so the hand-decoding workarounds are gone; browser Firebase routes now
+answer 403 to a native device token.
 
 This document is **self-contained**. The app developer has **no access to the backend repository**;
 everything needed to build the apps is here, in the API schema file shipped with it, and in the public
@@ -19,7 +32,7 @@ sign-off is implied: notification sending remains held pending conversion/replay
 
 ## 1. What Space Works is
 
-A multi-tenant system for lending hardware and running makerspaces. Each **makerspace** has its own
+A multi-tenant system for loaning out hardware and running makerspaces. Each **makerspace** has its own
 inventory, members, staff roles, bookings, events and payments. The core rule is **traceability of
 physical handovers**: every issue and return of hardware produces evidence (QR scan + photo + remark),
 and the server enforces it. The apps are **thin clients**: the server decides everything, and the
@@ -83,9 +96,9 @@ Rules:
 - Brand palette: deep ink `#142C2A`, maker teal `#006E63`, workshop orange `#FF7447`, citron, sky blue,
   warm yellow, warm cream `#FFF4E8` — use the semantic roles from the tokens (bg, surface, panel, ink,
   muted, accent, emphasis…), not raw brand colours.
-- Typography: Gilroy (400–700) for UI and display; Unbounded (500–600) for **one short accent phrase per
+- Typography: Gilroy ExtraBold (800) for display/headings and Outfit (OFL, 400–700) for UI text — only the free Gilroy Light/ExtraBold may ship (owner decision 2026-11-09); Unbounded (500–600) for **one short accent phrase per
   screen** at most. Fonts in the repo are `.woff/.woff2` — **mobile needs `.ttf/.otf`**: convert, and
-  **check the Gilroy licence permits app embedding before shipping** (raise it with the owner). Until
+  **check the Gilroy free EULA (see `frontend/public/fonts/README.md`) before shipping** (raise it with the owner). Until
   cleared, fall back to the platform font.
 - Accessibility floor: dynamic type / font scaling, ≥ 4.5:1 text contrast, 44pt / 48dp touch targets,
   TalkBack/VoiceOver labels on every control, no colour-only status.
@@ -272,6 +285,20 @@ categories.
 - `X-Makerspace-Id: <id>` selects the makerspace for makerspace-scoped calls. It must be one where the
   user has an active local membership for staff/member participation surfaces. Core own-charge
   history/payment access can admit an account-only borrower without a membership; use server visibility.
+  **Send it only where the server can check it against the route** (a header the server cannot
+  match to the route answers 403 "Makerspace target could not be resolved"):
+  - **required** on every staff route with a staff grant (it must equal the grant's makerspace and
+    any makerspace in the URL), on push registration and on the payment `mobile-intent` call;
+  - **allowed** on member routes whose path carries the makerspace
+    (`/member/makerspaces/{makerspace_id}/...`); it must then equal that id;
+  - **allowed** on routes that name the space by slug: `/public/{makerspace_slug}/...`
+    (request submission, contextual requests, kits, member bookings, ...) and
+    `/public/m/{makerspace_slug}/shop/...`; it must then be the id of the space that slug
+    names, otherwise 403 ("does not match the selected makerspace"). An unknown slug with the
+    header answers 403 rather than 404;
+  - **omit it** on routes that name no space at all, for example `/member/shop/orders/...`
+    (filter with `?makerspace_id=` instead). Member routes never require it unless this
+    document says so, so omitting it is always safe there.
 - Errors: usually `{ "detail": "...", "code": "..." }`, but not always. Validation errors (400) can be a
   **field dictionary** (`{"field": ["message"]}`), and some framework errors carry only `detail`.
   Parse in this order: `code` → `detail` → field dictionary → generic message by status. 401 auth,
@@ -467,7 +494,8 @@ the selected rail and public values at runtime.
   Refunds are separate rows/amounts, not a `refunded` Payment status. A failed attempt can remain
   pending. Keep a processing/retry state and refresh on foreground rather than polling indefinitely.
 - 409 `payment_rail_conflict` means a different online rail already owns the charge; finish the
-  existing checkout. 503 `payments_unavailable` means disabled/unconfigured/unreachable online
+  existing checkout. A charge whose hosted page was created when it was raised is already on the
+  hosted rail, so open its `checkout_url` in the system browser rather than the native sheet. 503 `payments_unavailable` means disabled/unconfigured/unreachable online
   payments; offer retry later or desk settlement. A non-pending/not-owned charge can return 404.
 - Receipts: `GET /member/makerspaces/{makerspace_id}/payment-documents`, then
   `GET /member/makerspaces/{makerspace_id}/payment-documents/{document_id}/download-url`
@@ -706,6 +734,294 @@ is a paginated `{id,name,slug}` picker with `report_key` and `page` parameters. 
 surfaces are web-only because native superadmin sign-in is refused. Hidden service counts
 are anonymous; do not try to identify hidden tenants.
 
+### Release 0.12.0 additions
+
+Every route below is under `/api/v1`. "Member" means any device grant of a person
+(`X-Makerspace-Id` is optional and must match the space in the path or slug, see
+Transport). "Staff" means a native **staff grant** with a matching `X-Makerspace-Id`, **and** the action named; a member grant gets 403 on every staff route
+here even if the person holds a staff role, so offer the staff step-up. Event-role grants
+(`native_event`) reach none of these routes. The server rechecks every permission, module and
+record on each call; a 404 usually means "not available to you" rather than "never existed", so
+show a neutral "not available" state. Schema type names are given in brackets.
+
+**Schema renames in 0.12.0 (regenerate).** Five operation IDs were made explicit so they no
+longer collide with a numeric suffix, and two hashed enum names were made stable:
+
+| Route | Old operation ID | New operation ID |
+|---|---|---|
+| GET `/admin/makerspace/{makerspace_id}/equipment-kits` | `api_v1_admin_makerspace_equipment_kits_retrieve` | `api_v1_admin_makerspace_equipment_kits_list` |
+| GET `/admin/makerspace/{makerspace_id}/equipment-kits/{kit_id}` | `api_v1_admin_makerspace_equipment_kits_retrieve_2` | `api_v1_admin_makerspace_equipment_kit_retrieve` |
+| GET `/public/{makerspace_slug}/equipment-kits/` | `api_v1_public_equipment_kits_retrieve` | `api_v1_public_equipment_kits_list` |
+| GET `/public/{makerspace_slug}/equipment-kits/{kit_id}/` | `api_v1_public_equipment_kits_retrieve_2` | `api_v1_public_equipment_kit_retrieve` |
+| POST `/notifications/browser-firebase/{makerspace_id}/may-resume` | `..._may_resume_create_2` | `api_v1_notifications_browser_firebase_space_may_resume_create` (web only) |
+
+`Kind5faEnum` is now `KitLineKindEnum` (`returnable|consumable`) and `Kind47fEnum` is now
+`ContextualRequestOutcomeEnum` (`request|consumable_plan`). Other hash-suffixed enum names
+(for example `Status219Enum`, `State9e8Enum`) can still change between releases: map them by
+their values in a hand-written wrapper, never by the generated type name, and treat an unknown
+enum value as "other" instead of failing to decode.
+
+#### Contextual equipment requests and kits (member + staff)
+
+User stories:
+- As a member registered for an event (or holding a booking), I ask for the equipment I need
+  **for that event or booking**, either item by item or by picking a kit the space published.
+- As staff, I raise the same request on behalf of a participant from the event or booking.
+- As staff with inventory rights, I maintain kits (named sets of products per person).
+
+| Method + path | Who | Notes |
+|---|---|---|
+| GET `/public/{makerspace_slug}/equipment-kits/?page=` | Member | Published kits `[PublicKitPage]` |
+| GET `/public/{makerspace_slug}/equipment-kits/{kit_id}/` | Member | One kit `[PublicKit]` |
+| POST `/public/{makerspace_slug}/requests/contextual` | Member | Submit for yourself `[ContextualSelf]` |
+| GET `/admin/makerspace/{makerspace_id}/events/{event_id}/equipment-request-products?page=` | Staff | Requestable products for an event `[RequestableProductPage]` |
+| GET `/admin/makerspace/{makerspace_id}/events/{event_id}/equipment-kits?page=` | Staff | Kits usable for an event `[PublicKitPage]` |
+| GET `/admin/makerspace/{makerspace_id}/spaces/{space_id}/equipment-request-products?page=` | Staff | Same for a bookable space |
+| GET `/admin/makerspace/{makerspace_id}/spaces/{space_id}/equipment-kits?page=` | Staff | Same for a bookable space |
+| POST `/admin/makerspace/{makerspace_id}/equipment-requests/contextual` | Staff | Submit for a participant `[ContextualStaff]` |
+| GET/POST `/admin/makerspace/{makerspace_id}/equipment-kits` | Staff, `view_inventory` / `edit_inventory` | List (`?include_archived=true` needs edit) / create |
+| GET `/admin/makerspace/{makerspace_id}/equipment-kits/{kit_id}` | Staff, `view_inventory` | Detail `[KitDetail]` |
+| POST `.../equipment-kits/{kit_id}/versions` · `/publication` · `/archive` | Staff, `edit_inventory` | New version / publish for contexts / archive |
+
+Fields:
+- `PublicKit {id, name, version, lines:[{product_id, display_name, quantity_per_person,
+  kind:"returnable"|"consumable"}]}`. `RequestableProduct {id, name, image_url|null}`.
+- Submit body (self): `operation_id` (UUID you generate once per submission and **reuse on
+  retry**), `requested_for` (text), exactly **one** of `items:[{product_id, quantity}]` (1–20,
+  no duplicates) or `kit:{id, version}`, plus the context: `event_registration_id` (your own
+  registration) and/or `booking_token` (your booking's public token), optional
+  `pickup_from`/`pickup_until` (ISO datetimes), `waitlist_entry_id`. Send no `website` field
+  (it is a bot trap; a filled value gets a fake success).
+- Submit body (staff): the same, but `booking_id` instead of `booking_token`, optional
+  `borrower_id`, and at least one of `event_registration_id`/`booking_id`. The borrower is the
+  registration's or booking's own member.
+- Response 201 (new) or 200 (replay of the same `operation_id`):
+  `{kind:"request"|"consumable_plan", replayed, public_token?|request_id?, status?, plan_id?}`.
+  `kind:"request"` is an ordinary hardware request (it then follows the normal request
+  lifecycle in "Request lifecycle"); `consumable_plan` is a consumables-only kit plan.
+- Kit bodies: create `{name, lines:[{product_id, quantity_per_person, kind}]}`; version
+  `{name, lines, expected_revision}`; publication `{expected_revision, published_for_contexts}`;
+  archive `{expected_revision, archived}`. `KitSummary {id, name, revision, current_version,
+  published_for_contexts, archived}`. A stale `expected_revision` answers 409: refetch and let
+  the user redo the change.
+
+Refusals: 403 with an eligibility `code` (table below), 404 when the space, kit version,
+product, registration or booking is not available to you, 409 `{code:"operation_conflict"}`
+(the same `operation_id` was used with different content: generate a new one only if the user
+changed the request) or `{code:"lock_busy"}` (retry shortly), 423 tenant frozen for migration,
+429 throttled, 503 intake temporarily unavailable.
+
+Gating: public inventory (`public_inventory` module plus the space's public site and public
+inventory switches) for member routes; returnable lines need the `request_workflow` module and
+`loans.enabled`; consumable lines need `inventory.consumables`; event context needs the
+`events` module, booking context the `bookings` module; with the `membership` module on the
+member needs a current membership term (and presence, waiver, etc. where the space requires
+them). Kit management needs the `staff_admin` module.
+
+#### Loan context (staff)
+
+Story: as staff, I link an existing request or direct handout to the event and/or booking it is
+for, or remove that link. A context explains purpose only: it never issues, returns, reserves or
+changes the borrower.
+
+| Method + path | Notes |
+|---|---|
+| GET/PUT/DELETE `/admin/makerspace/{makerspace_id}/requests/{request_id}/event-context` | GET takes optional `?intended_event_id=` |
+| GET/PUT/DELETE `/admin/makerspace/{makerspace_id}/direct-loans/{loan_id}/event-context` | Same for a direct handout |
+| GET/PUT/DELETE `/admin/makerspace/{makerspace_id}/requests/{request_id}/booking-context` | GET takes optional `?intended_booking_id=` |
+| GET/PUT/DELETE `/admin/makerspace/{makerspace_id}/direct-loans/{loan_id}/booking-context` | Same for a direct handout |
+
+Responses: `EventContextResponse {active, generation:UUID, revision, can_write, event_id?,
+may_view_participant?, participant_registration_id?|null}`; `BookingContextResponse {active,
+generation, revision, can_write, booking_id?}`. PUT body: `{expected_generation,
+expected_revision, event_id, participant_registration_id|null}` or `{expected_generation,
+expected_revision, booking_id}`; DELETE body: `{expected_generation, expected_revision}`.
+Always send the generation/revision you last read. 409 means someone else changed it, or the
+data was restored/imported: show "Review latest state", refetch, and never replay the write
+automatically. Hide the editor when `can_write` is false. The participant is omitted unless
+`may_view_participant`. Gating: `request_workflow` + `loans.enabled` (self-checkout loans
+also `inventory.self_checkout`), plus `events` / `bookings` for each panel; the actor needs the
+loan's own action and the event's registration-management or the room's reservation-management
+right, for both the old and the new target.
+
+#### Bookings: staff price confirmation, readiness, venue link (staff)
+
+Stories: as staff booking a room for a member, I see the exact price before I confirm and the
+booking is refused if the price moved; I see why a booking would be blocked (outage, machine
+repair or lockout, missing certification) before I submit; as event staff, I link the event to
+its venue booking and replace that booking when the room or time changes.
+
+| Method + path | Who | Notes |
+|---|---|---|
+| POST `/admin/spaces/{id}/bookings/quote/` | Staff, `manage_reservations` | `{member_id, starts_at, ends_at}` → `StaffBookingQuote` |
+| GET `/admin/spaces/{id}/bookings/readiness/?member_id=&starts_at=&ends_at=` | Staff | Before creating → `BookingReadiness` |
+| GET `/admin/bookings/{id}/readiness/` | Staff | For an existing booking |
+| POST `/admin/spaces/{id}/bookings/` | Staff | Create; send `price_confirmation` from the quote |
+| GET/POST `/admin/makerspace/{makerspace_id}/events/{event_id}/booking-link` | Staff (events + bookings roles) | Read / link an existing booking |
+| POST `/admin/makerspace/{makerspace_id}/events/{event_id}/booking-link/replacement` | Staff | Replace the linked booking |
+
+Fields:
+- `StaffBookingQuote {charges:"tracked"|"off", quote:PricingQuote|null, price_confirmation:
+  64-hex string}`. `PricingQuote` has `currency`, `lines`, `subtotal`, `discount_total`,
+  `total` (decimal strings) and `notes`. Show the total and currency; `charges:"off"` means the
+  space charges nothing for rooms. Create with the same member, room and window and the
+  `price_confirmation`. A moved price answers **409 `price_changed`** with
+  `{detail, code, confirmation:{charges, quote, price_confirmation}}`: show the new price and ask
+  again; nothing was created and nothing was charged.
+- `BookingReadiness {ready, checks:[{code:"room_outage"|"machine_repair"|"machine_lockout"|
+  "certification", state:"ok"|"warning"|"blocked", detail, certifications?:[string]}],
+  maintenance_link:{machine_id}|null}`. Show `detail` per check; disable confirm while any
+  check is `blocked`. Readiness is advisory; the create rechecks.
+- Booking link: GET → `DecisionOutput {generation|null, revision, events_epoch, bookings_epoch,
+  state:"absent"|"linked"|"booking_unavailable", booking_id|null, billing_owner:"booking"|null,
+  event_window?, booking_window?, reservation_state?:"pending"|"confirmed"|"historical"|
+  "unavailable", sync?:"matched"|"different"|"unavailable", fee_state?:"none"|"free_no_debt"|
+  "configured"|"historical_debt", current_booking_id?, current_status?, replaceable?,
+  history?:[{booking_id, status}]}`. POST `{operation_id, expected_generation|null,
+  expected_revision, expected_events_epoch, expected_bookings_epoch,
+  confirm_billing_owner:"booking", existing_booking_id}` (all copied from your last GET; the
+  user must explicitly confirm that the booking, not the event, bills the room). Replacement
+  `{expected_booking_id, space_id, member_id, starts_at, ends_at, note?, price_confirmation}` →
+  201 `{booking_id, replaces_booking_id, status:"pending"|"confirmed"}`; get the
+  `price_confirmation` from the quote route for the new room. The original booking is never
+  edited.
+- Refusals: 400 validation, 403, 404, 409 (stale revision/epochs or `price_changed`), 423, 429, 503.
+
+Gating: `bookings` module (and `events` for the link); readiness machine checks need
+`machines.maintenance`; prices exist only when booking charges are tracked.
+
+#### Related facts and linked event finance (staff, read-only)
+
+| Method + path | Notes |
+|---|---|
+| GET `/admin/makerspace/{makerspace_id}/related-facts/events/{event_id}` | `{subject, registrations?, attendance?, presence?}` |
+| GET `/admin/makerspace/{makerspace_id}/related-facts/bookings/{booking_id}` | `{subject, arrival?, presence?, machine_sessions?}` |
+| GET `/admin/makerspace/{makerspace_id}/finance/events/{event_id}/linked` | `{event_id, sections}` |
+
+Story: as event or booking staff, I see the counts around a subject (registrations by status,
+check-ins, arrivals, overlapping presence and machine sessions) and the event's money in one
+place (registration charges, venue fee, the booking's room charge, reimbursements, payouts,
+budget). Every section is **omitted** when its module/capability is off or I lack its authority:
+absent means "not shown", never zero. Money is per currency (`currencies:[...]`); never add
+currencies, and never add the booking room charge (`read_only:true`, owned by bookings) to the
+event's own totals. Finance needs `finance.ledger`; sections also need `events.venue_fees`,
+`bookings`, `event_reimbursements` or event charge tracking as applicable. Presence and machine
+sections need their own modules (`bookings.checkin`, `machines` + `machines.sessions`).
+
+#### Loan repair handoff (staff)
+
+| Method + path | Notes |
+|---|---|
+| GET `/admin/makerspaces/{makerspace_id}/requests/{request_id}/repairs` | `{request_id, lines:[LoanRepairLine]}` |
+| POST same path | `{accountability_id, note?}` → 201 (new) / 200 (already handed off) `{created, issue_id, line}` |
+
+Story: after a return recorded damage, the area manager (Inventory Manager or Space Manager)
+hands each damaged line to repairs once. Needs `inventory.repairs`; with it off there is no
+handoff and the route is refused (hide the panel).
+`LoanRepairLine {accountability_id, request_item_id|null, product_name, quantity, asset_id|null,
+asset_tag, remark, evidence_id|null, issue:{id, state, title, priority, quote_state,
+quote_amount|null, quote_currency, parts, to_buy_items, created_at, fixed_at, closed_at,...}|null}`.
+The POST is idempotent per line. It never changes the loan, its evidence or any charge.
+
+#### Shop: event pickup moved to the space
+
+POST `/admin/shop/orders/{id}/move-pickup-to-space/` (staff with shop sell rights, no body) moves
+an event-pickup order whose event can no longer hand it over to the makerspace counter and
+returns `ShopStaffOrder` (`pickup_at:"space"|"event"`, `pickup_event`, `status`, totals...).
+Members see the change in `GET /member/shop/orders/` (optional `?makerspace_id=`, `?page=`) and
+`/member/shop/orders/{id}/`. Members place orders with `POST /public/m/{makerspace_slug}/shop/orders/`:
+**send the bearer token** so the order belongs to the account (the schema marks the route's
+auth as optional bearer because guests may also order with an emailed code; a signed-in person
+is always the buyer when the token is present). Order status values: `held, awaiting_payment,
+paid, ready, collected, cancelled, unfulfilled, refunded`. The order list answers the standard
+page envelope `[ShopBuyerOrderPage] {count, next, previous, results:[ShopBuyerOrder]}`, and the
+schema types it that way.
+
+#### Personal calendar feeds (member)
+
+| Method + path | Notes |
+|---|---|
+| GET/POST/DELETE `/member/makerspaces/{makerspace_id}/calendar-feeds/{kind}/` | `kind` = `shifts` or `combined` |
+| GET/POST/DELETE `/member/makerspaces/{makerspace_id}/event-calendar-feed/` | POST body `{confirm_bearer_risk:true}` |
+| GET/POST/DELETE `/public/{makerspace_slug}/my-bookings/calendar/` | Bookings feed |
+
+Story: I subscribe my phone calendar to my shifts, my events or my bookings. GET returns
+`{enabled, token_hint|null, created_at?, rotated_at?}`; POST issues (or rotates) and returns
+`{feed_url, token_hint}` **once**; DELETE revokes it. The `feed_url` is a secret: show it
+only right after POST, hand it to the OS calendar subscription (`webcal://` or the calendar
+intent), never store, log or share it, and drop it when the account or makerspace changes.
+Rotating invalidates the old URL. The user must accept the "anyone with this link can see
+these entries" warning before POST.
+
+#### Eligibility refusal codes and copy (member)
+
+The server's 403 member-eligibility refusals carry a `code`, sometimes as a one-element list
+(`{"code":["membership_required"]}`); read the first string in that case. Show this copy (the
+same as the web app), and fall back to `detail` for unknown codes:
+
+| `code` | Show |
+|---|---|
+| `membership_required` | This needs an active membership of this space. Join or renew from your member area, or ask space staff if you think your membership should be active. |
+| `membership_inactive` | Your membership of this space is not active. Ask space staff to review it. |
+| `membership_lapsed` | Your membership term has ended. Renew your membership from your member area, then try again. |
+| `waiver_acceptance_required` | Accept the space's current waiver in your member area, then try again. |
+| `presence_required` | Check in at the space first (in your member area or at the front desk), then try again. |
+| `borrower_restricted`, `member_restricted` | Your account is restricted at this space. Talk to space staff to resolve it. |
+| `certification_required` | You need machine training or certification first (*names from `certifications`*). Ask space staff how to qualify, then try again. (Omit the brackets when `certifications` is empty.) |
+| `machine_intake_unavailable` | Online machine requests aren't available here. Ask space staff for help. |
+| `organization_audience_required` | This event is open to members of its participating organizations. Ask your organization to confirm your membership, or contact the organizers. |
+| `organization_audience_not_ready` | Staff must review this event's audience before registration opens. Try again later or contact the organizers. |
+| `organization_audience_disabled` | This event isn't taking organization registrations right now. Contact the organizers. |
+| `organization_audience_changed` | This event's audience changed. Reload the page to check whether you can still register. |
+| `invitation_expired` | This invitation has expired. Ask an organization governor to send a new one. |
+| `invitation_revoked` | This invitation was withdrawn. Ask an organization governor if you should still have access. |
+| `invitation_redeemed` | This invitation has already been used. If that wasn't you, tell an organization governor. |
+| `invitation_grant_changed` | The person who invited you no longer holds all of the access they offered. Ask an organization governor to send a new invitation. |
+| `organization_membership_suspended` | Your membership of this organization is suspended. Ask an organization governor to reactivate it. |
+
+These apply on every member action that checks eligibility (requests, contextual requests and
+kits, bookings, event registration and ticket orders, machine requests). Organization invitation
+redemption itself stays web-only (native member grants are refused there).
+
+#### Event-desk issue and return (staff evidence rules)
+
+Equipment handed out at an event desk uses the **same** issue/return routes and evidence rules
+as any loan; a loan context never relaxes them. With a staff grant holding the handout actions:
+1. Upload the issue photo: `POST /admin/makerspaces/{makerspace_id}/uploads/evidence-url` with
+   `{evidence_type, content_type, size_bytes?}`, upload as described in "Evidence photos", keep
+   `evidence_id`.
+2. Reviewed request: once accepted (by staff holding the review action), assign the box by
+   scanning its QR (`POST /admin/requests/{id}/assign-box` `{box_code}`), then
+   `POST /admin/requests/{id}/issue` with `{evidence_id, asset_qr_payloads?, kit_checklist?,
+   remark?}`. Direct handout at the desk: `POST
+   /admin/makerspace/{makerspace_id}/direct-loans` with `{borrower_id, evidence_id, qr_payloads
+   or container_id, items?, kit_checklist?, remark?}`, then link it to the event with the
+   direct-loan `event-context` PUT above.
+3. Return: a new return photo plus a non-empty remark: `POST /admin/requests/{id}/return` (or the
+   handover-only `/guest-admin/requests/{id}/return`) with `{evidence_id, box_code, remark,
+   resolutions:[...], kit_checklist?}`.
+No photo, no scan or no remark means no submit: the UI must block it, and the server refuses it
+anyway. Evidence notices (`issued`, `returned`, ...) carry no push action buttons. An event-role
+grant (`native_event`, judges/crew/volunteers) cannot issue or return; the person must step up
+to a staff grant.
+
+#### Notifications: browser push is web-only
+
+`/notifications/browser-firebase/*` (config, challenge, confirm, may-resume) and
+`/notifications/browser-alerts/*` are the **web** browser-push enrolment and must not be called
+by the apps; the browser-firebase routes answer 403 to any native device token. Native push
+stays `POST /integrations/push/devices` (FCM on Android, APNs on iOS) as described in "Push notifications". A person can have both; the server delivers to each
+channel independently and the apps deduplicate by `event_id` as before.
+
+#### Polling and caching guidance for these screens
+
+None of these routes return `ETag` or `Last-Modified`; do not send conditional requests.
+Context, kit and booking-link reads carry `revision`/`generation`/epochs: use them as the change
+marker and for every write. Related facts, linked finance, readiness and repairs have no change
+marker: refetch on screen open, pull-to-refresh and app foreground, never on a timer. All lists
+here use the standard page envelope except `checks`, `lines` and `history`, which are bounded
+arrays inside one object.
+
 ## 8. Phases
 
 Each phase ends with **tests green in CI, a commit (or a few small ones) per repo, and a short phase
@@ -719,10 +1035,10 @@ an older 2026-10-17 schema is not the reconciled contract.
 | **A0 Base** | Repo scaffold, CI, brand theme from tokens, white-label config, generated API client, networking core (headers, errors, pagination, single-flight refresh skeleton), server-URL screen, app shell with empty tabs | none — **start now** |
 | A1 Sign-in | Attestation, password + MFA, Google/Apple/OIDC, token storage, refresh, logout, makerspace switcher, `/auth/me`, superadmin refusal screen, min-version gate | available - password/social/phone, attestation, native config and staff authority |
 | A2 Member — read | Inventory browse/search/detail, my requests & loans with due dates, bookings, events, member dashboard/activity + my-usage, membership card, inbox (read/unread) | none |
-| A3 Member — act | Submit hardware request, renew loan, book, register/cancel event + ticket QR, profile edit, notification preferences, phone verification and SMS/WhatsApp consent | none |
+| A3 Member — act | Submit hardware request, renew loan, book, register/cancel event + ticket QR, profile edit, notification preferences, phone verification and SMS/WhatsApp consent; 0.12.0: equipment for an event/booking (items or kit), calendar feeds, eligibility refusal copy (§7 "Release 0.12.0 additions") | none |
 | A4 Push + deep links | Device registration, notification tap routing, universal/app links, watch-friendly categories and channels (payload v3, §7) | available - member/staff push and association files; owner configures hosts |
 | A5 Payments | Payments list, Stripe PaymentSheet, Razorpay Checkout, receipts/documents | available - Stripe PaymentSheet and Razorpay Orders; server provisioning in §7 |
-| A6 Staff | Pending requests accept/reject, QR scanner, issue (QR + photo), return (photo + remark), direct handout, booking approvals, event check-in, role dashboard and authorized analytics | available - native staff grants and scoped APIs |
+| A6 Staff | Pending requests accept/reject, QR scanner, issue (QR + photo), return (photo + remark), direct handout, booking approvals, event check-in, role dashboard and authorized analytics; 0.12.0: event-desk issue/return with loan context, contextual requests for participants, staff booking quote/readiness, read-only related facts and linked finance, repair handoff, shop pickup move (kit editing and booking-link/replacement are optional) | available - native staff grants and scoped APIs |
 | A7 Account + store readiness | Device sessions list/revoke, leave/cancel membership, **delete account** (blocker list → fix links → re-auth → confirm, §7), privacy labels, accessibility pass, localisation-ready strings | available - deletion, identity-only restore and logout-all |
 | A8 Release | White-label guide, TestFlight + Play closed test, store listings, reviewer demo account | — |
 

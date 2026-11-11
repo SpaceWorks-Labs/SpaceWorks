@@ -37,6 +37,11 @@ now belong to the core ledger rather than the removable rail. Only the payer's r
 email defaults ON; an explicit PAYMENTS/email OFF suppresses it. Other matrix defaults
 remain OFF. Financial amounts stay out of staff chat.
 
+**A restricted member can still pay.** An account that was restricted or suspended because of an unpaid
+or lost-item charge can still see and pay its own charges, because paying is how the restriction is
+cleared. Only the payment pages work this way: borrowing, requests and every other member screen stay
+closed to a restricted account, and a revoked member is still refused everywhere.
+
 `refund-offline` records money actually returned on any `paid_offline` charge kind and
 requires `record_payment`. It is immediately succeeded and requires method, returned
 date and an optional financial reference. Pending and succeeded refunds share the
@@ -96,8 +101,14 @@ money. Only a staff approval creates a `Refund`, under the Payment then case row
   platform fee (direct charges: no transfer to reverse). Razorpay is unchanged.
 - The `refunds` report (VIEW_FINANCE) groups cases and case-less refunds (`manual`) by
   local month, area, reason and currency.
-- Notifications: `refund_due_opened` and `refund_request_received` reach staff;
-  `refund_request_approved` and `refund_request_declined` reach the payer.
+- Notifications: `refund_due_opened`, `refund_request_received` and `refund_approval_failed` (the provider
+  refused an approved refund) reach staff; `refund_request_approved` and `refund_request_declined` reach the
+  payer.
+- Approving a refund on an event charge can also cancel its tickets (`cancel_tickets`, behind
+  `events.refund_cancels_tickets`); the amount refunded is unchanged and the cancellation is audited.
+- The payment settings payload carries `test_mode` (derived from the public key prefix `pk_test_` or
+  `rzp_test_`; no secret is read). Reports that list payments keep a Stripe test-key payment in its own
+  `test_paid` column, so test and live money are never added together.
 - Open and approved cases join the money fingerprint; an undecided case blocks account
   deletion (`refund_under_review`); purges delete cases before refunds.
 
@@ -133,8 +144,8 @@ The policy is **frozen per charge**: `create_payment` stores `Payment.tax_snapsh
 supply type, place of supply from the payer's state or GSTIN, falling back to the supplier state,
 and the exact taxable/component split). Editing the policy never changes an existing charge or
 document; the database refuses any change to a snapshot. CGST/SGST (UTGST in union territories)
-versus IGST follows the place of supply, and every split is exact at the ledger's two decimals by
-largest remainder (a yen has no subunit; a fils is capped to two places). Composition and exempt
+versus IGST follows the place of supply, and every split is exact at the charge precision by
+largest remainder (a yen has no subunit; a three-decimal currency moves in 10-fils steps). Composition and exempt
 supplies issue a **bill of supply**; LUT exports a zero-rated tax invoice.
 
 Documents issued while tax is on take a gapless **per-financial-year** series: `INV26-27/0001` for
@@ -210,7 +221,7 @@ and `ledger_api.void(entry, actor, reason)`; a repeat call for the same live sou
 same row. Spending is always recorded; `finance.ledger` only hides the screens and reports.
 
 Visibility follows each area (#100): Space Managers and `view_finance` see everything; the
-Inventory Manager sees inventory and lending money, the Booking Manager bookings, the Machine
+Inventory Manager sees Inventory money, the Booking Manager bookings, the Machine
 Manager their machine types, the Event Manager events money (#128 C-16). The same areas record
 spending; finance staff with `view_finance` + `record_payment` record anywhere. Routes:
 `finance/access`, `finance/summary`, `finance/entries` (+ `/<id>`, `/void`, `/receipt-url`),
@@ -243,11 +254,30 @@ money out and only ever recorded.
 | Paid, offline | tracking on, no `payments` rail | A pending charge (`provider=unclaimed`) is recorded; staff mark it paid with a receipt |
 | Paid, online | tracking on plus `payments`, `payments.enabled`, `payments.<area>` and credentials | The same charge with a hosted checkout or native intent; webhooks settle it; refunds go through a staff-approved case |
 
-A mixed space is normal: lending free while machines are paid. Each seam reads only its own area's
+A mixed space is normal: loans free while machines are paid. Each seam reads only its own area's
 key, so one area's mode never reaches another.
 
+```mermaid
+flowchart TD
+  raise["Charge raised by an area<br/>loans, machines, bookings, events, membership, shop, donations"] --> on{"Charges on for this area?"}
+  on -- no --> free["Nothing is charged"]
+  on -- yes --> owed["Owed: a pending charge"]
+  owed --> how{"How is it paid?"}
+  how -- "Online (payments rail)" --> online["Hosted checkout or in-app sheet<br/>a webhook settles it"]
+  how -- Offline --> off["Staff mark it paid with a receipt"]
+  claim["Member posts I paid with a reference"] -. "staff confirm" .-> off
+  off --> mc{"Two-person check on?"}
+  mc -- yes --> second["A second person confirms"]
+  mc -- no --> paid["Paid, receipt kept"]
+  second --> paid
+  online --> paid
+  paid --> ask["Member asks, or a cancellation opens a due case"]
+  ask --> case["Refund case: staff approve or decline"]
+  case -- approve --> refund["Refund recorded<br/>online ones go through the provider"]
+```
+
 **Free mode, area by area.**
-- *Lending:* deposits, rental and late fees raise nothing; a damage or lost charge is refused with
+- *Inventory:* deposits, rental and late fees raise nothing; a damage or lost charge is refused with
   404 `charges_off` and the loan's Charges panel (`charges_enabled: false`) hides the step.
 - *Machines:* no quote is required or sent (`send_quote` refuses, the job is accepted instead),
   `prepay` reads false, a prepaid quote approved after charges went off queues at once, and the
@@ -282,7 +312,7 @@ are charged (A8). Areas and components (`payments/pricing/components.py`):
 
 | Area | Components | Notes |
 |---|---|---|
-| Lending | rental per loan, rental per day (cap per unit of each item line), refundable deposit, late fee per day (cap, grace), damage, lost | Deposit and late fee keep their release-1 columns on the payment settings; damage and lost are staff-set with a suggestion |
+| Inventory | rental per loan, rental per day (cap per unit of each item line), refundable deposit, late fee per day (cap, grace), damage, lost | Deposit and late fee keep their release-1 columns on the payment settings; damage and lost are staff-set with a suggestion |
 | Machines | time per hour (billing increment, minimum), material per unit, per job | Time AND material together; the machine type's price row is the middle level |
 | Bookings | per booking (the room's own price), per hour (rounded up to the increment, capped per day) | |
 | Events | per registration | The space default only prefills new events; a published event keeps its own price |
@@ -308,7 +338,7 @@ raised PENDING as a `machine_session` charge. An auto-stopped session is held un
 and confirm it (a duration correction first is an audited amendment). Sessions that run an L12 job
 are billed through the job only.
 
-**Rounding** is half-up to two decimals per line, the total is the sum of the lines, and a cap
+**Rounding** is half-up to the currency's charge precision per line (two decimals; none for a yen; 10 fils for KWD/BHD/OMR/JOD/TND), the total is the sum of the lines, and a cap
 applies before any discount (A7).
 
 **Discounts** (`charges.discounts`, off by default): the single best automatic rule -- all
@@ -384,8 +414,21 @@ or `charges.enabled` off, every gift, pledge and sponsor charge is refused (`cha
   giver's name, address and PAN from their encrypted columns (`DonorTaxDetail`, shared by a pledge's gifts). The PAN is asked only for an 80G
   receipt, validated, always encrypted, shown elsewhere as its last four characters, masked for a
   superadmin without a PII window, and never part of a report.
-- **Money.** Gifts and sponsor money are the ledger's `donations` area, visible to the Space Manager
-  and finance staff. Giving one back is a refund case in area `donations` that staff open
+- **Non-profit profile (decision 242(m)).** `DonationSettings.is_nonprofit` plus legal name,
+  registration number, a typed `tax_exemptions` list (`{scheme, number, valid_from, valid_until}`,
+  schemes in `donations/nonprofit.SCHEMES`), signatory and footer. Tax receipts need the profile on,
+  `finance.tax_exempt_receipts` and a DEDUCTIBLE scheme live on the receipt date (India 12A alone
+  unlocks nothing); only India 80G asks for PAN and address. The frozen receipt now also carries the
+  exemptions, legal identity and signatory; the old single-80G columns mirror the list's first 80G
+  entry (`nonprofit.mirror_legacy_80g`), and `payments/0047` adopted existing 80G spaces as
+  non-profits. Off, gifts still work and the giver's receipt says it is not a tax receipt. A
+  non-profit taking gifts gets the public Donate entry (`bootstrap.makerspace.donate_enabled`).
+  Givers opt in to be named on a campaign page (`Donation.recognize_publicly`, off by default).
+- **Money.** Gifts and sponsor money are the ledger's `donations` area, visible to the Space Manager,
+  the Fundraising role (`manage_donations`, decision 242(m)) and finance staff -- never an area
+  manager. The staff console's own **Donations** tab holds gifts, campaigns, pledges, donors
+  (`donations/donors`), sponsors, the CSV export (`donations/export.csv`, audited), receipt resend
+  (`donations/<id>/receipt/reissue`) and paid-claim decisions (`donations/<id>/claim/confirm|reject`). Giving one back is a refund case in area `donations` that staff open
   (`donations/<id>/return`, `sponsors/charges/<id>/return`) and decide in the refund-case queue; the
   direct staff refund routes refuse these charges (`refund_via_case_only`).
 - **Sponsors.** `admin/makerspace/<id>/sponsors` (+ tiers, perks, charges, event links, logo):

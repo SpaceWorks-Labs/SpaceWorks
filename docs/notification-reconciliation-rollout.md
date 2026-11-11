@@ -99,4 +99,4 @@ identity-only restore stay member-only. Platform native grants are forbidden.
 
 See [notification contract](notification-contract.md), [channel setup](messaging-channels.md)
 and [mobile builder PRD](mobile/MOBILE-APP-PRD.md). OpenAPI is regenerated from the reconciled
-server by the orchestrator; generated files do not establish rollout completion.
+server by the release operator; generated files do not establish rollout completion.

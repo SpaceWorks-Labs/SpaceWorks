@@ -56,3 +56,19 @@ secrets still apply.
 
 Changing the schema requires updating the runtime catalogue and snapshot together.
 Consumers should pin a schema version and deliberately opt in to future breaking formats.
+
+
+## Damaged-return handoff and `issue_reported`
+
+`issue_reported` is named per area family, not per source. A damaged-return handoff to repairs
+(decision 221(c)) raises the same event as a member's own report, and it fires the event of the
+item's area, once, on first creation only (an idempotent replay never alerts twice):
+
+| Item's area | Event |
+|---|---|
+| Inventory item | `hardware_requests.issue_reported` |
+| Bookable room or space | `bookings.issue_reported` |
+| Machine | `maintenance.issue_reported` (the machines area's webhook family is `maintenance`) |
+
+The payload is the family's usual identifier set; consumers that handle all three families can
+subscribe to each name separately.

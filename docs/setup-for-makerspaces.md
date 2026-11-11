@@ -37,14 +37,14 @@ Docker Desktop installation on Windows/macOS:
 On Linux, paste:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/SpaceWorks-Labs/SpaceWorks/main/install.sh | bash
+curl -fsSL https://github.com/SpaceWorks-Labs/SpaceWorks/releases/latest/download/install.sh | sh
 ```
 
 It installs into `/opt/spaceworks` by default. To choose another directory, export it for the `bash`
 side of the pipe:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/SpaceWorks-Labs/SpaceWorks/main/install.sh | SPACEWORKS_DIR="$HOME/SpaceWorks" bash
+curl -fsSL https://github.com/SpaceWorks-Labs/SpaceWorks/releases/latest/download/install.sh | SPACEWORKS_DIR="$HOME/SpaceWorks" sh
 ```
 
 Use the second form in Windows Git Bash. The installer downloads the newest **tagged GitHub release**
@@ -68,7 +68,7 @@ The script will ask you a few simple questions (press Enter to accept the sugges
 | Website here? | yes, or API only (enter your external HTTPS website origins) |
 | HTTPS | localhost-only HTTP, automatic Caddy (domain/email), or your existing HTTPS proxy |
 | File storage | bundled Silo, or your S3 buckets/credentials/public image URL |
-| Areas | Inventory & lending, Machines and Reports default yes; Events, Bookings, Membership, Online payments and Chat default no. Each yes immediately asks its settings. |
+| Areas | Inventory, Machines and Reports default yes; Events, Bookings, Membership, Online payments and Chat default no. Each yes immediately asks its settings. |
 | Web address people will type | `localhost` to start (you can change it later) |
 | Organization name | your network, university, company or community, e.g. `Riverside Community Trust` (required) |
 | Name of your makerspace | e.g. `Riverside Makerspace` |
@@ -251,11 +251,11 @@ sign-in and the member area. Membership adds plans, vouching, renewals and the m
 
 | Area question | Follow-ups in order (defaults) | Editable later |
 | --- | --- | --- |
-| Use Inventory & lending? [Y/n] | Maximum active loans [0]; outstanding items [0] (zero = unlimited); loan length [7 days]; maximum renewals [1]; renewal length [7 days]; self-checkout [Y/n]; kiosk [Y/n]; deposit mode [none] (`none/fixed/per_product`); fixed amount [0.00] if fixed; late fee/day [0.00]; cap [0.00] (zero = uncapped); fee grace [0 days]; require deposit settlement before issue [y/N] if using deposits; charge currency [usd]; who can submit borrow requests [accounts] (`accounts/anyone` while Membership is off) | General / loan policy, Features, loan charges, Borrow request access, Location & hours |
+| Use Inventory? [Y/n] | Maximum active loans [0]; outstanding items [0] (zero = unlimited); loan length [7 days]; maximum renewals [1]; renewal length [7 days]; self-checkout [Y/n]; kiosk [Y/n]; deposit mode [none] (`none/fixed/per_product`); fixed amount [0.00] if fixed; late fee/day [0.00]; cap [0.00] (zero = uncapped); fee grace [0 days]; require deposit settlement before issue [y/N] if using deposits; charge currency [usd]; who can submit borrow requests [accounts] (`accounts/anyone` while Membership is off) | General / loan policy, Features, loan charges, Borrow request access, Location & hours |
 | Use Machines? [Y/n] | Enforce certification gating [Y/n] (blocks use until certified for the type); certification reminder lead [14 days]; maintenance reminder lead [7 days]. Zero disables advance notices. | Features, machine-type reminder policy |
 | Use Events? [y/N] | New event audience [accounts] (`members/accounts/invite`); ticket currency [usd], reusing the shared charge currency if already answered. Promo codes, ticket types and offline check-in enabled. | Event defaults, each event/series, Location & hours |
 | Use Bookings? [y/N] | No numeric follow-up: buffers and cancellation cutoff belong to each bookable resource; there is no space-level default. Recurring bookings enabled. | Bookable resource editor |
-| Use Membership? [y/N] | Join mode [approval] (`approval/vouch/open/invite_only/closed`); if vouching: vouches [1], voucher tenure [30 days], pending applicants/voucher [3], vouch validity [30 days], vouches replace staff approval [y/N]; application form [Y/n] (editable question: why join); create first plan [y/N] (skippable); if chosen: name [Standard], interval [monthly] (`monthly/yearly/custom_days`), custom days [30] if applicable, amount [0.00], currency [usd], auto-renew [Y/n]; if renewing: open window [7 days], grace [0 days], retries [0], reminders before [14,7,1], after [none]. If lending is on, confirm who can submit requests [members]. | Membership admission and form builder, membership plans, Features |
+| Use Membership? [y/N] | Join mode [approval] (`approval/vouch/open/invite_only/closed`); if vouching: vouches [1], voucher tenure [30 days], pending applicants/voucher [3], vouch validity [30 days], vouches replace staff approval [y/N]; application form [Y/n] (editable question: why join); create first plan [y/N] (skippable); if chosen: name [Standard], interval [monthly] (`monthly/yearly/custom_days`), custom days [30] if applicable, amount [0.00], currency [usd], auto-renew [Y/n]; if renewing: open window [7 days], grace [0 days], retries [0], reminders before [14,7,1], after [none]. If Inventory is on, confirm who can submit requests [members]. | Membership admission and form builder, membership plans, Features |
 | Use Online payments? [y/N] | Checkout for chosen domains is enabled; default checkout currency [usd] if no earlier area set it; Stripe keys remain optional integration questions later. Money owed and receipts remain enabled without this area. | Payment settings |
 | Use Reports? [Y/n] | Reports and analytics for every installed module, saved views and scheduled exports; no numeric follow-ups. | Reports |
 | Use Chat alerts? [y/N] | All five channels enabled and idle until configured; no token/URL questions here. | Integration settings |
@@ -286,7 +286,7 @@ The Membership module currently enforces members-only borrow requests. Enabling 
 confirms the earlier request-access answer as members. Disable Membership to admit any signed-in
 account; personal accounts remain on in setup. A space later run without Member accounts takes
 account-less requests confirmed by an email code. Inventory off skips borrowing questions, keeps
-the six core modules and hides lending without touching loan/evidence data. Enabling self-checkout or kiosk never bypasses
+the six core modules and hides loans without touching loan/evidence data. Enabling self-checkout or kiosk never bypasses
 authentication, eligible-tool checks or evidence requirements.
 
 Only Events (with optional Membership/Payments/Reports/Chat) derives the `events` edition; only

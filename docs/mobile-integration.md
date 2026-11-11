@@ -216,7 +216,10 @@ Only a pending charge owned by the caller is eligible. Response dispatch is by `
   Configure native Checkout with the key, Order ID and the integer minor-unit amount as returned.
   The server recovers/reuses a matching Order instead of creating a new one on every retry.
 
-409 `payment_rail_conflict` means another online rail already owns the charge; 503
+409 `payment_rail_conflict` means another online rail already owns the charge. A charge whose
+hosted checkout page was created when the charge was raised is stamped `online_rail=checkout`, so
+the native sheet answers 409 for it too: open that hosted `checkout_url` in the system browser (it
+is on the member payment row) instead of the sheet. 503
 `payments_unavailable` means the online rail is disabled, unconfigured or failed.
 The SDK callback never settles the ledger. After completion/cancellation, refetch
 GET `/api/v1/member/makerspaces/{makerspace_id}/payments` and locate the payment ID;

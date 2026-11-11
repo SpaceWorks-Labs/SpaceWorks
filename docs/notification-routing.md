@@ -29,6 +29,8 @@ Two things worth knowing before you set this up:
 
 - **Webhook URLs are write-only.** They are stored encrypted and never shown again, so an edit that
   only renames a room can leave the field blank.
+- **Signed webhooks get a generated secret, shown once.** Create a `webhook` room without a secret and the server makes one and returns it in that response only; it can never be read again. 
+  **Rotate** it with `POST .../notification-destinations/{id}/rotate-secret` (optional `grace_hours`, default 24, 0 to retire the old one at once). During the grace window each delivery carries one `v1=` signature per live secret, newest first, so the receiver can switch over without dropping events.
 - **Telegram rooms share the makerspace's bot** — add the same bot to each group and paste each
   group's chat ID. Rooms use the Communication channels bot token when configured, then the legacy
   tenant/platform fallback. Decisions remain in the staff console or `/control/`; every decision

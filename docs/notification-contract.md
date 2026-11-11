@@ -405,4 +405,4 @@ to core inventory; these avoid the former generic printing/procurement gates.
 The [coverage inventory](notification-coverage.md) distinguishes producers and intentional legacy
 paths; it is not runtime test evidence. Source ownership is indexed in
 [SOURCE-MAP-NOTIFICATIONS.md](SOURCE-MAP-NOTIFICATIONS.md). OpenAPI/TypeScript regeneration,
-runtime checks, provider tests and rollout sign-offs belong to the orchestrator/operator.
+runtime checks, provider tests and rollout sign-offs belong to the release operator.

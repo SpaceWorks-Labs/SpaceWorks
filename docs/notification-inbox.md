@@ -46,6 +46,7 @@ Writes emit audit entries with a User actor.
 | POST | `/notifications/inbox/{makerspace_id}/read-all` | Own unread rows only |
 | GET/PATCH | `/notifications/preferences/{makerspace_id}` | Family/channel cells; PATCH `{feature,channel,enabled}` |
 | POST | `/notifications/unsubscribe/{token}` | Signed, login-free one-click email opt-out |
+| GET | `/notifications/unsubscribe/{token}` | No-write browser landing: 302 to `/unsubscribe/{token}`, or an HTML confirm form |
 | GET | `/integrations/makerspace/{makerspace_id}/delivery-logs` | Staff unified email/channel history |
 | POST | `/integrations/makerspace/{makerspace_id}/delivery-logs/{kind}/{id}/retry` | Failed row retry; `{generation}` |
 | POST | `/integrations/makerspace/{makerspace_id}/delivery-test` | Email to current User; optional `{destination_id}` tests an explicitly selected room |
@@ -66,8 +67,9 @@ Personal opt-outs are checked both when mail is queued and immediately before se
 They cannot turn on a channel the makerspace disabled. Existing staff receives-notification
 and recipient rules remain authoritative. Turning off the editor does not discard saved
 opt-outs, including after a deployment tombstones notifications. Email, inbox and device
-push preferences are independent. Member push intentionally requires an inbox row, so
-tenant `in_app` and personal `in_app` must allow its creation.
+push preferences are independent. Member native push does not depend on an inbox row: it is a
+channel delivery under the personal envelope (see Native push beneath personal envelopes below),
+so the `in_app` switches govern only inbox rows.
 
 Account recovery, verification, overdue return reminders and loan
 closure-with-issue emails bypass personal opt-outs. Suppression still blocks known bad
@@ -87,8 +89,12 @@ Optional family emails addressed to a known User include `List-Unsubscribe` and
 `List-Unsubscribe-Post: List-Unsubscribe=One-Click` when the preference editor is enabled
 and `PUBLIC_APP_BASE_URL` is HTTPS. The token binds tenant, User and family, uses Django's
 salted timestamp signature and expires after 365 days. POST accepts URL-encoded form or
-JSON with `List-Unsubscribe=One-Click`; GET has no effect. Forged/expired tokens return
-400. The late tenant write gate refuses frozen tenants with 423. No login, cookies or
+JSON with `List-Unsubscribe=One-Click`. GET changes nothing (mail scanners prefetch links): a
+valid token 302-redirects to the website's `/unsubscribe/{token}` confirm page at
+`PUBLIC_APP_BASE_URL`, or, with no website origin configured, renders a minimal HTML form that
+POSTs the one-click body back; an invalid token gets a 400 HTML page. The same mail carries a
+visible "Unsubscribe from these emails" footer link to the website page, added at send time
+and never persisted. Forged/expired tokens return 400. The late tenant write gate refuses frozen tenants with 423. No login, cookies or
 CSRF session are required. Configure the SMTP provider to DKIM-sign both unsubscribe
 headers as required by RFC 8058; the application cannot enforce provider signing.
 
@@ -161,3 +167,6 @@ Signed destinations keep `payload_version=1` by default, including old clients e
 an existing destination. Choosing 2 emits the contract in
 [webhooks-v2.md](webhooks-v2.md) and [the JSON Schema catalogue](webhooks-v2.schema.json).
 Editable templates cannot alter v2 field names or inject contact/credential fields.
+
+For which notices each module sends (inventory, events, bookings, membership, shop, repairs) see
+[notification-coverage.md](notification-coverage.md#release-0120-coverage-by-module-decision-221f).

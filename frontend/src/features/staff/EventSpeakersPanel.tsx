@@ -1,4 +1,4 @@
-import { formatLocale } from "../../lib/format";
+import { formatDateTime } from "../../lib/format";
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
 
@@ -18,10 +18,10 @@ const STATUS: Record<EventSpeaker["status"], { label: string; tone: Tone }> = {
 };
 
 function speakerMeta(row: EventSpeaker) {
-  const parts = [row.user ? `Account: ${row.user.display_name}` : row.claim_expires_at ? `Claim link expires ${new Date(row.claim_expires_at).toLocaleString(formatLocale())}` : "Not yet claimed"];
-  if (row.linked_via === "claimed") parts.push("Claimed the link");
-  if (row.section_slug) parts.push(`Website profile: ${row.section_slug}`);
-  if (row.grants_check_in && row.status !== "removed") parts.push("Can check people in");
+  const parts = [row.user ? t`Account: ${row.user.display_name}` : row.claim_expires_at ? t`Claim link expires ${formatDateTime(row.claim_expires_at)}` : t`Not yet claimed`];
+  if (row.linked_via === "claimed") parts.push(t`Claimed the link`);
+  if (row.section_slug) parts.push(t`Website profile: ${row.section_slug}`);
+  if (row.grants_check_in && row.status !== "removed") parts.push(t`Can check people in`);
   return parts.join(" · ");
 }
 
@@ -60,9 +60,9 @@ export function EventSpeakersPanel({ eventId, makerspaceId, websiteEnabled, disa
         {row.status !== "removed" && !disabled ? <button className="desk-button-danger-outline" type="button" disabled={remove.isPending} onClick={() => { remove.reset(); setRemoving(row); }}>{t`Remove ${row.display_name}`}</button> : null}
       </div>
     </li>)}</ul> : null}
-    <EventPanelPager page={page} setPage={setPage} previous={speakers.data?.previous} next={speakers.data?.next} />
+    <EventPanelPager page={page} setPage={setPage} count={speakers.data?.count} previous={speakers.data?.previous} next={speakers.data?.next} />
     <ConfirmDialog open={removing !== null} title={t`Remove speaker`} tone="danger" confirmLabel={t`Remove speaker`} pending={remove.isPending}
-      message={t`Remove ${removing?.display_name ?? "this speaker"} from the event? An unclaimed link stops working. Their separate Team check-in grant stays active; revoke check-in access on the Team tab.`}
+      message={removing?.display_name ? t`Remove ${removing.display_name} from the event? An unclaimed link stops working. Their separate Team check-in grant stays active; revoke check-in access on the Team tab.` : t`Remove this speaker from the event? An unclaimed link stops working. Their separate Team check-in grant stays active; revoke check-in access on the Team tab.`}
       onCancel={() => setRemoving(null)} onConfirm={() => { if (removing) remove.mutate(removing.id, { onSettled: () => setRemoving(null) }); }} />
   </section>;
 }

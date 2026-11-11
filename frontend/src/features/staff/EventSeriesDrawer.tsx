@@ -1,18 +1,20 @@
 import { formatLocale } from "../../lib/format";
 import { t } from "@lingui/core/macro";
 import { SeriesGuestList } from "./eventProgramme/SeriesGuestList";
+import { SeriesInvitesPanel } from "./eventProgramme/SeriesInvitesPanel";
 import { useEffect, useState, type FormEvent } from "react";
 
 import { ConfirmDialog, EmptyState, ErrorText, ListRow, Pagination, Skeleton, StatusBadge } from "../../components/ui";
 import { DetailLayout } from "../../components/layouts";
 import { opsQueryState, useOpsTabs, opsStatusLabel } from "./opsPresentation";
 import { EventSeriesCollaborators } from "./EventSeriesCollaborators";
+import { SeriesMoneyCard } from "./SeriesMoneyCard";
 import { SeriesPassTypes, useStaffCapability } from "./eventTicketing/SeriesPassTypes";
 import { EventWebsiteEditor } from "./EventWebsiteEditor";
 import { EventOrganizationAudience } from "./EventOrganizationAudience";
 import { EventStaffAccess } from "./EventStaffAccess";
 import { eventAccess } from "./eventStaffPermissions";
-import { ImageUploader } from "./ImageUploader";
+import { EventCoverUploader } from "./eventProgramme/EventCoverUploader";
 import { EventSeriesFields, emptySeriesForm, seriesPayload, valuesForSeries } from "./EventSeriesForm";
 import {
   EVENT_SERIES_PAGE_SIZE,
@@ -26,9 +28,18 @@ import { pageStickyActions } from "./stickyActions";
 
 type Action = "publish" | "cancel" | "complete" | "extend";
 
-export function EventSeriesDrawer({ seriesId, makerspaceId, onClose, onSelectOccurrence }: {
+function confirmCopy(action: Action | null) {
+  if (action === "publish") return { title: t`Publish recurring series`, message: t`This will publish the series and its applicable occurrences.` };
+  if (action === "complete") return { title: t`Complete recurring series`, message: t`This will complete the series and its applicable occurrences.` };
+  if (action === "cancel") return { title: t`Cancel recurring series`, message: t`This will cancel the series and its applicable occurrences.` };
+  if (action === "extend") return { title: t`Extend recurring series`, message: t`This will extend the series and its applicable occurrences.` };
+  return { title: t`Change recurring series`, message: t`This will change the series and its applicable occurrences.` };
+}
+
+export function EventSeriesDrawer({ seriesId, makerspaceId, onClose, onSelectOccurrence, enabledFeatures = [] }: {
   seriesId: number; makerspaceId: number; onClose: () => void;
   onSelectOccurrence: (eventId: number) => void;
+  enabledFeatures?: readonly string[];
 }) {
   const query = useEventSeries(seriesId);
   const access = eventAccess(query.data ?? { staff_permissions: [], can_manage_staff: false });
@@ -57,10 +68,13 @@ export function EventSeriesDrawer({ seriesId, makerspaceId, onClose, onSelectOcc
   const showWebsite = Boolean(query.data?.website_enabled) && (access.edit || access.publish);
   const showSettings = access.edit || access.publish;
   const showPasses = useStaffCapability(makerspaceId, "events.series_passes") && access.manager;
+  // Parity E-F3 (B12): the series allowlist, for invite-only series while events.series_invites is on.
+  const showInvites = enabledFeatures.includes("events.series_invites") && access.invitations && query.data?.registration_audience === "invite";
   const tabs = useOpsTabs("seriesTab", [{ key: "occurrences", label: t`Occurrences`, count: occurrences.data?.count },
     ...(access.registrations ? [{ key: "guests", label: t`Guests` }] : []),
     ...(showWebsite ? [{ key: "website", label: t`Website` }] : []),
     ...(showPasses ? [{ key: "passes", label: t`Passes` }] : []),
+    ...(showInvites ? [{ key: "invites", label: t`Invitations` }] : []),
     ...(access.manager ? [{ key: "team", label: t`Team` }] : []),
     ...(showSettings ? [{ key: "settings", label: t`Settings` }] : [])], "occurrences");
   return <>
@@ -78,9 +92,11 @@ export function EventSeriesDrawer({ seriesId, makerspaceId, onClose, onSelectOcc
       main={query.data ? <div className="grid gap-5">
         {access.registrations && tabs.active === "guests" ? <SeriesGuestList seriesId={seriesId} /> : null}
         {showPasses && tabs.active === "passes" ? <SeriesPassTypes seriesId={seriesId} disabled={terminal} /> : null}
+        {showInvites && tabs.active === "invites" ? <SeriesInvitesPanel seriesId={seriesId} disabled={terminal} /> : null}
+        {tabs.active === "occurrences" ? <SeriesMoneyCard money={query.data.money} /> : null}
         {tabs.active === "occurrences" ? <EventOrganizationAudience event={query.data} pending={update.isPending} onReconfigure={access.edit ? () => update.mutate({ registration_audience: "participating_organizations" }) : undefined} /> : null}
         {showSettings && tabs.active === "settings" ? <div className="grid gap-5">
-        {access.edit ? <ImageUploader endpoint={`/admin/event-series/${seriesId}/image`} currentUrl={query.data.image_url} label={t`Series photo (inherited by occurrences)`} shape="wide" disabled={terminal} onChanged={() => query.refetch()} /> : null}
+        {access.edit ? <EventCoverUploader endpoint={`/admin/event-series/${seriesId}/image`} currentUrl={query.data.image_url} label={t`Series photo (inherited by occurrences)`} disabled={terminal} onChanged={() => { void query.refetch(); }} /> : null}
         <form onSubmit={submit}><h3 className="title-section mb-3">{t`Edit future occurrences`}</h3><EventSeriesFields organizationAudienceEnabled={query.data.organization_audience_enabled} values={values} setValues={setValues} disabled={terminal} canEditDetails={access.edit} canEditSchedule={access.publish} canEditPrice={access.manager} />{!terminal ? <div className={pageStickyActions}><button className="desk-button" type="button" disabled={update.isPending} onClick={() => setValues(valuesForSeries(query.data!))}>{t`Discard`}</button><button className="desk-button-primary" type="submit" disabled={update.isPending}>{t`Save future occurrences`}</button></div> : null}</form>
         {query.data.status === "published" && access.publish ? <button className="desk-button justify-self-start" type="button" onClick={() => setConfirm("complete")}>{t`Complete series`}</button> : null}
         </div> : null}
@@ -88,7 +104,7 @@ export function EventSeriesDrawer({ seriesId, makerspaceId, onClose, onSelectOcc
         {update.error || action.error ? <p className="text-sm text-danger" role="alert">{eventErrorText(update.error || action.error)}</p> : null}
         {tabs.active === "occurrences" ? <section><h2 className="title-panel">{t`Occurrences`}</h2><p className="mt-1 text-sm text-muted">{t`Choose a date to edit or cancel only that occurrence.`}</p>
           {occurrences.isLoading ? <Skeleton className="mt-3 h-24 w-full" /> : null}
-          {occurrences.error ? <ErrorText resource="occurrences" onRetry={() => { void occurrences.refetch(); }} /> : null}
+          {occurrences.error ? <ErrorText resource={t`occurrences`} onRetry={() => { void occurrences.refetch(); }} /> : null}
           {occurrences.data && !occurrences.data.results.length ? <EmptyState message={t`No occurrences on this page.`} /> : null}
           <div className="mt-3 grid gap-3">{occurrences.data?.results.map(row => <ListRow key={row.id} title={new Date(row.starts_at).toLocaleString(formatLocale())} identity={{ kind: "date", date: row.starts_at }} draft={row.status === "draft"} onClick={() => onSelectOccurrence(row.id)} right={<StatusBadge domain="event" status={row.status} label={opsStatusLabel(row.status)} />} />)}</div>
           {occurrences.data ? <Pagination page={occurrencePage} count={occurrences.data.count} pageSize={EVENT_SERIES_PAGE_SIZE} totalPages={Math.ceil(occurrences.data.count / EVENT_SERIES_PAGE_SIZE)} onChange={setOccurrencePage} disabled={occurrences.isFetching} /> : null}
@@ -98,6 +114,6 @@ export function EventSeriesDrawer({ seriesId, makerspaceId, onClose, onSelectOcc
           {tabs.active === "team" ? <EventStaffAccess target={{ kind: "series", id: seriesId }} /> : null}
         </> : null}
       </div> : null} /></div>
-    <ConfirmDialog open={confirm !== null} title={t`${confirm ?? "Change"} recurring series`} message={t`This will ${confirm ?? "change"} the series and its applicable occurrences.`} confirmLabel={t`Confirm`} tone={confirm === "cancel" ? "danger" : "default"} pending={action.isPending} onCancel={() => setConfirm(null)} onConfirm={() => action.mutate(undefined, { onSettled: () => setConfirm(null) })} />
+    <ConfirmDialog open={confirm !== null} title={confirmCopy(confirm).title} message={confirmCopy(confirm).message} confirmLabel={t`Confirm`} tone={confirm === "cancel" ? "danger" : "default"} pending={action.isPending} onCancel={() => setConfirm(null)} onConfirm={() => action.mutate(undefined, { onSettled: () => setConfirm(null) })} />
   </>;
 }

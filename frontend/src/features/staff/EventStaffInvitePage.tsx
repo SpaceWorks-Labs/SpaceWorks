@@ -65,11 +65,11 @@ export function EventStaffInvitePage() {
       {authError ? <p className="text-sm text-danger" role="alert">{authError}</p> : null}</div>}
     footer={<button className="desk-button w-full" type="button" onClick={cancel}>{t`Cancel invitation`}</button>}
     onAuthenticated={() => { void authenticated(); }} />;
-  const cancelAction = { label: t`Cancel invitation`, onClick: cancel, disabled: redeem.isPending, disabledReason: redeem.isPending ? "Wait for the invitation to finish." : undefined };
+  const cancelAction = { label: t`Cancel invitation`, onClick: cancel, disabled: redeem.isPending, disabledReason: redeem.isPending ? t`Wait for the invitation to finish.` : undefined };
   const primary = redeem.isSuccess
     ? { label: t`Open helper workspace`, onClick: openStaff }
-    : user ? { label: t`Accept staff invitation`, pending: redeem.isPending, pendingLabel: "Accepting…", disabled: !token,
-      disabledReason: !token ? "The invitation link is missing its token." : undefined, onClick: () => redeem.mutate() }
+    : user ? { label: t`Accept staff invitation`, pending: redeem.isPending, pendingLabel: t`Accepting…`, disabled: !token,
+      disabledReason: !token ? t`The invitation link is missing its token.` : undefined, onClick: () => redeem.mutate() }
     : cancelAction;
   return <CenteredCardLayout state={{ status: "ready" }} width={480} media={{ icon: "Calendar", tone: "accent" }}
     title={t`Event staff invitation`}

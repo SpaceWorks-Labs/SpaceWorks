@@ -1,11 +1,13 @@
 import { formatLocale } from "../../lib/format";
 import { t } from "@lingui/core/macro";
 import { opsStatusLabel } from "./opsPresentation";
-import { AUDIENCE_LABELS } from "./EventAudienceOptions";
+import { audienceLabels } from "./EventAudienceOptions";
 import { Card, EmptyState, ListRow, RelativeTime, StatCard, StatusBadge } from "../../components/ui";
 import { useEventRegistrations, type StaffEvent } from "./eventsApi";
 import { eventAccess } from "./eventStaffPermissions";
+import { EventLinkedFinancePanel } from "./EventLinkedFinancePanel";
 import { useStaffChargesOn } from "./useStaffChargesOn";
+import { formatPrice } from "../../lib/money";
 
 /** The latest registrations. Mounted only for staff who may read the roster, so nobody else requests it. */
 function RegistrationsPreview({ eventId, onRegistrations }: { eventId: number; onRegistrations?: () => void }) {
@@ -29,14 +31,14 @@ export function EventOverview({ event, onRegistrations }: { event: StaffEvent; o
       <StatCard label={t`Checked in`} value={counts.attended} of={going || undefined} />
     </div>
     {eventAccess(event).registrations ? <RegistrationsPreview eventId={event.id} onRegistrations={onRegistrations} /> : null}
+    <EventLinkedFinancePanel tenant={event.makerspace_id} eventId={event.id} />
     {event.description ? <Card><h2 className="title-panel mb-3">{t`About this event`}</h2><p className="whitespace-pre-wrap text-sm">{event.description}</p></Card> : null}
   </div>;
 }
 
-const AUDIENCE_LABEL = { members: AUDIENCE_LABELS.members, accounts: AUDIENCE_LABELS.accounts, invite: AUDIENCE_LABELS.invite } as const;
 /** Participating-organization events name their organizations; the server's audience label already does. */
 const audienceLabel = (event: StaffEvent) => event.registration_audience === "participating_organizations"
-  ? event.audience_label || AUDIENCE_LABELS.participating_organizations : AUDIENCE_LABEL[event.registration_audience ?? "members"];
+  ? event.audience_label || audienceLabels().participating_organizations : audienceLabels()[event.registration_audience ?? "members"];
 
 export function EventAtAGlance({ event, onCheckIn }: { event: StaffEvent; onCheckIn?: () => void }) {
   const today = new Date(); today.setHours(0, 0, 0, 0);
@@ -49,7 +51,7 @@ export function EventAtAGlance({ event, onCheckIn }: { event: StaffEvent; onChec
         <div><dt className="text-muted">{t`When`}</dt><dd>{new Date(event.starts_at).toLocaleString(formatLocale())} → {new Date(event.ends_at).toLocaleString(formatLocale())} · {event.timezone_name}</dd></div>
         <div><dt className="text-muted">{t`Where`}</dt><dd>{event.location || t`Location to be confirmed`}</dd></div>
         <div><dt className="text-muted">{t`Who can join`}</dt><dd>{audienceLabel(event)} · {event.is_public ? t`Public listing` : t`Private event`}</dd></div>
-        {chargesOn ? <div><dt className="text-muted">{t`Price`}</dt><dd>{Number(event.payment_amount) === 0 ? t`Free` : event.payment_amount}</dd></div> : null}
+        {chargesOn ? <div><dt className="text-muted">{t`Price`}</dt><dd>{event.currency ? formatPrice(event.payment_amount, event.currency) : Number(event.payment_amount) === 0 ? t`Free` : event.payment_amount}</dd></div> : null}
         <div><dt className="text-muted">{t`Registration`}</dt><dd>{event.registration_open ? t`Open` : t`Closed`}{event.effective_registration_cutoff_at ? t` · Closes ${new Date(event.effective_registration_cutoff_at).toLocaleString(formatLocale())}` : ""}</dd></div>
       </dl>
     </Card>

@@ -10,7 +10,7 @@ export type EventFormValues = Omit<EventPayload, "starts_at" | "ends_at" | "regi
 };
 
 export const emptyEventForm: EventFormValues = {
-  accent_preset: "", title: "", description: "", starts_at: "", ends_at: "", location: "",
+  accent_preset: "", title: "", description: "", starts_at: "", ends_at: "", location: "", venue_address: "", venue_map_url: "",
   timezone_name: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
   capacity: 0, payment_amount: "0.00", registration_requires_approval: false,
   registration_cutoff_at: null, registration_cutoff_lead_minutes: null,
@@ -30,7 +30,7 @@ export function valuesFor(event: StaffEvent): EventFormValues {
     accent_preset: event.accent_preset ?? "", title: event.title, description: event.description,
     starts_at: localDate(event.starts_at), ends_at: localDate(event.ends_at),
     timezone_name: event.timezone_name,
-    location: event.location, capacity: event.capacity,
+    location: event.location, venue_address: event.venue_address ?? "", venue_map_url: event.venue_map_url ?? "", capacity: event.capacity,
     payment_amount: event.payment_amount,
     registration_requires_approval: event.registration_requires_approval,
     registration_cutoff_at: event.registration_cutoff_at ? localDate(event.registration_cutoff_at) : null,
@@ -48,7 +48,7 @@ export function valuesFor(event: StaffEvent): EventFormValues {
 export function payloadFor(values: EventFormValues): EventPayload {
   return {
     ...values, tags: (values.tags ?? []).map((tag) => tag.trim()).filter(Boolean), title: values.title.trim(), description: values.description.trim(),
-    location: values.location.trim(), starts_at: new Date(values.starts_at).toISOString(),
+    location: values.location.trim(), venue_address: (values.venue_address ?? "").trim(), venue_map_url: (values.venue_map_url ?? "").trim(), starts_at: new Date(values.starts_at).toISOString(),
     ends_at: new Date(values.ends_at).toISOString(),
     registration_cutoff_at: values.registration_cutoff_at ? new Date(values.registration_cutoff_at).toISOString() : null,
   };

@@ -32,6 +32,6 @@ export function EventInvitesPanel({ visible = true,  eventId, disabled = false }
       <div className="min-w-0"><p className="title-section">{t`Invitation ${row.id}`}</p><p className="mt-1 text-sm tabular-nums text-muted">{row.uses}/{row.max_uses} uses</p></div>
       {row.revoked_at ? <StatusPill label={t`Revoked`} /> : <button className="desk-button-danger-outline" type="button" disabled={disabled || revoke.isPending} onClick={() => revoke.mutate(row.id)}>{t`Revoke invitation ${row.id}`}</button>}
     </li>)}</ul> : null}
-    <EventPanelPager page={page} setPage={setPage} previous={rows.data?.previous} next={rows.data?.next} />
+    <EventPanelPager page={page} setPage={setPage} count={rows.data?.count} previous={rows.data?.previous} next={rows.data?.next} />
   </section>;
 }

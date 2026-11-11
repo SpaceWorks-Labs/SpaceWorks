@@ -8,9 +8,19 @@ import { EventAtAGlance, EventOverview } from "./EventOverview";
 import { opsQueryState, opsStatusLabel } from "./opsPresentation";
 import { EventOrganizationAudience } from "./EventOrganizationAudience";
 import { emptyEventForm, payloadFor, valuesFor } from "./EventFormFields";
+import { EquipmentSubjectReport } from "./EquipmentSubjectReport";
+import { EventEquipmentDesk } from "./EventEquipmentDesk";
+import { RelatedFactsPanel } from "./RelatedFactsPanel";
+import { EventCrossLinks } from "./eventLinks/EventCrossLinks";
 import { EventRegistrationRoster } from "./EventRegistrationRoster";
 import { usePriceDropCheck } from "./priceDrop/usePriceDropCheck";
 import { EventCheckInTab } from "./EventCheckInTab";
+import { EventVenueBookingPanel } from "./EventVenueBookingPanel";
+import { EventVenueSummary } from "./EventVenueSummary";
+import { EventPublishDialog } from "./EventPublishDialog";
+import { EventVenueOffersDialog } from "./EventVenueOffersDialog";
+import { EventInductionPanel } from "./EventInductionPanel";
+import type { VenueOffer } from "./eventVenueApi";
 import { EventDrawerMore } from "./EventDrawerMore";
 import { EventEssentialsEditor } from "./EventEssentialsEditor";
 import { eventDrawerSurfaces, useEventDrawerTabs } from "./eventDrawerTabs";
@@ -26,12 +36,21 @@ import {
 import type { EventPatch } from "./eventsApi";
 import { eventErrorText } from "./eventUi";
 import { EventProgrammePanel } from "./eventProgramme/EventProgrammePanel";
+import { EventStaffLists } from "./eventProgramme/EventStaffLists";
+import { EventDisclosure } from "./EventDisclosure";
 import { EventAddonPanel } from "./eventProgramme/EventAddonPanel";
 import { EventParticipationSection } from "./eventParticipation/EventParticipationSection";
 import { ProgrammeSessionBoundary } from "./eventProgramme/sessionScope";
 import { ScreenHelp } from "../help/HelpLink";
 
 type Action = "publish" | "cancel" | "complete";
+
+function confirmCopy(action: Action | null) {
+  if (action === "publish") return { title: t`Publish event`, message: t`Are you sure you want to publish this event?`, label: t`Publish` };
+  if (action === "complete") return { title: t`Complete event`, message: t`Are you sure you want to complete this event?`, label: t`Complete` };
+  if (action === "cancel") return { title: t`Cancel event`, message: t`Are you sure you want to cancel this event?`, label: t`Cancel event` };
+  return { title: t`Change event`, message: t`Are you sure you want to change this event?`, label: t`Confirm` };
+}
 
 export function EventDrawer({ eventId, makerspaceId, onClose, onOpenSeries, enabledFeatures = [], enabledModules = [] }: {
   eventId: number;
@@ -53,6 +72,11 @@ export function EventDrawer({ eventId, makerspaceId, onClose, onOpenSeries, enab
   const cancel = useCancelEvent(makerspaceId, eventId);
   const complete = useCompleteEvent(makerspaceId, eventId);
   const invalidateEvent = useEventInvalidation(makerspaceId, eventId);
+  // Decision 223 (m): a cancel or a schedule change answers with room offers; staff choose, nothing runs itself.
+  const [offers, setOffers] = useState<VenueOffer[]>([]);
+  useEffect(() => { if (cancel.data?.venue_offers?.length) setOffers(cancel.data.venue_offers); }, [cancel.data]);
+  useEffect(() => { if (update.data?.venue_offers?.length) setOffers(update.data.venue_offers); }, [update.data]);
+  const bookingsOn = enabledModules.includes("bookings");
 
   useEffect(() => { if (event) setValues(valuesFor(event)); }, [event?.updated_at]);
   useEffect(() => setWebsitePublication(undefined), [eventId]);
@@ -93,7 +117,7 @@ export function EventDrawer({ eventId, makerspaceId, onClose, onOpenSeries, enab
       <DetailLayout title={event?.title ?? t`Event details`} back={{ label: t`All events`, onClick: onClose }}
         identity={event ? { kind: "date", date: event.starts_at } : undefined}
         status={event ? <StatusBadge domain="event" status={event.status} label={opsStatusLabel(event.status)} /> : undefined}
-        meta={event ? [...(recurring ? [recurring] : []), event.is_public ? "Public" : "Private", event.location, `${event.registration_counts.registered + event.registration_counts.attended} / ${event.capacity || "unlimited"} going`] : undefined}
+        meta={event ? [...(recurring ? [recurring] : []), event.is_public ? t`Public` : t`Private`, event.location, (event.capacity ? t`${event.registration_counts.registered + event.registration_counts.attended} / ${event.capacity} going` : t`${event.registration_counts.registered + event.registration_counts.attended} / unlimited going`)] : undefined}
         state={opsQueryState(eventQuery, "event")} tabs={tabs.tabs} activeTab={tabs.active}
         actions={{ primary: event?.status === "draft" && access.publish ? { label: t`Publish`, confirms: true, onClick: () => setConfirm("publish") }
           : event?.status === "published" && access.checkIn ? { label: t`Open check-in`, targetsTab: "checkin", onClick: () => tabs.select("checkin") }
@@ -102,7 +126,7 @@ export function EventDrawer({ eventId, makerspaceId, onClose, onOpenSeries, enab
           overflow: event?.status === "published" && access.publish ? [{ label: t`Complete event`, confirms: true, onClick: () => setConfirm("complete") },
             { label: t`Cancel event`, confirms: true, tone: "danger", onClick: () => setConfirm("cancel") }] : undefined }}
         banner={readOnly ? { size: "banner", tone: "warn", lead: `This event is ${event?.status}. It can’t be edited.` } : undefined}
-        danger={tabs.section === "settings" && event?.status === "published" && access.publish ? [{ title: t`Cancel event`, consequence: "Registrants are notified and registration closes.", action: { label: t`Cancel event`, onClick: () => setConfirm("cancel") } }] : []}
+        danger={tabs.section === "settings" && event?.status === "published" && access.publish ? [{ title: t`Cancel event`, consequence: t`Registrants are notified and registration closes.`, action: { label: t`Cancel event`, onClick: () => setConfirm("cancel") } }] : []}
         aside={event && tabs.active === "overview" ? <EventAtAGlance event={event} onCheckIn={checkable && access.checkIn ? () => tabs.select("checkin") : undefined} /> : undefined}
         main={event ? <div className="grid gap-6">
           {tabs.section && sections[tabs.section] ? <ScreenHelp screen={`events.${tabs.section}`} /> : null}
@@ -111,21 +135,39 @@ export function EventDrawer({ eventId, makerspaceId, onClose, onOpenSeries, enab
             <EventOrganizationAudience event={event} pending={update.isPending} onReconfigure={access.edit ? () => update.mutate({ registration_audience: "participating_organizations" }) : undefined} />
             <EventReadinessPanel eventId={eventId} />
             {access.checkIn ? <EventDayPanel eventId={eventId} /> : null}
+            <EventEquipmentDesk makerspaceId={makerspaceId} eventId={event.id} canEditWindow={access.edit && !readOnly} />
+            <EquipmentSubjectReport tenant={makerspaceId} kind="event" id={event.id} />
+            <RelatedFactsPanel tenant={makerspaceId} kind="event" id={event.id} />
+            <EventCrossLinks makerspaceId={makerspaceId} eventId={event.id} />
             <EventOverview event={event} onRegistrations={access.registrations ? () => tabs.select("registrations") : undefined} />
           </> : null}
+          <div hidden={tabs.active !== "overview"} className="grid gap-4">
+            {access.publish && bookingsOn ? <EventVenueSummary makerspaceId={makerspaceId} eventId={event.id} active={tabs.active === "overview"} /> : null}
+            <EventInductionPanel makerspaceId={makerspaceId} event={event} enabledFeatures={enabledFeatures} enabledModules={enabledModules} active={tabs.active === "overview"} canLinkEvent={access.manager} />
+            <EventVenueBookingPanel makerspaceId={makerspaceId} eventId={event.id} readOnly={readOnly} active={tabs.active === "overview"} />
+          </div>
           {access.registrations ? <EventRegistrationRoster key={eventId} visible={tabs.active === "registrations"} event={event} makerspaceId={makerspaceId} offlineCheckInEnabled={event.offline_checkin_enabled} showCheckIn={false} /> : null}
+          {/* Parity E-F3 (B25, C16): the filtered guest list with counted presets, reply filter and per-event views. */}
+          {access.registrations && tabs.active === "registrations" && enabledFeatures.includes("events.saved_views") ? <EventDisclosure title={t`Guest list views and exports`}>
+            <EventStaffLists eventId={event.id} makerspaceId={makerspaceId} canSaveViews={access.manager} features={enabledFeatures} lists={["guests"]} /></EventDisclosure> : null}
           {surfaces.checkInTab ? <EventCheckInTab event={event} makerspaceId={makerspaceId} active={tabs.active === "checkin"} checkable={checkable} canManageStation={access.manager} /> : null}
           <EventDrawerMore event={event} makerspaceId={makerspaceId} access={access} surfaces={surfaces} section={tabs.section} sectionTabs={tabs.sectionTabs}
-            readOnly={readOnly} onWebsitePublication={setWebsitePublication}
+            readOnly={readOnly} onWebsitePublication={setWebsitePublication} onDeleted={onClose}
             settings={{ values, setValues, save: () => { void saveOccurrence(); }, pending: update.isPending, invalidate: invalidateEvent, resetField: field => update.mutate({ inherit_fields: [field] }), complete: () => setConfirm("complete") }} />
           {tabs.section && sections[tabs.section] ? <EventProgrammePanel event={event} makerspaceId={makerspaceId} section={tabs.section} access={access} features={enabledFeatures} /> : null}
           {(tabs.section === "stage-forms" || tabs.section === "reimbursements") && sections[tabs.section]
-            ? <EventAddonPanel key={`${event.id}:${tabs.section}`} event={event} makerspaceId={makerspaceId} section={tabs.section} access={access} /> : null}
+            ? <EventAddonPanel key={`${event.id}:${tabs.section}`} event={event} makerspaceId={makerspaceId} section={tabs.section} access={access}
+              staffClaims={(enabledFeatures ?? []).includes("events.staff_claims")} /> : null}
           {tabs.section && sections[tabs.section] ? <EventParticipationSection key={`${event.id}:l21a:${tabs.section}`} event={event} section={tabs.section} access={access} features={enabledFeatures} /> : null}
           {actionError ? <p role="alert" className="text-sm text-danger">{eventErrorText(actionError)}</p> : null}
         </div> : null} />
     </div>
     {drop.dialog}
-    <ConfirmDialog open={confirm !== null} title={`${confirm ? confirm[0].toUpperCase() + confirm.slice(1) : "Change"} event`} message={t`Are you sure you want to ${confirm ?? "change"} this event?`} confirmLabel={confirm ? confirm[0].toUpperCase() + confirm.slice(1) : t`Confirm`} tone={confirm === "cancel" ? "danger" : "default"} pending={lifecycle.isPending} onCancel={() => setConfirm(null)} onConfirm={() => { const options = { onSettled: () => setConfirm(null) }; if (confirm === "publish") publish.mutate(websitePublication, options); else lifecycle.mutate(undefined, options); }} />
+    <EventPublishDialog open={confirm === "publish"} makerspaceId={makerspaceId} eventId={eventId} pending={publish.isPending} error={publish.error}
+      onCancel={() => { publish.reset(); setConfirm(null); }}
+      onPublish={options => publish.mutate({ ...websitePublication, ...options }, { onSuccess: () => setConfirm(null) })} />
+    <EventVenueOffersDialog makerspaceId={makerspaceId} eventId={eventId} offers={offers} onClose={() => setOffers([])}
+      onReviewFee={sections.tickets ? () => { setOffers([]); tabs.select("tickets"); } : undefined} />
+    <ConfirmDialog open={confirm !== null && confirm !== "publish"} title={confirmCopy(confirm).title} message={confirmCopy(confirm).message} confirmLabel={confirmCopy(confirm).label} tone={confirm === "cancel" ? "danger" : "default"} pending={lifecycle.isPending} onCancel={() => setConfirm(null)} onConfirm={() => { const options = { onSettled: () => setConfirm(null) }; if (confirm === "publish") publish.mutate(websitePublication, options); else lifecycle.mutate(undefined, options); }} />
   </ProgrammeSessionBoundary>;
 }

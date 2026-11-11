@@ -36,6 +36,6 @@ export function EventPromosPanel({ visible = true,  eventId, disabled = false }:
         <p className="mt-1 text-sm tabular-nums text-muted">{t`${row.percent_off ? `${row.percent_off}%` : row.amount_off} discount · ${row.uses}/${row.max_uses} uses`}</p></div>
       {row.revoked_at ? <StatusPill label={t`Revoked`} /> : <button className="desk-button-danger-outline" type="button" disabled={disabled || revoke.isPending} onClick={() => revoke.mutate(row.id)}>{t`Revoke promo ${row.id}`}</button>}
     </li>)}</ul> : null}
-    <EventPanelPager page={page} setPage={setPage} previous={rows.data?.previous} next={rows.data?.next} />
+    <EventPanelPager page={page} setPage={setPage} count={rows.data?.count} previous={rows.data?.previous} next={rows.data?.next} />
   </section>;
 }

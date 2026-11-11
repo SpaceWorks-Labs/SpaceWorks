@@ -44,7 +44,7 @@ export function EventMoneySettings({ makerspaceId }: { makerspaceId: number }) {
     ? draft.payee_templates.filter(item => item !== pair) : [...draft.payee_templates, pair].sort() });
   return <SettingsRow label={t`Event prizes: tax and payee options`} helper={t`How prize payouts propose tax, and where winners and reimbursed people can be paid.`}><div className="@container grid min-w-0 gap-4">
     <button className="desk-button mt-2" type="button" aria-expanded={expanded} onClick={() => setExpanded(!expanded)}>{t`Configure prize tax and payees`}</button>
-    {expanded ? <SettingsQueryState query={settings} resource="event money settings"><>
+    {expanded ? <SettingsQueryState query={settings} resource={t`event money settings`}><>
       {settings.error || save.error ? <p role="alert" className="text-danger">{(settings.error || save.error)?.message}</p> : null}
       {draft && data ? <form className="mt-3 grid gap-4" onSubmit={event => { event.preventDefault(); save.mutate(payloadFrom(draft, data.version)); }}>
         <fieldset className="grid gap-3"><legend className="font-semibold">{t`Prize tax (TDS)`}</legend>

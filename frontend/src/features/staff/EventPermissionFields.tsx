@@ -1,11 +1,11 @@
 import { t } from "@lingui/core/macro";
 import { EVENT_PERMISSIONS, type EventPermission } from "./eventStaffPermissions";
 
-export const ROLE_LABELS = [["speaker", "Speaker"], ["volunteer", "Volunteer"], ["check_in", "Check-in"]] as const;
+export const ROLE_LABELS = [["speaker", t`Speaker`], ["volunteer", t`Volunteer`], ["check_in", t`Check-in`]] as const;
 export type RoleLabel = typeof ROLE_LABELS[number][0] | "";
 export const roleLabelText = (value?: string | null) => ROLE_LABELS.find(([key]) => key === value)?.[1] ?? null;
 
-export function EventPermissionFields({ value, onChange, disabled = false, legend = "Permissions", onSpeakerPreset }: {
+export function EventPermissionFields({ value, onChange, disabled = false, legend = t`Permissions`, onSpeakerPreset }: {
   value: EventPermission[]; onChange: (next: EventPermission[]) => void; disabled?: boolean; legend?: string;
   /** Speakers only need the door: check-in, which also shows who has arrived. */
   onSpeakerPreset?: () => void;

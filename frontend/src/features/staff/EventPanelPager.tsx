@@ -1,9 +1,17 @@
-import { t } from "@lingui/core/macro";
-/** Previous/next for an event drawer panel's paged list; hidden when everything fits on one page. */
-export function EventPanelPager({ page, setPage, previous, next }: { page: number; setPage: (page: number) => void; previous?: string | null; next?: string | null }) {
-  if (!previous && !next) return null;
-  return <div className="flex flex-wrap gap-2">
-    <button className="desk-button" type="button" disabled={!previous} onClick={() => setPage(page - 1)}>{t`Previous`}</button>
-    <button className="desk-button" type="button" disabled={!next} onClick={() => setPage(page + 1)}>{t`Next`}</button>
-  </div>;
+import { Pagination } from "../../components/ui";
+
+/** DRF `PageNumberPagination` page size, the standing convention for every list endpoint. */
+const PAGE_SIZE = 24;
+
+/**
+ * The event drawers' pager: a thin adapter from a DRF page (`count`/`next`/`previous`) to the shared
+ * `Pagination`, so every drawer pages the same way. Hidden when everything fits on one page.
+ */
+export function EventPanelPager({ page, setPage, count, next, disabled }: {
+  page: number; setPage: (page: number) => void; count?: number; next?: string | null; previous?: string | null; disabled?: boolean;
+}) {
+  // A response without `count` still tells us whether another page exists.
+  const totalPages = count != null ? Math.ceil(count / PAGE_SIZE) : page + (next ? 1 : 0);
+  return <Pagination page={page} totalPages={totalPages} onChange={setPage} disabled={disabled}
+    {...(count != null ? { count, pageSize: PAGE_SIZE } : {})} />;
 }

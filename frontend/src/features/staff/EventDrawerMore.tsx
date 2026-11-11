@@ -18,8 +18,10 @@ import { EventAudienceOrganizations } from "./EventAudienceOrganizations";
 import { EventCertificateDesigner } from "./EventCertificateDesigner";
 import { EventBadgeActions } from "./EventBadgeActions";
 import { EventStaffAccess } from "./EventStaffAccess";
+import { EventHelperInvites } from "./EventHelperInvites";
 import { EventSpeakersPanel } from "./EventSpeakersPanel";
 import { EventDisclosure } from "./EventDisclosure";
+import { EventDeleteDraft } from "./EventDeleteDraft";
 import type { EventFormValues } from "./EventFormFields";
 import type { StaffEvent } from "./eventsApi";
 import type { eventAccess } from "./eventStaffPermissions";
@@ -32,10 +34,12 @@ type WebsitePublication = { publish_website: boolean; website_revision?: number 
  * Some panels stay mounted while another section shows — exactly as when each was its own tab —
  * so an unsaved draft or the "publish website with event" choice never goes stale.
  */
-export function EventDrawerMore({ event, makerspaceId, access, surfaces, section, sectionTabs, readOnly, onWebsitePublication, settings }: {
+export function EventDrawerMore({ event, makerspaceId, access, surfaces, section, sectionTabs, readOnly, onWebsitePublication, settings, onDeleted }: {
   event: StaffEvent; makerspaceId: number; access: ReturnType<typeof eventAccess>;
   surfaces: ReturnType<typeof eventDrawerSurfaces>; section: MoreSection | undefined; sectionTabs: Tab[]; readOnly: boolean;
   onWebsitePublication: (value: WebsitePublication) => void;
+  /** Close the drawer after an empty draft is deleted (B9). */
+  onDeleted?: () => void;
   settings: { values: EventFormValues; setValues: (value: EventFormValues) => void; save: () => void; pending: boolean;
     invalidate: () => void; resetField: (field: string) => void; complete: () => void };
 }) {
@@ -45,9 +49,10 @@ export function EventDrawerMore({ event, makerspaceId, access, surfaces, section
   return <>
     {section ? <Tabs tabs={sectionTabs} activeKey={section} label={t`More sections`} /> : null}
     {surfaces.invites ? <EventInvitesPanel key={`invites:${eventId}`} visible={section === "tickets"} eventId={eventId} disabled={readOnly} /> : null}
-    {surfaces.ticketTypes ? <EventTicketsPanel key={`ticket-types:${eventId}`} visible={section === "tickets"} eventId={eventId} disabled={readOnly} /> : null}
+    {surfaces.ticketTypes ? <EventTicketsPanel key={`ticket-types:${eventId}`} visible={section === "tickets"} eventId={eventId} disabled={readOnly} readOnly={surfaces.ticketTypesReadOnly} /> : null}
     {surfaces.promos ? <EventPromosPanel key={`promos:${eventId}`} visible={section === "tickets"} eventId={eventId} disabled={readOnly} /> : null}
-    {section === "tickets" && access.manager ? <EventOrderTools eventId={eventId} features={ticketing} manager={access.manager} disabled={readOnly} /> : null}
+    {section === "tickets" && access.manager ? <EventOrderTools eventId={eventId} features={ticketing} manager={access.manager} disabled={readOnly}
+      makerspaceId={makerspaceId} exportsOn={(event.report_features ?? []).includes("exports")} /> : null}
     {sections.speakers && section === "speakers" ? <EventSpeakersPanel eventId={eventId} makerspaceId={makerspaceId} websiteEnabled={sections.website} disabled={readOnly} /> : null}
     {section === "feedback" ? access.edit ? <>
       <EventFeedbackPanel eventId={eventId} makerspaceId={makerspaceId} canViewResponses={access.registrations} canManageCertificates={access.manager} />
@@ -62,12 +67,13 @@ export function EventDrawerMore({ event, makerspaceId, access, surfaces, section
       <EventOrganizers visible={section === "team"} event={event} makerspaceId={makerspaceId} disabled={readOnly} />
       <EventCollaborators visible={section === "team"} makerspaceId={makerspaceId} eventId={eventId} />
       {section === "team" ? <EventStaffAccess target={{ kind: "event", id: eventId }} /> : null}
-    </> : null}
+    </> : section === "team" && access.teams ? <EventHelperInvites eventId={eventId} held={event.staff_permissions ?? []} myLimit={event.my_limit} /> : null}
     {sections.settings && section === "settings" ? <>
       {event.can_duplicate === true ? <div className="flex flex-wrap gap-2"><EventDuplicateAction event={event} makerspaceId={makerspaceId} /></div> : null}
       <EventSettings event={event} makerspaceId={makerspaceId} {...settings} />
       {access.edit ? <EventAudienceOrganizations event={event} makerspaceId={makerspaceId} disabled={readOnly} /> : null}
       {/* Without the roster, an editor still owns the badge template; printing stays with check-in staff. */}
+      {access.edit && event.status === "draft" && onDeleted ? <EventDeleteDraft event={event} makerspaceId={makerspaceId} onDeleted={onDeleted} /> : null}
       {!access.registrations && access.edit ? <EventDisclosure title={t`Badges`}><EventBadgeActions event={event} makerspaceId={makerspaceId} selectedIds={[]} includeAttended={false} onIncludeAttended={() => {}} canPrint={false} /></EventDisclosure> : null}
     </> : null}
   </>;

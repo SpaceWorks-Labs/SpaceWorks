@@ -13,7 +13,7 @@ export function EventCheckInTab({ event, makerspaceId, active, checkable, canMan
   event: StaffEvent; makerspaceId: number; active: boolean; checkable: boolean; canManageStation: boolean;
 }) {
   if (!checkable) return active ? <Card><h2 className="title-panel">{t`Check-in opens once the event is published`}</h2>
-    <p className="mt-2 text-sm text-muted">{t`This event is still a draft. When it is published, this tab gives you the attendance scanner, the checked-in list${event.offline_checkin_enabled ? " and offline check-in" : ""}.`}</p></Card> : null;
+    <p className="mt-2 text-sm text-muted">{event.offline_checkin_enabled ? t`This event is still a draft. When it is published, this tab gives you the attendance scanner, the checked-in list and offline check-in.` : t`This event is still a draft. When it is published, this tab gives you the attendance scanner and the checked-in list.`}</p></Card> : null;
   if (!active) return null;
   const counts = event.registration_counts;
   return <>

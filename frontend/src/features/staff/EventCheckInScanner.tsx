@@ -1,10 +1,13 @@
 import { t } from "@lingui/core/macro";
+import { collectFromList, DeskListSwitch } from "./eventCredentials/DeskListSwitcher";
 import { QuickBadgePrint } from "./eventCredentials/QuickBadgePrint";
 import { useReducedMotion } from "../../components/delight";
 import { opsStatusLabel } from "./opsPresentation";
+import { paymentStatusLabel } from "./paymentsApi";
 import { useContext, useEffect, useRef, useState } from "react";
 import { QueryClientContext } from "@tanstack/react-query";
 
+import type { CheckInList } from "./eventParticipation/api";
 import { ScanWorkbench } from "../../components/ui";
 import { StructuredApiError } from "../../lib/api";
 import { EventAttendanceTools } from "./EventAttendanceTools";
@@ -34,6 +37,8 @@ export default function EventCheckInScanner({
   eventId: number;
   onClose: () => void;
 }) {
+  const [deskList, setDeskList] = useState<CheckInList | null>(null);
+  const [overrideFor, setOverrideFor] = useState<{ id: number; name: string } | null>(null);
   const [quickPrint, setQuickPrint] = useState<{ id: number; name: string } | null>(null);
   const reducedMotion = useReducedMotion();
   const [resolved, setResolved] = useState<EventCheckInResolution | null>(null);
@@ -61,7 +66,9 @@ export default function EventCheckInScanner({
     setResolved(null);
     setCardMatch(null);
     try {
-      setResolved(await resolve.mutateAsync(value.trim()));
+      const found = await resolve.mutateAsync(value.trim());
+      if (deskList) { await handleListCollect(found.registration_id, found.name); return; }
+      setResolved(found);
     } catch (cause) {
       if (cause instanceof StructuredApiError && cause.status === 404) {
         // Not a ticket code: it may be a card (member card, this event's ID card, a programme card's check link).
@@ -90,6 +97,16 @@ export default function EventCheckInScanner({
             : t`Could not read that code.`,
       );
     }
+  };
+
+  // List mode (D22): a scan collects from the chosen list instead of recording entry.
+  const handleListCollect = async (registrationId: number, name: string, override = false) => {
+    if (!deskList) return;
+    setOverrideFor(null);
+    const refused = await collectFromList(eventId, deskList, registrationId, name, override);
+    if (!refused) { setConfirmed(t`${name} collected from ${deskList.name}.`); return; }
+    if (refused.code === "waitlisted") setOverrideFor({ id: registrationId, name });
+    setError(refused.reason);
   };
 
   const handleConfirm = async () => {
@@ -169,10 +186,12 @@ export default function EventCheckInScanner({
   // `scroll-mb-*` keeps the scrolled-to result clear of the shell's bottom tabs and the home indicator.
   return <section ref={sectionRef} aria-labelledby="event-checkin-title" className="grid gap-4 [&_section[aria-labelledby]]:scroll-mb-[calc(var(--shell-bottom-tabs,0px)+env(safe-area-inset-bottom)+1rem)]">
     <div className="flex flex-wrap items-center justify-between gap-3"><h3 id="event-checkin-title" className="title-panel">{t`Check in by QR`}</h3><button className={`desk-button ${FOCUS}`} type="button" onClick={onClose}>{t`Done`}</button></div>
+    {queryClient ? <DeskListSwitch eventId={eventId} onActive={setDeskList} /> : null}
+    {overrideFor && deskList ? <button className="desk-button" type="button" onClick={() => void handleListCollect(overrideFor.id, overrideFor.name, true)}>{t`Let ${overrideFor.name} collect anyway`}</button> : null}
     <ScanWorkbench onFind={handleScan} onScan={handleScan} searchLabel="Find a guest by check-in code" helper={t`Scan or paste the guest’s ticket code, or scan their member or event ID card. Confirm their name before recording attendance.`}
       findPending={resolve.isPending || attend.isPending || cardPending}
-      result={resolved ? { title: resolved.name, tone: confirmable ? "success" : "warn", summary: <div className="grid gap-2"><p>{opsStatusLabel(resolved.status)}</p>{resolved.payment_status ? <p>{t`Payment: ${resolved.payment_status}`}</p> : null}{resolved.host_waiver_state === "missing" ? <p>{t`No host waiver on file — take one at the desk.`}</p> : null}{blockedReason ? <p>{blockedReason}</p> : null}</div>,
-        next: { label: t`Confirm attendance`, onClick: handleConfirm, disabled: !confirmable || attend.isPending, disabledReason: blockedReason || (attend.isPending ? "Attendance is being recorded." : undefined) },
+      result={resolved ? { title: resolved.name, tone: confirmable ? "success" : "warn", summary: <div className="grid gap-2"><p>{opsStatusLabel(resolved.status)}</p>{resolved.payment_status ? <p>{t`Payment: ${paymentStatusLabel(resolved.payment_status)}`}</p> : null}{resolved.host_waiver_state === "missing" ? <p>{t`No host waiver on file — take one at the desk.`}</p> : null}{blockedReason ? <p>{blockedReason}</p> : null}</div>,
+        next: { label: t`Confirm attendance`, onClick: handleConfirm, disabled: !confirmable || attend.isPending, disabledReason: blockedReason || (attend.isPending ? t`Attendance is being recorded.` : undefined) },
       } : cardMatch && cardSummary ? { title: cardSummary.title, tone: cardSummary.confirmable ? "success" : "warn",
         summary: <div className="grid gap-2"><p>{cardSummary.note}</p>
           <CardMatchList match={cardMatch} pending={cardPending || attend.isPending} onPick={(row) => void handleCardConfirm(row)} /></div>,

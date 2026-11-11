@@ -1,4 +1,5 @@
 import { t } from "@lingui/core/macro";
+import { sentenceCase } from "../../lib/sentenceCase";
 import { Card, EmptyState } from "../../components/ui";
 
 import { PartnerMakerspacePicker } from "./EventPartnerPickers";
@@ -9,11 +10,11 @@ import {
 } from "./eventCollaborationsApi";
 import { panelRow } from "./eventPanelStyles";
 
-const STATUS_LABEL: Record<string, string> = {
+const statusLabel = (): Record<string, string> => ({
   invited: t`Invited — waiting for them to accept`,
   accepted: t`Accepted — their members can register`,
   declined: t`Declined`,
-};
+});
 
 /** Host-side collaborator management for one event.
  *
@@ -61,7 +62,7 @@ export function EventCollaborators({ visible = true,
                   {row.makerspace_name}{" "}
                   <span className="text-sm font-normal text-muted">({row.makerspace_slug})</span>
                 </p>
-                <p className="mt-1 text-sm text-muted">{STATUS_LABEL[row.status] ?? row.status}</p>
+                <p className="mt-1 text-sm text-muted">{statusLabel()[row.status] ?? sentenceCase(row.status)}</p>
               </div>
               <button
                 type="button"

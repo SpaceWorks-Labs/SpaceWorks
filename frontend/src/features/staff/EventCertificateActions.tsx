@@ -17,7 +17,7 @@ export function EventCertificateActions({ certificate, eventId, makerspaceId }: 
   const revoke = useCertificateAction(eventId, makerspaceId, "revoke");
   const reissue = useCertificateAction(eventId, makerspaceId, "reissue");
   const error = download.error || revoke.error || reissue.error;
-  const downloadLabel = certificate.status === "active" ? "Download" : "Prepare certificate";
+  const downloadLabel = certificate.status === "active" ? t`Download` : t`Prepare certificate`;
   return <div className="mt-3">
     <div className="flex flex-wrap items-center gap-2">
       <StatusBadge status={certificate.status} label={opsStatusLabel(certificate.status)} />

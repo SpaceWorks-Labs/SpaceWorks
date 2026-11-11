@@ -3,7 +3,7 @@ import { EventField } from "./EventField";
 import { CustomFormBuilder } from "../forms/CustomFormBuilder";
 import { AudienceOptions } from "./EventAudienceOptions";
 import type { EventFormValues } from "./EventFormFields";
-import { EventDeliveryFields, EventVisibilityFields } from "./eventPublishing/EventSurfaceFields";
+import { EventDeliveryFields, EventVenueFields, EventVisibilityFields } from "./eventPublishing/EventSurfaceFields";
 import { EventPriceNote } from "./pricing/PricingNote";
 import { useStaffChargesOn } from "./useStaffChargesOn";
 
@@ -25,6 +25,7 @@ export function EventEssentialFields({ values, setValues, settings, details, sch
     <EventField label={t`Ends`} settings={settings}><input className="desk-input w-full min-w-0" type="datetime-local" value={values.ends_at} onChange={(e) => set("ends_at", e.target.value)} required disabled={schedule} /></EventField>
     <EventField label={t`Location`} settings={settings}><input className="desk-input w-full" value={values.location} onChange={(e) => set("location", e.target.value)} disabled={details} maxLength={255} /></EventField>
     {onlineEnabled ? <EventDeliveryFields values={values} setValues={setValues} settings={settings} disabled={details} /> : null}
+    <EventVenueFields values={values} setValues={setValues} settings={settings} disabled={details} />
     <EventField label={t`Capacity`} settings={settings} helper={t`Use 0 for Unlimited.`}><input className="desk-input w-full" type="number" min="0" value={values.capacity} onChange={(e) => set("capacity", Number(e.target.value))} disabled={details} /></EventField>
     <EventField label={t`Registration audience`} settings={settings} wide helper={t`Who may register. Enable account registration, invitations or organization audiences in feature settings first.`}><select className="desk-input w-full" value={values.registration_audience ?? "members"} disabled={details} onChange={(e) => set("registration_audience", e.target.value as EventFormValues["registration_audience"])}><AudienceOptions value={values.registration_audience} organizationAudienceEnabled={organizationAudienceEnabled} /></select></EventField>
     <EventVisibilityFields values={values} setValues={setValues} settings={settings} disabled={details} />
@@ -44,7 +45,7 @@ export function EventMoreFields({ values, setValues, settings, details, price, a
     </select></EventField>
     <EventField label={t`Description`} settings={settings} wide><textarea className="desk-input w-full min-h-24" value={values.description} onChange={(e) => set("description", e.target.value)} disabled={details} /></EventField>
     <EventField label={t`Tags (comma separated)`} settings={settings}><input className="desk-input w-full" value={(values.tags ?? []).join(",")} disabled={details} onChange={(e) => set("tags", e.target.value.split(","))} /></EventField>
-    {chargesOn ? <><EventField label={t`Registration price`} settings={settings} helper={t`Charged only when a place is confirmed.`}><input className="desk-input w-full" type="number" min="0" step="0.01" value={values.payment_amount} onChange={(e) => set("payment_amount", e.target.value)} disabled={price} /></EventField>
+    {chargesOn ? <><EventField label={t`Registration price`} settings={settings} helper={t`Charged only when a place is confirmed.`}><input className="desk-input w-full" type="number" min="0" step="any" value={values.payment_amount} onChange={(e) => set("payment_amount", e.target.value)} disabled={price} /></EventField>
     <EventPriceNote settings={settings} /></> : <p className="text-sm text-muted sm:col-span-2">{t`Event charges are off in this space, so events are free.`}</p>}
     <EventField label={t`Member cancellation closes hours before`} settings={settings} helper={t`Leave blank to allow cancellation until the event starts. Settled refunds are handled by staff.`}><input className="desk-input w-full" type="number" min="0" max="8760" value={values.cancellation_cutoff_hours ?? ""} onChange={(e) => set("cancellation_cutoff_hours", e.target.value === "" ? null : Number(e.target.value))} disabled={details} /></EventField>
     <EventField label={t`Registration cutoff`} settings={settings}><select className="desk-input w-full" value={cutoffMode} disabled={details} onChange={(e) => { const mode = e.target.value; setValues({ ...values, registration_cutoff_at: mode === "absolute" ? (values.starts_at || "") : null, registration_cutoff_lead_minutes: mode === "lead" ? 0 : null }); }}><option value="none">{t`No cutoff`}</option><option value="absolute">{t`At a date and time`}</option><option value="lead">{t`Before the event starts`}</option></select></EventField>

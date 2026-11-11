@@ -1,4 +1,4 @@
-import { t } from "@lingui/core/macro";
+import { plural, t } from "@lingui/core/macro";
 import { EventTicketTemplates } from "./EventTicketTemplates";
 import { CustomFormBuilder } from "../forms/CustomFormBuilder";
 import { AudienceOptions } from "./EventAudienceOptions";
@@ -46,8 +46,13 @@ export function EventSeriesFields({ values, setValues, disabled = false, canEdit
 }) {
   const set = <K extends keyof SeriesFormValues>(key: K, value: SeriesFormValues[K]) => setValues({ ...values, [key]: value });
   const chargesOn = useStaffChargesOn("events"); // #184: no price input while event charges are off
-  const unit = { DAILY: "day", WEEKLY: "week", MONTHLY: "month" }[values.frequency];
-  const cadence = `Every ${values.interval > 1 ? values.interval + " " : ""}${unit}${values.interval > 1 ? "s" : ""} at ${values.dtstart_local_time || "the selected time"} (${values.recurrence_timezone}).`;
+  const at = values.dtstart_local_time || t`the selected time`;
+  const zone = values.recurrence_timezone;
+  const cadence = values.frequency === "DAILY"
+    ? plural(values.interval, { one: `Every day at ${at} (${zone}).`, other: `Every # days at ${at} (${zone}).` })
+    : values.frequency === "WEEKLY"
+      ? plural(values.interval, { one: `Every week at ${at} (${zone}).`, other: `Every # weeks at ${at} (${zone}).` })
+      : plural(values.interval, { one: `Every month at ${at} (${zone}).`, other: `Every # months at ${at} (${zone}).` });
   return <div className="grid gap-3 sm:grid-cols-2">
     <label className="grid gap-1 text-sm font-semibold text-ink sm:col-span-2">{t`Series title`}<input className="desk-input" required maxLength={200} disabled={disabled || !canEditDetails} value={values.title} onChange={(e) => set("title", e.target.value)} /></label>
     <label className="grid gap-1 text-sm font-semibold text-ink">{t`First local date`}<input className="desk-input w-full min-w-0" type="date" required disabled={disabled || !canEditSchedule} value={values.dtstart_local_date} onChange={(e) => set("dtstart_local_date", e.target.value)} /></label>
@@ -59,10 +64,12 @@ export function EventSeriesFields({ values, setValues, disabled = false, canEdit
     {values.frequency === "WEEKLY" ? <label className="grid gap-1 text-sm font-semibold text-ink sm:col-span-2">{t`Weekdays (optional)`}<input className="desk-input" disabled={disabled || !canEditSchedule} placeholder={t`MO,WE,FR`} value={values.byday} onChange={(e) => set("byday", e.target.value)} /></label> : null}
     <p className="rounded-lg border border-line bg-surface p-3 text-sm text-muted sm:col-span-2">{cadence}</p>
     <label className="grid gap-1 text-sm font-semibold text-ink">{t`Location`}<input className="desk-input" maxLength={255} disabled={disabled || !canEditDetails} value={values.location} onChange={(e) => set("location", e.target.value)} /></label>
+    <label className="grid gap-1 text-sm font-semibold text-ink">{t`Venue address`}<textarea className="desk-input min-h-11" maxLength={500} disabled={disabled || !canEditDetails} value={values.venue_address ?? ""} onChange={(e) => set("venue_address", e.target.value)} /><span className="text-xs font-normal text-muted">{t`For a venue outside your space.`}</span></label>
+    <label className="grid gap-1 text-sm font-semibold text-ink">{t`Map link`}<input className="desk-input" type="url" inputMode="url" pattern="https://.*" placeholder="https://" maxLength={500} disabled={disabled || !canEditDetails} value={values.venue_map_url ?? ""} onChange={(e) => set("venue_map_url", e.target.value)} /></label>
     <label className="grid gap-1 text-sm font-semibold text-ink">{t`Capacity per occurrence`}<input className="desk-input" type="number" min="0" disabled={disabled || !canEditDetails} value={values.capacity} onChange={(e) => set("capacity", Number(e.target.value))} /></label>
     <label className="grid gap-1 text-sm font-semibold text-ink">{t`Registration audience`}<select className="desk-input" value={values.registration_audience ?? "members"} disabled={disabled || !canEditDetails} onChange={(e) => set("registration_audience", e.target.value as SeriesFormValues["registration_audience"])}><AudienceOptions value={values.registration_audience} organizationAudienceEnabled={organizationAudienceEnabled} /></select></label>
     {values.ticket_types ? <div className="sm:col-span-2"><EventTicketTemplates value={values.ticket_types} onChange={(tickets) => set("ticket_types", tickets)} disabled={disabled || !canEditDetails} /></div> : null}
-    {chargesOn ? <label className="grid gap-1 text-sm font-semibold text-ink">{t`Price per occurrence`}<input className="desk-input" type="number" min="0" step="0.01" disabled={disabled || !canEditPrice} value={values.payment_amount} onChange={(e) => set("payment_amount", e.target.value)} /></label>
+    {chargesOn ? <label className="grid gap-1 text-sm font-semibold text-ink">{t`Price per occurrence`}<input className="desk-input" type="number" min="0" step="any" disabled={disabled || !canEditPrice} value={values.payment_amount} onChange={(e) => set("payment_amount", e.target.value)} /></label>
       : <p className="text-sm text-muted sm:col-span-2">{t`Event charges are off in this space, so events are free.`}</p>}
     <label className="grid gap-1 text-sm font-semibold text-ink">{t`Registration closes minutes before`}<input className="desk-input" type="number" min="0" disabled={disabled || !canEditDetails} value={values.registration_cutoff_lead_minutes ?? ""} onChange={(e) => set("registration_cutoff_lead_minutes", e.target.value === "" ? null : Number(e.target.value))} /></label>
     <label className="grid gap-1 text-sm font-semibold text-ink">{t`Member cancellation closes hours before`}<input className="desk-input" type="number" min="0" disabled={disabled || !canEditDetails} value={values.cancellation_cutoff_hours ?? ""} onChange={(e) => set("cancellation_cutoff_hours", e.target.value === "" ? null : Number(e.target.value))} /><span className="text-xs font-normal text-muted">{t`Blank allows cancellation until each occurrence starts.`}</span></label>

@@ -1,4 +1,4 @@
-import { t } from "@lingui/core/macro";
+import { plural, t } from "@lingui/core/macro";
 import { useState } from "react";
 
 import { ConfirmDialog } from "../../components/ui";
@@ -22,7 +22,7 @@ function CategoryRow({ row, makerspaceId, disabled, onDeleted }: { row: EventCat
   const label = row.name || row.slug;
   return <li className="grid gap-2 rounded-xl border border-line bg-surface p-3">
     <div className="flex flex-wrap items-center justify-between gap-2">
-      <p className="min-w-0 text-sm text-ink"><span className="font-semibold">{row.name}</span> <span className="code-text text-muted">{row.slug}</span>{row.event_count !== undefined ? <span className="text-muted"> · {row.event_count} {row.event_count === 1 ? "event" : "events"}</span> : null}</p>
+      <p className="min-w-0 text-sm text-ink"><span className="font-semibold">{row.name}</span> <span className="code-text text-muted">{row.slug}</span>{row.event_count !== undefined ? <span className="text-muted"> · {plural(row.event_count, { one: "# event", other: "# events" })}</span> : null}</p>
       {!editing && !disabled ? <div className="flex flex-wrap gap-2">
         <button className="desk-button" type="button" onClick={() => { update.reset(); setName(row.name); setSlug(row.slug); setEditing(true); }}>{t`Rename ${label}`}</button>
         <button className="desk-button-danger-outline" type="button" disabled={remove.isPending} onClick={() => { remove.reset(); setConfirming(true); }}>{t`Delete ${label}`}</button>

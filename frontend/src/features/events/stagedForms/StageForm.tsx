@@ -1,4 +1,5 @@
-import { formatLocale } from "../../../lib/format";
+import { formatDateTime } from "../../../lib/format";
+import { ConfirmDialog } from "../../../components/ui";
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { FormPageLayout } from "../../../components/layouts";
@@ -28,6 +29,7 @@ function StageEditor({ scope, response, uploadFiles, onSaved, onDirtyChange }: {
   const initial: FormState = { answers: Object.fromEntries(response.answers.answers.map(row => [row.id, row.value])), derivations: {}, save_choices: {}, saved_detail_versions: {} };
   const [value, setValue] = useState(initial);
   const [dirty, setDirty] = useState(false);
+  const [discarding, setDiscarding] = useState(false);
   const mutation = useStageCommand(scope);
   const uploads = useFormUploads(`${stagePath(scope)}/stage-forms/${response.assignment.stage_form_id}/files/`, {
     response_id: response.id, expected_response_version: response.version, form_revision_id: response.assignment.pinned_form_revision_id });
@@ -49,9 +51,9 @@ function StageEditor({ scope, response, uploadFiles, onSaved, onDirtyChange }: {
   const blocked = closed || uploads.busy;
   const canSave = response.allowed_actions?.includes("stage_save") === true;
   const canSubmit = response.allowed_actions?.includes("stage_submit") === true;
-  return <FormPageLayout header={{ title: response.assignment.title, subtitle: t`Due ${new Date(response.assignment.due_at).toLocaleString(formatLocale())}` }}
+  return <FormPageLayout header={{ title: response.assignment.title, subtitle: t`Due ${formatDateTime(response.assignment.due_at)}` }}
     state={{ status: "ready" }} submit={{ label: response.selected_revision ? t`Resubmit form` : t`Submit form`, onClick: () => submit(true), pending: mutation.isPending,
-      disabled: blocked || !canSubmit, disabledReason: uploads.busy ? "Wait for files to finish checking." : "Submission is unavailable. Ask the organizer if you need an extension." }}
+      disabled: blocked || !canSubmit, disabledReason: uploads.busy ? t`Wait for files to finish checking.` : t`Submission is unavailable. Ask the organizer if you need an extension.` }}
     form={<div className="grid gap-5">
       {closed ? <p role="status">{t`This form is read-only. Your previous submissions remain available.`}</p> : null}
       {response.selected_revision ? <p role="status">{t`Submitted revision ${response.selected_revision}. A new submission preserves your earlier answers.`}</p> : null}
@@ -63,7 +65,9 @@ function StageEditor({ scope, response, uploadFiles, onSaved, onDirtyChange }: {
       </fieldset>
       {dirty ? <p role="status">{t`You have unsaved answers.`}</p> : null}
       <div className="flex flex-wrap gap-3"><button type="button" className="desk-button min-h-11" disabled={blocked || !canSave || mutation.isPending} onClick={() => submit(false)}>{t`Save draft`}</button>
-        <button type="button" className="desk-button" disabled={!dirty || mutation.isPending || uploads.busy} onClick={() => { if (window.confirm(t`Discard unsaved answers?`)) { setValue(initial); setDirty(false); } }}>{t`Discard changes`}</button></div>
+        <button type="button" className="desk-button" disabled={!dirty || mutation.isPending || uploads.busy} onClick={() => setDiscarding(true)}>{t`Discard changes`}</button></div>
+      <ConfirmDialog open={discarding} tone="danger" title={t`Discard changes?`} message={t`Discard unsaved answers?`} confirmLabel={t`Discard`}
+        onCancel={() => setDiscarding(false)} onConfirm={() => { setDiscarding(false); setValue(initial); setDirty(false); }} />
       {mutation.error ? <p role="alert">{commandError(mutation.error)}</p> : mutation.isSuccess ? <p role="status">{t`Your form was saved.`}</p> : null}
     </div>} />;
 }

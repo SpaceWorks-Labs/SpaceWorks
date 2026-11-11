@@ -1,4 +1,4 @@
-import { formatLocale } from "../../../lib/format";
+import { formatPrice } from "../../../lib/money";
 import { t } from "@lingui/core/macro";
 import { memberRequest, tenantPublicRequest } from "../../../lib/api";
 
@@ -86,10 +86,7 @@ export const acceptClaim = (kind: "claim" | "transfer", token: string) =>
 
 /** Money shown as the server computed it: never re-priced in the browser. */
 export function money(amount: string | number, currency: string) {
-  const value = Number(amount);
-  if (!value) return "Free";
-  try { return new Intl.NumberFormat(formatLocale(), { style: "currency", currency: currency.toUpperCase() }).format(value); }
-  catch { return `${value.toFixed(2)} ${currency.toUpperCase()}`; }
+  return formatPrice(amount, currency);
 }
 
 export function policyLine(policy: RefundPolicySummary) {

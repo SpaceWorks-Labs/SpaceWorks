@@ -1,4 +1,4 @@
-import { formatLocale } from "../../../lib/format";
+import { formatDateTime } from "../../../lib/format";
 import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -44,7 +44,7 @@ export function TicketClaimPage({ kind }: { kind: "claim" | "transfer" }) {
   const done = accept.data;
   return <CenteredCardLayout width={480} eyebrow={t`Event ticket`} title={copy.title}
     state={restoring || preview.isLoading ? { status: "loading" } : { status: "ready" }}
-    body={done ? copy.done : data ? <>{t`${data.from_name} has a ${data.ticket_type ? `${data.ticket_type} ` : ""}ticket for you to`}<strong className="text-ink"> {data.event_title}</strong> on {new Date(data.starts_at).toLocaleString(formatLocale())}.</>
+    body={done ? copy.done : data ? <>{t`${data.from_name} has a ${data.ticket_type ? `${data.ticket_type} ` : ""}ticket for you to`}<strong className="text-ink"> {data.event_title}</strong> on {formatDateTime(data.starts_at)}.</>
       : t`This ticket link could not be opened.`}
     content={<div className="grid gap-3">
       {preview.error ? <ErrorText message={errorText(preview.error)} /> : null}

@@ -12,6 +12,7 @@ import { ProgrammeFields, formSchema } from './formBridge'
 import { memberFormInput } from '../../forms'
 import { prefillDetails } from '../../accountSavedDetails/api'
 import { SaveIntentNotice } from '../../accountSavedDetails/RegistrationSavedDetails'
+import { registrationStatusLabel } from '../../members/registrationLabels'
 
 export function OrdinaryProgrammeRegistration({ context, accountId }: { context: ProgrammeContext; accountId: number }) {
   const [value, setValue] = useState<FormValue>({ answers: {}, derivations: {}, save_choices: {}, saved_detail_versions: {} })
@@ -34,7 +35,7 @@ export function OrdinaryProgrammeRegistration({ context, accountId }: { context:
         event_date_revision: context.event.event_date_revision, operation_id: operation.current, expected_version: 0 }),
     })
   } })
-  if (registration.data) return <div className="grid gap-4"><p role="status">{t`Registration received: ${registration.data.status.replace(/_/g, ' ')}.`}</p>
+  if (registration.data) return <div className="grid gap-4"><p role="status">{t`Registration received: ${registrationStatusLabel(registration.data.status)}.`}</p>
     {registration.data.save_intent ? <SaveIntentNotice actorId={accountId} operationId={registration.data.save_intent.operation_id} /> : null}
     <a className="desk-button" href={`/m/${context.makerspace.slug}/member/events/history`}>{t`Tickets and certificates`}</a>
   </div>

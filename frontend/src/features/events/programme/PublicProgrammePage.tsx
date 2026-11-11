@@ -20,7 +20,7 @@ export function PublicProgrammePage({ results = false }: { results?: boolean }) 
   const brandStyle = useTenantBranding(bootstrap)
   const name = bootstrap?.branding.display_name || bootstrap?.makerspace.name || formatSlug(makerspaceSlug) || 'Makerspace'
   const base = tenantPath(`events/${encodeURIComponent(publicToken)}`)
-  const here = results ? 'Results' : 'Project gallery'
+  const here = results ? t`Results` : t`Project gallery`
   // #181: People's choice voting and its award, only where the space has it on.
   const peoplesChoice = bootstrap?.features.includes('events.peoples_choice') ? bootstrap.makerspace.id : undefined
   const projectHref = (id: string) => `${base}/gallery/${encodeURIComponent(id)}`

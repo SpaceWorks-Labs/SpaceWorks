@@ -1,5 +1,6 @@
 import { formatLocale } from "../../../lib/format";
 import { t } from "@lingui/core/macro";
+import { formatMoney, paymentMethodLabel } from "../../../lib/money";
 import { useState } from 'react';
 import { StatusPill } from '../../../components/ui';
 import { KIND_LABELS, STATUS_LABELS, payoutRow, statusTone, type MyPrize, type PrizeCommand } from './api';
@@ -32,12 +33,12 @@ export function PrizeCard({ prize, makerspaceId, actorId, pending, send }: {
     {share ? <p className="text-sm">{t`Your share: `}<strong>{share.amount}</strong> · {share.state === 'proposed' ? t`waiting for you to confirm`
       : share.state === 'confirmed' ? 'confirmed' : share.state}</p> : null}
     {payout ? <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm sm:grid-cols-4" aria-label={t`Your payout`}>
-      <div><dt className="text-muted">{t`Prize (gross)`}</dt><dd>{payout.gross} {payout.currency}</dd></div>
-      <div><dt className="text-muted">{t`Tax deducted`}</dt><dd>{payout.tds} {payout.currency}</dd></div>
-      <div><dt className="text-muted">{t`Paid to you`}</dt><dd>{payout.net} {payout.currency}</dd></div>
+      <div><dt className="text-muted">{t`Prize (gross)`}</dt><dd>{formatMoney(payout.gross, payout.currency)}</dd></div>
+      <div><dt className="text-muted">{t`Tax deducted`}</dt><dd>{formatMoney(payout.tds, payout.currency)}</dd></div>
+      <div><dt className="text-muted">{t`Paid to you`}</dt><dd>{formatMoney(payout.net, payout.currency)}</dd></div>
       <div><dt className="text-muted">{t`Paid on`}</dt><dd>{payout.paidOn}</dd></div>
     </dl> : null}
-    {claim && claim.state !== 'not_given' ? <p className="text-sm">{t`Payee details: ${claim.country} · ${claim.method.replace('_', ' ')}${claim.masked_details ? ` · ${claim.masked_details}` : ''}`}{claim.pan_masked ? t` · PAN ${claim.pan_masked}` : ''}
+    {claim && claim.state !== 'not_given' ? <p className="text-sm">{(claim.masked_details ? t`Payee details: ${claim.country} · ${paymentMethodLabel(claim.method)} · ${claim.masked_details}` : t`Payee details: ${claim.country} · ${paymentMethodLabel(claim.method)}`)}{claim.pan_masked ? t` · PAN ${claim.pan_masked}` : ''}
       {' · '}{claim.verified ? t`verified by finance` : t`waiting for finance to check`}</p> : null}
     {deadline && !payout ? <p className="text-sm text-muted">{deadline > new Date() ? t`Claim by ${when(prize.claim_deadline)}.`
       : t`The claim window closed on ${when(prize.claim_deadline)}.`}</p> : null}

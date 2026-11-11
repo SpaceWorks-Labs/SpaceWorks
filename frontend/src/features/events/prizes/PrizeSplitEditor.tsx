@@ -2,6 +2,7 @@ import { t } from "@lingui/core/macro";
 import { useState } from 'react';
 import { ErrorBlock, Field } from '../../../components/ui';
 import { useLeaderTeam } from './api';
+import { fixedMoney } from '../../../lib/money';
 
 /** The leader proposes how a cash prize is shared (G3). Each member then confirms their own share. */
 export function PrizeSplitEditor({ makerspaceId, eventId, actorId, pending, onSubmit, onCancel }: {
@@ -17,7 +18,7 @@ export function PrizeSplitEditor({ makerspaceId, eventId, actorId, pending, onSu
   const rows = members.map(member => ({ member_id: member.member_id, amount: (amounts[member.member_id] ?? '').trim() }))
     .filter(row => row.amount && Number(row.amount) > 0);
   const total = rows.reduce((sum, row) => sum + Number(row.amount), 0);
-  const invalid = !rows.length || rows.some(row => !/^\d+(\.\d{1,2})?$/.test(row.amount));
+  const invalid = !rows.length || rows.some(row => !/^\d+(\.\d{1,3})?$/.test(row.amount));
   return <form className="grid gap-3 rounded-xl border border-line p-4" aria-label={t`Prize split`}
     onSubmit={event => { event.preventDefault(); if (!invalid) onSubmit(rows); }}>
     <fieldset className="grid gap-3" disabled={pending}>
@@ -28,7 +29,7 @@ export function PrizeSplitEditor({ makerspaceId, eventId, actorId, pending, onSu
         <input className="desk-input min-h-11" inputMode="decimal" value={amounts[member.member_id] ?? ''}
           onChange={event => setAmounts(value => ({ ...value, [member.member_id]: event.target.value }))} />
       </Field>)}
-      <p className="text-sm" role="status">{t`Total ${total.toFixed(2)}`}</p>
+      <p className="text-sm" role="status">{t`Total ${fixedMoney(total)}`}</p>
       <div className="flex flex-wrap gap-2">
         <button type="submit" className="desk-button-primary min-h-11" disabled={invalid}>{t`Propose split`}</button>
         <button type="button" className="desk-button min-h-11" onClick={onCancel}>{t`Cancel`}</button>

@@ -16,10 +16,42 @@ export type WebsiteGroup = typeof websiteGroups[number];
 export const emptyVenue = (): WebsiteVenue => ({ name: "", address: "", city: "", country: "", latitude: null, longitude: null,
   map_url: "", directions: "", parking: "", public_transport: "", accessibility_notes: "" });
 export const sectionGroup = (kind: WebsiteSection["kind"]): WebsiteGroup => ({
-  intro: t`ABOUT`, logo: "HERO", highlight: "HIGHLIGHTS", speaker: "SPEAKERS", sponsor: "SPONSORS",
+  // i18n-ignore: "intro" is a section kind and "ABOUT" a group code, never shown as copy.
+  intro: "ABOUT", logo: "HERO", highlight: "HIGHLIGHTS", speaker: "SPEAKERS", sponsor: "SPONSORS",
   track: "SCHEDULE", room: "VENUE", faq: "FAQ", resource: "RESOURCES",
   prizes: "SPONSORS", judges: "SPEAKERS", mentors: "SPEAKERS", project_gallery: "HIGHLIGHTS", results: "HIGHLIGHTS",
 })[kind] as WebsiteGroup;
+/** Translated heading for a sponsor tier; the tier code itself stays the grouping key. */
+export function sponsorTierLabel(tier: string): string {
+  switch (tier) {
+    case "platinum": return t`Platinum`;
+    case "gold": return t`Gold`;
+    case "silver": return t`Silver`;
+    case "partner": return t`Partner`;
+    case "community_partner": return t`Community partner`;
+    default: return tier.replace(/_/g, " ");
+  }
+}
+/** Translated heading for a website group or a programme section kind (prizes, judges, results…). */
+export function websiteSectionHeading(code: string): string {
+  switch (code.toLowerCase()) {
+    case "hero": return t`Welcome`;
+    case "about": return t`About`;
+    case "highlights": return t`Highlights`;
+    case "schedule": return t`Schedule`;
+    case "speakers": return t`Speakers`;
+    case "sponsors": return t`Sponsors`;
+    case "venue": return t`Venue`;
+    case "faq": return t`FAQ`;
+    case "resources": return t`Resources`;
+    case "prizes": return t`Prizes`;
+    case "judges": return t`Judges`;
+    case "mentors": return t`Mentors`;
+    case "project_gallery": return t`Project gallery`;
+    case "results": return t`Results`;
+    default: return code.replace(/_/g, " ");
+  }
+}
 export const orderedGroups = (page: { section_order?: string[] }): WebsiteGroup[] => {
   return [...new Set([...(page.section_order ?? []), ...websiteGroups])] as WebsiteGroup[];
 };

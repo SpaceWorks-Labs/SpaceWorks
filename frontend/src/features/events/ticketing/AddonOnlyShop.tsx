@@ -42,7 +42,7 @@ export function AddonOnlyShop({ makerspaceSlug, makerspaceId, publicToken, order
   if (!approval || !shop || !shop.addons.length) return null;
   const chosen = (body().addons ?? []).length > 0;
   return <section className="grid gap-3 rounded-xl border border-line p-4" aria-labelledby="addon-only-title">
-    <h2 id="addon-only-title" className="title-section flex items-center gap-2"><ShoppingBag className="text-accent" aria-hidden="true" />{t`Add-ons for your place`}</h2>
+    <h2 id="addon-only-title" className="title-section flex items-center gap-2"><ShoppingBag className="text-accent-ink" aria-hidden="true" />{t`Add-ons for your place`}</h2>
     <p className="text-sm text-muted">{t`Your place is confirmed. Add extras to it; you are not buying another seat.`}</p>
     <TicketShopPicker tickets={[]} addons={shop.addons} currency={shop.currency} orderMax={0} basket={basket}
       onChange={next => { setBasket(next); setQuote(null); }} free={free} />

@@ -3,15 +3,15 @@ import { useState } from 'react';
 import { Field } from '../../../components/ui';
 import type { PayeeTemplate } from '../../../generated/api';
 
-const METHOD_LABELS: Record<string, string> = {
+const methodLabels = (): Record<string, string> => ({
   bank_transfer: t`Bank transfer`, upi: 'UPI', paypal: t`PayPal`, wise: t`Wise`, cash: t`Cash`, cheque: t`Cheque`, other: t`Other`,
-};
-const FIELD_LABELS: Record<string, string> = {
+});
+const fieldLabels = (): Record<string, string> => ({
   holder_name: t`Account holder name`, account_number: t`Account number`, ifsc: t`IFSC code`, bank_name: t`Bank name`,
   upi_id: t`UPI ID`, routing_number: t`Routing number`, account_type: t`Account type`, iban: 'IBAN', swift: t`SWIFT / BIC`,
   bsb: 'BSB', institution_number: t`Institution number`, transit_number: t`Transit number`, bank_code: t`Bank code`,
   branch_code: t`Branch code`, payout_email: t`Payout email`, delivery_instructions: t`Delivery instructions`,
-};
+});
 const PAN = /^[A-Z]{5}[0-9]{4}[A-Z]$/;
 
 export type ClaimFields = { country: string; method: string; details: Record<string, string>; pan?: string };
@@ -45,10 +45,10 @@ export function PrizeClaimForm({ templates, askPan, pending, onSubmit, onCancel 
           onChange={event => { setChoice(Number(event.target.value)); setDetails({}); }}>
           <option value={-1}>{t`Choose how to be paid`}</option>
           {templates.map((row, index) => <option key={row.template_key + row.country + row.method} value={index}>
-            {row.country} · {METHOD_LABELS[row.method] ?? row.method}</option>)}
+            {row.country} · {methodLabels()[row.method] ?? row.method}</option>)}
         </select>
       </Field>
-      {template?.fields.map(field => <Field key={field.key} label={FIELD_LABELS[field.key] ?? field.key.replace(/_/g, ' ')}>
+      {template?.fields.map(field => <Field key={field.key} label={field.label || fieldLabels()[field.key] || t`Detail`} hint={field.help || undefined}>
         <input className="desk-input min-h-11" autoComplete="off" maxLength={200} required={field.required}
           value={details[field.key] ?? ''} onChange={event => setDetails(value => ({ ...value, [field.key]: event.target.value }))} />
       </Field>)}

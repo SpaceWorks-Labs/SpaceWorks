@@ -1,4 +1,4 @@
-import { formatLocale } from "../../../lib/format";
+import { formatDateTime } from "../../../lib/format";
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -42,7 +42,7 @@ function TransferCard({ makerspaceId, registrationId }: { makerspaceId: number; 
     <Field label={t`Their email address`}><input className="desk-input" type="email" required value={email}
       onChange={e => setEmail(e.target.value)} autoComplete="email" /></Field>
     {transfer.error ? <ErrorText message={errorMessage(transfer.error)} /> : null}
-    {transfer.data ? <p role="status" className="text-sm text-ink">{t`Offer sent. It expires ${new Date(transfer.data.expires_at).toLocaleString(formatLocale())}.`}</p> : null}
+    {transfer.data ? <p role="status" className="text-sm text-ink"><time dateTime={transfer.data.expires_at}>{t`Offer sent. It expires ${formatDateTime(transfer.data.expires_at)}.`}</time></p> : null}
     <button type="submit" className="desk-button justify-self-start" disabled={transfer.isPending || !email.trim()}>
       {transfer.isPending ? t`Sending…` : t`Send the transfer offer`}</button>
   </form></Card>;

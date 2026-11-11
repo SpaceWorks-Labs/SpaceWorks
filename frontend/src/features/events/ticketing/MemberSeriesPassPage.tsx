@@ -1,4 +1,4 @@
-import { formatLocale } from "../../../lib/format";
+import { formatDateTime } from "../../../lib/format";
 import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -58,7 +58,8 @@ export function MemberSeriesPassPage() {
         {rows.map(row => <label key={row.id} className="flex min-h-11 items-start gap-3 rounded-card border border-line p-3 text-sm text-ink">
           <input type="radio" name="pass" value={row.id} checked={selected === row.id} onChange={() => setChoice(row.id)} />
           <span className="grid gap-0.5"><span className="font-semibold">{row.name}</span>
-            <span className="text-muted">{chargesOn ? price(row.amount) : t`Free`}{row.sales_end_at ? t` · on sale until ${new Date(row.sales_end_at).toLocaleString(formatLocale())}` : ""}</span></span>
+            <span className="text-muted">{chargesOn ? price(row.amount) : t`Free`}</span>
+            {row.sales_end_at ? <span className="text-muted">{t`On sale until ${formatDateTime(row.sales_end_at)}`}</span> : null}</span>
         </label>)}
       </fieldset> : null}
       {buy.error ? <ErrorText message={errorMessage(buy.error)} /> : null}

@@ -12,7 +12,7 @@ export function VisitSparkline({ days }: { days: ShortLinkVisitDay[] }) {
   const max = Math.max(1, ...days.map(day => day.count));
   const step = days.length > 1 ? 120 / (days.length - 1) : 0;
   const points = days.map((day, index) => `${(index * step).toFixed(1)},${(28 - (day.count / max) * 26).toFixed(1)}`).join(" ");
-  return <svg aria-hidden="true" focusable="false" viewBox="0 0 120 30" className="h-8 w-32 text-brand">
+  return <svg aria-hidden="true" focusable="false" viewBox="0 0 120 30" className="h-8 w-32 text-brand-ink">
     <polyline points={points} fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
   </svg>;
 }

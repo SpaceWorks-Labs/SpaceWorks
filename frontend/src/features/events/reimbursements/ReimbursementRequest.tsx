@@ -23,9 +23,9 @@ function RequestEditor({ scope, overview, onDirtyChange }: { scope: Reimbursemen
   const [error, setError] = useState("");
   const mutation = useApplicantCommand(scope);
   useUnsavedChanges(dirty, onDirtyChange);
-  const canSubmit = overview.allowed_actions.includes("request_submit");
+  const canSubmit = overview.allowed_actions.includes("submit_request");
   return <FormPageLayout header={{ eyebrow: t`Travel support`, title: t`Request reimbursement support` }} state={{ status: "ready" }}
-    submit={{ label: t`Submit support request`, pending: mutation.isPending, disabled: !canSubmit, disabledReason: "Requests are closed for your current participation.", onClick: () => {
+    submit={{ label: t`Submit support request`, pending: mutation.isPending, disabled: !canSubmit, disabledReason: t`Requests are closed for your current participation.`, onClick: () => {
       try { const reimbursement_request = requestPayload(context, value, consent, distance); setError("");
         mutation.mutate({ path: `${reimbursementPath(scope)}request/submit/`, body: { expected_version: overview.request?.version ?? 0, reimbursement_request } }, { onSuccess: () => setDirty(false) });
       } catch (failure) { setError(failure instanceof Error ? failure.message : t`Check your request.`); }

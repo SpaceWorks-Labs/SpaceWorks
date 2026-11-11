@@ -5,6 +5,7 @@ import { ListLayout } from "../../components/layouts";
 import { ListRow, StatusPill } from "../../components/ui";
 import { money } from "../payments/usePriceQuote";
 import { MemberJobsShell, type MemberJobsContext } from "../machine-jobs/MemberJobsShell";
+import { ReportProblem } from "../repairs/ReportProblem";
 import { fetchMySessions, sessionKeys, type MemberSession } from "./api";
 import { CHARGE_LABELS, duration, STOP_REASONS, when } from "./sessionFormat";
 
@@ -21,6 +22,8 @@ function SessionList({ context }: { context: MemberJobsContext }) {
     enabled: context.ready && context.makerspaceId != null, retry: false,
     refetchInterval: current => (current.state.data ?? []).some(row => row.status === "live") ? 60_000 : false });
   const rows = sessions.data ?? [];
+  // Decision 220(d)2: the server routes a session report to that machine's managers.
+  const canReport = (context.features ?? []).includes("machines.issue_reporting");
   return <ListLayout header={{ eyebrow: t`Member area`, title: t`My machine sessions`,
     subtitle: t`Time you spent on the space's machines. Scan a machine's QR to start one.` }}
     state={context.bootstrapError || sessions.isError
@@ -33,7 +36,9 @@ function SessionList({ context }: { context: MemberJobsContext }) {
         : session.status === "review" ? { text: t`Staff are checking the time`, tone: "warn" as const } : CHARGE_LABELS[session.charge_state];
       return <li key={session.id}><ListRow title={session.machine_name} meta={sessionSummary(session)}
         href={context.path(`machines/${session.machine_id}/use`)} identity={{ kind: "icon", icon: "Cog", tone: "accent" }}
-        right={<StatusPill label={charge.text} tone={charge.tone} />} /></li>;
+        right={<div className="flex flex-wrap items-center gap-3"><StatusPill label={charge.text} tone={charge.tone} />
+          {canReport ? <ReportProblem source={{ makerspace_id: session.makerspace_id, machine_session_id: session.id }}
+            label={t`Report a problem with the machine`} /> : null}</div>} /></li>;
     })}</ul> }} />;
 }
 

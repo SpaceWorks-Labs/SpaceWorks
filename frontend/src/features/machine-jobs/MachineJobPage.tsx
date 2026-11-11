@@ -1,5 +1,5 @@
 import { formatLocale } from "../../lib/format";
-import { t } from "@lingui/core/macro";
+import { plural, t } from "@lingui/core/macro";
 import { useParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -49,7 +49,7 @@ function JobDetail({ id, context }: { id: number; context: MemberJobsContext }) 
     isEmpty={missing || id <= 0} empty={{ message: t`We couldn't find that job in your account.`, action: { label: t`My machine jobs`, href: context.path("member/machine-jobs") } }}
     title={job?.title ?? t`Machine job`} identity={{ kind: "icon", icon: "Wrench", tone: "info" }}
     status={label ? <StatusPill label={label.text} tone={label.tone} /> : undefined}
-    meta={job ? [job.machine_type_name, `${job.copies} cop${job.copies === 1 ? "y" : "ies"}`, ...(job.needed_by ? [`Needed by ${day(job.needed_by)}`] : [])] : undefined}
+    meta={job ? [job.machine_type_name, plural(job.copies, { one: "# copy", other: "# copies" }), ...(job.needed_by ? [t`Needed by ${day(job.needed_by)}`] : [])] : undefined}
     banner={job ? outcomeBanner(job) : undefined}
     main={job ? <div className="grid gap-5">
       <JobPickupCard job={job} />

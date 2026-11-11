@@ -1,5 +1,5 @@
 import { formatLocale } from "../../lib/format";
-import { t } from "@lingui/core/macro";
+import { plural, t } from "@lingui/core/macro";
 import { StatusPill } from "../../components/ui";
 import type { EtaReason, ServiceRequestEta as Eta } from "./types";
 import { normalizeServiceStatus } from "./types";
@@ -61,7 +61,7 @@ function lineCopy(eta: Eta, status: string): string | null {
   if (status === "accepted") {
     return eta.approved_ahead === 0
       ? t`You're next among approved jobs`
-      : t`${eta.approved_ahead} approved job${eta.approved_ahead === 1 ? "" : "s"} ahead of you`;
+      : plural(eta.approved_ahead, { one: "# approved job ahead of you", other: "# approved jobs ahead of you" });
   }
   return null;
 }

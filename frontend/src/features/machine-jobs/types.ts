@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { formatLocale } from "../../lib/format";
 import { serviceStatusLabel, serviceStatusTone, type ServiceRequestEta } from "../machine-service/types";
 
@@ -39,9 +40,9 @@ export function jobLabel(label: string) {
 }
 
 export const TIMELINE_STEPS: Record<string, string> = {
-  submitted: "Submitted", needs_changes: "Changes requested", quote_sent: "Quote sent", quote_approved: "Quote approved",
-  in_queue: "Joined the queue", in_progress: "Started", ready_to_collect: "Ready to collect", collected: "Collected",
-  not_collected: "Not collected", failed: "Failed", cancelled: "Cancelled",
+  submitted: t`Submitted`, needs_changes: t`Changes requested`, quote_sent: t`Quote sent`, quote_approved: t`Quote approved`,
+  in_queue: t`Joined the queue`, in_progress: t`Started`, ready_to_collect: t`Ready to collect`, collected: t`Collected`,
+  not_collected: t`Not collected`, failed: t`Failed`, cancelled: t`Cancelled`,
 };
 
 /** Labels that end the job: no polling, no cancel. */
@@ -52,20 +53,20 @@ export function jobRefetchInterval(job: MemberJob | undefined): number | false {
   return job.label === "in_progress" || job.label === "in_queue" ? 30_000 : 90_000;
 }
 
-const FAIL_CODES: Record<string, string> = {
-  adhesion: "the print came off the bed", nozzle_jam: "nozzle jam", material_ran_out: "material ran out",
-  machine_fault: "machine fault", power_cut: "power cut", operator_error: "operator error", file_problem: "a problem with the file",
-  material_defect: "faulty material", other: "",
-};
-const OUTCOMES: Record<string, string> = {
-  requeued: "re-queued at the front, no charge", free: "no charge", charged: "charged as agreed",
-  staff_decide: "staff will tell you what happens next",
-};
+const FAIL_CODES = (): Record<string, string> => ({
+  adhesion: t`the print came off the bed`, nozzle_jam: t`nozzle jam`, material_ran_out: t`material ran out`,
+  machine_fault: t`machine fault`, power_cut: t`power cut`, operator_error: t`operator error`, file_problem: t`a problem with the file`,
+  material_defect: t`faulty material`, other: "",
+});
+const OUTCOMES = (): Record<string, string> => ({
+  requeued: t`re-queued at the front, no charge`, free: t`no charge`, charged: t`charged as agreed`,
+  staff_decide: t`staff will tell you what happens next`,
+});
 
 /** "Failed: nozzle jam — re-queued at the front, no charge". */
 export function failureText(job: Pick<MemberJob, "fail_code" | "failure_outcome" | "reason">) {
-  const cause = FAIL_CODES[job.fail_code] ?? job.fail_code.replace(/_/g, " ");
-  const outcome = OUTCOMES[job.failure_outcome] ?? "";
+  const cause = FAIL_CODES()[job.fail_code] ?? job.fail_code.replace(/_/g, " ");
+  const outcome = OUTCOMES()[job.failure_outcome] ?? "";
   const head = cause ? `Failed: ${cause}` : "Failed";
   return outcome ? `${head} — ${outcome}` : head;
 }

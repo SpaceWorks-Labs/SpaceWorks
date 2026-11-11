@@ -9,6 +9,7 @@ import { registerKioskSync } from "./useKioskQueue";
 import type { OfflineQueue } from "./offlineQueueTypes";
 import type { ReplayEnvelope } from "./kioskReplayApi";
 import { KioskQueueStatus } from "./KioskQueueStatus";
+import { kioskOperationLabel } from "./replayRecoveryGuidance";
 import { KitChecklistCapture, useSuppliedKitChecklist } from "../inventory/KitChecklist";
 
 export function KioskOfflineHandover({ queue, onChange, retry, acknowledge }: {
@@ -67,10 +68,10 @@ export function KioskOfflineHandover({ queue, onChange, retry, acknowledge }: {
     <FlowLayout presentation="kiosk" state={{ status: "ready" }} title={t`Queue a handover`} current="capture"
       steps={[{ key: "capture", label: t`Capture handover`, state: "current" }]} pending={busy}
       onCancel={() => { setPhoto(null); setBox(""); setRemark(""); setAssetQrs(""); }}
-      footer={{ next: { label: t`Queue handover`, pending: busy, pendingLabel: "Encrypting capture…",
+      footer={{ next: { label: t`Queue handover`, pending: busy, pendingLabel: t`Encrypting capture…`,
         disabled: !kits.ready || !allowed.includes(operation) || (operation !== "assign_box" && !photo),
-        disabledReason: !allowed.includes(operation) ? "Choose an allowed operation." : !kits.ready ? "Check every kit part to continue."
-          : operation !== "assign_box" && !photo ? "Add the evidence photo to continue." : undefined,
+        disabledReason: !allowed.includes(operation) ? t`Choose an allowed operation.` : !kits.ready ? t`Check every kit part to continue.`
+          : operation !== "assign_box" && !photo ? t`Add the evidence photo to continue.` : undefined,
         onClick: () => captureForm.current?.requestSubmit() } }}
       error={error ? { size: "inline", tone: "danger", lead: error } : undefined}
       work={<form ref={captureForm} className="grid gap-3" onSubmit={capture}>
@@ -78,7 +79,7 @@ export function KioskOfflineHandover({ queue, onChange, retry, acknowledge }: {
         {queue.works.map((item) => <option key={item.id} value={item.id}>{item.work.display_label}</option>)}
       </select></label>
       <label className="grid gap-1 text-sm">{t`Operation`}<select className="desk-input" value={operation} disabled={busy} onChange={(event) => { setKind(event.target.value as ReplayEnvelope["kind"]); setPhoto(null); }}>
-        {choices.map((choice) => <option key={choice} disabled={!allowed.includes(choice)} value={choice}>{choice.replace(/_/g, " ")}</option>)}
+        {choices.map((choice) => <option key={choice} disabled={!allowed.includes(choice)} value={choice}>{kioskOperationLabel(choice)}</option>)}
       </select></label>
       {operation === "assign_box" || returning ? <label className="grid gap-1 text-sm">{t`Scan box or return QR`}<input className="desk-input code-text" required value={box} disabled={busy} onChange={(event) => setBox(event.target.value)} /></label> : null}
       {operation !== "assign_box" ? <>

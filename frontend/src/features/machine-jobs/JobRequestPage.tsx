@@ -1,4 +1,4 @@
-import { t } from "@lingui/core/macro";
+import { plural, t } from "@lingui/core/macro";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 
 import { FlowLayout, type FlowStep } from "../../components/layouts";
@@ -21,6 +21,7 @@ import { JobUploadError } from "./jobUploads";
 import { JobTypeStep, extensionList } from "./JobTypeStep";
 import { JOB_STEPS, useJobRequest, type JobStep } from "./useJobRequest";
 import { useMemberIdentity } from "./useMemberIdentity";
+import { machineIntakeAvailable } from "../inventory/machineIntakeAvailability";
 
 const STEP_LABELS: Record<JobStep, string> = { type: t`Machine type`, files: t`Files`, details: t`Details`, confirm: t`Confirm and send` };
 
@@ -47,8 +48,14 @@ export function JobRequestPage() {
   const showPrice = chargesOn(bootstrap, "machines"); // #184: no quote, prepay or price copy when machines are free
   const displayName = bootstrap?.branding.display_name || bootstrap?.makerspace.name || formatSlug(makerspaceSlug) || "Makerspace";
   const member = useMemberIdentity();
-  const flow = useJobRequest(makerspaceSlug, bootstrap?.features ?? [], search, id => navigate(tenantPath(`member/machine-jobs/${id}`)));
+  const available = machineIntakeAvailable(bootstrap, makerspaceSlug) && !!bootstrap?.features.includes("machines.job_requests");
+  const printingAvailable = bootstrap?.makerspace.slug === makerspaceSlug && Boolean(bootstrap?.modules.includes("printing"));
+  const flow = useJobRequest(makerspaceSlug, bootstrap?.features ?? [], search, id => navigate(tenantPath(`member/machine-jobs/${id}`)), available, printingAvailable);
   const { types, type, step, draft, submit } = flow;
+
+  if (tenant.mode === "central" && bootstrapQuery.isLoading) return <div role="status">{t`Loading…`}</div>;
+  if (tenant.mode === "central" && bootstrapQuery.isError) return <div role="alert">{t`Couldn’t load the space. Try again.`}</div>;
+  if (!available) return <div role="status">{t`Online machine requests aren't available here. Ask space staff for help.`}</div>;
 
   if (member.signedOut) return <div style={brandStyle}><MemberAuthPanel makerspaceSlug={makerspaceSlug}
     eyebrow={t`Request a job`} tenantBrand={bootstrap ? { name: displayName, logo: bootstrap.branding.logo_url || bootstrap.makerspace.logo_url || undefined } : undefined}
@@ -65,7 +72,7 @@ export function JobRequestPage() {
       : { status: "ready" as const };
   const steps: FlowStep[] = JOB_STEPS.map((key, position) => ({ key, label: STEP_LABELS[key], required: true,
     state: position < index ? "done" : position === index ? "current" : "todo",
-    summary: key === "type" ? type?.name : key === "files" && flow.models.length ? t`${flow.models.length} design file${flow.models.length === 1 ? "" : "s"}`
+    summary: key === "type" ? type?.name : key === "files" && flow.models.length ? plural(flow.models.length, { one: "# design file", other: "# design files" })
       : key === "details" && position < index ? draft.title.trim() : undefined }));
   const go = (next: JobStep) => { if (!busy) flow.setStep(next); };
   const nextAction: Action = step === "type" ? { label: t`Next: files`, disabled: !type, disabledReason: "Choose a machine type.", onClick: () => go("files") }
@@ -86,7 +93,7 @@ export function JobRequestPage() {
           <JobConfirmStep type={type} draft={draft} fileCount={flow.models.length} screenshotCount={flow.screenshots.length} disabled={busy} showPrice={showPrice}
             onAck={(key, value) => flow.update({ acks: { ...draft.acks, [key]: value } })} />
           <PricePreview makerspaceSlug={makerspaceSlug} request={{ domain: "machines", machine_type_id: type.machine_type_id,
-            pool_id: draft.poolId ? Number(draft.poolId) : undefined, quantity: Number(draft.grams) > 0 ? draft.grams.trim() : undefined }} />
+            pool_id: printingAvailable && draft.poolId ? Number(draft.poolId) : undefined, quantity: Number(draft.grams) > 0 ? draft.grams.trim() : undefined }} />
           {flow.progress ? <p className="text-sm text-muted" role="status">{flow.progress}</p> : null}
         </div>;
 

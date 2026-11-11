@@ -32,8 +32,8 @@ export function when(iso: string | null | undefined) {
 }
 
 export const STOP_REASONS: Record<string, string> = {
-  member: "Stopped by you", staff: "Stopped by staff", max_length: "Reached the maximum length",
-  check_out: "Stopped at check-out", closing: "Stopped at closing time", device: "Ended by the machine",
+  member: t`Stopped by you`, staff: t`Stopped by staff`, max_length: t`Reached the maximum length`,
+  check_out: t`Stopped at check-out`, closing: t`Stopped at closing time`, device: t`Ended by the machine`,
 };
 
 export const SOURCES: Record<SessionSource, string> = { member_qr: "Machine QR", staff: "Staff", device: "Machine report" };

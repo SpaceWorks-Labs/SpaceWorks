@@ -73,6 +73,10 @@ export function jobErrorMessage(error: unknown): string {
   if (error instanceof StructuredApiError) {
     if (error.status === 401) return t`Sign in to your member account to request a job.`;
     if (error.code && SUBMIT_COPY[error.code]) return SUBMIT_COPY[error.code];
+    // The server answers the typed switch-off for `machines.job_requests` (decision 221e).
+    if (error.code === "feature_disabled" && (error.body as { feature?: unknown }).feature === "machines.job_requests") {
+      return SUBMIT_COPY.capability_disabled;
+    }
     // A refused file answers {file, code}; the code is for machines, the sentence is for people.
     const field = Object.entries(error.body).find(([key, value]) => key !== "code" && typeof value === "string");
     if (!error.detail && field) return field[1] as string;

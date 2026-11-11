@@ -1,7 +1,7 @@
 import { t } from "@lingui/core/macro";
 import { DataTable, StatusPill } from "../../components/ui";
 import type { OfflineQueue } from "./offlineQueueTypes";
-import { replayGuidance } from "./replayRecoveryGuidance";
+import { kioskCommandStatusLabel, kioskOperationLabel, replayGuidance } from "./replayRecoveryGuidance";
 
 export function KioskQueueStatus({ queue, retry, acknowledge }: {
   queue: OfflineQueue; retry: () => void; acknowledge: () => void;
@@ -15,11 +15,11 @@ export function KioskQueueStatus({ queue, retry, acknowledge }: {
     <DataTable data={queue.commands} getRowId={command => command.envelope.client_command_id}
       emptyTitle={t`No handovers queued.`} emptyDescription={t`Captured handovers will appear here until the server confirms them.`}
       columns={[
-        { key: "sequence", header: "Sequence", render: command => `Sequence ${command.envelope.sequence}` },
-        { key: "operation", header: "Operation", render: command => command.envelope.kind.replace(/_/g, " ") },
-        { key: "status", header: "Status", render: command => <StatusPill label={command.status === "queued" ? t`Queued` : command.status === "succeeded" ? t`Confirmed` : command.status.replace(/^./, c => c.toUpperCase())}
+        { key: "sequence", header: t`Sequence`, render: command => t`Sequence ${command.envelope.sequence}` },
+        { key: "operation", header: t`Operation`, render: command => kioskOperationLabel(command.envelope.kind) },
+        { key: "status", header: t`Status`, render: command => <StatusPill label={kioskCommandStatusLabel(command.status)}
           tone={command.status === "failed" ? "danger" : command.status === "succeeded" ? "success" : "warn"} /> },
-        { key: "review", header: "Next step", render: command => command.status === "failed" ? <div className="grid gap-2">
+        { key: "review", header: t`Next step`, render: command => command.status === "failed" ? <div className="grid gap-2">
           <p>{replayGuidance(command.lastFailure)}</p>{command.result?.replay_id
             ? <a className="desk-button" href={`${window.location.pathname}?recovery=${encodeURIComponent(command.result.replay_id)}`}>{t`Review failed handover online`}</a>
             : <p>{t`No server recovery record was confirmed. Keep this local evidence for staff review.`}</p>}

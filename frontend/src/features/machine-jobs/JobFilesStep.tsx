@@ -8,7 +8,7 @@ import { fileKey, type FileErrors } from "./jobUploads";
 export function formatError(file: File, accepted: string[]) {
   if (!accepted.length) return "";
   const name = file.name.toLowerCase();
-  return accepted.some(ext => name.endsWith(ext)) ? "" : t`This machine doesn't take ${name.includes(".") ? name.slice(name.lastIndexOf(".")) : "this kind of"} files.`;
+  return accepted.some(ext => name.endsWith(ext)) ? "" : name.includes(".") ? t`This machine doesn't take ${name.slice(name.lastIndexOf("."))} files.` : t`This machine doesn't take this kind of files.`;
 }
 
 function FileList({ label, files, errors, onRemove }: { label: string; files: File[]; errors: FileErrors; onRemove: (file: File) => void }) {

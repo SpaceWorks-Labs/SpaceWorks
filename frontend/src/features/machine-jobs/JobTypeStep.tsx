@@ -1,4 +1,4 @@
-import { t } from "@lingui/core/macro";
+import { plural, t } from "@lingui/core/macro";
 import type { JobType } from "./types";
 
 const QUOTE_HINT: Record<JobType["quotes"], string> = {
@@ -34,9 +34,9 @@ export function JobTypeStep({ types, value, onChange, showPrice = true }: { type
     <legend className="title-section mb-1">{t`What should make it?`}</legend>
     <p className="text-sm text-muted">{t`Pick the kind of machine. Staff choose the exact machine when your job runs.`}</p>
     {types.map(type => {
-      const hints = [showPrice ? QUOTE_HINT[type.quotes] : "", showPrice && type.prepay ? "Paid before the job runs." : "",
-        type.runs_unattended ? "Runs unattended — it may finish while nobody is at the machine." : "",
-        type.max_open_jobs ? `Up to ${type.max_open_jobs} open job${type.max_open_jobs === 1 ? "" : "s"} per member.` : ""].filter(Boolean);
+      const hints = [showPrice ? QUOTE_HINT[type.quotes] : "", showPrice && type.prepay ? t`Paid before the job runs.` : "",
+        type.runs_unattended ? t`Runs unattended — it may finish while nobody is at the machine.` : "",
+        type.max_open_jobs ? plural(type.max_open_jobs, { one: "Up to # open job per member.", other: "Up to # open jobs per member." }) : ""].filter(Boolean);
       const selected = value === type.queue_id;
       return <label key={type.queue_id} className={`flex min-h-11 cursor-pointer items-start gap-3 rounded-control border p-4 ${selected ? "border-accent bg-accent-soft" : "border-line"}`}>
         <input type="radio" name="job-type" className="mt-1 h-5 w-5 shrink-0 accent-brand" checked={selected} onChange={() => onChange(type.queue_id)} />

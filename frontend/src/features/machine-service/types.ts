@@ -24,7 +24,7 @@ export function normalizeServiceStatus(status: string): string {
   return status === "printing" ? "in_progress" : status;
 }
 
-export const SERVICE_STATUS_LABELS: Record<string, string> = {
+const SERVICE_STATUS_LABELS = (): Record<string, string> => ({
   pending: t`Awaiting review`,
   accepted: t`Approved`,
   in_progress: t`In progress`,
@@ -44,11 +44,11 @@ export const SERVICE_STATUS_LABELS: Record<string, string> = {
   in_queue: t`In the queue`,
   ready_to_collect: t`Ready to collect`,
   not_collected: t`Not collected`,
-};
+});
 
 export function serviceStatusLabel(status: string): string {
   const normalized = normalizeServiceStatus(status);
-  return SERVICE_STATUS_LABELS[normalized] ?? normalized.replace(/_/g, " ");
+  return SERVICE_STATUS_LABELS()[normalized] ?? normalized.replace(/_/g, " ");
 }
 
 export function serviceStatusTone(status: string): "success" | "info" | "warn" | "danger" | "neutral" {

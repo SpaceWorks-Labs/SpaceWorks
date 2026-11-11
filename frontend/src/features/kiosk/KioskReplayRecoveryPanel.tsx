@@ -1,8 +1,8 @@
-import { t } from "@lingui/core/macro";
+import { plural, t } from "@lingui/core/macro";
 import { useEffect, useRef, useState } from "react";
-import { CollapsibleSection, EmptyState, ErrorBlock, Field, ListRow, RelativeTime, StatusPill } from "../../components/ui";
-import { plural } from "../../lib/plural";
+import { CollapsibleSection, EmptyState, ErrorBlock, Field, ListRow, RelativeTime, StatusPill, PagePager } from "../../components/ui";
 import { KioskReplayDetail } from "./KioskReplayDetail";
+import { kioskOperationLabel } from "./replayRecoveryGuidance";
 import { KioskReplayResolution } from "./KioskReplayResolution";
 import { useKioskReplays, useReplayDetail } from "./useKioskReplays";
 
@@ -34,15 +34,15 @@ function RecoveryPanel({ makerspaceId, revealKey }: { makerspaceId: number; reve
         setResolution(event.target.value); setPage(1); setSelected(null); setExpanded(true);
       }}><option value="unresolved">{t`Unresolved`}</option><option value="resolved">{t`Resolved`}</option><option value="all">{t`All failures`}</option></select></Field>
       {list.isPending ? <p role="status">{t`Loading failed handovers…`}</p> : list.isError
-        ? <ErrorBlock error={list.error} resource="failed handovers" onRetry={() => { void list.refetch(); }} />
+        ? <ErrorBlock error={list.error} resource={t`failed handovers`} onRetry={() => { void list.refetch(); }} />
         : !list.data?.results.length ? <EmptyState message={t`No retained failures in this view.`} /> : <ul className="grid gap-3">
         {list.data.results.map((row) => <li key={row.id}>
-          <ListRow title={`${row.operation_kind.replace(/_/g, " ")} · ${row.station_name} · ${row.failure_code}`}
+          <ListRow title={`${kioskOperationLabel(row.operation_kind)} · ${row.station_name} · ${row.failure_code}`}
             meta={<RelativeTime date={row.created_at} />} right={<div className="flex flex-wrap items-center gap-3">
               <StatusPill tone={row.resolution_code ? "success" : "warn"} label={row.resolution_code ? t`Resolved` : t`Unresolved`} />
               <button type="button" className="desk-button" aria-expanded={selected === row.id}
                 onClick={() => setSelected(selected === row.id ? null : row.id)}>{selected === row.id ? t`Close details` : t`Review`}{" "}
-                <span className="sr-only">{`${row.operation_kind.replace(/_/g, " ")} · ${row.station_name} · ${row.failure_code}`}</span></button>
+                <span className="sr-only">{`${kioskOperationLabel(row.operation_kind)} · ${row.station_name} · ${row.failure_code}`}</span></button>
             </div>} />
           {selected === row.id ? detail.isPending ? <p role="status">{t`Loading failure details…`}</p> : detail.isError ? <p role="alert">{t`This failure is unavailable under your current permissions.`}</p> : detail.data ? <div className="mt-3">
             <KioskReplayDetail key={row.id} row={detail.data} />
@@ -50,11 +50,10 @@ function RecoveryPanel({ makerspaceId, revealKey }: { makerspaceId: number; reve
           </div> : null : null}
         </li>)}
       </ul>}
-      {list.data ? <nav className="flex flex-wrap items-center gap-3 text-sm" aria-label={t`Recovery pages`}>
-        <button type="button" className="desk-button" disabled={!list.data.previous || list.isFetching} onClick={() => { setPage(page - 1); setSelected(null); }}>{t`Previous failures`}</button>
-        <span>{t`Page ${page} · ${plural(list.data.count, "failure")}`}</span>
-        <button type="button" className="desk-button" disabled={!list.data.next || list.isFetching} onClick={() => { setPage(page + 1); setSelected(null); }}>{t`Next failures`}</button>
-      </nav> : null}
+      {list.data ? <>
+        <p className="text-sm text-muted">{plural(list.data.count, { one: "# failure", other: "# failures" })}</p>
+        <PagePager page={page} setPage={next => { setPage(next); setSelected(null); }} next={list.data.next} disabled={list.isFetching} />
+      </> : null}
     </div>
   </CollapsibleSection></div>;
 }

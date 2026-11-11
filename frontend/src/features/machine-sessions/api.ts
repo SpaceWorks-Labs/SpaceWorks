@@ -63,33 +63,33 @@ export const saveSessionSettings = (makerspaceId: number, typeId: number, minute
   staffRequest<{ session_max_minutes: number }>(`/admin/makerspaces/${makerspaceId}/machine-types/${typeId}/session-settings`,
     { method: "PUT", body: json({ session_max_minutes: minutes }) });
 
-const REFUSALS: Record<string, string> = {
-  member_restricted: "Your account is restricted, so you can't use machines right now. Talk to staff.",
-  membership_required: "Only active members of this space can use its machines.",
-  waiver_acceptance_required: "Accept the space's current waiver in your member area first.",
-  presence_required: "Check in at the space first, then scan the machine again.",
-  certification_required: "You need the certification for this machine first.",
-  machine_unavailable: "This machine is down or under maintenance.",
-  machine_locked_out: "Overdue safety maintenance blocks this machine for now.",
-  machine_booked: "Someone else has booked this machine for now.",
-  booking_required: "Book this machine before using it.",
-  machine_in_use: "Someone is using this machine right now.",
-  session_already_live: "You already have a session running on this machine.",
-  session_closed: "This session has already stopped.",
-  session_final: "This session is already final; its charge follows the usual payment path.",
-  session_live: "Stop the session first.",
-  session_unattributed: "Assign this session to a member first.",
-  session_attributed: "This session already belongs to a member.",
-  price_changed: "The price changed since you opened this page. Check the new rate and start again.",
-};
+const REFUSALS = (): Record<string, string> => ({
+  member_restricted: t`Your account is restricted, so you can't use machines right now. Talk to staff.`,
+  membership_required: t`Only active members of this space can use its machines.`,
+  waiver_acceptance_required: t`Accept the space's current waiver in your member area first.`,
+  presence_required: t`Check in at the space first, then scan the machine again.`,
+  certification_required: t`You need the certification for this machine first.`,
+  machine_unavailable: t`This machine is down or under maintenance.`,
+  machine_locked_out: t`Overdue safety maintenance blocks this machine for now.`,
+  machine_booked: t`Someone else has booked this machine for now.`,
+  booking_required: t`Book this machine before using it.`,
+  machine_in_use: t`Someone is using this machine right now.`,
+  session_already_live: t`You already have a session running on this machine.`,
+  session_closed: t`This session has already stopped.`,
+  session_final: t`This session is already final; its charge follows the usual payment path.`,
+  session_live: t`Stop the session first.`,
+  session_unattributed: t`Assign this session to a member first.`,
+  session_attributed: t`This session already belongs to a member.`,
+  price_changed: t`The price changed since you opened this page. Check the new rate and start again.`,
+});
 
 export function refusalText(refusal: SessionRefusal | null | undefined) {
   if (!refusal) return "";
-  const base = REFUSALS[refusal.code] ?? refusal.detail;
+  const base = REFUSALS()[refusal.code] ?? refusal.detail;
   return refusal.certifications?.length ? `${base} (${refusal.certifications.join(", ")})` : base;
 }
 
 export function sessionErrorMessage(error: unknown) {
-  if (error instanceof StructuredApiError && error.code && REFUSALS[error.code]) return REFUSALS[error.code];
+  if (error instanceof StructuredApiError && error.code && REFUSALS()[error.code]) return REFUSALS()[error.code];
   return error instanceof Error ? error.message : t`Something went wrong. Try again.`;
 }

@@ -1,5 +1,5 @@
 import { formatLocale } from "../../lib/format";
-import { t } from "@lingui/core/macro";
+import { plural, t } from "@lingui/core/macro";
 import type { JobDraft } from "./jobDraft";
 import type { JobType } from "./types";
 
@@ -17,10 +17,12 @@ export function JobConfirmStep({ type, draft, fileCount, screenshotCount, onAck,
   onAck: (key: keyof JobDraft["acks"], value: boolean) => void;
 }) {
   const rows = [
-    ["Machine", type.name], ["Title", draft.title.trim()], ["Copies", String(draft.copies)],
-    ["Files", `${fileCount} design file${fileCount === 1 ? "" : "s"}${screenshotCount ? `, ${screenshotCount} screenshot${screenshotCount === 1 ? "" : "s"}` : ""}`],
-    ...(draft.neededBy ? [["Needed by", new Date(`${draft.neededBy}T12:00:00`).toLocaleDateString(formatLocale(), { weekday: "short", day: "numeric", month: "short" })]] : []),
-    ["Material", draft.ownMaterial ? `My own${draft.materialNote.trim() ? `: ${draft.materialNote.trim()}` : ""}` : [draft.material, draft.color].filter(Boolean).join(", ") || "Staff choose"],
+    [t`Machine`, type.name], [t`Title`, draft.title.trim()], [t`Copies`, String(draft.copies)],
+    [t`Files`, screenshotCount
+      ? `${plural(fileCount, { one: "# design file", other: "# design files" })}, ${plural(screenshotCount, { one: "# screenshot", other: "# screenshots" })}`
+      : plural(fileCount, { one: "# design file", other: "# design files" })],
+    ...(draft.neededBy ? [[t`Needed by`, new Date(`${draft.neededBy}T12:00:00`).toLocaleDateString(formatLocale(), { weekday: "short", day: "numeric", month: "short" })]] : []),
+    [t`Material`, draft.ownMaterial ? (draft.materialNote.trim() ? t`My own: ${draft.materialNote.trim()}` : t`My own`) : [draft.material, draft.color].filter(Boolean).join(", ") || t`Staff choose`],
   ];
   return <div className="grid gap-5">
     <dl className="grid gap-2 text-sm">{rows.map(([label, value]) => <div key={label} className="grid grid-cols-[8rem_1fr] gap-3">

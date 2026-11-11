@@ -38,7 +38,7 @@ export function MemberJobsShell({ children }: { children: (context: MemberJobsCo
     tenantBrand={bootstrap ? { name, logo } : undefined} onAuthenticated={() => { void member.identity.refetch(); }} /></div>;
   const memberHome = path("member");
   return <div style={brandStyle}>
-    <MemberPortalTabs modules={bootstrap?.modules ?? []} active="overview"
+    <MemberPortalTabs modules={bootstrap?.modules ?? []} features={bootstrap?.features} active="overview"
       space={{ id: bootstrap?.makerspace.id, slug: makerspaceSlug || undefined }}
       workspace={bootstrap ? { name: bootstrap.makerspace.name, subtitle: t`Member area`,
         avatar: logo ? { kind: "image", src: logo } : { kind: "avatar", name: bootstrap.makerspace.name, seed: makerspaceSlug }, locked: true } : undefined}

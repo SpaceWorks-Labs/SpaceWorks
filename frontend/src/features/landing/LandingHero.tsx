@@ -1,7 +1,6 @@
-import { t } from "@lingui/core/macro";
+import { plural, t } from "@lingui/core/macro";
 import { BrandFacets } from "../../components/BrandFacets";
 import { FilterBar } from "../../components/ui";
-import { plural } from "../../lib/plural";
 import { SpaceWorksDemo } from "./SpaceWorksDemo";
 
 /**
@@ -21,7 +20,7 @@ export function LandingHero({ search, onSearch, shown, total }: {
         <form role="search" className="mt-2 grid w-full min-w-0 gap-3 md:max-w-[440px] xl:mt-4 xl:max-w-[600px]" onSubmit={event => event.preventDefault()}>
           <FilterBar variant="hero" searchLabel="Search makerspaces" placeholder={t`Search by name, code or place`} value={search} onChange={onSearch} />
           <div className="flex min-h-11 flex-wrap items-center gap-3">
-            <p className="text-sm font-medium tabular-nums" aria-live="polite">{shown} / {plural(total, "space")}</p>
+            <p className="text-sm font-medium tabular-nums" aria-live="polite">{plural(total, { one: `${shown} / # space`, other: `${shown} / # spaces` })}</p>
             {search ? <button className="desk-button" type="button" onClick={() => onSearch("")}>{t`Clear search`}</button> : null}
           </div>
         </form>

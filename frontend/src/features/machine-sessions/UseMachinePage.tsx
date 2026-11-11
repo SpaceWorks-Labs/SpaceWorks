@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { DetailLayout } from "../../components/layouts";
 import { Callout, KeyValueCard, StatusPill } from "../../components/ui";
+import { RouteLink } from "../../components/ui/RouteLink";
 import { StructuredApiError } from "../../lib/api";
 import { MemberJobsShell, type MemberJobsContext } from "../machine-jobs/MemberJobsShell";
 import {
@@ -68,6 +69,9 @@ function UseMachine({ machineId, context }: { machineId: number; context: Member
         : <StartSheet preview={data} onStart={() => start.mutate(data.digest)} starting={start.isPending}
           error={start.isError ? sessionErrorMessage(start.error) : undefined} />}
       {stop.isSuccess && !live ? <p role="status" className="text-sm">{t`Session stopped after ${duration(stop.data.minutes)}.`}{stop.data.charge_state === "raised" ? t` Its charge is in your payments.` : ""}</p> : null}
+      {/* Decision 223 (d): a certified instructor leads a workshop on this machine from here. */}
+      {(context.features ?? []).includes("machines.supervised_sessions") ? <RouteLink className="desk-button justify-self-start"
+        href={context.path(`machines/${machineId}/supervise`)}>{t`Lead a supervised session`}</RouteLink> : null}
     </div> : null}
     aside={data ? <KeyValueCard items={[{ label: t`Machine`, value: data.machine_name }, { label: t`Type`, value: data.machine_type_name }]} /> : undefined} />;
 }

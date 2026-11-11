@@ -1,6 +1,7 @@
 import { t } from "@lingui/core/macro";
 import { useEffect, useState, type FormEvent } from "react";
 import { staffRequest } from "../../lib/api";
+import { requestStatusLabel } from "../../components/ui/StatusStepper";
 import type { KioskBootstrap } from "./kioskApi";
 import type { OfflineQueue } from "./offlineQueueTypes";
 import { recoveryPath, type RecoveryReplay } from "./useKioskReplays";
@@ -8,7 +9,7 @@ import { listQueues, loadQueue } from "./offlineQueueStore";
 import { replayQueue } from "./kioskReplayClient";
 import { captureCorrection, loadCorrectiveWork } from "./replayCorrectionCapture";
 import { KioskReplayDetail } from "./KioskReplayDetail";
-import { replayGuidance } from "./replayRecoveryGuidance";
+import { kioskCommandStatusLabel, replayGuidance } from "./replayRecoveryGuidance";
 
 // Mounted only for ?recovery=<uuid>; ordinary kiosk flows need no query provider.
 export function KioskReplayCorrection({ id, token, session, online, onQueueChange }: {
@@ -77,7 +78,7 @@ export function KioskReplayCorrection({ id, token, session, online, onQueueChang
         })); }); }} disabled={busy} />
         {!queue ? <button type="button" className="desk-button-primary" disabled={busy || !row.recovery_request_id && !row.recovery_loan_id}
           onClick={() => { void run(async () => { setQueue(await loadCorrectiveWork(token, session, row)); }); }}>{t`Start corrective shift and load current work`}</button> : !command ? <form className="grid gap-2" onSubmit={(event) => { void capture(event); }}>
-          <p className="text-sm [overflow-wrap:anywhere]">{t`Current work: ${queue.works[0].work.display_label} · ${queue.works[0].work.status}. Return corrections record all outstanding items as returned; damage/loss needs the staff return workflow.`}</p>
+          <p className="text-sm [overflow-wrap:anywhere]">{t`Current work: ${queue.works[0].work.display_label} · ${requestStatusLabel(queue.works[0].work.status)}. Return corrections record all outstanding items as returned; damage/loss needs the staff return workflow.`}</p>
           {row.operation_kind === "assign_box" || row.operation_kind.endsWith("return") ? <label className="grid gap-1 text-sm">{t`Current box or return QR`}<input className="desk-input w-full" autoComplete="off" required value={box} onChange={(event) => setBox(event.target.value)} /></label> : null}
           {row.operation_kind !== "assign_box" ? <>
             <label className="grid gap-1 text-sm">{t`New correction photo`}<input className="desk-input w-full min-w-0" type="file" accept="image/*" required onChange={(event) => setPhoto(event.target.files?.[0] ?? null)} /></label>
@@ -86,7 +87,7 @@ export function KioskReplayCorrection({ id, token, session, online, onQueueChang
           </> : null}
           <button className="desk-button-primary" type="submit" disabled={busy}>{t`Capture fresh correction`}</button>
         </form> : <div className="grid gap-2 text-sm">
-          <p role="status">{t`Correction ${command.status}. ${command.lastFailure ? replayGuidance(command.lastFailure) : ""}`}</p>
+          <p role="status">{t`Correction status: ${kioskCommandStatusLabel(command.status)}.`}{command.lastFailure ? ` ${replayGuidance(command.lastFailure)}` : ""}</p>
           <button type="button" className="desk-button-brand" disabled={busy} onClick={() => { void run(() => replayAndReview(queue.scope)); }}>{t`Check corrective replay`}</button>
           {linkReady || command.result?.state === "succeeded" ? <button type="button" className="desk-button-primary" disabled={busy} onClick={() => { void run(async () => {
             setRow(await staffRequest<RecoveryReplay>(`${recoveryPath(id)}resolve/`, { method: "POST",

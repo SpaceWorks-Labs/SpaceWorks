@@ -4,6 +4,7 @@ from unfold.admin import ModelAdmin
 from apps.separability.tombstones import app_is_tombstoned
 from apps.warranty.models import Warranty, WarrantyDocument
 from config.admin_access import SuperuserOnlyModelAdmin
+from django.utils.translation import gettext_lazy
 
 
 class WarrantyAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
@@ -29,7 +30,7 @@ class WarrantyAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
     raw_id_fields = ("makerspace", "asset", "machine")
     readonly_fields = ("created_at", "updated_at")
 
-    @admin.display(description="Host")
+    @admin.display(description=gettext_lazy("Host"))
     def host(self, obj):
         if obj.machine_id:
             return obj.machine

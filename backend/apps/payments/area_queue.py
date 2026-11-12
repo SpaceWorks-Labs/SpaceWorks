@@ -91,7 +91,7 @@ def summary(actor, makerspace, now=None):
     for row in pending.values("subject_type", "currency").annotate(n=Count("pk"), total=Sum("amount")):
         group = groups.setdefault(area_of(row["subject_type"]), {"pending": 0, "owed": {}})
         group["pending"] += row["n"]
-        group["owed"][row["currency"]] = str(group["owed"].get(row["currency"], 0) + row["total"])
+        group["owed"][row["currency"]] = group["owed"].get(row["currency"], 0) + row["total"]
     overdue = filter_due(pending, makerspace, "overdue", now=now)
     for row in overdue.values("subject_type").annotate(n=Count("pk")):
         groups.setdefault(area_of(row["subject_type"]), {"pending": 0, "owed": {}})["overdue"] = row["n"]
@@ -100,4 +100,5 @@ def summary(actor, makerspace, now=None):
     for row in claims.values("payment__subject_type").annotate(n=Count("pk")):
         groups.setdefault(area_of(row["payment__subject_type"]), {"pending": 0, "owed": {}})["claims"] = row["n"]
     return [{"area": area, "pending": g["pending"], "overdue": g.get("overdue", 0), "claims": g.get("claims", 0),
-             "owed": g["owed"]} for area, g in sorted(groups.items(), key=lambda item: AREAS.index(item[0]))]
+             "owed": {currency: str(total) for currency, total in g["owed"].items()}}
+            for area, g in sorted(groups.items(), key=lambda item: AREAS.index(item[0]))]

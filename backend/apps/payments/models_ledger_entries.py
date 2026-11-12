@@ -32,7 +32,7 @@ class LedgerEntry(models.Model):
 
     class Domain(models.TextChoices):
         INVENTORY = "inventory", "Inventory"
-        LOANS = "loans", "Inventory loans"
+        LOANS = "loans", gettext_noop("Inventory loans")
         MACHINES = "machines", "Machines"
         BOOKINGS = "bookings", gettext_noop("Bookings and rooms")
         EVENTS = "events", "Events"

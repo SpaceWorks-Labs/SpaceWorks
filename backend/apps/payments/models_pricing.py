@@ -23,7 +23,7 @@ from apps.payments.money_model import MoneyDecimalField
 
 
 class PricingDomain(models.TextChoices):
-    LOANS = "loans", "Inventory loans"
+    LOANS = "loans", gettext_noop("Inventory loans")
     MACHINES = "machines", "Machines"
     BOOKINGS = "bookings", "Bookings"
     EVENTS = "events", "Events"

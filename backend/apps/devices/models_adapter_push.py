@@ -1,6 +1,7 @@
 """Device Adapter API v1, part 4: webhook push and per-machine-type safety defaults (device-bound, never exported)."""
 import uuid
 
+from django.utils.translation import gettext_noop
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
@@ -35,7 +36,7 @@ class AdapterWebhookDelivery(models.Model):
     class Status(models.TextChoices):
         PENDING = "pending", "Pending"
         DELIVERED = "delivered", "Delivered"
-        DEAD = "dead", "Gave up"
+        DEAD = "dead", gettext_noop("Gave up")
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.CASCADE, related_name="+")

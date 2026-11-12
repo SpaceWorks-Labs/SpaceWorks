@@ -6,6 +6,7 @@ retention sweep deletes the bytes (rows stay as a purged marker). Telemetry is b
 """
 import uuid
 
+from django.utils.translation import gettext_noop
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
@@ -15,7 +16,7 @@ from .models_adapter import AdapterBinding
 
 class AdapterArtifact(models.Model):
     class Status(models.TextChoices):
-        PENDING = "pending", "Pending upload"
+        PENDING = "pending", gettext_noop("Pending upload")
         READY = "ready", "Ready"
         PURGED = "purged", "Purged"
 

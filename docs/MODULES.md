@@ -1080,6 +1080,7 @@ its parent module is off.
 | `membership.insights` | `membership` | | Renewal, collection, bridge, breakdown, expiry-calendar, win-back and funnel reports (needs `reports`) | Those reports refuse |
 | `membership.monthly_summary` | `membership` | | Monthly staff summary email as a scheduled-report preset, opt-out per person (needs `reports`) | The schedule is skipped while off; kept |
 | `charges.loans` | `request_workflow` | ● | Record loan deposits, rental, late, damage and lost charges (amounts are set in Settings › Pricing › Inventory, or the payment settings) | Lateness is recorded but never charged |
+| `charges.shop` | `shop` | ● | Record every shop sale as a charge in the finance ledger, whether or not online payment is configured | New online orders and till sales refuse with 409 charges_off; public prices and the basket are hidden |
 | `loans.enabled` | `staff_admin` | On | The Inventory area switch (label "Inventory"): public catalogue, borrowing, self-checkout, kiosk, staff inventory, requests, ledger, stocktake, transfers, containers and QR-tool screens, inventory reports, tiles and notifications; disabling preserves core data | Every inventory surface is hidden and its API routes answer the typed module-off 404; machine consumables, events and bookings keep working without their equipment pickers |
 | `payments.enabled` | `payments` | ● | Master switch for all online payments | Every `payments.<area>` switch below is inert |
 | `payments.machines` | `machines` | | Card rail for machine-job charges | Charges are still recorded and settled offline |
@@ -1087,6 +1088,7 @@ its parent module is off.
 | `payments.events` | `events` | | Card rail for event charges | Charges are still recorded and settled offline |
 | `payments.membership` | `membership` | | Card rail for dues | Dues are still recorded and settled offline |
 | `payments.loans` | `payments` | | Card rail for loan deposits and late fees | Loan charges are still recorded and settled offline |
+| `payments.shop` | `shop` | | Card and UPI payment online for shop orders (needs the `payments` module) | Online orders are paid at the desk; ledger recording and historical orders continue |
 | `mobile.push` | `mobile` | ● | Native push notifications | Apps rely on in-app/inbox notifications |
 | `mobile.watch_actions` | `mobile` | ● | Open, Mark seen (and Snooze with inbox snooze) buttons on phone and watch notifications; never money, evidence, approval or handover actions | Pushes still arrive, without buttons |
 | `events.short_links` | `events` | | Short `/e/<code>` links with a daily visit count | Only the long event address; existing codes are kept and 404 |

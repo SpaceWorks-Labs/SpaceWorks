@@ -70,3 +70,11 @@ jobs:
 
       - name: Vitest (whole suite)
         run: npx vitest run --maxWorkers=2
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: node:test suites (website serving, documentation contracts)
+        working-directory: .
+        run: node --test frontend/scripts/verify-website-serving.test.mjs backend/tests/docs/documentation.test.cjs

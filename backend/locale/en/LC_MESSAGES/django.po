@@ -203,6 +203,9 @@ msgstr ""
 msgid "A key job is already running for this makerspace; wait for it to finish."
 msgstr ""
 
+msgid "A kit requires between one and fifty lines."
+msgstr ""
+
 msgid "A label batch must contain at least one item."
 msgstr ""
 
@@ -216,6 +219,9 @@ msgid "A lifetime term never ends."
 msgstr ""
 
 msgid "A linked target account does not exist."
+msgstr ""
+
+msgid "A linked use requires an operation ID and exactly one source."
 msgstr ""
 
 msgid "A loan reference is for return previews."
@@ -450,6 +456,9 @@ msgstr ""
 msgid "A seat was cancelled"
 msgstr ""
 
+msgid "A selected provider needs an identifier."
+msgstr ""
+
 msgid "A selected registration was not found for this event."
 msgstr ""
 
@@ -500,6 +509,9 @@ msgid "A signed webhook needs a signing secret (16+ characters)."
 msgstr ""
 
 msgid "A slot with participation history cannot change kind."
+msgstr ""
+
+msgid "A source is required."
 msgstr ""
 
 #, python-brace-format
@@ -553,6 +565,9 @@ msgid "A track already uses this name."
 msgstr ""
 
 msgid "A valid expected sha256 digest is required (64 lowercase hexadecimal characters)."
+msgstr ""
+
+msgid "A valid kit name is required."
 msgstr ""
 
 msgid "A vendor with this name already exists."
@@ -1675,8 +1690,11 @@ msgstr ""
 msgid "Bookable space"
 msgstr ""
 
+msgid "Booking"
+msgstr ""
+
 msgid ""
-"Booking #{{ booking.id }} {{ event_name }}.\n"
+"Booking #{{ booking.id }} {{ event_label }}.\n"
 "Space: {{ booking.space.name }}\n"
 "Time: {{ booking.when }}\n"
 "Status: {{ booking.status }}\n"
@@ -1706,6 +1724,12 @@ msgid "Booking cannot start more than {max_booking_advance_days} days from now."
 msgstr ""
 
 msgid "Booking charged at the approval-day price (no price frozen at request)"
+msgstr ""
+
+msgid "Booking decisions are immutable."
+msgstr ""
+
+msgid "Booking decisions are retained until authorized purge."
 msgstr ""
 
 msgid "Booking departure recorded"
@@ -1818,13 +1842,25 @@ msgstr ""
 msgid "Browser linking requires the web client."
 msgstr ""
 
+msgid "Browser notification sign-up started"
+msgstr ""
+
 msgid "Browser notifications switched off"
 msgstr ""
 
 msgid "Browser notifications switched on"
 msgstr ""
 
+msgid "Browser notifications turned off"
+msgstr ""
+
+msgid "Browser notifications turned on"
+msgstr ""
+
 msgid "Browser origin cannot use native makerspace selection."
+msgstr ""
+
+msgid "Browser push is not available to native device sessions."
 msgstr ""
 
 msgid "Browser sign-ins through an OIDC provider, while in progress."
@@ -2124,10 +2160,13 @@ msgstr ""
 msgid "Certificates must be PDF files."
 msgstr ""
 
-msgid "Certification #{{ subject.id }} ({{ subject.name }}): {{ event_name }}. Expiry: {{ subject.expires_at }}."
+msgid "Certification #{{ subject.id }} ({{ subject.name }}): {{ event_label }}. Expiry: {{ subject.expires_at }}."
 msgstr ""
 
-msgid "Certification coverage"
+msgid "Certification coverage (retired)"
+msgstr ""
+
+msgid "Certification history (retired)"
 msgstr ""
 
 msgid "Certification granted"
@@ -2149,6 +2188,15 @@ msgid "Certification type deactivated"
 msgstr ""
 
 msgid "Certification type updated"
+msgstr ""
+
+msgid "Challenge is already in use."
+msgstr ""
+
+msgid "Challenge is invalid or expired."
+msgstr ""
+
+msgid "Challenge was already used."
 msgstr ""
 
 msgid "Changed to a cheaper ticket"
@@ -2199,6 +2247,9 @@ msgid "Chat template saved"
 msgstr ""
 
 msgid "Chat templates"
+msgstr ""
+
+msgid "Check at most 14 days at a time."
 msgstr ""
 
 msgid "Check the highlighted fields."
@@ -2822,6 +2873,9 @@ msgstr ""
 msgid "Complete personal linking through the authenticated challenge verify route."
 msgstr ""
 
+msgid "Complete the Firebase web project, sender and VAPID fields."
+msgstr ""
+
 msgid "Complete the control-panel MFA gate first."
 msgstr ""
 
@@ -2924,6 +2978,9 @@ msgstr ""
 msgid "Consumable is not linked to this machine."
 msgstr ""
 
+msgid "Consumable plan created"
+msgstr ""
+
 msgid "Consumable pool is incompatible with this machine service request."
 msgstr ""
 
@@ -2940,6 +2997,15 @@ msgid "Consumable price must belong to this makerspace."
 msgstr ""
 
 msgid "Consumable quantity is already reserved."
+msgstr ""
+
+msgid "Consumables recorded as used against this activity's linked plans and kit allocations, each use counted once, over the activity's lifetime. Kit allocations appear only for loans you may view. Cost is estimated at the product's current unit cost; unpriced products show no cost. Shortage compares the remaining planned quantity with current available stock."
+msgstr ""
+
+msgid "Consumables used for a booking"
+msgstr ""
+
+msgid "Consumables used for an event"
 msgstr ""
 
 msgid "Container belongs to another makerspace."
@@ -2965,6 +3031,9 @@ msgid "Content-Length must be between 1 and {CHUNK_MAX_BYTES}."
 msgstr ""
 
 msgid "Content-Length must specify the chunk size."
+msgstr ""
+
+msgid "Context not shown"
 msgstr ""
 
 msgid "Could not allocate a short link. Try again."
@@ -3036,10 +3105,16 @@ msgstr ""
 msgid "Currency requires a metric threshold."
 msgstr ""
 
+msgid "Current active equipment links for this authorized subject, limited to physical loans with a recorded issue time in the selected period; each canonical request appears once. Overdue marks a loan still out past its due time; loan hours run from issue to close, or to now while out. Loss cost is estimated at the current per-unit cost of missing units and is blank when a missing unit is unpriced. Never-issued requests are excluded."
+msgstr ""
+
 msgid "Current password is incorrect."
 msgstr ""
 
 msgid "Current public loans"
+msgstr ""
+
+msgid "Current purpose and status of authorized physical loans with a recorded issue time in the selected period. Each canonical request counts once, in exactly one purpose: a loan linked to both an event and a booking appears only under Event and booking, so column sums are overall totals. Overdue counts loans still out past their due time; loan hours run from issue to close, or to now while out. Loss cost is estimated at the current per-unit cost of missing units, per currency; loans with an unpriced missing unit are counted separately. Never-issued requests are excluded."
 msgstr ""
 
 msgid "Custom domains aren't available on free managed hosting; self-host to use your own domain."
@@ -3856,13 +3931,40 @@ msgstr ""
 msgid "Entry IDs must be unique within a section."
 msgstr ""
 
+msgid "Equipment kit created"
+msgstr ""
+
+msgid "Equipment kit setting changed"
+msgstr ""
+
+msgid "Equipment kit version created"
+msgstr ""
+
+msgid "Equipment linked to an event or booking"
+msgstr ""
+
+msgid "Equipment loan timeline for a booking"
+msgstr ""
+
+msgid "Equipment loan timeline for an event"
+msgstr ""
+
+msgid "Equipment loans by purpose"
+msgstr ""
+
+msgid "Equipment loans for a booking"
+msgstr ""
+
+msgid "Equipment loans for an event"
+msgstr ""
+
 msgid "Erasure approved"
 msgstr ""
 
 msgid "Erasure rejected"
 msgstr ""
 
-msgid "Erasure request #{{ subject.id }}: {{ event_name }}."
+msgid "Erasure request #{{ subject.id }}: {{ event_label }}."
 msgstr ""
 
 msgid "Erasure request withdrawn"
@@ -3874,8 +3976,11 @@ msgstr ""
 msgid "Estimated unit cost cannot be negative."
 msgstr ""
 
+msgid "Event"
+msgstr ""
+
 msgid ""
-"Event #{{ event.id }} {{ event_name }}.\n"
+"Event #{{ event.id }} {{ event_label }}.\n"
 "Title: {{ event.title }}\n"
 "Time: {{ event.when }}\n"
 "Status: {{ event.status }}\n"
@@ -3914,6 +4019,9 @@ msgid "Event Manager"
 msgstr ""
 
 msgid "Event and Station must belong to the same makerspace."
+msgstr ""
+
+msgid "Event and booking"
 msgstr ""
 
 msgid "Event approval digest sent"
@@ -4663,10 +4771,16 @@ msgstr ""
 msgid "Expected a boolean."
 msgstr ""
 
+msgid "Expected a canonical UUIDv4 generation."
+msgstr ""
+
 msgid "Expected a list of field names."
 msgstr ""
 
 msgid "Expected a question-ID map."
+msgstr ""
+
+msgid "Expected a safe integer in the allowed range."
 msgstr ""
 
 msgid "Expected an object."
@@ -4721,6 +4835,9 @@ msgid "Exports that move a space to another server."
 msgstr ""
 
 msgid "Extend by 1 to 3650 days."
+msgstr ""
+
+msgid "External"
 msgstr ""
 
 msgid "External contractor"
@@ -4855,6 +4972,12 @@ msgstr ""
 msgid "Financial year start month changed"
 msgstr ""
 
+msgid "Firebase challenge delivery is unavailable."
+msgstr ""
+
+msgid "Firebase web project must match the platform push credential."
+msgstr ""
+
 msgid "First compatible idle machine"
 msgstr ""
 
@@ -4880,6 +5003,9 @@ msgid "Flagged for information"
 msgstr ""
 
 msgid "Flat fee"
+msgstr ""
+
+msgid "For Firebase use firebase.measurement_id only."
 msgstr ""
 
 msgid "Form encoding required."
@@ -4998,6 +5124,9 @@ msgid "Groups that own or run one or more spaces."
 msgstr ""
 
 msgid "HTML, embeds and Markdown images are not supported."
+msgstr ""
+
+msgid "HTTPS origin must be explicitly operator-approved; no credentials, query or fragment."
 msgstr ""
 
 msgid "Handles can be changed once every 30 days."
@@ -5572,6 +5701,9 @@ msgstr ""
 msgid "Invalid authenticated batch item."
 msgstr ""
 
+msgid "Invalid booking decision intent."
+msgstr ""
+
 msgid "Invalid callback fields."
 msgstr ""
 
@@ -5594,6 +5726,9 @@ msgid "Invalid client signature."
 msgstr ""
 
 msgid "Invalid configuration space pack."
+msgstr ""
+
+msgid "Invalid consumable operation."
 msgstr ""
 
 msgid "Invalid cron request."
@@ -5642,11 +5777,26 @@ msgstr ""
 msgid "Invalid error severity."
 msgstr ""
 
+msgid "Invalid identifier for this provider."
+msgstr ""
+
 msgid "Invalid image object key."
 msgstr ""
 
 #, python-brace-format
 msgid "Invalid intake value for {key}."
+msgstr ""
+
+msgid "Invalid kit line."
+msgstr ""
+
+msgid "Invalid kit product."
+msgstr ""
+
+msgid "Invalid kit setting."
+msgstr ""
+
+msgid "Invalid kit."
 msgstr ""
 
 msgid "Invalid layer order."
@@ -5677,6 +5827,9 @@ msgid "Invalid notification scope fields."
 msgstr ""
 
 msgid "Invalid operator access level."
+msgstr ""
+
+msgid "Invalid or duplicate product IDs."
 msgstr ""
 
 msgid "Invalid or expired MFA challenge."
@@ -5722,6 +5875,9 @@ msgid "Invalid printer job ownership."
 msgstr ""
 
 msgid "Invalid project id."
+msgstr ""
+
+msgid "Invalid proposal."
 msgstr ""
 
 msgid "Invalid provider callback."
@@ -6048,7 +6204,13 @@ msgstr ""
 msgid "Kit components must contain only a UUID key, label and quantity."
 msgstr ""
 
+msgid "Kit is unavailable."
+msgstr ""
+
 msgid "Kit issue checklist recorded"
+msgstr ""
+
+msgid "Kit line kind does not match its product."
 msgstr ""
 
 msgid "Kit return checklist recorded"
@@ -6126,6 +6288,9 @@ msgstr ""
 msgid "Library revisions are immutable."
 msgstr ""
 
+msgid "Lifecycle milestones of loans currently linked to this authorized subject, from the request's recorded times, each return record and the rejection audit entry, in time order. Requests are included once submitted, whether or not they were issued; the period filters milestones, not loans. A loan linked to several activities appears in each activity's timeline but is still one request."
+msgstr ""
+
 msgid "Limit must be an integer."
 msgstr ""
 
@@ -6147,7 +6312,16 @@ msgstr ""
 msgid "Link existing account"
 msgstr ""
 
+msgid "Linked consumable use requires an account session."
+msgstr ""
+
+msgid "Linked room booking replaced"
+msgstr ""
+
 msgid "Linked sign-in accounts"
+msgstr ""
+
+msgid "Linked workshop machine booking replaced"
 msgstr ""
 
 msgid "Links must start with https://."
@@ -6162,6 +6336,9 @@ msgstr ""
 msgid "Live event credentials cannot be stored in design text."
 msgstr ""
 
+msgid "Loan booking context changed"
+msgstr ""
+
 msgid "Loan damage charge"
 msgstr ""
 
@@ -6169,6 +6346,9 @@ msgid "Loan deposit"
 msgstr ""
 
 msgid "Loan deposit raised"
+msgstr ""
+
+msgid "Loan event context changed"
 msgstr ""
 
 msgid "Loan fee waived by staff"
@@ -6202,6 +6382,15 @@ msgid "Loan rental to be charged at return"
 msgstr ""
 
 msgid "Loan throughput"
+msgstr ""
+
+msgid "Loan-context generation is invalid."
+msgstr ""
+
+msgid "Loan-context generations have an invalid shape."
+msgstr ""
+
+msgid "Loan-context generations must be distinct."
 msgstr ""
 
 msgid "Loans"
@@ -6544,7 +6733,7 @@ msgstr ""
 msgid "Maintenance recorded on {{ machine.name }}"
 msgstr ""
 
-msgid "Maintenance schedule #{{ schedule.id }} for {{ machine.name }}: {{ event_name }}. Due: {{ schedule.next_due }}."
+msgid "Maintenance schedule #{{ schedule.id }} for {{ machine.name }}: {{ event_label }}. Due: {{ schedule.next_due }}."
 msgstr ""
 
 msgid "Maintenance schedule changed for {{ machine.name }}"
@@ -6578,7 +6767,7 @@ msgid "Maintenance work that was carried out."
 msgstr ""
 
 msgid ""
-"Maintenance {{ event_name }}.\n"
+"Maintenance {{ event_label }}.\n"
 "Machine: {{ machine.name }}\n"
 "{% if schedule %}Schedule: #{{ schedule.id }}\n"
 "Description: {{ schedule.description }}\n"
@@ -6975,7 +7164,7 @@ msgstr ""
 msgid "Members' public maker profiles."
 msgstr ""
 
-msgid "Membership #{{ subject.id }}: {{ event_name }}. Status: {{ subject.status }}."
+msgid "Membership #{{ subject.id }}: {{ event_label }}. Status: {{ subject.status }}."
 msgstr ""
 
 msgid "Membership MRR / ARR per plan"
@@ -8120,6 +8309,9 @@ msgstr ""
 msgid "Order seat cancelled"
 msgstr ""
 
+msgid "Ordinary loan"
+msgstr ""
+
 msgid "Organisation event-email sender updated"
 msgstr ""
 
@@ -8357,7 +8549,7 @@ msgstr ""
 msgid "Pay link opened"
 msgstr ""
 
-msgid "Payment #{{ subject.id }}: {{ event_name }}. Status: {{ subject.status }}."
+msgid "Payment #{{ subject.id }}: {{ event_label }}. Status: {{ subject.status }}."
 msgstr ""
 
 msgid "Payment IDs must be unique."
@@ -8727,6 +8919,9 @@ msgstr ""
 msgid "Planned quantity must be greater than zero."
 msgstr ""
 
+msgid "Platform Firebase web settings changed"
+msgstr ""
+
 msgid "Platform IP rule deleted"
 msgstr ""
 
@@ -8854,6 +9049,9 @@ msgid "Post-event PDF is available after the event ends."
 msgstr ""
 
 msgid "Post-event analytics"
+msgstr ""
+
+msgid "PostHog analytics and replay must use the same project and origin."
 msgstr ""
 
 msgid "Prepaid job cancelled before it started"
@@ -9228,10 +9426,16 @@ msgstr ""
 msgid "Provide exactly one checkin_token or credential."
 msgstr ""
 
+msgid "Provide exactly one of items or kit."
+msgstr ""
+
 msgid "Provide exactly one of product or asset."
 msgstr ""
 
 msgid "Provide exactly one of product_id or asset_id."
+msgstr ""
+
+msgid "Provide exactly one of product_id, asset_id, create_product or create_asset."
 msgstr ""
 
 msgid "Provide exactly one of role_id or role_ids."
@@ -9310,6 +9514,9 @@ msgid "Public inventory is disabled."
 msgstr ""
 
 msgid "Public item consent changed. Review the selection."
+msgstr ""
+
+msgid "Public machine-job intake is unavailable. Please ask staff."
 msgstr ""
 
 msgid "Public makerspace location does not accept copied coordinates."
@@ -9418,6 +9625,12 @@ msgid "QR code is no longer available. Refresh and try again."
 msgstr ""
 
 msgid "QR code is not active."
+msgstr ""
+
+msgid "QR code values can be at most 64 characters."
+msgstr ""
+
+msgid "QR code values cannot contain control characters."
 msgstr ""
 
 msgid "QR codes"
@@ -9737,6 +9950,9 @@ msgstr ""
 msgid "Reopen source"
 msgstr ""
 
+msgid "Replacement booking created"
+msgstr ""
+
 msgid "Replay and Station must belong to the same makerspace."
 msgstr ""
 
@@ -9868,6 +10084,9 @@ msgstr ""
 msgid "Required email provider credentials are missing."
 msgstr ""
 
+msgid "Required for Firebase Analytics."
+msgstr ""
+
 msgid "Required for a custom-days interval."
 msgstr ""
 
@@ -9884,6 +10103,9 @@ msgid "Required integration scopes are missing."
 msgstr ""
 
 msgid "Required only for link_existing decisions."
+msgstr ""
+
+msgid "Required when enabled."
 msgstr ""
 
 msgid "Reservation exports require a tenant-local bookable_space subject."
@@ -10031,6 +10253,9 @@ msgstr ""
 msgid "Rollup dimensions must be an object."
 msgstr ""
 
+msgid "Room booking linked to the event"
+msgstr ""
+
 msgid "Room delivery is disabled."
 msgstr ""
 
@@ -10083,6 +10308,9 @@ msgid "SMTP port must be one of 25, 465, 587, or 2525."
 msgstr ""
 
 msgid "Sales end must be after sales start."
+msgstr ""
+
+msgid "Sample rate must be finite."
 msgstr ""
 
 msgid "Save a draft before releasing it."
@@ -10143,6 +10371,9 @@ msgid "Say why this job is urgent."
 msgstr ""
 
 msgid "Say why this membership is being extended."
+msgstr ""
+
+msgid "Scan or enter the QR code value."
 msgstr ""
 
 msgid "Scanner Lookup"
@@ -10296,6 +10527,9 @@ msgstr ""
 msgid "Sent to technicians"
 msgstr ""
 
+msgid "Sentry DSN needs a public ingest key and numeric project path."
+msgstr ""
+
 #, python-brace-format
 msgid "Serial {serial} · Revision {revision}"
 msgstr ""
@@ -10402,6 +10636,9 @@ msgstr ""
 msgid "Shop Manager"
 msgstr ""
 
+msgid "Shop items offered at an event changed"
+msgstr ""
+
 msgid "Shop items returned"
 msgstr ""
 
@@ -10439,6 +10676,9 @@ msgid "Shop order placed"
 msgstr ""
 
 msgid "Shop order ready for pickup"
+msgstr ""
+
+msgid "Shop pickup moved to the makerspace"
 msgstr ""
 
 msgid "Shop product archived"
@@ -10626,6 +10866,9 @@ msgstr ""
 msgid "Space archived as scheduled"
 msgstr ""
 
+msgid "Space closed"
+msgstr ""
+
 msgid "Space controls"
 msgstr ""
 
@@ -10693,6 +10936,9 @@ msgid "Space roles"
 msgstr ""
 
 msgid "Space unblocked by the platform operator"
+msgstr ""
+
+msgid "SpaceWorks"
 msgstr ""
 
 msgid "SpaceWorks delivery test"
@@ -10936,7 +11182,7 @@ msgstr ""
 msgid "Stock counts and the corrections they made."
 msgstr ""
 
-msgid "Stock item #{{ subject.id }} ({{ subject.name }}): {{ event_name }}."
+msgid "Stock item #{{ subject.id }} ({{ subject.name }}): {{ event_label }}."
 msgstr ""
 
 msgid "Stock movements are append-only."
@@ -11055,6 +11301,9 @@ msgid "Storage reservations reconciled"
 msgstr ""
 
 msgid "Store canonical UUID keys, text labels and integer quantities for kit components."
+msgstr ""
+
+msgid "Stored identifier exceeds the safe integer range."
 msgstr ""
 
 msgid "Stored member entries require a stable typed reference slot."
@@ -11989,6 +12238,12 @@ msgstr ""
 msgid "This API target is unavailable."
 msgstr ""
 
+msgid "This QR code is already linked. The existing link was kept."
+msgstr ""
+
+msgid "This QR code was revoked in this makerspace and cannot be linked again."
+msgstr ""
+
 msgid "This account cannot use access tokens."
 msgstr ""
 
@@ -12147,6 +12402,9 @@ msgstr ""
 msgid "This endpoint does not accept request fields."
 msgstr ""
 
+msgid "This endpoint requires a staff session."
+msgstr ""
+
 msgid "This entry has no receipt."
 msgstr ""
 
@@ -12226,6 +12484,9 @@ msgid "This is a Space Works delivery test. Confirm it arrived in your inbox."
 msgstr ""
 
 msgid "This is a walk-in record, not an account. It has no password to reset."
+msgstr ""
+
+msgid "This item already has an active QR code. Revoke it before linking another."
 msgstr ""
 
 msgid "This item cannot be waitlisted."
@@ -12433,6 +12694,9 @@ msgid "This receipt is already attached."
 msgstr ""
 
 msgid "This recurrence rule is invalid."
+msgstr ""
+
+msgid "This report is retired and cannot be newly scheduled."
 msgstr ""
 
 msgid "This report has no currency dimension."
@@ -12721,16 +12985,25 @@ msgstr ""
 msgid "URLs cannot contain whitespace or control characters."
 msgstr ""
 
+msgid "Umami requires an approved origin."
+msgstr ""
+
 msgid "Unattached event website images removed"
 msgstr ""
 
 msgid "Unattached public page images removed"
 msgstr ""
 
+msgid "Unavailable"
+msgstr ""
+
 msgid "Unclaimed prize forfeited"
 msgstr ""
 
 msgid "Under review"
+msgstr ""
+
+msgid "Unexpected decision fields."
 msgstr ""
 
 msgid "Unexpected fields."
@@ -12743,6 +13016,9 @@ msgid "Unexpected online payment decided"
 msgstr ""
 
 msgid "Unexpected online payment flagged"
+msgstr ""
+
+msgid "Unexpected or missing context fields."
 msgstr ""
 
 msgid "Unification migration"
@@ -13213,6 +13489,12 @@ msgstr ""
 msgid "Use a #RRGGBB colour."
 msgstr ""
 
+msgid "Use a Firebase project ID."
+msgstr ""
+
+msgid "Use a GA4 measurement ID."
+msgstr ""
+
 msgid "Use a URL of at most 500 characters."
 msgstr ""
 
@@ -13405,6 +13687,9 @@ msgid "Use an object with areas, settings, request_access and optional without."
 msgstr ""
 
 msgid "Use an object."
+msgstr ""
+
+msgid "Use an uncompressed P-256 VAPID public key."
 msgstr ""
 
 msgid "Use answers."
@@ -13687,7 +13972,6 @@ msgstr ""
 msgid "Use weekly and exceptions, or {} for always open."
 msgstr ""
 
-#, python-brace-format
 msgid "Use {number} or {number:N} exactly once."
 msgstr ""
 
@@ -13920,6 +14204,9 @@ msgstr ""
 msgid "Web social login cannot use attestation."
 msgstr ""
 
+msgid "Web telemetry settings changed"
+msgstr ""
+
 msgid "Webhook verification failed."
 msgstr ""
 
@@ -14080,6 +14367,15 @@ msgid "Work started"
 msgstr ""
 
 msgid "Workload identity must be a boolean."
+msgstr ""
+
+msgid "Workshop machine booking linked to the event"
+msgstr ""
+
+msgid "Workshop machine links are immutable."
+msgstr ""
+
+msgid "Workshop machine links are retained until authorized purge."
 msgstr ""
 
 msgid "Written off"
@@ -14257,7 +14553,7 @@ msgstr ""
 msgid "Your card was emailed a few minutes ago. Try again later."
 msgstr ""
 
-msgid "Your certification {{ subject.name }} at {{ makerspace.name }}: {{ event_name }}. Expiry: {{ subject.expires_at }}."
+msgid "Your certification {{ subject.name }} at {{ makerspace.name }}: {{ event_label }}. Expiry: {{ subject.expires_at }}."
 msgstr ""
 
 #, python-brace-format
@@ -14333,7 +14629,7 @@ msgstr ""
 msgid "Your makerspace request was cancelled"
 msgstr ""
 
-msgid "Your membership at {{ makerspace.name }}: {{ event_name }}."
+msgid "Your membership at {{ makerspace.name }}: {{ event_label }}."
 msgstr ""
 
 msgid "Your membership request at {{ makerspace.name }}"
@@ -14342,7 +14638,7 @@ msgstr ""
 msgid "Your own verified email is required."
 msgstr ""
 
-msgid "Your payment #{{ subject.id }}: {{ event_name }}. Amount: {{ subject.amount }} {{ subject.currency }}. {% if subject.due_date %}Due: {{ subject.due_date }}. {% endif %}Review your payment history at {{ makerspace.name }}."
+msgid "Your payment #{{ subject.id }}: {{ event_label }}. Amount: {{ subject.amount }} {{ subject.currency }}. {% if subject.due_date %}Due: {{ subject.due_date }}. {% endif %}Review your payment history at {{ makerspace.name }}."
 msgstr ""
 
 msgid "Your place is booked. We look forward to seeing you."
@@ -14405,6 +14701,9 @@ msgid "[{name}] Scheduled report: {title}"
 msgstr ""
 
 msgid "a member card is a durable physical credential; claim sessions cannot read or manage it"
+msgstr ""
+
+msgid "api_key, project_id and app_id are required."
 msgstr ""
 
 #, python-brace-format
@@ -14484,6 +14783,9 @@ msgid "event cancellation can mutate a foreign-hosted registration"
 msgstr ""
 
 msgid "event certificates can belong to foreign-hosted registrations"
+msgstr ""
+
+msgid "event equipment lists the holder's own loans for a registration"
 msgstr ""
 
 msgid "event feedback can return foreign-hosted registration rows"
@@ -14693,6 +14995,10 @@ msgid ""
 msgstr ""
 
 #, python-brace-format
+msgid "{keys} cannot be turned on: it is retired or not shipped by this deployment."
+msgstr ""
+
+#, python-brace-format
 msgid "{count} certification(s) expire soon; review and renew training."
 msgstr ""
 
@@ -14880,13 +15186,13 @@ msgstr ""
 msgid "{{ makerspace.name }} asked for a new photo for your card. Your card stays valid."
 msgstr ""
 
-msgid "{{ makerspace.name }} booking #{{ booking.id }} {{ event_name }}"
+msgid "{{ makerspace.name }} booking #{{ booking.id }} {{ event_label }}"
 msgstr ""
 
 msgid "{{ makerspace.name }} could not erase your membership data. {% if decision.note %}Their note: {{ decision.note }}{% endif %}"
 msgstr ""
 
-msgid "{{ makerspace.name }} event #{{ event.id }} {{ event_name }}"
+msgid "{{ makerspace.name }} event #{{ event.id }} {{ event_label }}"
 msgstr ""
 
 msgid "{{ makerspace.name }} hardware request #{{ request.id }} accepted"
@@ -14913,7 +15219,7 @@ msgstr ""
 msgid "{{ makerspace.name }} hardware request #{{ request.id }} submitted"
 msgstr ""
 
-msgid "{{ makerspace.name }} maintenance {{ event_name }}: {{ machine.name }}"
+msgid "{{ makerspace.name }} maintenance {{ event_label }}: {{ machine.name }}"
 msgstr ""
 
 msgid "{{ makerspace.name }} print request #{{ print_request.id }} accepted"
@@ -14985,4 +15291,35 @@ msgstr ""
 
 #, python-brace-format
 msgid "“{value}” needs an email address."
+msgstr ""
+
+msgid "Unknown grant source."
+msgstr ""
+
+msgid "Unknown limit key."
+msgstr ""
+
+#, python-format
+msgid "Use a whole number from 0 to %(max)s, -1 or null."
+msgstr ""
+
+msgid "Member"
+msgstr ""
+
+msgid "Guest"
+msgstr ""
+
+msgid "A machine this adapter serves is outside your management scope."
+msgstr ""
+
+msgid "Enter the shared secret again when you change the address."
+msgstr ""
+
+msgid "This adapter has no enabled binding that prints labels."
+msgstr ""
+
+msgid "A guardian's consent is needed before this profile can be shown on the open web."
+msgstr ""
+
+msgid "Your profiles from different spaces were combined into one, so publishing it on the open web is off until you confirm it again in your profile settings."
 msgstr ""

@@ -45,13 +45,13 @@ def create_self_service(actor, *, name, slug, description="", website=""):
     if not policy["eligible"]:
         raise PermissionDenied(policy["reason"])
     if Organization.objects.filter(created_by=locked_actor).count() >= policy["max_owned"]:
-        raise OrganizationConflict("Your organization ownership limit has been reached.")
+        raise OrganizationConflict(gettext("Your organization ownership limit has been reached."))
     recent = AuditLog.objects.filter(
         actor=locked_actor, action="organization.self_created",
         created_at__gte=timezone.now() - timedelta(days=1),
     ).count()
     if recent >= policy["max_per_day"]:
-        raise OrganizationConflict("Your daily organization creation limit has been reached.")
+        raise OrganizationConflict(gettext("Your daily organization creation limit has been reached."))
     if not isinstance(name, str) or not isinstance(slug, str):
         raise ValidationError(gettext("A name and slug must be strings."))
     if not isinstance(description, str) or len(description) > 10000:
@@ -78,7 +78,7 @@ def create_self_service(actor, *, name, slug, description="", website=""):
                 granted_actions=[],
             )
     except IntegrityError as exc:
-        raise OrganizationConflict("An organization with this slug already exists.") from exc
+        raise OrganizationConflict(gettext("An organization with this slug already exists.")) from exc
     audit.record(locked_actor, "organization.self_created", target=row)
     if services_review.review_required():
         services_review.submit_new(row, locked_actor)

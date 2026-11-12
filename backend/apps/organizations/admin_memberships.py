@@ -13,6 +13,7 @@ from apps.organizations.governance import GOVERNANCE_ACTIONS
 from apps.organizations.services_governance import assert_governor_remains
 from apps.organizations.admin_errors import control_mutation
 from config.admin_access import SuperuserOnlyModelAdmin
+from django.utils.translation import gettext
 
 
 class OrganizationMembershipForm(forms.ModelForm):
@@ -37,15 +38,15 @@ class OrganizationMembershipForm(forms.ModelForm):
         if not isinstance(actions, list) or any(
             not isinstance(item, str) for item in actions
         ):
-            raise forms.ValidationError("Use a list of action values.")
+            raise forms.ValidationError(gettext("Use a list of action values."))
         values = set(actions)
         if values & rbac.ROLE_FORBIDDEN_ACTIONS:
             raise forms.ValidationError(
-                "This action cannot be granted through an organization."
+                gettext("This action cannot be granted through an organization.")
             )
         unknown = values - rbac.ALL_ACTIONS
         if unknown:
-            raise forms.ValidationError(f"Unknown action value: {sorted(unknown)[0]}.")
+            raise forms.ValidationError(gettext("Unknown action value: %(value)s.") % {"value": sorted(unknown)[0]})
         if rbac.Action.MANAGE_MACHINES in values:
             # machines.role_scope.manage_scope_for() derives machine reach from a local
             # MakerspaceMembership role and resolves an organization-only actor to
@@ -54,8 +55,8 @@ class OrganizationMembershipForm(forms.ModelForm):
             # grant something inert; machine scope for organization grants has to be
             # defined before it can be offered.
             raise forms.ValidationError(
-                "manage_machines cannot be granted through an organization yet: "
-                "machine scope is derived from a makerspace membership."
+                gettext("manage_machines cannot be granted through an organization yet: "
+                "machine scope is derived from a makerspace membership.")
             )
         return sorted(values)
 
@@ -66,11 +67,11 @@ class OrganizationMembershipForm(forms.ModelForm):
         if not isinstance(actions, list) or any(
             not isinstance(item, str) for item in actions
         ):
-            raise forms.ValidationError("Use a list of governance action values.")
+            raise forms.ValidationError(gettext("Use a list of governance action values."))
         unknown = set(actions) - GOVERNANCE_ACTIONS
         if unknown:
             raise forms.ValidationError(
-                f"Unknown governance action: {sorted(unknown)[0]}."
+                gettext("Unknown governance action: %(value)s.") % {"value": sorted(unknown)[0]}
             )
         return sorted(set(actions))
 

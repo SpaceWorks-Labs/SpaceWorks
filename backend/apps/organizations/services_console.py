@@ -39,7 +39,7 @@ def create_organization(actor, **values):
         with transaction.atomic():
             row = Organization.objects.create(created_by=actor, **values)
     except IntegrityError as exc:
-        raise OrganizationConflict("An organization with this slug already exists.") from exc
+        raise OrganizationConflict(gettext("An organization with this slug already exists.")) from exc
     audit.record(actor, "organization.created", target=row, meta={"fields": sorted(values)})
     return row
 
@@ -61,9 +61,9 @@ def change_link(actor, organization_id, makerspace_id, *, relationship=None):
         row.delete()
         return None
     if not organization.is_active:
-        raise OrganizationConflict("Reactivate the organization before linking a makerspace.")
+        raise OrganizationConflict(gettext("Reactivate the organization before linking a makerspace."))
     if organization.review_status != "approved":
-        raise OrganizationConflict("This organization is not approved yet.")
+        raise OrganizationConflict(gettext("This organization is not approved yet."))
     if relationship not in OrganizationMakerspace.Relationship.values:
         from rest_framework.exceptions import ValidationError
         raise ValidationError({"relationship": gettext("Unknown relationship.")})
@@ -81,7 +81,7 @@ def change_link(actor, organization_id, makerspace_id, *, relationship=None):
                 row.relationship = relationship
                 row.save(update_fields=["relationship", "updated_at"])
     except IntegrityError as exc:
-        raise OrganizationConflict("This makerspace already has an owner organization.") from exc
+        raise OrganizationConflict(gettext("This makerspace already has an owner organization.")) from exc
     if created or changed:
         audit.record(actor, "organization.link_created" if created else "organization.link_updated",
                      makerspace=space, target=row,

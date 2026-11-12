@@ -46,12 +46,12 @@ def _create_organization(actor, name):
         audit.record(actor, "organization.created", target=row,
                      meta={"fields": ["name", "slug"]})
         return row
-    raise OrganizationConflict("Could not allocate an organization slug. Try again.")
+    raise OrganizationConflict(gettext("Could not allocate an organization slug. Try again."))
 
 
 def _validated_choice(organization_id, new_name):
     if (organization_id is None) == (new_name is None):
-        message = "Choose an existing organization or provide a new name, exactly one."
+        message = gettext("Choose an existing organization or provide a new name, exactly one.")
         raise serializers.ValidationError({"organization_id": message, "organization_name": message})
     try:
         if new_name is not None:
@@ -67,7 +67,7 @@ def _link_owner(actor, space, *, organization_id, new_name):
     if OrganizationMakerspace.objects.filter(
         makerspace=space, relationship=OrganizationMakerspace.Relationship.OWNER,
     ).exists():
-        raise OrganizationConflict("This makerspace already has an owner organization.")
+        raise OrganizationConflict(gettext("This makerspace already has an owner organization."))
     if new_name is not None:
         organization_id = _create_organization(actor, new_name).pk
     organization = Organization.objects.select_for_update().filter(pk=organization_id).first()
@@ -82,7 +82,7 @@ def _link_owner(actor, space, *, organization_id, new_name):
                 relationship=OrganizationMakerspace.Relationship.OWNER, created_by=actor,
             )
     except IntegrityError as exc:
-        raise OrganizationConflict("This makerspace already has an owner organization.") from exc
+        raise OrganizationConflict(gettext("This makerspace already has an owner organization.")) from exc
     audit.record(actor, "organization.link_created", makerspace=space, target=row,
                  meta={"organization_id": organization.pk, "relationship": row.relationship})
     return row

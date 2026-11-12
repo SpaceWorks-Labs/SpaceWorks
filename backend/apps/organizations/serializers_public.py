@@ -2,6 +2,7 @@ from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from apps.inventory import public_image_storage
+from apps.makerspaces.public_page_projected_serializers import PublicMembershipPlans, SpaceCard
 from apps.organizations.models import Organization
 
 
@@ -35,13 +36,13 @@ class PublicOrganizationSerializer(serializers.ModelSerializer):
     def get_logo_url(self, obj):
         return public_image_storage.public_url(obj.logo_key) or None
 
-    @extend_schema_field(serializers.JSONField(allow_null=True))
+    @extend_schema_field(PublicMembershipPlans(allow_null=True))
     def get_plans(self, obj):
         # The home space's listed membership plans; null while its plans switch is off.
         from apps.organizations.public_plans import home_space_plans
         return home_space_plans(obj)
 
-    @extend_schema_field(serializers.JSONField(allow_null=True))
+    @extend_schema_field(SpaceCard(allow_null=True))
     def get_home_space(self, obj):
         # Member cards are issued by the home space; the org has no card of its own.
         from apps.organizations.public_plans import home_space

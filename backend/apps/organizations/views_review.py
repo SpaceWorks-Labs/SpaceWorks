@@ -1,4 +1,5 @@
 """Organization review queue, decisions, resubmission and the governor roll-up (O-B5)."""
+from drf_spectacular.utils import extend_schema_serializer
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import serializers
@@ -15,6 +16,7 @@ from apps.organizations.serializers_admin import OrganizationSummarySerializer
 from apps.organizations.services_console import require_superadmin
 from apps.organizations.views_admin import _organization
 from apps.organizations.views_console import console_errors
+from django.utils.translation import gettext
 
 
 class ReviewEntrySerializer(serializers.ModelSerializer):
@@ -43,6 +45,7 @@ class ReviewQueueSerializer(serializers.Serializer):
     results = ReviewQueueRowSerializer(many=True)
 
 
+@extend_schema_serializer(component_name="OrganizationReviewDecision")
 class ReviewDecisionSerializer(serializers.Serializer):
     decision = serializers.ChoiceField(choices=sorted(services_review.DECISIONS))
     reason = serializers.CharField(required=False, allow_blank=True, max_length=2000)
@@ -69,7 +72,7 @@ class OrganizationReviewQueueView(APIView):
         require_superadmin(request.user)
         status = request.query_params.get("status", Organization.ReviewStatus.PENDING_REVIEW)
         if status not in Organization.ReviewStatus.values:
-            raise serializers.ValidationError({"status": "Unknown review status."})
+            raise serializers.ValidationError({"status": gettext("Unknown review status.")})
         paginator = PageNumberPagination()
         rows = paginator.paginate_queryset(
             Organization.objects.filter(review_status=status).select_related("created_by")

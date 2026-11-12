@@ -31,7 +31,7 @@ def assert_governor_remains(organization, *, replaced_id, status=None, actions=N
         )
     )
     if not remaining:
-        raise OrganizationConflict("Invite another governor before removing the last governor.")
+        raise OrganizationConflict(gettext("Invite another governor before removing the last governor."))
 
 
 def assert_deletable(organization):
@@ -48,10 +48,10 @@ def assert_deletable(organization):
             **{relation.field.name: organization.pk}
         ).exists():
             raise OrganizationConflict(
-                "This organization still has linked makerspaces or retained domain references."
+                gettext("This organization still has linked makerspaces or retained domain references.")
             )
     if organization.logo_key:
-        raise OrganizationConflict("Remove organization artwork through platform support before deletion.")
+        raise OrganizationConflict(gettext("Remove organization artwork through platform support before deletion."))
 
 
 @transaction.atomic

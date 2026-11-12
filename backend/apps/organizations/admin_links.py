@@ -12,6 +12,7 @@ from apps.tenant_migration.gate_runtime import assert_write_allowed
 from config.admin_access import SuperuserOnlyModelAdmin
 from .models import Organization, OrganizationMakerspace
 from .services_console import change_link
+from django.utils.translation import gettext
 
 
 class OrganizationLinkForm(forms.ModelForm):
@@ -23,7 +24,7 @@ class OrganizationLinkForm(forms.ModelForm):
         data = super().clean()
         organization = data.get("organization") or getattr(self.instance, "organization", None)
         if organization and not organization.is_active:
-            raise forms.ValidationError("Reactivate the organization before linking a makerspace.")
+            raise forms.ValidationError(gettext("Reactivate the organization before linking a makerspace."))
         return data
 
 

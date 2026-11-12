@@ -1,5 +1,6 @@
 """Owner-self organization withdrawal, with a timestamp revision and durable replay."""
 
+from drf_spectacular.utils import extend_schema_serializer
 from django.utils.translation import gettext
 from datetime import UTC, datetime
 
@@ -69,12 +70,12 @@ def leave_organization(*, request, organization_id, operation_id, expected_versi
         organization=organization, actor=actor, operation_id=operation_id).first()
     if receipt:
         if receipt.expected_version != expected_version:
-            raise LeaveConflict("idempotency_conflict", "This operation ID was already used.")
+            raise LeaveConflict("idempotency_conflict", gettext("This operation ID was already used."))
         return {"organization_id": organization.pk, "state": "left", "allowed_actions": []}
     membership = get_object_or_404(
         OrganizationMembership.objects.select_for_update(), organization=organization, user=actor)
     if membership_version(membership) != expected_version:
-        raise LeaveConflict("stale_version", "Your organization membership changed. Reload before leaving.")
+        raise LeaveConflict("stale_version", gettext("Your organization membership changed. Reload before leaving."))
     assert_governor_remains(organization, replaced_id=membership.pk, deleting=True)
     record(actor, "organization.member_left", target=organization,
            meta={"membership_id": membership.pk, "operation_id": str(operation_id)})
@@ -84,6 +85,7 @@ def leave_organization(*, request, organization_id, operation_id, expected_versi
     return {"organization_id": organization.pk, "state": "left", "allowed_actions": []}
 
 
+@extend_schema_serializer(component_name="OrganizationLeaveInput")
 class LeaveInput(serializers.Serializer):
     operation_id = serializers.UUIDField()
     expected_version = serializers.IntegerField(min_value=1)

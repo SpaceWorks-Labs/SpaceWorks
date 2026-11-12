@@ -46,7 +46,7 @@ def send(invitation, email, raw_token, actor):
     from apps.integrations.invite_chat import dispatch_invite_chat
     organization = invitation.organization
     link = redeem_link(raw_token)
-    label = f"You are invited to join {organization.name} on Space Works"
+    label = gettext("You are invited to join %(name)s on Space Works") % {"name": organization.name}
     emailed = chatted = False
     try:
         log = dispatch_email(to_email=email, subject=label, text_body=gettext('{label}. Accept it here: {link}').format(label=label, link=link),

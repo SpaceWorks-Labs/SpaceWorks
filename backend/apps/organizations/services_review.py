@@ -50,7 +50,7 @@ def is_inert(organization) -> bool:
 
 def require_not_inert(organization):
     if is_inert(organization):
-        raise OrganizationConflict("This organization is not approved yet.")
+        raise OrganizationConflict(gettext("This organization is not approved yet."))
 
 
 def submit_new(organization, actor):
@@ -69,7 +69,7 @@ def resubmit(organization, actor, note=""):
     if governance.MANAGE_ORGANIZATION_PROFILE not in governance.actions_for(actor, locked):
         raise PermissionDenied()
     if locked.review_status != S.CHANGES_REQUESTED:
-        raise OrganizationConflict("Only an organization with requested changes can be resubmitted.")
+        raise OrganizationConflict(gettext("Only an organization with requested changes can be resubmitted."))
     locked.review_status = S.PENDING_REVIEW
     locked.save(update_fields=["review_status", "updated_at"])
     OrganizationReview.objects.create(
@@ -93,7 +93,7 @@ def decide(organization, actor, decision, reason=""):
     locked = Organization.objects.select_for_update().get(pk=organization.pk)
     outcome = _DECISIONS.get((locked.review_status, decision))
     if outcome is None:
-        raise OrganizationConflict("This decision does not apply to the organization's current standing.")
+        raise OrganizationConflict(gettext("This decision does not apply to the organization's current standing."))
     new_status, action = outcome
     locked.review_status = new_status
     fields = ["review_status", "updated_at"]
@@ -117,6 +117,6 @@ def assert_slug_available(slug):
     declined = held.reviews.filter(action=A.DECLINED).first()
     until = (declined.created_at if declined else held.updated_at) + timedelta(days=SLUG_HOLD_DAYS)
     if until > timezone.now():
-        raise OrganizationConflict("This slug is held for a recently declined organization.")
+        raise OrganizationConflict(gettext("This slug is held for a recently declined organization."))
     if not held.makerspace_links.exists():
         held.delete()

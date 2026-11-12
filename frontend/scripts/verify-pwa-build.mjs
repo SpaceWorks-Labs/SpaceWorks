@@ -5,6 +5,18 @@ import { resolve } from "node:path";
 import { runInNewContext } from "node:vm";
 
 const output = resolve("dist");
+// Dev-only galleries (gallery.html, motion-gallery.html) and their entry chunks must never ship.
+for (const page of ["gallery.html", "motion-gallery.html"]) {
+  await assert.rejects(access(resolve(output, page)), `Dev-only ${page} must not be in the production build.`);
+}
+for (const asset of await readdir(resolve(output, "assets"), { recursive: true })) {
+  assert(!/galleryMain|motionGallery|LayoutGallery/i.test(String(asset)), `Dev gallery chunk shipped: ${asset}`);
+}
+// The deployment CSP has no 'unsafe-inline' and no hash: the shell may carry no inline script.
+const shell = await readFile(resolve(output, "index.html"), "utf8");
+for (const [tag] of shell.matchAll(/<script\b[^>]*>/g)) assert(/\ssrc=/.test(tag), `Inline script in dist/index.html: ${tag}`);
+assert(shell.includes('<script src="/boot.js"></script>'), "Pre-paint boot script missing from the shell.");
+await access(resolve(output, "boot.js"));
 const worker = await readFile(resolve(output, "sw.js"), "utf8");
 const manifest = JSON.parse(await readFile(resolve(output, "pwa-manifest.json"), "utf8"));
 await assert.rejects(access(resolve("public/sw.js")), "The static public worker must be removed.");

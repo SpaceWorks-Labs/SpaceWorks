@@ -125,12 +125,36 @@ function generatedHeaders(settings) {
   }
 }
 
-it("generates SPA security headers when analytics is disabled", { skip: !existsSync(shell) }, () => {
+it("generates SPA security headers, with a script baseline CSP, when analytics is disabled", { skip: !existsSync(shell) }, () => {
   assert.equal(generatedHeaders({}), [
     "add_header Referrer-Policy strict-origin always;",
     'add_header X-Frame-Options "DENY" always;',
-    `add_header Content-Security-Policy "frame-ancestors 'none'" always;`, "",
+    'add_header X-Content-Type-Options "nosniff" always;',
+    `add_header Content-Security-Policy "frame-ancestors 'none'" always;`,
+    `add_header Content-Security-Policy "script-src 'self' 'wasm-unsafe-eval' https://accounts.google.com https://appleid.cdn-apple.com; object-src 'none'; base-uri 'self'" always;`,
+    "",
   ].join("\n"));
+});
+
+it("never relaxes the script policy with 'unsafe-inline', in any mode", { skip: !existsSync(shell) }, () => {
+  const modes = [{}, { TURNSTILE_SITE_KEY: "0x4AAAAAAA" }, {
+    WEB_ANALYTICS_SCRIPT_URL: "https://stats.example.org/js/script.manual.js",
+    WEB_ANALYTICS_COLLECT_URL: "https://stats.example.org/api/event", WEB_ANALYTICS_DOMAIN: "space.example.org",
+  }];
+  for (const settings of modes) {
+    const headers = generatedHeaders(settings);
+    assert.doesNotMatch(headers, /'unsafe-inline'|'unsafe-eval'/);
+    assert.match(headers, /script-src 'self' [^"]*; object-src 'none'; base-uri 'self'"/);
+  }
+  assert.match(generatedHeaders({ TURNSTILE_SITE_KEY: "0x4AAAAAAA" }), /script-src [^;]*https:\/\/challenges\.cloudflare\.com;/);
+});
+
+it("serves the pre-paint boot script as a file under the SPA headers, never inline", () => {
+  const html = read("../index.html");
+  for (const [tag] of html.matchAll(/<script\b[^>]*>/g)) assert.match(tag, /\ssrc=/, `inline script in index.html: ${tag}`);
+  assert.ok(html.indexOf('src="/boot.js"') < html.indexOf('src="/src/main.tsx"'));
+  assert.ok(existsSync(new URL("../public/boot.js", import.meta.url)));
+  assert.ok(block(nginx, "location = /boot.js").includes("analytics-headers.conf;"));
 });
 
 it("composes analytics restrictions with framing and explicit API/storage origins", { skip: !existsSync(shell) }, () => {

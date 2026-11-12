@@ -41,6 +41,10 @@ export default defineConfig({
     },
   },
   build: {
+    // Everything past 500 kB is already a lazy chunk nobody downloads up front: the docs graph (Mermaid, ELK,
+    // the API reference), the 3D viewer, the preview worker and the event drawer. The ceiling sits just above
+    // the largest of them (ELK, ~1.4 MB) so a NEW oversized chunk still warns; the entry chunk is ~590 kB.
+    chunkSizeWarningLimit: 1500,
     rollupOptions: {
       output: {
         // Two stable vendor chunks so an app deploy does not invalidate the framework bytes

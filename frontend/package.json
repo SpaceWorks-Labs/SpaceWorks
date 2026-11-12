@@ -11,9 +11,10 @@
     "i18n:check": "node scripts/check-i18n-literals.mjs",
     "test": "vitest run",
     "build": "tsc -b && npm run build:bundle",
-    "build:bundle": "vite build && node scripts/verify-pwa-build.mjs",
+    "build:bundle": "vite build && node scripts/verify-pwa-build.mjs && node scripts/check-chunk-sizes.mjs",
     "preview": "vite preview",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "features:catalogue": "node scripts/features-catalogue/generate.mjs"
   },
   "dependencies": {
     "@lingui/core": "6.10.1",

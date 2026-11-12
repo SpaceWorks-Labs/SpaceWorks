@@ -62,6 +62,11 @@ export const CURATED_DOCS: Curated[] = [
   ...group("API", [
     "api-guide.md", "api-client-protocol.md", "webhooks-v2.md", "mobile-integration.md", "device-protocol.md",
     "device-printer-protocol.md", "device-label-commands.md", "machine-integrations/INTEGRATION.md",
+    "device-adapters/README.md", "device-adapters/authentication.md", "device-adapters/api.md",
+    "device-adapters/sequences.md", "device-adapters/errors.md", "device-adapters/versioning.md",
+    "device-adapters/build-an-adapter.md", "device-adapters/media-and-data.md", "device-adapters/hardware/shelf-pointer.md",
+    "image-adapters/README.md", "image-adapters/authentication.md", "image-adapters/api.md",
+    "image-adapters/errors.md", "image-adapters/build-a-provider.md",
   ]),
   ...group("Reference", [
     "environment-reference.md", "environment-reference-delivery.md", "environment-operations.md",

@@ -30,7 +30,8 @@ def test_every_published_schema_is_exactly_what_the_exporter_writes(tmp_path):
     exporter.main()
     published = REPO / "docs" / "device-adapters" / "schemas"
     fresh = {path.name: path.read_bytes() for path in tmp_path.glob("*.json")}
-    docs = {path.name: path.read_bytes() for path in published.glob("*.json")}
+    # A Windows checkout (core.autocrlf) turns the committed LF into CRLF; the bytes that matter are the repo's.
+    docs = {path.name: path.read_bytes().replace(b"\r\n", b"\n") for path in published.glob("*.json")}
     assert sorted(set(fresh) - set(docs)) == [], "run: python scripts/export_adapter_schemas.py"
     assert sorted(set(docs) - set(fresh)) == [], "a published schema no longer exists in code"
     assert sorted(name for name in fresh if fresh[name] != docs[name]) == []

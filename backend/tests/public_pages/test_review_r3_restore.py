@@ -68,7 +68,8 @@ def test_unlimited_tenant_assets_verify_without_incrementing_counter(event_owner
         object_key=f"events/website/{space.pk}/{event_page.pk}/r3.webp")
     limits.add_storage(space, 30)
     space.refresh_from_db()
-    assert space.storage_bytes_used == 0
+    # Owner rule 261: bytes are counted for every space (unlimited ones too); an unlimited space is never refused.
+    assert space.storage_bytes_used == 30
     assert verify_public_pages()["assets"] == 1
     # Finite tenants must still account for both maker and event bytes. Other
     # domains may add to the counter; the verifier never requires subtotal equality.

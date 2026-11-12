@@ -30,7 +30,7 @@ def available_locks(space, actor, event):
         Event.objects.select_for_update(nowait=True).get(pk=event.pk)
         Makerspace.objects.select_for_update(nowait=True).get(pk=space.pk)
         User.objects.select_for_update(nowait=True).get(pk=actor.pk)
-        list(MakerspaceMembership.objects.select_for_update(nowait=True).filter(user=actor, makerspace=space))
+        list(MakerspaceMembership.staff_tracks.select_for_update(nowait=True).filter(user=actor, makerspace=space))
         list(EventPage.objects.select_for_update(nowait=True).filter(makerspace=space))
 
 
@@ -112,7 +112,7 @@ def test_authority_revocation_commits_during_storage_and_finalizer_refuses(event
         def change():
             with transaction.atomic():
                 available_locks(space, actor, event)
-                member = MakerspaceMembership.objects.select_for_update().get(makerspace=space, user=actor)
+                member = MakerspaceMembership.staff_tracks.select_for_update().get(makerspace=space, user=actor)
                 member.status = "revoked"
                 member.save(update_fields=["status"])
         with database_worker(change) as (future, _):

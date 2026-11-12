@@ -41,10 +41,13 @@ def test_a_rule_narrowed_to_one_type_routes_only_that_types_notices():
     w = two_types("route-type")
     default = ids(w, w.mill)
     laser_lead = manager(w, w.kind)
+    # A Machine Manager scoped to the type is already in that type's default audience (machine scoping),
+    # so "untouched" means the audience is the same before and after the rule exists.
+    submitted = ids(w, w.kind, "submitted")
     route(w, laser_lead, w.kind)
     assert ids(w, w.kind) == [laser_lead.pk]
     assert ids(w, w.mill) == default  # another type's notices keep the default audience
-    assert ids(w, w.kind, "submitted") == ids(w, w.mill, "submitted")  # other events untouched
+    assert ids(w, w.kind, "submitted") == submitted  # other events untouched
 
 
 def test_a_staff_rule_never_silences_the_members_own_notice():

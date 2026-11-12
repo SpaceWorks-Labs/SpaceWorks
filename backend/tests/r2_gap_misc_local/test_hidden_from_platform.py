@@ -64,10 +64,9 @@ def test_discover_search_and_the_sitemap_leave_it_out():
     shown, hidden, _manager = spaces("hide-discover")
     listed = set(directory_spaces().values_list("pk", flat=True))
     assert shown.pk in listed and hidden.pk not in listed
-    from urllib.parse import urlsplit
-    from django.conf import settings
-    request = RequestFactory().get("/sitemap.xml", HTTP_HOST=urlsplit(settings.PUBLIC_APP_BASE_URL).hostname or "localhost")
-    with override_settings(ALLOWED_HOSTS=["*"]):
+    # The test environment leaves PUBLIC_APP_BASE_URL empty, so sitemap_spaces 404s every host; pin it.
+    request = RequestFactory().get("/sitemap.xml", HTTP_HOST="spaceworks.test")
+    with override_settings(ALLOWED_HOSTS=["*"], PUBLIC_APP_BASE_URL="https://spaceworks.test"):
         mapped = set(sitemap_spaces(request).values_list("pk", flat=True))
     assert hidden.pk not in mapped
 

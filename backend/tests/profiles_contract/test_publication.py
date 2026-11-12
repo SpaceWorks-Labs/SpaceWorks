@@ -47,7 +47,9 @@ def test_space_level_changes_shrink_the_listing_instead_of_hiding_the_profile(pu
         space.enabled_modules = []; space.save()
     response = read()
     assert response.status_code == 200
-    assert (response.data["spaces"] == []) is (change != "module")
+    # Decision 336b (M13): an anonymous reader sees a space only while it is PUBLIC (public site on AND the
+    # `membership` module installed), so switching the module off shrinks the list the same way.
+    assert response.data["spaces"] == []
 
 
 @pytest.mark.parametrize("change", ["invisible", "consent", "inactive", "restricted"])
@@ -153,11 +155,15 @@ def test_vouch_projection_omits_unpublished_vouchers_and_vouchees(published):
                                               kind="request", state="active")
     MembershipVouch.objects.create(makerspace=space, request=request, voucher=other,
                                    expires_at=timezone.now() + timedelta(days=30))
+    from apps.makerspaces.account_profile_vouches import vouches_for
+    subject = published.membership.user
     save_profile(membership, {"is_visible": True})
-    assert read().data["vouched_by"] == []
+    assert vouches_for(subject, "public")["vouched_by"] == []
     save_profile(membership, {"public_visible": True, "publication_consent": True})
     claim_handle(membership.user, "public.voucher")
-    assert read().data["vouched_by"] == [
+    assert vouches_for(subject, "public")["vouched_by"] == [
         {"handle": "public.voucher", "display_name": "Visible voucher", "space_name": space.name}]
     save_profile(membership, {"public_visible": False})
+    assert vouches_for(subject, "public")["vouched_by"] == []
+    # Decision 336b (M13): the anonymous profile read never names vouchers; only co-members see them.
     assert read().data["vouched_by"] == []

@@ -99,8 +99,10 @@ def test_archived_space_schedules_only_its_purge(world):
 def test_purge_is_held_when_the_scheduler_is_no_longer_a_superadmin(world):
     control(world.root, world.lab, "archive")
     control(world.root, world.lab, "schedule", {"purge_grace_days": 1})
-    world.root.is_superuser = False
-    world.root.save(update_fields=["is_superuser"])
+    # Decision 63 account split: user_platform_flags forbids a platform account without is_superuser, so
+    # the scheduler stops being an ACTIVE superadmin by being deactivated instead.
+    world.root.is_active = False
+    world.root.save(update_fields=["is_active"])
     due = state(world).purge_due_at + timedelta(minutes=1)
     assert run_schedules(due)["purged"] == 0
     assert run_schedules(due)["purged"] == 0

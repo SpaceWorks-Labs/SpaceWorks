@@ -103,7 +103,7 @@ def test_device_issuance_checks_live_grant_after_account_lock():
     assert OutstandingToken.objects.count() == count
 
 
-@pytest.mark.parametrize("kind,surface", [("member", "member"), ("staff", "staff_api"),
+@pytest.mark.parametrize("kind,surface", [("member", "member"), ("staff", "member"),
                                          ("platform", "platform"), ("platform", "control")])
 @pytest.mark.parametrize("revoked", [False, True])
 def test_mfa_completion_locks_account_before_proof_and_tokens(kind, surface, revoked):

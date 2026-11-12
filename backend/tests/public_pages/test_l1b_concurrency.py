@@ -26,7 +26,7 @@ def test_page_save_rechecks_authority_after_concurrent_revocation(page_owner):
     from contextlib import ExitStack
     with ExitStack() as stack:
         with transaction.atomic():
-            membership = MakerspaceMembership.objects.select_for_update().get(makerspace=space, user=actor)
+            membership = MakerspaceMembership.staff_tracks.select_for_update().get(makerspace=space, user=actor)
             future, pid = stack.enter_context(database_worker(save))
             wait_for_blocked(pid)
             membership.status = "revoked"

@@ -148,15 +148,16 @@ def test_product_master_data_edit_is_atomic_with_its_audit(monkeypatch):
 
 def test_stale_product_edit_cannot_write_kit_after_feature_disabled():
     from apps.admin_api.serializers_inventory_products import InventoryProductAdminUpdateSerializer
-    from rest_framework.exceptions import ValidationError
+    from apps.makerspaces.guards import SurfaceOff
     data = kit_setup()
+    # Decision 183B (gap 12): a feature that is off answers a typed 404 (SurfaceOff), never a 400.
     # Load the relation before changing the stored gates, reproducing a stale view lookup.
     assert "loans.kit_checklist" in data.product.makerspace.enabled_features
     data.space.enabled_features = []
     data.space.save(update_fields=["enabled_features"])
     serializer = InventoryProductAdminUpdateSerializer(data.product, data={"kit_components": []}, partial=True)
     serializer.is_valid(raise_exception=True)
-    with pytest.raises(ValidationError):
+    with pytest.raises(SurfaceOff):
         serializer.save()
     data.product.refresh_from_db()
     assert data.product.kit_components[0]["label"] == "Driver bits"

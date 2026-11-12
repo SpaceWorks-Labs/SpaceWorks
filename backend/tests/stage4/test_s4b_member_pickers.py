@@ -29,11 +29,10 @@ def roster():
     space.enabled_features = sorted(set(space.enabled_features) | {"inventory.self_checkout"})
     space.save(update_fields=["enabled_modules", "enabled_features"])
     manager, _ = staff(space, "s4b-picker-manager", role="space_manager")
-    operator, _ = staff(space, "s4b-picker-operator", email="same@example.test")
+    # Decisions 63/66: one account per person (e-mail is unique), so the operator is a person who
+    # holds ONLY a staff-track row here; without a community-track row they are never a candidate.
+    operator, _ = staff(space, "s4b-picker-operator", email="operator@example.test")
     community = member(space, username="s4b-picker-member")
-    # Matching contact details never make the staff identity a community candidate.
-    community.email = operator.email
-    community.save(update_fields=["email"])
     platform = User.objects.create_superuser("s4b-picker-platform")
     foreign = member(Makerspace.objects.create(name="Other", slug="s4b-other"),
                      username="s4b-outsider", phone="+15550100101")
@@ -101,9 +100,9 @@ def test_payment_presence_and_member_card_rosters_never_offer_staff(roster):
         with pytest.raises(Http404):
             scoped_account(space, account.pk)
     # The staff lifecycle roster remains a separate, usable staff picker.
-    response = api.get(f"/api/v1/admin/makerspaces/{space.pk}/staff-accounts/")
+    response = api.get(f"/api/v1/admin/makerspaces/{space.pk}/staff-roles/")
     assert response.status_code == 200, response.data
-    assert {row["id"] for row in response.data["results"]} == {manager.pk, operator.pk}
+    assert {row["user_id"] for row in response.data["results"]} == {manager.pk, operator.pk}
 
 
 def test_organization_audience_and_speaker_candidates_use_community_accounts(roster):
@@ -118,7 +117,7 @@ def test_organization_audience_and_speaker_candidates_use_community_accounts(ros
             assign_speaker(event, actor=manager, user=account)
 
 
-def test_organization_admin_autocomplete_and_form_refuse_staff(roster):
+def test_organization_admin_autocomplete_and_form_offer_people_never_platform_accounts(roster):
     from django.contrib import admin
     from django.test import RequestFactory
     from apps.organizations.admin_memberships import OrganizationMembershipForm
@@ -129,10 +128,14 @@ def test_organization_admin_autocomplete_and_form_refuse_staff(roster):
     })
     request.user = platform
     candidates, _ = admin.site._registry[User].get_search_results(request, User.objects.all(), "")
-    assert candidates.filter(pk=community.pk).exists()
-    assert not candidates.filter(pk__in=[operator.pk, platform.pk]).exists()
+    # Decision 63 retires the separate staff account kind: the operator is an ordinary person who
+    # holds a staff role, and this deployment-wide picker has no space to read a track from, so a
+    # person is a candidate whatever roles they hold. Platform accounts (and shells) never are.
+    assert candidates.filter(pk__in=[community.pk, operator.pk]).count() == 2
+    assert not candidates.filter(pk=platform.pk).exists()
     choices = OrganizationMembershipForm().fields["user"].queryset
-    assert choices.filter(pk=community.pk).exists() and not choices.filter(pk=operator.pk).exists()
+    assert choices.filter(pk__in=[community.pk, operator.pk]).count() == 2
+    assert not choices.filter(pk=platform.pk).exists()
 
 
 @__import__("pytest").mark.skip(reason="Decision 319: certification gating retired (machine access grants replace it); see tests/parity_0120/machine_access.")

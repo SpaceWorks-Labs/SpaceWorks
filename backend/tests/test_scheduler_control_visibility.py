@@ -63,6 +63,7 @@ def test_a_space_manager_cannot_open_it():
 
 
 def test_sidebar_has_every_platform_integration_and_the_scheduler():
+    # The control catalogue names the SMS entry in plain language ("Platform text messages").
     from config.unfold import UNFOLD
 
     labels = {
@@ -71,6 +72,6 @@ def test_sidebar_has_every_platform_integration_and_the_scheduler():
         for item in group["items"]
     }
     assert {
-        "Platform SMS", "Platform push", "Login methods", "Social sign-in",
+        "Platform text messages", "Platform push", "Login methods", "Social sign-in",
         "OIDC providers", "Scheduled task runs",
     } <= labels

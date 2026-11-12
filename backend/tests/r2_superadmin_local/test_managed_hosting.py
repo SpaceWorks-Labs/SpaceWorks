@@ -49,7 +49,12 @@ def test_switch_off_changes_nothing_visible_or_enforced(world):
     assert "plan" not in health.card(world.lab)
     for path in ("/hosting-plans", "/hosting-invoices", "/hosting-billing-settings", f"/spaces/{world.lab.pk}/plan"):
         assert api(world.root).get(PLATFORM + path).status_code == 404
-    assert api(world.boss).get(f"/api/v1/admin/makerspace/{world.lab.pk}/hosting-plan").status_code == 404
+    # Decision 236: the Space Manager's usage page is not plan-gated (SpacePlanUsageView plans_required=False);
+    # an OWN space (explicit type: the suite's conftest makes an absent row hosted) answers with no plan, not 404.
+    from apps.managed_hosting.hosting_type import OWN, set_type
+    set_type(world.root, world.lab, OWN)
+    usage = api(world.boss).get(f"/api/v1/admin/makerspace/{world.lab.pk}/hosting-plan")
+    assert usage.status_code == 200 and usage.json()["plan"] is None and usage.json()["hosted"] is False
     uninstall_module(world.lab, "shop")
     assert install_module(world.lab, "shop") == ["shop"]  # not refused by the plan's module list
     with mock.patch("apps.managed_hosting.enforcement.monthly_used") as counted:

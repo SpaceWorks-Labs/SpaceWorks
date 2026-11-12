@@ -30,10 +30,10 @@ def test_highlights_follow_public_visibility_and_availability_modes_and_never_le
     space = lane.space
     _open_catalogue(space)
     make_product(space, "Exact item", public_availability_mode=PublicAvailabilityMode.EXACT_COUNT,
-                 show_public_count=True, storage_location="SECRET-SHELF-1", issued_quantity=9)
+                 show_public_count=True, storage_location="SECRET-SHELF-1", issued_quantity=9, total_quantity=20)
     make_product(space, "Gated count", public_availability_mode=PublicAvailabilityMode.EXACT_COUNT,
-                 show_public_count=False, issued_quantity=8)
-    make_product(space, "Hidden count", public_availability_mode=PublicAvailabilityMode.HIDDEN, issued_quantity=7)
+                 show_public_count=False, issued_quantity=8, total_quantity=20)
+    make_product(space, "Hidden count", public_availability_mode=PublicAvailabilityMode.HIDDEN, issued_quantity=7, total_quantity=20)
     make_product(space, "Private item", is_public=False)
     make_product(space, "Archived item", is_archived=True)
     make_product(space, "Consumable item", is_consumable=True)
@@ -72,7 +72,8 @@ def test_sponsor_wall_shows_only_live_wall_sponsors_with_public_fields(lane):
     assert set(panel["sponsors"][0]) == {"name", "tier", "logo_url"}
 
 
-def test_screen_state_carries_the_new_panels_only_when_chosen(lane):
+def test_screen_state_carries_the_new_panels_only_when_chosen(lane, settings):
+    settings.PUBLIC_APP_BASE_URL = "https://spaces.example.test"  # the secret-bearing link needs an origin
     _open_catalogue(lane.space)
     _sponsors_on(lane.space)
     make_product(lane.space, "Shown on screen")

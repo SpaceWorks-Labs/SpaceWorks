@@ -45,7 +45,8 @@ def test_native_order_created_once_stored_and_reused(monkeypatch, claimed):
         if method == "POST":
             assert path == "/orders"
             assert body == {
-                key: order[key] for key in ("amount", "currency", "receipt", "notes")
+                **{key: order[key] for key in ("amount", "currency", "receipt", "notes")},
+                "payment_capture": 1,  # PAY-REVIEW 0.12.0: automatic capture is requested
             }
             assert len(body["receipt"]) <= 40
         else:

@@ -5,7 +5,7 @@ from django.core.management import CommandError, call_command
 
 from apps.hardware_requests.models import HardwareRequest
 from apps.accounts.models import User
-from apps.makerspaces.models import Makerspace
+from apps.makerspaces.models import Makerspace, MakerspaceMembership
 
 pytestmark = pytest.mark.django_db
 
@@ -24,7 +24,10 @@ def test_seed_e2e_creates_a_fresh_makerspace_with_both_requests(settings, tmp_pa
     probe = HardwareRequest.objects.get(pk=seeded["probe_request_id"])
     assert pending.requester.account_kind == "member"
     manager = User.objects.get(username=seeded["manager"]["username"])
-    assert manager.account_kind == "staff" and manager.staff_makerspace_id == space.pk
+    # Decision 63: one account per person; the manager is a member-kind account holding a
+    # staff-track row in the seeded space.
+    assert manager.account_kind == "member"
+    assert MakerspaceMembership.staff_tracks.filter(user=manager, makerspace=space).exists()
     assert pending.status == HardwareRequest.Status.PENDING_APPROVAL
     assert probe.status == HardwareRequest.Status.ACCEPTED
     assert space.boxes.filter(code=seeded["box_code"]).exists()

@@ -148,10 +148,13 @@ def test_feedback_is_released_only_by_a_published_shortlist_or_result(monkeypatc
     w = world(monkeypatch)
     one = stage(w.event, 1, shortlist_after=True)
     stage(w.event, 2)
-    round_row = SimpleNamespace(share_feedback=True, state="finalized", submission_stage_id=one.pk,
-                                event_id=w.event.pk, pk=0)
+    from apps.events.judging.models_definitions import JudgingRound
+    round_row = JudgingRound.objects.create(event=w.event, key="ideas", mode="top3", state="finalized",
+                                            submission_stage=one, share_feedback=True)
     assert not stage_feedback.released(round_row)
     publish(w, one, [])
     assert stage_feedback.released(round_row)
-    assert not stage_feedback.released(SimpleNamespace(**{**vars(round_row), "share_feedback": False}))
-    assert not stage_feedback.released(SimpleNamespace(**{**vars(round_row), "state": "open"}))
+    round_row.share_feedback = False
+    assert not stage_feedback.released(round_row)
+    round_row.share_feedback, round_row.state = True, "open"
+    assert not stage_feedback.released(round_row)

@@ -37,7 +37,7 @@ def test_members_row_keeps_only_people_who_can_see_the_machine_for_email_and_pus
     MachineOperator.objects.create(machine=printer, user=operator, access_level=MachineOperator.AccessLevel.OPERATE)
     linked = make_member("os-linked", space, make_role(space, "mm", [Action.MANAGE_MACHINES]))
     MembershipMachineTypeScope.objects.create(
-        membership=MakerspaceMembership.objects.get(user=linked, makerspace=space),
+        membership=MakerspaceMembership.all_tracks.get(user=linked, makerspace=space),
         machine_type=printer.machine_type,
     )
     _members_row(space)

@@ -192,7 +192,8 @@ def test_the_provider_test_route_is_throttled_per_user(monkeypatch):
     from apps.outbound_throttles import ImageAdapterTestThrottle
     monkeypatch.setattr(outbound_policy.socket, "getaddrinfo", _dns("93.184.216.34"))
     monkeypatch.setattr(outbound_http, "send", lambda *a, **k: outbound_http.Response(503))
-    monkeypatch.setattr(ImageAdapterTestThrottle, "default_rate", "2/min")
+    # The scope is now configured in REST_FRAMEWORK (settings_drf), which wins over `default_rate`.
+    monkeypatch.setitem(ImageAdapterTestThrottle.THROTTLE_RATES, "image_adapter_test", "2/min")
     cache.clear()
     space = card_space("secfix-eraser-throttle", features=("cards.photo_cutout",))
     api = client(manager(space))

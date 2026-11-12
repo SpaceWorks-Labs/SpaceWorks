@@ -72,7 +72,10 @@ def test_late_native_capture_after_switch_settles_or_flags_excess_once(client, t
         assert receipts.get().settlement_method == "cash"
         assert excess.count() == 1
         assert excess.get().meta["provider_payment_id"] == "pay_late"
-    assert ProcessedStripeEvent.objects.filter(makerspace=space, provider="razorpay").count() == 2
+    # decision 360: two deliveries, each claiming an event id plus a signed-body hash
+    assert ProcessedStripeEvent.objects.filter(
+        makerspace=space, provider="razorpay"
+    ).exclude(stripe_event_id__startswith="sha256:").count() == 2
 
 
 @pytest.mark.parametrize("invalid", ["forged", "missing", "other_tenant"])

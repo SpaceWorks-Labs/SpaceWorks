@@ -100,6 +100,11 @@ def test_delivery_rechecks_dns_and_stores_sanitized_error(monkeypatch):
         smtp_host="smtp.internal.example",
         smtp_port=587,
     )
+    # Parity E-B8: a space's own SMTP is only used once its test message was accepted; mark it
+    # verified so delivery reaches the DNS re-check this test is about.
+    from django.utils import timezone
+    from apps.integrations.space_smtp_gate import mark_verified
+    mark_verified(space, timezone.now())
 
     log = dispatch_email(
         to_email="borrower@example.com",

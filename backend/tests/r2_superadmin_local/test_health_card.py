@@ -20,8 +20,8 @@ BASE = "/api/v1/admin/platform/space-health"
 @pytest.fixture
 def world(settings):
     settings.PLATFORM_DOMAIN_SUFFIX = ".space-works.test"
-    settings.MANAGED_RESOURCE_LIMITS = {**settings.MANAGED_RESOURCE_LIMITS, "members": 4}
-    lab = space()
+    # Decisions 236 addendum / 281: built-in values are suggestions; a limit applies only when set per space.
+    lab = space(resource_limit_overrides={"members": 4})
     root, boss = superadmin(), manager(lab)
     people = [member(lab, f"person-{index}") for index in range(3)]
     return type("World", (), dict(lab=lab, root=root, boss=boss, people=people))

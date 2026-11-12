@@ -30,7 +30,8 @@ def test_export_registration_tenant_subject_json_and_user_decisions(published):
     assert "makerspaces.PublicHandleRedirect" in OMITTED_MODELS
     assert ("makerspaces.PublicHandle", "user") in RELATIONAL_USER_FIELDS
     assert ("makerspaces.MemberProfile", "skills") in JSON_FIELDS
-    assert DATASET_SPECS["makerspaces.PublicHandle"][1].any_paths == ("profile__membership__makerspace",)
+    assert DATASET_SPECS["makerspaces.PublicHandle"][1].any_paths == (
+        "profile__membership__makerspace", "makerspace")  # a space's own handle rows reach it by `makerspace`
     assert subject_query(ProfileTimelineEntry, published.membership.user,
                          published.membership.makerspace_id).get().pk == entry.pk
     validate_model_and_field_coverage()
@@ -126,8 +127,10 @@ def test_portable_source_carries_authored_content_and_handle_but_resets_consent(
     import uuid
     from apps.makerspaces.models import MemberProject
     from apps.tenant_migration.tenant_dump_source_projection import project_makerspace_source
-    legacy = MemberProfile.objects.create(membership=published.membership, domains=["Robotics"],
-                                          show_projects=True, public_visible=True, public_consented_at=timezone.now())
+    # `save_profile` already made the legacy per-membership row (one per membership), so update it.
+    legacy, _ = MemberProfile.objects.update_or_create(
+        membership=published.membership,
+        defaults=dict(domains=["Robotics"], show_projects=True, public_visible=True, public_consented_at=timezone.now()))
     MemberProject.objects.create(profile=legacy, title="Robot", subtitle="First build", tags=["robotics"],
                                  public_visible=True)
     PublicHandle.objects.filter(user=published.user).update(profile=legacy)

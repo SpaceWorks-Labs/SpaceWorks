@@ -60,10 +60,16 @@ def test_retirement_migration_moves_legacy_labels_without_reviving_invalid_autho
     unassigned = MakerspaceMembership.staff_tracks.get(user=legacy, makerspace=makerspace)
     handover_membership = MakerspaceMembership.staff_tracks.get(user=handover, makerspace=makerspace)
     migration = import_module("apps.makerspaces.migrations.0046_retire_print_manager")
+    # A data migration runs on HISTORICAL models, whose default manager sees every membership row.
+    # Under the real models `.objects` is the member track only (U-A1), which would hide the staff
+    # rows this test seeds, so hand the migration the app registry as it stood before 0046.
+    from django.db.migrations.loader import MigrationLoader
+    historical = MigrationLoader(connection).project_state(
+        ("makerspaces", "0045_membership_join_policy_referrals")).apps
     with pytest.raises(IntegrityError), transaction.atomic():
         MakerspaceMembership.staff_tracks.filter(pk=unassigned.pk).update(assigned_role=None, role="print_manager")
-        migration.migrate_print_manager_memberships(django_apps, None)
-        migration.migrate_print_manager_memberships(django_apps, None)
+        migration.migrate_print_manager_memberships(historical, None)
+        migration.migrate_print_manager_memberships(historical, None)
         already_machine.refresh_from_db()
         unassigned.refresh_from_db()
         handover_membership.refresh_from_db()

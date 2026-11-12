@@ -182,7 +182,8 @@ def test_address_problems_found_before_any_connection_stay_distinct(space, monke
 def test_test_and_sync_are_throttled_per_user(space, monkeypatch):
     admin, pid = _create(space)
     route_through(monkeypatch, FakeAnthias("v2"))
-    monkeypatch.setattr(AnthiasPlayerThrottle, "default_rate", "2/min")
+    # The scope is now configured in REST_FRAMEWORK (settings_drf), which wins over `default_rate`.
+    monkeypatch.setitem(AnthiasPlayerThrottle.THROTTLE_RATES, "anthias_player_call", "2/min")
     from django.core.cache import cache
     cache.clear()
     codes = [admin.post(_admin(space.space, f"anthias-players/{pid}/test")).status_code for _ in range(3)]

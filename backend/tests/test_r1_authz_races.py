@@ -33,7 +33,7 @@ pytestmark = pytest.mark.django_db
 
 
 def _revoke(user, space):
-    MakerspaceMembership.objects.filter(user=user, makerspace=space).update(status="revoked")
+    MakerspaceMembership.all_tracks.filter(user=user, makerspace=space).update(status="revoked")
 
 
 def _revoking(monkeypatch, target, name, revoke):
@@ -58,6 +58,7 @@ def test_domain_verification_refuses_when_manager_is_revoked_after_lookup(monkey
         frontend_domain_status=Makerspace.DomainStatus.PENDING, domain_verified_at=None,
     )
     manager = make_member("race-domain-manager", space)
+    monkeypatch.setattr("apps.makerspaces.domain_verification._resolve_txt", lambda name: [])
     _revoking(monkeypatch, views_domain_verification, "verify_domain", lambda: _revoke(manager, space))
 
     response = authenticated_client(manager).post(
@@ -71,10 +72,15 @@ def test_domain_verification_refuses_when_manager_is_revoked_after_lookup(monkey
 
 
 @override_settings(PLATFORM_DOMAIN_SUFFIX="")
-def test_domain_verification_still_verifies_for_a_live_manager():
+def test_domain_verification_still_verifies_for_a_live_manager(monkeypatch):
+    # Decision 192: a Space Manager on self-host proves control with the DNS TXT record
+    # (only the operator's word is trusted outright), so the proof is served by a stub.
     space = make_space("race-domain-ok")
     space.frontend_domain = "race-domain-ok.example"
     space.save(update_fields=["frontend_domain"])
+    monkeypatch.setattr(
+        "apps.makerspaces.domain_verification._resolve_txt", lambda name: [space.domain_verification_token]
+    )
     manager = make_member("race-domain-ok-manager", space)
 
     response = authenticated_client(manager).post(

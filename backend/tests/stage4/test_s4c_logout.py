@@ -12,16 +12,27 @@ from apps.accounts.credential_revocation import revoke_sessions_only
 from apps.accounts.session_context import cookie_name
 from apps.accounts.tokens import SpaceWorksRefreshToken
 from apps.accounts.web_sessions import revoke_session
-from tests.account_split.test_p2_contexts import principals
+from apps.accounts.models import User
 from .test_s4c_refresh_revocation import device_tokens
 
 pytestmark = pytest.mark.django_db
-CONTEXTS = ["member", "staff:context-a", "staff:context-b", "platform"]
+# Decisions 63/66 (U-B, one account per person): only the person and platform cookies exist.
+CONTEXTS = ["person", "platform"]
 HEADERS = {"HTTP_ORIGIN": "http://localhost:5000", "HTTP_X_REFRESH_CSRF": "1"}
 LOGOUT = "/api/v1/auth/logout"
+ORIGIN = "http://localhost:5000"
 
 
-@pytest.mark.parametrize("index", range(4))
+@pytest.fixture
+def principals(settings):
+    settings.CORS_ALLOWED_ORIGINS = [ORIGIN]
+    settings.PLATFORM_STAFF_ORIGINS = [ORIGIN]
+    person = User.objects.create_user("person", email="person@example.test", password="Logout password 965!")
+    platform = User.objects.create_superuser("platform", email="platform@example.test", password="Logout password 965!")
+    return person, platform
+
+
+@pytest.mark.parametrize("index", range(2))
 @pytest.mark.parametrize("state", ["live", "missing", "malformed", "expired", "blacklisted", "revoked", "session_revoked"])
 def test_logout_always_clears_only_the_selected_context(principals, index, state):
     client = APIClient()
@@ -60,7 +71,7 @@ def test_logout_always_clears_only_the_selected_context(principals, index, state
         assert BlacklistedToken.objects.filter(token__jti=selected["sid"]).exists()
 
 
-@pytest.mark.parametrize("index", range(4))
+@pytest.mark.parametrize("index", range(2))
 @pytest.mark.parametrize("headers", [{}, {"HTTP_ORIGIN": HEADERS["HTTP_ORIGIN"]},
     {"HTTP_X_REFRESH_CSRF": "1", "HTTP_ORIGIN": "https://attacker.example.test"}])
 def test_invalid_cookie_does_not_bypass_csrf(principals, index, headers):
@@ -97,7 +108,7 @@ def test_wrong_context_is_refused_and_cleared_without_consuming_other_token(prin
     assert not BlacklistedToken.objects.filter(token__jti=member["sid"]).exists()
 
 
-def test_default_context_does_not_select_a_staff_cookie(principals):
+def test_default_context_does_not_select_the_platform_cookie(principals):
     client = APIClient()
     raw = str(SpaceWorksRefreshToken.for_user(principals[1]))
     client.cookies[cookie_name(CONTEXTS[1])] = raw
@@ -133,7 +144,7 @@ def test_device_logout_ignores_refresh_validity_and_keeps_browser_sessions(princ
 @pytest.mark.parametrize("expired_session", [False, True])
 def test_control_logout_flushes_only_django_session(principals, expired_session):
     client = APIClient()
-    client.force_login(principals[3])
+    client.force_login(principals[1])
     session_key = client.session.session_key
     raws = {cookie_name(context): str(SpaceWorksRefreshToken.for_user(user))
             for context, user in zip(CONTEXTS, principals)}

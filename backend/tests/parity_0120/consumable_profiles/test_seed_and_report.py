@@ -9,7 +9,7 @@ from apps.machines.models_consumable_profiles import MachineTypeConsumable
 from apps.machines import consumable_usage as usage
 from tests.return_helpers import make_product
 
-from .helpers import D, define, pool, running_job, world
+from .helpers import D, define, pool, report_dicts, running_job, world
 
 pytestmark = pytest.mark.django_db
 migration = import_module("apps.machines.migrations.0042_seed_consumable_profiles")
@@ -81,19 +81,19 @@ def test_types_a_space_does_not_price_by_material_get_nothing():
 
 
 def test_report_sums_estimates_and_actuals_per_type_and_key():
-    from apps.operations.reports import report_rows
     w = world("rep")
     define(w, "sheet", unit_price=D("2.00"), estimate_by="staff")
     first, _ = running_job(w)
     usage.record_estimates(first, w.staff, [{"key": "sheet", "quantity": 1}], source="staff")
     usage.record_estimates(first, w.staff, [{"key": "sheet", "quantity": 3}], source="staff")
     usage.record_actuals(first, w.staff, [{"key": "sheet", "quantity": 2}], source="staff")
-    second, _ = running_job(w)
+    # A running job holds its machine (audit 0.12.0, C8), so the second one runs on the other machine.
+    second, _ = running_job(w, machine=1)
     usage.record_actuals(second, None, [{"key": "sheet", "quantity": 1}], source="adapter")
     from apps.machines.models import MachineServiceRequest
     w.space.enabled_modules = sorted({*w.space.enabled_modules, "reports"})
     w.space.save(update_fields=["enabled_modules"])
-    [row] = report_rows("machine-consumables", w.space.pk, actor=w.staff)
+    [row] = report_dicts("machine-consumables", w.space.pk, actor=w.staff)
     assert (row["key"], row["unit"], row["jobs"]) == ("sheet", "sheet", 2)
     assert D(row["estimated_quantity"]) == 3 and D(row["actual_quantity"]) == 3 and D(row["adapter_quantity"]) == 1
     assert D(row["actual_value"]) == D("6.00")

@@ -46,8 +46,12 @@ def test_staff_and_member_downloads_recheck_grant_owner_and_tenant(monkeypatch):
     assert bearer_client(manager).get(path, {"token": "invalid"}).status_code == 400
     from tests.return_helpers import make_space
     foreign, _ = staff(make_space("s4-foreign-finance"), "s4-foreign-finance", role="space_manager")
-    assert bearer_client(foreign).get(path).status_code == 403
-    assert bearer_client(User.objects.create_superuser("s4-root")).get(path).status_code == 403
+    # The surface guard no longer pre-refuses this mixed-audience route (surface_policy.enforce_request,
+    # decisions 63/66): the view owns the check. Without a signed grant it refuses everyone alike, and a
+    # foreign space's staff cannot mint a grant for this space's document.
+    assert bearer_client(foreign).get(path).status_code == 400
+    assert bearer_client(foreign).get(reverse("staff-payment-document-url", args=[space.pk, bill.pk])).status_code in {403, 404}
+    assert bearer_client(User.objects.create_superuser("s4-root")).get(path).status_code == 400
 
 
 def test_kiosk_lease_package_evidence_and_command_use_station_tenant(monkeypatch):

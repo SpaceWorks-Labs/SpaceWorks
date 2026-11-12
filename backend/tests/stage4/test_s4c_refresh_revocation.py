@@ -139,8 +139,8 @@ def test_refresh_and_credential_revocation_serialize(settings, monkeypatch, firs
                 except (TokenError, APIException):
                     outcomes[name] = None
             elif operation == "recovery":
-                confirm_password_reset(user.email, code, NEW_PASSWORD, context=kind,
-                    makerspace=user.staff_makerspace.slug if kind == "staff" else None, origin=ORIGIN)
+                confirm_password_reset(user.email, code, NEW_PASSWORD, context=user.account_kind,
+                    origin=ORIGIN)  # decisions 63/66: a staff person recovers as a member
             else:
                 function = revocation.revoke_all_credentials if operation == "all" else revocation.revoke_sessions_only
                 function(User.objects.get(pk=user.pk), reason="s4c.race")

@@ -26,9 +26,12 @@ pytestmark = pytest.mark.django_db
 
 
 @pytest.fixture(autouse=True)
-def no_broker(monkeypatch):
+def no_broker(monkeypatch, request):
     monkeypatch.setattr("apps.card_designs.tasks.dispatch_cutout", lambda cutout_id: None)
-    monkeypatch.setattr(photo_batch_apply.cutouts, "request", lambda *a, **k: None, raising=False)
+    if "queued" not in request.fixturenames:
+        # `photo_batch_apply.cutouts` IS `apps.card_designs.cutouts`: stubbing `request` would also stub the
+        # real staff endpoint the M10 `queued` fixture drives, so only the batch tests may stub it.
+        monkeypatch.setattr(photo_batch_apply.cutouts, "request", lambda *a, **k: None, raising=False)
 
 
 # --- M10 --------------------------------------------------------------------------------------------------------

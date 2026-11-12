@@ -58,8 +58,12 @@ def public_profile(space, username="member"):
     user = make_member(space, username=username)
     from apps.makerspaces.models import AccountProfile
     AccountProfile.objects.update_or_create(user=user, defaults={"public_visible": True, "public_consented_at": timezone.now()})
-    return MemberProfile.objects.create(membership=MakerspaceMembership.objects.get(makerspace=space, user=user),
-                                        public_visible=True, public_consented_at=timezone.now())
+    profile = MemberProfile.objects.create(membership=MakerspaceMembership.objects.get(makerspace=space, user=user),
+                                           public_visible=True, public_consented_at=timezone.now())
+    # An open-web profile needs a public handle (account_is_open_web, decisions 303b/336b).
+    from apps.makerspaces.models import PublicHandle
+    PublicHandle.objects.create(user=user, profile=profile, handle=f"r5.{username}", changed_at=timezone.now())
+    return profile
 
 
 def team(slot, profile):

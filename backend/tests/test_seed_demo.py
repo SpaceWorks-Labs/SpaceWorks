@@ -22,12 +22,13 @@ def test_seed_demo_creates_three_spaces_staff_and_inventory(settings, debug):
     for username in ("superadmin", "alpha_manager", "beta_manager", "gamma_manager"):
         user = User.objects.get(username=username)
         assert user.check_password("same-pass-123")
-        assert user.account_kind == ("platform" if username == "superadmin" else "staff")
-        if user.account_kind == "staff":
-            assert user.makerspace_memberships.count() == 1
-            assert user.staff_makerspace_id == user.makerspace_memberships.get().makerspace_id
+        # Decision 63: one account per person; a demo manager is a normal (member-kind) account
+        # holding exactly one staff-track row, never a separate "staff" account kind.
+        assert user.account_kind == ("platform" if username == "superadmin" else "member")
+        if user.account_kind == "member":
+            assert MakerspaceMembership.staff_tracks.filter(user=user).count() == 1
 
-    assert MakerspaceMembership.objects.filter(
+    assert MakerspaceMembership.staff_tracks.filter(
         makerspace=spaces["beta-workshop"],
         role=MakerspaceMembership.Role.SPACE_MANAGER,
     ).exists()

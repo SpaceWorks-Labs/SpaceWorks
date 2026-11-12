@@ -91,7 +91,8 @@ def test_a_queued_notice_is_stale_once_the_shop_module_is_off_or_the_role_is_los
     staff_row = staff_envelopes(order).filter(recipient=seller).order_by("-pk").first()
     buyer_row = NotificationEnvelope.objects.get(event="shop_order_ready", source_id=str(order.pk))
     assert notices.eligible(staff_row) and notices.eligible(buyer_row)
-    MakerspaceMembership.objects.filter(makerspace=space, user=seller).update(status="suspended")
+    # Losing the role: a membership is only ever active or revoked (accounts_validate_memberships).
+    MakerspaceMembership.all_tracks.filter(makerspace=space, user=seller).update(status="revoked")
     assert not notices.eligible(staff_row)
     module_off(space)
     assert not notices.eligible(buyer_row)

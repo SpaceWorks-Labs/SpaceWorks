@@ -14,7 +14,7 @@ from apps.machines.service_file_policies import policy_for_queue
 from apps.machines.service_reports import build_printer_service_report
 from apps.machines.service_workflow import accept, collect, complete, start, submit
 from apps.operations.report_registry import report_definition
-from tests.return_helpers import make_space, make_user
+from tests.return_helpers import make_member, make_space, make_user
 
 
 pytestmark = pytest.mark.django_db
@@ -30,7 +30,9 @@ def printer(space, *, name="Printer", model="MK4"):
 
 def test_printer_type_contract_drives_full_generic_lifecycle():
     space = make_space("b3-printer-lifecycle")
-    actor, requester = make_user("b3-printer-operator"), make_user("b3-printer-requester")
+    # collect() re-checks the collector's reach under the authority lock, so the operator is a
+    # space member holding the collect action (a bare account no longer passes).
+    actor, requester = make_member("b3-printer-operator", space), make_user("b3-printer-requester")
     printer_type = MachineType.objects.get(makerspace__isnull=True, slug="3d_printer")
     assert printer_type.capability_config["schema"] == "3d-printer-v1"
     assert printer_type.capability_config["pooled_service_queue"] is True

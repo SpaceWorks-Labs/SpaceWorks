@@ -6,7 +6,7 @@ from apps.events.models_machine_use import MachineEventLink
 from apps.machines import consumable_usage as usage
 from tests.events.checkin_helpers import make_event
 
-from .helpers import D, define, pool, running_job, world
+from .helpers import D, define, pool, report_dicts, running_job, world
 
 pytestmark = pytest.mark.django_db
 
@@ -30,8 +30,7 @@ def test_profile_actuals_appear_on_the_event_and_in_the_report():
     [line] = rows_for(event)
     assert sorted((item["label"], item["unit"], item["quantity"]) for item in line["consumables"]) == [
         ("Bit", "use", "1.000"), ("Sheet", "sheet", "2.000")]
-    from apps.operations.reports import report_rows
-    [summary] = report_rows("machine-use-by-event", w.space.pk, actor=w.staff)
+    [summary] = report_dicts("machine-use-by-event", w.space.pk, actor=w.staff)
     assert summary["consumable_entries"] == 2
 
 

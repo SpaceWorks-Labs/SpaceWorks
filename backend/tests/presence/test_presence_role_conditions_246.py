@@ -2,7 +2,7 @@
 
 Roster, check-in and check-out need `manage_members`; the privacy settings need `manage_makerspace`
 (`presence/policy.require_staff`). Expectations are derived from `ROLE_CATALOG`. Check-in is idempotent
-(one live session), check-out of someone not present is a 404, and every route is 404 with the module off.
+(one live session), check-out of a roster member not present is an idempotent 200 (an unknown account is the 404), and every route is 404 with the module off.
 """
 import pytest
 from rest_framework.test import APIClient
@@ -73,7 +73,11 @@ def test_checking_in_twice_keeps_one_live_session_and_checking_out_twice_is_404(
     boss.post(_url(space, "check-in"), body, format="json")
     assert PresenceSession.objects.filter(makerspace=space, account=person, ended_at__isnull=True).count() == 1
     assert boss.post(_url(space, "check-out"), {"account_id": person.pk}, format="json").status_code == 200
-    assert boss.post(_url(space, "check-out"), {"account_id": person.pk}, format="json").status_code == 404
+    # A roster member checked out twice is an idempotent 200 (nothing left to end); only an account this
+    # space does not know at all is the 404 (`scoped_account`).
+    assert boss.post(_url(space, "check-out"), {"account_id": person.pk}, format="json").status_code == 200
+    stranger, _ = member(_space("pre-idem-other"), "pre-idem-stranger")
+    assert boss.post(_url(space, "check-out"), {"account_id": stranger.pk}, format="json").status_code == 404
     assert PresenceSession.objects.filter(makerspace=space, account=person, ended_at__isnull=True).count() == 0
 
 

@@ -268,5 +268,6 @@ def test_razorpay_refund_processed_settles_a_pending_refund_idempotently(client)
 
     refund.refresh_from_db()
     assert refund.status == Refund.Status.SUCCEEDED
-    assert ProcessedStripeEvent.objects.filter(makerspace=makerspace).count() == 1
+    assert ProcessedStripeEvent.objects.filter(  # decision 360: id + signed-body hash
+        makerspace=makerspace).exclude(stripe_event_id__startswith="sha256:").count() == 1
     assert AuditLog.objects.filter(action="payment.refunded").count() == 1

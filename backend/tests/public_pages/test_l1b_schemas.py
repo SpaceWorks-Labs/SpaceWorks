@@ -63,9 +63,12 @@ def test_openapi_documents_projected_and_event_unions_without_generic_payloads()
     public = components["ProjectedPublicPageSection"]
     assert set(public["discriminator"]["mapping"]) == {
         "about", "gallery", "team", "testimonials", "links", "stats", "location", "upcoming_events",
-        "linked_makerspaces", "organization_events", "functional_content"}
+        "linked_makerspaces", "organization_events", "functional_content",
+        # 0.12.0 sections: membership plans, sponsors, shop and crew (`PUBLIC_PAYLOADS`).
+        "membership_plans", "sponsors", "shop", "crew"}
+    # Release 2 (#128 C-36): an event page also carries the opt-in public crew section.
     assert set(components["EventEditorialSectionInput"]["discriminator"]["mapping"]) == {
-        "about", "gallery", "team", "testimonials", "links"}
+        "about", "gallery", "team", "testimonials", "links", "crew"}
     for key in ("capabilities", "delay_targets", "draft_revision_id", "published_revision_id"):
         assert key not in components["PublicWebsite"]["properties"]
     assert "$ref" in components["Website"]["properties"]["capabilities"]

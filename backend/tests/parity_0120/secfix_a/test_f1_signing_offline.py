@@ -31,13 +31,16 @@ def _digests(doc):
 
 
 def _cache_case(slug, *, grant_ends=None, grant=True):
-    from apps.machines.models import MachineAccessGrant
+    from apps.machines.models import Machine, MachineAccessGrant
     case = adapter_case(slug, caps=CACHE_CAPS)
     member = plain_member(f"{slug}-m", case["space"])
     made = case["client"].post(reverse("devices:admin-adapter-credentials", args=[case["space"].pk]),
                                {"user_id": member.pk, "kind": "nfc", "secret": TAG}, format="json")
     assert made.status_code == 201, made.data
     if grant:
+        # tests/conftest.py opens every new machine (decision 319 note); a grant only bounds the cache on a
+        # machine that actually requires one, so close it here.
+        Machine.objects.filter(pk=case["machine"].pk).update(open_to_all_members=False)
         MachineAccessGrant.objects.create(makerspace=case["space"], member=member, machine=case["machine"],
                                           expires_at=grant_ends)
     case["member"] = member

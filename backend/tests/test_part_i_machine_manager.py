@@ -169,6 +169,9 @@ def test_superadmin_can_revoke_space_manager_membership():
         role=User.Role.SUPERADMIN,
         access_status=User.AccessStatus.ACTIVE,
     )
+    # A second active Space Manager keeps the space from losing its last one: the lifecycle
+    # service refuses to remove the last active manager (409), so the revoke needs a successor.
+    make_member("mm-super-revoke-successor", makerspace)
     peer = make_member("mm-super-revoke-peer", makerspace)
     membership_id = _membership(peer, makerspace).id
 
@@ -176,8 +179,9 @@ def test_superadmin_can_revoke_space_manager_membership():
         f"/api/v1/admin/memberships/{membership_id}"
     )
 
-    assert response.status_code == 400
-    assert MakerspaceMembership.staff_tracks.filter(pk=membership_id).exists()
+    assert response.status_code == 204
+    # Revocation ends the access but keeps the staff row for the audit trail.
+    assert MakerspaceMembership.staff_tracks.get(pk=membership_id).status == "revoked"
 
 
 def test_machine_manager_sees_own_makerspace_in_switcher_with_modules():

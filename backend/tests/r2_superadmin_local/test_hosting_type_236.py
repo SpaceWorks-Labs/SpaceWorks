@@ -29,8 +29,9 @@ def _hosted(lab, root):
     return hosting_type.set_type(root, lab, hosting_type.HOSTED)
 
 
-def test_a_new_space_is_own_and_ignores_overrides_and_plans(hosting):
-    lab, root = space(resource_limit_overrides={"members": 1, "custom_domain": False}), superadmin()
+def test_a_new_space_is_own_and_ignores_plans_but_not_explicit_overrides(hosting):
+    # Decision 281 addendum: an explicitly set limit applies to own spaces; plans stay hosted-only.
+    lab, root = space(resource_limit_overrides={"custom_domain": False}), superadmin()
     plan = HostingPlan.objects.create(key="tiny", name="Tiny", limits={"members": 1})
     SpacePlanAssignment.objects.create(makerspace=lab, plan=plan)
     assert hosting_type.stored_type(lab) == "own" and not hosting_type.is_hosted(lab)
@@ -40,6 +41,9 @@ def test_a_new_space_is_own_and_ignores_overrides_and_plans(hosting):
     assert limits.custom_domain_allowed(lab) is True
     rows = limit_rows(lab)
     assert rows["hosted"] is False and {row["source"] for row in rows["rows"]} == {"own"}
+    lab.resource_limit_overrides = {"members": 1}
+    lab.save(update_fields=["resource_limit_overrides"])
+    assert limits.resource_limit(lab, "members") == 1
     assert root  # created after the space on purpose: nothing about the actor changes the answer
 
 
@@ -67,8 +71,10 @@ def test_plan_applies_and_override_beats_plan_on_a_hosted_space(hosting):
 
 
 def test_switch_off_makes_every_space_own_and_keeps_the_stored_type(hosting):
-    lab, root = space(resource_limit_overrides={"members": 1}), superadmin()
+    lab, root = space(), superadmin()
     _hosted(lab, root)
+    plan = HostingPlan.objects.create(key="tiny-off", name="Tiny", limits={"members": 1})
+    plans.assign(root, lab.pk, plan.pk, trial_days=0)
     assert limits.resource_limit(lab, "members") == 1
     hosting.MANAGED_PLANS_ENABLED = False
     assert not hosting_type.is_hosted(lab) and limits.resource_limit(lab, "members") is None
@@ -106,12 +112,15 @@ def test_plans_trials_and_invoices_need_a_hosted_space(hosting):
 
 
 def test_a_space_from_a_hosting_request_is_hosted(hosting):
+    from django.utils import timezone
+
     from apps.hosting_requests.models import HostingRequest
     from apps.hosting_requests import workflow
 
     root, lab = superadmin(), space()
     row = HostingRequest.objects.create(space_name="Guest Lab", applicant_email="a@example.test",
-                                        status=HostingRequest.Status.ACCEPTED, source=HostingRequest.Source.PUBLIC)
+                                        status=HostingRequest.Status.ACCEPTED, source=HostingRequest.Source.PUBLIC,
+                                        decided_at=timezone.now())
     workflow.link_created_makerspace(root, row.pk, lab)
     assert hosting_type.stored_type(lab) == "hosted"
 

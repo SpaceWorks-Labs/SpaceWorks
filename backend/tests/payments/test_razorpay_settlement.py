@@ -75,7 +75,10 @@ def test_replaying_the_same_event_settles_only_once(client, django_user_model):
     post()
     post()
 
-    assert ProcessedStripeEvent.objects.filter(makerspace=space).count() == 1
+    # decision 360: each delivery claims its event id plus its signed-body hash
+    assert ProcessedStripeEvent.objects.filter(makerspace=space).count() == 2
+    assert ProcessedStripeEvent.objects.filter(
+        makerspace=space, stripe_event_id__startswith="sha256:").count() == 1
 
 
 def test_two_providers_may_use_the_same_event_id(django_user_model):

@@ -23,7 +23,7 @@ def booking_world(slug):
 def new_space(w, name="Laser time", **kwargs):
     from apps.bookings import services
     return services.create_space(makerspace=w.space, actor=w.staff, name=name, kind="bench", description="",
-                                 capacity=1, location="", is_public=False, machine_type=w.kind, **kwargs)
+                                 capacity=1, location="", is_public=False, machine_type=w.kind.pk, **kwargs)
 
 
 def test_setup_saves_partially_and_audits_changed_fields():

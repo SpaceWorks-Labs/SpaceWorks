@@ -142,6 +142,8 @@ def test_module_off_skips_instead_of_sending(monkeypatch):
 
 
 def test_staff_api_requires_a_secret_and_never_echoes_it(monkeypatch):
+    # Parity E-B8: a missing secret is no longer refused; the server generates one and
+    # returns it exactly once. A secret the caller supplies is never echoed.
     # The serializer resolves the hostname to refuse private ranges; no DNS in unit tests.
     monkeypatch.setattr(
         "apps.admin_api.serializers_notification_destinations.validate_webhook_url", lambda value: value
@@ -153,9 +155,11 @@ def test_staff_api_requires_a_secret_and_never_echoes_it(monkeypatch):
     client = authenticated_client(manager)
     url = reverse("admin-notification-destinations", kwargs={"makerspace_id": space.pk})
     base = {"channel": "webhook", "label": "ERP", "webhook_url": "https://hooks.example.org/x"}
-    refused = client.post(url, base, format="json")
-    assert refused.status_code == 400 and "signing_secret" in refused.json()
-    created = client.post(url, {**base, "signing_secret": SECRET}, format="json")
+    generated = client.post(url, base, format="json")
+    assert generated.status_code == 201, generated.content
+    assert generated.json()["signing_secret_set"] is True and len(generated.json()["signing_secret"]) >= 16
+    assert "hooks.example.org" not in generated.content.decode()
+    created = client.post(url, {**base, "label": "ERP supplied", "signing_secret": SECRET}, format="json")
     assert created.status_code == 201, created.content
     body = created.json()
     assert body["signing_secret_set"] is True and body["credential_set"] is True

@@ -33,13 +33,20 @@ def manager(w, machine_type=None):
     return _manager(w.space, f"mm-{uuid4().hex[:6]}", machine_type)[0]
 
 
-def running_job(w, *, member=None):
+def running_job(w, *, member=None, machine=0):
     member = member or owner(f"{w.space.slug}-m")
     row = job(w, member=member)
     accept(row, w.staff, estimated_minutes=10)
-    start(row, w.staff, role_scope.EXEMPT, machine_id=w.machines[0].pk)
+    start(row, w.staff, role_scope.EXEMPT, machine_id=w.machines[machine].pk)
     row.refresh_from_db()
     return row, member
+
+
+def report_dicts(key, space_id, **kwargs):
+    """`report_rows` returns an export matrix (header row first); read it back as one dict per record."""
+    from apps.operations.reports import report_rows
+    header, *records = report_rows(key, space_id, **kwargs)
+    return [dict(zip(header, record)) for record in records]
 
 
 def client(user):

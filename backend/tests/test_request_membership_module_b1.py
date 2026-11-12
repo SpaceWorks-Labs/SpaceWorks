@@ -137,6 +137,10 @@ def test_membership_off_does_not_relax_other_physical_action_surfaces():
 def test_membership_off_disables_public_machine_and_printer_intake():
     modules = [key for key in profile_modules(EVERYTHING) if key != "membership"]
     space = _space("service-proposals-take-accounts", modules)
+    # Decision 221e: `machines.job_requests` is checked first, so it must be on for the
+    # membership/presence gate (the point of this test) to be the one that answers.
+    space.enabled_features = [*space.enabled_features, "machines.job_requests"]
+    space.save(update_fields=["enabled_features"])
     urls = [
         reverse("public-machine-service-request-submit", args=[space.slug]),
         reverse("public-printer-service-upload", args=[space.slug]),

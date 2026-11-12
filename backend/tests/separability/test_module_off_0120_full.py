@@ -13,6 +13,7 @@ from django.urls import reverse
 
 from apps.accounts.models import User
 from apps.makerspaces.capabilities import FEATURES
+from apps.makerspaces.capability_definitions import RETIRED_FEATURES
 from apps.makerspaces.platform import feature_enabled
 from tests.return_helpers import authenticated_client, make_space, make_user
 
@@ -60,6 +61,10 @@ def test_registry_chain(key):
 @pytest.mark.parametrize("key", sorted(NEW_CAPABILITIES))
 def test_capability_is_off_when_unset_and_inert_under_an_off_parent(key):
     space = _all_on(f"full-{key.replace('.', '-').replace('_', '-')}")
+    if key in RETIRED_FEATURES:
+        # Decision 319: induction events are a retired feature; the key stays registered but always reads off.
+        assert not feature_enabled(space, key)
+        return
     assert feature_enabled(space, key)
     parent, needs_features, needs_modules = NEW_CAPABILITIES[key]
     for module in filter(None, (parent, *needs_modules)):

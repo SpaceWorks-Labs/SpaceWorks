@@ -57,10 +57,19 @@ def test_login_rejects_bad_password():
     assert "wrong" not in str(audit.meta)
 
 
-def test_login_rejects_suspended_account():
+def test_login_of_suspended_account_reports_its_state_and_reaches_no_staff_route():
+    # Decision 361 replaced the outright refusal: a suspended person signs in (to pay what they
+    # owe), the payload says so, and the session reaches nothing else.
     make_staff(username="bad", access_status=User.AccessStatus.SUSPENDED)
     resp = APIClient().post(LOGIN, {"username": "bad", "password": "pw-strong-123", "context": "staff", "makerspace": "auth-bad"}, format="json")
-    assert resp.status_code in (401, 403)
+    if resp.status_code == 200 and "access" in resp.data:
+        assert resp.data["user"]["account_status"] == "suspended"
+        client = APIClient()
+        client.credentials(HTTP_AUTHORIZATION=f"Bearer {resp.data['access']}")
+        refused = client.get("/api/v1/auth/me")
+        assert refused.status_code == 401 and refused.data["code"] == "account_suspended"
+    else:  # a staff person with an enrolled factor answers the MFA step first
+        assert resp.status_code == 200 and resp.data.get("mfa_required") is True
 
 
 REFRESH = "/api/v1/auth/refresh"

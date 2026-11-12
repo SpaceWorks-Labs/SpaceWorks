@@ -71,10 +71,12 @@ def test_global_reference_inverse_without_backup_merge_guard_is_rejected(page_ow
     """Ordinary writers cannot use the guarded slice-restore allowance."""
     from django.db import IntegrityError
     from apps.makerspaces.models_profiles import MemberProfile
-    from apps.makerspaces.models import MakerspaceMembership
     from apps.organizations.models_public_pages import OrganizationPublicPageRevisionMember
     space, actor = page_owner
-    membership = MakerspaceMembership.objects.get(makerspace=space, user=actor)
+    from tests.accounts.account_factories import make_membership
+    # A member profile hangs off the community row (DB track guard); the page owner is staff, so under
+    # one account per person (decision 63) they join as a member too rather than reuse the staff row.
+    membership = make_membership(actor, space)
     profile = MemberProfile.objects.create(membership=membership)
     organization = Organization.objects.create(name="Inverse", slug="restore-inverse")
     page = OrganizationPublicPage.objects.create(organization=organization)

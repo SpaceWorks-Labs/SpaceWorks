@@ -142,6 +142,9 @@ def test_another_spaces_manager_and_anonymous_cannot_see_or_move_items():
 
 def test_both_streams_are_hidden_when_their_switches_are_off():
     space = space_with("pr-off", features=())
+    # Switches default ON for a new space, so "off" must be set explicitly (space_with only adds).
+    space.enabled_features = [k for k in space.enabled_features if k not in ("inventory.tobuy", "machines.tobuy")]
+    space.save(update_fields=["enabled_features"])
     boss = authenticated_client(staff_account(space, "pr-off-boss", "space_manager"))
     _hardware_item(space)
     response = boss.get(_list(space))

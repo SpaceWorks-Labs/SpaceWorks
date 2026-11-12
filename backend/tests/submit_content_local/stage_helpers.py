@@ -61,7 +61,8 @@ def team_for(event, name):
     user = account(f"{name}-{uuid4().hex[:8]}")
     with transaction.atomic():
         application = apps.get_model("events", "HackathonApplication").objects.create(event=event, member=user)
-        team = apps.get_model("events", "HackathonTeam").objects.create(event=event, leader=user, name=name)
+        team = apps.get_model("events", "HackathonTeam").objects.create(event=event, leader=user, name=name,
+            normalized_name=name.lower())
         apps.get_model("events", "HackathonTeamMember").objects.create(event=event, team=team, member=user,
             application=application, creator=user, state="active")
     return SimpleNamespace(user=user, team=team)

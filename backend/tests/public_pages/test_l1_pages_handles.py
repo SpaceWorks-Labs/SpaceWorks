@@ -77,5 +77,8 @@ def test_owner_shape_and_same_page_pointer_guards(page_owner):
 def test_platform_cannot_use_page_services(page_owner):
     space, _ = page_owner
     platform = User.objects.create_superuser(username="page-root", password=None)
+    # Decision 115: the platform superadmin edits a makerspace's OWN page like its Space Manager ...
+    assert pages.read_editor("makerspace", space.pk, actor=platform)["version"] == 0
+    # ... but organization pages are deployment-global and stay owner-only.
     with pytest.raises(PermissionDenied):
-        pages.read_editor("makerspace", space.pk, actor=platform)
+        pages.read_editor("organization", space.pk, actor=platform)

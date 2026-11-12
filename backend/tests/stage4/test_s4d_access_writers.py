@@ -2,17 +2,21 @@
 
 import pytest
 from django.contrib import admin
+from django.db import transaction
 from django.core.exceptions import PermissionDenied as AdminPermissionDenied
 from django.test import RequestFactory
 from django.urls import reverse
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import PermissionDenied
 
+from apps.accounts import staff_account_lifecycle as lifecycle
 from apps.accounts.models import User
+from apps.accounts.staff_account_policy import StaffRoleRefused
 from apps.audit.models import AuditLog
 from apps.makerspaces.membership_revocation import revoke_membership
 from apps.makerspaces.models import MakerspaceMembership
 from apps.makerspaces.role_assignments import set_membership_roles
 from tests.account_split.p3_helpers import context
+from tests.accounts.ua1_helpers import merged_shell
 from .helpers import bearer_client
 
 pytestmark = pytest.mark.django_db(transaction=True)
@@ -55,8 +59,13 @@ def test_legacy_access_routes_still_restrict_and_restore_community_accounts(ctx)
 
 
 @pytest.mark.parametrize("action", ["restrict_access", "restore_access", "delete_queryset"])
-@pytest.mark.parametrize("target_name", ["foreign", "root"])
+@pytest.mark.parametrize("target_name", ["shell", "root"])
 def test_control_bulk_writers_refuse_mixed_lifecycle_targets(ctx, action, target_name):
+    # Decisions 63/66: a staff person is an ordinary person account and may be bulk-restricted;
+    # what a mixed selection must refuse is a platform account or an inert (merged) shell.
+    if target_name == "shell":
+        with transaction.atomic():
+            ctx.shell = merged_shell(User.objects.create_user("s4d-shell", email="s4d-shell@example.test"), ctx.member)
     target = getattr(ctx, target_name)
     before = User.objects.values().get(pk=target.pk)
     request = RequestFactory().post("/control/", {"apply": "1", "status": "suspended", "reason": "Bulk"})
@@ -69,15 +78,22 @@ def test_control_bulk_writers_refuse_mixed_lifecycle_targets(ctx, action, target
     assert ctx.member.access_status == "active"
 
 
-@pytest.mark.parametrize("operation", ["revoke", "demote"])
+@pytest.mark.parametrize("operation", ["revoke", "demote", "staff_roles_revoke"])
 def test_legacy_membership_writers_preserve_last_active_manager(ctx, operation):
-    membership = MakerspaceMembership.objects.get(user=ctx.foreign, makerspace=ctx.other)
-    with pytest.raises(ValidationError, match="last active Space Manager"):
-        if operation == "revoke":
+    # Decisions 63/66: the legacy community revoker no longer touches staff-track rows at all
+    # (PermissionDenied); demotion and the staff-roles revoker keep the last-manager guard.
+    membership = MakerspaceMembership.staff_tracks.get(user=ctx.foreign, makerspace=ctx.other)  # .objects is community-only
+    if operation == "revoke":
+        with pytest.raises(PermissionDenied):
             revoke_membership(ctx.root, membership, "Legacy revoke")
-        else:
-            set_membership_roles(makerspace=ctx.other, actor=ctx.root, membership=membership,
-                                 roles=[ctx.other.roles.get(slug="inventory_manager")])
+    else:
+        with pytest.raises(StaffRoleRefused) as refused:
+            if operation == "demote":
+                set_membership_roles(makerspace=ctx.other, actor=ctx.root, membership=membership,
+                                     roles=[ctx.other.roles.get(slug="inventory_manager")])
+            else:
+                lifecycle.revoke(ctx.root, ctx.other.pk, membership.pk, reason="Staff revoke")
+        assert "last active Space Manager" in str(refused.value.detail["detail"])
     membership.refresh_from_db()
     ctx.foreign.refresh_from_db()
     assert membership.status == "active" and membership.assigned_role.slug == "space_manager"

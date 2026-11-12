@@ -44,15 +44,19 @@ def add_payment(space, actor, subject_type, subject_id, amount, currency="usd", 
             email=actor.email or f"{actor.username}@example.test", phone="1",
         ).pk
     elif subject_type == Payment.SubjectType.MAKERSPACE_MEMBERSHIP:
-        subject_id = MakerspaceMembership.objects.get(
+        subject_id = MakerspaceMembership.all_tracks.get(
             makerspace=space, user=actor
         ).pk
     elif subject_type == Payment.SubjectType.MEMBERSHIP_TERM:
         plan = MembershipPlan.objects.create(
             makerspace=space, name=f"Payment report plan {subject_id}", interval="monthly",
         )
+        # Decision 63 / DB trigger makerspaces_membership_track_guard: a term hangs off a COMMUNITY
+        # membership, never the staff-track row `actor` holds, so the term belongs to a member account.
+        from tests.events.checkin_helpers import make_member as make_community_member
+        term_member = make_community_member(space, username=f"payment-report-term-{subject_id}")
         subject_id = MembershipTerm.objects.create(
-            membership=MakerspaceMembership.objects.get(makerspace=space, user=actor),
+            membership=MakerspaceMembership.objects.get(makerspace=space, user=term_member),
             plan=plan, starts_at=now - timedelta(days=30), ends_at=now + timedelta(days=1),
         ).pk
     elif subject_type == Payment.SubjectType.MEMBERSHIP_REQUEST:
@@ -64,6 +68,17 @@ def add_payment(space, actor, subject_type, subject_id, amount, currency="usd", 
         subject_id = HardwareRequest.objects.create(
             makerspace=space, requester=actor, requester_username=actor.username,
         ).pk
+    else:
+        # Subjects this helper has no builder for (shop order, guest pass, event money, ...): the
+        # report only groups Payment rows, so write the row directly rather than model each subject.
+        row = Payment.objects.bulk_create([Payment(
+            makerspace=space, subject_type=subject_type, subject_id=subject_id,
+            member=actor, amount=Decimal(amount), currency=currency, status=status,
+            created_by=actor,
+        )])[0]
+        if created_at:
+            Payment.objects.filter(pk=row.pk).update(created_at=created_at)
+        return row
     row = Payment.objects.create(
         makerspace=space, subject_type=subject_type, subject_id=subject_id,
         member=actor, amount=Decimal(amount), currency=currency, status=status,

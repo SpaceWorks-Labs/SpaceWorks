@@ -34,7 +34,8 @@ def test_create_once_then_fetch_stored_order(monkeypatch):
         if path.startswith('/orders?'):
             return {'items': []}
         if method == 'POST':
-            assert body == {key: order_for(payment)[key] for key in ('receipt', 'amount', 'currency', 'notes')}
+            assert body == {**{key: order_for(payment)[key] for key in ('receipt', 'amount', 'currency', 'notes')},
+                            'payment_capture': 1}  # PAY-REVIEW 0.12.0: automatic capture is requested
             assert len(body['receipt']) <= 40
         return order_for(payment)
     monkeypatch.setattr(RazorpayProvider, '_request', request)

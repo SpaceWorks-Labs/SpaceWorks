@@ -18,7 +18,7 @@ def hosting(settings, own_by_default):
 
 
 def test_hosting_a_space_leaves_every_other_space_own_and_unlimited(hosting):
-    hosted, bystander, root = space(), space(), superadmin()
+    hosted, bystander, root = space("hosted-246"), space("bystander-246"), superadmin()
     hosting_type.set_type(root, hosted, hosting_type.HOSTED)
     plan = HostingPlan.objects.create(key="tiny-246", name="Tiny", limits={"members": 1})
     plans.assign(root, hosted.pk, plan.pk, trial_days=0)
@@ -31,7 +31,7 @@ def test_hosting_a_space_leaves_every_other_space_own_and_unlimited(hosting):
 
 
 def test_a_per_space_override_on_one_hosted_space_does_not_change_a_sibling(hosting):
-    first, second, root = space(), space(), superadmin()
+    first, second, root = space("first-246"), space("second-246"), superadmin()
     for lab in (first, second):
         hosting_type.set_type(root, lab, hosting_type.HOSTED)
     first.resource_limit_overrides = {"members": 3}

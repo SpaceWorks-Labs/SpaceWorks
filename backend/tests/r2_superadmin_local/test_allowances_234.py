@@ -71,11 +71,17 @@ def test_warning_at_80_and_limit_at_100(hosted_lab):
     assert row["level"] == "limit" and row["remaining"] == 0
 
 
-def test_own_space_shows_nothing(settings, own_by_default):
+def test_own_space_shows_only_limits_the_superadmin_set(settings, own_by_default):
+    # Decision 281 addendum: a limit the superadmin SET applies to own spaces too (236 relaxed for
+    # explicit limits only); with nothing set an own space has no limited rows.
     settings.MANAGED_PLANS_ENABLED = True
+    plain = space("allowance-plain-own")
+    boss = make_staff(plain, username="allowance-plain-boss")
+    assert api(boss).get(f"{ADMIN}/{plain.pk}/allowances").json()["rows"] == []
     lab = space("allowance-own", resource_limit_overrides={"products": 1})
     boss = make_staff(lab, username="allowance-own-boss")
-    assert api(boss).get(f"{ADMIN}/{lab.pk}/allowances").json()["rows"] == []
+    rows = api(boss).get(f"{ADMIN}/{lab.pk}/allowances").json()["rows"]
+    assert [row["key"] for row in rows] == ["products"] and rows[0]["limit"] == 1
 
 
 def test_upload_caps_refuse_a_big_file_and_a_full_budget(hosted_lab, monkeypatch):
@@ -100,9 +106,13 @@ def test_upload_caps_refuse_a_big_file_and_a_full_budget(hosted_lab, monkeypatch
 def test_upload_caps_are_dormant_without_hosting(settings):
     settings.PLATFORM_DOMAIN_SUFFIX = ""
     settings.MANAGED_PLANS_ENABLED = False
-    lab = space("allowance-plain", resource_limit_overrides={"upload_bytes": 1, "storage": 1})
+    # Decision 281 addendum: only a limit the superadmin SET applies; with none set nothing is checked.
+    lab = space("allowance-plain")
     limits.check_upload_headroom(lab, 10_000_000)
     limits.check_upload_size(lab, 10_000_000)
+    capped = space("allowance-capped", resource_limit_overrides={"upload_bytes": 1})
+    with pytest.raises(ValidationError):
+        limits.check_upload_size(capped, 10_000_000)
 
 
 def test_member_sees_their_own_allowances(hosted_lab):

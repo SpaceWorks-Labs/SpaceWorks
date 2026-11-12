@@ -209,7 +209,9 @@ def test_revoked_membership_cannot_read_archived_payment_history():
         f"/api/v1/member/makerspaces/{space.pk}/payments"
     )
 
-    assert response.status_code == 200
+    # A REVOKED member is refused even in an archived space (member_may_see_own_charges contract;
+    # decision 209 keeps the revoked restriction; decision 260 only admits live/restricted accounts).
+    assert response.status_code == 403
 
 
 @pytest.mark.parametrize(

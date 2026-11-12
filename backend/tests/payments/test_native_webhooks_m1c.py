@@ -48,7 +48,7 @@ def audits(payment, action=None):
 def events(payment):
     return ProcessedStripeEvent.objects.filter(
         makerspace=payment.makerspace, provider=Payment.Provider.RAZORPAY,
-    )
+    ).exclude(stripe_event_id__startswith="sha256:")  # decision 360: signed-body claim rows
 
 
 def payment_snapshot(payment):

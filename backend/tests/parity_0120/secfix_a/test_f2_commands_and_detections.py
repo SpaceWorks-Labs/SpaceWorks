@@ -133,8 +133,8 @@ def test_a_former_job_owner_cannot_read_later_jobs_detections():
     row = in_progress(case["space"], actor=case["manager"], target=case["machine"])
     now = time.time()
     started, finished = timezone.now() - timedelta(seconds=600), timezone.now() - timedelta(seconds=300)
-    MachineServiceRequest.objects.filter(pk=row.pk).update(started_at=started, completed_at=finished,
-                                                           status="completed")
+    MachineServiceRequest.objects.filter(pk=row.pk).update(started_at=started, completed_at=finished)
+    # status is workflow-managed (the queryset refuses it); the run window is read from the timestamps alone.
     _detect(case, now - 700)  # before the run: another job
     _detect(case, now - 450)  # during the run: theirs
     _detect(case, now - 100)  # after the run ended: a later member's job

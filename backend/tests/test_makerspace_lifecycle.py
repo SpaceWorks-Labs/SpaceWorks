@@ -685,9 +685,10 @@ def test_archived_makerspace_is_excluded_from_api_scopes(monkeypatch, settings):
         "lifecycle-scope-visible",
         public_inventory_enabled=True,
     )
-    archived_space.enabled_modules = ["public_inventory", "request_workflow", "reports"]
-    visible_space.enabled_modules = ["public_inventory", "request_workflow", "reports"]
-    # Inventory-only modules answer off unless the Inventory master switch (loans.enabled) is on.
+    archived_space.enabled_modules = ["public_inventory", "request_workflow", "reports", "staff_admin"]
+    visible_space.enabled_modules = ["public_inventory", "request_workflow", "reports", "staff_admin"]
+    # Inventory-only modules answer off unless the Inventory master switch (loans.enabled, decision 254) is on;
+    # that switch only reads on while its parent module (staff_admin) is installed.
     archived_space.enabled_features = sorted({*archived_space.enabled_features, "loans.enabled"})
     visible_space.enabled_features = sorted({*visible_space.enabled_features, "loans.enabled"})
     archived_space.save(update_fields=["enabled_modules", "enabled_features"])

@@ -40,8 +40,8 @@ def test_an_event_without_stages_gets_the_single_submission_stage_and_behaves_as
 def test_files_only_refuses_links_in_a_draft_and_at_submit(w):
     stage(w.event, content_mode="files_only")
     assert refused(lambda: save(w, links=[REPO]))[0] == "submission_links_disabled"
-    assert save(w, links=None)["version"] == 1  # A draft may be incomplete: no files yet is fine.
-    assert refused(lambda: run(w, "submit", 1))[0] == "submission_content_required"
+    draft = save(w, links=None)["version"]  # A draft may be incomplete: no files yet is fine.
+    assert refused(lambda: run(w, "submit", draft))[0] == "submission_content_required"
 
 
 def test_links_only_refuses_files_in_a_draft(w):
@@ -136,8 +136,9 @@ def test_shortlist_gate_opens_the_next_stage_only_to_chosen_teams(monkeypatch):
 
 
 def test_an_extension_lets_one_team_submit_late_and_marks_it(w):
-    row = stage(w.event, deadline=timezone.now() - timedelta(minutes=5))
-    saved = save(w, links=[REPO])
+    row = stage(w.event, deadline=timezone.now() + timedelta(hours=1))
+    saved = save(w, links=[REPO])  # Drafting ends at the last stage's cutoff, so the draft is saved first.
+    SubmissionStage.objects.filter(pk=row.pk).update(deadline=timezone.now() - timedelta(minutes=5))
     assert refused(lambda: run(w, "submit", saved["version"], {"stage_id": row.pk}))[0] == "submission_deadline"
     extension = StageExtension.objects.create(stage=row, team=w.teams[0].team, until=timezone.now() + timedelta(hours=1),
                                               reason="Power cut")
@@ -147,8 +148,10 @@ def test_an_extension_lets_one_team_submit_late_and_marks_it(w):
 
 
 def test_late_policy_is_per_stage(w):
-    row = stage(w.event, deadline=timezone.now() - timedelta(minutes=5), late_policy="accept_flagged")
-    done = run(w, "submit", save(w, links=[REPO])["version"], {"stage_id": row.pk})
+    row = stage(w.event, deadline=timezone.now() + timedelta(hours=1), late_policy="accept_flagged")
+    saved = save(w, links=[REPO])  # The draft lock still ends drafting; the late policy only governs submit.
+    SubmissionStage.objects.filter(pk=row.pk).update(deadline=timezone.now() - timedelta(minutes=5))
+    done = run(w, "submit", saved["version"], {"stage_id": row.pk})
     assert SubmissionSnapshot.objects.get(pk=done["snapshot_id"]).late
 
 

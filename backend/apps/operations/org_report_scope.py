@@ -128,7 +128,8 @@ EXCLUDED_ORGANIZATION_REPORT_KEYS = EXCLUDED_ORGANIZATION_REPORT_KEYS | DONATION
 # Release 0.12 (decision 327): device adapters, machine grants, card studio, event certificates,
 # report usage and the profile roll-up are per-space counts (or account-level) and never combine.
 from apps.operations.report_definitions_r2_final import R2_FINAL_REPORT_KEYS  # noqa: E402
-EXCLUDED_ORGANIZATION_REPORT_KEYS = EXCLUDED_ORGANIZATION_REPORT_KEYS | R2_FINAL_REPORT_KEYS
+from apps.operations.report_definitions_channels import CHANNEL_REPORT_KEYS  # noqa: E402
+EXCLUDED_ORGANIZATION_REPORT_KEYS = EXCLUDED_ORGANIZATION_REPORT_KEYS | R2_FINAL_REPORT_KEYS | CHANNEL_REPORT_KEYS
 # L5 finance books (area ledgers, FY bookkeeping, GST returns and the documents register) are
 # per-space accounts with their own numbering and tax registration; they never combine across
 # an organization. The L22 shop money and sales are per space too.

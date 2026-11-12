@@ -19,6 +19,7 @@ from apps.operations.report_definitions_loan_context import LOAN_CONTEXT_REPORT_
 from apps.operations.report_definitions_completeness import COMPLETENESS_REPORT_DEFINITIONS
 from apps.operations.report_definitions_org_parity import ORG_PARITY_REPORT_DEFINITIONS
 from apps.operations.report_definitions_r2_final import R2_FINAL_REPORT_DEFINITIONS
+from apps.operations.report_definitions_channels import CHANNEL_REPORT_DEFINITIONS
 from apps.operations.report_types import (
     ReportDefinition,
     ReportNotExportable,
@@ -40,6 +41,7 @@ REPORT_DEFINITIONS = (
     *COMPLETENESS_REPORT_DEFINITIONS,
     *ORG_PARITY_REPORT_DEFINITIONS,
     *R2_FINAL_REPORT_DEFINITIONS,
+    *CHANNEL_REPORT_DEFINITIONS,
 )
 # Area A+B replaces the shipped definitions without retaining duplicate catalog keys.
 REPORT_DEFINITIONS = tuple(d for d in REPORT_DEFINITIONS if d.key not in AB_REPORT_KEYS) + AB_REPORT_DEFINITIONS

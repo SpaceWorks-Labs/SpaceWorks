@@ -10,7 +10,6 @@ from uuid import uuid4
 
 from django.utils import timezone
 
-from apps.makerspaces.models import Makerspace
 
 FEATURES = ("events.project_gallery", "events.peoples_choice")
 
@@ -19,7 +18,7 @@ def seed_peoples_choice(space, manager, hackathon):
     from apps.events.judging.models_peoples_choice import PeoplesChoiceConfig
     from apps.events.judging.peoples_choice import update
     space.enabled_features = sorted(set(space.enabled_features or []) | set(FEATURES))
-    Makerspace.objects.filter(pk=space.pk).update(enabled_features=space.enabled_features)
+    space.save(update_fields=["enabled_features"])
     current = PeoplesChoiceConfig.objects.filter(event=hackathon).values_list("version", flat=True).first() or 0
     update(hackathon.pk, actor=manager, data={"operation_id": uuid4(), "expected_version": current, "enabled": True,
                                               "audience": "members", "closes_at": timezone.now() + timedelta(days=7)})

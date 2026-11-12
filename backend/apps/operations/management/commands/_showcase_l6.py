@@ -14,7 +14,6 @@ from django.utils import timezone
 from apps.events import addons, cancellation_policy, promos, services, venue_fees
 from apps.events.models import EventSalesSettings
 from apps.events.ticketing import create_ticket
-from apps.makerspaces.models import Makerspace
 
 FEATURES = ("events.ticket_types", "events.promo_codes", "events.orders", "events.seat_holds", "events.addons",
             "events.transfers", "events.desk_collect", "events.refund_override", "events.venue_fees",
@@ -24,7 +23,7 @@ CREW_CODE = "TINKER-CREW-2026"
 
 def seed_ticketing(space, manager, organiser):
     space.enabled_features = sorted(set(space.enabled_features or []) | set(FEATURES))
-    Makerspace.objects.filter(pk=space.pk).update(enabled_features=space.enabled_features)
+    space.save(update_fields=["enabled_features"])
     starts = (timezone.now() + timedelta(days=16)).replace(hour=18, minute=0, second=0, microsecond=0)
     event = services.create_event(
         makerspace=space, actor=manager, title="Build night: robot arena", description="Bring a bot, or build one.",

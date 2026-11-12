@@ -222,8 +222,11 @@ def _aggregate_ledger_makerspace_id(request):
     queryset = Makerspace.objects.all()
     if excluded:
         queryset = queryset.exclude(pk__in=excluded)
-    if not queryset.filter(pk=makerspace_id).exists():
+    makerspace = queryset.filter(pk=makerspace_id).first()
+    if makerspace is None:
         raise ValidationError({"makerspace": gettext("Makerspace is not available.")})
+    # Decision 254: a space whose Inventory switch is off has no inventory ledger, however it is asked for.
+    require_module(makerspace, "public_inventory")
     return makerspace_id
 
 

@@ -9,7 +9,6 @@ walkthrough. No payout or charge is invented: those are recorded by staff and me
 
 from uuid import uuid4
 
-from apps.makerspaces.models import Makerspace
 
 FEATURES = ("events.finalists", "events.prize_payouts", "events.entry_fees", "events.paid_teams",
             "events.saved_views", "events.gallery_search")
@@ -23,7 +22,7 @@ def seed_l21b(space, manager, hackathon):
     from apps.events.judging.definitions_workflow import save_definition
     from apps.events.judging.options import update
     space.enabled_features = sorted(set(space.enabled_features or []) | set(FEATURES))
-    Makerspace.objects.filter(pk=space.pk).update(enabled_features=space.enabled_features)
+    space.save(update_fields=["enabled_features"])
     save_definition(hackathon.pk, actor=manager, kind="prizes", data=_command(
         name="Best build", description="The build the judges would most like to take home.", amount_per_winner="5000.00"))
     from apps.events.judging.models_options import HackathonProgrammeOptions

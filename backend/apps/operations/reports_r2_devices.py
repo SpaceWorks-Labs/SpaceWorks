@@ -52,8 +52,11 @@ def _adapter_rows(space, start, end, *, actor=None):
         usage, access = usage.filter(binding_id__in=visible), access.filter(binding_id__in=visible)
         commands, events = commands.filter(binding_id__in=visible), events.filter(binding_id__in=visible)
         artifacts, points = artifacts.filter(binding_id__in=visible), points.filter(binding_id__in=visible)
+    # `end` is exclusive and defaults to "now", so the last day counted is the one holding its final instant:
+    # `day__lt=end.date()` silently left out today's drops in the default window.
+    last_day = (end - timedelta(microseconds=1)).date()
     dropped = AdapterTelemetryDrop.objects.filter(
-        makerspace=space, day__gte=start.date(), day__lt=end.date()).aggregate(n=Sum("count"))["n"] or 0
+        makerspace=space, day__gte=start.date(), day__lte=last_day).aggregate(n=Sum("count"))["n"] or 0
     sums = usage.aggregate(active=Sum("active_minutes"), idle=Sum("idle_minutes"))
     rows = [
         ("adapters_active", adapters.filter(status=Device.Status.ACTIVE).count()),

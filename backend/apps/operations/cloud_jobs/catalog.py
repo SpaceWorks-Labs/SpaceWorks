@@ -108,6 +108,8 @@ LEGACY_ENTRIES = (
     # Lane L23: machine sessions that reached their max length, check-out or closing time.
     ("machine-sessions", "apps.machines.tasks_sessions.sweep_machine_sessions_task", 5),
     # Release 2 S-C: IP auto-block rows 7 d after they end; axes rows after 30 d.
+    # 0.12.0 channel analytics: cached call counts by channel and area into ChannelUsageDay.
+    ("flush-channel-usage", "apps.accounts.tasks_channel_usage.flush_channel_usage_task", 1),
     ("purge-login-security", "apps.accounts.tasks_login_security.purge_login_security_task", 1440),
     # Lane L3: card jobs (one chunk per job per tick), 7-day result purge, wallet refresh, photo reminders.
     ("card-jobs", "apps.card_designs.tasks.resume_card_jobs", 1),

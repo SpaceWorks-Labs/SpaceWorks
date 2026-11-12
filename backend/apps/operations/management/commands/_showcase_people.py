@@ -20,6 +20,7 @@ from apps.admin_api.serializers_makerspaces import MakerspaceSerializer
 from apps.audit import services as audit
 from apps.machines.models import MachineType
 from apps.makerspaces.capabilities import FEATURES
+from apps.makerspaces.capability_definitions import RETIRED_FEATURES
 from apps.makerspaces.capability_validation import prune_features
 from apps.makerspaces.membership_services import approve_request, invite_membership
 from apps.makerspaces.module_install import apply_profile
@@ -34,7 +35,9 @@ from . import _showcase_data as data
 # The two-person check (L5) would park every seeded desk receipt waiting for a second
 # person; the showcase demonstrates settled dues, so it stays off. (Staff MFA is no longer
 # a switch: showcase staff get the 3-day staff-MFA grace from their first sign-in.)
-FEATURES_LEFT_OFF = frozenset({"billing.maker_checker"})
+# Decision 319: retired features (machine certifications, reminders, induction events) can no longer be
+# turned on, so the seed leaves them off rather than making the whole capability write refuse.
+FEATURES_LEFT_OFF = frozenset({"billing.maker_checker"}) | RETIRED_FEATURES
 
 
 def member_account(username, display_name, password, kind="member", **flags):

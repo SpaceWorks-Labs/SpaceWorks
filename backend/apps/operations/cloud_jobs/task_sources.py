@@ -55,6 +55,7 @@ TASK_SOURCES = {
     A + "accounts.tasks.purge_deleted_accounts_task": platform("account deletion is a legal obligation"),
     A + "accounts.tasks_login_security.purge_login_security_task": platform(_SECURITY),
     A + "apiclients.tasks.flush_api_client_usage_task": platform("API client metering"),
+    A + "accounts.tasks_channel_usage.flush_channel_usage_task": platform("channel analytics metering"),
     A + "audit.tasks.run_audit_attestation_task": platform("append-only audit integrity"),
     A + "audit.tasks.run_audit_verification": platform("append-only audit integrity"),
     A + "encryption.rekey_tasks.advance_key_jobs_task": platform("key rotation"),

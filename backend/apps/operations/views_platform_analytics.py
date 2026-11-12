@@ -18,7 +18,7 @@ from apps.operations.serializers_report_catalog import PlatformAnalyticsReportSe
 from apps.operations.views_report_helpers import _date_range, _limit_param
 from apps.operations.views_reports import ERROR_RESPONSES
 
-PLATFORM_KEYS = ("platform-services", "platform-usage")
+PLATFORM_KEYS = ("platform-services", "platform-usage", "platform-channel-usage")
 
 
 class AnalyticsMakerspaceSerializer(serializers.Serializer):

@@ -130,7 +130,8 @@ for _module, _keys, _kind in (
     ("membership", ("card-studio-activity",), None),
     ("events", ("event-certificates-issued",), None),
     ("reports", ("report-usage",), "substantive"),
-    ("platform", ("platform-profile-adoption",), None),
+    ("platform", ("platform-profile-adoption", "platform-channel-usage"), None),
+    ("reports", ("channel-usage",), None),
 ):
     _coverage = REPORT_MODULE_COVERAGE[_module]
     REPORT_MODULE_COVERAGE[_module] = ModuleReportCoverage(_kind or _coverage.kind, (*_coverage.reports, *_keys))

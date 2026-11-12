@@ -24,6 +24,7 @@ class SavedViewSerializer(serializers.ModelSerializer):
         allowed |= {"columns", "density", "out_of_stock", "queue"}
         allowed |= {"triage", "prize", "round", "below_target"}  # L21b staff event lists (X40)
         allowed |= {"event", "reply", "list", "collected"}  # parity E-B5: one event's guest list
+        allowed |= {"machine", "member", "machine_type", "source", "since", "until"}  # open item A17: Machines list filters
         if set(value) - allowed:
             raise serializers.ValidationError(gettext("Unsupported list-state key."))
         if "density" in value and value["density"] not in {"comfortable", "compact"}:

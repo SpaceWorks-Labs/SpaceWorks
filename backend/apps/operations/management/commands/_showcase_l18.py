@@ -10,7 +10,6 @@ from decimal import Decimal
 
 from django.utils import timezone
 
-from apps.makerspaces.models import Makerspace
 from apps.payments.donations import pledges, services, sponsors
 from apps.payments.donations.identity import Donor
 from apps.payments.models import DonationCampaign, DonationSettings, SponsorPerk, SponsorTier
@@ -25,7 +24,7 @@ def _donor(user):
 
 def seed_donations(space, manager, members):
     space.enabled_features = sorted(set(space.enabled_features or []) | set(FEATURES))
-    Makerspace.objects.filter(pk=space.pk).update(enabled_features=space.enabled_features)
+    space.save(update_fields=["enabled_features"])
     today = timezone.localdate()
     DonationSettings.objects.update_or_create(makerspace=space, defaults={
         "page_intro": "Every gift keeps the doors open and the tools sharp.", "suggested_amounts": ["500", "1000", "2500"],

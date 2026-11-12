@@ -7,7 +7,7 @@ from django.db.models import DateTimeField
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 
-from apps.accounts.models_activity import DeviceActivityDay
+from apps.accounts.models_activity import DeviceActivityDay, WebSessionActivityDay
 from apps.accounts.models_devices import NativeAppRegistration
 from apps.bookings.models import Booking
 from apps.devices.models import Device
@@ -138,7 +138,21 @@ def build_platform_usage(makerspace_id=None, *, platform_context=None, limit=Non
     for (day, platform, _grant), space_id in grants.items():
         add(space_id, datetime.combine(day, time.min, tzinfo=datetime_timezone.utc), "active_app_sessions",
             entity_kind="platform", entity_id=platform)
+    # Browser sessions, the web twin of the phone count above: one session-day per day, assigned to
+    # its first visible space (else NULL) so a person in several spaces is not counted per space.
+    web = WebSessionActivityDay.objects.filter(Q(makerspace_id__in=[s.pk for s in spaces]) | Q(makerspace__isnull=True))
+    if date_range:
+        if date_range[0]:
+            web = web.filter(local_day__gte=date_range[0].date())
+        if date_range[1]:
+            web = web.filter(local_day__lt=date_range[1].date())
+    sessions = {}
+    for row in web.order_by("local_day", "makerspace_id").values("local_day", "session_hash", "makerspace_id").iterator():
+        sessions.setdefault((row["local_day"], row["session_hash"]), row["makerspace_id"])
+    for (day, _session), space_id in sessions.items():
+        add(space_id, datetime.combine(day, time.min, tzinfo=datetime_timezone.utc), "active_web_sessions",
+            entity_kind="platform", entity_id="web")
     rows = [dict(zip(FIELDS, (*key, value), strict=True)) for key, value in groups.items()]
     rows.sort(key=lambda r: (r["metric"], r["unit"], r["currency"] or "", -r["value"], r["makerspace_id"] or 0, r["entity_id"] or "", r["period"]))
     return ReportResult(FIELDS, limited(rows, limit), {"definition": "UTC periods; activity counts remain per makerspace. Machine service, manual and booked hours are separate measures. Adoption is a current snapshot; growth uses creation time.",
-                                                     "limitations": "Active app sessions count grants once per recorded local day across visible/NULL attribution; hidden rows are excluded. Daily counts roll up as active session-days. Missing consumable costs are unknown. Units and currencies never combine."})
+                                                     "limitations": "Active web sessions count browser sessions once per recorded local day, the same way. Active app sessions count grants once per recorded local day across visible/NULL attribution; hidden rows are excluded. Daily counts roll up as active session-days. Missing consumable costs are unknown. Units and currencies never combine."})

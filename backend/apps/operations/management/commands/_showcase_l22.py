@@ -10,7 +10,6 @@ pay-at-desk order that waits on the pickup shelf.
 from decimal import Decimal
 
 from apps.accounts.models import User
-from apps.makerspaces.models import Makerspace
 
 FEATURES = ("shop.online", "shop.holds", "shop.receipts", "shop.cash_up", "shop.returns", "shop.reorder",
             "shop.public_stock", "shop.order_limits", "charges.enabled", "charges.shop")
@@ -32,8 +31,7 @@ def seed_shop(space, manager, member):
 
     space.enabled_modules = sorted(set(space.enabled_modules or []) | {"shop"})
     space.enabled_features = sorted(set(space.enabled_features or []) | set(FEATURES))
-    Makerspace.objects.filter(pk=space.pk).update(enabled_modules=space.enabled_modules,
-                                                  enabled_features=space.enabled_features)
+    space.save(update_fields=["enabled_modules", "enabled_features"])
     space.refresh_from_db()
     seller = User.objects.filter(username="tinker_shop").first() or manager
     products = [services_catalogue.save_product(space, dict(row), actor=seller) for row in PRODUCTS]

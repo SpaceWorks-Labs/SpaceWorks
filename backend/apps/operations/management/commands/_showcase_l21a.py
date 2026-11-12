@@ -17,7 +17,6 @@ from apps.events.contributions import crew_workflow
 from apps.events.hackathons import admission_stages
 from apps.events.hackathons.admission_models import HackathonConfig
 from apps.events.models import EventAddon, EventParticipationSettings
-from apps.makerspaces.models import Makerspace
 
 FEATURES = ("events.applications", "events.application_stages", "events.attendance_confirmation",
             "events.crew", "events.checkin_lists")
@@ -33,7 +32,7 @@ def seed_participation(space, manager, members, build_night):
     from apps.events.services_event_details import create_event
     from apps.events.services_lifecycle import publish
     space.enabled_features = sorted(set(space.enabled_features or []) | set(FEATURES))
-    Makerspace.objects.filter(pk=space.pk).update(enabled_features=space.enabled_features)
+    space.save(update_fields=["enabled_features"])
     people = list(members.values())
     starts = (timezone.now() + timedelta(days=30)).replace(hour=10, minute=0, second=0, microsecond=0)
     residency = create_event(makerspace=space, actor=manager, title="Open studio residency",

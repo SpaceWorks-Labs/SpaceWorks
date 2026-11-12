@@ -65,6 +65,7 @@ SUBJECT_PATHS = {
     "machines.MachineUsageEntry": ("service_request__member", "member"),
     "machines.CertificationGrant": ("membership__user",),
     "machines.GuestCertificationGrant": ("user",),  # final audit m22 (L3a): the grantee's own certification
+    "machines.MachineAccessGrant": ("member",),  # decision 319: the member's own machine access
     "machines.SupervisedParticipant": ("user",),
     "machines.SupervisedUse": ("user",),
     "maintenance.Incident": ("involved_user", "sponsor_user"),  # not the reporter: authorship is not ownership
@@ -72,6 +73,8 @@ SUBJECT_PATHS = {
     "machines.ServiceRequestConsumption": ("service_request__member",),
     "makerspaces.MakerspaceMembership": ("user",),
     "makerspaces.MemberCard": ("membership__user",),
+    # Decision 345(b): the member's own background-eraser opt-out (a privacy choice) for the card that owns the photo.
+    "card_designs.CardPhotoEraserOptOut": ("member_card__membership__user", "programme_card__user", "event_card__person"),
     "makerspaces.MemberProfile": ("membership__user",),
     "makerspaces.MemberProject": ("profile__membership__user",),
     "makerspaces.MembershipRequest": ("user",),

@@ -217,8 +217,12 @@ from .classification_r3_org_units import DATASETS as R3_ORG_UNIT_DATASETS  # noq
 DATASET_SPECS.update(R3_ORG_UNIT_DATASETS)
 from .classification_r3_org_b4 import DATASETS as R3_ORG_B4_DATASETS  # noqa: E402
 DATASET_SPECS.update(R3_ORG_B4_DATASETS)
+from .classification_studio import DATASETS as STUDIO_DATASETS  # noqa: E402
+DATASET_SPECS.update(STUDIO_DATASETS)
 from .classification_l3b import DATASET_SPECS as L3B_DATASETS  # noqa: E402
 DATASET_SPECS.update(L3B_DATASETS)
+from .classification_adapter import DATASET_SPECS as ADAPTER_DATASETS  # noqa: E402
+DATASET_SPECS.update(ADAPTER_DATASETS)
 from .classification_booking_decision import DATASETS as BOOKING_DECISION_DATASETS
 DATASET_SPECS.update(BOOKING_DECISION_DATASETS)
 DATASETS = {}

@@ -32,6 +32,8 @@ EXPORTED_FIELDS = {
     "card_designs.CardNumberCounter": "id makerspace scheme_key year next_value",
     "card_designs.CardPhotoRequest": "id makerspace member_card programme_card event_card staff_card requested_by reason "
                                      "created_at reminded_at resolved_at",
+    "card_designs.CardPhotoEraserOptOut": "id makerspace member_card programme_card event_card staff_card opted_out_at "
+                                          "notice_version",
     "makerspaces.MemberCardSettings": "id makerspace auto_issue email_on_issue public_verify verify_show_plan verify_show_name updated_at",
     "events.EventCardSettings": "id event extras_visible_to_organizers updated_at",
     "id_programmes.IdProgramme": "id organization makerspace name slug description status registration_open "
@@ -64,6 +66,14 @@ OMITTED_MODELS = {
     "card_designs.CardHolderExtras": "Opt-in blood group and emergency contact: the holder and the printed card only "
                                      "(Q-I5), never any export.",
     "card_designs.CardJob": "Operational job state; its private result objects expire 7 days after finishing.",
+    # D314c: the eraser provider's shared secret never travels; cut-outs are derived and regenerable from the
+    # original photo (which does travel); a photo batch is a temporary review area that expires after 7 days.
+    "card_designs.MakerspaceImageAdapter": _CREDENTIAL,
+    "card_designs.PlatformImageAdapter": "Deployment-wide eraser provider settings never travel.",
+    "card_designs.CardPhotoCutout": "Derived private cut-out of a card photo; regenerated from the original, "
+                                    "which is exported.",
+    "card_designs.CardPhotoBatch": "Temporary bulk photo upload under review; expires after 7 days.",
+    "card_designs.CardPhotoBatchItem": "Temporary bulk photo upload under review; expires after 7 days.",
     "card_designs.CardFont": "Deployment-wide cache of open-licence font files; not tenant data.",
 }
 NON_CREDENTIAL = {
@@ -82,6 +92,7 @@ DATASET_SPECS = {
     "card_designs.CardNumberScheme": ("cards/number_schemes.csv", P(("makerspace",))),
     "card_designs.CardNumberCounter": ("cards/number_counters.csv", P(("makerspace",))),
     "card_designs.CardPhotoRequest": ("cards/photo_requests.csv", P(("makerspace",))),
+    "card_designs.CardPhotoEraserOptOut": ("cards/photo_eraser_opt_outs.csv", P(("makerspace",))),
     "makerspaces.MemberCardSettings": ("members/member_card_settings.csv", P(("makerspace",))),
     "id_programmes.IdProgramme": ("id_programmes/programmes.csv", P(("makerspace",))),
     "id_programmes.IdProgrammeCard": ("id_programmes/cards.csv", P(("makerspace",))),
@@ -97,6 +108,8 @@ RELATIONAL_USER_FIELDS = frozenset({
     ("card_designs.CardDesignAsset", "uploaded_by"),
     ("card_designs.CardPhotoRequest", "requested_by"),
     ("card_designs.CardJob", "requested_by"),
+    ("card_designs.CardPhotoCutout", "requested_by"),
+    ("card_designs.CardPhotoBatch", "created_by"),
     ("id_programmes.IdProgramme", "created_by"),
     ("id_programmes.IdProgrammeCard", "user"),
     ("id_programmes.IdProgrammeImport", "created_by"),
@@ -105,6 +118,8 @@ RELATIONAL_USER_FIELDS = frozenset({
 })
 EXCLUDED_USER_EDGE_REASONS = {
     ("card_designs.CardJob", "requested_by"): "Requester of an omitted, expiring job.",
+    ("card_designs.CardPhotoCutout", "requested_by"): "Requester of an omitted, derived cut-out.",
+    ("card_designs.CardPhotoBatch", "created_by"): "Creator of an omitted, expiring photo batch.",
 }
 # Layout documents (no references), a forms schema and an import column mapping.
 JSON_FIELDS = frozenset({

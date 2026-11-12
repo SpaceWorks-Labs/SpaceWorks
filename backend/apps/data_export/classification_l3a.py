@@ -1,6 +1,6 @@
 """Release 0.12.0 lane L3a (induction events, supervised sessions, incident register): export classification.
 
-All seven models are the space's own accountability history and export with it: which event
+All eight models are the space's own accountability history and export with it: which event
 inducted for which certification, who was certified as a guest and from which event, who led
 a supervised session and who used the machine under it, and the incident register with its
 follow-up actions. People are relational account references. The free text (a supervised
@@ -14,6 +14,7 @@ EXPORTED_FIELDS = {
     "machines.EventInductionLink": "id makerspace event certification_type created_by created_at",
     "machines.GuestCertificationGrant": ("id makerspace certification_type user source_event granted_by granted_at "
                                          "expires_at revoked_at revoked_by notes"),
+    "machines.MachineAccessGrant": "id makerspace member machine machine_type granted_by granted_at expires_at note source revoked_at revoked_by expiry_notice_sent_at",
     "machines.SupervisedSession": "id makerspace machine instructor event note opened_at closed_at closed_by",
     "machines.SupervisedParticipant": "id session user added_by added_at removed_at",
     "machines.SupervisedUse": "id session user instructor started_at ended_at note",
@@ -26,6 +27,7 @@ OMITTED_MODELS = {}
 DATASET_SPECS = {
     "machines.EventInductionLink": ("machines/induction_links.csv", P(("makerspace",))),
     "machines.GuestCertificationGrant": ("machines/guest_certification_grants.csv", P(("makerspace",))),
+    "machines.MachineAccessGrant": ("machines/machine_access_grants.csv", P(("makerspace",))),
     "machines.SupervisedSession": ("machines/supervised_sessions.csv", P(("makerspace",))),
     "machines.SupervisedParticipant": ("machines/supervised_participants.csv", P(("session__makerspace",))),
     "machines.SupervisedUse": ("machines/supervised_uses.csv", P(("session__makerspace",))),
@@ -37,6 +39,9 @@ RELATIONAL_USER_FIELDS = frozenset({
     ("machines.GuestCertificationGrant", "user"),
     ("machines.GuestCertificationGrant", "granted_by"),
     ("machines.GuestCertificationGrant", "revoked_by"),
+    ("machines.MachineAccessGrant", "member"),
+    ("machines.MachineAccessGrant", "granted_by"),
+    ("machines.MachineAccessGrant", "revoked_by"),
     ("machines.SupervisedSession", "instructor"),
     ("machines.SupervisedSession", "closed_by"),
     ("machines.SupervisedParticipant", "user"),

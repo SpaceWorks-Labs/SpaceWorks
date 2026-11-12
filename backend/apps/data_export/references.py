@@ -86,6 +86,11 @@ from .classification_unified_accounts import (  # noqa: E402
 )
 RELATIONAL_USER_FIELDS |= UA1_USER_FIELDS
 _EXCLUDED_USER_EDGE_REASONS.update(UA1_EDGES)
+from .classification_account_profile import (  # noqa: E402
+    RELATIONAL_USER_FIELDS as ACCOUNT_PROFILE_USER_FIELDS, EXCLUDED_USER_EDGE_REASONS as ACCOUNT_PROFILE_EDGES,
+)
+RELATIONAL_USER_FIELDS |= ACCOUNT_PROFILE_USER_FIELDS
+_EXCLUDED_USER_EDGE_REASONS.update(ACCOUNT_PROFILE_EDGES)
 from .classification_login_security import (  # noqa: E402
     RELATIONAL_USER_FIELDS as S0_USER_FIELDS, EXCLUDED_USER_EDGE_REASONS as S0_EDGES,
 )
@@ -96,6 +101,11 @@ from .classification_r2_l10 import (  # noqa: E402
 )
 RELATIONAL_USER_FIELDS |= R2_L10_USER_FIELDS
 _EXCLUDED_USER_EDGE_REASONS.update(R2_L10_EDGES)
+from .classification_adapter import (  # noqa: E402
+    RELATIONAL_USER_FIELDS as ADAPTER_USER_FIELDS, EXCLUDED_USER_EDGE_REASONS as ADAPTER_EDGES,
+)
+RELATIONAL_USER_FIELDS |= ADAPTER_USER_FIELDS
+_EXCLUDED_USER_EDGE_REASONS.update(ADAPTER_EDGES)
 from .classification_r2_l11 import (  # noqa: E402
     RELATIONAL_USER_FIELDS as R2_L11_USER_FIELDS, EXCLUDED_USER_EDGE_REASONS as R2_L11_EDGES,
 )
@@ -198,6 +208,9 @@ for _fidelity in Fidelity:
             decision = SemanticUserRef(_model, "sealed_member_ids[]",
                 "Frozen roster members join portable identity closure; readable exports omit this private vector.",
                 included=_fidelity is Fidelity.PORTABLE)
+        elif (_model, _field) == ("events.HackathonTeam", "deleted_snapshot"):
+            decision = SourceLocalProvenance(_model, "deleted_snapshot.leader_id+member_ids",
+                "Short-lived organiser undo snapshot of the roster at delete time: source-local ids, reset to empty on tenant import and never remapped.")
         elif (_model, _field) == ("audit.AuditLog", "meta"):
             decision = SourceLocalProvenance(
                 _model,

@@ -112,6 +112,12 @@ def build_subject_archive(job, *, monotonic=time.monotonic):
                         count += 1
                     output.write(b"]")
                 counts[label] = count
+            # M17: the account-level global profile is the person's own data too (decision 336f).
+            from .subject_account_profile import account_profile_records
+            for section, rows in account_profile_records(job.requested_by).items():
+                archive.writestr(f"account_profile/{section}.json", json.dumps(
+                    rows, cls=DjangoJSONEncoder, ensure_ascii=False))
+                counts[f"account_profile.{section}"] = len(rows)
             manifest = {
                 "kind": "subject_access", "registry_version": REGISTRY_VERSION,
                 "makerspace_id": job.makerspace_id, "subject_id": job.requested_by_id,

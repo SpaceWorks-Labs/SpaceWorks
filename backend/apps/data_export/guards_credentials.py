@@ -34,6 +34,8 @@ REVIEWED_NON_CREDENTIAL.update(PRINTER_NON_CREDENTIAL)
 REVIEWED_NON_CREDENTIAL.update(WP3_NON_CREDENTIAL)
 from .credentials_events_programme import NON_CREDENTIAL as PROGRAMME_NON_CREDENTIAL
 REVIEWED_NON_CREDENTIAL.update(PROGRAMME_NON_CREDENTIAL)
+REVIEWED_NON_CREDENTIAL[("makerspaces.MembershipPlan", "join_state")] = (
+    "Join-form field mode (hidden/optional/required) for collecting a place of supply; not a bearer credential.")
 from .credentials_reimbursements import NON_CREDENTIAL as REIMBURSEMENT_NON_CREDENTIAL
 REVIEWED_NON_CREDENTIAL.update(REIMBURSEMENT_NON_CREDENTIAL)
 from .classification_r2_l1 import NON_CREDENTIAL as R2_L1_NON_CREDENTIAL  # noqa: E402

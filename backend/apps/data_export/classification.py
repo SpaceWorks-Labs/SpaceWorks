@@ -36,6 +36,8 @@ from .classification_r3_org_units import FIELDS as R3_ORG_UNIT_FIELDS  # noqa: E
 EXPORTED_MODEL_FIELDS.update(R3_ORG_UNIT_FIELDS)
 from .classification_r3_org_b4 import FIELDS as R3_ORG_B4_FIELDS  # noqa: E402
 EXPORTED_MODEL_FIELDS.update(R3_ORG_B4_FIELDS)
+from .classification_studio import FIELDS as STUDIO_FIELDS  # noqa: E402
+EXPORTED_MODEL_FIELDS.update(STUDIO_FIELDS)
 from .classification_l3b import EXPORTED_FIELDS as L3B_FIELDS, OMITTED_MODELS as L3B_OMITTED  # noqa: E402
 EXPORTED_MODEL_FIELDS.update(L3B_FIELDS)
 EXPORTED_MODEL_FIELDS["makerspaces.Makerspace"] += " loan_context_generations"
@@ -94,6 +96,8 @@ from apps.tenant_migration.catalog_p2_events import OMITTED_MODELS as P2_EVENT_O
 OMITTED_MODELS.update(P2_EVENT_OMITTED)
 from apps.tenant_migration.catalog_p2_presence import classify as classify_presence
 classify_presence(EXPORTED_MODEL_FIELDS)
+from apps.tenant_migration.catalog_p2_presence import OMITTED_MODELS as PRESENCE_OMITTED  # noqa: E402
+OMITTED_MODELS.update(PRESENCE_OMITTED)
 from .classification_m1f1 import EXPORTED_FIELDS as M1F1_FIELDS, FIELD_ADDITIONS as M1F1_ADDITIONS, OMITTED_MODELS as M1F1_OMITTED
 EXPORTED_MODEL_FIELDS.update(M1F1_FIELDS)
 for _label, _fields in M1F1_ADDITIONS.items():
@@ -156,6 +160,8 @@ for _label, _names in R2_L2_EXTRA.items():
     EXPORTED_MODEL_FIELDS[_label] += " " + _names
 from .classification_unified_accounts import OMITTED_MODELS as UA1_OMITTED, EXTRA_FIELDS as UA1_EXTRA  # noqa: E402
 OMITTED_MODELS.update(UA1_OMITTED)
+from .classification_account_profile import OMITTED_MODELS as ACCOUNT_PROFILE_OMITTED  # noqa: E402
+OMITTED_MODELS.update(ACCOUNT_PROFILE_OMITTED)
 for _label, _names in UA1_EXTRA.items():
     EXPORTED_MODEL_FIELDS[_label] += " " + _names
 from .classification_r2_l4 import (
@@ -170,6 +176,9 @@ OMITTED_MODELS.update(S0_OMITTED)
 EXPORTED_MODEL_FIELDS.update(S0_FIELDS)
 from .classification_r2_l10 import OMITTED_MODELS as R2_L10_OMITTED  # noqa: E402
 OMITTED_MODELS.update(R2_L10_OMITTED)
+from .classification_adapter import OMITTED_MODELS as ADAPTER_OMITTED, EXPORTED_FIELDS as ADAPTER_FIELDS  # noqa: E402
+OMITTED_MODELS.update(ADAPTER_OMITTED)
+EXPORTED_MODEL_FIELDS.update(ADAPTER_FIELDS)
 from .classification_r2_l11 import OMITTED_MODELS as R2_L11_OMITTED  # noqa: E402
 OMITTED_MODELS.update(R2_L11_OMITTED)
 from .classification_r2_l8 import OMITTED_MODELS as R2_L8_OMITTED  # noqa: E402

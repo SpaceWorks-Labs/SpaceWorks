@@ -15323,3 +15323,81 @@ msgstr ""
 
 msgid "Your profiles from different spaces were combined into one, so publishing it on the open web is off until you confirm it again in your profile settings."
 msgstr ""
+
+msgid "80 or 100: the highest threshold already notified."
+msgstr ""
+
+msgid "A name and a host are required."
+msgstr ""
+
+msgid "A space can register up to 10 players."
+msgstr ""
+
+msgid "Bulk job"
+msgstr ""
+
+msgid "Consumed by a booking"
+msgstr ""
+
+msgid "Converted from a certification"
+msgstr ""
+
+msgid "Gave up"
+msgstr ""
+
+msgid "Granted by staff"
+msgstr ""
+
+msgid "Hosted space"
+msgstr ""
+
+msgid "In sync"
+msgstr ""
+
+msgid "Inventory loans"
+msgstr ""
+
+msgid "Machine document storage is unavailable."
+msgstr ""
+
+msgid "Machine time hours"
+msgstr ""
+
+msgid "Never synced"
+msgstr ""
+
+msgid "Not set"
+msgstr ""
+
+msgid "Offline desk"
+msgstr ""
+
+msgid "One pool, never resets"
+msgstr ""
+
+msgid "Own space"
+msgstr ""
+
+msgid "Pending review"
+msgstr ""
+
+msgid "Released from a booking"
+msgstr ""
+
+msgid "Resets every calendar month"
+msgstr ""
+
+msgid "Resets every calendar year"
+msgstr ""
+
+msgid "Room booking hours"
+msgstr ""
+
+msgid "Use background, watermark or image."
+msgstr ""
+
+msgid "Use http:// or https:// and a host, for example http://192.168.1.20."
+msgstr ""
+
+msgid "Whole units of the key (bytes for byte keys). Delete the row for no limit."
+msgstr ""

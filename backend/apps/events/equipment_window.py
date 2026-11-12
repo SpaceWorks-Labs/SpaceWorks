@@ -139,32 +139,36 @@ def plan_for_participants(actor, event, *, operation_id, requested_for, lines, p
     # Only this event's registrations: a guest pass is never issued, nor a request bound, for another event's id.
     own = set(EventRegistration.objects.filter(
         event=event, pk__in=[person["registration_id"] for person in participants]).values_list("pk", flat=True))
-    for person in participants:
-        reg_id = person["registration_id"]
-        items = [{"product_id": line["product_id"], "quantity": line["quantity"]} for line in person["lines"] or lines]
-        row = {"registration_id": reg_id}
-        if reg_id not in own:
-            row.update(outcome="error", code="not_found")
+    # The tenant key is minted before any savepoint: preparing one inside a transaction is refused, and every
+    # per-person savepoint below would otherwise turn the whole plan into a 503.
+    from apps.encryption.tenant_preparation import prepare_tenant_key, tenant_key_context
+    with tenant_key_context(prepare_tenant_key(event.makerspace_id)):
+        for person in participants:
+            reg_id = person["registration_id"]
+            items = [{"product_id": line["product_id"], "quantity": line["quantity"]} for line in person["lines"] or lines]
+            row = {"registration_id": reg_id}
+            if reg_id not in own:
+                row.update(outcome="error", code="not_found")
+                result["results"].append(row)
+                continue
+            try:
+                with transaction.atomic():  # one savepoint per person: a refusal never poisons the others
+                    # Decision 223: a non-member registrant is planned for through their event guest pass (no
+                    # presence needed). m11: inside the savepoint, so a refused row leaves no pass behind.
+                    ensure_event_pass(reg_id, issuer_id=actor.pk)
+                    outcome, req, replayed = create_pending(
+                        makerspace_id=event.makerspace_id, actor=actor, borrower=None, intent_kind="staff",
+                        operation_id=uuid.uuid5(operation_id, f"registration:{reg_id}"),
+                        event_registration_id=reg_id, booking_id=None, booking_token=None, borrower_id=None,
+                        items=items, kit=None, requested_for=requested_for, pickup_from=None, pickup_until=None,
+                        waitlist_entry_id=None,
+                        canonical_fields={"items": items, "requested_for": requested_for})
+                row.update(outcome="replayed" if replayed else "created", request_id=req.pk, status=req.status)
+            except (Http404, ProposalConflict, APIException, DjangoValidationError, *_GUARD_REFUSALS) as exc:
+                # Decision 223 G5: before the event nobody has a presence session, and a registrant may hold no
+                # membership. Those refusals are per-row results, never an abort of the whole plan.
+                row.update(outcome="error", code=_error_code(exc))
             result["results"].append(row)
-            continue
-        try:
-            with transaction.atomic():  # one savepoint per person: a refusal never poisons the others
-                # Decision 223: a non-member registrant is planned for through their event guest pass (no
-                # presence needed). m11: inside the savepoint, so a refused row leaves no pass behind.
-                ensure_event_pass(reg_id, issuer_id=actor.pk)
-                outcome, req, replayed = create_pending(
-                    makerspace_id=event.makerspace_id, actor=actor, borrower=None, intent_kind="staff",
-                    operation_id=uuid.uuid5(operation_id, f"registration:{reg_id}"),
-                    event_registration_id=reg_id, booking_id=None, booking_token=None, borrower_id=None,
-                    items=items, kit=None, requested_for=requested_for, pickup_from=None, pickup_until=None,
-                    waitlist_entry_id=None,
-                    canonical_fields={"items": items, "requested_for": requested_for})
-            row.update(outcome="replayed" if replayed else "created", request_id=req.pk, status=req.status)
-        except (Http404, ProposalConflict, APIException, DjangoValidationError, *_GUARD_REFUSALS) as exc:
-            # Decision 223 G5: before the event nobody has a presence session, and a registrant may hold no
-            # membership. Those refusals are per-row results, never an abort of the whole plan.
-            row.update(outcome="error", code=_error_code(exc))
-        result["results"].append(row)
     created = sum(1 for row in result["results"] if row["outcome"] == "created")
     if created:  # m11: a pure replay changed nothing, so it writes no second audit entry
         record(actor, "event.equipment_planned", makerspace=event.makerspace, target=event,

@@ -1,6 +1,7 @@
 """Transactional contextual request orchestration; entrypoints must validate input."""
 import json
 from django.core.exceptions import ValidationError
+from contextlib import nullcontext
 from django.db import DatabaseError, IntegrityError, transaction
 from django.http import Http404
 
@@ -9,7 +10,7 @@ from apps.accounts.loan_context_identity import borrower_aliases, borrower_survi
 from apps.accounts.models import User
 from apps.accounts.staff_identity import is_person, is_platform
 from apps.encryption.write_fence import assert_mapped_write_allowed
-from apps.encryption.tenant_preparation import prepare_tenant_key, tenant_key_context
+from apps.encryption.tenant_preparation import holds_tenant_key, prepare_tenant_key, tenant_key_context
 from apps.hardware_requests.request_submission_locked import submit_locked
 from apps.hardware_requests.request_workflow import RequesterSnapshot
 from apps.inventory.equipment_proposal_receipts import (
@@ -115,8 +116,10 @@ def create_pending(**kwargs):
         else:
             raise Http404
         _preflight_equipment(maker, kwargs["items"], kwargs["kit"])
-        key = prepare_tenant_key(maker_id, create=probe is None)
-        with tenant_key_context(key):
+        # A caller that already minted this tenant's key (the event plan, which opens a savepoint per person)
+        # keeps its context; preparing one here, inside that savepoint, would be refused.
+        key = None if holds_tenant_key(maker_id) else prepare_tenant_key(maker_id, create=probe is None)
+        with tenant_key_context(key) if key is not None else nullcontext():
             try:
                 try:
                     return _create_pending(**kwargs)

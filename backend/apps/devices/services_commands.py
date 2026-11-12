@@ -13,6 +13,7 @@ from apps.devices.errors_printers import LeaseExpired, PrinterConflict
 from apps.devices.models import DeviceCommand, PrinterJob
 from apps.devices.printer_access import live_target, locked_device, owned_command
 from apps.devices.services_printer_events import record
+from apps.makerspaces.guards import SurfaceOff
 
 
 JOB_COMMAND_KINDS = ("printer_job", "adapter_job")
@@ -51,7 +52,8 @@ def validate_delivery_target(makerspace, device, command):
         if command.device_key_version != device.key_version or command.kind not in JOB_COMMAND_KINDS or job is None:
             raise ValidationError(gettext("Unknown or stale command."))
         live_target(job, device)
-    except ValidationError:
+    except (ValidationError, SurfaceOff):
+        # A switched-off adapter module is a permanent reason not to deliver, like a stale target.
         cancel_command(makerspace, device, command, job=job)
         return None
     return job

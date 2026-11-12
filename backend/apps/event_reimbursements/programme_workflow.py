@@ -57,8 +57,17 @@ def configure(*, request, event_id, data):
         ctx.cas(row)
         require(pool.version == data["expected_pool_version"] and row.finance_policy_revision == data["policy_revision"], "stale_version")
         combined = {name: getattr(row, name) for name in POLICY_FIELDS}
+        # A client that only knows the legacy yes/no switch must not be overridden by the stored
+        # ``required_submission`` (G11): drop the stored pair so the switch derives it, then persist both.
+        legacy_only = "require_project_submission" in data["settings"] and "required_submission" not in data["settings"]
+        if legacy_only:
+            combined.pop("required_submission", None)
+            combined.pop("required_submission_stage", None)
         normalized = validate_policy({**combined, **data["settings"]}, event=ctx.event)
         settings = {key: normalized[key] for key in data["settings"]}
+        if legacy_only:
+            settings.update(required_submission=normalized["required_submission"],
+                            required_submission_stage=normalized["required_submission_stage"])
         if row.imported_paused:
             require(data.get("reconciliation_confirmed") is True, "finance_reconciliation_required")
             from django.db.models import Sum

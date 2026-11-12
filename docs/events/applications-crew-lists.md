@@ -1,4 +1,4 @@
-# Applications, review stages, attendance, crew and check-in lists (release 2 L21a)
+# Applications, review stages, attendance, crew and check-in lists
 
 Six Events capabilities, all off by default, all keeping their data when turned off. The rules
 behind each are in `docs/INVARIANTS.md` ("Applications, review stages, attendance, crew and
@@ -24,7 +24,7 @@ check-in lists").
    or the panel changed since the preview, apply refuses and asks for a new preview.
 3. **Open for review.** Panel reviewers work at **Member > Application reviews**
    (`/member/application-reviews`); they see only their own assignments and nothing else of
-   the event. This workspace is web-only until native event-role sign-in exists (#173).
+   the event. This workspace is web-only until native event-role sign-in exists.
 4. Select applications in **Progress** and **Advance selected to the next stage**, or stage an
    offer, waitlist or rejection as usual. A decision staged against an application that has
    since moved is skipped at release and recorded in the audit log.

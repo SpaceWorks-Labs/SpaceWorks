@@ -1,21 +1,21 @@
-# Shared reminder schedules (research F1)
+# Shared reminder schedules
 
 `operations/reminder_sweeper.py` runs every five minutes in both Celery beat and
-`run_scheduled_tasks --due-only`. F1 introduced the coordination foundation; the
-membership admission lane registers its payment-deadline consumer. The `payments.due`
+`run_scheduled_tasks --due-only`. The coordination foundation comes first; membership
+admission registers its payment-deadline consumer. The `payments.due`
 consumer is registered explicitly and gated on default-OFF `billing.reminders`;
-see [payment-billing.md](payment-billing.md). Wave 2 registers `loans.return`
+see [payment-billing.md](payment-billing.md). The loan reminders register `loans.return`
 (borrower mail) and `loans.escalation` (staff notification family). Membership
 renewal tasks keep their current schedules. The existing hourly return-reminder
 task, management command and cron endpoint delegate policy-backed loans to these
-same F1 sources. Spaces without a loan-policy row retain their existing single
+same reminder sources. Spaces without a loan-policy row retain their existing single
 overdue reminder.
 
-Wave 2 also registers opt-in certification expiry/digest and maintenance consumers;
+They also register opt-in certification expiry/digest and maintenance consumers;
 see [machine-training-maintenance.md](machine-training-maintenance.md). Upgrading
 leaves these features and their external notification channels off.
 
-E3/B10 add event and booking reminders through the same F1 sweep.
+E3/B10 add event and booking reminders through the same reminder sweep.
 
 ## Registering a source
 
@@ -34,7 +34,7 @@ opaque subject identity, kind, aware due timestamp, and configurable signed inte
 offsets in **seconds**. For example, `[-259200, -86400, 0, 86400, 604800]` represents
 three days before, one day before, due time, one day after, and seven days after.
 An empty offset list disables reminders. Lists are limited to 100 steps and
-duplicate offsets are collapsed. Consumer policy rows own these lists; F1 adds no
+duplicate offsets are collapsed. Consumer policy rows own these lists; the sweeper adds no
 feature keys or tenant settings surface.
 
 Use `accounts.rbac.scope_for_scheduled_work(queryset, makerspace_id=makerspace.pk,
@@ -67,7 +67,7 @@ The default emitter adds no member delivery or matrix event families; domain
 consumers own those through their dispatch callbacks.
 Event and booking callbacks use the same five arguments and return `NotificationResult`;
 an empty result denotes suppressed delivery. Delivery failures mark the schedule FAILED;
-suppressed deliveries count as skipped. Both remain terminal under F1's at-most-once
+suppressed deliveries count as skipped. Both remain terminal under the sweeper's at-most-once
 contract. Legacy callbacks returning `None` still count attempts, preserving consumers
 without delivery receipts. Event and booking notices go only to their requester, never
 to the shared staff inbox or a chat room. They re-read live status and eligibility
@@ -83,7 +83,7 @@ time formatting using existing booking rows without implementing booking mail.
 `operations/membership_payment_reminders.py` registers `membership.admission_payment`
 under the `membership` module. The initial `awaiting_payment` transition sends the
 applicant's payment notice. This source attempts one further `payment_due` notice
-one day before the request's `expires_at`, through the F3 MEMBERSHIP family and the
+one day before the request's `expires_at`, through the MEMBERSHIP notification family and the
 verified applicant User address. The shared `notifications` module gate still applies.
 
 Discovery is bounded and excludes completed/claimed/failed reminder identities, so
@@ -144,7 +144,7 @@ Reminder rows contain no payload, address or User FK and contribute no accounts 
 the export identity closure. They are omitted from data export and explicitly DROP
 in the tenant-migration catalog/projection, then rebuilt from imported domain rows.
 Because sent markers do not travel, the target may dispatch a historical offset again:
-consumer lanes must choose their target eligibility/catch-up window accordingly.
+each consumer must choose their target eligibility/catch-up window accordingly.
 Full deployment backup/restore retains the database coordination rows as usual.
 
 `REMINDER_SWEEP_BATCH_SIZE` defaults to 200 and must be positive. Cadence is fixed at
@@ -157,12 +157,12 @@ generated frontend/OpenAPI artifact is needed for this internal foundation.
 negative before due, zero at due, positive overdue. Defaults are `[0]`; an empty
 list disables borrower reminders. `loan_escalate_overdue_days=0` disables staff
 escalation; a positive value emits `hardware_requests/overdue_escalated` through
-F3 recipients/channels and a `loan.overdue_escalated` inbox event.
+notification-family recipients/channels and a `loan.overdue_escalated` inbox event.
 
 Borrower mail goes only to the requester's own proven address, never an arbitrary
 contact or staff destination. Templates retain an aware local datetime for custom
 Django date filters, with an explicit timezone and UTC offset appended to borrower
-mail. Offsets remain elapsed UTC time across DST, using the F4 makerspace zone.
+mail. Offsets remain elapsed UTC time across DST, using the makerspace time zone.
 
 Subject identity includes request ID and due instant. Renewal/manual rescheduling
 creates a new occurrence; old claims remain permanent and stale rows revalidate
@@ -170,9 +170,9 @@ against the current request. The legacy sent marker suppresses duplicate zero-st
 delivery during opt-in. Discovery scans pages of claim tombstones and yields only
 currently due steps, so completed loans and future steps cannot starve newer due
 loans. Downtime catches up all eligible unsent offsets within the per-source batch.
-Portable dumps preserve the policy and zero-step marker, but drop F1 coordination;
+Portable dumps preserve the policy and zero-step marker, but drop reminder coordination;
 other historical offsets may dispatch again at the target, as described above.
-Failed channel delivery records a terminal failed F1 claim; it is never retried
+Failed channel delivery records a terminal failed reminder claim; it is never retried
 automatically. The legacy zero-step sent marker is written only after borrower
 email delivery, so a suppressed/failed attempt does not become delivery proof if
 the policy is later removed. The legacy path revalidates active status, current
@@ -207,4 +207,4 @@ One missed step is dispatched at most once; policies
 and due timestamps do not reset completed claims. Production subject identities include
 the UTC start instant, so rescheduling creates a new occurrence while preserving the
 old committed claim. A reminder suppressed after a claim is terminal, consistent with
-F1's at-most-once guarantee.
+the sweeper's at-most-once guarantee.

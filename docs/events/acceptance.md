@@ -54,14 +54,14 @@ mounted, not that a production provider or UI consumer is installed.
 | 7 event-day mode | E `programme/live.py`; A `programme/live/` | T `operations/test_live_funnel.py`; UI mounted; live/current-authority proof pending |
 | 8 funnel | `backend/apps/operations/reports_events_programme.py`; existing analytics route and `event-programme` report registry | T `operations/test_live_funnel.py`; shared registry/typed union/provider authored; Docker/privacy acceptance pending |
 | 9 live ticket | E `views_ticket.py`; U `features/events/MemberEventTicketPage.tsx`; existing owner ticket route | T `credentials/test_credentials.py`; real persisted attendance/undo + shared pass integration pending |
-| 10 short links | `/e/<7-char base62>` codes beside `/e/<public token>` (release 2 L1, `events.short_links`): regenerate retires, resolve has the public gate, 30/min throttle, PII-free daily visits | Built in L1; local tests `tests/events/test_short_links.py` |
+| 10 short links | `/e/<7-char base62>` codes beside `/e/<public token>` (`events.short_links`): regenerate retires, resolve has the public gate, 30/min throttle, PII-free daily visits | Built in L1; local tests `tests/events/test_short_links.py` |
 | 11 cover editor | E `programme/cover.py`; existing cover attachment path | T `operations/test_cover_accent.py`; sanitized canonical attachment and UI consumer authored; browser proof pending |
 | 12 publish questions/dirty bar | E `programme/publishing.py`; A `programme/publishing/`; F UI exports | T `operations/test_commands.py`; version writers and dirty-state consumers authored; runtime/browser proof pending |
 | 13 accent presets | E `programme/accent_presets.py`, Event accent field | T `operations/test_cover_accent.py`; event create/update/read/clone consumers authored; real clone/palette/browser proof pending |
 | 14 leave/security/series guests | `organizations/member_leave.py`, `accounts/security_activity.py`, E `programme/series_guests.py`; member org leave/activity, admin series guests | T `operations/test_account_extras.py`, `test_series_guests.py`; own-organization version/actions, v2 projections and mounted UI authored; privacy/race/browser proof pending |
 | 15 platform insights | `backend/apps/operations/platform_insights.py`; `/api/v1/admin/platform/insights/` | T `operations/test_account_extras.py`; platform UI mounted; real cache/privacy/browser proof pending |
 
-Owner decisions 34 (reimbursement, superseding “not now”) and 35 (staged forms) remain
+Reimbursement and staged forms remain
 required before integration acceptance; they belong to the separate approved R plan.
 AO19/AO20 and later cloud/governance checklist rows are not silently closed by AO1–AO18/AO23.
 The cloud/VPS work is separately owned; this branch supplies no fresh-VM or free-tier proof.

@@ -15,7 +15,7 @@ What SpaceWorks does with the sheet:
   then discarded. The import keeps only its counts and the fact that the rows came from a Google Sheet
   (an ID-programme import also keeps a fingerprint of the content, as it does for a file); the link
   itself is never stored or written to the audit log or the server logs.
-- **The people in the sheet are treated as in any import (#128 C-13).** Each row becomes a pending
+- **The people in the sheet are treated as in any import.** Each row becomes a pending
   entry with an emailed invitation; nobody is linked to an existing account and no account is created
   until the person accepts by signing in with that verified email.
 

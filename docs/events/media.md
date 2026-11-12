@@ -1,8 +1,8 @@
 # Upload formats, limits and retention
 
-**Checkpoint `f1ef7736`: these are code limits, not an acceptance claim.** The upload features are
+**These are code limits, not an acceptance claim.** The upload features are
 per-space switches, off for a new space. The real-tool export test (open-source tools: Inkscape,
-PrusaSlicer, arduino-cli, FreeCAD, KiCad) runs in release 2's final test phase; proprietary formats
+PrusaSlicer, arduino-cli, FreeCAD, KiCad) runs in the release test phase; proprietary formats
 with no owner samples (SolidWorks, Inventor, F3D, Altium, Eagle, LightBurn, CDR, SKP, DWG, and
 embroidery PES/DST unless Ink/Stitch installs) are waived for this release.
 
@@ -79,14 +79,14 @@ passes the default policy; organizer-specific lower policy wiring is not establi
 STL/OBJ/3MF mesh and Gerber/drill previews have lazy bounded workers; STEP/IGES loads on
 explicit request. External textures/references are refused. ZIP listing, expansion, mesh,
 time/output limits and cancellation guard the browser. KiCad files (boards, schematics,
-symbols, footprints, projects and KiCad 5) are download-only by owner decision (2026-10-29):
+symbols, footprints, projects and KiCad 5) are download-only by design:
 there is no in-browser KiCad viewer; the file offers only its original download. Vendor
 bundling/WASM APIs and actual browser previews of the other formats still need acceptance.
 
-### Preview acceptance (D19, AO4)
+### Preview acceptance
 
-X3 is **not applicable** in release 2: it was scoped to accept the new KiCad viewer alongside
-the existing previews, and the owner chose no KiCad viewer. The existing 3D and Gerber previews
+KiCad preview acceptance is **not applicable** in this release: no KiCad viewer is provided, so there is nothing
+to accept alongside the existing previews. The existing 3D and Gerber previews
 keep the acceptance status recorded above.
 Images are metadata-stripped/re-encoded; text/CSV/toolpath previews escape content and
 protect exported cells from spreadsheet formulas. Accepted files are never executed.

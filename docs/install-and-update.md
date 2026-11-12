@@ -140,7 +140,7 @@ installed. Rerunning `--non-interactive` on an existing install needs no answers
 
 ### Forward-only versions
 
-Upgrades only move forward (decision 219g). Over an existing install, `install.sh --version` with an
+Upgrades only move forward. Over an existing install, `install.sh --version` with an
 older release, and `scripts/update.sh --version` with an older or conflicting release, are refused
 before anything is backed up or changed. Going back means restoring the pre-upgrade backup; see
 [Rolling back](#rolling-back).
@@ -255,7 +255,7 @@ the **repository before downloading** that questionnaire; a source checkout asks
 4. **Storage:** bundled Silo (default), or external S3 endpoint/region, separate private/public
    buckets, access/secret keys, public-image base URL and PUT/POST presigning.
 5. **Control-plane proxy:** website access to `/control/` (default off), allowed peer IPs/CIDRs and,
-   with automatic HTTPS, an optional loopback HTTPS SSH-tunnel port. SaaS and API-only behind your
+   with automatic HTTPS, an optional loopback HTTPS SSH-tunnel port. The hosting-other-spaces layer (`saas`) and API-only behind your
    own proxy skip this choice. See [control-plane access](PROJECT-STATUS.md#admin-control-plane-superadmin-only).
    The recommended answer is the default, **No**: the control plane is then reachable only from the
    server itself through the SSH tunnel, so give a tunnel port (automatic HTTPS only) if you want it; with
@@ -270,7 +270,7 @@ the **repository before downloading** that questionnaire; a source checkout asks
     the console; GitHub is member-only. Then **Show the SpaceWorks product page at your site's front
     page? [Y/n]** (default yes, quick setup keeps yes). Answer **n** for a space that wants its own
     home at `/`: the front page then opens your space (or the `/spaces` directory when there are
-    several). Change it later with `bash scripts/apply-settings.sh --landing on|off` (`HUB_LANDING_ENABLED`).
+    several). Change it later with `bash scripts/apply-settings.sh --landing on|off` (`HUB_LANDING_ENABLED`); see [The SpaceWorks front page](how-to/front-page-and-features.md).
 11. **Areas and follow-ups:** enable every area [y/N], or choose each in order: Inventory
     [Y/n], Machines [Y/n], Events [y/N], Bookings [y/N], Membership [y/N], Online payments [y/N],
     Reports [Y/n], Chat alerts [y/N]. Each yes asks its settings immediately: loan limits/renewals,
@@ -354,15 +354,29 @@ other components changes, and each outside service is tested before setup starts
 | --- | --- | --- | --- |
 | Website | Full: web app and API on this server | API-only, with the website hosted elsewhere (or none) | `RUN_FRONTEND`, `SITE_ORIGINS` |
 | Database | Bundled PostgreSQL 16 | Any PostgreSQL 16 or 17: Supabase, Neon, Amazon RDS, your own | `DATABASE_CHOICE` (`1`/`2`), `EXTERNAL_DB_URL`, `EXTERNAL_DB_DIRECT_URL` |
-| Redis | Bundled Redis | Any `rediss://` Redis: Upstash, Redis Cloud, ElastiCache | `REDIS_CHOICE` (`1`/`2`), `EXTERNAL_REDIS_URL` |
+| Redis | Bundled Redis | Any `rediss://` Redis (Upstash, Redis Cloud, ElastiCache), or **none** (cron mode) | `REDIS_CHOICE` (`1` bundled, `2` outside, `3` none), `EXTERNAL_REDIS_URL` |
 | File storage | Bundled Silo | Any S3-compatible service: Cloudflare R2, Backblaze B2, Amazon S3, Supabase Storage | `STORAGE` (`1`/`2`), `S3_ENDPOINT`, `S3_PUBLIC_ENDPOINT`, `S3_REGION`, `PRIVATE_BUCKET`, `IMAGE_BUCKET`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`, `IMAGE_BASE_URL`, `STORAGE_PROFILE` (`limited`/`full`), `PRESIGN_METHOD` |
 | Email | Set up later in the control panel | An SMTP server now (API providers such as Resend, Postmark, Brevo, SES, Mailgun and SendGrid are chosen in the control panel) | `EMAIL_CHOICE` (`1`/`2`), `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_TLS`, `SMTP_FROM`, `SMTP_TEST` |
 
 File storage is asked first. A single follow-up question then covers the database, Redis and email ("Use an outside
 database, Redis or email server instead of any of those?"); answer `n` and everything else stays on this server. A
 noninteractive answers file opens that question simply by naming `DATABASE_CHOICE`, `REDIS_CHOICE` or `EMAIL_CHOICE`.
-To run with no Redis at all, use the cloud files instead (`docker-compose.managed-brokerless.yml`; see
-[mix and match](deploy/mix-and-match.md#redis-optional)).
+Choosing **3, None (cron mode)** runs with no Redis at all; see below. The cloud files
+(`docker-compose.managed-brokerless.yml`, [mix and match](deploy/mix-and-match.md#redis-optional)) are the equivalent for provider hosting.
+
+**Redis: none (cron mode).** Choose `3` to install without Redis. Setup then leaves out Redis, the worker and the beat
+process (`docker/compose.no-redis.yml`):
+
+- background jobs (emails, notifications, exports) run inside the request that starts them, so a slow provider can make
+  that one request slower;
+- scheduled jobs (return reminders, expiries, retention sweeps, renewals) run from a scheduler container that calls
+  `python manage.py run_scheduled_tasks --due-only` once a minute, so a job fires at most about a minute late;
+- the cache is kept in the database, and live screens poll instead of streaming.
+
+This suits a small space with a few people online at once. It is not the free profile: the HTTP tick that profile uses
+is not switched on, and a server with many simultaneous users is better served by choosing `1`. The check at the end of
+setup expects no worker and confirms that the scheduler loop is running. You can move between none, bundled and outside
+Redis later with `bash scripts/switch-services.sh redis`; jobs still queued in an old Redis are dropped by the switch.
 
 **Database.** Give the owner login (on Supabase, the `postgres` user) as a direct or session-mode URL with
 `?sslmode=require`. Setup creates its own limited login on that server (`spaceworks_app`) with a generated password;
@@ -566,7 +580,7 @@ include uploaded files. See [recovery instructions](update-recovery.md).
 
 ### Rolling back
 
-Upgrades are **forward-only by policy (decision 219g)**. The updater refuses any target release older
+Upgrades are **forward-only by policy**. The updater refuses any target release older
 than the installed `.spaceworks-version`, or the same version from a conflicting run, and `--force` does
 not override that: it fails with `Refusing release downgrade` before taking a backup or touching a
 container.
@@ -604,7 +618,7 @@ after the new release is healthy. The useful explicit forms are:
 bash scripts/update.sh --force --modules                    # update, then review modules
 bash scripts/update.sh --force --no-module-changes          # update images only
 bash scripts/update.sh --modules-only --makerspace my-space # modules only; no release check
-bash scripts/update.sh --all-modules --without=printing,payments \
+bash scripts/update.sh --all-modules --without=bookings,payments \
   --makerspace my-space --confirm-removals
 bash scripts/update.sh --all-modules --all-makerspaces      # explicit cross-tenant target
 ```
@@ -647,7 +661,7 @@ and on-disk format, so nothing changes in your `.env`.
 
 ## Windows support boundary
 
-New installs on Windows use **WSL2 (Ubuntu) or a Linux VM** (decision 220a): the one-line installer
+New installs on Windows use **WSL2 (Ubuntu) or a Linux VM**: the one-line installer
 refuses a new native Git Bash install, and `setup.ps1` is only a developer helper. Inside WSL2 the Linux
 instructions apply unchanged.
 

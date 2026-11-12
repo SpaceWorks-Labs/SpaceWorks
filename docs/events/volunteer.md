@@ -28,7 +28,7 @@ An approved contribution is event-scoped work, not a built-in staff role or auto
 
 Scheduled shift notices exist for one week before, two days before and event-local day-of;
 past schedules are skipped. They must recheck shift version, approval, time window and
-recipient at delivery. Actual programme delivery adapters remain pending in this checkpoint;
+recipient at delivery. Actual programme delivery adapters are not available yet;
 do not rely on a reminder arriving. Monitor your application/shift status directly.
 
 Choose any badge/card photo through the separate selected-profile controls. No photo is valid.

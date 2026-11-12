@@ -38,11 +38,12 @@ flowchart TD
 | Page | Area or module | What it gives you | Default for a new space |
 | --- | --- | --- | --- |
 | [Inventory](inventory.md) | Inventory (six core modules plus optional ones) | Loans, QR and boxes, evidence photos, returns, accountability, direct handouts, self-checkout, repairs, To-Buy | On. The area switch can turn it off; the safety records stay |
-| [Machines](machines.md) | `machines`, `machine_service`, `printing` | Machine registry, job requests and queue, certifications, sessions, maintenance and repairs | Off (setup suggests yes) |
+| [Machines](machines.md) | `machines`, `machine_service` | Machine registry, job requests and queue, certifications, sessions, maintenance and repairs | Off (setup suggests yes) |
 | [Events](events.md) | `events`, `event_reimbursements` | Events, tickets, guest passes, hackathons, volunteers, venue bookings, certificates, QR check-in | Off |
 | [Bookings](bookings.md) | `bookings` | Rooms and spaces, availability, included hours, organization bookings | Off |
 | [Shop](shop.md) | `shop` | Catalogue, stock, front-desk sales, online pickup orders | Off |
 | [Memberships](memberships.md) | `membership`, `presence`, `member_accounts` | Plans, terms, renewals, join funnel, member dashboard, presence check-in | Member accounts on; membership and presence off |
+| [Presence](presence.md) | Presence | Time-limited check-in, who is here now on the public page, paired display screens | Off |
 | [Payments](payments.md) | `payments` plus the core money ledger | Online card rail; money owed is tracked even without it | Rail off; tracking on |
 | [Donations](donations.md) | `finance.*` features (no module key) | Donation page, campaigns, sponsors, receipts | Off |
 | [Analytics](analytics.md) | `reports`, `analytics` | Reports and exports, Metabase and Grafana per space and for the platform, web telemetry | Reports on in setup; analytics off |

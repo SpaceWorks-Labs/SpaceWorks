@@ -1,7 +1,7 @@
 ---
 title: Set up SMS and WhatsApp
 group: How-to guides
-order: 40
+order: 45
 summary: Add Twilio SMS or Twilio/Meta WhatsApp as a personal notification channel and understand consent.
 ---
 

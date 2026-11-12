@@ -1,3 +1,5 @@
+> **Retired (decision 319).** Machine certifications, trainings and inductions no longer gate machine use and their screens, switches and notices are removed; machine access is given by the space manager (see `docs/modules/machines.md`, "Machine access replaces certifications"). This page is kept as the record of the retired behaviour; the maintenance reminder parts below still apply.
+
 # Machine training and maintenance reminders
 
 Training types remain per makerspace and machine type. The Machines type page lets
@@ -29,7 +31,7 @@ Two new features default off:
   a due-soon notice (7 local calendar days by default) and an overdue notice beginning
   the day after the due date plus any configured grace period.
 
-The F3 CERTIFICATIONS and MAINTENANCE channel matrices stay off by default. Enable
+The CERTIFICATIONS and MAINTENANCE channel matrices stay off by default. Enable
 channels separately. Recipient selections and member opt-outs still apply. Scheduled
 staff emails and push recipients must currently manage the named machine/type;
 unlinked roles cannot receive these safety reminders. Chat destinations retain their
@@ -54,7 +56,7 @@ Completion, next due date and anchor are recorded together in the same audited
 transaction. Machine status remains controlled by the existing workflow; reminders
 do not introduce automatic lockout or machine-service request states.
 
-All three consumers register with the existing F1 sweeper. Its single five-minute
+All three consumers register with the existing reminder sweeper. Its single five-minute
 task already runs through Celery beat and `SCHEDULED_TASKS`, with tombstone/module
 filtering. A source may provide a domain dispatch callback after live revalidation;
 sources without one continue to emit staff inbox notices as before. Reminder identity
@@ -64,12 +66,11 @@ subjects cannot starve eligible work. Renewals with overlapping grants notify on
 the longest remaining valid window, matching the gate's “any live grant” semantics.
 Expired and overdue notices take priority over advance notices within a small batch.
 
-F1 provides at-most-once dispatch attempts, not guaranteed external delivery. Expired
+The sweeper provides at-most-once dispatch attempts, not guaranteed external delivery. Expired
 and overdue work missed during downtime is discovered on the next sweep; no arbitrary
 catch-up cutoff is imposed. Coordination rows do not travel in portable tenant dumps,
 so enabling reminders on a target can send historical expired/overdue notices again.
 
 Escalation timing, automatic maintenance lockout, work orders, prerequisites and new
-machine-service request states remain outside this lane. No escalation interval was
-stated, so no value is invented here. The coordinator regenerates OpenAPI artifacts,
-recomputes the merged catalog digest and runs database/UI tests before integration.
+machine-service request states are not part of this feature. No escalation interval has
+been specified, so none is assumed.

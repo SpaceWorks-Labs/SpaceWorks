@@ -58,7 +58,7 @@ Routes under `/api/v1/admin/events/{event_id}/` include `judge-assignments/`,
 `/api/v1/public/event-programmes/{public_token}/`. Consult mounted OpenAPI for exact
 methods; authority is enforced server-side on every attempt and stream recheck.
 
-## Judging extras (release 2 L21b)
+## Judging extras
 
 **Score next project.** In an open weighted round, "Score next project" opens a project you
 already started, otherwise the eligible project with the fewest reviews. When the organizer sets
@@ -105,10 +105,10 @@ step-up). It opens that event's desks and nothing else, and ends when your role 
 - *Search*: the judge's own list takes `state` and `q` (project title) with a count per state; the staff
   results list and the public results page take `q` (project or prize).
 
-Routes (E-B4) under `/api/v1/admin/events/{event_id}/`: `judging/scores-export/` (GET, CSV, `?round=`),
+Routes under `/api/v1/admin/events/{event_id}/`: `judging/scores-export/` (GET, CSV, `?round=`),
 `results/unpublish/` (POST) and `submissions/{submission_id}/reinstate/` (POST).
 
-Routes (L21b) under `/api/v1/admin/events/{event_id}/`: `finalists/`, `finalists/preview/`,
+Routes under `/api/v1/admin/events/{event_id}/`: `finalists/`, `finalists/preview/`,
 `finalists/apply/`, `finalists/publish/`, `judging-rounds/{round_id}/progress/`,
 `judging-rounds/{round_id}/next-project/`, `programme-options/`, `results/send-email/`,
 `prize-payouts/`, `prize-payouts/{payout_id}/reverse/`, `lists/{list}/` and `lists/{list}/export/`.

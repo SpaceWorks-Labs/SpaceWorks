@@ -442,6 +442,8 @@ single-device logout and needs no selected makerspace or optional module.
   `X-Makerspace-Id` and `{token,provider:"fcm"|"apns",environment:"development"|"production"}`.
   Android uses FCM; iOS uses APNs. Success (200 reused / 201 created) returns
   `{id,provider,environment,makerspace_id,active,created_at,updated_at}`; it never returns the token.
+  A makerspace with native push switched off answers `404 {"code":"feature_disabled","feature":"mobile.push"}`:
+  treat it as "no push here" and do not retry until the next bootstrap lists the feature again.
   Re-register on OS token changes or new memberships. `DELETE /integrations/push/devices/{device_id}`
   returns 204; leaving a makerspace disables only that makerspace's push subscriptions.
 - Member device sessions can read `GET /notifications/inbox/{makerspace_id}` (paginated),

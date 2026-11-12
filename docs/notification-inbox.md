@@ -136,7 +136,7 @@ uncertain attempts held. Conversion never sends. Follow the separate
 
 ## Retention and data hygiene
 
-The F1 reminder sweeper runs bounded cleanup even with no reminder sources registered.
+The reminder sweeper runs bounded cleanup even with no reminder sources registered.
 Platform email logs use the same bounded terminal-delivery cleanup.
 Each tenant holds its migration boundary, skips frozen/not-restored tenants and isolates
 failures. Row locks with skip-locked protect cleanup against concurrent retry claims.
@@ -150,7 +150,7 @@ failures. Row locks with skip-locked protect cleanup against concurrent retry cl
 | Unread inbox, pending/sending delivery | Kept |
 
 These are the research proposal's fixed defaults. Per-space retention overrides and
-longer retention need a separate owner decision. Suppression and preference rows are
+longer retention would need a separate policy decision. Suppression and preference rows are
 not delivery telemetry and are retained until removed or the tenant/module is purged.
 Notification-module purge deletes legacy rows, personal rows and personal preferences.
 

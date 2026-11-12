@@ -71,7 +71,7 @@ are **public-only**: they can make publishable-key API calls but can never pass 
 staff refresh/CSRF flow or hold a staff session.)
 
 Optionally, a makerspace can switch on **Hide this space from the platform**
-(`Makerspace.hidden_from_central_directory`, #192; no custom domain needed) to drop
+(`Makerspace.hidden_from_central_directory`; no custom domain needed) to drop
 itself from the central directory, Discover and the shared listings. Its `/m/<slug>`
 deep link still resolves — it is a discovery hide, not a hard block. See
 [own-domain-and-frontend.md](own-domain-and-frontend.md).

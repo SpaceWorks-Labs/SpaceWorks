@@ -50,5 +50,5 @@ application and recorded afterward by an authorized human.
 Before acceptance, run the complete request/award/claim/payee/partial-payout/amendment
 journey on both event types; test privacy, mandatory encryption, both purge paths,
 archive/unarchive, correction races and retention recovery. Capture themed browser
-evidence and real reminder dispatch for AO19/AO20. The local pure-policy tests do not
+evidence and real reminder dispatch. The local pure-policy tests do not
 replace these database, integration and browser checks.

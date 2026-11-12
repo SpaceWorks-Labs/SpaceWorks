@@ -90,6 +90,10 @@ stateDiagram-v2
 
 Registration and booking confirmations (with an `.ics` invite and optionally the ticket PDF), reminders, "are you still coming" prompts, application decisions, broadcasts (with a short undo hold), mentor alerts in team chat, shift notices, and refund updates.
 
+## Machine use for an event
+
+Members, crew, team members and organisers can log a machine session or job as done for an event. The event overview lists it under **Machine use** (with consumables and the member's charge), and an organiser can record approval to charge the cost to the event. See [Log machine use for an event](../how-to/machine-use-for-events.md).
+
 ## Reports and analytics
 
 Event analytics in the drawer, an optional post-event PDF, registration and feedback exports, funnel and attendance reports, lending and guest-pass views per event. Co-organizers get their own event's analytics.
@@ -151,6 +155,50 @@ Under **Cards and tickets**, **Card design**, the event's badge opens in the bad
 - **Import and export.** Export writes the current settings, unsaved edits included, as a `spaceworks-event-badge` file. Import checks the file in the browser, then the server normalises it and lists anything dropped; answers this event's form lacks can be removed in one step.
 - **Convert to free canvas.** Confirmed, one way and audited. Afterwards the badge opens in the card designer; **Start a badge designer design instead** replaces that draft with a fresh badge.
 
+## Certificates on Card Studio
+
+Event certificates are drawn by the same engine as member cards, badges and tickets (decision 315), so the designer, the
+templates and the printed result behave the same way. Nothing about issuing changed: bulk generation, signatory approval,
+publication controls, print custody and the public verification page work exactly as before, on the same routes.
+
+- **Designer screen.** The event's certificate designer is the Card Studio canvas (paper, layers, backgrounds, rich text,
+  guides, undo), with a certificate preset (signature rows, seal, serial, verification QR) and a **Start from a look**
+  chooser. A stored version 2 layout is compiled to a Studio document on load and is only saved as version 3 when you save;
+  approval, publication, bulk issue and the template library keep their screens. The page shows a signatory who has not
+  yet approved as "(awaiting approval)".
+- **Two kinds of design.** A design saved before this release is a version 2 layout and keeps working: its stored
+  revisions and every issued certificate are never rewritten, and it still prints identically. A design saved from the
+  Studio is a version 3 document (`kind: certificate`) and is sent through the same save route as before
+  (`POST /api/v1/admin/events/{id}/certificate-template/`, `parameters` accepts either version).
+- **Paper.** A4, Letter or A5 in landscape or portrait, or a custom size up to 420 mm, with a 10 mm print margin
+  guide. A certificate is one page.
+- **Certificate layers.** `signature` (a signatory slot 1-3: image above a rule, name and title below), `signature_row`
+  (several signatories laid out evenly; an absent slot is skipped and the rest re-spaced), `seal` (ring, scalloped
+  rosette or star, with Latin ring text and a centre label), `certificate_id` (the serial in full, or its first 8
+  characters) and `verify_qr` (links to the public verification page; never hidden, 20 mm minimum).
+- **Tags.** `{{recipient}}` (also `{{name}}`), `{{first_name}}`, `{{last_name}}`, `{{event}}`, `{{event_date}}`,
+  `{{issue_date}}`, `{{organisation}}`, `{{role}}`, `{{kind}}`, `{{award}}`, `{{place}}`, `{{hours}}` (event length,
+  rounded to half an hour, empty when zero), `{{achievement}}` (the prize and place when there is one), `{{serial}}` and
+  `{{serial_short}}`. Older camelCase tags exist only inside version 2 designs.
+- **Signatory consent.** A signature prints the signatory's image, name and title only when they have approved this
+  design revision (when your space requires approval). Until then the layer is a placeholder line; the certificate is
+  also held back from rendering and e-mail, as before.
+- **Templates.** Three built-in looks, each in a light and a dark theme: **Laurel** (classic, cream, teal frame, centred
+  seal), **Ribbon** (modern, white, orange ribbon, left-aligned) and **Spotlight** (hackathon winner: ink spotlight,
+  two-weight name, Citron highlights, star seal). They sit in the template gallery with kind *Certificate*
+  (`GET /api/v1/admin/makerspaces/{id}/card-templates?kind=certificate`; one look with its document at
+  `.../card-templates/builtin/{key}/{theme}`), next to your saved templates. Saved templates count toward the
+  `card_templates` limit.
+- **Output.** A print-quality PDF with fonts embedded (or drawn as outlines), sRGB colour, title, author and subject set,
+  no scripts or external links, and the same bytes every time for one issued certificate. It is "PDF/A-friendly"; full
+  PDF/A conformance is not claimed.
+- **Switch `CERTIFICATE_SHARED_RENDERER`** (environment, default off). When on, certificates issued from then on from a
+  version 2 design are also drawn by the shared engine (the choice is saved inside each certificate, so a retry of an
+  older one is unchanged). Studio designs always use the shared engine. A version 1 design with a page-sized background
+  image stays on the old renderer.
+- **Not carried over yet.** Copying certificate artwork to the organisation library and cloning a design between events
+  still read version 2 layouts; a Studio design's images are event artwork referenced by `asset_id`.
+
 ## Content, drafts, analytics and discovery
 
 - **Covers are stored as WebP.** An event or series cover is decoded, turned upright, capped at 2048 px and re-encoded as WebP with all metadata (camera, location, colour profile) removed. The uploaded original is deleted and storage is charged for the stored copy.
@@ -159,3 +207,36 @@ Under **Cards and tickets**, **Card design**, the event's badge opens in the bad
 - **Event analytics** now show sign-ups per day (in the event's time zone), written-answer counts per open question (the text is never shown) and arrival windows that widen from 15 minutes up to 8 hours for long events.
 - **Insights** (switch `events.space_insights`, on by default). A space with `manage_events`, and an organisation's governors for its hosted events, see the top events of the last 180 days by attendance and the share of returning attendees. Events or groups under 10 people are left out.
 - **Discovery filters** (switch `events.discovery_filters`, on by default). Public discovery can be narrowed by `tag` and by `organization` (slug), and search also finds tags and the names of organisations whose public profile is on. A space with the switch off is left out of a tag or organisation filter.
+
+### Where staff find these
+
+- **Publishing** asks a fourth question, *How do sign-ups work?*: a spot limit, when sign-ups close (keep open, a time before the start, or a set time), whether the count is shown and whether you approve each sign-up. The summary line under the questions says it in one sentence.
+- **Cover editor** (event Settings and series Settings): crop to banner, wide or square with guides for cards and social previews, drag or arrow keys to move, scroll, pinch or +/- to zoom, rotate, straighten, flip, a preset look and brightness, contrast and saturation, with Undo.
+- **Broadcasts**: a formatting toolbar (bold, italic, heading, quote, lists, links to a web address or to the event, ticket, schedule or feedback page, placeholders). Your own draft opens by itself; a status line says *Saving…*, *Unsaved changes*, *Couldn't save · Retry* or *Draft saved*; replacing it with a template or a reused email, or discarding it, asks first; closing the tab with unsaved work asks too.
+- **Analytics** shows sign-ups over time, arrivals in the window size the server picked and how many people wrote each written answer.
+- **Events → Insights** (and *Event insights* in the organisation console) shows the top events and the returning share.
+- **Registrations → Guest list views and exports** (with `events.saved_views`) filters by reply and by check-in list, offers counted presets, and saves, renames and copies a link to a view for this event.
+- **Check-in lists** show eligible and collected counts, move up and down, restore, offer *Undo* for 60 seconds after a collection and *Let them collect anyway* for a waitlisted guest.
+- **Series → Invitations** (invite-only series with `events.series_invites`) adds pasted addresses and removes entries.
+- **Settings → Delete this draft** removes an empty draft after a confirmation.
+- **Venue address and map link** sit under Location on events and series; the public page shows them with *Get directions*. A paid place in a pay window shows *Pay by …* to the guest on their ticket and to staff in the roster.
+- **Discover** takes a *Tag* filter and an *Organiser* picker (the public organisations behind events Discover lists now, from `GET /api/v1/discover/events/organizers/`, slug and name only, cached five minutes), also from `?tag=` and `?organization=` links, shown as removable chips. Tags on a public event page link to `/discover?tag=…`.
+- **Support → File a claim** (with `events.staff_claims`) opens the staff claim form: choose who the claim is for, find their registration, pick a category and amount in the pool's currency, add a note for the reviewer. If the pool cannot cover it, the form says so.
+- **Refunds → approve** shows a *cancel the tickets* choice on a ticket charge when `events.refund_cancels_tickets` is on. Leave it unticked and the refund only returns money.
+- **Cards and tickets → Ticket design** edits the event's designed ticket, which is attached as a PDF to each confirmation email. With `events.ticket_types` on, **Design for** lets you pick one ticket type and edit a design of its own. Opening a type creates only that type's ticket design, from the event pass, the first time. Holders of that type get it instead of the event's; types without one use the event's design, then the organisation default.
+- **Orders** has a *Download orders CSV* button (needs `events.orders` and the report-export switch) and a *Test mode* note when the space charges with test keys; the CSV puts test-key money in its own `test_paid` column.
+
+## Hackathons, prizes and reimbursements
+
+Everything here sits behind its own switch (hackathons are never turned on by choosing Events alone).
+
+- **Review stages.** With `events.application_stages` an event defines its own stages in order (name, reviewers per application, up to ten scored criteria, optional blind review). Panel reviewers see only their own assignments. Staff advance, wait-list or reject in batches and release them explicitly.
+- **Prizes.** `events.prize_payouts` records each prize payout by hand after a person has paid the winner; nothing is sent automatically. `events.prize_claims` lets winners claim a prize and give payee details (kept encrypted and cleared once paid). A public prize list on the event page is off by default.
+- **People's choice.** `events.peoples_choice` adds an optional extra award: signed-in members vote on public gallery projects, one vote each per event, never for their own team, results hidden until staff publish. It never replaces judging.
+- **Prize tax is record only.** Each space can turn on a prize-tax setting (`prize_tds_enabled`, off by default; rate defaults to 30 percent, threshold to 10,000). It proposes a deduction and each payout stores gross, tax and net, but staff deduct and file outside Space Works. A winner's tax number is optional and only asked for when the setting is on.
+- **Reimbursements.** Travel support is requested, offered from a finite budget, accepted, claimed with receipts, decided by finance and then recorded as paid. See [Payments](payments.md) and the event reimbursement flow in the Event manager guide.
+- **Money out is recorded, not sent.** Space Works never moves prize or reimbursement money itself.
+
+## Public calendar on the space page
+
+With Events on, the space's public page also shows an **Events calendar**: a live-now card, a month grid, and the next few events. It reads the same public, listed events as the events page (private, unlisted and draft events never appear) and is hidden when nothing is upcoming. Paired display screens show the same calendar; see [Presence](presence.md).

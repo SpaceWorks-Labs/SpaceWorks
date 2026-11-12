@@ -19,4 +19,4 @@ Free/paid accounts have different pause/cap/backup entitlements. Record actual v
 retention/PITR and a drill. See [free](deploy/cloud-free.md), [Render](deploy/cloud-render.md),
 [Cloud Run](deploy/cloud-cloud-run.md) and [recovery](deploy/cloud-recovery.md).
 [Official connection modes](https://supabase.com/docs/guides/database/connecting-to-postgres) checked 2026-10-18;
-live privilege/session/recovery acceptance is unverified.
+Not supported yet: automated live-database acceptance of privileges, sessions and recovery on Supabase. Run your own check and a recovery drill before relying on it.

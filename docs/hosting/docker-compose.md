@@ -100,6 +100,7 @@ steady-state services. These files are standalone: never layer them over the ful
 | --- | --- |
 | `docker/compose.external-db.yml` | Removes the bundled PostgreSQL; uses an outside server. |
 | `docker/compose.external-redis.yml` | Removes the bundled Redis; uses an outside `rediss://` server. |
+| `docker/compose.no-redis.yml` | Cron mode (`SPACEWORKS_REDIS=none`): removes Redis and the worker; the scheduler slot runs `run_scheduled_tasks --due-only` once a minute. |
 | `docker/compose.external-storage.yml` | Removes bundled storage; uses an outside S3-compatible service. |
 | `docker/compose.control-tunnel.yml` | The loopback HTTPS listener for the SSH-tunnel control plane. |
 | `docker-compose.scanner.yml` | An optional ClamAV upload scanner (explicit add-on). |

@@ -22,7 +22,7 @@ Open **Settings > People > Guest passes**. Live passes keep the rules they were 
 | Setting | What it decides |
 | --- | --- |
 | Guest borrowing | Whether guests can borrow, on site only (items are due back by the end of the pass; full borrowing always takes a deposit) |
-| Guest machine use | **Supervised** (only inside a certified instructor's session) or **after induction** (a certification granted at an induction event) |
+| Guest machine use | **Supervised** (only inside an instructor's supervised session) or **after induction** (the guest needs machine access granted by staff, for example after an induction event) |
 | Who pays for a sponsored guest's lost or damaged items | The guest, or the sponsoring member. Either way the sponsor is told |
 | Walk-in and door registration creates | A guest pass for the day, or a full membership |
 | Waiver before a guest is on site | Guests accept the current waiver on their phone or at the desk before check-in |
@@ -44,6 +44,22 @@ With `membership.day_passes` on, a guest can buy a one-day pass, or staff can se
 ## Issue a pass at the desk
 
 Staff manage passes under **Members**, **Guests**: issue or sell a pass, check (scan) one and revoke it. Scanning a pass resolves it against the live record on the server.
+
+## How a pass moves
+
+A pass is a dated permit on an existing account, never a membership. Once it is closed it never changes again; the record stays as history.
+
+```mermaid
+stateDiagram-v2
+  [*] --> Issued: event registration, member sponsor, staff desk or paid day pass
+  Issued --> Issued: event moved (window follows) or waiver signed
+  Issued --> Expired: the window ends
+  Issued --> Revoked: staff revoke it (unpaid day-pass charge voided)
+  Issued --> Converted: the guest becomes a member
+  Expired --> [*]
+  Revoked --> [*]
+  Converted --> [*]
+```
 
 ## See also
 

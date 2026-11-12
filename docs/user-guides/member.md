@@ -96,9 +96,13 @@ Open **Support** (`/donate`): choose an amount, where it goes, how often, add a 
 
 **Inbox**: **Notices** (your own loans, bookings, jobs, payments; **Mark read** or **Mark all read**) and **Announcements**. **Channels** lets you add Telegram, WhatsApp and other channels (chat apps ask you to opt in once) and choose what goes where. **Preferences** unticks optional messages or bundles them into a **Daily digest**. Safety and account-recovery emails always stay on.
 
+## How do I set up my profile and username?
+
+Every account has one **username**, also your profile address. It is chosen when you create your account, and an older account without one gets a **Choose your username** step at the next sign-in. Your **profile** is one page for all your spaces: **Account**, **Profile**. Signed-in members can see it by default and you can hide the whole page or any section; the open web (people not signed in, search engines) is a separate switch that stays off until you consent. Add a status, experience, education, volunteering, projects (including one imported from your own hackathon submission), links and a GitHub username. Achievements marked verified come from published results and event records; the ones you type are marked self-reported. Private events, unpublished results and contact details are never shown. Full detail: [The global member profile](../how-to/member-profile.md) and [Usernames](../how-to/usernames.md).
+
 ## How do I show my card and check in?
 
-**Account**, **Card**, **Show QR to scan**; **Save card for offline use** works without signal. Where presence is on, **Home**, **Presence**, **Check in** (allow location once) records that you are in the space.
+**Account**, **Card**, **Show QR to scan**; **Save card for offline use** works without signal. Where presence is on, **Home**, **Presence**, **Check in** (allow location once) records that you are in the space. Tick **Hide me on the display** if you do not want your name on the public "Here now" list or a TV screen; see [Public space page and display screens](../how-to/display-screens.md).
 
 ## How do I control my data and privacy?
 

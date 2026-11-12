@@ -15,7 +15,7 @@ and [acceptance](acceptance.md) pages retain their dated integration evidence an
 | Judge / sponsor representative | [Frozen projects, conflicts and results](judge.md) |
 | Deployment operator | [Migrations, keys, storage, scanning and video probe](operations.md) |
 | File uploader / operator | [Formats, media limits and retention](media.md) |
-| Reviewer / acceptance owner | [AO1–AO18 and AO23 traceability](acceptance.md) |
+| Reviewer / acceptance owner | [Acceptance traceability](acceptance.md) |
 
 Hackathons are features of the existing [Events module](../MODULES.md#events), with no
 separate hackathons module. `events.hackathons`, `events.mentoring`, `events.mentor_rounds`,
@@ -40,7 +40,7 @@ distinguishes installed sources from pending delivery adapters.
 For API integrations, use the deployment's `/docs/` or `/schema/` and the checked-in
 `frontend/openapi-schema.json`; the generated client is `frontend/src/generated/api.ts`.
 The frozen route fixtures are design contracts; the mounted route inventory supersedes
-the original lane proposals. Current mounts include C2's completion routes.
+the original proposals. The current mounts include the completion routes.
 
 All programme UI must use Space Works light/dark tokens, Gilroy ExtraBold headings with Outfit text, one Unbounded
 accent per layout, lucide controls and the existing layouts inside AppShell. Original
@@ -48,4 +48,4 @@ accent per layout, lucide controls and the existing layouts inside AppShell. Ori
 consumer mounting, accessibility, physical QR and authoritative PDF acceptance remain
 separate requirements. No alternate brand or placeholder artwork establishes completion.
 
-Release 2 L21a: [applications on any event, review stages, attendance, crew and check-in lists](applications-crew-lists.md).
+Also available: [applications on any event, review stages, attendance, crew and check-in lists](applications-crew-lists.md).

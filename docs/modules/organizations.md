@@ -75,6 +75,11 @@ Attendance and bookings appear in the Events and Bookings reports of the spaces 
 
 Organizations are deployment-global, so a space or module purge never deletes a shared organization or a foreign organizer. Deleting an organization is refused while it has space links, retained references or artwork. The organization hours bank rows are left out of space exports and purged with Bookings.
 
+## Organization workspaces
+
+An organization with no makerspace of its own (a club, college society or association) can run in a **workspace**: a space created with the kind `organization`. It starts with Events, Memberships (which carries member and ID cards) and Bookings on, and Inventory and Machines off. Everything stays switchable later, so a workspace can turn Inventory on or be linked to a real makerspace. Its screens say "organization" instead of "makerspace", and its public page is the organization page at `/o/<slug>` (events, public plans, bookable rooms).
+
+The superadmin creates a workspace and chooses the kind when creating it; the kind cannot be changed afterwards. An organization or a makerspace can also ask for a workspace through the hosting request form, and the superadmin approves it. Superadmin limits apply as for any space (none by default). A member of the workspace counts as a member of the organization and holds one member card.
 ## Decisions
 
 - **An organization is a platform entity**, not a per-space module, because it spans spaces.

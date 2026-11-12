@@ -76,7 +76,7 @@ Before closing, check [media expiry](media.md#retention-and-removal), budgets, p
 and cleanup failures. Turning a feature off retains history and owned objects. Purge is
 destructive and is not a routine close-event step. The core payment ledger survives Events
 purge. Travel reimbursement ([reimbursement](reimbursement.md)) and stage-triggered forms
-([staged forms](staged-forms.md)) are built (owner decisions 34/35).
+([staged forms](staged-forms.md)) are built.
 
 Routes: admin prefix `/api/v1/admin/events/{event_id}/`; `hackathon/`, `applications/`,
 `application-decisions/preview|stage|release|cancel/`, `programme/readiness|live|publishing/`,

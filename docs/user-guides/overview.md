@@ -52,6 +52,9 @@ flowchart TD
   HD --> MB
 ```
 
+## Theme
+
+Everyone can choose **Light**, **Dark** or **System** (follow the device) from the theme control in the user menu or page header. Light is the default and the choice is kept in the browser. The dark theme is solid black with neutral grey surfaces and the same accent colours.
 ## Two rules that explain most surprises
 
 1. **Switching something off hides it and keeps its data.** Only the platform administrator can delete data, and always with a preview.

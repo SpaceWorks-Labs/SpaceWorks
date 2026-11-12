@@ -37,7 +37,7 @@ To build from source with the compose files, use `docker/compose.build.yml` (see
 ## What is in the image
 
 - Python 3.12 with the application dependencies; the PostgreSQL client matching the supported servers
-  (16 and 17), so backups and restores use a version-matched `pg_dump`.
+ (16 and 17), so backups and restores use a version-matched `pg_dump`.
 - A small, statically linked `ffprobe` built from a pinned, checksum-verified FFmpeg source release, used to
   check event video uploads. The image does not install Debian's full `ffmpeg` package, which removed a large
   set of libraries from the image. The version is recorded in the image label `spaceworks.ffmpeg.version`.

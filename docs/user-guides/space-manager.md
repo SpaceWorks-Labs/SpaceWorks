@@ -59,7 +59,7 @@ Switching off hides and keeps data. Purging is the platform administrator's step
 3. Tick roles. For a Machine Manager or Technician choose what they cover; a Machine Manager with no machine types sees no machines.
 4. **Grant roles** or **Send invitation**.
 
-On a row: **Change roles**, **Revoke**, **Restore**, **Reset authenticator** (lost device). The **Invitations** tab lists pending invites; the **Roles** tab shows what each role holds. You can only grant roles whose actions you hold. Only the platform administrator gives or removes Space Manager.
+On a row: **Change roles**, **Revoke**, **Restore**, **Reset authenticator** (lost device). Staff are people with one account and roles in your space, not separate staff accounts; revoking ends the staff access but keeps the person's account and history. See [Give someone a role](../how-to/roles-and-handover.md). The **Invitations** tab lists pending invites; the **Roles** tab shows what each role holds. You can only grant roles whose actions you hold. Only the platform administrator gives or removes Space Manager.
 
 ## How do I let an area manager change their own settings?
 
@@ -77,6 +77,8 @@ To hold one setting yourself, open it and press **Lock for managers**. A lock ne
 - **Profile & location:** timezone, **Opening hours**, **Dated exceptions and holidays**, **Publish public site**, **Show public inventory**, the **Closed-for-now banner**.
 - **Public page:** arrange the page's sections, claim a handle, publish.
 - **Public stats:** choose which figures the stats page and TV board show; managers may be granted their own area's figures.
+
+- **Here now, Machines now and the events calendar** appear on the public page when Presence, Machines and Events are on, and **Display screens** run them on a TV. See [Public space page and display screens](../how-to/display-screens.md).
 
 Light mode is the default; a visitor's saved choice is kept.
 

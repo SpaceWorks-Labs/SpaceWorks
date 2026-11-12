@@ -84,7 +84,7 @@ If requested, runner registration begins only after confirmation. No dependency
 installation, Docker changes, install-directory creation, image pull or `.env` write occurs before yes. curl or wget and tar must already exist to read the questionnaire;
 missing bootstrap utilities cause a read-only refusal with instructions. Ports are checked after the
 answers: 80/443 for Caddy, 8080 for an existing proxy, 80 for plain HTTP, and 9000/9001 with bundled
-storage (the SaaS layer keeps storage ports internal). Point DNS at the server before certificate issuance.
+storage (the hosting-other-spaces layer, key `saas`, keeps storage ports internal). Point DNS at the server before certificate issuance.
 Wildcard tenant DNS is convenient, but certificates are issued individually for registered tenant hosts.
 
 `bash setup.sh` from a fresh checkout asks the same questions first. A fetched install supplies a private
@@ -157,7 +157,7 @@ These overlays need Docker Compose 2.24.4 or newer (`!override` and `!reset`).
 The primary layer (`none`, `tls`, `saas`) persists in `.spaceworks-layer`; frontend/storage
 selectors persist in `.env`. The wrapper appends those overlays and validates the matching hashed
 `compose-topology[-<layer>][-api-only][-external-storage].json` record. Source builds retain the selected
-TLS/SaaS layer. Updates exclude the website from their image list when disabled; failed-update rollback,
+TLS or hosting-other-spaces (`saas`) layer. Updates exclude the website from their image list when disabled; failed-update rollback,
 explicit snapshot rollback and restore all reuse the same wrapper/topology. The live-event process is
 included in image updates and writer fencing. Never activate `website-disabled` or `storage-disabled`
 profiles manually on a deployment that selected those services off.
@@ -254,7 +254,7 @@ docker compose -f docker-compose.prod.yml -f docker/compose.build.yml build   --
 ```
 
 The published release image uses the default. The trade-offs and how to verify a forky build are in
-[backend-image-cve-notes-0.12.0.md](security/backend-image-cve-notes-0.12.0.md#building-with-zero-known-findings-optional).
+[backend-image-cve-notes-0.12.0.md](security/backend-image-cve-notes-0.12.0.md#0b-building-with-zero-known-findings-optional).
 
 For a guided first run that generates secrets, the atomic pointer and `.env`, use the curl installer or
 `setup.sh` at the repo root (see [setup-for-makerspaces.md](setup-for-makerspaces.md)).
@@ -418,7 +418,7 @@ The fork's own release workflow must have run at least once so those images and 
 Register the runner in that fork and set the fork's own `SPACEWORKS_DEPLOY=true` repository variable;
 apply all the security settings above. No upstream runner or setting is shared with forks.
 
-The upstream GitHub org was renamed from `SpaceWorks-HQ` to `SpaceWorks-Labs` (owner decision #107),
+The upstream GitHub org was renamed from `SpaceWorks-HQ` to `SpaceWorks-Labs`,
 and its images moved from `ghcr.io/spaceworks-hq/*` to `ghcr.io/spaceworks-labs/*`. An existing install
 needs no manual step: the updater, an installer re-run and the compose wrapper rewrite a saved
 `SPACEWORKS_REPOSITORY=SpaceWorks-HQ/...` or `ghcr.io/spaceworks-hq/...` image value to the new name,
@@ -734,9 +734,10 @@ private bucket private, and do not enable credentialed CORS.
 
 ### Plans and limits
 
-The effective limit for a space is, in order: the **space override**, then its **plan**, then the built-in
-fair-use default (only when a platform domain is set), otherwise **unlimited**. A space with no plan and no
-override on a plain install is therefore unrestricted.
+The effective limit for a space is, in order: the **space override**, then its **plan** (hosted spaces only), then the
+**platform default** you set for that limit, otherwise **unlimited**. Nothing is set by default, so a plain install
+is unrestricted. A limit only ever stops the *start* of something new; it never blocks reading, exporting, settling
+an existing charge, refunds, returns, or member privacy requests, and existing data is never changed or removed.
 
 Each space is either an **Own space** (no plan, no limits, no hosting billing) or a **Hosted space** (plan, limits,
 trial and hosting billing can apply). The superadmin chooses per space; one install can mix both.
@@ -763,6 +764,25 @@ flowchart TD
   requests, daily email and each notification channel, signed webhooks, API clients, machine-service
   requests, data exports and **guest and day passes per day**. `-1` means unlimited; a blank field
   follows the plan. The `custom_domain` switch allows a custom domain.
+* **Limits by module.** Limits are grouped by module, in the same order as the module switches (Inventory, Events,
+  Bookings, Membership, Notifications, Reports, Payments, Mobile, Connected devices, Shop). Every module either has
+  limits or is listed as exempt with a reason in `backend/apps/makerspaces/limit_modules.py` (`bulk_import`,
+  `containers`, `qr_print_batches` and `member_accounts` are counted by other limits). A guard test fails if a
+  module or key is added without one or the other. New in 0.12.0: hardware requests, stock transfers, stocktake
+  sessions, reimbursement claims, public-page images, scheduled reports, adapter media bytes, adapter telemetry
+  samples and Anthias players (plus the card, wallet and background-eraser limits already added).
+* **Platform defaults.** **Platform settings → Limits & hosting → Platform default limits** (superadmin only, audited as
+  `managed_hosting.limit_defaults_changed`) sets one default per key for every space. Blank means unlimited. A space
+  override (including `-1` for no limit) always wins. API: `GET/PUT /api/v1/admin/platform/limit-defaults`.
+* **Warnings and notices.** From 80% of an effective limit staff see a warning on the space dashboard and in the
+  area; at 100% new items are refused with a typed 409 naming the limit and telling the person to contact the
+  platform operator. A sweep every 30 minutes (`sweep_limit_thresholds_task`) tells the Space Managers and every
+  superadmin once per crossing of 80% and of 100%, through the in-app inbox when the space's Notifications module
+  is on, and records `managed_hosting.limit_threshold_crossed`. Usage that falls back under 80% resets the marker.
+  The 80% and 100% notices share a per-month key, so one space gets at most one of each per key per month even if
+  usage bounces around the threshold.
+* **Space Manager view.** **Usage & limits** shows every limited key of the space grouped by module with a bar, the
+  80% and 100% states and where the value comes from. It is read-only (`GET /api/v1/admin/makerspace/<id>/limits`).
 * **Request rate limits.** The deployment-wide API throttles (login, OTP, uploads and so on) are
   listed under **Platform → Spaces → Request rate limits**. The environment variable (`THROTTLE_<SCOPE>`)
   remains the default; you may override a scope within 10 times either side of it. **Use default** removes the override.
@@ -777,9 +797,9 @@ Each space brings its own Stripe or Razorpay account, SMTP/email, Slack/Discord/
 other integration credentials; these are stored encrypted per space and are never visible to
 another space. The platform's own SMS, push, WhatsApp, app-attestation and Stripe Connect credentials
 (the platform provider settings in the console) are used only where a space has none, on every install, whatever the Hosting other makerspaces switch says
-(decision 240; a space's own credentials always win). The one hosting-only piece is Stripe Connect: new Connect
+(a space's own credentials always win). The one hosting-only piece is Stripe Connect: new Connect
 onboarding and new Connect charges need the switch, but a configured Connect platform keeps settling, refunding and
-expiring charges already raised with the switch off (decision 260). Usage of the platform credentials can be capped per space (own or hosted) by the superadmin: monthly emails, SMS,
+expiring charges already raised with the switch off. Usage of the platform credentials can be capped per space (own or hosted) by the superadmin: monthly emails, SMS,
 WhatsApp, push, wallet passes and online payments through the platform rail (count and amount). There is no limit
 until a value is set, and a space's own credentials are never counted. At the limit a message channel is skipped with a
 recorded reason (the in-app inbox still delivers) and a new platform-rail payment page answers 409
@@ -833,7 +853,7 @@ box; it stays dormant here.) End-to-end:
    staff console to this deployment.
 3. **Set the domain in Settings.** As a **superadmin**, open the makerspace's Settings → **Your own
    domain or frontend**, enter the hostname, and Save. It is **Verified** immediately (no TXT record,
-   no Verify step): the operator's word is enough. A **Space Manager** may set a domain too (#192),
+   no Verify step): the operator's word is enough. A **Space Manager** may set a domain too,
    but theirs stays **Waiting for DNS proof** — no CORS, staff-origin, Host or TLS trust — until the
    DNS TXT record the page shows is found by **Verify domain**. The staff-auth/CORS allowlist is
    process-global (not tenant-scoped), so an unproven tenant-set origin is never trusted. See
@@ -863,7 +883,7 @@ every variable the backend reads, with its default — is
 | `ALLOWED_HOSTS` | yes | Comma-separated hostnames the backend will serve |
 | `DATABASE_URL` | no | Never put this in static `.env`; the atomic ops pointer is its only Compose source |
 | `CORS_ALLOWED_ORIGINS` | no | Browser origins allowed to call the API |
-| `PLATFORM_STAFF_ORIGINS` | yes for the superadmin | The only origins the platform superadmin can sign in from (release 2). The installer writes your site's own origin, and the 0.12.0 updater adds it to an older self-host that lacks it; without it the superadmin cannot reach the web console |
+| `PLATFORM_STAFF_ORIGINS` | yes for the superadmin | The only origins the platform superadmin can sign in from. The installer writes your site's own origin, and the 0.12.0 updater adds it to an older self-host that lacks it; without it the superadmin cannot reach the web console |
 | `API_CLIENT_ENC_KEY` | recommended | Fernet key encrypting integration secrets at rest |
 | `MINIO_ROOT_USER` | yes | MinIO/S3 access key used by the backend |
 | `MINIO_ROOT_PASSWORD` | yes | MinIO/S3 secret key used by the backend |
@@ -900,7 +920,7 @@ every variable the backend reads, with its default — is
 | `CARD_PHOTO_MODEL_PATH` | no (`/var/lib/spaceworks/models/u2netp.onnx` in Compose) | The photo clean-up model on the `card_models` volume, shared by web and worker. Fetch it once with `scripts/spaceworks-compose.sh bundled run --rm --no-deps backend --role management python manage.py fetch_card_photo_model`; the clean-up button stays hidden until then |
 | `MESSAGING_WEBHOOK_BASE_URL`, `MIN_NATIVE_APP_VERSION_IOS`, `MIN_NATIVE_APP_VERSION_ANDROID` | no (unset) | Public base for inbound messaging webhooks, and the oldest native app allowed to sign in |
 
-The release-2 keys above reach the backend, worker, beat and live processes through
+The 0.12.0 keys above reach the backend, worker, beat and live processes through
 `docker-compose.prod.yml`, each defaulting to the value above; a value in `.env` that the compose file
 does not pass would never reach Django.
 

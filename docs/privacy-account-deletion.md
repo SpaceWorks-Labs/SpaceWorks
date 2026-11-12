@@ -48,7 +48,7 @@ are already revoked and redacted during immediate account closure. Canonical env
 routing/context and account-bound proof receipts/mapping snapshots must be scrubbed by account
 ID; optional-inbox push children require their envelope ownership path. Shared sender/STOP,
 provider-reference and other accounts' protections survive. See the reconciliation rollout
-checkpoints for the required cross-lane privacy-hook verification before activation.
+checkpoints for the privacy-hook verification required before activation.
 
 The following records remain after account deletion:
 

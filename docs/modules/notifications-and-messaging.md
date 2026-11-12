@@ -83,9 +83,10 @@ Added in 0.12.0:
 - **Hours bank running low.** When an organization's included hours at your space fall to a fifth, and again when they run out, the Space Managers and Booking Managers are told once for that period. Bookings over the limit are charged for the remainder.
 - **"Not coming" answers.** When someone answers No to an event's attendance check, the event's organisers are told whether their place was released, a refund needs a decision, or the place is left to them. Yes answers stay in the counts on the Emails tab.
 - **Guest certificates.** A guest-pass holder certified after an induction (or revoked) is told, as a member would be.
+- **Profile now open.** Members whose profile was merged into the new global profile without ever being hidden get one in-app notice that links to their profile settings. See [The global member profile](../how-to/member-profile.md).
 - **Guardian consent.** When staff record a minor and name a guardian who has an account, that guardian is asked to sign the consent. The notice never names the minor.
 
-Every notice follows the same rules: the space's switches and the people's own choices decide who gets it and on which channel, area managers only hear about their own area, and the words are translatable.
+Notices are queued and delivered by the background worker (Celery), not inside the request that caused them, so a slow channel never holds up staff or members; see [Monitoring](../hosting/monitoring.md) for what to check when delivery stalls. Every notice follows the same rules: the space's switches and the people's own choices decide who gets it and on which channel, area managers only hear about their own area, and the words are translatable.
 
 ## Reports and analytics
 

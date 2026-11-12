@@ -37,7 +37,7 @@ checkpoint. They are now mounted: optional `event_reimbursements` owns travel su
 Events owns staged forms, and core Payments retains permanent financial obligations.
 See [travel support](reimbursement.md), [finance operations](reimbursement-operations.md)
 and [staged forms](staged-forms.md). The Pages programme
-owns shared handles and full maker/org builders; event short links (`/e/<code>`) shipped in release 2 L1
+owns shared handles and full maker/org builders; event short links (`/e/<code>`) shipped
 (`events.short_links`, see MODULES.md "Public event surface"). Events sections do not
 substitute for those domains.
 

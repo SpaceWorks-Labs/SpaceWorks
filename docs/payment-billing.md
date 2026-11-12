@@ -22,7 +22,7 @@ requires `notifications`, `email` and the PAYMENTS/email matrix cell ON. Reminde
 offsets are distinct positive local-calendar-day counts; the cap retains the earliest
 configured steps, including the due-day step when it fits. Zero disables all steps.
 
-The F1 sweeper owns claims and idempotency in `ReminderSchedule`; a duplicate payment
+The reminder sweeper owns claims and idempotency in `ReminderSchedule`; a duplicate payment
 reminder log would introduce a second source of truth. The explicit `payments.due`
 consumer revalidates pending status, tenant, due date and policy before dispatch.
 Completed/uncertain claims are never retried. After downtime, only the latest eligible
@@ -66,27 +66,27 @@ money. Only a staff approval creates a `Refund`, under the Payment then case row
 - **Due cases** open when a paid charge's subject is cancelled and the policy owes more
   than zero: a space-cancelled event owes the full balance (`event_cancelled`); a
   member cancelled registration or booking follows that area's `RefundPolicy` (a booking
-  staff cancel on a member's behalf is owed in full, `staff_cancelled`, decision 72)
+  staff cancel on a member's behalf is owed in full, `staff_cancelled`)
   (full window, partial window and percent, fee in the space currency, rounded down to
   min(currency exponent, 2) places, minus anything already refunded). Bookings open the
   case in the cancellation's own transaction; the events path is post-commit and a
   missed case is rebuilt by the hourly `rebuild-refund-cases` sweep (beat and beat-less),
   which looks back 7 days but never before the deploy watermark (the apply time of the
   `payments.0023_refund_cases` migration), so deploying back-fills nothing.
-- **Memberships** (owner decision 68): cancelling a paid membership term opens a due under
+- **Memberships**: cancelling a paid membership term opens a due under
   the membership policy -- a space default plus optional per-plan rules: a full refund
   within N days of the term start, then pro rata of the unused term time or a percentage
   (the policy chooses), then nothing after the term ends, minus an optional fee. Dues and
   admission charges have no term, so they stay request-only. "Do not renew" only voids a
   pending renewal. Per-plan rules: `refund-policies/membership/plans/<plan>`.
-  Release 2 (L4): financial-year and fixed-end terms are pro-rated to their own end; a
+  Since 0.12.0: financial-year and fixed-end terms are pro-rated to their own end; a
   lifetime term is refunded in full within `full_within_days`, then nothing; a paid but
   unopened next term is owed in full. The member sees the policy's suggested amount
-  before asking (`member/makerspaces/<id>/payments/<pid>/refund-suggestion`, X20) and
+  before asking (`member/makerspaces/<id>/payments/<pid>/refund-suggestion`) and
   staff see it on the case (`.../refund-cases/<case>/membership-suggestion`). Approving a
   membership case ends the term the payment bought once the approval commits -- an
   early-paid upcoming term is cancelled -- unless staff send `keep_membership: true`
-  (X21); ending it opens no second case. Joining fees and dues stay `Payment` income in
+; ending it opens no second case. Joining fees and dues stay `Payment` income in
   the `membership` domain for the finance ledger.
 - **Requests**: a member may ask on any own settled charge except a loan deposit. One
   active (open or approval-failed) case per payment; asking on an open due case adds the
@@ -113,8 +113,8 @@ money. Only a staff approval creates a `Refund`, under the Payment then case row
   deletion (`refund_under_review`); purges delete cases before refunds.
 
 Portable dumps preserve due dates and refund correction chains, remapping identities.
-They reset automatic-mail policy and drop F1 claims; the target must opt in afresh.
-The money fingerprint includes due dates and every refund amendment. The coordinator
+They reset automatic-mail policy and drop reminder claims; the target must opt in afresh.
+The money fingerprint includes due dates and every refund amendment. Maintainers
 must recompute the merged catalog digest and regenerate the OpenAPI snapshot/client.
 
 Native online payments use the charge's resolved vendor: Stripe returns PaymentSheet
@@ -152,7 +152,7 @@ Documents issued while tax is on take a gapless **per-financial-year** series: `
 receipts/tax invoices and a separate `CN…` credit-note series, prefixes of at most four
 characters and numbers of at most 16 (CGST Rule 46). The financial year comes from the space's FY
 start (April by default; L4's `financial_year` when present). Existing documents are never
-renumbered, and with tax off every document and number is byte-identical to release 1. The frozen
+renumbered, and with tax off every document and number is byte-identical to the original. The frozen
 `tax_breakdown` drives the PDF (title, identities, tax table, notes) and the returns. Credit notes
 apportion the invoice's remaining taxable value and tax, so partial refunds never over-credit.
 
@@ -172,7 +172,7 @@ date; one open claim per charge, one claim per reference per space, rate-limited
 receipt in the same transaction that marks the charge paid -- or reject with a note. A claim moves
 no money.
 
-`billing.maker_checker` (off) applies to **offline income only** (#128 C-5): a cash/UPI/bank
+`billing.maker_checker` (off) applies to **offline income only**: a cash/UPI/bank
 settlement becomes a `SettlementConfirmation` awaiting a second person with `record_payment`
 (`settlements`, `settlements/<sid>/confirm|reject`); the recorder can never confirm their own
 (409 `self_confirmation`, also a database check). Refunds, expenses and payouts never wait.
@@ -206,23 +206,23 @@ still requires an account.
 
 ## Finance ledger
 
-Every money movement is in the space's finance ledger (#94): member charges (`Payment`), refunds,
+Every money movement is in the space's finance ledger: member charges (`Payment`), refunds,
 event reimbursement/prize payouts and `LedgerEntry` rows for everything else -- expenses and
 non-charge receipts such as donations or grants. Entries carry a domain (inventory, loans,
 machines, bookings, events, membership, donations, shop, general), a machine type where it
 applies, a category, method (cash lands in the cash account, everything else in bank), date,
-reference, an optional receipt -- a photo or a PDF (#155), up to `EVIDENCE_MAX_BYTES` (10 MB),
+reference, an optional receipt -- a photo or a PDF, up to `EVIDENCE_MAX_BYTES` (10 MB),
 through the staging-key presign with the MIME type bound and promoted once -- and the source that
 caused them. They are voided with a reason, never edited or deleted.
 
-Other lanes record spending through `payments.ledger_api.record_expense(makerspace, domain,
+Other areas record spending through `payments.ledger_api.record_expense(makerspace, domain,
 machine_type, amount, currency, method, reference, receipt, source_kind, source_id, actor, ...)`
 and `ledger_api.void(entry, actor, reason)`; a repeat call for the same live source returns the
 same row. Spending is always recorded; `finance.ledger` only hides the screens and reports.
 
-Visibility follows each area (#100): Space Managers and `view_finance` see everything; the
+Visibility follows each area: Space Managers and `view_finance` see everything; the
 Inventory Manager sees Inventory money, the Booking Manager bookings, the Machine
-Manager their machine types, the Event Manager events money (#128 C-16). The same areas record
+Manager their machine types, the Event Manager events money. The same areas record
 spending; finance staff with `view_finance` + `record_payment` record anywhere. Routes:
 `finance/access`, `finance/summary`, `finance/entries` (+ `/<id>`, `/void`, `/receipt-url`),
 `finance/receipt-upload`, `finance/opening-balances` (API only: no console screen yet) and
@@ -232,7 +232,7 @@ spending; finance staff with `view_finance` + `record_payment` record anywhere. 
 method splits with the failed-online rate), and `prizes-owed` (hack-money G6: announced prizes not yet
 paid, handed over or forfeited, and prize money owed back after a disqualification).
 
-**Hackathon money (hack-money lane, #180/#181).** A refundable deposit is subject `event_deposit` (domain
+**Hackathon money.** A refundable deposit is subject `event_deposit` (domain
 `events`, one per registration), raised at confirmation and returned only through a staff-approved
 settlement batch that opens `deposit_returned` refund cases. Prize payouts store gross, tax deducted and
 net; the gross is the ledger expense. The Space Manager's `admin/makerspace/<id>/event-money-settings`
@@ -241,11 +241,11 @@ pairs, inside the deployment ceiling. A sponsorship charge may be earmarked to o
 
 ## Money modes: free, offline, online
 
-Owner decision #184 makes three modes a release gate for every chargeable area, decided **per area**
+Every chargeable area has three money modes (free, paid offline, paid online), decided **per area**
 by `charge_tracking_enabled(space, area)` = `charges.enabled` AND `charges.<area>`; the online rail is
 `online_payments_enabled(space, area)` on top. The areas are `loans`, `machines`, `bookings`,
 `events`, `membership`, `shop` and `donations` (`payments.availability.CHARGE_DOMAINS`). ID cards are
-always free (C-20) and have no charge path at all; hackathon prizes, payouts and reimbursements are
+always free and have no charge path at all; hackathon prizes, payouts and reimbursements are
 money out and only ever recorded.
 
 | Mode | Switches | What happens |
@@ -288,7 +288,7 @@ flowchart TD
   `["charges_off"]`), so the order is placed at 0 and seated at once. Venue fees resolve **Free**.
 - *Membership:* joining activates at once whatever the payment timing; the request's first-term price
   and joining fee are stored as 0, dues and renewals raise nothing.
-- *Shop:* the shop records every sale (#94), so with `charges.shop` off it sells nothing
+- *Shop:* the shop records every sale, so with `charges.shop` off it sells nothing
   (`charges_off`) and shows no prices or basket.
 - *Donations:* gifts, pledges and sponsor charges are refused (`charges_off`); a pledge period due
   while off is skipped, never back-charged.
@@ -301,77 +301,77 @@ key back on, so a new module never starts untracked by accident.
 
 ## Pricing: paid and free everywhere
 
-Release 2, lane L15 (decisions #84 and #85, answers A1-A14). One pattern for every area: **rate
+One pattern for every area: **rate
 card -> item price -> loan waiver -> member discount -> frozen quote -> `Payment`**. There is no
 second ledger: pricing decides the amount, the existing `create_payment` records the debt, and
-L5's tax is frozen on top of the net amount (A6).
+L5's tax is frozen on top of the net amount.
 
 **One resolver.** `apps.payments.pricing.quote(makerspace, domain, target, member, params)`
 prices every chargeable seam and every preview, so the price a member is shown is the price they
-are charged (A8). Areas and components (`payments/pricing/components.py`):
+are charged. Areas and components (`payments/pricing/components.py`):
 
 | Area | Components | Notes |
 |---|---|---|
-| Inventory | rental per loan, rental per day (cap per unit of each item line), refundable deposit, late fee per day (cap, grace), damage, lost | Deposit and late fee keep their release-1 columns on the payment settings; damage and lost are staff-set with a suggestion |
+| Inventory | rental per loan, rental per day (cap per unit of each item line), refundable deposit, late fee per day (cap, grace), damage, lost | Deposit and late fee keep their original columns on the payment settings; damage and lost are staff-set with a suggestion |
 | Machines | time per hour (billing increment, minimum), material per unit, per job | Time AND material together; the machine type's price row is the middle level |
 | Bookings | per booking (the room's own price), per hour (rounded up to the increment, capped per day) | |
 | Events | per registration | The space default only prefills new events; a published event keeps its own price |
-| Membership | dues, joining fee | Read-only here: plans own their prices (L4); a cheaper tier is a cheaper plan (A4) |
+| Membership | dues, joining fee | Read-only here: plans own their prices; a cheaper tier is a cheaper plan |
 
 **Resolution per component**, most specific first: the item's own price field above 0 (a room's
 price, an item's deposit); a per-item price (`PriceOverride`: Free or Custom, on a product,
 machine, material pool or room); the machine type's price row (machines); the space rate card,
-where a **Free** area resolves to 0. 0 or empty on an item means "inherit the default" (A13); set
+where a **Free** area resolves to 0. 0 or empty on an item means "inherit the default"; set
 the item to Free to keep it free under a paid default. Before a default is saved, the impact
 preview lists every item whose price would move.
 
-**Bookings awaiting approval keep the requested price** (#159): the quote is frozen on the
+**Bookings awaiting approval keep the requested price**: the quote is frozen on the
 booking (`Booking.pricing_snapshot`, insert-only) when it is requested, and approval raises the
 `Payment` from that snapshot, never re-quoting. Staff see the frozen price beside Approve. A
 request from before this rule has no snapshot and is charged the approval-day price, audited as
 `booking.price_quoted_at_approval`. Instant confirmations are quoted and charged at once.
 
-**Machine sessions keep the price shown at Start** (L23, #158): a metered session freezes the
+**Machine sessions keep the price shown at Start**: a metered session freezes the
 machine's hourly `time` rate (with its billing increment, minimum and the member's best discount)
 when it starts; at stop the charge is rebuilt from that snapshot for the session's minutes and
 raised PENDING as a `machine_session` charge. An auto-stopped session is held until staff check
-and confirm it (a duration correction first is an audited amendment). Sessions that run an L12 job
+and confirm it (a duration correction first is an audited amendment). Sessions that run a machine job
 are billed through the job only.
 
 **Rounding** is half-up to the currency's charge precision per line (two decimals; none for a yen; 10 fils for KWD/BHD/OMR/JOD/TND), the total is the sum of the lines, and a cap
-applies before any discount (A7).
+applies before any discount.
 
 **Discounts** (`charges.discounts`, off by default): the single best automatic rule -- all
 members, the members on a plan (their active plan; display titles are never tiers), or one member
--- then an event promo code on top. Nothing else stacks and no line goes below 0 (A3). Deposits,
+-- then an event promo code on top. Nothing else stacks and no line goes below 0. Deposits,
 late, damage and lost fees are never discounted unless a rule names them. Rules are archived,
 never deleted. Space Manager only (a finance setting).
 
 **A total of 0 raises no `Payment`.** A priced charge that came to 0 (waived, discounted, a free
 failed job) is audited as `charge.free_by_pricing`.
 
-**Loans.** Rental timing is a per-space setting (A1): **at checkout** charges the planned days at
+**Loans.** Rental timing is a per-space setting: **at checkout** charges the planned days at
 issue, **at return** charges the actual days at close; the choice made when a loan is issued sticks
-to that loan. The late fee is per loan at the highest late rate among its items (A2) and applies
+to that loan. The late fee is per loan at the highest late rate among its items and applies
 on top. An early return refunds nothing automatically and renewals are not charged. Direct,
 kiosk and self-checkout handouts are charged like reviewed loans; a deposit never blocks them
-(A10). Damage and lost charges are entered by staff (handover roles included) at return or later,
-one per damage/lost row, and an amount above 0 needs the return photo that recorded the item (A5).
+. Damage and lost charges are entered by staff (handover roles included) at return or later,
+one per damage/lost row, and an amount above 0 needs the return photo that recorded the item.
 
 **Waivers** (`loans.fee_waivers`): staff with `return_request` waive a loan's rental, late, damage
-or lost fees with a required reason (A14). Pending charges become `waived`; a charge already paid
+or lost fees with a required reason. Pending charges become `waived`; a charge already paid
 is never reversed -- it opens a refund case (`fee_waived`) that a staff member approves. The
 deposit is never waived. A waiver is append-only and undone only by a revocation row, which
 affects charges not yet raised.
 
-**Who edits what** (#101, A9): each area's rate card is that module's setting (the Space Manager,
+**Who edits what**: each area's rate card is that module's setting (the Space Manager,
 or the module manager holding its settings grant); rental timing is also the Inventory Manager's
-without a grant (#128 C-11d) unless the Space Manager locked it; per-item prices belong to whoever
+without a grant unless the Space Manager locked it; per-item prices belong to whoever
 edits the item; discounts and the currency are the Space Manager's.
 
-**Machines: failed jobs.** Free by default (A11). `machines.service_payments.create_for_failed_request`
-charges a failed job as none, material only or full; lane L12 calls it with the per-type, per-fault
-choice of #142 OQ-8.
+**Machines: failed jobs.** Free by default. `machines.service_payments.create_for_failed_request`
+charges a failed job as none, material only or full; the machine job flow calls it with the per-type, per-fault
+choice.
 
 Routes (staff): `admin/makerspace/<id>/pricing/<domain>` (+ `/impact`), `pricing/loans/rental-timing`,
 `pricing/currency`, `pricing/overrides/<target_type>/<target_id>`, `pricing/discounts` (+ `/<id>`,
@@ -385,15 +385,15 @@ quote before anything is written.
 
 ## Donations and sponsors
 
-Four switches on the core ledger, each off by default (#128 C-14): `finance.donations`,
+Four switches on the core ledger, each off by default: `finance.donations`,
 `finance.recurring_donations`, `finance.tax_exempt_receipts`, `finance.sponsors`; the online rail
 for gifts and sponsor money is `payments.donations` (needs the `payments` module and credentials).
-Whether gift and sponsor money is recorded at all is `charges.donations` (default on, #184 G10): with it
+Whether gift and sponsor money is recorded at all is `charges.donations` (default on): with it
 or `charges.enabled` off, every gift, pledge and sponsor charge is refused (`charges_off`).
 
 - **Giving.** `public/<slug>/donations` is the page (intro, suggested amounts, minimum, open
   campaigns and funds with their goal and the amount raised). Anyone gives: a signed-in person as
-  themselves, a guest with name, email and the code from `donations/email-code` (the #80 contact
+  themselves, a guest with name, email and the code from `donations/email-code` (the account-less contact
   code). Each gift is a `Donation` and ONE `Payment` (subject `donation`, no tax frozen on a gift),
   raised through `create_payment`; with the rail on the response carries the hosted checkout URL,
   otherwise the space's offline instructions. A guest gets a signed status link
@@ -414,7 +414,7 @@ or `charges.enabled` off, every gift, pledge and sponsor charge is refused (`cha
   giver's name, address and PAN from their encrypted columns (`DonorTaxDetail`, shared by a pledge's gifts). The PAN is asked only for an 80G
   receipt, validated, always encrypted, shown elsewhere as its last four characters, masked for a
   superadmin without a PII window, and never part of a report.
-- **Non-profit profile (decision 242(m)).** `DonationSettings.is_nonprofit` plus legal name,
+- **Non-profit profile.** `DonationSettings.is_nonprofit` plus legal name,
   registration number, a typed `tax_exemptions` list (`{scheme, number, valid_from, valid_until}`,
   schemes in `donations/nonprofit.SCHEMES`), signatory and footer. Tax receipts need the profile on,
   `finance.tax_exempt_receipts` and a DEDUCTIBLE scheme live on the receipt date (India 12A alone
@@ -425,7 +425,7 @@ or `charges.enabled` off, every gift, pledge and sponsor charge is refused (`cha
   non-profit taking gifts gets the public Donate entry (`bootstrap.makerspace.donate_enabled`).
   Givers opt in to be named on a campaign page (`Donation.recognize_publicly`, off by default).
 - **Money.** Gifts and sponsor money are the ledger's `donations` area, visible to the Space Manager,
-  the Fundraising role (`manage_donations`, decision 242(m)) and finance staff -- never an area
+  the Fundraising role (`manage_donations`) and finance staff -- never an area
   manager. The staff console's own **Donations** tab holds gifts, campaigns, pledges, donors
   (`donations/donors`), sponsors, the CSV export (`donations/export.csv`, audited), receipt resend
   (`donations/<id>/receipt/reissue`) and paid-claim decisions (`donations/<id>/claim/confirm|reject`). Giving one back is a refund case in area `donations` that staff open
@@ -443,7 +443,7 @@ or `charges.enabled` off, every gift, pledge and sponsor charge is refused (`cha
 
 ## Price-drop refunds
 
-Lane L24 (#163A, #171). **Nothing is ever refunded automatically**: each refund below is a
+**Nothing is ever refunded automatically**: each refund below is a
 `RefundCase` in the refund queue that a person approves.
 
 **A price lowered after people paid** (`charges.price_drop_refunds`, off by default). When staff
@@ -467,7 +467,7 @@ more. Before saving, the price forms show the affected items and the total diffe
 price-saving endpoint accepts `?price_drop_preview=1`, which runs the save, lists the items and
 rolls it back (404 while the switch is off).
 
-**Prepaid machine jobs** (#171, always on wherever machine charging is on):
+**Prepaid machine jobs** (always on wherever machine charging is on):
 
 - a member cancels a prepaid job before it starts: a `job_cancelled` case for what is left on the
   charge (an unpaid prepay charge is voided instead);
@@ -480,7 +480,7 @@ it never ends a membership. A `job_cancelled` case is decided like any staff can
 job's Machine Manager. Each save that opens cases writes one `pricing.price_drop_refunds_opened`
 audit row; each case writes its own `payment.refund_case_opened`.
 
-## Shop sales (release 2 L22)
+## Shop sales
 
 A shop order is one `Payment` (subject `shop_order`, domain `shop`); its line prices come from
 `pricing.quote(space, "shop", params={"lines": [(variant, quantity), ...]})` with the buyer's one best

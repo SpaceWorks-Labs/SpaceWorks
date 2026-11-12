@@ -4,7 +4,7 @@
 This repository contains the migrations/mounts and regenerated schema/client; neither those
 artifacts nor syntax checks certify a working production programme. Close the named
 [integration work](integration-status.md) and [acceptance evidence](acceptance.md) first.
-Use the existing isolated runner; this documentation lane ran no Docker/Django tests.
+Use the existing isolated runner; these docs were written without running the Docker/Django tests.
 
 ## Migration and key preparation
 
@@ -36,7 +36,7 @@ The authored graph is:
 | `events/0050_stage_selector_ownership` | events 0049 | Stage selector ownership and attendance-correction watermark guards |
 
 Before upgrade, take a deployment backup with required recipient/key custody. Inspect actual
-leaves and the merged sibling-lane graph; parallel follow-up migrations may be renumbered.
+leaves and the merged migration graph; parallel follow-up migrations may be renumbered.
 Apply through the normal deployment migration path. Test forward, reverse/reapply and
 `makemigrations --check` in the correct isolated checkout before production. A rollback
 to an older image is not a schema rollback.
@@ -124,7 +124,7 @@ outage, oversized input and interrupted scans before accepting production config
 Account résumé scanning is a separate always-present core callback:
 `ACCOUNT_SAVED_RESUME_SCAN_REQUIRED=True` plus `ACCOUNT_SAVED_RESUME_SCANNER` as an importable
 callable accepting bytes and returning exactly `"clean"`. There is no installed production
-callback in this checkpoint. It must remain independent of Events tombstoning. Blank/broken
+callback yet. It must remain independent of Events tombstoning. Blank/broken
 required callback fails closed; an event ClamAV option does not wire account scanning.
 
 ## Video probe

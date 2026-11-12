@@ -11,6 +11,13 @@ three sibling documents, and this page links to them rather than repeating them:
   reports, heartbeat status snapshot).
 - [Label commands](../device-label-commands.md): sending QR print batches to a label printer.
 
+> **Update (0.12.0): the Device Adapter API v1 now exists.** A vendor-neutral, capability-based contract for bridges
+> (printers, power relays, doors, shelf pointers, scanners, sensors, kiosks) lives in
+> [`docs/device-adapters/`](../device-adapters/README.md): `hello`, bindings, status, events, command lease and ack,
+> access decisions, sessions and usage logs, plus staff routes for the console. It reuses everything on this page
+> (signed protocol, registry, 404 gate) and keeps the printer routes below unchanged. Vendor adapters live in their
+> own repositories; see [build an adapter](../device-adapters/build-an-adapter.md).
+
 ## 1. What the integration layer is
 
 It is the `devices` app (`backend/apps/devices/`, module `devices`) plus one capability,
@@ -177,7 +184,7 @@ What an agent is expected to do, using only these routes:
 A failure is always held for staff review (`needs_review`). A completion is held too unless the
 binding's `auto_apply_terminal` is on. Staff apply a held report with `POST .../printer-jobs/{id}/apply`.
 
-The older command path from phase 7b also works for printers: staff create a printer job, the device
+The older command path also works for printers: staff create a printer job, the device
 leases and acknowledges the command, then sends telemetry and a result.
 
 Not shipped: an agent program, any vendor adapter, fleet sync or scheduling, live printer controls,
@@ -187,7 +194,7 @@ camera, file or G-code transfer, and a console screen for integrations. The capa
 ## 5. Adding a device kind or integration kind
 
 These are the registries the existing code composes. Follow the established pattern of a dated or
-lane-named sibling file (`*_7b.py`, `*_7c.py`, `*_r2_l10.py`) imported by the main catalogue.
+feature-named sibling file (for example `*_7b.py`, `*_7c.py`) imported by the main catalogue.
 
 1. **Model choices.** Add the value to `Device.Kind` or `MachineTypeIntegration.Kind` and write a
    migration chained off the actual leaf in `backend/apps/devices/migrations/`.
@@ -202,7 +209,7 @@ lane-named sibling file (`*_7b.py`, `*_7c.py`, `*_r2_l10.py`) imported by the ma
    `printer_agent` kind. A new kind needs its own type check and chain there.
 5. **Staff authorization.** Check `rbac.can(actor, Action.MANAGE_DEVICES, makerspace_id)` and scope
    lists with `rbac.scope_by_action`; check machine scope (`covers_type`, `can_manage_machine`).
-   Classify new staff route names in the delegated route catalogue (the L10 ones are in
+   Classify new staff route names in the delegated route catalogue (the device ones are in
    `accounts/delegated_route_catalog_r2.py`) and add detail routes without a `makerspace_id` to an
    `origin_scope_routes_*.py` table in `makerspaces/`.
 6. **Capability.** If the feature should be switchable, add a definition sibling in
@@ -286,6 +293,7 @@ through the job only. There is no separate device route for sessions.
 | `backend/apps/devices/services_integration_*.py` | Snapshot storage, queue and job reports, staff bindings and status. |
 | `backend/apps/devices/views_heartbeat.py`, `views_integrations.py` | Heartbeat and integration views. |
 | `backend/apps/devices/serializers_integrations.py` | Bounded, clamped integration payloads. |
+| `backend/apps/devices/adapters/`, `adapter_access.py`, `services_adapter_*.py`, `views_adapter*.py`, `urls_adapter*.py` | The Device Adapter API v1: capability registry and schemas, gate, services, signed and staff views. |
 | `backend/apps/makerspaces/capability_definitions_r2_l10.py` | The `machines.integrations` switch. |
 | `backend/apps/machines/sessions_device.py` | Device-sourced machine sessions. |
 | `docs/INVARIANTS.md` | The device identity, printer and machine-integration invariants. |

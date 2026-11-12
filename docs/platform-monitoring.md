@@ -74,6 +74,6 @@ Coordinator verification: `tests/test_platform_monitoring_api.py`,
 `tests/test_platform_problem_checks.py`, `tests/test_platform_scheduler.py`,
 the existing scheduler/source-gate/origin-scope guards, and
 `frontend/src/features/staff/platformMonitoring.test.tsx`. Regenerate the OpenAPI
-snapshot/client after integration; this lane leaves both generated files untouched.
+snapshot and client after changing these routes.
 Review regressions: `tests/test_platform_monitoring_regressions.py` and
 `frontend/src/features/staff/StaffApp.platform.test.tsx`.

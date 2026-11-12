@@ -93,6 +93,12 @@ Join request updates, renewal reminders, lifecycle mail (owner-only), card ready
 
 Join-month cohorts, retention at 3, 6 and 12 months, MRR and ARR per currency (MRR needs finance access and is a projection, separate from collected revenue), the member register export, renewal, collection, expiry-calendar, win-back and funnel reports. Also: collected revenue by plan (cash collected net of refunds, unlike the MRR projection), a 30, 60 and 90 day renewal forecast, and the median and 90th-percentile wait for a membership application decision. With member units on there are two more count-only reports, a **unit league** (active members per unit including the units beneath it, members who joined in the period, requests waiting) and a **level league** (units and members per level); they never show a name or an amount. A unit-scoped staff member sees their own unit's figures only in these reports, the renewal forecast, the approval times and the collected-revenue report.
 
+## The global member profile
+
+Each person has ONE profile for the whole platform, addressed by their username (handle). It is visible to every signed-in user by default and the person can hide the whole profile or any section (status, about, experience, education, achievements, projects, skills, links, interests, events attended, spaces and organisations, certifications). Showing it to the open web (logged-out visitors, search, share cards) is a separate switch that is off until the person turns it on with fresh consent. It lists the spaces and organisations the person is an active member of, their attended events and verified achievements (published hackathon results from any space; attendance and roles only from spaces they belong to, never private or unlisted events) and the achievements they typed themselves, clearly labelled "self-reported". A person can import one of their own hackathon submissions as a project. Everyone must have a username: sign-up asks for one (pre-filled with a suggestion) and existing accounts without one see a blocking "Choose your username" step. A space's member directory shows only that space's members, with name, headline and avatar. Members whose profile was open before get a one-time notice.
+
+More detail for operators: [The global member profile](../how-to/member-profile.md) and [Usernames](../how-to/usernames.md); for staff access and staff ID cards see [Give someone a role](../how-to/roles-and-handover.md).
+
 ## Member cards: numbering, titles, organisation design and desk printing
 
 Every member holds one card, even when the space belongs to an organisation: the same number, QR and check page serve as both the space and organisation membership card, and the design may show the organisation's name too.
@@ -111,15 +117,41 @@ Every member holds one card, even when the space belongs to an organisation: the
   disabled or restricted) and is reissued, same number and new QR, when the roles change; a card problem never blocks
   the staff change. `membership.staff_cards_auto_issue` issues one as soon as a role is granted. Limit key
   `staff_cards_issued_monthly` (none by default). Staff see their own card under My cards.
+- **Card photo background eraser** (`cards.photo_cutout`, off by default): staff, and members on their own card, can ask
+  your own eraser service (any HTTPS service implementing the [Image Adapter API](../image-adapters/README.md)) to cut the
+  holder out of a card photo; the original is kept, the cut-out is a private derived copy deleted with it. The same
+  switch adds the bulk **Upload many photos** follow-up. Limit key `photo_cutout_jobs_monthly` (none by default). See
+  [Remove card photo backgrounds](../how-to/background-eraser.md).
+- **Upload many photos** (member, staff and event cards): photos or a zip matched to holders by file name (card number,
+  then email local part, then full name), reviewed in a table, then attached through the normal card-photo path. It needs
+  no switch beyond the card kind's own.
+- **Card Studio** (all card kinds, no switch): the designer is a full canvas with uploaded backgrounds and images, shapes,
+  rich text (mixed weights, colours and fonts in one line, strokes, shadows, highlight bars, translations), photo
+  frames (circle, rounded, arch, sticker outline, drop shadow, cut-out variant), groups, guides and a punch slot, all drawn
+  identically for print, sheets, wallet images and the check page. Fonts are an allow-list of open faces plus the Gilroy
+  free weights. **Templates**: save any design as a space template (limit key `card_templates`, default none), start from
+  the built-in looks (Studio lanyard, spotlight, arch, and the existing ones, light or dark), duplicate, export and import
+  a template file, and apply one while keeping your data-field bindings (fields the template does not place are added as
+  small lines and listed). Event certificates use the same engine: see [Events](events.md#certificates-on-card-studio).
+  How-to: [Design cards and certificates](../how-to/design-cards-and-certificates.md).
+- **Where it is in the console** (Member cards screen): the **Bulk** tab makes print sheets, per-person PDFs or a ZIP for everyone a register filter selects. **Card design** lists role cards (status, live cards, number pattern) and, with numbering on, edits the draft pattern with token chips and a live sample. **Staff cards** (when switched on) has Staff (search, filter, issue, bulk issue with a skipped-reasons summary, reissue, revoke with a reason, a "Roles changed since issue" badge with one-click reissue), Numbering, Design (the same designer) and Print jobs. With desk printing on, "Print at desk" opens a stock and orientation picker and prints at true size; printed cards stay in memory so they can be printed again offline, and nothing is stored on the device.
 - **Unit tags on member cards**: designs can place `unit`, `unit_code`, `units` and `level1` to `level4`, and
   numbering patterns can use `{UNIT}` and `{U1}` to `{U4}` (needs `membership.units`).
 - **Desk printing** (`membership.card_desk_print`): print a card face at 300 dpi on A6, 4x6, 3x4 or CR80.
 - **Public check page**: the holder's name shows by default for spaces created from 0.12.0; existing spaces keep it hidden until the holder opts in, and any holder can hide it. Contact details, units and answers never show.
 - **Limits**: a space can be capped on member cards issued per month and on wallet passes (platform operator setting, default none). A card limit never blocks a membership activation.
 
+### Card Studio designer (screen)
+
+Member, staff and programme card designs open in **Quick** mode (style, colours, paper and orientation, what is shown,
+logo and background) or **Advanced** (full canvas: layers panel with drag and keyboard reorder, marquee select, snapping
+guides, rich text, cut-out photo with sticker outline, guides for bleed, margin and punch slot). Templates (built-in,
+this space's own, import and export) apply while keeping your data-field bindings. See
+[Design cards and certificates](../how-to/design-cards-and-certificates.md).
+
 ## Data kept and purged
 
-Switching off keeps everything. A purge removes join requests, profiles with their projects and imagery, and member cards with photos (QR codes are revoked, never deleted). Memberships, waivers and acceptance evidence stay, since they are core authorization and liability records. A Presence purge removes sessions, settings and preferences.
+Switching off keeps everything. A purge removes join requests, the older per-space profiles with their projects and imagery (the global profile belongs to the person and goes only with their account), and member cards with photos (QR codes are revoked, never deleted). Memberships, waivers and acceptance evidence stay, since they are core authorization and liability records. A Presence purge removes sessions, settings and preferences.
 
 ## Decisions
 
@@ -128,3 +160,5 @@ Switching off keeps everything. A purge removes join requests, profiles with the
 - **Waivers stay even without Membership** because they are liability evidence.
 - **Cards identify, they do not authorize.** Scanning a card needs its own permission and the Inventory Manager never gets it.
 - **Self-service renewal for account-only borrowers** is off by default and a Space Manager setting.
+
+See [Presence](presence.md) for check-in, the public "Here now" section and display screens.

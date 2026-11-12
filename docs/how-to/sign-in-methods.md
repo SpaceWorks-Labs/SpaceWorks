@@ -9,6 +9,8 @@ summary: Turn on Google, GitHub, Apple, single sign-on (OIDC) and phone sign-in,
 
 Password sign-in works out of the box. Everything else needs credentials issued for your domain. Sign-in providers are configured **once for the whole server** by the platform superadmin, because people sign in before a space is chosen. (Chat channels, by contrast, are per space.)
 
+On wide screens the member and staff sign-in pages show a **sample staff ID card** beside the form. It is a made-up example drawn by the real card designer, purely decorative, and hidden on phones and tablets. Every new account also chooses a username; see [Usernames](usernames.md).
+
 ## Before you start
 
 - You are the platform superadmin.

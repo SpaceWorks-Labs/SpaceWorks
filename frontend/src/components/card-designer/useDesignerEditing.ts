@@ -7,15 +7,16 @@ import { round1 } from "./cardGeometry";
 import { alignLayers, distributeLayers, type AlignEdge, type DistributeAxis } from "./alignment";
 import { minimumSize, moveSelection } from "./canvasMath";
 import { copyLayers, duplicateLayers, pasteLayers } from "./clipboard";
-import { addLayer, moveLayer } from "./designDocument";
+import { addLayer, moveLayer, moveLayerTo, setGroupMeta } from "./designDocument";
+import { restack, type StackOp } from "./stacking";
 import { groupLayers, moveUnits, patchLayers, removeLayers, selectAll, selectedLayers, ungroupLayers,
   type Patches } from "./selection";
 
 type Update = (change: (current: CardDocument) => CardDocument, record?: boolean) => void;
 
-export function useDesignerEditing({ update, sideName, side, stock, selection, setSelection, canEdit }: {
+export function useDesignerEditing({ update, sideName, side, stock, selection, setSelection, canEdit, safeMm }: {
   update: Update; sideName: SideName; side: Side; stock: string; selection: string[];
-  setSelection: (ids: string[]) => void; canEdit: boolean;
+  setSelection: (ids: string[]) => void; canEdit: boolean; /** The document's safe zone (guides.safe_mm). */ safeMm?: number;
 }) {
   const clipboard = useRef<Layer[]>([]);
   const patch = useCallback((patches: Patches, record = true) =>
@@ -29,6 +30,8 @@ export function useDesignerEditing({ update, sideName, side, stock, selection, s
     selectAll: () => setSelection(selectAll(side)),
     clear: () => setSelection([]),
     add: (layer: Layer) => { update((current) => addLayer(current, sideName, layer)); setSelection([layer.id]); },
+    groupMeta: (id: string, change: Partial<{ name: string; locked: boolean; hidden: boolean }>) => update((current) => setGroupMeta(current, sideName, id, change)),
+    reorderTo: (id: string, to: number) => update((current) => moveLayerTo(current, sideName, id, to)),
     reorder: (id: string, direction: "up" | "down") => update((current) => moveLayer(current, sideName, id, direction)),
     group: () => { if (selection.length > 1) update((current) => groupLayers(current, sideName, selection)); },
     ungroup: () => update((current) => ungroupLayers(current, sideName, selection)),
@@ -72,10 +75,17 @@ export function useDesignerEditing({ update, sideName, side, stock, selection, s
       }
       patch(patches);
     },
-    align: (edge: AlignEdge, toSafeArea: boolean) => patch(alignLayers(side, selection, edge, toSafeArea)),
+    align: (edge: AlignEdge, toSafeArea: boolean) => patch(alignLayers(side, selection, edge, toSafeArea, safeMm)),
     distribute: (axis: DistributeAxis) => patch(distributeLayers(side, selection, axis)),
     setFlag: (flag: "locked" | "hidden", value: boolean) =>
       patch(Object.fromEntries(selection.map((id) => [id, { [flag]: value }]))),
+    /** Lock (or hide) the whole selection, or undo it when every selected layer already is. */
+    toggleFlag: (flag: "locked" | "hidden") => {
+      const chosen = selectedLayers(side, selection);
+      const value = !chosen.every((layer) => layer[flag]);
+      patch(Object.fromEntries(chosen.map((layer) => [layer.id, { [flag]: value }])));
+    },
+    restack: (op: StackOp) => { if (selection.length) update((current) => restack(current, sideName, selection, op)); },
     canEdit,
   };
 }

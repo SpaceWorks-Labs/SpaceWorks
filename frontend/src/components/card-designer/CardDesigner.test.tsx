@@ -32,7 +32,7 @@ function open() {
 const key = (key: string, extra: Partial<KeyboardEventInit> = {}) => fireEvent.keyDown(window.document.body, { key, ...extra });
 const canvasLayer = (name: RegExp) => within(screen.getByRole("group", { name: /front of the card/i })).getByRole("button", { name });
 
-beforeEach(() => { api.staffRequest.mockReset(); });
+beforeEach(() => { api.staffRequest.mockReset(); window.localStorage.setItem("spaceworks.card-studio-mode", "advanced"); });
 
 describe("card designer editing", () => {
   it("selects all, groups, and shows the group in the layer list", async () => {
@@ -41,7 +41,7 @@ describe("card designer editing", () => {
     key("a", { ctrlKey: true });
     expect(screen.getByRole("heading", { name: "3 layers selected" })).toBeInTheDocument();
     key("g", { ctrlKey: true });
-    fireEvent.click(screen.getByRole("radio", { name: "Layers" }));
+    fireEvent.click(screen.getByRole("button", { name: "Layers" }));
     expect(screen.getByRole("button", { name: "Name, group A" })).toBeInTheDocument();
     expect(canvasLayer(/QR layer, group A/)).toBeInTheDocument();
     key("g", { ctrlKey: true, shiftKey: true });
@@ -51,7 +51,7 @@ describe("card designer editing", () => {
   it("Shift-click in the layer list builds a selection; Escape clears it", async () => {
     open();
     await screen.findByRole("group", { name: /front of the card/i });
-    fireEvent.click(screen.getByRole("radio", { name: "Layers" }));
+    fireEvent.click(screen.getByRole("button", { name: "Layers" }));
     fireEvent.click(screen.getByRole("button", { name: "Name" }));
     expect(screen.getByRole("heading", { name: "Name" })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "QR" }), { shiftKey: true });
@@ -63,7 +63,7 @@ describe("card designer editing", () => {
   it("copies, pastes, duplicates and deletes with the keyboard; undo puts it back", async () => {
     open();
     await screen.findByRole("group", { name: /front of the card/i });
-    fireEvent.click(screen.getByRole("radio", { name: "Layers" }));
+    fireEvent.click(screen.getByRole("button", { name: "Layers" }));
     fireEvent.click(screen.getByRole("button", { name: "QR" }));
     key("c", { ctrlKey: true });
     key("v", { ctrlKey: true });
@@ -78,7 +78,7 @@ describe("card designer editing", () => {
   it("aligns the selection from the toolbar and keeps locked layers still", async () => {
     open();
     await screen.findByRole("group", { name: /front of the card/i });
-    fireEvent.click(screen.getByRole("radio", { name: "Layers" }));
+    fireEvent.click(screen.getByRole("button", { name: "Layers" }));
     fireEvent.click(screen.getByRole("button", { name: "Name" }));
     fireEvent.click(screen.getByRole("button", { name: "Align left edges to the card" }));
     expect(screen.getByRole("spinbutton", { name: /left/i })).toHaveValue(0);

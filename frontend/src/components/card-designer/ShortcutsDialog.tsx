@@ -1,14 +1,14 @@
 // "Keyboard shortcuts": every designer shortcut in one list (also opened with ?).
 import { t } from "@lingui/core/macro";
 import { Modal } from "../ui/Modal";
-import { SHORTCUT_GROUPS } from "./shortcuts";
+import { shortcutGroups } from "./shortcuts";
 
 export function ShortcutsDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   return <Modal open={open} onClose={onClose} title={t`Keyboard shortcuts`}
     footer={<div className="flex justify-end"><button type="button" className="desk-button min-h-11" onClick={onClose}>{t`Close`}</button></div>}>
     <div className="grid gap-5">
       <p className="text-sm text-muted">{t`Shortcuts work when the card or the designer has focus, never while you type in a field.`}</p>
-      {SHORTCUT_GROUPS.map((group, index) => <section key={group.title} aria-labelledby={`card-shortcuts-${index}`} className="grid gap-2">
+      {shortcutGroups().map((group, index) => <section key={group.title} aria-labelledby={`card-shortcuts-${index}`} className="grid gap-2">
         <h3 id={`card-shortcuts-${index}`} className="text-sm font-semibold text-ink">{group.title}</h3>
         <dl className="grid gap-2">
           {group.rows.map((row) => <div key={row.action} className="grid gap-1 sm:grid-cols-[12rem_minmax(0,1fr)] sm:items-center">

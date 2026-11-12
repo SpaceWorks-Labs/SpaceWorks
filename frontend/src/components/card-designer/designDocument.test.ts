@@ -27,10 +27,10 @@ describe("design document edits", () => {
     expect(next.front.layers.map((layer) => layer.id)).not.toContain(text.id);
   });
 
-  it("caps a side at 40 layers", () => {
+  it("caps a side at 60 layers (decision 314)", () => {
     let next = doc();
-    for (let i = 0; i < 45; i += 1) next = addLayer(next, "front", newLayer("shape", next.front, next.stock));
-    expect(next.front.layers).toHaveLength(40);
+    for (let i = 0; i < 65; i += 1) next = addLayer(next, "front", newLayer("shape", next.front, next.stock));
+    expect(next.front.layers).toHaveLength(60);
   });
 
   it("new QR layers meet the stock's minimum and keep it when the stock changes", () => {

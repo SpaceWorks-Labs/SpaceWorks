@@ -1,129 +1,103 @@
-// Undo/redo, side, stock and view options; then templates, "Preview as", the test print, the
-// calibration sheet, the design file, checks and shortcuts. On phones the file tools fold into "More".
+// The slim top bar's tools: undo/redo, zoom, "Preview as", the exact preview, the test print, and a File menu
+// (print-ready PDF and PNG, cards from a CSV, design file, import, calibration sheets, checks, shortcuts). View
+// options live in the canvas bar, card size in the Page tab, templates in the left rail.
 import { t } from "@lingui/core/macro";
 import { useRef, useState } from "react";
-import { Download, Keyboard, ListChecks, Printer, Redo2, Undo2, Upload } from "lucide-react";
+import { Printer, Redo2, Undo2 } from "lucide-react";
 
 import { OverflowMenu } from "../ui/OverflowMenu";
+import { SegmentedControl } from "../ui/SegmentedControl";
 import type { CardDesign, CardDocument, SideName } from "./cardTypes";
-import { GRID_SIZES_MM, STOCKS } from "./cardGeometry";
+import { zoomPresets, type Zoom } from "./canvasMath";
 import { exportDesign, importDesign } from "./designerApi";
+import { CsvMergeDialog } from "./CsvMergeDialog";
 import { calibrationSheet, exactPreview, saveBlob, type CalibrationPaper } from "./designerHistoryApi";
-import { NumberInput, SelectInput, Toggle } from "./inspectorFields";
 import { PreviewAsControl } from "./PreviewAsControl";
-import type { PreviewPerson } from "./previewPerson";
-import { TemplateGallery } from "./TemplateGallery";
+import { isLongPerson, type PreviewPerson } from "./previewPerson";
 
-export type ViewOptions = { side: SideName; showGrid: boolean; gridMm: number };
-const PAPERS: { value: CalibrationPaper; label: string }[] = [
+export type ViewOptions = { side: SideName; showGrid: boolean; gridMm: number; showRulers?: boolean };
+const papers = (): { value: CalibrationPaper; label: string }[] => [
   { value: "a4", label: t`A4 paper` }, { value: "letter", label: t`Letter paper` }, { value: "card", label: t`Single card (PVC printer)` },
 ];
-const CALIBRATION_HINT = "Print at 100 %: each ruler should measure exactly 100 mm.";
+/** Print-ready exports use the design's bleed guide, or the common 3 mm when none is set. */
+export const exportBleed = (document: CardDocument) => (document.guides?.bleed_mm && document.guides.bleed_mm > 0 ? document.guides.bleed_mm : 3);
 
-export function DesignToolbar({ design, document, view, onView, onDocument, onStock, onAdopt, history, canEdit, flush,
-  person, onPerson, values, checks, onShowChecks, onShortcuts }: {
-  design: CardDesign; document: CardDocument; view: ViewOptions; onView: (view: ViewOptions) => void;
-  onDocument: (change: (current: CardDocument) => CardDocument) => void;
-  onStock: (stock: string, width?: number, height?: number) => void; onAdopt: (design: CardDesign) => void;
+export function DesignToolbar({ design, document, view, onAdopt, history, canEdit, flush, person, onPerson, zoom, onZoom,
+  checks, onShowChecks, onShortcuts, messageSlot }: {
+  design: CardDesign; document: CardDocument; view: ViewOptions; onAdopt: (design: CardDesign) => void;
   history: { undo: () => void; redo: () => void; canUndo: boolean; canRedo: boolean }; canEdit: boolean;
-  flush: () => Promise<void>; person: PreviewPerson; onPerson: (person: PreviewPerson) => void; values: Record<string, string>;
+  flush: () => Promise<void>; person: PreviewPerson; onPerson: (person: PreviewPerson) => void;
+  zoom: Zoom; onZoom: (zoom: Zoom) => void;
   checks: { count: number; errors: number }; onShowChecks: () => void; onShortcuts: () => void;
+  /** Receives the last status message so the bar can show it under itself. */ messageSlot?: (message: { tone: "info" | "error"; text: string } | null) => void;
 }) {
-  const [message, setMessage] = useState<{ tone: "info" | "error"; text: string } | null>(null);
+  const [message, setMessageState] = useState<{ tone: "info" | "error"; text: string } | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [csvOpen, setCsvOpen] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
+  const setMessage = (next: { tone: "info" | "error"; text: string } | null) => { setMessageState(next); messageSlot?.(next); };
   const fail = (error: unknown, fallback: string) => setMessage({ tone: "error", text: error instanceof Error ? error.message : fallback });
 
   async function run(key: string, work: () => Promise<string>, fallback: string) {
     setBusy(key); setMessage(null);
     try { setMessage({ tone: "info", text: await work() }); } catch (error) { fail(error, fallback); } finally { setBusy(null); }
   }
+  const holderId = person.kind === "holder" ? person.holder.id : null;
   const testPrint = () => run("print", async () => {
-    saveBlob(await exactPreview(design.id, document, view.side, { format: "pdf", longNames: person.kind === "long",
-      holderId: person.kind === "holder" ? person.holder.id : null }), `card-design-${design.id}-test.pdf`);
-    return "Print the PDF at 100 % (actual size) and check it against a real card.";
-  }, "The test print couldn't be made.");
+    saveBlob(await exactPreview(design.id, document, view.side, { format: "pdf", longNames: isLongPerson(person), holderId }),
+      `card-design-${design.id}-test.pdf`);
+    return t`Print the PDF at 100 % (actual size) and check it against a real card.`;
+  }, t`The test print couldn't be made.`);
+  const printReady = (format: "pdf" | "png") => run("ready", async () => {
+    const bleedMm = exportBleed(document);
+    saveBlob(await exactPreview(design.id, document, view.side, { format, longNames: isLongPerson(person), holderId, bleedMm,
+      cropMarks: format === "pdf", dpi: 300 }), `card-design-${design.id}-print.${format}`);
+    return format === "pdf" ? t`Print-ready PDF with ${bleedMm} mm bleed and crop marks. Proofs carry the PREVIEW mark; real cards come from each card's download.`
+      : t`300 dpi PNG with ${bleedMm} mm bleed, for online print services.`;
+  }, t`The print-ready file couldn't be made.`);
   const calibrate = (paper: CalibrationPaper) => run("calibrate", async () => {
     saveBlob(await calibrationSheet(design.id, paper), `card-calibration-${paper}.pdf`);
-    return CALIBRATION_HINT;
-  }, "The calibration sheet couldn't be made.");
+    return t`Print at 100 %: each ruler should measure exactly 100 mm.`;
+  }, t`The calibration sheet couldn't be made.`);
   const exportFile = () => run("export", async () => {
     await flush();
     saveBlob(new Blob([JSON.stringify(await exportDesign(design.id), null, 2)], { type: "application/json" }), `card-design-${design.id}.json`);
-    return "Design file downloaded.";
-  }, "The design file couldn't be downloaded.");
+    return t`Design file downloaded.`;
+  }, t`The design file couldn't be downloaded.`);
   const importFile = (file: File) => run("import", async () => {
     let parsed: unknown;
     try { parsed = JSON.parse(await file.text()); } catch { throw new Error(t`That file isn't a card design.`); }
     await flush();
     const result = await importDesign(design.id, parsed);
     onAdopt(result.design);
-    return result.notes.length ? result.notes.join(" ") : "Design imported.";
-  }, "That file isn't a card design.");
+    return result.notes.length ? result.notes.join(" ") : t`Design imported.`;
+  }, t`That file isn't a card design.`);
 
-  const custom = document.stock === "custom";
-  const calibration = PAPERS.map((paper) => ({ label: paper.label, onClick: () => void calibrate(paper.value) }));
-  return <div className="grid gap-3">
-    <div className="flex flex-wrap items-end gap-2">
-      <button type="button" className="desk-button-ghost min-h-11 min-w-11" aria-label={t`Undo`} title={t`Undo (Ctrl or Cmd + Z)`}
-        disabled={!canEdit || !history.canUndo} onClick={history.undo}><Undo2 size={16} aria-hidden="true" /></button>
-      <button type="button" className="desk-button-ghost min-h-11 min-w-11" aria-label={t`Redo`} title={t`Redo (Shift + Ctrl or Cmd + Z)`}
-        disabled={!canEdit || !history.canRedo} onClick={history.redo}><Redo2 size={16} aria-hidden="true" /></button>
-      <div role="radiogroup" aria-label={t`Side`} className="inline-flex gap-1 rounded-control border border-line bg-surface p-1">
-        {(["front", "back"] as const).map((side) => <button key={side} type="button" role="radio" aria-checked={view.side === side}
-          disabled={side === "back" && !document.back_enabled}
-          className={`min-h-11 rounded-control px-4 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-focus ${view.side === side ? "bg-panel text-ink" : "text-muted"} disabled:opacity-40`}
-          onClick={() => onView({ ...view, side })}>{side === "front" ? t`Front` : t`Back`}</button>)}
-      </div>
-      <Toggle label={t`Two-sided`} checked={document.back_enabled} disabled={!canEdit} onChange={(back_enabled) => {
-        onDocument((current) => ({ ...current, back_enabled }));
-        if (!back_enabled) onView({ ...view, side: "front" });
-      }} />
-      <Toggle label={t`Black and white`} checked={document.mono} disabled={!canEdit}
-        onChange={(mono) => onDocument((current) => ({ ...current, mono }))} />
-      <Toggle label={t`Grid`} checked={view.showGrid} onChange={(showGrid) => onView({ ...view, showGrid })} />
-      <SelectInput label={t`Snap`} value={String(view.gridMm)} onChange={(value) => onView({ ...view, gridMm: Number(value) })}
-        options={GRID_SIZES_MM.map((size) => ({ value: String(size), label: `${size} mm` }))} />
-    </div>
-    <div className="flex flex-wrap items-end gap-2">
-      <SelectInput label={t`Card size`} value={document.stock} disabled={!canEdit} onChange={(stock) => onStock(stock)}
-        options={STOCKS.map((stock) => ({ value: stock.key, label: stock.label }))} />
-      {custom ? <>
-        <NumberInput label={t`Width`} unit="mm" value={document.page_width_mm ?? document.front.page_width_mm} min={40} max={300}
-          disabled={!canEdit} onChange={(width) => onStock("custom", width, document.front.page_height_mm)} />
-        <NumberInput label={t`Height`} unit="mm" value={document.page_height_mm ?? document.front.page_height_mm} min={40} max={300}
-          disabled={!canEdit} onChange={(height) => onStock("custom", document.front.page_width_mm, height)} />
-      </> : null}
-      {canEdit ? <TemplateGallery design={design} values={values} onAdopt={onAdopt}
-        onError={(error) => fail(error, "The template couldn't be applied.")} /> : null}
-      <PreviewAsControl design={design} document={document} person={person} onPerson={onPerson} />
-    </div>
-    <div className="flex flex-wrap items-center gap-2">
-      <button type="button" className="desk-button min-h-11" disabled={busy === "print"} onClick={() => void testPrint()}>
-        <Printer size={16} aria-hidden="true" /> {busy === "print" ? t`Making the PDF…` : t`Test print`}</button>
-      <OverflowMenu className="hidden sm:block" label={t`Calibration sheet`} showLabel actions={calibration} />
-      {canEdit ? <>
-        <button type="button" className="desk-button-ghost hidden min-h-11 sm:inline-flex" onClick={() => void exportFile()}>
-          <Download size={16} aria-hidden="true" /> {t` Design file`}</button>
-        <button type="button" className="desk-button-ghost hidden min-h-11 sm:inline-flex" onClick={() => fileInput.current?.click()}>
-          <Upload size={16} aria-hidden="true" /> {t` Import`}</button>
-      </> : null}
-      <input ref={fileInput} type="file" accept="application/json,.json" className="sr-only" tabIndex={-1} aria-hidden="true"
-        onChange={(event) => { const file = event.target.files?.[0]; event.target.value = ""; if (file) void importFile(file); }} />
-      <button type="button" className="desk-button min-h-11" onClick={onShowChecks}
-        aria-label={checks.count ? t`Checks: ${checks.count} to look at` : t`Checks: all passed`}>
-        <ListChecks size={16} aria-hidden="true" /> {t` Checks`}<span aria-hidden="true" className={`min-w-6 rounded-full px-1.5 text-center text-xs font-bold tabular-nums ${checks.errors
-          ? "bg-danger text-on-danger" : checks.count ? "bg-warn text-on-warn" : "bg-success text-on-success"}`}>{checks.count}</span>
-      </button>
-      <button type="button" className="desk-button-ghost hidden min-h-11 sm:inline-flex" onClick={onShortcuts}>
-        <Keyboard size={16} aria-hidden="true" /> {t` Keyboard shortcuts`}</button>
-      <OverflowMenu className="sm:hidden" label={t`More tools`} actions={[
-        ...calibration.map((item) => ({ ...item, label: t`Calibration sheet, ${item.label}` })),
-        ...(canEdit ? [{ label: t`Download the design file`, onClick: () => void exportFile() },
-          { label: t`Import a design file`, onClick: () => fileInput.current?.click() }] : []),
-        { label: t`Keyboard shortcuts`, onClick: onShortcuts }]} />
-    </div>
-    {message ? <p role={message.tone === "error" ? "alert" : "status"}
-      className={`text-sm ${message.tone === "error" ? "text-danger" : "text-muted"}`}>{message.text}</p> : null}
+  const menu = [
+    { label: t`Print-ready PDF (bleed and crop marks)`, onClick: () => void printReady("pdf") },
+    { label: t`Print-ready PNG (300 dpi, bleed)`, onClick: () => void printReady("png") },
+    ...(canEdit ? [{ label: t`Cards from a CSV file…`, onClick: () => setCsvOpen(true) },
+      { label: t`Download the design file`, onClick: () => void exportFile() },
+      { label: t`Import a design file`, onClick: () => fileInput.current?.click() }] : []),
+    ...papers().map((paper) => ({ label: t`Calibration sheet, ${paper.label}`, onClick: () => void calibrate(paper.value) })),
+    { label: checks.count ? t`Checks (${checks.count} to look at)` : t`Checks (all passed)`, onClick: onShowChecks },
+    { label: t`Keyboard shortcuts`, onClick: onShortcuts },
+  ];
+  return <div className="flex flex-wrap items-center gap-2">
+    <button type="button" className="desk-button-ghost min-h-11 min-w-11" aria-label={t`Undo`} title={t`Undo (Ctrl or Cmd + Z)`}
+      disabled={!canEdit || !history.canUndo} onClick={history.undo}><Undo2 size={16} aria-hidden="true" /></button>
+    <button type="button" className="desk-button-ghost min-h-11 min-w-11" aria-label={t`Redo`} title={t`Redo (Shift + Ctrl or Cmd + Z)`}
+      disabled={!canEdit || !history.canRedo} onClick={history.redo}><Redo2 size={16} aria-hidden="true" /></button>
+    <SegmentedControl label={t`Zoom`} value={String(zoom)} onChange={(value) => onZoom(value === "fit" ? "fit" : Number(value))}
+      options={zoomPresets().map((item) => ({ value: String(item.value), label: item.label }))} />
+    <PreviewAsControl design={design} document={document} person={person} onPerson={onPerson} />
+    <button type="button" className="desk-button min-h-11" disabled={busy === "print"} onClick={() => void testPrint()}>
+      <Printer size={16} aria-hidden="true" /> {busy === "print" ? t`Making the PDF…` : t`Test print`}</button>
+    <OverflowMenu label={t`File`} showLabel actions={menu} />
+    <input ref={fileInput} type="file" accept="application/json,.json" className="sr-only" tabIndex={-1} aria-hidden="true"
+      onChange={(event) => { const file = event.target.files?.[0]; event.target.value = ""; if (file) void importFile(file); }} />
+    {csvOpen ? <CsvMergeDialog design={design} open onClose={() => setCsvOpen(false)} /> : null}
+    {message && !messageSlot ? <p role={message.tone === "error" ? "alert" : "status"}
+      className={`basis-full text-sm ${message.tone === "error" ? "text-danger" : "text-muted"}`}>{message.text}</p> : null}
   </div>;
 }

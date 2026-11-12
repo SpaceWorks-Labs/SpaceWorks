@@ -9,30 +9,39 @@ import { boundsOf, moveUnits, selectedLayers, type Box, type Patches } from "./s
 export type AlignEdge = "left" | "centre" | "right" | "top" | "middle" | "bottom";
 export type DistributeAxis = "horizontal" | "vertical";
 
-export const ALIGN_LABELS: Record<AlignEdge, string> = {
-  left: t`Align left edges`, centre: t`Align centres`, right: t`Align right edges`,
-  top: t`Align top edges`, middle: t`Align middles`, bottom: t`Align bottom edges`,
-};
+/** Button names, by target (a function so they follow the language switch). */
+export function alignLabel(edge: AlignEdge, target: "card" | "selection" | "safe"): string {
+  const labels: Record<AlignEdge, Record<typeof target, string>> = {
+    left: { card: t`Align left edges to the card`, selection: t`Align left edges to the selection`, safe: t`Align left edges to the safe area` },
+    centre: { card: t`Align centres to the card`, selection: t`Align centres to the selection`, safe: t`Align centres to the safe area` },
+    right: { card: t`Align right edges to the card`, selection: t`Align right edges to the selection`, safe: t`Align right edges to the safe area` },
+    top: { card: t`Align top edges to the card`, selection: t`Align top edges to the selection`, safe: t`Align top edges to the safe area` },
+    middle: { card: t`Align middles to the card`, selection: t`Align middles to the selection`, safe: t`Align middles to the safe area` },
+    bottom: { card: t`Align bottom edges to the card`, selection: t`Align bottom edges to the selection`, safe: t`Align bottom edges to the safe area` },
+  };
+  return labels[edge][target];
+}
 
 function shift(unit: Layer[], dx: number, dy: number, patches: Patches) {
   if (unit.some((layer) => layer.locked) || (Math.abs(dx) < 0.001 && Math.abs(dy) < 0.001)) return;
   for (const layer of unit) patches[layer.id] = { x_mm: round1(layer.x_mm + dx), y_mm: round1(layer.y_mm + dy) };
 }
 
-export function safeBox(side: Side): Box {
-  return { x: SAFE_AREA_MM, y: SAFE_AREA_MM, w: side.page_width_mm - 2 * SAFE_AREA_MM, h: side.page_height_mm - 2 * SAFE_AREA_MM };
+/** The safe area: the document's safe zone (`guides.safe_mm`, 3 mm by default, 10 mm on certificates). */
+export function safeBox(side: Side, safeMm = SAFE_AREA_MM): Box {
+  return { x: safeMm, y: safeMm, w: side.page_width_mm - 2 * safeMm, h: side.page_height_mm - 2 * safeMm };
 }
 
-export function alignTarget(side: Side, ids: string[], toSafeArea: boolean): Box | null {
+export function alignTarget(side: Side, ids: string[], toSafeArea: boolean, safeMm = SAFE_AREA_MM): Box | null {
   const layers = selectedLayers(side, ids);
   if (!layers.length) return null;
-  if (toSafeArea) return safeBox(side);
+  if (toSafeArea) return safeBox(side, safeMm);
   if (moveUnits(layers).length === 1) return { x: 0, y: 0, w: side.page_width_mm, h: side.page_height_mm };
   return boundsOf(layers);
 }
 
-export function alignLayers(side: Side, ids: string[], edge: AlignEdge, toSafeArea = false): Patches {
-  const target = alignTarget(side, ids, toSafeArea);
+export function alignLayers(side: Side, ids: string[], edge: AlignEdge, toSafeArea = false, safeMm = SAFE_AREA_MM): Patches {
+  const target = alignTarget(side, ids, toSafeArea, safeMm);
   const patches: Patches = {};
   if (!target) return patches;
   for (const unit of moveUnits(selectedLayers(side, ids))) {

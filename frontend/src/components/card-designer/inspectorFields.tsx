@@ -1,5 +1,6 @@
 // Small labelled inputs the inspector and background panel share.
 import { t } from "@lingui/core/macro";
+import { BrandSwatchRow } from "./brandKit";
 import { useEffect, useState } from "react";
 
 const HEX = /^#[0-9A-Fa-f]{6}$/;
@@ -47,6 +48,7 @@ export function ColourInput({ label, value, onChange, allowNone, disabled }: {
       {allowNone && value ? <button type="button" className="desk-button-ghost min-h-11" disabled={disabled}
         onClick={() => onChange(null)}>{t`None`}</button> : null}
     </div>
+    <BrandSwatchRow label={label} value={value} disabled={disabled} onPick={(hex) => { setDraft(hex); onChange(hex); }} />
   </div>;
 }
 

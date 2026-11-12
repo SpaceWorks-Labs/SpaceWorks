@@ -7,6 +7,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import type { CardFont } from "./cardTypes";
 import { prepareFont, useFonts } from "./designerApi";
 import { loadCardFont } from "./fontLoader";
+import { LogoLoader } from "../LogoLoader";
 
 const SCRIPTS = [
   { value: "", label: t`Any script` }, { value: "latin", label: t`Latin` }, { value: "devanagari", label: t`Devanagari` },
@@ -74,7 +75,7 @@ export function FontPicker({ designId, family, weight, onChange, disabled }: {
           {SCRIPTS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
         </select>
       </div>
-      {fonts.isLoading ? <p className="text-sm text-muted">{t`Loading fonts…`}</p> : null}
+      {fonts.isLoading ? <LogoLoader label={t`Loading fonts…`} size={48} className="min-h-16 py-3" /> : null}
       {fonts.isError ? <p className="text-sm text-danger">{t`The font list couldn't load.`}</p> : null}
       <ul className="max-h-64 overflow-y-auto" aria-label={t`Fonts`}>
         {fonts.data?.results.map((font) => <li key={font.family}>

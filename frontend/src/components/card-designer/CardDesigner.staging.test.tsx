@@ -28,6 +28,7 @@ function renderDesigner(canEdit = true) {
 }
 
 beforeEach(() => {
+  window.localStorage.setItem("spaceworks.card-studio-mode", "advanced");
   staffRequest.mockReset();
   staffRequestBlob.mockReset();
   staffRequest.mockImplementation((path: string, options?: RequestInit) => {

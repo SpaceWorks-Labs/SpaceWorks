@@ -1,4 +1,4 @@
-// Drawing helpers for the on-screen card: fitted text, the barcode and photo filters.
+// Drawing helpers for the on-screen card: fitted text and photo filters (the barcode lives in BarcodeView).
 // The server PDF is the authority; these keep the designer and "My cards" faithful to it.
 import { useId, useMemo, type CSSProperties, type ReactNode } from "react";
 
@@ -21,34 +21,7 @@ export function useFittedText(layer: Layer, text: string, px: number): CSSProper
     fontSize: fitted.sizePt * PT_TO_MM * px, whiteSpace: fitted.oneLine ? "nowrap" : undefined };
 }
 
-/** Deterministic stand-in bars for the designer (the real code is drawn by the server). */
-function placeholderBars() {
-  const bars: { x: number; w: number }[] = [];
-  let x = 10, seed = 7;
-  while (x < 110) {
-    seed = (seed * 37 + 11) % 97;
-    const w = 1 + (seed % 3);
-    bars.push({ x, w });
-    x += w + 1 + ((seed >> 2) % 3);
-  }
-  return bars;
-}
-const BARS = placeholderBars();
-
-export function BarcodeView({ layer, values, image }: { layer: Layer; values: Record<string, string>; image?: string | null }) {
-  const label = layer.source === "desk" ? "DESK CODE" : values.number ?? "";
-  const showText = layer.show_text !== false;
-  return <div className="flex h-full w-full flex-col bg-white" aria-hidden="true">
-    <div className="min-h-0 flex-1">
-      {image ? <img src={image} alt="" className="h-full w-full" style={{ objectFit: "fill", imageRendering: "pixelated" }} />
-        : <svg viewBox="0 0 120 40" preserveAspectRatio="none" className="h-full w-full" shapeRendering="crispEdges">
-          {BARS.map((bar) => <rect key={bar.x} x={bar.x} y="2" width={bar.w} height="36" fill="#000000" />)}
-        </svg>}
-    </div>
-    {showText ? <div className="truncate text-center font-medium leading-none text-black"
-      style={{ fontSize: "clamp(4px, 22%, 12px)", letterSpacing: "0.08em" }}>{label}</div> : null}
-  </div>;
-}
+export { BarcodeView } from "./BarcodeView";
 
 /** A CSS filter (and the SVG filter it points at, for duotone) for a photo layer. */
 export function usePhotoFilter(layer: Layer, mono: boolean): { filter?: string; defs: ReactNode } {

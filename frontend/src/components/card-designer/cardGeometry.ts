@@ -6,7 +6,10 @@ export const PT_TO_MM = 0.3528;
 export const SAFE_AREA_MM = 3;
 export const GRID_SIZES_MM = [1, 2, 5, 10] as const;
 
-export const STOCKS: { key: string; label: string; width: number; height: number }[] = [
+export type StockFamily = "card" | "badge" | "certificate";
+export type Stock = { key: string; label: string; width: number; height: number; family: StockFamily };
+
+const CARD_STOCKS: Omit<Stock, "family">[] = [
   { key: "cr80-landscape", label: t`ID card (CR80), landscape`, width: 85.6, height: 53.98 },
   { key: "cr80-portrait", label: t`ID card (CR80), portrait`, width: 53.98, height: 85.6 },
   { key: "cr79-landscape", label: t`Adhesive card (CR79), landscape`, width: 83.9, height: 52.1 },
@@ -18,8 +21,28 @@ export const STOCKS: { key: string; label: string; width: number; height: number
   { key: "4x3", label: t`4 × 3 in badge`, width: 101.6, height: 76.2 },
   { key: "3x4", label: t`3 × 4 in badge`, width: 76.2, height: 101.6 },
   { key: "4x6", label: t`4 × 6 in badge`, width: 101.6, height: 152.4 },
+  { key: "6x4", label: t`6 × 4 in badge`, width: 152.4, height: 101.6 },
+  { key: "badge-90x130", label: t`Badge 90 × 130 mm, portrait`, width: 90, height: 130 },
+  { key: "badge-130x90", label: t`Badge 130 × 90 mm, landscape`, width: 130, height: 90 },
+  { key: "a5-portrait", label: t`A5, portrait`, width: 148, height: 210 },
+  { key: "a5-landscape", label: t`A5, landscape`, width: 210, height: 148 },
+  { key: "a4-portrait", label: t`A4 certificate, portrait`, width: 210, height: 297 },
+  { key: "a4-landscape", label: t`A4 certificate, landscape`, width: 297, height: 210 },
+  { key: "letter-portrait", label: t`US Letter, portrait`, width: 215.9, height: 279.4 },
+  { key: "letter-landscape", label: t`US Letter, landscape`, width: 279.4, height: 215.9 },
   { key: "custom", label: t`Custom size`, width: 85.6, height: 53.98 },
 ];
+
+const familyOf = (key: string): StockFamily => (/^(a5|a4|letter)-/.test(key) ? "certificate"
+  : /^(a6|4x|3x|6x|badge)/.test(key) ? "badge" : "card");
+export const STOCKS: Stock[] = CARD_STOCKS.map((stock) => ({ ...stock, family: familyOf(stock.key) }));
+
+/** The presets a document kind offers: certificates take paper sizes (custom 100-420 mm), cards take card and badge sizes. */
+export function stocksFor(kind: "card" | "certificate" = "card") {
+  return STOCKS.filter((stock) => stock.key === "custom" || (kind === "certificate" ? stock.family === "certificate"
+    : stock.family !== "certificate" || /^a5-/.test(stock.key)));
+}
+export const customLimits = (kind: "card" | "certificate" = "card") => (kind === "certificate" ? { min: 100, max: 420 } : { min: 40, max: 300 });
 
 export function stockSize(stock: string, width?: number, height?: number) {
   if (stock === "custom") return { width: width ?? 85.6, height: height ?? 53.98 };

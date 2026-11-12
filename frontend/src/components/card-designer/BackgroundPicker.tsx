@@ -2,9 +2,12 @@
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
 
-import type { Background, Watermark } from "./cardTypes";
+import type { Background, Overlay, Watermark } from "./cardTypes";
 import { uploadAsset } from "./designerApi";
-import { ColourInput, NumberInput, SelectInput } from "./inspectorFields";
+import { useStudioAssets } from "./studioAssets";
+import { GradientEditor } from "./GradientEditor";
+import { ColourInput, NumberInput, SelectInput, Toggle } from "./inspectorFields";
+import { BoxArt } from "../BoxSpinner";
 
 const ACCEPT = "image/png,image/jpeg,image/webp";
 
@@ -14,16 +17,17 @@ export function UploadButton({ designId, kind, label, onUploaded, disabled }: {
 }) {
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
+  const assets = useStudioAssets();
   return <div className="grid gap-1">
     <label className={`desk-button min-h-11 cursor-pointer text-center ${disabled || busy ? "pointer-events-none opacity-60" : ""}`}>
-      {busy ? t`Uploading…` : label}
+      {busy ? <><BoxArt size={16} mono />{t`Uploading…`}</> : label}
       <input type="file" accept={ACCEPT} className="sr-only" disabled={disabled || busy} onChange={async (event) => {
         const file = event.target.files?.[0];
         event.target.value = "";
         if (!file) return;
         setBusy(true); setFailure(null);
         try {
-          const asset = await uploadAsset(designId, kind, file);
+          const asset = assets ? await assets.upload(kind, file) : await uploadAsset(designId, kind, file);
           onUploaded(asset.asset_id, asset.mean_colour);
         } catch (error) {
           setFailure(error instanceof Error ? error.message : "The image couldn't be uploaded.");
@@ -54,25 +58,8 @@ export function BackgroundPicker({ designId, background, onChange, onAssetColour
       }} />
     {background.kind === "colour" && !choosingImage ? <ColourInput label={t`Colour`} value={background.colour} disabled={readOnly}
       onChange={(colour) => colour && onChange({ ...background, colour })} /> : null}
-    {background.kind === "gradient" && !choosingImage ? <div className="grid gap-2">
-      <SelectInput label={t`Gradient type`} value={background.type} disabled={readOnly}
-        options={[{ value: "linear", label: t`Linear` }, { value: "radial", label: t`Radial` }]}
-        onChange={(type) => onChange({ ...background, type })} />
-      {background.type === "linear" ? <NumberInput label={t`Angle`} unit="°" value={background.angle_deg} min={0} max={360} step={5}
-        disabled={readOnly} onChange={(angle_deg) => onChange({ ...background, angle_deg })} /> : null}
-      {background.stops.map((stop, index) => <div key={index} className="grid grid-cols-[1fr_5.5rem] items-end gap-2">
-        <ColourInput label={t`Stop ${index + 1}`} value={stop.colour} disabled={readOnly} onChange={(colour) => colour && onChange({
-          ...background, stops: background.stops.map((item, i) => (i === index ? { ...item, colour } : item)) })} />
-        <NumberInput label={t`At`} unit="%" value={stop.at} min={0} max={100} step={5} disabled={readOnly} onChange={(at) => onChange({
-          ...background, stops: background.stops.map((item, i) => (i === index ? { ...item, at } : item)) })} />
-      </div>)}
-      <div className="flex flex-wrap gap-2">
-        {background.stops.length < 4 ? <button type="button" className="desk-button-ghost min-h-11" disabled={readOnly}
-          onClick={() => onChange({ ...background, stops: [...background.stops, { colour: "#FFFFFF", at: 100 }] })}>{t`Add a stop`}</button> : null}
-        {background.stops.length > 2 ? <button type="button" className="desk-button-ghost min-h-11" disabled={readOnly}
-          onClick={() => onChange({ ...background, stops: background.stops.slice(0, -1) })}>{t`Remove the last stop`}</button> : null}
-      </div>
-    </div> : null}
+    {background.kind === "gradient" && !choosingImage ? <GradientEditor readOnly={readOnly} value={background}
+      onChange={(next) => onChange({ kind: "gradient", ...next })} /> : null}
     {choosingImage ? <div className="grid gap-1">
       <UploadButton designId={designId} kind="background" disabled={readOnly} label={t`Upload an image`}
         onUploaded={(asset_id, mean) => {
@@ -86,10 +73,23 @@ export function BackgroundPicker({ designId, background, onChange, onAssetColour
       <UploadButton designId={designId} kind="background" disabled={readOnly} label={t`Replace the image`}
         onUploaded={(asset_id, mean) => { onAssetColour(asset_id, mean); onChange({ ...background, asset_id, fallback: mean }); }} />
       <SelectInput label={t`Fit`} value={background.fit} disabled={readOnly}
-        options={[{ value: "cover", label: t`Fill the card` }, { value: "contain", label: t`Show the whole image` }]}
+        options={[{ value: "cover", label: t`Fill the card` }, { value: "contain", label: t`Show the whole image` },
+          { value: "stretch", label: t`Stretch to the card` }]}
         onChange={(fit) => onChange({ ...background, fit })} />
-      <NumberInput label={t`Darken`} unit="%" value={background.dim_pct} min={0} max={60} step={5} disabled={readOnly}
-        onChange={(dim_pct) => onChange({ ...background, dim_pct })} />
+      <div className="grid grid-cols-3 gap-2">
+        <NumberInput label={t`Zoom (crop)`} unit="×" value={background.zoom ?? 1} min={1} max={4} step={0.1} disabled={readOnly}
+          onChange={(zoom) => onChange({ ...background, zoom })} />
+        <NumberInput label={t`Focus across`} unit="%" value={background.focal_x_pct ?? 50} min={0} max={100} step={5} disabled={readOnly}
+          onChange={(focal_x_pct) => onChange({ ...background, focal_x_pct })} />
+        <NumberInput label={t`Focus down`} unit="%" value={background.focal_y_pct ?? 50} min={0} max={100} step={5} disabled={readOnly}
+          onChange={(focal_y_pct) => onChange({ ...background, focal_y_pct })} />
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <NumberInput label={t`Blur`} unit="mm" value={background.blur_mm ?? 0} min={0} max={8} step={0.5} disabled={readOnly}
+          onChange={(blur_mm) => onChange({ ...background, blur_mm })} />
+        <NumberInput label={t`Darken`} unit="%" value={background.dim_pct} min={0} max={80} step={5} disabled={readOnly}
+          onChange={(dim_pct) => onChange({ ...background, dim_pct })} />
+      </div>
     </div> : null}
   </div>;
 }
@@ -122,4 +122,17 @@ export function WatermarkPicker({ designId, watermark, onChange, onAssetColour, 
         onChange={(colour) => colour && onChange({ ...watermark, colour })} /> : null}
     </div> : null}
   </div>;
+}
+
+/** A gradient laid over the background and under the layers, with per-stop opacity (for text legibility on photos). */
+export function OverlayPicker({ overlay, onChange, readOnly }: {
+  overlay: Overlay | null | undefined; onChange: (overlay: Overlay | null) => void; readOnly: boolean;
+}) {
+  return <fieldset className="grid gap-2 rounded-control border border-line p-2" disabled={readOnly}>
+    <legend className="px-1 text-xs font-semibold text-muted">{t`Overlay`}</legend>
+    <Toggle label={t`Fade a colour over the background`} checked={Boolean(overlay)}
+      onChange={(on) => onChange(on ? { type: "linear", angle_deg: 180, stops: [
+        { colour: "#000000", at: 0, alpha_pct: 0 }, { colour: "#000000", at: 100, alpha_pct: 80 }] } : null)} />
+    {overlay ? <GradientEditor value={overlay} alpha readOnly={readOnly} onChange={onChange} /> : null}
+  </fieldset>;
 }

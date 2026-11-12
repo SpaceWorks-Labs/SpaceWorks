@@ -4,7 +4,8 @@ import { plural, t } from "@lingui/core/macro";
 import type { CardDocument, CardDomain, Layer, Side, SideName } from "./cardTypes";
 import { qrMinimum, SAFE_AREA_MM } from "./cardGeometry";
 import { layerContrast, MINIMUM_RATIO } from "./contrast";
-import { BARCODE_MIN_HEIGHT_MM, BARCODE_MIN_WIDTH_MM, layerName } from "./designDocument";
+import { barcodeMinimum, symbologyOf } from "./barcodes";
+import { layerName } from "./designDocument";
 
 export type Severity = "error" | "warn" | "info";
 export type Issue = { id: string; severity: Severity; side: SideName; layerId: string | null; message: string };
@@ -54,11 +55,11 @@ function checkSide(side: Side, name: SideName, stock: string, assetColours: Reco
       if (layer.rotation % 90 !== 0) add("qr-angle", "error", layer, t`${quote(layer)} must be square-on: turn it by right angles only.`);
     }
     if (layer.kind === "barcode") {
-      const minimum = BARCODE_MIN_WIDTH_MM[layer.source === "desk" ? "desk" : "number"];
+      const { w: minimum, h: minHeight } = barcodeMinimum(symbologyOf(layer), layer.source);
       if (minimum > side.page_width_mm - 2 * SAFE_AREA_MM) {
         add("barcode-card", "error", layer, t`This card is too narrow for ${quote(layer)}: it needs ${minimum} mm. Use a landscape or larger card.`);
-      } else if (layer.w_mm < minimum - 0.05 || layer.h_mm < BARCODE_MIN_HEIGHT_MM - 0.05) {
-        add("barcode-size", "error", layer, t`${quote(layer)} needs at least ${minimum} × ${BARCODE_MIN_HEIGHT_MM} mm for a scanner to read it.`);
+      } else if (layer.w_mm < minimum - 0.05 || layer.h_mm < minHeight - 0.05) {
+        add("barcode-size", "error", layer, t`${quote(layer)} needs at least ${minimum} × ${minHeight} mm for a scanner to read it.`);
       }
     }
   });

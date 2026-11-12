@@ -6,10 +6,11 @@ import { Eye, UserSearch } from "lucide-react";
 
 import { ErrorBlock } from "../ui/ErrorBlock";
 import { Modal } from "../ui/Modal";
-import { Skeleton } from "../ui/Skeleton";
 import type { CardDesign, CardDocument } from "./cardTypes";
 import { exactPreview, useHolders } from "./designerHistoryApi";
-import { filterHolders, previewLabel, type PreviewPerson } from "./previewPerson";
+import { filterHolders, isLongPerson, previewLabel, SAMPLE_PEOPLE, type PreviewPerson } from "./previewPerson";
+import { Toggle } from "./inspectorFields";
+import { LogoLoader } from "../LogoLoader";
 
 const option = (on: boolean) => `flex min-h-11 w-full items-center gap-3 rounded-control border px-2 py-2 text-left text-sm text-ink focus-visible:outline-2 focus-visible:outline-focus ${on ? "border-accent-ink bg-accent-soft" : "border-transparent hover:bg-hover"}`;
 const mark = (on: boolean) => <span aria-hidden="true" className={`grid h-5 w-5 shrink-0 place-items-center rounded-full border-2 ${on ? "border-accent-ink" : "border-line"}`}>
@@ -26,10 +27,10 @@ export function PreviewAsControl({ design, document, person, onPerson }: {
   const choose = (next: PreviewPerson) => { onPerson(next); setPicking(false); };
   const selectedHolder = person.kind === "holder" ? person.holder.id : null;
   return <>
-    <button type="button" className="desk-button min-h-11 max-w-full" onClick={() => setPicking(true)}>
+    <button type="button" className="desk-button min-h-11 max-w-[13rem]" onClick={() => setPicking(true)}>
       <UserSearch size={16} aria-hidden="true" /><span className="truncate">{t`Preview as: ${previewLabel(person)}`}</span></button>
     <button type="button" className="desk-button-ghost min-h-11" onClick={() => setExact(true)}>
-      <Eye size={16} aria-hidden="true" /> {t` Render exact preview`}</button>
+      <Eye size={16} aria-hidden="true" /> {t` Exact preview`}</button>
     <Modal open={picking} onClose={() => setPicking(false)} title={t`Preview as`}>
       <div className="grid gap-4">
         <div role="group" aria-labelledby="preview-as-samples" className="grid gap-1">
@@ -37,12 +38,20 @@ export function PreviewAsControl({ design, document, person, onPerson }: {
           {(["short", "long"] as const).map((kind) => <button key={kind} type="button" aria-pressed={person.kind === kind}
             className={option(person.kind === kind)} onClick={() => choose({ kind })}>
             {mark(person.kind === kind)}{previewLabel({ kind })}</button>)}
+          {SAMPLE_PEOPLE.map((sample) => {
+            const on = person.kind === "sample" && person.id === sample.id;
+            return <button key={sample.id} type="button" aria-pressed={on} className={option(on)}
+              onClick={() => choose({ kind: "sample", id: sample.id, long: person.kind === "sample" ? person.long : false })}>
+              {mark(on)}{sample.label}</button>;
+          })}
+          {person.kind === "sample" ? <Toggle label={t`Long form of the name`} checked={person.long}
+            onChange={(long) => onPerson({ ...person, long })} /> : null}
         </div>
         <div role="group" aria-labelledby="preview-as-people" className="grid gap-2">
           <h3 id="preview-as-people" className="mb-1 text-xs font-semibold text-muted">{t`People with a card from this design`}</h3>
           <input className="desk-input min-h-11" type="search" value={search} aria-label={t`Search by name or number`}
             placeholder={t`Search by name or number`} onChange={(event) => setSearch(event.target.value)} />
-          {holders.isLoading ? <Skeleton className="h-24 w-full" /> : null}
+          {holders.isLoading ? <LogoLoader size={48} className="min-h-24 py-3" /> : null}
           {holders.isError ? <ErrorBlock error={holders.error} resource={t`card holders`} onRetry={() => void holders.refetch()} /> : null}
           {holders.data && !holders.data.length ? <p className="text-sm text-muted">{t`No live cards use this design yet.`}</p> : null}
           {holders.data?.length && !rows.length ? <p className="text-sm text-muted">{t`No one matches “${search}”.`}</p> : null}
@@ -74,7 +83,7 @@ function ExactPreview({ design, document, person, onClose }: {
     const made: string[] = [];
     const sides: ("front" | "back")[] = document.back_enabled ? ["front", "back"] : ["front"];
     Promise.all(sides.map((side) => exactPreview(design.id, document, side,
-      { format: "png", longNames: person.kind === "long", holderId })
+      { format: "png", longNames: isLongPerson(person), holderId })
       .then((blob) => {
         const url = URL.createObjectURL(blob);
         if (live) made.push(url); else URL.revokeObjectURL(url);
@@ -90,7 +99,7 @@ function ExactPreview({ design, document, person, onClose }: {
     footer={<div className="flex justify-end"><button type="button" className="desk-button min-h-11" onClick={onClose}>{t`Close`}</button></div>}>
     <div className="grid gap-3">
       <p className="text-sm text-muted">{t`Drawn by the print engine for ${previewLabel(person)}, marked PREVIEW. Sensitive extras are never shown.`}</p>
-      {state.loading ? <Skeleton className="h-56 w-full" /> : null}
+      {state.loading ? <LogoLoader size={48} className="min-h-56 py-3" /> : null}
       {state.error ? <ErrorBlock error={state.error} resource={t`preview`} /> : null}
       <div className="grid gap-3 md:grid-cols-2">
         {state.urls.map(({ side, url }) => <figure key={side} className="grid gap-1">

@@ -5,9 +5,11 @@ import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { staffRequest } from "../../lib/api";
-import { Badge, ErrorBlock, Skeleton } from "../ui";
+import { Badge, ErrorBlock } from "../ui";
 import { NumberPatternFields } from "./NumberPatternFields";
 import { MEMBER_TOKENS, patternProblem } from "./numberPattern";
+import { LogoLoader } from "../LogoLoader";
+import { BoxArt } from "../BoxSpinner";
 
 type Scheme = { title_id: number | null; prefix: string; pattern: string; draft_prefix: string; draft_pattern: string;
   pending: boolean; published_at: string | null; preview: string[] };
@@ -28,7 +30,7 @@ export function NumberingPanel({ makerspaceId, titleId, canEdit }: { makerspaceI
       { method: "PUT", body: JSON.stringify(draft) }),
     onSuccess: () => client.invalidateQueries({ queryKey: key(makerspaceId) }),
   });
-  if (schemes.isLoading) return <Skeleton className="h-32 w-full" />;
+  if (schemes.isLoading) return <LogoLoader size={48} className="min-h-32 py-3" />;
   if (schemes.isError) return <ErrorBlock error={schemes.error} resource={t`card numbering`} onRetry={() => void schemes.refetch()} />;
   const changed = draft.prefix !== (scheme?.draft_prefix ?? "") || draft.pattern !== (scheme?.draft_pattern ?? "");
   const invalid = Boolean(patternProblem(draft.prefix, draft.pattern, MEMBER_TOKENS));
@@ -42,6 +44,6 @@ export function NumberingPanel({ makerspaceId, titleId, canEdit }: { makerspaceI
     {scheme && scheme.published_at && (scheme.prefix || scheme.pattern) ? <p className="text-xs text-muted">{t`Live now: ${scheme.pattern || "—"}`}</p> : null}
     {save.error ? <ErrorBlock error={save.error} /> : null}
     {canEdit ? <button type="button" className="desk-button-primary min-h-11 w-fit" disabled={!changed || invalid || save.isPending}
-      onClick={() => save.mutate()}>{save.isPending ? t`Saving…` : t`Save draft`}</button> : null}
+      onClick={() => save.mutate()}>{save.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Save draft`}</button> : null}
   </section>;
 }

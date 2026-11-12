@@ -1,6 +1,7 @@
 // Card fonts for the canvas, loaded from THIS app (never from Google): the bytes come
 // through the authenticated design route and are registered with the FontFace API.
 import { staffRequestBlob } from "../../lib/api";
+import { loadStudioFont, studioFont } from "./studioFonts";
 
 const loaded = new Map<string, Promise<boolean>>();
 
@@ -18,6 +19,7 @@ export function fontSlug(family: string) {
 }
 
 export function loadCardFont(designId: number, family: string, weight: number) {
+  if (studioFont(family)) return loadStudioFont(family);
   return loadCardFontWith(family, weight, (slug) => staffRequestBlob(`/admin/card-designs/${designId}/fonts/${slug}/${weight}`));
 }
 

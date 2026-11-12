@@ -13,8 +13,17 @@ export function useCardDesignQuery(id: number) {
   return useQuery({ queryKey: designKey(id), queryFn: () => staffRequest<CardDesign>(base(id)) });
 }
 
+/** Keys that only exist in document v3; a document that uses any of them is sent as version 3 (the server upgrades v1/v2 itself). */
+const V3_KEYS = ["guides", "kind", "overlay", "groups", "spans", "shadow", "highlight", "underline", "translations", "mask", "outline",
+  "variant", "fill_gradient", "zoom", "focal_x_pct", "signatory_slot", "slots", "ring_text", "cx_pct", "blur_mm"];
+export function needsV3(document: CardDocument) {
+  const text = JSON.stringify(document);
+  return document.version === 3 || V3_KEYS.some((key) => text.includes(`"${key}"`)) || /"fit":"stretch"|"shape":"(arch|circle|rounded)"/.test(text);
+}
+
 export function saveDesign(id: number, document: CardDocument, revision: number) {
-  return staffRequest<CardDesign>(base(id), { method: "PUT", body: JSON.stringify({ document, revision }) });
+  const body = needsV3(document) ? { ...document, version: 3 } : document;
+  return staffRequest<CardDesign>(base(id), { method: "PUT", body: JSON.stringify({ document: body, revision }) });
 }
 
 function useDesignAction(id: number, path: string) {

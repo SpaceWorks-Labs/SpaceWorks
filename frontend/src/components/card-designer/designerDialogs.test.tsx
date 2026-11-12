@@ -21,7 +21,7 @@ function wrap(node: ReactNode) {
 const design = { id: 1, domain: "member_cards", name: "Default", revision: 5, document: doc([layer()]) } as unknown as CardDesign;
 const body = (call: unknown[]) => JSON.parse(String((call[1] as RequestInit).body));
 
-beforeEach(() => { api.staffRequest.mockReset(); api.staffRequestBlob.mockReset(); });
+beforeEach(() => { api.staffRequest.mockReset(); api.staffRequestBlob.mockReset(); window.localStorage.setItem("spaceworks.card-studio-mode", "advanced"); });
 
 describe("template gallery", () => {
   const template = (key: string, label: string, theme: "light" | "dark"): CardTemplate => ({ key, label, theme,

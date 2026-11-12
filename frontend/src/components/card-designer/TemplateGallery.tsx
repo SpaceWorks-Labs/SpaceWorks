@@ -8,12 +8,12 @@ import { ConfirmDialog } from "../ui/ConfirmDialog";
 import { ErrorBlock } from "../ui/ErrorBlock";
 import { Modal } from "../ui/Modal";
 import { SegmentedControl } from "../ui/SegmentedControl";
-import { Skeleton } from "../ui/Skeleton";
 import type { CardDesign, CardTemplate } from "./cardTypes";
 import { fitInside } from "./canvasMath";
 import { CardThumbnail } from "./CardThumbnail";
 import { useResetDesign, useTemplates } from "./designerApi";
 import { useCardFonts } from "./useCardFonts";
+import { LogoLoader } from "../LogoLoader";
 
 const WIDE = "(min-width: 640px)";
 function useWide() {
@@ -54,8 +54,7 @@ export function TemplateGallery({ design, values, onAdopt, onError }: {
           <SegmentedControl label={t`Template colours`} value={theme} onChange={(value) => setTheme(value as "light" | "dark")}
             options={[{ value: "light", label: t`Light` }, { value: "dark", label: t`Dark` }]} />
         </div>
-        {templates.isLoading ? <div className="grid gap-3 sm:grid-cols-2">
-          {Array.from({ length: 4 }, (_v, index) => <Skeleton key={index} className="h-44 w-full" />)}</div> : null}
+        {templates.isLoading ? <LogoLoader size={48} className="min-h-44 py-3" /> : null}
         {templates.isError ? <ErrorBlock error={templates.error} resource={t`templates`} onRetry={() => void templates.refetch()} /> : null}
         {templates.data && !shown.length ? <p className="text-sm text-muted">{t`No ${theme} templates are available.`}</p> : null}
         <ul className="grid gap-3 sm:grid-cols-2" aria-label={theme === "light" ? t`Light templates` : t`Dark templates`}>

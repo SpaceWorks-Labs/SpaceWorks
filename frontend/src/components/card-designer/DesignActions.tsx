@@ -32,21 +32,21 @@ export function DesignActions({ design, saveStatus, saveError, canEdit, flush, o
     await action().catch(() => undefined);
   }
 
-  return <div className="grid gap-2" aria-label={t`Publishing`} role="group">
+  return <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1" aria-label={t`Publishing`} role="group">
     <div className="flex flex-wrap items-center gap-2 text-sm">
       <span className="rounded-full border border-line px-2 py-0.5 font-semibold text-ink">{STATUS_LABELS[design.status]}</span>
       <span aria-live="polite" className={saveStatus === "error" || saveStatus === "conflict" ? "text-danger" : "text-muted"}>
         {SAVE_STATUS_LABELS[saveStatus]}</span>
-      {design.published_at && !changed ? <span className="text-muted">{t`Cards use this version.`}</span> : null}
-      {design.published_at && changed ? <span className="text-muted">{t`Cards keep the last published version until you publish.`}</span> : null}
-      {!design.published_at ? <span className="text-muted">{t`Cards use the built-in design until you publish.`}</span> : null}
+      {design.published_at && !changed ? <span className="hidden text-muted min-[1800px]:inline">{t`Cards use this version.`}</span> : null}
+      {design.published_at && changed ? <span className="hidden text-muted min-[1800px]:inline">{t`Cards keep the last published version until you publish.`}</span> : null}
+      {!design.published_at ? <span className="hidden text-muted min-[1800px]:inline">{t`Cards use the built-in design until you publish.`}</span> : null}
     </div>
-    {saveStatus === "error" ? <p role="alert" className="text-sm text-danger">{saveError}
+    {saveStatus === "error" ? <p role="alert" className="basis-full text-sm text-danger">{saveError}
       {" "}<button type="button" className="underline" onClick={onRetry}>{t`Try again`}</button></p> : null}
-    {saveStatus === "conflict" ? <p role="alert" className="text-sm text-danger">{t`Someone else saved this design.${" "}`}<button type="button" className="underline" onClick={onReload}>{t`Load their version`}</button> {t` (your unsaved edits are dropped).`}</p> : null}
-    {pending ? <p className="text-sm text-muted">{t`Revision ${pending.revision} was submitted for approval${pending.note ? `: “${pending.note}”` : "."}`}</p> : null}
-    {sentBack ? <p className="text-sm text-warn-ink">{t`Revision ${sentBack.revision} was sent back${sentBack.note ? `: “${sentBack.note}”` : "."}`}</p> : null}
-    {failure ? <p role="alert" className="text-sm text-danger">{failure instanceof Error ? failure.message : t`That didn't work.`}</p> : null}
+    {saveStatus === "conflict" ? <p role="alert" className="basis-full text-sm text-danger">{t`Someone else saved this design.${" "}`}<button type="button" className="underline" onClick={onReload}>{t`Load their version`}</button> {t` (your unsaved edits are dropped).`}</p> : null}
+    {pending ? <p className="basis-full text-sm text-muted">{t`Revision ${pending.revision} was submitted for approval${pending.note ? `: “${pending.note}”` : "."}`}</p> : null}
+    {sentBack ? <p className="basis-full text-sm text-warn-ink">{t`Revision ${sentBack.revision} was sent back${sentBack.note ? `: “${sentBack.note}”` : "."}`}</p> : null}
+    {failure ? <p role="alert" className="basis-full text-sm text-danger">{failure instanceof Error ? failure.message : t`That didn't work.`}</p> : null}
     <div className="flex flex-wrap gap-2">
       {canEdit && !design.needs_approval ? <button type="button" className="desk-button-primary min-h-11" disabled={busy || saveStatus === "conflict"}
         onClick={() => void run(() => publish.mutateAsync({}))}>{t`Publish`}</button> : null}

@@ -1,15 +1,25 @@
 // Canvas maths kept out of the component so it can be tested: zoom sizing, pointer deltas in
 // millimetres, snapping a moved box (grid, guides, equal spacing) and proportional resizing.
 import { t } from "@lingui/core/macro";
-import type { Layer, Side } from "./cardTypes";
+import type { Guides, Layer, Side } from "./cardTypes";
 import { clamp, qrMinimum, round1, SAFE_AREA_MM, snap } from "./cardGeometry";
-import { BARCODE_MIN_HEIGHT_MM, BARCODE_MIN_WIDTH_MM } from "./designDocument";
+import { barcodeMinimum, symbologyOf } from "./barcodes";
 import { boundsOf, type Box, type Patches } from "./selection";
 
-export type Zoom = "fit" | 1 | 1.5 | 2;
-export const ZOOMS: { value: Zoom; label: string }[] = [
+export type Zoom = "fit" | number;
+export const ZOOM_RANGE = [0.5, 4] as const;
+/** The zoom presets (a function so the "Fit" label follows the language switch). */
+export const zoomPresets = (): { value: Zoom; label: string }[] => [
   { value: "fit", label: t`Fit` }, { value: 1, label: "100 %" }, { value: 1.5, label: "150 %" }, { value: 2, label: "200 %" },
 ];
+
+/** One keyboard zoom step (Ctrl/Cmd + plus or minus): 25 % at a time inside ZOOM_RANGE; "fit" counts as 100 %. */
+export function stepZoom(current: Zoom, to: "in" | "out" | "fit"): Zoom {
+  if (to === "fit") return "fit";
+  const now = current === "fit" ? 1 : current;
+  const next = to === "in" ? now * 1.25 : now / 1.25;
+  return Math.round(Math.min(ZOOM_RANGE[1], Math.max(ZOOM_RANGE[0], next)) * 100) / 100;
+}
 export const SNAP_THRESHOLD_MM = 1.2;
 
 export type Guide = { axis: "x" | "y"; at: number };
@@ -37,9 +47,15 @@ export function pointerToMm(clientX: number, clientY: number, rect: { left: numb
   return { x: (clientX - rect.left) / px, y: (clientY - rect.top) / px };
 }
 
-function guideLines(side: Side, exclude: Set<string>) {
-  const xs = [0, side.page_width_mm / 2, side.page_width_mm, SAFE_AREA_MM, side.page_width_mm - SAFE_AREA_MM];
-  const ys = [0, side.page_height_mm / 2, side.page_height_mm, SAFE_AREA_MM, side.page_height_mm - SAFE_AREA_MM];
+/** The editor-only guides a drag snaps to; absent keys take the document defaults (3 mm safe zone, no margin). */
+export type SnapGuides = Partial<Pick<Guides, "safe_mm" | "margin_mm" | "rulers">>;
+
+function guideLines(side: Side, exclude: Set<string>, guides: SnapGuides = {}) {
+  const w = side.page_width_mm, h = side.page_height_mm;
+  const insets = [guides.safe_mm ?? SAFE_AREA_MM, guides.margin_mm ?? 0].filter((inset) => inset > 0);
+  const xs = [0, w / 2, w, ...insets.flatMap((inset) => [inset, w - inset])];
+  const ys = [0, h / 2, h, ...insets.flatMap((inset) => [inset, h - inset])];
+  for (const ruler of guides.rulers ?? []) (ruler.axis === "x" ? xs : ys).push(ruler.at_mm);
   for (const other of side.layers) {
     if (exclude.has(other.id) || other.hidden) continue;
     xs.push(other.x_mm, other.x_mm + other.w_mm / 2, other.x_mm + other.w_mm);
@@ -48,9 +64,9 @@ function guideLines(side: Side, exclude: Set<string>) {
   return { xs, ys };
 }
 
-/** Snap a box's edges or centre to the card, the safe area and the other layers. */
-export function snapBox(side: Side, exclude: Set<string>, box: Box, threshold = SNAP_THRESHOLD_MM) {
-  const { xs, ys } = guideLines(side, exclude);
+/** Snap a box's edges or centre to the card, the safe zone and margin, ruler lines and the other layers. */
+export function snapBox(side: Side, exclude: Set<string>, box: Box, threshold = SNAP_THRESHOLD_MM, lines: SnapGuides = {}) {
+  const { xs, ys } = guideLines(side, exclude, lines);
   const guides: Guide[] = [];
   const pick = (start: number, size: number, lines: number[], axis: "x" | "y") => {
     for (const offset of [0, size / 2, size]) {
@@ -86,7 +102,8 @@ export function equalSpacing(side: Side, exclude: Set<string>, box: Box, thresho
 
 /** Move a selection from where the drag started: grid, then guides, then equal spacing (unless
  *  `free`, Alt held), clamped so the selection stays on the card. */
-export function moveSelection(side: Side, start: Layer[], dx: number, dy: number, options: { gridMm: number; free?: boolean }) {
+export function moveSelection(side: Side, start: Layer[], dx: number, dy: number,
+  options: { gridMm: number; free?: boolean; guides?: SnapGuides }) {
   const box = boundsOf(start);
   if (!box) return { patches: {} as Patches, guides: [] as Guide[], hints: [] as SpacingHint[], box: null };
   const exclude = new Set(start.map((layer) => layer.id));
@@ -94,7 +111,7 @@ export function moveSelection(side: Side, start: Layer[], dx: number, dy: number
   let guides: Guide[] = [], hints: SpacingHint[] = [];
   if (!options.free) {
     x = snap(x, options.gridMm); y = snap(y, options.gridMm);
-    const snapped = snapBox(side, exclude, { ...box, x, y });
+    const snapped = snapBox(side, exclude, { ...box, x, y }, SNAP_THRESHOLD_MM, options.guides);
     const spaced = equalSpacing(side, exclude, { ...box, x, y });
     guides = snapped.guides;
     if (snapped.x !== null) x = snapped.x; else if (spaced.x !== null) x = spaced.x;
@@ -114,8 +131,8 @@ const PROPORTIONAL = new Set(["photo", "image", "logo"]);
 export function minimumSize(layer: Layer, stock: string, side: Side) {
   if (layer.kind === "desk_qr" || layer.kind === "verify_qr") return { w: qrMinimum(stock), h: qrMinimum(stock) };
   if (layer.kind === "barcode") {
-    const width = BARCODE_MIN_WIDTH_MM[layer.source === "desk" ? "desk" : "number"];
-    return { w: Math.min(width, side.page_width_mm - layer.x_mm), h: BARCODE_MIN_HEIGHT_MM };
+    const min = barcodeMinimum(symbologyOf(layer), layer.source);
+    return { w: Math.min(min.w, side.page_width_mm - layer.x_mm), h: min.h };
   }
   return { w: 1, h: 0.5 };
 }

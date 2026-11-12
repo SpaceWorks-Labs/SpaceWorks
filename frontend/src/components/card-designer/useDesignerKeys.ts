@@ -6,10 +6,11 @@ import { useEffect, useRef, type RefObject } from "react";
 import { designerCommand, type DesignerCommand } from "./shortcuts";
 import type { DesignerEditing } from "./useDesignerEditing";
 
-type Handlers = { editing: DesignerEditing; selection: string[]; undo: () => void; redo: () => void; help: () => void };
+type Handlers = { editing: DesignerEditing; selection: string[]; undo: () => void; redo: () => void; help: () => void;
+  /** Zoom the canvas (Ctrl/Cmd + plus, minus, 0); absent where the view has no zoom. */ zoom?: (to: "in" | "out" | "fit") => void };
 
 /** Run one command; returns whether the designer used the key (so the browser default is cancelled). */
-export function runCommand(command: DesignerCommand, { editing, selection, undo, redo, help }: Handlers, onCanvas: boolean) {
+export function runCommand(command: DesignerCommand, { editing, selection, undo, redo, help, zoom }: Handlers, onCanvas: boolean) {
   const any = selection.length > 0;
   const edit = editing.canEdit;
   switch (command.type) {
@@ -29,6 +30,9 @@ export function runCommand(command: DesignerCommand, { editing, selection, undo,
     case "delete": if (edit && any) editing.remove(); return edit && any;
     case "nudge": if (!onCanvas || !edit || !any) return false; editing.nudge(command.dx, command.dy); return true;
     case "resize": if (!onCanvas || !edit || !any) return false; editing.resizeBy(command.dw, command.dh); return true;
+    case "stack": if (edit && any) editing.restack(command.op); return edit && any;
+    case "toggle": if (edit && any) editing.toggleFlag(command.flag); return edit && any;
+    case "zoom": if (!zoom) return false; zoom(command.to); return true;
   }
 }
 

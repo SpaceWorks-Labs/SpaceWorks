@@ -11,12 +11,13 @@ import { ConfirmDialog } from "../ui/ConfirmDialog";
 import { ErrorBlock } from "../ui/ErrorBlock";
 import { Pagination } from "../ui/Pagination";
 import { RelativeTime } from "../ui/RelativeTime";
-import { Skeleton } from "../ui/Skeleton";
 import type { CardDesign } from "./cardTypes";
 import { fitInside } from "./canvasMath";
 import { CardThumbnail } from "./CardThumbnail";
 import { designKey } from "./designerApi";
 import { restoreRevision, REVISIONS_PAGE_SIZE, revisionsKey, useRevision, useRevisions, type CardRevision } from "./designerHistoryApi";
+import { LogoLoader } from "../LogoLoader";
+import { VersionCompare } from "./VersionCompare";
 
 const REVIEW: Record<Exclude<CardRevision["review"], "">, { label: string; tone: "warn" | "success" | "danger" | "neutral" }> = {
   pending: { label: t`Waiting for approval`, tone: "warn" }, approved: { label: t`Approved`, tone: "success" },
@@ -31,6 +32,7 @@ export function HistoryPanel({ designId, canEdit, values, prepare, onRestored, o
   const [page, setPage] = useState(1);
   const [chosen, setChosen] = useState<number | null>(null);
   const [confirming, setConfirming] = useState(false);
+  const [comparing, setComparing] = useState<[number, number] | null>(null);
   const [pending, setPending] = useState(false);
   const [outcome, setOutcome] = useState<{ tone: "info" | "error" | "conflict"; text: string } | null>(null);
   const list = useRevisions(designId, page);
@@ -56,9 +58,10 @@ export function HistoryPanel({ designId, canEdit, values, prepare, onRestored, o
   }
 
   const document = detail.data?.document;
+  const current = rows.find((item) => item.is_current)?.revision ?? null;
   const thumb = document ? fitInside(220, 150, document.front.page_width_mm, document.front.page_height_mm) : 0;
   const preview = chosen !== null ? <div className="mt-1 grid gap-2 rounded-control border border-line bg-surface p-2" aria-live="polite">
-    {detail.isLoading ? <Skeleton className="h-32 w-full" /> : null}
+    {detail.isLoading ? <LogoLoader size={48} className="min-h-32 py-3" /> : null}
     {detail.isError ? <ErrorBlock error={detail.error} resource={t`this version`} onRetry={() => void detail.refetch()} /> : null}
     {document ? <div className="grid justify-items-center gap-2">
       <CardThumbnail side={document.front} designId={designId} values={values} mono={document.mono}
@@ -68,6 +71,8 @@ export function HistoryPanel({ designId, canEdit, values, prepare, onRestored, o
         watermark={document.watermark}
         width={thumb} label={t`Version ${chosen}, back`} /> : null}
     </div> : null}
+    {current !== null && chosen !== null && chosen !== current ? <button type="button" className="desk-button min-h-11"
+      onClick={() => setComparing([Math.min(chosen, current), Math.max(chosen, current)])}>{t`Compare with the current version`}</button> : null}
     {canEdit && row && !row.is_current ? <button type="button" className="desk-button-primary min-h-11" disabled={pending || !document}
       onClick={() => setConfirming(true)}>{t`Restore this version`}</button> : null}
     {row?.is_current ? <p className="text-xs text-muted">{t`This is the version you are editing.`}</p> : null}
@@ -81,7 +86,7 @@ export function HistoryPanel({ designId, canEdit, values, prepare, onRestored, o
       <button type="button" className="underline" onClick={onReload}>{t`Load their version`}</button> {t` (your unsaved edits are dropped).`}</p> : null}
     {outcome && outcome.tone !== "conflict" ? <p role={outcome.tone === "error" ? "alert" : "status"}
       className={`text-sm ${outcome.tone === "error" ? "text-danger" : "text-muted"}`}>{outcome.text}</p> : null}
-    {list.isLoading ? <Skeleton className="h-40 w-full" /> : null}
+    {list.isLoading ? <LogoLoader size={48} className="min-h-40 py-3" /> : null}
     {list.isError ? <ErrorBlock error={list.error} resource={t`version history`} onRetry={() => void list.refetch()} /> : null}
     {list.data && !rows.length ? <p className="text-sm text-muted">{t`No saved versions yet.`}</p> : null}
     <ul className="grid gap-1" aria-label={t`Versions, newest first`}>
@@ -101,6 +106,8 @@ export function HistoryPanel({ designId, canEdit, values, prepare, onRestored, o
     </ul>
     {list.data ? <Pagination page={page} totalPages={Math.ceil(list.data.count / REVISIONS_PAGE_SIZE)} count={list.data.count}
       pageSize={REVISIONS_PAGE_SIZE} disabled={list.isFetching} onChange={(next) => { setPage(next); setChosen(null); }} /> : null}
+    {comparing ? <VersionCompare designId={designId} older={comparing[0]} newer={comparing[1]} values={values}
+      onClose={() => setComparing(null)} /> : null}
     <ConfirmDialog open={confirming} title={t`Restore version ${chosen ?? ""}?`} confirmLabel={t`Restore as a draft`} pending={pending}
       message={t`It replaces what you are editing now as a new draft. Cards keep the published version until you publish.`}
       onCancel={() => setConfirming(false)} onConfirm={() => void restore()} />

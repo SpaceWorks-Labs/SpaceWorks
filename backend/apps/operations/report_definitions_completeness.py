@@ -47,7 +47,7 @@ COMPLETENESS_REPORT_DEFINITIONS = (
     _report("machine-jobs", "reports_completeness_ops", "build_machine_jobs", ops.JOB_FIELDS,
             gettext_noop("Machine jobs register"), ("machines", "machine_service"), A.MANAGE_MACHINES),
     _report("certification-holders", "reports_completeness_ops", "build_certification_holders", ops.HOLDER_FIELDS,
-            gettext_noop("Certification holders"), ("machines",), A.MANAGE_MACHINES, identity=True),
+            gettext_noop("Certification history (retired)"), ("machines",), A.MANAGE_MACHINES, identity=True),
     _report("roster-export", "reports_completeness_people", "build_roster_export", people.ROSTER_FIELDS,
             gettext_noop("Member roster"), ("membership",), A.MANAGE_MEMBERS, identity=True),
     _report("guest-passes-export", "reports_completeness_people", "build_guest_passes_export",

@@ -1,5 +1,6 @@
 """Exact undo contract; adapters own resource locks, eligibility and admission math."""
 
+from django.utils.translation import gettext
 from datetime import timedelta
 
 from rest_framework.exceptions import APIException
@@ -28,20 +29,20 @@ def restore_deadline(instance):
 def require_restorable(instance, *, now, cancelled_status, allowed_statuses,
                        has_charge=False, has_consumption=False, would_charge=False):
     if instance.status != cancelled_status:
-        raise RestoreRefused("not_cancelled", "Only a cancelled record can be restored.")
+        raise RestoreRefused("not_cancelled", gettext("Only a cancelled record can be restored."))
     if instance.status_before_cancel not in allowed_statuses or instance.cancelled_at is None:
-        raise RestoreRefused("missing_provenance", "This cancellation has no restorable prior state.")
+        raise RestoreRefused("missing_provenance", gettext("This cancellation has no restorable prior state."))
     if not instance.cancelled_at <= now < restore_deadline(instance):
-        raise RestoreRefused("window_expired", "The five-minute undo window has expired.")
+        raise RestoreRefused("window_expired", gettext("The five-minute undo window has expired."))
     if has_charge:
-        raise RestoreRefused("historical_charge", "A record with a historical charge cannot be restored.")
+        raise RestoreRefused("historical_charge", gettext("A record with a historical charge cannot be restored."))
     if has_consumption:
-        raise RestoreRefused("consumed_code", "Invite or promo consumption cannot be restored.")
+        raise RestoreRefused("consumed_code", gettext("Invite or promo consumption cannot be restored."))
     if would_charge:
-        raise RestoreRefused("charge_required", "Ordinary admission would require a charge.")
+        raise RestoreRefused("charge_required", gettext("Ordinary admission would require a charge."))
     return instance.status_before_cancel
 
 
 def require_exact_restore(previous, admitted):
     if previous != admitted:
-        raise RestoreRefused("admission_changed", "Current admission cannot restore the original status.")
+        raise RestoreRefused("admission_changed", gettext("Current admission cannot restore the original status."))

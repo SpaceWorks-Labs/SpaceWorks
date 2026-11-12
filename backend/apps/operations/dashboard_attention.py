@@ -10,6 +10,7 @@ Counts only, never rows; each item names a console tab plus filters the client t
 import logging
 from datetime import timedelta
 
+from django.db.models import Q
 from django.utils import timezone
 
 from apps.accounts import rbac
@@ -68,7 +69,7 @@ def lending(actor, space, now):
 def machines(actor, space, now):
     from apps.machines import role_scope
     from apps.machines.access_scoping import scope_machines_for_actor
-    from apps.machines.models import CertificationGrant, Machine, MachineServiceRequest
+    from apps.machines.models import Machine, MachineAccessGrant, MachineServiceRequest
 
     if not module_enabled(space, "machines"):
         return []
@@ -88,10 +89,11 @@ def machines(actor, space, now):
             schedules = MaintenanceSchedule.objects.filter(
                 machine__in=fleet, is_active=True, next_due__lt=to_local(space, now).date())
             out.append(item("maintenance_overdue", schedules.count(), "machines", work_queue="maintenance_overdue"))
-        soon = CertificationGrant.objects.filter(
-            certification_type__machine_type_id__in=fleet.values("machine_type_id"), revoked_at__isnull=True,
-            expires_at__gte=now, expires_at__lt=now + timedelta(days=30)).distinct()
-        out.append(item("certifications_expiring", soon.count(), "machines", expiring="30"))
+        soon = MachineAccessGrant.objects.filter(  # decision 319: machine access, not certifications
+            makerspace=space, revoked_at__isnull=True, expires_at__gte=now,
+            expires_at__lt=now + timedelta(days=30)).filter(
+            Q(machine__in=fleet) | Q(machine_type_id__in=fleet.values("machine_type_id"))).distinct()
+        out.append(item("machine_access_expiring", soon.count(), "machines", expiring="30"))
     out += _technician_items(actor, space)
     return out
 

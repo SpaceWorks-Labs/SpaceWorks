@@ -66,7 +66,7 @@ TASK_SOURCES = {
     # Backups, recovery, migration.
     **{A + "backup." + name: platform(_RECOVERY) for name in (
         "tasks.cleanup_expired_restore_rollbacks_task", "tasks.purge_expired_backup_archives_task",
-        "tasks.push_offsite_backups_task", "tasks.reconcile_backup_artifacts_task", "tasks.reencrypt_archives_task",
+        "tasks_offsite.push_offsite_backups_task", "tasks.reconcile_backup_artifacts_task", "tasks.reencrypt_archives_task",
         "tasks.run_restore_drill_task", "tasks.scheduled_deployment_backup_task", "tasks.scheduled_space_backups_task",
         "tasks_space_restore.resume_space_restores_task")},
     **{A + "tenant_migration.tasks." + name: platform(_MIGRATION) for name in (
@@ -103,6 +103,13 @@ TASK_SOURCES = {
     A + "machines.tasks_jobs.sweep_job_flow_task": gated("machines.job_requests"),
     A + "machines.tasks_sessions.sweep_machine_sessions_task": gated("machines.sessions"),
     A + "devices.tasks.scan_offline_devices_task": gated("devices"),
+    # Device Adapter API (decision 321; module audit 0.12.0). The safety and webhook sweeps skip a space
+    # whose `devices` module or `machines.integrations` switch is off (`adapter_access.adapters_enabled`);
+    # recording, artifact and telemetry retention keep deleting/thinning stored bytes whatever the switch says.
+    A + "devices.tasks.adapter_safety_sweep_task": gated(("devices", "machines.integrations")),
+    A + "devices.tasks.adapter_webhook_sweep_task": gated(("devices", "machines.integrations")),
+    A + "devices.tasks.adapter_media_sweep_task": platform("adapter telemetry and artifact byte retention must outlive the switch"),
+    A + "devices.tasks.purge_adapter_recordings_task": platform("camera recording retention must outlive the switch"),
     A + "presence.tasks.expire_presence_sessions_task": gated("presence"),
     # Events.
     A + "events.approval_digest.send_approval_digests_task": gated("events.approval_digest"),
@@ -165,4 +172,7 @@ TASK_SOURCES = {
         "superadmin platform announcements; not owned by any space switch (#185)"),
     A + "managed_hosting.tasks.sweep_managed_hosting_task": platform(
         "managed-hosting trials and billing, behind the deployment flag MANAGED_PLANS_ENABLED (#187A)"),
+    A + "managed_hosting.tasks.sweep_limit_thresholds_task": per_row(
+        "each space's notifications module (limit_notices.notify_threshold) and its tenant write gate; "
+        "a space with no limits is skipped (decision 328a)"),
 }

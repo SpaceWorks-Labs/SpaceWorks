@@ -24,7 +24,6 @@ REPORT_MODULE_COVERAGE = {
     "staff_admin": ModuleReportCoverage("health_row", ("module-operational-health",)),
     "guest_handover": ModuleReportCoverage("composite", ("loan-throughput",)),
     "scanner": ModuleReportCoverage("substantive", ("qr-scans", "module-operational-health")),
-    "printing": ModuleReportCoverage("substantive", ("printer-service",)),
     "telegram": ModuleReportCoverage("composite", ("communications-health",)),
     "evidence_uploads": ModuleReportCoverage("substantive", ("evidence-compliance",)),
     "qr_management": ModuleReportCoverage("composite", ("inventory-control",)),
@@ -37,7 +36,8 @@ REPORT_MODULE_COVERAGE = {
     "asset_units": ModuleReportCoverage("composite", ("inventory-control",)),
     "procurement": ModuleReportCoverage("substantive", ("procurement-performance",)),
     "machines": ModuleReportCoverage("substantive", ("machine-usage", "module-operational-health")),
-    "machine_service": ModuleReportCoverage("substantive", ("machine-service",)),
+    # The printer report moved here with the retired `printing` module (decision 340b).
+    "machine_service": ModuleReportCoverage("substantive", ("machine-service", "printer-service")),
     "events": ModuleReportCoverage("substantive", ("event-attendance",)),
     "event_reimbursements": ModuleReportCoverage("health_row", ("module-operational-health",)),
     "bookings": ModuleReportCoverage("substantive", ("booking-utilization",)),
@@ -74,7 +74,7 @@ _MACHINE_AREA_REPORT_KEYS = (
     "machine-usage", "machine-usage-members", "machine-usage-heatmap", "machine-downtime",
     "maintenance-activity", "machine-service", "service-queue-times", "printer-jobs", "machine-errors", "warranty-expiry",
 )
-for _module in ("machines", "machine_service", "printing", "maintenance"):
+for _module in ("machines", "machine_service", "maintenance"):
     _coverage = REPORT_MODULE_COVERAGE[_module]
     REPORT_MODULE_COVERAGE[_module] = ModuleReportCoverage(_coverage.kind, tuple(dict.fromkeys((*_coverage.reports, *_MACHINE_AREA_REPORT_KEYS))))
 
@@ -121,6 +121,19 @@ REPORT_MODULE_COVERAGE["machines"] = ModuleReportCoverage(REPORT_MODULE_COVERAGE
 REPORT_MODULE_COVERAGE["membership"] = ModuleReportCoverage("substantive", (
     *REPORT_MODULE_COVERAGE["membership"].reports, "roster-export", "guest-passes-export", "volunteer-hours-export",
     "minors-consent-export"))
+
+
+# Release 0.12 (decision 327): the 0.12 areas and the reports module report on themselves.
+for _module, _keys, _kind in (
+    ("devices", ("device-adapter-activity",), "substantive"),
+    ("machines", ("machine-access-grants", "machine-use-by-event", "event-machine-use"), None),  # 342
+    ("membership", ("card-studio-activity",), None),
+    ("events", ("event-certificates-issued",), None),
+    ("reports", ("report-usage",), "substantive"),
+    ("platform", ("platform-profile-adoption",), None),
+):
+    _coverage = REPORT_MODULE_COVERAGE[_module]
+    REPORT_MODULE_COVERAGE[_module] = ModuleReportCoverage(_kind or _coverage.kind, (*_coverage.reports, *_keys))
 
 
 @checks.register(checks.Tags.models)

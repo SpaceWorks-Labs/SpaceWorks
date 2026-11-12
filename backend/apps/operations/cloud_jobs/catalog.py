@@ -54,7 +54,7 @@ LEGACY_ENTRIES = (
     ("scheduled-space-backups", "apps.backup.tasks.scheduled_space_backups_task", 10),
     ("resume-space-restores", "apps.backup.tasks_space_restore.resume_space_restores_task", 5),
     ("reconcile-backup-artifacts", "apps.backup.tasks.reconcile_backup_artifacts_task", 5),
-    ("push-offsite-backups", "apps.backup.tasks.push_offsite_backups_task", 5),
+    ("push-offsite-backups", "apps.backup.tasks_offsite.push_offsite_backups_task", 5),
     ("purge-expired-backup-archives", "apps.backup.tasks.purge_expired_backup_archives_task", 1440),
     ("cleanup-expired-restore-rollbacks", "apps.backup.tasks.cleanup_expired_restore_rollbacks_task", 1440),
     ("cleanup-expired-tenant-import-jobs", "apps.tenant_migration.tasks.cleanup_expired_import_jobs_task", 60),
@@ -128,6 +128,12 @@ LEGACY_ENTRIES = (
     ("space-control-schedules", "apps.space_controls.tasks.run_space_schedules_task", 60),
     ("platform-announcement-emails", "apps.space_controls.tasks.send_announcement_emails_task", 5),
     ("managed-hosting-sweep", "apps.managed_hosting.tasks.sweep_managed_hosting_task", 60),
+    ("limit-threshold-sweep", "apps.managed_hosting.tasks.sweep_limit_thresholds_task", 30),  # decision 328a
+    # Device Adapter API (decisions 312, 321): the managed DatabaseScheduler dispatches only catalogue rows.
+    ("adapter-safety-sweep", "apps.devices.tasks.adapter_safety_sweep_task", 1),
+    ("adapter-webhook-sweep", "apps.devices.tasks.adapter_webhook_sweep_task", 1),
+    ("adapter-media-sweep", "apps.devices.tasks.adapter_media_sweep_task", 10),
+    ("purge-adapter-recordings", "apps.devices.tasks.purge_adapter_recordings_task", 1440),
 )
 _RETAINED = frozenset({
     "evidence-object-expiry", "evidence-abandoned-upload-cleanup",

@@ -45,10 +45,12 @@ from apps.operations.views_report_helpers import (
     _require_source_modules,
     _require_superadmin,
 )
+from .report_retired import newly_schedulable
 from .report_render_throttles import ReportRenderThrottle
 from .report_download import _export_response
 from .report_definitions_machines import MACHINE_REPORT_KEYS
 from config.locale_resolution import display
+from .report_groups import catalog_group_fields
 
 
 ERROR_RESPONSES = {
@@ -290,6 +292,7 @@ def _catalog_entry(definition, *, available, reason):
         "chart_spec": definition.chart_spec, "identity_bearing": definition.identity_bearing,
         "aggregate_supported": definition.key in STRATEGIES,
         "allowed_formats": list(definition.allowed_formats),
-        "schedulable": definition.schedulable, "previewable": definition.previewable,
+        "schedulable": newly_schedulable(definition), "previewable": definition.previewable,
         "condition_metrics": list(condition_metrics(definition)),
+        **catalog_group_fields(definition),
     }

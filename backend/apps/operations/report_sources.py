@@ -54,6 +54,9 @@ def definition_live(makerspace, definition):
 
     if definition.required_feature and not feature_enabled(makerspace, definition.required_feature):
         return False
+    from .report_retired import retired_report_listed
+    if not retired_report_listed(makerspace, definition):  # decision 329: history-only reports
+        return False
     return all(source_enabled(makerspace, key) for key in definition.required_modules)
 
 

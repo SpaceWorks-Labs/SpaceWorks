@@ -51,7 +51,7 @@ MACHINE_REPORT_DEFINITIONS = (
                 _chart("period", (("failure_rate", "percent"),), ("machine_id",)), version=2, grains=GRAINS),
     _definition("service-queue-times", "reports_machine_queue.build_service_queue_times", QUEUE_FIELDS, ("machines", "machine_service"), "line",
                 _chart("period", (("median_minutes", "minutes"), ("p90_minutes", "minutes"), ("p95_minutes", "minutes")), ("queue_id", "bucket_id", "stage")), grains=GRAINS),
-    _definition("printer-jobs", "reports_machine_health.build_printer_jobs", PRINTER_FIELDS, ("machines", "printing", "devices"), "stacked_bar",
+    _definition("printer-jobs", "reports_machine_health.build_printer_jobs", PRINTER_FIELDS, ("machines", "machine_service", "devices"), "stacked_bar",
                 _chart("period", (("job_count", "jobs"),), ("machine_id", "state", "outcome")), grains=GRAINS),
     _definition("machine-errors", "reports_machine_health.build_machine_errors", ERROR_FIELDS, ("machines",), "stacked_bar",
                 _chart("period", (("error_count", "errors"),), ("machine_id", "severity")), grains=GRAINS),
@@ -61,6 +61,12 @@ MACHINE_REPORT_DEFINITIONS = (
 # Lane L23: machine-session reports ride the machine family (actor forwarded, machine scope).
 from .report_definitions_machine_sessions import SESSION_REPORT_DEFINITIONS  # noqa: E402
 MACHINE_REPORT_DEFINITIONS += SESSION_REPORT_DEFINITIONS
+# Decision 342: machine use logged with an event (counts per event; one event's rows).
+from .report_definitions_machine_event import MACHINE_EVENT_REPORT_DEFINITIONS  # noqa: E402
+MACHINE_REPORT_DEFINITIONS += MACHINE_EVENT_REPORT_DEFINITIONS
+# Decision 341: consumables per machine type, by the type's profile.
+from .report_definitions_machine_consumables import MACHINE_CONSUMABLE_REPORT_DEFINITIONS  # noqa: E402
+MACHINE_REPORT_DEFINITIONS += MACHINE_CONSUMABLE_REPORT_DEFINITIONS
 MACHINE_REPORT_KEYS = frozenset(d.key for d in MACHINE_REPORT_DEFINITIONS)
 
 for _key, _combine in COMBINERS.items():

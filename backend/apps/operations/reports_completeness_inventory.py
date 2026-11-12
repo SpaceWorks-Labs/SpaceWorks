@@ -86,7 +86,7 @@ def build_overdue_by_borrower(makerspace_id, *, limit=None, date_range=None, act
     requests = HardwareRequest.objects.filter(
         makerspace_id=makerspace_id, status__in=("issued", "partially_returned"), return_due_at__lt=now,
         public_tool_loan__isnull=True).select_related("requester").prefetch_related("items")
-    for request in requests.iterator():
+    for request in requests.iterator(chunk_size=500):
         if request.requester_id in principals:
             continue
         add(("u", request.requester_id), requester_label(request), request.return_due_at,

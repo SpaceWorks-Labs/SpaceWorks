@@ -168,6 +168,10 @@ class ReportScheduleSerializer(serializers.ModelSerializer):
             raise ReportNotFound()
         if definition is None:
             raise serializers.ValidationError({"report_key": gettext("Report is unavailable on this deployment.")})
+        from .report_retired import RETIRED_REPORT_KEYS
+        if report_key in RETIRED_REPORT_KEYS and (current is None or current.report_key != report_key):
+            # Decision 329: history only. A schedule that already exists keeps running; no new one.
+            raise serializers.ValidationError({"report_key": gettext("This report is retired and cannot be newly scheduled.")})
         filters = attrs.get("filters", getattr(current, "filters", {}))
         from .report_subjects import reject_aggregate
         reject_aggregate(filters)

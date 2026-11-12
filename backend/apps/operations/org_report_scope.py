@@ -52,6 +52,8 @@ EXCLUDED_ORGANIZATION_REPORT_KEYS = frozenset({
     "booking-resource-utilization", "booking-resource-utilization-pdf", "booking-reservations", "booking-answers",
     "event-registrations", "event-feedback", "event-attendance-pdf", "event-orders",
     "event-equipment", "booking-equipment", "event-loan-timeline", "booking-loan-timeline",
+    # Loan hours and loss cost per purpose are per-space calendars and currencies: no honest combined total.
+    "loan-purpose-summary",
     # One activity's consumable use is tenant-local stock and price context.
     "event-consumables", "booking-consumables",
     # Financial detail and accounting custody stay tenant-local. Different local
@@ -108,6 +110,10 @@ from apps.operations.report_definitions_membership_l4 import L4_MEMBERSHIP_REPOR
 EXCLUDED_ORGANIZATION_REPORT_KEYS = EXCLUDED_ORGANIZATION_REPORT_KEYS | L4_MEMBERSHIP_REPORT_KEYS
 from apps.operations.report_definitions_machine_sessions import SESSION_REPORT_KEYS  # noqa: E402
 EXCLUDED_ORGANIZATION_REPORT_KEYS = EXCLUDED_ORGANIZATION_REPORT_KEYS | SESSION_REPORT_KEYS
+from apps.operations.report_definitions_machine_event import MACHINE_EVENT_REPORT_KEYS  # noqa: E402
+EXCLUDED_ORGANIZATION_REPORT_KEYS = EXCLUDED_ORGANIZATION_REPORT_KEYS | MACHINE_EVENT_REPORT_KEYS
+from apps.operations.report_definitions_machine_consumables import MACHINE_CONSUMABLE_REPORT_KEYS  # noqa: E402
+EXCLUDED_ORGANIZATION_REPORT_KEYS = EXCLUDED_ORGANIZATION_REPORT_KEYS | MACHINE_CONSUMABLE_REPORT_KEYS
 # Release 2 L3: the member-card issuance tile is tenant-local.
 from apps.operations.report_definitions_cards import CARD_REPORT_KEYS  # noqa: E402
 EXCLUDED_ORGANIZATION_REPORT_KEYS = EXCLUDED_ORGANIZATION_REPORT_KEYS | CARD_REPORT_KEYS
@@ -119,6 +125,10 @@ EXCLUDED_ORGANIZATION_REPORT_KEYS = EXCLUDED_ORGANIZATION_REPORT_KEYS | REPAIRS_
 # (each space's own causes, calendar and sponsors); never combined across an organization.
 from apps.operations.report_definitions_donations import DONATION_REPORT_KEYS  # noqa: E402
 EXCLUDED_ORGANIZATION_REPORT_KEYS = EXCLUDED_ORGANIZATION_REPORT_KEYS | DONATION_REPORT_KEYS | {"finance-donations"}
+# Release 0.12 (decision 327): device adapters, machine grants, card studio, event certificates,
+# report usage and the profile roll-up are per-space counts (or account-level) and never combine.
+from apps.operations.report_definitions_r2_final import R2_FINAL_REPORT_KEYS  # noqa: E402
+EXCLUDED_ORGANIZATION_REPORT_KEYS = EXCLUDED_ORGANIZATION_REPORT_KEYS | R2_FINAL_REPORT_KEYS
 # L5 finance books (area ledgers, FY bookkeeping, GST returns and the documents register) are
 # per-space accounts with their own numbering and tax registration; they never combine across
 # an organization. The L22 shop money and sales are per space too.

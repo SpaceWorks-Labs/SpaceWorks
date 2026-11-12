@@ -22,6 +22,7 @@ from apps.operations.report_definitions_repairs import REPAIRS_ACTOR_REPORT_KEYS
 from apps.operations.report_definitions_loan_context import LOAN_CONTEXT_REPORT_KEYS
 from apps.operations.report_definitions_audit import AUDIT_VIEWER_REPORT_KEYS
 from apps.operations.report_definitions_completeness import COMPLETENESS_ACTOR_REPORT_KEYS
+from apps.operations.report_definitions_org_parity import ORG_PARITY_REPORT_KEYS
 from apps.payments.money import money_text
 
 
@@ -49,10 +50,12 @@ def report_data(
         kwargs["actor"] = actor
     if report_key in {"member-retention", "membership-revenue", "membership-growth", "payments-ageing", "revenue-over-time", "cash-book", "payment-reconciliation", "refunds"}:
         kwargs["actor"] = actor
+    if report_key in ORG_PARITY_REPORT_KEYS:
+        kwargs["actor"] = actor  # O-B3: unit-scoped actors read their own subtree / own in-scope cash only
     if report_key in L5_ACTOR_REPORT_KEYS or report_key in REPAIRS_ACTOR_REPORT_KEYS or report_key in LOAN_CONTEXT_REPORT_KEYS or report_key in COMPLETENESS_ACTOR_REPORT_KEYS:
         kwargs["actor"] = actor
     from .report_definitions_machines import MACHINE_REPORT_KEYS
-    if report_key in MACHINE_REPORT_KEYS or report_key in {"consumable-usage", "consumable-pools", "procurement-performance", "overdue-loans", "longest-loans", "qr-scan-actors", "certification-coverage", "printer-service", "fablab-health", "machine-service"}:
+    if report_key in MACHINE_REPORT_KEYS or report_key in {"consumable-usage", "consumable-pools", "procurement-performance", "overdue-loans", "longest-loans", "qr-scan-actors", "certification-coverage", "printer-service", "fablab-health", "machine-service", "machine-access-grants", "device-adapter-activity"}:
         kwargs["actor"] = actor
     if definition.summary and makerspace_id is None:
         kwargs["limit"] = None  # Totals must include every eligible tenant.
@@ -115,7 +118,7 @@ def report_rows(
     if report_key in L5_ACTOR_REPORT_KEYS or report_key in REPAIRS_ACTOR_REPORT_KEYS or report_key in LOAN_CONTEXT_REPORT_KEYS or report_key in COMPLETENESS_ACTOR_REPORT_KEYS:
         kwargs["actor"] = actor
     from .report_definitions_machines import MACHINE_REPORT_KEYS
-    if report_key in MACHINE_REPORT_KEYS or report_key in {"consumable-usage", "consumable-pools", "procurement-performance", "overdue-loans", "longest-loans", "qr-scan-actors", "certification-coverage", "printer-service", "fablab-health", "machine-service"}:
+    if report_key in MACHINE_REPORT_KEYS or report_key in {"consumable-usage", "consumable-pools", "procurement-performance", "overdue-loans", "longest-loans", "qr-scan-actors", "certification-coverage", "printer-service", "fablab-health", "machine-service", "machine-access-grants", "device-adapter-activity"}:
         kwargs["actor"] = actor
     if definition.grains:
         kwargs["grain"] = grain

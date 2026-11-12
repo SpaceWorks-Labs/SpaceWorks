@@ -57,7 +57,7 @@ def _celery_queue_lengths():
         return []
     queue = getattr(settings, "CELERY_TASK_DEFAULT_QUEUE", None) or "celery"
     try:
-        client = redis.Redis.from_url(settings.CELERY_BROKER_URL, socket_timeout=1)
+        client = redis.Redis.from_url(settings.CELERY_BROKER_URL, socket_timeout=1, socket_connect_timeout=1)
         return [({"queue": queue}, int(client.llen(queue)))]
     except Exception:  # broker unreachable: report nothing rather than fail the scrape
         return []

@@ -10,6 +10,7 @@ from django.utils.translation import gettext_noop
 from apps.accounts import rbac
 from apps.operations.report_definitions_finance_l5 import LEDGER_CHART
 from apps.operations.report_types import ReportDefinition
+from apps.operations.report_charts_remaining import table
 from apps.operations.reports_de_common import chart
 from apps.operations.reports_shop import FIELDS as SALES_FIELDS
 from apps.operations.reports_shop_products import SALES_FIELDS as PRODUCT_FIELDS, STOCK_FIELDS
@@ -29,8 +30,9 @@ SHOP_REPORT_DEFINITIONS = (
     ReportDefinition("shop-product-sales", "apps.operations.reports_shop_products.build_shop_product_sales",
                      PRODUCT_FIELDS, ("shop",), required_action=rbac.Action.MANAGE_SHOP,
                      title=gettext_noop("Shop sales by product and month"), deployment_aggregate=False,
-                     schedulable=False),
+                     schedulable=False, chart_hint="table", chart_spec=table("month")),
     ReportDefinition("shop-stock-value", "apps.operations.reports_shop_products.build_shop_stock_value",
                      STOCK_FIELDS, ("shop",), required_action=rbac.Action.MANAGE_SHOP,
-                     title=gettext_noop("Shop stock value"), deployment_aggregate=False, schedulable=False),
+                     title=gettext_noop("Shop stock value"), deployment_aggregate=False, schedulable=False,
+                     chart_hint="table", chart_spec=table("product")),
 )

@@ -2,6 +2,7 @@
 from decimal import Decimal
 
 from apps.hardware_requests.models import HardwareRequest
+from apps.inventory.availability_projections import outstanding_units, reserved_units
 from .reports_ab_common import calendar_range
 from .reports_common import apply_range
 
@@ -11,6 +12,16 @@ METRIC_FIELDS = (
     "issued_units", "returned_units", "damaged_units", "missing_units",
     "overdue_count", "loan_hours",
 )
+
+
+# Quantities come from the workflow counters through inventory's own projections (Inventory
+# Availability owns all quantity math); this module only adds them up per request.
+QUANTITY_FIELDS = ("requested_units", "reserved_units", "outstanding_units")
+
+
+def utilisation(issued, requested):
+    """Share of the units asked for that were actually lent; blank when nothing was asked for."""
+    return round(issued / requested, 4) if requested else None
 
 
 def issued_cohort(rows, space, date_range):
@@ -29,6 +40,10 @@ def loan_metrics(request, now):
     items = list(request.items.all())
     metrics = {field: sum(getattr(item, field.replace("_units", "_quantity")) for item in items)
                for field in METRIC_FIELDS[:4]}
+    metrics["requested_units"] = sum(item.requested_quantity for item in items)
+    metrics["reserved_units"] = reserved_units(request)
+    metrics["outstanding_units"] = outstanding_units(request)
+    metrics["utilisation"] = utilisation(metrics["issued_units"], metrics["requested_units"])
     due = request.return_due_at
     metrics["overdue_count"] = int(request.status in OUTSTANDING and due is not None and due < now)
     end = request.closed_at if request.status in CLOSED and request.closed_at else now

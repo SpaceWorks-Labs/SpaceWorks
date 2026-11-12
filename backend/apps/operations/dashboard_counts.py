@@ -139,11 +139,9 @@ def build_dashboard(
             counts.update(stock_health_counts(actor, makerspace))
         except Exception as exc:
             _failed(counts, "inventory", makerspace, exc)
-    # Print tiles are `printing` data: a space without the module shows zeros, exactly as
-    # the maintenance tile below does without `maintenance`.
-    jobs_on = module_enabled(makerspace, "printing") or (
-        module_enabled(makerspace, "machines") and module_enabled(makerspace, "machine_service")
-    )
+    # Print tiles are machine-service data (the retired `printing` module folded in, 340b):
+    # a space without it shows zeros, as the maintenance tile below does without maintenance.
+    jobs_on = module_enabled(makerspace, "machine_service")
     if include_machines and jobs_on:
         try:
             from apps.machines.models import MachineServiceRequest

@@ -14,6 +14,8 @@ from apps.operations.services_transfer_splits import move_quantity_stock
 
 def apply_stock_transfer(actor, makerspace, data):
     with transaction.atomic():
+        from apps.managed_hosting.extra_quotas import check_extra_quota_locked
+        check_extra_quota_locked(makerspace, "stock_transfers_monthly")  # decision 328a: refuses only a NEW transfer
         destination_makerspace_id = data.get("destination_makerspace_id") or makerspace.id
         is_cross = destination_makerspace_id != makerspace.id
         source = _container(data.get("source_container_id"), makerspace.id)

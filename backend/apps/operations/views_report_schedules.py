@@ -1,4 +1,5 @@
 from django.utils.translation import gettext
+from django.db import transaction
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
@@ -106,11 +107,14 @@ class ReportScheduleListCreateView(generics.ListCreateAPIView):
         require_action(self.request.user, definition.required_action, makerspace.id)
         if is_payout_report(definition):  # 224(c): a token must not schedule payee money out
             require_full_session(self.request)
-        schedule = serializer.save(makerspace=makerspace, created_by=self.request.user)
-        audit.record(
-            self.request.user, "report_schedule.created", makerspace=makerspace, target=schedule,
-            meta={"schedule_id": schedule.pk, "report_key": schedule.report_key},
-        )
+        from apps.managed_hosting.extra_quotas import check_extra_quota_locked
+        with transaction.atomic():
+            check_extra_quota_locked(makerspace, "scheduled_reports")  # decision 328a: refuses only a NEW schedule
+            schedule = serializer.save(makerspace=makerspace, created_by=self.request.user)
+            audit.record(
+                self.request.user, "report_schedule.created", makerspace=makerspace, target=schedule,
+                meta={"schedule_id": schedule.pk, "report_key": schedule.report_key},
+            )
 
 
 class ReportScheduleDetailView(APIView):

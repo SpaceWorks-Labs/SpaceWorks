@@ -15,7 +15,7 @@ _ROWS = (
     (("bulk_import",), ("import-quality",)),
     (("stocktake", "stock_transfers", "procurement"),
      ("stocktake-variance", "stock-transfers", "procurement-performance", "stock-health", "inventory-watch-demand")),
-    (("machines", "machine_service", "printing", "maintenance"),
+    (("machines", "machine_service", "maintenance"),
      ("machine-usage", "machine-usage-members", "machine-usage-heatmap", "machine-downtime",
       "maintenance-activity", "machine-service", "service-queue-times", "printer-jobs",
       "machine-errors", "consumable-usage", "consumable-pools", "warranty-expiry")),

@@ -28,7 +28,7 @@ def build_machine_errors(makerspace_id, *, limit=None, date_range=None, grain="d
 def build_printer_jobs(makerspace_id, *, limit=None, date_range=None, grain="day", actor=None):
     from apps.devices.models import PrinterJob
     rows = []
-    for space, scope in spaces(makerspace_id, ("machines", "printing", "devices"), actor):
+    for space, scope in spaces(makerspace_id, ("machines", "machine_service", "devices"), actor):
         qs = apply_range(PrinterJob.objects.filter(makerspace_id__in=space_ids(space), machine__in=machines(space, scope)), "created_at", date_range)
         for row in qs.order_by().annotate(period=period_expression("created_at", grain, makerspace=space)).values(
             "makerspace_id", "period", "machine_id", "machine__name", "machine__machine_type__name", "state", "outcome",

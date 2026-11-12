@@ -20,6 +20,9 @@ class ReportCatalogItemSerializer(serializers.Serializer):
     schedulable = serializers.BooleanField()
     previewable = serializers.BooleanField()
     condition_metrics = serializers.ListField(child=serializers.CharField())
+    group = serializers.CharField(required=False, help_text="Module group key the report reads under (or `platform`).")
+    group_label = serializers.CharField(required=False)
+    group_order = serializers.IntegerField(required=False, help_text="Position of the group in the module-switch order.")
 
 
 class ReportCatalogSerializer(serializers.Serializer):

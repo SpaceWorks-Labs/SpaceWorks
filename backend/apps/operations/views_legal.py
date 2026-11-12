@@ -58,8 +58,11 @@ class PublicLegalPageView(APIView):
         slug = _slug(page)
         raw = request.query_params.get("space", "")
         space = get_public_makerspace(raw) if raw else None
-        return Response(LegalPageSerializer(legal_pages.resolve(slug, makerspace=space)).data,
-                        headers={"Cache-Control": "public, max-age=300"})
+        page = legal_pages.resolve(slug, makerspace=space)
+        if slug == "privacy" and space is not None:  # decision 345(b): the card-photo eraser notice, while it can run
+            from apps.card_designs.eraser_notice import privacy_section
+            page = {**page, "markdown": page["markdown"] + privacy_section(space)}
+        return Response(LegalPageSerializer(page).data, headers={"Cache-Control": "public, max-age=300"})
 
 
 class PlatformLegalPageView(APIView):

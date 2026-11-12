@@ -72,6 +72,7 @@ class TickErrorSerializer(serializers.Serializer):
 class FreeTickView(APIView):
     authentication_classes = ()
     permission_classes = (AllowAny,)
+    throttle_classes = ()
     # The PostgreSQL counters below are the authoritative rate limits. No DRF
     # cache throttle is used as either the task lock or a permissive fallback.
     http_method_names = ("post",)

@@ -11,7 +11,7 @@ from .report_types import ReportDefinition
 from .report_definitions_existing import EXISTING_REPORT_DEFINITIONS
 from .reports_events_money import PDF_FIELDS as EVENT_PDF_FIELDS
 from .reports_event_orders import ORDER_FIELDS
-from .report_charts_remaining import REGISTRATIONS_CHART, FEEDBACK_CHART, ATTENDANCE_PDF_CHART
+from .report_charts_remaining import REGISTRATIONS_CHART, FEEDBACK_CHART, ATTENDANCE_PDF_CHART, table
 
 # Lane L21a appends the crew flag and the "still coming?" reply (X43).
 REGISTRATION_FIELDS = ("registration_id", "name", "email", "phone", "status", "created_at", "answers",
@@ -32,7 +32,7 @@ EVENT_REPORT_DEFINITIONS = (
     ReportDefinition("event-orders", "apps.operations.reports_event_orders.build_event_orders",
                      ORDER_FIELDS, ("events",), required_action=rbac.Action.MANAGE_EVENTS, title=gettext_noop("Event orders export"), subject_kind="event",
                      required_feature="reports.event_exports", allowed_formats=("csv",), schedulable=False,
-                     deployment_aggregate=False),
+                     deployment_aggregate=False, chart_hint="table", chart_spec=table("order_id")),
     # Parity C19: the PDF adds Money and Spending sections when payments or charges are on and the viewer sees them.
     ReportDefinition("event-attendance-pdf", "apps.operations.reports_events_money.build_event_report_pdf",
                      EVENT_PDF_FIELDS, ("events",), required_action=rbac.Action.MANAGE_EVENTS, title=gettext_noop("Post-event analytics"), subject_kind="event",

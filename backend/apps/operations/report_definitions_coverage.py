@@ -3,6 +3,7 @@ from apps.accounts import rbac
 from apps.operations.report_types import ReportDefinition
 from apps.operations.report_definitions_hi import COMMUNICATIONS_REPORT_DEFINITION
 from apps.operations.report_charts_remaining import EVIDENCE_CHART, IMPORT_CHART, COMMUNITY_CHART, CERTIFICATION_CHART
+from apps.operations.reports_de_common import chart
 
 
 COVERAGE_REPORT_DEFINITIONS = (
@@ -49,11 +50,12 @@ COVERAGE_REPORT_DEFINITIONS = (
         ("period", "attendees", "guests", "joined", "guest_rate_percent", "join_rate_percent"),
         ("membership",), required_action=rbac.Action.MANAGE_MEMBERS, title=gettext_noop("Attendee join funnel"), chart_hint="grouped_bar", grains=("day", "month"),
         section_modules=("membership", "events"), required_feature="membership.join_funnel",
+        chart_spec=chart("period", (("attendees", "people"), ("guests", "people"), ("joined", "people")), time=True),
     ),
     ReportDefinition(
         "certification-coverage", "apps.machines.reports_certifications.build_certification_coverage",
         ("machine_type", "certification_type", "gating_enabled", "required_for_service", "required_for_booking", "active_members", "certified_members", "expiring_30d", "revoked_grants", "coverage_percent"),
-        ("machines",), required_action=rbac.Action.MANAGE_MACHINES, title=gettext_noop("Certification coverage"), chart_hint="grouped_bar", section_modules=("machines",),
+        ("machines",), required_action=rbac.Action.MANAGE_MACHINES, title=gettext_noop("Certification coverage (retired)"), chart_hint="grouped_bar", section_modules=("machines",),
         chart_spec=CERTIFICATION_CHART,
     ),
     ReportDefinition(
@@ -61,7 +63,7 @@ COVERAGE_REPORT_DEFINITIONS = (
         ("module_key", "enabled", "runtime_available", "coverage_kind", "activity_count", "failure_count", "last_activity_at", "rollup_watermark", "rollup_state"),
         required_action=rbac.Action.MANAGE_MAKERSPACE, title=gettext_noop("Module operational health"),
         chart_hint="status_grid", section_modules=(
-            "public_inventory", "request_workflow", "staff_admin", "guest_handover", "scanner", "printing", "telegram", "evidence_uploads", "qr_management", "bulk_import", "containers", "stock_transfers", "stocktake", "reports", "qr_print_batches", "asset_units", "machines", "machine_service", "events", "bookings", "membership", "notifications", "email", "slack", "mattermost", "discord", "webhook", "payments", "member_accounts", "mobile", "devices",
+            "public_inventory", "request_workflow", "staff_admin", "guest_handover", "scanner", "telegram", "evidence_uploads", "qr_management", "bulk_import", "containers", "stock_transfers", "stocktake", "reports", "qr_print_batches", "asset_units", "machines", "machine_service", "events", "bookings", "membership", "notifications", "email", "slack", "mattermost", "discord", "webhook", "payments", "member_accounts", "mobile", "devices",
         ),
     ),
 )

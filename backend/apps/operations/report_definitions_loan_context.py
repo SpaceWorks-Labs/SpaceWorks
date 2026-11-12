@@ -27,8 +27,8 @@ LOAN_CONTEXT_REPORT_DEFINITIONS = (
         ("request_workflow",),
         required_action=rbac.Action.VIEW_INVENTORY,
         title=gettext_noop("Equipment loans by purpose"),
-        # v2 (decision 216 item 16): units, overdue, loan hours and loss cost per purpose.
-        version=2,
+        # v3 (decision 214d): requested, reserved and outstanding units, utilisation, linked charges and settlements.
+        version=3,
         schedulable=False,
         deployment_aggregate=False,
         chart_hint="stacked_bar",
@@ -40,7 +40,7 @@ LOAN_CONTEXT_REPORT_DEFINITIONS = (
         EQUIPMENT_FIELDS,
         ("request_workflow", "events"),
         required_action=rbac.Action.VIEW_INVENTORY,
-        version=2,
+        version=3,
         title=gettext_noop("Equipment loans for an event"),
         subject_kind="event",
         identity_bearing=True,
@@ -55,7 +55,7 @@ LOAN_CONTEXT_REPORT_DEFINITIONS = (
         EQUIPMENT_FIELDS,
         ("request_workflow", "bookings"),
         required_action=rbac.Action.VIEW_INVENTORY,
-        version=2,
+        version=3,
         title=gettext_noop("Equipment loans for a booking"),
         subject_kind="booking",
         identity_bearing=True,

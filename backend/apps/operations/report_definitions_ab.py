@@ -78,7 +78,7 @@ AB_REPORT_DEFINITIONS = (
     # One To-Buy list, two switches (#97): readable while either parent's is on.
     definition("procurement-performance", "reports_ab_procurement", PROCUREMENT_FIELDS, ("inventory.tobuy|machines.tobuy",),
         action=rbac.Action.EDIT_INVENTORY, version=2, grains=True, hint="stacked_bar",
-        sections=("printing", "machines"),
+        sections=("machine_service", "machines"),
         spec=chart("period", (("units", "units"),), series=("kind", "item_name", "lead_time_bucket"), time=True, top=10)),
     definition("stock-transfers", "reports_ab_movements", movements.TRANSFER_FIELDS, ("stock_transfers",),
         action=rbac.Action.EDIT_INVENTORY, grains=True, hint="stacked_bar",

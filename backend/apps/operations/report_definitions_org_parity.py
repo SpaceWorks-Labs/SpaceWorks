@@ -31,10 +31,13 @@ APPROVAL_CHART = {**chart("period", [("median_hours", "hours"), ("p90_hours", "h
                           alt="{period}: median {median_hours} hours, 90th percentile {p90_hours} hours."),
                   "partition": None}
 
-UNIT_LEAGUE_CHART = chart("unit_name", [("members", "memberships"), ("joined", "memberships")],
-                          alt="{unit_name}: {members} active members, {joined} joined in the period.")
-LEVEL_LEAGUE_CHART = chart("level_name", [("units", "units"), ("members", "memberships")],
-                           alt="{level_name}: {units} units with {members} members.")
+# Tenant-local like the approval times: no makerspace_id column, so no tenant partition.
+UNIT_LEAGUE_CHART = {**chart("unit_name", [("members", "memberships"), ("joined", "memberships")],
+                             alt="{unit_name}: {members} active members, {joined} joined in the period."),
+                     "partition": None}
+LEVEL_LEAGUE_CHART = {**chart("level_name", [("units", "units"), ("members", "memberships")],
+                              alt="{level_name}: {units} units with {members} members."),
+                      "partition": None}
 
 
 def _definition(key, builder, fields, title, spec, modules=(), **extra):

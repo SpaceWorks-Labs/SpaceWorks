@@ -7,6 +7,7 @@ from apps.makerspaces.models import Makerspace
 from apps.makerspaces.servability import servable_queryset
 from apps.operations.models import StocktakeLine, StocktakeSession
 from apps.operations.serializers import StocktakeLineInputSerializer
+from django.utils.translation import gettext
 
 
 def visible_makerspaces():
@@ -56,19 +57,19 @@ class StockTransferAdminForm(forms.Form):
         self._require_visible_enabled(source, "stock_transfers")
         self._require_visible_enabled(destination, "stock_transfers")
         if product.makerspace_id != source.id:
-            raise forms.ValidationError("Product must belong to the source makerspace.")
+            raise forms.ValidationError(gettext("Product must belong to the source makerspace."))
         if cleaned.get("source_container") and cleaned["source_container"].makerspace_id != source.id:
-            raise forms.ValidationError("Source container must belong to the source makerspace.")
+            raise forms.ValidationError(gettext("Source container must belong to the source makerspace."))
         if (
             cleaned.get("destination_container")
             and cleaned["destination_container"].makerspace_id != destination.id
         ):
             raise forms.ValidationError(
-                "Destination container must belong to the destination makerspace."
+                gettext("Destination container must belong to the destination makerspace.")
             )
         if destination.id != source.id and product.tracking_mode == TrackingMode.INDIVIDUAL:
             raise forms.ValidationError(
-                "Individual-tracked products cannot be moved across makerspaces."
+                gettext("Individual-tracked products cannot be moved across makerspaces.")
             )
         return cleaned
 
@@ -87,7 +88,7 @@ class StockTransferAdminForm(forms.Form):
 
     def _require_visible_enabled(self, makerspace, module):
         if not visible_makerspaces().filter(pk=makerspace.pk).exists():
-            raise forms.ValidationError("Makerspace is archived or unavailable.")
+            raise forms.ValidationError(gettext("Makerspace is archived or unavailable."))
         try:
             require_module(makerspace, module)
         except SurfaceOff as exc:

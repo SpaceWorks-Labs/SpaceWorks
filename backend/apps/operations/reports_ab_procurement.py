@@ -22,7 +22,7 @@ def build_procurement_performance(makerspace_id, *, limit=None, date_range=None,
         groups = {}
         # Each stream follows its own parent's To-Buy switch (#97, C-9).
         allowed = Q(kind="hardware") if feature_enabled(space, "inventory.tobuy") else Q(pk__in=[])
-        if (actor is not None and feature_enabled(space, "machines.tobuy") and module_enabled(space, "printing")
+        if (actor is not None and feature_enabled(space, "machines.tobuy") and module_enabled(space, "machine_service")
                 and rbac.can(actor, rbac.Action.MANAGE_MACHINES, space.pk)):
             scope = role_scope.manage_scope_for(actor, space.pk)
             allowed |= Q(kind="printing") & role_scope.scope_q_for(scope, type_id_paths=("machine_type_id",))

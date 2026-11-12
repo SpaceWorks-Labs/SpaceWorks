@@ -50,6 +50,8 @@ def _locked_stocktake(actor, stocktake):
 
 @transaction.atomic
 def create_stocktake(actor, makerspace, data):
+    from apps.managed_hosting.extra_quotas import check_extra_quota_locked
+    check_extra_quota_locked(makerspace, "stocktake_sessions_monthly")  # decision 328a: refuses only a NEW session
     try:
         container = _container(actor, data.get("container_id"), makerspace)
     except ObjectDoesNotExist as exc:

@@ -7,6 +7,7 @@ staff `grant` / `adjust` rows. The balance is never stored: it is the allowance 
 the period being read (see `organization_hours`). Both rows reference a deployment-global organization, so neither
 travels in a tenant export (same rule as `BookingOrganizationLink`).
 """
+from django.utils.translation import gettext_noop
 from django.conf import settings
 from django.db import models
 from django.db.models import Q
@@ -14,9 +15,9 @@ from django.db.models import Q
 
 class OrganizationHoursAllowance(models.Model):
     class Period(models.TextChoices):
-        NONE = "none", "One pool, never resets"
-        MONTHLY = "monthly", "Resets every calendar month"
-        YEARLY = "yearly", "Resets every calendar year"
+        NONE = "none", gettext_noop("One pool, never resets")
+        MONTHLY = "monthly", gettext_noop("Resets every calendar month")
+        YEARLY = "yearly", gettext_noop("Resets every calendar year")
 
     makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.CASCADE, related_name="+")
     organization = models.ForeignKey("organizations.Organization", on_delete=models.CASCADE, related_name="+")
@@ -35,8 +36,8 @@ class OrganizationHoursAllowance(models.Model):
 class OrganizationHoursLedger(models.Model):
     class Entry(models.TextChoices):
         GRANT = "grant", "Granted"
-        CONSUME = "consume", "Consumed by a booking"
-        RELEASE = "release", "Released from a booking"
+        CONSUME = "consume", gettext_noop("Consumed by a booking")
+        RELEASE = "release", gettext_noop("Released from a booking")
         ADJUST = "adjust", "Adjusted"
 
     makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.CASCADE, related_name="+")

@@ -7,14 +7,15 @@ within the refund policy. Rows are insert-only; a restored booking takes a NEW c
 row with the next `generation`, so one booking holds at most one live consumption.
 """
 
+from django.utils.translation import gettext_noop
 from django.db import models
 from django.db.models import Q
 
 
 class IncludedHoursUsage(models.Model):
     class Kind(models.TextChoices):
-        BOOKING = "booking", "Room booking hours"
-        MACHINE = "machine", "Machine time hours"
+        BOOKING = "booking", gettext_noop("Room booking hours")
+        MACHINE = "machine", gettext_noop("Machine time hours")
 
     class Entry(models.TextChoices):
         CONSUME = "consume", "Consumed"

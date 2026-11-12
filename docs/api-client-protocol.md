@@ -64,7 +64,7 @@ vocabulary is:
 
 `public:read` · `public:write` · `public:*` · `legacy:v1`
 
-Release 2 (#193) adds **area scopes** `public:<area>:read` / `public:<area>:write`: each
+Since 0.12.0 there are also **area scopes** `public:<area>:read` / `public:<area>:write`: each
 public registry entry belongs to exactly one area (`apps/apiclients/scope_registry_areas.py`)
 and also accepts its area scope, so a client can hold, say, `public:catalogue:read` alone.
 `public:read`, `public:write` and `public:*` keep their meaning. Area scopes are tenant
@@ -127,7 +127,7 @@ outside the vocabulary.
 |---|---|---|
 | 401 | `{"detail": "Invalid client signature."}` | Any credential failure: unknown client, bad signature, skew, nonce replay, scope denied, unresolved or mismatched tenant. Deliberately uniform — it does not tell an attacker which check failed. The server log records the specific reason. |
 | 429 | throttled | Rate limit for the client's tier. |
-| 403 | `{"code": "full_session_required"}` | Payee/payout money is session-only (decision 224, `payments/payout_session.py`). Signed clients, personal access tokens and OAuth app connections are refused payout reports (`prizes-owed`, `event-finance`, any report with a payout column), the event finance view and the reimbursement routes. Finance summaries and the linked event-finance view answer without `payouts`, `money_out`, `net` and `budget_left`. |
+| 403 | `{"code": "full_session_required"}` | Payee/payout money is session-only (`payments/payout_session.py`). Signed clients, personal access tokens and OAuth app connections are refused payout reports (`prizes-owed`, `event-finance`, any report with a payout column), the event finance view and the reimbursement routes. Finance summaries and the linked event-finance view answer without `payouts`, `money_out`, `net` and `budget_left`. |
 
 A misconfigured deployment fails at startup rather than at runtime: if
 `HMAC_PROTECTED_PATH_PREFIXES` is widened to a prefix whose routes are not registered,
@@ -232,7 +232,7 @@ Respond with any 2xx. Anything else, or a timeout, is retried by the delivery wo
 space manager can retry from Delivery logs, or a superadmin from `/control/`. Endpoints must be public HTTPS — private and
 loopback addresses are refused when the destination is saved and again at send time.
 
-## Signed staff-data reads (Lane F)
+## Signed staff-data reads
 
 GET and HEAD routes require a server client bound to exactly one makerspace,
 Events installed and `events.api_read` enabled:
@@ -242,7 +242,7 @@ Events installed and `events.api_read` enabled:
 | `/api/v1/events/` | `events:read` |
 | `/api/v1/events/<id>/` | `events:read` |
 | `/api/v1/events/<id>/participants/` | `events:read` AND `participants:read` |
-| `/api/v1/events/orders/` | `orders:read` (release 2 L6; also needs `events.orders`) |
+| `/api/v1/events/orders/` | `orders:read` (also needs `events.orders`) |
 | `/api/v1/events/orders/<id>/` | `orders:read` |
 
 Only a platform superadmin grants these scopes. Browser/publishable keys, global
@@ -251,15 +251,14 @@ routes. The prefix remains mandatory even if removed from an operator override
 or public-API enforcement is off. Sign the full path including its query string
 using the existing protocol above. Nonce, clock and rotation policies are unchanged.
 
-Events allow only ID, title, status, start/end, location, `is_public` and `listing` (release 2 L1:
-the tenant credential still reads every event, private and unlisted included, and filters on these
+Events allow only ID, title, status, start/end, location, `is_public` and `listing` (the tenant credential still reads every event, private and unlisted included, and filters on these
 fields itself). Participants allow
 registration ID, display name and registration date. With both prerequisite
 scopes, `participants:attendance:read` adds the current attendance date (null when
 no longer attended). Contacts, answers, ticket/check-in credentials and money are
 excluded. Participant reads audit an opaque client fingerprint and row count.
 
-Ticket orders (`orders:read`, release 2 L6) allow the order ID, event or series ID, kind, status,
+Ticket orders (`orders:read`) allow the order ID, event or series ID, kind, status,
 currency, subtotal, discount, fee and total, created and paid dates, the frozen lines (kind, label,
 quantity, unit amount, discount, line total, ticket type and add-on IDs) and seat counts (live and
 claimed). Buyer and attendee names, emails, claim tokens and provider handles are excluded. A space
@@ -278,7 +277,7 @@ typed `ReadTarget` adapters. Add explicit GET/HEAD registry entries, dedicated
 server-only scopes and a mandatory prefix for a new domain; never import Events
 to reuse authentication, target resolution, throttles or signed keyset pagination.
 
-## Signed booking reads (BK-H)
+## Signed booking reads
 
 These GET/HEAD routes require Bookings and opt-in `bookings.api_read`, with the
 same mandatory HMAC, tenant-bound server principal, operator-only grants, signed
@@ -312,7 +311,6 @@ projection; changing scopes cannot reuse an earlier projection's cursor. Lists
 are live ID-ordered reads, not snapshots. Scopes/features/revocation are rechecked
 on each request, without consulting user RBAC or resource staff grants.
 
-Website sections/assets from parallel BK-F are not part of this initial projection.
-After its merge, extend only approved public page fields through its release/visibility
-adapter, never through unrestricted model serialization. See the BK-H lane report
-for the remaining public route, schema and analytics integration checks.
+Website sections and assets are not part of this initial projection. To add them, extend
+only approved public page fields through the release/visibility adapter, never through
+unrestricted model serialization.

@@ -4,7 +4,7 @@ The English labels below come from the audit presentation catalogue and reviewed
 The platform and makerspace audit screens apply the same metadata policy.
 Entries with withheld metadata show the action label and omit the stored metadata.
 
-The table lists 1,408 actions: 1,369 presentation-catalogue entries, 20 reviewed wrapper actions that
+The table lists 1,429 actions: 1,390 presentation-catalogue entries, 20 reviewed wrapper actions that
 show a label built from the key, and 19 dynamic actions under the deny policy. A further 60 shared-service
 prefixes are listed at the end. The sources are `backend/apps/audit/presentation_catalog.py`,
 `presentation_fallback_labels.py` and `presentation_catalog_dynamic.py`.
@@ -193,6 +193,11 @@ prefixes are listed at the end. The sources are `backend/apps/audit/presentation
 | `card.email_format_changed` | Card email format chosen | Reviewed fields only |
 | `card.extras_optin_changed` | Card extras opt-in changed | Reviewed fields only |
 | `card.photo_cleanup_accepted` | Cleaned card photo accepted | Reviewed fields only |
+| `card.photo_cutout_choice` | Card photo cut-out or original chosen | Reviewed fields only |
+| `card.photo_cutout_discarded` | Card photo cut-out discarded | Reviewed fields only |
+| `card.photo_cutout_done` | Card photo cut-out ready | Reviewed fields only |
+| `card.photo_cutout_failed` | Card photo background removal failed | Reviewed fields only |
+| `card.photo_cutout_requested` | Card photo background removal requested | Reviewed fields only |
 | `card.photo_requested` | New card photo requested | Reviewed fields only |
 | `card.photo_set_by_staff` | Card photo set by staff (holder agreed) | Reviewed fields only |
 | `card.scanned_for_checkin` | Card scanned to check in | Reviewed fields only |
@@ -222,6 +227,11 @@ prefixes are listed at the end. The sources are `backend/apps/audit/presentation
 | `card_job.queued` | Card job queued | Reviewed fields only |
 | `card_job.result_downloaded` | Card job file downloaded | Reviewed fields only |
 | `card_job.succeeded` | Card job finished | Reviewed fields only |
+| `card_photo_batch.applied` | Bulk card photo upload applied | Reviewed fields only |
+| `card_photo_batch.cancelled` | Bulk card photo upload cancelled | Reviewed fields only |
+| `card_photo_batch.created` | Bulk card photo upload started | Reviewed fields only |
+| `card_photo_batch.finished` | Bulk card photo upload finished | Reviewed fields only |
+| `card_photo_batch.item_applied` | Bulk upload photo attached to a card | Reviewed fields only |
 | `category.created` | Category created | Reviewed fields only |
 | `category.deleted` | Category deleted | Reviewed fields only |
 | `category.updated` | Category updated | None declared |
@@ -268,6 +278,7 @@ prefixes are listed at the end. The sources are `backend/apps/audit/presentation
 | `deployment.staging_created` | Private staging created | Reviewed fields only |
 | `deployment.staging_deleted` | Private staging deletion confirmed | Reviewed fields only |
 | `deployment.staging_retired` | Private staging retired | Reviewed fields only |
+| `devices.adapter_command_leased` | Command delivered to a device adapter | Withheld |
 | `devices.auth_artifacts_purged` | Devices auth artifacts purged | Withheld |
 | `devices.integration_bound` | Machine integration bound to a type | Withheld |
 | `devices.integration_unbound` | Machine integration removed | Withheld |
@@ -678,6 +689,11 @@ prefixes are listed at the end. The sources are `backend/apps/audit/presentation
 | `id_programme.fields_updated` | ID programme questions changed | Reviewed fields only |
 | `id_programme.unarchived` | ID programme restored from the archive | Reviewed fields only |
 | `id_programme.updated` | ID programme changed | Reviewed fields only |
+| `image_adapter.platform_switch` | Platform eraser fallback switched | Reviewed fields only |
+| `image_adapter.removed` | Eraser provider removed | Reviewed fields only |
+| `image_adapter.rotated` | Eraser provider secret rotated | Reviewed fields only |
+| `image_adapter.saved` | Eraser provider saved | Reviewed fields only |
+| `image_adapter.tested` | Eraser provider tested | Reviewed fields only |
 | `incident.action_added` | Incident follow-up action added | Reviewed fields only |
 | `incident.action_done` | Incident follow-up action updated | Reviewed fields only |
 | `incident.reported` | Incident reported | Withheld |
@@ -750,7 +766,11 @@ prefixes are listed at the end. The sources are `backend/apps/audit/presentation
 | `machine.material_created` | Machine material created | Withheld |
 | `machine.material_deleted` | Machine material deleted | Withheld |
 | `machine.material_updated` | Machine material updated | Withheld |
+| `machine.open_access_changed` | Machine open to all members changed | Withheld |
 | `machine.publicity_changed` | Machine publicity changed | Withheld |
+| `machine_access.granted` | Machine access granted | Withheld |
+| `machine_access.renewed` | Machine access renewed | Withheld |
+| `machine_access.revoked` | Machine access revoked | Withheld |
 | `machine.status_changed` | Machine status changed | Withheld |
 | `machine.typed_usage_logged` | Machine typed usage logged | Withheld |
 | `machine.updated` | Machine updated | Withheld |
@@ -759,10 +779,18 @@ prefixes are listed at the end. The sources are `backend/apps/audit/presentation
 | `machine_downtime.updated` | Downtime details updated | Reviewed fields only |
 | `machine_service.agent_report_applied` | Printer report applied to a service job | Withheld |
 | `machine_service.agent_report_refused` | Printer report refused | Withheld |
+| `machine_service.consumable_stock_short` | Job consumable stock ran short | Reviewed fields only |
+| `machine_service.consumables_estimated` | Job consumables estimated | Reviewed fields only |
+| `machine_service.consumables_recorded` | Job consumables recorded | Reviewed fields only |
 | `machine_service.consumption_recorded` | Machine service consumption recorded | Withheld |
 | `machine_service.file_attached` | Machine service file attached | Withheld |
 | `machine_service.file_deleted` | Machine service file deleted | Withheld |
 | `machine_service.file_staged` | Machine service file staged | Withheld |
+| `machine_event.changed` | Machine use event changed | Reviewed fields only |
+| `machine_event.cleared` | Machine use event cleared | Reviewed fields only |
+| `machine_event.cost_approved` | Machine cost approved for the event | Reviewed fields only |
+| `machine_event.cost_withdrawn` | Machine cost approval withdrawn | Reviewed fields only |
+| `machine_event.linked` | Machine use linked to an event | Reviewed fields only |
 | `machine_session.amended` | Machine session time corrected | Reviewed fields only |
 | `machine_session.assigned` | Machine session assigned to a member | Reviewed fields only |
 | `machine_session.auto_stopped` | Machine session stopped automatically | Reviewed fields only |
@@ -781,9 +809,20 @@ prefixes are listed at the end. The sources are `backend/apps/audit/presentation
 | `machine_type.job_settings_updated` | Machine type job settings changed | Reviewed fields only |
 | `machine_type.policy_updated` | Machine type policy updated | None declared |
 | `machine_type.session_settings_updated` | Machine type session settings changed | Reviewed fields only |
+| `machine_type.template_applied` | Machine type template applied | Reviewed fields only |
 | `machine_type.updated` | Machine type updated | None declared |
+| `machine_type_consumable.created` | Consumable added to a machine type | Reviewed fields only |
+| `machine_type_consumable.deactivated` | Machine type consumable switched off | Reviewed fields only |
+| `machine_type_consumable.deleted` | Consumable removed from a machine type | Reviewed fields only |
+| `machine_type_consumable.updated` | Machine type consumable changed | Reviewed fields only |
+| `machine_type_document.added` | Machine type document added | Reviewed fields only |
+| `machine_type_document.removed` | Machine type document removed | Reviewed fields only |
 | `machine_type_pricing.set` | Machine type pricing set | Withheld |
 | `machine_type_pricing.updated` | Machine type pricing updated | Withheld |
+| `machine_type_setup.booking_defaults_applied` | Machine type booking defaults applied to its spaces | Reviewed fields only |
+| `machine_type_setup.updated` | Machine type setup changed | Reviewed fields only |
+| `machine_type_template.deleted` | Machine type template deleted | Reviewed fields only |
+| `machine_type_template.saved` | Machine type template saved | Reviewed fields only |
 | `maintenance.document_added` | Maintenance document added | Reviewed fields only |
 | `maintenance.document_deleted` | Maintenance document deleted | Reviewed fields only |
 | `maintenance.feed_revoked` | Maintenance feed revoked | None declared |
@@ -847,6 +886,8 @@ prefixes are listed at the end. The sources are `backend/apps/audit/presentation
 | `managed_hosting.invoice_created` | Hosting invoice recorded | Reviewed fields only |
 | `managed_hosting.invoice_paid` | Hosting invoice paid | Reviewed fields only |
 | `managed_hosting.invoice_voided` | Hosting invoice voided | None declared |
+| `managed_hosting.limit_defaults_changed` | Platform default limits changed | Reviewed fields only |
+| `managed_hosting.limit_threshold_crossed` | Limit warning sent | Reviewed fields only |
 | `managed_hosting.plan_assigned` | Hosting plan assigned | Reviewed fields only |
 | `managed_hosting.plan_created` | Hosting plan created | Reviewed fields only |
 | `managed_hosting.plan_removed` | Hosting plan removed | None declared |
@@ -865,8 +906,13 @@ prefixes are listed at the end. The sources are `backend/apps/audit/presentation
 | `member.phone_link_requested` | Member phone link requested | Withheld |
 | `member.phone_unlinked` | Member phone unlinked | Withheld |
 | `member.phone_verified` | Member phone verified | Withheld |
+| `member.profile_achievement_created` | Self-reported achievement added | Reviewed fields only |
+| `member.profile_achievement_deleted` | Self-reported achievement deleted | None declared |
+| `member.profile_achievement_updated` | Self-reported achievement updated | Reviewed fields only |
 | `member.profile_image_cleared` | Member profile image cleared | Withheld |
 | `member.profile_image_updated` | Member profile image updated | Withheld |
+| `member.profile_opened` | Member profile created (open by default) | None declared |
+| `member.profile_project_imported` | Hackathon submission imported as a project | None declared |
 | `member.profile_timeline_created` | Profile timeline entry added | Reviewed fields only |
 | `member.profile_timeline_deleted` | Profile timeline entry deleted | None declared |
 | `member.profile_timeline_updated` | Profile timeline entry updated | Reviewed fields only |
@@ -1143,6 +1189,9 @@ prefixes are listed at the end. The sources are `backend/apps/audit/presentation
 | `pledge.period_raised` | Pledge period charge raised | Reviewed fields only |
 | `pledge.resumed` | Donation pledge resumed | Reviewed fields only |
 | `pledge.updated` | Donation pledge changed | Reviewed fields only |
+| `presence.display_claimed` | Space display screen paired | Reviewed fields only |
+| `presence.display_unpaired` | Space display screen unpaired | None declared |
+| `presence.display_updated` | Space display screen changed | Reviewed fields only |
 | `presence.ended` | Presence ended | None declared |
 | `presence.ended_claim_revoked` | Presence ended claim revoked | Reviewed fields only |
 | `presence.ended_membership_revoked` | Presence ended membership revoked | None declared |

@@ -107,9 +107,9 @@ and start at model-default zero stock; existing quantities are untouched.
 
 Saved profiles have no tenant or User FK. Actor attribution is in platform audit.
 `makerspaces.SpacePackProfile` is explicitly omitted from data export and DROP in the
-tenant-dump catalogue via `OMITTED_MODELS`; its fields are in the literal Lane D
+tenant-dump catalogue via `OMITTED_MODELS`; its fields are in the tenant-dump
 snapshot, and its JSON never becomes imported tenant authority. This is intentionally
 separate from `spaceworks-tenant-dump-v1`, signed backup manifests and dump projections.
 
 Database tests are written in `backend/tests/makerspaces/test_space_pack_*.py` for
-the coordinator's isolated runner. The lane does not regenerate OpenAPI artifacts.
+the isolated test runner.

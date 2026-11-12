@@ -26,7 +26,7 @@ SpaceWorks speaks the S3 API. Azure Blob Storage does not, so there are three ch
    is third-party software you must run and patch. A gateway generally gives presigned `PUT` but not presigned
    `POST` size policies, versioning, Object Lock or conditional create, so describe it as a **limited** store in
    the capabilities file (`presign_methods: ["put"]`, `versioning: "never_versioned"`, `object_lock: false`).
-   Features that need those capabilities show a clear notice instead of working weakly (decision 37).
+   Features that need those capabilities show a clear notice instead of working weakly.
 3. **Run MinIO/Silo yourself** on a VM with a managed disk: full control, but you own durability and backups.
 
 Whatever you choose, keep two buckets (private and public image), add a CORS rule for your website origin

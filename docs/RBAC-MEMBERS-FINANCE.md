@@ -1,4 +1,4 @@
-# Member and finance delegation (F6)
+# Member and finance delegation
 
 Membership roles are fixed and local to one makerspace: Space Manager, Inventory Manager, Machine
 Manager, Event Manager, Booking Manager, Handover, Technician, Shop Manager, Fundraising and Member (ten built-ins). Space
@@ -16,18 +16,18 @@ Space Manager includes `manage_members`, `view_finance` and `record_payment`. Th
 Membership Coordinator, Treasurer or front-desk cashier built-ins; roles that were custom before the upgrade are mapped at upgrade by
 migration 0089's raw-grant subset rules and can lose authority that no built-in represents.
 Handover includes job collection and evidence but does not independently grant cash recording.
-Technician (release 2 L16) holds only `work_repairs`, `run_maintenance` and `set_service_state`: the
+Technician holds only `work_repairs`, `run_maintenance` and `set_service_state`: the
 repair jobs assigned to them, plus maintenance and service state within the machine types, items and
 rooms their in-house technician entry covers. It never records money; payouts need finance authority
 in the area (see [Repairs and technicians](INVARIANTS.md#repairs-and-technicians)).
 
-Shop Manager (release 2 L22, #137) holds only `manage_shop`, `sell_shop` and `view_shop`: the shop's
+Shop Manager holds only `manage_shop`, `sell_shop` and `view_shop`: the shop's
 catalogue, stock, prices, orders, front desk, cash-ups, returns and its own settings, plus the shop's
 money in the ledger (domain `shop`). It records cash only for shop sales and shop refunds, never other
 money; the Space Manager reaches the shop through `manage_makerspace`. See
 [Shop](INVARIANTS.md#shop-release-2-l22-128-c-7-129-135-137).
 
-`view_analytics` (release 2 L25, #163B) opens the space's embedded Metabase dashboards. The Space
+`view_analytics` opens the space's embedded Metabase dashboards. The Space
 Manager holds it through `manage_makerspace`; it is also organization-grantable. Creating, rotating
 or revoking the analytics database login and pasting the Metabase secret stay with the space's own
 Space Manager and the superadmin (`rbac.is_space_manager_identity`), never a delegated grant.

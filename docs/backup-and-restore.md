@@ -122,7 +122,7 @@ Extract the space on a trusted machine and copy only the decrypted directory to 
 
 ## Roll back an upgrade
 
-Upgrades are **forward-only** (decision 219g). The updater refuses an older target release, and never points an old
+Upgrades are **forward-only**. The updater refuses an older target release, and never points an old
 release at a database a newer release has migrated.
 
 - **A failed update** rolls the application images back by itself and leaves the database as the new release migrated

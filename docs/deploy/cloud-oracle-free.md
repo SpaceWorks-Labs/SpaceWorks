@@ -23,6 +23,6 @@ named deployment resources, retaining required archive custody and permanent del
 [Oracle Always Free resources](https://docs.oracle.com/en-us/iaas/Content/FreeTier/freetier_topic-Always_Free_Resources.htm)
 checked 2026-10-18 documents reclaim risk. [Managed recovery differences](cloud-recovery.md).
 
-## Release 2 (0.11.0)
+## New in 0.12.0
 
-See [the release-2 settings](cloud-environment.md#release-2-0110-settings) and [choose your hosting](../choose-your-hosting.md). Oracle runs the host/full VPS shape, so everything in [choose your hosting](../choose-your-hosting.md) for the full VPS applies, including the photo clean-up model on the `card_models` volume and the control plane through an SSH tunnel.
+See [the 0.12.0 settings](cloud-environment.md#new-settings-in-0120) and [choose your hosting](../choose-your-hosting.md). Oracle runs the host/full VPS shape, so everything in [choose your hosting](../choose-your-hosting.md) for the full VPS applies, including the photo clean-up model on the `card_models` volume and the control plane through an SSH tunnel.

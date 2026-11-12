@@ -73,7 +73,7 @@ images only). Settings:
 | `STORAGE_PRESIGN_METHOD` | `post` (size policy enforced at upload) or `put` |
 | `STORAGE_CAPABILITIES_FILE` | Cloud files only: a strict version-1 JSON describing each bucket honestly |
 
-The application detects and records what each store can do; it never pretends a weaker store is stronger (decision 37).
+The application detects and records what each store can do; it never pretends a weaker store is stronger.
 
 | Service | Presign | Versioning | Object Lock | Class |
 | --- | --- | --- | --- | --- |

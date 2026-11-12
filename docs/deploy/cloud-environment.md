@@ -54,7 +54,7 @@ in server-only edge/backend secret stores. Every static adapter strips the brows
 the upstream secret. Exact raw health GET/HEAD and
 the separately secret-authenticated free tick can reach backend ingress without a forwarded host.
 
-## Release 2 (0.11.0) settings
+## New settings in 0.12.0
 
 Every one of these is off or empty by default and leaving it unset changes nothing; full values, the
 tuning knobs (TTLs, thresholds) and the reasoning are in the [environment reference](../environment-reference.md)

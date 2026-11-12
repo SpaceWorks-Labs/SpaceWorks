@@ -38,7 +38,7 @@ These changes were first prepared for the unpublished 0.11.0 candidate and ship 
 - [Take part in a hackathon](../frontend/src/help-content/en/member/hackathons.md)
 - [Request a machine job](../frontend/src/help-content/en/member/machine-jobs.md)
 - [Use a machine yourself](../frontend/src/help-content/en/member/machine-sessions.md)
-- [Your machine certifications](../frontend/src/help-content/en/member/certifications.md)
+- [My machine access](../frontend/src/help-content/en/member/machine-access.md)
 - [Tell the space something is broken](../frontend/src/help-content/en/member/something-broken.md)
 - [Pay what you owe](../frontend/src/help-content/en/member/pay-what-you-owe.md)
 - [Support a space with a gift or a pledge](../frontend/src/help-content/en/member/donate.md)
@@ -103,7 +103,7 @@ These changes were first prepared for the unpublished 0.11.0 candidate and ship 
 - [Machine types and machines](../frontend/src/help-content/en/machine-manager/machines-and-types.md)
 - [Run the job queue](../frontend/src/help-content/en/machine-manager/job-requests-and-quotes.md)
 - [Machine sessions](../frontend/src/help-content/en/machine-manager/machine-sessions.md)
-- [Certifications](../frontend/src/help-content/en/machine-manager/certifications.md)
+- [Machine access](../frontend/src/help-content/en/machine-manager/machine-access.md)
 - [Machine maintenance](../frontend/src/help-content/en/machine-manager/maintenance.md)
 - [Connected devices](../frontend/src/help-content/en/machine-manager/devices-and-integrations.md)
 

@@ -110,7 +110,7 @@ and hosting other makerspaces are covered in [Install and update](install-and-up
 - [Scoped PII encryption](scoped-pii-encryption.md) — the opt-in personal-data encryption runbook.
 - [Notification reconciliation checkpoints](notification-reconciliation-rollout.md) — the held sending-activation rollout.
 - [Security policy](../.github/SECURITY.md) — how to report a vulnerability.
-- [Dependency security alerts, release 1](security/dependency-alerts-r1.md) — every open alert and its resolution.
+- [Dependency security alerts](security/dependency-alerts-r1.md) — every open alert and its resolution.
 - [Module-architecture security review](module-program-security-report.md) — the security and loophole review of the module programme.
 - [Printing kernel cutover](printing-kernel-b4-cutover.md) — historical record of the finished cutover.
 

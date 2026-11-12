@@ -24,6 +24,6 @@ into a new non-routable deployment and attach DB/object/decryption evidence. Ord
 Signup, provider schema/CLI validation and live acceptance remain required; this guide claims no price or SLA.
 [Provider reference](https://docs.railway.com/builds/dockerfiles) reviewed 2026-10-18; recheck before provisioning.
 
-## Release 2 (0.11.0)
+## New in 0.12.0
 
-See [the release-2 settings](cloud-environment.md#release-2-0110-settings) and [choose your hosting](../choose-your-hosting.md). Railway services take their variables from the rendered role environment; the wizard now renders every non-secret release-2 setting at its default. Put `TURNSTILE_SECRET_KEY` and `WEB_PUSH_VAPID_PRIVATE_KEY` in shared variables only when you turn those features on.
+See [the 0.12.0 settings](cloud-environment.md#new-settings-in-0120) and [choose your hosting](../choose-your-hosting.md). Railway services take their variables from the rendered role environment; the wizard now renders every non-secret 0.12.0 setting at its default. Put `TURNSTILE_SECRET_KEY` and `WEB_PUSH_VAPID_PRIVATE_KEY` in shared variables only when you turn those features on.

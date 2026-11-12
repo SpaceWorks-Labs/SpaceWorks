@@ -1,16 +1,15 @@
 # Cloud integration contracts, version 1
 
-Frozen by CL-I for integration order step 1, 2026-10-18. Binding authority is the
-owner-approved cloud plan sections 2–8, 11 and decisions 36–43. Decision 43 is
-approved: the HTTP scheduler is free-only. These files describe interfaces for
-parallel implementation; they do not certify managed deployment or AO24/AO25.
+Frozen on 2026-10-18 as the first step of the cloud integration order. The binding
+source is the approved cloud plan (sections 2–8 and 11). One decision matters here:
+the HTTP scheduler is free-only. These files describe interfaces for
+parallel implementation; they do not certify managed deployment.
 
-Common base: `01ac3decc0d3f32817cbf8956bf8b26cc5d7e7e7`, branch
-`cloud/integration`. Initial index and worktree were clean. No incoming Pages,
+They were written on the `cloud/integration` branch. No incoming Pages,
 Events or reimbursement delta is incorporated. The historical 63-failure ledger
-is not a fresh baseline run. Docker/Django execution is prohibited in this lane.
+is not a fresh baseline run. No container or Django run was part of freezing these contracts.
 
-## Files every lane consumes
+## Files every implementation consumes
 
 * `backend/cloud_contracts/deployment.py`: dependency-free selectors. M calls
   `parse_selection(os.environ)` before Django and maps ValueError to exit 78;
@@ -197,7 +196,7 @@ Managed archives remain archive-and-purge custody records with no restore reader
 Portable dumps and provider recovery retain the approved distinct capabilities.
 
 Step 1 does not create a migration, change generated schema/client/catalog hash,
-publish a recipe/image, commit, stage or merge. Actual runtime tests and AO24/AO25
+publish a recipe/image, commit, stage or merge. Actual runtime tests
 remain later gates; no provider prices or free-allowance promises are certified here.
 
 
@@ -209,7 +208,7 @@ deploy/contracts/cloud-model-fields.json. No parallel provisional tables are reg
 hook is config.cloud_database.django.managed_database_configuration; discovery consumes J's periodic_catalog.
 Source-local fields keep explicit export/portable-dump dispositions.
 
-Exactly two images are published (owner decision #75a): spaceworks-backend and spaceworks-frontend. The
+Exactly two images are published: spaceworks-backend and spaceworks-frontend. The
 backend `release` target adds scripts/cloud_setup under /app/scripts from the BuildKit named context
 cloud_tooling (the repository root); the default `full` target is the plain source build. The one image runs
 host/full, managed/full and managed/free: in managed mode the common entrypoint hands over to

@@ -1,6 +1,6 @@
 # Choosing modules
 
-A makerspace only carries the parts it uses. Space Works ships **37 modules**; **6 are core** and
+A makerspace only carries the parts it uses. Space Works ships **36 modules**; **6 are core** and
 always on (the public catalogue, request workflow, staff admin, evidence uploads, QR management and
 the scanner). The rest are **opt-in**.
 
@@ -14,7 +14,7 @@ uninstall, purge or remove a module. Per-module detail — what each key is, wha
 
 ## Areas
 
-You do not have to think in 37 module switches. They are grouped into **areas**, which is what the console
+You do not have to think in 36 module switches. They are grouped into **areas**, which is what the console
 shows you:
 
 | Area | Covers |
@@ -115,8 +115,7 @@ cannot be removed. **Default** means it is on when you install outside the guide
 | | [`procurement`](MODULES.md#to-buy-was-procurement) | | | The "to buy" list |
 | **Stocktake** | [`stocktake`](MODULES.md#stocktake) | | | Scan-first stock counts and variance |
 | **Machines** | [`machines`](MODULES.md#machines) | | | The machine registry |
-| | [`machine_service`](MODULES.md#machine_service) | | | The service/job queue |
-| | [`printing`](MODULES.md#printing) | | | 3D printing on top of `machine_service` |
+| | [`machine_service`](MODULES.md#machine_service) | | | The service/job queue for every machine type, the 3D print queue included |
 | | [`maintenance`](MODULES.md#maintenance-was-maintenance) | | | Scheduled and reactive maintenance |
 | **Events** | [`events`](MODULES.md#events) | | | Scheduling, recurring series, registrations and waitlists, QR check-in, feedback and certificates, collaborative events |
 | **Bookings** | [`bookings`](MODULES.md#bookings) | | | Resource booking and public self-booking |

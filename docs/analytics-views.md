@@ -1,4 +1,4 @@
-# Analytics views (release 2, lane L25)
+# Analytics views
 
 **Catalogue version 3.** These are the curated, read-only views a space's analytics database login
 (and the platform-wide Metabase login) can read. They are generated from `backend/apps/analytics/catalogue/`;
@@ -623,7 +623,7 @@ Charges and payments: amount, currency, subject kind and state.
 
 ### `finance_ledger` (since 1)
 
-Money in and out from the finance ledger (L5), by domain and category.
+Money in and out from the finance ledger, by domain and category.
 
 | Column | Meaning |
 | --- | --- |
@@ -962,7 +962,7 @@ Desk cash sessions: amounts and times only.
 | `opened_at` | Opened. |
 | `closed_at` | Closed. |
 
-L24's price-drop refund cases need no new view: they appear in `refund_cases` with their own `reason_code`.
+Price-drop refund cases need no new view: they appear in `refund_cases` with their own `reason_code`.
 
 ## Release 0.12: loan contexts and included hours
 
@@ -981,6 +981,25 @@ Borrow requests lent for an event (event equipment, including event-only items).
 | `created_at` | Created. |
 | `updated_at` | Last changed. |
 
+### `machine_event_links` (since 3)
+
+Machine sessions and service requests logged as done for an event (decision 342), with the organiser's latest decision on charging the cost to the event. No person or note: join sessions or service requests.
+
+| Column | Meaning |
+| --- | --- |
+| `makerspace_id` | The space the row belongs to. |
+| `link_id` | Link id. |
+| `event_id` | Event (events). |
+| `machine_type_id` | Machine type (machine_types). |
+| `session_id` | Machine session, when the link is on a session. |
+| `service_request_id` | Service request, when the link is on a job. |
+| `booking_id` | Machine-time booking (bookings), when the link is on a booking. |
+| `source` | Who gave the link: requester, adapter or manager. |
+| `cost_decision` | Latest organiser decision: approved or withdrawn; empty if none. |
+| `cost_amount` | The charge as it stood when the organiser decided. |
+| `cost_currency` | Currency of that charge. |
+| `created_at` | Linked. |
+
 ### `loan_booking_contexts` (since 3)
 
 Borrow requests lent for a room or machine booking.
@@ -994,6 +1013,22 @@ Borrow requests lent for a room or machine booking.
 | `revision` | Context revision counter. |
 | `created_at` | Created. |
 | `updated_at` | Last changed. |
+
+### `loan_charges` (since 3)
+
+Money raised for a borrow request (deposit, late fee, rental, damage, lost item) with its state and the count of effective offline settlements, read as stored in the payments ledger.
+
+| Column | Meaning |
+| --- | --- |
+| `makerspace_id` | The space the row belongs to. |
+| `payment_id` | Charge id (payments). |
+| `request_id` | Request (loan_requests) the charge belongs to. |
+| `subject_type` | Deposit, late fee, rental, damage or lost item. |
+| `amount` | Amount. |
+| `currency` | Currency. |
+| `status` | Charge state: pending, paid online or offline, waived or canceled. |
+| `settlements` | Effective offline settlements recorded against the charge. |
+| `created_at` | Raised. |
 
 ### `included_hours_usage` (since 3)
 
@@ -1109,6 +1144,90 @@ Follow-up actions on incidents; counts and timing, not text.
 | `due_date` | Due. |
 | `done_at` | Done. |
 | `created_at` | Created. |
+
+## Release 0.12: grants, device adapters, card jobs and certificates
+
+Added in catalogue version 3 (decision 327). People appear as member ids only; grant notes, command parameters, adapter event data, recipient names and file keys are left out.
+
+### `machine_access_grants` (since 3)
+
+Who may use which machine or machine type: one row per grant, kept after revocation.
+
+| Column | Meaning |
+| --- | --- |
+| `makerspace_id` | The space the row belongs to. |
+| `grant_id` | Grant id. |
+| `member_id` | Member who may use it (members). |
+| `machine_id` | One machine (machines), or empty for a whole type. |
+| `machine_type_id` | Every machine of this type (machine_types). |
+| `source` | Given by staff, or converted from a certification. |
+| `granted_at` | Granted. |
+| `expires_at` | Expires, if it does. |
+| `revoked_at` | Revoked. |
+
+### `adapter_usage` (since 3)
+
+Sessions and jobs a device adapter reported: active and idle minutes and the outcome.
+
+| Column | Meaning |
+| --- | --- |
+| `makerspace_id` | The space the row belongs to. |
+| `usage_id` | Usage record id. |
+| `device_id` | Adapter device. |
+| `started_at` | Started. |
+| `ended_at` | Ended. |
+| `active_minutes` | Minutes of use. |
+| `idle_minutes` | Minutes idle. |
+| `outcome` | How it ended. |
+| `error_code` | Failure reason code, when it failed. |
+
+### `adapter_access_decisions` (since 3)
+
+Every door or machine access decision an adapter made, with its reason code.
+
+| Column | Meaning |
+| --- | --- |
+| `makerspace_id` | The space the row belongs to. |
+| `decision_id` | Decision id. |
+| `device_id` | Adapter device. |
+| `member_id` | Member it concerned (members). |
+| `credential_type` | Kind of credential shown. |
+| `allowed` | Access was allowed. |
+| `reason` | Reason code. |
+| `offline` | Decided offline from the adapter's cache. |
+| `created_at` | Decided. |
+
+### `card_jobs` (since 3)
+
+Card studio jobs: sheet printing, per-person PDFs, ZIPs, emails and wallet passes, with progress.
+
+| Column | Meaning |
+| --- | --- |
+| `makerspace_id` | The space the row belongs to. |
+| `job_id` | Job id. |
+| `kind` | What the job does. |
+| `scope` | Which cards it covers. |
+| `state` | Queued, running, finished, failed or cancelled. |
+| `total` | Cards in the job. |
+| `done` | Cards finished. |
+| `failed` | Cards that failed. |
+| `created_at` | Requested. |
+| `finished_at` | Finished. |
+
+### `event_certificates` (since 3)
+
+Certificates issued for events: kind, state and revocation, never the recipient or the file.
+
+| Column | Meaning |
+| --- | --- |
+| `makerspace_id` | The space the row belongs to. |
+| `certificate_id` | Certificate id. |
+| `event_id` | Event (events). |
+| `kind` | Attendance, participant, winner, thanks and so on. |
+| `status` | Render state. |
+| `public_verification_enabled` | Anyone can verify it online. |
+| `issued_at` | Issued. |
+| `revoked_at` | Revoked. |
 
 ## Where cost and usage figures come from
 

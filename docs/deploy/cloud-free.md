@@ -19,7 +19,7 @@ Heavy intents remain persisted; every job needs a real bounded checkpoint adapte
 deployment backup runs. Unsupported video/media validation must refuse before upload acceptance. Scanning is
 explicitly off with a visible notice; type/size validation does not scan malware.
 
-Owner decision 43 is approved: POST /api/v1/internal/free/tick, X-Cron-Secret, no caller-selected jobs/credentials.
+The one scheduler route is POST /api/v1/internal/free/tick, X-Cron-Secret, no caller-selected jobs/credentials.
 The body may be absent or an empty JSON object (`{}`, `Content-Type: application/json`, at most 1,024 bytes).
 Full has no route/schema even when the secret is set. Browsers cannot reach internal/control paths. Only the
 Cloudflare scheduled handler calls the fixed backend origin. Primary cron is */10 * * * * (600 seconds).
@@ -82,7 +82,7 @@ acceptance evidence and a current platform operator. Account aliases cannot crea
 
 Every Events scheduled task (admission, contributors, broadcasts, assets, certificates, print and
 judging recovery, stage forms and files, reimbursement deadlines, payout recovery/retention, saved
-details) runs through the free tick under its own catalog key (#89b). Each sweep sizes its batch with
+details) runs through the free tick under its own catalog key. Each sweep sizes its batch with
 `bounded.rows`: unchanged on a full server, the chunk's remaining limit inside a tick, and one row per
 chunk for scans, renders, validation and object I/O; unfinished work resumes on the next tick. Scans,
 renders and validation are heavy tasks, so at most one starts per tick. The older programme wrappers
@@ -94,6 +94,6 @@ Sources checked 2026-10-18: [Render free services](https://render.com/docs/free)
 [Supabase connections](https://supabase.com/docs/guides/database/connecting-to-postgres),
 [Cloudflare limits](https://developers.cloudflare.com/workers/platform/limits/).
 
-## Release 2 (0.11.0)
+## New in 0.12.0
 
-See [the release-2 settings](cloud-environment.md#release-2-0110-settings) and [choose your hosting](../choose-your-hosting.md). Free renders the same non-secret release-2 defaults as full. The breach check and card font downloads make outbound calls that count against cold-start time; set `CARD_FONT_DOWNLOADS_ENABLED=False` to keep cards to the bundled faces. Photo clean-up is not available on free (no durable shared storage for the model); there is no live process, so the console polls.
+See [the 0.12.0 settings](cloud-environment.md#new-settings-in-0120) and [choose your hosting](../choose-your-hosting.md). Free renders the same non-secret 0.12.0 defaults as full. The breach check and card font downloads make outbound calls that count against cold-start time; set `CARD_FONT_DOWNLOADS_ENABLED=False` to keep cards to the bundled faces. Photo clean-up is not available on free (no durable shared storage for the model); there is no live process, so the console polls.

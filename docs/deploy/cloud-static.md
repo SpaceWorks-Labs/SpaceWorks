@@ -41,6 +41,6 @@ in server-only edge/backend secret stores. F's adapters still need that reviewed
 until then forwarded-host enablement correctly refuses their requests. Exact raw health GET/HEAD and
 the separately secret-authenticated free tick can reach backend ingress without a forwarded host.
 
-## Release 2 (0.11.0)
+## New in 0.12.0
 
-See [the release-2 settings](cloud-environment.md#release-2-0110-settings) and [choose your hosting](../choose-your-hosting.md). The root `netlify.toml` (split origin) now sends the same security and cache headers as the bundled nginx and carries a commented proxy block for the backend-rendered pages (`/share/`, `/embed/`, sitemap, robots, app-association files); fill in your API origin to use it. If Turnstile or analytics are on, add their origins to your adapter's CSP: the nginx image derives them from env, static hosts cannot.
+See [the 0.12.0 settings](cloud-environment.md#new-settings-in-0120) and [choose your hosting](../choose-your-hosting.md). The root `netlify.toml` (split origin) now sends the same security and cache headers as the bundled nginx and carries a commented proxy block for the backend-rendered pages (`/share/`, `/embed/`, sitemap, robots, app-association files); fill in your API origin to use it. If Turnstile or analytics are on, add their origins to your adapter's CSP: the nginx image derives them from env, static hosts cannot.

@@ -44,7 +44,7 @@ flowchart TD
 | How you install | `install.sh` (pinned release) | `install.sh`, answer **API-only** (`--frontend api-only`) | `npm run build`, or a [static adapter](deploy/cloud-static.md) | The setup wizard, then the provider | `install.sh --profile free` or the wizard | The setup wizard (provider `docker`), then your compute; the installer with **External S3-compatible buckets** keeps its bundled database |
 | Files | `docker-compose.prod.yml` + `docker/compose.tls.yml` | + `docker/compose.api-only.yml`, `netlify.toml` | `netlify.toml`, `deploy/static/` | `render.yaml`, `deploy/<provider>/`, `charts/spaceworks`, `docker-compose.managed*.yml` | `docker-compose.free.yml`, `deploy/render.free.yaml` | `docker-compose.managed*.yml`, `docker-compose.cloud.yml` |
 | HTTPS | Caddy, automatic; or your own proxy; or plain HTTP on this machine only | Caddy on the API; the static host on the website | The static host | The provider | The provider | The provider or your own proxy |
-| Scheduled jobs | Celery beat | Celery beat | n/a | beat, or the brokerless loop/external scheduler | The authenticated tick (every 10 minutes by default) | beat, loop, external scheduler or the tick |
+| Scheduled jobs | Celery beat (or, with Redis set to none, a once-a-minute scheduler loop) | Celery beat (or the same scheduler loop) | n/a | beat, or the brokerless loop/external scheduler | The authenticated tick (every 10 minutes by default) | beat, loop, external scheduler or the tick |
 | Backups and recovery | Full: scheduled database and object backups, restore, drills, key rotation, update rollback | Same as the full VPS | n/a | Your provider's backups plus portable dumps | No scheduled dump; external backups only | Your providers' backups plus portable dumps |
 | Control plane (`/control/`) | Server only by default: the SSH-tunnel port (automatic HTTPS), else off; optional website route with an IP allowlist | Server only | n/a | Not served (`CONTROL_PLANE_PROXY=false`); use the web superadmin console | Not served | Not served |
 | Live updates | Live events process | Live events process | Uses the API's | Optional live process, otherwise polling | Polling | Optional live process, otherwise polling |
@@ -66,7 +66,7 @@ people will use; plain HTTP is limited to `localhost` for a trial on your own ma
 
 Everything works without any outside service: inventory, loans, bookings, events, machines, cards, the
 member app, backups. Optional features call out only when you switch them on (mail, SMS/WhatsApp, payments,
-Turnstile). Two release-2 defaults do make outbound calls: the breached-password check (HIBP range API,
+Turnstile). Two 0.12.0 defaults do make outbound calls: the breached-password check (HIBP range API,
 2 second timeout, fails open) and card font downloads (Google Fonts). On an offline server set
 `PASSWORD_BREACH_CHECK_ENABLED=False` and `CARD_FONT_DOWNLOADS_ENABLED=False`.
 
@@ -150,14 +150,14 @@ nothing about them is visible or enforced while they are off. Never turn them on
 files `docker-compose.managed*.yml` and `render.managed.yaml` are for installs that host other makerspaces or run on
 cloud services; they keep those names.
 
-## Release 2 settings in every shape
+## 0.12.0 settings in every shape
 
-Each release-2 setting (Turnstile, login IP blocking, breached-password check, passkey name, browser alerts,
+Each 0.12.0 setting (Turnstile, login IP blocking, breached-password check, passkey name, browser alerts,
 messaging webhook base URL, native app minimums, card fonts and the photo model) has a safe default: leaving it
 unset behaves exactly as before. The full VPS, cloud compose files pass them through explicitly; the
 free and brokerless compose files, `render.yaml` and the Fly, Railway, Koyeb, DigitalOcean and Cloud Run recipes
 rely on the backend defaults, so set a key there only when you want to change it. They are listed in
 [the environment reference](environment-reference.md) and, for the cloud recipes, in
-[the release-2 settings](deploy/cloud-environment.md#release-2-0110-settings). Turnstile needs its site key on
+[the 0.12.0 settings](deploy/cloud-environment.md#new-settings-in-0120). Turnstile needs its site key on
 the website too: the bundled nginx derives its CSP from `TURNSTILE_SITE_KEY`; a static host needs
 `https://challenges.cloudflare.com` added to its CSP by hand.

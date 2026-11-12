@@ -122,7 +122,7 @@ reset ends the token), the space's modules, the view's own permissions. Tokens n
 reach sign-in, MFA, passkeys, credential and security settings, API clients, backups,
 superadmin routes or `/control/`.
 
-**Payee and payout money needs an interactive session (decision 224).** Personal access
+**Payee and payout money needs an interactive session.** Personal access
 tokens, OAuth app connections and signed API clients never read what was paid to a person.
 Payout reports (`prizes-owed`, `event-finance`, any report with a payout column), the event
 finance view and the reimbursement routes answer `403 {"code": "full_session_required"}`.

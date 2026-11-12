@@ -32,8 +32,8 @@ Offline rebuild:
 
 This is not a completed provider drill. Private ciphertext staging now persists immutable owner/attempt,
 bucket identity, size, digest, expiry and late-delete receipts in the primary database. Import chunks and
-row sidecars cross containers through these locators; local plaintext is disposable attempt scratch. Lane D
-source/derived trees are age-encrypted before object staging.
+row sidecars cross containers through these locators; local plaintext is disposable attempt scratch. The
+source and derived trees are age-encrypted before object staging.
 Managed adoption refuses unresolved host-local import/capture staging: finish or migrate it on its original
 host before admission. A file path or timestamp alone is never proof of portable bytes.
 Capture pauses persist through crashes and are never cleared in `finally`.

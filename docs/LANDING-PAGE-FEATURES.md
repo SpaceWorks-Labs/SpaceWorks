@@ -29,9 +29,9 @@ These counts were checked against the current sources rather than copied as mark
 
 | What was counted | Result | Source |
 | --- | --- | --- |
-| Module keys and customer-facing areas | **37 modules in 12 areas** | `backend/apps/makerspaces/module_registry_catalog.py`, `module_registry_definitions.py` (`GROUPS`) |
+| Module keys and customer-facing areas | **36 modules in 12 areas** | `backend/apps/makerspaces/module_registry_catalog.py`, `module_registry_definitions.py` (`GROUPS`) |
 | Module modes | **6 core, 1 on by default (member accounts), 30 opt-in; 31 non-core total** | `docs/MODULES.md` |
-| User-facing module entries | **37**, one per registry key | `docs/MODULES.md` |
+| User-facing module entries | **36**, one per registry key | `docs/MODULES.md` |
 | Seeded default roles | **9**: Space Manager, Inventory Manager, Machine Manager, Event Manager, Booking Manager, Handover, Technician, Shop Manager and Member | `backend/apps/makerspaces/role_catalog.py` |
 
 The six core keys counted in the registry are Public inventory, Request workflow, Staff admin, Evidence
@@ -153,9 +153,9 @@ only the server side of a device protocol ships (see `docs/machine-integrations/
 - Support an optional staff-private cash charge at collection.
 - Use the broader Payments module when online checkout, receipts and reconciliation are required.
 
-**Honest limits:** Printing depends on Machine service. Without the Printing module, a 3D printer can still
-be registered and its work can use the generic service queue, but the print-specific intake and handling
-disappear.
+**Honest limits:** 3D printing is part of Machine service, which handles every machine type; there is no
+separate Printing module (retired in 0.12.0). Without Machine service a 3D printer can still be registered as
+a machine, but no job queue, print form or print tracker is offered.
 
 ## Events and bookings
 

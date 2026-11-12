@@ -72,8 +72,8 @@ Telegram group, QR namespace and audit scope. Queries and actions are scoped to 
   breached-password checks are available, and each space sets its own staff session, idle-timeout,
   passkey and staff IP rules. Member methods are switchable;
   external identity and staff-created walk-ins support spaces without the member-account ecosystem
-  (see [Sign-in, identity and borrowing](sign-in-and-borrowing.md)). Opt-in maker profiles include
-  projects, interests, education, optional GitHub counts and a consent-based member directory.
+  (see [Sign-in, identity and borrowing](sign-in-and-borrowing.md)). One global member profile per account (visible to signed-in members by default, with a separate open-web switch) includes
+  status, experience, education, verified and self-reported achievements, projects, optional GitHub counts and a consent-based member directory.
   Public pages at `/<handle>` add fresh publication consent, separate activity-family opt-ins,
   counts-only activity and GitHub calendars, and HOSTED/SPOKE event badges. Public reads expose
   `viewer_is_owner`; the member profile exposes this membership's `verified` flag.

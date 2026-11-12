@@ -24,6 +24,6 @@ into a new non-routable deployment and attach DB/object/decryption evidence. Ord
 Signup, provider schema/CLI validation and live acceptance remain required; this guide claims no price or SLA.
 [Provider reference](https://kubernetes.io/docs/concepts/workloads/controllers/job/) reviewed 2026-10-18; recheck before provisioning.
 
-## Release 2 (0.11.0)
+## New in 0.12.0
 
-See [the release-2 settings](cloud-environment.md#release-2-0110-settings) and [choose your hosting](../choose-your-hosting.md). Backend settings, release-2 ones included, come from the `runtimeSecret` the chart mounts with `envFrom`, so add only the ones you turn on. Turnstile also needs `frontendEnv.TURNSTILE_SITE_KEY` so the bundled nginx allows the widget in its CSP. `helm lint` passes and `helm template` renders host, managed Redis and managed brokerless; the chart refuses the free profile by design (use the single-web free recipes).
+See [the 0.12.0 settings](cloud-environment.md#new-settings-in-0120) and [choose your hosting](../choose-your-hosting.md). Backend settings, 0.12.0 ones included, come from the `runtimeSecret` the chart mounts with `envFrom`, so add only the ones you turn on. Turnstile also needs `frontendEnv.TURNSTILE_SITE_KEY` so the bundled nginx allows the widget in its CSP. `helm lint` passes and `helm template` renders host, managed Redis and managed brokerless; the chart refuses the free profile by design (use the single-web free recipes).

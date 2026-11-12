@@ -44,3 +44,17 @@ it('records a second-person requirement completion for an approved role', async 
   expect(JSON.parse(request.mock.calls[0][1].body)).toMatchObject({ kind: 'briefing', reference_id: 7, expected_version: 4 })
   expect(await screen.findByText('Completion of requirement 7 recorded.')).toBeInTheDocument()
 })
+
+it('never arms a timer beyond the 32-bit limit for a round that closes far in the future', async () => {
+  // A longer delay is clamped to 1 ms by the browser, which would clear the drafts of a round that is still live.
+  const round = { id: 5, event_id: 42, version: 3, state: 'live', allowed_actions: [], label: 'Round one',
+    closes_at: '2099-01-01T00:00:00Z', form_schema: {}, teams: [] }
+  request.mockResolvedValue(round)
+  const arm = vi.spyOn(window, 'setTimeout')
+  mount(<MentorRoundsPanel scope={scope} roundId={5} sessionId="s" renderForm={() => null} />)
+  await screen.findByText('Round one')
+  const delays = arm.mock.calls.map(([, ms]) => Number(ms ?? 0))
+  expect(delays.filter((ms) => ms > 2_000_000_000)).toEqual([2_147_483_647])
+  expect(Math.max(...delays)).toBe(2_147_483_647)
+  arm.mockRestore()
+})

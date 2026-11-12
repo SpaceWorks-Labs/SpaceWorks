@@ -38,7 +38,18 @@ export function MentorRoundsPanel({ scope, roundId, sessionId, renderForm }: {
   useEffect(() => () => { void clearRoundDrafts(draftScope).catch(() => {}) }, [draftScope])
   useEffect(() => {
     if (row?.state !== 'live') return
-    const timeout = window.setTimeout(() => { void clearRoundDrafts(draftScope).catch(setDraftError) }, Math.max(0, Date.parse(row.closes_at) - Date.now()))
+    // Browsers store a timer delay as a signed 32-bit number (about 24.8 days); a longer one fires at once and
+    // would wipe the drafts of a round that has not closed. Wait in capped slices until the close time.
+    const closesAt = Date.parse(row.closes_at)
+    let timeout = 0
+    const arm = () => {
+      const remaining = Math.max(0, closesAt - Date.now())
+      timeout = window.setTimeout(() => {
+        if (closesAt - Date.now() > 0) arm()
+        else void clearRoundDrafts(draftScope).catch(setDraftError)
+      }, Math.min(remaining, 2_147_483_647))
+    }
+    arm()
     return () => window.clearTimeout(timeout)
   }, [row?.closes_at, row?.state, draftScope])
   useEffect(() => {

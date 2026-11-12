@@ -15,7 +15,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.admin_api.permissions import IsActiveStaff
-from apps.hardware_requests.exceptions import ErrorSerializer
+from apps.hardware_requests.exceptions import WORKFLOW_ERRORS, ErrorSerializer
 from django.utils.translation import gettext
 
 MAX_IDS = 50
@@ -66,7 +66,7 @@ class _BulkView(APIView):
                 try:
                     with transaction.atomic():
                         self.decide(request.user, pk, decision, reason)
-                except APIException as exc:
+                except (APIException, *WORKFLOW_ERRORS) as exc:
                     raise BulkFailed(pk, exc) from exc
         return Response({"decided": len(ids), "ids": ids})
 

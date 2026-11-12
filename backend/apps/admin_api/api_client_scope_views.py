@@ -23,7 +23,9 @@ ERRORS = {401: ErrorSerializer, 403: ErrorSerializer, 404: ErrorSerializer, 429:
 
 
 class ApiClientScopePagination(PageNumberPagination):
-    page_size = 24
+    # The picker reads page 1 only and the vocabulary is a bounded list (area scopes grew it past 24), so one
+    # page must hold the whole catalogue or the SPA silently hides grantable scopes.
+    page_size = 200
 
 
 def _visible_makerspace(actor, makerspace_id):

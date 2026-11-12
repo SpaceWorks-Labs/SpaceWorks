@@ -18,7 +18,11 @@ def resolve_handle_target(request, match):
     claim, result = resolve_handle(match.kwargs.get("handle"), request)
     if result["kind"] == "organization":
         return PublicHandleTarget("global"), True
-    space = claim.makerspace if result["kind"] == "makerspace" else claim.profile.membership.makerspace
+    if result["kind"] == "makerspace":
+        space = claim.makerspace
+    else:
+        from apps.makerspaces.profile_images import home_space
+        space = home_space(claim.user)  # the profile is global: the person's home space
     return PublicHandleTarget("tenant", space), True
 
 

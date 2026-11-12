@@ -6,6 +6,7 @@ from functools import lru_cache
 
 import redis
 from django.conf import settings
+from django.core.cache import cache
 from django.db import transaction
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
@@ -22,13 +23,14 @@ BROWSER_KIND = "browser"
 
 @lru_cache(maxsize=4)
 def _client_for_url(url):
-    return redis.Redis.from_url(url, decode_responses=True)
+    # Short timeouts: this runs inside signed-request authentication (decision 339).
+    return redis.Redis.from_url(url, decode_responses=True, socket_connect_timeout=1, socket_timeout=2)
 
 
 def get_redis_client():
     """Return the configured Redis cache client, or None for non-Redis installs."""
     config = settings.CACHES.get("default", {})
-    if not str(config.get("BACKEND", "")).endswith(".RedisCache"):
+    if not str(config.get("BACKEND", "")).endswith("RedisCache"):  # RedisCache or ResilientRedisCache
         return None
     location = config.get("LOCATION")
     if isinstance(location, (list, tuple)):
@@ -53,10 +55,6 @@ def record_browser_client_observation(request, client):
 def _record_observation(kind, request, client_id):
     try:
         observed_at = timezone.now()
-        redis_client = get_redis_client()
-        if redis_client is None:
-            return
-        key = bucket_key(kind, observed_at)
         payload = json.dumps(
             {
                 "timestamp": observed_at.isoformat(),
@@ -64,6 +62,13 @@ def _record_observation(kind, request, client_id):
             },
             separators=(",", ":"),
         )
+        redis_client = get_redis_client()
+        if redis_client is None:
+            _remember_without_redis(kind, client_id, payload, observed_at)
+            return
+        if getattr(cache, "degraded", False):
+            return  # Redis is down; the cache already logged the outage once for this process
+        key = bucket_key(kind, observed_at)
         pipeline = redis_client.pipeline()
         pipeline.hset(key, client_id, payload)
         pipeline.expire(key, BUCKET_TTL_SECONDS)
@@ -74,6 +79,35 @@ def _record_observation(kind, request, client_id):
             extra={"client_id": client_id, "telemetry_kind": kind},
             exc_info=True,
         )
+
+
+def _last_key(kind, client_id):
+    return f"{KEY_PREFIX}:last:{kind}:{client_id}"
+
+
+def _remember_without_redis(kind, client_id, payload, observed_at):
+    """Cron mode (no Redis): keep each client's newest observation in the shared database cache.
+
+    At most one write per client per minute, so a busy client does not turn every signed request
+    into a cache write; the flush reads these keys for the deployment's known clients.
+    """
+    minute = observed_at.astimezone(UTC).strftime("%Y%m%d%H%M")
+    if cache.add(f"{KEY_PREFIX}:seen:{kind}:{client_id}:{minute}", 1, 120):
+        cache.set(_last_key(kind, client_id), payload, BUCKET_TTL_SECONDS)
+
+
+def _flush_without_redis():
+    from apps.apiclients.models import ApiClient
+
+    client_ids = list(ApiClient.objects.filter(is_active=True).values_list("client_id", flat=True))
+    keys = {_last_key(kind, client_id): (kind, client_id)
+            for client_id in client_ids for kind in (SIGNED_KIND, BROWSER_KIND)}
+    newest = {}
+    for key, raw_payload in cache.get_many(list(keys)).items():
+        observation = _parse_observation(raw_payload)
+        if observation is not None:
+            newest[keys[key]] = observation
+    return _bulk_update_observations(newest)
 
 
 def _resolved_ip(request):
@@ -91,7 +125,7 @@ def flush_usage_observations(*, now=None, redis_client=None):
     """Persist closed Redis buckets with one monotonic bulk update."""
     redis_client = redis_client or get_redis_client()
     if redis_client is None:
-        return 0
+        return _flush_without_redis()
     current_minute = (now or timezone.now()).astimezone(UTC).replace(
         second=0, microsecond=0
     )

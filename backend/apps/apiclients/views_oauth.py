@@ -70,7 +70,7 @@ def _validated(request):
     try:
         scopes, info = get_oauthlib_core().validate_authorization_request(request._request)
     except OAuth2Error as exc:
-        raise ValidationError({"detail": getattr(error, "description", None) or getattr(error, "error", "invalid_request")}) from exc
+        raise ValidationError({"detail": getattr(exc, "description", None) or getattr(exc, "error", "invalid_request")}) from exc
     except Exception as exc:  # DOT wraps invalid client/redirect as its own fatal error type
         raise ValidationError({"detail": gettext("This app request is not valid.")}) from exc
     # oauthlib also accepts the "plain" method (and assumes it when none is named), where the

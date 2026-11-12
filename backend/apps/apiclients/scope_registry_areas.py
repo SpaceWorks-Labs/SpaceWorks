@@ -87,6 +87,7 @@ _NAMES = {
     ),
     "presence": (
         "presence-start", "presence-current", "presence-end", "public-presence-now", "presence-renew",
+        "public-presence-here-now", "public-machines-now", "public-presence-now-config",
         "presence-projects", "presence-preferences",
     ),
     "shop": (

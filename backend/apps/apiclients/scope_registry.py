@@ -98,9 +98,15 @@ def resolve_target(request, entry):
             target = Makerspace.objects.filter(pk=next(iter(targets))).first()
             return target, target is not None
         if view_name in {"public-profile", "public-profile-activity", "public-profile-events", "public-profile-projects", "public-profile-github"}:
-            from apps.makerspaces.public_profile_access import resolve_public_profile
-            claim, _ = resolve_public_profile(kwargs.get("handle"), request)
-            return claim.profile.membership.makerspace, True
+            # Decision 304: the profile is global, so the tenant a machine client is checked against is
+            # the person's home space (newest active, servable membership); a client is always the
+            # logged-out audience, so the open-web consent still applies.
+            from django.contrib.auth.models import AnonymousUser
+            from apps.makerspaces.account_profile_access import resolve_by_handle
+            from apps.makerspaces.profile_images import home_space
+            profile, _ = resolve_by_handle(kwargs.get("handle"), AnonymousUser(), request)
+            space = home_space(profile.user)
+            return space, space is not None
         if view_name in {"public-event-code", "public-event-short-code"}:
             from apps.events.views_public_codes import api_client_target
             return api_client_target(request, view_name, kwargs)

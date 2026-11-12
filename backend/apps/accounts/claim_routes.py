@@ -36,6 +36,7 @@ from .claim_routes_l3b import L3B_CLAIM_ROUTES
 from .claim_routes_r2 import R2_CLAIM_ROUTES
 from .claim_routes_l3 import L3_CLAIM_ROUTES
 from .claim_routes_cutout import CUTOUT_CLAIM_ROUTES
+from .claim_routes_adapter_watch import ADAPTER_WATCH_CLAIM_ROUTES
 from .claim_routes_l6 import L6_CLAIM_ROUTES
 from .claim_routes_l18 import L18_CLAIM_ROUTES
 from .claim_routes_l22 import L22_CLAIM_ROUTES
@@ -58,6 +59,7 @@ CLAIM_ROUTES = {
     **R2_CLAIM_ROUTES,
     **L3_CLAIM_ROUTES,
     **CUTOUT_CLAIM_ROUTES,
+    **ADAPTER_WATCH_CLAIM_ROUTES,
     **L6_CLAIM_ROUTES,
     **L18_CLAIM_ROUTES,
     **L22_CLAIM_ROUTES,

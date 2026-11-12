@@ -94,6 +94,11 @@ POLICY_OVERRIDE_ALLOWLIST = {
     "apps.machines.permissions.IsActiveRequester": {"has_permission"},
     "apps.accounts.views_device.IsDeviceAccessToken": {"has_permission"},
     "apps.makerspaces.throttles.MemberImagePresignThrottle": {"get_cache_key"},
+    # The cut-out budget only counts POSTs (the one verb that calls an external service).
+    "apps.card_designs.views_cutout.CutoutPostThrottle": {"allow_request"},
+    # Camera-watch budgets are per account (scope/rate lookup + cache key), as FixedWindowRateThrottle.
+    "apps.devices.throttles.AdapterWatchStartThrottle": {"allow_request", "get_cache_key", "get_rate", "wait"},
+    "apps.devices.throttles.AdapterWatchRelayThrottle": {"allow_request", "get_cache_key", "get_rate", "wait"},
     "apps.makerspaces.throttles.ProfileLookupThrottle": {"allow_request", "get_cache_key", "wait"},
     "apps.makerspaces.throttles.ProfileLookupDailyThrottle": {"allow_request", "get_cache_key", "wait"},
     "apps.makerspaces.throttles.HandleCheckThrottle": {"allow_request", "get_cache_key", "wait"},

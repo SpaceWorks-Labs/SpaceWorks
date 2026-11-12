@@ -12,7 +12,7 @@ PROFILE_CLAIM_ROUTES = {
         gettext_noop("Speaker invitations require a full account session.")),
     ("member-event-speaker-claim", "OPTIONS"): AnonymousRead(),
     **{(name, method): AnonymousRead() for name in (
-        "handle-check", "public-profile", "public-profile-activity", "public-profile-events", "public-profile-projects", "public-profile-github",
+        "public-profile", "public-profile-activity", "public-profile-events", "public-profile-projects", "public-profile-github",
     ) for method in ("GET", "HEAD", "OPTIONS")},
     **{("member-profile-handle", method): Refused(
         gettext_noop("A global public handle requires a full account session.")) for method in ("POST", "DELETE")},
@@ -29,7 +29,7 @@ PROFILE_CLAIM_ROUTES = {
     )},
     # Self-reported achievements follow the timeline rules (decision 302c).
     **{(name, method): ReadOnly(tenant=ID) for name in (
-        "member-profile-achievements", "member-profile-achievement-detail",
+        "member-profile-achievements",
     ) for method in ("GET", "HEAD")},
     ("member-profile-achievements", "POST"): Refused(gettext_noop("The global profile requires a full account session.")),
     ("member-profile-achievement-detail", "PATCH"): Refused(gettext_noop("The global profile requires a full account session.")),
@@ -55,7 +55,6 @@ _GLOBAL_PROFILE_METHODS = {
     "member-global-profile-achievements": ("GET", "HEAD", "POST"),
     "member-global-profile-achievement-detail": ("PATCH", "DELETE"),
     "member-global-profile-project-import": ("GET", "HEAD", "POST"),
-    "profile-by-account": ("GET", "HEAD"),
 }
 for _name, _methods in _GLOBAL_PROFILE_METHODS.items():
     for _method in _methods:

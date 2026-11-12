@@ -14,6 +14,9 @@ SAMPLE = {1: ("Signatory name", "Director"), 2: ("Second signatory", "Programme 
 
 
 def printed_slots(parameters):
+    if (parameters or {}).get("version") == 3:  # a Studio certificate: `signature` and `signature_row` layers
+        from apps.card_designs.layout_certificate import printed_slots as studio_slots
+        return studio_slots(parameters)
     return sorted({layer["signature_slot"] for layer in (parameters or {}).get("layers", ())
                    if layer.get("type") == "signature"})
 
@@ -60,7 +63,7 @@ def capture(event, layout):
     for slot in slots:
         row = rows.get(slot)
         if row is None:
-            raise ProgrammeConflict(f"Signatory {slot} was removed. Update the certificate design.",
+            raise ProgrammeConflict(gettext("Signatory %(slot)s was removed. Update the certificate design.") % {"slot": slot},
                                     code="certificate_ineligible")
         result[str(slot)] = {"signatory_id": row.pk, "version": row.version, "name": row.name,
                              "title": row.title, "artwork": _artwork(row)}
@@ -100,7 +103,7 @@ def require_render_released(row):
     """A certificate renders (and is emailed) only after its printed signatories approved."""
     waiting = unapproved(row.event, row.template_revision_id, (row.layout_snapshot or {}).get("signatures"))
     if waiting:
-        raise ProgrammeConflict("This certificate is waiting for its signatories to approve the design.",
+        raise ProgrammeConflict(gettext("This certificate is waiting for its signatories to approve the design."),
                                 code="signatory_approval_pending")
 
 

@@ -1,4 +1,5 @@
 """C owns entitlement synchronization; shared infrastructure owns grant containers."""
+from django.utils.translation import gettext
 from django.db import connection
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -67,7 +68,7 @@ def sync_role_locked(*, assignment_id, actor_id, locks):
         if row.role == "co_organizer":
             event_authority.require(actor, row.event, None)
             if not all(event_authority.can(actor, row.event, p) for p in desired):
-                raise ProgrammeError("permission_subset", "Role permissions exceed current authority.", status=403)
+                raise ProgrammeError("permission_subset", gettext("Role permissions exceed current authority."), status=403)
         else:
             # A co-organizer limited to a track/window appoints helpers inside that track and window only.
             starts, ends = inherited_window(actor=actor, target=row.event, permissions=desired, track_ids=row.track_ids)
@@ -75,12 +76,12 @@ def sync_role_locked(*, assignment_id, actor_id, locks):
                     actor=actor, target=row.event, permissions=desired,
                     scope=DelegationScope(event_id=row.event_id, helper_role=row.role,
                                           track_ids=tuple(row.track_ids), valid_from=starts, valid_until=ends)):
-                raise ProgrammeError("permission_subset", "Role permissions exceed current helper authority.", status=403)
+                raise ProgrammeError("permission_subset", gettext("Role permissions exceed current helper authority."), status=403)
         if row.role == "sponsor_rep":
             allowed = set(EventSponsorTrack.objects.filter(event_id=row.event_id,
                 sponsor_id=row.sponsor_id, track__event_id=row.event_id).values_list("track_id", flat=True))
             if not row.track_ids or not set(row.track_ids) <= allowed:
-                raise ProgrammeError("invalid_tracks", "Select only this sponsor's event tracks.", status=400)
+                raise ProgrammeError("invalid_tracks", gettext("Select only this sponsor's event tracks."), status=400)
     _sync(row=row, kind="role", desired=desired, tracks=row.track_ids, actor_id=actor_id, locks=locks,
           starts=starts, ends=ends)
 
@@ -93,6 +94,6 @@ def sync_shift_locked(*, signup_id, actor_id, locks):
         and not row.attendance.state in ("checked_out", "no_show")) else ()
     # Earlier approvals verified the preset subset; later sync only narrows it.
     if desired and not set(desired) <= set(shift.posting.permission_preset):
-        raise ProgrammeError("permission_subset", "Shift permissions exceed the posting preset.", status=403)
+        raise ProgrammeError("permission_subset", gettext("Shift permissions exceed the posting preset."), status=403)
     _sync(row=row, kind="shift", desired=desired, actor_id=actor_id, locks=locks,
           starts=shift.starts_at, ends=shift.ends_at)

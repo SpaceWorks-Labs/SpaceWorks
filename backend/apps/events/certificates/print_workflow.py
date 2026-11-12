@@ -50,7 +50,7 @@ def create(event_id, *, actor, operation_id, expected_version, registration_ids,
         previous = BadgePrintJob.objects.filter(event=event, operation_id=operation_id).first()
         if previous:
             if previous.request_sha256 != digest or previous.actor_id != actor.pk:
-                raise ProgrammeConflict("Operation ID was already used.", code="operation_conflict")
+                raise ProgrammeConflict(gettext("Operation ID was already used."), code="operation_conflict")
             return previous
         require_version(event, expected_version)
         revision = EventBadgeTemplateRevision.objects.filter(pk=template_revision, event=event, stock=stock).first()
@@ -71,7 +71,7 @@ def create(event_id, *, actor, operation_id, expected_version, registration_ids,
             except NotFound:
                 failures.append({"registration_id": row.pk, "error_code": "registration_ineligible"})
         if not eligible:
-            raise ProgrammeConflict("No selected registrations are eligible for printing.", code="print_ineligible")
+            raise ProgrammeConflict(gettext("No selected registrations are eligible for printing."), code="print_ineligible")
         job = BadgePrintJob.objects.create(event=event, actor=actor, operation_id=operation_id,
                 request_sha256=digest, template=revision.document, template_revision=revision,
                 event_version=event.version, fields_sha256=fields_digest(event, eligible), row_failures=failures,
@@ -115,7 +115,7 @@ def prepare_resources(job, *, actor):
             if created:
                 limits.add_storage(event.makerspace, len(photo.pixels))
             if resource.sha256 != photo.sha256 or resource.presentation_version != version:
-                raise ProgrammeConflict("Prepared photo differs from its reservation.", code="photo_source_changed")
+                raise ProgrammeConflict(gettext("Prepared photo differs from its reservation."), code="photo_source_changed")
             require_job(job, actor, prepared_scope=scope)
         if resource.bound_at:
             continue
@@ -140,7 +140,7 @@ def require_prepared_photo(job, registration_id, presentation_id, version, photo
             or profile.membership_id != photo.membership_id
             or profile.updated_at.isoformat().replace("+00:00", "Z") != photo.source_revision
             or hashlib.sha256(profile.avatar_key.encode()).hexdigest() != photo.source_key_digest):
-        raise ProgrammeConflict("Photo source or consent changed.", code="photo_source_changed")
+        raise ProgrammeConflict(gettext("Photo source or consent changed."), code="photo_source_changed")
 
 
 def snapshots(job):
@@ -197,7 +197,7 @@ def render(job, *, actor):
 def download(job, *, actor):
     require_job(job, actor)
     if job.state != "ready":
-        raise ProgrammeConflict("This print job is not ready.", code="print_not_ready")
+        raise ProgrammeConflict(gettext("This print job is not ready."), code="print_not_ready")
     content = storage.read(job.object_key, job.sha256)
     # Recheck after object I/O and immediately before HTTP releases these bounded bytes.
     job.refresh_from_db()

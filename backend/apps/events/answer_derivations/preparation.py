@@ -1,5 +1,6 @@
 """Short-lived in-process ciphertext prepared before entering event locks."""
 
+from django.utils.translation import gettext
 from dataclasses import dataclass, field
 from datetime import timedelta
 import re
@@ -49,7 +50,7 @@ class PreparedDerivations:
 
 def source_dob(source, *, actor_id, saved_dob_loader):
     if not isinstance(source, dict):
-        raise DerivationError("invalid_dob_source", "Use a private birth date source.")
+        raise DerivationError("invalid_dob_source", gettext("Use a private birth date source."))
     if source.get("kind") == "inline_dob" and set(source) == {"kind", "date_of_birth"}:
         raw = source["date_of_birth"]
     elif (source.get("kind") == "saved_detail" and set(source) == {"kind", "field_key", "version"}
@@ -57,11 +58,11 @@ def source_dob(source, *, actor_id, saved_dob_loader):
           and source["version"] > 0 and saved_dob_loader is not None):
         raw = saved_dob_loader(actor_id=actor_id, version=source["version"])
     else:
-        raise DerivationError("invalid_dob_source", "Use a private birth date source.")
+        raise DerivationError("invalid_dob_source", gettext("Use a private birth date source."))
     try:
         return validate_dob(raw)
     except ValueError as exc:
-        raise DerivationError("invalid_date_of_birth", "Use a valid nonfuture birth date.") from exc
+        raise DerivationError("invalid_date_of_birth", gettext("Use a valid nonfuture birth date.")) from exc
 
 
 def prepare_derivations(
@@ -93,7 +94,7 @@ def prepare_derivations(
     if (not isinstance(derivations, dict) or len(derivations) > 50
             or any(not isinstance(q, str) or not _QUESTION.fullmatch(q) for q in derivations)
             or not set(derivations) <= set(visible_question_ids)):
-        raise DerivationError("invalid_derivations", "Use visible derived questions.")
+        raise DerivationError("invalid_derivations", gettext("Use visible derived questions."))
     event = Event.objects.filter(pk=subject.event_id).first()
     if event is None:
         from rest_framework.exceptions import NotFound
@@ -101,7 +102,7 @@ def prepare_derivations(
     require_event(event)
     existing = list(EventAnswerDerivation.objects.filter(**subject_filter(subject))) if subject.subject_id else []
     if any(row.locked_at for row in existing) and not reopening:
-        raise DerivationError("answers_locked", "Submitted source evidence is locked.", status=409)
+        raise DerivationError("answers_locked", gettext("Submitted source evidence is locked."), status=409)
     by_question = {row.question_id: row for row in existing}
     target = review_target(event, [] if reopening else existing)
     resolved = []
@@ -109,18 +110,18 @@ def prepare_derivations(
         try:
             explicit_dob = validate_dob(explicit_dob)
         except ValueError as exc:
-            raise DerivationError("invalid_date_of_birth", "Use a valid nonfuture birth date.") from exc
+            raise DerivationError("invalid_date_of_birth", gettext("Use a valid nonfuture birth date.")) from exc
     for question_id, item in derivations.items():
         if (not isinstance(item, dict) or set(item) != {
             "source", "reviewed_event_date_revision", "reviewed_as_of_date",
         }):
-            raise DerivationError("derived_value_not_accepted", "Supply a private birth date, never a numeric age.")
+            raise DerivationError("derived_value_not_accepted", gettext("Supply a private birth date, never a numeric age."))
         require_review(item["reviewed_event_date_revision"], item["reviewed_as_of_date"], target)
         dob = source_dob(item["source"], actor_id=actor_id, saved_dob_loader=saved_dob_loader)
         if explicit_dob is not None and dob != explicit_dob:
-            raise DerivationError("dob_source_mismatch", "Use one consistent birth date source.")
+            raise DerivationError("dob_source_mismatch", gettext("Use one consistent birth date source."))
         if resolved and dob != resolved[0][1]:
-            raise DerivationError("dob_source_mismatch", "Use one consistent birth date source.")
+            raise DerivationError("dob_source_mismatch", gettext("Use one consistent birth date source."))
         resolved.append((question_id, dob))
     version, dek = prepared_key(event.makerspace_id)
     sources = []

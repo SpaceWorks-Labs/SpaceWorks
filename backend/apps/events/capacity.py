@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 import math
 from datetime import timedelta
 
@@ -142,7 +143,7 @@ def require_contributor_room_locked(*, event_id, ticket_type_id, assignment_id, 
     if (ticket.contributor_capacity_policy != "reserved_contributor_capacity" or ticket.capacity == 0
             or not EventRoleAssignment.objects.filter(pk=assignment_id, event_id=event_id,
                 state="approved", imported_inert=False, member_id__in=locks.account_ids).exists()):
-        fail("invalid_capacity_policy", "Choose a configured reserved contributor ticket.", status=400)
+        fail("invalid_capacity_policy", gettext("Choose a configured reserved contributor ticket."), status=400)
     available = registration_spots_left(event, ticket)
     if available is not None and available <= 0:
-        fail("capacity_full", "No reserved contributor places are available.")
+        fail("capacity_full", gettext("No reserved contributor places are available."))

@@ -51,13 +51,13 @@ def enqueue(event_id, *, actor, operation_id, expected_version, subjects, publis
         previous = CertificateIssueBatch.objects.filter(event=event, operation_id=operation_id).first()
         if previous:
             if previous.request_sha256 != digest or previous.actor_id != actor.pk:
-                raise ProgrammeConflict("Operation ID was already used.", code="operation_conflict")
+                raise ProgrammeConflict(gettext("Operation ID was already used."), code="operation_conflict")
             return previous
         require_version(event, expected_version)
         if all_attended:
             if (subjects != attended_subjects(event.pk) or not 1 <= len(subjects) <= MAX_BATCH
                     or confirmed_count != len(subjects)):
-                raise ProgrammeConflict("Attendance count changed. Preview again.", code="eligibility_changed")
+                raise ProgrammeConflict(gettext("Attendance count changed. Preview again."), code="eligibility_changed")
         for item in subjects:
             require_subject(event, **item, prepared=prepared.recipient(item["subject_kind"], item["subject_id"]))
         if publish_event_details:

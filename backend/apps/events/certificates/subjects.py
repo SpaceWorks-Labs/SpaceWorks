@@ -1,5 +1,6 @@
 """One adapter for nullable certificate subjects; no blind registration dereference."""
 
+from django.utils.translation import gettext
 from dataclasses import dataclass
 from rest_framework.exceptions import NotFound, PermissionDenied
 
@@ -30,30 +31,30 @@ def install_eligibility(*, roles, awards):
 
 def require_subject(event, *, subject_kind, subject_id, kind, award_id=None, result_revision_id=None, prepared=None):
     if prepared is None or (prepared.kind, prepared.subject_id) != (subject_kind, subject_id):
-        raise ProgrammeConflict("Prepare the exact recipient before the event lock.", code="subject_changed")
+        raise ProgrammeConflict(gettext("Prepare the exact recipient before the event lock."), code="subject_changed")
     assert_account_fence_held(prepared.member_id)
     if subject_kind == "registration":
         row = EventRegistration.objects.select_for_update().filter(event=event, pk=subject_id).first()
         if row is None:
             raise NotFound()
         if row.status not in ("registered", "attended") or not row.member_id:
-            raise ProgrammeConflict("Attendance and a member account are required.", code="certificate_ineligible")
+            raise ProgrammeConflict(gettext("Attendance and a member account are required."), code="certificate_ineligible")
         if kind == "attendance" and row.status != "attended":
-            raise ProgrammeConflict("Attendance is required.", code="certificate_ineligible")
+            raise ProgrammeConflict(gettext("Attendance is required."), code="certificate_ineligible")
         if kind not in ("attendance", "participant", "finalist", "winner"):
-            raise ProgrammeConflict("Certificate kind does not match the subject.", code="certificate_ineligible")
+            raise ProgrammeConflict(gettext("Certificate kind does not match the subject."), code="certificate_ineligible")
         assert_account_fence_held(row.member_id)
         if prepared.member_id != row.member_id:
-            raise ProgrammeConflict("Prepare the recipient before the event lock.", code="subject_changed")
+            raise ProgrammeConflict(gettext("Prepare the recipient before the event lock."), code="subject_changed")
         if row.__dict__["name"] != prepared.raw_name:
-            raise ProgrammeConflict("Recipient changed. Retry preparation.", code="subject_changed")
+            raise ProgrammeConflict(gettext("Recipient changed. Retry preparation."), code="subject_changed")
         result = EligibleSubject("registration", row.pk, event.pk, row.member_id, prepared.name)
     elif subject_kind == "role_assignment":
         if _role_eligibility is None:
-            raise ProgrammeConflict("Verified contribution provider is unavailable.", code="certificate_ineligible")
+            raise ProgrammeConflict(gettext("Verified contribution provider is unavailable."), code="certificate_ineligible")
         result = _role_eligibility(event_id=event.pk, assignment_id=subject_id, kind=kind)
         if not isinstance(result, EligibleSubject):
-            raise ProgrammeConflict("Verified contribution is required.", code="certificate_ineligible")
+            raise ProgrammeConflict(gettext("Verified contribution is required."), code="certificate_ineligible")
     else:
         raise NotFound()
     if result.event_id != event.pk or result.subject_kind != subject_kind or result.subject_id != subject_id:
@@ -62,16 +63,16 @@ def require_subject(event, *, subject_kind, subject_id, kind, award_id=None, res
     from apps.accounts.models import User
     if not User.objects.filter(person_q(), pk=result.member_id, is_active=True,
             access_status="active", is_tenant_dump_stub=False, retired_at__isnull=True).exists():
-        raise ProgrammeConflict("Recipient account is unavailable.", code="certificate_ineligible")
+        raise ProgrammeConflict(gettext("Recipient account is unavailable."), code="certificate_ineligible")
     if (prepared.member_id, prepared.name) != (result.member_id, result.recipient_name):
-        raise ProgrammeConflict("Recipient changed. Retry preparation.", code="subject_changed")
+        raise ProgrammeConflict(gettext("Recipient changed. Retry preparation."), code="subject_changed")
     if kind in ("finalist", "winner", "participant"):
         if (kind != "participant" and (not award_id or not result_revision_id)) or _award_eligibility is None or _award_eligibility(
                 event_id=event.pk, member_id=result.member_id, award_id=award_id,
                 result_revision_id=result_revision_id, kind=kind) is not True:
-            raise ProgrammeConflict("A current result award is required.", code="certificate_ineligible")
+            raise ProgrammeConflict(gettext("A current result award is required."), code="certificate_ineligible")
     elif award_id or result_revision_id:
-        raise ProgrammeConflict("This certificate kind cannot carry a prize.", code="certificate_ineligible")
+        raise ProgrammeConflict(gettext("This certificate kind cannot carry a prize."), code="certificate_ineligible")
     return result
 
 

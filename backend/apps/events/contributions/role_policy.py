@@ -1,4 +1,5 @@
 """Locked policy shared by manual approval and posting auto-approval."""
+from django.utils.translation import gettext
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from apps.accounts.models import User
@@ -20,11 +21,11 @@ def require_requirements(*, actor_id, assignment_id, shift_id):
 
 def approve_locked(*, row, issuer, event, locks):
     if row.imported_inert:
-        raise ProgrammeError("imported_inert", "Reconfirm this imported role before granting authority.")
+        raise ProgrammeError("imported_inert", gettext("Reconfirm this imported role before granting authority."))
     if row.member_id not in locks.account_ids or issuer.pk not in locks.account_ids:
-        raise ProgrammeError("scope_changed", "Approval authority changed; retry.")
+        raise ProgrammeError("scope_changed", gettext("Approval authority changed; retry."))
     if not event_authority._active(issuer):
-        raise ProgrammeError("issuer_inactive", "A current organizer must approve this role.", status=403)
+        raise ProgrammeError("issuer_inactive", gettext("A current organizer must approve this role."), status=403)
     event_authority.require(issuer, event, None if row.role == "co_organizer" else
                             "manage_volunteers" if row.role == "volunteer" else "manage_team")
     ports().forms.require_approval_locked(subject=subject_for(row), locks=locks)
@@ -44,13 +45,13 @@ def approve_locked(*, row, issuer, event, locks):
 
 def auto_approve_locked(*, row, posting, event, locks):
     if posting.permission_issuer_id is None or posting.permission_issuer_id not in locks.account_ids:
-        raise ProgrammeError("issuer_changed", "A current organizer must review this posting.")
+        raise ProgrammeError("issuer_changed", gettext("A current organizer must review this posting."))
     issuer = get_object_or_404(User, pk=posting.permission_issuer_id)
     if not event_authority._active(issuer):
-        raise ProgrammeError("issuer_inactive", "A current organizer must approve this role.", status=403)
+        raise ProgrammeError("issuer_inactive", gettext("A current organizer must approve this role."), status=403)
     event_authority.require(issuer, event, "manage_volunteers" if row.role == "volunteer" else "manage_team")
     if not all(event_authority.can(issuer, event, p) for p in posting.permission_preset):
-        raise ProgrammeError("permission_subset", "The posting issuer no longer holds these permissions.", status=403)
+        raise ProgrammeError("permission_subset", gettext("The posting issuer no longer holds these permissions."), status=403)
     row.delegated_permissions = list(posting.permission_preset)
     row.save(update_fields=["delegated_permissions"])
     approve_locked(row=row, issuer=issuer, event=event, locks=locks)
@@ -61,10 +62,10 @@ def reopen_locked(*, row, actor, event, locks, reason):
     from .models_roles import ACTIVE, EventRoleAssignment
     from .form_storage import canonical_answers
     if not reason.strip():
-        raise ProgrammeError("reason_required", "Explain why the answers need a new revision.", status=400)
+        raise ProgrammeError("reason_required", gettext("Explain why the answers need a new revision."), status=400)
     if EventRoleAssignment.objects.filter(event=event, member_id=row.member_id,
             role=row.role, sponsor_id=row.sponsor_id, state__in=ACTIVE).exclude(pk=row.pk).exists():
-        raise ProgrammeError("application_exists", "This member already has an active application.")
+        raise ProgrammeError("application_exists", gettext("This member already has an active application."))
     commands.new_row(EventRoleAnswerRevision, event, assignment=row, actor=actor,
         answers=canonical_answers(row.answers if row.answers != "{}" else '{"version":2,"answers":[]}'),
         reason=reason, schema_version=row.form_schema_version,

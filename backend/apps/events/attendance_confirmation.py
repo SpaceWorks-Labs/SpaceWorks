@@ -10,6 +10,7 @@ With the event's "free the place on No" switch on (off by default), a No:
   to decide -- money never moves automatically (#59, #60);
 - on a seat from a multi-ticket order changes nothing: those are left to staff.
 """
+from django.utils.translation import gettext
 from datetime import timedelta
 
 from django.db import transaction
@@ -29,7 +30,7 @@ INTERVAL = timedelta(hours=12)
 
 def require_feature(event):
     if not feature_enabled(event.makerspace, FEATURE):
-        fail("not_found", "Not found.", status=404)
+        fail("not_found", gettext("Not found."), status=404)
 
 
 def _targets(event):
@@ -42,14 +43,14 @@ def send(event, *, actor, kind):
     require_feature(event)
     now = timezone.now()
     if event.status != event.Status.PUBLISHED or now >= event.ends_at:
-        fail("event_closed", "Attendance can only be confirmed for an upcoming published event.")
+        fail("event_closed", gettext("Attendance can only be confirmed for an upcoming published event."))
     last = EventAttendanceRound.objects.filter(event=event).order_by("-created_at").first()
     if last and now - last.created_at < INTERVAL:
         wait = int((last.created_at + INTERVAL - now).total_seconds())
-        fail("attendance_too_soon", "Wait 12 hours between attendance emails.", status=429,
+        fail("attendance_too_soon", gettext("Wait 12 hours between attendance emails."), status=429,
              fields={"retry_after_seconds": [str(wait)]})
     if kind == EventAttendanceRound.Kind.REMINDER and not EventAttendanceReply.objects.filter(event=event).exists():
-        fail("attendance_not_asked", "Send the confirmation before a reminder.", status=400)
+        fail("attendance_not_asked", gettext("Send the confirmation before a reminder."), status=400)
     if kind == EventAttendanceRound.Kind.CONFIRMATION:
         asked = EventAttendanceReply.objects.filter(event=event).values("registration_id")
         for registration in _targets(event).exclude(pk__in=asked):
@@ -106,11 +107,11 @@ def reply(registration, *, actor, answer, note=""):
     require_feature(event)
     row = EventAttendanceReply.objects.select_for_update().filter(registration=registration).first()
     if row is None or registration.member_id != actor.pk:
-        fail("not_found", "Not found.", status=404)
+        fail("not_found", gettext("Not found."), status=404)
     if timezone.now() >= event.ends_at:
-        fail("event_closed", "This event has ended.")
+        fail("event_closed", gettext("This event has ended."))
     if row.effect != EventAttendanceReply.Effect.NONE:
-        fail("attendance_final", "Your place was already released.")
+        fail("attendance_final", gettext("Your place was already released."))
     row.answer, row.note, row.replied_at = answer, note[:1000], timezone.now()
     if answer == EventAttendanceReply.Answer.NO and EventParticipationSettings.for_event(event).attendance_free_on_no:
         locked = EventRegistration.objects.get(pk=registration.pk)

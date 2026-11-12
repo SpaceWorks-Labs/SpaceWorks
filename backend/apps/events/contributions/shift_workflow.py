@@ -1,4 +1,5 @@
 """Public shift command boundary; internal variants require existing event locks."""
+from django.utils.translation import gettext
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from apps.audit.services import record
@@ -23,9 +24,9 @@ def conflicts(*, member_id, shift, exclude_signup=None):
 
 def _requirements(assignment, shift):
     if assignment.member_id is None or assignment.event_id != shift.event_id or assignment.posting_id != shift.posting_id:
-        raise ProgrammeError("invalid_assignment", "Choose your application for this posting.", status=404)
+        raise ProgrammeError("invalid_assignment", gettext("Choose your application for this posting."), status=404)
     if assignment.imported_inert or assignment.state not in ("applied", "approved"):
-        raise ProgrammeError("role_not_eligible", "This application cannot join a shift.", status=403)
+        raise ProgrammeError("role_not_eligible", gettext("This application cannot join a shift."), status=403)
     require_requirements(actor_id=assignment.member_id, assignment_id=assignment.pk, shift_id=shift.pk)
 
 
@@ -38,23 +39,23 @@ def transition_scope(*, event_id, shift_ids):
 
 def _approve_locked(signup, shift, assignment, actor, locks, *, automated=False):
     if signup.member_id not in locks.account_ids:
-        raise ProgrammeError("scope_changed", "The waitlist changed; retry this operation.")
+        raise ProgrammeError("scope_changed", gettext("The waitlist changed; retry this operation."))
     _requirements(assignment, shift)
     require_state(assignment, "approved")
     issuer = actor
     if shift.permission_preset:
         issuer = shift.posting.permission_issuer if automated else actor
         if issuer is None or issuer.pk not in locks.account_ids:
-            raise ProgrammeError("issuer_changed", "The posting issuer changed; retry this operation.")
+            raise ProgrammeError("issuer_changed", gettext("The posting issuer changed; retry this operation."))
         if not event_authority.can(issuer, shift.event, "manage_volunteers") or not all(
                 event_authority.can(issuer, shift.event, p) for p in shift.permission_preset):
-            raise ProgrammeError("permission_subset", "A current organizer must approve these duty permissions.", status=403)
+            raise ProgrammeError("permission_subset", gettext("A current organizer must approve these duty permissions."), status=403)
     if conflicts(member_id=signup.member_id, shift=shift, exclude_signup=signup.pk):
-        raise ProgrammeError("shift_conflict", "You already have an overlapping duty.")
+        raise ProgrammeError("shift_conflict", gettext("You already have an overlapping duty."))
     booked = shift.signups.filter(state="approved").exclude(pk=signup.pk).count()
     if remaining_locked(shift, booked=booked) == 0:
         if not shift.waitlist_enabled:
-            raise ProgrammeError("shift_full", "This shift is full.")
+            raise ProgrammeError("shift_full", gettext("This shift is full."))
         return commands.changed(signup, state="waitlisted")
     commands.changed(signup, state="approved", approved_at=timezone.now(), approved_by=issuer)
     EventShiftAttendance.objects.get_or_create(signup=signup, defaults={
@@ -81,10 +82,10 @@ def apply(*, actor, event_id, shift_id, payload):
         shift = get_object_or_404(EventShift.objects.select_for_update(), pk=shift_id, event=event, kind="volunteer")
         check_version(shift, payload["expected_version"])
         if shift.state != "open" or timezone.now() >= shift.signup_deadline:
-            raise ProgrammeError("shift_closed", "This shift is closed.")
+            raise ProgrammeError("shift_closed", gettext("This shift is closed."))
         _requirements(assignment, shift)
         if EventShiftSignup.objects.filter(shift=shift, member=actor).exists():
-            raise ProgrammeError("signup_exists", "You already have a signup for this shift.")
+            raise ProgrammeError("signup_exists", gettext("You already have a signup for this shift."))
         signup = commands.new_row(EventShiftSignup, event, shift=shift, assignment=assignment, member=actor)
         if not shift.approval_required and assignment.state == "approved":
             _approve_locked(signup, shift, assignment, actor, locks, automated=True)
@@ -134,13 +135,13 @@ def transition(*, actor, event_id, signup_id, payload, action, staff=False):
         if action == "approve":
             require_state(signup, "applied", "waitlisted")
             if timezone.now() >= shift.starts_at or shift.state != "open":
-                raise ProgrammeError("shift_closed", "This shift is closed.")
+                raise ProgrammeError("shift_closed", gettext("This shift is closed."))
             return _approve_locked(signup, shift, assignment, actor, locks)
         if action != "withdraw":
-            raise ProgrammeError("invalid_transition", "Unknown shift command.", status=400)
+            raise ProgrammeError("invalid_transition", gettext("Unknown shift command."), status=400)
         require_state(signup, "applied", "approved", "waitlisted")
         if EventShiftAttendance.objects.filter(signup=signup, state__in=["checked_in", "checked_out"]).exists():
-            raise ProgrammeError("work_locked", "Work has started; ask an organizer to close this shift.")
+            raise ProgrammeError("work_locked", gettext("Work has started; ask an organizer to close this shift."))
         commands.changed(signup, state="withdrawn")
         sync_shift_locked(signup_id=signup.pk, actor_id=actor.pk, locks=locks)
         from .notifications import cancelled_signup_locked
@@ -179,5 +180,5 @@ def withdraw_assignment_locked(*, assignment, actor, event, locks, allow_active=
         if slots[booking.slot_id].starts_at <= timezone.now():
             if allow_active:
                 continue
-            raise ProgrammeError("work_locked", "A booked office-hour session has started.")
+            raise ProgrammeError("work_locked", gettext("A booked office-hour session has started."))
         cancel_locked(actor=actor, event=event, booking_id=booking.pk, locks=locks, reason_code=reason_code)

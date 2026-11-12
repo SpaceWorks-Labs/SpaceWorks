@@ -124,10 +124,10 @@ def set_override(event, *, actor, enabled, values, policy_text=""):
     if has_sales(event):
         old, _overridden = current_terms(event, row)
         if not enabled and row.refund_override:
-            raise OrderRefused("policy_less_generous", "The event's own policy cannot be removed after the first sale.")
+            raise OrderRefused("policy_less_generous", gettext("The event's own policy cannot be removed after the first sale."))
         if enabled and old is not None and less_generous(old, values):
             raise OrderRefused("policy_less_generous",
-                               "After the first sale the refund policy may only become more generous.",
+                               gettext("After the first sale the refund policy may only become more generous."),
                                fields=less_generous(old, values))
     before = {field: str(getattr(row, field)) for field in OVERRIDE_FIELDS}
     row.refund_override = bool(enabled)

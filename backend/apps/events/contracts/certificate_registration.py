@@ -1,5 +1,6 @@
 """C verified work and D current awards feed E's sole issuance service."""
 
+from django.utils.translation import gettext
 from apps.encryption.account_write_fence import assert_account_fence_held
 from apps.events.contracts.providers import LockedContext
 from apps.events.contributions.models_roles import EventRoleAssignment
@@ -25,7 +26,7 @@ def role_eligible(*, event_id, assignment_id, kind):
     from apps.encryption.write_fence import assert_mapped_write_allowed
     assert_mapped_write_allowed(role.makerspace_id)
     if kind != THANKS_KINDS.get(role.role):
-        raise ProgrammeConflict("Certificate kind does not match the role.", code="certificate_ineligible")
+        raise ProgrammeConflict(gettext("Certificate kind does not match the role."), code="certificate_ineligible")
     # An actor fence is not a recipient fence. Missing E scopes refuse here.
     assert_account_fence_held(role.member_id)
     if role.role == "volunteer":
@@ -33,7 +34,7 @@ def role_eligible(*, event_id, assignment_id, kind):
         resolve(event_id=event_id, assignment_id=assignment_id, locks=current_locks(event_id))
     else:
         if role.state not in ("approved", "completed") or role.imported_inert:
-            raise ProgrammeConflict("Completed contribution evidence is required.", code="certificate_ineligible")
+            raise ProgrammeConflict(gettext("Completed contribution evidence is required."), code="certificate_ineligible")
         if role.role == "co_organizer":
             # The approved co-organiser role on this event is the organising evidence.
             worked = True
@@ -47,7 +48,7 @@ def role_eligible(*, event_id, assignment_id, kind):
                 submitted_at__isnull=False).exists() or JudgeRankingBallot.objects.filter(
                     event_id=event_id, judge=role).exists() or _compared(event_id, role)
         if not worked:
-            raise ProgrammeConflict("Completed contribution evidence is required.", code="certificate_ineligible")
+            raise ProgrammeConflict(gettext("Completed contribution evidence is required."), code="certificate_ineligible")
     member = User.objects.get(pk=role.member_id)
     from apps.events.contributions.commands import active_member
     active_member(member)

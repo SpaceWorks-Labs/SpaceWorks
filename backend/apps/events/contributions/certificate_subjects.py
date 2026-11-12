@@ -1,4 +1,5 @@
 """E consumes verified work evidence, independently of attendee registration."""
+from django.utils.translation import gettext
 from dataclasses import dataclass
 from django.db import connection
 from django.shortcuts import get_object_or_404
@@ -39,9 +40,9 @@ def resolve(*, event_id, assignment_id, locks):
         entry = EventContributionHoursEntry.objects.filter(hours=row, minutes=row.minutes,
             previous_version=row.version - 1, kind=row.state).exclude(actor_id=role.member_id).first()
         if entry is None or entry.actor_id is None:
-            raise ProgrammeError("hours_unverified", "Work needs independent verification.")
+            raise ProgrammeError("hours_unverified", gettext("Work needs independent verification."))
         evidence.append((row.pk, row.version))
     minutes = sum(row.minutes for row in rows)
     if minutes <= 0:
-        raise ProgrammeError("hours_unverified", "Verified contribution hours are required.")
+        raise ProgrammeError("hours_unverified", gettext("Verified contribution hours are required."))
     return VerifiedContributionSubject(event_id, role.member_id, role.pk, minutes, tuple(evidence))

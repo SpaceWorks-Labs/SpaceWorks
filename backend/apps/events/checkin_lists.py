@@ -12,6 +12,7 @@ waitlist override with the same rule as entry (a confirmed guest passes; a waitl
 override; pending and declined guests never pass), eligible/collected counts, and a minor's guardian-consent
 re-check on every collection (the same `require_minor_clearance` entry check-in makes, decision 291).
 """
+from django.utils.translation import gettext
 from datetime import timedelta
 
 from django.db.models import Max, Sum
@@ -38,7 +39,7 @@ REFUSALS = {"not_confirmed": "This person has no confirmed place.",
 
 def require_feature(event):
     if not feature_enabled(event.makerspace, FEATURE):
-        fail("not_found", "Not found.", status=404)
+        fail("not_found", gettext("Not found."), status=404)
 
 
 def allowance(checkin_list, registration):
@@ -80,11 +81,11 @@ def eligibility(checkin_list, registration, *, override=False):
 
 def _validate(checkin_list):
     if not checkin_list.name.strip():
-        fail("invalid_name", "Name the list.", status=400)
+        fail("invalid_name", gettext("Name the list."), status=400)
     if not 1 <= checkin_list.per_person <= 20:
-        fail("invalid_per_person", "Allow 1 to 20 collections per person.", status=400)
+        fail("invalid_per_person", gettext("Allow 1 to 20 collections per person."), status=400)
     if checkin_list.addon_id and checkin_list.addon.event_id != checkin_list.event_id:
-        fail("not_found", "Not found.", status=404)
+        fail("not_found", gettext("Not found."), status=404)
 
 
 def _check_quota(event):
@@ -123,7 +124,7 @@ def update(event, *, actor, list_id, data):
                      meta={"event_id": event.pk, "list_id": row.pk})
         return row
     if row.archived_at:
-        fail("list_archived", "An archived list is read-only.")
+        fail("list_archived", gettext("An archived list is read-only."))
     for key in ("name", "kind", "after_entry", "per_person"):
         if key in data:
             setattr(row, key, data[key])
@@ -147,7 +148,7 @@ def reorder(event, *, actor, ordered_ids):
     rows = {row.pk: row for row in EventCheckInList.objects.select_for_update().filter(event=event)}
     live = {pk for pk, row in rows.items() if row.archived_at is None}
     if len(ordered_ids) != len(set(ordered_ids)) or set(ordered_ids) != live:
-        fail("invalid_order", "Name every open list exactly once.", status=400)
+        fail("invalid_order", gettext("Name every open list exactly once."), status=400)
     for position, pk in enumerate(ordered_ids, start=1):
         if rows[pk].position != position:
             rows[pk].position = position
@@ -162,7 +163,7 @@ def scan(event, *, actor, list_id, registration_id=None, token=None, operation_i
     require_feature(event)
     row = get_object_or_404(EventCheckInList.objects.select_for_update(), pk=list_id, event=event)
     if row.archived_at:
-        fail("list_archived", "An archived list is read-only.")
+        fail("list_archived", gettext("An archived list is read-only."))
     replay = EventCheckInListScan.objects.filter(checkin_list=row, operation_id=operation_id).first()
     if replay is not None:
         return replay, eligibility(row, replay.registration, override=override)
@@ -190,12 +191,12 @@ def undo(event, *, actor, list_id, scan_id):
     require_feature(event)
     row = get_object_or_404(EventCheckInList.objects.select_for_update(), pk=list_id, event=event)
     if row.archived_at:
-        fail("list_archived", "An archived list is read-only.")
+        fail("list_archived", gettext("An archived list is read-only."))
     scan_row = get_object_or_404(EventCheckInListScan.objects.select_for_update(), pk=scan_id, checkin_list=row)
     if scan_row.undone_at is not None:
-        fail("already_undone", "This collection was already undone.")
+        fail("already_undone", gettext("This collection was already undone."))
     if timezone.now() - scan_row.scanned_at > UNDO_WINDOW:
-        fail("undo_window_closed", "A collection can only be undone within a minute.")
+        fail("undo_window_closed", gettext("A collection can only be undone within a minute."))
     scan_row.undone_at, scan_row.undone_by = timezone.now(), actor
     scan_row.save(update_fields=["undone_at", "undone_by"])
     audit.record(actor, "event.checkin_list.scan_undone", makerspace=event.makerspace, target=scan_row,

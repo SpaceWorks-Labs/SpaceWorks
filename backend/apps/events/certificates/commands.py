@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 import hashlib
 import json
 from django.shortcuts import get_object_or_404
@@ -22,7 +23,7 @@ def change_certificate(event_id, certificate_id, *, actor, action, operation_id,
         receipt = EventCredentialCommand.objects.filter(event=event, operation_id=operation_id).first()
         if receipt:
             if receipt.actor_id != actor.pk or receipt.request_sha256 != digest:
-                raise ProgrammeConflict("Operation ID was already used.", code="operation_conflict")
+                raise ProgrammeConflict(gettext("Operation ID was already used."), code="operation_conflict")
             return receipt.result
         require_version(event, expected_version)
         row = get_object_or_404(EventAttendanceCertificate.objects.select_for_update(), pk=certificate_id, event=event)
@@ -30,7 +31,7 @@ def change_certificate(event_id, certificate_id, *, actor, action, operation_id,
             row = revoke_locked(event, row, actor=actor, reason=reason)
         elif action == "reissue":
             if row.status != "revoked":
-                raise ProgrammeConflict("Revoke the earlier certificate before reissuing.")
+                raise ProgrammeConflict(gettext("Revoke the earlier certificate before reissuing."))
             row = create_for_subject_locked(event, subject_kind="registration" if row.registration_id else "role_assignment",
                 subject_id=row.registration_id or row.role_assignment_id, kind=row.kind, actor=actor,
                 award_id=row.award_id, result_revision_id=row.result_revision_id, prepared=prepared)

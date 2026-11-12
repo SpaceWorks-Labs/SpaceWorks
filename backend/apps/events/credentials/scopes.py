@@ -1,4 +1,5 @@
 """Discover subjects before fences and reject scope changes after the Event lock."""
+from django.utils.translation import gettext
 from dataclasses import dataclass, field
 
 from apps.transaction_guards import in_domain_transaction
@@ -23,14 +24,14 @@ class RegistrationScope:
         actual = tuple(EventRegistration.objects.filter(event_id=event.pk,
             pk__in=[pk for pk, _ in self.identities]).order_by("pk").values_list("pk", "member_id"))
         if event.pk != self.event_id or actual != self.identities:
-            raise ProgrammeConflict("Registration ownership changed. Retry the command.", code="subject_changed")
+            raise ProgrammeConflict(gettext("Registration ownership changed. Retry the command."), code="subject_changed")
 
     def bind(self, row):
         if (row.pk, row.member_id) not in self.identities or row.event_id != self.event_id:
-            raise ProgrammeConflict("Registration ownership changed.", code="subject_changed")
+            raise ProgrammeConflict(gettext("Registration ownership changed."), code="subject_changed")
         if row.pk in self.names:
             if any(row.__dict__[key] != value for key, value in self.raw_names[row.pk].items()):
-                raise ProgrammeConflict("Badge text changed. Retry preparation.", code="print_snapshot_changed")
+                raise ProgrammeConflict(gettext("Badge text changed. Retry preparation."), code="print_snapshot_changed")
             row.__dict__.setdefault("_pii_plain_values", {}).update(self.names[row.pk])
         return row
 

@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from rest_framework.exceptions import APIException
 
 
@@ -15,9 +16,9 @@ class ProgrammeError(APIException):
 
 def check_version(row, expected):
     if row.version != expected:
-        raise ProgrammeError("stale_version", "This item changed.", current_version=row.version)
+        raise ProgrammeError("stale_version", gettext("This item changed."), current_version=row.version)
 
 
 def require_state(row, *states):
     if row.state not in states:
-        raise ProgrammeError("invalid_transition", "This action is unavailable in the current state.")
+        raise ProgrammeError("invalid_transition", gettext("This action is unavailable in the current state."))

@@ -22,14 +22,14 @@ def set_policy(event_id, *, actor, operation_id, expected_version, enabled, cert
 
     def revalidate(event):
         if identities() != subjects:
-            raise ProgrammeConflict("Certificate ownership changed.", code="subject_changed")
+            raise ProgrammeConflict(gettext("Certificate ownership changed."), code="subject_changed")
 
     with event_command(event_id, actor=actor, account_ids=[pk for _, pk in subjects if pk],
                        revalidate=revalidate) as (event, actor):
         receipt = EventCredentialCommand.objects.filter(event=event, operation_id=operation_id).first()
         if receipt:
             if receipt.actor_id != actor.pk or receipt.request_sha256 != digest:
-                raise ProgrammeConflict("Operation ID was already used.", code="operation_conflict")
+                raise ProgrammeConflict(gettext("Operation ID was already used."), code="operation_conflict")
             return receipt.result
         require_version(event, expected_version)
         certificates = list(EventAttendanceCertificate.objects.select_for_update().filter(

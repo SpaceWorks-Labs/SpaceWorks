@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 import hashlib
 import json
 from apps.events.credentials.boundary import event_command, require_version, advance
@@ -17,7 +18,7 @@ def save_command(event_id, *, actor, operation_id, expected_version, parameters,
         receipt = EventCredentialCommand.objects.filter(event=event, operation_id=operation_id).first()
         if receipt:
             if receipt.actor_id != actor.pk or receipt.request_sha256 != digest:
-                raise ProgrammeConflict("Operation ID was already used.", code="operation_conflict")
+                raise ProgrammeConflict(gettext("Operation ID was already used."), code="operation_conflict")
             return receipt.result
         require_version(event, expected_version)
         row = save_template(event, actor=actor, parameters=parameters, artwork_id=artwork_id,

@@ -45,7 +45,7 @@ def save_design(event_id, *, actor, document, stock, operation_id, expected_vers
         previous = EventCredentialCommand.objects.filter(event=event, operation_id=operation_id).first()
         if previous:
             if previous.actor_id != actor.pk or previous.request_sha256 != digest:
-                raise ProgrammeConflict("Operation ID was already used.", code="operation_conflict")
+                raise ProgrammeConflict(gettext("Operation ID was already used."), code="operation_conflict")
             row = EventBadgeTemplateRevision.objects.get(pk=previous.result["id"], event=event)
             row.event_version = previous.result["event_version"]
             return row

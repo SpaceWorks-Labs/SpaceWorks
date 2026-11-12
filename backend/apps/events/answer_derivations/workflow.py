@@ -1,5 +1,6 @@
 """Insert prepared ciphertext inside the caller's ordered event transaction."""
 
+from django.utils.translation import gettext
 import hmac
 
 from django.db import connection
@@ -85,15 +86,15 @@ def insert_prepared_locked(
         binding.subject_id != subject.subject_id if binding.subject_id is not None
         else binding.creation_operation_id != creation_operation_id
     ):
-        raise DerivationError("invalid_preparation", "Prepared source belongs to another operation.")
+        raise DerivationError("invalid_preparation", gettext("Prepared source belongs to another operation."))
     if prepared.expires_at <= timezone.now():
-        raise DerivationError("save_preparation_expired", "Save preparation expired.", status=409)
+        raise DerivationError("save_preparation_expired", gettext("Save preparation expired."), status=409)
     if event.makerspace_id != prepared.makerspace_id or not all(
         isinstance(current, str) and hmac.compare_digest(current, expected)
         for current, expected in ((form_sha256, prepared.form_sha256),
                                   (canonical_answer_sha256, prepared.canonical_answer_sha256))
     ):
-        raise DerivationError("form_revision_changed", "Review the current event form.", status=409)
+        raise DerivationError("form_revision_changed", gettext("Review the current event form."), status=409)
     # Fences precede domain locks in the outer service; this rechecks persistent
     # state in this transaction. It never tries to acquire an account/key row.
     try:
@@ -106,7 +107,7 @@ def insert_prepared_locked(
     if not MakerspaceEncryptionKey.objects.filter(
         makerspace_id=event.makerspace_id, version=prepared.key_version, status="active",
     ).exists():
-        raise DerivationError("event_key_changed", "Protected-data key changed; review again.", status=409)
+        raise DerivationError("event_key_changed", gettext("Protected-data key changed; review again."), status=409)
     subject_row = resolve_subject(subject, lock=True)
     rows = list(EventAnswerDerivation.objects.select_for_update().filter(**subject_filter(subject)))
     require_review(prepared.event_date_revision, prepared.as_of_date, review_target(event, rows))
@@ -117,7 +118,7 @@ def insert_prepared_locked(
         if (row is None and source.base_version != 0) or (row is not None and (
             row.pk != source.pk or row.version != source.base_version or row.locked_at
         )):
-            raise DerivationError("stale_version", "Answer source changed; review again.", status=409)
+            raise DerivationError("stale_version", gettext("Answer source changed; review again."), status=409)
         if row is None:
             row = EventAnswerDerivation(
                 pk=source.pk, question_id=source.question_id, **subject_filter(subject),
@@ -141,13 +142,13 @@ def delete_draft_sources_locked(*, actor_id, subject, locks, question_ids=None, 
     require_owner(actor_id, subject)
     source = resolve_subject(subject, lock=True)
     if getattr(source, "state", None) != "draft":
-        raise DerivationError("answers_retained", "Submitted evidence follows event retention.", status=409)
+        raise DerivationError("answers_retained", gettext("Submitted evidence follows event retention."), status=409)
     rows = EventAnswerDerivation.objects.select_for_update().filter(**subject_filter(subject))
     if question_ids is not None:
         rows = rows.filter(question_id__in=question_ids)
     rows = list(rows)
     if any(row.locked_at or row.source_history for row in rows):
-        raise DerivationError("answers_locked", "Submitted source evidence is retained.", status=409)
+        raise DerivationError("answers_locked", gettext("Submitted source evidence is retained."), status=409)
     for row in rows:
         audit(actor_id if audit_actor_id is None else audit_actor_id,
               "draft_source_deleted", event, subject=subject, row=row)

@@ -1,4 +1,5 @@
 """An override is exact evidence for training or briefing, never waiver/CoC."""
+from django.utils.translation import gettext
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 from . import commands
@@ -27,7 +28,7 @@ def override(*, actor, event_id, assignment_id, payload):
         requirements = shift.requirements if shift else role.posting.requirements if role.posting_id else {}
         key = {"training": "training_ids", "briefing": "briefing_ids"}.get(payload["kind"])
         if not key or payload["reference_id"] not in requirements.get(key, []) or not payload["reason"].strip():
-            raise ProgrammeError("invalid_override", "Choose a required training or briefing and explain the exception.", status=400)
+            raise ProgrammeError("invalid_override", gettext("Choose a required training or briefing and explain the exception."), status=400)
         return commands.new_row(EventRequirementOverride, event, assignment=role, shift=shift,
             actor=actor, kind=payload["kind"], reference_id=payload["reference_id"], reason=payload["reason"])
 
@@ -48,11 +49,11 @@ def complete(*, actor, event_id, assignment_id, payload):
         role = get_object_or_404(EventRoleAssignment.objects.select_for_update(), event=event, pk=assignment_id)
         check_version(role, payload["expected_version"])
         if role.member_id == actor.pk:
-            raise ProgrammeError("second_person_required", "Another organizer must verify completion.", status=403)
+            raise ProgrammeError("second_person_required", gettext("Another organizer must verify completion."), status=403)
         key = payload["kind"] + "_ids"
         requirements = role.posting.requirements if role.posting_id else {}
         if payload["reference_id"] not in requirements.get(key, []):
-            raise ProgrammeError("invalid_requirement", "Choose a requirement of this posting.", status=400)
+            raise ProgrammeError("invalid_requirement", gettext("Choose a requirement of this posting."), status=400)
         return commands.new_row(EventContributorRequirementCompletion, event, member_id=role.member_id,
             posting=role.posting, requirements_sha256=commands.digest(requirements),
             kind=payload["kind"], reference_id=payload["reference_id"], verified_by=actor)

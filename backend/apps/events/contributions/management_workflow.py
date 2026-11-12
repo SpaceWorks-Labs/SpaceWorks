@@ -48,7 +48,7 @@ def save_posting(*, actor, event_id, payload, posting_id=None):
         row.requirements = requirements(row.requirements)
         if not set(row.permission_preset) <= HELPER_PERMISSIONS.get(row.role, set()) or not all(
                 event_authority.can(actor, event, p) for p in row.permission_preset):
-            raise ProgrammeError("permission_subset", "The posting exceeds your helper permissions.", status=403)
+            raise ProgrammeError("permission_subset", gettext("The posting exceeds your helper permissions."), status=403)
         if row.closes_at and row.closes_at > event.ends_at:
             raise ValidationError({"closes_at": gettext("The posting must close before the event ends.")})
         if posting_id:
@@ -59,7 +59,7 @@ def save_posting(*, actor, event_id, payload, posting_id=None):
         if row.state == "closed":
             owners = set(EventRoleAssignment.objects.filter(posting=row).values_list("member_id", flat=True))
             if not owners <= set(locks.account_ids):
-                raise ProgrammeError("scope_changed", "Applications changed; retry closing the posting.")
+                raise ProgrammeError("scope_changed", gettext("Applications changed; retry closing the posting."))
             for assignment in EventRoleAssignment.objects.select_for_update().filter(posting=row,
                     answer_locked_at__isnull=True).order_by("pk"):
                 ports().forms.lock_locked(subject=subject_for(assignment), locks=locks)
@@ -79,7 +79,7 @@ def save_posting(*, actor, event_id, payload, posting_id=None):
 
 def _zero(payload):
     if payload["expected_version"] != 0:
-        raise ProgrammeError("stale_version", "Use version zero for a new item.")
+        raise ProgrammeError("stale_version", gettext("Use version zero for a new item."))
 
 
 def save_shift(*, actor, event_id, payload, shift_id=None):
@@ -95,7 +95,7 @@ def save_shift(*, actor, event_id, payload, shift_id=None):
             schedule_keys = {"posting_id", "starts_at", "ends_at", "kind", "mentor_assignment_id", "state"}
             if payload.get("cancel_bookings") or any(key in payload and payload[key] != getattr(row, key) for key in schedule_keys):
                 if row.kind != "office_hours" or not payload.get("cancel_bookings") or not payload.get("reason", "").strip():
-                    raise ProgrammeError("active_bookings", "Explicitly cancel booked teams with a reason before changing this slot.")
+                    raise ProgrammeError("active_bookings", gettext("Explicitly cancel booked teams with a reason before changing this slot."))
                 from apps.events.mentoring.models_queue import OfficeHoursChange
                 from apps.events.mentoring.office_hours_workflow import cancel_locked
                 event_authority.require(actor, event, "manage_team")
@@ -113,7 +113,7 @@ def save_shift(*, actor, event_id, payload, shift_id=None):
         row.posting = get_object_or_404(EventRolePosting, pk=row.posting_id, event=event)
         row.requirements = requirements(row.requirements)
         if not set(row.permission_preset) <= set(row.posting.permission_preset):
-            raise ProgrammeError("permission_subset", "Shift permissions exceed the posting preset.", status=403)
+            raise ProgrammeError("permission_subset", gettext("Shift permissions exceed the posting preset."), status=403)
         if row.kind == "office_hours":
             get_object_or_404(EventRoleAssignment, pk=row.mentor_assignment_id, event=event,
                               role="mentor", state="approved", imported_inert=False)

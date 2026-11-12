@@ -1,5 +1,6 @@
 """Date changes, owner confirmation, freeze points, and immutable reopen history."""
 
+from django.utils.translation import gettext
 from dataclasses import dataclass, field
 from datetime import timedelta
 
@@ -52,7 +53,7 @@ def lock_subject_locked(*, actor_id, subject, locks, closing=False):
         not row.locked_at and row.event_date_revision != event.event_date_revision for row in rows
     )
     if pending and not closing:
-        raise DerivationError("date_review_required", "Owner date review is required.", status=409)
+        raise DerivationError("date_review_required", gettext("Owner date review is required."), status=409)
     now = timezone.now()
     changed = False
     for row in rows:
@@ -122,7 +123,7 @@ def prepare_reopen(*, actor_id, subject, reason):
     source = resolve_subject(subject)
     event_authority.require(User.objects.get(pk=actor_id), source.event, None)
     if not isinstance(reason, str) or not reason.strip() or len(reason) > 1000:
-        raise DerivationError("reopen_reason_required", "Provide a bounded reopening reason.")
+        raise DerivationError("reopen_reason_required", gettext("Provide a bounded reopening reason."))
     version, dek = prepared_key(source.event.makerspace_id)
     rows = list(EventAnswerDerivation.objects.filter(**subject_filter(subject), locked_at__isnull=False))
     reasons = tuple((row.pk, encrypt_source(
@@ -140,11 +141,11 @@ def reopen_subject_locked(prepared, *, actor_id, subject, locks):
     event_authority.require(User.objects.get(pk=actor_id), event, None)
     if (not isinstance(prepared, PreparedReopen) or prepared.subject != subject
             or prepared.actor_id != actor_id or prepared.expires_at <= timezone.now()):
-        raise DerivationError("save_preparation_expired", "Reopening preparation expired.", status=409)
+        raise DerivationError("save_preparation_expired", gettext("Reopening preparation expired."), status=409)
     source = resolve_subject(subject, lock=True)
     rows = list(EventAnswerDerivation.objects.select_for_update().filter(**subject_filter(subject), locked_at__isnull=False))
     if {(row.pk, row.version) for row in rows} != set(prepared.versions):
-        raise DerivationError("stale_version", "Answer source changed; review again.", status=409)
+        raise DerivationError("stale_version", gettext("Answer source changed; review again."), status=409)
     reasons = dict(prepared.reasons)
     for row in rows:
         row.source_history = [*row.source_history, {

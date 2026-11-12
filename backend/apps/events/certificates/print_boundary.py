@@ -1,4 +1,5 @@
 """Print subjects and foreign photo sources are declared before any row lock."""
+from django.utils.translation import gettext
 from contextlib import contextmanager
 from dataclasses import dataclass
 
@@ -36,7 +37,7 @@ class PrintScope:
         profiles = tuple(MemberProfile.objects.filter(pk__in=[row[0] for row in self.profiles])
             .order_by("pk").values_list("pk", "membership_id", "membership__makerspace_id"))
         if current != self.selections or profiles != self.profiles:
-            raise ProgrammeConflict("Print source changed. Retry preparation.", code="photo_source_changed")
+            raise ProgrammeConflict(gettext("Print source changed. Retry preparation."), code="photo_source_changed")
 
 
 def prepare_scope(event_id, registration_ids):

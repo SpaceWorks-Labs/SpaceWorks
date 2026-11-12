@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 import hashlib
 
 from botocore.exceptions import BotoCoreError, ClientError
@@ -18,7 +19,7 @@ class PrintStorageUnavailable(APIException):
 
 def put(key, content, mime):
     if not content or len(content) > 40 * 1024 * 1024:
-        raise PrintStorageUnavailable("The print artifact exceeds the bounded size.")
+        raise PrintStorageUnavailable(gettext("The print artifact exceeds the bounded size."))
     client = _client(settings.AWS_S3_ENDPOINT_URL)
     digest = hashlib.sha256(content).hexdigest()
     try:

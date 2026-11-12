@@ -58,8 +58,9 @@ def catering(event):
 
 def public_crew(event, *, require_switch=True):
     from apps.makerspaces.models_profiles import PublicHandle
-    from apps.makerspaces.profile_services import display_name_for
-    from apps.makerspaces.public_profile_access import profile_is_public
+    from apps.makerspaces.account_profile import display_name_for_user
+    from apps.makerspaces.account_profile_spaces import listed_space_ids
+    from apps.makerspaces.public_profile_access import account_is_open_web
     from apps.events.models_participation import EventParticipationSettings
     # The per-event block reads the event's switch; a Pages section is its own opt-in (#165 auto).
     if require_switch and not EventParticipationSettings.for_event(event).crew_public_section:
@@ -67,13 +68,14 @@ def public_crew(event, *, require_switch=True):
     rows = EventCrewMember.objects.filter(event=event, state="approved", show_publicly=True,
                                           staff_hidden=False).order_by("position", "pk")
     handles = {claim.user_id: claim for claim in PublicHandle.objects.filter(
-        user_id__in=rows.values("member_id"), profile__membership__makerspace_id=event.makerspace_id,
-    ).select_related("profile__membership__user", "profile__membership__makerspace")}
+        user_id__in=rows.values("member_id")).select_related("user")}
     result, kinds = [], _kinds_on(event)
     for crew in rows:
         claim = handles.get(crew.member_id)
-        if claim is not None and profile_is_public(claim.profile):
-            result.append({"handle": claim.handle, "display_name": display_name_for(claim.profile.membership),
+        # Open-web audience: the account profile is open AND the person is an active member of this space.
+        if (claim is not None and account_is_open_web(claim.user)
+                and event.makerspace_id in listed_space_ids(claim.user)):
+            result.append({"handle": claim.handle, "display_name": display_name_for_user(claim.user),
                            "crew_role": crew.crew_role, "kind": crew.kind if kinds else None})
     return result
 

@@ -1,4 +1,5 @@
 """Copy an immutable event design into independently owned tenant-library artwork."""
+from .studio_assets import image_ids, remap
 from django.utils.translation import gettext
 from copy import deepcopy
 from uuid import uuid4
@@ -34,7 +35,7 @@ def capture(makerspace_id, *, actor, operation_id, expected_version, event_id, r
         receipt = Command.objects.select_for_update().filter(makerspace=space, operation_id=operation_id).first()
         if receipt:
             if receipt.request_sha256 != digest:
-                raise ProgrammeConflict("Operation ID was already used.", code="operation_conflict")
+                raise ProgrammeConflict(gettext("Operation ID was already used."), code="operation_conflict")
             if receipt.result.get("phase") == "applied":
                 return receipt.result["response"]
         else:
@@ -50,7 +51,7 @@ def capture(makerspace_id, *, actor, operation_id, expected_version, event_id, r
                 request_sha256=digest, result={"phase": "preparing", "resources": {}})
             record(actor, "event.certificate_library_capture_started", makerspace=space, target=template)
     parameters = deepcopy(source.parameters)
-    ids = {row["resource_id"] for row in parameters.get("layers", []) if row["type"] == "image"}
+    ids = image_ids(parameters)
     artworks = list(EventCertificateArtwork.objects.filter(event=event, resource_id__in=ids, promoted_at__isnull=False))
     if ids != {str(row.resource_id) for row in artworks}:
         raise NotFound()
@@ -85,9 +86,7 @@ def capture(makerspace_id, *, actor, operation_id, expected_version, event_id, r
         mapping[str(original.resource_id)] = str(target.resource_id)
         if original.pk == source.artwork_id:
             logo_id = target.pk
-    for layer in parameters.get("layers", []):
-        if layer["type"] == "image":
-            layer["resource_id"] = mapping[layer["resource_id"]]
+    remap(parameters, mapping)
     with tenant_command(makerspace_id, actor) as space:
         receipt = Command.objects.select_for_update().get(pk=receipt.pk)
         if receipt.result.get("phase") == "applied":

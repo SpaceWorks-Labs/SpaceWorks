@@ -11,7 +11,7 @@ def validate_certificate_layout(certificate):
     from reportlab.pdfgen.canvas import Canvas
 
     if certificate.layout_snapshot:
-        if certificate.layout_snapshot.get("version") == 2:
+        if certificate.layout_snapshot.get("version") in (2, 3):
             from .certificates.rendering import render_layers
             render_layers(Canvas(BytesIO()), certificate, preflight=True)
             return
@@ -35,8 +35,11 @@ def render_certificate_pdf(certificate):
     canvas = Canvas(output, pagesize=(width * mm, height * mm), pageCompression=1, invariant=1)
     from .certificates.merge import document_title
     canvas.setTitle(document_title(certificate))
-    if snapshot.get("version") == 2:
+    if snapshot.get("version") in (2, 3):
         from .certificates.rendering import render_layers
+        if snapshot["version"] == 3:  # Studio certificate: document properties for the print/archive copy
+            from .certificates.shared_render import describe
+            describe(canvas, certificate)
         render_layers(canvas, certificate)
         canvas.showPage()
         canvas.save()

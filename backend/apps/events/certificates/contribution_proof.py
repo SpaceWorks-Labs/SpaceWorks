@@ -1,4 +1,5 @@
 """Immutable work evidence belongs to the certificate, not a cached role label."""
+from django.utils.translation import gettext
 from apps.events.programme_locks import current_locks
 from apps.events.credentials.errors import ProgrammeConflict
 
@@ -34,9 +35,9 @@ def snapshot(*, event_id, assignment_id):
         # Organising has no hours ledger; the live approved role is the evidence, and a
         # withdrawn or revoked role makes the stored proof stale.
         if role.state not in ("approved", "completed") or role.imported_inert:
-            raise ProgrammeConflict("An approved organiser role is required.", code="certificate_ineligible")
+            raise ProgrammeConflict(gettext("An approved organiser role is required."), code="certificate_ineligible")
     else:
-        raise ProgrammeConflict("Verified work is required.", code="certificate_ineligible")
+        raise ProgrammeConflict(gettext("Verified work is required."), code="certificate_ineligible")
     return proof
 
 
@@ -45,7 +46,7 @@ def require_current(certificate):
         return
     stored = certificate.layout_snapshot.get("contribution_proof")
     if not stored or snapshot(event_id=certificate.event_id, assignment_id=certificate.role_assignment_id) != stored:
-        raise ProgrammeConflict("Contribution evidence changed. Reissue the certificate.", code="certificate_ineligible")
+        raise ProgrammeConflict(gettext("Contribution evidence changed. Reissue the certificate."), code="certificate_ineligible")
 
 
 def invalidate_role_locked(*, event, assignment_id, actor=None):

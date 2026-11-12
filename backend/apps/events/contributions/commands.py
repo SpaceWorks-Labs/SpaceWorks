@@ -1,4 +1,5 @@
 """One short event command transaction, stable receipts, and ordered fences."""
+from django.utils.translation import gettext
 import hashlib
 import json
 from dataclasses import dataclass
@@ -32,7 +33,7 @@ def digest(value):
 
 def active_member(actor):
     if not event_authority._active(actor) or not is_person(actor):
-        raise ProgrammeError("member_required", "An active member account is required.", status=403)
+        raise ProgrammeError("member_required", gettext("An active member account is required."), status=403)
 
 
 def run(*, actor, event_id, operation_id, payload, action, feature, permission,
@@ -45,7 +46,7 @@ def run(*, actor, event_id, operation_id, payload, action, feature, permission,
     adapter = ports()
     event = get_object_or_404(Event.objects.select_related("makerspace"), pk=event_id)
     if not event_authority._active(actor):
-        raise ProgrammeError("account_inactive", "An active account is required.", status=403)
+        raise ProgrammeError("account_inactive", gettext("An active account is required."), status=403)
     # Avoid exposing gate/key readiness to a caller without local authority.
     if permission is not False:
         event_authority.require(actor, event, permission)
@@ -75,7 +76,7 @@ def run(*, actor, event_id, operation_id, payload, action, feature, permission,
                 adapter.lock_authority_locked(actor_id=authority_id, event_id=event.pk, locks=locks)
             actor = User.objects.filter(pk=actor.pk).first()
             if not event_authority._active(actor):
-                raise ProgrammeError("account_inactive", "An active account is required.", status=403)
+                raise ProgrammeError("account_inactive", gettext("An active account is required."), status=403)
             if permission is not False:
                 event_authority.require(actor, event, permission)
             if authorize:
@@ -88,10 +89,10 @@ def run(*, actor, event_id, operation_id, payload, action, feature, permission,
                 operation_uuid=operation_id).first()
             if receipt:
                 if receipt.request_sha256 != request_hash:
-                    raise ProgrammeError("idempotency_conflict", "This operation has different content.")
+                    raise ProgrammeError("idempotency_conflict", gettext("This operation has different content."))
                 ref = receipt.response_reference
                 if not ref["model"].startswith("events."):
-                    raise ProgrammeError("invalid_receipt", "This operation cannot be replayed.", status=503)
+                    raise ProgrammeError("invalid_receipt", gettext("This operation cannot be replayed."), status=503)
                 row = get_object_or_404(apps.get_model(ref["model"]), pk=ref["id"], event=event)
                 return CommandResult(row=row, status=ref["status"], replayed=True)
             row = mutate(event, locks)

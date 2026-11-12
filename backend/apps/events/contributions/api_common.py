@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import inline_serializer
 from rest_framework import serializers
@@ -34,7 +35,7 @@ class ProgrammeView(APIView):
             event = get_object_or_404(Event.objects.select_related("makerspace"), pk=pk)
             if makerspace_id is not None and event.makerspace_id != makerspace_id:
                 # Collaborative-origin resolution is G's adapter, never a client hint.
-                raise ProgrammeError("not_found", "Not found.", status=404)
+                raise ProgrammeError("not_found", gettext("Not found."), status=404)
             require_module(event.makerspace, "events")
         if self.feature:
             require_feature(event.makerspace, self.feature)
@@ -50,10 +51,10 @@ class ProgrammeView(APIView):
     def input(self, request, serializer):
         parsed = serializer(data=request.data)
         if not parsed.is_valid():
-            raise ProgrammeError("invalid_input", "Check the highlighted fields.", status=400, fields=parsed.errors)
+            raise ProgrammeError("invalid_input", gettext("Check the highlighted fields."), status=400, fields=parsed.errors)
         data = parsed.validated_data
         if str(request.headers.get("Idempotency-Key", "")) != str(data["operation_id"]):
-            raise ProgrammeError("idempotency_key_required", "Idempotency-Key must equal operation_id.", status=400)
+            raise ProgrammeError("idempotency_key_required", gettext("Idempotency-Key must equal operation_id."), status=400)
         return data
 
 

@@ -157,3 +157,5 @@ from .models_booking_decision import EventBookingDecision  # noqa: E402
 __all__ += ["EventBookingDecision"]
 from .models_machine_booking_link import EventMachineBookingLink  # noqa: E402
 __all__ += ["EventMachineBookingLink"]
+from .models_machine_use import MachineEventCostApproval, MachineEventLink  # noqa: E402
+__all__ += ["MachineEventLink", "MachineEventCostApproval"]

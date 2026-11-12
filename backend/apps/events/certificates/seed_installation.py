@@ -34,7 +34,7 @@ def install_to_event(event_id, *, actor, seed_id, theme, kind, stock=None, expec
     if seed is None:
         raise ValidationError({"seed_id": gettext("Unknown default design.")})
     if seed_version is not None and seed_version != seed["seed_version"]:
-        raise ProgrammeConflict("The default design changed. Reload it.", code="seed_version_changed")
+        raise ProgrammeConflict(gettext("The default design changed. Reload it."), code="seed_version_changed")
     recipe = json.dumps([event_id, kind, seed_id, seed["seed_version"], theme, stock], separators=(",", ":"))
     operation = operation_id or uuid5(NAMESPACE_URL, "spaceworks:seed-install:" + recipe)
     request_digest = sha256(recipe.encode()).hexdigest()
@@ -44,7 +44,7 @@ def install_to_event(event_id, *, actor, seed_id, theme, kind, stock=None, expec
         receipt = EventCredentialCommand.objects.filter(event=event, operation_id=operation).first()
         if receipt:
             if receipt.request_sha256 != request_digest:
-                raise ProgrammeConflict("Seed installation operation was already used.", code="operation_conflict")
+                raise ProgrammeConflict(gettext("Seed installation operation was already used."), code="operation_conflict")
             return model.objects.get(event=event, pk=receipt.result["id"])
 
     with event_command(event_id, actor=actor, permission=EDIT_DETAILS) as (event, actor):

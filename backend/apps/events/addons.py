@@ -5,6 +5,7 @@ paid orders and of pending orders under a live hold. Nothing here reads or write
 hardware inventory (`inventory/availability.py` owns that, and is not used).
 """
 
+from django.utils.translation import gettext
 from django.db import transaction
 from django.db.models import Q, Sum
 from django.utils import timezone
@@ -38,14 +39,14 @@ def remaining(addon, variant=None):
 
 def require_available(addon, variant, quantity):
     if not addon.is_active or (variant is not None and (not variant.is_active or variant.addon_id != addon.pk)):
-        raise OrderRefused("addon_unavailable", "That add-on is not available.", addon_id=addon.pk)
+        raise OrderRefused("addon_unavailable", gettext("That add-on is not available."), addon_id=addon.pk)
     if variant is None and addon.variants.filter(is_active=True).exists():
-        raise OrderRefused("addon_unavailable", "Choose a size or option for this add-on.", addon_id=addon.pk)
+        raise OrderRefused("addon_unavailable", gettext("Choose a size or option for this add-on."), addon_id=addon.pk)
     if addon.per_order_limit and quantity > addon.per_order_limit:
-        raise OrderRefused("order_limit", "Too many of this add-on in one order.", addon_id=addon.pk)
+        raise OrderRefused("order_limit", gettext("Too many of this add-on in one order."), addon_id=addon.pk)
     left = remaining(addon, variant)
     if left is not None and quantity > left:
-        raise OrderRefused("sold_out", "This add-on has sold out.", addon_id=addon.pk)
+        raise OrderRefused("sold_out", gettext("This add-on has sold out."), addon_id=addon.pk)
 
 
 def _locked(event):
@@ -76,7 +77,7 @@ def update_addon(addon, *, actor, variants=None, **values):
     changed = sorted(key for key in ADDON_FIELDS if key in values and values[key] != getattr(row, key))
     if "amount" in changed and EventOrderLine.objects.filter(addon=row).exists():
         from .ticketing_edit import ReferencedConflict
-        raise ReferencedConflict("The price is fixed once orders include this add-on. Add a new add-on instead.",
+        raise ReferencedConflict(gettext("The price is fixed once orders include this add-on. Add a new add-on instead."),
                                  "addon_referenced")
     for key in changed:
         setattr(row, key, values[key])
@@ -110,6 +111,6 @@ def delete_addon(addon, *, actor):
     row = EventAddon.objects.select_for_update().get(pk=addon.pk, event=event)
     if row.order_lines.exists():
         from .ticketing_edit import ReferencedConflict
-        raise ReferencedConflict("Orders include this add-on. Deactivate it instead.", "addon_referenced")
+        raise ReferencedConflict(gettext("Orders include this add-on. Deactivate it instead."), "addon_referenced")
     record(actor, "event.addon_deleted", makerspace=event.makerspace, target=row, meta={"event_id": event.pk})
     row.delete()

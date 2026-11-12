@@ -28,9 +28,9 @@ CLOSED_LIMIT = 100
 
 
 def outstanding_units(request):
-    """Units still with the borrower, read from the workflow's own item counters."""
-    return sum(max(0, item.issued_quantity - item.returned_quantity - item.damaged_quantity
-                   - item.missing_quantity) for item in request.items.all())
+    """Units still with the borrower: Inventory Availability's projection over the workflow's item counters."""
+    from apps.inventory.availability import outstanding_units as units
+    return units(request)
 
 
 def _linked(event):

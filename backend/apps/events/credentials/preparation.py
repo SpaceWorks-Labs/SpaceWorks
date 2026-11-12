@@ -1,4 +1,5 @@
 """Command-scoped credential material prepared before ordered domain locks."""
+from django.utils.translation import gettext
 from contextlib import contextmanager
 from contextvars import ContextVar
 
@@ -16,7 +17,7 @@ def prepare_event_credentials(event_ids):
     held = _held.get()
     if held is not None:
         if not set(event_ids) <= held.keys():
-            raise ProgrammeConflict("Credential preparation scope changed.")
+            raise ProgrammeConflict(gettext("Credential preparation scope changed."))
         yield
         return
     if in_domain_transaction():
@@ -52,7 +53,7 @@ def new_registration_id(event_id):
 def prepared_issue(event_id, registration_id):
     held = _held.get()
     if held is None or event_id not in held or registration_id not in held[event_id][1]:
-        raise ProgrammeConflict("Prepare the registration credential before event locks.")
+        raise ProgrammeConflict(gettext("Prepare the registration credential before event locks."))
     prepared = held[event_id][1][registration_id]
     if isinstance(prepared, CredentialKeyUnavailable):
         raise prepared

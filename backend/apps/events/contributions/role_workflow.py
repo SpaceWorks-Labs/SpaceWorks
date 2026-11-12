@@ -1,4 +1,5 @@
 """The sole role lifecycle and role-source synchronization entry point."""
+from django.utils.translation import gettext
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from apps.events import event_authority
@@ -15,7 +16,7 @@ from . import role_policy
 def _open(posting):
     now = timezone.now()
     if posting.state != "open" or not posting.opens_at <= now < posting.closes_at:
-        raise ProgrammeError("posting_closed", "This posting is closed.")
+        raise ProgrammeError("posting_closed", gettext("This posting is closed."))
 
 
 def _feature(role):
@@ -37,11 +38,11 @@ def apply(*, actor, event_id, posting_id, payload):
         locked = EventRolePosting.objects.select_for_update().get(pk=posting_id, event=event)
         _open(locked)
         if payload["expected_version"] != 0:
-            raise ProgrammeError("stale_version", "Start a new application with version zero.")
+            raise ProgrammeError("stale_version", gettext("Start a new application with version zero."))
         existing = EventRoleAssignment.objects.filter(event=event, member=actor,
             role=locked.role, sponsor__isnull=True, state__in=ACTIVE).first()
         if existing:
-            raise ProgrammeError("application_exists", "You already have an application.", application_id=existing.pk)
+            raise ProgrammeError("application_exists", gettext("You already have an application."), application_id=existing.pk)
         row = commands.new_row(EventRoleAssignment, event, member=actor, posting=locked,
             role=locked.role, skills=payload.get("skills", []), availability=payload.get("availability", []))
         result = ports().forms.apply_locked(prepared=prepared, subject=subject_for(row), locks=locks)
@@ -71,7 +72,7 @@ def edit(*, actor, event_id, assignment_id, payload, submit=False):
         check_version(locked, payload["expected_version"])
         require_state(locked, "draft", "proposed", "applied")
         if locked.answer_locked_at:
-            raise ProgrammeError("answers_locked", "The application answers are locked.")
+            raise ProgrammeError("answers_locked", gettext("The application answers are locked."))
         if posting:
             _open(posting)
         result = ports().forms.apply_locked(prepared=prepared, subject=subject_for(locked), locks=locks)
@@ -88,7 +89,7 @@ def edit(*, actor, event_id, assignment_id, payload, submit=False):
             # The shared boundary re-discovers issuers, so an issuer swapped while the
             # answers were being prepared would otherwise auto-approve unseen.
             if posting.permission_issuer_id != row.posting.permission_issuer_id:
-                raise ProgrammeError("issuer_changed", "The posting issuer changed; retry this operation.")
+                raise ProgrammeError("issuer_changed", gettext("The posting issuer changed; retry this operation."))
             role_policy.auto_approve_locked(row=locked, posting=posting, event=event, locks=locks)
         return locked
 
@@ -122,7 +123,7 @@ def transition(*, actor, event_id, assignment_id, payload, action):
             return commands.changed(locked, date_review_required=False)
         if action in ("reopen_answers", "reconfirm"):
             if action == "reconfirm" and not locked.imported_inert:
-                raise ProgrammeError("invalid_transition", "Only imported roles need reconfirmation.")
+                raise ProgrammeError("invalid_transition", gettext("Only imported roles need reconfirmation."))
             require_state(locked, "applied", "approved", "proposed", "declined", "completed")
             return role_policy.reopen_locked(row=locked, actor=actor, event=event, locks=locks,
                                              reason=payload.get("reason", ""))
@@ -132,18 +133,18 @@ def transition(*, actor, event_id, assignment_id, payload, action):
         else:
             require_state(locked, "draft", "proposed", "applied", "approved")
             if action not in ("withdraw", "revoke", "decline", "complete", "reject"):
-                raise ProgrammeError("invalid_transition", "Unknown role command.", status=400)
+                raise ProgrammeError("invalid_transition", gettext("Unknown role command."), status=400)
             if action == "complete":
                 require_state(locked, "approved")
                 if not payload.get("reason", "").strip():
-                    raise ProgrammeError("reason_required", "Explain the completion.", status=400)
+                    raise ProgrammeError("reason_required", gettext("Explain the completion."), status=400)
             if action in ("decline", "reject"):
                 require_state(locked, "proposed", "applied")
             # Attendance already started is a work lock. Do not discard its evidence.
             from .models_shifts import EventShiftAttendance
             if own and EventShiftAttendance.objects.filter(signup__assignment=locked,
                     state__in=["checked_in", "checked_out"]).exists():
-                raise ProgrammeError("work_locked", "Work has started; ask an organizer to close this role.")
+                raise ProgrammeError("work_locked", gettext("Work has started; ask an organizer to close this role."))
             from .shift_workflow import withdraw_assignment_locked
             withdraw_assignment_locked(assignment=locked, actor=actor, event=event, locks=locks, allow_active=not own)
             commands.changed(locked, state={"withdraw": "withdrawn", "revoke": "revoked",

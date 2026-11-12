@@ -1,4 +1,5 @@
 """Storage guard after F validation/P derivation binding, before C snapshots."""
+from django.utils.translation import gettext
 import json
 from .errors import ProgrammeError
 
@@ -17,4 +18,4 @@ def canonical_answers(value):
                 raise ValueError()
         return json.dumps(document, separators=(",", ":"), ensure_ascii=False, allow_nan=False)
     except (ValueError, TypeError) as exc:
-        raise ProgrammeError("invalid_validated_form", "The validated form cannot be stored safely.", status=503) from exc
+        raise ProgrammeError("invalid_validated_form", gettext("The validated form cannot be stored safely."), status=503) from exc

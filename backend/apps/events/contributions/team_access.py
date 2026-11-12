@@ -1,4 +1,5 @@
 """Contributor team operations resolve A's real roster, never contact guesses."""
+from django.utils.translation import gettext
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from apps.events.hackathons.team_models import HackathonTeam, HackathonTeamMember
@@ -44,24 +45,24 @@ class TeamAccess:
     def require_practice(self, *, event_id, team_id, practice_run_id):
         get_object_or_404(HackathonTeam, pk=team_id, event_id=event_id)
         if practice_run_id and team_id not in self.ids(event_id=event_id, practice_run_id=practice_run_id):
-            raise ProgrammeError("practice_scope_mismatch", "Use a team mapped to this practice run.", status=404)
+            raise ProgrammeError("practice_scope_mismatch", gettext("Use a team mapped to this practice run."), status=404)
 
     def validate_import(self, *, event_id, rows):
         if not isinstance(rows, list) or not 1 <= len(rows) <= 500:
-            raise ProgrammeError("invalid_import", "Use 1–500 explicit mappings.", status=400)
+            raise ProgrammeError("invalid_import", gettext("Use 1–500 explicit mappings."), status=400)
         result, seen = [], set()
         for item in rows:
             if not isinstance(item, dict) or set(item) != {"team_id", "member_ids", "alias"}:
-                raise ProgrammeError("invalid_import", "Use explicit team and member IDs.", status=400)
+                raise ProgrammeError("invalid_import", gettext("Use explicit team and member IDs."), status=400)
             team_id, members, alias = item["team_id"], item["member_ids"], item["alias"]
             if (type(team_id) is not int or team_id in seen or not isinstance(members, list)
                     or any(type(pk) is not int for pk in members) or len(set(members)) != len(members)
                     or not isinstance(alias, str) or not alias.strip() or len(alias) > 100
                     or any(ord(c) < 32 for c in alias)):
-                raise ProgrammeError("invalid_import", "Check the explicit mapping.", status=400)
+                raise ProgrammeError("invalid_import", gettext("Check the explicit mapping."), status=400)
             team = get_object_or_404(HackathonTeam, event_id=event_id, pk=team_id)
             if set(members) != set(self.member_ids(event_id=event_id, team_id=team_id)):
-                raise ProgrammeError("mapping_changed", "Import must match the current admitted roster.")
+                raise ProgrammeError("mapping_changed", gettext("Import must match the current admitted roster."))
             seen.add(team_id)
             result.append({"team_id": team_id, "member_ids": sorted(members), "alias": alias.strip()})
         return sorted(result, key=lambda item: item["team_id"])
@@ -75,4 +76,4 @@ class TeamAccess:
         ids = sorted(item["team_id"] for item in mapping)
         list(HackathonTeam.objects.select_for_update().filter(event_id=event_id, pk__in=ids).order_by("pk"))
         if self.validate_import(event_id=event_id, rows=mapping) != mapping:
-            raise ProgrammeError("mapping_changed", "Review the current team mapping.")
+            raise ProgrammeError("mapping_changed", gettext("Review the current team mapping."))

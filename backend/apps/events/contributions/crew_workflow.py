@@ -5,6 +5,7 @@ capacity, never part of an order and never on a team. A person who already holds
 participant registration keeps it as it is; their crew role still shows on their badge.
 Being on the crew grants NO event staff authority.
 """
+from django.utils.translation import gettext
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 
@@ -22,7 +23,7 @@ LIVE_REGISTRATION = ("registered", "attended", "pending_approval", "waitlisted")
 
 def require_feature(event):
     if not feature_enabled(event.makerspace, FEATURE):
-        fail("not_found", "Not found.", status=404)
+        fail("not_found", gettext("Not found."), status=404)
 
 
 def kinds_enabled(event):
@@ -32,12 +33,12 @@ def kinds_enabled(event):
 def check_kind(event, kind):
     """A kind may only be set while `events.crew_kinds` is on (off = the field is not accepted)."""
     if kind and not kinds_enabled(event):
-        fail("crew_kinds_disabled", "Crew kinds are not turned on for this space.", status=400)
+        fail("crew_kinds_disabled", gettext("Crew kinds are not turned on for this space."), status=400)
 
 
 def _open(event):
     if event.status != "published" or timezone.now() >= event.ends_at:
-        fail("event_closed", "This event no longer takes crew.")
+        fail("event_closed", gettext("This event no longer takes crew."))
 
 
 def place_locked(event, crew, actor):
@@ -86,10 +87,10 @@ def signup(event, *, actor, crew_role="", answers="{}", dietary="", show_publicl
     require_member(actor)
     settings = EventParticipationSettings.for_event(event)
     if not settings.crew_signup_open:
-        fail("not_found", "Not found.", status=404)
+        fail("not_found", gettext("Not found."), status=404)
     _open(event)
     if EventCrewMember.objects.filter(event=event, member=actor, state__in=LIVE).exists():
-        fail("crew_exists", "You already signed up for this crew.")
+        fail("crew_exists", gettext("You already signed up for this crew."))
     crew = EventCrewMember.objects.create(makerspace=event.makerspace, event=event, member=actor, crew_role=crew_role,
                                           answers=answers, dietary=dietary, show_publicly=show_publicly)
     audit.record(actor, "event.crew.signed_up", makerspace=event.makerspace, target=crew,
@@ -114,7 +115,7 @@ def add(event, *, actor, member, crew_role="", kind=None):
     check_kind(event, kind)
     _open(event)
     if EventCrewMember.objects.filter(event=event, member=member, state__in=LIVE).exists():
-        fail("crew_exists", "This person is already on the crew.")
+        fail("crew_exists", gettext("This person is already on the crew."))
     crew = EventCrewMember.objects.create(makerspace=event.makerspace, event=event, member=member,
                                           origin=EventCrewMember.Origin.STAFF, crew_role=crew_role, kind=kind or None)
     _approve_locked(event, crew, actor, reason="added_by_staff")
@@ -128,9 +129,9 @@ def decide(event, *, actor, crew_id, approve, expected_version):
     require_feature(event)
     crew = get_object_or_404(EventCrewMember.objects.select_for_update(), pk=crew_id, event=event)
     if crew.version != expected_version:
-        fail("stale_version", "This crew row changed. Refresh it.", version=crew.version)
+        fail("stale_version", gettext("This crew row changed. Refresh it."), version=crew.version)
     if crew.state != "applied":
-        fail("invalid_transition", "Only a pending sign-up can be decided.")
+        fail("invalid_transition", gettext("Only a pending sign-up can be decided."))
     if approve:
         _open(event)
         _approve_locked(event, crew, actor, reason="reviewed")
@@ -153,11 +154,11 @@ def end(event, *, actor, crew_id, own):
     # No select_related here: FOR UPDATE cannot cover the nullable side of the registration join.
     crew = get_object_or_404(EventCrewMember.objects.select_for_update(), pk=crew_id, event=event)
     if own and crew.member_id != actor.pk:
-        fail("not_found", "Not found.", status=404)
+        fail("not_found", gettext("Not found."), status=404)
     if not own:
         event_authority.require(actor, event, "manage_volunteers")
     if crew.state not in LIVE:
-        fail("invalid_transition", "This crew role has already ended.")
+        fail("invalid_transition", gettext("This crew role has already ended."))
     crew.state = "withdrawn" if own else "removed"
     crew.version += 1
     release_locked(crew, actor)
@@ -177,9 +178,9 @@ def update(event, *, actor, crew_id, expected_version, **changes):
     require_feature(event)
     crew = get_object_or_404(EventCrewMember.objects.select_for_update(), pk=crew_id, event=event)
     if crew.version != expected_version:
-        fail("stale_version", "This crew row changed. Refresh it.", version=crew.version)
+        fail("stale_version", gettext("This crew row changed. Refresh it."), version=crew.version)
     if crew.state not in LIVE:
-        fail("invalid_transition", "This crew role has already ended.")
+        fail("invalid_transition", gettext("This crew role has already ended."))
     if "kind" in changes:
         check_kind(event, changes["kind"])
     for key in ("crew_role", "kind", "staff_hidden"):
@@ -198,7 +199,7 @@ def reorder(event, *, actor, ids):
     require_feature(event)
     rows = {row.pk: row for row in EventCrewMember.objects.select_for_update().filter(event=event, pk__in=ids)}
     if len(set(ids)) != len(ids) or len(rows) != len(ids):
-        fail("invalid_order", "List each crew member of this event once.", status=400)
+        fail("invalid_order", gettext("List each crew member of this event once."), status=400)
     for position, crew_id in enumerate(ids, start=1):
         if rows[crew_id].position != position:
             rows[crew_id].position = position

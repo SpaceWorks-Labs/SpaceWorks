@@ -1,4 +1,5 @@
 """Clone only current person-free designs with independently owned artwork."""
+from .studio_assets import image_ids, remap
 from django.utils.translation import gettext
 from copy import deepcopy
 from uuid import uuid4
@@ -32,7 +33,7 @@ def prepare_designs(event, copies):
     selected = set()
     documents = [row.parameters if hasattr(row, "parameters") else row.document for row in (certificate, badge) if row]
     for document in documents:
-        selected.update(layer["resource_id"] for layer in document.get("layers", []) if layer["type"] == "image")
+        selected.update(image_ids(document))
     rows = EventCertificateArtwork.objects.filter(event=event, promoted_at__isnull=False)
     resources = list(rows.filter(resource_id__in=selected))
     if certificate and certificate.artwork_id and all(r.pk != certificate.artwork_id for r in resources):
@@ -80,9 +81,7 @@ def copy_designs_locked(*, source, target, actor, prepared):
         document = deepcopy(prepared[key])
         if document is None:
             continue
-        for layer in document.get("layers", []):
-            if layer["type"] == "image":
-                layer["resource_id"] = mapping[layer["resource_id"]]
+        remap(document, mapping)
         values = {"parameters": document, "artwork": by_id.get(prepared["artwork_id"])} if key == "certificate" else {"document": document, "stock": prepared["stock"]}
         row = model.objects.create(event=target, **values)
         record(actor, "event.certificate_template_saved" if key == "certificate" else "event.badge_design_saved",

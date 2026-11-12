@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 import hashlib
 import json
 
@@ -43,7 +44,7 @@ def require_job(job, actor, *, prepared_scope=None):
         for row in rows:
             prepared_scope.bind(row)
     if job.fields_sha256 != fields_digest(job.event, rows):
-        raise ProgrammeConflict("Badge text changed. Prepare a new print job.", code="print_snapshot_changed")
+        raise ProgrammeConflict(gettext("Badge text changed. Prepare a new print job."), code="print_snapshot_changed")
     manager = event_authority.can_manage_grants(actor, job.event)
     for resource in job.resources.select_related("registration"):
         registration = resource.registration
@@ -56,7 +57,7 @@ def require_job(job, actor, *, prepared_scope=None):
         if resource.kind == "qr":
             credential = current(registration)
             if not credential or credential.pk != resource.credential_id:
-                raise ProgrammeConflict("This badge was replaced.", code="credential_changed")
+                raise ProgrammeConflict(gettext("This badge was replaced."), code="credential_changed")
         elif resource.kind == "photo":
             presentation = EventMemberPresentation.objects.filter(pk=resource.presentation_id).first()
             profile = print_profile(presentation)
@@ -64,10 +65,10 @@ def require_job(job, actor, *, prepared_scope=None):
                     or profile.pk != resource.source_profile_id
                     or source_revision(profile) != resource.source_avatar_revision
                     or hashlib.sha256(profile.avatar_key.encode()).hexdigest() != resource.source_key_sha256):
-                raise ProgrammeConflict("The photo choice or consent changed.", code="photo_consent_changed")
+                raise ProgrammeConflict(gettext("The photo choice or consent changed."), code="photo_consent_changed")
         elif resource.kind == "logo":
             if hashlib.sha256(job.event.makerspace.logo_key.encode()).hexdigest() != resource.source_key_sha256:
-                raise ProgrammeConflict("The event logo changed. Prepare a new print job.", code="print_snapshot_changed")
+                raise ProgrammeConflict(gettext("The event logo changed. Prepare a new print job."), code="print_snapshot_changed")
 
 
 def invalidate_profile(profile_id):

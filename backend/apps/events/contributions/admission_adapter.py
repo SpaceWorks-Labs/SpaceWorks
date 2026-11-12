@@ -1,4 +1,5 @@
 """Approved contributors use real registration admission; C owns no attendee writer."""
+from django.utils.translation import gettext
 from dataclasses import dataclass
 from typing import Literal, Protocol
 from django.shortcuts import get_object_or_404
@@ -76,7 +77,7 @@ def admit(*, actor, event_id, assignment_id, payload):
             state="approved", imported_inert=False)
         check_version(row, payload["expected_version"])
         if payload["capacity_policy"] not in ("event_capacity", "reserved_contributor_capacity"):
-            raise ProgrammeError("invalid_capacity_policy", "Choose an explicit contributor capacity policy.", status=400)
+            raise ProgrammeError("invalid_capacity_policy", gettext("Choose an explicit contributor capacity policy."), status=400)
         require_requirements(actor_id=row.member_id, assignment_id=row.pk, shift_id=None)
         get_object_or_404(EventTicketType, pk=payload["ticket_type_id"], event=event,
                           makerspace_id=event.makerspace_id, is_active=True)
@@ -91,7 +92,7 @@ def admit(*, actor, event_id, assignment_id, payload):
         previous = EventContributorAdmission.objects.filter(assignment=row).first()
         if previous:
             if previous.registration_id != registration.pk:
-                raise ProgrammeError("contributor_admitted", "Use the existing contributor registration.")
+                raise ProgrammeError("contributor_admitted", gettext("Use the existing contributor registration."))
             return previous
         return commands.new_row(EventContributorAdmission, event, assignment=row, registration=registration,
             capacity_policy=request.capacity_policy, actor=actor)

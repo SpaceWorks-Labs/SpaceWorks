@@ -80,7 +80,7 @@ def remove_signatory(event, *, actor, slot):
     if row is None:
         raise NotFound()
     if any(slot in printed_slots(design.parameters) for design in current_designs(event)):
-        raise ProgrammeConflict("A current certificate design prints this signature. Remove the layer first.",
+        raise ProgrammeConflict(gettext("A current certificate design prints this signature. Remove the layer first."),
                                 code="signatory_in_use")
     record(actor, "event.certificate_signatory_removed", makerspace=event.makerspace, target=row,
            meta={"slot": slot, "version": row.version})

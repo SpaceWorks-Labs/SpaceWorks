@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from datetime import timedelta
 from uuid import uuid4
 
@@ -17,7 +18,7 @@ def claim(job, actor):
         if row.state == "ready":
             return row
         if row.state == "rendering" and row.render_started_at is not None and row.render_started_at > timezone.now()-timedelta(minutes=5):
-            raise ProgrammeConflict("This print job is rendering.", code="print_in_progress")
+            raise ProgrammeConflict(gettext("This print job is rendering."), code="print_in_progress")
         row.state, row.render_token, row.render_started_at = "rendering", uuid4(), timezone.now()
         row.save(update_fields=("state", "render_token", "render_started_at"))
         record(actor, "event.badge_print_claimed", makerspace=event.makerspace, target=row)
@@ -31,10 +32,10 @@ def finish(job, actor, size, digest):
             require_job(row, actor, prepared_scope=scope)
             return row
         if row.render_token != job.render_token or row.state != "rendering":
-            raise ProgrammeConflict("The print render claim changed.", code="print_claim_changed")
+            raise ProgrammeConflict(gettext("The print render claim changed."), code="print_claim_changed")
         require_job(row, actor, prepared_scope=scope)
         if row.size_bytes != size or row.sha256 != digest:
-            raise ProgrammeConflict("The rendered PDF differs from its reservation.", code="print_snapshot_changed")
+            raise ProgrammeConflict(gettext("The rendered PDF differs from its reservation."), code="print_snapshot_changed")
         row.state, row.size_bytes, row.sha256 = "ready", size, digest
         row.save(update_fields=("state", "size_bytes", "sha256"))
         record(actor, "event.badge_print_ready", makerspace=event.makerspace, target=row,
@@ -47,9 +48,9 @@ def reserve_pdf(job, actor, size, digest):
         row = BadgePrintJob.objects.select_for_update().get(pk=job.pk)
         require_job(row, actor, prepared_scope=scope)
         if row.render_token != job.render_token or row.state != "rendering":
-            raise ProgrammeConflict("The render claim changed.", code="print_claim_changed")
+            raise ProgrammeConflict(gettext("The render claim changed."), code="print_claim_changed")
         if row.size_bytes and (row.size_bytes != size or row.sha256 != digest):
-            raise ProgrammeConflict("The immutable print content changed.", code="print_snapshot_changed")
+            raise ProgrammeConflict(gettext("The immutable print content changed."), code="print_snapshot_changed")
         if not row.size_bytes:
             limits.add_storage(event.makerspace, size)
             row.size_bytes, row.sha256 = size, digest

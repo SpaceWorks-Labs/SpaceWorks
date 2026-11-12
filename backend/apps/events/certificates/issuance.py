@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from copy import deepcopy
 
 from django.db.models import Max
@@ -33,7 +34,7 @@ def create_for_subject_locked(event, *, subject_kind, subject_id, kind="attendan
     if live:
         return live
     if response is not None and (subject_kind != "registration" or response.registration_id != subject_id):
-        raise ProgrammeConflict("Feedback does not belong to this registration.")
+        raise ProgrammeConflict(gettext("Feedback does not belong to this registration."))
     revision = (previous.aggregate(value=Max("revision"))["value"] or 0) + 1
     template_id, layout = prepared.variant(kind)
     publication = EventCertificatePublicationPolicy.objects.filter(event=event, enabled=True).exists()

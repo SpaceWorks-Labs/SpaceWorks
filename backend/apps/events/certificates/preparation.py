@@ -1,4 +1,5 @@
 """Recipient decryption, key unwrapping and layout capture precede Event locks."""
+from django.utils.translation import gettext
 from dataclasses import dataclass, field
 from copy import deepcopy
 import json
@@ -65,7 +66,7 @@ class IssuancePreparation:
                 return template_id, layout
         if not self.variants:
             return self.template_id, self.layout
-        raise ProgrammeConflict("Prepare every certificate kind before locking.", code="subject_changed")
+        raise ProgrammeConflict(gettext("Prepare every certificate kind before locking."), code="subject_changed")
 
     @property
     def account_ids(self):
@@ -75,28 +76,28 @@ class IssuancePreparation:
         for item in self.recipients:
             if (item.kind, item.subject_id) == (kind, pk):
                 return item
-        raise ProgrammeConflict("Prepare every certificate subject before locking.", code="subject_changed")
+        raise ProgrammeConflict(gettext("Prepare every certificate subject before locking."), code="subject_changed")
 
     def revalidate(self, event):
         if self.key_version is not None and not MakerspaceEncryptionKey.objects.filter(
                 makerspace_id=event.makerspace_id, version=self.key_version, status="active").exists():
-            raise ProgrammeConflict("Certificate key changed. Retry preparation.", code="subject_changed")
+            raise ProgrammeConflict(gettext("Certificate key changed. Retry preparation."), code="subject_changed")
         template = selected_template(event)
         if (event.pk != self.event_id or event.version != self.event_version
                 or (template.pk if template else None) != self.template_id
                 or issuance_layout(template) != self.layout):
-            raise ProgrammeConflict("Certificate source changed. Retry preparation.", code="subject_changed")
+            raise ProgrammeConflict(gettext("Certificate source changed. Retry preparation."), code="subject_changed")
         for kind, template_id, layout in self.variants:
             template = selected_template(event, kind)
             if (template.pk if template else None) != template_id or issuance_layout(template) != layout:
-                raise ProgrammeConflict("Certificate source changed. Retry preparation.", code="subject_changed")
+                raise ProgrammeConflict(gettext("Certificate source changed. Retry preparation."), code="subject_changed")
         for item in self.recipients:
             row = subject_model(item.kind).objects.filter(pk=item.subject_id, event=event).first()
             if row is None or row.member_id != item.member_id:
-                raise ProgrammeConflict("Certificate ownership changed.", code="subject_changed")
+                raise ProgrammeConflict(gettext("Certificate ownership changed."), code="subject_changed")
             raw = row.__dict__["name"] if item.kind == "registration" else role_recipient(User.objects.get(pk=row.member_id))[1]
             if raw != item.raw_name:
-                raise ProgrammeConflict("Recipient name changed. Retry preparation.", code="subject_changed")
+                raise ProgrammeConflict(gettext("Recipient name changed. Retry preparation."), code="subject_changed")
 
 
 def selected_template(event, kind=None):

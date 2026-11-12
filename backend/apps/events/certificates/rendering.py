@@ -32,6 +32,9 @@ def verification_url(certificate):
 def render_layers(canvas, certificate, *, preflight=False):
     from apps.events.certificate_artwork_storage import read_artwork
     snapshot = certificate.layout_snapshot
+    from .shared_render import draw as draw_shared, uses_shared
+    if uses_shared(snapshot):  # a Studio (v3) design, or a v2 one issued with the shared renderer pinned
+        return draw_shared(canvas, certificate, preflight=preflight)
     preview = str(certificate.serial) == "PREVIEW"
     if snapshot.get("legacy_background") and snapshot.get("artwork_object_key") and not preflight:
         from reportlab.lib.units import mm

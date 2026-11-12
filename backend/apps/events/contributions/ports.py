@@ -3,6 +3,7 @@
 No permission or crypto fallback: an uninstalled adapter refuses before mutation.
 The protocols deliberately exchange IDs and value objects rather than writable ORM rows.
 """
+from django.utils.translation import gettext
 from contextlib import AbstractContextManager
 from datetime import datetime
 from typing import Protocol
@@ -108,12 +109,12 @@ def install(adapter: ProgrammePorts):
 
 def ports() -> ProgrammePorts:
     if _adapter is None:
-        raise ProgrammeError("programme_not_ready", "The programme is not ready.", status=503)
+        raise ProgrammeError("programme_not_ready", gettext("The programme is not ready."), status=503)
     return _adapter
 
 
 def required_hook(adapter, name):
     hook = getattr(adapter, name, None)
     if not callable(hook):
-        raise ProgrammeError("programme_not_ready", "The programme adapter is not ready.", status=503)
+        raise ProgrammeError("programme_not_ready", gettext("The programme adapter is not ready."), status=503)
     return hook

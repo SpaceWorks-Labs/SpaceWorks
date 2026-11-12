@@ -3,6 +3,7 @@
 Every crew route is web-only until the native event-role authority contract (L21b, #173)
 exists; `accounts/programme_route_catalog` records that decision per route.
 """
+from django.utils.translation import gettext
 import json
 
 from django.shortcuts import get_object_or_404
@@ -130,7 +131,7 @@ class CrewSignupView(ProgrammeView):
         own = EventCrewMember.objects.filter(event=event, member=request.user).order_by("-pk").first()
         if not settings.crew_signup_open and own is None:
             from apps.events.hackathons.admission_errors import fail
-            fail("not_found", "Not found.", status=404)
+            fail("not_found", gettext("Not found."), status=404)
         return {"event_id": event.pk, "event_title": event.title, "starts_at": event.starts_at,
                 "open": settings.crew_signup_open, "approval_required": settings.crew_approval_required,
                 "crew": crew_reads.project_own(own) if own else None}

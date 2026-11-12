@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.utils import timezone
 from rest_framework.exceptions import NotFound
 
@@ -57,12 +58,12 @@ def confirm(event_id, payload, *, actor, operation_id, credential_generation):
                        revalidate=scope.revalidate) as (event, actor):
         result = resolve(event, payload, actor=actor, prepared_scope=scope)
         if result["credential_generation"] != credential_generation:
-            raise ProgrammeConflict("This badge was replaced.", code="credential_changed")
+            raise ProgrammeConflict(gettext("This badge was replaced."), code="credential_changed")
         previous = EventCheckInEvent.objects.filter(makerspace_id=event.makerspace_id,
                                                     operation_id=operation_id).first()
         if previous:
             if previous.event_id != event.pk or previous.registration_id != result["registration_id"]:
-                raise ProgrammeConflict("Operation ID was already used.", code="operation_conflict")
+                raise ProgrammeConflict(gettext("Operation ID was already used."), code="operation_conflict")
             return result
         registration = EventRegistration.objects.select_for_update().get(pk=result["registration_id"])
         scope.bind(registration)

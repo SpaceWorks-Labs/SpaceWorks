@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from uuid import uuid4
 import hashlib
 from django.utils import timezone
@@ -25,14 +26,14 @@ def prepare_logo(job, actor):
             require_job(job, actor, prepared_scope=scope)
             if hashlib.sha256(event.makerspace.logo_key.encode()).hexdigest() != key_digest:
                 from apps.events.credentials.errors import ProgrammeConflict
-                raise ProgrammeConflict("The event logo changed.", code="print_snapshot_changed")
+                raise ProgrammeConflict(gettext("The event logo changed."), code="print_snapshot_changed")
             resource, created = BadgePrintResource.objects.get_or_create(job=job, registration_id=qr.registration_id,
                 kind="logo", defaults={"object_key": f"events/badge-print/{event.makerspace_id}/{uuid4()}.png",
                     "source_key_sha256": key_digest, "sha256": digest,
                     "size_bytes": len(content), "expires_at": job.expires_at})
             if resource.sha256 != digest or resource.source_key_sha256 != key_digest:
                 from apps.events.credentials.errors import ProgrammeConflict
-                raise ProgrammeConflict("Logo reservation changed.", code="print_snapshot_changed")
+                raise ProgrammeConflict(gettext("Logo reservation changed."), code="print_snapshot_changed")
             if created:
                 limits.add_storage(event.makerspace, len(content))
             record(actor, "event.badge_logo_reserved", makerspace=event.makerspace, target=resource)

@@ -44,8 +44,11 @@ def tenant_command(makerspace_id, actor):
         yield space
 
 
+from .studio_assets import image_ids, remap
+
+
 def require_artworks(template, parameters, artwork_id):
-    ids = {row["resource_id"] for row in parameters.get("layers", []) if row["type"] == "image"}
+    ids = image_ids(parameters)
     rows = list(template.artworks.filter(promoted_at__isnull=False))
     available = {str(row.resource_id): row for row in rows}
     if ids - available.keys() or (artwork_id and not any(row.pk == artwork_id for row in rows)):
@@ -63,7 +66,7 @@ def save(makerspace_id, *, actor, operation_id, expected_version, name, paramete
         previous = Command.objects.filter(makerspace=space, operation_id=operation_id).first()
         if previous:
             if previous.request_sha256 != digest:
-                raise ProgrammeConflict("Operation ID was already used.", code="operation_conflict")
+                raise ProgrammeConflict(gettext("Operation ID was already used."), code="operation_conflict")
             return previous.result
         if template_id:
             template = Template.objects.select_for_update().filter(pk=template_id, makerspace=space).first()
@@ -98,7 +101,7 @@ def copy_to_event(makerspace_id, *, actor, template_id, revision_id, event_id, o
         receipt = EventCredentialCommand.objects.filter(event=event, operation_id=operation_id).first()
         if receipt:
             if receipt.actor_id != actor.pk or receipt.request_sha256 != digest:
-                raise ProgrammeConflict("Operation ID was already used.", code="operation_conflict")
+                raise ProgrammeConflict(gettext("Operation ID was already used."), code="operation_conflict")
             return EventCertificateTemplateRevision.objects.get(pk=receipt.result["id"], event=event)
         require_version(event, expected_version)
     with tenant_command(makerspace_id, actor):
@@ -109,7 +112,7 @@ def copy_to_event(makerspace_id, *, actor, template_id, revision_id, event_id, o
         parameters = deepcopy(revision.parameters)
         require_artworks(revision.template, parameters, revision.artwork_id)
     # Preparation and immutable copying happen outside all row locks.
-    images = {row["resource_id"] for row in parameters.get("layers", []) if row["type"] == "image"}
+    images = image_ids(parameters)
     sources = list(revision.template.artworks.filter(resource_id__in=images))
     if revision.artwork_id and not any(row.pk == revision.artwork_id for row in sources):
         sources.append(revision.artwork)
@@ -131,9 +134,7 @@ def copy_to_event(makerspace_id, *, actor, template_id, revision_id, event_id, o
         mapping[str(source.resource_id)] = str(target.resource_id)
         if source.pk == revision.artwork_id:
             logo = target.pk
-    for layer in parameters.get("layers", []):
-        if layer["type"] == "image":
-            layer["resource_id"] = mapping[layer["resource_id"]]
+    remap(parameters, mapping)
     with event_command(event_id, actor=actor, permission=EDIT_DETAILS) as (event, actor):
         if event.makerspace_id != makerspace_id:
             raise NotFound()
@@ -141,7 +142,7 @@ def copy_to_event(makerspace_id, *, actor, template_id, revision_id, event_id, o
         receipt = EventCredentialCommand.objects.filter(event=event, operation_id=operation_id).first()
         if receipt:
             if receipt.actor_id != actor.pk or receipt.request_sha256 != digest:
-                raise ProgrammeConflict("Operation ID was already used.", code="operation_conflict")
+                raise ProgrammeConflict(gettext("Operation ID was already used."), code="operation_conflict")
             return EventCertificateTemplateRevision.objects.get(pk=receipt.result["id"], event=event)
         require_version(event, expected_version)
         result = save_template(event, actor=actor, parameters=parameters, artwork_id=logo)

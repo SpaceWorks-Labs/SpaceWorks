@@ -1,4 +1,5 @@
 """Live certificate scope and operational writes without decrypting frozen PII."""
+from django.utils.translation import gettext
 from contextlib import contextmanager
 
 from apps.events.credentials.boundary import event_command
@@ -28,7 +29,7 @@ def certificate_command(certificate_id, *, actor=None):
         recipient = prepared.recipient("registration" if row.registration_id else "role_assignment",
                                         row.registration_id or row.role_assignment_id)
         if row.recipient_member_id != recipient.member_id:
-            raise ProgrammeConflict("Certificate subject changed.", code="subject_changed")
+            raise ProgrammeConflict(gettext("Certificate subject changed."), code="subject_changed")
         row.event = event
         yield event, actor, row, recipient
 

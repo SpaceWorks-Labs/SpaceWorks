@@ -4,6 +4,7 @@ from apps.audit.services import record
 from apps.events.models_staff_grants import EventStaffGrant
 from apps.events.programme_locks import assert_lock_context
 from .models_roles import EventGrantEntitlement
+from django.utils.translation import gettext
 
 
 def write_union(grant):
@@ -27,7 +28,7 @@ def manual_changed(*, grant, permissions, actor, operation):
         if limits.is_limited(limit) and carried != (tracks, starts, ends):
             # Merging a limited invite into a differently limited source would widen one of them.
             from rest_framework.exceptions import ValidationError
-            raise ValidationError({"detail": "This person already holds a differently limited grant here."})
+            raise ValidationError({"detail": gettext("This person already holds a differently limited grant here.")})
         desired = sorted(set(desired) | set(existing.permissions))
     elif operation != "redeem_invite" and existing:
         tracks, starts, ends = carried  # an edit never silently widens a limited source

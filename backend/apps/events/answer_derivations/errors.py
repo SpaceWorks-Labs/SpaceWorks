@@ -1,5 +1,6 @@
 """Safe programme errors; never interpolate a birth date or envelope."""
 
+from django.utils.translation import gettext
 from rest_framework.exceptions import APIException
 
 
@@ -14,6 +15,6 @@ class DerivationError(APIException):
 
 def pii_unavailable():
     return DerivationError(
-        "event_pii_unavailable", "Event pii unavailable.", status=503,
+        "event_pii_unavailable", gettext("Event pii unavailable."), status=503,
         readiness_action="Configure host protected-data encryption before collecting birth dates.",
     )

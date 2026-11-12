@@ -1,5 +1,6 @@
 """Only writer of event credential generations; cancellation adapters call revoke_locked."""
 
+from django.utils.translation import gettext
 import hashlib
 import json
 from dataclasses import dataclass, field
@@ -78,7 +79,7 @@ def issue_locked(event, registration, *, actor=None, rotate=False, prepared=None
     assert_account_fence_held(registration.member_id)
     require_eligible(event, registration)
     if window_for(event).closes_at <= timezone.now():
-        raise ProgrammeConflict("The event credential window has closed.", code="credential_expired")
+        raise ProgrammeConflict(gettext("The event credential window has closed."), code="credential_expired")
     existing = current(registration)
     if existing and not rotate:
         return existing
@@ -86,7 +87,7 @@ def issue_locked(event, registration, *, actor=None, rotate=False, prepared=None
                   .aggregate(value=Max("generation"))["value"] or 0) + 1
     if (not isinstance(prepared, PreparedCredential) or prepared.event_id != event.pk
             or prepared.registration_id != registration.pk or prepared.generation != generation):
-        raise ProgrammeConflict("Credential generation changed. Retry preparation.", code="credential_changed")
+        raise ProgrammeConflict(gettext("Credential generation changed. Retry preparation."), code="credential_changed")
     material = prepared.material
     revoke_locked(registration, actor=actor, reason="rotated" if rotate else "expired")
     row = EventRegistrationCredential.objects.create(
@@ -112,7 +113,7 @@ def command(event_id, registration_id, *, actor, operation_id, expected_version,
         receipt = EventCredentialCommand.objects.filter(event=event, operation_id=operation_id).first()
         if receipt:
             if receipt.request_sha256 != digest or receipt.actor_id != actor.pk:
-                raise ProgrammeConflict("Operation ID was already used for a different command.", code="operation_conflict")
+                raise ProgrammeConflict(gettext("Operation ID was already used for a different command."), code="operation_conflict")
             return receipt.result
         require_version(event, expected_version)
         try:

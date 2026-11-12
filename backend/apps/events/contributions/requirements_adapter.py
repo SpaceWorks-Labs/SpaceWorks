@@ -1,4 +1,5 @@
 """Live typed training/briefing evidence; exceptional overrides never waive consent."""
+from django.utils.translation import gettext
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from apps.events.hackathons.admission_models import HackathonConfig
@@ -14,7 +15,7 @@ def require_requirements(*, actor_id, assignment_id, shift_id, override_ids=()):
     require_member(actor_id)
     config = HackathonConfig.objects.filter(event_id=row.event_id).first()
     if config and row.consent_revision != config.coc_revision:
-        raise ProgrammeError("coc_required", "Accept the current code of conduct.", status=400)
+        raise ProgrammeError("coc_required", gettext("Accept the current code of conduct."), status=400)
     required = dict(row.posting.requirements) if row.posting_id else {}
     if shift_id:
         shift = get_object_or_404(EventShift, pk=shift_id, event_id=row.event_id, posting_id=row.posting_id)
@@ -29,7 +30,7 @@ def require_requirements(*, actor_id, assignment_id, shift_id, override_ids=()):
         requirements_sha256=digest(row.posting.requirements if row.posting_id else {})).values_list("kind", "reference_id"))
     for kind, key in (("training", "training_ids"), ("briefing", "briefing_ids")):
         if any((kind, pk) not in completed | overrides for pk in required.get(key, [])):
-            raise ProgrammeError("requirements_unmet", "Complete the required training and briefing.", status=400)
+            raise ProgrammeError("requirements_unmet", gettext("Complete the required training and briefing."), status=400)
     if required.get("host_waiver_required") or row.event.registration_audience == "participating_organizations":
         from apps.events.host_waivers import require_host_waiver
         require_host_waiver(row.event, row.member, registration=row, allow_consent=False)

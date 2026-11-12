@@ -111,7 +111,7 @@ def read_artwork(key, version, digest):
     try:
         payload, _version = _read(_client(settings.AWS_S3_ENDPOINT_URL), key, version)
         if hashlib.sha256(payload).hexdigest() != digest:
-            raise ArtworkUnavailable("Artwork failed its immutable checksum check.")
+            raise ArtworkUnavailable(gettext("Artwork failed its immutable checksum check."))
         return payload
     except (BotoCoreError, ClientError, OSError) as exc:
         raise ArtworkUnavailable from exc

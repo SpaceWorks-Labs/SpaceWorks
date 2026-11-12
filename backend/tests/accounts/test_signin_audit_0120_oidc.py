@@ -31,7 +31,8 @@ def linked(campus, name="oidc-member", *, password=None):
 
 
 def patch(campus, body):
-    return api(superadmin("oidc-audit-root")).patch(URL.format(campus.pk), body, format="json")
+    admin = User.objects.filter(username="oidc-audit-root").first() or superadmin("oidc-audit-root")
+    return api(admin).patch(URL.format(campus.pk), body, format="json")
 
 
 @pytest.mark.parametrize("change", [{"slug": "renamed"}, {"issuer": "https://other.example.test"}])

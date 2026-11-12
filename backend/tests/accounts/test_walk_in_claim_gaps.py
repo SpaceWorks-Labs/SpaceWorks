@@ -65,7 +65,7 @@ def test_a_walk_in_holding_a_valid_link_code_is_still_refused_the_phone_and_it_i
         expires_at=timezone.now() + timedelta(minutes=10),
     )
 
-    with pytest.raises(ValidationError, match=services_phone.GENERIC_CONFIRM_ERROR):
+    with pytest.raises(ValidationError, match=str(services_phone.GENERIC_CONFIRM_ERROR)):
         services_phone.confirm_link(walk_in, number, "123456")
 
     walk_in.refresh_from_db()

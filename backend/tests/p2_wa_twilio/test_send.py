@@ -56,6 +56,7 @@ def test_live_endpoint_or_installation_changes_fail_closed(wa, change):
     wa.template()
     if change == "revoked":
         wa.endpoint.revoked_at = timezone.now()
+        wa.endpoint.save(update_fields=["revoked_at"])  # the live check reads the database row
     elif change == "generation":
         wa.config.generation += 1
     elif change == "tenant":
@@ -76,6 +77,7 @@ def test_test_always_uses_approved_template_to_verified_endpoint(wa):
     assert wa.provider.test(wa.endpoint).accepted
     assert "Body" not in wa.http.calls[-1][1]
     wa.endpoint.revoked_at = timezone.now()
+    wa.endpoint.save(update_fields=["revoked_at"])
     assert not wa.provider.test(wa.endpoint).accepted
 
 
@@ -95,5 +97,6 @@ def test_challenge_sends_code_but_never_creates_endpoint(wa):
 def test_invalid_credentials_are_safe_at_send_boundary(wa):
     wa.template()
     wa.config.set_credentials({"account_sid": "bad", "auth_token": "secret"})
+    wa.config.save()  # send() re-reads the stored configuration
     assert wa.provider.send(wa.delivery, {"text": "Body"}).error_code == "not_configured"
     assert not wa.http.calls

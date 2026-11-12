@@ -43,7 +43,9 @@ def test_unproven_template_never_becomes_approved(wa, failure):
 @pytest.mark.parametrize("role", ["inventory_manager", "machine_manager", "event_manager", "booking_manager", "handover", "member"])
 def test_other_roles_cannot_refresh_credentials_or_templates(wa, role):
     user = make_member("wa-role-" + role, wa.space, membership_role="custom" if role == "member" else role)
-    membership = user.makerspace_memberships.get(makerspace=wa.space)
+    from apps.makerspaces.models import MakerspaceMembership
+    rows = MakerspaceMembership.objects if role == "member" else MakerspaceMembership.staff_tracks  # staff roles live on the staff track
+    membership = rows.get(user=user, makerspace=wa.space)
     membership.assigned_role = wa.space.roles.get(slug=role)
     membership.save(update_fields=["assigned_role"])
     path = reverse("whatsapp-twilio-template-refresh", kwargs={"makerspace_id": wa.space.pk})

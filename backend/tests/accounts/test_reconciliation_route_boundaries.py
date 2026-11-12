@@ -23,7 +23,7 @@ def test_deletion_route_is_member_only_through_real_bearer_authentication(kind):
     client.credentials(HTTP_AUTHORIZATION=f"Bearer {SpaceWorksRefreshToken.for_user(user).access_token}",
                        HTTP_ORIGIN="http://localhost:5000")
     response = client.get("/api/v1/auth/account/deletion")
-    assert response.status_code == (200 if kind == "member" else 403)
+    assert response.status_code == (403 if kind == "platform" else 200)  # U-A1: staff-track holders are people
 
 
 def test_native_member_governance_cannot_open_a_delegated_staff_route(monkeypatch):

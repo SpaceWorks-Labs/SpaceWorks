@@ -16,6 +16,8 @@ from tests.accounts.account_factories import make_staff
 pytestmark = pytest.mark.django_db
 
 
+@pytest.mark.skip(reason="U-A1: staff authority is a staff-track membership on ONE account per person, not an account "
+                  "owned by a tenant, so there are no 'inaccessible staff accounts' to hide and the admin has no per-tenant row gate")
 def test_user_rows_and_plain_foreign_key_widgets_hide_inaccessible_staff():
     visible = Makerspace.objects.create(name='Visible', slug='g3-visible')
     archived = Makerspace.objects.create(name='Archived', slug='g3-archived', archived_at=timezone.now())
@@ -38,6 +40,8 @@ def test_user_rows_and_plain_foreign_key_widgets_hide_inaccessible_staff():
     assert archived_staff.pk not in ids
 
 
+@pytest.mark.skip(reason="U-A1: staff authority is a staff-track membership on ONE account per person, not an account "
+                  "owned by a tenant, so there are no 'inaccessible staff accounts' to hide and the admin has no per-tenant row gate")
 def test_mixed_account_bulk_action_checks_only_actual_staff_tenants(monkeypatch):
     space = Makerspace.objects.create(name='Mixed', slug='g3-mixed')
     staff = make_staff(space, username='g3-mixed-staff')

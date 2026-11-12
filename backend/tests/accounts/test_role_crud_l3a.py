@@ -38,14 +38,14 @@ def list_url(makerspace):
     return reverse("admin-role-list-create", kwargs={"makerspace_id": makerspace.id})
 
 
-def test_catalogue_lists_seven_fixed_roles_and_assignment_flags():
+def test_catalogue_lists_the_fixed_roles_and_assignment_flags():
     makerspace = space("roles")
     actor = make_staff(makerspace, username="roles-manager", password="password")
     response = client(actor).get(list_url(makerspace))
     assert response.status_code == 200
     assert [row["slug"] for row in response.data] == [
         "space_manager", "inventory_manager", "machine_manager", "event_manager",
-        "booking_manager", "handover", "member",
+        "booking_manager", "handover", "technician", "shop_manager", "fundraising", "member",
     ]
     for row in response.data:
         assert row["is_default"] and row["is_protected"]

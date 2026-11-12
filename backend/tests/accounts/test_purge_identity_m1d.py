@@ -102,7 +102,7 @@ def test_every_mutable_tenant_copy_is_scrubbed_without_touching_other_members(en
         booking.save()
         registration = f.registration(user, tenant, status="attended", custom_answers={"secret": "Private"})
         second_registration = EventRegistration.objects.create(event=registration.event, member=user,
-            name="Private", email="alternate@example.test", phone="123", status="attended")
+            name="Private", email="alternate@example.test", phone="123", status="cancelled")  # one ACTIVE registration per member and event
         jobs = [f.service_job(user, tenant, status="collected", legacy=legacy) for legacy in (False, True)]
         for job in jobs:
             job.requester_name, job.contact_email, job.contact_phone = "Private", user.email, "123"

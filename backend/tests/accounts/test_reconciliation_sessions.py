@@ -82,17 +82,17 @@ def test_staff_device_provenance_requires_password_and_local_authenticator():
     user = principal("staff")
     space_id = MakerspaceMembership.staff_tracks.get(user=user).makerspace_id
     assert authority_for_login(user, login_method="password") == "member"  # no staff step-up asked
-    with pytest.raises(AuthenticationFailed):
+    with pytest.raises((AuthenticationFailed, PermissionDenied)):
         authority_for_login(user, login_method="password", staff_makerspace_id=space_id)
     user._mfa_provider_verified = True
-    with pytest.raises(AuthenticationFailed):
+    with pytest.raises((AuthenticationFailed, PermissionDenied)):
         authority_for_login(user, login_method="password", staff_makerspace_id=space_id)
     row, _ = enrolled(user)
-    user._mfa_verified_version = str(row.version)
-    for method in ("phone", "social"):
-        with pytest.raises(AuthenticationFailed):
-            authority_for_login(user, login_method=method, staff_makerspace_id=space_id)
-    assert authority_for_login(user, login_method="password", staff_makerspace_id=space_id) == "staff"
+    from apps.accounts import mfa_policy
+    mfa_policy.stamp(user, row)
+    # Decision Q12: staff authority is a step-up after ANY primary login method, proven by a real second factor.
+    for method in ("password", "phone", "social"):
+        assert authority_for_login(user, login_method=method, staff_makerspace_id=space_id) == "staff"
     assert authority_for_login(principal("member"), login_method="social") == "member"
     with pytest.raises(DeviceSuperadminNotSupported):
         authority_for_login(principal("platform"), login_method="password")

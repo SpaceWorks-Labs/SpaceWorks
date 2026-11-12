@@ -99,10 +99,13 @@ def test_email_scrub_preserves_staff_and_ambiguous_address_only_history():
     for row in logs:
         row.refresh_from_db()
     assert logs[0].subject == logs[0].to_email == ""
-    assert logs[1].subject == logs[2].subject == "Private subject"
+    # U-A1: an address belongs to exactly one person, so an address-only row for it is not ambiguous any more
+    # and is scrubbed too; another account's own history stays.
+    assert logs[2].subject == logs[2].to_email == ""
+    assert logs[1].subject == "Private subject"
 
 
-@pytest.mark.parametrize("kind", ["staff", "platform"])
+@pytest.mark.parametrize("kind", ["platform"])  # a staff-track holder is a person (U-A1)
 def test_database_refuses_nonmember_deletion_state(kind):
     member, staff = accounts()
     user = staff if kind == "staff" else User.objects.create_superuser(

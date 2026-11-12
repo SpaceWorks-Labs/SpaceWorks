@@ -17,7 +17,12 @@ APPS_DIR = Path(apps.makerspaces.__file__).resolve().parent.parent
 # Whole-tenant capture, restore, export, purge and the managers themselves may read
 # every track; everything else picks one track explicitly.
 ALL_TRACKS_ALLOWLIST = ("backup/", "tenant_migration/", "data_export/", "makerspaces/lifecycle_purge",
-                        "makerspaces/membership_managers.py", "makerspaces/models_memberships.py")
+                        "makerspaces/membership_managers.py", "makerspaces/models_memberships.py",
+                        # One account per person (U-A1): the person's PROFILE, its images, share cache and the
+                        # member-unit row lookups read the person's whole relation to a space, never authority.
+                        "makerspaces/account_profile", "makerspaces/member_unit_assign.py",
+                        "makerspaces/member_unit_scope.py", "makerspaces/profile_image",
+                        "makerspaces/public_profile_cache.py", "makerspaces/public_profile_share.py")
 
 
 def test_default_manager_and_reverse_relations_are_community_only():

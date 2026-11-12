@@ -22,6 +22,12 @@ READ_ONLY_CASES = (
     ("member-profile-timeline", "HEAD", "timeline"),
     ("member-profile-timeline-detail", "GET", "timeline-detail"),
     ("member-profile-timeline-detail", "HEAD", "timeline-detail"),
+    ("member-profile-achievements", "GET", "achievements"),
+    ("member-profile-achievements", "HEAD", "achievements"),
+    ("hardware_requests:equipment-kit-public-list", "GET", "kit-list"),
+    ("hardware_requests:equipment-kit-public-list", "HEAD", "kit-list"),
+    ("hardware_requests:equipment-kit-public-detail", "GET", "kit-detail"),
+    ("hardware_requests:equipment-kit-public-detail", "HEAD", "kit-detail"),
     ("member-booking-list", "GET", "bookings"),
     ("member-booking-list", "HEAD", "bookings"),
     ("presence-current", "GET", "presence"),
@@ -34,6 +40,8 @@ READ_ONLY_CASES = (
     ("member-my-usage", "HEAD", "my-usage"),
     ("member-certifications", "GET", "certifications"),
     ("member-certifications", "HEAD", "certifications"),
+    ("member-allowances", "GET", "allowances"),
+    ("member-allowances", "HEAD", "allowances"),
     ("member-payment-history", "GET", "payments"),
     ("member-payment-history", "HEAD", "payments"),
     ("member-payment-documents", "GET", "payment-documents"),
@@ -72,17 +80,24 @@ def case_url(case, space, membership, timeline_id=None):
     if case in {"presence", "presence-projects"}:
         suffix = "current" if case == "presence" else "projects"
         return f"/api/v1/public/{space.slug}/presence-sessions/{suffix}"
+    if case == "kit-list":
+        return f"/api/v1/public/{space.slug}/equipment-kits/"
+    if case == "kit-detail":
+        return f"/api/v1/public/{space.slug}/equipment-kits/999999/"
     base = f"/api/v1/member/makerspaces/{space.pk}"
     return {
         "waiver": f"{base}/waiver",
         "activity": f"{base}/activity",
         "my-usage": f"{base}/my-usage",
         "certifications": f"{base}/certifications",
+        "allowances": f"{base}/allowances",
         "payments": f"{base}/payments",
         "payment-documents": f"{base}/payment-documents",
         "profile": f"{base}/profile",
         "timeline": f"{base}/profile/timeline",
         "timeline-detail": f"{base}/profile/timeline/{timeline_id}",
+        "achievements": f"{base}/profile/achievements",
+        "achievement-detail": f"{base}/profile/achievements/{timeline_id}",
         "directory": f"{base}/directory",
         "directory-detail": f"{base}/directory/{membership.pk}",
     }[case]
@@ -96,6 +111,10 @@ def test_every_read_only_policy_executes_without_database_writes(
     if case == "directory-detail":
         profile_services.save_profile(membership, {"is_visible": True})
     timeline_id = None
+    if case == "achievement-detail":
+        from apps.makerspaces.models_account_profile import ProfileAchievement
+        timeline_id = ProfileAchievement.objects.create(
+            profile=profile_services.profile_for(membership), title="Existing self-reported entry").pk
     if case == "timeline-detail":
         profile = profile_services.profile_for(membership)
         entry = ProfileTimelineEntry.objects.create(
@@ -112,7 +131,10 @@ def test_every_read_only_policy_executes_without_database_writes(
     with connection.execute_wrapper(capture):
         response = client.generic(method, case_url(case, space, membership, timeline_id))
 
-    assert response.status_code == 200, getattr(response, "data", None)
+    # Machine certifications were retired: the route answers a typed 410 and still writes nothing.
+    # kit-detail has no published kit in this fixture: a typed 404, still without a write.
+    expected = {"certifications": 410, "kit-detail": 404, "achievement-detail": 405}.get(case, 200)
+    assert response.status_code == expected, getattr(response, "data", None)
     assert writes == []
 
 

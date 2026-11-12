@@ -31,8 +31,14 @@ def resources(user):
         if kind == "event":
             target = Event.objects.create(makerspace=tenant, title="Delegated workshop",
                 starts_at=timezone.now(), ends_at=timezone.now() + timedelta(hours=1))
+            # Authority is read from a live entitlement issued by someone who manages the event.
+            from apps.events.contributions.models_roles import EventGrantEntitlement
+            from tests.accounts.account_factories import make_staff
+            issuer = make_staff(tenant, username=f"grant-issuer-{tenant.pk}")
             grant = EventStaffGrant.objects.create(makerspace=tenant, event=target, user=user,
-                                                   permissions=["edit_details"])
+                                                   granted_by=issuer, permissions=["edit_details"])
+            EventGrantEntitlement.objects.create(event=target, makerspace=tenant, grant=grant,
+                source_kind="manual", permissions=["edit_details"], created_by=issuer)
             policy = event_authority
         else:
             target = BookableSpace.objects.create(makerspace=tenant, name="Delegated room")

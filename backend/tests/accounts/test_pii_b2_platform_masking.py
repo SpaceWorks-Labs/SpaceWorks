@@ -1,5 +1,3 @@
-# STALE (test phase, staging 2026-11-05): reverse("admin-staff-accounts") names a route U-B deleted and
-# lane r2-tidy (4639e2ed) dropped from the registries; rewrite or retire the staff-accounts cases.
 """B2: the PII-window expiry sweep and masking on platform routes (#111 Q12, #114)."""
 
 from datetime import timedelta
@@ -39,7 +37,7 @@ def api(user):
 
 def _staff_url(ctx):
     from django.urls import reverse
-    return reverse("admin-staff-accounts", args=[ctx.space.pk])
+    return reverse("admin-staff-roles", args=[ctx.space.pk])  # U-B: staff-roles replaced staff-accounts
 
 
 def _lapse(grant, minutes=1):

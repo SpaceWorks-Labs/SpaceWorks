@@ -64,6 +64,13 @@ def test_refresh_rotation_preserves_one_absolute_expiry_forever():
 
 
 ROUTE_KWARGS = {
+    "devices:member-adapter-watch-start": {"request_id": 1},
+    **{f"devices:member-adapter-watch-{name}": {"pk": "00000000-0000-4000-8000-000000000001"}
+       for name in ("end", "signal", "frame", "talk")},
+    "devices:member-adapter-artifacts": {"request_id": 1},
+    "devices:member-adapter-detections": {"request_id": 1},
+    "devices:member-adapter-artifact-url": {"pk": "00000000-0000-4000-8000-000000000001"},
+    "hardware_requests:member-borrowing-history": {"makerspace_id": "claim"},
     "member-event-history": {"makerspace_id": "claim"},
     "member-profile-handle": {"makerspace_id": "claim"},
     "member-global-profile-timeline-detail": {"pk": 1},
@@ -273,7 +280,9 @@ def test_mixed_ownership_reads_and_checkout_never_return_a_foreign_row():
     assert usage.data["usage_available"] is True
     assert usage.data["events"]["attended_count"] == 1
     assert usage.data["payments"]["outstanding_by_currency"] == {"usd": "5.00"}
-    assert profile.data["activity"]["events_registered"] == 1
+    # Registrations are read by PROVENANCE (decision on member history): the foreign event was registered VIA
+    # this space, so it counts here; the row listing above still shows only this host's own event.
+    assert profile.data["activity"]["events_registered"] == 2
     assert [row["title"] for row in detail.data["activity"]["recent_attended_events"]] == ["Local event"]
     assert [row["id"] for row in history.data] == [local_payment.pk]
     assert foreign_checkout.status_code == 404

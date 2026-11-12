@@ -193,7 +193,7 @@ def test_revokes_every_account_owned_credential_and_preserves_other_principals(c
     event = AuditLog.objects.get(action="account.credentials_revoked", target_id=str(c.user.pk))
     assert event.actor_id == c.other.pk
     assert event.meta == {"reason": "staff_deactivated", "scope": "all", "counts": counts}
-    assert all(counts[name] > 0 for name in counts)
+    assert all(counts[name] > 0 for name in counts), counts
     assert "secret" not in str(event.meta) and "private-chat" not in str(event.meta)
 
 
@@ -286,11 +286,12 @@ def test_reset_queue_and_delivery_generations_are_fenced(credentials, status):
 
 def test_open_invitations_are_selected_by_account_not_email(credentials):
     c = credentials
-    # Staff and member accounts may share an address; ownership is the FK alone.
+    # Two accounts' invitations may carry the same invited address; ownership is the FK alone (U-A1: the
+    # accounts themselves have distinct emails).
     from tests.accounts.account_factories import make_staff
 
     shared_email_staff = make_staff(c.space, username="staff.same-address",
-                                   email=c.user.email, role_slug="inventory_manager")
+                                   email="staff.same-address@example.test", role_slug="inventory_manager")
     other_invitation = StaffInvitation.objects.create(
         account=shared_email_staff, makerspace=c.space, role=c.role,
         email_ciphertext=c.invitation.email_ciphertext, token_digest="o" * 64,

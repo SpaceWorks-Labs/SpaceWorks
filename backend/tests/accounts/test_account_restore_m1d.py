@@ -146,7 +146,7 @@ def test_after_purge_same_email_creates_new_account_and_old_proof_fails(monkeypa
     address, token = user.email, email_proof(user)
     expire(user)
     assert purge(user)["purged"] == 1 and user.email == ""
-    monkeypatch.setattr("apps.accounts.services_registration.issue_challenge", lambda user: None)
+    monkeypatch.setattr("apps.accounts.services_registration.issue_challenge", lambda *args, **kwargs: None)
     new = register_member(display_name="Returned person", email=address, phone="", password=PASSWORD)
     assert new.pk != user.pk and new.email == address
     with pytest.raises(ValidationError):

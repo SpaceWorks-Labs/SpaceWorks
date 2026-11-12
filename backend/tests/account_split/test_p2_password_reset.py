@@ -57,7 +57,7 @@ def test_shared_email_recovers_only_the_member(monkeypatch):
         assert not BlacklistedToken.objects.filter(token__jti=refreshes[other.pk]["jti"]).exists()
 
 
-@pytest.mark.parametrize("kind", ["staff", "platform", "unknown"])
+@pytest.mark.parametrize("kind", ["platform", "unknown"])  # a staff-track holder is a person (U-A1) and may reset
 def test_nonmember_requests_are_generic_without_a_queue_row_or_mail(monkeypatch, kind):
     email = "nonmember-reset@example.test"
     if kind == "staff":
@@ -80,6 +80,7 @@ def test_nonmember_requests_are_generic_without_a_queue_row_or_mail(monkeypatch,
 
 def test_legacy_links_cannot_reset_staff_or_platform_even_with_shared_email():
     member, *others = accounts_sharing_email()
+    others = others[-1:]  # the platform account; staff-track holders are people (U-A1) and may reset
     responses = []
     for other in others:
         response = APIClient().post(reverse("auth-reset-password"), {
@@ -97,6 +98,7 @@ def test_legacy_links_cannot_reset_staff_or_platform_even_with_shared_email():
 
 def test_worker_discards_nonmember_envelopes_without_minting_an_otp(monkeypatch):
     _, *others = accounts_sharing_email()
+    others = others[-1:]  # platform only (U-A1: staff-track holders are people)
     for account in others:
         PasswordResetEnvelope.objects.create(
             user=account, context=account.account_kind, makerspace_id=account.staff_makerspace_id,

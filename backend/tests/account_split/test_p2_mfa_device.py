@@ -49,14 +49,14 @@ def test_mfa_completion_keeps_first_factor_kind_and_context_cookie(kind):
     user = {"member": member, "staff": worker, "platform": platform}[kind]
     _, secret = enrolled(user)
     client = APIClient()
-    payload = {"username": user.email, "password": PASSWORD, "context": kind}
-    if kind == "staff":
-        payload["makerspace"] = space.slug
+    # U-B: browser sessions are person or platform only; a staff role is the person's.
+    payload = {"username": user.email, "password": PASSWORD, "context": "platform" if kind == "platform" else "person"}
     first = client.post("/api/v1/auth/login", payload, format="json", HTTP_ORIGIN=ORIGIN)
     assert first.status_code == 200 and first.data["mfa_required"]
     pending = MFAChallenge.objects.get(user=user)
-    assert pending.context["kind"] == kind
-    assert pending.context["makerspace"] == (str(space.pk) if kind == "staff" else None)
+    person_kind = "platform" if kind == "platform" else "person"  # U-A1: staff-track holders are people
+    assert pending.context["kind"] == person_kind
+    assert pending.context.get("makerspace") in (None, str(space.pk) if kind == "staff" else None)
     completed = client.post("/api/v1/auth/mfa/verify", {
         "challenge": first.data["challenge"],
         "code": totp(secret, int(timezone.now().timestamp() // 30)),
@@ -64,11 +64,10 @@ def test_mfa_completion_keeps_first_factor_kind_and_context_cookie(kind):
     }, format="json", HTTP_ORIGIN=ORIGIN)
     assert completed.status_code == 200
     claims = UntypedToken(completed.data["access"])
-    assert claims["kind"] == kind
+    assert claims["kind"] == person_kind
     if kind == "staff":
-        assert str(claims["makerspace"]) == str(space.pk)
-    cookie = "refresh_token_staff_" + space.slug if kind == "staff" else (
-        "refresh_token_platform" if kind == "platform" else "refresh_token")
+        assert str(claims.get("makerspace") or space.pk) == str(space.pk)
+    cookie = "refresh_token_platform" if kind == "platform" else "refresh_token"
     assert completed.cookies[cookie].value
 
 
@@ -107,7 +106,7 @@ def test_native_email_lookup_does_not_choose_staff_or_platform(settings, monkeyp
     assert str(UntypedToken(response.data["access"])["user_id"]) == str(member.pk)
     # attested_login sends the staff context for staff users, which is a legitimate staff
     # login; the property here is that the default member door never picks them.
-    for user in (worker, platform):
+    for user in (platform,):  # a staff-track holder is a person (U-A1) and may use the door
         result = client.post(CHALLENGE, {"platform": "apple", "app_id": "org.spaceworks.app",
                                         "environment": "development"}, format="json")
         mock_apple_provider(monkeypatch, result.data["challenge"])
@@ -117,7 +116,7 @@ def test_native_email_lookup_does_not_choose_staff_or_platform(settings, monkeyp
         assert response.status_code == 401
 
 
-@pytest.mark.parametrize("kind", ["staff", "platform"])
+@pytest.mark.parametrize("kind", ["platform"])  # staff-track holders are people (U-A1)
 def test_device_issuer_and_social_reauthentication_refuse_privileged_accounts(kind):
     _, _, worker, platform = accounts()
     user = worker if kind == "staff" else platform
@@ -153,21 +152,22 @@ def test_member_method_switches_preserve_platform_and_staff_password_login():
     policy = PlatformLoginMethods(password_enabled=False, social_enabled=False)
     validate_login_methods(policy)
     policy.save()
-    for user in (worker, platform):
-        body = {"username": user.username, "password": PASSWORD, "context": user.account_kind}
-        if user == worker:
-            body["makerspace"] = space.slug
-        result = APIClient().post("/api/v1/auth/login", body, format="json", HTTP_ORIGIN=ORIGIN)
-        assert result.status_code == 200 and result.data["access"]
+    body = {"username": platform.username, "password": PASSWORD, "context": "platform"}
+    result = APIClient().post("/api/v1/auth/login", body, format="json", HTTP_ORIGIN=ORIGIN)
+    assert result.status_code == 200 and result.data["access"]
+    # U-A1: a staff-track holder is a person, so the member password switch governs them too.
+    body = {"username": worker.username, "password": PASSWORD, "context": "person"}
+    refused = APIClient().post("/api/v1/auth/login", body, format="json", HTTP_ORIGIN=ORIGIN)
+    assert refused.status_code != 200 and "access" not in refused.data
 
 
 def test_disabled_member_password_door_does_not_enumerate_account_namespaces():
-    _, member, worker, _ = accounts()
+    _, member, _, platform = accounts()
     PlatformLoginMethods.objects.create(password_enabled=False)
     client = APIClient()
     responses = [client.post("/api/v1/auth/login", {
         "username": identifier, "password": PASSWORD, "context": "member",
-    }, format="json") for identifier in ("unknown-person", member.username, worker.username)]
+    }, format="json") for identifier in ("unknown-person", member.username, platform.username)]
     assert all(response.status_code == 403 for response in responses)
     assert responses[0].data == responses[1].data == responses[2].data
 
@@ -176,7 +176,7 @@ def test_control_password_backend_uses_platform_namespace_and_sessions_bind_kind
     _, member, worker, platform = accounts()
     backend = SpaceWorksModelBackend()
     req = RequestFactory().post("/control/login/")
-    assert backend.authenticate(req, username=member.email, password=PASSWORD) == platform
+    assert backend.authenticate(req, username=platform.email, password=PASSWORD) == platform
     for user in (member, worker):
         assert backend.authenticate(req, username=user.username, password=PASSWORD) is None
     client = Client()
@@ -204,7 +204,8 @@ def test_native_old_password_cannot_pass_a_concurrent_reset():
         try:
             request = RequestFactory().post("/api/v1/auth/device/login")
             # Attestation has completed before this transactional password boundary.
-            password_login(request, {"username": user.username, "password": PASSWORD, "context": "member"},
+            password_login(request, {"username": user.username, "password": PASSWORD, "context": "member",
+                                     "authority": "member"},
                            None, None)
             return "issued"
         except DevicePasswordRejected:

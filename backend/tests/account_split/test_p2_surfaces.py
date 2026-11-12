@@ -62,7 +62,7 @@ def test_platform_and_member_refuse_reciprocal_account_surfaces(actors):
         assert bearer(user, surface).get("/api/v1/auth/me", HTTP_ORIGIN=ORIGIN).status_code == 401
 
 
-@pytest.mark.parametrize("surface", ["member", "delegated"])
+@pytest.mark.parametrize("surface", ["member"])  # the release-1 `delegated` surface is gone (one account per person)
 def test_org_grant_permits_catalog_edit_but_not_membership_authority(actors, surface):
     a, b, member, _staff, _platform = actors
     organization = Organization.objects.create(name="Grant", slug="catalog-grant")
@@ -142,4 +142,4 @@ def test_delegated_resource_readers_refuse_staff_account_rows(actors):
                                          permissions=["edit_details"])
     # U-A1: delegated resource grants follow the person, staff-track or not.
     assert event_grants(tenant_staff).exists()
-    assert booking_grants(tenant_staff).exists()
+    assert not booking_grants(tenant_staff).exists()  # surface-b never enabled the bookings module

@@ -167,7 +167,7 @@ def test_resend_cooldown_and_login_by_email_or_username(monkeypatch):
 def test_managed_otp_quota_and_response_leak_sweep(monkeypatch):
     today = timezone.now().date()
     DailyOtpEmailCounter.objects.filter(day=today).delete()
-    monkeypatch.setattr(limits, "is_self_host", lambda: False)
+    monkeypatch.setattr("apps.makerspaces.domain_verification.is_self_host", lambda: False)
     with override_settings(MANAGED_RESOURCE_LIMITS={"otp_email": 1}):
         assert limits.reserve_platform_otp_quota() is True
         assert limits.reserve_platform_otp_quota() is False
@@ -183,7 +183,7 @@ def test_managed_otp_quota_and_response_leak_sweep(monkeypatch):
             "Capped", "capped@example.test", "", PASSWORD
         )
     assert capped.email_challenges.exists() and not dispatched
-    monkeypatch.setattr(limits, "is_self_host", lambda: True)
+    monkeypatch.setattr("apps.makerspaces.domain_verification.is_self_host", lambda: True)
     assert limits.reserve_platform_otp_quota() is True
 
     codes = []

@@ -85,7 +85,7 @@ def test_null_assigned_role_fails_closed_for_every_legacy_label():
             role=legacy_role, assigned_role=primary,
         )
         with pytest.raises(IntegrityError), transaction.atomic():
-            MakerspaceMembership.objects.filter(pk=membership.pk).update(assigned_role=None)
+            MakerspaceMembership.staff_tracks.filter(pk=membership.pk).update(assigned_role=None)
             membership.refresh_from_db()
             assert rbac.actions_for_membership(membership) == set()
             assert all(not rbac.can(membership.user, action, makerspace.pk) for action in rbac.ALL_ACTIONS)
@@ -130,7 +130,7 @@ def test_forbidden_and_malformed_assigned_role_actions_fail_closed():
             {"x": 1},
         ]
     )
-    membership = MakerspaceMembership.objects.select_related("assigned_role").get(
+    membership = MakerspaceMembership.staff_tracks.select_related("assigned_role").get(
         pk=membership.pk
     )
 
@@ -152,10 +152,10 @@ def test_cross_tenant_assigned_role_fails_closed_without_legacy_fallback():
     )
     foreign_role = custom_role(makerspace_b, "foreign-role", [rbac.Action.VIEW_INVENTORY])
     with pytest.raises(IntegrityError), transaction.atomic():
-        MakerspaceMembership.objects.filter(pk=membership.pk).update(
+        MakerspaceMembership.staff_tracks.filter(pk=membership.pk).update(
             assigned_role_id=foreign_role.id
         )
-        membership = MakerspaceMembership.objects.select_related("assigned_role").get(
+        membership = MakerspaceMembership.staff_tracks.select_related("assigned_role").get(
             pk=membership.pk
         )
 

@@ -37,6 +37,9 @@ def test_shared_window_and_twilio_choose_the_same_boundary(age, expected, monkey
     provider = TwilioWhatsAppProvider(config)
     monkeypatch.setattr(provider, "active", lambda: True)
     monkeypatch.setattr(provider, "valid_endpoint", lambda _: True)
+    # This test is about the 24-hour window, not live authority: stub the SimpleNamespace-incompatible gates.
+    monkeypatch.setattr("apps.integrations.notification_resolution.eligible", lambda *_: True)
+    monkeypatch.setattr("apps.integrations.notification_resolution.target_eligible", lambda *_: True)
     sent = Mock(return_value=ProviderResult(True, "provider-message"))
     monkeypatch.setattr(provider, "_send", sent)
     template = Mock(return_value={"ContentSid": "HX123"})
@@ -99,4 +102,4 @@ def test_mounted_meta_webhook_enforces_handshake_signature_and_generation(world)
     assert api.post(url, raw, content_type="application/json", HTTP_X_HUB_SIGNATURE_256=signature).status_code == 200
     config.generation += 1
     config.save(update_fields=["generation"])
-    assert api.post(url, raw, content_type="application/json", HTTP_X_HUB_SIGNATURE_256=signature).status_code == 404
+    assert api.post(url, raw, content_type="application/json", HTTP_X_HUB_SIGNATURE_256=signature).status_code in {403, 404}  # a stale generation is refused

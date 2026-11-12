@@ -131,6 +131,8 @@ def test_phone_login_and_linking_refuse_nonmembers(principals, target, monkeypat
     assert exc.value.detail["detail"] == services_phone.GENERIC_CONFIRM_ERROR
 
 
+@pytest.mark.skip(reason="U-A1: a verified phone belongs to exactly ONE account (uniq_member_phone_e164); a staff-track "
+                  "holder and a member can no longer share one contact, so there is nothing to disambiguate")
 def test_phone_login_resolves_member_with_shared_staff_contact(principals, monkeypatch):
     _, employee, _ = principals
     member = User.objects.create_user("phone.member", email=EMAIL, password=PASSWORD)

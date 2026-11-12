@@ -41,15 +41,14 @@ def test_credential_storage_is_encrypted(wa):
     assert credentials(wa.config) == wa.secrets
 
 
-def test_readiness_uses_notifications_module_without_whatsapp_module(wa):
+def test_readiness_follows_the_whatsapp_module(wa):
     from apps.makerspaces.module_registry import MODULE_KEYS
 
-    assert "whatsapp" not in MODULE_KEYS
-    assert "whatsapp" not in wa.space.enabled_modules
+    # WhatsApp is its own module now (it was folded under notifications in release 1).
+    assert "whatsapp" in MODULE_KEYS
+    assert "whatsapp" in wa.space.enabled_modules
     assert wa.provider._ready()
-    wa.config.makerspace.enabled_modules = [
-        key for key in wa.space.enabled_modules if key != "notifications"
-    ]
+    wa.config.makerspace.enabled_modules = [key for key in wa.space.enabled_modules if key != "whatsapp"]
     assert not wa.provider._ready()
 
 
@@ -155,7 +154,7 @@ def test_approval_refresh_cannot_follow_untrusted_next_url(wa, monkeypatch):
 def test_challenge_sends_approved_opt_in_code_template(wa, monkeypatch):
     calls = http(monkeypatch)
     WhatsAppTemplate.objects.create(configuration=wa.config, event="notification_opt_in", audience="member",
-        template_name="opt_in", variables=["code"])
+        template_name="opt_in", variables=["code"], approved=True)
     challenge, code = wa.challenge()
     result = wa.provider.start_challenge(challenge, code)
     assert "instructions" in result

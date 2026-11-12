@@ -43,10 +43,11 @@ def world():
         tenant = tenant or space
         user = User.objects.create_user(username=name, email=f"{name}@example.test", display_name=name,
             access_status="active", role="requester",
-            account_kind="member" if role == "member" else "staff",
-            staff_makerspace=None if role == "member" else tenant,
             email_verified_at=timezone.now() if verified else None)
-        MakerspaceMembership.objects.create(makerspace=tenant, user=user, status="active",
+        # One account per person (U-A1): staff authority is a staff-track row on the same account.
+        manager = MakerspaceMembership.objects if role == "member" else MakerspaceMembership.staff_tracks
+        manager.create(makerspace=tenant, user=user, status="active",
+            **({} if role == "member" else {"track": "staff"}),
             assigned_role=tenant.roles.get(slug=role), role=role if role != "member" else "custom")
         return user
     owner = person("wire-owner")

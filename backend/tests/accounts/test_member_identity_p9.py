@@ -39,12 +39,11 @@ def accounts_off(makerspace, actor=None):
 def front_desk(makerspace, username="front-desk"):
     user = User.objects.create_user(
         username=f"{username}-{makerspace.slug}",
-        account_kind="staff", staff_makerspace=makerspace,
         email=f"{username}-{makerspace.slug}@example.test",
         access_status=User.AccessStatus.ACTIVE,
     )
-    MakerspaceMembership.objects.create(
-        user=user,
+    MakerspaceMembership.staff_tracks.create(
+        user=user, track="staff",
         makerspace=makerspace,
         role=MakerspaceMembership.Role.INVENTORY_MANAGER,
         assigned_role=MakerspaceRole.objects.get(

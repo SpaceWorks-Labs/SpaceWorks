@@ -14,6 +14,7 @@ from rest_framework.test import APIClient
 
 from apps.integrations.models_contract import NotificationDelivery, NotificationEnvelope
 from apps.integrations.models_endpoints import ChannelConfiguration, NotificationEndpoint, WhatsAppTemplate
+from apps.integrations.notification_sender import configuration_sender_key
 from apps.integrations.notification_wa_twilio import TwilioWhatsAppProvider
 from apps.integrations.notification_wa_twilio_config import callback_path
 from tests.return_helpers import make_member, make_space
@@ -62,11 +63,21 @@ def http(monkeypatch):
 
 
 @pytest.fixture
-def wa(settings, http):
+def wa(settings, http, monkeypatch, django_capture_on_commit_callbacks):
     settings.API_CLIENT_ENC_KEY = Fernet.generate_key().decode()
+    # The delivery path re-checks the envelope's source (live authority); a test source must be registered.
+    from apps.integrations.notification_sources import NotificationSource, SOURCES
+    monkeypatch.setitem(SOURCES, "wa.test", NotificationSource(lambda envelope: True))
     settings.ALLOWED_HOSTS = ["testserver", "internal-proxy.example.test"]
     space = make_space("wa-twilio")
     user = make_member("wa-owner", space)
+    # One account per person (U-A1): personal WhatsApp needs a COMMUNITY tie; make_member only gives the staff row.
+    from tests.accounts.account_factories import make_membership
+    make_membership(user, space)
+    # WhatsApp is opt-in per feature (catalogue default OFF): these tests deliver hardware-request events.
+    from apps.integrations.models import NotificationPreference
+    NotificationPreference.objects.update_or_create(makerspace=space, feature="hardware_requests", channel="whatsapp",
+                                                    defaults={"enabled": True})
     config = ChannelConfiguration.objects.create(makerspace=space, channel="whatsapp", provider="twilio",
         enabled=True, personal_enabled=True, integration_identity="wa-business-one")
     credentials = {"account_sid": ACCOUNT, "auth_token": TOKEN, "whatsapp_sender": SENDER, "public_base_url": PUBLIC}
@@ -83,6 +94,7 @@ def wa(settings, http):
         source_kind="wa.test", dedup_key="wa:test")
     delivery = NotificationDelivery.objects.create(makerspace=space, envelope=envelope, channel="whatsapp",
         endpoint=endpoint, target_key=f"endpoint:{endpoint.pk}", provider="twilio",
+        sender_key=configuration_sender_key(config),
         integration_generation=config.generation, integration_identity=config.integration_identity)
 
     def template(event="accepted", variables=None, approved=True, audience="requester"):
@@ -96,9 +108,10 @@ def wa(settings, http):
                 "From": "whatsapp:" + (SENDER if kind == "status" else DESTINATION),
                 "To": "whatsapp:" + (DESTINATION if kind == "status" else SENDER)}
         data.update(params or {})
-        return APIClient().post(path, urlencode(data), content_type=content_type,
-            HTTP_X_TWILIO_SIGNATURE=signature(path, data) if signed else "invalid",
-            HTTP_HOST="internal-proxy.example.test")
+        with django_capture_on_commit_callbacks(execute=True):
+            return APIClient().post(path, urlencode(data), content_type=content_type,
+                HTTP_X_TWILIO_SIGNATURE=signature(path, data) if signed else "invalid",
+                HTTP_HOST="internal-proxy.example.test")
 
     return SimpleNamespace(space=space, user=user, config=config, credentials=credentials, endpoint=endpoint,
         envelope=envelope, delivery=delivery, provider=TwilioWhatsAppProvider(config), template=template, post=post,

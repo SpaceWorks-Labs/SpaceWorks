@@ -117,7 +117,7 @@ def test_old_generation_rejects_even_with_current_app_secret(wa):
     old = wa.config.generation
     wa.config.generation += 1
     wa.config.save(update_fields=["generation"])
-    assert wa.post(wa.payload("messages", [wa.message("STOP")]), generation=old).status_code == 404
+    assert wa.post(wa.payload("messages", [wa.message("STOP")]), generation=old).status_code == 403  # a stale generation is indistinguishable from a bad signature
     endpoint.refresh_from_db()
     assert endpoint.revoked_at is None
 
@@ -270,7 +270,7 @@ def test_invalid_proof_creates_no_endpoint(wa, failure):
         wa.space.save(update_fields=["enabled_modules"])
     # Removing notifications rotates the installation in the database; the old
     # generation URL must be refused before it can consume an outstanding proof.
-    expected_status = 404 if failure == "module" else 200
+    expected_status = 403 if failure == "module" else 200  # refused as a bad callback, not a 404 oracle
     assert wa.post(wa.payload("messages", [wa.message(code, sender=sender)])).status_code == expected_status
     assert not NotificationEndpoint.objects.filter(configuration=wa.config).exists()
 

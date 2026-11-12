@@ -86,6 +86,8 @@ def test_django_admin_reset_action_invalidates_an_issued_otp(monkeypatch):
     assert_invalidated(target, code)
 
 
+@pytest.mark.skip(reason="U-A1/U-B: the staff-accounts set-password route is gone and a staff-track holder shares "
+                  "their ONE account (and email) with their member self, so there is no 'separate member' to preserve")
 def test_staff_reset_preserves_separate_members_issued_otp(monkeypatch):
     space = make_space("invalidate-staff-reset")
     actor = make_member("invalidate-staff-actor", space)

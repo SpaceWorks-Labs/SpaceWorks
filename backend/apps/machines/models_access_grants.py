@@ -7,6 +7,7 @@ revocation sets `revoked_at`/`revoked_by`, and `expires_at` is a stored moment, 
 grant row stays as the accountability trail of who allowed whom onto a machine, and when.
 """
 
+from django.utils.translation import gettext_noop
 from django.conf import settings
 from django.db import models
 from django.db.models import Q
@@ -15,8 +16,8 @@ from django.utils import timezone
 
 class MachineAccessGrant(models.Model):
     class Source(models.TextChoices):
-        STAFF = "staff", "Granted by staff"
-        MIGRATION = "migration", "Converted from a certification"
+        STAFF = "staff", gettext_noop("Granted by staff")
+        MIGRATION = "migration", gettext_noop("Converted from a certification")
 
     makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.CASCADE,
                                    related_name="machine_access_grants")

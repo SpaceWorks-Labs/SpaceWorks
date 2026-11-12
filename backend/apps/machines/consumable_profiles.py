@@ -28,9 +28,9 @@ class Unit(models.TextChoices):
     METRE = "m", "m"
     MILLILITRE = "ml", "ml"
     LITRE = "l", "l"
-    SQUARE_CM = "cm2", "cm²"
-    SQUARE_M = "m2", "m²"
-    CUBIC_CM = "cm3", "cm³"
+    SQUARE_CM = "cm2", "cm²"  # i18n-ignore: unit symbol
+    SQUARE_M = "m2", "m²"  # i18n-ignore: unit symbol
+    CUBIC_CM = "cm3", "cm³"  # i18n-ignore: unit symbol
     SHEET = "sheet", gettext_noop("sheet")
     PIECE = "piece", gettext_noop("piece")
     MINUTE = "min", "min"

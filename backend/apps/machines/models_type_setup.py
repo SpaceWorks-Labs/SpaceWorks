@@ -10,15 +10,16 @@ Notifications are NOT here: per-type notices use the existing recipient routing 
 `RecipientMachineTypeScope`). No user FKs: the audit log records who changed what.
 """
 
+from django.utils.translation import gettext_noop
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 
 class MachineTypeSetup(models.Model):
     class Approval(models.TextChoices):
-        UNSET = "", "Not set"
-        INSTANT = "instant", "Instant confirmation"
-        APPROVE = "approve", "Staff approval required"
+        UNSET = "", gettext_noop("Not set")
+        INSTANT = "instant", gettext_noop("Instant confirmation")
+        APPROVE = "approve", gettext_noop("Staff approval required")
 
     makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.CASCADE,
                                    related_name="machine_type_setups")

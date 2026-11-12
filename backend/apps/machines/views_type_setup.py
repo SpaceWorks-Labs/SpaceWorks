@@ -1,5 +1,6 @@
 """Staff API: a machine type's per-space setup -- booking defaults, training notes and documents (decision 343)."""
 
+from django.utils.translation import gettext
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers, status
@@ -57,7 +58,7 @@ class AppliedSpacesSerializer(serializers.Serializer):
 
 
 def _unavailable():
-    return Response({"detail": "Machine document storage is unavailable."}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+    return Response({"detail": gettext("Machine document storage is unavailable.")}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
 
 class TypeSetupView(APIView):

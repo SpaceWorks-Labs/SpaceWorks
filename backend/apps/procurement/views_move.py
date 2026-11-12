@@ -109,7 +109,7 @@ class ToBuyMoveToPrintingView(ToBuyMoveBaseView):
     )
     def post(self, request, pk, *args, **kwargs):
         item = self.get_item(pk)
-        require_module(item.makerspace, "printing")
+        require_module(item.makerspace, "machine_service")
         serializer = MoveToPrintingRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = dict(serializer.validated_data)

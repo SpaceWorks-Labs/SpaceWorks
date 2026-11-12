@@ -60,9 +60,9 @@ def publish(event_id, *, actor, data):
     with mutation(event_id, actor, permission=None, gallery=True) as (event, _):
         def run():
             if GalleryPublication.objects.filter(event=event).exists():
-                raise ProgrammeError("gallery_already_published", "The initial gallery was already published. Use an explicit amendment.")
+                raise ProgrammeError("gallery_already_published", gettext("The initial gallery was already published. Use an explicit amendment."))
             if values["expected_version"] != 0:
-                raise ProgrammeError("stale_version", "This item changed.", current_version=0)
+                raise ProgrammeError("stale_version", gettext("This item changed."), current_version=0)
             publication = GalleryPublication.objects.create(event=event, published_at=timezone.now(), published_by=actor,
                 result_revision=_result(event_id, values["result_revision_id"]))
             for snapshot_id in values["snapshot_ids"]:

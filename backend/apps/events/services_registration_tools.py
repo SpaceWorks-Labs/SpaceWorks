@@ -1,5 +1,6 @@
 """Staff edits and exact cancellation undo under the ordinary event admission lock."""
 
+from django.utils.translation import gettext
 from django.db import transaction
 from django.db.models import CharField, Exists, OuterRef, Q
 from django.db.models.functions import Cast
@@ -128,9 +129,9 @@ def restore_registration(registration, *, actor):
                                   locked.quoted_amount or 0) > 0),
     )
     if not registration_is_open(event, now):
-        raise RestoreRefused("registration_closed", "Registration for this event is closed.")
+        raise RestoreRefused("registration_closed", gettext("Registration for this event is closed."))
     if event.registration_audience == "invite":
-        raise RestoreRefused("invite_required", "Current admission requires an invitation.")
+        raise RestoreRefused("invite_required", gettext("Current admission requires an invitation."))
     via = locked.registered_via_makerspace or event.makerspace
     require_registration_access(event, locked.member, staff=True,
                                 collaborative=via.pk != event.makerspace_id, via=via)

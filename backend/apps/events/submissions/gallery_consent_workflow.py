@@ -4,6 +4,7 @@ Generation counters prevent a later regrant from reviving a previously issued
 gallery URL. Publishing an amendment is always a separate manager action.
 """
 
+from django.utils.translation import gettext
 from django.http import Http404
 
 from apps.events.judging.boundary import active_member, audit, command, mutation, notice
@@ -74,7 +75,7 @@ def grant(event_id, team_id, *, actor, data):
                 row.version += 1
             else:
                 if values["expected_version"] != 0:
-                    raise ProgrammeError("stale_version", "This item changed.", current_version=0)
+                    raise ProgrammeError("stale_version", gettext("This item changed."), current_version=0)
                 row = GalleryConsent(event=event, team_id=team_id, snapshot_id=snapshot.id, metadata_public=True)
                 new_generation = True
             row.save()

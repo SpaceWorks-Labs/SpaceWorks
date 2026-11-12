@@ -1,4 +1,5 @@
 from django.utils.translation import gettext
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from apps.events.certificate_artwork_storage import MAX_BYTES
@@ -16,12 +17,31 @@ class CertificateParametersSerializer(PrintInputSerializer):
     layers = CertificateLayerSerializer(many=True, required=False, max_length=20)
 
 
+@extend_schema_field({"type": "object", "description": (
+    "The closed version 1/2 layout (see CertificateParameters), or a Card Studio certificate: a version 3 card design "
+    "document with kind `certificate` (CARD-STUDIO-SPEC-0.12.0.md section 12).")})
+class CertificateParametersField(serializers.Field):
+    """The closed v1/v2 layout, or a Studio v3 certificate document (validated by `normalize_certificate_template`)."""
+
+    def to_internal_value(self, data):
+        if isinstance(data, dict) and data.get("version") == 3:
+            return data
+        serializer = CertificateParametersSerializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        return serializer.validated_data
+
+    def to_representation(self, value):
+        if isinstance(value, dict) and value.get("version") == 3:
+            return value
+        return CertificateParametersSerializer(value).data
+
+
 KIND_CHOICES = ("", "attendance", "participant", "finalist", "winner", "volunteer_thanks",
                 "mentor_thanks", "judge_thanks", "organiser_thanks")
 
 
 class CertificateTemplateWriteSerializer(PrintInputSerializer):
-    parameters = CertificateParametersSerializer()
+    parameters = CertificateParametersField()
     artwork_id = serializers.IntegerField(min_value=1, allow_null=True, required=False, default=None)
     certificate_kind = serializers.ChoiceField(choices=KIND_CHOICES, required=False, default="", help_text=(
         "Blank saves the event default design; a kind saves that kind's own design."))
@@ -42,7 +62,7 @@ class CertificateTemplateCommandSerializer(CertificateTemplateWriteSerializer):
 
 class CertificateTemplateRevisionSerializer(serializers.Serializer):
     id = serializers.IntegerField(allow_null=True)
-    parameters = CertificateParametersSerializer()
+    parameters = CertificateParametersField()
     artwork_id = serializers.IntegerField(allow_null=True)
     created_at = serializers.DateTimeField(allow_null=True)
     event_version = serializers.IntegerField(required=False)

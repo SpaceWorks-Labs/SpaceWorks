@@ -111,7 +111,7 @@ def append_stage_revision_locked(*, event, actor, target, schema):
     last = history.filter(**scope).order_by("-revision").first()
     if (getattr(target, "current_revision_id", None) != (last.pk if last else None)
             or canonical["revision"] != (last.revision if last else 1)):
-        raise FormContextConflict("form_revision_changed", "Reload the current stage form revision.")
+        raise FormContextConflict("form_revision_changed", gettext("Reload the current stage form revision."))
     canonical = deepcopy(canonical)
     canonical["revision"] = last.revision + 1 if last else 1
     revision = history.create(**scope, revision=canonical["revision"], schema=canonical, created_by=actor)

@@ -49,8 +49,8 @@ def update_ticket(ticket, *, actor, **values):
     sold = used.exists() or EventOrderLine.objects.filter(ticket_type=row).exists()
     changed = sorted(field for field in TICKET_FIELDS if field in values and values[field] != getattr(row, field))
     if any(field in changed for field in FROZEN_WHEN_USED) and sold and not _price_drop(event, row, changed, values):
-        raise ReferencedConflict("Price and audience are fixed once people registered with this ticket. "
-                                 "Deactivate it and create a new ticket type instead.", "ticket_type_referenced")
+        raise ReferencedConflict(gettext("Price and audience are fixed once people registered with this ticket. "
+                                 "Deactivate it and create a new ticket type instead."), "ticket_type_referenced")
     capacity = values.get("capacity", row.capacity)
     if "capacity" in changed and capacity and capacity < used.filter(status__in=CONFIRMED_STATUSES).count():
         raise ValidationError({"capacity": gettext("Capacity cannot be lower than the registered and attended seats on this ticket.")})
@@ -87,7 +87,7 @@ def delete_ticket(ticket, *, actor):
     from .models import EventOrderLine
     if (EventRegistration.objects.filter(ticket_type=row).exists()
             or EventOrderLine.objects.filter(ticket_type=row).exists()):
-        raise ReferencedConflict("Registrations or orders use this ticket type. Deactivate it instead of deleting it.",
+        raise ReferencedConflict(gettext("Registrations or orders use this ticket type. Deactivate it instead of deleting it."),
                                  "ticket_type_referenced")
     record(actor, "event.ticket_deleted", makerspace=event.makerspace, target=row)
     row.delete()
@@ -116,7 +116,7 @@ def update_category(category, *, actor, **values):
 def delete_category(category, *, actor):
     space, row = _locked_category(category)
     if row.events.exists():
-        raise ReferencedConflict("Events use this category. Move them to another category first.",
+        raise ReferencedConflict(gettext("Events use this category. Move them to another category first."),
                                  "category_referenced")
     record(actor, "event.category_deleted", makerspace=space, target=row)
     row.delete()

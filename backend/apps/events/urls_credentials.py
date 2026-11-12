@@ -2,7 +2,7 @@ from django.urls import path
 
 from .views_certificate_templates import (
     EventCertificateTemplateView, EventCertificatePreviewView,
-    EventCertificateArtworkPresignView, EventCertificateArtworkFinalizeView, EventCertificateArtworkView,
+    EventCertificateArtworkPresignView, EventCertificateArtworkFinalizeView, EventCertificateArtworkView, EventCertificateArtworkByResourceView,
 )
 
 urlpatterns = [
@@ -11,4 +11,5 @@ urlpatterns = [
     path("events/<int:pk>/certificate-artwork/", EventCertificateArtworkPresignView.as_view(), name="admin-event-certificate-artwork-presign"),
     path("events/<int:pk>/certificate-artwork/<int:artwork_id>/finalize/", EventCertificateArtworkFinalizeView.as_view(), name="admin-event-certificate-artwork-finalize"),
     path("events/<int:pk>/certificate-artwork/<int:artwork_id>/", EventCertificateArtworkView.as_view(), name="admin-event-certificate-artwork"),
+    path("events/<int:pk>/certificate-artwork/by-resource/<uuid:resource_id>/", EventCertificateArtworkByResourceView.as_view(), name="admin-event-certificate-artwork-by-resource"),
 ]

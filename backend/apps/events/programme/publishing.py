@@ -62,7 +62,7 @@ def save_publishing(event, *, actor, data):
         # G owns the aggregate version writer, including lifecycle/release integration.
         # Fail closed until installed; never fake a version or silently lose CAS.
         if (changes or publish or release) and event_version(locked) <= before:
-            raise ProgrammeUnavailable("event_version_writer_unavailable", "Event version writer integration is required.")
+            raise ProgrammeUnavailable("event_version_writer_unavailable", gettext("Event version writer integration is required."))
         return project_publishing(locked, actor=locked_actor)
 
     return execute_command(event=event, actor=actor, command="publishing", payload=data,

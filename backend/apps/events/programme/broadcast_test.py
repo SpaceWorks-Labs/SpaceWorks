@@ -26,7 +26,7 @@ def test_self(campaign, actor, payload):
         preview = EventBroadcastPreview.objects.filter(pk=payload["preview_id"], campaign=row,
                                                         created_by=locked_actor).first()
         if row.status != "draft" or preview is None or preview.content_sha256 != content_digest(row):
-            raise ProgrammeConflict("stale_version", "Create a fresh preview before sending a test.")
+            raise ProgrammeConflict("stale_version", gettext("Create a fresh preview before sending a test."))
         if not locked_actor.email_verified_at:
             raise ValidationError({"recipient": gettext("Verify your own email before sending a test.")})
         try:

@@ -8,11 +8,13 @@ no stock counts, no other guests, no member contact details. The same payloads a
 """
 
 from django.db.models import Q
+from django.utils.translation import gettext
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import serializers
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.accounts.pii_presentation import mask_data, pii_visible
 from apps.admin_api.permissions import IsActiveStaff
 from apps.events.views_admin_event_detail import _manageable_event
 from apps.hardware_requests.exceptions import ErrorSerializer
@@ -20,6 +22,14 @@ from apps.makerspaces.platform import feature_enabled, module_enabled
 
 ERRORS = {code: OpenApiResponse(ErrorSerializer) for code in (401, 403, 404)}
 LIMIT = 200
+
+
+def _shown(request, space, rows):
+    """A platform superadmin without an open PII window on this space sees holders masked (#111 Q12)."""
+    if not pii_visible(request.user, space.pk):
+        for row in rows:
+            mask_data(row, ("holder",))
+    return rows
 
 
 class EventLoanItemSerializer(serializers.Serializer):
@@ -32,7 +42,7 @@ class EventLoanItemSerializer(serializers.Serializer):
 class EventLoanSerializer(serializers.Serializer):
     request_id = serializers.IntegerField()
     status = serializers.CharField()
-    holder = serializers.CharField(help_text="Readable borrower label.")
+    holder = serializers.CharField(help_text="Borrower name; never an email or phone number.")
     issued_at = serializers.DateTimeField(allow_null=True)
     due_at = serializers.DateTimeField(allow_null=True)
     items = EventLoanItemSerializer(many=True)
@@ -47,7 +57,7 @@ class EventGuestPassSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     kind = serializers.CharField()
     status = serializers.CharField()
-    holder = serializers.CharField(help_text="Account username only.")
+    holder = serializers.CharField(help_text="Account name; never an email or phone number.")
     valid_until = serializers.DateTimeField()
 
 
@@ -63,7 +73,7 @@ class EventLoansView(APIView):
                    responses={200: EventLoansSerializer, **ERRORS})
     def get(self, request, pk):
         from apps.events.models_loan_context import EventLoanContext
-        from apps.hardware_requests.display import requester_label
+        from apps.hardware_requests.display import requester_name_label
         from apps.hardware_requests.models import HardwareRequest
 
         event = _manageable_event(request.user, pk)
@@ -73,13 +83,14 @@ class EventLoansView(APIView):
         ids = EventLoanContext.objects.filter(event=event, makerspace=space, active=True).values("request_id")
         rows = HardwareRequest.objects.filter(makerspace=space, pk__in=ids).select_related("requester").prefetch_related(
             "items__product").order_by("-pk")[:LIMIT]
-        return Response({"enabled": True, "results": [{
-            "request_id": row.pk, "status": row.status, "holder": requester_label(row),
+        member = gettext("Member")
+        return Response({"enabled": True, "results": _shown(request, space, [{
+            "request_id": row.pk, "status": row.status, "holder": requester_name_label(row, fallback=member),
             "issued_at": row.issued_at, "due_at": row.return_due_at,
             "items": [{"product_name": item.product.name, "requested": item.requested_quantity,
                        "issued": item.issued_quantity, "returned": item.returned_quantity}
                       for item in row.items.all()],
-        } for row in rows]})
+        } for row in rows])})
 
 
 class EventGuestPassesView(APIView):
@@ -94,9 +105,12 @@ class EventGuestPassesView(APIView):
         space = event.makerspace
         if not feature_enabled(space, "membership.guest_passes"):
             return Response({"enabled": False, "results": []})
+        from apps.hardware_requests.display import account_name_label
+
+        guest = gettext("Guest")
         base = f"event-{event.pk}-reg-"
         rows = GuestPass.objects.filter(makerspace=space, kind=GuestPass.Kind.EVENT).filter(
             Q(operation_id__startswith=base)).select_related("holder").order_by("-pk")[:LIMIT]
-        return Response({"enabled": True, "results": [{
-            "id": row.pk, "kind": row.kind, "status": row.status, "holder": row.holder.username,
-            "valid_until": row.valid_until} for row in rows]})
+        return Response({"enabled": True, "results": _shown(request, space, [{
+            "id": row.pk, "kind": row.kind, "status": row.status, "holder": account_name_label(row.holder, fallback=guest),
+            "valid_until": row.valid_until} for row in rows])})

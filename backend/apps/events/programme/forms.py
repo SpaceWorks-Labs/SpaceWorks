@@ -50,7 +50,7 @@ def resolve_form(event, *, actor, key, selector, locked=False):
         return None
     provider = form_provider(key)
     if provider is None:
-        raise ProgrammeUnavailable("form_provider_unavailable", "This form editor is not available yet.")
+        raise ProgrammeUnavailable("form_provider_unavailable", gettext("This form editor is not available yet."))
     target = provider.resolve(event=event, actor=actor, selector=selector, locked=locked)
     if target is None or getattr(target, "event_id", None) != event.pk:
         raise NotFound(gettext("Unknown event form."))
@@ -104,7 +104,7 @@ def save_form(event, *, actor, key, data):
             form_provider(key).save_locked(event=locked, actor=locked_actor, target=target, schema=next_schema)
             locked.refresh_from_db()
         if event_version(locked) <= before:
-            raise ProgrammeUnavailable("event_version_writer_unavailable", "Event version writer integration is required.")
+            raise ProgrammeUnavailable("event_version_writer_unavailable", gettext("Event version writer integration is required."))
         from .draft_sources import prune_definition_drafts_locked
         from apps.events.programme_locks import current_locks
         prune_definition_drafts_locked(event=locked, key=key, target=target, previous=previous,
@@ -127,7 +127,7 @@ def check_editor_revision(schema, previous):
     if isinstance(schema, dict):
         expected = previous.get("revision", 1) if isinstance(previous, dict) else 1
         if schema["revision"] != expected:
-            raise ProgrammeConflict("form_revision_changed", "The form changed. Reload its current revision.")
+            raise ProgrammeConflict("form_revision_changed", gettext("The form changed. Reload its current revision."))
 
 
 def validate_form_preview(event, *, actor, key, schema, sample_answers, **selection):

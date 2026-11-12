@@ -1,4 +1,5 @@
 """Discover cross-tenant presentation source dependencies before purge row locks."""
+from django.utils.translation import gettext
 from contextlib import ExitStack, contextmanager
 
 from django.apps import apps
@@ -45,6 +46,6 @@ def presentation_purge_scope(tenant_id, *, actor=None):
         list(Event.objects.select_for_update().filter(pk__in={row[2] for row in prepared}).order_by("pk"))
         list(Makerspace.objects.select_for_update().filter(pk__in=tenants).order_by("pk"))
         if _snapshot(tenant_id) != prepared:
-            raise ProgrammeConflict("Presentation sources changed. Retry purge.", code="subject_changed")
+            raise ProgrammeConflict(gettext("Presentation sources changed. Retry purge."), code="subject_changed")
         clear_selections(EventMemberPresentation.objects.filter(pk__in=[row[0] for row in prepared]), actor=actor)
         yield

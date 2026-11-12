@@ -3,6 +3,7 @@
 User/key rows are read again for live policy, never locked after an Event row.
 Account fencing serializes prepared Saved details work with account erasure.
 """
+from django.utils.translation import gettext
 from contextlib import contextmanager
 from contextvars import ContextVar
 
@@ -108,11 +109,11 @@ def lock_event(*, event_id, account_ids=()):
     tenants, accounts = event_scopes(event_id=event_id, account_ids=account_ids)
     if (event.series_id != series_id or not set(tenants) <= set(locks.tenant_ids)
             or not set(accounts) <= set(locks.account_ids)):
-        raise ProgrammeConflict("scope_changed", "Event participants changed. Retry the command.")
+        raise ProgrammeConflict("scope_changed", gettext("Event participants changed. Retry the command."))
     list(Makerspace.objects.select_for_update().filter(pk__in=locks.tenant_ids).order_by("pk"))
     tenants, accounts = event_scopes(event_id=event_id, account_ids=account_ids)
     if not set(tenants) <= set(locks.tenant_ids) or not set(accounts) <= set(locks.account_ids):
-        raise ProgrammeConflict("scope_changed", "Event participants changed. Retry the command.")
+        raise ProgrammeConflict("scope_changed", gettext("Event participants changed. Retry the command."))
     event.makerspace = require_module_locked(event.makerspace_id, "events")
     return event
 

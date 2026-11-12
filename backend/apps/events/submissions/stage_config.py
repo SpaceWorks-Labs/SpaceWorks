@@ -6,6 +6,7 @@ late policy) for every reader of the overall window. Editing them through the co
 - with several stages is refused (``submission_window_by_stage``): each stage has its own window.
 A config created after the stage migration gets its "Single submission" stage at once.
 """
+from django.utils.translation import gettext
 from apps.audit.services import record
 
 WINDOW = {"submission_opens_at": "opens_at", "submission_deadline": "deadline",
@@ -20,7 +21,7 @@ def refuse_multi_stage(config, data):
     from .models_stages import SubmissionStage
     if config.pk and changed_window(config, data) and SubmissionStage.objects.filter(event_id=config.event_id).count() > 1:
         from apps.events.hackathons.admission_errors import fail
-        fail("submission_window_by_stage", "This event has several submission stages. Edit each stage's window.",
+        fail("submission_window_by_stage", gettext("This event has several submission stages. Edit each stage's window."),
              status=400)
 
 

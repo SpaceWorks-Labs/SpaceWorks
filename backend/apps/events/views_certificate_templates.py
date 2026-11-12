@@ -148,3 +148,17 @@ class EventCertificateArtworkView(APIView):
         row = get_object_or_404(EventCertificateArtwork, event=event, pk=artwork_id, promoted_at__isnull=False)
         payload = storage.read_artwork(row.object_key, row.version_id, row.sha256)
         return _private(HttpResponse(payload, content_type="image/png"))
+
+
+class EventCertificateArtworkByResourceView(APIView):
+    permission_classes = [IsActiveStaff]
+    throttle_classes = [CredentialRenderThrottle]
+
+    @extend_schema(tags=["Admin events"], responses={(200, "image/png"): OpenApiTypes.BINARY, **ERRORS},
+                   description="Read private artwork by the `resource_id` that certificate image layers store, with the same live event "
+                               "edit authority as the numeric route; artwork of another event or space is a 404.")
+    def get(self, request, pk, resource_id):
+        event = _event(request, pk)
+        row = get_object_or_404(EventCertificateArtwork, event=event, resource_id=resource_id, promoted_at__isnull=False)
+        payload = storage.read_artwork(row.object_key, row.version_id, row.sha256)
+        return _private(HttpResponse(payload, content_type="image/png"))

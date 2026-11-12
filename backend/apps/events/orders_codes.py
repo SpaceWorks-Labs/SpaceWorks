@@ -35,7 +35,7 @@ def unlocked_types(event, codes, *, lock=False):
     for code in codes or ():
         promo = _live(event, code, lock=lock)
         if promo is None or promo.kind != "access":
-            raise OrderRefused("access_code_invalid", "That access code is not valid for this event.")
+            raise OrderRefused("access_code_invalid", gettext("That access code is not valid for this event."))
         ids.add(promo.ticket_type_id)
         promos.append(promo)
     return ids, promos

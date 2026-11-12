@@ -111,8 +111,9 @@ class EventWorkshopMachinesView(_SessionOnly):
 
     @extend_schema(request=WorkshopMachineLinkInput, auth=[{"jwtAuth": []}], summary="Link a machine booking to the event",
                    description="The booking keeps its own Booking-owned machine-time charge; no event venue fee "
-                               "or room charge is involved. Re-checks the booker's certification (403 "
-                               "`certification_required`) and the repair gate (409 `machine_under_repair`). "
+                               "or room charge is involved. Re-checks the booker's machine access (403 "
+                               "`no_machine_access` or `machine_access_expired`) and the repair gate "
+                               "(409 `machine_under_repair`). "
                                "409 codes: `booking_already_linked`, `not_linkable`, `too_many_machines`, "
                                "`booker_required`. Linking the same booking again answers 200.",
                    responses={200: WorkshopMachineLink, 201: WorkshopMachineLink, **PUBLIC_ERROR_RESPONSES, **FENCE})

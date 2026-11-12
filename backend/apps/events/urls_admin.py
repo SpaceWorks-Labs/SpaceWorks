@@ -51,6 +51,8 @@ from apps.events.views_badges import EventBadgePdfView, EventBadgeTemplateView
 from .views_loan_context import EventLoanContextView
 from .views_booking_decision import EventBookingDecisionView
 from .views_booking_decision_replacement import EventBookingReplacementView
+from .views_machine_use import AdminMachineUseEventView, AdminMachineUseOptionsView
+from .views_machine_use_event import EventMachineUseCostView, EventMachineUseView
 from .views_machine_booking_links import EventWorkshopMachineReplacementView, EventWorkshopMachinesView
 from .urls_equipment_window import patterns as equipment_window_patterns
 from .urls_venue import patterns as venue_patterns
@@ -60,6 +62,10 @@ from .urls_admin_series import patterns as series_patterns
 urlpatterns = [
     path("makerspace/<int:makerspace_id>/events/<int:event_id>/booking-link", EventBookingDecisionView.as_view(), name="admin-event-booking-link"),
     path("makerspace/<int:makerspace_id>/events/<int:event_id>/booking-link/replacement", EventBookingReplacementView.as_view(), name="admin-event-booking-replacement"),
+    path("makerspace/<int:makerspace_id>/machine-use/<str:kind>/<int:pk>/event", AdminMachineUseEventView.as_view(), name="admin-machine-use-event"),
+    path("makerspace/<int:makerspace_id>/machine-use/events", AdminMachineUseOptionsView.as_view(), name="admin-machine-use-event-options"),
+    path("makerspace/<int:makerspace_id>/events/<int:event_id>/machine-use", EventMachineUseView.as_view(), name="admin-event-machine-use"),
+    path("makerspace/<int:makerspace_id>/events/<int:event_id>/machine-use/<int:link_id>/cost", EventMachineUseCostView.as_view(), name="admin-event-machine-use-cost"),
     path("makerspace/<int:makerspace_id>/events/<int:event_id>/workshop-machines", EventWorkshopMachinesView.as_view(), name="admin-event-workshop-machines"),
     path("makerspace/<int:makerspace_id>/events/<int:event_id>/workshop-machines/<int:link_id>/replacement", EventWorkshopMachineReplacementView.as_view(), name="admin-event-workshop-machine-replacement"),
     path("makerspace/<int:makerspace_id>/requests/<int:request_id>/event-context", EventLoanContextView.as_view(), name="admin-request-event-context"),

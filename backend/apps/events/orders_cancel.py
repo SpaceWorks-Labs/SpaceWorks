@@ -5,6 +5,7 @@ cancelled one registration at a time, each through the refund policy (`orders_re
 If the charge turns out to be settled already, the order is seated instead.
 """
 
+from django.utils.translation import gettext
 from django.utils import timezone
 
 from apps.audit.services import record
@@ -19,7 +20,7 @@ def _cancel_locked(order_id, actor):
     from .orders_settlement import SETTLED, order_payment, release_hold, settle_locked
     order = EventOrder.objects.select_for_update().get(pk=order_id)
     if order.status != EventOrder.Status.PENDING:
-        raise OrderRefused("order_not_payable", "Only an unpaid order can be abandoned.")
+        raise OrderRefused("order_not_payable", gettext("Only an unpaid order can be abandoned."))
     payment = order_payment(order)
     if payment is not None and payment.status in SETTLED:
         return settle_locked(order, actor=actor)

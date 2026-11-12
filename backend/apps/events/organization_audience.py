@@ -1,5 +1,6 @@
 """Live event audience adapter over always-present organization membership policy."""
 
+from django.utils.translation import gettext
 from django.db.models import prefetch_related_objects
 from rest_framework.exceptions import APIException
 
@@ -18,6 +19,9 @@ PROJECTION_FEATURES = (
     "events.offline_checkin", "events.broadcasts", "events.website", "events.embed",
     "events.certificate_designer", "events.online_delivery", "events.short_links",
     "reports.event_exports", "reports.event_pdf",
+    # Release 2 L6 ticketing keys the staff list serializer projects: batched here so a list never queries per row.
+    "events.orders", "events.addons", "events.transfers", "events.desk_collect",
+    "events.refund_override", "events.venue_fees", "events.series_passes",
 )
 
 
@@ -153,9 +157,9 @@ def require_organization_audience(event, member):
     if event.registration_audience != AUDIENCE:
         return
     if not feature_enabled(event.makerspace, FEATURE):
-        raise OrganizationAudienceRefused("organization_audience_disabled", "Organization audience is disabled.")
+        raise OrganizationAudienceRefused("organization_audience_disabled", gettext("Organization audience is disabled."))
     if event.organization_admission_blocked:
-        raise OrganizationAudienceRefused("organization_audience_not_ready", "Staff must reconfigure the imported organization audience.")
+        raise OrganizationAudienceRefused("organization_audience_not_ready", gettext("Staff must reconfigure the imported organization audience."))
     if not usable_spaces().filter(pk=event.makerspace_id).exists():
         raise OrganizationAudienceRefused()
     if not member or not getattr(member, "is_authenticated", False) or not member.pk:

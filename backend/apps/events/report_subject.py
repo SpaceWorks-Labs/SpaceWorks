@@ -11,7 +11,7 @@ from .event_permissions import MANAGE_REGISTRATIONS, VIEW
 from .models import Event
 
 KEYS = ("event-attendance", "event-registrations", "event-feedback", "event-attendance-pdf", "event-orders", "event-equipment",
-        "event-consumables", "event-loan-timeline")
+        "event-consumables", "event-loan-timeline", "event-machine-use")
 
 
 def resolve(space, pk):

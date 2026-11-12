@@ -52,7 +52,7 @@ def save_template(event, *, actor, parameters, artwork_id=None, certificate_kind
     event = _locked(event, actor)
     parameters = normalize_certificate_template(parameters)
     artwork = _artwork(event, artwork_id)
-    if parameters.get("version") == 2:
+    if parameters.get("version") in (2, 3):
         from types import SimpleNamespace
         from .certificate_templates import issuance_layout
         issuance_layout(SimpleNamespace(parameters=parameters, artwork=artwork, event_id=event.pk))

@@ -23,7 +23,7 @@ def pay_link(registration, *, actor, send=False):
     from .services_checkin import pending_ticket_charge
     payment = pending_ticket_charge(registration)
     if payment is None or registration.member_id is None:
-        raise OrderRefused("nothing_to_collect", "This ticket has nothing left to pay.")
+        raise OrderRefused("nothing_to_collect", gettext("This ticket has nothing left to pay."))
     url = ""
     if online_payments_enabled(payment.makerspace, "events"):
         from apps.payments.services import create_checkout_url

@@ -41,7 +41,7 @@ def require_transfers(registration, *, flag="transfers_allowed"):
     from .orders_quote import sales_settings
     require_feature(registration.event, "events.transfers")
     if not transfer_window_open(registration, sales_settings(registration.event), flag=flag):
-        raise OrderRefused("transfer_not_allowed", "This ticket cannot be transferred or changed now.")
+        raise OrderRefused("transfer_not_allowed", gettext("This ticket cannot be transferred or changed now."))
 
 
 def accept_url(token):
@@ -54,12 +54,12 @@ def offer_transfer(registration, *, actor, to_email):
     from django.core.validators import validate_email
     row = EventRegistration.objects.select_for_update().select_related("event__makerspace").get(pk=registration.pk)
     if row.member_id != actor.pk:
-        raise OrderRefused("transfer_not_allowed", "Only the ticket holder can transfer it.")
+        raise OrderRefused("transfer_not_allowed", gettext("Only the ticket holder can transfer it."))
     require_transfers(row)
     email = (to_email or "").strip().lower()
     validate_email(email)
     if email == (actor.email or "").strip().lower():
-        raise OrderRefused("transfer_not_allowed", "Choose someone else to receive the ticket.")
+        raise OrderRefused("transfer_not_allowed", gettext("Choose someone else to receive the ticket."))
     now = timezone.now()
     EventTicketTransfer.objects.select_for_update().filter(registration=row, status="pending").update(
         status=EventTicketTransfer.Status.CANCELLED, decided_at=now)
@@ -92,7 +92,7 @@ def find_offer(token):
                 .filter(token_digest=token_digest(token), status="pending", expires_at__gt=timezone.now()).first()
                 if token and len(str(token)) <= 128 else None)
     if transfer is None:
-        raise OrderRefused("claim_invalid", "This transfer link is not valid any more.")
+        raise OrderRefused("claim_invalid", gettext("This transfer link is not valid any more."))
     return transfer
 
 
@@ -100,7 +100,7 @@ def accept(token, *, user):
     transfer = find_offer(token)
     email = (user.email or "").strip().lower()
     if email != transfer.to_email or not getattr(user, "email_verified_at", None):
-        raise OrderRefused("claim_email_mismatch", "Sign in with the verified email address the ticket was sent to.")
+        raise OrderRefused("claim_email_mismatch", gettext("Sign in with the verified email address the ticket was sent to."))
     return _accept(transfer.registration, member=user, actor=user, transfer_id=transfer.pk)
 
 
@@ -110,12 +110,12 @@ def _accept(registration, *, member, actor, transfer_id):
     transfer = EventTicketTransfer.objects.select_for_update().get(pk=transfer_id, registration_id=registration.pk)
     row = EventRegistration.objects.select_for_update().select_related("event__makerspace").get(pk=registration.pk)
     if transfer.status != "pending" or row.member_id != transfer.from_member_id:
-        raise OrderRefused("claim_invalid", "This transfer is no longer open.")
+        raise OrderRefused("claim_invalid", gettext("This transfer is no longer open."))
     require_transfers(row)
     event = row.event
     if event.registrations.filter(member=member, status__in=("pending_approval", "registered", "waitlisted",
                                                              "attended")).exists():
-        raise OrderRefused("already_registered", "You already have a place at this event.")
+        raise OrderRefused("already_registered", gettext("You already have a place at this event."))
     require_registration_access(event, member)
     _move(row, member)
     rotate_credentials(event, row, actor=actor)

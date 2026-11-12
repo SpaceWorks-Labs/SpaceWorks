@@ -10,6 +10,7 @@ of 0 raises nothing and is audited. After charging the row is frozen: staff waiv
 refund it only through the existing payment decisions (#59).
 """
 
+from django.utils.translation import gettext
 import logging
 
 from django.db import transaction
@@ -39,8 +40,8 @@ def refuse_room_already_booked(event, room):
     ).order_by("starts_at", "id").values_list("pk", flat=True).first()
     if clash is not None:
         raise OrderRefused("venue_room_already_booked",
-                           "A booking already holds this room during the event. Link that booking to the "
-                           "event, or remove the room from the venue fee, so the room is not charged twice.")
+                           gettext("A booking already holds this room during the event. Link that booking to the "
+                           "event, or remove the room from the venue fee, so the room is not charged twice."))
 
 
 def venue_quote(event, fee):
@@ -54,15 +55,15 @@ def configure(event, *, actor, **values):
     from .services import _locked_event
     event = _locked_event(event.pk)
     if EventBookingDecision.objects.filter(event_id=event.pk).exists():
-        raise OrderRefused("venue_owned_by_booking", "The booking owns this venue charge.")
+        raise OrderRefused("venue_owned_by_booking", gettext("The booking owns this venue charge."))
     require_feature(event, "events.venue_fees")
     fee = EventVenueFee.objects.select_for_update().filter(event=event).first()
     if fee is not None and fee.status == EventVenueFee.Status.CHARGED:
-        raise OrderRefused("venue_fee_charged", "The venue fee was already charged; settle or waive that charge.")
+        raise OrderRefused("venue_fee_charged", gettext("The venue fee was already charged; settle or waive that charge."))
     require_member_account(values["payer"])
     room = values.get("room")
     if room is not None and room.makerspace_id != event.makerspace_id:
-        raise OrderRefused("venue_fee_charged", "Choose a room of this space.")
+        raise OrderRefused("venue_fee_charged", gettext("Choose a room of this space."))
     refuse_room_already_booked(event, room)
     fee = fee or EventVenueFee(makerspace=event.makerspace, event=event)
     for key in FIELDS:
@@ -88,11 +89,11 @@ def charge(event, *, actor):
     from .services import _locked_event
     event = _locked_event(event.pk)
     if EventBookingDecision.objects.filter(event_id=event.pk).exists():
-        raise OrderRefused("venue_owned_by_booking", "The booking owns this venue charge.")
+        raise OrderRefused("venue_owned_by_booking", gettext("The booking owns this venue charge."))
     require_feature(event, "events.venue_fees")
     fee = EventVenueFee.objects.select_for_update().filter(event=event).first()
     if fee is None or fee.status != EventVenueFee.Status.CONFIGURED:
-        raise OrderRefused("venue_fee_charged", "There is no venue fee waiting to be charged.")
+        raise OrderRefused("venue_fee_charged", gettext("There is no venue fee waiting to be charged."))
     refuse_room_already_booked(event, fee.room)
     if not charge_tracking_enabled(event.makerspace, "events"):
         # #184 G6: event charges are off, so hosting is free -- the fee resolves FREE, not stuck.

@@ -10,6 +10,8 @@ the submission window.
 import hashlib
 import json
 
+from django.core.serializers.json import DjangoJSONEncoder
+
 from apps.audit.services import record
 from .errors import SubmissionError
 from .models_stages import SubmissionStage, SubmissionStageEntry, StageExtension, StageShortlist
@@ -35,7 +37,7 @@ def in_use(stage):
 def replace(*, actor, event_id, data):
     stages_in = data["stages"]
     port = boundary()
-    digest = canonical_digest({"stages": data, "event": event_id})
+    digest = canonical_digest({"stages": json.loads(json.dumps(data, cls=DjangoJSONEncoder)), "event": event_id})
     with port.locked(actor=actor, event_id=event_id, team_id=None, action="stage_edit") as ctx:
         replay = port.receipt(event_id=event_id, actor_id=actor.pk, operation_id=str(data["operation_id"]), digest=digest)
         if replay is not None:

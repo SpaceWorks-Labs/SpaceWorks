@@ -1,5 +1,6 @@
 """No-store public allowlists and live gates independent of an expired EventPage."""
 
+from django.utils.translation import gettext
 import re
 from urllib.parse import urlsplit
 
@@ -113,7 +114,7 @@ def asset_download(public_token, public_asset_id, *, request):
         if item.asset_id not in snapshot.public_asset_ids:
             raise Http404
         if snapshot.expires_at and snapshot.expires_at <= timezone.now():
-            raise ProgrammeError("asset_expired", "These project files have expired.", status=410)
+            raise ProgrammeError("asset_expired", gettext("These project files have expired."), status=410)
         return item
     item = authorize()
     return runtime().stream_asset(asset_id=item.asset_id, snapshot_id=item.entry.snapshot_id,

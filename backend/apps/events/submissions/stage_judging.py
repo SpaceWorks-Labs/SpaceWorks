@@ -32,7 +32,7 @@ def require_triaged(round, stage_id):
     if stage_id is None or SubmissionStage.objects.filter(event_id=round.event_id).count() < 2:
         return
     if pending_count(SubmissionStage.objects.get(pk=stage_id)):
-        invalid("Triage every submission of this stage before judging it.")
+        invalid(gettext("Triage every submission of this stage before judging it."))
 
 
 def narrow_to_finalists(snapshots, finalist_ids, stage_id):

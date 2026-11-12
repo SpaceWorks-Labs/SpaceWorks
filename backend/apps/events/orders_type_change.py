@@ -10,6 +10,7 @@ out against what the holder actually paid (`orders_pricing.paid_ticket_price`):
 * the same price: the switch happens now.
 """
 
+from django.utils.translation import gettext
 from decimal import Decimal
 
 from django.utils import timezone
@@ -32,10 +33,10 @@ def _target(event, member, ticket_type_id, current):
     from .ticketing import available_ticket_types
     ticket = available_ticket_types(event, member).filter(pk=ticket_type_id).exclude(pk=current).first()
     if ticket is None or ticket.pricing_mode != "fixed" or ticket.seats_per_ticket != 1:
-        raise OrderRefused("type_change_not_allowed", "That ticket type is not available to change to.")
+        raise OrderRefused("type_change_not_allowed", gettext("That ticket type is not available to change to."))
     left = registration_spots_left(event, ticket)
     if left is not None and left < 1:
-        raise OrderRefused("sold_out", "That ticket type has sold out.")
+        raise OrderRefused("sold_out", gettext("That ticket type has sold out."))
     return ticket
 
 
@@ -50,7 +51,7 @@ def change_type(registration, *, actor, ticket_type_id, digest=None):
     from .transfers import require_transfers
     row = EventRegistration.objects.select_for_update().select_related("event__makerspace").get(pk=registration.pk)
     if row.member_id != actor.pk:
-        raise OrderRefused("type_change_not_allowed", "Only the ticket holder can change it.")
+        raise OrderRefused("type_change_not_allowed", gettext("Only the ticket holder can change it."))
     require_transfers(row, flag="type_changes_allowed")
     event = row.event
     ticket = _target(event, actor, ticket_type_id, row.ticket_type_id)

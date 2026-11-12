@@ -140,9 +140,9 @@ def prepare(*, actor_id, subject, schema, payload, submit=True, previous_answers
 def require_current(prepared, event, schema):
     from apps.forms_schema.submission import FormContextConflict
     if digest(form_descriptor(event, schema or [])) != prepared.form_sha256:
-        raise FormContextConflict("form_revision_changed", "Review the current form.")
+        raise FormContextConflict("form_revision_changed", gettext("Review the current form."))
     if event.event_date_revision != prepared.event_date_revision:
-        raise FormContextConflict("event_date_changed", "Review the current event date.")
+        raise FormContextConflict("event_date_changed", gettext("Review the current event date."))
 
 
 def apply_locked(prepared, *, subject, locks, store_intent=True):

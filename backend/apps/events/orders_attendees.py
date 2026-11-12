@@ -40,7 +40,7 @@ def create_seats(order, *, attendees=(), buyer_attends=True):
     """One unclaimed seat per admission; the buyer's first (member tickets first)."""
     if buyer_attends and order.event.registrations.filter(
             member=order.buyer, status__in=("pending_approval", "registered", "waitlisted", "attended")).exists():
-        raise OrderRefused("already_registered", "You already have a place at this event; buy for others only.")
+        raise OrderRefused("already_registered", gettext("You already have a place at this event; buy for others only."))
     lines = sorted(order.lines.filter(kind=EventOrderLine.Kind.TICKET).select_related("ticket_type"),
                    key=lambda line: (line.ticket_type.audience != "member", line.pk))
     emails = list(attendees)
@@ -51,7 +51,7 @@ def create_seats(order, *, attendees=(), buyer_attends=True):
             EventOrderSeat.objects.create(makerspace=order.makerspace, order=order, line=line, event=order.event,
                                           attendee_email=emails.pop(0) if emails else "")
     if any(line.ticket_type.audience == "member" for line in lines) and not buyer_attends:
-        raise OrderRefused("order_limit", "A member ticket admits the buyer only.")
+        raise OrderRefused("order_limit", gettext("A member ticket admits the buyer only."))
 
 
 def is_buyer_seat(seat):
@@ -100,13 +100,13 @@ def assign_attendees(order, *, member, assignments):
     from django.core.validators import validate_email
     order = _locked_order(order.pk, member)
     if order.status not in (EventOrder.Status.PENDING, EventOrder.Status.PAID):
-        raise OrderRefused("order_not_payable", "This order is closed.")
+        raise OrderRefused("order_not_payable", gettext("This order is closed."))
     seats = {seat.pk: seat for seat in order.seats.select_for_update().filter(status=EventOrderSeat.Status.UNCLAIMED)}
     changed = []
     for seat_id, email in assignments.items():
         seat = seats.get(int(seat_id))
         if seat is None:
-            raise OrderRefused("claim_invalid", "That seat cannot be changed.", seat_id=seat_id)
+            raise OrderRefused("claim_invalid", gettext("That seat cannot be changed."), seat_id=seat_id)
         email = (email or "").strip().lower()
         if email:
             validate_email(email)
@@ -128,7 +128,7 @@ def chase(order, *, member):
     """Re-send the claim link to every named, unclaimed seat (once a day per seat)."""
     order = _locked_order(order.pk, member)
     if order.status != EventOrder.Status.PAID:
-        raise OrderRefused("order_not_payable", "Only a paid order's seats can be claimed.")
+        raise OrderRefused("order_not_payable", gettext("Only a paid order's seats can be claimed."))
     now, sent = timezone.now(), 0
     for seat in order.seats.select_for_update().filter(status=EventOrderSeat.Status.UNCLAIMED).exclude(
             attendee_email=""):

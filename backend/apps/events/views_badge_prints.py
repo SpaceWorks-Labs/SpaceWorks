@@ -18,6 +18,7 @@ from .event_permissions import CHECK_IN
 from .id_cards_views import organiser_event
 from .models import EventRegistration
 from .serializers_badge_prints import BadgeDeskSerializer, BadgeReceiptBatchSerializer, BadgeReceiptResultSerializer
+from django.utils.translation import gettext
 
 TAGS = ["Event badges"]
 
@@ -44,12 +45,12 @@ class EventBadgeDeskView(APIView):
         event = desk_event(request.user, pk)
         registration, status_set = None, request.query_params.get("status_set") or None
         if status_set is not None and status_set not in badge_desk.STATUS_SETS:
-            raise ValidationError({"status_set": "Unknown status set."})
+            raise ValidationError({"status_set": gettext("Unknown status set.")})
         if request.query_params.get("registration_id"):
             try:
                 registration_id = int(request.query_params["registration_id"])
             except ValueError:
-                raise ValidationError({"registration_id": "Use a registration id."}) from None
+                raise ValidationError({"registration_id": gettext("Use a registration id.")}) from None
             registration = get_object_or_404(EventRegistration.objects.select_related("event__makerspace"),
                                              pk=registration_id, event=event)
             badge_prints.check_print_start(event)

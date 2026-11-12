@@ -1,5 +1,6 @@
 """Explicit public selection and privacy-withdrawal command schemas."""
 
+from django.utils.translation import gettext
 from rest_framework import serializers
 
 from apps.events.judging.serializers import CommandInput, IdList
@@ -28,7 +29,7 @@ class GalleryWithdrawInput(CommandInput):
         if (attrs["scope"] not in ("all", "items") or (attrs["scope"] == "items" and not has_items)
                 or (attrs["scope"] == "all" and has_items)):
             from apps.events.judging.errors import ProgrammeError
-            raise ProgrammeError("invalid_consent_scope", "Choose all disclosure or a nonempty item selection.", status=400)
+            raise ProgrammeError("invalid_consent_scope", gettext("Choose all disclosure or a nonempty item selection."), status=400)
         return attrs
 
 

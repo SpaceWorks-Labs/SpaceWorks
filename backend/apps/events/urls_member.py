@@ -27,8 +27,11 @@ from .views_registration_calendar import MemberEventRegistrationCalendarView
 from .views_event_history import MemberEventHistoryView
 from .views_equipment_desk import MemberEventEquipmentView
 from .views_speakers import MemberSpeakerClaimView
+from .views_machine_use import MemberMachineUseEventsView
 
 urlpatterns = [
+    path("makerspaces/<int:makerspace_id>/machine-use/events/", MemberMachineUseEventsView.as_view(),
+         name="member-machine-use-events"),
     path("makerspaces/<int:makerspace_id>/event-history/", MemberEventHistoryView.as_view(),
          name="member-event-history"),
     path("event-speaker-claims/", MemberSpeakerClaimView.as_view(), name="member-event-speaker-claim"),

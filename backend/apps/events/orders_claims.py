@@ -8,6 +8,7 @@ charge of its own and keeps the ticket type the buyer paid for. Nobody is ever
 registered without an account (#71).
 """
 
+from django.utils.translation import gettext
 from django.utils import timezone
 
 from apps.audit.services import record
@@ -31,14 +32,14 @@ def fill_seat(seat, *, member, actor, **values):
     seat = (EventOrderSeat.objects.select_for_update(of=("self",)).select_related("order", "line__ticket_type")
             .get(pk=seat.pk))
     if seat.status != EventOrderSeat.Status.UNCLAIMED or seat.order.status != EventOrder.Status.PAID:
-        raise OrderRefused("claim_invalid", "This place has already been claimed or was cancelled.")
+        raise OrderRefused("claim_invalid", gettext("This place has already been claimed or was cancelled."))
     with filling_seat(seat):
         try:
             registration = register(seat.event, member=member, actor=actor,
                                     ticket_type_id=seat.line.ticket_type_id,
                                     **{key: values[key] for key in REGISTRATION_KEYS if key in values})
         except DuplicateRegistration:
-            raise OrderRefused("already_registered", "You already have a place at this event.") from None
+            raise OrderRefused("already_registered", gettext("You already have a place at this event.")) from None
     seat.registration, seat.status, seat.claimed_at = registration, EventOrderSeat.Status.CLAIMED, timezone.now()
     seat.attendee_email = (member.email or seat.attendee_email).strip().lower()
     seat.claim_token_digest = secrets.token_hex(32)
@@ -53,7 +54,7 @@ def find_claim(token):
             .filter(claim_token_digest=token_digest(token), status=EventOrderSeat.Status.UNCLAIMED,
                     order__status=EventOrder.Status.PAID).first() if token and len(str(token)) <= 128 else None)
     if seat is None or not seat.attendee_email:
-        raise OrderRefused("claim_invalid", "This claim link is not valid any more.")
+        raise OrderRefused("claim_invalid", gettext("This claim link is not valid any more."))
     return seat
 
 
@@ -61,7 +62,7 @@ def require_claimant(seat, user):
     email = (user.email or "").strip().lower()
     if not email or email != seat.attendee_email.strip().lower() or not getattr(user, "email_verified_at", None):
         raise OrderRefused("claim_email_mismatch",
-                           "Sign in with the verified email address this ticket was sent to.")
+                           gettext("Sign in with the verified email address this ticket was sent to."))
 
 
 def claim(token, *, user, values=None):
@@ -82,6 +83,6 @@ def claim_own_seat(order, seat_id, *, member, values=None):
     """The buyer claims their own seat after paying (an event with a form or waiver)."""
     seat = EventOrderSeat.objects.select_related("order").filter(pk=seat_id, order=order, order__buyer=member).first()
     if seat is None:
-        raise OrderRefused("claim_invalid", "That seat is not yours to claim.")
+        raise OrderRefused("claim_invalid", gettext("That seat is not yours to claim."))
     require_claimant(seat, member)
     return _claim(seat.event, member=member, actor=member, seat_id=seat.pk, values=values or {})

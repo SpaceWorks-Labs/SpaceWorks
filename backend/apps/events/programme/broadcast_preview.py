@@ -70,7 +70,7 @@ def preview_response(preview, actor):
         from rest_framework.exceptions import PermissionDenied
         raise PermissionDenied()
     if preview.content_sha256 != content_digest(campaign):
-        raise ProgrammeConflict("stale_version", "Event details changed. Create a fresh preview.")
+        raise ProgrammeConflict("stale_version", gettext("Event details changed. Create a fresh preview."))
     rendered = render_content(campaign, preview_context(campaign, actor), preview=True)
     mobile = render_content(campaign, preview_context(campaign, actor), width=360, preview=True)
     return {"id": preview.pk, "event_id": campaign.event_id, "version": campaign.version,

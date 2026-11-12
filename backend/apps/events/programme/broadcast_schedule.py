@@ -36,7 +36,7 @@ HOLD = timedelta(seconds=5)
 
 def _confirm_locked(row, locked_actor, payload, *, available_at, hold):
     if row.status != "draft" or row.render_schema_version != 2:
-        raise ProgrammeConflict("invalid_transition", "Only a composer draft can be scheduled.")
+        raise ProgrammeConflict("invalid_transition", gettext("Only a composer draft can be scheduled."))
     if payload["confirm"] is not True:
         raise ValidationError({"confirm": gettext("Confirm the selected audience before sending.")})
     now = timezone.now()
@@ -50,7 +50,7 @@ def _confirm_locked(row, locked_actor, payload, *, available_at, hold):
     if (preview is None or preview.content_sha256 != content_digest(row)
             or payload["revision"] != preview.revision or revision != preview.revision
             or payload["recipient_count"] != preview.recipient_count or count != preview.recipient_count):
-        raise ProgrammeConflict("stale_version", "The audience or event changed. Preview it again.")
+        raise ProgrammeConflict("stale_version", gettext("The audience or event changed. Preview it again."))
     if EventBroadcast.objects.filter(makerspace=row.makerspace,
             queued_at__gte=now - timedelta(hours=1)).count() >= 10:
         raise Throttled(detail=gettext("Limit of 10 broadcasts per hour for this makerspace."))

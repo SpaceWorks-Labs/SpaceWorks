@@ -6,6 +6,7 @@ optimistic concurrency on `expected_version`, so two tabs never overwrite each o
 silently. Only a version-2 DRAFT changes; a scheduled or sent campaign never does.
 """
 
+from django.utils.translation import gettext
 from django.db import models, transaction
 from rest_framework.exceptions import NotFound
 
@@ -45,7 +46,7 @@ def delete_draft(campaign, actor):
     row = EventBroadcast.objects.select_for_update().get(pk=campaign.pk, event_id=campaign.event_id)
     require_visible(row, actor)
     if row.status != EventBroadcast.Status.DRAFT:
-        raise ProgrammeConflict("invalid_transition", "Only a draft can be deleted.")
+        raise ProgrammeConflict("invalid_transition", gettext("Only a draft can be deleted."))
     record(actor, "event.broadcast_draft_deleted", makerspace=row.makerspace, target=row)
     row.delete()
 
@@ -55,7 +56,7 @@ def save_draft(campaign, actor, payload):
 
     def update(row, locked_actor):
         if row.status != EventBroadcast.Status.DRAFT or row.render_schema_version != 2:
-            raise ProgrammeConflict("invalid_transition", "Only a composer draft can be edited.")
+            raise ProgrammeConflict("invalid_transition", gettext("Only a composer draft can be edited."))
         require_design_allowed(row.makerspace, draft["design"])
         from apps.events.services_broadcasts import validate_audience
         row.subject = draft["subject"]

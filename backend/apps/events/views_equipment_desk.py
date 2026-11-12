@@ -18,6 +18,7 @@ from rest_framework.exceptions import PermissionDenied
 from . import event_permissions
 from .equipment_desk import member_equipment, staff_desk
 from .equipment_window import planning_event, set_return_hours
+from django.utils.translation import gettext
 
 NOT_FOUND = OpenApiResponse(description="Event, module, feature or authority unavailable.")
 
@@ -55,7 +56,7 @@ class EventEquipmentDeskSerializer(serializers.Serializer):
 class EventReturnWindowInput(serializers.Serializer):
     def to_internal_value(self, data):
         if not hasattr(data, "keys") or set(data.keys()) - set(self.fields):
-            raise serializers.ValidationError("Unexpected fields.")
+            raise serializers.ValidationError(gettext("Unexpected fields."))
         return super().to_internal_value(data)
 
     equipment_return_hours = serializers.IntegerField(
@@ -88,7 +89,7 @@ class EventEquipmentDeskView(APIView):
                    "authority. Audited as event.equipment_return_window_changed.")
     def patch(self, request, makerspace_id, event_id):
         if getattr(request, "api_client", None) or getattr(request, "person_credential", None):
-            raise PermissionDenied("This endpoint requires a staff session.")
+            raise PermissionDenied(gettext("This endpoint requires a staff session."))
         body = EventReturnWindowInput(data=request.data)
         body.is_valid(raise_exception=True)
         hours = body.validated_data["equipment_return_hours"] or None

@@ -14,6 +14,7 @@ Order, the same for the preview and the placed order (A8: preview = charge):
    frozen on top by L5 when the charge is raised.
 """
 
+from django.utils.translation import gettext
 from dataclasses import dataclass, field, replace
 from decimal import Decimal
 
@@ -68,25 +69,25 @@ def _ticket(event, member, item, unlocked):
     try:
         pk, quantity = int(item["ticket_type_id"]), int(item.get("quantity") or 0)
     except (KeyError, TypeError, ValueError):
-        raise OrderRefused("order_limit", "Each ticket needs a type and a quantity.")
+        raise OrderRefused("order_limit", gettext("Each ticket needs a type and a quantity."))
     if not EventTicketType.objects.filter(pk=pk, event=event, purpose="participant").exists():
-        raise OrderRefused("sold_out", "That ticket is not on sale.", ticket_type_id=pk)
+        raise OrderRefused("sold_out", gettext("That ticket is not on sale."), ticket_type_id=pk)
     ticket = available_ticket_types(event, member, unlocked=unlocked).filter(pk=pk).first()
     if ticket is None:
-        raise OrderRefused("sold_out", "That ticket is not on sale.", ticket_type_id=pk)
+        raise OrderRefused("sold_out", gettext("That ticket is not on sale."), ticket_type_id=pk)
     if quantity < ticket.min_quantity or (ticket.per_order_limit and quantity > ticket.per_order_limit):
-        raise OrderRefused("order_limit", "That quantity is not allowed for this ticket.", ticket_type_id=pk)
+        raise OrderRefused("order_limit", gettext("That quantity is not allowed for this ticket."), ticket_type_id=pk)
     if ticket.audience == "member" and quantity * ticket.seats_per_ticket > 1:
-        raise OrderRefused("order_limit", "A member ticket admits the buyer only.", ticket_type_id=pk)
+        raise OrderRefused("order_limit", gettext("A member ticket admits the buyer only."), ticket_type_id=pk)
     unit = Decimal(ticket.amount)
     if ticket.pricing_mode == "pwyw":
         try:
             from apps.payments.pricing.rates import RateCard
             unit = quantize_money(Decimal(str(item.get("amount", ticket.amount))), RateCard(event.makerspace, "events").currency)
         except (ArithmeticError, TypeError, ValueError):
-            raise OrderRefused("amount_below_minimum", "Enter the amount you want to pay.", ticket_type_id=pk)
+            raise OrderRefused("amount_below_minimum", gettext("Enter the amount you want to pay."), ticket_type_id=pk)
         if unit < ticket.min_amount:
-            raise OrderRefused("amount_below_minimum", f"The minimum for this ticket is {ticket.min_amount}.",
+            raise OrderRefused("amount_below_minimum", gettext("The minimum for this ticket is %(amount)s.") % {"amount": ticket.min_amount},
                                ticket_type_id=pk, minimum=str(ticket.min_amount))
     return ticket, quantity, unit
 
@@ -99,11 +100,11 @@ def _require_room(event, tickets):
         seats += wanted
         left = registration_spots_left(event, ticket)
         if left is not None and wanted > left:
-            raise OrderRefused("sold_out", "Not enough places are left for this ticket.",
+            raise OrderRefused("sold_out", gettext("Not enough places are left for this ticket."),
                                ticket_type_id=ticket.pk, spots_left=left)
     left = registration_spots_left(event, None)
     if left is not None and seats > left:
-        raise OrderRefused("sold_out", "Not enough places are left at this event.", spots_left=left)
+        raise OrderRefused("sold_out", gettext("Not enough places are left at this event."), spots_left=left)
     return seats
 
 
@@ -121,7 +122,7 @@ def _addons(event, items):
                    if item.get("variant_id") and addon else None)
         quantity = int(item.get("quantity") or 0)
         if addon is None or quantity < 1 or (item.get("variant_id") and variant is None):
-            raise OrderRefused("addon_unavailable", "That add-on is not available.")
+            raise OrderRefused("addon_unavailable", gettext("That add-on is not available."))
         require_available(addon, variant, quantity)
         rows.append((addon, variant, quantity))
     return rows
@@ -136,11 +137,11 @@ def build_quote(event, member, request, *, lock=False, addons_only=False):
     unlocked, access = unlocked_types(event, request.get("access_codes"), lock=lock)
     items = [] if addons_only else request.get("tickets") or []
     if not items and not addons_only:
-        raise OrderRefused("order_limit", "Choose at least one ticket.")
+        raise OrderRefused("order_limit", gettext("Choose at least one ticket."))
     tickets = [_ticket(event, member, item, unlocked) for item in items]
     settings_row = sales_settings(event)
     if sum(quantity for _ticket_row, quantity, _unit in tickets) > settings_row.max_tickets_per_order:
-        raise OrderRefused("order_limit", f"At most {settings_row.max_tickets_per_order} tickets per order.",
+        raise OrderRefused("order_limit", gettext("At most %(max)s tickets per order.") % {"max": settings_row.max_tickets_per_order},
                            limit=settings_row.max_tickets_per_order)
     seats = _require_room(event, tickets) if tickets else 0
     addons = _addons(event, request.get("addons"))

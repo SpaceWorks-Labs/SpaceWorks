@@ -1,4 +1,5 @@
 """Contributor form integration reuses the same F/P prepared workflow as A/G."""
+from django.utils.translation import gettext
 import json
 from apps.events.answer_derivations.subjects import resolve_subject
 from apps.events.hackathons.admission_models import HackathonConfig
@@ -42,7 +43,7 @@ class RoleForms:
         if submit and config:
             from apps.events.contributions.errors import ProgrammeError
             if prepared.consent_revision != config.coc_revision:
-                raise ProgrammeError("coc_required", "Accept the current code of conduct.", status=400)
+                raise ProgrammeError("coc_required", gettext("Accept the current code of conduct."), status=400)
         return prepared
 
     def apply_locked(self, *, prepared, subject, locks):
@@ -63,10 +64,10 @@ class RoleForms:
         from apps.events.contributions.errors import ProgrammeError
         row = resolve_subject(subject)
         if row.date_review_required:
-            raise ProgrammeError("date_review_required", "Review the current event date.")
+            raise ProgrammeError("date_review_required", gettext("Review the current event date."))
         config = HackathonConfig.objects.filter(event_id=subject.event_id).first()
         if config and row.consent_revision != config.coc_revision:
-            raise ProgrammeError("coc_required", "Accept the current code of conduct.", status=400)
+            raise ProgrammeError("coc_required", gettext("Accept the current code of conduct."), status=400)
 
     def project(self, *, subject, audience, actor_id=None):
         row = resolve_subject(subject)

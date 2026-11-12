@@ -28,7 +28,7 @@ def require_private_registration_answers():
             or "custom_answers" not in model.pii_document_fields
             or not isinstance(model._meta.get_field("custom_answers"), models.TextField)
             or field_for(model, "custom_answers") is None):
-        raise ProgrammeUnavailable("private_answer_storage_unavailable", "Private registration answer storage is unavailable.")
+        raise ProgrammeUnavailable("private_answer_storage_unavailable", gettext("Private registration answer storage is unavailable."))
 
 
 class MemberInputValidator(Protocol):

@@ -1,4 +1,4 @@
-<!doctype html>
+{% load i18n %}<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -39,12 +39,12 @@
   <div class="body">
     <h1>{{ title }}</h1>
     <p class="meta"><time>{{ when }}</time>{% if location %} · {{ location }}{% endif %}</p>
-    <ul class="chips" aria-label="Event details">
+    <ul class="chips" aria-label="{% translate 'Event details' %}">
       {% if mode %}<li class="chip">{{ mode }}</li>{% endif %}
       {% if availability %}<li class="chip">{{ availability }}</li>{% endif %}
     </ul>
-    <a class="cta" href="{{ event_url }}" target="_blank" rel="noopener noreferrer">Register<span class="sr"> (opens in a new tab)</span></a>
-    <p class="host">Hosted by {{ space }}</p>
+    <a class="cta" href="{{ event_url }}" target="_blank" rel="noopener noreferrer">{% translate "Register" %}<span class="sr"> {% translate "(opens in a new tab)" %}</span></a>
+    <p class="host">{% blocktranslate trimmed with space=space %}Hosted by {{ space }}{% endblocktranslate %}</p>
   </div>
 </main>
 </body>

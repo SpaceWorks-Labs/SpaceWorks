@@ -1,4 +1,4 @@
-from django.utils.translation import gettext
+from django.utils.translation import gettext, gettext_lazy
 from urllib.parse import quote
 from uuid import UUID, uuid4
 
@@ -27,7 +27,7 @@ from apps.makerspaces.station_security import (
 from apps.makerspaces.station_sessions import resolve_session as resolve_shared_session
 
 
-STATION_REFUSAL = "Invalid station request."
+STATION_REFUSAL = gettext_lazy("Invalid station request.")
 STATION_COOKIE_NAME = "sw_event_station"
 
 
@@ -116,7 +116,7 @@ def reveal(event, *, actor, current_password):
     )
     binding = binding_for_event(locked, lock=True)
     if binding is None:
-        raise PasswordStepUpUnavailable("Rotate a station PIN before revealing it.")
+        raise PasswordStepUpUnavailable(gettext("Rotate a station PIN before revealing it."))
     credential, pin = reveal_credential(
         binding.station,
         actor=actor,

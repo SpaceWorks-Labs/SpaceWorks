@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 import hashlib
 import json
 
@@ -31,6 +32,9 @@ def project_owner(row):
 
 def options(event, actor):
     require_owner_event(event, actor)
+    # The photo source is the ACCOUNT avatar; the per-space row is only its identity token (decision 305).
+    from apps.makerspaces.account_profile import ensure_legacy_pointers
+    ensure_legacy_pointers(actor)
     rows = MemberProfile.objects.filter(membership__user=actor).select_related(
         "membership__user", "membership__makerspace",
     ).order_by("membership_id")
@@ -38,7 +42,7 @@ def options(event, actor):
                "makerspace_name": profile.membership.makerspace.name,
                "has_photo": bool(profile.avatar_key), "source_revision": source_revision(profile),
                "public_eligible": bool(profile_is_public(profile) and PublicHandle.objects.filter(
-                   profile=profile, user=actor).exists())}
+                   user=actor).exists())}
               for profile in rows if source_live(profile, actor.pk)]
     selected = EventMemberPresentation.objects.filter(event=event, member=actor).first()
     return {"selected_profile_id": selected.selected_profile_id if selected else None,
@@ -76,7 +80,7 @@ def select(event_id, *, actor, operation_id, expected_version, profile_id, membe
         current = EventMemberPresentation.objects.filter(event=event, member=actor).first()
         selection = (current.selected_profile_id, current.selected_membership_id) if current else (None, None)
         if actual != sources or selection != previous_selection:
-            raise ProgrammeConflict("Photo selection changed. Reload the choices.", code="photo_source_changed")
+            raise ProgrammeConflict(gettext("Photo selection changed. Reload the choices."), code="photo_source_changed")
 
     with event_command(event_id, tenant_ids=tenant_ids, account_ids=(actor.pk,), revalidate=revalidate) as (event, _):
         from apps.accounts.models import User
@@ -99,7 +103,7 @@ def select(event_id, *, actor, operation_id, expected_version, profile_id, membe
         receipt = EventPresentationCommand.objects.filter(presentation=row, operation_id=operation_id).first()
         if receipt:
             if receipt.request_sha256 != digest:
-                raise ProgrammeConflict("Operation ID was already used.", code="operation_conflict")
+                raise ProgrammeConflict(gettext("Operation ID was already used."), code="operation_conflict")
             return receipt.result
         if row.version != expected_version:
             raise ProgrammeConflict()
@@ -111,10 +115,10 @@ def select(event_id, *, actor, operation_id, expected_version, profile_id, membe
             if not profile or not source_live(profile, actor.pk):
                 raise NotFound()
             if profile.updated_at.isoformat().replace("+00:00", "Z") != source_revision:
-                raise ProgrammeConflict("Your profile changed. Reload the choices.", code="photo_source_changed")
+                raise ProgrammeConflict(gettext("Your profile changed. Reload the choices."), code="photo_source_changed")
         changed = row.selected_profile_id != profile_id
         if changed and row.selected_profile_id and (print_photo_consent or public_card_consent):
-            raise ProgrammeConflict("Select the new profile first, then confirm its consent choices.",
+            raise ProgrammeConflict(gettext("Select the new profile first, then confirm its consent choices."),
                                     code="photo_selection_changed")
         row.selected_profile, row.selected_membership_id = profile, membership_id
         row.source_revision = source_revision or ""

@@ -25,12 +25,21 @@ _FEED_PATH = re.compile(
 from apps.makerspaces.calendar_bearers import is_calendar_feed_bearer_path
 
 
+# Decision 335(d): the deprecated display-screen poll still carries the screen's secret in its path.
+_DISPLAY_PATH = re.compile(r"(/api/v1/space-displays/)[^/?\s]+(/state/)")
+
+
 def redact_calendar_feed_uri(value):
     return _FEED_PATH.sub(r"\1[redacted]\2", value or "")
 
 
+def redact_bearer_uri(value):
+    """Every path-borne bearer this middleware hides: calendar feeds and display-screen secrets."""
+    return _DISPLAY_PATH.sub(r"\1[redacted]\2", redact_calendar_feed_uri(value))
+
+
 class CalendarFeedLogRedactionMiddleware:
-    """Remove bearer feed tokens from WSGI/Gunicorn request-line logging."""
+    """Remove bearer feed and display-screen tokens from WSGI/Gunicorn request-line logging."""
 
     def __init__(self, get_response):
         self.get_response = get_response
@@ -39,8 +48,9 @@ class CalendarFeedLogRedactionMiddleware:
         from apps.integrations.notification_media_secrets import redact_media_uri
         raw_uri = request.META.get("RAW_URI")
         if raw_uri:
-            request.META["RAW_URI"] = redact_media_uri(redact_calendar_feed_uri(raw_uri))
+            request.META["RAW_URI"] = redact_media_uri(redact_bearer_uri(raw_uri))
         feed_path = request.path_info if (is_calendar_feed_bearer_path(request.path_info)
+            or redact_bearer_uri(request.path_info) != request.path_info
             or redact_media_uri(request.path_info) != request.path_info) else None
         try:
             response = private_event_response(request, self.get_response(request))
@@ -51,7 +61,7 @@ class CalendarFeedLogRedactionMiddleware:
             # Resolution and the view need the real token. Access/error logging happens
             # after the response, so replace every request-line source only on unwind.
             if feed_path:
-                redacted = redact_media_uri(redact_calendar_feed_uri(feed_path))
+                redacted = redact_media_uri(redact_bearer_uri(feed_path))
                 request.path = redacted
                 request.path_info = redacted
                 request.META["PATH_INFO"] = redacted

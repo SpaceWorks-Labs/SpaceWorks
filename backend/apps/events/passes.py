@@ -8,6 +8,7 @@ type's `occurrence_refund_amount` -- the organiser's partial amount -- as a staf
 refund case (`orders_refunds.event_cancelled`). Skipping an occurrence owes nothing.
 """
 
+from django.utils.translation import gettext
 from django.db import transaction
 from django.db.models import Q, Sum
 from django.utils import timezone
@@ -50,7 +51,7 @@ def save_pass_type(series, *, actor, pass_type=None, **values):
     row = pass_type or EventPassType(makerspace=series.makerspace, series=series)
     if pass_type is not None and "amount" in values and values["amount"] != row.amount and row.order_lines.exists():
         from .ticketing_edit import ReferencedConflict
-        raise ReferencedConflict("The price is fixed once passes were sold. Add a new pass type instead.",
+        raise ReferencedConflict(gettext("The price is fixed once passes were sold. Add a new pass type instead."),
                                  "pass_type_referenced")
     for key in PASS_FIELDS:
         if key in values:
@@ -65,17 +66,17 @@ def _require_room(pass_type, occurrences, member):
     from .capacity import registration_spots_left
     from .registration_access import require_registration_access
     if pass_type.capacity and passes_sold(pass_type) >= pass_type.capacity:
-        raise OrderRefused("sold_out", "This pass has sold out.")
+        raise OrderRefused("sold_out", gettext("This pass has sold out."))
     if not occurrences:
-        raise OrderRefused("sold_out", "There are no upcoming occurrences to cover.")
+        raise OrderRefused("sold_out", gettext("There are no upcoming occurrences to cover."))
     for event in occurrences:
         require_registration_access(event, member)
         left = registration_spots_left(event, None)
         if left is not None and left < 1:
-            raise OrderRefused("sold_out", "One of the occurrences is full.", event_id=event.pk)
+            raise OrderRefused("sold_out", gettext("One of the occurrences is full."), event_id=event.pk)
         if event.registrations.filter(member=member, status__in=("pending_approval", "registered",
                                                                  "waitlisted", "attended")).exists():
-            raise OrderRefused("already_registered", "You already have a place at one of these occurrences.",
+            raise OrderRefused("already_registered", gettext("You already have a place at one of these occurrences."),
                                event_id=event.pk)
 
 
@@ -101,7 +102,7 @@ def place_pass_order(series, *, member, actor, pass_type_id, digest=None):
     _require_feature(series)
     pass_type = EventPassType.objects.filter(pk=pass_type_id, series=series, is_active=True).first()
     if pass_type is None or (pass_type.sales_end_at and pass_type.sales_end_at <= timezone.now()):
-        raise OrderRefused("sold_out", "That pass is not on sale.")
+        raise OrderRefused("sold_out", gettext("That pass is not on sale."))
     occurrences = covered_occurrences(series)
     _require_room(pass_type, occurrences, member)
     quote = verify_digest(pass_quote(series, pass_type), digest)

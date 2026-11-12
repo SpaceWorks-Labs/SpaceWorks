@@ -27,7 +27,7 @@ def locked_event(event, actor=None):
     event = Event.objects.select_for_update().get(pk=event.pk)
     if event.makerspace_id != original_space_id or event.series_id != series_id:
         from .programme.commands import ProgrammeConflict
-        raise ProgrammeConflict("scope_changed", "The event scope changed. Retry the operation.")
+        raise ProgrammeConflict("scope_changed", gettext("The event scope changed. Retry the operation."))
     event.makerspace = require_module_locked(event.makerspace_id, "events")
     event._broadcast_actor = actor
     if actor is not None:

@@ -84,5 +84,5 @@ def public_profile(presentation, scope):
             or not _public_surfaces[scope](event_id=event.pk, member_id=presentation.member_id)):
         return None
     from apps.makerspaces.models_profiles import PublicHandle
-    claim = PublicHandle.objects.filter(profile=profile, user_id=presentation.member_id).first()
+    claim = PublicHandle.objects.filter(user_id=presentation.member_id).first()  # the handle is the account's
     return (profile, claim) if claim else None

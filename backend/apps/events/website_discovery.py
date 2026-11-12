@@ -46,3 +46,18 @@ def restrict_by_tag_and_organization(rows, spaces, tag, organization):
     if organization:
         rows = rows.filter(pk__in=_public_organizers(spaces, organization__slug=organization))
     return rows
+
+
+def discoverable_organizers(spaces):
+    """`slug` and `name` of the public organisations that organise at least one event Discover lists right now.
+
+    The events are exactly the Discover list (listed, published, not ended, servable, on a directory space), narrowed to
+    spaces with the switch on, so the picker can never offer an organiser the organisation filter would refuse.
+    """
+    from apps.organizations.models import Organization
+
+    from .website_visibility import discover_events
+    events = discover_events(spaces).filter(makerspace_id__in=_allowed_space_ids(spaces)).order_by().values("pk")
+    organizers = EventOrganizer.objects.filter(event_id__in=events).values("organization_id")
+    return (Organization.objects.filter(pk__in=organizers, is_active=True, public_profile_enabled=True,
+                                        review_status="approved").order_by("name", "pk").values("slug", "name"))

@@ -1,5 +1,6 @@
 """CAS and replay boundary shared by programme commands and communications."""
 
+from django.utils.translation import gettext
 import hashlib
 import json
 
@@ -43,7 +44,7 @@ def fingerprint(payload):
 def event_version(event):
     value = getattr(event, "version", None)
     if value is None:
-        raise ProgrammeUnavailable("event_version_unavailable", "Event version integration is required.")
+        raise ProgrammeUnavailable("event_version_unavailable", gettext("Event version integration is required."))
     return value
 
 
@@ -51,7 +52,7 @@ def receipt_model():
     try:
         return apps.get_model("events", "EventCommandReceipt")
     except LookupError as exc:
-        raise ProgrammeUnavailable("command_receipt_unavailable", "Event command receipt integration is required.") from exc
+        raise ProgrammeUnavailable("command_receipt_unavailable", gettext("Event command receipt integration is required.")) from exc
 
 
 def execute_command(*, event, actor, command, payload, expected_version, operation_id,
@@ -78,7 +79,7 @@ def _execute_fenced(*, event, actor, command, payload, expected_version, operati
         EventSeries.objects.select_for_update().get(pk=series_id)
     locked = Event.objects.select_for_update().get(pk=event.pk)
     if locked.makerspace_id != event.makerspace_id or locked.series_id != series_id:
-        raise ProgrammeConflict("scope_changed", "Event ownership changed. Retry the command.")
+        raise ProgrammeConflict("scope_changed", gettext("Event ownership changed. Retry the command."))
     locked.makerspace = require_module_locked(locked.makerspace, "events")
     locked_actor = lock_authority(actor, locked)
     event_authority.require(locked_actor, locked, permission)
@@ -89,7 +90,7 @@ def _execute_fenced(*, event, actor, command, payload, expected_version, operati
     receipt = receipts.filter(event=locked, actor=locked_actor, operation_uuid=operation_id).first()
     if receipt is not None:
         if receipt.request_sha256 != digest:
-            raise ProgrammeConflict("idempotency_conflict", "This operation ID was already used.")
+            raise ProgrammeConflict("idempotency_conflict", gettext("This operation ID was already used."))
         return dict(receipt.response_reference)
     version = version_getter(locked) if version_getter else event_version(locked)
     if expected_version != version:

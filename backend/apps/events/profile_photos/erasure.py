@@ -1,4 +1,5 @@
 """Account erasure drops only unsubmitted sources and withdraws presentation consent."""
+from django.utils.translation import gettext
 from dataclasses import dataclass
 
 from django.db.models import Q
@@ -42,12 +43,12 @@ class EventSubjectErasure:
 
         assert_account_fence_held(user_id, exclusive=True)
         if EventSubjectErasure.discover(user_id) != prepared:
-            raise ProgrammeConflict("Erasure subjects changed. Retry the entire erasure.", code="subject_changed")
+            raise ProgrammeConflict(gettext("Erasure subjects changed. Retry the entire erasure."), code="subject_changed")
         list(EventSeries.objects.select_for_update().filter(
             pk__in={row[2] for row in prepared.events if row[2]}).order_by("pk"))
         events = list(Event.objects.select_for_update().filter(pk__in=[row[0] for row in prepared.events]).order_by("pk"))
         if tuple((row.pk, row.makerspace_id, row.series_id) for row in events) != prepared.events:
-            raise ProgrammeConflict("Erasure subjects changed.", code="subject_changed")
+            raise ProgrammeConflict(gettext("Erasure subjects changed."), code="subject_changed")
         list(Makerspace.objects.select_for_update().filter(pk__in=prepared.tenant_ids).order_by("pk"))
         for event in events:
             locks = LockedContext(event_id=event.pk, tenant_ids=prepared.tenant_ids, account_ids=(user_id,))

@@ -13,6 +13,7 @@ invitation events keep the single-registration flow, whose charge is raised on a
 `events.accepted_addons` on, a CONFIRMED registration there may order add-ons alone (hack-money G9).
 """
 
+from django.utils.translation import gettext
 import logging
 from datetime import timedelta
 
@@ -46,12 +47,12 @@ def require_orderable(event, member, request=None):
     from .registration_access import require_registration_access
     if addons_only(event, member, request):
         if event.ends_at <= timezone.now():
-            raise OrderRefused("sold_out", "This event has ended.")
+            raise OrderRefused("sold_out", gettext("This event has ended."))
         return
     if event.registration_audience not in ORDER_AUDIENCES or event.registration_requires_approval:
-        raise OrderRefused("order_not_payable", "This event takes single registrations only.")
+        raise OrderRefused("order_not_payable", gettext("This event takes single registrations only."))
     if not registration_is_open(event, timezone.now()):
-        raise OrderRefused("sold_out", "Registration for this event is closed.")
+        raise OrderRefused("sold_out", gettext("Registration for this event is closed."))
     require_registration_access(event, member)
 
 
@@ -60,7 +61,7 @@ def _payment(order, actor):
     from apps.payments.models import Payment
     from apps.payments.services import create_payment
     if not charge_tracking_enabled(order.makerspace, "events"):
-        raise OrderRefused("order_not_payable", "This space is not taking payments for events.")
+        raise OrderRefused("order_not_payable", gettext("This space is not taking payments for events."))
     from apps.managed_hosting.space_quotas import require_payment_capacity
     require_payment_capacity(order.makerspace, order.total, order.currency)
     first = order.event or order.seats.select_related("event").order_by("event__starts_at").first().event

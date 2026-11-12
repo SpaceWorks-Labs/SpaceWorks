@@ -1,4 +1,5 @@
 """Ordered entry point for an already-authorized profile/membership deletion."""
+from django.utils.translation import gettext
 from contextlib import ExitStack
 
 from django.db import transaction
@@ -50,18 +51,18 @@ def delete_source(kind, pk, *, actor=None):
         stack.enter_context(transaction.atomic())
         stack.enter_context(account_fences([member_id], tenants, exclusive=True, allow_erased=True))
         if _scope(kind, pk) != prepared:
-            raise ProgrammeConflict("Deletion sources changed. Retry the command.", code="subject_changed")
+            raise ProgrammeConflict(gettext("Deletion sources changed. Retry the command."), code="subject_changed")
         list(EventSeries.objects.select_for_update().filter(pk__in={row[3] for row in selections if row[3]}).order_by("pk"))
         list(Event.objects.select_for_update().filter(pk__in={row[1] for row in selections}).order_by("pk"))
         list(Makerspace.objects.select_for_update().filter(pk__in=tenants).order_by("pk"))
         membership = MakerspaceMembership.objects.select_for_update().get(pk=membership_id)
         profiles = list(MemberProfile.objects.select_for_update().filter(membership=membership).order_by("pk"))
         if _scope(kind, pk) != prepared:
-            raise ProgrammeConflict("Deletion sources changed.", code="subject_changed")
+            raise ProgrammeConflict(gettext("Deletion sources changed."), code="subject_changed")
         clear_selections(EventMemberPresentation.objects.filter(pk__in=[row[0] for row in selections]), actor=actor)
         if kind == "membership":
             return membership.delete()
         source = next((profile for profile in profiles if profile.pk == pk), None)
         if source is None:
-            raise ProgrammeConflict("Deletion source changed.", code="subject_changed")
+            raise ProgrammeConflict(gettext("Deletion source changed."), code="subject_changed")
         return source.delete()

@@ -15,7 +15,7 @@ def _quote(event, member, ticket, invite_code, promo_code, *, actor, admission_l
         def required(name):
             callback = getattr(invites, name, None)
             if callback is None:
-                fail("programme_dependency_unavailable", "Invitation admission is temporarily unavailable.", status=503)
+                fail("programme_dependency_unavailable", gettext("Invitation admission is temporarily unavailable."), status=503)
             return callback
         if event.registration_audience in ("invite", AUDIENCE):
             redeem_invite = required("redeem_invite_locked")

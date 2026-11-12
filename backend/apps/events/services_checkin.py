@@ -188,23 +188,23 @@ def collect_at_desk(registration, *, actor, method="", reference="", received_at
     require_feature(event, "events.desk_collect")
     payment = pending_ticket_charge(registration)
     if payment is None:
-        raise OrderRefused("nothing_to_collect", "This ticket has nothing left to pay.")
+        raise OrderRefused("nothing_to_collect", gettext("This ticket has nothing left to pay."))
     if terminal:
         from apps.payments.availability import online_payments_enabled
         from apps.payments.services import PaymentRailConflict, PaymentSettlementPending, create_checkout_url
         if not online_payments_enabled(event.makerspace, "events"):
             # #184: an offline-only events domain never mints a checkout, even when the
             # space's credentials serve another domain; the desk takes a receipt instead.
-            raise OrderRefused("online_payments_off", "Online payment is off for events here; record a receipt.")
+            raise OrderRefused("online_payments_off", gettext("Online payment is off for events here; record a receipt."))
         try:
             url = create_checkout_url(payment.pk, actor=actor)
         except PaymentRailConflict:
-            raise OrderRefused("payment_rail_conflict", "This charge already uses a different online payment rail.")
+            raise OrderRefused("payment_rail_conflict", gettext("This charge already uses a different online payment rail."))
         except PaymentSettlementPending:
-            raise OrderRefused("payment_settlement_pending", "An 'I paid' claim or proposal is open for this charge.")
+            raise OrderRefused("payment_settlement_pending", gettext("An 'I paid' claim or proposal is open for this charge."))
         except Exception:
             logger.exception("event_desk_checkout_failed", extra={"payment_id": payment.pk})
-            raise OrderRefused("payments_unavailable", "Payments are temporarily unavailable.")
+            raise OrderRefused("payments_unavailable", gettext("Payments are temporarily unavailable."))
         record(actor, "event.payment_collected_at_desk", makerspace=event.makerspace, target=registration,
                meta={"registration_id": registration.pk, "payment_id": payment.pk, "terminal": True, "method": ""})
         return {"payment": payment, "checkout_url": url}

@@ -68,6 +68,16 @@ class RazorpayRequestError(PaymentsUnavailable):
         )
 
 
+class RazorpayUnreadableResponse(PaymentsUnavailable):
+    """A 2xx whose body is not JSON. `outcome_unknown` keeps a refund PENDING and reserved."""
+
+    status = 200
+    outcome_unknown = True
+
+    def __init__(self):
+        super().__init__("Razorpay sent an unreadable response.")
+
+
 class RazorpayProvider:
     key = RAZORPAY
 
@@ -97,7 +107,7 @@ class RazorpayProvider:
         )
         try:
             with urllib.request.urlopen(request, timeout=TIMEOUT_SECONDS) as response:
-                return json.loads(response.read().decode() or "{}")
+                raw = response.read()
         except urllib.error.HTTPError as exc:
             # The body can echo back the description and notes, which carry a member's
             # name. Log the status only -- an integration log is not the place for it.
@@ -115,6 +125,13 @@ class RazorpayProvider:
         except (urllib.error.URLError, TimeoutError, ValueError) as exc:
             logger.warning("razorpay_unreachable", extra={"path": path})
             raise PaymentsUnavailable("Razorpay could not be reached.") from exc
+        try:
+            return json.loads(raw.decode() or "{}")
+        except ValueError:
+            # Razorpay answered 2xx, so it may well have acted (PAY-REVIEW 0.12.0): a refund whose
+            # answer we cannot read is an UNKNOWN outcome, never a refusal that frees its balance.
+            logger.warning("razorpay_unreadable_response", extra={"path": path})
+            raise RazorpayUnreadableResponse() from None
 
     # ---- Provider protocol -----------------------------------------------------
 
@@ -122,6 +139,10 @@ class RazorpayProvider:
         return self._request(source, "POST", "/orders", {
             "amount": amount_minor, "currency": currency.upper(), "receipt": receipt,
             "notes": {key: str(value) for key, value in notes.items()},
+            # Ask for automatic capture (PAY-REVIEW 0.12.0): an authorised-but-uncaptured payment
+            # never settles here and Razorpay auto-refunds it. The Dashboard capture setting is
+            # still documented as required, in case an account overrides the per-order flag.
+            "payment_capture": 1,
         })
 
     def fetch_order(self, source, order_id):
@@ -170,16 +191,26 @@ class RazorpayProvider:
             raise PaymentsUnavailable("Razorpay did not return a payment link.")
         return CheckoutResult(order_id=order_id, checkout_url=checkout_url)
 
-    def expire_checkout(self, source, order_id: str) -> None:
+    def expire_checkout(self, source, order_id: str) -> bool:
+        """Cancel a link; True only when Razorpay confirms it can no longer take money."""
         if not order_id:
-            return
+            return True
         try:
             self._request(source, "POST", f"/payment_links/{order_id}/cancel")
+            return True
         except PaymentsUnavailable:
             # Best effort by contract: the reconciliation that called this must still
             # succeed. A link that outlives its payment is caught by the webhook, which
             # corrects a waiver or raises an explicit refund-required audit condition.
             logger.info("razorpay_link_cancel_failed", extra={"order_id": order_id})
+        # PAY-REVIEW 0.12.0: a refused cancel is often a link that is already closed. Only an
+        # authoritative read says so; the gateway poll forgets a link's id only on True, because a
+        # forgotten link that is still payable takes money no webhook can match to its charge.
+        try:
+            link = self._request(source, "GET", f"/payment_links/{order_id}")
+        except PaymentsUnavailable:
+            return False
+        return isinstance(link, dict) and link.get("status") in {"cancelled", "expired"}
 
     def create_refund(self, source, request: RefundRequest) -> RefundResult:
         if not request.payment_id:
@@ -259,5 +290,5 @@ class RazorpayProvider:
             dispute_status=str(dispute.get("status") or event_type.rpartition(".")[2] or "")[:32],
             dispute_reason=str(dispute.get("reason_code") or dispute.get("reason_description") or "")[:64],
             dispute_amount_minor=int(dispute.get("amount") or 0),
-            event_type=event_type,
+            event_type=event_type, body_sha256=hashlib.sha256(payload).hexdigest(),
         )

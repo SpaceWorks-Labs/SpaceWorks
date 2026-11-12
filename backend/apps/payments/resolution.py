@@ -53,6 +53,16 @@ def razorpay_source(merchant) -> PaymentSource | None:
     )
 
 
+def stripe_keys_retained(merchant) -> bool:
+    """Whether the row still HOLDS raw Stripe keys, whichever provider is selected now.
+
+    New checkouts go through `resolve_payment_source` (selection-aware). Existing Stripe
+    charges, and the per-space Stripe webhook that settles and refunds them, must keep
+    working after a switch to Razorpay for as long as the keys are kept.
+    """
+    return bool(merchant.stripe_secret_key and merchant.stripe_webhook_secret)
+
+
 def resolve_payment_source(makerspace) -> PaymentSource | None:
     merchant = MakerspacePaymentSettings.for_makerspace(makerspace)
     if merchant.provider == "razorpay":
@@ -111,7 +121,13 @@ def source_for_payment(payment) -> PaymentSource | None:
         return razorpay_source(MakerspacePaymentSettings.for_makerspace(payment.makerspace))
     if payment.stripe_provider == payment.StripeProvider.RAW:
         merchant = MakerspacePaymentSettings.for_makerspace(payment.makerspace)
-        if not merchant.raw_credentials_configured:
+        # PAY-REVIEW 0.12.0: the RETAINED Stripe keys, not `raw_credentials_configured`, which
+        # follows the selected provider. After a switch to Razorpay that property reads False,
+        # so a Stripe charge raised before the switch could no longer be refunded, have its
+        # native intent cancelled, or be polled -- the mirror of what `razorpay_source`
+        # already guarantees for Razorpay rows ("existing collections still belong to this
+        # vendor after provider selection changes").
+        if not stripe_keys_retained(merchant):
             return None
         try:
             return PaymentSource(

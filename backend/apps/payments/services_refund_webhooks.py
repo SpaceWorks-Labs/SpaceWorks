@@ -46,6 +46,20 @@ def _record_once(makerspace, event_id, provider=Payment.Provider.STRIPE):
     return True
 
 
+def claim_razorpay_event(makerspace, event):
+    """Claim a verified Razorpay delivery by its id AND by its signed body (PAY-REVIEW 0.12.0).
+
+    `X-Razorpay-Event-Id` is outside the HMAC, so a captured body replayed under a fresh id
+    passed the id check. Settlement was already state-idempotent; this closes the rest (a
+    repeated failure notice). A second claim that collides aborts the caller's transaction,
+    which then returns without writing, so the id claim rolls back with it.
+    """
+    if not _record_once(makerspace, event.event_id, Payment.Provider.RAZORPAY):
+        return False
+    digest = getattr(event, "body_sha256", "")
+    return not digest or _record_once(makerspace, f"sha256:{digest}", Payment.Provider.RAZORPAY)
+
+
 def apply_stripe_refund_event(makerspace, event, *, provider, connected_account_id=None):
     event_id, event_type = _value(event, "id"), _value(event, "type")
     obj = _value(_value(event, "data") or {}, "object") or {}
@@ -82,9 +96,7 @@ def apply_razorpay_refund_event(makerspace, event):
             )
             .first()
         )
-        if payment is None or not _record_once(
-            makerspace, event.event_id, Payment.Provider.RAZORPAY
-        ):
+        if payment is None or not claim_razorpay_event(makerspace, event):
             return None
         status = {
             "succeeded": Refund.Status.SUCCEEDED,

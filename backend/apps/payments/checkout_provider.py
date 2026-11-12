@@ -2,7 +2,9 @@
 
 from decimal import Decimal, ROUND_HALF_UP
 
-from apps.payments.money import AmountNotCapturable, to_minor_units, to_provider_minor_units
+from apps.payments.money import (
+    AmountNotCapturable, minor_unit_exponent, to_minor_units, to_provider_minor_units,
+)
 
 
 def _create_checkout_via_provider(payment, source, label, member_url):
@@ -52,12 +54,18 @@ def _value(value, key):
 
 
 def _application_fee_amount(amount, basis_points, currency):
+    """The Connect platform fee in provider minor units, stamped once on a NEW charge.
+
+    Three-decimal currencies (KWD, BHD, OMR, JOD, TND) move in 10-fils steps at Stripe, so their
+    fee is rounded half-up to a multiple of 10 (PAY-REVIEW 0.12.0); a stray fils made Stripe
+    refuse the checkout. Existing charges keep the fee already stored on their row.
+    """
     minor_units = Decimal(to_minor_units(amount, currency))
-    return int(
-        (minor_units * Decimal(basis_points) / Decimal(10000)).quantize(
-            Decimal("1"), rounding=ROUND_HALF_UP
-        )
+    step = Decimal(10) if minor_unit_exponent(currency) == 3 else Decimal(1)
+    steps = (minor_units * Decimal(basis_points) / Decimal(10000) / step).quantize(
+        Decimal("1"), rounding=ROUND_HALF_UP
     )
+    return int(steps * step)
 
 
 def _checkout_idempotency_key(payment):

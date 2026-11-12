@@ -90,7 +90,7 @@ def _poll_attempt(payment, now):
     if result is not None and result.paid:
         return _settle(payment.pk, result)
     if result is not None and now - _opened_at(payment) > ABANDON_AFTER:
-        return _abandon(payment.pk)
+        return _abandon(payment.pk, intent_id=result.capture_id)
     return False
 
 
@@ -110,7 +110,12 @@ def _settle(payment_id, result):
     return True
 
 
-def _abandon(payment_id):
+def _abandon(payment_id, *, intent_id=""):
+    """Stop polling a week-old attempt. A hosted page's ids are forgotten only when nothing can
+    still take money through it unmatched (PAY-REVIEW 0.12.0): the provider confirmed it closed,
+    or -- for a Stripe session whose debit is still processing (SEPA/ACH can outlast a week) --
+    its PaymentIntent is kept on the row, so `async_payment_succeeded` still finds the charge.
+    Otherwise the row is left as it is and the next sweep tries again."""
     from apps.payments.checkout_expiry import forget_closed_checkout
     from apps.payments.reconciliation_rail import _expire_checkout_best_effort
 
@@ -126,8 +131,15 @@ def _abandon(payment_id):
             payment.stripe_checkout_session_expired_at = timezone.now()
             payment.save(update_fields=["stripe_checkout_session_expired_at", "updated_at"])
         else:
-            _expire_checkout_best_effort(payment)
-            payment.save(update_fields=[*forget_closed_checkout(payment), "updated_at"])
+            closed = _expire_checkout_best_effort(payment)
+            keep_intent = bool(intent_id) and payment.provider == Payment.Provider.STRIPE
+            if not closed and not keep_intent:
+                return False
+            fields = forget_closed_checkout(payment)
+            if keep_intent and not payment.stripe_payment_intent_id:
+                payment.stripe_payment_intent_id = intent_id
+                fields.append("stripe_payment_intent_id")
+            payment.save(update_fields=[*fields, "updated_at"])
         audit.record(None, "payment.checkout_abandoned", makerspace=payment.makerspace, target=payment,
                      meta={"provider": payment.provider})
     return True
@@ -143,9 +155,7 @@ def _pending_refunds(space, now):
 def _poll_refund(refund, now):
     from apps.payments.resolution import source_for_payment
     from apps.payments.services_refunds import settle_refund
-    from apps.payments_rail.provider_poll import poll_refund
-
-    from apps.payments_rail.provider_poll import find_refund
+    from apps.payments_rail.provider_poll import find_refund, poll_refund
 
     source = source_for_payment(refund.payment)
     if source is not None and not refund.external_refund_id:

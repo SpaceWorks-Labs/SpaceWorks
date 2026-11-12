@@ -11,6 +11,7 @@ from apps.payments.services_refund_webhooks import (  # noqa: F401  (_record_onc
     _value,
     apply_razorpay_refund_event,
     apply_stripe_refund_event,
+    claim_razorpay_event,
 )
 from apps.payments.terminal_settlement import (
     handle_razorpay_paid_after_terminal,
@@ -67,9 +68,10 @@ def apply_webhook_event(
         "checkout.session.async_payment_failed",
     }:
         return None
-    if event_type == "checkout.session.completed" and _value(
-        obj, "payment_status"
-    ) not in {"paid", None}:
+    # Paid means `payment_status == "paid"`, never a missing field (PAY-REVIEW 0.12.0). Real Stripe
+    # always sends it; `no_payment_required` is not accepted either, because a Payment is always a
+    # positive amount (DB check), so a session that took nothing can never settle one.
+    if event_type == "checkout.session.completed" and _value(obj, "payment_status") != "paid":
         return None
     session_id = (
         _value(obj, "id")
@@ -169,7 +171,7 @@ def apply_razorpay_webhook_event(makerspace, event):
         )
         if payment is None:
             return None
-        if not _record_once(makerspace, event.event_id, Payment.Provider.RAZORPAY):
+        if not claim_razorpay_event(makerspace, event):
             return None
         if event.is_failed:
             from apps.payments.failure_notifications import record_payment_failure

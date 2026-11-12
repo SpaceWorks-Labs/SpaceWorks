@@ -125,6 +125,9 @@ class WebhookEvent:
     dispute_reason: str = ""
     dispute_amount_minor: int = 0
     event_type: str = ""
+    #: SHA-256 of the signed raw body. Razorpay's delivery id header is NOT covered by its HMAC,
+    #: so a replayed body under a fresh id is deduplicated on this too (PAY-REVIEW 0.12.0).
+    body_sha256: str = ""
 
 
 class PaymentProvider(Protocol):
@@ -135,8 +138,11 @@ class PaymentProvider(Protocol):
         """Raise a hosted payment page. Raises PaymentsUnavailable on any failure."""
         ...
 
-    def expire_checkout(self, source, order_id: str) -> None:
+    def expire_checkout(self, source, order_id: str) -> bool | None:
         """Best-effort cancellation of a live page. Must not raise on a missing order.
+
+        Returns True only when the provider confirms the page can no longer take money;
+        the gateway poll forgets a page's id on nothing less (PAY-REVIEW 0.12.0).
 
         Called when staff reconcile a payment offline or waive it, so a member cannot
         pay a charge that has already been settled another way. Best-effort because the

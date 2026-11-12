@@ -159,7 +159,7 @@ def _send_to_provider(refund):
 
 
 def outcome_unknown(exc):
-    """True when the provider may have acted: a network failure, timeout or 5xx anywhere in the chain.
+    """True when the provider may have acted: a network failure, timeout, 5xx or unreadable 2xx anywhere in the chain.
 
     A 4xx is a definitive refusal, and a local precondition (no credentials, no captured id)
     never reached the provider, so both stay FAILED and the balance is free to retry.
@@ -167,10 +167,16 @@ def outcome_unknown(exc):
     seen, current = set(), exc
     while current is not None and id(current) not in seen:
         seen.add(id(current))
+        if getattr(current, "outcome_unknown", False) is True:
+            return True
         status = getattr(current, "http_status", None)
         if status is None:
             status = getattr(current, "status", None)
         if isinstance(status, int) and not isinstance(status, bool):
+            # A 2xx carried by an exception is an answer we could not read (Stripe's SDK raises
+            # APIError on an unparseable 200): the provider accepted, so the outcome is unknown.
+            if 200 <= status < 300:
+                return True
             if 400 <= status < 500:
                 return False
             if status >= 500:

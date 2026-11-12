@@ -13,7 +13,7 @@ from apps.makerspaces.lookup import get_makerspace_by_public_code
 from apps.makerspaces.servability import is_servable
 from apps.payments.models import MakerspacePaymentSettings
 from apps.payments.providers import WebhookVerificationError, get_provider
-from apps.payments.resolution import razorpay_source
+from apps.payments.resolution import razorpay_source, stripe_keys_retained
 from apps.payments.serializers import WebhookResponseSerializer
 from apps.payments.services import apply_razorpay_webhook_event, apply_webhook_event
 from apps.payments.stripe_client import PaymentsUnavailable, StripeWebhookSignatureError, construct_event
@@ -46,7 +46,11 @@ class StripeWebhookView(APIView):
             logger.warning("stripe_webhook_unknown_makerspace", extra={"public_code": public_code})
             return Response({"detail": gettext("Makerspace not found.")}, status=status.HTTP_404_NOT_FOUND)
         payment_settings = MakerspacePaymentSettings.for_makerspace(makerspace)
-        if not payment_settings.raw_credentials_configured:
+        # Retained Stripe keys authenticate late captures, refunds and disputes even after the
+        # space switches its new collections to Razorpay (PAY-REVIEW 0.12.0; the mirror of
+        # RazorpayWebhookView). Gating on the selection-aware `raw_credentials_configured`
+        # answered 400 to every such event, so a pending Stripe refund never settled.
+        if not stripe_keys_retained(payment_settings):
             logger.warning("stripe_webhook_unconfigured", extra={"makerspace_id": makerspace.id})
             return Response({"detail": gettext("Payments are not configured.")}, status=status.HTTP_400_BAD_REQUEST)
         try:

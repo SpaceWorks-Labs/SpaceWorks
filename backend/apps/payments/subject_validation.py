@@ -173,7 +173,7 @@ def validate_subject(payment, identity_unchanged):
     if payment.subject_type == Payment.SubjectType.MAKERSPACE_MEMBERSHIP and payment.subject_id:
         from apps.makerspaces.models import MakerspaceMembership
 
-        membership = MakerspaceMembership.objects.filter(
+        membership = MakerspaceMembership.all_tracks.filter(
             pk=payment.subject_id,
             makerspace_id=payment.makerspace_id,
         ).only("user_id").first()

@@ -67,10 +67,10 @@ class StripeProvider:
             raise PaymentsUnavailable("Stripe did not return a Checkout URL.")
         return CheckoutResult(order_id=session_id, checkout_url=checkout_url)
 
-    def expire_checkout(self, source, order_id: str) -> None:
+    def expire_checkout(self, source, order_id: str) -> bool:
         if not order_id:
-            return
-        stripe_client.expire_checkout_session(source, order_id)
+            return True
+        return stripe_client.expire_checkout_session(source, order_id)
 
     def create_refund(self, source, request: RefundRequest) -> RefundResult:
         if not request.payment_id:

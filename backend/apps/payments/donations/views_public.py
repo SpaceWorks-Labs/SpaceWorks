@@ -53,7 +53,11 @@ def open_campaigns(space):
 def raised(campaign):
     from .models import Donation
 
-    total = Donation.objects.filter(campaign=campaign, status=Donation.Status.PAID).aggregate(t=Sum("amount"))["t"]
+    # Only gifts in the campaign's own currency count against its goal (PAY-REVIEW 0.12.0): a gift
+    # takes the space's CURRENT default currency, so a mid-campaign change would otherwise add
+    # rupees to dollars in a figure shown beside the goal. `reports.py` already splits by currency.
+    total = Donation.objects.filter(campaign=campaign, status=Donation.Status.PAID,
+                                    currency=campaign.currency).aggregate(t=Sum("amount"))["t"]
     return total or Decimal("0.00")
 
 

@@ -14,7 +14,7 @@ from django.utils import timezone
 
 from apps.makerspaces.local_time import local_now
 from apps.operations.report_types import ReportResult
-from apps.payments.money import trim_money
+from apps.payments.money import minor_unit_exponent, trim_money
 
 ZERO = Decimal("0.00")
 CENT = Decimal("0.01")
@@ -63,6 +63,13 @@ def _money(value):
     return trim_money(value or ZERO)
 
 
+def _per_month(value, currency):
+    """A monthly equivalent is a quotient (40 a year = 3.333...), so round it to the currency's
+    own minor unit before display; stored amounts are exact and only need trimming."""
+    step = Decimal(1).scaleb(-minor_unit_exponent(currency))
+    return _money((value or ZERO).quantize(step, rounding=ROUND_HALF_UP))
+
+
 def _campaign_rows(space, date_range):
     from apps.payments.models import Donation, DonationCampaign, DonationPledge
 
@@ -102,7 +109,7 @@ def _campaign_rows(space, date_range):
             "currency": currency, "goal_amount": goal, "raised_amount": raised,
             "pending_amount": _money(group["pending"]), "gift_count": group["gifts"],
             "donor_count": len(group["accounts"]) + group["guests"], "active_pledges": group["pledges"],
-            "pledged_per_month": _money(group["per_month"]),
+            "pledged_per_month": _per_month(group["per_month"], currency),
             "percent_of_goal": (raised * 100 / goal).quantize(Decimal("0.1"), rounding=ROUND_HALF_UP) if goal else None,
             "starts_at": campaign.starts_at if campaign else None, "ends_at": campaign.ends_at if campaign else None,
         })
@@ -167,7 +174,7 @@ def _pledge_rows(space, date_range):
         group["outstanding"] += outstanding
     rows = [{"campaign_id": campaign_id, "campaign": names[campaign_id], "currency": currency, "pledge_state": state,
              "interval": interval, "pledge_count": group["count"], "amount_per_period": _money(group["per_period"]),
-             "monthly_equivalent": _money(group["per_month"]), "paid_periods": group["paid"],
+             "monthly_equivalent": _per_month(group["per_month"], currency), "paid_periods": group["paid"],
              "paid_amount": _money(group["paid_amount"]), "missed_periods": group["missed"],
              "outstanding_amount": _money(group["outstanding"])}
             for (campaign_id, currency, state, interval), group in groups.items()]

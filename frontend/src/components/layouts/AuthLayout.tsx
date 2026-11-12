@@ -2,7 +2,7 @@ import { t } from "@lingui/core/macro";
 import type { ReactNode } from "react";
 import { BrandFacets } from "../BrandFacets";
 import { MakerspaceBrand } from "../MakerspaceBrand";
-import { SpaceWorksLogo } from "../SpaceWorksLogo";
+import { AnimatedLogoMark } from "../brand/AnimatedLogoMark";
 import { PageHeader, SegmentedControl } from "../ui";
 import type { SegmentedControlProps } from "../ui";
 import { LayoutFrame, QueryContent } from "./LayoutFrame";
@@ -30,8 +30,8 @@ export function AuthLayout({ brand, eyebrow, title, modeSwitch, social, dividerL
     <div className="sw-auth">
       <div className="flex min-w-0 flex-col">
         <a href="/" aria-label={t`Space Works — Open makerspace listing`} className="mb-6 inline-flex self-start rounded-control focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
-          <span className="inline-flex sm:hidden"><SpaceWorksLogo variant="stacked" size={180} /></span>
-          <span className="hidden sm:inline-flex"><SpaceWorksLogo variant="horizontal" size={288} /></span>
+          <span className="inline-flex sm:hidden"><AnimatedLogoMark variant="stacked" size={180} /></span>
+          <span className="hidden sm:inline-flex"><AnimatedLogoMark variant="horizontal" size={288} /></span>
         </a>
         <div className="sw-auth-form min-w-0 py-6">
         {tenant ? <div className="mb-6"><MakerspaceBrand name={tenant.name} logoUrl={tenant.logo} /></div> : null}

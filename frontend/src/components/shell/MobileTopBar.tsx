@@ -1,6 +1,6 @@
 import { plural, t } from "@lingui/core/macro";
 import { Menu, Search } from "lucide-react";
-import { SpaceWorksLogo } from "../SpaceWorksLogo";
+import { AnimatedLogoMark } from "../brand/AnimatedLogoMark";
 import { UserMenu } from "./UserMenu";
 import { focusRing, type AppShellProps } from "./types";
 
@@ -11,7 +11,7 @@ export function MobileTopBar({ workspace, user, search, unread, onMenu }: Pick<A
       className={`relative flex min-h-11 min-w-11 items-center justify-center rounded-lg hover:bg-sidebar-hover ${focusRing}`} onClick={onMenu}><Menu aria-hidden="true" size={24} />
       {/* Phones lost the old dock's count: show the attention total on the menu button itself. */}
       {unread > 0 ? <span aria-hidden="true" className="absolute right-0.5 top-0.5 min-w-5 rounded-full bg-emphasis px-1 text-center text-xs font-semibold tabular-nums leading-5 text-on-emphasis">{unread > 99 ? "99+" : unread}</span> : null}</button>
-    <SpaceWorksLogo variant="symbol" size={48} />
+    <AnimatedLogoMark variant="symbol" size={48} />
     <span className="min-w-0 flex-1 truncate text-sm font-semibold" title={workspace?.name}>{workspace?.name ?? t`Choose a makerspace`}</span>
     {search ? <button type="button" aria-label={search.label} onClick={search.onOpen}
       className={`flex min-h-11 min-w-11 items-center justify-center rounded-lg hover:bg-sidebar-hover ${focusRing}`}><Search aria-hidden="true" size={24} /></button> : null}

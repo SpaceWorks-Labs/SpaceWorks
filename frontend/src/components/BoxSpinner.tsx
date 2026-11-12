@@ -1,10 +1,18 @@
+import { useSyncExternalStore } from "react";
+import { currentTheme, subscribeTheme } from "../lib/theme";
 import { t } from "@lingui/core/macro";
-import { BOX, ensureBoxCss } from "./boxOpen/shared";
+import { BOX, boxGroundColour, ensureBoxCss } from "./boxOpen/shared";
 
 /** The bare looping artwork (decorative, never focusable); `BoxSpinner` and the `Skeleton` placeholder wrap it. */
 export function BoxArt({ size, mono = false }: { size: number; mono?: boolean }) {
   ensureBoxCss();
-  return <span className={`sw-box loop${mono ? " mono" : ""} me-1.5 inline-block shrink-0 align-middle`} aria-hidden="true" style={{ width: size * 136 / 126, height: size }} dangerouslySetInnerHTML={{ __html: BOX }} />;
+  // Re-read the host ground when its theme changes so the four mono lid panels stay separated.
+  useSyncExternalStore(subscribeTheme, currentTheme, () => "light");
+  return <span ref={node => {
+    if (!node || !mono) return;
+    const ground = boxGroundColour(node);
+    if (ground) node.style.setProperty("--sw-ground", ground);
+  }} className={`sw-box loop${mono ? " mono" : ""} me-1.5 inline-block shrink-0 align-middle`} aria-hidden="true" style={{ width: size * 136 / 126, height: size }} dangerouslySetInnerHTML={{ __html: BOX }} />;
 }
 
 /**

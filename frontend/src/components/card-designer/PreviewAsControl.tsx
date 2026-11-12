@@ -11,6 +11,7 @@ import { exactPreview, useHolders } from "./designerHistoryApi";
 import { filterHolders, isLongPerson, previewLabel, SAMPLE_PEOPLE, type PreviewPerson } from "./previewPerson";
 import { Toggle } from "./inspectorFields";
 import { LogoLoader } from "../LogoLoader";
+import { SearchField } from "../ui/SearchField";
 
 const option = (on: boolean) => `flex min-h-11 w-full items-center gap-3 rounded-control border px-2 py-2 text-left text-sm text-ink focus-visible:outline-2 focus-visible:outline-focus ${on ? "border-accent-ink bg-accent-soft" : "border-transparent hover:bg-hover"}`;
 const mark = (on: boolean) => <span aria-hidden="true" className={`grid h-5 w-5 shrink-0 place-items-center rounded-full border-2 ${on ? "border-accent-ink" : "border-line"}`}>
@@ -49,7 +50,7 @@ export function PreviewAsControl({ design, document, person, onPerson }: {
         </div>
         <div role="group" aria-labelledby="preview-as-people" className="grid gap-2">
           <h3 id="preview-as-people" className="mb-1 text-xs font-semibold text-muted">{t`People with a card from this design`}</h3>
-          <input className="desk-input min-h-11" type="search" value={search} aria-label={t`Search by name or number`}
+          <SearchField className="desk-input min-h-11" value={search} aria-label={t`Search by name or number`}
             placeholder={t`Search by name or number`} onChange={(event) => setSearch(event.target.value)} />
           {holders.isLoading ? <LogoLoader size={48} className="min-h-24 py-3" /> : null}
           {holders.isError ? <ErrorBlock error={holders.error} resource={t`card holders`} onRetry={() => void holders.refetch()} /> : null}

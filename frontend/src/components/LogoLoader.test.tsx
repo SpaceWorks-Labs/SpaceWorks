@@ -7,9 +7,9 @@ describe("LogoLoader", () => {
     const { container } = render(<LogoLoader />);
     expect(screen.getByRole("status")).toHaveTextContent("Loading");
     expect(container.querySelector(".sw-box.loop")).toHaveAttribute("aria-hidden", "true");
-    // Both themes' artwork, four animated flaps each; CSS shows the one for html.dark.
-    expect(container.querySelectorAll("svg.lt .f")).toHaveLength(4);
-    expect(container.querySelectorAll("svg.dk .f")).toHaveLength(4);
+    // Both themes' artwork, four animated flaps each (tr also has a top-layer copy, .z1); CSS shows the one for html.dark.
+    expect(container.querySelectorAll("svg.lt .f:not(.z1)")).toHaveLength(4);
+    expect(container.querySelectorAll("svg.dk .f:not(.z1)")).toHaveLength(4);
   });
   it("announces a custom label, printed only when showLabel is set", () => {
     const { rerender } = render(<LogoLoader label="Opening makerspace..." />);

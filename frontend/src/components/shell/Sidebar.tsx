@@ -2,7 +2,7 @@ import { t } from "@lingui/core/macro";
 import { useEffect, useRef } from "react";
 import { Search } from "lucide-react";
 import { useSlideIndicator } from "../../lib/motion";
-import { SpaceWorksLogo } from "../SpaceWorksLogo";
+import { AnimatedLogoMark } from "../brand/AnimatedLogoMark";
 import { ActionControl } from "../ui";
 import { SidebarSection } from "./SidebarSection";
 import { WorkspaceSwitcher } from "./WorkspaceSwitcher";
@@ -18,7 +18,7 @@ export function Sidebar({ variant, workspace, search, nav, activeKey, footerLink
   useEffect(() => { root.current?.querySelector('[aria-current="page"]')?.scrollIntoView?.({ block: "nearest" }); }, [activeKey]);
   return <aside ref={root} className="flex h-full min-h-0 w-full flex-col bg-sidebar pl-[env(safe-area-inset-left)] text-ink dark:border-r dark:border-line">
     <div className="shrink-0 space-y-2 px-3.5 pb-3">
-      <div className="flex items-center justify-center"><SpaceWorksLogo variant="stacked" size={180} /></div>
+      <div className="flex items-center justify-center"><AnimatedLogoMark variant="stacked" size={180} /></div>
       <WorkspaceSwitcher workspace={workspace} />
       {search ? <button type="button" aria-haspopup="dialog" onClick={search.onOpen}
         className={`flex min-h-11 w-full items-center gap-2 rounded-lg bg-sidebar px-2.5 text-sm hover:bg-sidebar-hover dark:bg-hover dark:hover:bg-sidebar-hover ${focusRing}`}>

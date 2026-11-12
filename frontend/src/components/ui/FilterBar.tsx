@@ -1,7 +1,7 @@
 import { t } from "@lingui/core/macro";
 import type { ReactNode } from "react";
 import { useId } from "react";
-import { Search } from "lucide-react";
+import { SearchField } from "./SearchField";
 
 export type FilterBarProps = {
   value: string;
@@ -33,17 +33,18 @@ export function FilterBar({
       <label className="sr-only" htmlFor={searchId}>
         {searchLabel}
       </label>
-      <input
+      <SearchField
         id={searchId}
-        className={`desk-input w-full min-w-0 bg-success pl-11 text-on-success placeholder:text-on-success/70 ${hero
+        fixedIcon
+        clearLabel={t`Clear the search box`}
+        adornmentClassName={`text-on-success ${hero ? "" : "dark:text-success-ink"}`}
+        className={`desk-input w-full min-w-0 bg-success text-on-success placeholder:text-on-success/70 ${hero
           ? "h-12 border-transparent hover:border-transparent xl:h-14"
           : "h-11 border-outline dark:border-success dark:bg-surface dark:text-ink dark:placeholder:text-muted"}`}
-        type="search"
         value={value}
         placeholder={placeholder}
         onChange={(event) => onChange(event.target.value)}
       />
-      <Search aria-hidden="true" className={`pointer-events-none absolute left-3 top-1/2 size-5 -translate-y-1/2 text-on-success ${hero ? "" : "dark:text-success-ink"}`} />
       </div>
       {children ? <div className="flex flex-wrap items-center gap-2">{children}</div> : null}
       {actions ? <div className="flex flex-wrap items-center gap-2 sm:ml-auto">{actions}</div> : null}

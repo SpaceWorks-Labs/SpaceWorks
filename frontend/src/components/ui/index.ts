@@ -94,3 +94,4 @@ export { ScanWorkbench } from "./ScanWorkbench";
 export type { ScanWorkbenchProps } from "./ScanWorkbench";
 export { ResultPanel } from "./ResultPanel";
 export type { ResultPanelProps } from "./ResultPanel";
+export { SearchField, searchItemStyle } from "./SearchField";

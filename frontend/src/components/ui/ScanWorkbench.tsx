@@ -12,6 +12,7 @@ import { StatusPill } from "./StatusPill";
 import type { Action, QueryState } from "./types";
 import { LogoLoader } from "../LogoLoader";
 import { BoxArt } from "../BoxSpinner";
+import { SearchField } from "./SearchField";
 
 export type ScanWorkbenchProps = {
   onFind: (value: string) => void;
@@ -53,7 +54,7 @@ export function ScanWorkbench({ onFind, onScan = onFind, searchLabel = "Find a Q
       <div className={`grid min-w-0 content-start gap-4 ${result ? "max-md:order-first" : ""}`}>
         <form className="flex min-w-0 flex-wrap items-end gap-3" onSubmit={event => { event.preventDefault(); if (!value.trim() || blocked) return;
           onFind(value.trim()); setValue(""); refocus.current = true; if (!findPending) input.current?.focus(); }}>
-          <Field label={searchLabel} hint={helper} className="min-w-0 flex-1 basis-48"><input ref={input} className="desk-input w-full" type="search"
+          <Field label={searchLabel} hint={helper} className="min-w-0 flex-1 basis-48"><SearchField ref={input} className="desk-input w-full" 
             value={value} onChange={event => setValue(event.target.value)} disabled={blocked} /></Field>
           <button type="submit" className="desk-button" disabled={blocked || !value.trim()} aria-busy={findPending || undefined}>{findPending ? <><BoxArt size={16} mono />{t`Finding…`}</> : t`Find`}</button>
         </form>

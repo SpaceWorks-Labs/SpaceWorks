@@ -1,6 +1,6 @@
 import { t } from "@lingui/core/macro";
 import type { ReactNode } from "react";
-import { SpaceWorksLogo } from "../SpaceWorksLogo";
+import { AnimatedLogoMark } from "../brand/AnimatedLogoMark";
 import { ActionControl, Callout, Card, ConfirmDialog, PageHeader, StatusPill } from "../ui";
 import type { Action, Identity } from "../ui";
 import { KioskPin, type KioskPinProps } from "./KioskPin";
@@ -27,7 +27,7 @@ export function KioskLayout({ context, connection, progress, headerActions, mode
   return <div className="sw-kiosk bg-bg text-ink">
     <LayoutFrame standalone={standalone} width={width}>
       <div className="mb-6 flex min-w-0 items-start gap-3">
-        <SpaceWorksLogo variant="symbol" size={48} />
+        <AnimatedLogoMark variant="symbol" size={48} />
         <div className="min-w-0 flex-1 [&>header]:mb-0"><PageHeader title={context.title} subtitle={context.subtitle} identity={context.identity}
         meta={<div className="flex flex-wrap items-center gap-4">
           {progress ? <span className="font-display text-2xl tabular-nums">{`${progress.done} / ${progress.of} ${progress.label}`}</span> : null}

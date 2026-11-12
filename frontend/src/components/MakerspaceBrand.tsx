@@ -1,4 +1,4 @@
-import { SpaceWorksLogo } from "./SpaceWorksLogo";
+import { AnimatedLogoMark } from "./brand/AnimatedLogoMark";
 import { Avatar } from "./ui/Avatar";
 
 type MakerspaceBrandProps = {
@@ -52,7 +52,7 @@ export function MakerspaceBrand({
           alt={`${name} logo`}
           className={`${LOGO_SIZE[size]} shrink-0 rounded-lg border border-line object-contain bg-panel`}
         />
-      ) : fallback === "logo" ? <SpaceWorksLogo variant="symbol" size={48} decorative className="-m-3" />
+      ) : fallback === "logo" ? <AnimatedLogoMark variant="symbol" size={48} decorative className="-m-3" />
         : <Avatar name={name} size={size === "sm" ? "sm" : size === "md" ? "md" : "lg"} />}
       {!hideName || !logoUrl ? (
         <span

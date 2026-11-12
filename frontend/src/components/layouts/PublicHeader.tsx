@@ -2,7 +2,7 @@ import { t } from "@lingui/core/macro";
 import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { Menu, X } from "lucide-react";
 import { MakerspaceBrand } from "../MakerspaceBrand";
-import { SpaceWorksLogo } from "../SpaceWorksLogo";
+import { AnimatedLogoMark } from "../brand/AnimatedLogoMark";
 import { RouteLink } from "../ui/RouteLink";
 import { ActionControl } from "../ui";
 import type { Action } from "../ui";
@@ -80,8 +80,8 @@ function PublicHeaderBar({ makerspace, nav, account, liveStatus, chrome = "bar" 
       <RouteLink href={makerspace.homeHref ?? `/m/${makerspace.slug}`}
         aria-label={centralIdentity ? undefined : t`${makerspace.name} home`}
         className="min-w-0 shrink rounded-control focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
-        {centralIdentity ? <><span className="inline-flex sm:hidden"><SpaceWorksLogo variant="symbol" size={48} /></span>
-          <span className="hidden sm:inline-flex"><SpaceWorksLogo variant="horizontal" size={288} /></span></>
+        {centralIdentity ? <><span className="inline-flex sm:hidden"><AnimatedLogoMark variant="symbol" size={48} /></span>
+          <span className="hidden sm:inline-flex"><AnimatedLogoMark variant="horizontal" size={288} /></span></>
           : makerspace.logo ? <img src={makerspace.logo} alt={makerspace.name}
             className="h-12 w-auto max-w-[min(40vw,12rem)] object-contain" />
             : <MakerspaceBrand name={makerspace.name} fallback="logo" wrap />}

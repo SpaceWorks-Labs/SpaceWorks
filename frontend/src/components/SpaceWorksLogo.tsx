@@ -2,6 +2,7 @@ import { t } from "@lingui/core/macro";
 import { useId, useSyncExternalStore, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { currentTheme, subscribeTheme, type Theme } from "../lib/theme";
+import { LogoBoxOverlay } from "./brand/LogoBoxOverlay";
 import { logoMasters } from "./spaceWorksLogoPaths";
 
 export type SymbolSize = 48 | 52 | 64 | 72 | 96 | 128 | 192 | 256 | 512;
@@ -10,6 +11,8 @@ type SharedProps = {
   ground?: Theme;
   oneColour?: boolean;
   decorative?: boolean;
+  /** Internal: set only by `AnimatedLogoMark`, which every product placement must use. Adds the hover/focus opening. */
+  animated?: boolean;
   /** Compatibility only: classes apply to the outside spacing wrapper, never SVG paths. */
   className?: string;
 };
@@ -21,7 +24,7 @@ export type SpaceWorksLogoProps = SharedProps & (
 );
 
 export function SpaceWorksLogo({
-  variant, ground, oneColour = false, decorative = false,
+  variant, ground, oneColour = false, decorative = false, animated = false,
   size, withWordmark = false, className,
 }: SpaceWorksLogoProps) {
   const theme = useSyncExternalStore(subscribeTheme, currentTheme, () => "light");
@@ -47,7 +50,7 @@ export function SpaceWorksLogo({
 
   return (
     <span className={className} style={{ display: "inline-flex", flexShrink: 0 }}>
-      <span data-logo={key} style={{ display: "inline-flex", padding: height / 4, flexShrink: 0 }}>
+      <span data-logo={key} style={{ display: "inline-flex", position: "relative", padding: height / 4, flexShrink: 0 }}>
         <svg
           xmlns="http://www.w3.org/2000/svg"
           viewBox={artwork.viewBox}
@@ -63,13 +66,20 @@ export function SpaceWorksLogo({
           {!decorative && <title id={titleId}>{t`Space Works`}</title>}
           {artwork.clip ? <>
             <defs><clipPath id={`${titleId}-clip`}><rect width={artwork.clip.width} height={artwork.clip.height} /></clipPath></defs>
-            <g clipPath={`url(#${titleId}-clip)`}>{artwork.paths.slice(0, artwork.clip.count - 4).map((path, index) => <path key={index} {...path} />)}</g>
-            {artwork.paths.slice(artwork.clip.count - 4).map((path, index) => <path key={index} {...path} className={flapClass(index)} />)}
-          </> : artwork.paths.map((path, index) => <path key={index} {...path} className={flapClass(index - symbolPaths + 4)} />)}
+            <g clipPath={`url(#${titleId}-clip)`}>{artwork.paths.slice(0, artwork.clip.count - 4).map((path, index) => <path key={index} {...path} className={symClass(animated, true)} />)}</g>
+            {artwork.paths.slice(artwork.clip.count - 4).map((path, index) => <path key={index} {...path} className={symClass(animated, index < 4, flapClass(index))} />)}
+          </> : artwork.paths.map((path, index) => <path key={index} {...path} className={symClass(animated, index < symbolPaths, flapClass(index - symbolPaths + 4))} />)}
         </svg>
+        {animated ? <LogoBoxOverlay shape={shape} width={width} height={height} offset={height / 4} surface={surface} oneColour={oneColour} /> : null}
       </span>
     </span>
   );
+}
+
+/** Symbol paths carry `sw-logo-sym` so the hover/focus opening can hide them while the overlay plays. */
+function symClass(animated: boolean, symbol: boolean, base?: string) {
+  const cls = [base, animated && symbol ? "sw-logo-sym" : undefined].filter(Boolean).join(" ");
+  return cls || undefined;
 }
 
 const FLAPS = ["tl", "tr", "bl", "br"] as const;
@@ -95,7 +105,7 @@ export function SpaceWorksHomeLink({ children, className }: { children: ReactNod
 export function SpaceWorksBadge({ className }: { className?: string }) {
   return (
     <SpaceWorksHomeLink className={className}>
-      <SpaceWorksLogo variant="symbol" size={48} decorative />
+      <SpaceWorksLogo variant="symbol" size={48} decorative animated />
     </SpaceWorksHomeLink>
   );
 }

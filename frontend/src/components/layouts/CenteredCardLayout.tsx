@@ -1,6 +1,6 @@
 import { t } from "@lingui/core/macro";
 import type { ReactNode } from "react";
-import { SpaceWorksLogo } from "../SpaceWorksLogo";
+import { AnimatedLogoMark } from "../brand/AnimatedLogoMark";
 import { ActionControl, IdentityChip, PageHeader } from "../ui";
 import type { Action, IconName, Identity, Tone } from "../ui";
 import { toneSurfaceClasses } from "../ui/tones";
@@ -22,8 +22,8 @@ export function CenteredCardLayout({ media, eyebrow, title, body, content, prima
   width = 440, standalone = true, ...query }: CenteredCardLayoutProps) {
   return <LayoutFrame standalone={standalone}>
     <a href="/" aria-label={t`Space Works — Open makerspace listing`} className="mb-8 inline-flex rounded-control focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
-      <span className="inline-flex sm:hidden"><SpaceWorksLogo variant="stacked" size={180} /></span>
-      <span className="hidden sm:inline-flex"><SpaceWorksLogo variant="horizontal" size={288} /></span>
+      <span className="inline-flex sm:hidden"><AnimatedLogoMark variant="stacked" size={180} /></span>
+      <span className="hidden sm:inline-flex"><AnimatedLogoMark variant="horizontal" size={288} /></span>
     </a>
     <div className="grid min-h-[60dvh] items-center">
       <div className={`sw-centered-card ${width === "wide" ? "sw-centered-wide" : width === 480 ? "sw-centered-480" : ""}`}>

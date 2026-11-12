@@ -8,6 +8,7 @@ import type { CardFont } from "./cardTypes";
 import { prepareFont, useFonts } from "./designerApi";
 import { loadCardFont } from "./fontLoader";
 import { LogoLoader } from "../LogoLoader";
+import { SearchField } from "../ui/SearchField";
 
 const SCRIPTS = [
   { value: "", label: t`Any script` }, { value: "latin", label: t`Latin` }, { value: "devanagari", label: t`Devanagari` },
@@ -69,7 +70,7 @@ export function FontPicker({ designId, family, weight, onChange, disabled }: {
     </div>
     {open ? <div className="grid gap-2 rounded-control border border-line bg-panel p-2">
       <div className="grid grid-cols-[1fr_auto] gap-2">
-        <input className="desk-input min-h-11" type="search" placeholder={t`Search fonts`} aria-label={t`Search fonts`}
+        <SearchField className="desk-input min-h-11" placeholder={t`Search fonts`} aria-label={t`Search fonts`}
           value={query} onChange={(event) => setQuery(event.target.value)} />
         <select className="desk-input min-h-11" aria-label={t`Script`} value={script} onChange={(event) => setScript(event.target.value)}>
           {SCRIPTS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}

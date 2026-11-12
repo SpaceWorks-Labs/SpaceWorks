@@ -1,6 +1,6 @@
 import { t } from "@lingui/core/macro";
 import type { ReactElement, ReactNode } from "react";
-import { SpaceWorksLogo } from "../SpaceWorksLogo";
+import { AnimatedLogoMark } from "../brand/AnimatedLogoMark";
 import { RouteLink } from "../ui/RouteLink";
 import { ActionControl, PageHeader } from "../ui";
 import { PublicHeader } from "./PublicHeader";
@@ -47,7 +47,7 @@ export function PublicLayout({ makerspace, nav, headerAction, liveStatus, width 
     <footer className="border-t border-line">
       <div className="sw-layout sw-public-chrome flex flex-wrap items-center justify-between gap-4">
         <RouteLink href="/" className="inline-flex items-center gap-2 rounded-control text-sm text-muted hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
-          <SpaceWorksLogo variant="symbol" size={48} decorative /><span>{footer.credit ?? t`Powered by Space Works`}</span>
+          <AnimatedLogoMark variant="symbol" size={48} decorative /><span>{footer.credit ?? t`Powered by Space Works`}</span>
         </RouteLink>
         <nav aria-label={t`Footer`} className="flex min-w-0 flex-wrap gap-2">{footer.links.map(link => <ActionControl key={link.label} action={link} className="max-w-full [overflow-wrap:anywhere]" />)}</nav>
       </div>

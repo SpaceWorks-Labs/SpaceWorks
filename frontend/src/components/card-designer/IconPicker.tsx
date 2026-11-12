@@ -5,6 +5,7 @@ import { useState } from "react";
 import type { Layer } from "./cardTypes";
 import { IconGlyph, iconLabel, ICON_KEYS } from "./IconLayerView";
 import { ColourInput, Toggle } from "./inspectorFields";
+import { SearchField } from "../ui/SearchField";
 
 export function IconPicker({ value, onPick, disabled, label }: {
   value?: string; onPick: (icon: string) => void; disabled?: boolean; label: string;
@@ -14,7 +15,7 @@ export function IconPicker({ value, onPick, disabled, label }: {
   return <div className="grid gap-2">
     <label className="grid gap-1 text-xs font-semibold text-muted">
       <span>{label}</span>
-      <input className="desk-input min-h-11" type="search" value={query} placeholder={t`Search icons`} disabled={disabled}
+      <SearchField className="desk-input min-h-11" value={query} placeholder={t`Search icons`} disabled={disabled}
         onChange={(event) => setQuery(event.target.value)} />
     </label>
     <div role="group" aria-label={label} className="grid grid-cols-5 gap-1">

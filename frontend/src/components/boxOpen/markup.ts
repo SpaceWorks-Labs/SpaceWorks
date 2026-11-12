@@ -1,5 +1,5 @@
 import { logoMasters } from "../spaceWorksLogoPaths";
-import { FLAP_KEYS, FLAP_ORDER, type FlapKey } from "./geometry";
+import { FLAP_KEYS, FLAP_SLOTS, type FlapKey } from "./geometry";
 
 /**
  * The animated box as one SVG string, built from the brand masters (`symbol`, `symbol-reversed`) so the
@@ -7,7 +7,11 @@ import { FLAP_KEYS, FLAP_ORDER, type FlapKey } from "./geometry";
  * by LogoLoader. Both themes are present; CSS shows the one for `html.dark`.
  */
 const VIEW_BOX = "0 0 136 126";
-/** The light master's two full-height faces: while shut, the reversed box needs them to read as a solid cube. */
+/**
+ * The light master's two full-height faces. The reversed master cuts its faces short under the front flaps, so the
+ * moment a flap leaves its resting place the reversed box shows this cap (cream) behind it: no black hole opens in
+ * the side of the box, and shut it reads as a solid cube.
+ */
 const CAP_FACES = logoMasters.symbol.paths.slice(0, 2);
 const WALL = "67.5,17.2 111.5,47.8 67.5,78.9";
 const star = (x: number, y: number, r: number) =>
@@ -30,17 +34,17 @@ const SPARKS = [star(121, 3, 6.5), star(-7, 47, 6), star(141, 45, 5),
 function variant(kind: "lt" | "dk"): string {
   const master = logoMasters[kind === "lt" ? "symbol" : "symbol-reversed"].paths;
   const flaps = master.slice(-4);
-  const flapFill = (key: FlapKey) => flaps[FLAP_KEYS.indexOf(key)].fill;
+  const flapFill = (key: FlapKey) => logoMasters.symbol.paths.slice(-4)[FLAP_KEYS.indexOf(key)].fill;
   const body = master.slice(0, -4).map((path, index) =>
     `<path${index === 2 ? ' class="c"' : ""} fill="${path.fill}" d="${path.d}"/>`).join("");
-  const alt = kind === "lt" ? flapFill("tl") : flapFill("bl");
-  const flap = (key: FlapKey) => {
+  const flap = ({ key, layer }: (typeof FLAP_SLOTS)[number]) => {
     const path = flaps[FLAP_KEYS.indexOf(key)];
-    return `<path class="f f-${key}" fill="${path.fill}" style="--c:${path.fill};--alt:${alt}" d="${path.d}"/>`;
+    const z = layer === undefined ? "" : ` z${layer}`;
+    return `<path class="f f-${key}${z}" fill="${flapFill(key)}" style="--c:${flapFill(key)}" d="${path.d}"/>`;
   };
   const arcs = FLAP_KEYS.map(key => `<path class="a a-${key}" d="${ARCS[key]}"/>`).join("");
   return `<svg class="${kind}" viewBox="${VIEW_BOX}" aria-hidden="true" focusable="false">${body}`
-    + `${kind === "dk" ? `<g class="p">${CAP_FACES.map(face => `<path fill="${flaps[0].fill}" d="${face.d}"/>`).join("")}</g>` : ""}<polygon class="w" points="${WALL}"/>${FLAP_ORDER.map(flap).join("")}<g class="x">${arcs}${SPARKS}</g></svg>`;
+    + `${kind === "dk" ? `<g class="p">${CAP_FACES.map(face => `<path fill="#FFF4E8" d="${face.d}"/>`).join("")}</g>` : ""}<polygon class="w" points="${WALL}"/>${FLAP_SLOTS.map(flap).join("")}<g class="x">${arcs}${SPARKS}</g></svg>`;
 }
 
 /** `<div class="sw-box once|loop">` markup for the given mode (no wrapper sizing: the host sets width/height). */

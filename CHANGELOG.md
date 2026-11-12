@@ -13,12 +13,31 @@ carries the design rule each change introduced.
 
 ## Unreleased
 
+- Per-machine-type consumable profiles and a generic "Add a machine type" setup (decisions 341/343): units, required flags, estimate and record sources, per-unit prices through the machine charge seam, stock links with the existing low-stock alerts, data templates for common machines, adapter `job.report` `profile_consumptions`, and a `machine-consumables` report. Migrations `machines.0041`/`0042` add the tables and seed profiles from existing consumables without changing any price; `machines.0043` adds per-type booking defaults (applied to new bookable spaces, and on request to existing ones), training notes and private documents shown to members ([guide](docs/how-to/machine-consumables.md)).
+- Machine use can be logged with an event (decision 342): an optional "This is for an event" on machine sessions and service requests, set or cleared by the area manager, an event page section, two reports, a Metabase view and an organiser's cost-to-event approval record. No switch. See [Log machine use for an event](docs/how-to/machine-use-for-events.md).
+
 ## 0.12.0
 
 0.12.0 is the first published release after 0.9.3. The 0.11.0 candidate below was never published;
 its changes ship in 0.12.0 and its section is kept as history. Notes: [release](docs/release-0.12.0.md),
 [upgrade](docs/upgrade-to-0.12.0.md), [security verification](docs/security-summary-0.12.0.md).
 
+- **Printing folded into Machine service** — the separate `printing` module is retired; Machine service handles
+  service requests for every machine type and the 3D print queue is one of them. `makerspaces.0154` keeps Machine
+  service on wherever printing was on; a stored, restored or posted `printing` key reads as `machine_service`; the
+  `print` limit, printer reports and print notifications moved with it ([upgrade](docs/upgrade-to-0.12.0.md)).
+- **Front page and Features page** — a scrolling product page at the front page (switch `HUB_LANDING_ENABLED`,
+  installer question, `apply-settings.sh --landing on|off`) and a `/features` page built from the app's own
+  catalogue, linking the main, Android and iOS repositories ([guide](docs/how-to/front-page-and-features.md)).
+- **Global member profile and required usernames** — one account-level profile visible to signed-in members by
+  default with a separate open-web consent, status, experience, education, achievements (verified and
+  self-reported), imported hackathon projects and activity graphs; every account has a username with a live
+  availability check, a sign-up field and a blocking choose-your-username step ([profile](docs/how-to/member-profile.md),
+  [usernames](docs/how-to/usernames.md)).
+- **Public space page and display screens** — Here now, Machines now and an events calendar, with paired TV
+  screens ([guide](docs/how-to/display-screens.md)).
+- **Machine printing foundation** — print requests, label printers and enrolled printers; vendor adapters are
+  built separately against the Device Adapter API ([guide](docs/how-to/machine-printing.md)).
 - **Contextual loans for events and bookings** — a loan can be ordinary, linked to an event, to one
   exact booking, or both. Context explains the purpose only; it never approves, issues or changes the
   borrower, and changing it rechecks authority on both records ([equipment contexts](docs/equipment-contexts.md)).

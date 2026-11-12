@@ -39,24 +39,42 @@ A candidate build was never a published tag, so the updater cannot select it as 
 - Revoking a person's authentication also ends their personal access tokens and disconnects their OAuth app connections. Revoked API integrations must be reconnected.
 - Direct-room notification delivery fails closed when its lookup errors: that room delivery is not sent, while independent email delivery stays eligible.
 - Storage usage is recomputed once. After the new release is healthy, `scripts/update.sh` runs `python manage.py recompute_storage` in the backend container for every existing makerspace, so displayed usage and storage limits start from the true figure. It is idempotent, leaves a space unchanged when storage cannot be read, only warns on failure, and is skipped on later updates by the marker file `.spaceworks-storage-recomputed-0.12.0` in the install directory. Cloud, Helm and managed deployments, which do not use `update.sh`, run `python manage.py recompute_storage` once in the backend container after the migrate step.
-- No new operator setting is required for these changes.
+- **Certifications are gone.** Migration `machines.0040` converts them to machine access grants and opens ungated machines to all members; read [Give members machine access](how-to/machine-access.md#what-happened-to-certifications-on-upgrade) and check the machines you expect to stay restricted afterwards. The old certification routes answer `410`.
+- **Profiles and usernames.** Per-space profiles are merged into one account profile (`makerspaces.0152`, `0153`) and older accounts are asked to choose a username on next sign-in. Before that, `scripts/update.sh` runs `python manage.py claim_default_handles` once (marker file `.spaceworks-handles-claimed-0.12.0`): every existing account whose username is a valid, free handle gets it, so most people never see the step. It is idempotent and only warns on failure. Cloud, Helm and managed deployments run it once after the migrate step, like `recompute_storage`. See [the profile guide](how-to/member-profile.md).
+- **Printing is part of Machine service.** The separate `printing` module ("a 3D print queue") is retired: Machine service handles service requests for every machine type, and the 3D print queue is one machine type inside it. Migration `makerspaces.0154_retire_printing_module` keeps Machine service on for every space that had printing on, removes the stored `printing` key and writes one `makerspace.module_retired` audit row per space; it is reversible. A space with Machine service on but printing off now also offers the public print form, print tracker and filament-pool choice, so check the 3D printer queues you publish. The `print` limit, the printer service report, print notifications and the `printing_requests` workflow all moved to Machine service. Anything that still says `printing` (an older backup or tenant dump, a hosting plan, an API client, `install_module printing`) is read as `machine_service`; `uninstall_module printing` is refused (uninstall `machine_service` instead) and `update.sh --without=printing` changes nothing. `/features/printing` redirects to `/features/machine-service`.
+- **Front page.** `HUB_LANDING_ENABLED` defaults to on. A space that wants its own home at `/` sets it to `False` (`bash scripts/apply-settings.sh --landing off`).
+- **Device adapters, the background eraser and bulk photo upload** are off until their switches are on. If you put your own reverse proxy in front, allow 25 MB (or 220 MB for a zip) on the bulk photo route; see [Remove card photo backgrounds](how-to/background-eraser.md).
+- No new operator setting is required. Optional device-adapter settings are in the [environment reference](environment-reference-delivery.md#device-adapters).
 
 ## New migrations
 
-New relative to the 0.11.0 candidate tree:
+New relative to the 0.11.0 candidate tree (the state at the 0.11.0 notes commit); `python manage.py showmigrations` lists them in order:
 
 | App | Migrations | Notes |
 | --- | --- | --- |
-| `analytics` | `0002_telemetry_config` | Adds web telemetry configuration fields. |
-| `audit` | `0011_venue_fee_payment_index` | **Non-atomic.** Builds `audit_venue_fee_payment_idx` with `CREATE INDEX CONCURRENTLY`; existing audit rows are not rewritten. |
-| `bookings` | `0024_loan_context`, `0025_consumable_plan_context`, `0026_booking_replaces` | Loan and consumable-plan context; one-to-one booking replacement. |
-| `events` | `0085_loan_context`, `0086_consumable_plan_context`, `0087_event_booking_decision`, `0088_event_booking_decision_guard` | Event loan context and the immutable event–booking decision with its database guard. |
-| `integrations` | `0052_firebase_web_config` | Adds the platform Firebase web configuration field. |
-| `inventory` | `0018_equipment_proposals`, `0019_equipment_snapshot_guards`, `0020_equipment_use_receipt` | Kits and proposals, snapshot guards and consumable use receipts. |
-| `machines` | `0034_builtin_cnc_router_name`, `0035_consumable_cost_shop_sources` | 0034 restores the built-in "CNC Router" name only where it was left as the generated "Cnc Router". |
-| `maintenance` | `0007_issue_report_return_line` | Links a repair issue to a damaged return line. |
-| `makerspaces` | `0134_loan_context_generations` | Seeds loan-context generations for every makerspace. |
-| `notifications` | `0012_browser_firebase_registration` | Browser Firebase installation registrations. |
+| `accounts` | `0058` to `0059` (2 migrations, from `0058_oidc_attempt_next_path`) | OIDC next path, staff invitation machine ids. |
+| `analytics` | `0002` to `0003` (2 migrations, from `0002_telemetry_config`) | Web telemetry configuration; Grafana connection. |
+| `audit` | `0011_venue_fee_payment_index` | **0011 is non-atomic** (`CREATE INDEX CONCURRENTLY`); existing audit rows are not rewritten. |
+| `bookings` | `0024` to `0031` (8 migrations, from `0024_loan_context`) | Loan and consumable-plan context, booking replacement, included hours, house bookings, organization link, three-decimal money, organization hours bank. |
+| `boxes` | `0013_qrcode_external_source` | External QR source. |
+| `card_designs` | `0004` to `0012` (9 migrations, from `0004_card_design_archived_at`) | Archived designs, Outfit font family, wallet credentials, event badge roles, staff cards, background eraser results, saved templates. |
+| `devices` | `0006` to `0010` (5 migrations, from `0006_device_adapter_api`) | Device Adapter API: models, jobs, kiosk, media, artifacts and offline data. |
+| `event_reimbursements` | `0009` to `0010` (2 migrations, from `0009_staff_claims`) | Staff claims; required stage ceiling. |
+| `events` | `0085` to `0099` (15 migrations, from `0085_loan_context`) | Loan context, event-booking decision and its guard, machine booking link, equipment, staff invite limits, crew and teams, series and check-in lists, search, external venue, card roles and badge prints. |
+| `hosting_requests` | `0004_requested_kind` | Requested kind. |
+| `id_programmes` | `0003_programme_archived_at` | Archived programmes. |
+| `integrations` | `0052` to `0055` (4 migrations, from `0052_firebase_web_config`) | Firebase web config, platform credential switch, webhook secret, platform legal pages. |
+| `inventory` | `0018` to `0022` (5 migrations, from `0018_equipment_proposals`) | Kits and proposals, snapshot guards, consumable use receipts, event-only products, three-decimal money. |
+| `machines` | `0034` to `0040` (7 migrations, from `0034_builtin_cnc_router_name`) | 0034 restores the built-in "CNC Router" name only where it was left as "Cnc Router"; 0036-0038 supervised sessions and membership machine scope; 0039-0040 machine access grants (0040 is a data step that converts certifications and is not undone by an image rollback). |
+| `maintenance` | `0007` to `0012` (6 migrations, from `0007_issue_report_return_line`) | Repair issue from a return line, machine sessions, incident register, three-decimal money. |
+| `makerspaces` | `0134` to `0154` (21 migrations, from `0134_loan_context_generations`) | Loan-context generations, guest passes, minors and volunteers, Fundraising role, member units, space kind, email sender verification, the global account profile (0152) and the merge of per-space profiles (0153). |
+| `managed_hosting` | `0002` to `0005` (4 migrations, from `0002_hosting_switch`) | Hosting switch, throttle rate, hosting type. |
+| `notifications` | `0012_browser_firebase_registration` | Browser Firebase registrations. |
+| `organizations` | `0009_review_status` | Review status. |
+| `payments` | `0046` to `0051` (6 migrations, from `0046_guest_pass_subject`) | Guest pass subject, donations, loan labels, three-decimal money, financial-year receipt series. |
+| `presence` | `0004` to `0005` (2 migrations, from `0004_display_screen`) | Display screens and account-level presence. |
+| `procurement` | `0011_money_three_decimals` | Three-decimal money. |
+| `shop` | `0003` to `0006` (4 migrations, from `0003_shop_event_offer`) | Event offers, three-decimal money, order idempotency key. |
 
 `machines/0017_seed_machine_type_metering_packs` was also edited so that a fresh database keeps the built-in names; databases that already applied it are corrected by `0034`.
 
@@ -73,6 +91,6 @@ Because `audit.0011` is non-atomic, an interrupted run can leave an invalid `aud
 5. Check related facts, event linked finance and the loan-context reports with an authorized and an unauthorized staff actor.
 6. Check existing Shop orders, a QR revocation and its audit record, and any printed output used by the installation.
 
-If an update fails, preserve logs and the previous artifact. An application-image rollback does not undo forward database migrations. Use the [database recovery procedure](update-recovery.md) for the verified backup and matching object state. Upgrades are **forward-only by policy (decision 219g)**: the updater refuses to deploy a release older than the one installed, so the only way back to 0.9.2 is restoring the verified pre-update backup ([Rolling back](install-and-update.md#rolling-back)). The automatic rollback after a *failed* update only restarts the images that were running when it began.
+If an update fails, preserve logs and the previous artifact. An application-image rollback does not undo forward database migrations. Use the [database recovery procedure](update-recovery.md) for the verified backup and matching object state. Upgrades are **forward-only by policy**: the updater refuses to deploy a release older than the one installed, so the only way back to 0.9.2 is restoring the verified pre-update backup ([Rolling back](install-and-update.md#rolling-back)). The automatic rollback after a *failed* update only restarts the images that were running when it began.
 
 Release status: the complete backend/runtime regression, browser suite, PostgreSQL scenarios for the new connections, deployment and old-version upgrade acceptance are still pending. Do not read this procedure as a record that those checks have already passed.

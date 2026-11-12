@@ -1,6 +1,6 @@
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/readme/banner-dark.svg" />
-  <img src="docs/readme/banner.svg" width="100%" alt="Space Works. Run the space. Not the spreadsheets. Free, open-source makerspace software: inventory, machines, events, members. Self-hosted, open source, made in a makerspace." />
+  <img src="docs/readme/banner.svg" width="100%" alt="Space Works. Run the space, not spreadsheets. Free, open-source makerspace software: inventory, machines, events, members. Self-hosted, open source, made in a makerspace." />
 </picture>
 
 <div align="center">
@@ -110,8 +110,15 @@ Grouped the way a space actually works. The full list lives in [Features](docs/F
 
 ### Members, money and messages
 
-- **Membership:** join requests, waivers, referrals, plans and renewals, opt-in maker profiles and a
-  consent-based member directory; **presence** check-in with a privacy-controlled TV display.
+- **Membership:** join requests, waivers, referrals, plans and renewals, a global member profile
+  and a consent-based member directory; **presence** check-in with a privacy-controlled TV display.
+- **One global member profile** per account, addressed by a required **username** and visible to
+  signed-in members by default, with its own switch for the open web, achievements (verified and
+  self-reported), projects, experience and education. See [the profile guide](docs/how-to/member-profile.md).
+- A **public space page** with "Here now", "Machines now" and an events calendar, and paired
+  **display screens** for a TV ([guide](docs/how-to/display-screens.md)).
+- A **product front page and a Features page** for the site, which a space can switch off
+  ([guide](docs/how-to/front-page-and-features.md)).
 - **Sign-in** with password, Google, Apple, GitHub, your own OIDC provider or a phone code, or run with
   no member accounts at all using walk-in records. See [Sign-in, identity and borrowing](docs/sign-in-and-borrowing.md).
 - **Money owed is always recorded**, with offline receipts, due dates and reminders; online checkout
@@ -147,7 +154,7 @@ makerspace; leave one out and nothing else changes.
 
 ## Modules
 
-A makerspace only carries the parts it uses. Space Works ships **37 modules**: **6 core** modules that
+A makerspace only carries the parts it uses. Space Works ships **36 modules**: **6 core** modules that
 are always on (the public inventory, request workflow, staff admin, evidence uploads, QR management and
 the scanner), because the handover rules depend on them, and the rest are **opt-in**. The console groups
 them into areas:
@@ -156,7 +163,7 @@ them into areas:
 | --- | --- |
 | **Inventory** *(always on)* | [`public_inventory`](docs/MODULES.md#public_inventory), [`request_workflow`](docs/MODULES.md#request_workflow), [`staff_admin`](docs/MODULES.md#staff_admin), [`evidence_uploads`](docs/MODULES.md#evidence_uploads), [`qr_management`](docs/MODULES.md#qr_management), [`scanner`](docs/MODULES.md#scanner), [`asset_units`](docs/MODULES.md#asset_units), [`containers`](docs/MODULES.md#containers), [`bulk_import`](docs/MODULES.md#bulk_import), [`stock_transfers`](docs/MODULES.md#stock_transfers), [`qr_print_batches`](docs/MODULES.md#qr_print_batches), [`guest_handover`](docs/MODULES.md#guest_handover) |
 | **Stocktake** | [`stocktake`](docs/MODULES.md#stocktake) |
-| **Machines** | [`machines`](docs/MODULES.md#machines), [`machine_service`](docs/MODULES.md#machine_service), [`printing`](docs/MODULES.md#printing) |
+| **Machines** | [`machines`](docs/MODULES.md#machines), [`machine_service`](docs/MODULES.md#machine_service) (every machine type, the 3D print queue included) |
 | **Events** | [`events`](docs/MODULES.md#events), [`event_reimbursements`](docs/MODULES.md#event_reimbursements) |
 | **Bookings** | [`bookings`](docs/MODULES.md#bookings) |
 | **Membership** | [`membership`](docs/MODULES.md#membership), [`member_accounts`](docs/MODULES.md#member_accounts), [`presence`](docs/MODULES.md#presence) |

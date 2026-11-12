@@ -21,6 +21,10 @@ The first published release after 0.9.3. It also carries everything prepared for
 - **Fixed staff roles.** Built-in roles that combine (Technician, Shop Manager, Fundraising and Handover included) replace editable roles; Machine Manager reach is per person by machine type. See [Roles and permissions](../reference/permissions.md).
 - **Events, hackathons and the Shop.** Configurable submission stages, judging, ticketing and applications; member cards and certificates; front-desk shop sales, pickup and cash-up.
 - **Money you can run free, offline or online.** Record what is owed without a payment provider; online checkout is an optional rail. Full precision for three-decimal currencies. See [Rates and fees](../how-to/rate-cards-and-fees.md).
+- **A scrolling front page and a Features page.** Every site opens on a product page that a space can switch off at install or later. See [The front page](../how-to/front-page-and-features.md).
+- **One global profile and a username for everyone.** Visible to signed-in members by default, with a separate open-web switch, achievements, projects and status. See [The global member profile](../how-to/member-profile.md) and [Usernames](../how-to/usernames.md).
+- **Here now, Machines now, a calendar and TV display screens** on the public space page. See [Display screens](../how-to/display-screens.md).
+- **Machine printing foundation.** Print requests, label printers and enrolled printers, with vendor adapters to come. See [Machine printing](../how-to/machine-printing.md).
 - **Donations and sponsors** for non-profits.
 - **Each role sees what it manages.** Area managers get their own finance, To-Buy, repairs and warranty views.
 - **One self-hosted mode, a standard installer and hybrid setup.** A signed, checksummed one-line installer, standard backend and frontend images, and the option to keep the database, Redis, storage or email outside the server.

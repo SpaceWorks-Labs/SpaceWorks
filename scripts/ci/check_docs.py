@@ -12,6 +12,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -156,7 +157,10 @@ def main() -> int:
             errors.append("--mermaid: " + MERMAID_HELP)
         else:
             payload = json.dumps([{"f": p.relative_to(ROOT).as_posix(), "l": ln, "t": t} for p, ln, t in merm])
-            r = subprocess.run(["node", str(Path(mdir) / "parse.mjs")], input=payload, text=True,
+            # The parser ships with the repo; it resolves mermaid/jsdom from MERMAID_DIR's node_modules.
+            runner = Path(mdir) / "parse.mjs"
+            shutil.copyfile(ROOT / "scripts" / "ci" / "mermaid_parse.mjs", runner)
+            r = subprocess.run(["node", str(runner)], input=payload, text=True,
                                capture_output=True, cwd=mdir)
             for line in r.stdout.splitlines():
                 if line.startswith("ERR "):
@@ -165,6 +169,8 @@ def main() -> int:
                     parsed += 1
             if r.returncode not in (0, 1):
                 errors.append("mermaid runner failed: " + r.stderr[-300:])
+            elif parsed + sum(1 for e in errors if e.startswith("mermaid ")) != len(merm):
+                errors.append(f"mermaid: only {parsed} of {len(merm)} blocks were parsed (runner output: {r.stderr[-200:]})")
     print(f"files={len(files)} links={n_links} anchors={n_anchors} mermaid_blocks={len(merm)} mermaid_parsed={parsed}")
     for e in errors:
         print(e)

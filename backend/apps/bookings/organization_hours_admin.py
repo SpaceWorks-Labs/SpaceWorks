@@ -12,6 +12,7 @@ from apps.encryption.write_fence import assert_mapped_write_allowed
 
 from .models_organization_hours import OrganizationHoursAllowance, OrganizationHoursLedger
 from .organization_hours import bank, period_ends_at, period_key, totals
+from django.utils.translation import gettext
 
 Entry = OrganizationHoursLedger.Entry
 
@@ -63,21 +64,21 @@ def adjust(makerspace, organization, actor, *, entry, minutes, reason):
     """Append a staff grant (positive top-up) or signed adjustment; never lets the period balance go negative."""
     reason = (reason or "").strip()
     if not reason:
-        raise ValidationError({"reason": "A reason is required."})
+        raise ValidationError({"reason": gettext("A reason is required.")})
     if entry == Entry.GRANT and minutes <= 0:
-        raise ValidationError({"minutes": "A grant must be a positive number of minutes."})
+        raise ValidationError({"minutes": gettext("A grant must be a positive number of minutes.")})
     if minutes == 0:
-        raise ValidationError({"minutes": "Enter a non-zero number of minutes."})
+        raise ValidationError({"minutes": gettext("Enter a non-zero number of minutes.")})
     with transaction.atomic():
         assert_mapped_write_allowed(makerspace.pk)
         allowance = OrganizationHoursAllowance.objects.select_for_update().filter(
             makerspace=makerspace, organization=organization).first()
         if allowance is None:
-            raise ValidationError({"organization_id": "Set an allowance before granting or adjusting hours."})
+            raise ValidationError({"organization_id": gettext("Set an allowance before granting or adjusting hours.")})
         key = period_key(allowance.period, timezone.now())
         pool, used = totals(makerspace, organization, key)
         if pool + minutes - used < 0:
-            raise ValidationError({"minutes": "This would take the balance below zero."})
+            raise ValidationError({"minutes": gettext("This would take the balance below zero.")})
         row = OrganizationHoursLedger.objects.create(
             makerspace=makerspace, organization=organization, entry=entry, minutes=minutes, period_key=key,
             reason=reason[:500], actor=actor)

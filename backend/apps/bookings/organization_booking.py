@@ -19,6 +19,7 @@ from apps.bookings.models import BookableSpace, BookingOrganizationLink
 from apps.makerspaces.guards import feature_off
 from apps.makerspaces.models import MakerspaceMembership
 from apps.makerspaces.platform import feature_enabled
+from django.utils.translation import gettext
 
 FEATURE = "bookings.organization_bookings"
 
@@ -32,13 +33,13 @@ def _validated(space, organization, contact):
     from apps.organizations.models import OrganizationMakerspace
     if not organization.is_active or not OrganizationMakerspace.objects.filter(
             organization=organization, makerspace_id=space.makerspace_id).exists():
-        raise ValidationError({"organization_id": "This organization is not linked to this space."})
+        raise ValidationError({"organization_id": gettext("This organization is not linked to this space.")})
     # Decision 293/295: an organization workspace's own members are members of the organization.
     if not is_org_member(contact, organization):
-        raise ValidationError({"contact_member_id": "The contact must be an active member of the organization."})
+        raise ValidationError({"contact_member_id": gettext("The contact must be an active member of the organization.")})
     if not MakerspaceMembership.objects.filter(
             makerspace_id=space.makerspace_id, user=contact, status="active").exists():
-        raise ValidationError({"contact_member_id": "The contact must be an active member of this space."})
+        raise ValidationError({"contact_member_id": gettext("The contact must be an active member of this space.")})
 
 
 def link_organization(booking, organization, contact, actor):

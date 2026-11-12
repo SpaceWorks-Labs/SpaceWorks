@@ -4,6 +4,7 @@ from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 from apps.admin_api.serializers_payment_summary import PaymentSummaryMixin
 from .event_labels import LINKED_EVENT_FIELD
+from apps.machines.serializers_sessions import MachineEventSummarySerializer
 from .models import Booking
 from .serializers_departure import BookingDepartureSerializer
 
@@ -16,6 +17,7 @@ class BookingAdminSerializer(PaymentSummaryMixin, serializers.ModelSerializer):
     status_before_cancel = serializers.CharField(read_only=True)
     restore_until = serializers.SerializerMethodField()
     space_name = serializers.CharField(source="space.name", read_only=True)
+    event = serializers.SerializerMethodField(help_text="The event this machine-time booking is logged for (decision 342), or null.")
     decision_reason = serializers.CharField(read_only=True)
     departed_at = serializers.DateTimeField(read_only=True, allow_null=True)
     departures = serializers.SerializerMethodField()
@@ -73,6 +75,11 @@ class BookingAdminSerializer(PaymentSummaryMixin, serializers.ModelSerializer):
                 subject_type=Payment.SubjectType.BOOKING, subject_id=obj.pk).exists()
         return None if charged else deadline
 
+    @extend_schema_field(MachineEventSummarySerializer(allow_null=True))
+    def get_event(self, obj):
+        from apps.machines.event_use import event_summary
+        return event_summary(obj)
+
     class Meta:
         model = Booking
         fields = (
@@ -93,7 +100,7 @@ class BookingAdminSerializer(PaymentSummaryMixin, serializers.ModelSerializer):
             'created_at',
             'payment',
             'space_name', 'decision_reason', 'departed_at', 'departures', 'open_issue_id',
-            'requested_price', 'linked_event', 'is_house', 'organization_name',
+            'requested_price', 'linked_event', 'is_house', 'organization_name', 'event',
         )
         read_only_fields = fields
 

@@ -138,6 +138,9 @@ class PublicBookingInputSerializer(serializers.Serializer):
         required=False,
         write_only=True,
     )
+    event_id = serializers.IntegerField(
+        min_value=1, required=False, allow_null=True, write_only=True,
+        help_text="Optional, machine-time bookings only: an event I may act for in this makerspace (decision 342).")
 
     def validate(self, attrs):
         errors = {}

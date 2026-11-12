@@ -101,12 +101,19 @@ def _audit(space, actor, action, target, audit_service, meta=None):
     )
 
 
+def _type_booking_defaults(makerspace, machine_type):
+    if machine_type is None:
+        return {}
+    from apps.machines.type_setup import booking_defaults
+    return booking_defaults(makerspace.pk, machine_type.pk)
+
+
 @transaction.atomic
 def create_space(
     *, makerspace, actor, name, kind, description, capacity, location, is_public,
     audit_service, show_public_availability=False,
     show_public_booker_names=False,
-    approval_mode=BookableSpace.ApprovalMode.INSTANT, custom_form=None,
+    approval_mode=None, custom_form=None,
     requester_notifications_enabled=None, payment_amount=0, machine_type=None, machine=None,
 ):
     locked_makerspace = Makerspace.objects.select_for_update().get(pk=makerspace.pk)
@@ -116,6 +123,11 @@ def create_space(
     check_extra_quota(locked_makerspace, "bookable_spaces")  # decision 284: typed 409
     machine = _machine(locked_makerspace, machine)
     machine_type = machine.machine_type if machine else _machine_type(locked_makerspace, machine_type)
+    # Decision 343: a machine type's booking defaults seed a new space of that type (never a hard dependency:
+    # only consulted when a type is set, which means the machines app is installed).
+    type_defaults = _type_booking_defaults(locked_makerspace, machine_type)
+    approval_mode = approval_mode or type_defaults.pop("approval_mode", None) or BookableSpace.ApprovalMode.INSTANT
+    type_defaults.pop("approval_mode", None)
     space = BookableSpace(
         makerspace=locked_makerspace,
         created_by=actor,
@@ -134,6 +146,7 @@ def create_space(
         machine_type=machine_type,
         machine=machine,
         is_active=True,
+        **type_defaults,
     )
     _validate_public_visibility(space)
     _validate(space)

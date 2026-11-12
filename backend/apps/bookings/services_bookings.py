@@ -55,7 +55,7 @@ def _audit(space, actor, action, target, meta=None):
 
 
 def _require_certification(space, member, actor, override_reason):
-    """Gate a member's booking on machine-type training, when the space names a type.
+    """Gate a member's booking on a machine access grant (decision 319), when the space names a type.
 
     Imported lazily and skipped entirely unless `machine_type_id` is set, so `bookings`
     never starts requiring the `machines` module: a space with no machine type (every
@@ -63,12 +63,16 @@ def _require_certification(space, member, actor, override_reason):
     """
     if member is None or not space.machine_type_id:
         return
-    from apps.machines.certifications import require_certification_for_member
+    from apps.machines.access_grants import require_access, require_type_access
+    from apps.makerspaces.platform import module_enabled
+    if not module_enabled(space.makerspace, "machines"):
+        return  # a bookings-only space is never gated by a module it does not have
 
-    require_certification_for_member(
-        space.makerspace, member, space.machine_type, purpose='booking',
-        actor=actor, override_reason=override_reason,
-    )
+    # The override reason is retired: staff simply grant access (audited) instead of overriding.
+    if space.machine_id:
+        require_access(member, space.machine)
+    else:
+        require_type_access(member, space.makerspace, space.machine_type)
 
 
 def _refresh(instance):

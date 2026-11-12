@@ -1,4 +1,5 @@
 from django.utils.translation import gettext
+from django.db import transaction
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import serializers, status
@@ -171,12 +172,17 @@ class PublicBookingSubmissionView(APIView):
         from apps.payments.pricing.submit_guard import check_submitted_digest  # L15 (A8): 409 price_changed
         check_submitted_digest(request, makerspace, "bookings", space, {
             "starts_at": serializer.validated_data.get("starts_at"), "ends_at": serializer.validated_data.get("ends_at")})
-        booking = services_bookings.create_booking(
-            space,
-            member=request.user,
-            actor=request.user,
-            **serializer.validated_data,
-        )
+        values = dict(serializer.validated_data)
+        event_id = values.pop('event_id', None)
+        with transaction.atomic():
+            booking = services_bookings.create_booking(
+                space,
+                member=request.user,
+                actor=request.user,
+                **values,
+            )
+            from apps.machines import event_use
+            event_use.attach(booking, event_id, actor=request.user)  # decision 342: optional, strict when given
         return Response(
             PublicBookingResponseSerializer(booking).data,
             status=status.HTTP_201_CREATED,

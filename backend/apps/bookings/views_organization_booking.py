@@ -22,6 +22,7 @@ from apps.bookings.views_admin_spaces import manageable_space
 from apps.makerspaces.guards import feature_off
 from apps.makerspaces.models import MakerspaceMembership
 from apps.payments.models import Payment
+from django.utils.translation import gettext
 
 TAG = "Admin bookings"
 
@@ -97,9 +98,9 @@ class OrganizationBookingCreateView(APIView):
         # A missing organization/contact answers exactly like an unlinked/ineligible one (the same 400),
         # so the route cannot be used to probe which organization or user ids exist.
         if organization is None:
-            raise ValidationError({"organization_id": "This organization is not linked to this space."})
+            raise ValidationError({"organization_id": gettext("This organization is not linked to this space.")})
         if contact is None:
-            raise ValidationError({"contact_member_id": "The contact must be an active member of the organization."})
+            raise ValidationError({"contact_member_id": gettext("The contact must be an active member of the organization.")})
         booking = book_for_organization(request.user, space, organization, contact, **values)
         context = scoped_payment_context(
             request.user, rbac.Action.MANAGE_BOOKINGS, Payment.SubjectType.BOOKING, [booking.pk])

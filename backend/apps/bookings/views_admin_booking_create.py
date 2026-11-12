@@ -1,5 +1,6 @@
 """Staff creation uses the same locked service and certification gate as self-booking."""
 
+from django.db import transaction
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework.pagination import PageNumberPagination
@@ -12,6 +13,7 @@ from apps.accounts.models import User
 from apps.admin_api.permissions import IsActiveStaff
 from apps.admin_api.serializers_payment_summary import scoped_payment_context
 from apps.bookings import services
+from apps.machines import event_use
 from apps.bookings.serializers_admin import BookingAdminSerializer
 from apps.bookings.serializers_staff_booking import (
     BookingEligibleMemberListSerializer, BookingEligibleMemberSerializer,
@@ -58,19 +60,27 @@ class StaffBookingCreateMixin:
         serializer = StaffSingleBookingInputSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         values = dict(serializer.validated_data)
+        event_id = values.pop('event_id', None)
+        with transaction.atomic():
+            booking = self._create(request, space, values, event_id)
+        context = scoped_payment_context(
+            request.user, rbac.Action.MANAGE_BOOKINGS, Payment.SubjectType.BOOKING, [booking.pk],
+        )
+        return Response(BookingAdminSerializer(booking, context=context).data, status=201)
+
+    def _create(self, request, space, values, event_id):
         if values.pop('house', False):
             values.pop('certification_override_reason', None)  # no member, so no certification to override
             values.pop('price_confirmation', None)  # a house booking is never priced
             booking = services.create_booking(space, actor=request.user, house=True, **values)
+            event_use.staff_attach(request.user, booking, event_id, house=True)
         else:
             membership = get_object_or_404(_members(request.user, space), user_id=values.pop('member_id'))
             # Booking ahead is allowed; membership, active standing and current waiver remain mandatory.
             require_active_member(membership.user, space.makerspace)
             booking = services.create_booking(space, member=membership.user, actor=request.user, **values)
-        context = scoped_payment_context(
-            request.user, rbac.Action.MANAGE_BOOKINGS, Payment.SubjectType.BOOKING, [booking.pk],
-        )
-        return Response(BookingAdminSerializer(booking, context=context).data, status=201)
+            event_use.staff_attach(request.user, booking, event_id)
+        return booking
 
 
 class _MemberPagination(PageNumberPagination):

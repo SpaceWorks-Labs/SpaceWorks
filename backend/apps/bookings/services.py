@@ -43,7 +43,7 @@ __all__ = [
 def create_space(
     *, makerspace, actor, name, kind, description, capacity, location, is_public,
     show_public_availability=False, show_public_booker_names=False,
-    approval_mode=BookableSpace.ApprovalMode.INSTANT, custom_form=None,
+    approval_mode=None, custom_form=None,
     requester_notifications_enabled=None, payment_amount=0, machine_type=None, machine=None,
 ):
     return services_spaces.create_space(

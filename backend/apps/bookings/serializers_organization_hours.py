@@ -2,6 +2,7 @@
 from rest_framework import serializers
 
 from .models_organization_hours import OrganizationHoursAllowance, OrganizationHoursLedger
+from django.utils.translation import gettext
 
 
 class OrganizationHoursBankSerializer(serializers.Serializer):
@@ -24,7 +25,7 @@ class OrganizationHoursBankWriteSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         if not attrs:
-            raise serializers.ValidationError("Send allowance_minutes, period or both.")
+            raise serializers.ValidationError(gettext("Send allowance_minutes, period or both."))
         return attrs
 
 

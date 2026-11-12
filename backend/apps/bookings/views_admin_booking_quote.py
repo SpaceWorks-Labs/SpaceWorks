@@ -15,6 +15,7 @@ from .serializers_staff_booking import StaffBookingQuoteInputSerializer, StaffBo
 from .staff_price_confirmation import preview
 from .views_admin_booking_create import ERRORS, _members
 from .views_admin_spaces import manageable_space
+from django.utils.translation import gettext
 
 
 class StaffBookingQuoteView(APIView):
@@ -59,7 +60,7 @@ class StaffBookingQuoteView(APIView):
                 pk__in=OrganizationMakerspace.objects.filter(makerspace_id=space.makerspace_id).values('organization_id'),
             ).first()
             if organization is None:
-                raise ValidationError({'organization_id': 'This organization is not linked to this space.'})
+                raise ValidationError({'organization_id': gettext('This organization is not linked to this space.')})
         data = preview(space, membership.user, values['starts_at'], values['ends_at'], exempt, organization)
         return Response(StaffBookingQuoteSerializer(data).data,
                         headers={'Cache-Control': 'private, no-store'})

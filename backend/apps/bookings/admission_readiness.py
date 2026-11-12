@@ -3,7 +3,7 @@
 Read-only by construction. Every blocking answer comes from calling the SAME admission seams
 `validate_admission` calls (`_refuse_room_outage`, `_refuse_machine_under_repair`,
 `_require_certification`) and catching their refusal; no rule is restated here. The
-certification check runs with no override reason, so it can never write its override audit.
+machine access check (decision 319) is the same single function sessions use.
 
 Two facts are advisory, not refusals, because admission does not refuse on them: a WARN-mode
 room outage, and a maintenance lockout (`machines.lockout`), which stops jobs and sessions on
@@ -79,7 +79,7 @@ def _machine_lockout(machine):
     return _check("machine_lockout", OK, "No overdue safety maintenance locks this machine.")
 
 
-def _certification(space, member):
+def _machine_access(space, member):
     from .services_bookings import _require_certification
     if member is None or not space.machine_type_id:
         return None
@@ -87,10 +87,9 @@ def _certification(space, member):
         _require_certification(space, member, None, "")
     except PermissionDenied as refused:
         detail = refused.detail if isinstance(refused.detail, dict) else {}
-        names = [str(name) for name in detail.get("certifications", [])]
-        return _check("certification", BLOCKED, "The member is missing a required certification.",
-                      certifications=names)
-    return _check("certification", OK, "The member holds every certification this booking requires.")
+        return _check("machine_access", BLOCKED, "The member has no machine access for this booking.",
+                      reason=str(detail.get("code", "no_machine_access")))
+    return _check("machine_access", OK, "The member has access to this machine.")
 
 
 def _maintenance_link(actor, machine, checks):
@@ -111,7 +110,7 @@ def readiness(space, *, member, starts_at, ends_at, actor):
     checks = [_time_booking(space), _room_outage(space, window)]
     if machine is not None:
         checks += [_machine_repair(space, window), _machine_lockout(machine)]
-    checks.append(_certification(space, member))
+    checks.append(_machine_access(space, member))
     checks = [row for row in checks if row is not None]
     return {
         "ready": all(row["state"] != BLOCKED for row in checks),

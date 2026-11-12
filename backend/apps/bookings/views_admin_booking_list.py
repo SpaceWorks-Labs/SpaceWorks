@@ -36,8 +36,9 @@ class SpaceBookingListView(StaffBookingCreateMixin, APIView):
         space = manageable_space(request.user, pk, "manage_reservations")
         filters = BookingListFilterSerializer(data=request.query_params)
         filters.is_valid(raise_exception=True)
+        from apps.machines.event_use import with_event  # decision 342: no query per row for the event link
         from .services_restore import annotate_restore_history
-        queryset = annotate_restore_history(Booking.objects.filter(space=space).select_related("space__makerspace"))
+        queryset = annotate_restore_history(with_event(Booking.objects.filter(space=space).select_related("space__makerspace")))
         data = filters.validated_data
         if data.get('booking_id'):
             queryset = queryset.filter(pk=data['booking_id'])

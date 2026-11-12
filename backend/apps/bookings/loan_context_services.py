@@ -1,4 +1,5 @@
 """Booking-owned loan context operations with nonblocking scoped locks."""
+from django.utils.translation import gettext
 from django.db import DatabaseError, IntegrityError, transaction
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import APIException, NotFound
@@ -136,7 +137,7 @@ def mutate(actor, req, payload, *, delete=False, intended=None):
                 elif not rbac.can(actor, rbac.Action.MANAGE_BOOKINGS, space.pk):
                     raise NotFound()
             if locked.status not in {"draft", "pending_approval", "accepted", "issued", "partially_returned"}:
-                raise Conflict("This request is no longer editable.")
+                raise Conflict(gettext("This request is no longer editable."))
             # Check CAS only after old/new resource authorization to avoid leaking
             # generation/revision information for an inaccessible association.
             if str(payload["expected_generation"]) != _generation(space):
@@ -144,7 +145,7 @@ def mutate(actor, req, payload, *, delete=False, intended=None):
             if payload["expected_revision"] != actual["revision"]:
                 raise RevisionChanged()
             if new_id and (not actual["active"] or actual["booking_id"] != new_id) and bookings[new_id].status in {Booking.Status.CANCELLED, Booking.Status.REJECTED, Booking.Status.COMPLETED, Booking.Status.NO_SHOW}:
-                raise Conflict("Booking is unavailable.")
+                raise Conflict(gettext("Booking is unavailable."))
             if not delete:
                 _refuse_event_only_without_event(locked)
             active = not delete
@@ -153,7 +154,7 @@ def mutate(actor, req, payload, *, delete=False, intended=None):
                 result["generation"] = _generation(space)
                 return result
             if actual["revision"] >= MAX_REVISION:
-                raise RevisionExhausted("Context revision exhausted.")
+                raise RevisionExhausted(gettext("Context revision exhausted."))
             if row is None:
                 try:
                     with transaction.atomic():
@@ -175,5 +176,5 @@ def mutate(actor, req, payload, *, delete=False, intended=None):
             return result
     except DatabaseError as exc:
         if (getattr(exc.__cause__, "sqlstate", None) or getattr(exc.__cause__, "pgcode", None)) == "55P03":
-            raise LockBusy("Context is busy; retry after reloading.") from exc
+            raise LockBusy(gettext("Context is busy; retry after reloading.")) from exc
         raise

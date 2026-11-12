@@ -40,7 +40,8 @@ def display_name(user):
 def candidates_q(event):
     """Community accounts known through membership, registration or a delegate grant."""
     return person_q() & (Q(makerspace_memberships__makerspace_id=event.makerspace_id,
-              makerspace_memberships__status="active")
+              makerspace_memberships__status="active",
+              makerspace_memberships__track="community")
             | Q(event_registrations__event_id=event.pk)
             | Q(event_staff_grants__event_id=event.pk, event_staff_grants__revoked_at__isnull=True))
 

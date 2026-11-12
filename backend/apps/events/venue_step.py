@@ -20,6 +20,7 @@ before this call is `GET admin/makerspace/<id>/spaces/<space>/bookings/availabil
 from uuid import uuid4
 
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.http import Http404
 from rest_framework.exceptions import APIException
 
 from apps.audit.services import record
@@ -36,6 +37,8 @@ def _code(exc):
         return "room_unavailable"
     if isinstance(exc, BookingInvalidTransition):
         return "room_invalid"
+    if isinstance(exc, Http404):
+        return "not_found"
     return getattr(exc, "default_code", "room_step_failed")
 
 
@@ -124,7 +127,7 @@ def run_room_step(actor, maker, event, room):
             created = _booking_for(actor, maker, event, room)
             _link_new(actor, maker, event, created)
             result["booking_id"], result["booking_status"] = created.pk, created.status
-    except (APIException, BookingConflict, BookingInvalidTransition, DjangoValidationError) as exc:
+    except (APIException, BookingConflict, BookingInvalidTransition, DjangoValidationError, Http404) as exc:
         result.update(status="failed", code=_code(exc), detail=str(getattr(exc, "detail", exc))[:300])
         if created is not None:
             result["orphan_booking_id"] = _undo(actor, created)

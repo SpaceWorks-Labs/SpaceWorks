@@ -29,6 +29,7 @@ ENTRIES = (
     ("makerspaces.subdomainrequest", web(f"{SP} → Requests → Web addresses", "admin-platform-subdomain-requests")),
     ("makerspaces.subdomainrequest.approve_and_provision", web(f"{SP} → Requests → Web addresses", "admin-platform-subdomain-request-approve")),
     ("makerspaces.subdomainrequest.reject_selected", web(f"{SP} → Requests → Web addresses", "admin-platform-subdomain-request-reject")),
+    ("hosting_requests.hostingrequest.approve_and_create_selected", web(f"{SP} → Onboarding → Approve (creates the space)", "admin-platform-hosting-request-approve")),
     ("hosting_requests.hostingrequest.accept_selected", web(f"{SP} → Onboarding", "admin-platform-hosting-request-approve")),
     ("hosting_requests.hostingrequest.reject_selected", web(f"{SP} → Onboarding", "admin-platform-hosting-request-reject")),
     ("hosting_requests.hostingrequest.request_changes_selected", web(f"{SP} → Onboarding", "admin-platform-hosting-request-changes")),

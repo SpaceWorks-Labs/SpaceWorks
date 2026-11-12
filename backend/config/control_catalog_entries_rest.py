@@ -14,6 +14,8 @@ REST_SECTION_ENTRIES = {
         ("managed_hosting.spacehostingtype", _("Hosting type per space"), "dns", _("Whether each space is run by its own team or hosted by the platform.")),
         ("managed_hosting.platformhostingbillingsettings", _("Hosting billing settings"), "account_balance_wallet",
          _("How the platform bills hosted spaces. Keys show only as set or not set.")),
+        ("managed_hosting.platformlimitdefault", _("Default limits"), "tune",
+         _("The limits every new space starts with. Read-only here: change them in the web console (Platform, Limits).")),
         ("managed_hosting.platformthrottlerate", _("Request rate limits"), "network_check", _("Platform-wide limits on how fast clients may call the API.")),
         ("integrations.dailyotpsmscounter", _("Sign-in code texts per day"), "sms", _("Sign-in code texts sent per day (cost guard).")),
         ("control-storage", _("Storage"), "storage", _("Database and file storage used, by space.")),

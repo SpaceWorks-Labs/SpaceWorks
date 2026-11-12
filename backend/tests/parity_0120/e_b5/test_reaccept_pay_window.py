@@ -50,7 +50,8 @@ def test_promotion_opens_a_window_only_when_the_switch_is_on():
     assert pay_window.due(10) == []  # off means no scheduled work
 
 
-def test_an_expired_window_voids_the_charge_releases_the_place_and_promotes_the_next():
+def test_an_expired_window_voids_the_charge_releases_the_place_and_promotes_the_next(
+        django_capture_on_commit_callbacks):
     space, event, staff = world("pw-c", "events.pay_window", capacity=1, amount="15")
     a, b, c = (make_member(space, f"pw-{n}") for n in "abc")
     first, second, third = register(event, a), register(event, b), register(event, c)
@@ -59,7 +60,8 @@ def test_an_expired_window_voids_the_charge_releases_the_place_and_promotes_the_
     assert second.pay_by is not None and charge(second).status == "pending"
     EventRegistration.objects.filter(pk=second.pk).update(pay_by=timezone.now() - timedelta(minutes=1))
     assert pay_window.due(10) == [second.pk]
-    assert pay_window.expire(second.pk) is True
+    with django_capture_on_commit_callbacks(execute=True):  # the charge is voided after commit
+        assert pay_window.expire(second.pk) is True
     second.refresh_from_db()
     third.refresh_from_db()
     assert second.status == "cancelled" and second.pay_by is None

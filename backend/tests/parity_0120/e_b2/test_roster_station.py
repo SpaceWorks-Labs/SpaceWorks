@@ -51,14 +51,22 @@ def test_the_lease_response_carries_the_published_badge_per_role_and_logos():
 
 
 def test_a_v2_registration_is_listed_with_its_live_code_and_syncs_offline(settings):
-    from apps.events.credentials.workflow import issue_locked
+    from apps.events.credentials.workflow import issue_locked, prepare_issue
+    from apps.events.credentials.boundary import event_command
+    import base64
+    settings.EVENT_REGISTRATION_CREDENTIAL_KEY_VERSION = 1
+    settings.EVENT_REGISTRATION_CREDENTIAL_KEYS = {"1": base64.b64encode(b"e" * 32).decode()}
+    settings.EVENT_REGISTRATION_CREDENTIAL_DIGEST_KEY = base64.b64encode(b"d" * 32).decode()
     _space, event, sm, registration = _roster_world("e2-v2")
     EventRegistration.objects.filter(pk=registration.pk).update(credential_mode="v2")
     registration.refresh_from_db()
-    issue_locked(event, registration, actor=sm)
+    material = prepare_issue(event.pk, registration.pk)  # prepared before the event transaction, as the real command does
+    with event_command(event.pk, actor=sm, permission="check_in", account_ids=(registration.member_id,)) as (locked, actor):
+        registration.event = locked
+        issue_locked(locked, registration, actor=actor, prepared=material)
     row = minimum_roster(event)[0]
     assert row["checkin_token"].startswith("SWEC2.") and row["checkin_token"] == row["checkin_payload"]
-    lease = {"lease_id": str(uuid4())}
+    lease = issue_roster(event, actor=sm, kind="staff")  # the lease carries the scan window the sync checks
     result = synchronize(event, [{"operation_id": uuid4(), "checkin_token": row["checkin_token"],
                                   "reported_occurred_at": timezone.now()}],
                          lease=lease, actor=sm, source="offline_sync", session_id=lease["lease_id"])

@@ -16,7 +16,7 @@ from apps.payments.event_payouts.errors import PayoutError
 from tests.event_reimbursements.conftest import cmd, make_world, world  # noqa: F401 (fixtures)
 from tests.event_reimbursements.helpers import accepted, decision_data, requested, submitted
 
-pytestmark = pytest.mark.django_db
+pytestmark = pytest.mark.django_db(transaction=True)  # the reimbursement commands take domain fences and need real commits
 
 
 def test_the_request_form_context_carries_currency_categories_and_distance_rule(world):
@@ -87,8 +87,10 @@ def test_travel_the_space_booked_directly_never_takes_a_claim(world, monkeypatch
     after = world.event.ends_at + timedelta(days=1)
     monkeypatch.setattr(timezone, "now", lambda: after)
     assert "create_claim" not in member_summary(world.event, world.owner)["allowed_actions"]
+    from tests.accounts.test_reauthentication import request as session_request
+    member_session = session_request(world.owner, surface="member")  # made after the clock moved, so not expired
     with pytest.raises(PayoutError) as caught:
-        claim_workflow.save_draft(event_id=world.event.pk, actor=world.owner, request=world.member_session,
+        claim_workflow.save_draft(event_id=world.event.pk, actor=world.owner, request=member_session,
                                   data=cmd(0, lines=[]))
     assert caught.value.detail["code"] in ("direct_booking_no_claim", "claim_closed")
     assert not ReimbursementClaim.objects.filter(event=world.event).exists()

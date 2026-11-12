@@ -17,6 +17,10 @@ pytestmark = pytest.mark.django_db
 
 def paid_event(capture):
     space, event, staff, ticket = ticketed_event(amount=12)
+    # The orders report is an event export: its own switch (off by default) has to be on.
+    space.enabled_modules = sorted(set(space.enabled_modules or []) | {"reports"})
+    space.enabled_features = sorted(set(space.enabled_features or []) | {"reports.event_exports"})
+    space.save(update_fields=["enabled_modules", "enabled_features"])
     buyer = verified("buyer")
     assert place(buyer, event, [{"ticket_type_id": ticket.pk, "quantity": 2}]).status_code == 201
     order = EventOrder.objects.get()
@@ -63,7 +67,12 @@ def test_orders_csv_has_one_row_per_order_with_live_money(django_capture_on_comm
 
 
 def test_a_test_mode_payment_never_joins_live_money(django_capture_on_commit_callbacks):
-    space, event, staff, order = paid_event(django_capture_on_commit_callbacks)
+    # A settled payment is immutable (DB trigger), so the order is paid by a test-mode Stripe session from the
+    # start: the pending row is moved to paid_online with the test session id in one update.
+    space, event, staff, ticket = ticketed_event(amount=12)
+    buyer = verified("buyer")
+    assert place(buyer, event, [{"ticket_type_id": ticket.pk, "quantity": 2}]).status_code == 201
+    order = EventOrder.objects.get()
     Payment.objects.filter(pk=order_payment(order).pk).update(
         status="paid_online", provider="stripe", stripe_checkout_session_id="cs_test_abc")
     row = build_event_orders(space.pk, subject_kind="event", subject_id=event.pk).records[0]
@@ -80,9 +89,18 @@ def test_orders_report_needs_the_registration_grant(django_capture_on_commit_cal
 
 
 def test_series_money_card_is_null_when_hidden(django_capture_on_commit_callbacks):
+    from apps.events.models import EventSeries
     space, event, staff, order = paid_event(django_capture_on_commit_callbacks)
+    from django.utils import timezone
+    series = EventSeries.objects.create(
+        makerspace=space, title="Weekly workshops", recurrence_timezone="UTC",
+        dtstart_local_date=timezone.now().date(), dtstart_local_time=timezone.now().time().replace(microsecond=0),
+        recurrence_rule="FREQ=WEEKLY;COUNT=2", duration_minutes=120)
+    event.series, event.series_revision, event.series_occurrence_key = series, 1, "first"
+    event.save(update_fields=["series", "series_revision", "series_occurrence_key"])
+    assert series_money(space, series, staff) is not None  # visible while charges are on
     turn_charges(space, False)
-    assert series_money(space, SimpleNamespace(pk=0), staff) is None
+    assert series_money(space, series, staff) is None
 
 
 def test_test_mode_is_derived_from_the_public_key_prefix_and_never_leaks_the_key():

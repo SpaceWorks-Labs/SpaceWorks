@@ -7,11 +7,15 @@ from apps.events.models import Event, EventIdCard, EventRegistration
 from tests.l3_local.helpers import card_space, manager, member
 
 FEATURES = ("events.id_cards", "events.badge_designer", "events.badge_desk_print", "events.role_badges",
-            "events.crew")
+            "events.crew", "events.offline_checkin")
 
 
 def live_event(slug, features=FEATURES):
     space = card_space(slug, features=features)
+    # The badge switches default ON (migration makerspaces 0151), so a "switch off" case must really remove
+    # the key: the space gets exactly the features the test names.
+    space.enabled_features = sorted(set(features))
+    space.save(update_fields=["enabled_features", "updated_at"])
     now = timezone.now()
     event = Event.objects.create(makerspace=space, title="Build Night", status="published",
                                  starts_at=now - timezone.timedelta(hours=1), ends_at=now + timezone.timedelta(hours=3))

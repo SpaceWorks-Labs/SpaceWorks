@@ -64,7 +64,7 @@ def test_verify_issuer_names_the_space_noun(kind, noun):
     MemberCardSettings.objects.update_or_create(makerspace=space, defaults={"public_verify": True})
     card = services.issue_card(manager(space), member(space)[1])
     cache.clear()
-    response = APIClient().get(f"/api/v1/public/card-verifications/{tokens.live('member_card', card).token}")
+    response = APIClient(HTTP_HOST="localhost").get(f"/api/v1/public/card-verifications/{tokens.live('member_card', card).token}")
     assert response.status_code == 200, response.content
     issuer = response.json()["issuer"]
     assert issuer["kind"] == "space" and issuer["space_noun"] == noun

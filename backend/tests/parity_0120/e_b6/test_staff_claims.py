@@ -9,7 +9,7 @@ from apps.payments.event_payouts.errors import PayoutError
 from tests.event_reimbursements.conftest import cmd, make_world, world  # noqa: F401  (fixtures)
 from tests.event_reimbursements.helpers import participate
 
-pytestmark = pytest.mark.django_db
+pytestmark = pytest.mark.django_db(transaction=True)  # the reimbursement commands take domain fences and need real commits
 
 
 def on(world, *extra):

@@ -9,7 +9,10 @@ from tests.events.collab_helpers import make_event, make_member, make_space, mak
 
 def world(slug, *features, capacity=0, amount=None):
     space = make_space(slug)
-    space.enabled_features = ["charges.enabled", "charges.events", *features]
+    # `events.pay_window` requires `events.orders`; a feature whose requirement is off reads as off.
+    from tests.events.orders_helpers import L6_FEATURES
+    needs = ("events.ticket_types", *L6_FEATURES) if "events.pay_window" in features else ()
+    space.enabled_features = ["charges.enabled", "charges.events", *needs, *features]
     space.save(update_fields=["enabled_features"])
     event = make_event(space, is_public=True)
     event.capacity = capacity

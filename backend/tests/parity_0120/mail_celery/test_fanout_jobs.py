@@ -94,9 +94,8 @@ def test_eager_celery_runs_inline(settings):
 
 def test_unserialisable_arguments_fall_back_to_inline_instead_of_losing_the_notice():
     space = make_space("mc-lambda")
-    with patch.object(fanout_jobs, "enqueue_job") as enqueue:
-        probe_adapter(space, label=lambda: 1)
-    enqueue.assert_not_called()
+    probe_adapter(space, label=lambda: 1)  # the real encoder refuses a lambda, so the call runs inline
+    assert not NotificationEnvelope.objects.filter(source_kind=LEGACY_KIND).exists()
     assert len(CALLS) == 1
 
 

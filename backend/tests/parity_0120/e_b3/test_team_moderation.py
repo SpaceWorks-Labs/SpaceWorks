@@ -139,4 +139,4 @@ def test_max_guard_refuses_a_maximum_below_the_largest_team(space_on):
     assert largest_active_team(world.event) == 2
     assert "team_max_below_largest_team" in code(lambda: update_config(
         event_id=world.event.pk, actor=world.owner,
-        data=cmd(world.config.version, team_mode="team_together", team_min=1, team_max=1)))
+        data=cmd(world.config.version, team_mode=world.config.team_mode, team_min=1, team_max=1)))

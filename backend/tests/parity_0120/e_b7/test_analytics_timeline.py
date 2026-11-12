@@ -45,7 +45,9 @@ def test_signups_by_day_counts_registrations():
     space = make_space("signups-a")
     event = make_event(space)
     for index in range(3):
-        EventRegistration.objects.create(event=event, member=make_member(space, f"s{index}"), status="registered")
+        person = make_member(space, f"s{index}")
+        EventRegistration.objects.create(event=event, member=person, name=person.username, email=person.email,
+                                         status="registered")
     rows = signups_by_day(event)
     assert sum(row["count"] for row in rows) == 3 and all("day" in row for row in rows)
 

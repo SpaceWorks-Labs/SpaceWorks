@@ -13,7 +13,7 @@ from apps.payments.exceptions_refunds import RefundNotAllowed
 from apps.payments.models import Payment, Refund, RefundCase
 from apps.payments.services_refund_cases import mark_approval_failed, open_due_case
 from apps.payments.services_refund_decisions import approve_case
-from tests.events.orders_helpers import order_payment, place, settle_offline, ticketed_event, verified
+from tests.events.orders_helpers import L6_FEATURES, order_payment, place, settle_offline, ticketed_event, verified
 from tests.payments.refund_case_helpers import charge, member, paid_event, receipt, registration, space_with_currency
 
 pytestmark = pytest.mark.django_db
@@ -44,7 +44,8 @@ def test_approval_cancels_every_seat_and_refunds_only_what_was_approved(django_c
     # The seats were voided before the registrations were cancelled, so no second refund share opened.
     assert Refund.objects.get().amount == Decimal("10.00")
     assert RefundCase.objects.filter(payment=payment).count() == 1
-    assert AuditLog.objects.filter(action="payment.refund_case_tickets_cancelled", meta__cancelled=2).exists()
+    # Two seats, one registration behind them (the buyer's; the second seat is unclaimed): one registration cancelled.
+    assert AuditLog.objects.filter(action="payment.refund_case_tickets_cancelled", meta__cancelled=1).exists()
 
 
 def test_cancelling_twice_changes_nothing(django_capture_on_commit_callbacks):
@@ -54,7 +55,8 @@ def test_cancelling_twice_changes_nothing(django_capture_on_commit_callbacks):
         approve_case(case, actor=staff, amount=Decimal("10.00"), receipt=receipt(), cancel_tickets=True)
     with django_capture_on_commit_callbacks(execute=True):
         assert cancel_tickets_for_refund(payment, actor=staff) == []
-    assert EventRegistration.objects.filter(event=event, status="cancelled").count() == 2
+    assert EventRegistration.objects.filter(event=event, status="cancelled").count() == 1
+    assert set(order.seats.values_list("status", flat=True)) == {"void"}
 
 
 def test_refused_while_the_switch_is_off_and_nothing_moves(django_capture_on_commit_callbacks):
@@ -68,10 +70,13 @@ def test_refused_while_the_switch_is_off_and_nothing_moves(django_capture_on_com
 
 def test_refused_for_a_charge_that_is_not_an_event_ticket():
     space = space_with_currency("c18-nonevent")
-    space.enabled_features = sorted(set(space.enabled_features) | {"events.refund_cancels_tickets"})
-    space.save(update_fields=["enabled_features"])
+    space.enabled_modules = sorted(set(space.enabled_modules or []) | {"events"})  # the feature's parent module
+    space.enabled_features = sorted(set(space.enabled_features) | {"events.ticket_types", *L6_FEATURES, "events.refund_cancels_tickets"})
+    space.save(update_fields=["enabled_modules", "enabled_features"])
     user = member("c18-nonevent-m", space)
-    payment = charge(space, user, subject_type=Payment.SubjectType.MAKERSPACE_MEMBERSHIP, subject_id=1)
+    from apps.makerspaces.models import MakerspaceMembership
+    membership = MakerspaceMembership.objects.get(makerspace=space, user=user)
+    payment = charge(space, user, subject_type=Payment.SubjectType.MAKERSPACE_MEMBERSHIP, subject_id=membership.pk)
     case = RefundCase.objects.create(payment=payment, kind="request", area="membership",
                                      reason_code="member_request", requested_by=user)
     with pytest.raises(RefundNotAllowed) as refused:

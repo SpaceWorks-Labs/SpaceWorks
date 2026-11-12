@@ -23,7 +23,8 @@ def past_event(space, title, days_ago=10):
 
 def attend(event, members):
     for member in members:
-        EventRegistration.objects.create(event=event, member=member, status="attended")
+        EventRegistration.objects.create(event=event, member=member, name=member.username, email=member.email,
+                                         status="attended")
 
 
 def test_small_groups_are_suppressed():
@@ -57,6 +58,9 @@ def test_tag_and_organiser_filters_need_the_switch_and_a_public_organiser():
     EventOrganizer.objects.create(event=other, organization=private_org)
     rows, spaces = Event.objects.filter(makerspace=space), [space]
     # Switch off: a tag or organiser filter returns nothing rather than being ignored.
+    # (The switch defaults ON since makerspaces 0151, so the off leg removes it explicitly.)
+    space.enabled_features = [key for key in space.enabled_features if key != "events.discovery_filters"]
+    space.save(update_fields=["enabled_features"])
     assert list(restrict_by_tag_and_organization(rows, spaces, "robotics", None)) == []
     space.enabled_features = ["events.discovery_filters"]
     space.save(update_fields=["enabled_features"])

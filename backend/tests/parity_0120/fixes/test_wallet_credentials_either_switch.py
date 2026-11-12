@@ -26,7 +26,7 @@ def test_membership_switch_alone_opens_the_page():
 
 
 def test_events_switch_alone_opens_the_page():
-    assert _get("wc-ev", {"events"}, {"events.wallet_passes"}).status_code == 200
+    assert _get("wc-ev", {"events"}, {"events.id_cards", "events.wallet_passes"}).status_code == 200
 
 
 def test_neither_switch_is_404():

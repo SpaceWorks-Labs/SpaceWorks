@@ -63,7 +63,7 @@ GROUPS = (
     ("Space administration", "Settings, staff, notifications, integrations, reports and audit.",
      ("admin", "staff", "page editor", "email", "data exports", "notification", "messaging", "telegram",
       "whatsapp", "chat", "analytics", "reports", "dashboard", "api client", "api key", "integration",
-      "audit", "pii", "makerspaces", "accountability", "schedule")),
+      "audit", "pii", "makerspaces", "accountability", "schedule", "space displays")),
 )
 
 

@@ -41,5 +41,5 @@ export function useReceiptQueueFlush(key: string, send: (receipts: PrintReceipt[
     flush();
     window.addEventListener("online", flush);
     return () => window.removeEventListener("online", flush);
-  }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [key]); // eslint-disable-line react-hooks/exhaustive-deps -- `send` is a caller closure that changes every render; the queue is keyed by `key`, so one flush and one online listener per key
 }

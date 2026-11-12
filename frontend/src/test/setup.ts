@@ -26,3 +26,15 @@ vi.mock("@testing-library/react", async (importOriginal) => {
       actual.renderHook(callback, { ...options, wrapper: withI18n(options?.wrapper as Wrapper | undefined) })) as typeof actual.renderHook,
   };
 });
+
+// jsdom has no canvas and cannot navigate. Left alone it prints "Not implemented" to stderr on every
+// getContext() call and every plain-link click, which buries real warnings. A missing 2D context is exactly
+// what getContext() reports in a browser without canvas support, so code under test already handles null.
+// Link navigation is cancelled after the app's own handlers ran; hash links and handled clicks are untouched.
+if (typeof HTMLCanvasElement !== "undefined") Object.defineProperty(HTMLCanvasElement.prototype, "getContext", { configurable: true, writable: true, value: () => null });
+if (typeof document !== "undefined") document.addEventListener("click", (event) => {
+  if (event.defaultPrevented) return;
+  const link = (event.target as Element | null)?.closest?.("a[href]");
+  const href = link?.getAttribute("href") ?? "";
+  if (link && !href.startsWith("#") && !(link as HTMLAnchorElement).hasAttribute("download")) event.preventDefault();
+});

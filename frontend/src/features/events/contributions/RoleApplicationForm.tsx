@@ -41,7 +41,7 @@ function FormContent({ scope, posting, application, bridge, onSaved, sponsorCons
     return () => { active = false }
     // A successful revision refresh must not replace unsaved text. Remount this
     // form on a subject/account switch; an explicit reload accepts a new revision.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `scope`, `posting`, `application` and `bridge` are read as mount-time values; only the listed identity fields restart the prefill
   }, [scope.accountId, scope.eventId, scope.makerspaceId, posting.id, application?.id])
   const locked = Boolean(application && !application.allowed_actions.includes('edit'))
   const submit = (intent: 'draft' | 'submit') => {

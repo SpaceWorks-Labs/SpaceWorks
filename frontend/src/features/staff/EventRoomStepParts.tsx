@@ -34,7 +34,7 @@ export function EventRoomMemberPrice({ space, startsAt, endsAt, value, onChange 
     if (bound.current === key) return;
     bound.current = key; ticket.current += 1; setQuote(null); setChecking(false);
     if (value.price_confirmation) onChange({ price_confirmation: "" });
-  }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [key]); // eslint-disable-line react-hooks/exhaustive-deps -- `key` already encodes room, member and window; `value` and `onChange` are re-created each render and must not retrigger the reset
   const review = async () => {
     const mine = ++ticket.current;
     setChecking(true); setError("");

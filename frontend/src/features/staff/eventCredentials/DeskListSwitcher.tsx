@@ -51,6 +51,6 @@ export async function collectFromList(eventId: number, list: CheckInList, regist
 export function DeskListSwitch({ eventId, onActive }: { eventId: number; onActive: (list: CheckInList | null) => void }) {
   const desk = useDeskList(eventId, true);
   const id = desk.active?.id ?? null;
-  useEffect(() => { onActive(desk.active); }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { onActive(desk.active); }, [id]); // eslint-disable-line react-hooks/exhaustive-deps -- reports the active list when its id changes; `desk.active` and `onActive` are new objects/closures each render and would loop the parent
   return <DeskListSwitcher {...desk} />;
 }

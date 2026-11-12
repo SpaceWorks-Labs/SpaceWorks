@@ -93,7 +93,7 @@ function ExactPreview({ design, document, person, onClose }: {
       .catch((error) => { if (live) setState({ urls: [], error, loading: false }); });
     return () => { live = false; made.forEach((url) => URL.revokeObjectURL(url)); };
     // One render per opening: the dialog shows the design as it was when it was opened.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- the render inputs are deliberately read once at mount (see the comment above)
   }, []);
   return <Modal open onClose={onClose} title={t`Exact preview`} size="xl"
     footer={<div className="flex justify-end"><button type="button" className="desk-button min-h-11" onClick={onClose}>{t`Close`}</button></div>}>

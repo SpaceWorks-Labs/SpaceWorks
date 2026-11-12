@@ -30,7 +30,7 @@ export function SpaceScope({ makerspaceId, slug, children }: { makerspaceId: num
   const value = useMemo(() => same && !slug ? parent : {
     ...parent, actions: same ? parent.actions : [],
     makerspace: { id: makerspaceId, enabled_modules: modules, enabled_features: features },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `modules` and `features` are rebuilt arrays each render; `key` is their JSON identity
   }, [parent, same, slug, makerspaceId, key]);
   return <StaffListContext.Provider value={value}>{children}</StaffListContext.Provider>;
 }

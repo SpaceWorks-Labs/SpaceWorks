@@ -7,7 +7,7 @@ beforeEach(() => { localStorage.clear(); window.history.replaceState(null, "", "
 it("saves only the own-loan projection with a stale timestamp", () => {
   saveOfflineLoans("Lab", [loan]);
   expect(readOfflineLoans()?.loans).toEqual([{ label: loan.label, checked_out_at: loan.checked_out_at, due_at: loan.due_at }]);
-  expect(readOfflineLoans()?.savedAt).toBeTruthy();
+  expect(readOfflineLoans()?.savedAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
   expect(JSON.stringify(readOfflineLoans())).not.toContain("secret");
 });
 it("isolates tenants and refuses saving on staff routes", () => {

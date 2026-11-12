@@ -31,7 +31,7 @@ export function EventPublishDialog({ open, makerspaceId, eventId, pending, error
   const venue = useEventVenue(makerspaceId, eventId, open);
   // A 409 means the room changed after the dialog opened: reread it so the override is offered.
   const stale = error instanceof StructuredApiError && error.code === "venue_booking_blocked";
-  useEffect(() => { if (stale) void venue.refetch(); }, [stale, error]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (stale) void venue.refetch(); }, [stale, error]); // eslint-disable-line react-hooks/exhaustive-deps -- refetch the venue only when the 409 appears or a new error arrives; `venue` is a new object each render
   // A venue panel that cannot be read (Bookings off, no access) never blocks publishing: the server re-checks.
   const panel: VenuePanel | undefined = venue.isError ? undefined : venue.data;
   const blocked = Boolean(panel?.requires_override) && !withoutRoom;

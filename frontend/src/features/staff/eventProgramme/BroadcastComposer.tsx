@@ -44,7 +44,7 @@ export function BroadcastComposer({ makerspaceId, eventId, initial, existing, on
     if (!firstSave) return;
     const timer = setTimeout(submit, 2000);
     return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `submit` reads the latest render; JSON.stringify(draft) is the content identity that restarts the 2 s autosave timer
   }, [firstSave, JSON.stringify(draft)]);
   useEffect(() => { if (denied) { setDraft({ ...EMPTY_BROADCAST, statuses: [] }); setSaved(null); lastAttempt.current = { digest: "", id: "" }; } }, [denied]);
   if (denied) return <p role="alert" className="text-sm text-danger">{t`Broadcast composition is no longer available for your access.`}</p>;

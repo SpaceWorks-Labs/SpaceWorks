@@ -30,7 +30,7 @@ export function StocktakeShelfGuide({ makerspaceId, products, counted }: { maker
   const left = order.filter(step => !skipped.includes(step.location) && step.rows.some(row => !counted.has(row.id)));
   const step = left[0];
   const stepLocation = on ? step?.location : undefined;
-  useEffect(() => { if (stepLocation && covered.has(stepLocation)) point.mutate(stepLocation); }, [stepLocation]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (stepLocation && covered.has(stepLocation)) point.mutate(stepLocation); }, [stepLocation]); // eslint-disable-line react-hooks/exhaustive-deps -- points once per shelf step; `covered` and `point` are new each render and would re-point the same location
   if (!locations.data || !order.length) return null;
   const stop = () => { setOn(false); setSkipped([]); clear.mutate(); };
   const error = point.error ?? clear.error;

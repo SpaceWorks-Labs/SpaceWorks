@@ -45,7 +45,7 @@ export function useDraftAutosave(tenant: number, event: number, saved: Broadcast
     const timer = setTimeout(flush, DELAY_MS);
     return () => clearTimeout(timer);
     // `flush` reads the latest render; the digest captures every content change.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `flush` is recreated every render and would restart the debounce timer on each one
   }, [ready, digest, state.failed]);
   return { state, flush, dirty, pending: ready || save.isPending };
 }

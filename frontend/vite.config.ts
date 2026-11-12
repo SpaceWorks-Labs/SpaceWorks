@@ -66,6 +66,9 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     setupFiles: ["./src/test/setup.ts"],
+    // Tests of checkout and OAuth redirects call window.location.assign; jsdom reports that single message as
+    // "not implemented". The redirect target is asserted where it matters, and every other log still prints.
+    onConsoleLog: (log) => (log.includes("Not implemented: navigation to another Document") ? false : undefined),
     // scripts/*.test.mjs are node:test suites (`node --test`), not vitest files.
     // legacy-worktree-imports/ holds skipped tests kept for reference (see the header of each file).
     exclude: [...configDefaults.exclude, "scripts/**/*.test.mjs", "e2e/**", "legacy-worktree-imports/**"],

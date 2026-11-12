@@ -1,12 +1,13 @@
 {% extends "email/base.html" %}
+{% load i18n %}
 
 {% block body %}
-  <p>Hello {{ print_request.requester.username }},</p>
-  <p>Your print request <strong>{{ print_request.title }}</strong> is complete.</p>
-  <p>Bucket: {{ print_request.bucket.name }}<br>
-  Makerspace: {{ print_request.bucket.makerspace.name }}</p>
+  <p>{% blocktranslate trimmed with username=print_request.requester.username %}Hello {{ username }},{% endblocktranslate %}</p>
+  <p>{% blocktranslate trimmed with title=print_request.title %}Your print request <strong>{{ title }}</strong> is complete.{% endblocktranslate %}</p>
+  <p>{% blocktranslate trimmed with name=print_request.bucket.name %}Bucket: {{ name }}{% endblocktranslate %}<br>
+  {% blocktranslate trimmed with name=print_request.bucket.makerspace.name %}Makerspace: {{ name }}{% endblocktranslate %}</p>
   {% if status_url %}
-    <p>Track your request: <a href="{{ status_url }}">{{ status_url }}</a></p>
+    <p>{% translate "Track your request:" %} <a href="{{ status_url }}">{{ status_url }}</a></p>
   {% endif %}
-  <p>Tracking token: <strong>{{ public_token }}</strong></p>
+  <p>{% translate "Tracking token:" %} <strong>{{ public_token }}</strong></p>
 {% endblock %}

@@ -1,12 +1,13 @@
 {% extends "email/base.html" %}
+{% load i18n %}
 
 {% block body %}
-  <h1 style="margin:0 0 16px;font-size:20px;color:#16181d;">Your two-step sign-in changed</h1>
-  <p style="margin:0 0 16px;">Hello {{ user.display_name|default:user.username }},</p>
-  <p style="margin:0 0 16px;">The two-step sign-in of your Space Works account just changed: an authenticator, a passkey or the recovery codes were added, removed or reset.</p>
-  <p style="margin:0 0 16px;background:#f4f3ee;color:#16181d;padding:12px 16px;border-radius:6px;font-size:14px;">When: {{ alert.sent_at|date:'j M Y, H:i e' }}</p>
-  <p style="margin:0;">If you made this change, there is nothing to do.</p>
-  <p style="margin:24px 0 8px;">Wasn't you?</p>
-  <p style="margin:0 0 16px;"><a href="{{ link }}" style="display:inline-block;background:#16161c;color:#ffffff;padding:12px 20px;border-radius:6px;text-decoration:none;font-weight:700;">This wasn't me</a></p>
-  <p style="margin:0;color:#555555;font-size:14px;">It signs you out everywhere, turns off your current password and emails you a reset code. The link works once, for {{ expires_days }} days.</p>
+  <h1 style="margin:0 0 16px;font-size:20px;color:#16181d;">{% translate "Your two-step sign-in changed" %}</h1>
+  <p style="margin:0 0 16px;">{% blocktranslate trimmed with display_name=user.display_name|default:user.username %}Hello {{ display_name }},{% endblocktranslate %}</p>
+  <p style="margin:0 0 16px;">{% translate "The two-step sign-in of your Space Works account just changed: an authenticator, a passkey or the recovery codes were added, removed or reset." %}</p>
+  <p style="margin:0 0 16px;background:#f4f3ee;color:#16181d;padding:12px 16px;border-radius:6px;font-size:14px;">{% blocktranslate trimmed with sent_at=alert.sent_at|date:'j M Y, H:i e' %}When: {{ sent_at }}{% endblocktranslate %}</p>
+  <p style="margin:0;">{% translate "If you made this change, there is nothing to do." %}</p>
+  <p style="margin:24px 0 8px;">{% translate "Wasn't you?" %}</p>
+  <p style="margin:0 0 16px;"><a href="{{ link }}" style="display:inline-block;background:#16161c;color:#ffffff;padding:12px 20px;border-radius:6px;text-decoration:none;font-weight:700;">{% translate "This wasn't me" %}</a></p>
+  <p style="margin:0;color:#555555;font-size:14px;">{% blocktranslate trimmed with expires_days=expires_days %}It signs you out everywhere, turns off your current password and emails you a reset code. The link works once, for {{ expires_days }} days.{% endblocktranslate %}</p>
 {% endblock %}

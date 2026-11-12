@@ -1,4 +1,5 @@
 {% extends "admin/base_site.html" %}
+{% load i18n %}
 
 {% block content %}
 <form method="post" action="{{ request.path }}">
@@ -10,15 +11,15 @@
 
   <fieldset class="module aligned">
     <div class="form-row">
-      <label>Product:</label>
+      <label>{% translate "Product:" %}</label>
       <div class="readonly">{{ product }}</div>
     </div>
     <div class="form-row">
-      <label>Needs fix:</label>
+      <label>{% translate "Needs fix:" %}</label>
       <div class="readonly">{{ product.needs_fix_quantity }}</div>
     </div>
     <div class="form-row">
-      <label for="id_quantity">Quantity to {{ action_label }}:</label>
+      <label for="id_quantity">{% blocktranslate trimmed with action_label=action_label %}Quantity to {{ action_label }}:{% endblocktranslate %}</label>
       <input id="id_quantity" type="number" name="quantity" min="1" required>
     </div>
   </fieldset>

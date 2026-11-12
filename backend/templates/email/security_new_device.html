@@ -1,12 +1,13 @@
 {% extends "email/base.html" %}
+{% load i18n %}
 
 {% block body %}
-  <h1 style="margin:0 0 16px;font-size:20px;color:#16181d;">A new sign-in to your account</h1>
-  <p style="margin:0 0 16px;">Hello {{ user.display_name|default:user.username }},</p>
-  <p style="margin:0 0 16px;">Your Space Works account was just signed in to from a device it has not used before.</p>
-  <p style="margin:0 0 16px;background:#f4f3ee;color:#16181d;padding:12px 16px;border-radius:6px;font-size:14px;">{% if alert.ua_label %}Device: {{ alert.ua_label }}{% endif %}{% if alert.network_label %}<br>Network: {{ alert.network_label }}{% endif %}<br>When: {{ alert.sent_at|date:'j M Y, H:i e' }}</p>
-  <p style="margin:0;">If this was you, there is nothing to do.</p>
-  <p style="margin:24px 0 8px;">Wasn't you?</p>
-  <p style="margin:0 0 16px;"><a href="{{ link }}" style="display:inline-block;background:#16161c;color:#ffffff;padding:12px 20px;border-radius:6px;text-decoration:none;font-weight:700;">This wasn't me</a></p>
-  <p style="margin:0;color:#555555;font-size:14px;">It signs you out everywhere, turns off your current password and emails you a reset code. The link works once, for {{ expires_days }} days.</p>
+  <h1 style="margin:0 0 16px;font-size:20px;color:#16181d;">{% translate "A new sign-in to your account" %}</h1>
+  <p style="margin:0 0 16px;">{% blocktranslate trimmed with display_name=user.display_name|default:user.username %}Hello {{ display_name }},{% endblocktranslate %}</p>
+  <p style="margin:0 0 16px;">{% translate "Your Space Works account was just signed in to from a device it has not used before." %}</p>
+  <p style="margin:0 0 16px;background:#f4f3ee;color:#16181d;padding:12px 16px;border-radius:6px;font-size:14px;">{% if alert.ua_label %}{% blocktranslate trimmed with ua_label=alert.ua_label %}Device: {{ ua_label }}{% endblocktranslate %}{% endif %}{% if alert.network_label %}<br>{% blocktranslate trimmed with network_label=alert.network_label %}Network: {{ network_label }}{% endblocktranslate %}{% endif %}<br>{% blocktranslate trimmed with sent_at=alert.sent_at|date:'j M Y, H:i e' %}When: {{ sent_at }}{% endblocktranslate %}</p>
+  <p style="margin:0;">{% translate "If this was you, there is nothing to do." %}</p>
+  <p style="margin:24px 0 8px;">{% translate "Wasn't you?" %}</p>
+  <p style="margin:0 0 16px;"><a href="{{ link }}" style="display:inline-block;background:#16161c;color:#ffffff;padding:12px 20px;border-radius:6px;text-decoration:none;font-weight:700;">{% translate "This wasn't me" %}</a></p>
+  <p style="margin:0;color:#555555;font-size:14px;">{% blocktranslate trimmed with expires_days=expires_days %}It signs you out everywhere, turns off your current password and emails you a reset code. The link works once, for {{ expires_days }} days.{% endblocktranslate %}</p>
 {% endblock %}

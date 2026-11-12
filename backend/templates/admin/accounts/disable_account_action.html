@@ -1,14 +1,15 @@
 {% extends "admin/base_site.html" %}
+{% load i18n %}
 
 {% block content %}
-<p>This stops {{ person.username }} signing in anywhere: every session and device grant ends and every staff role they hold is revoked. Nothing is deleted; their memberships, history and payments stay. The change is recorded in the audit log, and you can re-enable the account later.</p>
+<p>{% blocktranslate trimmed with username=person.username %}This stops {{ username }} signing in anywhere: every session and device grant ends and every staff role they hold is revoked. Nothing is deleted; their memberships, history and payments stay. The change is recorded in the audit log, and you can re-enable the account later.{% endblocktranslate %}</p>
 <form method="post" action="{{ request.path }}">
   {% csrf_token %}
   <input type="hidden" name="action" value="{{ action_name }}">
   <input type="hidden" name="{{ action_checkbox_name }}" value="{{ person.pk }}">
   <fieldset class="module aligned">
     <div class="form-row">
-      <label for="id_reason">Reason:</label>
+      <label for="id_reason">{% translate "Reason:" %}</label>
       <textarea id="id_reason" name="reason" rows="4" minlength="3" maxlength="200" required></textarea>
     </div>
   </fieldset>

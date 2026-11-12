@@ -1,14 +1,15 @@
 {% extends "admin/base_site.html" %}
+{% load i18n %}
 {% block content %}
-<h1>Deployment storage</h1>
-<p>Database: {{ database_bytes|filesizeformat }}. Accounted object bytes across visible makerspaces: {{ object_bytes|filesizeformat }}.</p>
-<p>Object accounting is maintained for managed deployments. This page does not scan buckets; self-hosted counters may be zero. Database totals include the complete deployment.</p>
-<h2>Largest database tables</h2>
-<table><thead><tr><th scope="col">Schema</th><th scope="col">Table</th><th scope="col">Total including indexes</th></tr></thead><tbody>
-{% for table in tables %}<tr><td>{{ table.schema }}</td><td>{{ table.name }}</td><td>{{ table.bytes|filesizeformat }}</td></tr>{% empty %}<tr><td colspan="3">No tables.</td></tr>{% endfor %}
+<h1>{% translate "Deployment storage" %}</h1>
+<p>{% blocktranslate trimmed with database_bytes=database_bytes|filesizeformat object_bytes=object_bytes|filesizeformat %}Database: {{ database_bytes }}. Accounted object bytes across visible makerspaces: {{ object_bytes }}.{% endblocktranslate %}</p>
+<p>{% translate "Object accounting is maintained for managed deployments. This page does not scan buckets; self-hosted counters may be zero. Database totals include the complete deployment." %}</p>
+<h2>{% translate "Largest database tables" %}</h2>
+<table><thead><tr><th scope="col">{% translate "Schema" %}</th><th scope="col">{% translate "Table" %}</th><th scope="col">{% translate "Total including indexes" %}</th></tr></thead><tbody>
+{% for table in tables %}<tr><td>{{ table.schema }}</td><td>{{ table.name }}</td><td>{{ table.bytes|filesizeformat }}</td></tr>{% empty %}<tr><td colspan="3">{% translate "No tables." %}</td></tr>{% endfor %}
 </tbody></table>
-<h2>Accounted object storage by makerspace</h2>
-<table><thead><tr><th scope="col">Makerspace</th><th scope="col">Bytes</th></tr></thead><tbody>
-{% for tenant in tenants %}<tr><td>{{ tenant.name }}</td><td>{{ tenant.storage_bytes_used|filesizeformat }}</td></tr>{% empty %}<tr><td colspan="2">No visible makerspaces.</td></tr>{% endfor %}
+<h2>{% translate "Accounted object storage by makerspace" %}</h2>
+<table><thead><tr><th scope="col">{% translate "Makerspace" %}</th><th scope="col">{% translate "Bytes" %}</th></tr></thead><tbody>
+{% for tenant in tenants %}<tr><td>{{ tenant.name }}</td><td>{{ tenant.storage_bytes_used|filesizeformat }}</td></tr>{% empty %}<tr><td colspan="2">{% translate "No visible makerspaces." %}</td></tr>{% endfor %}
 </tbody></table>
 {% endblock %}

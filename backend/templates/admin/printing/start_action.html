@@ -1,4 +1,5 @@
 {% extends "admin/base_site.html" %}
+{% load i18n %}
 
 {% block content %}
 <form method="post" action="{{ request.path }}">
@@ -8,21 +9,21 @@
   <fieldset class="module aligned">
     {% for obj in queryset %}
       <input type="hidden" name="{{ action_checkbox_name }}" value="{{ obj.pk }}">
-      <h2>Request {{ obj.pk }}: {{ obj.title }}</h2>
+      <h2>{% blocktranslate trimmed with pk=obj.pk title=obj.title %}Request {{ pk }}: {{ title }}{% endblocktranslate %}</h2>
       <div class="form-row">
-        <label for="id_printer_id_{{ obj.pk }}">Printer ID:</label>
+        <label for="id_printer_id_{{ obj.pk }}">{% translate "Printer ID:" %}</label>
         <input id="id_printer_id_{{ obj.pk }}" type="number" name="printer_id_{{ obj.pk }}" min="1">
       </div>
       <div class="form-row">
-        <label for="id_filament_spool_id_{{ obj.pk }}">Filament spool ID:</label>
+        <label for="id_filament_spool_id_{{ obj.pk }}">{% translate "Filament spool ID:" %}</label>
         <input id="id_filament_spool_id_{{ obj.pk }}" type="number" name="filament_spool_id_{{ obj.pk }}" min="1">
       </div>
       <div class="form-row">
-        <label for="id_estimated_minutes_{{ obj.pk }}">Estimated minutes:</label>
+        <label for="id_estimated_minutes_{{ obj.pk }}">{% translate "Estimated minutes:" %}</label>
         <input id="id_estimated_minutes_{{ obj.pk }}" type="number" name="estimated_minutes_{{ obj.pk }}" min="0">
       </div>
       <div class="form-row">
-        <label for="id_estimated_filament_grams_{{ obj.pk }}">Estimated filament grams:</label>
+        <label for="id_estimated_filament_grams_{{ obj.pk }}">{% translate "Estimated filament grams:" %}</label>
         <input id="id_estimated_filament_grams_{{ obj.pk }}" type="number" step="0.01" name="estimated_filament_grams_{{ obj.pk }}" min="0">
       </div>
     {% endfor %}

@@ -1,4 +1,5 @@
 {% extends "admin/base_site.html" %}
+{% load i18n %}
 {% block content %}
-<form method="post">{% csrf_token %}{{ form.as_p }}<button type="submit">Send invitation</button></form>
+<form method="post">{% csrf_token %}{{ form.as_p }}<button type="submit">{% translate "Send invitation" %}</button></form>
 {% endblock %}

@@ -1,27 +1,28 @@
 {% extends "admin/base_site.html" %}
+{% load i18n %}
 {% block content %}
-<p>Configuration checks only. No live provider probes are made. Optional integrations do not block login.</p>
+<p>{% translate "Configuration checks only. No live provider probes are made. Optional integrations do not block login." %}</p>
 {% for name, platform in platforms.items %}
 <section class="module">
-  <h2>{{ name|upper }} — production login {{ platform.login_ready|yesno:"ready,incomplete" }}</h2>
+  <h2>{% blocktranslate trimmed with name=name|upper login_ready=platform.login_ready|yesno:"ready,incomplete" %}{{ name }} — production login {{ login_ready }}{% endblocktranslate %}</h2>
   <p>{{ platform.hint }}</p>
   {% for registration in platform.registrations %}
-  <h3>{{ registration.hint }} — login {{ registration.login_ready|yesno:"ready,incomplete" }}</h3>
+  <h3>{% blocktranslate trimmed with hint=registration.hint login_ready=registration.login_ready|yesno:"ready,incomplete" %}{{ hint }} — login {{ login_ready }}{% endblocktranslate %}</h3>
   <table>
-    <caption>Login requirements</caption>
-    <thead><tr><th scope="col">Check</th><th scope="col">Status</th><th scope="col">Hint</th></tr></thead>
+    <caption>{% translate "Login requirements" %}</caption>
+    <thead><tr><th scope="col">{% translate "Check" %}</th><th scope="col">{% translate "Status" %}</th><th scope="col">{% translate "Hint" %}</th></tr></thead>
     <tbody>{% for key, check in registration.login.items %}
       <tr><th scope="row">{{ key }}</th><td>{{ check.ready|yesno:"Ready,Missing" }}</td><td>{{ check.hint }}</td></tr>
     {% endfor %}</tbody>
   </table>
   <table>
-    <caption>Optional integrations</caption>
-    <thead><tr><th scope="col">Check</th><th scope="col">Status</th><th scope="col">Hint</th></tr></thead>
+    <caption>{% translate "Optional integrations" %}</caption>
+    <thead><tr><th scope="col">{% translate "Check" %}</th><th scope="col">{% translate "Status" %}</th><th scope="col">{% translate "Hint" %}</th></tr></thead>
     <tbody>{% for key, check in registration.optional.items %}
       <tr><th scope="row">{{ key }}</th><td>{{ check.ready|yesno:"Ready,Missing" }}</td><td>{{ check.hint }}</td></tr>
     {% endfor %}</tbody>
   </table>
-  {% empty %}<p>No approved deployment-global registrations.</p>{% endfor %}
+  {% empty %}<p>{% translate "No approved deployment-global registrations." %}</p>{% endfor %}
 </section>
 {% endfor %}
 {% endblock %}

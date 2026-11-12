@@ -6,6 +6,8 @@ import { Card, EmptyState } from "../../components/ui";
 import { FilePicker, TextArea, TextInput } from "./PublicPrintRequestParts";
 import type { TypeIntake } from "../inventory/MachineIntakeForm";
 import type { PublicFilamentPool } from "./publicApi";
+import { LogoLoader } from "../../components/LogoLoader";
+import { BoxArt } from "../../components/BoxSpinner";
 
 export type FormState = {
   title: string;
@@ -157,7 +159,7 @@ export function PrintDetailsForm({
                   ))}
                 </select>
                 {poolsQuery.isLoading ? (
-                  <p className="mt-1 text-sm text-muted">{t`Loading filament…`}</p>
+                  <LogoLoader label={t`Loading filament…`} size={48} className="min-h-16 py-3" />
                 ) : null}
                 {poolsQuery.isError ? (
                   <p className="mt-1 text-sm text-danger">
@@ -229,7 +231,7 @@ export function PrintDetailsForm({
           }
           type="submit"
         >
-          {submitPending ? t`Sending…` : t`Send print request`}
+          {submitPending ? <><BoxArt size={16} mono />{t`Sending…`}</> : t`Send print request`}
         </button>
       </form>
     </Card>

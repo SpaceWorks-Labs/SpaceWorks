@@ -1,10 +1,11 @@
 import { plural, t } from "@lingui/core/macro";
 import type { ChangeEvent, Dispatch, SetStateAction } from "react";
 
-import { EmptyState, ErrorBlock, Field, ListRow, ProgressBar, RelativeTime, Skeleton, StatusPill } from "../../components/ui";
+import { EmptyState, ErrorBlock, Field, ListRow, ProgressBar, RelativeTime, StatusPill } from "../../components/ui";
 import type { PrintStatus } from "./publicApi";
 import { ServiceRequestEta } from "../machine-service/ServiceRequestEta";
 import { normalizeServiceStatus, serviceStatusLabel } from "../machine-service/types";
+import { LogoLoader } from "../../components/LogoLoader";
 
 export type TextInputProps = {
   label: string;
@@ -102,7 +103,7 @@ export function StatusStepper({ status }: { status: PrintStatus }) {
 export function StatusResult({ isPending, error, status, onRetry }: {
   isPending: boolean; error: Error | null; status?: PrintStatus; onRetry?: () => void;
 }) {
-  if (isPending) return <div role="status" aria-label={t`Loading print status`}><Skeleton className="h-60" /></div>;
+  if (isPending) return <LogoLoader label={t`Loading print status`} size={48} className="min-h-60 py-3" />;
   if (error) return <ErrorBlock error={new Error(error.message || t`Couldn't load your print status. Try again.`)} onRetry={onRetry} />;
   return status ? <div className="grid gap-5"><div><h3 className="title-section break-words">{status.title}</h3>
     <p className="mt-1 text-sm text-muted">{t`Created `}<RelativeTime date={status.created_at} /></p></div><StatusStepper status={status} /></div> : null;

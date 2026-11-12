@@ -8,7 +8,7 @@ import type { PublicOrganizationEvent, OrganizationArchiveEvent } from "../../ge
 import { PublicOrganizationPage } from "./PublicOrganizationPage";
 
 const upcomingEvent = (title: string, token: string, host: PublicOrganizationEvent["host"], amount: string): PublicOrganizationEvent => ({
-  public_token: token, title, description: "", starts_at: "2026-11-01T10:00:00Z", ends_at: "2026-11-01T12:00:00Z", location: "", location_kind: "indoor", capacity: 20,
+  public_token: token, title, description: "", starts_at: "2026-11-01T10:00:00Z", ends_at: "2026-11-01T12:00:00Z", location: "", venue_address: "", venue_map_url: "", location_kind: "indoor", capacity: 20,
   website: null, image_url: null, accent_preset: "maker_teal", availability: "Available", payment_amount: amount, currency: "eur", host, status: "published", event_url: `https://space.example/e/${token}`,
   delivery_mode: null, indexable: true, participating_organizations: [], audience_label: null, registration_audience: "accounts", category: null, tags: [], ticket_types: [], ticket_selection_required: false, promo_codes_enabled: false,
   custom_form: null, show_registration_count: false, registration_count: null, registration_requires_approval: false, effective_registration_cutoff_at: null, registration_open: true, organizers: [], series: null, timezone_name: "UTC", submission_stages: [],

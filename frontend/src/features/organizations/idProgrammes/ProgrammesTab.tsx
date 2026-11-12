@@ -3,11 +3,13 @@
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
 
-import { Badge, EmptyState, ErrorBlock, Skeleton } from "../../../components/ui";
+import { Badge, EmptyState, ErrorBlock } from "../../../components/ui";
 import { ScreenHelp } from "../../help/HelpLink";
 import { useOrganizations } from "../../staff/organizationsApi";
 import { ProgrammePage } from "./ProgrammePage";
 import { useCreateProgramme, useProgrammes, type Programme } from "./api";
+import { LogoLoader } from "../../../components/LogoLoader";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 const STATUS_TONE = { draft: "neutral", active: "success", closed: "warn" } as const;
 const STATUS_LABEL = { draft: t`Draft`, active: t`Open`, closed: t`Closed` } as const;
@@ -23,7 +25,7 @@ export function ProgrammesTab({ makerspaceId, sheetImport = false }: { makerspac
   const programmes = useProgrammes(chosen, showArchived);
   const rows = (programmes.data ?? []).filter((row) => row.makerspace === makerspaceId);
   if (open !== null) return <ProgrammePage programmeId={open} onBack={() => setOpen(null)} sheetImport={sheetImport} />;
-  if (organizations.isLoading) return <Skeleton className="h-40 w-full" />;
+  if (organizations.isLoading) return <LogoLoader size={48} className="min-h-40 py-3" />;
   if (organizations.isError) return <ErrorBlock error={organizations.error} resource={t`organisations`} />;
   if (!organizations.data?.results.length) return <EmptyState title={t`No organisations yet`}
     description={t`ID programmes belong to an organisation that owns this space. Add one under Organisations first.`} />;
@@ -38,7 +40,7 @@ export function ProgrammesTab({ makerspaceId, sheetImport = false }: { makerspac
     {chosen !== null && !showArchived ? <NewProgramme organizationId={chosen} makerspaceId={makerspaceId} onCreated={setOpen} /> : null}
     <label className="flex min-h-11 w-fit items-center gap-2 text-sm text-ink"><input type="checkbox" className="h-5 w-5"
       checked={showArchived} onChange={(event) => setShowArchived(event.target.checked)} />{t`Show archived programmes`}</label>
-    {programmes.isLoading ? <Skeleton className="h-24 w-full" /> : null}
+    {programmes.isLoading ? <LogoLoader size={48} className="min-h-24 py-3" /> : null}
     {programmes.isError ? <ErrorBlock error={programmes.error} resource={t`programmes`} /> : null}
     {programmes.data && !rows.length ? <p className="text-sm text-muted">{showArchived
       ? t`No archived programmes for this organisation here.` : t`No programmes yet for this organisation here.`}</p> : null}
@@ -77,7 +79,7 @@ function NewProgramme({ organizationId, makerspaceId, onCreated }: { organizatio
         {PRESETS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
       </select></label>
     <button type="submit" className="desk-button-primary min-h-11" disabled={name.trim().length < 2 || create.isPending}>
-      {create.isPending ? t`Creating…` : t`Create`}</button>
+      {create.isPending ? <><BoxArt size={16} mono />{t`Creating…`}</> : t`Create`}</button>
     {create.error ? <div className="basis-full"><ErrorBlock error={create.error} /></div> : null}
   </form>;
 }

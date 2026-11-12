@@ -38,7 +38,8 @@ export function PublicPrintRequestPage() {
   useEffect(() => { if (submitted) trackerRef.current?.scrollIntoView?.({ behavior: "smooth", block: "center" }); }, [submitted]);
   const bootstrapQuery = useTenantBootstrap(makerspaceSlug, tenant.mode === "central");
   const bootstrap = tenant.mode === "single" ? tenant.bootstrap : bootstrapQuery.data;
-  const printingAvailable = bootstrap?.makerspace.slug === makerspaceSlug && Boolean(bootstrap?.modules.includes("printing"));
+  // The print queue is a machine type inside Machine service (decision 340b folded the `printing` module in).
+  const printingAvailable = bootstrap?.makerspace.slug === makerspaceSlug && Boolean(bootstrap?.modules.includes("machine_service"));
   const intakeAvailable = machineIntakeAvailable(bootstrap, makerspaceSlug) && printingAvailable;
   const currentIntake = useRef({ available: intakeAvailable, slug: makerspaceSlug }); currentIntake.current = { available: intakeAvailable, slug: makerspaceSlug };
   const brandStyle = useTenantBranding(bootstrap);

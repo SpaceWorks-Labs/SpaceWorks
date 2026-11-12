@@ -1,8 +1,9 @@
 import { plural, t } from "@lingui/core/macro";
 import { useQuery } from "@tanstack/react-query";
-import { ErrorText, Skeleton } from "../../components/ui";
+import { ErrorText } from "../../components/ui";
 import { formatLocale } from "../../lib/format";
 import { staffRequest } from "../../lib/api";
+import { LogoLoader } from "../../components/LogoLoader";
 
 // O-B5 `member-rollup`; typed locally until the staging step regenerates `generated/api.ts`.
 export type MemberRollup = {
@@ -25,7 +26,7 @@ const count = (value: number) => value.toLocaleString(formatLocale());
  */
 export function OrganizationMemberRollup({ organizationId }: { organizationId: number }) {
   const rollup = useMemberRollup(organizationId);
-  if (rollup.isLoading) return <Skeleton className="h-32 w-full" />;
+  if (rollup.isLoading) return <LogoLoader size={48} className="min-h-32 py-3" />;
   if (rollup.isError || !rollup.data) return <ErrorText resource={t`member counts`} onRetry={() => { void rollup.refetch(); }} />;
   const { people, spaces } = rollup.data;
   const figures = [

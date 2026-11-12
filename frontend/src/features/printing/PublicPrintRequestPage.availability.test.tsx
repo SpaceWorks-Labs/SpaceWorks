@@ -8,7 +8,7 @@ import { PublicPrintRequestPage } from "./PublicPrintRequestPage";
 const availability = vi.hoisted(() => ({ printing: true, jobs: false }));
 const api = vi.hoisted(() => ({ fetchPrintQueues: vi.fn(), fetchPublicConsumablePools: vi.fn(), fetchPrintStatus: vi.fn(), presignPrintUpload: vi.fn(), submitPrintRequest: vi.fn(), uploadToStorage: vi.fn() }));
 vi.mock("./publicApi", () => api);
-vi.mock("../../lib/tenant", () => ({ useTenant: () => ({ mode: "single", slug: "lab", modules: new Set(["machine_service", "membership", "presence", ...(availability.printing ? ["printing"] : [])]), bootstrap: { makerspace: { slug: "lab", name: "Lab" }, modules: ["machine_service", "membership", "presence", ...(availability.printing ? ["printing"] : [])], features: availability.jobs ? ["machines.job_requests"] : [], branding: {} } }), useTenantPath: () => (path = "") => `/m/lab/${path}` }));
+vi.mock("../../lib/tenant", () => ({ useTenant: () => ({ mode: "single", slug: "lab", modules: new Set(["membership", "presence", ...(availability.printing ? ["machine_service"] : [])]), bootstrap: { makerspace: { slug: "lab", name: "Lab" }, modules: ["membership", "presence", ...(availability.printing ? ["machine_service"] : [])], features: availability.jobs ? ["machines.job_requests"] : [], branding: {} } }), useTenantPath: () => (path = "") => `/m/lab/${path}` }));
 vi.mock("../../lib/useTenantBranding", () => ({ useTenantBranding: () => ({}) }));
 vi.mock("../inventory/usePublicInventory", () => ({ useTenantBootstrap: () => ({}) }));
 vi.mock("../../lib/publicHome", () => ({ publicFamilies: () => [] }));
@@ -32,7 +32,7 @@ it("keeps existing print tracking but does not load or offer a new form when job
 });
 
 
-it("does not query or offer print tracking when printing is off even if job requests are enabled", async () => {
+it("does not query or offer print tracking when machine service (which holds the print queue) is off", async () => {
   availability.printing = false; availability.jobs = true;
   api.fetchPrintQueues.mockReset(); api.fetchPublicConsumablePools.mockReset(); api.fetchPrintStatus.mockReset();
   api.fetchPrintStatus.mockResolvedValue({ status: "pending" });

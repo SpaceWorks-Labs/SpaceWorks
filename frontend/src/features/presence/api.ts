@@ -25,6 +25,13 @@ export type CheckInGuest = { id: number; display_name: string; pass_valid_until:
 export type PresenceTVRow = { display_name: string; status: PresenceStatus; since: string;
   project_title?: string; event_title?: string };
 
+/** What staff may see around one live check-in; each part is empty unless the viewer's area covers it. */
+export type PresenceRelated = {
+  event: { event_id: number; title: string; starts_at: string; ends_at: string; registration_status: string } | null;
+  booking: { booking_id: number; space_name: string; starts_at: string; ends_at: string; arrived_at: string; status: string } | null;
+  machine_sessions: { session_id: number; machine_name: string; started_at: string; ended_at: string | null; source: string }[];
+};
+
 export const DEFAULT_PRESETS = [60, 120, 180, 240];
 
 export const presenceKeys = {
@@ -33,6 +40,7 @@ export const presenceKeys = {
   preference: (slug: string) => ["member", slug, "presence", "preference"] as const,
   roster: (makerspaceId: number, page: number) => ["presence", "staff", makerspaceId, "roster", page] as const,
   privacy: (makerspaceId: number) => ["presence", "staff", makerspaceId, "privacy"] as const,
+  related: (makerspaceId: number, accountId: number) => ["presence", "staff", makerspaceId, "related", accountId] as const,
   tv: (slug: string) => ["presence", "tv", slug] as const,
 };
 
@@ -55,6 +63,8 @@ export const presenceApi = {
     staffRequest<{ results: CheckInGuest[] }>(`/admin/makerspace/${makerspaceId}/presence-sessions/check-in-guests?${new URLSearchParams({ q })}`),
   staffCheckOut: (makerspaceId: number, accountId: number) =>
     staffRequest<PresenceCurrent>(`/admin/makerspace/${makerspaceId}/presence-sessions/check-out`, json({ account_id: accountId })),
+  related: (makerspaceId: number, accountId: number) =>
+    staffRequest<PresenceRelated>(`/admin/makerspace/${makerspaceId}/presence-sessions/${accountId}/related`),
   privacy: (makerspaceId: number) => staffRequest<PresencePrivacy>(`/admin/makerspace/${makerspaceId}/presence-sessions/privacy`),
   savePrivacy: (makerspaceId: number, next: Partial<PresencePrivacy>) =>
     staffRequest<PresencePrivacy>(`/admin/makerspace/${makerspaceId}/presence-sessions/privacy`, { method: "PATCH", body: JSON.stringify(next) }),

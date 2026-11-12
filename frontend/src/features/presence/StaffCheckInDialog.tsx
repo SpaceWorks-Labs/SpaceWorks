@@ -8,6 +8,8 @@ import { StaffListContext } from "../staff/StaffListContext";
 import { formatDate } from "../../lib/format";
 import { presenceApi } from "./api";
 import { presenceErrorText, presetLabel } from "./presenceCopy";
+import { BoxArt } from "../../components/BoxSpinner";
+import { BoxSpinner } from "../../components/BoxSpinner";
 
 type MemberOption = { id: number; user: { id: number; username: string; display_name: string } };
 type Person = { id: number; name: string; detail: string; guest: boolean; waiverOnFile: boolean };
@@ -50,14 +52,14 @@ export function StaffCheckInDialog({ makerspaceId, presets, onClose, onDone }: {
   const waiverRefused = checkIn.error instanceof StructuredApiError && checkIn.error.code === "waiver_acceptance_required";
   return <Modal open onClose={onClose} title={t`Check someone in`} footer={<div className="flex flex-wrap justify-end gap-3">
     <button type="button" className="desk-button" onClick={onClose}>{t`Cancel`}</button>
-    <button type="button" className="desk-button-brand" disabled={!accountId || checkIn.isPending} onClick={() => checkIn.mutate()}>{checkIn.isPending ? t`Checking in…` : t`Check in`}</button>
+    <button type="button" className="desk-button-brand" disabled={!accountId || checkIn.isPending} onClick={() => checkIn.mutate()}>{checkIn.isPending ? <><BoxArt size={16} mono />{t`Checking in…`}</> : t`Check in`}</button>
   </div>}>
     <div className="grid gap-4">
       <p className="text-sm text-muted">{t`Staff check-in doesn't need the person's location. Use it at the desk or kiosk when self check-in isn't possible.`}</p>
       <Field label={t`Find a member or guest`} hint={t`Type at least two letters of a name or username.`}>
         <input className="desk-input" type="search" value={query} onChange={(event) => { setQuery(event.target.value); setAccountId(null); setDeskWaiver(false); }} />
       </Field>
-      {members.isFetching || guests.isFetching ? <p role="status" className="text-sm text-muted">{t`Searching…`}</p> : null}
+      {members.isFetching || guests.isFetching ? <BoxSpinner label={t`Searching…`} /> : null}
       {members.isError ? <p role="alert" className="text-sm text-danger">{presenceErrorText(members.error).text}</p> : null}
       {search.length >= 2 && members.isSuccess && guests.isSuccess && !options.length ? <p className="text-sm text-muted">{t`No active members or guest-pass holders match.`}</p> : null}
       {options.length ? <fieldset className="grid gap-2"><legend className="text-sm font-semibold text-ink">{t`Person`}</legend>

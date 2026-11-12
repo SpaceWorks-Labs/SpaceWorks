@@ -11,6 +11,7 @@ import { SheetPreviewDialog } from "../../cards/SheetPreviewDialog";
 import { StaffPhotoDialog } from "../../cards/StaffPhotoDialog";
 import { downloadProgrammeCard, programmeJobsPath, useAddProgrammeCard, useDecide, useDeleteProgrammeCard, useProgrammeCards,
   type Programme, type ProgrammeCard, type ProgrammeCardStatus } from "./api";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 const STATUS: Record<ProgrammeCardStatus, { label: string; tone: "warn" | "success" | "danger" | "neutral" }> = {
   pending: { label: t`Waiting for approval`, tone: "warn" }, approved: { label: t`Approved`, tone: "success" },
@@ -80,7 +81,7 @@ export function ProgrammeMembers({ programme }: { programme: Programme }) {
           <th className="p-2">{t`Name`}</th><th className="p-2">{t`ID number`}</th><th className="p-2">{t`Status`}</th><th className="p-2">{t`Valid until`}</th>
           <th className="p-2"><span className="sr-only">{t`Actions`}</span></th></tr></thead>
         <tbody>
-          {cards.isLoading ? <tr><td className="p-3 text-muted" colSpan={6}>{t`Loading…`}</td></tr> : null}
+          {cards.isLoading ? <tr><td className="p-3 text-muted" colSpan={6}><LogoLoader size={48} className="min-h-16 py-3" /></td></tr> : null}
           {!cards.isLoading && !rows.length ? <tr><td className="p-3 text-muted" colSpan={6}>{t`No one here yet.`}</td></tr> : null}
           {rows.map((card) => <MemberRow key={card.id} card={card} manage={manage} selected={selected.includes(card.id)}
             onToggle={(on) => setSelected((current) => on ? [...current, card.id] : current.filter((id) => id !== card.id))}

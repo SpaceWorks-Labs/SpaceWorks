@@ -1,4 +1,5 @@
 import { t } from "@lingui/core/macro";
+import { BoxArt } from "../../components/BoxSpinner";
 import { ArrowRight, RefreshCw } from "lucide-react";
 import { useSyncExternalStore, type ReactNode } from "react";
 import { illustrationImageProps, type IllustrationId } from "../../assets/illustrations";
@@ -52,7 +53,7 @@ export function DirectoryState({ art, title, tone = "neutral", live, children, a
 export function DirectoryError({ onRetry, retrying }: { onRetry: () => void; retrying?: boolean }) {
   return <DirectoryState art="moods/error" tone="error" live="alert" title={t`Couldn't load organizations`}
     actions={<button type="button" className="desk-button-primary gap-2" onClick={onRetry} disabled={retrying}>
-      <RefreshCw aria-hidden="true" size={18} className={retrying ? "motion-safe:animate-spin" : ""} />{retrying ? t`Retrying` : t`Retry`}
+      {retrying ? <BoxArt size={18} mono /> : <RefreshCw aria-hidden="true" size={18} />}{retrying ? t`Retrying` : t`Retry`}
     </button>}>
     <p>{t`The list didn't arrive. Check your connection and try again.`}</p>
   </DirectoryState>;

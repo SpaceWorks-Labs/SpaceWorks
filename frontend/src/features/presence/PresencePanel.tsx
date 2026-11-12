@@ -7,6 +7,8 @@ import { PresenceRenewPrompt } from "./PresenceRenewPrompt";
 import { clockTime, displayDisclosure, minutesLeft, presenceErrorText, presetLongLabel, STATUS_LABELS, timeLeftLabel } from "./presenceCopy";
 import { renewPhase, useNow, useRenewNotification } from "./renewReminder";
 import { requestWebNotify, webNotifyPermission } from "./webNotify";
+import { LogoLoader } from "../../components/LogoLoader";
+import { BoxArt } from "../../components/BoxSpinner";
 
 export type PresencePanelProps = {
   slug: string; spaceName: string;
@@ -48,7 +50,7 @@ function PresencePanelBody({ slug, spaceName, member, claim, selfCheckIn, sheetO
       <h2 id="presence-panel-title" className="title-panel">{t`Presence`}</h2>
       {live ? <StatusPill label={t`Checked in`} tone="success" /> : null}
     </div>
-    {current.isLoading ? <p role="status" className="mt-2 text-sm text-muted">{t`Checking your presence…`}</p> : null}
+    {current.isLoading ? <LogoLoader label={t`Checking your presence…`} size={48} className="min-h-16 py-3" /> : null}
     {current.isError ? <p role="alert" className="mt-2 text-sm text-danger">{presenceErrorText(current.error).text}</p> : null}
     {current.isSuccess && showSession ? <div className="mt-3 grid gap-4">
       <div className="grid gap-1">
@@ -62,7 +64,7 @@ function PresencePanelBody({ slug, spaceName, member, claim, selfCheckIn, sheetO
         <div className="flex flex-wrap gap-2">{presets.map((minutes) => <button key={minutes} type="button" className="desk-button" disabled={renew.isPending}
           onClick={() => renew.mutate(minutes)}>{presetLongLabel(minutes)}</button>)}</div></div> : null}
       <div className="flex flex-wrap gap-2">
-        {live ? <button type="button" className="desk-button" disabled={end.isPending} onClick={() => end.mutate()}>{end.isPending ? t`Ending…` : t`End check-in`}</button>
+        {live ? <button type="button" className="desk-button" disabled={end.isPending} onClick={() => end.mutate()}>{end.isPending ? <><BoxArt size={16} mono />{t`Ending…`}</> : t`End check-in`}</button>
           : <button type="button" className="desk-button" onClick={() => setOpen(true)}>{t`Check in again`}</button>}
         {live && permission === "default" ? <button type="button" className="desk-button" onClick={() => void requestWebNotify().then(setPermission)}>{t`Notify me before it ends`}</button> : null}
       </div>

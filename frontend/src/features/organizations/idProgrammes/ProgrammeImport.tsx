@@ -7,6 +7,7 @@ import { useState } from "react";
 import { ErrorBlock } from "../../../components/ui";
 import { SheetLinkField, SourcePicker, sheetLinkProblem, type ImportSource } from "../../staff/memberImport/SheetSource";
 import { useImportCommit, useImportPreview, type ImportInput, type ImportPreview, type Programme } from "./api";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 const REASONS = (): Record<string, string> => ({ no_name: t`no name`, bad_email: t`email not valid`, duplicate_in_file: t`repeated in the file`,
   already_in_programme: t`already in this programme` });
@@ -33,7 +34,7 @@ export function ProgrammeImport({ programme, onDone, sheetImport = false }: {
     {source === "google_sheet" ? <div className="grid gap-3">
       <SheetLinkField url={url} onUrl={(next) => { setUrl(next); restart(); }} />
       <div><button type="button" className="desk-button min-h-11" disabled={preview.isPending || Boolean(sheetLinkProblem(url))}
-        onClick={() => run({ source: "google_sheet", url: url.trim() })}>{preview.isPending ? t`Reading the sheet…` : t`Preview`}</button></div>
+        onClick={() => run({ source: "google_sheet", url: url.trim() })}>{preview.isPending ? <><BoxArt size={16} mono />{t`Reading the sheet…`}</> : t`Preview`}</button></div>
     </div> : <label className="grid gap-1 text-sm font-semibold text-ink"><span>{t`CSV file (UTF-8, up to 2 MB)`}</span>
       <input type="file" accept=".csv,text/csv" className="desk-input" onChange={async (event) => {
         const file = event.target.files?.[0];
@@ -69,7 +70,7 @@ export function ProgrammeImport({ programme, onDone, sheetImport = false }: {
       <div className="flex gap-2">
         <button type="button" className="desk-button-primary min-h-11" disabled={commit.isPending || mapping.name == null || mapping.email == null}
           onClick={() => commit.mutate({ ...input, mapping, approve }, { onSuccess: onDone })}>
-          {commit.isPending ? t`Importing…` : t`Add ${data.to_create} people`}</button>
+          {commit.isPending ? <><BoxArt size={16} mono />{t`Importing…`}</> : t`Add ${data.to_create} people`}</button>
       </div>
     </> : null}
   </div>;

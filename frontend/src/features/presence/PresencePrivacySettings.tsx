@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { SettingsRow, SettingsSection } from "../../components/ui";
 import { presenceApi, presenceKeys, type PresencePrivacy } from "./api";
 import { presenceErrorText } from "./presenceCopy";
+import { LogoLoader } from "../../components/LogoLoader";
 
 /** Presence display privacy (Space Manager; server requires manage_makerspace). Exported for the
  * settings shell to mount; render it only when the `presence` module is enabled. */
@@ -22,7 +23,7 @@ export function PresencePrivacySettings({ makerspaceId, slug }: { makerspaceId: 
     <span>{value?.[field] ? t`On` : t`Off`}</span>
   </label>;
   return <SettingsSection title={t`Presence display`} description={t`Controls the public “who's in” screen${slug ? ` at /m/${slug}/now` : ""}. It never shows contact details or history.`}>
-    {privacy.isLoading ? <p role="status" className="py-4 text-sm text-muted">{t`Loading presence settings…`}</p> : null}
+    {privacy.isLoading ? <LogoLoader label={t`Loading presence settings…`} size={48} className="min-h-16 py-3" /> : null}
     {privacy.isError ? <p role="alert" className="py-4 text-sm text-danger">{presenceErrorText(privacy.error).text}</p> : null}
     {value ? <>
       <SettingsRow label={t`Show names`} helper={t`Off: everyone appears as “A member” or “A guest”, with no project or event titles.`}>{toggle("show_names", "Show names on the display")}</SettingsRow>

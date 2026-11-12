@@ -1,8 +1,9 @@
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
-import { EmptyState, ErrorText, Field, ListRow, PagePager, RelativeTime, Skeleton, StatusPill } from "../../../components/ui";
+import { EmptyState, ErrorText, Field, ListRow, PagePager, RelativeTime, StatusPill } from "../../../components/ui";
 import { OrganizationReviewDrawer } from "./OrganizationReviewDrawer";
 import { REVIEW_STATUSES, reviewStatusLabels, reviewStatusTone, useReviewQueue, type ReviewQueueRow, type ReviewStatus } from "./reviewApi";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 const emptyCopy = (): Record<ReviewStatus, string> => ({
   pending_review: t`Nothing waiting. New organizations appear here when review is required before they go live.`,
@@ -25,7 +26,7 @@ export function OrganizationReviewQueue() {
         {REVIEW_STATUSES.map(key => <option key={key} value={key}>{reviewStatusLabels()[key]}</option>)}
       </select>
     </Field>
-    {queue.isLoading ? <Skeleton className="h-24 w-full" />
+    {queue.isLoading ? <LogoLoader size={48} className="min-h-24 py-3" />
       : queue.isError ? <ErrorText resource={t`organization reviews`} onRetry={() => { void queue.refetch(); }} />
       : !rows.length ? <EmptyState message={emptyCopy()[status]} />
       : <ul className="grid gap-3">{rows.map(row => <li key={row.id}><ListRow title={row.name} onClick={() => setOpen(row)}

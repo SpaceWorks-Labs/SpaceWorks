@@ -1,3 +1,4 @@
+import { LogoLoader } from "../../components/LogoLoader";
 import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -85,7 +86,7 @@ export function PresenceCheckInSheet({ slug, open, onClose, presets, member, cla
 
 function ProjectPicker({ loading, error, rows, value, onChange }: { loading: boolean; error: boolean;
   rows: { id: number; title: string; public_visible: boolean }[]; value: number | null; onChange: (id: number | null) => void }) {
-  if (loading) return <p role="status" className="text-sm text-muted">{t`Loading your projects…`}</p>;
+  if (loading) return <LogoLoader label={t`Loading your projects…`} size={48} className="min-h-16 py-3" />;
   if (error) return <p role="alert" className="text-sm text-danger">{t`Couldn't load your projects. Choose Visiting, or retry later.`}</p>;
   if (!rows.length) return <p className="text-sm text-muted">{t`You have no projects on your profile yet. Add one to your profile, or check in as Visiting.`}</p>;
   return <Field label={t`Which project?`} hint={t`Private projects are never named on the display.`}>

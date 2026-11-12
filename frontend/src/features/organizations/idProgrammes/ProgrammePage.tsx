@@ -3,7 +3,7 @@ import { t } from "@lingui/core/macro";
 import { useState } from "react";
 
 import { CardDesigner } from "../../../components/card-designer/CardDesigner";
-import { ErrorBlock, Skeleton, Tabs } from "../../../components/ui";
+import { ErrorBlock, Tabs } from "../../../components/ui";
 import { ScreenHelp } from "../../help/HelpLink";
 import { CardJobList } from "../../cards/cardJobs";
 import { ProgrammeImport } from "./ProgrammeImport";
@@ -12,6 +12,7 @@ import { ProgrammeMembers } from "./ProgrammeMembers";
 import { ProgrammeSettings } from "./ProgrammeSettings";
 import { ApprovalLevelSelect } from "../../cards/ApprovalLevelSelect";
 import { programmeJobsPath, useProgramme, useProgrammeApproval, useProgrammeDesign } from "./api";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 type TabKey = "members" | "import" | "design" | "settings";
 
@@ -20,7 +21,7 @@ export function ProgrammePage({ programmeId, onBack, sheetImport = false }: {
 }) {
   const programme = useProgramme(programmeId);
   const [tab, setTab] = useState<TabKey>("members");
-  if (programme.isLoading) return <Skeleton className="h-64 w-full" />;
+  if (programme.isLoading) return <LogoLoader size={48} className="min-h-64 py-3" />;
   if (programme.isError || !programme.data) return <ErrorBlock error={programme.error} resource={t`programme`} onRetry={() => void programme.refetch()} />;
   const row = programme.data;
   const joinPath = `/o/${row.organization_slug}/ids/${row.slug}`;
@@ -45,18 +46,18 @@ export function ProgrammePage({ programmeId, onBack, sheetImport = false }: {
     <Tabs tabs={tabs} activeKey={tab} label={t`Programme`} onChange={(key) => setTab(key as TabKey)} />
     {tab === "members" ? <><CardJobList listPath={programmeJobsPath(row.id)} /><ProgrammeMembers programme={row} /></> : null}
     {tab === "import" ? <ProgrammeImport programme={row} onDone={() => setTab("members")} sheetImport={sheetImport} /> : null}
-    {tab === "design" ? <ProgrammeDesign programmeId={row.id} canManage={row.can_manage} /> : null}
+    {tab === "design" ? <ProgrammeDesign programmeId={row.id} makerspaceId={row.makerspace} canManage={row.can_manage} /> : null}
     {tab === "settings" ? <><ProgrammeSettings programme={row} /><RemoveProgramme programme={row} onDeleted={onBack} /></> : null}
   </div>;
 }
 
-function ProgrammeDesign({ programmeId, canManage }: { programmeId: number; canManage: boolean }) {
+function ProgrammeDesign({ programmeId, makerspaceId, canManage }: { programmeId: number; makerspaceId: number; canManage: boolean }) {
   const design = useProgrammeDesign(programmeId);
-  if (design.isLoading) return <Skeleton className="h-64 w-full" />;
+  if (design.isLoading) return <LogoLoader size={48} className="min-h-64 py-3" />;
   if (design.isError || !design.data) return <ErrorBlock error={design.error} resource={t`card design`} />;
   return <div className="grid gap-4">
     {canManage ? <ProgrammeApproval programmeId={programmeId} /> : null}
-    <CardDesigner designId={design.data.id} canEdit={design.data.can_edit} title={t`Programme card design`} />
+    <CardDesigner designId={design.data.id} makerspaceId={makerspaceId} canEdit={design.data.can_edit} title={t`Programme card design`} />
   </div>;
 }
 

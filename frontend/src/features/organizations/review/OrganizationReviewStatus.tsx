@@ -5,6 +5,7 @@ import { toast } from "../../../components/ui/toastStore";
 import { actionErrorText } from "../../staff/platformSpaces/ActionDialog";
 import { ReviewHistory } from "./ReviewHistory";
 import { reviewStatusLabels, reviewStatusTone, useResubmitOrganization, useReviewHistory, type ReviewStatus } from "./reviewApi";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 type Standing = Exclude<ReviewStatus, "approved">;
 type Props = { organization: { id: number; name: string; review_status?: string; governance_actions: string[] } };
@@ -38,7 +39,7 @@ function Resubmit({ id }: { id: number }) {
     </Field>
     {error ? <p role="alert" className="rounded-control border border-danger-line bg-panel px-3 py-2 text-sm text-danger">{error}</p> : null}
     <button type="submit" className="desk-button-primary justify-self-start" disabled={resubmit.isPending}>
-      {resubmit.isPending ? t`Sending…` : t`Resubmit for review`}</button>
+      {resubmit.isPending ? <><BoxArt size={16} mono />{t`Sending…`}</> : t`Resubmit for review`}</button>
   </form>;
 }
 

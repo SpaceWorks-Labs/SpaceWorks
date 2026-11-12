@@ -3,6 +3,7 @@ import { toneSurfaceClasses } from "../../components/ui/tones";
 import type { PresenceSession } from "./api";
 import { clockTime, minutesLeft, presetLongLabel } from "./presenceCopy";
 import { RENEW_WINDOW_MINUTES, type RenewPhase } from "./renewReminder";
+import { BoxArt } from "../../components/BoxSpinner";
 
 export type PresenceRenewPromptProps = { session: PresenceSession; phase: RenewPhase; now: number; presets: number[];
   pending: boolean; onRenew: (minutes: number) => void };
@@ -17,7 +18,7 @@ export function PresenceRenewPrompt({ session, phase, now, presets, pending, onR
     <p className="text-sm"><strong>{lead}</strong> {body}</p>
     <div className="flex flex-wrap gap-2" role="group" aria-label={t`Renew for`}>
       {presets.map((minutes) => <button key={minutes} type="button" className="desk-button-brand" disabled={pending} onClick={() => onRenew(minutes)}>
-        {pending ? t`Renewing…` : t`Renew ${presetLongLabel(minutes)}`}</button>)}
+        {pending ? <><BoxArt size={16} mono />{t`Renewing…`}</> : t`Renew ${presetLongLabel(minutes)}`}</button>)}
     </div>
   </div>;
 }

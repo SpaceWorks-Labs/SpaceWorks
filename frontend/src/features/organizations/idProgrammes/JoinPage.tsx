@@ -11,6 +11,7 @@ import { PhotoPicker } from "../../../components/photo-crop/PhotoPicker";
 import { ErrorText } from "../../../components/ui";
 import { getAccessToken, memberRequest, publicV1Request, refreshAccessToken } from "../../../lib/api";
 import { MemberAuthPanel } from "../../members/MemberAuthPanel";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 type JoinQuestion = { key: string; label: string; type: "text" | "choice" | "email" | "phone"; required: boolean; options?: string[];
   prefill?: boolean };
@@ -89,7 +90,7 @@ export function JoinPage() {
     content={<form className="grid gap-3" onSubmit={(event) => { event.preventDefault(); join.mutate(); }}>
       {data.questions.some((question) => question.prefill) ? <div className="flex flex-wrap items-center gap-2">
         <button type="button" className="desk-button-ghost min-h-11" disabled={prefill.isPending} onClick={() => prefill.mutate()}>
-          {prefill.isPending ? t`Filling…` : t`Fill from my Saved details`}</button>
+          {prefill.isPending ? <><BoxArt size={16} mono />{t`Filling…`}</> : t`Fill from my Saved details`}</button>
         <span role="status" aria-live="polite" className="text-xs text-muted">{filled === null ? t`Only fills empty answers; check them before sending.`
           : filled ? plural(filled, { one: "Filled # answer. Check it before sending.", other: "Filled # answers. Check them before sending." }) : t`Nothing in your Saved details matches these questions.`}</span>
       </div> : null}
@@ -111,7 +112,7 @@ export function JoinPage() {
       </div> : null}
       {join.error || prefill.error ? <ErrorText message={(join.error ?? prefill.error)?.message} /> : null}
       <div><button type="submit" className="desk-button-primary min-h-11" disabled={missing || join.isPending}>
-        {join.isPending ? t`Sending…` : t`Ask to join`}</button></div>
+        {join.isPending ? <><BoxArt size={16} mono />{t`Sending…`}</> : t`Ask to join`}</button></div>
     </form>}
     primary={{ label: t`Home`, href: "/" }} />;
 }

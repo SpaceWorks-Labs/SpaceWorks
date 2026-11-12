@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Download, RefreshCw } from "lucide-react";
 import { Field, SegmentedControl } from "../../components/ui";
 import { downloadOverviewCsv, overviewReady, type OverviewPreset, type OverviewQuery } from "./platformOverviewApi";
+import { BoxArt } from "../../components/BoxSpinner";
 
 const PRESETS: { value: OverviewPreset; label: string }[] = [
   { value: "this_month", label: t`This month` }, { value: "this_year", label: t`This year` },
@@ -48,9 +49,9 @@ export function PlatformOverviewControls({ query, onChange, ready, excludedCount
       </label>
       <div className="flex flex-wrap gap-2">
         <button type="button" className="desk-button min-h-11" onClick={onRefresh} disabled={refreshing || !overviewReady(query)}>
-          <RefreshCw aria-hidden="true" size={18} />{refreshing ? t`Recomputing…` : t`Recompute`}</button>
+          <RefreshCw aria-hidden="true" size={18} />{refreshing ? <><BoxArt size={16} mono />{t`Recomputing…`}</> : t`Recompute`}</button>
         <button type="button" className="desk-button-primary min-h-11" onClick={() => void exportCsv()} disabled={!ready || exporting}>
-          <Download aria-hidden="true" size={18} />{exporting ? t`Exporting…` : t`Export CSV`}</button>
+          <Download aria-hidden="true" size={18} />{exporting ? <><BoxArt size={16} mono />{t`Exporting…`}</> : t`Export CSV`}</button>
       </div>
     </div>
     {notice ? <p role="status" className="text-sm text-muted">{notice}</p> : null}

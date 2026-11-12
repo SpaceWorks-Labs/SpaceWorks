@@ -1,3 +1,4 @@
+import { LogoLoader } from "../../components/LogoLoader";
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { Link } from "react-router-dom";
@@ -29,7 +30,7 @@ function EligibleOrganizationSelfCreation({ onCreated }: { onCreated?: (id: numb
   const create = useCreateOwnOrganization();
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
-  if (policy.isLoading) return <p role="status" className="py-5 text-sm text-muted">{t`Loading organization creation options…`}</p>;
+  if (policy.isLoading) return <LogoLoader label={t`Loading organization creation options…`} />;
   if (policy.error) return <div className="py-5"><ErrorText message={policy.error.message} /></div>;
   if (!policy.data?.enabled) return null;
   return <div className="grid divide-y divide-line">

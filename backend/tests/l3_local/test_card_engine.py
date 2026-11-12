@@ -39,8 +39,8 @@ def test_custom_stock_bounds():
 @pytest.mark.parametrize("domain", ["member_cards", "id_programme", "event_card", "event_ticket"])
 def test_every_template_normalises_and_passes_contrast(key, domain):
     document = normalize_document(build(key, domain))
-    assert document["version"] == 2
-    assert set(LABELS) == {"classic", "bold", "minimal", "community", "student", "event_pass"}
+    assert document["version"] == 3  # Card Studio documents are v3 (a v2 document stays valid)
+    assert {"classic", "bold", "minimal", "community", "student", "event_pass"} <= set(LABELS)  # plus the org and studio looks
 
 
 def test_defaults_per_domain():

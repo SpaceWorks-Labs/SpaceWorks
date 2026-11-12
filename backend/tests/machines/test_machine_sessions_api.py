@@ -26,6 +26,7 @@ def test_member_previews_starts_lists_and_stops():
     body = preview.json()
     assert body["can_start"] and body["billing"] and body["rate"]["unit_amount"] == "120.00"
     assert (body["rate"]["increment"], body["rate"]["minimum"], body["max_minutes"]) == (15, 30, 240)
+    assert body["machine_type_id"] == w.machines[0].machine_type_id  # decision 343: the type's training notes
     started = client.post(f"/api/v1/member/machines/{w.machines[0].pk}/sessions/start", {"digest": body["digest"]},
                           format="json")
     assert started.status_code == 201, started.content

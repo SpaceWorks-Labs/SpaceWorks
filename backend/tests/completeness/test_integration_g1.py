@@ -25,8 +25,8 @@ def _space(slug):
 def test_full_dashboard_carries_payments_to_record_for_record_payment_holders():
     space = _space("g1-record")
     sm = staff_account(space, "g1-sm", "space_manager")
-    Payment.objects.create(member=sm, makerspace=space, subject_type="loan_late_fee", subject_id=1,
-                           amount=Decimal("5.00"), currency="usd", created_by=sm)
+    Payment.objects.bulk_create([Payment(member=sm, makerspace=space, subject_type="loan_late_fee", subject_id=1,
+                                         amount=Decimal("5.00"), currency="usd", created_by=sm)])  # no full_clean
     body = authenticated_client(sm).get(reverse("operations-dashboard", args=[space.pk])).json()
     assert body["scope_mode"] == "full"
     assert body["payments_to_record"] == 1
@@ -52,8 +52,8 @@ def test_people_counters_name_real_members_sections_not_community():
 
 
 def _loan_payment(space, user, subject_type="loan_late_fee"):
-    return Payment.objects.create(member=user, makerspace=space, subject_type=subject_type, subject_id=1,
-                                  amount=Decimal("5.00"), currency="usd", created_by=user)
+    return Payment.objects.bulk_create([Payment(member=user, makerspace=space, subject_type=subject_type, subject_id=1,
+                                                amount=Decimal("5.00"), currency="usd", created_by=user)])[0]
 
 
 def test_area_queue_all_status_ordering_and_claims_area_filter():

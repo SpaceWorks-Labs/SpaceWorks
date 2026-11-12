@@ -129,7 +129,8 @@ def test_not_available_on_this_hosting_is_a_typed_409(monkeypatch):
     monkeypatch.setattr(provisioning, "availability", lambda using="default": (False, "not_available_on_hosting"))
     response = client_for(manager(makerspace)).post(space_url("-login", makerspace))
     assert (response.status_code, response.data["code"]) == (409, "analytics_not_available")
-    assert not AnalyticsConnection.objects.get(makerspace=makerspace).login_role
+    # A refused attempt rolls its whole transaction back, including the lazily created connection row.
+    assert not AnalyticsConnection.objects.filter(makerspace=makerspace).exclude(login_role="").exists()
     assert "analytics.login_created" not in _actions(makerspace)
 
 
@@ -142,7 +143,7 @@ def test_a_database_refusal_is_a_typed_503_and_changes_nothing(monkeypatch):
     monkeypatch.setattr(provisioning, "ensure_login", refuse)
     response = client_for(manager(makerspace)).post(space_url("-login", makerspace))
     assert (response.status_code, response.data["code"]) == (503, "analytics_login_failed")
-    assert not AnalyticsConnection.objects.get(makerspace=makerspace).login_role
+    assert not AnalyticsConnection.objects.filter(makerspace=makerspace).exclude(login_role="").exists()
 
 
 def test_provisioning_errors_never_log_the_verifier(caplog):

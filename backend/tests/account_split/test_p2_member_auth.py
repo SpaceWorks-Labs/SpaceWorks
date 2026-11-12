@@ -34,8 +34,8 @@ PHONE = "+15550123456"
 @pytest.fixture
 def principals():
     space = Makerspace.objects.create(name="Identity", slug="identity")
-    employee, membership = staff(space, "identity.staff", email=EMAIL, password=PASSWORD)
-    platform = User.objects.create_superuser("identity.platform", email=EMAIL, password=PASSWORD)
+    employee, membership = staff(space, "identity.staff", email="identity.staff@example.test", password=PASSWORD)
+    platform = User.objects.create_superuser("identity.platform", email="identity.platform@example.test", password=PASSWORD)
     return space, employee, platform
 
 
@@ -43,6 +43,8 @@ def claims(subject="subject", email=EMAIL):
     return {"sub": subject, "email": email, "email_verified": True}
 
 
+@pytest.mark.skip(reason="U-A1 (decision 308 family): staff and members share ONE account; there is no separate staff "
+                  "namespace sharing an email with a member, so 'signup ignores the staff row' has no premise")
 def test_signup_and_duplicate_only_use_member_identity(principals, monkeypatch):
     _, employee, platform = principals
     monkeypatch.setattr(services_registration, "send_email_verification_otp", lambda *_: 0)
@@ -59,6 +61,8 @@ def test_signup_and_duplicate_only_use_member_identity(principals, monkeypatch):
     assert not employee.email_challenges.exists() and not platform.email_challenges.exists()
 
 
+@pytest.mark.skip(reason="U-A1: one account per person; a provider email matching a staff-track holder asks to link "
+                  "to that person (account_link_required): there is no separate staff namespace to ignore")
 @pytest.mark.parametrize("provider", ["google", "apple", "github", "oidc:campus"])
 def test_provider_email_matching_ignores_staff_and_platform(principals, provider):
     _, employee, platform = principals
@@ -68,7 +72,7 @@ def test_provider_email_matching_ignores_staff_and_platform(principals, provider
 
 
 @pytest.mark.parametrize("provider", ["google", "apple", "github", "oidc:campus"])
-@pytest.mark.parametrize("target", [1, 2])
+@pytest.mark.parametrize("target", [2])  # platform only: a staff-track holder is a person (U-A1)
 def test_preexisting_nonmember_provider_identity_is_refused(principals, provider, target):
     account = principals[target]
     SocialIdentity.objects.create(user=account, provider=provider, provider_sub="subject")
@@ -81,7 +85,7 @@ def test_preexisting_nonmember_provider_identity_is_refused(principals, provider
     assert exc.value.code == "social_invalid"
 
 
-@pytest.mark.parametrize("target", [1, 2])
+@pytest.mark.parametrize("target", [2])  # platform only: a staff-track holder is a person (U-A1)
 def test_social_session_and_oidc_resolution_refuse_nonmembers(principals, target):
     account = principals[target]
     with pytest.raises(SocialResolutionError):
@@ -104,7 +108,7 @@ def test_staff_social_attempts_refused_before_provider_or_origin_work():
     assert exc.value.code == "social_invalid"
 
 
-@pytest.mark.parametrize("target", [1, 2])
+@pytest.mark.parametrize("target", [2])  # platform only: a staff-track holder is a person (U-A1)
 def test_phone_login_and_linking_refuse_nonmembers(principals, target, monkeypatch):
     account = principals[target]
     User.objects.filter(pk=account.pk).update(phone_e164=PHONE, phone_verified_at=timezone.now())
@@ -141,6 +145,8 @@ def test_phone_login_resolves_member_with_shared_staff_contact(principals, monke
     assert services_phone_login.confirm_login(PHONE, "123456").pk == member.pk
 
 
+@pytest.mark.skip(reason="U-A1: a walk-in whose email belongs to a staff-track holder is the same person; the "
+                  "add-from-members-list refusal replaces 'ignore the staff row'")
 def test_walk_in_and_oidc_transition_email_lookup_ignore_staff(principals):
     space, _, _ = principals
     walk_in = _new_user("Walk In", EMAIL, "")
@@ -154,7 +160,7 @@ def test_walk_in_and_oidc_transition_email_lookup_ignore_staff(principals):
     )
 
 
-@pytest.mark.parametrize("target", [1, 2])
+@pytest.mark.parametrize("target", [2])  # platform only: a staff-track holder is a person (U-A1)
 def test_import_adoption_and_claim_issuance_refuse_nonmembers(principals, target):
     account = principals[target]
     User.objects.filter(pk=account.pk).update(email_verified_at=timezone.now())

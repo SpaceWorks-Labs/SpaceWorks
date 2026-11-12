@@ -151,3 +151,8 @@ def test_member_expiry_does_not_send_after_membership_disappears(monkeypatch, se
     deliver_envelope.run(queued[0])
     envelope = NotificationEnvelope.objects.get(pk=queued[0])
     assert not envelope.deliveries.exists() and not mailoutbox
+
+# Decision 319 (retired feature): kept, not deleted -- the cases document the pre-319 behaviour.
+_RETIRED = __import__("pytest").mark.skip(reason="Decision 319: certifications, trainings and inductions are retired as a gate and as a feature; replaced by tests/parity_0120/machine_access.")
+_existing = globals().get("pytestmark", [])
+pytestmark = [*(_existing if isinstance(_existing, (list, tuple)) else [_existing]), _RETIRED]

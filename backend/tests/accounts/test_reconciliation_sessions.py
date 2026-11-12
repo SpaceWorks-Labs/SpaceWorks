@@ -14,6 +14,7 @@ from apps.accounts.models import User
 from apps.accounts.services_device_grants import authority_for_login, DeviceSuperadminNotSupported
 from apps.accounts.session_issuance import lock_session_user
 from apps.accounts.tokens import SpaceWorksRefreshToken
+from apps.makerspaces.models import MakerspaceMembership
 from tests.accounts.account_factories import make_staff
 from tests.accounts.mfa_helpers import enrolled
 from tests.return_helpers import make_space
@@ -22,7 +23,8 @@ pytestmark = pytest.mark.django_db
 PASSWORD = "Reconciled-password-729!"
 
 
-def principal(kind, *, username=None, email="shared-reconciliation@example.test"):
+def principal(kind, *, username=None, email=None):
+    email = email or f"{username or kind}-reconciliation@example.test"
     if kind == "staff":
         return make_staff(make_space(username or "session-staff"), username=username or "session-staff",
                           password=PASSWORD, email=email, role_slug="inventory_manager")
@@ -57,13 +59,14 @@ def test_restore_epoch_fences_an_in_flight_pre_archive_login():
 def test_tokens_bind_account_kind_generation_and_only_staff_tenant(kind):
     user = principal(kind)
     token = SpaceWorksRefreshToken.for_user(user)
-    assert token["kind"] == kind
+    # U-A1: a staff-track holder is a person; only platform accounts carry their own kind.
+    assert token["kind"] == ("platform" if kind == "platform" else "person")
     assert token["credential_generation"] == user.credential_generation
     assert token.get("makerspace") == user.staff_makerspace_id
-    assert token["surface"] == {"member": "member", "staff": "staff_api", "platform": "platform"}[kind]
+    assert token["surface"] == ("platform" if kind == "platform" else "member")
 
 
-@pytest.mark.parametrize("kind", ["staff", "platform"])
+@pytest.mark.parametrize("kind", ["platform"])  # a staff-track holder IS a person (U-A1) and may recover/delete
 def test_member_lifecycle_refuses_nonmember_principals_before_proofs(kind):
     from types import SimpleNamespace
     user = principal(kind)
@@ -77,17 +80,19 @@ def test_member_lifecycle_refuses_nonmember_principals_before_proofs(kind):
 
 def test_staff_device_provenance_requires_password_and_local_authenticator():
     user = principal("staff")
+    space_id = MakerspaceMembership.staff_tracks.get(user=user).makerspace_id
+    assert authority_for_login(user, login_method="password") == "member"  # no staff step-up asked
     with pytest.raises(AuthenticationFailed):
-        authority_for_login(user, login_method="password")
+        authority_for_login(user, login_method="password", staff_makerspace_id=space_id)
     user._mfa_provider_verified = True
     with pytest.raises(AuthenticationFailed):
-        authority_for_login(user, login_method="password")
+        authority_for_login(user, login_method="password", staff_makerspace_id=space_id)
     row, _ = enrolled(user)
     user._mfa_verified_version = str(row.version)
     for method in ("phone", "social"):
         with pytest.raises(AuthenticationFailed):
-            authority_for_login(user, login_method=method)
-    assert authority_for_login(user, login_method="password") == "staff"
+            authority_for_login(user, login_method=method, staff_makerspace_id=space_id)
+    assert authority_for_login(user, login_method="password", staff_makerspace_id=space_id) == "staff"
     assert authority_for_login(principal("member"), login_method="social") == "member"
     with pytest.raises(DeviceSuperadminNotSupported):
         authority_for_login(principal("platform"), login_method="password")
@@ -114,8 +119,6 @@ def test_native_password_resolution_honors_explicit_kind_and_fixed_tenant():
     request = APIRequestFactory().post("/api/v1/auth/device/login")
     with transaction.atomic():
         assert authenticate_native(request, member.email, PASSWORD).pk == member.pk
-        assert authenticate_native(request, staff.email, PASSWORD, context="staff",
-                                   makerspace=staff.staff_makerspace.slug).pk == staff.pk
-        assert authenticate_native(request, staff.username, PASSWORD) is None
-        assert authenticate_native(request, staff.username, PASSWORD, context="staff",
-                                   makerspace="wrong-space") is None
+        assert authenticate_native(request, staff.email, PASSWORD).pk == staff.pk  # one account per person
+        assert authenticate_native(request, staff.username, PASSWORD).pk == staff.pk
+        assert authenticate_native(request, principal("platform").email, PASSWORD) is None  # platform never holds a grant

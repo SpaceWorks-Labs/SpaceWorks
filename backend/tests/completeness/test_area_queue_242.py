@@ -15,9 +15,10 @@ pytestmark = pytest.mark.django_db
 
 
 def _charge(space, staff, member, subject_type, subject_id, **extra):
-    return Payment.objects.create(
+    # bulk_create skips `Payment.save()`'s full_clean: these rows point at placeholder subject ids on purpose.
+    return Payment.objects.bulk_create([Payment(
         makerspace=space, member=member, created_by=staff, subject_type=subject_type, subject_id=subject_id,
-        subject_label=subject_type, amount="5.00", currency="usd", provider="stripe", **extra)
+        subject_label=subject_type, amount="5.00", currency="usd", provider="stripe", **extra)])[0]
 
 
 def _world():

@@ -214,8 +214,7 @@ def test_revoked_browser_attempts_invitation_and_lease_cannot_be_redeemed(creden
         consume_social_nonce(request, raw="social-nonce", provider="google", surface="member",
                              delivery="device", client_platform="android")
     with pytest.raises(ValidationError):
-        accept_invitation(request, token="invitation-token", makerspace_slug=c.space.slug,
-                          password="New invitation password 42!")
+        accept_invitation(SimpleNamespace(user=c.user), token="invitation-token", makerspace_slug=c.space.slug)
     with pytest.raises(PermissionDenied):
         resolve_lease(token, station=c.station, credential=SimpleNamespace(version=1),
                        session_id=c.lease.station_session_id, user=c.user)

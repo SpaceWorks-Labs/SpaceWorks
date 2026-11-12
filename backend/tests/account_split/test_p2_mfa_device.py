@@ -38,8 +38,8 @@ def configuration(settings):
 def accounts():
     space = Makerspace.objects.create(name="MFA account kinds", slug="mfa-account-kinds")
     member = User.objects.create_user("kind-member", email="shared@example.test", password=PASSWORD)
-    worker, _ = staff(space, "kind-staff", password=PASSWORD, email=member.email)
-    platform = User.objects.create_superuser("kind-platform", email=member.email, password=PASSWORD)
+    worker, _ = staff(space, "kind-staff", password=PASSWORD, email="kind-staff@example.test")
+    platform = User.objects.create_superuser("kind-platform", email="kind-platform@example.test", password=PASSWORD)
     return space, member, worker, platform
 
 

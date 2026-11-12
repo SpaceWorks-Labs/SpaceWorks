@@ -124,7 +124,7 @@ def test_the_home_dashboard_lists_what_needs_attention_with_counts_only():
 
     now = timezone.now()
     paused = make_space("catalog-paused")
-    SpaceControlState.objects.create(makerspace=paused, suspended_at=now, suspension_reason="Dispute")
+    SpaceControlState.objects.create(makerspace=paused, suspended_at=now, suspension_reason="Landlord quarrel details")
     IPAutoBlock.objects.create(network="203.0.113.0/24", ip_key="k" * 64, blocked_until=now + timedelta(hours=1))
     RestoreDrillReport.objects.create(makerspace=paused, makerspace_id_snapshot=paused.pk,
                                       archive_id_snapshot="00000000-0000-0000-0000-000000000001",
@@ -138,7 +138,8 @@ def test_the_home_dashboard_lists_what_needs_attention_with_counts_only():
     for label in ("Paused spaces", "Networks blocked now", "Restore drills failed in the last 30 days",
                   "Messages stuck for more than 30 minutes", "Quick links", "Spaces and accounts"):
         assert label in body, label
-    assert "private-person@example.test" not in body and "Dispute" not in body
+    # (A sidebar link is called "Disputes", so the free-text reason needs a distinctive value.)
+    assert "private-person@example.test" not in body and "Landlord quarrel details" not in body
 
 
 @pytest.mark.django_db

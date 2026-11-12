@@ -10,7 +10,7 @@ from apps.accounts.claim_routes import CLAIM_ROUTES
 from apps.accounts.models import User
 from apps.makerspaces import profile_services
 from apps.makerspaces.models import Makerspace, MakerspaceMembership, MakerspaceRole
-from apps.makerspaces.models_profiles import ProfileTimelineEntry
+from apps.makerspaces.models import AccountTimelineEntry as ProfileTimelineEntry
 
 pytestmark = pytest.mark.django_db
 

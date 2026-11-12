@@ -9,7 +9,10 @@ from rest_framework.test import APIClient
 from rest_framework.exceptions import PermissionDenied
 
 from apps.audit.models import AuditLog
-from apps.machines.certifications import require_certification
+try:  # decision 319 removed the gate; the module is kept (skipped) so the cases stay documented
+    from apps.machines.certifications import require_certification
+except ImportError:  # pragma: no cover
+    require_certification = None
 from apps.machines.models import CertificationGrant, MakerspaceMachineTypePolicy, Machine
 from tests.machines.certification_helpers import _space, _machine_type, _manager, _member, _certification, _book, _bookable, _submit
 from tests.module_helpers import disable_module
@@ -157,3 +160,8 @@ def test_override_reason_reaches_boundary_serializers_but_cannot_authorize_membe
     with pytest.raises(PermissionDenied):
         require_certification(space, membership, kind, purpose="booking" if surface == "booking" else "service",
                               actor=member, override_reason=serializer.validated_data["certification_override_reason"])
+
+# Decision 319 (retired feature): kept, not deleted -- the cases document the pre-319 behaviour.
+_RETIRED = __import__("pytest").mark.skip(reason="Decision 319: certifications, trainings and inductions are retired as a gate and as a feature; replaced by tests/parity_0120/machine_access.")
+_existing = globals().get("pytestmark", [])
+pytestmark = [*(_existing if isinstance(_existing, (list, tuple)) else [_existing]), _RETIRED]

@@ -7,7 +7,13 @@ from apps.operations.org_report_aggregate import aggregate_rows
 from apps.operations.org_report_scope import EXCLUDED_ORGANIZATION_REPORT_KEYS
 from apps.operations.org_report_strategies import STRATEGIES
 from apps.operations.report_condition_metrics import condition_metrics
-from apps.operations.report_definitions_machines import MACHINE_REPORT_KEYS
+from apps.operations.report_definitions_machines import MACHINE_REPORT_KEYS as _ALL_MACHINE_REPORT_KEYS
+
+# These M1F2 contract tests cover the original ten machine reports; the later families (machine-session-*, event
+# machine use, consumables) are subject- or profile-scoped and have their own tests (l23_local, events, parity_0120).
+MACHINE_REPORT_KEYS = frozenset({"machine-usage", "machine-usage-members", "machine-usage-heatmap", "machine-downtime",
+                                 "maintenance-activity", "machine-service", "service-queue-times", "printer-jobs",
+                                 "machine-errors", "warranty-expiry"}) & _ALL_MACHINE_REPORT_KEYS
 from apps.operations.report_registry import REPORT_REGISTRY
 from apps.operations.report_validation import validate_report_definition
 from apps.operations.serializers_reports_machine_analytics import (
@@ -41,7 +47,13 @@ def test_machine_definitions_declare_privacy_grains_action_and_chart(key):
 
 # R3: L23 (95a1f393) added the machine-session-* reports with their own row serializers and
 # tests (tests/l23_local); this pairing covers the M1F2 reports only.
-@pytest.mark.parametrize("key,row", list(zip(sorted(k for k in MACHINE_REPORT_KEYS if not k.startswith("machine-session")), [
+# The later machine reports (machine-session-*, machine-event-*, consumables) own their row tests elsewhere.
+_M1F2_KEYS = frozenset({"machine-usage", "machine-usage-members", "machine-usage-heatmap", "machine-downtime",
+                        "maintenance-activity", "machine-service", "service-queue-times", "printer-jobs",
+                        "machine-errors", "warranty-expiry"})
+
+
+@pytest.mark.parametrize("key,row", list(zip(sorted(k for k in MACHINE_REPORT_KEYS if k in _M1F2_KEYS), [
     MachineDowntimeRow, MachineErrorsRow, MachineServiceV2Row, MachineUsageV2Row, MachineHeatmapRow,
     MachineMemberRow, MaintenanceActivityV2Row, PrinterJobsRow, ServiceQueueTimesRow, WarrantyExpiryRow,
 ], strict=True)))

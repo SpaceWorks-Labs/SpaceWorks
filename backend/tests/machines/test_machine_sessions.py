@@ -40,12 +40,12 @@ def test_each_refusal_has_its_typed_code(monkeypatch):
     assert refused(w, other.user) == "membership_required"
     fresh = community_member(w.space, "fresh")
     check_in(w.space, fresh)
-    from apps.machines.models import CertificationType
-    features(w.space, {"machines.certifications"})
-    CertificationType.objects.create(makerspace=w.space, machine_type=w.kind, name="Laser safety",
-                                     is_required_for_booking=True)
-    assert refused(w, fresh.user) == "certification_required"
-    features(w.space, remove={"machines.certifications"})
+    # Decision 319: a space manager's machine access grant decides, not a certification.
+    from apps.machines.models import MachineAccessGrant
+    w.machines[0].open_to_all_members = False
+    w.machines[0].save(update_fields=["open_to_all_members"])
+    assert refused(w, fresh.user) == "no_machine_access"
+    MachineAccessGrant.objects.create(makerspace=w.space, member=fresh.user, machine_type=w.kind)
     w.machines[0].status = "maintenance"
     w.machines[0].save(update_fields=["status"])
     assert refused(w, fresh.user) == "machine_unavailable"

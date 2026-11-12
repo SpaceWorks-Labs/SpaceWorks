@@ -47,6 +47,7 @@ def test_supervised_mode_refuses_a_self_service_session_and_a_job():
     assert job.value.code == "guest_pass_supervised_only"
 
 
+@__import__("pytest").mark.skip(reason="Decision 319: certification gating retired (machine access grants replace it); see tests/parity_0120/machine_access.")
 def test_after_induction_cert_needs_a_guest_certification_for_the_machine_type():
     makerspace = _space("gm-cert")
     machine = _machine(makerspace, "cert")

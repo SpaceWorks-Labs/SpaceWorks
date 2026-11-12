@@ -84,6 +84,44 @@ def ensure_global_pii_write_fence(request):
     PiiGlobalWriteFence.objects.get_or_create(pk=1)
 
 
+_HANDLE_GATE_TESTS = ("test_secfix_b_handles.py", "test_username_required.py")
+
+
+@pytest.fixture(autouse=True)
+def handle_gate_is_opt_in(request, monkeypatch):
+    """Decision 308 holds a real-token write until the person has a username.
+
+    Production accounts get a default handle at profile creation or in the 0.12.0 backfill; test fixtures create
+    bare `User` rows, so every bearer-token write in the suite would answer 403 `handle_required`. The gate is
+    therefore off by default and exercised only by its own tests (`test_username_required.py`,
+    `test_secfix_b_handles.py`, or any test marked `handle_gate`).
+    """
+    if request.node.get_closest_marker("handle_gate") or request.node.path.name in _HANDLE_GATE_TESTS:
+        return
+    from apps.makerspaces import handle_gate
+
+    monkeypatch.setattr(handle_gate, "assert_handle_chosen", lambda request_, user: None)
+
+
+@pytest.fixture(autouse=True)
+def ensure_builtin_machine_types(request):
+    """Re-seed the migration-seeded built-in machine types after a transactional test's flush.
+
+    A `transaction=True` test truncates every table, including the global built-in `MachineType` rows migration
+    0002 seeds; without them every later test that looks one up by slug fails with `DoesNotExist`.
+    """
+    if not request.node.get_closest_marker("django_db") or connection.needs_rollback:
+        return
+    request.getfixturevalue("db")
+    from django.apps import apps as django_apps
+    from apps.machines.models import MachineType
+
+    if not MachineType.objects.filter(is_builtin=True, makerspace__isnull=True).exists():
+        import importlib
+
+        importlib.import_module("apps.machines.migrations.0002_seed_builtin_machine_types").seed_builtins(django_apps, None)
+
+
 @pytest.fixture(autouse=True)
 def ensure_deployment_recovery_state(request):
     """Mirror the migration-seeded routing singleton after transactional flushes."""
@@ -250,6 +288,25 @@ def activated_notification_deployment(request):
     NotificationCutover.objects.update_or_create(pk=1, defaults={
         "route": "canonical", "sending_enabled": True, "barrier_at": now,
         "copied_at": now, "reconciled_at": now, "activated_at": now})
+
+
+@pytest.fixture(autouse=True)
+def open_new_machines():
+    """Decision 319: a new machine needs a machine access grant by default. The pre-319 suites build machines
+    and expect members to use them, so every machine created in a test starts "open to all members" (what the
+    upgrade migration gives ungated machines). `tests/parity_0120/machine_access` overrides this fixture to
+    exercise the real default (grant required)."""
+    from django.db.models.signals import pre_save
+
+    from apps.machines.models import Machine
+
+    def receiver(sender, instance, **kwargs):
+        if instance._state.adding:
+            instance.open_to_all_members = True
+
+    pre_save.connect(receiver, sender=Machine, dispatch_uid="tests.open_new_machines")
+    yield
+    pre_save.disconnect(sender=Machine, dispatch_uid="tests.open_new_machines")
 
 
 # LOCAL ONLY (R3 test phase): `--narrow-role` runs the whole session as the narrow runtime role

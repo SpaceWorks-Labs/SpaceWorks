@@ -11,9 +11,9 @@ from tests.devices.sim_agent import integrated_case, snapshot, started_request
 pytestmark = pytest.mark.django_db(transaction=True)
 
 
-def test_the_capability_is_a_machines_feature_off_by_default_and_hidden_from_the_console():
+def test_the_capability_is_a_machines_feature_off_by_default_and_shown_in_settings():  # decision 312 exposes it
     feature = FEATURES["machines.integrations"]
-    assert (feature.parent_module, feature.default_enabled, feature.frontend_exposed) == ("machines", False, False)
+    assert (feature.parent_module, feature.default_enabled, feature.frontend_exposed) == ("machines", False, True)
     assert set(feature.requires_modules) == {"devices", "machine_service"}
 
 

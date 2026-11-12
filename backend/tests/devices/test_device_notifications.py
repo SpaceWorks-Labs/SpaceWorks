@@ -27,7 +27,10 @@ def test_devices_catalog_keeps_external_channels_off_and_personal_inbox_on():
     space = device_space("device-alert-defaults")
     assert NotificationFeature.DEVICES in SELECTABLE_FEATURES
     assert FEATURE_MODULES[NotificationFeature.DEVICES] == "devices"
-    assert FEATURE_EVENTS[NotificationFeature.DEVICES] == ("offline", "recovered")
+    assert FEATURE_EVENTS[NotificationFeature.DEVICES][:2] == ("offline", "recovered")
+    assert set(FEATURE_EVENTS[NotificationFeature.DEVICES][2:]) == {
+        "adapter_attention", "adapter_runout", "adapter_session_ending", "adapter_access_denied",
+        "adapter_detection", "adapter_job_review"}
     assert set(DEFAULT_CHANNEL_STATE[NotificationFeature.DEVICES]) == set(NotificationChannel.values)
     assert is_notification_enabled(space, "devices", NotificationChannel.IN_APP)
     assert not any(is_notification_enabled(space, "devices", channel)

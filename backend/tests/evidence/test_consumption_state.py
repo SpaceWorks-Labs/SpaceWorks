@@ -4,7 +4,7 @@ import ast
 from pathlib import Path
 
 import pytest
-from django.db import Error, connection, transaction
+from django.db import Error, connection, connections, transaction
 
 from tests.account_split.p1_helpers import staff
 from apps.evidence.consumption import mark_consumed
@@ -68,7 +68,7 @@ def test_mark_consumed_rolls_back_with_its_domain_transaction():
 def test_mark_consumed_refuses_to_run_outside_a_transaction(monkeypatch):
     photo = _photo("consume-no-txn", state=C.UNCONSUMED)
     # pytest-django wraps each test in a transaction; model "no atomic block".
-    monkeypatch.setattr(connection, "in_atomic_block", False)
+    monkeypatch.setattr(connections["default"], "in_atomic_block", False)  # the real wrapper, not the lazy proxy
     with pytest.raises(RuntimeError, match="consuming transaction"):
         mark_consumed(photo)
     monkeypatch.undo()

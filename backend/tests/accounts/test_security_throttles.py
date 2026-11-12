@@ -47,8 +47,11 @@ def test_challenge_cache_key_never_contains_bearer():
 
 def test_invitation_accept_throttle_does_not_require_a_real_account(monkeypatch):
     rates(monkeypatch, "staff_invite_accept")
-    payload = {"token": "x" * 43, "makerspace_slug": "missing", "password": "Throttle password 394!"}
+    # U-A1: redeeming an invitation needs a signed-in person; the budget still must not need a real invitation.
+    from apps.accounts.models import User
+    payload = {"token": "x" * 43, "makerspace_slug": "missing"}
     client = APIClient()
+    client.force_authenticate(User.objects.create_user("throttle-redeemer", email="throttle-redeemer@example.test"))
     assert client.post("/api/v1/auth/staff-invitations/accept", payload, format="json").status_code == 400
     assert client.post("/api/v1/auth/staff-invitations/accept", payload, format="json").status_code == 429
 

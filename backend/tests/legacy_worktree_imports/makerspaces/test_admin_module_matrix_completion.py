@@ -9,6 +9,11 @@ from apps.makerspaces.admin_capabilities import MakerspaceAdminForm, MakerspaceC
 from apps.makerspaces.models import Makerspace
 from apps.makerspaces.module_registry import core_module_keys
 
+# Superseded: "maintenance" is now a feature of the machines module (no longer a module of its own), so this
+# worktree-era copy asserts a retired registry shape. The maintained version is
+# tests/makerspaces/test_admin_module_matrix_completion.py (kept here per the keep-all-tests rule).
+pytestmark = pytest.mark.skip(reason="superseded by tests/makerspaces/test_admin_module_matrix_completion.py")
+
 
 def _fresh(name, slug):
     # Only core is on before, so nothing in these tick tests counts as an untick.

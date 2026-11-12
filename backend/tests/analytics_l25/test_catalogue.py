@@ -75,7 +75,7 @@ def test_the_payments_views_are_amounts_only():
 def test_domains_are_registered_modules_and_names_unique():
     assert DOMAIN_MODULES == ("inventory", "machines", "bookings", "events", "tickets", "membership",
                               "payments", "procurement", "donations", "shop", "lending_contexts",
-                              "access_safety")
+                              "access_safety", "release_devices_cards")
     names = [view.name for view in all_views()]
     assert len(names) == len(set(names))
     assert VIEWS_VERSION == 3 and all(view.since <= VIEWS_VERSION for view in all_views())
@@ -113,8 +113,10 @@ def test_shop_and_payout_people_are_masked_and_never_named():
         assert word not in text
 
 
-R12 = ("loan_event_contexts", "loan_booking_contexts", "included_hours_usage", "day_pass_products", "guest_passes",
-       "guest_certification_grants", "incidents", "incident_actions")
+R12 = ("loan_event_contexts", "loan_booking_contexts", "loan_charges", "included_hours_usage", "day_pass_products", "guest_passes",
+       "guest_certification_grants", "incidents", "incident_actions",
+       # Decision 327: machine grants, device adapters, card jobs and event certificates.
+       "machine_access_grants", "adapter_usage", "adapter_access_decisions", "card_jobs", "event_certificates")
 
 
 def test_release_twelve_views_are_registered_at_version_three():

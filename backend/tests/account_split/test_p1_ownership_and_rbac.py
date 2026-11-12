@@ -53,7 +53,7 @@ def ownership_calls(user):
     return [
         lambda: own_membership(user, None),
         lambda: profile_for(membership), lambda: save_profile(membership, {}),
-        lambda: claim_handle(membership, "handle"), lambda: issue_card(user, membership),
+        lambda: claim_handle(membership.user, "handle"), lambda: issue_card(user, membership),
         lambda: reissue_card(user, SimpleNamespace(membership=membership), reason="lost"),
         lambda: create_term(user, membership, None), lambda: accept_waiver(membership),
         lambda: start_session(user, None, 60), lambda: staff_check_in(user, user, None, 60),

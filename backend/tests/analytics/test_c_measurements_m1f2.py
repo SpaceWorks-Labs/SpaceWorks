@@ -7,7 +7,13 @@ import pytest
 
 from apps.machines.models import ServiceQueue, MachineServiceRequest
 from apps.operations import reports
-from apps.operations.report_definitions_machines import MACHINE_REPORT_KEYS
+from apps.operations.report_definitions_machines import MACHINE_REPORT_KEYS as _ALL_MACHINE_REPORT_KEYS
+
+# These M1F2 contract tests cover the original ten machine reports; the later families (machine-session-*, event
+# machine use, consumables) are subject- or profile-scoped and have their own tests (l23_local, events, parity_0120).
+MACHINE_REPORT_KEYS = frozenset({"machine-usage", "machine-usage-members", "machine-usage-heatmap", "machine-downtime",
+                                 "maintenance-activity", "machine-service", "service-queue-times", "printer-jobs",
+                                 "machine-errors", "warranty-expiry"}) & _ALL_MACHINE_REPORT_KEYS
 from apps.operations.reports_machine_downtime import _period_segments
 from apps.operations.reports_machine_heatmap import hour_cells
 from apps.operations.reports_machine_queue import percentile

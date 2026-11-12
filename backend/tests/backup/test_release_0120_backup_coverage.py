@@ -20,7 +20,8 @@ from apps.encryption.registry import fields_for_label
 TENANT_MODELS = (
     "bookings.BookingConsumablePlanContext", "bookings.BookingLoanContext",
     "bookings.IncludedHoursUsage", "events.EventBookingDecision", "events.EventConsumablePlanContext",
-    "events.EventLoanContext", "events.EventMachineBookingLink", "inventory.EquipmentConsumablePlan",
+    "events.EventLoanContext", "events.EventMachineBookingLink", "events.MachineEventCostApproval",
+    "events.MachineEventLink", "inventory.EquipmentConsumablePlan",
     "inventory.EquipmentConsumableUseReceipt", "inventory.EquipmentKitAllocation", "inventory.EquipmentKitTemplate",
     "inventory.EquipmentKitVersion", "inventory.EquipmentProposalReceipt", "machines.EventInductionLink",
     "machines.GuestCertificationGrant", "machines.SupervisedParticipant", "machines.SupervisedSession",
@@ -32,6 +33,7 @@ TENANT_MODELS = (
 # Platform level or per-space secrets: never in a tenant dump, never in a one-space archive.
 NEVER_TRAVEL = (
     "managed_hosting.PlatformThrottleRate", "managed_hosting.SpaceHostingType",
+    "managed_hosting.PlatformLimitDefault", "managed_hosting.SpaceLimitThreshold",
     "card_designs.PlatformWalletCredentials", "card_designs.MakerspaceWalletCredentials",
     "notifications.BrowserFirebaseInstallation", "notifications.BrowserFirebaseRegistration",
 )

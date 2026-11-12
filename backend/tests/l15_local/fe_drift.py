@@ -2,8 +2,8 @@ import re, json
 from pathlib import Path
 from apps.makerspaces.capability_definitions import FEATURE_DEFINITIONS
 from apps.makerspaces.capability_validation import default_enabled_features
-src = Path("/workspace/frontend/src/lib/features.ts").read_text(encoding="utf-8")
-body = src.split("FEATURE_DEFINITIONS: readonly FeatureDefinition[] = [", 1)[1].split("];", 1)[0]
+parts = sorted(Path("/workspace/frontend/src/lib/featureDefinitions").glob("part*.ts"), key=lambda p: int(p.stem[4:]))
+body = "\n".join(p.read_text(encoding="utf-8") for p in parts)
 m = set()
 for line in body.splitlines():
     x = re.search(r'key:\s*"([^"]+)",\s*parent_module:\s*(null|"[^"]*"),\s*label:\s*"([^"]+)"', line)

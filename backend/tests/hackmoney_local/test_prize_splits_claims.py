@@ -48,7 +48,7 @@ def test_leader_proposes_member_confirms_and_each_share_is_its_own_payout(world)
     prize_shares.respond(world.event.pk, mate["id"], actor=user(members[1]), data=command(mate["version"]), accept=True)
     first = pay(world, award, recipient=members[0])
     second = pay(world, award, recipient=members[1])
-    assert (first["amount"], second["amount"]) == (Decimal("600.00"), Decimal("400.00"))
+    assert (Decimal(first["amount"]), Decimal(second["amount"])) == (Decimal("600.00"), Decimal("400.00"))
     assert LedgerEntry.objects.filter(pk__in=[first["ledger_entry_id"], second["ledger_entry_id"]]).count() == 2
 
 
@@ -84,6 +84,8 @@ def test_a_non_cash_or_sponsor_paid_prize_cannot_be_split_or_paid(world):
 
 # G4 / G7 --------------------------------------------------------------------------------------
 
+# A claim's fields are mandatory-encrypted: the tenant key is prepared OUTSIDE any transaction (claim_key).
+@pytest.mark.django_db(transaction=True)
 def test_a_claim_is_encrypted_masked_and_never_audited_in_full(world, settings):
     accept_payees(settings, world)
     award, members = winning_award(world, second_member=False)
@@ -96,6 +98,8 @@ def test_a_claim_is_encrypted_masked_and_never_audited_in_full(world, settings):
     assert "ABCDE1234F" not in str(audit.meta) and "asha" not in str(audit.meta)
 
 
+# A claim's fields are mandatory-encrypted: the tenant key is prepared OUTSIDE any transaction (claim_key).
+@pytest.mark.django_db(transaction=True)
 def test_a_payee_pair_the_space_does_not_accept_is_refused(world, settings):
     accept_payees(settings, world, pairs=(("IN", "bank_transfer"),))
     award, members = winning_award(world, second_member=False)
@@ -103,6 +107,8 @@ def test_a_payee_pair_the_space_does_not_accept_is_refused(world, settings):
         prize_claims.submit(world.event.pk, award.pk, actor=user(members[0]), data=command(0, **payee()))
 
 
+# A claim's fields are mandatory-encrypted: the tenant key is prepared OUTSIDE any transaction (claim_key).
+@pytest.mark.django_db(transaction=True)
 def test_a_bad_pan_is_refused_and_a_pan_is_optional(world, settings):
     accept_payees(settings, world)
     award, members = winning_award(world, second_member=False)
@@ -112,6 +118,8 @@ def test_a_bad_pan_is_refused_and_a_pan_is_optional(world, settings):
                                data=command(0, **payee()))["pan_masked"] == ""
 
 
+# A claim's fields are mandatory-encrypted: the tenant key is prepared OUTSIDE any transaction (claim_key).
+@pytest.mark.django_db(transaction=True)
 def test_finance_reveal_is_audited_with_its_reason_and_paying_clears_the_routing(world, settings):
     accept_payees(settings, world)
     award, members = winning_award(world, second_member=False)
@@ -129,6 +137,8 @@ def test_finance_reveal_is_audited_with_its_reason_and_paying_clears_the_routing
                             data=command(row.version, reason_code="pay_winner"))
 
 
+# A claim's fields are mandatory-encrypted: the tenant key is prepared OUTSIDE any transaction (claim_key).
+@pytest.mark.django_db(transaction=True)
 def test_a_member_outside_the_winning_team_cannot_claim(world, settings):
     from tests.events.ticketing_helpers import account
     accept_payees(settings, world)
@@ -148,8 +158,8 @@ def test_a_payout_stores_gross_tds_and_net_and_the_ledger_records_the_gross(worl
     tax_on(world)
     award, _members = winning_award(world, amount=Decimal("20000.00"), second_member=False)
     row = pay(world, award)
-    assert (row["amount"], row["tds_amount"], row["net_amount"]) == (Decimal("20000.00"), Decimal("6000.00"),
-                                                                     Decimal("14000.00"))
+    assert (Decimal(row["amount"]), Decimal(row["tds_amount"]), Decimal(row["net_amount"])) == (
+        Decimal("20000.00"), Decimal("6000.00"), Decimal("14000.00"))
     assert LedgerEntry.objects.get(pk=row["ledger_entry_id"]).amount == Decimal("20000.00")
     payout = HackathonPrizePayout.objects.get(pk=row["id"])
     assert payout.net_amount == payout.amount - payout.tds_amount
@@ -160,7 +170,7 @@ def test_staff_may_change_the_proposed_tax_but_never_to_the_whole_prize(world):
     award, _members = winning_award(world, amount=Decimal("20000.00"), second_member=False)
     with pytest.raises(ValidationError):
         pay(world, award, tds_amount="20000.00")
-    assert pay(world, award, tds_amount="0")["tds_amount"] == Decimal("0.00")
+    assert Decimal(pay(world, award, tds_amount="0")["tds_amount"]) == Decimal("0.00")
 
 
 def test_masking_shows_only_the_last_four():

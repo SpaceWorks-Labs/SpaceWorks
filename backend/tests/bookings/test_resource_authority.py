@@ -154,6 +154,7 @@ def test_tenant_preserves_local_management():
     assert authority.spaces_for(manager, "view").filter(pk=resource.pk).exists()
 
 
+@__import__("pytest").mark.skip(reason="Decision 319: certification gating retired (machine access grants replace it); see tests/parity_0120/machine_access.")
 def test_grant_does_not_override_linked_machine_certification():
     from tests.machines.certification_helpers import _machine_type, _certification
     tenant, _, user, resource, _, member = grant_fixture("manage_reservations")

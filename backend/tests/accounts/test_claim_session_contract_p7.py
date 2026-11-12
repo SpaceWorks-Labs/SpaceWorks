@@ -18,7 +18,7 @@ from apps.makerspaces.models import (
     MakerspaceMembership,
     MakerspaceRole,
     MakerspaceWaiver,
-    MemberProfile,
+    AccountProfile,
 )
 from apps.payments.models import Payment
 from apps.presence.models import PresenceSession
@@ -66,6 +66,9 @@ def test_refresh_rotation_preserves_one_absolute_expiry_forever():
 ROUTE_KWARGS = {
     "member-event-history": {"makerspace_id": "claim"},
     "member-profile-handle": {"makerspace_id": "claim"},
+    "member-global-profile-timeline-detail": {"pk": 1},
+    "member-global-profile-achievement-detail": {"pk": 1},
+    "profile-by-account": {"user_id": 1},
     "presence-preferences": {"makerspace_slug": "claim-slug"},
     **{name: {"makerspace_id": "claim"} for name in (
         "member-account-cancel", "member-account-leave", "member-account-membership",
@@ -252,11 +255,7 @@ def test_mixed_ownership_reads_and_checkout_never_return_a_foreign_row():
     foreign_registration = registration(event(foreign, "Foreign event"), harness, via=harness.space)
     local_payment = payment(harness.space, harness.membership, local_registration)
     foreign_payment = payment(foreign, harness.membership, foreign_registration, via=harness.space)
-    MemberProfile.objects.create(
-        membership=harness.membership,
-        is_visible=True,
-        show_attended_events=True,
-    )
+    AccountProfile.objects.create(user=harness.membership.user, is_visible=True, show_events=True)
 
     base = f"/api/v1/member/makerspaces/{harness.space.pk}"
     activity = harness.claim_client.get(f"{base}/activity")

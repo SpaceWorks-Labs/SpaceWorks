@@ -84,8 +84,11 @@ def pairwise_world(settings, monkeypatch, *, projects=4, judges=3, enabled=True)
                            judges=judge_users, roles=role_ids)
 
 
-def _project(event, adapter, index):
+def _project(event, adapter, index, mates=0):
+    """One submitted project. `mates` extra accounts are sealed into the snapshot at INSERT time: the snapshot is
+    immutable afterwards (trigger `events_submissionsnapshot_immutable`), so members can only be set here."""
     leader = account(f"maker-{uuid4().hex[:10]}")
+    mate_ids = [account(f"mate-{uuid4().hex[:10]}").pk for _ in range(mates)]
     with transaction.atomic():
         application = apps.get_model("events", "HackathonApplication").objects.create(event=event, member=leader)
         name = f"Team {index} {uuid4().hex[:4]}"
@@ -95,8 +98,8 @@ def _project(event, adapter, index):
             application=application, creator=leader, state="active")
     project = HackathonSubmission.objects.create(event=event, team=team, state="submitted", triage="eligible")
     snapshot = SubmissionSnapshot.objects.create(submission=project, sequence=1, submitted_by=leader,
-        project={"title": f"Project {index}"}, content_sha256=f"{index:064x}", sealed_member_ids=[leader.pk])
-    adapter.snaps[snapshot.pk] = Snapshot(id=snapshot.pk, event_id=event.pk, team_id=team.pk, member_ids=(leader.pk,),
+        project={"title": f"Project {index}"}, content_sha256=f"{index:064x}", sealed_member_ids=[leader.pk, *mate_ids])
+    adapter.snaps[snapshot.pk] = Snapshot(id=snapshot.pk, event_id=event.pk, team_id=team.pk, member_ids=(leader.pk, *mate_ids),
         track_ids=(), prize_ids=(), title=f"Project {index}", description="", content_sha256=snapshot.content_sha256,
         eligible=True, current=True, metadata_public=False, public_asset_ids=(), public_links=(), expires_at=None)
     return snapshot.pk

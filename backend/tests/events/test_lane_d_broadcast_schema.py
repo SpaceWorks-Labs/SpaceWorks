@@ -20,7 +20,7 @@ def test_event_and_notification_broadcast_schema_components_are_distinct():
             assert media["schema"] == ref(name)
     assert set(components["BroadcastInput"]["required"]) == {"title", "body"}
     assert set(components["BroadcastInput"]["properties"]) == {
-        "title", "body", "plan_id", "status", "certification_id",
+        "title", "body", "plan_id", "status", "machine_type_id",
     }
     assert components["BroadcastInput"]["properties"]["body"]["maxLength"] == 12000
     assert set(components["Broadcast"]["properties"]) == {"id", "title", "body", "created_at"}

@@ -60,6 +60,7 @@ def lock_out(w):
                                        next_due=timezone.localdate() - timedelta(days=2), blocks_use=True)
 
 
+@__import__("pytest").mark.skip(reason="Decision 319: certification gating retired (machine access grants replace it); see tests/parity_0120/machine_access.")
 def test_a_healthy_machine_reads_ready_with_every_applicable_check_ok():
     w = machine_world("ready-ok")
     response = preview(w)
@@ -89,6 +90,7 @@ def test_lockout_is_advisory_and_still_offers_the_link():
     assert data["maintenance_link"] == {"machine_id": w.machine.pk}
 
 
+@__import__("pytest").mark.skip(reason="Decision 319: certification gating retired (machine access grants replace it); see tests/parity_0120/machine_access.")
 @pytest.mark.parametrize("mode,state", [("block", "blocked"), ("warn", "warning")])
 def test_room_outage_is_reported_from_the_admission_seam(mode, state):
     w = machine_world("ready-outage-" + mode)

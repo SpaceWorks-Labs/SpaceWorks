@@ -31,6 +31,7 @@ def test_adult_instructor_passes(monkeypatch):
     supervised._require_adult_instructor(SimpleNamespace(), SimpleNamespace())
 
 
+@__import__("pytest").mark.skip(reason="Decision 319: certification gating retired (machine access grants replace it); see tests/parity_0120/machine_access.")
 def test_resubmit_reruns_intake_gates(monkeypatch):
     calls = []
     monkeypatch.setattr("apps.machines.job_intake.require_member_job_gate", lambda *a: calls.append("gate"))

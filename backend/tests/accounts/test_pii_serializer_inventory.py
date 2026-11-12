@@ -45,6 +45,10 @@ REVIEWED = {
     'apps.notifications.serializers_inbox.InboxSerializer': _OWN,
     # L16: a reporter's own reports (no reporter name, email or contractor detail in it).
     'apps.maintenance.repairs.serializers_issues.MemberIssueReportSerializer': _OWN,
+    'apps.devices.serializers_adapter_logs.BindingJobSerializer': _STAFF,
+    'apps.maintenance.incidents.serializers.IncidentSerializer': _STAFF,
+    'apps.maintenance.incidents.serializers.MemberIncidentSerializer': _OWN,
+    'apps.maintenance.repairs.serializers_loan_handoff.LoanRepairIssueSerializer': _STAFF,
     # Reviewed 2026-11-06 (AG2) for 650a647e (#190): the superadmin account lookup returns id, username,
     # kind, status, MFA flag and a role count -- no ACCOUNT_PII_FIELDS and no registry field; the lookup
     # key (exact username) is all it echoes, so masking has nothing to cover.

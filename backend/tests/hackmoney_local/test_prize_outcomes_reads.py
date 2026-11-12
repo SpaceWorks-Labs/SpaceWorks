@@ -10,14 +10,14 @@ from apps.events.judging import options, prize_outcomes, prize_reads
 from apps.events.judging.errors import ProgrammeError
 from apps.events.judging.models_prize_money import HackathonPrizeOutcome
 from apps.payments.models_ledger_entries import LedgerEntry
-from tests.hackmoney_local.helpers import command, world  # noqa: F401
+from tests.hackmoney_local.helpers import command, enable, world  # noqa: F401
 from tests.hackmoney_local.prize_helpers import pay, user, winning_award
 
 pytestmark = pytest.mark.django_db
 
 
 def fulfil(world, award, **fields):
-    data = command(0, method="handed_over", happened_on="2026-11-05", **fields)
+    data = command(0, **{"method": "handed_over", "happened_on": "2026-11-05", **fields})
     return prize_outcomes.fulfil(world.event.pk, award.pk, actor=world.manager, data=data)
 
 
@@ -154,6 +154,7 @@ def test_prize_pool_counts_earmarked_sponsorship_and_payouts(world):
     from apps.payments.donations import sponsors
     from apps.payments.donations.models_sponsors import Sponsor
     from apps.payments.models import Payment
+    enable(world, "charges.donations")  # sponsor money is recorded only while the donations charge family is on
     award, _members = winning_award(world, second_member=False)
     sponsor = Sponsor.objects.create(makerspace=world.space, name="Acme")
     charge, payment = sponsors.raise_charge(sponsor, actor=world.manager, amount=Decimal("5000.00"),
@@ -169,10 +170,12 @@ def test_a_prize_pool_earmark_needs_an_event_in_this_space(world):
     from apps.payments.donations import sponsors
     from apps.payments.donations.gates import DonationRefused
     from apps.payments.donations.models_sponsors import Sponsor
+    enable(world, "charges.donations")  # so the refusal below is the earmark rule, not "charges_off"
     sponsor = Sponsor.objects.create(makerspace=world.space, name="Acme")
-    with pytest.raises(DonationRefused):
+    with pytest.raises(DonationRefused) as refused:
         sponsors.raise_charge(sponsor, actor=world.manager, amount=Decimal("10.00"), event_id=999999,
                               earmark="prize_pool")
+    assert refused.value.detail["code"] != "charges_off"
 
 
 def test_prizes_owed_report_lists_unsettled_awards_without_naming_anyone(world):

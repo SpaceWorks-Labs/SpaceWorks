@@ -64,13 +64,13 @@ def test_payout_is_a_ledger_expense_and_a_reversal_voids_it(world):
     assert row["recipient_id"] == world.ports.snaps[world.snapshots[0]].member_ids[0]  # defaults to the leader
     with pytest.raises(ProgrammeError) as twice:
         payouts.record_payout(world.event.pk, actor=world.manager, data=command(
-            0, award_id=award.pk, method="cash", paid_on="2026-11-05"))
+            0, award_id=award.pk, method="cash", reference="REF-1", paid_on="2026-11-05"))
     assert twice.value.detail["code"] == "payout_exists"
     reversal = payouts.reverse_payout(world.event.pk, row["id"], actor=world.manager, data=command(0, reason="Wrong account"))
     entry.refresh_from_db()
     assert reversal["kind"] == "reversal" and entry.voided_at is not None
     again = payouts.record_payout(world.event.pk, actor=world.manager, data=command(
-        0, award_id=award.pk, method="cash", paid_on="2026-11-06", amount="200.00"))
+        0, award_id=award.pk, method="cash", reference="REF-1", paid_on="2026-11-06", amount="200.00"))
     assert LedgerEntry.objects.get(pk=again["ledger_entry_id"]).voided_at is None
 
 
@@ -78,7 +78,7 @@ def test_payout_rows_are_append_only(world):
     enable(world, "events.prize_payouts")
     award = published_award(world)
     row = payouts.record_payout(world.event.pk, actor=world.manager, data=command(
-        0, award_id=award.pk, method="cash", paid_on="2026-11-05"))
+        0, award_id=award.pk, method="cash", reference="REF-1", paid_on="2026-11-05"))
     payout = HackathonPrizePayout.objects.get(pk=row["id"])
     payout.reference = "edited"
     with pytest.raises(RuntimeError):
@@ -92,7 +92,7 @@ def test_only_record_payment_holders_or_the_event_manager_record_payouts(world):
     award = published_award(world)
     judge = world.judges[0]  # an event role, no space finance or events action
     with pytest.raises(Http404):
-        payouts.record_payout(world.event.pk, actor=judge, data=command(0, award_id=award.pk, method="cash", paid_on="2026-11-05"))
+        payouts.record_payout(world.event.pk, actor=judge, data=command(0, award_id=award.pk, method="cash", reference="REF-1", paid_on="2026-11-05"))
     assert payouts.may_record(world.manager, world.space.pk)
 
 
@@ -114,7 +114,7 @@ def test_migration_keeps_existing_events_emails_on(world):
     from importlib import import_module
     from django.apps import apps
     from apps.events.judging.models_options import HackathonProgrammeOptions
-    import_module("apps.events.migrations.0068_l21b_guards_and_options").keep_existing_emails(apps, None)
+    import_module("apps.events.migrations.0069_l21b_guards_and_options").keep_existing_emails(apps, None)
     row = HackathonProgrammeOptions.objects.get(event=world.event)
     assert row.results_email and row.submission_receipt_email and not row.finalists_email
 

@@ -28,7 +28,7 @@ def accounts():
     space = make_space("recovery-isolation")
     member = User.objects.create_user(username="recover-member", email="shared-recovery@example.test",
                                       password=PASSWORD)
-    staff = make_staff(space, username="recover-staff", email=member.email, password=PASSWORD)
+    staff = make_staff(space, username="recover-staff", email="recover-staff@example.test", password=PASSWORD)
     return member, staff
 
 
@@ -106,7 +106,7 @@ def test_email_scrub_preserves_staff_and_ambiguous_address_only_history():
 def test_database_refuses_nonmember_deletion_state(kind):
     member, staff = accounts()
     user = staff if kind == "staff" else User.objects.create_superuser(
-        username="recovery-platform", email=member.email, password=PASSWORD)
+        username="recovery-platform", email="recovery-platform@example.test", password=PASSWORD)
     with pytest.raises(IntegrityError), transaction.atomic():
         User.objects.filter(pk=user.pk).update(deletion_requested_at=timezone.now())
 

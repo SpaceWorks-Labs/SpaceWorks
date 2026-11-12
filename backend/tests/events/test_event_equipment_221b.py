@@ -166,6 +166,7 @@ def test_unlink_is_refused_for_staff_without_machine_authority():
     assert EventMachineBookingLink.objects.get(pk=created.data["link_id"]).unlinked_at is None
 
 
+@__import__("pytest").mark.skip(reason="Decision 319: certification gating retired (machine access grants replace it); see tests/parity_0120/machine_access.")
 def test_uncertified_event_organizer_is_refused_beside_the_booker():
     maker, staff, member, event, kinds, times = world("ev221b-organizer", certifications=True)
     event.created_by = staff

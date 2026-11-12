@@ -83,8 +83,8 @@ def test_event_money_settings_are_off_by_default_and_space_manager_only(settings
     space, _event, staff, _ticket = ticketed_event(l6_space("g13-read"))
     body = client_for(staff).get(settings_url(space))
     assert body.status_code == 200, body.data
-    assert (body.data["prize_tds_enabled"], body.data["prize_tds_rate"], body.data["prize_tds_threshold"]) == (
-        False, "30.00", "10000.00")
+    assert (body.data["prize_tds_enabled"], Decimal(str(body.data["prize_tds_rate"])),
+            Decimal(str(body.data["prize_tds_threshold"]))) == (False, Decimal("30.00"), Decimal("10000.00"))
     assert ["IN", "upi"] in body.data["available_payee_templates"]
     assert client_for(verified("g13-member")).get(settings_url(space)).status_code in (403, 404)
 

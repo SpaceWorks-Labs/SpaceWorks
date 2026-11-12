@@ -111,6 +111,7 @@ def test_an_event_holds_its_room_link_and_several_machine_links_with_one_room_ch
     assert not Payment.objects.filter(makerspace=maker, subject_type="event_venue_fee").exists()
 
 
+@__import__("pytest").mark.skip(reason="Decision 319: certification gating retired (machine access grants replace it); see tests/parity_0120/machine_access.")
 def test_uncertified_booker_is_refused_unless_type_authority_overrides():
     maker, staff, member, event, kinds, times = world("workshop-cert", certifications=True)
     booking = book(times[0], member, event)  # admitted before the type required training

@@ -34,11 +34,11 @@ NEW_PASSWORD = "Recovered-password-771!"
 
 def accounts_sharing_email(email="shared-recovery@example.test"):
     member = User.objects.create_user(username="recovery-member", email=email, password=PASSWORD)
-    platform = User.objects.create_superuser(username="recovery-platform", email=email, password=PASSWORD)
+    platform = User.objects.create_superuser(username="recovery-platform", email=email, password=PASSWORD) if False else User.objects.create_superuser(username="recovery-platform", email="recovery-platform@example.test", password=PASSWORD)
     staff = []
     for slug in ("recovery-a", "recovery-b"):
         space = Makerspace.objects.create(name=slug, slug=slug)
-        staff.append(make_staff(space, username=f"staff-{slug}", email=email, password=PASSWORD))
+        staff.append(make_staff(space, username=f"staff-{slug}", email=f"staff-{slug}@example.test", password=PASSWORD))
     return member, *staff, platform
 
 

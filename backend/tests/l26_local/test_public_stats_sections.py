@@ -47,7 +47,7 @@ def test_default_sections_keep_todays_page():
     makerspace = Makerspace.objects.create(name="d", slug="l26-default", enabled_modules=ALL_MODULES,
                                            public_stats_enabled=True)
     stats = build_public_stats(makerspace)
-    assert stats["sections"] == ["machines", "lending"]  # printing needs machine_service + printing
+    assert stats["sections"] == ["machines", "lending"]  # printing needs machine_service (340b)
     assert stats["events"] is None and stats["community"] is None
     assert stats["headline"] == [] and stats["tv"] == {"enabled": False, "refresh_seconds": 60}
     assert stats["period"]["key"] == "month"

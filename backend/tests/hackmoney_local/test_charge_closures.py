@@ -101,6 +101,10 @@ def publish_finalists(world, snapshot_ids):
     from django.utils import timezone
     from apps.events.judging.models_definitions import JudgingRound
     from apps.events.judging.models_finalists import FinalistAdvance, FinalistAnnouncement, JudgingFinalist
+    from apps.events.models import HackathonSubmission, SubmissionSnapshot
+    # The fixture seals snapshots but never points the submission at one; the seam reads `current_snapshot`.
+    for snap in SubmissionSnapshot.objects.filter(pk__in=world.snapshots):
+        HackathonSubmission.objects.filter(pk=snap.submission_id).update(current_snapshot_id=snap.pk)
     source = JudgingRound.objects.create(event=world.event, key="heats", mode="weighted_1_5")
     target = JudgingRound.objects.create(event=world.event, key="final", mode="weighted_1_5")
     advance = FinalistAdvance.objects.create(event=world.event, source_round=source, target_round=target,

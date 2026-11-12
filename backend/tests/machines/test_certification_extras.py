@@ -68,3 +68,8 @@ def test_certification_coverage_report_row_and_org_exclusion():
     assert aggregate.field_order == REPORT_REGISTRY["certification-coverage"].fields
     assert aggregate.records
     assert all(row["makerspace_id"] == space.id for row in aggregate.records)
+
+# Decision 319 (retired feature): kept, not deleted -- the cases document the pre-319 behaviour.
+_RETIRED = __import__("pytest").mark.skip(reason="Decision 319: certifications, trainings and inductions are retired as a gate and as a feature; replaced by tests/parity_0120/machine_access.")
+_existing = globals().get("pytestmark", [])
+pytestmark = [*(_existing if isinstance(_existing, (list, tuple)) else [_existing]), _RETIRED]

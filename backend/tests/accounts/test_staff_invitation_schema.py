@@ -29,5 +29,5 @@ def test_staff_invitation_delivery_openapi_documents_link_and_errors():
         assert responses[success]["content"]["application/json"]["schema"] == {
             "$ref": "#/components/schemas/StaffInvitationDelivery",
         }
-    old = schema["paths"]["/api/v1/admin/makerspaces/{makerspace_id}/staff-invitations"]["post"]
-    assert old["deprecated"] and "201" not in old["responses"] and "400" in old["responses"]
+    # The legacy create-by-POST is gone: the list path is read-only now (invitations are issued by granting a role).
+    assert "post" not in schema["paths"]["/api/v1/admin/makerspaces/{makerspace_id}/staff-invitations"]

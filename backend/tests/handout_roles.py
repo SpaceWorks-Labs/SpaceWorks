@@ -48,5 +48,10 @@ def make_handout_member(username, makerspace, **kwargs):
         role=User.Role.REQUESTER,
         access_status=User.AccessStatus.ACTIVE,
     )
+    # U-A1: a staff role is granted to a community member, so the person is a member first.
+    MakerspaceMembership.objects.create(
+        user=user, makerspace=makerspace, role=MakerspaceMembership.Role.CUSTOM, status="active",
+        assigned_role=MakerspaceRole.objects.get(makerspace=makerspace, slug="member"),
+    )
     grant_handout(user, makerspace, **kwargs)
     return user

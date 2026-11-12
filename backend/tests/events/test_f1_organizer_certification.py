@@ -48,3 +48,8 @@ def test_individual_co_organizers_with_edit_details_are_in_the_set_but_helpers_a
     create_manual_grant(event=event, makerspace=event.makerspace, user=co, permissions=["edit_details"])
     create_manual_grant(event=event, makerspace=event.makerspace, user=helper, permissions=["check_in"])
     assert {user.pk for user in organizer_users(event)} == {outsider.pk, co.pk}
+
+# Decision 319 (retired feature): kept, not deleted -- the cases document the pre-319 behaviour.
+_RETIRED = __import__("pytest").mark.skip(reason="Decision 319: certifications, trainings and inductions are retired as a gate and as a feature; replaced by tests/parity_0120/machine_access.")
+_existing = globals().get("pytestmark", [])
+pytestmark = [*(_existing if isinstance(_existing, (list, tuple)) else [_existing]), _RETIRED]

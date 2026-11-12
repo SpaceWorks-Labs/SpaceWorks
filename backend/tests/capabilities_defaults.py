@@ -22,7 +22,7 @@ def test_kiosk_feature_is_standalone_default_off_and_advertises_two_workflows():
     # Merged staging (2026-10-24): Yuyu lanes F, C and BK-F (event and booking websites,
     # embeds and API reads), Pages, mobile, cloud, hosting, machine ETA and the events
     # programme (hackathons, mentoring, volunteering, gallery, reimbursements).
-    assert len(FEATURE_DEFINITIONS) == 209  # + charges.donations (r2-gap-money, #184), + events.peoples_choice (r2-peoples-choice, #181), + events.prize_claims, events.deposits, events.accepted_addons (r2-hack-money), + 2 GAP2 maintenance reminder keys, + platform.help_centre (L20), + 14 shop.* + charges.shop + payments.shop (L22), + charges.price_drop_refunds (L24), + 6 L21b keys, + 6 L21a participation keys, + 10 L18 keys, + 8 L6 ticketing keys, + 2 L13 sheet-import keys, + 5 L3 card keys, + machines.sessions (R2 L23), - security.staff_mfa_required (R2 S-A, retired), + mobile.watch_actions (R2 L19), + machines.integrations (R2 L10), + inventory.contact_self_checkout (#95), + 13 L17 per-parent keys (#97), + events.pairwise_judging (R2 L7), + 3 L1 keys, + 9 L2 keys, + 14 L4 membership keys, + 7 L5 billing/finance keys, + 3 L15 pricing keys, + 12 L12 keys
+    assert len(FEATURE_DEFINITIONS) == 263  # 0.12.0 parity round: + 41 keys (events badge/crew/discovery switches, machine certifications and induction events, Device Adapter integration keys, space display, email sender identity, legal pages ...), each pinned individually by the frontend mirror and the defaults list; before it: + 8 Device Adapter media/data keys (decision 321), + 5 Device Adapter API keys (machines.integrations + .access/.usage_billing/.video/.kiosk/.recording; decisions 310-312), + charges.donations (r2-gap-money, #184), + events.peoples_choice (r2-peoples-choice, #181), + events.prize_claims, events.deposits, events.accepted_addons (r2-hack-money), + 2 GAP2 maintenance reminder keys, + platform.help_centre (L20), + 14 shop.* + charges.shop + payments.shop (L22), + charges.price_drop_refunds (L24), + 6 L21b keys, + 6 L21a participation keys, + 10 L18 keys, + 8 L6 ticketing keys, + 2 L13 sheet-import keys, + 5 L3 card keys, + machines.sessions (R2 L23), - security.staff_mfa_required (R2 S-A, retired), + mobile.watch_actions (R2 L19), + machines.integrations (R2 L10), + inventory.contact_self_checkout (#95), + 13 L17 per-parent keys (#97), + events.pairwise_judging (R2 L7), + 3 L1 keys, + 9 L2 keys, + 14 L4 membership keys, + 7 L5 billing/finance keys, + 3 L15 pricing keys, + 12 L12 keys
     assert {"events.website", "events.embed", "events.api_read",
             "bookings.website", "bookings.embed", "bookings.api_read"} <= FEATURES.keys()
     audience = FEATURES["events.organization_audience"]
@@ -97,6 +97,18 @@ def test_feature_defaults_are_dormant_except_legacy_compatible_self_checkout():
         "platform.help_centre",
         "inventory.maintenance_reminders",
         "bookings.room_maintenance_reminders",
+        # 0.12.0 events parity: team moderation, crew kinds, the badge designer / desk print / role badges,
+        # discovery filters and space insights keep today's behaviour (migration makerspaces 0151 switches them on).
+        "events.team_moderation",
+        "events.crew_kinds",
+        "events.badge_designer",
+        "events.badge_desk_print",
+        "events.role_badges",
+        "events.discovery_filters",
+        "events.space_insights",
+        # Sender identity and the space legal pages are on by default (inert until configured).
+        "email.sender_identity",
+        "legal.space_pages",
     ]
     assert not any(
         key.startswith("payments.") and key != "payments.enabled"

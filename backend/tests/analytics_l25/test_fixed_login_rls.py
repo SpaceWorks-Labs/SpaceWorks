@@ -109,7 +109,7 @@ def test_switching_the_module_off_empties_the_views(two_spaces):
 def test_built_in_machine_types_are_listed_to_a_space_login(two_spaces):
     from apps.machines.models import MachineType
     a, _b = two_spaces
-    MachineType.objects.get_or_create(slug="l25-builtin", makerspace=None, defaults={"name": "Built-in"})
+    MachineType.objects.get_or_create(slug="l25-builtin", makerspace=None, defaults={"name": "Built-in", "is_builtin": True})
     role = _login(a.pk)
     query = "SELECT slug FROM spaceworks_analytics.machine_types"
     # Decision 263 isolation pass: unowned rows follow the login's own space switches too.

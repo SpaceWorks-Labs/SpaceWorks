@@ -133,12 +133,13 @@ def finalize_upload(evidence, max_bytes):
         raise StorageUnavailable from exc
 
 
-def presigned_upload(object_key, content_type):
+def presigned_upload(object_key, content_type, max_bytes=None):
+    """`max_bytes` may only LOWER the evidence ceiling (member-card photos: the card-photo normaliser's 8 MB)."""
     try:
         return presign_upload(
             _public_client(), backend_client=_client(),
             bucket=settings.AWS_STORAGE_BUCKET_NAME, key=staging_key(object_key),
-            content_type=content_type, max_bytes=settings.EVIDENCE_MAX_BYTES,
+            content_type=content_type, max_bytes=min(max_bytes or settings.EVIDENCE_MAX_BYTES, settings.EVIDENCE_MAX_BYTES),
             ttl=settings.EVIDENCE_URL_TTL_SECONDS, requested=settings.STORAGE_PRESIGN_METHOD,
         )
     except (BotoCoreError, ClientError, CapabilityError) as exc:

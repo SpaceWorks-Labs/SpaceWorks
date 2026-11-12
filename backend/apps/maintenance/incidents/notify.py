@@ -7,6 +7,7 @@ area's own staff-feature action so mutes and `receives_notifications` still appl
 its kind, severity and area -- never the description, a name or a contact detail.
 """
 
+from django.utils.translation import gettext
 from apps.hardware_requests.notifications_p2 import fanout, revision, safe_adapter
 from apps.integrations.destinations import NotificationScope
 from apps.integrations.notification_sources import NotificationSource, register_source
@@ -46,12 +47,14 @@ def _area_staff_ids(incident):
 @safe_adapter
 def staff_reported(incident):
     kind = incident.get_kind_display().lower()
-    text = (f"A {incident.get_severity_display().lower()}-severity {kind} (#{incident.pk}) was reported in "
-            f"{incident.get_area_display()}. Review it in the incident register.")
+    text = gettext(
+        "A %(severity)s-severity %(kind)s (#%(id)s) was reported in %(area)s. Review it in the incident register."
+    ) % {"severity": incident.get_severity_display().lower(), "kind": kind, "id": incident.pk,
+         "area": incident.get_area_display()}
     scope = NotificationScope(machine=incident.machine) if incident.machine_id else None
     return fanout(space=incident.makerspace, feature="maintenance", stream="maintenance", event=EVENT, kind=KIND,
                   source=incident.pk, version=_version(incident), subject=incident, scope=scope,
-                  staff={"subject": f"Safety {kind} reported", "text": text},
+                  staff={"subject": gettext("Safety %(kind)s reported") % {"kind": kind}, "text": text},
                   context={"incident_id": incident.pk, "area": incident.area},
                   staff_context={"incident_id": incident.pk}, staff_extra_ids=_area_staff_ids(incident))
 

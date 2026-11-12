@@ -107,12 +107,15 @@ def notify(row, kind):
     feature, stream = AREAS[area]["family"]
     name, day = label(row), row.next_due.strftime("%d %b %Y")
     if kind == "due_soon":
-        title, text = "Maintenance due soon", f"{row.description} on {name} is due on {day}."
+        title = gettext("Maintenance due soon")
+        text = gettext("%(task)s on %(name)s is due on %(day)s.") % {"task": row.description, "name": name, "day": day}
     else:
-        title, text = "Maintenance overdue", f"{row.description} on {name} was due on {day} and is overdue."
+        title = gettext("Maintenance overdue")
+        text = gettext("%(task)s on %(name)s was due on %(day)s and is overdue.") % {
+            "task": row.description, "name": name, "day": day}
     return fanout(space=row.makerspace, feature=feature, stream=stream, event=event, kind=KIND, source=row.pk,
                   version=version(row, event), subject=row,
-                  staff={"subject": f"{title}: {name}"[:200], "text": text + " Log it in the staff console."},
+                  staff={"subject": f"{title}: {name}"[:200], "text": text + " " + gettext("Log it in the staff console.")},
                   context={"schedule_id": row.pk, "area": area}, staff_context={"schedule_id": row.pk})
 
 

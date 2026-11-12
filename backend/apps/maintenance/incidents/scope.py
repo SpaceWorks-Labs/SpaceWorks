@@ -16,6 +16,7 @@ from apps.audit import areas
 from apps.makerspaces.platform import feature_enabled
 
 from .models import Incident
+from django.utils.translation import gettext
 
 FEATURE = "safety.incidents"
 READER_AREAS = (areas.MACHINES, areas.LENDING, areas.EVENTS, areas.BOOKINGS)
@@ -27,7 +28,7 @@ def incidents_on(makerspace):
 
 def require_incidents(makerspace):
     if not incidents_on(makerspace):
-        raise NotFound({"detail": "The incident register is switched off for this makerspace.",
+        raise NotFound({"detail": gettext("The incident register is switched off for this makerspace."),
                         "code": "feature_disabled", "feature": FEATURE})
     return makerspace
 

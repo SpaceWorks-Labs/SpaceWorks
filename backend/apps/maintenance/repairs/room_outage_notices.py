@@ -12,6 +12,7 @@ re-checked at send: the outage must still be open, the booking still affected an
 recipient's, Bookings on (plus the room repairs or maintenance switch, `EVENT_SOURCES`).
 """
 
+from django.utils.translation import gettext, ngettext
 from apps.hardware_requests.notifications_p2 import fanout, revision, safe_adapter
 from apps.integrations.notification_links import local_link
 from apps.makerspaces.platform import module_enabled
@@ -44,11 +45,16 @@ def staff_notice(outage, bookings):
     if not _on(space):
         return None
     count = len(bookings)
-    text = (f"{room.name} is out of service.{_back(outage)} {count} booking{'s' if count != 1 else ''} "
-            "fall in this time. Review each one in Bookings: cancel it or keep it.")
+    text = ngettext(
+        "%(room)s is out of service.%(back)s %(count)s booking falls in this time. "
+        "Review it in Bookings: cancel it or keep it.",
+        "%(room)s is out of service.%(back)s %(count)s bookings fall in this time. "
+        "Review each one in Bookings: cancel it or keep it.",
+        count,
+    ) % {"room": room.name, "back": _back(outage), "count": count}
     return fanout(space=space, feature="bookings", stream="bookings", event=EVENT, kind=SOURCE,
                   source=str(outage.pk), version=_staff_version(outage), subject=outage,
-                  staff={"subject": f"{room.name} is out of service"[:200], "text": text, "html": "",
+                  staff={"subject": (gettext("%(room)s is out of service") % {"room": room.name})[:200], "text": text, "html": "",
                          "link": staff_link(space, f"bookings?space={room.pk}")},
                   context={"outage_id": outage.pk, "space_id": room.pk}, staff_context={"space_id": room.pk})
 
@@ -58,11 +64,13 @@ def booker_notice(outage, booking):
     space, room = outage.makerspace, outage.room
     if not _on(space) or booking.member is None:
         return None
-    text = (f"{room.name} at {space.name} is out of service.{_back(outage)}\n\n"
-            f"Your booking #{booking.pk} falls in this time. The space will contact you about it.")
+    text = gettext(
+        "%(room)s at %(space)s is out of service.%(back)s\n\n"
+        "Your booking #%(id)s falls in this time. The space will contact you about it."
+    ) % {"room": room.name, "space": space.name, "back": _back(outage), "id": booking.pk}
     return fanout(space=space, feature="bookings", stream="bookings", event=EVENT, kind=SOURCE,
                   source=str(outage.pk), version=_booker_version(outage, booking), subject=booking,
-                  owner=booking.member, own={"subject": f"{room.name} is out of service"[:200], "text": text,
+                  owner=booking.member, own={"subject": (gettext("%(room)s is out of service") % {"room": room.name})[:200], "text": text,
                                              "html": "", "link": local_link(space, "member", "bookings")},
                   context={"outage_id": outage.pk, "booking_id": booking.pk, "space_id": room.pk})
 

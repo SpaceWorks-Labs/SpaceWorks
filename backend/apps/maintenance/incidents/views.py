@@ -32,6 +32,7 @@ from .serializers import (
     IncidentSerializer, MemberIncidentPageSerializer, MemberIncidentReportSerializer, MemberIncidentSerializer,
     StaffIncidentCreateSerializer, StaffIncidentUpdateSerializer,
 )
+from django.utils.translation import gettext
 
 STAFF_TAGS, MEMBER_TAGS = ["Admin maintenance incidents"], ["Member incident reports"]
 LINK_MODELS = {"guest_pass": GuestPass, "machine": Machine, "room": BookableSpace, "event": Event, "loan": HardwareRequest,
@@ -159,7 +160,7 @@ class IncidentActionListView(APIView):
             from apps.makerspaces.models import MakerspaceMembership
             if not MakerspaceMembership.objects.filter(makerspace_id=row.makerspace_id, status="active",
                                                        user_id=data["assignee_id"]).exists():
-                raise ValidationError({"assignee_id": "Choose a member of this space."})
+                raise ValidationError({"assignee_id": gettext("Choose a member of this space.")})
             assignee = User.objects.get(pk=data["assignee_id"])
         action = services.add_action(request.user, row, description=data["description"], assignee=assignee,
                                      due_date=data.get("due_date"))

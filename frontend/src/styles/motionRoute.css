@@ -1,0 +1,25 @@
+/* Route changes. View Transitions (src/lib/motion/routeTransition.ts) name only the main content
+   region while a route transition runs; the sidebar and top bar belong to the unanimated root
+   layer and stay still. Where View Transitions are missing, `.sw-route-enter` replays a CSS
+   fade-in on the same region. The old page leaves first (90 ms) and the new one starts at 70 ms, so the two
+   are never visible together at meaningful opacity. Direction sets the settle distance; kiosk/TV screens use 0 (fade only). */
+html[data-sw-nav="forward"], [data-sw-enter="forward"] { --sw-vt-y: 8px; }
+html[data-sw-nav="lateral"], [data-sw-enter="lateral"] { --sw-vt-y: 6px; }
+html[data-sw-nav="back"], [data-sw-enter="back"] { --sw-vt-y: -6px; }
+html[data-sw-nav="fade"], [data-sw-enter="fade"] { --sw-vt-y: 0px; }
+
+html[data-sw-vt="route"] [data-sw-main] { view-transition-name: sw-main; }
+html[data-sw-vt="route"]::view-transition-group(root),
+html[data-sw-vt="route"]::view-transition-old(root),
+html[data-sw-vt="route"]::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
+html[data-sw-vt="route"]::view-transition-group(sw-main) { animation: none; }
+html[data-sw-vt="route"]::view-transition-old(sw-main),
+html[data-sw-vt="route"]::view-transition-new(sw-main) { mix-blend-mode: normal; }
+html[data-sw-vt="route"]::view-transition-old(sw-main) { animation: sw-vt-out 90ms var(--sw-ease-exit) both; }
+html[data-sw-vt="route"]::view-transition-new(sw-main) { animation: sw-vt-in var(--sw-dur-slow) var(--sw-ease-enter) 70ms both; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .sw-route-enter { animation: sw-vt-in var(--sw-dur-slow) var(--sw-ease-enter) 70ms backwards; }
+}
+@keyframes sw-vt-in { from { opacity: 0; transform: translateY(var(--sw-vt-y, 8px)); } }
+@keyframes sw-vt-out { to { opacity: 0; } }

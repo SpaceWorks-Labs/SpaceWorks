@@ -10,6 +10,14 @@ faces. The commercial Gilroy Regular/Medium/SemiBold/Bold files were removed fro
 | `Gilroy-Light.woff2` (300) | large light display text only, where the spec calls for Light | same EULA |
 | `Outfit-Variable.woff2` (wght 100–900) | primary text face: body, UI, labels, emphasis at 400–700 | SIL OFL 1.1, `LICENSES/OFL-Outfit.txt` |
 | `Unbounded-Variable.woff2` (500–600) | one short accent phrase per layout | SIL OFL 1.1, `LICENSES/OFL-Unbounded.txt` |
+| `BebasNeue-400.woff2` | Card Studio: condensed display lettering in card and certificate designs | SIL OFL 1.1, `LICENSES/OFL-BebasNeue.txt` |
+| `Pacifico-400.woff2` | Card Studio: script lines (a department or a signature-style flourish) | SIL OFL 1.1, `LICENSES/OFL-Pacifico.txt` |
+| `DMSerifDisplay-400.woff2` | Card Studio: display serif for names | SIL OFL 1.1, `LICENSES/OFL-DMSerifDisplay.txt` |
+
+The three Card Studio faces are unmodified WOFF2 conversions of the Google Fonts files and are loaded only by the card
+designer (`card-designer/fontLoader.ts`), never by the app shell. The print renderer uses the same faces from
+`backend/apps/card_designs/fonts/` (with the same licence texts), where Outfit 300/800 and Unbounded 800 are static
+instances of the variable files above and the two Gilroy weights are outline-drawn.
 
 The Gilroy and Outfit files are byte-for-byte copies from the SpaceWorks-Design repository (`fonts/`).
 There is no monospace face: machine strings use Outfit with tabular numerals (`.code-text`); Outfit has

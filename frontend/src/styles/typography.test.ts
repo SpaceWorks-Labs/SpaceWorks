@@ -28,20 +28,31 @@ it("keeps native machine strings on the Outfit text face instead of the browser 
 // AGPL repo (owner decision 2026-11-09): only Gilroy's free Light/ExtraBold may ship.
 const COMMERCIAL_GILROY = /Gilroy-(Regular|Medium|SemiBold|Bold)\./;
 
-it("ships only the free Gilroy weights, Outfit and Unbounded, each with its licence", () => {
-  expect(readdirSync("public/fonts").filter((name) => name.endsWith(".woff2")).sort()).toEqual(
-    ["Gilroy-ExtraBold.woff2", "Gilroy-Light.woff2", "Outfit-Variable.woff2", "Unbounded-Variable.woff2"]);
-  for (const licence of ["Gilroy-Free-Font-EULA.txt", "OFL-Outfit.txt", "OFL-Unbounded.txt"]) {
-    expect(existsSync(`public/fonts/LICENSES/${licence}`)).toBe(true);
+// Card Studio (decision 314) adds open display faces for card and certificate designs; each ships with its OFL text.
+const LICENCE_OF: Record<string, string> = {
+  "Gilroy-ExtraBold.woff2": "Gilroy-Free-Font-EULA.txt", "Gilroy-Light.woff2": "Gilroy-Free-Font-EULA.txt",
+  "Outfit-Variable.woff2": "OFL-Outfit.txt", "Unbounded-Variable.woff2": "OFL-Unbounded.txt",
+  "BebasNeue-400.woff2": "OFL-BebasNeue.txt", "DMSerifDisplay-400.woff2": "OFL-DMSerifDisplay.txt",
+  "Pacifico-400.woff2": "OFL-Pacifico.txt",
+};
+
+it("ships only the free Gilroy weights and open (OFL) faces, each with its licence", () => {
+  const shipped = readdirSync("public/fonts").filter((name) => name.endsWith(".woff2")).sort();
+  expect(shipped).toEqual(Object.keys(LICENCE_OF).sort());
+  expect(shipped.filter((name) => COMMERCIAL_GILROY.test(name))).toEqual([]);
+  for (const name of shipped) {
+    expect(existsSync(`public/fonts/LICENSES/${LICENCE_OF[name]}`), `${name} needs ${LICENCE_OF[name]}`).toBe(true);
   }
-  for (const file of ["src/index.css", "index.html", "public/member-pwa/offline.css", "public/member-pwa/offline.html"]) {
+  for (const file of ["src/index.css", "src/styles/fonts.css", "index.html","public/member-pwa/offline.css", "public/member-pwa/offline.html"]) {
     expect(readFileSync(file, "utf8")).not.toMatch(COMMERCIAL_GILROY);
   }
 });
 
 it("declares only real faces so no weight is synthesised", () => {
   const css = readFileSync("src/index.css", "utf8");
-  const faces = [...css.matchAll(/@font-face\s*\{([^}]+)\}/g)].map(([, body]) => ({
+  // The faces live in styles/fonts.css (split out of index.css for the 300-line ceiling) and must stay imported.
+  expect(css).toMatch(/@import "\.\/styles\/fonts\.css";/);
+  const faces = [...readFileSync("src/styles/fonts.css", "utf8").matchAll(/@font-face\s*\{([^}]+)\}/g)].map(([, body]) => ({
     family: body.match(/font-family:\s*"([^"]+)"/)![1],
     src: body.match(/url\("([^"]+)"\)/)![1],
     weight: body.match(/font-weight:\s*([^;]+);/)![1].trim(),

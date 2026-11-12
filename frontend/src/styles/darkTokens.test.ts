@@ -3,10 +3,10 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { contrast, type RGB } from "../lib/brandColours";
 
-// Decision 225: dark is true black. 0.12.0 lights it with the brand, calmly (owner 2026-11-11: "professional,
-// clean"): three near-black layers with a faint Maker Teal + Cream lift, a quiet hairline between them, and
-// control boundaries carried by outline at 3:1. The sidebar is Deep Ink itself, and muted, links, status
-// inks, hairlines and boundaries are documented teal/cream mixes. The Deep Ink island keeps its set.
+// Decision 316 (supersedes the teal lift of 275): dark is ONE solid black family. The page is #000 and every
+// layer is a neutral grey (no green or teal tint in any surface), control boundaries ride on outline at 3:1,
+// muted is a neutral grey, and brand colour lives only in accents (teal fill, Citron focus, links, status inks).
+// Soft fills are the panel plus a hint of their accent hue. The Deep Ink island keeps its set (light-mode panel).
 const INK: RGB = [20, 44, 42], TEAL: RGB = [0, 110, 99], CREAM: RGB = [255, 244, 232], BLACK: RGB = [0, 0, 0];
 const ORANGE: RGB = [255, 116, 71], CITRON: RGB = [223, 255, 143], YELLOW: RGB = [255, 212, 71], SKY: RGB = [181, 205, 255];
 
@@ -15,7 +15,9 @@ const chrome = readFileSync("src/styles/chrome.css", "utf8");
 function block(source: string, selector: string) {
   const parts = source.split(`${selector} {`);
   if (parts.length < 2) throw new Error(`${selector} block missing`);
-  return parts[1].split("}")[0];
+  // A selector can open several blocks (motion tokens first, colour tokens later): take the one holding colour tokens.
+  const bodies = parts.slice(1).map((part) => part.split("}")[0]);
+  return bodies.find((body) => body.includes("--color-")) ?? bodies[0];
 }
 const dark = block(css, ":root.dark"), island = block(css, ".sw-island-dark");
 function read(source: string, name: string): RGB {
@@ -25,22 +27,22 @@ function read(source: string, name: string): RGB {
 }
 const token = (name: string) => read(dark, name);
 const names = (source: string) => [...source.matchAll(/--color-([\w-]+):/g)].map((m) => m[1]);
-const lit = (base: RGB, t: number, u: number) => base.map((v, i) => Math.round(v * (1 - t - u) + TEAL[i] * t + CREAM[i] * u)) as RGB;
+const grey = (n: number): RGB => [n, n, n];
 const mix = (a: RGB, b: RGB, t: number) => a.map((v, i) => Math.round(v * (1 - t) + b[i] * t)) as RGB;
-const SURFACE_LIFTS: Record<string, [number, number]> = { surface: [.10, .04], panel: [.14, .07], hover: [.20, .11] };
+const lit = (base: RGB, t: number, u: number) => base.map((v, i) => Math.round(v * (1 - t - u) + TEAL[i] * t + CREAM[i] * u)) as RGB;
+const NEUTRAL_LAYERS: Record<string, RGB> = { surface: grey(11), panel: grey(20), hover: grey(28), line: grey(44), outline: grey(120), muted: grey(172), sidebar: grey(11), "sidebar-hover": grey(28) };
 const ISLAND_LIFTS: Record<string, [number, number]> = {
   sidebar: [.14, 0], surface: [.10, .03], panel: [.16, .06], hover: [.22, .09], "sidebar-hover": [.22, .09],
 };
-// Text and boundary tokens that the true-black set derives itself (over black), instead of copying the island.
+// Links and status inks are documented accent mixes over their brand colour.
 const DARK_MIXES: Record<string, RGB> = {
-  muted: lit(BLACK, .08, .70), line: lit(BLACK, .28, .18), outline: lit(BLACK, .30, .50),
+  ...NEUTRAL_LAYERS,
   "success-ink": mix(CITRON, CREAM, .3), "warn-ink": mix(YELLOW, CREAM, .3), "info-ink": mix(SKY, CREAM, .3),
   "accent-ink": mix(TEAL, CREAM, .5), "brand-ink": mix(TEAL, CREAM, .5), "brand-boundary": mix(TEAL, CREAM, .5),
-  sidebar: INK, "sidebar-hover": lit(INK, .12, .06),
 };
 const SOFTS: Record<string, [RGB, number]> = {
-  "accent-soft": [TEAL, .16], "brand-soft": [TEAL, .16], "emphasis-soft": [ORANGE, .07],
-  "success-soft": [CITRON, .07], "warn-soft": [YELLOW, .07], "info-soft": [SKY, .07],
+  "accent-soft": [TEAL, .10], "brand-soft": [TEAL, .10], "emphasis-soft": [ORANGE, .06],
+  "success-soft": [CITRON, .06], "warn-soft": [YELLOW, .06], "info-soft": [SKY, .06],
 };
 const GROUNDS = ["bg", "surface", "panel", "hover", "sidebar", "sidebar-hover", "accent-soft", "emphasis-soft", "success-soft", "warn-soft", "info-soft"];
 const TEXTS = ["ink", "muted", "accent-ink", "brand-ink", "success-ink", "warn-ink", "info-ink", "danger"];
@@ -51,23 +53,30 @@ function worst(texts: RGB[], grounds: RGB[]) {
   return low;
 }
 
-describe("dark tokens (true black)", () => {
-  it("puts the page on #000 and layers three near-black surfaces with a faint teal and cream lift", () => {
+describe("dark tokens (one solid black family)", () => {
+  it("puts the page on #000 and layers neutral greys with no green or teal tint", () => {
     expect(token("bg")).toEqual(BLACK);
-    for (const [name, [t, u]] of Object.entries(SURFACE_LIFTS)) expect([name, token(name)]).toEqual([name, lit(BLACK, t, u)]);
-    for (const [name, [t, u]] of Object.entries(ISLAND_LIFTS)) {
-      expect([name, read(island, name)]).toEqual([name, lit(INK, t, u)]); // the island keeps the kit's lifts
-      // Near-black, not green: teal never outweighs cream three to one in a layer's lift.
-      if (name in SURFACE_LIFTS) expect(SURFACE_LIFTS[name][0] / SURFACE_LIFTS[name][1]).toBeLessThan(3);
+    for (const name of ["surface", "panel", "hover", "line", "outline", "muted", "sidebar", "sidebar-hover"]) {
+      const [r, g, b] = token(name);
+      expect([name, r === g && g === b]).toEqual([name, true]);
     }
+    for (const [name, value] of Object.entries(NEUTRAL_LAYERS)) expect([name, token(name)]).toEqual([name, value]);
+    for (const [name, [t, u]] of Object.entries(ISLAND_LIFTS)) expect([name, read(island, name)]).toEqual([name, lit(INK, t, u)]); // the island keeps the kit's lifts
     for (const [name, [fill, t]] of Object.entries(SOFTS)) expect([name, token(name)]).toEqual([name, mix(token("panel"), fill, t)]);
-    expect(token("bg")).not.toEqual(token("surface"));
     expect(contrast(token("hover"), BLACK)).toBeGreaterThan(contrast(token("panel"), BLACK));
     expect(contrast(token("panel"), BLACK)).toBeGreaterThan(contrast(token("surface"), BLACK));
   });
 
-  it("derives muted, links, hairlines, boundaries and the Deep Ink sidebar as brand mixes; the rest match the island", () => {
-    const own = new Set(["bg", ...Object.keys(SURFACE_LIFTS), ...Object.keys(SOFTS), ...Object.keys(DARK_MIXES)]);
+  it("keeps soft fills near-black: a faint hint of the accent hue, never a coloured background", () => {
+    for (const name of Object.keys(SOFTS)) {
+      const c = token(name);
+      expect([name, Math.max(...c) <= 40]).toEqual([name, true]);
+      expect([name, Math.max(...c) - Math.min(...c) <= 12]).toEqual([name, true]);
+    }
+  });
+
+  it("derives links and status inks as accent mixes; the rest match the island", () => {
+    const own = new Set(["bg", ...Object.keys(SOFTS), ...Object.keys(DARK_MIXES)]);
     expect(names(dark).filter((n) => n !== "scrim").sort()).toEqual(names(island).sort());
     for (const [name, value] of Object.entries(DARK_MIXES)) expect([name, token(name)]).toEqual([name, value]);
     for (const name of names(island).filter((n) => !own.has(n))) expect([name, token(name)]).toEqual([name, read(island, name)]);
@@ -77,7 +86,7 @@ describe("dark tokens (true black)", () => {
     // Links read teal and muted reads neutral, so the two never look alike.
     const tealness = ([r, g]: RGB) => g - r;
     expect(tealness(token("accent-ink"))).toBeGreaterThan(40);
-    expect(Math.abs(tealness(token("muted")))).toBeLessThan(10);
+    expect(tealness(token("muted"))).toBe(0);
   });
 
   it("dims behind dialogs and the camera with black, never a Cream wash", () => {
@@ -114,16 +123,16 @@ describe("dark tokens (true black)", () => {
   });
 
   it("separates layers with a quiet hairline that never glows; boundaries that identify a control stay on outline", () => {
-    // Decorative: line divides layers (about 2:1 on black), so it sits clearly below the 3:1 control boundary.
-    for (const ground of ["bg", "surface", "panel"]) {
+    // Decorative: line divides layers (about 1.5:1 on black), so it sits clearly below the 3:1 control boundary.
+    for (const [ground, floor] of [["bg", 1.45], ["surface", 1.35], ["panel", 1.3]] as const) {
       const ratio = contrast(token("line"), token(ground));
-      expect([ground, ratio >= 1.6 && ratio < 3]).toEqual([ground, true]);
+      expect([ground, ratio >= floor && ratio < 3]).toEqual([ground, true]);
     }
-    expect(contrast(token("line"), token("hover"))).toBeGreaterThanOrEqual(1.3);
+    expect(contrast(token("line"), token("hover"))).toBeGreaterThanOrEqual(1.2);
     expect(contrast(token("outline"), token("line"))).toBeGreaterThan(2); // a control never looks like a divider
-    // Each layer steps up from the one below, so cards read without a border at all.
-    expect(contrast(token("surface"), token("bg"))).toBeGreaterThanOrEqual(1.1);
-    expect(contrast(token("panel"), token("surface"))).toBeGreaterThanOrEqual(1.1);
+    // Each layer steps up from the one below, so cards read as a step even before the hairline.
+    expect(contrast(token("surface"), token("bg"))).toBeGreaterThanOrEqual(1.06);
+    expect(contrast(token("panel"), token("surface"))).toBeGreaterThanOrEqual(1.05);
     expect(contrast(token("danger-line"), token("panel"))).toBeGreaterThanOrEqual(2);
     expect(dark).toMatch(/--shadow-color: 0 0 0;/);
   });

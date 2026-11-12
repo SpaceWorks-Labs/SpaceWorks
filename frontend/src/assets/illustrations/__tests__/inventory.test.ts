@@ -73,7 +73,9 @@ describe('Space Works original artwork inventory', () => {
 
   it('resolves the same light/dark CSS tokens used by the app and print artwork', () => {
     const css = readFileSync(resolve(root, '../../index.css'), 'utf8')
-    const blocks = [css.split(':root {')[1].split('}')[0], css.split('.sw-island-dark {')[1].split('}')[0]]
+    // The light palette is the `:root {` block that defines --color-bg (index.css also has a motion-token :root block).
+    const lightBlock = css.split(':root {').slice(1).map(part => part.split('}')[0]).find(block => block.includes('--color-bg:'))
+    const blocks = [lightBlock ?? '', css.split('.sw-island-dark {')[1].split('}')[0]]
     themes.forEach((theme, index) => {
       for (const [token, hex] of Object.entries(illustrationTokens[theme])) {
         const match = blocks[index].match(new RegExp(`--color-${token}:\\s*([\\d ]+);`))

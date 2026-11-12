@@ -21,7 +21,7 @@ a clear structure gives every part a place, teal grounds it and orange brings en
 
 | What | File | Kit source |
 | --- | --- | --- |
-| Colour tokens, light and dark | `frontend/src/index.css` (`:root` / `:root.dark` / `.sw-island-dark`), mapped one-to-one in `frontend/tailwind.config.ts` | `tokens/tokens.css` (dark surfaces deepened, decision 225) |
+| Colour tokens, light and dark | `frontend/src/index.css` (`:root` / `:root.dark` / `.sw-island-dark`), mapped one-to-one in `frontend/tailwind.config.ts` | `tokens/tokens.css` (dark surfaces: solid black family, decision 316) |
 | Brand colour fields (teal, citron, ink, tenant) | `frontend/src/styles/fields.css` | brand p.7, p.13 |
 | Radius, motion, chart marks | `frontend/src/styles/chrome.css`, `tailwind.config.ts` | `ui-brand-spec.md` §E |
 | Buttons, inputs, pills, nav, tabs | `frontend/src/styles/buttons.css`, `components.css` | `ui-brand-spec.md` §B–C |
@@ -39,9 +39,9 @@ No alpha tints: soft fills are opaque.
 
 | Role | Light | Dark |
 | --- | --- | --- |
-| `bg` / `surface` / `panel` / `hover` | Cream `#FFF4E8` / `#F6ECE0` / white / `#EFE6DB` | Black `#000000` / `#0A1513` / `#12201E` / `#1C312D` |
-| `ink` / `muted` | Deep Ink / `#5B6863` | Cream / `#B3B4AA` |
-| `line` (hairline) / `outline` (control boundary) | `#D5D0C6` / `#828A83` | `#2E4B45` / `#809B92` |
+| `bg` / `surface` / `panel` / `hover` | Cream `#FFF4E8` / `#F6ECE0` / white / `#EFE6DB` | Black `#000000` / `#0B0B0B` / `#141414` / `#1C1C1C` |
+| `ink` / `muted` | Deep Ink / `#5B6863` | Cream / `#ACACAC` |
+| `line` (hairline) / `outline` (control boundary) | `#D5D0C6` / `#828A83` | `#2C2C2C` / `#787878` |
 | `accent` (staff action) · label | Maker Teal · Cream | Maker Teal · Cream |
 | `accent-ink` (links, focus in light; = `brand-ink`) | Maker Teal | `#80B1A6` |
 | `focus` ring | Maker Teal | Citron |
@@ -50,8 +50,8 @@ No alpha tints: soft fills are opaque.
 | `success` / `warn` / `info` fills · Ink label | Citron / Warm Yellow / Sky Blue | same |
 | `success-ink` / `warn-ink` / `info-ink` (coloured text) | `#536D49` / `#696834` / `#51697B` | `#E9FCAA` / `#FFDE77` / `#CBD9F8` |
 | `danger` | `#B91C1C` · Cream label | `#FCA5A5` · Ink label |
-| `sidebar` / hover / active item | Citron / `#F2FFD2` / Maker Teal | Deep Ink `#142C2A` / `#20403C` / Maker Teal |
-| soft fills (`accent`, `emphasis`, `success`, `warn`, `info`) | `#E0EEEC` / `#FFEEE9` / `#FBFFF2` / `#FFFAE9` / `#F6F9FF` | `#0F2C29` / `#232621` / `#203026` / `#232D21` / `#1D2C2E` |
+| `sidebar` / hover / active item | Citron / `#F2FFD2` / Maker Teal | `#0B0B0B` / `#1C1C1C` / Maker Teal |
+| soft fills (`accent`, `emphasis`, `success`, `warn`, `info`) | `#E0EEEC` / `#FFEEE9` / `#FBFFF2` / `#FFFAE9` / `#F6F9FF` | `#121D1C` / `#221A17` / `#20221B` / `#222017` / `#1E1F22` |
 | `scrim` (dims the page behind dialogs and the camera) | Deep Ink | Black |
 
 Text on a fill uses its `on-*` token; coloured text uses the `*-ink` token, never the fill
@@ -59,34 +59,41 @@ Text on a fill uses its `on-*` token; coloured text uses the `*-ink` token, neve
 cards 16 px (`rounded-xl` / `rounded-card`), pills fully round, no shadows except `shadow-overlay` on
 popovers, menus, dialogs and toasts. Motion: colour 120 ms, no translate or scale on hover,
 `prefers-reduced-motion` honoured.
+Motion tokens (`--sw-dur-fast/base/slow` 120/180/240 ms, `--sw-ease-standard/enter/exit`, plus the distance tokens) live in `frontend/src/index.css` and the rules in `frontend/src/styles/motion*.css`; route transitions, exit animations (`usePresence`), sliding indicators and `TransitionLink`/`useTransitionNavigate` are in `frontend/src/lib/motion/` -- use them rather than writing new keyframes, and transform/opacity only.
 
-**Dark set: true black, lit by the brand** (owner decision 225, 10 November 2026; brand lift 11 November
-2026; calmed 11 November 2026, owner: "professional, clean, and a better dark theme palette"). The page is
-pure black `#000` for OLED screens. Raised surfaces are three near-black layers with a faint Maker Teal and
-Cream lift, so cards, dialogs and tables read as Space Works ink without turning green or glowing
-(`surface` 10 % teal + 4 % cream, `panel` 14 % + 7 %, `hover` 20 % + 11 %; each layer steps 1.1:1 or more
-above the one below). The `sidebar` is Deep Ink itself (brand p.16), with `sidebar-hover` Deep Ink
-+ 12 % teal + 6 % cream. Softs are the panel plus 16 % teal or 7 % of their fill. The neutrals are brand
-mixes over black too: `muted` is Cream 70 % + Teal 8 % (a warm sage, 5.4:1 at worst), links and
-`brand-ink` are Teal + 50 % Cream (clearly teal, so a link never reads as muted text), the `line` hairline
-is a quiet divider, Teal 28 % + Cream 18 % (2.2:1 on black, 1.8:1 on `panel`: decorative, never the only
-thing that identifies a control), and the `outline` control boundary Teal 30 % + Cream 50 % (3:1 or more on
-every ground, so inputs and buttons keep their 3:1 edge). Status inks (`success-ink`, `warn-ink`,
-`info-ink`) are their brand colour + 30 % Cream so coloured text sits on black without buzzing; status
-fills, accent and danger are unchanged. Text is Cream; the focus ring is Citron. Elevation reads from the
-layer steps and the hairline, not from shadows,
-which are invisible on black (`--shadow-color` is black in dark). The browser chrome colour
-(`theme-color`) follows the theme: Cream in light, black in dark. `frontend/src/styles/darkTokens.test.ts`
-pins the recipe and the contrast floors (text 4.5:1 on every ground including the sidebar and softs;
-focus, control boundaries and chart marks 3:1; the hairline kept between 1.6:1 and 3:1), and the tenant brand derivation
-in `frontend/src/lib/brandColours.ts` and `backend/apps/makerspaces/theme_contrast.py` validates against
-the same surfaces.
+**Loading animation.** The loading state for a page or panel is the Space Works box: it opens, holds, folds shut and
+repeats (`frontend/src/components/LogoLoader.tsx`, the same artwork as the cold-start splash). Under reduced motion it
+is the still, open logo. Buttons and table rows keep a small spinner and lists keep a skeleton.
 
-The earlier Deep Ink dark set (`#142C2A` / `#193935` / `#1F433F`) survives as the `.sw-island-dark`
-block: the light-mode sign-in brand panel (p.1 cover) uses it, and the dark illustrations in
+**Dark set: one solid black family** (owner decision 316, 11 November 2026, superseding the teal lift of
+decision 275: "single solid black everywhere, no mixing of pure black and green dark"). The page is pure black
+`#000` for OLED screens and every raised layer is a neutral grey with no green or teal tint: `surface` `#0B0B0B`,
+`panel` `#141414`, `hover` `#1C1C1C` (each steps 1.07:1 or more above the one below; cards are also drawn with the
+`line` hairline). Nothing in a dark surface is Deep Ink or teal, so a dark page never shows a green field next to
+black: the landing self-host block, the display screens and the sign-in showcase use the same neutral layers
+(`:root.dark .sw-island-dark`), and the landing symbol pattern is drawn in `muted` grey. The `sidebar` is the
+`surface` layer and `sidebar-hover` the `hover` layer; the active item stays Maker Teal. `muted` is neutral grey
+`#ACACAC` (9.3:1 on black, 7.5:1 on `hover`, 7.1:1 at worst on a soft), links and `brand-ink` are Teal + 50 % Cream
+(clearly teal, so a link never reads as muted text), the `line` hairline is a quiet divider `#2C2C2C` (1.5:1 on
+black, 1.3:1 on `panel`: decorative, never the only thing that identifies a control), and the `outline`
+control boundary is `#787878` (4.8:1 on black, 3.9:1 on `hover`, so inputs and buttons keep their 3:1 edge).
+Soft fills are the panel plus 10 % teal or 6 % of their accent hue, so status chips read without tinting the
+page. Status inks (`success-ink`, `warn-ink`, `info-ink`) are their brand colour + 30 % Cream. Brand colour lives
+only in accents: the Maker Teal fill, Citron focus ring, links, status, highlights and the landing illustration
+fields (the sign-in brand panel and the spaces header stay Maker Teal as deliberate brand blocks, not page
+backgrounds). Text is Cream. Elevation reads from the layer steps and the hairline, not from shadows, which are
+invisible on black (`--shadow-color` is black in dark). The browser chrome colour (`theme-color`) follows the
+theme: Cream in light, black in dark. `frontend/src/styles/darkTokens.test.ts` pins the recipe and the contrast
+floors (text 4.5:1 on every ground including the sidebar and softs; focus, control boundaries and chart marks
+3:1; the hairline kept between 1.3:1 and 3:1), and the tenant brand derivation in
+`frontend/src/lib/brandColours.ts` and `backend/apps/makerspaces/theme_contrast.py` validates against the same
+surfaces. `/control/` uses the same family (`control.css`, the Unfold `base` ramp in `config/unfold.py`).
+
+The earlier Deep Ink dark set (`#142C2A` / `#193935` / `#1F433F`) survives as the light-mode `.sw-island-dark`
+block: the sign-in brand panel (p.1 cover) uses it, and the dark illustrations in
 `frontend/src/assets/illustrations/` and the dark print artwork are drawn in it. The kit's
-`tokens/tokens.css` / `tokens.json` in SpaceWorks-Design still carry the Deep Ink dark surfaces and
-need the true-black values above synced. The kit's `docs/ui-brand-spec.md` §A.3 dark proposal (accent
+`tokens/tokens.css` / `tokens.json` in SpaceWorks-Design still carry the older dark surfaces and
+need the solid-black values above synced. The kit's `docs/ui-brand-spec.md` §A.3 dark proposal (accent
 `#579C90` with an Ink label) is not used.
 
 **Tenant branding.** A makerspace may set `primary_color` (the `brand` fill) and optionally
@@ -212,8 +219,12 @@ Patch is an African painted wolf carrying a wrench: the friendly face, never the
   (heading left uses the approved `walk-left` art). Do not scale bitmaps past their size.
 - On dark surfaces use the `dark/` variants with the Warm Cream sticker border.
 - Honour reduced motion with a still frame. Patch is decorative (`aria-hidden`) beside real copy.
-- Today Patch appears only on the 404 page (`NotFoundPatch`, light and dark walk sheets in
-  `frontend/public/brand/patch/`). Kiosk surfaces never show Patch: the kiosk worker neither precaches
+- Patch appears on the 404 page (`NotFoundPatch`, light and dark walk sheets in
+  `frontend/public/brand/patch/`) and, since 0.12.0 (decision 306 addendum), as one still moment on
+  the public hub pages (`PatchMoment`): beside the native-apps copy on the landing page and beside the
+  closing call to action on `/features`. It trots on the spot once when it first scrolls into view and
+  is a still frame under reduced motion; it never sits over the tiled-symbol backgrounds, and nothing
+  orange shares its section. Kiosk surfaces never show Patch: the kiosk worker neither precaches
   nor caches `/brand/patch/`. Empty states use the original programme illustrations in
   `frontend/src/assets/illustrations/`.
 

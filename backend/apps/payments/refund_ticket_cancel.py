@@ -7,6 +7,7 @@ the waitlist. A failure here never undoes the refund; it is audited so staff can
 Behind `events.refund_cancels_tickets`; the ledger stays core and works with the switch off.
 """
 
+from django.utils.translation import gettext
 import logging
 
 from django.db import transaction
@@ -24,10 +25,10 @@ def require_cancel_tickets_allowed(case):
     from apps.makerspaces.platform import feature_enabled
     payment = case.payment
     if not feature_enabled(payment.makerspace, "events.refund_cancels_tickets"):
-        raise RefundNotAllowed("Cancelling tickets with a refund is turned off for this makerspace.",
+        raise RefundNotAllowed(gettext("Cancelling tickets with a refund is turned off for this makerspace."),
                                "refund_cancel_tickets_unavailable")
     if payment.subject_type not in EVENT_SUBJECTS:
-        raise RefundNotAllowed("Only a refund on an event ticket charge can cancel tickets.",
+        raise RefundNotAllowed(gettext("Only a refund on an event ticket charge can cancel tickets."),
                                "refund_cancel_tickets_not_event")
 
 

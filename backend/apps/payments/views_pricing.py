@@ -8,6 +8,7 @@ grant (#128 C-11d). The currency is a finance setting: Space Manager only. Every
 is 404 while `charges.pricing` is off.
 """
 
+from django.utils.translation import gettext
 from django.db import transaction
 from drf_spectacular.utils import extend_schema
 from rest_framework.response import Response
@@ -66,7 +67,7 @@ class PricingDefaultView(APIView):
     def put(self, request, makerspace_id, domain):
         space = _space(request, makerspace_id, domain)
         if domain not in SETTINGS_MODULES:
-            raise ComponentNotAllowed("Membership prices are set on each plan.")
+            raise ComponentNotAllowed(gettext("Membership prices are set on each plan."))
         body = PricingDefaultWriteSerializer(data=request.data)
         body.is_valid(raise_exception=True)
         data = body.validated_data

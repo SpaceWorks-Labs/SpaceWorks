@@ -12,6 +12,7 @@ Three steps, and the split is deliberate:
 The Payment row itself is never touched: it is terminal and the database forbids it.
 """
 
+from django.utils.translation import gettext
 import logging
 from decimal import Decimal, InvalidOperation
 
@@ -61,12 +62,12 @@ def _open_refund(payment, *, amount, reason, actor):
     try:
         raw, amount = Decimal(amount), quantize_money(amount, payment.currency)
     except (InvalidOperation, TypeError, ValueError):
-        raise RefundNotAllowed("Refund amount is invalid.", "refund_amount_invalid")
+        raise RefundNotAllowed(gettext("Refund amount is invalid."), "refund_amount_invalid")
     if raw != amount:
         # Finer than the charge precision (a yen's decimals, a KWD fils): refuse, never round a refund.
-        raise RefundNotAllowed("Refund amount is invalid for this currency.", "refund_amount_invalid")
+        raise RefundNotAllowed(gettext("Refund amount is invalid for this currency."), "refund_amount_invalid")
     if amount <= 0:
-        raise RefundNotAllowed("Refund amount must be positive.", "refund_amount_invalid")
+        raise RefundNotAllowed(gettext("Refund amount must be positive."), "refund_amount_invalid")
     with transaction.atomic():
         locked = Payment.objects.select_for_update(of=("self",)).select_related("makerspace").get(pk=payment.pk)
         return open_refund_locked(locked, amount=amount, reason=reason, actor=actor)
@@ -82,16 +83,16 @@ def open_refund_locked(locked, *, amount, reason, actor):
         # Offline charges are refunded through the core manual receipt service;
         # a provider cannot send back money it did not collect.
         raise RefundNotAllowed(
-            "Only payments settled online can be refunded through the provider.",
+            gettext("Only payments settled online can be refunded through the provider."),
             "refund_not_online",
         )
     from apps.payments.refund_policy import precision_ok
     if not precision_ok(amount, locked.currency):
         # Audit 0.12.0 C-2: JPY 0.50 passed the two-place check and was sent as 1 yen.
-        raise RefundNotAllowed("Refund amount is invalid for this currency.", "refund_amount_invalid")
+        raise RefundNotAllowed(gettext("Refund amount is invalid for this currency."), "refund_amount_invalid")
     if Refund.counted_total(locked) + amount > locked.amount:
         raise RefundNotAllowed(
-            "Refund exceeds the refundable balance.", "refund_exceeds_balance"
+            gettext("Refund exceeds the refundable balance."), "refund_exceeds_balance"
         )
     refund = Refund.objects.create(
         payment=locked,

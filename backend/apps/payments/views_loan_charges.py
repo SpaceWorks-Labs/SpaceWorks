@@ -6,6 +6,7 @@ charges need `charges.pricing`. Waiving never reverses a paid charge: it opens a
 approved refund case instead.
 """
 
+from django.utils.translation import gettext
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
 from rest_framework.response import Response
@@ -39,7 +40,7 @@ def _request(actor, makerspace_id, request_id, *actions):
 
 def _waivers_on(loan):
     if not feature_enabled(loan.makerspace, "loans.fee_waivers"):
-        raise PricingDisabled("Loan fee waivers are switched off for this space.")
+        raise PricingDisabled(gettext("Loan fee waivers are switched off for this space."))
 
 
 class LoanChargesView(APIView):

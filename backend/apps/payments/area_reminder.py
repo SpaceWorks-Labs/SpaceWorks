@@ -24,9 +24,9 @@ def send_reminder(*, actor, makerspace_id, payment_id):
         raise NotFound(gettext("Payment not found."))
     _require_record_authority(actor, [payment])
     if payment.status != Payment.Status.PENDING:
-        raise PayLinkRefused("Only a pending charge can be reminded.", "payment_terminal")
+        raise PayLinkRefused(gettext("Only a pending charge can be reminded."), "payment_terminal")
     if payment.member is None or not payment.member.email:
-        raise PayLinkRefused("This charge has no account email to remind.", "reminder_no_recipient")
+        raise PayLinkRefused(gettext("This charge has no account email to remind."), "reminder_no_recipient")
     space = payment.makerspace
     label = payment.subject_label or payment.get_subject_type_display()
     text = gettext("{space} is waiting for {currency} {amount} for {label}. Please pay or reply to this message.").format(

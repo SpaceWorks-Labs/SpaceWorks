@@ -6,6 +6,7 @@ and never delegable: `assert_setting_write` refuses anyone but the Space Manager
 rule it applied. Every write is atomic, audited and refused during a tenant move.
 """
 
+from django.utils.translation import gettext
 from decimal import Decimal
 
 from django.core.exceptions import ValidationError as DjangoValidationError
@@ -36,13 +37,13 @@ def _authorize(actor, makerspace):
 def _validate(rule):
     unknown = [domain for domain in rule.domains if domain not in PricingDomain.values]
     if unknown:
-        raise DiscountInvalid("Unknown pricing areas.", domains=unknown)
+        raise DiscountInvalid(gettext("Unknown pricing areas."), domains=unknown)
     domains = rule.domains or PricingDomain.values
     bad = [key for key in rule.components if not any(component(domain, key) for domain in domains)]
     if bad:
-        raise DiscountInvalid("Those components are not in the chosen areas.", components=bad)
+        raise DiscountInvalid(gettext("Those components are not in the chosen areas."), components=bad)
     if rule.member_id and not _is_member(rule.makerspace_id, rule.member_id):
-        raise DiscountInvalid("A member discount must name a member of this space.")
+        raise DiscountInvalid(gettext("A member discount must name a member of this space."))
     try:
         rule.full_clean()
     except DjangoValidationError as exc:
@@ -100,7 +101,7 @@ def update_discount(actor, rule, data):
     space, decision = _authorize(actor, rule.makerspace)
     rule = PriceDiscount.objects.select_for_update().get(pk=rule.pk)
     if rule.archived_at is not None:
-        raise DiscountInvalid("An archived discount cannot change.")
+        raise DiscountInvalid(gettext("An archived discount cannot change."))
     before = _terms(rule)
     _apply(rule, data)
     _validate(rule)

@@ -31,6 +31,9 @@ WEBHOOK_RESPONSES = {
 class StripeWebhookView(APIView):
     authentication_classes = []
     permission_classes = [AllowAny]
+    # Signature-verified provider callback: exempt from the deployment baseline (336c), a 429
+    # would only make the provider retry and delay settlement/delivery state.
+    throttle_classes = []
 
     @extend_schema(tags=["Payments"], summary="Receive a makerspace Stripe webhook", description="Verifies the Stripe signature using request.body and the addressed makerspace's webhook secret before applying an idempotent event.", auth=[], request=None, responses=WEBHOOK_RESPONSES)
     def post(self, request, public_code):
@@ -60,7 +63,7 @@ class StripeWebhookView(APIView):
         apply_webhook_event(
             makerspace, event, provider="raw"
         )
-        return Response({"detail": "Verified."}, status=status.HTTP_200_OK)
+        return Response({"detail": gettext("Verified.")}, status=status.HTTP_200_OK)
 
 
 class RazorpayWebhookView(APIView):
@@ -79,6 +82,9 @@ class RazorpayWebhookView(APIView):
 
     authentication_classes = []
     permission_classes = [AllowAny]
+    # Signature-verified provider callback: exempt from the deployment baseline (336c), a 429
+    # would only make the provider retry and delay settlement/delivery state.
+    throttle_classes = []
 
     @extend_schema(
         tags=["Payments"],
@@ -120,4 +126,4 @@ class RazorpayWebhookView(APIView):
         apply_razorpay_webhook_event(makerspace, event)
         # 200 even for an event we chose not to act on: Razorpay retries a non-2xx, and
         # retrying an event that is correctly ignored achieves nothing but load.
-        return Response({"detail": "Verified."}, status=status.HTTP_200_OK)
+        return Response({"detail": gettext("Verified.")}, status=status.HTTP_200_OK)

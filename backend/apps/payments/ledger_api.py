@@ -28,6 +28,7 @@ Stable contract for every lane that moves money (#94, LANE-RULES §12):
 * Every write emits `ledger.expense_recorded` / `ledger.entry_created` / `ledger.entry_voided`.
 """
 
+from django.utils.translation import gettext
 from decimal import Decimal
 
 from django.db import IntegrityError, transaction
@@ -48,7 +49,7 @@ def _machine_type(machine_type):
         return machine_type
     found = MachineType.objects.filter(pk=machine_type).first()
     if found is None:
-        raise LedgerConflict("That machine type does not exist.", "machine_type_invalid")
+        raise LedgerConflict(gettext("That machine type does not exist."), "machine_type_invalid")
     return found
 
 
@@ -65,17 +66,17 @@ def _staged_receipt(makerspace, receipt):
 
     photo = receipt if isinstance(receipt, EvidencePhoto) else EvidencePhoto.objects.filter(pk=receipt).first()
     if photo is None or photo.makerspace_id != makerspace.pk or photo.evidence_type != "receipt":
-        raise LedgerConflict("That receipt upload is not in this space.", "receipt_invalid")
+        raise LedgerConflict(gettext("That receipt upload is not in this space."), "receipt_invalid")
     assert_write_allowed(makerspace.pk)
     try:
         finalized = storage.finalize_upload(photo, settings.EVIDENCE_MAX_BYTES)
     except storage.EvidenceObjectValidationError:
-        raise LedgerConflict("The receipt upload is invalid, expired or too large.", "receipt_invalid")
+        raise LedgerConflict(gettext("The receipt upload is invalid, expired or too large."), "receipt_invalid")
     if finalized is None:
-        raise LedgerConflict("The receipt has not been uploaded yet.", "receipt_not_uploaded")
+        raise LedgerConflict(gettext("The receipt has not been uploaded yet."), "receipt_not_uploaded")
     if photo.content_type and getattr(finalized, "content_type", "") != photo.content_type:
         # The presign bound one MIME type; a different file behind it is refused (#155).
-        raise LedgerConflict("The uploaded file is not the type that was announced.", "receipt_type_mismatch")
+        raise LedgerConflict(gettext("The uploaded file is not the type that was announced."), "receipt_type_mismatch")
     return photo, getattr(finalized, "size", None)
 
 
@@ -87,9 +88,9 @@ def _attach_receipt(photo, size):
     from apps.evidence.finalization import charge_storage_once, lock_evidence_for_attachment
 
     if not lock_evidence_for_attachment(photo.pk):
-        raise LedgerConflict("The receipt has expired under the retention policy.", "receipt_invalid")
+        raise LedgerConflict(gettext("The receipt has expired under the retention policy."), "receipt_invalid")
     if LedgerEntry.objects.filter(receipt=photo).exists():
-        raise LedgerConflict("That receipt is already attached to another entry.", "receipt_in_use")
+        raise LedgerConflict(gettext("That receipt is already attached to another entry."), "receipt_in_use")
     charge_storage_once(photo, size or photo.size_bytes or 0)
     mark_consumed(photo)
     return photo
@@ -115,11 +116,11 @@ def _record(kind, makerspace, domain, machine_type, amount, currency, method, re
         if existing is not None:
             if existing.amount == amount and existing.currency == currency:
                 return existing
-            raise LedgerConflict("This source already has a different live ledger entry; void it first.",
+            raise LedgerConflict(gettext("This source already has a different live ledger entry; void it first."),
                                  "ledger_source_conflict")
     machine_type = _machine_type(machine_type)
     if machine_type is not None and domain != LedgerEntry.Domain.MACHINES:
-        raise LedgerConflict("A machine type belongs on a machines entry.", "machine_type_invalid")
+        raise LedgerConflict(gettext("A machine type belongs on a machines entry."), "machine_type_invalid")
     from django.core.exceptions import ValidationError
     try:
         with transaction.atomic():
@@ -135,7 +136,7 @@ def _record(kind, makerspace, domain, machine_type, amount, currency, method, re
     except ValidationError as exc:
         raise LedgerConflict("; ".join(exc.messages), "ledger_entry_invalid")
     except IntegrityError:
-        raise LedgerConflict("This source already has a live ledger entry.", "ledger_source_conflict")
+        raise LedgerConflict(gettext("This source already has a live ledger entry."), "ledger_source_conflict")
     if kind == LedgerEntry.Kind.EXPENSE:
         audit.record(actor, "ledger.expense_recorded", makerspace=makerspace, target=entry, meta={
             "domain": domain, "machine_type_id": entry.machine_type_id, "category": category,
@@ -172,10 +173,10 @@ def void(entry, actor, reason):
     """Void a live entry with a reason. The row stays; it drops out of every total."""
     entry = LedgerEntry.objects.select_for_update().get(pk=getattr(entry, "pk", entry))
     if entry.voided_at is not None:
-        raise LedgerConflict("This entry is already void.", "ledger_entry_voided")
+        raise LedgerConflict(gettext("This entry is already void."), "ledger_entry_voided")
     reason = (reason or "").strip()[:300]
     if not reason:
-        raise LedgerConflict("Say why the entry is void.", "void_reason_required")
+        raise LedgerConflict(gettext("Say why the entry is void."), "void_reason_required")
     entry.voided_at, entry.voided_by, entry.void_reason = timezone.now(), actor, reason
     entry.save(update_fields=["voided_at", "voided_by", "void_reason"])
     audit.record(actor, "ledger.entry_voided", makerspace=entry.makerspace, target=entry,

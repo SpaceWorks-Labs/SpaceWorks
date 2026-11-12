@@ -6,6 +6,7 @@ It is a TRANSFER, not spending: the income/spending reports and the platform ove
 ledger list still shows it (and it can be voided like any entry, with a reason).
 """
 
+from django.utils.translation import gettext
 from apps.accounts import rbac
 from apps.audit import services as audit
 from apps.makerspaces.models import Makerspace
@@ -24,7 +25,7 @@ def record_cash_handover(*, actor, space, collector, amount, currency, entry_dat
     """The collector must still hold record_payment here, so a hand-over always names a real collector."""
     if not rbac.scope_by_action(collector, rbac.Action.RECORD_PAYMENT, Makerspace.objects.filter(pk=space.pk),
                                 field="pk").exists():
-        raise ledger_api.LedgerConflict("That person does not collect payments in this space.", "collector_invalid")
+        raise ledger_api.LedgerConflict(gettext("That person does not collect payments in this space."), "collector_invalid")
     entry = ledger_api.record_expense(
         space, LedgerEntry.Domain.GENERAL, None, amount, currency, LedgerEntry.Method.CASH,
         collector_reference(collector.pk), None, SOURCE_KIND, "", actor, category=SOURCE_KIND,

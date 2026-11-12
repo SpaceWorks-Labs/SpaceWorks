@@ -25,6 +25,7 @@ from apps.payments.pricing import components as registry
 from apps.payments.pricing import targets as target_registry
 from apps.payments.pricing.adapters import LOAN_LEGACY_COMPONENTS, write_loan_legacy
 from apps.payments.pricing.errors import ComponentNotAllowed, PricingDomainUnknown
+from django.utils.translation import gettext
 
 LINE_FIELDS = ("amount", "cap", "grace_units", "billing_increment", "minimum")
 
@@ -67,7 +68,7 @@ def set_default(actor, makerspace, domain, *, mode=None, lines=(), loan_block=No
         row.mode = mode
     if failed_job_charge is not None:
         if domain != "machines":
-            raise ComponentNotAllowed("Failed-job charging applies to machines only.")
+            raise ComponentNotAllowed(gettext("Failed-job charging applies to machines only."))
         row.failed_job_charge = failed_job_charge
     row.updated_by = actor
     row.save()
@@ -76,14 +77,14 @@ def set_default(actor, makerspace, domain, *, mode=None, lines=(), loan_block=No
         if spec is None or spec.read_only:
             raise ComponentNotAllowed(component=entry["component"])
         if domain == "loans" and spec.key in LOAN_LEGACY_COMPONENTS:
-            raise ComponentNotAllowed("Set the deposit and late fee in the deposit and late fee section.", component=spec.key)
+            raise ComponentNotAllowed(gettext("Set the deposit and late fee in the deposit and late fee section."), component=spec.key)
         values = {field: entry[field] for field in LINE_FIELDS if field in entry}
         if not spec.has_cap:
             values["cap"] = None
         PricingDefaultLine.objects.update_or_create(default=row, component=spec.key, defaults=values)
     if loan_block:
         if domain != "loans":
-            raise ComponentNotAllowed("The deposit and late fee section applies to Inventory loans only.")
+            raise ComponentNotAllowed(gettext("The deposit and late fee section applies to Inventory loans only."))
         legacy_before, legacy_after = write_loan_legacy(space, loan_block)
     after = _summary(row)
     if legacy_after:
@@ -113,7 +114,7 @@ def set_rental_timing(actor, makerspace, timing):
 def _target(actor, makerspace, target_type, target_id):
     target = target_registry.load(target_type, target_id, makerspace.pk)
     if target is None or not target_registry.can_view(actor, target_type, target):
-        raise NotFound("Item not found.")
+        raise NotFound(gettext("Item not found."))
     return target
 
 
@@ -122,7 +123,7 @@ def set_override(actor, makerspace, target_type, target_id, component, *, mode, 
     space = _lock_space(makerspace)
     target = _target(actor, space, target_type, target_id)
     if not target_registry.can_price(actor, target_type, target):
-        raise PermissionDenied("Only staff who edit this item may change its price.")
+        raise PermissionDenied(gettext("Only staff who edit this item may change its price."))
     domain = target_registry.DOMAINS[target_type]
     spec = registry.component(domain, component)
     if spec is None or target_type not in spec.targets:

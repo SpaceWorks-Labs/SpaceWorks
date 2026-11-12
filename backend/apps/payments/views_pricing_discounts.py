@@ -5,6 +5,7 @@ may read. 404 while `charges.pricing` or `charges.discounts` is off. Rules are a
 never deleted.
 """
 
+from django.utils.translation import gettext
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework.response import Response
@@ -30,7 +31,7 @@ def _space(request, makerspace_id):
     space = space_for(request.user, makerspace_id, rbac.Action.MANAGE_MAKERSPACE, rbac.Action.VIEW_FINANCE)
     require_pricing(space)
     if not feature_enabled(space, DISCOUNTS_FEATURE):
-        raise PricingDisabled("Member discounts are switched off for this space.")
+        raise PricingDisabled(gettext("Member discounts are switched off for this space."))
     return space
 
 

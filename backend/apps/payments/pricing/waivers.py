@@ -139,7 +139,7 @@ def revoke_waiver(waiver, actor, *, reason=""):
         raise WaiverReasonRequired()
     waiver = LoanFeeWaiver.objects.select_for_update().get(pk=waiver.pk)
     if waiver.is_revocation or LoanFeeWaiver.objects.filter(revokes=waiver).exists():
-        raise WaiverExists("This waiver has already been revoked.")
+        raise WaiverExists(gettext("This waiver has already been revoked."))
     revocation = LoanFeeWaiver.objects.create(makerspace_id=request.makerspace_id, request=request,
                                               components=waiver.components, reason=reason[:500],
                                               revokes=waiver, created_by=actor)

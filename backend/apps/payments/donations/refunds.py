@@ -6,6 +6,7 @@ needs record_payment. The direct staff refund routes refuse these subjects
 (`refund_via_case_only`), so no gift is returned without that decision.
 """
 
+from django.utils.translation import gettext
 from django.db import transaction
 
 from apps.payments.exceptions_refunds import RefundCaseConflict, RefundNotAllowed
@@ -15,7 +16,7 @@ CASE_ONLY_SUBJECTS = ("donation", "sponsorship")
 
 def refuse_direct_refund(payment):
     if payment is not None and payment.subject_type in CASE_ONLY_SUBJECTS:
-        raise RefundNotAllowed("Gifts and sponsor payments are returned through a refund case that staff approve.",
+        raise RefundNotAllowed(gettext("Gifts and sponsor payments are returned through a refund case that staff approve."),
                                "refund_via_case_only")
 
 
@@ -27,14 +28,14 @@ def open_return_case(payment, *, actor, reason=""):
 
     locked = _lock_payment(payment.pk)
     if locked.subject_type not in CASE_ONLY_SUBJECTS:
-        raise RefundNotAllowed("Not a gift or sponsor payment.", "refund_request_not_allowed")
+        raise RefundNotAllowed(gettext("Not a gift or sponsor payment."), "refund_request_not_allowed")
     if locked.status not in (Payment.Status.PAID_ONLINE, Payment.Status.PAID_OFFLINE):
-        raise RefundNotAllowed("Only a received payment can be returned.", "refund_not_settled")
+        raise RefundNotAllowed(gettext("Only a received payment can be returned."), "refund_not_settled")
     if refundable_balance(locked) <= 0:
-        raise RefundNotAllowed("This payment has already been returned in full.", "refund_exceeds_balance")
+        raise RefundNotAllowed(gettext("This payment has already been returned in full."), "refund_exceeds_balance")
     existing = _active(locked)
     if existing is not None:
-        raise RefundCaseConflict("A refund case is already open for this payment.", "refund_request_exists",
+        raise RefundCaseConflict(gettext("A refund case is already open for this payment."), "refund_request_exists",
                                  case_id=existing.pk)
     case = RefundCase.objects.create(
         payment=locked, kind=RefundCase.Kind.REQUEST, area=RefundCase.Area.DONATIONS,

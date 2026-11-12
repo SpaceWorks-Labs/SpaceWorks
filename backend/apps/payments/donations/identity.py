@@ -7,6 +7,7 @@
   columns; the charge belongs to no account and the space's inert principal records it.
 """
 
+from django.utils.translation import gettext
 from dataclasses import dataclass
 
 from .gates import DonationRefused
@@ -40,7 +41,7 @@ def donor_for(request, space, data):
         return Donor(account=person, name=name[:200], email=(person.email or "")[:254], actor=person)
     name, email, code = (str(data.get(key) or "").strip() for key in ("donor_name", "donor_email", "email_code"))
     if not name or not email or not code:
-        raise DonationRefused("Sign in, or give your name, email and the code we emailed you.",
+        raise DonationRefused(gettext("Sign in, or give your name, email and the code we emailed you."),
                               "donor_identity_required")
     from apps.hardware_requests.contact_verification import consume_code, normalize_email
     from apps.makerspaces.anonymous_requesters import get_or_create_anonymous_requester
@@ -54,7 +55,7 @@ def send_code(space, email):
     from apps.hardware_requests.contact_verification import issue_code
 
     if "@" not in str(email or ""):
-        raise DonationRefused("Enter a valid email address.", "email_invalid", "donor_email")
+        raise DonationRefused(gettext("Enter a valid email address."), "email_invalid", "donor_email")
     issue_code(space, email)
 
 

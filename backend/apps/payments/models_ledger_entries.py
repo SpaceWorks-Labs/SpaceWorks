@@ -89,6 +89,7 @@ class LedgerEntry(models.Model):
 
     class Meta:
         ordering = ["-entry_date", "-pk"]
+        verbose_name_plural = "ledger entries"
         constraints = [
             models.CheckConstraint(condition=models.Q(amount__gt=0), name="ledger_entry_amount_positive"),
             models.CheckConstraint(condition=models.Q(voided_at__isnull=True, void_reason="") | models.Q(

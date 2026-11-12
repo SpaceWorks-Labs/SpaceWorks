@@ -15,7 +15,7 @@ import math
 from decimal import Decimal
 
 from apps.payments.models_pricing import PriceOverride, PricingDefault
-from apps.payments.pricing.components import component
+from apps.payments.pricing.components import Component, component
 from apps.payments.pricing.quotes import line
 from apps.payments.pricing.rates import Rate
 
@@ -58,7 +58,7 @@ def billed_minutes(minutes, rate):
 
 
 def lines(card, *, machine=None, machine_type=None, pool=None, minutes=0, quantity=0,
-          outcome="completed", failure_charge=None):
+          outcome="completed", failure_charge=None, consumables=()):
     machine_type = machine_type or (machine.machine_type if machine is not None else None)
     middle = _type_rates(card, machine_type)
     machine_target = ((T.MACHINE, machine.pk),) if machine is not None else ()
@@ -84,12 +84,34 @@ def lines(card, *, machine=None, machine_type=None, pool=None, minutes=0, quanti
         built.append(line(component("machines", "material"), currency=card.currency, quantity=Decimal(quantity),
                           unit_amount=material_rate.amount, rate_source=material_rate.source,
                           target=material_target, detail={"unit": getattr(pool, "unit", "") or "unit"}))
+    built += consumable_lines(card, consumables, full=full)
     per_job_rate = card.resolve("per_job", machine_target, middle=middle.get("per_job"))
     if full and per_job_rate.amount > 0:
         built.append(line(component("machines", "per_job"), currency=card.currency, quantity=1,
                           unit_amount=per_job_rate.amount, rate_source=per_job_rate.source, target=target))
     notes = () if full or outcome != "failed" else ("failed_job_material_only",)
     return built, notes
+
+
+# Decision 341: a profile consumable with its own price per unit. Not in the component registry (no
+# space-wide default, no override target, no automatic discount): the price lives on the type's profile.
+CONSUMABLE = Component("consumable", "Consumable", "consumable_unit", "machine_service_request", read_only=True)
+#: A failed job charged "material used only" keeps these kinds; time and per-job lines go.
+MATERIAL_KINDS = frozenset({"material"})
+
+
+def consumable_lines(card, consumables, *, full=True):
+    built = []
+    for item in consumables or ():
+        if not full and item["kind"] not in MATERIAL_KINDS:
+            continue
+        component = Component(CONSUMABLE.key, item["name"], CONSUMABLE.unit, CONSUMABLE.subject_type)
+        built.append(line(component, currency=card.currency, quantity=item["quantity"],
+                          unit_amount=item["unit_price"], rate_source="consumable_profile",
+                          target={"type": "machine_type_consumable", "id": item["definition_id"],
+                                  "label": item["name"]},
+                          detail={"key": item["key"], "unit": item["unit"], "kind": item["kind"]}))
+    return built
 
 
 def service_request_quantity(service_request):

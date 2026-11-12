@@ -65,11 +65,11 @@ def create_link(*, actor, makerspace_id, payment_id, days=DEFAULT_DAYS, email=""
         raise NotFound(gettext("Payment not found."))
     _require_record_authority(actor, [payment])
     if payment.status != Payment.Status.PENDING:
-        raise PayLinkRefused("Only a pending charge can be paid by link.", "payment_terminal")
+        raise PayLinkRefused(gettext("Only a pending charge can be paid by link."), "payment_terminal")
     if payment.member_id is not None:
-        raise PayLinkRefused("This charge belongs to an account; the payer signs in to pay it.", "pay_link_has_account")
+        raise PayLinkRefused(gettext("This charge belongs to an account; the payer signs in to pay it."), "pay_link_has_account")
     if not _raised_by_staff(payment):
-        raise PayLinkRefused("Pay links are only for charges staff raised.", "pay_link_not_staff_raised")
+        raise PayLinkRefused(gettext("Pay links are only for charges staff raised."), "pay_link_not_staff_raised")
     now = timezone.now()
     PaymentPayLink.objects.filter(payment=payment, revoked_at__isnull=True).update(revoked_at=now)
     token = secrets.token_urlsafe(32)

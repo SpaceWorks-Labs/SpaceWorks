@@ -54,15 +54,15 @@ def record_offline_refund(payment, *, amount, reason, receipt, actor, release_de
             pk=locked.subject_id, makerspace_id=locked.makerspace_id,
             status__in=[HardwareRequest.Status.RETURNED, HardwareRequest.Status.CLOSED_WITH_ISSUE])
         if locked.subject_type != Payment.SubjectType.LOAN_DEPOSIT or not closed.exists():
-            raise RefundNotAllowed("A deposit can be released after the loan closes.", "deposit_not_returned")
+            raise RefundNotAllowed(gettext("A deposit can be released after the loan closes."), "deposit_not_returned")
     if locked.status != Payment.Status.PAID_OFFLINE:
-        raise RefundNotAllowed("Only offline-settled payments accept a manual refund.", "refund_not_offline")
+        raise RefundNotAllowed(gettext("Only offline-settled payments accept a manual refund."), "refund_not_offline")
     from apps.payments.refund_policy import precision_ok
     if not precision_ok(data["amount"], locked.currency):
         # Audit 0.12.0 C-2: no half yen is handed back over a counter.
-        raise RefundNotAllowed("Refund amount is invalid for this currency.", "refund_amount_invalid")
+        raise RefundNotAllowed(gettext("Refund amount is invalid for this currency."), "refund_amount_invalid")
     if Refund.counted_total(locked) + data["amount"] > locked.amount:
-        raise RefundNotAllowed("Refund exceeds the refundable balance.", "refund_exceeds_balance")
+        raise RefundNotAllowed(gettext("Refund exceeds the refundable balance."), "refund_exceeds_balance")
     refund = Refund.objects.create(
         payment=locked, amount=data["amount"], currency=locked.currency,
         status=Refund.Status.SUCCEEDED, provider=Refund.Provider.MANUAL,

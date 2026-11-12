@@ -5,6 +5,7 @@ a person: event payouts, reimbursements, prize payouts and everything derived fr
 (`payouts`, `budget_left`, `net`). One predicate and one refusal so every surface agrees.
 """
 from rest_framework.exceptions import PermissionDenied
+from django.utils.translation import gettext
 
 # Report keys whose rows are payout money without a literal "payout" column.
 # `receipts-payments` folds payouts into its `payments` and `closing` columns (226g).
@@ -23,7 +24,7 @@ def full_session(request):
 
 def require_full_session(request):
     if not full_session(request):
-        raise PermissionDenied({"detail": "Payout money needs an interactive session.", "code": "full_session_required"})
+        raise PermissionDenied({"detail": gettext("Payout money needs an interactive session."), "code": "full_session_required"})
 
 
 def is_payout_report(definition):

@@ -11,6 +11,7 @@
   the PAN, name or address: those stay in the encrypted columns and are read when it is rendered.
 """
 
+from django.utils.translation import gettext
 import re
 
 from django.utils import timezone
@@ -45,16 +46,16 @@ def clean_request(space, data):
     settings = DonationSettings.for_makerspace(space)
     today = timezone.localdate()
     if not nonprofit.receipts_available(space, settings, today):
-        raise DonationRefused("This space does not issue tax receipts.", "tax_receipts_unavailable",
+        raise DonationRefused(gettext("This space does not issue tax receipts."), "tax_receipts_unavailable",
                               "wants_tax_receipt")
     address = str(data.get("donor_address") or "").strip()[:500]
     if not nonprofit.needs_pan(nonprofit.receipt_exemptions(settings, today)):
         return True, "", address
     pan = normalize_pan(data.get("donor_pan"))
     if not PAN_RE.match(pan):
-        raise DonationRefused("Enter a valid 10-character PAN.", "pan_invalid", "donor_pan")
+        raise DonationRefused(gettext("Enter a valid 10-character PAN."), "pan_invalid", "donor_pan")
     if not address:
-        raise DonationRefused("An 80G receipt needs your postal address.", "address_required", "donor_address")
+        raise DonationRefused(gettext("An 80G receipt needs your postal address."), "address_required", "donor_address")
     return True, pan, address
 
 

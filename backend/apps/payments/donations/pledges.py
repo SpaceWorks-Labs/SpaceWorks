@@ -6,6 +6,7 @@ The raise is idempotent -- one gift per (pledge, period), unique in the database
 period missed while the switch was off is skipped, never charged later.
 """
 
+from django.utils.translation import gettext
 import logging
 
 from dateutil.relativedelta import relativedelta
@@ -34,7 +35,7 @@ def create_pledge(space, donor, *, amount, interval, starts_on=None, campaign=No
     assert_write_allowed(space.pk)
     require_tracking(space)
     if interval not in STEP:
-        raise DonationRefused("Choose monthly, quarterly or yearly.", "interval_invalid", "interval")
+        raise DonationRefused(gettext("Choose monthly, quarterly or yearly."), "interval_invalid", "interval")
     today = timezone.localdate()
     starts_on = max(starts_on or today, today)
     wants, pan, address = tax
@@ -55,7 +56,7 @@ def change_pledge(pledge, *, actor, action, amount=None, interval=None):
     """pause / resume / cancel / update (amount, interval) -- audited `pledge.<action>`."""
     locked = DonationPledge.objects.select_for_update().get(pk=pledge.pk)
     if locked.status == DonationPledge.Status.CANCELLED:
-        raise DonationRefused("This pledge is cancelled.", "pledge_cancelled")
+        raise DonationRefused(gettext("This pledge is cancelled."), "pledge_cancelled")
     fields = ["updated_at"]
     if action == "cancel":
         locked.status, locked.cancelled_at = DonationPledge.Status.CANCELLED, timezone.now()
@@ -76,11 +77,11 @@ def change_pledge(pledge, *, actor, action, amount=None, interval=None):
             fields.append("amount")
         if interval is not None:
             if interval not in STEP:
-                raise DonationRefused("Choose monthly, quarterly or yearly.", "interval_invalid", "interval")
+                raise DonationRefused(gettext("Choose monthly, quarterly or yearly."), "interval_invalid", "interval")
             locked.interval = interval
             fields.append("interval")
     else:
-        raise DonationRefused("Unknown pledge action.", "pledge_action_invalid", "action")
+        raise DonationRefused(gettext("Unknown pledge action."), "pledge_action_invalid", "action")
     locked.save(update_fields=fields)
     if action == "cancel":
         audit.record(actor, "pledge.cancelled", makerspace=locked.makerspace, target=locked,

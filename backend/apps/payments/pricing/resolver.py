@@ -13,7 +13,8 @@ Targets and params by domain:
   `late`; default all), `days` (rental days), `due_at` / `now` (late fee).
 * `machines` -- target: a `MachineServiceRequest`, or None with `params` `machine`,
   `machine_type`, `pool`, `minutes`, `quantity`; plus `outcome` (`completed`|`failed`)
-  and `failure_charge` (`none`|`material_only`|`full`, default the space's choice).
+  and `failure_charge` (`none`|`material_only`|`full`, default the space's choice), and
+  `consumables` (priced profile items, decision 341; a request target reads its actuals).
 * `bookings` -- target: a `BookableSpace`; params `starts_at`, `ends_at`; optional
   `booking`/`included_exempt` (plan included hours, decision 221(d)).
 * `events` -- target: an `Event`; params `ticket` (an `EventTicketType`), or `venue_fee`
@@ -107,10 +108,13 @@ def _machines(card, service_request, params):
         params.setdefault("pool", service_request.run_consumable_pool)
         params.setdefault("minutes", service_request.actual_minutes)
         params.setdefault("quantity", build_machines.service_request_quantity(service_request))
+        from apps.machines.consumable_usage import ACTUAL, priced_items
+        params.setdefault("consumables", priced_items(service_request, ACTUAL))
     return build_machines.lines(
         card, machine=params.get("machine"), machine_type=params.get("machine_type"), pool=params.get("pool"),
         minutes=params.get("minutes") or 0, quantity=params.get("quantity") or 0,
         outcome=params.get("outcome", "completed"), failure_charge=params.get("failure_charge"),
+        consumables=params.get("consumables") or (),
     )
 
 

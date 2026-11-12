@@ -118,7 +118,7 @@ def resolve_flag(*, actor, makerspace_id, flag_id, resolution, note="", amount=N
     payment = Payment.objects.select_for_update(of=("self",)).select_related("makerspace").get(pk=flag.payment_id)
     flag = Flag.objects.select_for_update().get(pk=flag.pk)
     if not flag.is_open:
-        raise FlagConflict("This flag has already been resolved.", "capture_flag_resolved")
+        raise FlagConflict(gettext("This flag has already been resolved."), "capture_flag_resolved")
     if resolution == Flag.Resolution.REFUND_CASE:
         _require_subject_authority(actor, [payment])
         flag.refund_case = _open_flag_case(payment, flag, actor, amount)
@@ -126,9 +126,9 @@ def resolve_flag(*, actor, makerspace_id, flag_id, resolution, note="", amount=N
         _require_record_authority(actor, [payment])
     if resolution == Flag.Resolution.ISSUE_RECEIVED:
         if flag.kind not in Flag.HOLDS_RECEIPT or flag.captured_amount is None:
-            raise FlagConflict("This capture cannot be receipted; open a refund case instead.", "document_held")
+            raise FlagConflict(gettext("This capture cannot be receipted; open a refund case instead."), "document_held")
     elif resolution == Flag.Resolution.ACKNOWLEDGED and not (note or "").strip():
-        raise FlagConflict("Say what happened, for example where the money was refunded.", "note_required")
+        raise FlagConflict(gettext("Say what happened, for example where the money was refunded."), "note_required")
     flag.resolution, flag.resolution_note = resolution, (note or "").strip()[:500]
     flag.resolved_by, flag.resolved_at = actor, timezone.now()
     flag.save()
@@ -153,13 +153,13 @@ def _open_flag_case(payment, flag, actor, amount):
     from apps.payments.services_refund_cases import record_case
 
     if RefundCase.objects.filter(payment=payment, status__in=RefundCase.ACTIVE_STATUSES).exists():
-        raise FlagConflict("A refund case is already open for this charge.", "refund_request_exists")
+        raise FlagConflict(gettext("A refund case is already open for this charge."), "refund_request_exists")
     default = flag.captured_amount or payment.amount
     if flag.kind == Flag.Kind.MISMATCH and flag.captured_amount and flag.captured_amount > payment.amount:
         default = flag.captured_amount - payment.amount
     due = min(Decimal(amount) if amount is not None else default, refundable_balance(payment))
     if due <= 0:
-        raise FlagConflict("Nothing is left to refund on this charge.", "refund_exceeds_balance")
+        raise FlagConflict(gettext("Nothing is left to refund on this charge."), "refund_exceeds_balance")
     case = RefundCase.objects.create(
         payment=payment, kind=RefundCase.Kind.REQUEST, area=area_for(payment),
         reason_code=RefundCase.ReasonCode.CAPTURE_FLAGGED, due_amount=due,

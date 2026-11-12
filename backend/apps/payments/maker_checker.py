@@ -35,7 +35,7 @@ def propose(locked_payments, actor, settlement, *, claim=None):
     rows = []
     for payment in locked_payments:
         if SettlementConfirmation.objects.filter(payment=payment, status=SettlementConfirmation.Status.AWAITING).exists():
-            raise ConfirmationConflict("A settlement for this charge is already awaiting confirmation.",
+            raise ConfirmationConflict(gettext("A settlement for this charge is already awaiting confirmation."),
                                        "settlement_awaiting_confirmation")
         row = SettlementConfirmation.objects.create(
             payment=payment, method=settlement["method"], reference=settlement.get("reference", ""),
@@ -67,9 +67,9 @@ def _locked(actor, makerspace_id, confirmation_id):
     if not rbac.scope_by_action(actor, rbac.Action.RECORD_PAYMENT, Payment.objects.filter(pk=payment.pk)).exists():
         raise PermissionDenied(gettext("Confirming a settlement needs record_payment."))
     if row.status != SettlementConfirmation.Status.AWAITING:
-        raise ConfirmationConflict("This settlement has already been decided.", "settlement_decided")
+        raise ConfirmationConflict(gettext("This settlement has already been decided."), "settlement_decided")
     if row.proposed_by_id == actor.pk:
-        raise ConfirmationConflict("A second person must confirm a settlement you recorded.", "self_confirmation")
+        raise ConfirmationConflict(gettext("A second person must confirm a settlement you recorded."), "self_confirmation")
     return payment, row
 
 

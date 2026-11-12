@@ -50,7 +50,7 @@ def require_tracking(space):
     from apps.payments.availability import charge_tracking_enabled
 
     if not charge_tracking_enabled(space, "donations"):
-        raise DonationRefused("This space is not recording donation or sponsor money right now.", "charges_off")
+        raise DonationRefused(gettext("This space is not recording donation or sponsor money right now."), "charges_off")
     return space
 
 

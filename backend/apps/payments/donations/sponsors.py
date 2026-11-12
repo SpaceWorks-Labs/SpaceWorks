@@ -5,6 +5,7 @@ Every change is audited (`sponsor.*`, `perk.*`). Sponsorship money is ONE `Payme
 the ledger's `donations` domain, settled offline with a receipt or paid through an L5 pay link.
 """
 
+from django.utils.translation import gettext
 from django.db import transaction
 from django.utils import timezone
 from .gates import DonationRefused, require_tracking
@@ -22,7 +23,7 @@ def save_sponsor(space, *, actor, data, sponsor=None):
     """Create or update. Contact fields are scoped PII and never enter the audit row."""
     tier = data.get("tier")
     if tier is not None and tier.makerspace_id != space.pk:
-        raise DonationRefused("That tier is not in this space.", "tier_invalid", "tier")
+        raise DonationRefused(gettext("That tier is not in this space."), "tier_invalid", "tier")
     creating = sponsor is None
     sponsor = sponsor or Sponsor(makerspace=space, created_by=actor)
     before = {key: getattr(sponsor, key, None) for key in data}
@@ -73,7 +74,7 @@ def copy_tier_perks(sponsor, *, actor):
 def save_perk(space, *, actor, data, perk=None):
     owner = data.get("sponsor") or data.get("tier") or (perk.sponsor if perk else None) or (perk.tier if perk else None)
     if owner is None or owner.makerspace_id != space.pk:
-        raise DonationRefused("A perk belongs to one sponsor or one tier in this space.", "perk_owner_invalid")
+        raise DonationRefused(gettext("A perk belongs to one sponsor or one tier in this space."), "perk_owner_invalid")
     creating = perk is None
     perk = perk or SponsorPerk(makerspace=space)
     for key, value in data.items():
@@ -91,7 +92,7 @@ def save_perk(space, *, actor, data, perk=None):
 @transaction.atomic
 def fulfil_perk(perk, *, actor, fulfilled=True, note=""):
     if perk.sponsor_id is None:
-        raise DonationRefused("Tier perks are templates; fulfil a sponsor's copy.", "perk_is_template")
+        raise DonationRefused(gettext("Tier perks are templates; fulfil a sponsor's copy."), "perk_is_template")
     perk.fulfilled_at, perk.fulfilled_by = (timezone.now(), actor) if fulfilled else (None, None)
     perk.note = (note or perk.note or "")[:300]
     perk.save(update_fields=["fulfilled_at", "fulfilled_by", "note"])
@@ -119,7 +120,7 @@ def raise_charge(sponsor, *, actor, amount, description="", event_id=None, earma
     if event_id is not None:
         event = Event.objects.filter(pk=event_id, makerspace_id=space.pk).first()
         if event is None:
-            raise DonationRefused("That event is not in this space.", "event_invalid", "event_id")
+            raise DonationRefused(gettext("That event is not in this space."), "event_invalid", "event_id")
     charge = SponsorshipCharge.objects.create(makerspace=space, sponsor=sponsor, amount=amount,
                                               currency=space_currency(space), description=description[:200],
                                               event=event, earmark=earmark, created_by=actor)
@@ -135,13 +136,13 @@ def raise_charge(sponsor, *, actor, amount, description="", event_id=None, earma
 @transaction.atomic
 def link_event_sponsor(sponsor, event_sponsor, *, actor):
     if event_sponsor.makerspace_id != sponsor.makerspace_id:
-        raise DonationRefused("That event sponsor is not in this space.", "event_sponsor_invalid",
+        raise DonationRefused(gettext("That event sponsor is not in this space."), "event_sponsor_invalid",
                               "event_sponsor")
     link, created = SponsorEventLink.objects.get_or_create(
         event_sponsor=event_sponsor, defaults={"makerspace_id": sponsor.makerspace_id, "sponsor": sponsor,
                                                "created_by": actor})
     if not created and link.sponsor_id != sponsor.pk:
-        raise DonationRefused("That event sponsor is already linked to another sponsor.", "event_sponsor_linked",
+        raise DonationRefused(gettext("That event sponsor is already linked to another sponsor."), "event_sponsor_linked",
                               "event_sponsor")
     if created:
         audit.record(actor, "sponsor.event_linked", makerspace=sponsor.makerspace, target=sponsor,

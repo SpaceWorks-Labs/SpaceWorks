@@ -6,6 +6,7 @@ first, so the one-active-case and one-due-case rules are decided under that lock
 a booking cancellation can never hit an IntegrityError on them (R1).
 """
 
+from django.utils.translation import gettext
 from django.db import transaction
 from django.utils import timezone
 
@@ -75,14 +76,14 @@ def request_refund(payment, *, member, reason):
     """A member asks for money back on their own settled charge; staff decide."""
     locked = _lock_payment(payment.pk)
     if locked.member_id != member.pk:
-        raise RefundNotAllowed("Only the payer can ask for a refund.", "refund_request_not_allowed")
+        raise RefundNotAllowed(gettext("Only the payer can ask for a refund."), "refund_request_not_allowed")
     if locked.status not in SETTLED:
-        raise RefundNotAllowed("Only a paid charge can be refunded.", "refund_not_settled")
+        raise RefundNotAllowed(gettext("Only a paid charge can be refunded."), "refund_not_settled")
     if locked.subject_type == Payment.SubjectType.LOAN_DEPOSIT:
         # A deposit has its own release path once the loan closes (R8).
-        raise RefundNotAllowed("Deposits are released by staff when the loan closes.", "refund_request_not_allowed")
+        raise RefundNotAllowed(gettext("Deposits are released by staff when the loan closes."), "refund_request_not_allowed")
     if refundable_balance(locked) <= 0:
-        raise RefundNotAllowed("This charge has already been refunded in full.", "refund_exceeds_balance")
+        raise RefundNotAllowed(gettext("This charge has already been refunded in full."), "refund_exceeds_balance")
     reason = (reason or "").strip()[:500]
     case = _active(locked)
     if case is not None:
@@ -93,7 +94,7 @@ def request_refund(payment, *, member, reason):
             record_case(member, "payment.refund_case_updated", case, requested=True)
             _notify(case, "refund_request_received")
             return case
-        raise RefundCaseConflict("A refund request is already open for this charge.", "refund_request_exists",
+        raise RefundCaseConflict(gettext("A refund request is already open for this charge."), "refund_request_exists",
                                  case_id=case.pk)
     case = RefundCase.objects.create(
         payment=locked, kind=RefundCase.Kind.REQUEST, area=area_for(locked),
@@ -110,9 +111,9 @@ def withdraw_request(case, *, member):
     _lock_payment(case.payment_id)
     locked = RefundCase.objects.select_for_update().select_related("payment__makerspace").get(pk=case.pk)
     if locked.requested_by_id != member.pk:
-        raise RefundCaseConflict("Only the member who asked can withdraw.", "refund_case_not_withdrawable")
+        raise RefundCaseConflict(gettext("Only the member who asked can withdraw."), "refund_case_not_withdrawable")
     if locked.kind != RefundCase.Kind.REQUEST or locked.status != RefundCase.Status.OPEN:
-        raise RefundCaseConflict("This refund can no longer be withdrawn.", "refund_case_not_withdrawable")
+        raise RefundCaseConflict(gettext("This refund can no longer be withdrawn."), "refund_case_not_withdrawable")
     locked.status, locked.decided_at = RefundCase.Status.WITHDRAWN, timezone.now()
     locked.save(update_fields=["status", "decided_at", "updated_at"])
     record_case(member, "payment.refund_case_withdrawn", locked)

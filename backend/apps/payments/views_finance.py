@@ -27,6 +27,7 @@ from apps.makerspaces.local_time import local_day_bounds, local_now
 from apps.payments.l5_gates import finance_space
 from apps.payments.payout_session import full_session, require_full_session, strip_payout_columns
 from apps.payments.reports_finance_ledger import EVENT_FIELDS, FIELDS, build_income_spending, event_finance
+from apps.operations.report_exports import _export_cell
 
 ERRORS = {400: OpenApiResponse(ErrorSerializer), 401: OpenApiResponse(ErrorSerializer),
           403: OpenApiResponse(ErrorSerializer), 404: OpenApiResponse(ErrorSerializer)}
@@ -132,7 +133,8 @@ class EventFinanceView(APIView):
             buffer = StringIO()
             writer = csv.DictWriter(buffer, fieldnames=EVENT_FIELDS)
             writer.writeheader()
-            writer.writerows(rows)
+            # L-M5: an event title like `=HYPERLINK(...)` must reach finance staff as text, never a formula.
+            writer.writerows({key: _export_cell(value) for key, value in row.items()} for row in rows)
             response = HttpResponse(buffer.getvalue(), content_type="text/csv; charset=utf-8")
             response["Content-Disposition"] = f'attachment; filename="event-{event.pk}-money.csv"'
             return response

@@ -36,7 +36,7 @@ def _lock_case(case, actor):
     locked.payment = payment
     require_decider(actor, payment, locked)
     if locked.status not in RefundCase.ACTIVE_STATUSES:
-        raise RefundCaseConflict("This refund case is already closed.", "refund_case_closed", status=locked.status)
+        raise RefundCaseConflict(gettext("This refund case is already closed."), "refund_case_closed", status=locked.status)
     return payment, locked
 
 
@@ -46,11 +46,11 @@ def _amount(raw, case, payment, balance):
     try:
         amount = Decimal(str(raw))
     except (InvalidOperation, TypeError, ValueError):
-        raise RefundNotAllowed("Refund amount is invalid.", "refund_amount_invalid")
+        raise RefundNotAllowed(gettext("Refund amount is invalid."), "refund_amount_invalid")
     if amount <= 0 or not precision_ok(amount, payment.currency):
-        raise RefundNotAllowed("Refund amount is invalid for this currency.", "refund_amount_invalid")
+        raise RefundNotAllowed(gettext("Refund amount is invalid for this currency."), "refund_amount_invalid")
     if amount > balance:
-        raise RefundCaseConflict("Refund exceeds the refundable balance.", "refund_exceeds_balance",
+        raise RefundCaseConflict(gettext("Refund exceeds the refundable balance."), "refund_exceeds_balance",
                                  balance=str(balance))
     return quantize_money(amount, payment.currency)
 
@@ -74,7 +74,7 @@ def approve_case(case, *, actor, amount=None, reason="", note="", receipt=None, 
             refund = _approve_locked(payment, locked, actor=actor, amount=_amount(amount, locked, payment, balance),
                                      reason=reason or "Refund approved", note=note, receipt=receipt)
     if exhausted:
-        raise RefundCaseConflict("Nothing is left to refund on this charge.", "refund_exceeds_balance",
+        raise RefundCaseConflict(gettext("Nothing is left to refund on this charge."), "refund_exceeds_balance",
                                  balance="0.00")
     if refund.status == refund.Status.PENDING and payment.status == Payment.Status.PAID_ONLINE:
         _send_after_commit(refund, actor)
@@ -91,12 +91,12 @@ def _approve_locked(payment, case, *, actor, amount, reason, note, receipt):
     if payment.status == Payment.Status.PAID_ONLINE:
         from apps.separability.tombstones import app_is_tombstoned
         if app_is_tombstoned("payments_rail"):
-            raise RefundCaseConflict("Online refunds are not available on this deployment; decline instead.",
+            raise RefundCaseConflict(gettext("Online refunds are not available on this deployment; decline instead."),
                                      "refund_rail_unavailable")
     elif not may_record_cash(actor, payment):
         raise PermissionDenied(gettext("Recording a cash refund requires record_payment."))
     elif not receipt:
-        raise RefundNotAllowed("An offline refund needs a receipt: method, reference and date.",
+        raise RefundNotAllowed(gettext("An offline refund needs a receipt: method, reference and date."),
                                "refund_receipt_required")
     # Mark the decision BEFORE the refund exists: the refund path voids every still-active
     # case once the balance reaches zero, and this one is not still active.

@@ -7,6 +7,8 @@ import {
   incidentErrorMessage, KIND_LABELS, SEVERITY_LABELS, severityTone, STATUS_LABELS, statusTone, useMyIncidents, useReportIncident,
 } from "./api";
 import { draftBody, emptyDraft, IncidentFields } from "./IncidentFields";
+import { LogoLoader } from "../../components/LogoLoader";
+import { BoxArt } from "../../components/BoxSpinner";
 
 /** The member's "Report a safety incident" form and their own reports (`safety.incidents`).
  *  The member reads only what they filed; staff triage notes stay on the staff side. */
@@ -34,12 +36,12 @@ export function MemberIncidentReports({ makerspaceId }: { makerspaceId: number }
       <div className="flex flex-wrap justify-end gap-2">
         <button type="button" className="desk-button-ghost" onClick={() => setOpen(false)}>{t`Cancel`}</button>
         <button type="submit" className="desk-button-brand" disabled={!draft.title.trim() || report.isPending}>
-          {report.isPending ? t`Sending…` : t`Send report`}</button>
+          {report.isPending ? <><BoxArt size={16} mono />{t`Sending…`}</> : t`Send report`}</button>
       </div>
     </form> : <button type="button" className="desk-button-brand justify-self-start" onClick={() => { report.reset(); setOpen(true); }}>
       {t`Report an incident or near miss`}</button>}
     <h3 className="title-section">{t`Your reports`}</h3>
-    {mine.isLoading ? <p role="status" className="text-sm text-muted">{t`Loading your reports…`}</p>
+    {mine.isLoading ? <LogoLoader label={t`Loading your reports…`} size={48} className="min-h-16 py-3" />
       : mine.error ? <div role="alert" className="grid justify-items-start gap-2 text-sm text-danger"><p>{incidentErrorMessage(mine.error)}</p>
         <button type="button" className="desk-button" onClick={() => void mine.refetch()}>{t`Try again`}</button></div>
       : rows.length ? <div className="grid gap-3">{rows.map(row => <ListRow key={row.id} title={row.title}

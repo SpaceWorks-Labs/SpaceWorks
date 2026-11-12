@@ -3,6 +3,7 @@ import { useState } from "react";
 import type { RecoveryReplay } from "./useKioskReplays";
 import { useResolveReplay } from "./useKioskReplays";
 import { Field } from "../../components/ui";
+import { BoxArt } from "../../components/BoxSpinner";
 
 // Public Station credentials are entered for the current channel, never returned
 // from historical recovery data. The Station flow obtains a fresh human lease.
@@ -37,7 +38,7 @@ export function KioskReplayResolution({ row }: { row: RecoveryReplay }) {
         mutation.mutate({ id: row.id, resolution_code: "acknowledged_no_change" }, {
           onSuccess: () => setConfirm(false), onError: () => setError(t`Review was refused. Reload current permissions and failure details.`),
         });
-      }}>{mutation.isPending ? t`Recording review…` : t`Confirm acknowledgement`}</button>
+      }}>{mutation.isPending ? <><BoxArt size={16} mono />{t`Recording review…`}</> : t`Confirm acknowledgement`}</button>
       <button type="button" className="desk-button" disabled={mutation.isPending} onClick={() => setConfirm(false)}>{t`Cancel`}</button>
     </section> : null}
     {correct ? <section className="grid gap-2" aria-label={t`Correct this handover online`}>

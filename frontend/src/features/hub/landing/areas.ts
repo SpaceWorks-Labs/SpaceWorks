@@ -24,7 +24,7 @@ export function hubAreas(): Area[] {
       ] }, docsQuery: "inventory" },
     { key: "machines", icon: Printer, name: t`Machines`, tagline: t`Queues, not clipboards.`,
       body: t`Print and machine job requests, quotes and queues, with the training, maintenance and repairs behind them.`,
-      points: [t`3D printers, spools and filament use`, t`Certifications before anyone runs a machine`,
+      points: [t`3D printers, spools and filament use`, t`Machine access given by a space manager`,
         t`Maintenance schedules that block a machine when overdue`, t`Repair work orders and metered sessions`],
       record: { title: t`Print queue · Printer 2`, rows: [
         { label: t`Bracket, PLA`, value: t`Printing`, tone: "info" },

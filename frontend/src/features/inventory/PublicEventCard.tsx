@@ -6,6 +6,7 @@ import { RouteLink } from "../../components/ui/RouteLink";
 import { EventCountdown } from "../events/EventCountdown";
 import { EventPrice } from "../events/EventPrice";
 import type { PublicEventDetail } from "../events/eventTicketTypes";
+import { BoxArt } from "../../components/BoxSpinner";
 
 function eventStatusLabel(status: string) {
   if (status === "published") return t`Published`;
@@ -62,7 +63,7 @@ export function PublicEventCard({ event, href, time, calendarPending, calendarEr
         </dl>
         <div className="flex flex-wrap gap-2">
           <RouteLink className={event.registration_open ? "desk-button-brand" : "desk-button"} href={href}>{eventActionLabel(event)}</RouteLink>
-          <button className="desk-button" type="button" disabled={calendarPending} onClick={onCalendar}>{calendarPending ? t`Preparing…` : t`Add to calendar`}</button>
+          <button className="desk-button" type="button" disabled={calendarPending} onClick={onCalendar}>{calendarPending ? <><BoxArt size={16} mono />{t`Preparing…`}</> : t`Add to calendar`}</button>
         </div>
         {calendarError ? <p role="alert" className="text-sm text-danger">{calendarError}</p> : null}
       </div>

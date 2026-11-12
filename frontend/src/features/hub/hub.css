@@ -51,6 +51,14 @@
 .sw-hub-cta-outline { border-color: rgb(var(--color-outline)); color: rgb(var(--color-ink)); }
 .sw-hub-cta-outline:hover { background: rgb(var(--color-hover)); }
 .sw-hub-cta-primary:focus-visible, .sw-hub-cta-outline:focus-visible { outline: 2px solid rgb(var(--color-focus)); outline-offset: 3px; }
+.sw-hub-hero-more { display: inline-flex; align-items: center; gap: 6px; min-height: 48px; padding: 0 8px; border-radius: 10px; font-weight: 600;
+  color: rgb(var(--color-ink)); text-decoration: underline; text-decoration-color: transparent; text-underline-offset: 6px; transition: text-decoration-color 120ms; }
+.sw-hub-hero-more:hover { text-decoration-color: rgb(var(--color-ink)); }
+.sw-hub-hero-more:focus-visible { outline: 2px solid rgb(var(--color-focus)); outline-offset: 2px; }
+.sw-hub-hero-source { display: inline-flex; align-items: center; gap: 4px; min-height: 24px; border-radius: 4px; color: rgb(var(--color-ink));
+  text-decoration: underline; text-decoration-color: rgb(var(--color-outline)); text-underline-offset: 4px; }
+.sw-hub-hero-source:hover { text-decoration-color: rgb(var(--color-ink)); }
+.sw-hub-hero-source:focus-visible { outline: 2px solid rgb(var(--color-focus)); outline-offset: 2px; }
 
 /* The sample loan record, in the theme's own tokens. Unreached rows keep their height (proof held back)
    so the pinned card never jumps. */

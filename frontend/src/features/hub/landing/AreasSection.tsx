@@ -25,7 +25,10 @@ export function AreasSection() {
     <div className="sw-hub-wrap">
       <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] md:items-end md:gap-10">
         <h2 id="areas-title" className="sw-hub-h2">{t`Turn on what you run. Leave off what you don’t.`}</h2>
-        <p className="sw-hub-lede">{t`Each makerspace chooses its own areas. Switch one off and it leaves every screen; its history stays.`}</p>
+        <div className="grid gap-3">
+          <p className="sw-hub-lede">{t`Each makerspace chooses its own areas. Switch one off and it leaves every screen; its history stays.`}</p>
+          <Link to="/features" className="sw-hub-inline-link inline-flex w-fit items-center gap-1">{t`Every area and switch, on one page`}<ArrowRight size={16} aria-hidden="true" /></Link>
+        </div>
       </div>
       <div className="mt-10 grid gap-6 lg:mt-14 lg:grid-cols-[minmax(0,320px)_minmax(0,1fr)] lg:gap-10">
         <div role="tablist" aria-label={t`Areas`} aria-orientation="vertical" className="sw-hub-area-tabs">

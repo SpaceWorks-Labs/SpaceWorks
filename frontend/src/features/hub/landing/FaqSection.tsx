@@ -16,7 +16,7 @@ function questions() {
     { q: t`Can we take payments?`,
       a: t`Money owed is tracked even without a payment provider, and staff can record cash or bank transfers with a receipt. Online checkout through Stripe or Razorpay is optional.` },
     { q: t`Is there a mobile app?`,
-      a: t`Space Works works in the browser on any phone today, and members can install their member area to the home screen. Native Android and iOS apps are in development.` },
+      a: t`Space Works works in the browser on any phone today, and members can install their member area to the home screen. The native Android and iOS apps are released too: download them from GitHub Releases.` },
   ];
 }
 

@@ -89,7 +89,7 @@ export function PublicEventDetailPage({ resolvedSlug, resolvedToken, canonicalUr
       breadcrumb={[{ label: t`All events`, href: tenantPath("events") }, { label: event?.title ?? t`Event` }]}>
       <PublicDetailLayout title={event?.title ?? t`Event`} state={state}
         cover={event?.image_url && !(event.website && "cover" in event.website) ? { src: event.image_url, alt: "" } : undefined}
-        chips={[...(event?.audience_label ? [{ label: event.audience_label, tone: "info" as const }] : []), ...(event?.category ? [{ label: event.category.name }] : []), ...(event?.tags ?? []).map(label => ({ label }))]}
+        chips={[...(event?.audience_label ? [{ label: event.audience_label, tone: "info" as const }] : []), ...(event?.category ? [{ label: event.category.name }] : []), ...(event?.tags ?? []).map(label => ({ label, href: `/discover?tag=${encodeURIComponent(label)}` }))]}
         facts={event ? [{ identity: { kind: "date", date: event.starts_at }, primary: new Date(event.starts_at).toLocaleString(formatLocale()), secondary: `Until ${new Date(event.ends_at).toLocaleString(formatLocale())}` },
           ...(event.location ? [{ identity: { kind: "icon" as const, icon: "Info" as const, tone: "neutral" as const }, primary: event.location }] : [])] : []}
         sections={event ? [{ id: "about", label: t`About`, content: <p className="whitespace-pre-wrap leading-7">{event.description}</p> },

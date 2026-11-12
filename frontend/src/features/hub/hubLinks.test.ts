@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { API_REFERENCE_PATH, findDoc } from "../docs/docsIndex";
-import { DOCS_LINKS, HUB_VERSION, LICENSE_SPDX, LICENSE_URL } from "./hubLinks";
+import { ANDROID_REPO_URL, DOCS_LINKS, GITHUB_URL, HUB_VERSION, IOS_REPO_URL, LICENSE_SPDX, LICENSE_URL } from "./hubLinks";
 
 // Vitest runs from frontend/, one level below the repository root.
 const repo = resolve(process.cwd(), "..");
@@ -37,6 +37,13 @@ describe("hub links", () => {
   it("takes the version from the repository VERSION file at build time", () => {
     const version = readFileSync(resolve(repo, "VERSION"), "utf8").trim();
     expect(HUB_VERSION).toBe(version);
+  });
+
+  it("links the three official repositories of the SpaceWorks-Labs organisation", () => {
+    expect(GITHUB_URL).toBe("https://github.com/SpaceWorks-Labs/SpaceWorks");
+    expect(ANDROID_REPO_URL).toBe("https://github.com/SpaceWorks-Labs/SpaceWorks-Android");
+    expect(IOS_REPO_URL).toBe("https://github.com/SpaceWorks-Labs/SpaceWorks-iOS");
+    for (const url of [GITHUB_URL, ANDROID_REPO_URL, IOS_REPO_URL]) expect(new URL(url).protocol).toBe("https:");
   });
 
   it("builds a docs search address", () => {

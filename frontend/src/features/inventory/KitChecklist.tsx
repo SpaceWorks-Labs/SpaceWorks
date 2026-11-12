@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { staffRequest } from "../../lib/api";
 import { Field } from "../../components/ui";
+import { LogoLoader } from "../../components/LogoLoader";
 
 export type KitComponent = { key: string; label: string; quantity: number };
 export type KitExpectation = KitComponent & { owner_label: string; issue_present?: number };
@@ -55,7 +56,7 @@ export function useSuppliedKitChecklist(components: KitExpectation[], token: str
 
 export function KitChecklistCapture({ checklist }: { checklist: Pick<ReturnType<typeof useKitChecklist>, "components" | "values" | "loading" | "error" | "update"> }) {
   return <div className="grid gap-2">
-    {checklist.loading ? <p role="status" className="text-sm text-muted">{t`Loading kit checklist…`}</p> : null}
+    {checklist.loading ? <LogoLoader label={t`Loading kit checklist…`} size={48} className="min-h-16 py-3" /> : null}
     {checklist.error ? <p role="alert" className="text-sm text-danger">{checklist.error}</p> : null}
     {checklist.components.length ? <fieldset className="grid gap-4 rounded-xl border border-line bg-panel p-4">
       <legend className="text-sm font-medium text-ink">{t`Kit component counts`}</legend>

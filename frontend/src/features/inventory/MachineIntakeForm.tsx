@@ -6,6 +6,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { tenantPublicRequest } from "../../lib/api";
 import { eligibilityMessage } from "../../lib/eligibilityCopy";
 import { PricePreview } from "../payments/PricePreview";
+import { LogoLoader } from "../../components/LogoLoader";
 
 type IntakeField = { key: string; label: string; type: "text" | "number" | "integer" | "choice" | "boolean"; required?: boolean; choices?: string[]; min?: number; max?: number };
 export type TypeIntake = { materials: { id: number | null; name: string; colours: string[] }[]; intake_schema: { version?: number; fields?: IntakeField[] } };
@@ -60,7 +61,7 @@ export function MachineIntakeForm({ slug, machineId, typeId, dialog = false, tra
     <label className="grid gap-1 text-sm">{t`Job title`}<input className="desk-input" required maxLength={200} value={title} onChange={event => setTitle(event.target.value)} /></label>
     <IntakeFields intake={schema.data} values={values} setValues={setValues} />
     <PricePreview makerspaceSlug={slug} request={{ domain: "machines", machine_id: machineId }} />
-    {schema.isPending ? <p role="status">{t`Loading job requirements…`}</p> : null}
+    {schema.isPending ? <LogoLoader label={t`Loading job requirements…`} size={48} className="min-h-16 py-3" /> : null}
     {schema.error || submit.error ? <p role="alert" className="text-sm text-danger">{eligibilityMessage(schema.error || submit.error) ?? (schema.error || submit.error)?.message}</p> : null}
     {submit.isSuccess ? <div role="status" className="grid gap-2"><p>{t`Request submitted for review.`}</p>
       {submit.data?.public_token && trackingPath ? <Link className="desk-button" to={trackingPath(submit.data.public_token)}>{t`Track your job`}</Link> : null}

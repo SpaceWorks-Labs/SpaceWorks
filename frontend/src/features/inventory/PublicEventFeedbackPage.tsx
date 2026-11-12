@@ -12,6 +12,7 @@ import { useTenantBranding } from "../../lib/useTenantBranding";
 import { useTenantBootstrap } from "./usePublicInventory";
 import { EventFeedbackFields } from "../events/programme/EventFeedbackFields";
 import { customAnswerErrors, validateCustomAnswers, type CustomAnswers, type CustomFormQuestion } from "../forms/customFormTypes";
+import { BoxArt } from "../../components/BoxSpinner";
 
 type FeedbackForm = {
   event: { title: string; starts_at: string; ends_at: string };
@@ -71,7 +72,7 @@ export function PublicEventFeedbackPage() {
       <form className="desk-panel mt-5 grid gap-5 p-5" onSubmit={event => { event.preventDefault(); const next = validateCustomAnswers(data.survey.questions, answers); setErrors(next); if (!Object.keys(next).length) submit.mutate(); }}>
         <EventFeedbackFields schema={data.survey.questions} answers={answers} onChange={setAnswers} errors={{ ...errors, ...customAnswerErrors(apiErrors) }} yesNoAsCheckbox />
         {data.mode === "certificate" ? <label className="grid gap-1"><span className="text-sm font-semibold text-ink">{t`Registration email`}</span><input className="desk-input" type="email" required value={email} onChange={event => setEmail(event.target.value)} /></label> : null}
-        <button className="desk-button-brand" type="submit" disabled={submit.isPending || (data.requires_auth && !restored)}>{submit.isPending ? t`Submitting…` : t`Submit feedback`}</button>
+        <button className="desk-button-brand" type="submit" disabled={submit.isPending || (data.requires_auth && !restored)}>{submit.isPending ? <><BoxArt size={16} mono />{t`Submitting…`}</> : t`Submit feedback`}</button>
         {submit.error ? <p className="text-sm text-danger" role="alert">{submit.error.message}</p> : null}
       </form>
     </> : null}

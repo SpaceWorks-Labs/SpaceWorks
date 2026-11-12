@@ -6,6 +6,7 @@ import {
   AREA_LABELS, incidentErrorMessage, options, SEVERITY_LABELS, STATUS_LABELS, type Incident, type IncidentPatch,
   type useIncidentChange,
 } from "./api";
+import { BoxArt } from "../../components/BoxSpinner";
 
 type Triage = Required<Pick<Incident, "status" | "severity" | "area" | "resolution_note">>;
 
@@ -51,7 +52,7 @@ export function IncidentTriage({ incident, mutation }: {
       <div className="flex flex-wrap justify-end gap-2">
         {changes.length ? <button type="button" className="desk-button-ghost" onClick={() => setDraft(initial)}>{t`Discard changes`}</button> : null}
         <button type="submit" className="desk-button-primary" disabled={!changes.length || mutation.isPending}>
-          {mutation.isPending ? t`Saving…` : t`Save triage`}</button>
+          {mutation.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Save triage`}</button>
       </div>
     </form>
   </section>;

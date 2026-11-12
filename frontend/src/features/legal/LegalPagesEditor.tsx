@@ -6,6 +6,7 @@ import { staffRequest } from "../../lib/api";
 import { formatDateTime } from "../../lib/format";
 import { LegalMarkdown } from "./LegalMarkdown";
 import { LEGAL_SLUGS, legalTitle, type LegalPageBody, type LegalSlug } from "./legalApi";
+import { BoxArt } from "../../components/BoxSpinner";
 
 /**
  * Edit /privacy and /terms (parity A13). `platform`: the operator's text for every space (superadmin);
@@ -63,7 +64,7 @@ function LegalPageForm({ slug, scope }: { slug: LegalSlug; scope: Parameters<typ
       {save.error || reset.error ? <p role="alert" className="text-sm text-danger">{(save.error ?? reset.error)?.message}</p> : null}
       {save.isSuccess && !dirty ? <p role="status" className="text-sm text-muted">{t`Saved. Visitors see the new text now.`}</p> : null}
       <div className="flex flex-wrap gap-2">
-        <button type="submit" className="desk-button-primary" disabled={!dirty || save.isPending || blankPlatform}>{save.isPending ? t`Saving…` : t`Save page`}</button>
+        <button type="submit" className="desk-button-primary" disabled={!dirty || save.isPending || blankPlatform}>{save.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Save page`}</button>
         {dirty ? <button type="button" className="desk-button" onClick={() => { setDraft(initial); save.reset(); }}>{t`Discard`}</button> : null}
         {scope.kind === "platform" && own ? <button type="button" className="desk-button" onClick={() => setConfirmReset(true)}>{t`Return to the shipped default`}</button> : null}
       </div>

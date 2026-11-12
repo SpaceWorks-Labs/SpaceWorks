@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Field, Modal } from "../../components/ui";
 import { AREA_LABELS, incidentErrorMessage, options, useRecordIncident, type Incident, type IncidentArea } from "./api";
 import { draftBody, emptyDraft, IncidentFields } from "./IncidentFields";
+import { BoxArt } from "../../components/BoxSpinner";
 
 /** Staff record an incident or near miss. The area follows what it links to unless chosen here. */
 export function RecordIncidentDialog({ makerspaceId, onClose, onRecorded }: {
@@ -38,7 +39,7 @@ export function RecordIncidentDialog({ makerspaceId, onClose, onRecorded }: {
       <div className="flex flex-wrap justify-end gap-2 border-t border-line pt-3">
         <button type="button" className="desk-button-ghost" onClick={onClose}>{t`Cancel`}</button>
         <button type="submit" className="desk-button-primary" disabled={!ready || record.isPending}>
-          {record.isPending ? t`Recording…` : t`Record incident`}</button>
+          {record.isPending ? <><BoxArt size={16} mono />{t`Recording…`}</> : t`Record incident`}</button>
       </div>
     </form>
   </Modal>;

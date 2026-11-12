@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { memberKits, staffContextKits, type SafeKit } from "./equipmentKitsApi";
 import { PagePager } from "../../components/ui";
+import { LogoLoader } from "../../components/LogoLoader";
 
 type KitLine = SafeKit["lines"][number];
 
@@ -32,7 +33,7 @@ export function KitChoice({ scope, slug, staff, value, onChange, disabled, consu
         return <button type="button" key={kit.id} className={choice(chosen)} aria-pressed={chosen} onClick={() => onChange(kit)}>{kit.name}</button>;
       }) : null}
     </div>
-    {query.isPending ? <p className="text-sm text-muted" role="status">{t`Loading kits…`}</p> : null}
+    {query.isPending ? <LogoLoader label={t`Loading kits…`} size={48} className="min-h-16 py-3" /> : null}
     {query.isError ? <p className="text-sm text-muted" role="status">{t`Kits are unavailable for your access.`}</p> : null}
     {query.isSuccess && !kits.length ? <p className="text-sm text-muted">{consumableOnly ? t`No consumable kits are available here.` : t`No kits are available here.`}</p> : null}
     {query.isSuccess ? <PagePager page={page} setPage={setPage} next={query.data.next} /> : null}

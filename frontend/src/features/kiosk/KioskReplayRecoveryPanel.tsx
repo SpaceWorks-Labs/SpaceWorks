@@ -5,6 +5,7 @@ import { KioskReplayDetail } from "./KioskReplayDetail";
 import { kioskOperationLabel } from "./replayRecoveryGuidance";
 import { KioskReplayResolution } from "./KioskReplayResolution";
 import { useKioskReplays, useReplayDetail } from "./useKioskReplays";
+import { LogoLoader } from "../../components/LogoLoader";
 
 /** `revealKey` changing (a callout's "Review failures") opens the section and scrolls it into view. */
 export function KioskReplayRecoveryPanel({ makerspaceId, revealKey = 0 }: { makerspaceId: number; revealKey?: number }) {
@@ -33,7 +34,7 @@ function RecoveryPanel({ makerspaceId, revealKey }: { makerspaceId: number; reve
         // Keep the section open on an empty filter, or the filter itself would vanish.
         setResolution(event.target.value); setPage(1); setSelected(null); setExpanded(true);
       }}><option value="unresolved">{t`Unresolved`}</option><option value="resolved">{t`Resolved`}</option><option value="all">{t`All failures`}</option></select></Field>
-      {list.isPending ? <p role="status">{t`Loading failed handovers…`}</p> : list.isError
+      {list.isPending ? <LogoLoader label={t`Loading failed handovers…`} size={48} className="min-h-16 py-3" /> : list.isError
         ? <ErrorBlock error={list.error} resource={t`failed handovers`} onRetry={() => { void list.refetch(); }} />
         : !list.data?.results.length ? <EmptyState message={t`No retained failures in this view.`} /> : <ul className="grid gap-3">
         {list.data.results.map((row) => <li key={row.id}>
@@ -44,7 +45,7 @@ function RecoveryPanel({ makerspaceId, revealKey }: { makerspaceId: number; reve
                 onClick={() => setSelected(selected === row.id ? null : row.id)}>{selected === row.id ? t`Close details` : t`Review`}{" "}
                 <span className="sr-only">{`${kioskOperationLabel(row.operation_kind)} · ${row.station_name} · ${row.failure_code}`}</span></button>
             </div>} />
-          {selected === row.id ? detail.isPending ? <p role="status">{t`Loading failure details…`}</p> : detail.isError ? <p role="alert">{t`This failure is unavailable under your current permissions.`}</p> : detail.data ? <div className="mt-3">
+          {selected === row.id ? detail.isPending ? <LogoLoader label={t`Loading failure details…`} size={48} className="min-h-16 py-3" /> : detail.isError ? <p role="alert">{t`This failure is unavailable under your current permissions.`}</p> : detail.data ? <div className="mt-3">
             <KioskReplayDetail key={row.id} row={detail.data} />
             <KioskReplayResolution key={`${row.id}/${detail.data.resolution_code}`} row={detail.data} />
           </div> : null : null}

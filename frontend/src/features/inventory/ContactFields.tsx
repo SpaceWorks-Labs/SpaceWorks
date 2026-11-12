@@ -1,4 +1,5 @@
 import { t } from "@lingui/core/macro";
+import { BoxArt } from "../../components/BoxSpinner";
 // A makerspace without member accounts has accounts for staff only (owner decision #80),
 // so a public borrower asks with name, phone and email instead, and proves the email with
 // a one-time code before the request is accepted. Phone and email reach staff only; the
@@ -58,7 +59,7 @@ export function ContactFields({ contact }: { contact: ContactDetails }) {
         type="email" autoComplete="email" maxLength={254} placeholder="you@example.com" />
       <button className="desk-button w-full" type="button" disabled={!emailReady || contact.codePending}
         onClick={contact.onSendCode}>
-        {contact.codePending ? t`Sending code...` : contact.codeSent ? t`Send a new code` : t`Email me a code`}
+        {contact.codePending ? <><BoxArt size={16} mono />{t`Sending code...`}</> : contact.codeSent ? t`Send a new code` : t`Email me a code`}
       </button>
       {contact.codeSent ? (
         <p className="text-sm text-muted">{t`We sent a 6-digit code to that address. It expires in 10 minutes.`}</p>

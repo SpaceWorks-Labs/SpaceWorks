@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { getAccessToken } from "../../lib/api";
 import type { Product } from "../../types/inventory";
 import { waitlistApi, waitlistKeys } from "./waitlistApi";
+import { BoxArt } from "../../components/BoxSpinner";
 
 /** "Join the waitlist" for an item that is out. Needs a signed-in member account and the `loans.waitlist` switch. */
 export function WaitlistJoin({ makerspaceId, product, features }: {
@@ -24,7 +25,7 @@ function JoinButton({ makerspaceId, product }: { makerspaceId: number; product: 
   const entry = join.data;
   return <div className="mt-4 grid gap-2">
     <button className="desk-button" type="button" disabled={join.isPending || join.isSuccess} onClick={() => join.mutate()}>
-      {join.isPending ? t`Joining…` : join.isSuccess ? t`On the waitlist` : t`Join the waitlist`}
+      {join.isPending ? <><BoxArt size={16} mono />{t`Joining…`}</> : join.isSuccess ? t`On the waitlist` : t`Join the waitlist`}
     </button>
     {entry ? <p role="status" className="text-sm text-muted">
       {entry.position ? t`You're number ${entry.position} in line for ${product.name}. ` : t`You're in line for ${product.name}. `}

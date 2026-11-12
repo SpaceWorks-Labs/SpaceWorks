@@ -1,17 +1,18 @@
 import { t } from "@lingui/core/macro";
-import { ArrowUpRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { SpaceWorksLogo } from "../../components/SpaceWorksLogo";
 import { useOrganizationDirectoryEnabled } from "../organizations/publicDirectoryApi";
 import { useHostingConfig } from "../hosting/hostingApi";
-import { DOCS_LINKS, GITHUB_URL, HUB_VERSION, ISSUES_URL, LICENSE_SPDX, LICENSE_URL } from "./hubLinks";
+import { ExternalLink } from "./ExternalLink";
+import { ANDROID_REPO_URL, DOCS_LINKS, GITHUB_URL, HUB_VERSION, IOS_REPO_URL, ISSUES_URL, LICENSE_SPDX, LICENSE_URL } from "./hubLinks";
 
-type FooterLink = { label: string; to: string; external?: boolean };
+/** `external` is the accessible name of a link that leaves the app (it starts with the visible label). */
+type FooterLink = { label: string; to: string; external?: string };
 
 function columns(directory: boolean, hosting: boolean): { title: string; links: FooterLink[] }[] {
   return [
     { title: t`Use it`, links: [
-      { label: t`Find a space`, to: "/spaces" },
+      { label: t`Features`, to: "/features" }, { label: t`Find a space`, to: "/spaces" },
       ...(directory ? [{ label: t`Organizations`, to: "/organizations" }] : []),
       // Decision 295: only while this deployment takes requests for new spaces.
       ...(hosting ? [{ label: t`Request a workspace`, to: "/hosting" }] : []),
@@ -31,8 +32,11 @@ function columns(directory: boolean, hosting: boolean): { title: string; links: 
       { label: t`Privacy`, to: "/privacy" }, { label: t`Terms`, to: "/terms" },
     ] },
     { title: t`GitHub`, links: [
-      { label: t`Source code`, to: GITHUB_URL, external: true }, { label: t`LICENSE file`, to: LICENSE_URL, external: true },
-      { label: t`Report a problem`, to: ISSUES_URL, external: true },
+      { label: t`Space Works on GitHub`, to: GITHUB_URL, external: t`Space Works on GitHub (opens in a new tab)` },
+      { label: t`Android app source`, to: ANDROID_REPO_URL, external: t`Android app source, on GitHub (opens in a new tab)` },
+      { label: t`iOS app source`, to: IOS_REPO_URL, external: t`iOS app source, on GitHub (opens in a new tab)` },
+      { label: t`LICENSE file`, to: LICENSE_URL, external: t`LICENSE file, on GitHub (opens in a new tab)` },
+      { label: t`Report a problem`, to: ISSUES_URL, external: t`Report a problem, on GitHub issues (opens in a new tab)` },
     ] },
   ];
 }
@@ -52,8 +56,7 @@ export function HubFooter() {
       {columns(directory, hosting).map(column => <nav key={column.title} aria-label={t`Footer: ${column.title}`} className="grid content-start gap-1">
         <h2 className="title-section mb-2">{column.title}</h2>
         {column.links.map(link => link.external
-          ? <a key={link.label} href={link.to} target="_blank" rel="noreferrer noopener" className="sw-hub-footer-link">
-            {link.label}<ArrowUpRight size={14} aria-hidden="true" /><span className="sr-only">{t`(opens in a new tab)`}</span></a>
+          ? <ExternalLink key={link.label} href={link.to} label={link.external} iconSize={14} className="sw-hub-footer-link">{link.label}</ExternalLink>
           : <Link key={link.label} to={link.to} className="sw-hub-footer-link">{link.label}</Link>)}
       </nav>)}
     </div>

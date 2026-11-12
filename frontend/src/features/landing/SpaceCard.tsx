@@ -3,9 +3,10 @@ import { Link } from "react-router-dom";
 import { BrandFacets } from "../../components/BrandFacets";
 import { MakerspaceBrand } from "../../components/MakerspaceBrand";
 import { MakerspaceMapLink } from "../../components/MakerspaceMapLink";
-import { Skeleton, StatusPill } from "../../components/ui";
+import { StatusPill } from "../../components/ui";
 import { identityTone } from "../../components/ui/tones";
 import type { Makerspace } from "../../types/inventory";
+import { LogoLoader } from "../../components/LogoLoader";
 
 // Cover placeholder: a solid brand tile per space (brand p.4 colour tiles), chosen by the same stable
 // hash as avatars. Brand-tested label pairs: ink on citron 13.23, sky 9.23, yellow 10.37; cream on teal 5.68.
@@ -45,10 +46,5 @@ export function SpaceCard({ space }: { space: Makerspace }) {
 }
 
 export function SpaceCardSkeletons() {
-  return <div role="status" aria-label={t`Loading spaces`} className="sw-space-grid">
-    {[0, 1, 2].map(index => <div key={index} className="overflow-hidden rounded-2xl border border-line bg-panel" aria-hidden="true">
-      <Skeleton className="aspect-[1.8] w-full rounded-none" />
-      <div className="grid gap-3 p-6"><Skeleton className="h-6 w-2/3" /><Skeleton className="h-4 w-1/2" /></div>
-    </div>)}
-  </div>;
+  return <LogoLoader label={t`Loading spaces`} className="min-h-72 py-10" />;
 }

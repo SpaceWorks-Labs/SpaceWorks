@@ -4,7 +4,7 @@
    The default rules are the static page: it is what reduced motion, phones, short screens and
    browsers without JavaScript get, and it reads top to bottom in DOM order. */
 
-.sw-hub { --sw-hub-bar: 73px; }
+.sw-hub { --sw-hub-bar: 89px; } /* the hub header: 72px bar + 16px padding + hairline */
 .sw-hub section[tabindex="-1"]:focus { outline: none; }
 .sw-hub section[id] { scroll-margin-top: var(--sw-hub-bar); }
 
@@ -18,9 +18,9 @@
 .sw-hub-seq-reveal { background: rgb(var(--color-surface)); border-bottom: 1px solid rgb(var(--color-line)); }
 
 /* ── Hero sequence, pinned (set by the hook only when it fits) ─────────────────────────── */
-.sw-hub-seq[data-animated] { height: calc(300svh - var(--sw-hub-header-h, 73px)); }
-.sw-hub-seq[data-animated] .sw-hub-seq-scene { position: sticky; top: var(--sw-hub-header-h, 73px); overflow: clip;
-  height: calc(100svh - var(--sw-hub-header-h, 73px)); }
+.sw-hub-seq[data-animated] { height: calc(300svh - var(--sw-hub-header-h, 89px)); }
+.sw-hub-seq[data-animated] .sw-hub-seq-scene { position: sticky; top: var(--sw-hub-header-h, 89px); overflow: clip;
+  height: calc(100svh - var(--sw-hub-header-h, 89px)); }
 .sw-hub-seq[data-animated] .sw-hub-seq-backdrop { display: block; position: absolute; inset: 0; opacity: 0; pointer-events: none;
   background: rgb(var(--color-surface)); }
 .sw-hub-seq[data-animated] .sw-hub-seq-copy { position: absolute; inset-inline: 0; top: var(--sw-seq-copy-top, 0px); padding: 0; }

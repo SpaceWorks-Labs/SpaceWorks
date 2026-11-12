@@ -4,6 +4,7 @@ import { useState } from "react";
 import { EmptyState, Field, StatusPill } from "../../components/ui";
 import { formatDate } from "../../lib/format";
 import { incidentErrorMessage, useIncidentAssignees, type IncidentAction, type useIncidentChange } from "./api";
+import { BoxArt } from "../../components/BoxSpinner";
 
 type Change = ReturnType<typeof useIncidentChange>;
 
@@ -56,7 +57,7 @@ export function IncidentFollowUps({ incidentId, actions, add, toggle }: {
         <input className="desk-input" type="date" value={due} onChange={event => setDue(event.target.value)} />
       </Field>
       <button type="submit" className="desk-button-primary" disabled={!description.trim() || add.isPending}>
-        {add.isPending ? t`Adding…` : t`Add action`}</button>
+        {add.isPending ? <><BoxArt size={16} mono />{t`Adding…`}</> : t`Add action`}</button>
     </form>
     {error ? <p role="alert" className="text-sm text-danger">{incidentErrorMessage(error)}</p> : null}
   </section>;

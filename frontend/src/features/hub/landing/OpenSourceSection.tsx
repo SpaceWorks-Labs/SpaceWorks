@@ -1,7 +1,8 @@
 import { t } from "@lingui/core/macro";
-import { ArrowRight, ArrowUpRight, FileText, GitPullRequest, History, Scale, ShieldAlert, Type } from "lucide-react";
+import { ArrowRight, ArrowUpRight, FileText, FolderGit2, GitPullRequest, History, Scale, ShieldAlert, Type } from "lucide-react";
 import { Link } from "react-router-dom";
-import { DOCS_LINKS, GITHUB_URL, LICENSE_SPDX, LICENSE_URL } from "../hubLinks";
+import { ExternalLink } from "../ExternalLink";
+import { ANDROID_REPO_URL, DOCS_LINKS, GITHUB_URL, IOS_REPO_URL, LICENSE_SPDX, LICENSE_URL } from "../hubLinks";
 
 /** The AGPL in plain words, row for row from docs/project/license.md (the licence text still wins). */
 function terms() {
@@ -20,6 +21,15 @@ function projectLinks() {
     { icon: GitPullRequest, label: t`Contributing`, to: DOCS_LINKS.contributing },
     { icon: History, label: t`Changelog and release notes`, to: DOCS_LINKS.changelog },
   ];
+}
+
+/** The three official repositories, each named by what it holds. */
+function repositories() {
+  return [
+    { name: t`Space Works: server, web app and docs`, href: GITHUB_URL },
+    { name: t`Android app`, href: ANDROID_REPO_URL },
+    { name: t`iOS app`, href: IOS_REPO_URL },
+  ].map(repo => ({ ...repo, slug: new URL(repo.href).pathname.slice(1) }));
 }
 
 /** What the licence lets you do, and where the project's rules live: in the docs and on GitHub. */
@@ -51,6 +61,15 @@ export function OpenSourceSection() {
             {projectLinks().map(({ icon: Icon, label, to }) => <li key={to} className="border-b border-line">
               <Link to={to} className="sw-hub-row-link"><Icon size={20} aria-hidden="true" className="shrink-0 text-accent-ink" />
                 <span className="min-w-0 flex-1">{label}</span><ArrowRight size={16} aria-hidden="true" className="shrink-0" /></Link>
+            </li>)}
+          </ul>
+          <h3 id="open-source-repos-title" className="title-section pt-4">{t`Official repositories`}</h3>
+          <ul aria-labelledby="open-source-repos-title" className="grid border-t border-line">
+            {repositories().map(({ name, href, slug }) => <li key={href} className="border-b border-line">
+              <ExternalLink href={href} label={t`${name}, ${slug}, on GitHub (opens in a new tab)`} className="sw-hub-row-link">
+                <FolderGit2 size={20} aria-hidden="true" className="shrink-0 text-accent-ink" />
+                <span className="grid min-w-0 flex-1"><span>{name}</span><span className="code-text truncate text-sm font-normal text-muted">{slug}</span></span>
+              </ExternalLink>
             </li>)}
           </ul>
           <div className="flex flex-wrap gap-3 pt-2">

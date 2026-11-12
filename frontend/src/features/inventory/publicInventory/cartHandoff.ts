@@ -43,12 +43,21 @@ export function clearStashedCart(path = window.location.pathname) {
   }
 }
 
-/** A same-origin path to return to after sign-in, or undefined (never another origin). */
+/** True for a path a browser would read as another host: `//host` or `/\host`. */
+const looksProtocolRelative = (path: string) => path.startsWith("//") || path.startsWith("/\\");
+
+/**
+ * A same-origin path to return to after sign-in, or undefined (never another origin).
+ * The FINAL normalized target is checked too: `/.//evil.test`, `/%2e//evil.test` and
+ * `/a/..//evil.test` all pass a prefix check but normalize to `//evil.test`, which
+ * `location.replace()` would follow off-site.
+ */
 export function safeReturnPath(value: string | null | undefined): string | undefined {
-  if (!value || !value.startsWith("/") || value.startsWith("//") || value.startsWith("/\\")) return undefined;
+  if (!value || !value.startsWith("/") || looksProtocolRelative(value)) return undefined;
   try {
     const url = new URL(value, window.location.origin);
-    return url.origin === window.location.origin ? url.pathname + url.search + url.hash : undefined;
+    if (url.origin !== window.location.origin || looksProtocolRelative(url.pathname)) return undefined;
+    return url.pathname + url.search + url.hash;
   } catch {
     return undefined;
   }

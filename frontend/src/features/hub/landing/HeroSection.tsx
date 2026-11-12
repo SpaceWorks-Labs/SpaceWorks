@@ -2,12 +2,14 @@ import { t } from "@lingui/core/macro";
 import { ArrowRight, Download } from "lucide-react";
 import { useRef } from "react";
 import { Link } from "react-router-dom";
-import { DOCS_LINKS } from "../hubLinks";
+import { ExternalLink } from "../ExternalLink";
+import { DOCS_LINKS, GITHUB_URL } from "../hubLinks";
 import { DeskPreview } from "./DeskPreview";
 import { SkipAhead } from "./SkipAhead";
 import { IntroSection } from "./StorySections";
 import { useScrollSequence } from "./useScrollSequence";
 import "./landing-scroll.css";
+import "./symbol-pattern.css";
 
 /**
  * The opening: the tagline and two ways in, then the staff console rises into view, the view moves
@@ -21,6 +23,7 @@ export function HeroSection() {
   return <div ref={sequence} className="sw-hub-seq">
     <SkipAhead target="hub-intro" label={t`Skip to the overview`} onJump={jumpToEnd} />
     <div className="sw-hub-seq-scene" data-seq="scene">
+      <div className="sw-hub-pattern" aria-hidden="true" />
       <div className="sw-hub-seq-backdrop" data-seq="backdrop" aria-hidden="true" />
       <section aria-labelledby="hub-title" className="sw-hub-seq-copy" data-seq="copy">
         <div className="sw-hub-wrap grid justify-items-center gap-6 text-center md:gap-7">
@@ -29,10 +32,13 @@ export function HeroSection() {
           <div className="flex flex-wrap items-center justify-center gap-3">
             <Link to={DOCS_LINKS.install} className="sw-hub-cta-primary"><Download size={18} aria-hidden="true" />{t`Install Space Works`}</Link>
             <Link to="/spaces" className="sw-hub-cta-outline">{t`Find a space`}<ArrowRight size={18} aria-hidden="true" /></Link>
+            <Link to="/features" className="sw-hub-hero-more">{t`See every feature`}<ArrowRight size={16} aria-hidden="true" /></Link>
           </div>
           <p className="flex flex-wrap justify-center gap-x-2 text-sm font-medium text-muted">
-            {[t`Open source under AGPL-3.0`, t`Self-hosted`, t`No licence fees`].map((fact, index) => <span key={fact} className="inline-flex gap-x-2 whitespace-nowrap">
-              {index ? <span aria-hidden="true">·</span> : null}<span>{fact}</span></span>)}
+            <ExternalLink href={GITHUB_URL} iconSize={14} className="sw-hub-hero-source"
+              label={t`Open source under AGPL-3.0: the Space Works repository on GitHub (opens in a new tab)`}>{t`Open source under AGPL-3.0`}</ExternalLink>
+            {[t`Self-hosted`, t`No licence fees`].map(fact => <span key={fact} className="inline-flex gap-x-2 whitespace-nowrap">
+              <span aria-hidden="true">·</span><span>{fact}</span></span>)}
           </p>
         </div>
       </section>

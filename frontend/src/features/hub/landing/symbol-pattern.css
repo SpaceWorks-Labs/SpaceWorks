@@ -1,0 +1,36 @@
+/* The Space Works symbol as a quiet tiled ground behind the hero copy and the overview (decision 300
+   addendum 2). symbol-mask.svg is docs/brand/symbol-one-colour-ink.svg, used only as a mask, so the mark
+   takes a token colour: Deep Ink in light, the neutral muted grey in dark (decision 316: no green tint on black), never a white wash.
+   A horizontal fade keeps the centre clean, where the text sits. The pattern never moves: in the pinned
+   sequence it lives on layers that are never transformed (the scene's own pattern layer and the backdrop),
+   and the copy's and overview's own patterns are switched off there because those layers move.
+   symbolPattern.test.ts keeps muted text at AA over the densest part of the pattern. */
+
+.sw-hub { --sw-pattern-ink: var(--color-ink); --sw-pattern-alpha: 0.045; --sw-pattern-tile: 172px 160px; }
+:root.dark .sw-hub { --sw-pattern-ink: var(--color-muted); --sw-pattern-alpha: 0.06; }
+@media (max-width: 767px) {
+  .sw-hub { --sw-pattern-alpha: 0.035; --sw-pattern-tile: 120px 112px; }
+  :root.dark .sw-hub { --sw-pattern-alpha: 0.05; }
+}
+
+.sw-hub-pattern, .sw-hub-seq-copy::before, .sw-hub-seq-reveal::before, .sw-hub-seq-backdrop::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background-color: rgb(var(--sw-pattern-ink)); opacity: var(--sw-pattern-alpha);
+  -webkit-mask-image: url("./symbol-mask.svg"), linear-gradient(90deg, #000, transparent 30%, transparent 70%, #000);
+  mask-image: url("./symbol-mask.svg"), linear-gradient(90deg, #000, transparent 30%, transparent 70%, #000);
+  -webkit-mask-size: var(--sw-pattern-tile), 100% 100%; mask-size: var(--sw-pattern-tile), 100% 100%;
+  -webkit-mask-repeat: repeat, no-repeat; mask-repeat: repeat, no-repeat;
+  -webkit-mask-composite: source-in; mask-composite: intersect;
+}
+
+/* Static page: each block carries its own pattern behind its text. */
+.sw-hub-seq-copy, .sw-hub-seq-reveal { position: relative; isolation: isolate; }
+.sw-hub-seq-copy::before, .sw-hub-seq-reveal::before { z-index: -1; }
+.sw-hub-pattern { display: none; }
+
+/* Pinned: the copy and overview move, so their patterns go; the scene's still layer shows instead, and the
+   backdrop brings the same tiling in with it, aligned to the same origin. */
+.sw-hub-seq[data-animated] :is(.sw-hub-seq-copy, .sw-hub-seq-reveal)::before { content: none; }
+.sw-hub-seq[data-animated] .sw-hub-pattern { display: block; }
+
+@media print { .sw-hub-pattern, .sw-hub-seq-copy::before, .sw-hub-seq-reveal::before, .sw-hub-seq-backdrop::before { display: none; } }

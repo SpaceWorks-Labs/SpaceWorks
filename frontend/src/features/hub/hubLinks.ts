@@ -2,6 +2,12 @@
 // publishes (docs/<folder>/<file>.md -> /docs/<folder>/<file>, an index.md -> its folder);
 // hubLinks.test.ts fails if one stops resolving.
 export const GITHUB_URL = "https://github.com/SpaceWorks-Labs/SpaceWorks";
+/** The native apps' own public repositories (the apps are released; owner, 2026-11-12). */
+export const ANDROID_REPO_URL = "https://github.com/SpaceWorks-Labs/SpaceWorks-Android";
+export const IOS_REPO_URL = "https://github.com/SpaceWorks-Labs/SpaceWorks-iOS";
+/** The apps ship through GitHub Releases only (no Play Store or App Store; owner, 2026-11-12). */
+export const ANDROID_RELEASES_URL = `${ANDROID_REPO_URL}/releases/latest`;
+export const IOS_RELEASES_URL = `${IOS_REPO_URL}/releases/latest`;
 export const LICENSE_URL = `${GITHUB_URL}/blob/main/LICENSE`;
 export const ISSUES_URL = `${GITHUB_URL}/issues`;
 export const INSTALL_COMMAND = "curl -fsSL https://github.com/SpaceWorks-Labs/SpaceWorks/releases/latest/download/install.sh | sh";

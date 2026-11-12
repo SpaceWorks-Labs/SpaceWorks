@@ -120,7 +120,7 @@ export function PublicInventoryPage({ embedded, resolvedSlug, inheritBranding = 
   const queryClient = useQueryClient();
   const liveRequest = useRef({ scope: requestScope, owner: session.owner, slug: makerspaceSlug, live: false });
   liveRequest.current.scope = requestScope; liveRequest.current.owner = session.owner; liveRequest.current.slug = makerspaceSlug;
-  useEffect(() => { liveRequest.current.live = true; return () => { liveRequest.current.live = false; }; }, []);
+  useEffect(() => { const state = liveRequest.current; state.live = true; return () => { state.live = false; }; }, []);
   const contextSuccess = (result: SelfResult, completedScope: string) => {
     const current = liveRequest.current;
     const verified = queryClient.getQueryData<{ id: number }>(["member", "cards-account"]);

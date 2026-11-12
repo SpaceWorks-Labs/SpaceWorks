@@ -107,6 +107,7 @@ export function PublicSelfCheckoutPage() {
       setUploadKey((key) => key + 1);
     },
   });
+  const { mutate: runLoan } = loanMutation;
   const canScan = contact.ready && (
     mode === "checkout"
       ? issueEvidenceId !== null
@@ -125,9 +126,9 @@ export function PublicSelfCheckoutPage() {
     if (scannedPayload && kits.ready && !kits.components.length) {
       const payload = scannedPayload;
       setScannedPayload("");
-      loanMutation.mutate({ payload });
+      runLoan({ payload });
     }
-  }, [scannedPayload, kits.ready, kits.components.length]);
+  }, [scannedPayload, kits.ready, kits.components.length, runLoan]);
 
   const phase = !canScan ? "photo" : scannedPayload && kits.components.length ? "kit" : "scan";
   const state = bootstrapQuery.isLoading || (accountAccess && session === "restoring") ? { status: "loading" as const } : bootstrapQuery.isError

@@ -20,6 +20,7 @@ import {
   type CustomAnswers,
   type CustomFormSchema,
 } from "../forms/customFormTypes";
+import { BoxArt } from "../../components/BoxSpinner";
 
 type RegistrationResult = { status: "pending_approval" | "registered" | "waitlisted" };
 
@@ -137,7 +138,7 @@ export function EventRegistrationForm({ makerspaceSlug, publicToken, waitlist, a
     {isPriceChanged(registration.error) ? <PriceChangedNotice makerspaceSlug={makerspaceSlug} error={registration.error} />
       : registration.error ? <p className="text-sm text-danger" role="alert">{failureMessage(apiError)}</p> : null}
     <button className="desk-button-brand" type="submit" disabled={registration.isPending}>
-      {registration.isPending ? t`Submitting...` : approvalRequired ? t`Apply` : waitlist ? t`Join waitlist` : t`Register`}
+      {registration.isPending ? <><BoxArt size={16} mono />{t`Submitting...`}</> : approvalRequired ? t`Apply` : waitlist ? t`Join waitlist` : t`Register`}
     </button>
   </form>;
 }

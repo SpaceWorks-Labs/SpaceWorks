@@ -18,7 +18,7 @@ import { splitTitle } from "./LegalMarkdown";
 
 const page = (markdown: string, source = "default") => ({ slug: "privacy", markdown, source, language: "en", updated_at: "2026-11-01T10:00:00Z" });
 
-function mount(path: string, element: JSX.Element) {
+function mount(path: string, element: import("react").ReactElement) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(<QueryClientProvider client={client}><MemoryRouter initialEntries={[path]}>
     <Routes><Route path="/privacy" element={element} /><Route path="/m/:slug/privacy" element={element} /><Route path="/admin" element={element} /></Routes>
@@ -60,7 +60,7 @@ describe("legal pages (parity A13)", () => {
   });
 
   it("lets a space save its own text and clear it back to the platform's", async () => {
-    staff.mockImplementation(async (path: string, options?: RequestInit) => options?.method === "PUT"
+    staff.mockImplementation(async (_path: string, options?: RequestInit) => options?.method === "PUT"
       ? page(JSON.parse(String(options.body)).markdown || "Platform text", JSON.parse(String(options.body)).markdown ? "space" : "platform")
       : page("Platform text", "platform"));
     mount("/admin", <LegalPagesEditor scope={{ kind: "space", makerspaceId: 4 }} />);

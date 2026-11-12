@@ -13,6 +13,7 @@ import {
   type KioskLease,
   type KioskWorkPackage,
 } from "./kioskApi";
+import { BoxArt } from "../../components/BoxSpinner";
 
 type Props = { token: string; lease: KioskLease; makerspaceId: number;
   onWorkLoaded?: (work: KioskWorkPackage) => Promise<void> };
@@ -76,7 +77,7 @@ export function KioskOnlineHandover({ token, lease, makerspaceId, onWorkLoaded }
   return <div className="grid gap-4">
     <form className="flex flex-wrap items-end gap-3" onSubmit={submitLoad}>
       <label className="grid min-w-0 flex-1 basis-48 gap-1 text-sm">{t`Request number`}<input className="desk-input w-full tabular-nums" inputMode="numeric" required value={requestId} onChange={(event) => setRequestId(event.target.value.replace(/\D/g, ""))} /></label>
-      <button className="desk-button-brand" type="submit" disabled={!requestId || loadingWork || Boolean(running)}>{loadingWork ? t`Loading…` : t`Load request`}</button>
+      <button className="desk-button-brand" type="submit" disabled={!requestId || loadingWork || Boolean(running)}>{loadingWork ? <><BoxArt size={16} mono />{t`Loading…`}</> : t`Load request`}</button>
     </form>
     {work ? <section className="grid gap-3" aria-label={work.display_label}>
       <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="title-panel">{work.display_label}</h2><StatusPill label={requestStatusLabel(work.status)} tone="accent" /></div>

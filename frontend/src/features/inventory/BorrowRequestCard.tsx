@@ -2,6 +2,7 @@ import { t } from "@lingui/core/macro";
 import type { ReactNode } from "react";
 import type { RequestCartItem } from "../../types/inventory";
 import { ContactFields, type ContactDetails } from "./ContactFields";
+import { BoxArt } from "../../components/BoxSpinner";
 
 type BorrowRequestCardProps = {
   canSubmit: boolean;
@@ -105,7 +106,7 @@ export function BorrowRequestCard({
           type="button"
           onClick={onSubmit}
         >
-          {submitPending ? t`Submitting...` : t`Submit request`}
+          {submitPending ? <><BoxArt size={16} mono />{t`Submitting...`}</> : t`Submit request`}
         </button>
         {submitError ? <Notice tone="danger" text={submitError} /> : null}
         {submitted ? (

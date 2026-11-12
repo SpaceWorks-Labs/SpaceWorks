@@ -40,4 +40,16 @@ describe("Sign in to borrow cart handoff (0.12.0 row 29)", () => {
       expect(safeReturnPath(bad)).toBeUndefined();
     }
   });
+
+  it("rejects targets that only become protocol-relative after normalization", () => {
+    for (const bad of ["/.//evil.test/phish", "/%2e//evil.test/phish", "/%2E//evil.test", "/a/..//evil.test/phish",
+      "/./\\evil.test", "/a/../\\evil.test", "/a/b/../..//evil.test"]) {
+      expect(safeReturnPath(bad)).toBeUndefined();
+    }
+  });
+
+  it("still normalizes harmless dot segments to a same-origin path", () => {
+    expect(safeReturnPath("/m/./forge/../forge/inventory?x=1#top")).toBe("/m/forge/inventory?x=1#top");
+    expect(safeReturnPath("/a/../member")).toBe("/member");
+  });
 });

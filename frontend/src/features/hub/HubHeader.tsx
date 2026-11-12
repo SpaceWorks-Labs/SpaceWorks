@@ -1,9 +1,10 @@
 import { t } from "@lingui/core/macro";
-import { ArrowUpRight, Menu, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { SpaceWorksLogo } from "../../components/SpaceWorksLogo";
 import { ThemeToggle } from "../../components/ThemeToggle";
+import { ExternalLink } from "./ExternalLink";
 import { GITHUB_URL } from "./hubLinks";
 
 type NavItem = { label: string; to: string; match: (path: string) => boolean };
@@ -11,6 +12,7 @@ type NavItem = { label: string; to: string; match: (path: string) => boolean };
 function navItems(): NavItem[] {
   return [
     { label: t`Home`, to: "/", match: path => path === "/" },
+    { label: t`Features`, to: "/features", match: path => path.startsWith("/features") },
     { label: t`Spaces`, to: "/spaces", match: path => path.startsWith("/spaces") },
     { label: t`Docs`, to: "/docs", match: path => path === "/docs" || path.startsWith("/docs/") },
   ];
@@ -41,13 +43,12 @@ export function HubHeader({ tools }: { tools?: ReactNode }) {
       return <Link key={item.to} to={item.to} aria-current={current ? "page" : undefined}
         className={`sw-hub-nav-link ${stacked ? "w-full" : ""}`}>{item.label}</Link>;
     })}
-    <a href={GITHUB_URL} target="_blank" rel="noreferrer noopener" className={`sw-hub-nav-link ${stacked ? "w-full" : ""}`}>
-      {t`GitHub`}<ArrowUpRight size={16} aria-hidden="true" /><span className="sr-only">{t`(opens in a new tab)`}</span>
-    </a>
+    <ExternalLink href={GITHUB_URL} label={t`GitHub: the Space Works repository (opens in a new tab)`}
+      className={`sw-hub-nav-link ${stacked ? "w-full" : ""}`}>{t`GitHub`}</ExternalLink>
   </>;
   return <header className="sw-hub-header">
     <div ref={root} className="sw-hub-bar">
-      <Link to="/" className="sw-hub-logo" aria-label={t`Space Works home`}>
+      <Link to="/" className="sw-hub-logo" data-sw-logo-target aria-label={t`Space Works home`}>
         <span className="inline-flex sm:hidden"><SpaceWorksLogo variant="symbol" size={48} decorative /></span>
         <span className="hidden sm:inline-flex"><SpaceWorksLogo variant="horizontal" size={240} decorative /></span>
       </Link>

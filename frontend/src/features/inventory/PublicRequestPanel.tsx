@@ -87,7 +87,7 @@ export function PublicRequestPanel({
   const admitted = () => identityAdmitted() && !ordinary.busy && !ordinary.unknown;
   const scope = ordinaryScope;
   const liveScope = useRef({ scope, live: false }); liveScope.current.scope = scope;
-  useEffect(() => { liveScope.current.live = true; return () => { liveScope.current.live = false; }; }, []);
+  useEffect(() => { const state = liveScope.current; state.live = true; return () => { state.live = false; }; }, []);
   const [lockedScope, setLockedScope] = useState<string>();
   const [planSubmittedScope, setPlanSubmitted] = useState<string>();
   useEffect(() => { setPlanSubmitted(undefined); }, [scope]);

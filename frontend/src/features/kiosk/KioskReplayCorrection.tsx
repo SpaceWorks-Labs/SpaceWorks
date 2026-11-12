@@ -10,6 +10,7 @@ import { replayQueue } from "./kioskReplayClient";
 import { captureCorrection, loadCorrectiveWork } from "./replayCorrectionCapture";
 import { KioskReplayDetail } from "./KioskReplayDetail";
 import { kioskCommandStatusLabel, replayGuidance } from "./replayRecoveryGuidance";
+import { LogoLoader } from "../../components/LogoLoader";
 
 // Mounted only for ?recovery=<uuid>; ordinary kiosk flows need no query provider.
 export function KioskReplayCorrection({ id, token, session, online, onQueueChange }: {
@@ -69,7 +70,7 @@ export function KioskReplayCorrection({ id, token, session, online, onQueueChang
 
   return <section className="grid gap-3" aria-label={t`Failed handover recovery`}>
     <h2 className="title-section">{t`Failed handover recovery`}</h2>
-    {!online ? <p role="status">{t`Reconnect to review and correct. Original failed evidence stays retained.`}</p> : !row ? <p role="status">{t`Loading retained failure…`}</p> : <>
+    {!online ? <p role="status">{t`Reconnect to review and correct. Original failed evidence stays retained.`}</p> : !row ? <LogoLoader label={t`Loading retained failure…`} size={48} className="min-h-16 py-3" /> : <>
       <KioskReplayDetail key={row.id} row={row} />
       {!row.resolution_code ? <>
         <p className="text-sm">{t`Acknowledge only after verifying no physical change. Review records no inventory change.`}</p>

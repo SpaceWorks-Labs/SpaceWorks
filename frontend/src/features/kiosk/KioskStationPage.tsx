@@ -36,6 +36,7 @@ export function KioskStationPage() {
   const [continuing, setContinuing] = useState(false);
   const [resetRequested, setResetRequested] = useState(false);
   const offline = useKioskQueue(stationToken, slug, recoveryId);
+  const { reset: resetOffline } = offline;
   const activeSession = session ?? offline.queue?.session ?? null;
   const activeLease = lease ?? offline.queue?.lease ?? null;
   const queueMode = Boolean(offline.queue && (!offline.online || offline.restored || continuing));
@@ -48,11 +49,11 @@ export function KioskStationPage() {
   }, [offline.restored, offline.queue]);
 
   const lock = useCallback(async () => {
-    await offline.reset();
+    await resetOffline();
     setSession(null); setLease(null);
     setContinuing(false); setResetRequested(false);
     try { await endKioskSession(stationToken); } catch { /* the signed cookie still expires */ }
-  }, [stationToken, offline.reset]);
+  }, [stationToken, resetOffline]);
   const idle = useIdleReset(Boolean(activeSession), activeLease?.expires_at ?? activeSession?.session_expires_at, () => {
     // Idle never discards pending captures silently. Authority expiry is pruned by
     // the store; the UI requests an explicit destructive reset for unexpired work.

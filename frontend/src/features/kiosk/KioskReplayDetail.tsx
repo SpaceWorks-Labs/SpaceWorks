@@ -5,6 +5,7 @@ import { staffRequest } from "../../lib/api";
 import { evidenceErrorText } from "../staff/evidenceUi";
 import type { RecoveryReplay } from "./useKioskReplays";
 import { replayGuidance, replayResolutionLabel } from "./replayRecoveryGuidance";
+import { BoxArt } from "../../components/BoxSpinner";
 
 export function KioskReplayDetail({ row }: { row: RecoveryReplay }) {
   const [error, setError] = useState<string | null>(null);
@@ -26,7 +27,7 @@ export function KioskReplayDetail({ row }: { row: RecoveryReplay }) {
     {row.recovery_loan_id ? <p>{t`Direct loan #${row.recovery_loan_id}`}</p> : null}
     {row.predecessor_id ? <p className="break-all">{t`Predecessor ${row.predecessor_id} · `}{row.predecessor_state}</p> : null}
     <p className="text-muted">{t`Recovery retained until at least ${new Date(row.retained_until).toLocaleString(formatLocale())}. Evidence has its own retention policy.`}</p>
-    {row.evidence_id && row.can_view_evidence ? <button type="button" className="desk-button-brand" disabled={pending} onClick={() => { void preview(); }}>{pending ? t`Loading evidence…` : t`Preview failed evidence`}</button> : null}
+    {row.evidence_id && row.can_view_evidence ? <button type="button" className="desk-button-brand" disabled={pending} onClick={() => { void preview(); }}>{pending ? <><BoxArt size={16} mono />{t`Loading evidence…`}</> : t`Preview failed evidence`}</button> : null}
     {url ? <a className="desk-button-brand" href={url} target="_blank" rel="noopener noreferrer">{t`Open failed evidence photo`}</a> : null}
     {error ? <p role="alert" className="text-danger">{error}</p> : null}
     {row.resolution_code ? <p role="status">{t`Resolved: ${replayResolutionLabel(row.resolution_code)} · ${row.resolved_by_display ?? ""}`}

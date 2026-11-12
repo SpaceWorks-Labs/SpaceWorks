@@ -24,8 +24,8 @@ class ClientTierRateThrottle(ScopedRateThrottle):
         """
         if api_client.makerspace_id is None:
             return
-        from apps.managed_hosting.extra_quotas import api_rate_limit
-        cap = api_rate_limit(api_client.makerspace)
+        from apps.managed_hosting.extra_quotas import quota_limit
+        cap = quota_limit(api_client.makerspace, "api_requests_per_minute")
         if cap is not None and cap * self.duration < self.num_requests * 60:
             self.num_requests, self.duration = cap, 60
 

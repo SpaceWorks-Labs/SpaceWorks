@@ -42,7 +42,7 @@ def _same_space(space, name, row):
 
 def _require_person(space, name, user):
     from apps.makerspaces.models import MakerspaceMembership
-    if user is not None and not MakerspaceMembership.objects.filter(makerspace=space, user=user).exists():
+    if user is not None and not MakerspaceMembership.all_tracks.filter(makerspace=space, user=user).exists():
         raise ValidationError({name: gettext("Choose a person who belongs to this makerspace.")})
 
 

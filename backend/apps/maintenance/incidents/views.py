@@ -158,8 +158,9 @@ class IncidentActionListView(APIView):
             # m27: the assignee must hold an active membership in this space; any other id answers the same
             # 400 as a missing one, so the id space cannot be probed for existence.
             from apps.makerspaces.models import MakerspaceMembership
-            if not MakerspaceMembership.objects.filter(makerspace_id=row.makerspace_id, status="active",
-                                                       user_id=data["assignee_id"]).exists():
+            # Staff live on the staff track (decision 63), so both tracks count.
+            if not MakerspaceMembership.all_tracks.filter(makerspace_id=row.makerspace_id, status="active",
+                                                          user_id=data["assignee_id"]).exists():
                 raise ValidationError({"assignee_id": gettext("Choose a member of this space.")})
             assignee = User.objects.get(pk=data["assignee_id"])
         action = services.add_action(request.user, row, description=data["description"], assignee=assignee,

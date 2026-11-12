@@ -3,6 +3,7 @@
 Same authority as the hackathon configuration it feeds (full manager; the event's programme gate decides),
 read-only, and static per deployment: the presets live in `forms_schema.mlh_presets`.
 """
+from django.utils.translation import gettext
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers
 from rest_framework.response import Response
@@ -30,5 +31,5 @@ class MlhPresetsView(AdminView):
         from .admission_errors import fail
         from .admission_feature import admission_enabled
         if not admission_enabled(event.makerspace):
-            fail("not_found", "Not found.", status=404)
+            fail("not_found", gettext("Not found."), status=404)
         return Response(mlh_presets())

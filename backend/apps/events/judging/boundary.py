@@ -1,5 +1,6 @@
 """Common source/fence/event/authority boundary and canonical command replay."""
 
+from django.utils.translation import gettext
 from contextlib import contextmanager
 from contextvars import ContextVar
 from hashlib import sha256
@@ -87,13 +88,13 @@ def command(event, actor, data, *, path, run):
     try:
         operation = UUID(str(operation))
     except (ValueError, TypeError, AttributeError) as exc:
-        raise ProgrammeError("invalid_operation_id", "Use a command UUID.", status=400) from exc
+        raise ProgrammeError("invalid_operation_id", gettext("Use a command UUID."), status=400) from exc
     hashed = digest({"path": path, "body": data})
     model = apps.get_model("events", "EventCommandReceipt")
     prior = model.objects.filter(event_id=event.pk, actor_id=actor.pk, operation_uuid=operation).first()
     if prior:
         if prior.request_sha256 != hashed:
-            raise ProgrammeError("idempotency_conflict", "This operation was used for different input.")
+            raise ProgrammeError("idempotency_conflict", gettext("This operation was used for different input."))
         return prior.response_reference
     # A receipt is a plain JSONField: money (Decimal) and dates (L21b payouts) are stored and
     # answered in their JSON form, so the first answer and every replay are byte-identical.

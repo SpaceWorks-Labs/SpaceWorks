@@ -7,6 +7,7 @@ visibility "all", a judge (on the panel, when there is one) may pull an unassign
 assignment is then created exactly as a planned one would be.
 """
 
+from django.utils.translation import gettext
 from datetime import timedelta
 from decimal import Decimal
 from statistics import mean, pstdev
@@ -124,7 +125,7 @@ def next_project(event_id, round_id, *, actor, data):
             now = timezone.now()
             if (round.state != "open" or round.mode != "weighted_1_5" or (round.opens_at and now < round.opens_at)
                     or (round.closes_at and now >= round.closes_at)):
-                invalid("Score next works in an open weighted round.")
+                invalid(gettext("Score next works in an open weighted round."))
             judge = _own_judge(event_id, actor, round)
             mine = list(JudgeAssignment.objects.filter(round=round, judge_role_assignment_id=judge.role_assignment_id))
             live = [a for a in mine if a.state == "assigned"

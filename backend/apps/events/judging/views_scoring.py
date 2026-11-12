@@ -2,6 +2,7 @@
 
 from django.http import Http404
 from django.utils import timezone
+from django.utils.translation import gettext
 from collections import Counter
 
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
@@ -62,7 +63,7 @@ class AssignmentList(PrivateView):
         event = admin_event(request, pk, "judge")
         state, text = request.query_params.get("state"), (request.query_params.get("q") or "").strip().casefold()
         if state not in (None, "") and state not in STATES:
-            raise ValidationError({"state": "Use one of " + ", ".join(STATES) + "."})
+            raise ValidationError({"state": gettext("Use one of %(states)s.") % {"states": ", ".join(STATES)}})
         roles = [j.role_assignment_id for j in runtime().judges(pk) if j.member_id == request.user.pk and j.active]
         rows = JudgeAssignment.objects.filter(event=event, judge_role_assignment_id__in=roles).select_related("round").order_by("pk")
         result = []

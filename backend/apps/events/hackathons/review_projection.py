@@ -1,4 +1,5 @@
 """Blind review is enforced here, never by hiding React fields."""
+from django.utils.translation import gettext
 import hashlib
 import hmac
 import json
@@ -48,7 +49,7 @@ def project_application(application, config):
 def project_assignment(assignment, *, actor, config):
     event_authority.require(actor, assignment.event, "review_applications")
     if assignment.reviewer_id != actor.pk:
-        fail("not_found", "Not found.", status=404)
+        fail("not_found", gettext("Not found."), status=404)
     require_current_assignment(assignment, config=config)
     applications = list(assignment.cohort.applications.order_by("pk")) if assignment.cohort_id else [assignment.application]
     result = {"id": assignment.pk, "event_id": assignment.event_id, "version": assignment.version,
@@ -72,7 +73,7 @@ def require_current_assignment(assignment, *, config):
             or assignment.rubric_revision != config.review_rubric.get("revision", 1)
             or any(a.state == "draft" for a in applications)
             or conflicted(assignment.event_id, assignment.reviewer_id, subject)):
-        fail("not_found", "Not found.", status=404)
+        fail("not_found", gettext("Not found."), status=404)
     return assignment
 
 
@@ -82,7 +83,7 @@ def project_review_result(assignment, *, actor, config):
         return project_assignment(assignment, actor=actor, config=config)
     event_authority.require(actor, assignment.event, "review_applications")
     if assignment.reviewer_id != actor.pk:
-        fail("not_found", "Not found.", status=404)
+        fail("not_found", gettext("Not found."), status=404)
     return {"id": assignment.pk, "event_id": assignment.event_id, "version": assignment.version,
             "state": "recused", "round": assignment.round, "rubric": config.review_rubric,
             "allowed_actions": [], "applications": []}

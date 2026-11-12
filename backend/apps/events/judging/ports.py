@@ -4,6 +4,7 @@ No lane-owned fallback guesses another lane's schema, authority or storage polic
 Install once at app startup, after G's model/source/PII/authority registries.
 """
 
+from django.utils.translation import gettext
 from contextlib import AbstractContextManager
 from dataclasses import dataclass
 from datetime import datetime
@@ -174,5 +175,5 @@ def install(ports: ProgrammePorts):
 
 def runtime() -> ProgrammePorts:
     if _installed is None:
-        raise ProgrammeError("programme_unavailable", "The event programme is temporarily unavailable.", status=503)
+        raise ProgrammeError("programme_unavailable", gettext("The event programme is temporarily unavailable."), status=503)
     return _installed

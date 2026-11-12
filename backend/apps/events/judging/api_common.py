@@ -1,5 +1,6 @@
 """No-store APIs, exact origin/member target checks and schema helpers."""
 
+from django.utils.translation import gettext
 from collections.abc import Mapping
 from uuid import UUID
 
@@ -69,7 +70,7 @@ class PrivateView(APIView):
             if operation != header:
                 raise ValueError
         except (ValueError, TypeError, AttributeError) as exc:
-            raise ProgrammeError("invalid_idempotency_key", "Idempotency-Key must match the command operation_id.", status=400) from exc
+            raise ProgrammeError("invalid_idempotency_key", gettext("Idempotency-Key must match the command operation_id."), status=400) from exc
 
     def finalize_response(self, request, response, *args, **kwargs):
         response = super().finalize_response(request, response, *args, **kwargs)

@@ -1,4 +1,5 @@
 """Team-place allocation shares C's locked helper, never volunteer signup counts."""
+from django.utils.translation import gettext
 from datetime import timedelta
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -24,7 +25,7 @@ def cancel_locked(*, actor, event, booking_id, locks, reason_code):
     elif reason_code == "team_cancelled":
         if row.team_id is None:
             if row.booked_by_id != actor.pk:
-                raise ProgrammeError("not_found", "Not found.", status=404)
+                raise ProgrammeError("not_found", gettext("Not found."), status=404)
         else:
             ports().teams.require_member(actor_id=actor.pk, event_id=event.pk, team_id=row.team_id)
     elif reason_code == "event_cancelled":
@@ -32,7 +33,7 @@ def cancel_locked(*, actor, event, booking_id, locks, reason_code):
     elif reason_code == "slot_changed":
         event_authority.require(actor, event, "manage_team")
     else:
-        raise ProgrammeError("invalid_reason", "Unknown cancellation reason.", status=400)
+        raise ProgrammeError("invalid_reason", gettext("Unknown cancellation reason."), status=400)
     if row.state == "cancelled":
         return row
     commands.changed(row, state="cancelled", cancelled_at=timezone.now())
@@ -62,32 +63,32 @@ def book(*, actor, event_id, slot_id, payload):
         slot = get_object_or_404(EventShift.objects.select_for_update(), pk=slot_id, event=event, kind="office_hours")
         check_version(slot, payload["expected_version"])
         if slot.state != "open" or slot.starts_at <= timezone.now() or slot.signup_deadline <= timezone.now():
-            raise ProgrammeError("slot_closed", "This slot is closed.")
+            raise ProgrammeError("slot_closed", gettext("This slot is closed."))
         mentor = slot.mentor_assignment
         if mentor.member_id not in locks.account_ids:
-            raise ProgrammeError("scope_changed", "The office-hour mentor changed; refresh this slot.")
+            raise ProgrammeError("scope_changed", gettext("The office-hour mentor changed; refresh this slot."))
         assignment, profile = policy.mentor_for(mentor.member, event, at=slot.starts_at, assignment_id=mentor.pk)
         from .models_queue import MentorProfile
         profile = MentorProfile.objects.select_for_update().get(pk=profile.pk, event=event)
         if not policy.in_windows(profile.availability or mentor.availability, slot.ends_at - timedelta(microseconds=1)):
-            raise ProgrammeError("booking_conflict", "The mentor is unavailable.")
+            raise ProgrammeError("booking_conflict", gettext("The mentor is unavailable."))
         if team_id is None:
             if mentor.member_id == actor.pk:
-                raise ProgrammeError("booking_conflict", "The mentor is unavailable.")
+                raise ProgrammeError("booking_conflict", gettext("The mentor is unavailable."))
         elif not policy.visit_eligible(assignment=assignment, profile=profile, team_id=team_id, at=slot.starts_at):
-            raise ProgrammeError("booking_conflict", "The mentor is unavailable.")
+            raise ProgrammeError("booking_conflict", gettext("The mentor is unavailable."))
         overlaps = OfficeHoursBooking.objects.filter(event=event, state="booked",
             slot__starts_at__lt=slot.ends_at, slot__ends_at__gt=slot.starts_at)
         own = (overlaps.filter(team__isnull=True, booked_by=actor) if team_id is None
                else overlaps.filter(team_id=team_id))
         if own.exists():
-            raise ProgrammeError("booking_conflict", "You have an overlapping booking.", conflicts=[
+            raise ProgrammeError("booking_conflict", gettext("You have an overlapping booking."), conflicts=[
                 {"booking_id": row.pk, "starts_at": row.slot.starts_at.isoformat(),
                  "ends_at": row.slot.ends_at.isoformat()} for row in own.select_related("slot")])
         if overlaps.filter(mentor_assignment=mentor).exclude(slot=slot).exists() or EventShiftSignup.objects.filter(
             member_id=mentor.member_id, state="approved", shift__starts_at__lt=slot.ends_at,
             shift__ends_at__gt=slot.starts_at).exists():
-            raise ProgrammeError("booking_conflict", "The mentor is unavailable.")
+            raise ProgrammeError("booking_conflict", gettext("The mentor is unavailable."))
         require_place_locked(slot, booked=slot.bookings.filter(state="booked").count())
         return commands.new_row(OfficeHoursBooking, event, slot=slot, team_id=team_id,
             booked_by=actor, mentor_assignment=mentor, operation_uuid=payload["operation_id"])
@@ -104,7 +105,7 @@ def cancel(*, actor, event_id, booking_id, payload):
         commands.active_member(actor)
         if initial.team_id is None:
             if initial.booked_by_id != actor.pk:
-                raise ProgrammeError("not_found", "Not found.", status=404)
+                raise ProgrammeError("not_found", gettext("Not found."), status=404)
             return
         ports().teams.require_member(actor_id=actor.pk, event_id=event.pk, team_id=initial.team_id)
         ports().teams.require_eligible(event_id=event.pk, team_id=initial.team_id, at=timezone.now())
@@ -115,7 +116,7 @@ def cancel(*, actor, event_id, booking_id, payload):
         check_version(row, payload["expected_version"])
         require_state(row, "booked")
         if timezone.now() >= slot.starts_at:
-            raise ProgrammeError("slot_started", "Ask an organizer to cancel a started slot.")
+            raise ProgrammeError("slot_started", gettext("Ask an organizer to cancel a started slot."))
         return cancel_locked(actor=actor, event=event, booking_id=row.pk, locks=locks, reason_code="team_cancelled")
 
     return commands.run(actor=actor, event_id=event_id, operation_id=payload["operation_id"], payload=payload,

@@ -1,4 +1,5 @@
 """Versioned configuration and private immutable code-of-conduct revisions."""
+from django.utils.translation import gettext
 from .admission_errors import check_version, fail
 from .admission_models import HackathonApplication, HackathonCocRevision
 from .admission_ports import ports
@@ -28,7 +29,7 @@ def update(*, event_id, actor, data):
         check_version(None if ctx.created_config else config, data["expected_version"])
         if HackathonApplication.objects.filter(event=ctx.event).exists():
             if any(key in data and data[key] != getattr(config, key) for key in ("team_mode", "application_form", "optional_mlh_schema")):
-                fail("applications_exist", "Reopen a new form revision through the admission review process.")
+                fail("applications_exist", gettext("Reopen a new form revision through the admission review process."))
         if "application_form" in data:
             ports().forms.validate_schema(data["application_form"])
         if data.get("optional_mlh_schema"):
@@ -38,7 +39,7 @@ def update(*, event_id, actor, data):
                 validate_rubric(data["review_rubric"])
             if not initial and data["review_rubric"] != config.review_rubric:
                 if data["review_rubric"]["revision"] <= config.review_rubric.get("revision", 0):
-                    fail("rubric_revision_changed", "Increase the rubric revision.")
+                    fail("rubric_revision_changed", gettext("Increase the rubric revision."))
                 config.review_round += 1
         from apps.events.submissions.stage_config import changed_window, refuse_multi_stage, sync_after_save
         refuse_multi_stage(config, data)  # #178: several stages each own their window.
@@ -54,35 +55,35 @@ def update(*, event_id, actor, data):
             config.team_min = config.team_max = 1
             config.finder_enabled = False
         if config.finder_enabled and config.team_mode != "individual_then_team":
-            fail("invalid_finder_mode", "Team finder is available for individual applications.", status=400)
+            fail("invalid_finder_mode", gettext("Team finder is available for individual applications."), status=400)
         if config.team_min > config.team_max:
-            fail("invalid_team_size", "Minimum team size exceeds maximum.", status=400)
+            fail("invalid_team_size", gettext("Minimum team size exceeds maximum."), status=400)
         largest = largest_active_team(ctx.event)
         if config.team_mode != "solo" and config.team_max < largest:
-            fail("team_max_below_largest_team", "The maximum is below the largest existing team (%d members)." % largest,
+            fail("team_max_below_largest_team", gettext("The maximum is below the largest existing team (%d members).") % largest,
                  status=400, fields={"team_max": [str(largest)]})
         for start, end in ((config.application_opens_at, config.application_closes_at), (config.submission_opens_at, config.submission_deadline)):
             if start and end and start >= end:
-                fail("invalid_window", "The close time must follow the opening time.", status=400)
+                fail("invalid_window", gettext("The close time must follow the opening time."), status=400)
         for value in (config.application_closes_at, config.team_lock_at, config.submission_opens_at, config.submission_deadline):
             if value and value > ctx.event.ends_at:
-                fail("invalid_window", "Programme deadlines must fit the event.", status=400)
+                fail("invalid_window", gettext("Programme deadlines must fit the event."), status=400)
         if not ports().upload_policy_supported(name=config.upload_policy, version=config.upload_policy_version):
-            fail("invalid_upload_policy", "Choose a supported upload policy and version.", status=400)
+            fail("invalid_upload_policy", gettext("Choose a supported upload policy and version."), status=400)
         # G supplies the real deployment tier; no client may claim self-host.
         managed = ports().storage_budget_limit(event_id=event_id)
         if managed is not None and (config.storage_budget_bytes is None or config.storage_budget_bytes > managed):
             config.storage_budget_bytes = managed
         if config.storage_budget_bytes is not None and ports().storage_budget_used(event_id=event_id) > config.storage_budget_bytes:
-            fail("storage_budget_in_use", "The budget cannot be smaller than stored files and active reservations.", status=413)
+            fail("storage_budget_in_use", gettext("The budget cannot be smaller than stored files and active reservations."), status=413)
         counts = occupancy(ctx.event, config)
         if config.offer_capacity is not None and config.offer_capacity < counts["offered"] + counts["confirmed"]:
-            fail("capacity_full", "The offer ceiling cannot be lower than current allocations.")
+            fail("capacity_full", gettext("The offer ceiling cannot be lower than current allocations."))
         if "coc_body" in data:
             config.coc_revision = 1 if initial else config.coc_revision + 1
             HackathonCocRevision.objects.create(event=ctx.event, revision=config.coc_revision, body=data["coc_body"])
         if config.enabled and not HackathonCocRevision.objects.filter(event=ctx.event, revision=config.coc_revision).exists():
-            fail("coc_required", "Write a code of conduct before enabling applications.", status=400)
+            fail("coc_required", gettext("Write a code of conduct before enabling applications."), status=400)
         if config.enabled and config.review_mode != "auto":
             validate_rubric(config.review_rubric)
         config.version = 1 if ctx.created_config else config.version + 1

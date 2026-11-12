@@ -1,4 +1,5 @@
 """Application answer locks/revisions; P owns encrypted derivation source history."""
+from django.utils.translation import gettext
 from zoneinfo import ZoneInfo
 from django.db.models import Max
 from django.utils import timezone
@@ -23,7 +24,7 @@ def lock_answers_locked(ctx, application, *, at=None, closing=False):
 
 def require_date_reviewed(application):
     if application.date_review_required:
-        fail("event_date_changed", "Review your answers for the event start date.")
+        fail("event_date_changed", gettext("Review your answers for the event start date."))
 
 
 def archive_locked(ctx, application):

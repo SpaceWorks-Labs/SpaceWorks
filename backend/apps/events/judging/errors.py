@@ -1,5 +1,6 @@
 """Stable programme errors; callers must establish visibility before version disclosure."""
 
+from django.utils.translation import gettext
 from rest_framework.exceptions import APIException
 
 
@@ -17,7 +18,7 @@ class ProgrammeError(APIException):
 
 def require_version(row, expected):
     if type(expected) is not int or expected != row.version:
-        raise ProgrammeError("stale_version", "This item changed.", current_version=row.version)
+        raise ProgrammeError("stale_version", gettext("This item changed."), current_version=row.version)
 
 
 def invalid(detail="This action is unavailable in the current state."):

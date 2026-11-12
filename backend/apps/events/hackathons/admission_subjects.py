@@ -1,4 +1,5 @@
 """P's application derivation resolver: ID/value-only, no membership prerequisite."""
+from django.utils.translation import gettext
 from dataclasses import dataclass
 from django.shortcuts import get_object_or_404
 from apps.accounts.models import User
@@ -21,7 +22,7 @@ class ApplicationAnswerContext:
 
 def require_owner(actor_id, subject):
     if not isinstance(subject, AnswerSubject) or subject.kind != SubjectKind.APPLICATION or subject.owner_member_id != actor_id:
-        fail("not_found", "Not found.", status=404)
+        fail("not_found", gettext("Not found."), status=404)
     actor = get_object_or_404(User, pk=actor_id)
     from apps.events.models import Event
     event = get_object_or_404(Event, pk=subject.event_id)

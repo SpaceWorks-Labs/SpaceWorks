@@ -1,4 +1,5 @@
 """Atomic individual/cohort RSVP; offers cannot overrun hard registration seats."""
+from django.utils.translation import gettext
 from datetime import timedelta
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -19,7 +20,7 @@ def subject_applications_locked(app):
 def end_group_locked(ctx, applications, state, *, reason_code):
     for app in applications:
         if app.state not in ("submitted", "offered", "waitlisted", "confirmed"):
-            fail("invalid_transition", "This application can no longer change.")
+            fail("invalid_transition", gettext("This application can no longer change."))
         transition_registration_locked(application_id=app.pk, registration_id=app.registration_id,
             transition="waitlist" if state == "waitlisted" else "cancel", actor=ctx.actor,
             reason_code=reason_code, locks=ctx.locks)
@@ -53,12 +54,12 @@ def rsvp(*, event_id, actor, data, application_id=None):
             app = next(a for a in applications if a.pk == app.pk)
         check_version(app, data["expected_version"])
         if app.state != "offered" or any(a.state != "offered" for a in applications):
-            fail("invalid_transition", "This offer cannot be answered.")
+            fail("invalid_transition", gettext("This offer cannot be answered."))
         if data["decision"] == "accept" and any(a.date_review_required for a in applications):
-            fail("event_date_changed", "Review your answers for the event start date.")
+            fail("event_date_changed", gettext("Review your answers for the event start date."))
         now = timezone.now()
         if any(not a.rsvp_due_at or now >= a.rsvp_due_at for a in applications):
-            fail("offer_expired", "The RSVP deadline has passed.")
+            fail("offer_expired", gettext("The RSVP deadline has passed."))
         decision = data["decision"]
         reason = data.get("reason_code", "participant_rsvp")
         if decision != "accept":
@@ -113,7 +114,7 @@ def withdraw(*, event_id, actor, data):
         check_version(app, data["expected_version"])
         from apps.events.models import EventRegistration
         if EventRegistration.objects.filter(pk__in=[a.registration_id for a in applications], status="attended").exists():
-            fail("invalid_transition", "An attended application cannot be withdrawn.")
+            fail("invalid_transition", gettext("An attended application cannot be withdrawn."))
         end_group_locked(ctx, applications, "withdrawn", reason_code=data["reason_code"])
         if cohort:
             cohort.state, cohort.version = "withdrawn", cohort.version + 1
@@ -139,9 +140,9 @@ def extend_rsvp(*, event_id, application_id, actor, data):
         check_version(app, data["expected_version"])
         deadline = data["rsvp_due_at"]
         if deadline <= timezone.now() or deadline > min(ctx.event.ends_at, timezone.now() + timedelta(days=30)):
-            fail("invalid_deadline", "Use a future RSVP deadline within the event and 30 days.", status=400)
+            fail("invalid_deadline", gettext("Use a future RSVP deadline within the event and 30 days."), status=400)
         if any(a.state != "offered" for a in applications):
-            fail("invalid_transition", "Only an open offer may be extended.")
+            fail("invalid_transition", gettext("Only an open offer may be extended."))
         for item in applications:
             item.rsvp_due_at, item.version = deadline, item.version + 1
             item.save()

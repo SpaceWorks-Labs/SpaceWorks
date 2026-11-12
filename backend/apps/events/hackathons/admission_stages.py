@@ -4,6 +4,7 @@ Stage settings are configuration (full event manager authority). Panels and assi
 are review operations (`review_applications`). A stage's criteria, blind switch and review
 target freeze at its first review; its name, guidance, window and state stay editable.
 """
+from django.utils.translation import gettext
 import re
 
 from django.db.models import Max
@@ -26,7 +27,7 @@ KEY = re.compile(r"^[a-z][a-z0-9_]{0,39}$")
 
 def require_feature(event):
     if not feature_enabled(event.makerspace, STAGES):
-        fail("not_found", "Not found.", status=404)
+        fail("not_found", gettext("Not found."), status=404)
 
 
 def stages_for(event_id):
@@ -58,13 +59,13 @@ def materialize_entry_locked(ctx, application, stage):
 
 def validate_criteria(criteria):
     if not isinstance(criteria, list) or len(criteria) > MAX_CRITERIA:
-        fail("invalid_criteria", f"Use at most {MAX_CRITERIA} criteria.", status=400)
+        fail("invalid_criteria", gettext("Use at most %(max)s criteria.") % {"max": MAX_CRITERIA}, status=400)
     keys = set()
     for row in criteria:
         if (not isinstance(row, dict) or set(row) - {"key", "label", "guidance"} or not KEY.match(str(row.get("key", "")))
                 or not str(row.get("label", "")).strip() or len(str(row["label"])) > 120
                 or len(str(row.get("guidance", ""))) > 500 or row["key"] in keys):
-            fail("invalid_criteria", "Each criterion needs a unique key and a label; scores run from 1 to 5.", status=400)
+            fail("invalid_criteria", gettext("Each criterion needs a unique key and a label; scores run from 1 to 5."), status=400)
         keys.add(row["key"])
     return criteria
 
@@ -72,11 +73,11 @@ def validate_criteria(criteria):
 def _validate(stage):
     validate_criteria(stage.criteria)
     if not 1 <= stage.reviews_per_application <= 20:
-        fail("invalid_review_target", "A stage needs 1 to 20 reviews per application.", status=400)
+        fail("invalid_review_target", gettext("A stage needs 1 to 20 reviews per application."), status=400)
     if stage.opens_at and stage.closes_at and stage.closes_at <= stage.opens_at:
-        fail("invalid_window", "The close time must follow the opening time.", status=400)
+        fail("invalid_window", gettext("The close time must follow the opening time."), status=400)
     if not stage.name.strip():
-        fail("invalid_name", "Name the stage.", status=400)
+        fail("invalid_name", gettext("Name the stage."), status=400)
 
 
 def create(*, event_id, actor, data):
@@ -86,7 +87,7 @@ def create(*, event_id, actor, data):
             return get_object_or_404(AdmissionStage, pk=ctx.reference["id"], event=ctx.event)
         position = (stages_for(event_id).aggregate(value=Max("position"))["value"] or 0) + 1
         if position > MAX_STAGES:
-            fail("too_many_stages", f"An event can have at most {MAX_STAGES} review stages.", status=400)
+            fail("too_many_stages", gettext("An event can have at most %(max)s review stages.") % {"max": MAX_STAGES}, status=400)
         stage = AdmissionStage(event=ctx.event, position=position, created_by=actor,
                                **{key: data[key] for key in EDITABLE if key in data})
         _validate(stage)
@@ -107,13 +108,13 @@ def update(*, event_id, stage_id, actor, data):
         check_version(stage, data["expected_version"])
         changed = [key for key in EDITABLE if key in data and data[key] != getattr(stage, key)]
         if stage.frozen_at and set(changed) & set(FROZEN):
-            fail("stage_frozen", "Criteria, blind review and the review target are fixed once a stage has reviews.")
+            fail("stage_frozen", gettext("Criteria, blind review and the review target are fixed once a stage has reviews."))
         for key in changed:
             setattr(stage, key, data[key])
         target = data.get("state")
         if target and target != stage.state:
             if target not in MOVES[stage.state]:
-                fail("invalid_transition", "This stage cannot move to that state.")
+                fail("invalid_transition", gettext("This stage cannot move to that state."))
             stage.state = target
             changed.append("state")
         _validate(stage)
@@ -140,7 +141,7 @@ def set_panel(*, event_id, stage_id, actor, data):
         people = set(User.objects.filter(person_q(), pk__in=reviewer_ids, is_active=True, access_status="active")
                      .values_list("pk", flat=True))
         if people != set(reviewer_ids):
-            fail("not_found", "Not found.", status=404)
+            fail("not_found", gettext("Not found."), status=404)
         live = {row.reviewer_id: row for row in AdmissionStageReviewer.objects.select_for_update()
                 .filter(stage=stage, removed_at__isnull=True)}
         added = [pk for pk in reviewer_ids if pk not in live]

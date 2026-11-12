@@ -5,6 +5,7 @@ chose; rows are ordered by the opaque handle, not by time. A void needs a reason
 (so the voter cannot vote again) and is final once the result is published.
 """
 
+from django.utils.translation import gettext
 from django.http import Http404
 from django.utils import timezone
 
@@ -48,13 +49,13 @@ def void(event_id, handle, *, actor, data):
 
         def run():
             if result_for(event) is not None:
-                raise ProgrammeError("already_published", "The People's choice result is published; ballots are final.")
+                raise ProgrammeError("already_published", gettext("The People's choice result is published; ballots are final."))
             vote = PeoplesChoiceVote.objects.select_for_update().filter(event=event, handle=handle).first()
             if vote is None:
                 raise Http404
             require_version(vote, values["expected_version"])
             if vote.voided_at is not None:
-                raise ProgrammeError("already_voided", "This vote is already voided.")
+                raise ProgrammeError("already_voided", gettext("This vote is already voided."))
             vote.void_reason = JudgingReason.objects.create(event=event, makerspace_id=event.makerspace_id,
                                                             actor=actor, body=values["reason"])
             vote.voided_at, vote.voided_by, vote.version = timezone.now(), actor, vote.version + 1

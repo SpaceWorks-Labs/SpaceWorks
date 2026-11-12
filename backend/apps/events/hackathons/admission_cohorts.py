@@ -1,4 +1,5 @@
 """Sealed team-together identity and atomic cohort submission."""
+from django.utils.translation import gettext
 import hashlib
 import json
 from django.utils import timezone
@@ -15,29 +16,29 @@ def roster_hash(members):
 def require_sealed_roster(team, members):
     cohort = HackathonApplicationCohort.objects.filter(team=team, event_id=team.event_id).first()
     if not cohort or not cohort.sealed_roster_hash or roster_hash(members) != cohort.sealed_roster_hash:
-        fail("roster_changed", "The team roster changed. Every member must review and resubmit.")
+        fail("roster_changed", gettext("The team roster changed. Every member must review and resubmit."))
     if set(cohort.applications.values_list("member_id", flat=True)) != {m.member_id for m in members}:
-        fail("roster_changed", "The application roster no longer matches the team.")
+        fail("roster_changed", gettext("The application roster no longer matches the team."))
     return cohort
 
 
 def seal_locked(ctx, team):
     if ctx.config.team_mode != "team_together":
-        fail("invalid_transition", "Only team applications use a sealed cohort.")
+        fail("invalid_transition", gettext("Only team applications use a sealed cohort."))
     members = list(team.memberships.select_for_update().filter(state="active").order_by("pk"))
     if not ctx.config.team_min <= len(members) <= ctx.config.team_max:
-        fail("team_size_required", "Complete the required team size first.")
+        fail("team_size_required", gettext("Complete the required team size first."))
     cohort, _ = HackathonApplicationCohort.objects.get_or_create(event=ctx.event, team=team)
     if cohort.state not in ("draft", "declined", "expired", "withdrawn", "rejected"):
-        fail("invalid_transition", "This cohort is already submitted.")
+        fail("invalid_transition", gettext("This cohort is already submitted."))
     from .admission_workflow import require_application_open
     require_application_open(ctx.event, ctx.config, timezone.now())
     applications = list(HackathonApplication.objects.select_for_update().filter(
         pk__in=[m.application_id for m in members], event=ctx.event).order_by("pk"))
     if len(applications) != len(members) or any(a.state != "submitted" or a.coc_revision != ctx.config.coc_revision for a in applications):
-        fail("cohort_incomplete", "Every member must submit their own application and current code of conduct.")
+        fail("cohort_incomplete", gettext("Every member must submit their own application and current code of conduct."))
     if any(a.cohort_id and a.cohort_id != cohort.pk for a in applications):
-        fail("roster_changed", "An application belongs to another cohort.")
+        fail("roster_changed", gettext("An application belongs to another cohort."))
     cohort.sealed_roster_hash, cohort.sealed_at = roster_hash(members), timezone.now()
     cohort.state, cohort.version = "submitted", cohort.version + 1
     cohort.save()
@@ -69,7 +70,7 @@ def invalidate_locked(ctx, team):
     if not cohort or not cohort.sealed_roster_hash:
         return
     if cohort.state in ("offered", "confirmed"):
-        fail("team_locked", "An offered or confirmed cohort requires staff reopening.")
+        fail("team_locked", gettext("An offered or confirmed cohort requires staff reopening."))
     cohort.state, cohort.sealed_roster_hash = "draft", ""
     cohort.version += 1
     cohort.save()

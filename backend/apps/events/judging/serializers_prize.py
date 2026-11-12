@@ -141,6 +141,7 @@ class MyPrizeRead(ClosedSerializer):
     kind = serializers.CharField()
     value_text = serializers.CharField(allow_blank=True)
     status = serializers.CharField()
+    currency = serializers.CharField(help_text="The space currency every amount on this prize is in.")
     my_share = ShareRead(allow_null=True)
     my_payout = serializers.DictField(allow_null=True, help_text="gross, tds, net, currency, paid_on of my payout.")
     claim = ClaimRead(allow_null=True)

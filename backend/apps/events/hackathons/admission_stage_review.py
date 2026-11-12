@@ -4,6 +4,7 @@ Panel membership is the whole authority here and it widens nothing: a reviewer-o
 person reads no event, roster, decision or configuration, only the application answers
 the form discloses to reviewers (identity stripped when the stage is blind).
 """
+from django.utils.translation import gettext
 import json
 
 from django.shortcuts import get_object_or_404
@@ -34,13 +35,13 @@ def require_panel(actor, stage, *, open_only=True):
     event = stage.event
     if (not _active(actor) or not is_servable(event.makerspace) or not module_enabled(event.makerspace, "events")
             or not on_panel(actor, stage)):
-        fail("not_found", "Not found.", status=404)
+        fail("not_found", gettext("Not found."), status=404)
     require_feature(event)
     if open_only and stage.state != AdmissionStage.State.OPEN:
-        fail("stage_not_open", "This review stage is not open.")
+        fail("stage_not_open", gettext("This review stage is not open."))
     now = timezone.now()
     if open_only and ((stage.opens_at and now < stage.opens_at) or (stage.closes_at and now >= stage.closes_at)):
-        fail("stage_not_open", "This review stage is outside its review window.")
+        fail("stage_not_open", gettext("This review stage is outside its review window."))
     return stage
 
 
@@ -98,17 +99,17 @@ def submit(*, actor, stage_id, assignment_id, data):
         row = get_object_or_404(AdmissionStageAssignment.objects.select_for_update(), pk=assignment_id,
                                 stage=stage, reviewer=actor)
         if row.state != AdmissionStageAssignment.State.ASSIGNED:
-            fail("invalid_transition", "This review is already finished.")
+            fail("invalid_transition", gettext("This review is already finished."))
         from .review_workflow import conflicted
         if "recusal_code" in data:
             row.state = AdmissionStageAssignment.State.RECUSED
         else:
             if conflicted(stage.event_id, actor.pk, row.application):
-                fail("review_conflict", "Recuse from this application.", status=403)
+                fail("review_conflict", gettext("Recuse from this application."), status=403)
             keys = {criterion["key"] for criterion in stage.criteria}
             scores = data.get("scores") or {}
             if set(scores) != keys or any(type(v) is not int or not 1 <= v <= 5 for v in scores.values()):
-                fail("invalid_scores", "Score every criterion from 1 to 5.", status=400)
+                fail("invalid_scores", gettext("Score every criterion from 1 to 5."), status=400)
             AdmissionStageReview.objects.create(assignment=row, scores=scores, notes=data.get("notes", ""))
             row.state, row.submitted_at = AdmissionStageAssignment.State.SUBMITTED, timezone.now()
             if stage.frozen_at is None:

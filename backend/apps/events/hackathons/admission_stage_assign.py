@@ -7,6 +7,7 @@ apply recomputes the plan under the event lock and refuses when its fingerprint 
 from the preview the staffer saw.
 """
 import hashlib
+from django.utils.translation import gettext
 import json
 import secrets
 
@@ -96,10 +97,10 @@ def apply(*, event_id, stage_id, actor, data):
         if ctx.reference:
             return stage, ctx.reference.get("created", 0)
         if stage.state == AdmissionStage.State.CLOSED:
-            fail("invalid_transition", "Reopen the stage before assigning reviewers.")
+            fail("invalid_transition", gettext("Reopen the stage before assigning reviewers."))
         result = plan(stage, seed=data["seed"], strategy=data["strategy"])
         if result["fingerprint"] != data["fingerprint"]:
-            fail("plan_changed", "Applications or the panel changed since the preview. Preview again.")
+            fail("plan_changed", gettext("Applications or the panel changed since the preview. Preview again."))
         for pair in result["pairs"]:
             application = HackathonApplication.objects.select_for_update().get(pk=pair["application_id"])
             materialize_entry_locked(ctx, application, stage)

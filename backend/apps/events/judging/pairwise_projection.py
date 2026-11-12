@@ -5,6 +5,7 @@ is valid while it has no invalidation row, both of its assignments are still `sc
 projects are still current, eligible and nonconflicted for that judge (`conflicts.eligible`).
 """
 
+from django.utils.translation import gettext
 from django.http import Http404
 
 from apps.makerspaces.platform import feature_enabled
@@ -27,7 +28,7 @@ def require_pairwise(event, *, hide=True):
     if not pairwise_enabled(event):
         if hide:
             raise Http404
-        raise ProgrammeError("feature_disabled", "Pairwise judging is switched off for this space.", status=403)
+        raise ProgrammeError("feature_disabled", gettext("Pairwise judging is switched off for this space."), status=403)
 
 
 def parameters(round):

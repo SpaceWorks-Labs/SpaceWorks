@@ -28,7 +28,7 @@ FIELD_GROUPS = {
     "ApplicationDecision": {"private_history": "id batch application cohort outcome reason_code expected_subject_version sent_revision active_draft review_override_code sent_at"},
     "HackathonTeam": {
         "private_history": "id event public_id name normalized_name leader state version zone table finder_intro skills public_profile_refs roster_hash locked_at eligibility_issue roster_reopened_until created_at",
-        "operational_reset": "seeking_members",
+        "operational_reset": "seeking_members deleted_at deleted_snapshot",
     },
     "HackathonTeamMember": {"private_history": "id event team application member state joined_at left_at creator"},
     "HackathonTeamInvite": {"omit_credential": "id team token_digest email_digest expires_at revoked_at redeemed_at redeemed_by created_by created_at"},
@@ -56,7 +56,7 @@ USER_EDGES = (
 
 IMPORT_RESETS = {
     "HackathonConfig": {"enabled": False, "finder_enabled": False, "gallery_publication": None, "results_revision": None},
-    "HackathonTeam": {"seeking_members": False, "public_profile_refs": [], "roster_reopened_until": None},
+    "HackathonTeam": {"seeking_members": False, "public_profile_refs": [], "roster_reopened_until": None, "deleted_at": None, "deleted_snapshot": {}},
     "HackathonFinderProfile": {"opted_in": False},
     "ApplicationDecisionBatch": {"draft_state": "cancelled"},
     "ApplicationDecision": {"active_draft": False},

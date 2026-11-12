@@ -1,4 +1,5 @@
 """Owner date confirmation delegates encrypted derivation handling to P."""
+from django.utils.translation import gettext
 from zoneinfo import ZoneInfo
 from django.shortcuts import get_object_or_404
 from .admission_errors import check_version, fail
@@ -22,7 +23,7 @@ def review_date(*, event_id, actor, data):
         as_of = app.answer_as_of_date if app.answer_locked_at else ctx.event.starts_at.astimezone(ZoneInfo(ctx.event.timezone_name)).date()
         revision = app.answer_event_date_revision if app.answer_locked_at else ctx.event.event_date_revision
         if data["confirmed"] is not True or data["event_date_revision"] != revision or data["as_of_date"] != as_of:
-            fail("event_date_changed", "Review the current event date.")
+            fail("event_date_changed", gettext("Review the current event date."))
         ports().forms.date_review_locked(application=app, revision=revision,
                                          as_of_date=as_of, locks=ctx.locks)
         app.date_review_required, app.version = False, app.version + 1

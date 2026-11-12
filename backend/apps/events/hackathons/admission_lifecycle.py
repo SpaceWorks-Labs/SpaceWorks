@@ -1,4 +1,5 @@
 """Existing cancellation/termination calls this under G's existing lock context."""
+from django.utils.translation import gettext
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from apps.events.models import Event
@@ -34,17 +35,17 @@ def cancel_registration_locked(*, event, registration, actor, member_cancel, loc
         if EventContributorAdmission.objects.filter(event=event, registration=registration).exists():
             return False
         if HackathonConfig.objects.filter(event=event, enabled=True).exists():
-            fail("admission_mapping_conflict", "The registration needs staff reconciliation.")
+            fail("admission_mapping_conflict", gettext("The registration needs staff reconciliation."))
         return False
     if member_cancel and (actor is None or actor.pk != app.member_id or not member_can_cancel(registration)):
-        fail("invalid_transition", "The member cancellation deadline has passed.")
+        fail("invalid_transition", gettext("The member cancellation deadline has passed."))
     from apps.events.models import EventRegistration
     ctx = context_locked(event, actor, locks)
     cohort, applications = subject_applications_locked(app)
     if not cohort:
         applications = [HackathonApplication.objects.select_for_update().get(pk=app.pk)]
     if EventRegistration.objects.filter(pk__in=[a.registration_id for a in applications], status="attended").exists():
-        fail("invalid_transition", "An attended application cannot be cancelled.")
+        fail("invalid_transition", gettext("An attended application cannot be cancelled."))
     end_group_locked(ctx, applications, "withdrawn", reason_code="registration_cancelled")
     if cohort:
         cohort.state, cohort.version = "withdrawn", cohort.version + 1
@@ -59,11 +60,11 @@ def cancel_registration_locked(*, event, registration, actor, member_cancel, loc
 def require_attendance_mapping(registration):
     app = HackathonApplication.objects.filter(registration=registration).first()
     if app is not None and app.state != "confirmed":
-        fail("admission_mapping_conflict", "Confirm this application before check-in.")
+        fail("admission_mapping_conflict", gettext("Confirm this application before check-in."))
     from apps.events.contributions.models_admission import EventContributorAdmission
     contributor = EventContributorAdmission.objects.filter(event_id=registration.event_id, registration=registration).exists()
     if app is None and not contributor and HackathonConfig.objects.filter(event_id=registration.event_id, enabled=True).exists():
-        fail("admission_mapping_conflict", "The registration needs staff reconciliation.")
+        fail("admission_mapping_conflict", gettext("The registration needs staff reconciliation."))
 
 
 def attendance_changed_locked(*, event, registration, actor, locks):
@@ -100,7 +101,7 @@ def cancel_event_locked(*, event_id, actor, locks):
     assert_locked(locks, event_id)
     event = get_object_or_404(Event, pk=event_id)
     if event.status != "cancelled":
-        fail("invalid_transition", "Cancel the event through its lifecycle first.")
+        fail("invalid_transition", gettext("Cancel the event through its lifecycle first."))
     config = HackathonConfig.objects.filter(event=event).first()
     if config is None:
         return

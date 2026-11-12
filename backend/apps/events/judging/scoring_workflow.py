@@ -1,5 +1,6 @@
 """Only assigned judges submit their own drafts, ballots, skips or recusals."""
 
+from django.utils.translation import gettext
 from decimal import Decimal
 
 from django.http import Http404
@@ -33,7 +34,7 @@ def _locked_assignment(event_id, assignment_id, expected):
 def _open(round):
     now = timezone.now()
     if round.state != "open" or (round.opens_at and now < round.opens_at) or (round.closes_at and now >= round.closes_at):
-        invalid("This judging round is closed.")
+        invalid(gettext("This judging round is closed."))
 
 
 def score(event_id, assignment_id, *, actor, data):
@@ -94,7 +95,7 @@ def rank(event_id, assignment_id, *, actor, data):
                 raise ValidationError({"ordered_top3": str(exc)}) from exc
             if JudgeRankingBallot.objects.filter(round=round, judge_id=assignment.judge_role_assignment_id,
                                                  batch=assignment.batch).exists():
-                invalid("This batch already has a submitted ballot.")
+                invalid(gettext("This batch already has a submitted ballot."))
             ballot = JudgeRankingBallot.objects.create(event=event, round=round,
                 judge_id=assignment.judge_role_assignment_id, batch=assignment.batch, submitted_at=timezone.now())
             for row in rows:

@@ -1,4 +1,5 @@
 """Offer reservation math; hard seats always use events.capacity."""
+from django.utils.translation import gettext
 from collections import Counter
 from apps.events.capacity import confirmed_occupancy, registration_spots_left, spots_left
 from apps.events.models import EventRegistration
@@ -18,21 +19,21 @@ def occupancy(event, config):
 def require_offer_room(event, config, count):
     left = occupancy(event, config)["offer_spots_left"]
     if left is not None and count > left:
-        fail("capacity_full", "There are not enough offer places for this whole group.")
+        fail("capacity_full", gettext("There are not enough offer places for this whole group."))
 
 
 def require_hard_room(event, applications):
     # This is a fresh unannotated locked event, not a cached UI count.
     event_left = spots_left(event)
     if event_left is not None and event_left < len(applications):
-        fail("capacity_full", "All confirmed places are taken. You can choose the waitlist.")
+        fail("capacity_full", gettext("All confirmed places are taken. You can choose the waitlist."))
     registrations = list(EventRegistration.objects.filter(pk__in=[a.registration_id for a in applications]))
     counts = Counter(r.ticket_type_id for r in registrations)
     for ticket_id, count in counts.items():
         registration = next(r for r in registrations if r.ticket_type_id == ticket_id)
         left = registration_spots_left(event, registration.ticket_type)
         if left is not None and left < count:
-            fail("capacity_full", "This ticket has no room for the whole group. You can choose the waitlist.")
+            fail("capacity_full", gettext("This ticket has no room for the whole group. You can choose the waitlist."))
 
 
 def preview(event, config, groups):

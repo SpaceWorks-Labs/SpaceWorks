@@ -18,7 +18,7 @@ def save(*, actor, event_id, payload, round_id=None):
             MentorRound(event=event, makerspace_id=event.makerspace_id))
         check_version(row, payload["expected_version"]) if round_id else _zero(payload)
         if row.state != "draft":
-            raise ProgrammeError("round_locked", "A started round cannot change its form or policy.")
+            raise ProgrammeError("round_locked", gettext("A started round cannot change its form or policy."))
         for key, value in payload.items():
             if key not in ("operation_id", "expected_version", "form_schema"):
                 setattr(row, key, value)

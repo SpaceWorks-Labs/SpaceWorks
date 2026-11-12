@@ -1,5 +1,6 @@
 """Audited round transitions and deterministic, conflict-aware assignment planning."""
 
+from django.utils.translation import gettext
 from django.utils import timezone
 
 from .assignment_planner import plan_assignments
@@ -34,7 +35,7 @@ def transition(event_id, round_id, *, actor, action, data):
                 if not calculation["coverage_complete"]:
                     reason = values.get("coverage_exception_reason")
                     if not reason:
-                        raise ProgrammeError("incomplete_coverage", "Every project needs the required nonconflicted submitted views.")
+                        raise ProgrammeError("incomplete_coverage", gettext("Every project needs the required nonconflicted submitted views."))
                     round.coverage_exception = JudgingReason.objects.create(
                         event=event, makerspace_id=event.makerspace_id, actor=actor, body=reason)
                 round.state = "finalized"
@@ -49,10 +50,10 @@ def _open(round, event):
         invalid()
     now = timezone.now()
     if (round.opens_at and now < round.opens_at) or (round.closes_at and now >= round.closes_at):
-        invalid("This round is outside its judging window.")
+        invalid(gettext("This round is outside its judging window."))
     criteria = list(round.criteria.order_by("priority", "pk"))
     if round.mode == "weighted_1_5" and not criteria:
-        invalid("A weighted round needs an anchored rubric.")
+        invalid(gettext("A weighted round needs an anchored rubric."))
     draft = round.configuration or {}
     round.configuration = {"mode": round.mode, "min_reviews": round.min_reviews,
                            "minutes_per_view": round.minutes_per_view, "judging_minutes": round.judging_minutes,
@@ -75,7 +76,7 @@ def _open(round, event):
         snapshots = narrow_to_finalists(snapshots, finalists, stage_id)
     round.configuration |= {"settings": frozen_settings(round)}
     if not snapshots:
-        invalid("There are no eligible frozen submissions.")
+        invalid(gettext("There are no eligible frozen submissions."))
     for snapshot in snapshots:
         JudgingRoundProject.objects.create(round=round, snapshot_id=snapshot.id)
     round.state = "open"
@@ -91,17 +92,17 @@ def assign(event_id, round_id, *, actor, data):
             if round.state != "open":
                 invalid()
             if round.mode == "pairwise":
-                invalid("Pairwise rounds pick each judge's next project as they judge; there is no batch to plan.")
+                invalid(gettext("Pairwise rounds pick each judge's next project as they judge; there is no batch to plan."))
             judges = [runtime().judge(pk) for pk in values["judge_role_assignment_ids"]]
             if any(not j.active or j.event_id != event_id for j in judges):
                 from django.http import Http404
                 raise Http404
             if len({j.member_id for j in judges}) != len(judges):
-                invalid("Each judge must be a distinct member.")
+                invalid(gettext("Each judge must be a distinct member."))
             from .round_settings import fresh_eyes_blocked, panel_ids, random_plan
             panel = panel_ids(round)
             if panel is not None and not {j.role_assignment_id for j in judges} <= panel:
-                invalid("Assign only judges on this round's panel.")
+                invalid(gettext("Assign only judges on this round's panel."))
             snapshots = [runtime().snapshot(pk) for pk in round.projects.values_list("snapshot_id", flat=True)]
             snapshots = [s for s in snapshots if s.current and s.eligible and s.event_id == event_id]
             previous = list(round.assignments.all())
@@ -135,7 +136,7 @@ def assign(event_id, round_id, *, actor, data):
             # Require the full live pool on reassign so workload and coverage are not understated.
             live_prior = {r.judge_role_assignment_id for r in previous if r.state in ("assigned", "scored") and r.pk not in stale_ids}
             if live_prior - valid_judges:
-                invalid("Include the existing judge pool when rebalancing this round.")
+                invalid(gettext("Include the existing judge pool when rebalancing this round."))
             before = loads_before(existing, valid_judges)
             replaceable = replaceable_pairs(previous, existing, stale_ids) if values["existing"] == "replace" else set()
             existing -= replaceable  # E-B4: "replace" re-plans unscored assignments; scored work is never touched.
@@ -144,7 +145,7 @@ def assign(event_id, round_id, *, actor, data):
                 plan = planner(ids, valid_judges, target_views=round.min_reviews, blocked=blocked,
                                existing=existing, max_load=values["max_load"], seed=values["seed"])
             except ValueError as exc:
-                raise ProgrammeError("assignment_limits_exceeded", "The assignment request exceeds the supported limits.", status=413) from exc
+                raise ProgrammeError("assignment_limits_exceeded", gettext("The assignment request exceeds the supported limits."), status=413) from exc
             added, dropped = split_plan(plan.pairs, replaceable)
             fingerprint = plan_fingerprint(round, values, valid_judges, added, dropped)
             result = {"pairs": [{"snapshot_id": p, "judge_role_assignment_id": j} for p, j in added],
@@ -157,7 +158,7 @@ def assign(event_id, round_id, *, actor, data):
             if not values["dry_run"]:
                 require_fresh(values, fingerprint)
                 if plan.deficits:
-                    raise ProgrammeError("insufficient_judges", "Add nonconflicted judges or increase their workload limit.")
+                    raise ProgrammeError("insufficient_judges", gettext("Add nonconflicted judges or increase their workload limit."))
                 by_pair = {(row.submission_snapshot_id, row.judge_role_assignment_id): row for row in previous}
                 for pair in dropped:
                     row = by_pair[pair]

@@ -5,6 +5,7 @@ digest of the round version, the inputs and the pairs that would be added or dro
 carries a preview's fingerprint is refused with 409 ``plan_changed`` when anything moved in between.
 """
 
+from django.utils.translation import gettext
 from collections import Counter
 
 from .boundary import digest
@@ -38,4 +39,4 @@ def plan_fingerprint(round, values, judge_ids, added, dropped):
 def require_fresh(values, fingerprint):
     sent = values.get("plan_fingerprint")
     if sent and sent != fingerprint:
-        raise ProgrammeError("plan_changed", "The assignment plan changed since the preview; preview it again.")
+        raise ProgrammeError("plan_changed", gettext("The assignment plan changed since the preview; preview it again."))

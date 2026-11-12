@@ -21,12 +21,12 @@ def require_selections_locked(*, event_id, team_id, track_ids, prize_ids, tech_t
                                              exclude_team_id=team_id, locks=locks)
     if set(counts) != set(tracks) or any(type(value) is not int or value < 0 for value in counts.values()):
         from .errors import ProgrammeError
-        raise ProgrammeError("programme_unavailable", "Track capacity is temporarily unavailable.", status=503)
+        raise ProgrammeError("programme_unavailable", gettext("Track capacity is temporarily unavailable."), status=503)
     for track in tracks.values():
         _tags(track.eligibility_rules, tech_tags)
         if track.capacity and counts[track.pk] >= track.capacity:
             from .errors import ProgrammeError
-            raise ProgrammeError("track_capacity_full", "This track has reached its project capacity.")
+            raise ProgrammeError("track_capacity_full", gettext("This track has reached its project capacity."))
     for prize in prizes.values():
         _tags(prize.eligibility_rules, tech_tags)
         if prize.track_id and prize.track_id not in tracks:

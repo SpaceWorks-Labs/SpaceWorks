@@ -3,6 +3,7 @@
 None of these callbacks is an authorization fallback. Missing integration returns
 503; the service cannot create an ordinary registration to bypass admission.
 """
+from django.utils.translation import gettext
 from dataclasses import dataclass, field
 from typing import Callable, Protocol
 from contextlib import AbstractContextManager
@@ -95,7 +96,7 @@ def install(integrations: AdmissionIntegrations):
 
 def ports() -> AdmissionIntegrations:
     if _ports is None:
-        fail("programme_dependency_unavailable", "Event admission is temporarily unavailable.", status=503)
+        fail("programme_dependency_unavailable", gettext("Event admission is temporarily unavailable."), status=503)
     return _ports
 
 

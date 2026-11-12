@@ -34,7 +34,7 @@ def save_profile(*, actor, event_id, assignment_id, payload):
             if key in payload:
                 setattr(row, key, payload[key])
         if MentorTeamAssignment.objects.filter(mentor_assignment=role, ended_at__isnull=True).count() > row.max_active_teams:
-            raise ProgrammeError("mentor_full", "End assignments before reducing capacity.")
+            raise ProgrammeError("mentor_full", gettext("End assignments before reducing capacity."))
         for window in row.availability:
             start, end = [datetime.fromisoformat(window[key].replace("Z", "+00:00")) for key in ("starts_at", "ends_at")]
             if not event.starts_at <= start < end <= event.ends_at:
@@ -42,7 +42,7 @@ def save_profile(*, actor, event_id, assignment_id, payload):
         for booking in OfficeHoursBooking.objects.filter(mentor_assignment=role, state="booked",
                 slot__ends_at__gt=timezone.now()).select_related("slot"):
             if not policy.covers_interval(row.availability, booking.slot.starts_at, booking.slot.ends_at):
-                raise ProgrammeError("active_bookings", "Reschedule booked office hours before changing availability.")
+                raise ProgrammeError("active_bookings", gettext("Reschedule booked office hours before changing availability."))
         _valid(row)
         # An explicit empty profile schedule means off duty. Keep the role's
         # compatibility schedule synchronized so fallback cannot revive it.
@@ -70,7 +70,7 @@ def save_help_type(*, actor, event_id, payload, type_id=None):
             if key not in ("operation_id", "expected_version"):
                 setattr(row, key, value)
         if EventHelpType.objects.filter(event=event, key=row.key).exclude(pk=row.pk).exists():
-            raise ProgrammeError("category_exists", "This category key is already in use.")
+            raise ProgrammeError("category_exists", gettext("This category key is already in use."))
         _valid(row)
         if type_id:
             row.version += 1
@@ -100,7 +100,7 @@ def conflict(*, actor, event_id, payload):
             return commands.changed(row, active=payload["active"], reason=payload["reason"])
         _zero(payload)
         if not payload["active"]:
-            raise ProgrammeError("not_found", "Not found.", status=404)
+            raise ProgrammeError("not_found", gettext("Not found."), status=404)
         return commands.new_row(MentorConflict, event, mentor=initial, team_id=payload["team_id"],
             kind=payload["kind"], reason=payload["reason"])
 
@@ -129,9 +129,9 @@ def nominate(*, actor, event_id, round_id, payload):
         round = get_object_or_404(MentorRound.objects.select_for_update(), pk=round_id, event=event)
         check_version(round, payload["expected_version"])
         if not MentorRoundCheckin.objects.filter(round=round, team_id=payload["team_id"], mentor=mentor, away=False).exists():
-            raise ProgrammeError("visit_required", "Complete a visit before nominating this team.")
+            raise ProgrammeError("visit_required", gettext("Complete a visit before nominating this team."))
         if MentorNomination.objects.filter(round=round, team_id=payload["team_id"], mentor=mentor).exists():
-            raise ProgrammeError("already_nominated", "You already nominated this team in this round.")
+            raise ProgrammeError("already_nominated", gettext("You already nominated this team in this round."))
         return commands.new_row(MentorNomination, event, mentor=mentor, round=round, team_id=payload["team_id"])
 
     return commands.run(actor=actor, event_id=event_id, operation_id=payload["operation_id"], payload=payload,

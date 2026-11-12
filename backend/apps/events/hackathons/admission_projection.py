@@ -1,4 +1,5 @@
 """Owner-only admission projection. Draft consent is never stamped evidence."""
+from django.utils.translation import gettext
 import json
 from apps.events.serializers_ticketing_public import EventTicketingPublicSerializer
 from apps.events.serializers_public import PublicEventSerializer
@@ -42,7 +43,7 @@ def admission_requirements(event, actor, *, request=None, registration=None):
 def owner_admission_projection(application, *, actor):
     if application.member_id != actor.pk:
         from .admission_errors import fail
-        fail("not_found", "Not found.", status=404)
+        fail("not_found", gettext("Not found."), status=404)
     registration = application.registration
     draft = json.loads(application.admission_draft)
     if registration is None:
@@ -83,7 +84,7 @@ def project_owner(application, *, event, actor, form, coc=None, request=None):
                 "save_intent": None, "optional_consent_purposes": ["mlh_data_sharing"] if event.hackathon_config.optional_mlh_schema else []}
     if application.member_id != actor.pk or application.event_id != event.pk:
         from .admission_errors import fail
-        fail("not_found", "Not found.", status=404)
+        fail("not_found", gettext("Not found."), status=404)
     snapshot = json.loads(application.answers_snapshot)
     projected = ports().forms.project_owner(application=application, snapshot=snapshot)
     from .admission_ports import OwnerAnswers

@@ -79,12 +79,13 @@ def _staff_grant_organizer_ids(event):
 
 
 def require_organizer_certification(event, space, actor, override_reason=""):
-    """Every organizer (creator and manage_event co-organizers) must hold the booking certification.
+    """Every organizer (creator and manage_event co-organizers) must hold machine access.
 
-    Decisions 221b and 226b: checked alongside the booker's (`_require_certification`) with the
-    same gate, override rules and audit. A non-member organizer cannot hold a certification and is
-    REFUSED with `certification_required` (staff override with a reason), never skipped. A space
-    whose machine type needs none is a no-op, exactly as for the booker.
+    Decisions 221b and 226b, re-keyed by decision 319: checked alongside the booker's
+    (`_require_certification`, which now asks for a machine access grant) with the same gate. A
+    non-member organizer holds no grant and is REFUSED with `no_machine_access` (or
+    `machine_access_expired`), never skipped; staff grant access instead of overriding. A space
+    with no machine type is a no-op, exactly as for the booker.
     """
     if not space.machine_type_id:
         return

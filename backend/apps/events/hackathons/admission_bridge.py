@@ -3,6 +3,7 @@
 An enabled config is authoritative even when its capability becomes unavailable:
 falling back to ordinary register/approve would bypass application consent/review.
 """
+from django.utils.translation import gettext
 from .admission_errors import fail
 from .admission_models import HackathonApplication, HackathonConfig
 
@@ -35,12 +36,12 @@ def require_ordinary_registration(event):
     if requires_admission(event.pk):
         from .admission_transactions import require_programme
         require_programme(event)
-        fail("hackathon_application_required", "Apply through this event's application form.")
+        fail("hackathon_application_required", gettext("Apply through this event's application form."))
 
 
 def require_ordinary_transition(registration):
     if enabled_for(registration.event_id) or HackathonApplication.objects.filter(registration=registration).exists():
-        fail("hackathon_admission_required", "Use the application review and RSVP workflow for this registration.")
+        fail("hackathon_admission_required", gettext("Use the application review and RSVP workflow for this registration."))
 
 
 def assert_registration_mapping(*, application_id):
@@ -52,4 +53,4 @@ def assert_registration_mapping(*, application_id):
                 "rejected": ("rejected",), "declined": ("cancelled",),
                 "expired": ("cancelled",), "withdrawn": ("cancelled",)}
     if not app.registration_id or app.registration.status not in expected.get(app.state, ()):
-        fail("admission_mapping_conflict", "The application and registration need staff reconciliation.")
+        fail("admission_mapping_conflict", gettext("The application and registration need staff reconciliation."))

@@ -1,5 +1,6 @@
 """B amendment hook and F/G recoverable notification-intent delivery seam."""
 
+from django.utils.translation import gettext
 from apps.operations.cloud_jobs import bounded
 import logging
 
@@ -47,7 +48,7 @@ def invalidate_snapshot_locked(*, event, snapshot_id, locks, actor):
 def _snapshot_reason(event, actor):
     from .models_scoring import JudgingReason
     return JudgingReason.objects.create(event=event, makerspace_id=event.makerspace_id, actor=actor,
-                                        body="The submission changed or is no longer eligible.")
+                                        body=gettext("The submission changed or is no longer eligible."))
 
 
 def sweep_notices(*, after_id=None, limit=100):

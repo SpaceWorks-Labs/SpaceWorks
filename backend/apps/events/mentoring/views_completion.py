@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.http import HttpResponse
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
 from rest_framework.response import Response
@@ -39,7 +40,7 @@ class TeamExportView(AdminView):
         try:
             practice = str(UUID(practice)) if practice else None
         except ValueError as exc:
-            raise ProgrammeError("invalid_input", "Use a practice run UUID.", status=400) from exc
+            raise ProgrammeError("invalid_input", gettext("Use a practice run UUID."), status=400) from exc
         raw, mime = import_export.export_teams(actor=request.user, event=event, format=format, practice_run_id=practice)
         response = HttpResponse(raw, content_type=mime)
         response["Content-Disposition"] = f'attachment; filename="event-{event.pk}-teams.{format}"'

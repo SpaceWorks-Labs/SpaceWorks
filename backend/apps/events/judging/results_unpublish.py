@@ -6,6 +6,7 @@ still the published one (`provider_notices.recipients`). Publishing again re-poi
 announcement and emails only people whose earlier message was cancelled, never anyone who already got it.
 """
 
+from django.utils.translation import gettext
 import logging
 
 from django.db import transaction
@@ -32,17 +33,17 @@ def unpublish(event_id, *, actor, data):
     values = validated(CommandInput, data)
     with mutation(event_id, actor, permission=None) as (event, _):
         def run():
-            state = ResultPublicationState.objects.select_for_update().select_related(
+            state = ResultPublicationState.objects.select_for_update(of=("self",)).select_related(
                 "current_announcement__result").filter(event=event).first()
             if state is None or state.current_announcement_id is None:
-                raise ProgrammeError("not_published", "These results are not published.")
+                raise ProgrammeError("not_published", gettext("These results are not published."))
             result = state.current_announcement.result
             if values["expected_version"] != result.version:
-                raise ProgrammeError("stale_version", "This item changed.", current_version=result.version)
+                raise ProgrammeError("stale_version", gettext("This item changed."), current_version=result.version)
             award_ids = list(result.awards.values_list("pk", flat=True))
             if (HackathonPrizePayout.objects.filter(event=event, award_id__in=award_ids).exists()
                     or HackathonPrizeShare.objects.filter(event=event, award_id__in=award_ids).exists()):
-                raise ProgrammeError("results_in_use", "Prizes were already claimed or paid for these results.")
+                raise ProgrammeError("results_in_use", gettext("Prizes were already claimed or paid for these results."))
             state.current_announcement = None
             state.version += 1
             state.save()

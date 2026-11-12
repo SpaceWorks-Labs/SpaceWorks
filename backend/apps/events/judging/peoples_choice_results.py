@@ -6,6 +6,7 @@ project tied at the top wins jointly, and a count with no votes has no winner. B
 the count is staff-only (manage_hackathon); the public, voters and teams see no number at all.
 """
 
+from django.utils.translation import gettext
 from django.db.models import Count
 from django.http import Http404
 from django.utils import timezone
@@ -77,12 +78,12 @@ def publish(event_id, *, actor, data):
             # No select_related here: the prize FK is nullable, and Postgres refuses FOR UPDATE across it.
             config = PeoplesChoiceConfig.objects.select_for_update().filter(event=event).first()
             if config is None:
-                invalid("Switch People's choice on for this event first.")
+                invalid(gettext("Switch People's choice on for this event first."))
             require_version(config, values["expected_version"])
             if result_for(event) is not None:
-                raise ProgrammeError("already_published", "The People's choice result is already published.")
+                raise ProgrammeError("already_published", gettext("The People's choice result is already published."))
             if state(config, None) != "closed":
-                invalid("Close voting before publishing: set the closing time to now or earlier.")
+                invalid(gettext("Close voting before publishing: set the closing time to now or earlier."))
             rows = tally(event)
             result = PeoplesChoiceResult.objects.create(
                 event=event, prize=config.prize, prize_name=config.prize.name if config.prize_id else DEFAULT_NAME,

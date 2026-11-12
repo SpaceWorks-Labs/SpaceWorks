@@ -9,6 +9,7 @@ void keeps the row, so a voided voter cannot simply vote again. A ballot may be 
 voting closes. Audit rows name the event only, never the project chosen.
 """
 
+from django.utils.translation import gettext
 from django.http import Http404
 from django.utils import timezone
 
@@ -84,7 +85,7 @@ def cast(event_id, *, actor, data):
             config, result = config_for(event), result_for(event)
             vote = PeoplesChoiceVote.objects.select_for_update().filter(event=event, voter=actor).first()
             if (vote.version if vote else 0) != values["expected_version"]:
-                raise ProgrammeError("stale_version", "Your vote changed.", current_version=vote.version if vote else 0)
+                raise ProgrammeError("stale_version", gettext("Your vote changed."), current_version=vote.version if vote else 0)
             reason = refusal(event, config, result, actor, vote)
             if reason:
                 raise ProgrammeError(reason, MESSAGES[reason], status=403)
@@ -94,7 +95,7 @@ def cast(event_id, *, actor, data):
                 raise Http404
             snapshot, _consent = live_entry(entry)  # Only a live, consented, eligible public project.
             if actor.pk in snapshot.member_ids or snapshot.team_id in own_team_ids(event, actor.pk):
-                raise ProgrammeError("own_project", "You cannot vote for your own team's project.", status=403)
+                raise ProgrammeError("own_project", gettext("You cannot vote for your own team's project."), status=403)
             if vote is not None and vote.team_id == snapshot.team_id:
                 return PeoplesChoiceBallotRead(ballot_projection(event, actor)).data  # The same choice again changes nothing.
             changed = vote is not None

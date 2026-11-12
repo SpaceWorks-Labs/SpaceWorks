@@ -1,5 +1,6 @@
 """G's clone workflow delegates D definitions here; no participant state is copied."""
 
+from django.utils.translation import gettext
 from copy import deepcopy
 
 from django.http import Http404
@@ -27,7 +28,7 @@ def copy_definitions_locked(*, source_event_id, target_event, actor, sponsor_map
         raise Http404
     if HackathonTrack.objects.filter(event=target_event).exists() or JudgingRound.objects.filter(event=target_event).exists():
         from .errors import invalid
-        invalid("Copy definitions into an empty new event.")
+        invalid(gettext("Copy definitions into an empty new event."))
     tracks = {}
     for row in bounded_children(HackathonTrack.objects.filter(event=source).order_by("pk")):
         tracks[row.pk] = HackathonTrack.objects.create(event=target_event, name=row.name, description=row.description,

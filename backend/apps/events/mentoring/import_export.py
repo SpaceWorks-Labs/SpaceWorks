@@ -1,4 +1,5 @@
 """Explicit-ID, bounded team exports. Never export contact or DOB sources."""
+from django.utils.translation import gettext
 import csv
 import io
 from apps.accounts.rbac import Action, can
@@ -41,20 +42,20 @@ def encode(rows, *, format):
         book.save(target)
         book.close()
         return target.getvalue(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    raise ProgrammeError("invalid_format", "Choose CSV or XLSX.", status=400)
+    raise ProgrammeError("invalid_format", gettext("Choose CSV or XLSX."), status=400)
 
 
 def export_teams(*, actor, event, format, practice_run_id=None):
     from apps.makerspaces.guards import require_feature, require_module
     event_authority.require(actor, event, None)
     if not can(actor, Action.VIEW_AUDIT, event.makerspace_id):
-        raise ProgrammeError("report_permission_required", "Private report permission is required.", status=403)
+        raise ProgrammeError("report_permission_required", gettext("Private report permission is required."), status=403)
     require_module(event.makerspace, "events")
     require_feature(event.makerspace, "events.mentoring")
     ports().require_event_feature(event_id=event.pk, feature="events.mentoring")
     ids = ports().teams.ids(event_id=event.pk, practice_run_id=practice_run_id)
     if len(ids) > 500:
-        raise ProgrammeError("export_too_large", "Export at most 500 teams at a time.", status=413)
+        raise ProgrammeError("export_too_large", gettext("Export at most 500 teams at a time."), status=413)
     rows = []
     for pk in ids:
         ports().teams.require_practice(event_id=event.pk, team_id=pk, practice_run_id=practice_run_id)
@@ -68,7 +69,7 @@ def export_teams(*, actor, event, format, practice_run_id=None):
         with ports().fences(tenant_ids=(event.makerspace_id,), account_ids=(actor.pk,)):
             event_authority.require(actor, event, None)
             if not can(actor, Action.VIEW_AUDIT, event.makerspace_id):
-                raise ProgrammeError("report_permission_required", "Private report permission is required.", status=403)
+                raise ProgrammeError("report_permission_required", gettext("Private report permission is required."), status=403)
             record(actor, "event.mentor_mappings.exported", makerspace=event.makerspace, target=event,
                 meta={"event_id": event.pk, "format": format, "team_count": len(rows),
                       "practice": practice_run_id is not None})

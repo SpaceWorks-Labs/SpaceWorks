@@ -71,17 +71,17 @@ def update(event_id, *, actor, data):
         def run():
             row = HackathonProgrammeOptions.objects.select_for_update().filter(event=event).first()
             if (row.version if row else 0) != values["expected_version"]:
-                raise ProgrammeError("stale_version", "This item changed.", current_version=row.version if row else 0)
+                raise ProgrammeError("stale_version", gettext("This item changed."), current_version=row.version if row else 0)
             if row is None:
                 row = HackathonProgrammeOptions(event=event, version=0)
             changes = {key: values[key] for key in FIELDS if key in values and values[key] != getattr(row, key)}
             from .feature import ENTRY_FEES, PAID_TEAMS, enabled
             from .deposits import DEPOSITS
             if "deposit_amount" in changes and row.deposits_settled_at is not None:
-                raise ProgrammeError("already_settled", "Deposits for this event were already settled.")
+                raise ProgrammeError("already_settled", gettext("Deposits for this event were already settled."))
             for key, feature in (("entry_fee", ENTRY_FEES), ("team_fee", PAID_TEAMS), ("deposit_amount", DEPOSITS)):
                 if changes.get(key) and not enabled(event.makerspace, feature):
-                    raise ProgrammeError("feature_disabled", "Switch this fee on for the space first.", status=403)
+                    raise ProgrammeError("feature_disabled", gettext("Switch this fee on for the space first."), status=403)
             if "entry_fee_stage" in changes:  # S17: a stage of this event.
                 from apps.events.submissions.models_stages import SubmissionStage
                 if changes["entry_fee_stage"] > max(1, SubmissionStage.objects.filter(event=event).count()):
@@ -107,9 +107,9 @@ def send_results_email(event_id, *, actor, data):
             if result is None:
                 raise Http404
             if values["expected_version"] != result.version:
-                raise ProgrammeError("stale_version", "This item changed.", current_version=result.version)
+                raise ProgrammeError("stale_version", gettext("This item changed."), current_version=result.version)
             if results_email_sent(event):
-                raise ProgrammeError("already_sent", "The results email was already sent for these results.")
+                raise ProgrammeError("already_sent", gettext("The results email was already sent for these results."))
             notice(event, "results_published", result.pk, result.version)
             record(actor, "event.results_email.sent", makerspace=event.makerspace, target=result,
                    meta={"event_id": event.pk, "version": result.version})

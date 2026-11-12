@@ -5,6 +5,7 @@ an own-track frozen submission; a contributor role alone cannot confer access.
 """
 
 
+from django.utils.translation import gettext
 from apps.accounts.staff_identity import is_person
 from django.contrib.auth import get_user_model
 from django.http import Http404
@@ -22,9 +23,9 @@ def _asset(event_id, member_id, asset_id, *, ready=True):
     if asset.event_id != event_id or asset.member_id != member_id or asset.purpose != "resume":
         raise Http404
     if ready and (asset.state != "ready" or not asset.current):
-        raise ProgrammeError("asset_not_ready", "Choose a ready current résumé.")
+        raise ProgrammeError("asset_not_ready", gettext("Choose a ready current résumé."))
     if ready and asset.expires_at and asset.expires_at <= timezone.now():
-        raise ProgrammeError("asset_expired", "This résumé has expired.", status=410)
+        raise ProgrammeError("asset_expired", gettext("This résumé has expired."), status=410)
     return asset
 
 
@@ -57,9 +58,9 @@ def _grant_locked(*, event_id, actor, sponsor_id, asset_id, purpose, disclosure_
     event = Event.objects.get(pk=event_id)
     asset, sponsor = _asset(event_id, actor.pk, asset_id), _sponsor(event_id, sponsor_id)
     if purpose != "recruiting":
-        raise ProgrammeError("invalid_purpose", "Choose recruiting consent.", status=400)
+        raise ProgrammeError("invalid_purpose", gettext("Choose recruiting consent."), status=400)
     if disclosure_revision != sponsor.disclosure_revision:
-        raise ProgrammeError("disclosure_changed", "Review the current sponsor disclosure.")
+        raise ProgrammeError("disclosure_changed", gettext("Review the current sponsor disclosure."))
     row = ParticipantSponsorResumeConsent.objects.filter(event_id=event_id, member=actor, sponsor_id=sponsor_id,
                                                          participant_asset_id=asset_id, purpose=purpose).first()
     if row is None:
@@ -93,7 +94,7 @@ def grant_command(event_id, *, actor, data, subject):
             if prior:
                 require_version(prior, values["expected_version"])
             elif values["expected_version"] != 0:
-                raise ProgrammeError("stale_version", "This item changed.", current_version=0)
+                raise ProgrammeError("stale_version", gettext("This item changed."), current_version=0)
             pk = grant(subject=subject, sponsor_id=values["sponsor_id"], asset_id=values["asset_id"],
                        purpose=values["purpose"], disclosure_revision=values["disclosure_revision"], locks=locks)
             row = ParticipantSponsorResumeConsent.objects.get(pk=pk)
@@ -170,7 +171,7 @@ def require_effective_for_asset(*, event_id, member_id, sponsor_id, asset_id, pu
                and set(s.track_ids) & set(sponsor.track_ids) for s in runtime().snapshots(event_id)):
         raise Http404
     if asset.state == "expired" or (asset.expires_at and asset.expires_at <= now) or (row.expires_at and row.expires_at <= now):
-        raise ProgrammeError("asset_expired", "This résumé has expired.", status=410)
+        raise ProgrammeError("asset_expired", gettext("This résumé has expired."), status=410)
     if asset.state != "ready":
         raise Http404
 

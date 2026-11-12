@@ -1,4 +1,5 @@
 """One source/fence/event/authority boundary for every lane A command."""
+from django.utils.translation import gettext
 import hashlib
 import json
 from contextlib import ExitStack, contextmanager
@@ -38,7 +39,7 @@ def require_member(actor):
     from apps.accounts.account_kind_guards import require_member_account
     require_member_account(actor)
     if not actor.is_active or actor.access_status != "active" or getattr(actor, "is_tenant_dump_stub", False):
-        fail("account_inactive", "An active member account is required.", status=403)
+        fail("account_inactive", gettext("An active member account is required."), status=403)
 
 
 def admission_enabled(makerspace):
@@ -48,7 +49,7 @@ def admission_enabled(makerspace):
 
 def require_programme(event):
     if not admission_enabled(event.makerspace):
-        fail("not_found", "Not found.", status=404)
+        fail("not_found", gettext("Not found."), status=404)
     config = get_object_or_404(HackathonConfig, event=event, enabled=True)
     return config
 
@@ -115,7 +116,7 @@ def command(*, event_id, actor, data, action, permission=None, owner=False, acco
         if integration.lock_actor is not None:
             actor = lock_accounts(integration, locked, accounts).get(actor.pk)
             if actor is None:
-                fail("account_inactive", "An active account is required.", status=403)
+                fail("account_inactive", gettext("An active account is required."), status=403)
         if owner:
             require_member(actor)
             integration.context_gate(event=locked, actor=actor)
@@ -125,7 +126,7 @@ def command(*, event_id, actor, data, action, permission=None, owner=False, acco
         created_config = False
         if configuration:
             if not admission_enabled(locked.makerspace):
-                fail("not_found", "Not found.", status=404)
+                fail("not_found", gettext("Not found."), status=404)
             config, created_config = HackathonConfig.objects.get_or_create(event=locked, defaults={
                 "attendance_required": integration.default_attendance_required(event=locked)})
         else:
@@ -136,7 +137,7 @@ def command(*, event_id, actor, data, action, permission=None, owner=False, acco
         receipt = receipt_model.objects.filter(event_id=event_id, actor_id=actor.pk,
                                                 operation_uuid=data["operation_id"]).first()
         if receipt and receipt.request_sha256 != digest and (receipt.response_reference or {}).get("input_sha256") != input_digest:
-            fail("idempotency_conflict", "This operation was already used for different input.")
+            fail("idempotency_conflict", gettext("This operation was already used for different input."))
         if receipt is None:
             receipt = receipt_model.objects.create(event_id=event_id, actor_id=actor.pk,
                 operation_uuid=data["operation_id"], request_sha256=digest, response_reference=None)

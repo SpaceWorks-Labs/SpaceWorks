@@ -16,6 +16,7 @@ from .api_common import ERRORS, PrivateView, admin_event, schema
 from .boundary import audit
 from .feature import SCORES_EXPORT, require_capability
 from .serializers import CommandInput, ResultEnvelope
+from django.utils.translation import gettext
 
 
 def _lines(columns, rows):
@@ -49,7 +50,7 @@ class ScoresExport(PrivateView):
         require_capability(event, SCORES_EXPORT)
         raw = request.query_params.get("round")
         if raw not in (None, "") and not str(raw).isdigit():
-            raise ValidationError({"round": "Use a round id."})
+            raise ValidationError({"round": gettext("Use a round id.")})
         round_id = int(raw) if raw not in (None, "") else None
         columns = exports.scores_columns(event, round_id)
         rows = list(exports.scores_rows(event, round_id=round_id,

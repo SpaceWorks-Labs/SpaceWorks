@@ -38,6 +38,10 @@ def require_verified_claim(event, award, recipient, actor):
     from .payout_split import lineage_shares
     claim = HackathonPrizeClaim.objects.select_related("share").filter(
         share__in=lineage_shares(award).filter(member_id=recipient)).order_by("-pk").first()
+    if claim is not None and claim.cleared_at:
+        from .payout_split import _standing
+        if _standing(award).filter(recipient_id=recipient).exists():
+            return  # paying cleared the details; payout_amount refuses the repeat with the clearer `payout_exists`
     if claim is None or not claim.submitted_at or claim.cleared_at or not claim.verified_at:
         raise ProgrammeError("claim_not_verified", gettext("Verify the winner's payee details before recording the payout."))
     if claim.verified_by_id == actor.pk and not sole_finance_person(event, actor):

@@ -6,6 +6,7 @@ current one. Every project shown is a lazily created `JudgeAssignment` (batch `p
 existing conflicts, recusal, coverage and sponsor scoping apply unchanged.
 """
 
+from django.utils.translation import gettext
 from datetime import timedelta
 
 from django.db.models import Max
@@ -47,7 +48,7 @@ def _cursor(event, round, judge, expected):
     cursor = JudgePairwiseCursor.objects.select_for_update().filter(round=round, judge_id=judge.role_assignment_id).first()
     if cursor is None:
         if expected != 0:
-            raise ProgrammeError("stale_version", "This item changed.", current_version=0)
+            raise ProgrammeError("stale_version", gettext("This item changed."), current_version=0)
         return JudgePairwiseCursor(event=event, round=round, judge_id=judge.role_assignment_id, version=0)
     require_version(cursor, expected)
     return cursor
@@ -144,7 +145,7 @@ def next_project(event_id, round_id, *, actor, data):
     def body(event, round, cursor, locks):
         current = live(cursor.current, actor, round, "assigned")
         if current is not None and live(cursor.previous, actor, round, "scored") is not None:
-            invalid("Compare or skip the current project first.")
+            invalid(gettext("Compare or skip the current project first."))
         if current is not None:  # The first project was only viewed; it becomes the anchor.
             _mark(current, "scored")
             cursor.previous = current
@@ -162,7 +163,7 @@ def compare(event_id, round_id, *, actor, data):
     def body(event, round, cursor, locks):
         previous, current = live(cursor.previous, actor, round, "scored"), live(cursor.current, actor, round, "assigned")
         if previous is None or current is None:
-            invalid("There is no pair to compare. Load the next project.")
+            invalid(gettext("There is no pair to compare. Load the next project."))
         row = _record(event, round, cursor, previous, current, values["outcome"], values["notes"])
         _mark(current, "scored")
         cursor.previous, cursor.current = current, None
@@ -177,7 +178,7 @@ def skip_current(event_id, round_id, *, actor, data):
     def body(event, round, cursor, locks):
         current = live(cursor.current, actor, round, "assigned")
         if current is None:
-            invalid("There is no project to skip.")
+            invalid(gettext("There is no project to skip."))
         previous = live(cursor.previous, actor, round, "scored")
         row = _record(event, round, cursor, previous, current, "skip", values["notes"]) if previous else None
         _mark(current, "skipped")
@@ -192,7 +193,7 @@ def recuse_current(event_id, round_id, *, actor, data):
 
     def body(event, round, cursor, locks):
         if live(cursor.current, actor, round, "assigned") is None:
-            invalid("There is no project to recuse from.")
+            invalid(gettext("There is no project to recuse from."))
         assignment = owned(JudgeAssignment, event.pk, cursor.current_id)
         withdraw_locked(event, actor, round, assignment, action="recuse", text=values["reason"], locks=locks)
         cursor.current = None

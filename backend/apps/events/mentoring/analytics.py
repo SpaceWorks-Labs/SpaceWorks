@@ -1,4 +1,5 @@
 """Private diagnostics and F's read-only readiness summary; practice is excluded."""
+from django.utils.translation import gettext
 import hashlib
 import json
 import math
@@ -31,7 +32,7 @@ def summary(*, actor, event, own_mentor_id=None):
         from .policy import mentor_for
         assignment, _ = mentor_for(actor, event, on_shift=False)
         if own_mentor_id not in (None, assignment.pk):
-            raise ProgrammeError("not_found", "Not found.", status=404)
+            raise ProgrammeError("not_found", gettext("Not found."), status=404)
         own_mentor_id = assignment.pk
     checks = MentorRoundCheckin.objects.filter(event=event, round__practice_run_id__isnull=True)
     help_rows = EventHelpRequest.objects.filter(event=event, practice_run_id__isnull=True)

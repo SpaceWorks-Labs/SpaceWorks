@@ -197,13 +197,13 @@ class SponsorGrantInput(CommandInput):
     def validate_consent(self, value):
         if value is not True or self.initial_data.get("consent") is not True:
             from .errors import ProgrammeError
-            raise ProgrammeError("explicit_consent_required", "Explicit consent is required.", status=400)
+            raise ProgrammeError("explicit_consent_required", gettext("Explicit consent is required."), status=400)
         return value
 
     def validate_purpose(self, value):
         if value != "recruiting":
             from .errors import ProgrammeError
-            raise ProgrammeError("invalid_purpose", "Choose recruiting consent.", status=400)
+            raise ProgrammeError("invalid_purpose", gettext("Choose recruiting consent."), status=400)
         return value
 
 

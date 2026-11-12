@@ -92,7 +92,7 @@ def submit(event_id, award_id, *, actor, data):
                 details = validate_details(country=values["country"], method=values["method"], template=key,
                                            version=TEMPLATE_VERSION, details=values["details"], enabled_templates=enabled)
             except PayoutValidationError as exc:
-                raise ProgrammeError(exc.code, "These payee details are not accepted here.", status=400) from None
+                raise ProgrammeError(exc.code, gettext("These payee details are not accepted here."), status=400) from None
             claim = HackathonPrizeClaim.objects.select_for_update().filter(share=share).first() or HackathonPrizeClaim(
                 event=event, makerspace=event.makerspace, share=share, version=0)
             claim.country, claim.method, claim.template_key = values["country"], values["method"], key

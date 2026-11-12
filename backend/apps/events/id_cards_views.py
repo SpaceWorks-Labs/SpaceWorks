@@ -65,7 +65,7 @@ class EventIdCardSerializer(PiiMaskingSerializerMixin, serializers.ModelSerializ
 class EventCardDesignsView(APIView):
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(tags=TAGS, summary="This event's card and ticket designs (created from Event pass on first use)",
+    @extend_schema(tags=TAGS, summary="This event's card and ticket designs, or one ticket type's ticket design (created from Event pass on first use)",
                    request=None, parameters=[OpenApiParameter("ticket_type", int)],
                    responses={200: CardDesignPairSerializer, **errors(401, 403, 404)})
     def get(self, request, pk):
@@ -78,7 +78,8 @@ class EventCardDesignsView(APIView):
             from .models import EventTicketType
             ticket_type = get_object_or_404(EventTicketType, pk=request.query_params["ticket_type"], event=event)
         result = {}
-        for domain in ("event_card", "event_ticket"):
+        # A ticket-type request asks for that type's TICKET design only; it must not also mint an event-card row for the type.
+        for domain in (("event_ticket",) if ticket_type is not None else ("event_card", "event_ticket")):
             if not domain_on(event.makerspace, domain):
                 continue
             design, _created = get_or_create(event.makerspace, domain, actor=request.user, event=event,

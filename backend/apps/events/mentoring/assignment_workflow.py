@@ -1,4 +1,5 @@
 """Deterministic load-balanced assignment; preview never writes grants or mappings."""
+from django.utils.translation import gettext
 from dataclasses import dataclass
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -24,7 +25,7 @@ class Candidate:
 
 def allocate(*, teams, candidates, mode, skill_weights=None, manual=None):
     if mode not in ("manual", "round_robin", "skill_match"):
-        raise ProgrammeError("invalid_mode", "Choose a supported assignment mode.", status=400)
+        raise ProgrammeError("invalid_mode", gettext("Choose a supported assignment mode."), status=400)
     weights = skill_weights or {}
     loads = {c.id: c.load for c in candidates}
     decisions, unsatisfied = [], []
@@ -54,7 +55,7 @@ def preview(*, actor, event, payload, locked_accounts=None):
     roles = EventRoleAssignment.objects.filter(event=event, role="mentor", state="approved", imported_inert=False)
     for role in roles.select_related("member").order_by("pk"):
         if locked_accounts is not None and role.member_id not in locked_accounts:
-            raise ProgrammeError("scope_changed", "The mentor roster changed; refresh the preview.")
+            raise ProgrammeError("scope_changed", gettext("The mentor roster changed; refresh the preview."))
         if not MentorProfile.objects.filter(assignment=role).exists():
             continue
         try:
@@ -87,7 +88,7 @@ def assign(*, actor, event_id, payload, proposed=False):
         state="approved", imported_inert=False).values_list("member_id", flat=True))
     def mutate(event, locks):
         if payload["expected_version"] != getattr(event, "version", 1):
-            raise ProgrammeError("stale_version", "The event changed; refresh the assignment preview.")
+            raise ProgrammeError("stale_version", gettext("The event changed; refresh the assignment preview."))
         result = preview(actor=actor, event=event, payload=payload, locked_accounts=locks.account_ids)
         rows = []
         for item in result["assignments"]:
@@ -113,14 +114,14 @@ def transition(*, actor, event_id, assignment_id, payload, action):
             mentor, profile = policy.mentor_for(row.mentor_assignment.member, event,
                 assignment_id=row.mentor_assignment_id)
             if not policy.visit_eligible(assignment=mentor, profile=profile, team_id=row.team_id):
-                raise ProgrammeError("mentor_conflict", "Choose an eligible mentor.", status=403)
+                raise ProgrammeError("mentor_conflict", gettext("Choose an eligible mentor."), status=403)
             count = MentorTeamAssignment.objects.filter(mentor_assignment=mentor,
                 ended_at__isnull=True).exclude(pk=row.pk).count()
             if count >= profile.max_active_teams:
-                raise ProgrammeError("mentor_full", "This mentor is at capacity.")
+                raise ProgrammeError("mentor_full", gettext("This mentor is at capacity."))
             return commands.changed(row, state="active", active_from=timezone.now())
         if action != "end":
-            raise ProgrammeError("invalid_transition", "Unknown assignment command.", status=400)
+            raise ProgrammeError("invalid_transition", gettext("Unknown assignment command."), status=400)
         require_state(row, "proposed", "active")
         return commands.changed(row, state="ended", ended_at=timezone.now())
 

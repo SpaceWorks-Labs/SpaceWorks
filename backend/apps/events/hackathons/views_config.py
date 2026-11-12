@@ -1,4 +1,5 @@
 """Full-manager-only configuration; review permission never grants it."""
+from django.utils.translation import gettext
 from drf_spectacular.utils import extend_schema
 from rest_framework.response import Response
 from apps.events import event_authority
@@ -21,7 +22,7 @@ class ConfigView(AdminView):
         from .admission_feature import admission_enabled
         from .admission_errors import fail
         if not admission_enabled(event.makerspace):
-            fail("not_found", "Not found.", status=404)
+            fail("not_found", gettext("Not found."), status=404)
         config = HackathonConfig.objects.filter(event=event).first()
         if not config:
             return Response({"id": None, "event_id": event.pk, "version": 0, "state": "disabled", "enabled": False, "allowed_actions": ["edit"],

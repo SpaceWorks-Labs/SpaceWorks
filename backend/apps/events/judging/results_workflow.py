@@ -36,7 +36,7 @@ def finalize(event_id, *, actor, data, correction=False):
             if values["expected_version"] != version:
                 raise ProgrammeError("stale_version", gettext("This item changed."), current_version=version)
             if previous and not correction:
-                invalid("Create a correction to preserve finalized history.")
+                invalid(gettext("Create a correction to preserve finalized history."))
             if correction and (not previous or not values.get("reason")):
                 raise ValidationError({"reason": gettext("A correction requires the previous result and a reason.")})
             if not values["integrity_reviewed"]:
@@ -47,11 +47,11 @@ def finalize(event_id, *, actor, data, correction=False):
                 raise Http404
             from .models_finalists import FinalistAdvance
             if FinalistAdvance.objects.filter(event=event, source_round__in=rounds).exists():
-                invalid("Results come from the final round; a selected round advanced finalists.")
+                invalid(gettext("Results come from the final round; a selected round advanced finalists."))
             calculations = []
             for round in rounds:
                 if round.state != "finalized":
-                    invalid("Finalize every selected judging round first.")
+                    invalid(gettext("Finalize every selected judging round first."))
                 calculation = round_calculation(round)
                 if not calculation["coverage_complete"] and not round.coverage_exception_id:
                     raise ProgrammeError("incomplete_coverage", gettext("Record an explicit coverage exception before finalization."))
@@ -123,7 +123,7 @@ def publish(event_id, *, actor, data):
             require_version(result, values["expected_version"])
             latest = EventResultRevision.objects.filter(event=event).order_by("-version").first()
             if latest.pk != result.pk:
-                invalid("Publish the latest finalized result revision.")
+                invalid(gettext("Publish the latest finalized result revision."))
             for evidence in result.rounds.select_related("round").all():
                 if digest(round_calculation(evidence.round)) != digest(evidence.calculation):
                     raise ProgrammeError("result_inputs_changed", gettext("Judging eligibility changed. Create a result correction before announcing."))
@@ -131,7 +131,7 @@ def publish(event_id, *, actor, data):
             for award in result.awards.all():
                 snapshot = runtime().snapshot(award.submission_snapshot_id)
                 if not snapshot.current or not snapshot.eligible:
-                    invalid("An award is no longer eligible. Create a correction.")
+                    invalid(gettext("An award is no longer eligible. Create a correction."))
             prior = ResultAnnouncement.objects.filter(result=result).first()
             if not prior:
                 first = ResultAnnouncement.objects.filter(event=event).order_by("published_at", "pk").first()

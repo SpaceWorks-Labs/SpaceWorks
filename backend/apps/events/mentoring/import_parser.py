@@ -1,4 +1,5 @@
 """Bounded explicit-ID team mapping; never guess identities from contact strings."""
+from django.utils.translation import gettext
 import csv
 import io
 import zipfile
@@ -10,7 +11,7 @@ HEADERS = ("team_id", "member_ids", "alias")
 
 def parse(raw: bytes, *, filename: str):
     if len(raw) > MAX_BYTES:
-        raise ProgrammeError("import_too_large", "Keep imports below 1 MB.", status=413)
+        raise ProgrammeError("import_too_large", gettext("Keep imports below 1 MB."), status=413)
     try:
         if filename.lower().endswith(".csv"):
             text = raw.decode("utf-8-sig")
@@ -62,4 +63,4 @@ def parse(raw: bytes, *, filename: str):
             result.append({"team_id": team_id, "member_ids": members, "alias": alias})
         return result
     except (ValueError, TypeError, UnicodeError, csv.Error, zipfile.BadZipFile, KeyError) as exc:
-        raise ProgrammeError("invalid_import", "Use one sheet with team_id, member_ids (semicolon-separated IDs), and alias; no formulas.", status=400) from exc
+        raise ProgrammeError("invalid_import", gettext("Use one sheet with team_id, member_ids (semicolon-separated IDs), and alias; no formulas."), status=400) from exc

@@ -105,9 +105,9 @@ def update(event_id, *, actor, data):
         def run():
             row = PeoplesChoiceConfig.objects.select_for_update().filter(event=event).first()
             if (row.version if row else 0) != values["expected_version"]:
-                raise ProgrammeError("stale_version", "This item changed.", current_version=row.version if row else 0)
+                raise ProgrammeError("stale_version", gettext("This item changed."), current_version=row.version if row else 0)
             if result_for(event) is not None:
-                raise ProgrammeError("already_published", "The People's choice result is published; its settings are final.")
+                raise ProgrammeError("already_published", gettext("The People's choice result is published; its settings are final."))
             was_on = bool(row and row.enabled)
             row = row or PeoplesChoiceConfig(event=event, version=0)
             changes = _changes(event, row, values)

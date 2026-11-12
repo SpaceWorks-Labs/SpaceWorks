@@ -1,4 +1,5 @@
 """Assignment, submission and recusal have exactly one writer."""
+from django.utils.translation import gettext
 from collections import Counter
 from django.db.models import Max
 from django.shortcuts import get_object_or_404
@@ -35,7 +36,7 @@ def validate_scores(rubric, scores):
     criteria = rubric.get("criteria", [])
     keys = {criterion["key"] for criterion in criteria}
     if not keys or set(scores) != keys or any(type(v) is not int or not 1 <= v <= 5 for v in scores.values()):
-        fail("invalid_scores", "Score every rubric criterion from 1 to 5.", status=400)
+        fail("invalid_scores", gettext("Score every rubric criterion from 1 to 5."), status=400)
     return scores
 
 
@@ -81,19 +82,19 @@ def assign(*, event_id, actor, data):
         seen = set()
         for item in data["subjects"]:
             if set(item) not in ({"application_id"}, {"cohort_id"}):
-                fail("invalid_subject", "Choose one application or cohort ID.", status=400)
+                fail("invalid_subject", gettext("Choose one application or cohort ID."), status=400)
             if any(type(v) is not int or v <= 0 for v in item.values()):
-                fail("invalid_subject", "Use a positive subject ID.", status=400)
+                fail("invalid_subject", gettext("Use a positive subject ID."), status=400)
             subject, applications = subject_locked(ctx.event, item)
             key = (type(subject).__name__, subject.pk)
             if key in seen or not applications or any(a.state not in ("submitted", "waitlisted") for a in applications):
-                fail("invalid_subject", "Choose distinct submitted subjects.", status=400)
+                fail("invalid_subject", gettext("Choose distinct submitted subjects."), status=400)
             seen.add(key)
             subjects.append(subject)
         reviewers = list(User.objects.filter(person_q(), pk__in=data["reviewer_ids"], is_active=True, access_status="active"))
         reviewers = [reviewer for reviewer in reviewers if event_authority.can(reviewer, ctx.event, "review_applications")]
         if len(reviewers) != len(set(data["reviewer_ids"])):
-            fail("not_found", "Not found.", status=404)
+            fail("not_found", gettext("Not found."), status=404)
         missing = assign_locked(ctx, subjects, reviewers)
         ctx.finish("review_assignment", ctx.config.pk, missing_coverage=missing)
         return {"missing_coverage": missing}
@@ -106,11 +107,11 @@ def submit(*, event_id, review_id, actor, data):
             return assignment
         check_version(assignment, data["expected_version"])
         if assignment.state != "assigned" or ctx.config.review_round_closed:
-            fail("invalid_transition", "This review is closed.")
+            fail("invalid_transition", gettext("This review is closed."))
         subject = assignment.cohort if assignment.cohort_id else assignment.application
         source_at = subject.sealed_at if assignment.cohort_id else subject.answers_changed_at
         if source_at is None or assignment.assigned_at < source_at:
-            fail("review_subject_changed", "This application was resubmitted. Refresh the review assignment.")
+            fail("review_subject_changed", gettext("This application was resubmitted. Refresh the review assignment."))
         if "recusal_code" in data:
             assignment.state, assignment.recusal_code = "recused", data["recusal_code"]
             ApplicationReviewConflict.objects.get_or_create(event=ctx.event, reviewer=actor,
@@ -118,9 +119,9 @@ def submit(*, event_id, review_id, actor, data):
                 defaults={"reason_code": data["recusal_code"]})
         else:
             if conflicted(event_id, actor.pk, subject):
-                fail("review_conflict", "Recuse from this application.", status=403)
+                fail("review_conflict", gettext("Recuse from this application."), status=403)
             if assignment.rubric_revision != ctx.config.review_rubric.get("revision", 1):
-                fail("rubric_revision_changed", "The review rubric changed.")
+                fail("rubric_revision_changed", gettext("The review rubric changed."))
             scores = validate_scores(ctx.config.review_rubric, data["scores"])
             ApplicationReview.objects.create(assignment=assignment, scores=scores, notes=data.get("notes", ""))
             assignment.state, assignment.submitted_at = "submitted", timezone.now()

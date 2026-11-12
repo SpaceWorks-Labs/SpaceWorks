@@ -11,6 +11,7 @@
   each returned deposit is still a refund case a staff member approves.
 """
 
+from django.utils.translation import gettext
 import logging
 
 from django.db import transaction
@@ -139,11 +140,11 @@ def settle(event_id, *, actor, data):
             if row is None or not row.deposit_amount:
                 raise Http404
             if row.version != values["expected_version"]:
-                raise ProgrammeError("stale_version", "This item changed.", current_version=row.version)
+                raise ProgrammeError("stale_version", gettext("This item changed."), current_version=row.version)
             if row.deposits_settled_at is not None:
-                raise ProgrammeError("already_settled", "Deposits for this event were already settled.")
+                raise ProgrammeError("already_settled", gettext("Deposits for this event were already settled."))
             if event.ends_at > timezone.now():
-                raise ProgrammeError("event_not_ended", "Settle deposits after the event ends.")
+                raise ProgrammeError("event_not_ended", gettext("Settle deposits after the event ends."))
             rows = plan(event)
             for item in rows:
                 if item["outcome"] == "keep":

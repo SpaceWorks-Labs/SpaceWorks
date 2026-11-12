@@ -1,4 +1,5 @@
 """Event-owned loan context operations; all writes are serialized and scoped."""
+from django.utils.translation import gettext
 from django.db import DatabaseError, IntegrityError, transaction
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import APIException, NotFound
@@ -147,7 +148,7 @@ def mutate(actor, req, payload, *, delete=False, intended=None):
                 if registration.event_id != expected["event_id"] or registration.member_id not in _borrower_aliases(locked.requester):
                     raise NotFound()
             if locked.status not in {"draft", "pending_approval", "accepted", "issued", "partially_returned"}:
-                raise Conflict("This request is no longer editable.")
+                raise Conflict(gettext("This request is no longer editable."))
             # Check CAS only after old/new resource authorization to avoid leaking
             # generation/revision information for an inaccessible association.
             if str(payload["expected_generation"]) != _generation(space):
@@ -155,21 +156,21 @@ def mutate(actor, req, payload, *, delete=False, intended=None):
             if payload["expected_revision"] != actual["revision"]:
                 raise RevisionChanged()
             if new_id and (not actual["active"] or actual["event_id"] != new_id or actual["participant_registration_id"] != payload.get("participant_registration_id")) and events[new_id].status in {Event.Status.CANCELLED, Event.Status.COMPLETED}:
-                raise Conflict("Event is unavailable.")
+                raise Conflict(gettext("Event is unavailable."))
             participant_id = payload.get("participant_registration_id") if not delete else None
             if participant_id:
                 participant = registrations[participant_id]
                 if participant.event_id != new_id or participant.member_id not in _borrower_aliases(locked.requester) or participant.member_id is None:
                     raise NotFound()
                 if (actual["event_id"] != new_id or actual["participant_registration_id"] != participant_id) and participant.status not in {EventRegistration.Status.REGISTERED, EventRegistration.Status.ATTENDED}:
-                    raise Conflict("Participant is unavailable.")
+                    raise Conflict(gettext("Participant is unavailable."))
             active = not delete
             if actual["active"] == active and actual["event_id"] == new_id and actual["participant_registration_id"] == participant_id:
                 result = _view(actor, locked, row, intended if delete else None)
                 result["generation"] = _generation(space)
                 return result
             if actual["revision"] >= MAX_REVISION:
-                raise RevisionExhausted("Context revision exhausted.")
+                raise RevisionExhausted(gettext("Context revision exhausted."))
             if row is None:
                 try:
                     with transaction.atomic():
@@ -190,5 +191,5 @@ def mutate(actor, req, payload, *, delete=False, intended=None):
             return result
     except DatabaseError as exc:
         if (getattr(exc.__cause__, "sqlstate", None) or getattr(exc.__cause__, "pgcode", None)) == "55P03":
-            raise LockBusy("Context is busy; retry after reloading.") from exc
+            raise LockBusy(gettext("Context is busy; retry after reloading.")) from exc
         raise

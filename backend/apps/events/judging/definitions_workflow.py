@@ -25,9 +25,9 @@ def save_definition(event_id, *, actor, kind, data, object_id=None):
             row = owned(model, event_id, object_id, expected=values["expected_version"]) if object_id else model(event=event)
             previous_mode = getattr(row, "mode", None) if object_id else None
             if not object_id and values["expected_version"] != 0:
-                invalid("A new definition requires expected_version 0.")
+                invalid(gettext("A new definition requires expected_version 0."))
             if model is JudgingRound and row.state != "draft":
-                invalid("Open rounds are frozen. Create a new round to change its rubric.")
+                invalid(gettext("Open rounds are frozen. Create a new round to change its rubric."))
             _references(event, payload)
             if payload.get("submission_stage_id") is not None:  # #178: a stage of this event.
                 from apps.events.submissions.models_stages import SubmissionStage

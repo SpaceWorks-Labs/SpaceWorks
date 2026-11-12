@@ -1,4 +1,5 @@
 """The only help state writer. Team and mentor origins are explicit."""
+from django.utils.translation import gettext
 from datetime import timedelta
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -32,9 +33,9 @@ def _attendee(actor, event):
     from apps.events.models import EventRegistration
     commands.active_member(actor)
     if not policy.drop_in_allowed(event):
-        raise ProgrammeError("team_required", "Ask for help from your team's page.", status=400)
+        raise ProgrammeError("team_required", gettext("Ask for help from your team's page."), status=400)
     if not EventRegistration.objects.filter(event=event, member=actor, status__in=("registered", "attended")).exists():
-        raise ProgrammeError("registration_required", "Only confirmed attendees can ask a mentor.", status=403)
+        raise ProgrammeError("registration_required", gettext("Only confirmed attendees can ask a mentor."), status=403)
 
 
 def _asker(actor, event, row):
@@ -42,7 +43,7 @@ def _asker(actor, event, row):
     if row.team_id is None:
         _attendee(actor, event)
         if row.raised_by_id != actor.pk:
-            raise ProgrammeError("not_found", "Not found.", status=404)
+            raise ProgrammeError("not_found", gettext("Not found."), status=404)
     else:
         _team(actor, event, row.team_id)
 
@@ -53,26 +54,26 @@ def create(*, actor, event_id, payload, mentor_origin=False):
 
     def authorize(event):
         if team_id is None and mentor_origin:
-            raise ProgrammeError("team_required", "Choose the team you are raising help for.", status=400)
+            raise ProgrammeError("team_required", gettext("Choose the team you are raising help for."), status=400)
         if drop_in:
             _attendee(actor, event)
         elif mentor_origin:
             assignment, profile = policy.mentor_for(actor, event)
             if not policy.visit_eligible(assignment=assignment, profile=profile, team_id=team_id):
-                raise ProgrammeError("mentor_not_eligible", "You cannot visit this team.", status=403)
+                raise ProgrammeError("mentor_not_eligible", gettext("You cannot visit this team."), status=403)
         else:
             _team(actor, event, team_id)
 
     def mutate(event, locks):
         help_type = EventHelpType.objects.filter(event=event, key=payload["type_key"]).first()
         if not help_type:
-            raise ProgrammeError("invalid_help_type", "Choose an available help category.", status=400)
+            raise ProgrammeError("invalid_help_type", gettext("Choose an available help category."), status=400)
         if payload["expected_version"] != 0:
-            raise ProgrammeError("stale_version", "Use version zero for a new request.")
+            raise ProgrammeError("stale_version", gettext("Use version zero for a new request."))
         practice = payload.get("practice_run_id")
         if drop_in:
             if practice:
-                raise ProgrammeError("practice_scope_mismatch", "Practice runs use teams.", status=404)
+                raise ProgrammeError("practice_scope_mismatch", gettext("Practice runs use teams."), status=404)
             rows = EventHelpRequest.objects.filter(event=event, team__isnull=True, raised_by=actor, type=help_type,
                                                    state__in=["open", "claimed"])
         else:
@@ -81,13 +82,13 @@ def create(*, actor, event_id, payload, mentor_origin=False):
             rows = EventHelpRequest.objects.filter(event=event, team_id=team_id, type=help_type,
                 practice_run_id=practice, state__in=["open", "claimed"])
         if rows.count() >= help_type.open_limit:
-            raise ProgrammeError("help_limit_reached", "There is already an open request in this category.")
+            raise ProgrammeError("help_limit_reached", gettext("There is already an open request in this category."))
         assignment = policy.mentor_for(actor, event)[0] if mentor_origin else None
         if mentor_origin:
             _, profile = policy.mentor_for(actor, event)
             if not policy.visit_eligible(assignment=assignment, profile=profile, team_id=team_id,
                                          skill_tags=help_type.skill_tags):
-                raise ProgrammeError("mentor_not_eligible", "This category needs another mentor.", status=403)
+                raise ProgrammeError("mentor_not_eligible", gettext("This category needs another mentor."), status=403)
         row = commands.new_row(EventHelpRequest, event, team_id=team_id, type=help_type,
             raised_by=actor, raised_by_role_assignment=assignment,
             origin="mentor" if mentor_origin else "attendee" if drop_in else "team", structured_zone=payload.get("zone", {}),
@@ -109,9 +110,9 @@ def _detail_access(actor, event, row, *, member_surface=False):
     elif not policy.queue_manager(actor, event):
         assignment, _ = policy.mentor_for(actor, event)
         if row.claimed_by_id != assignment.pk:
-            raise ProgrammeError("not_found", "Not found.", status=404)
+            raise ProgrammeError("not_found", gettext("Not found."), status=404)
         if not help_expiry.live_claim(row):
-            raise ProgrammeError("lease_lost", "This help claim expired. Refresh the queue.")
+            raise ProgrammeError("lease_lost", gettext("This help claim expired. Refresh the queue."))
 
 
 def command(*, actor, event_id, help_id, payload, action, member_surface=False):
@@ -151,10 +152,10 @@ def command(*, actor, event_id, help_id, payload, action, member_surface=False):
                 assignment, profile = policy.mentor_for(actor, event)
             if not policy.request_eligible(assignment=assignment, profile=profile, row=row,
                     skill_tags=row.type.skill_tags, priority_until=row.exclusive_until):
-                raise ProgrammeError("mentor_not_eligible", "This request needs another mentor.", status=403)
+                raise ProgrammeError("mentor_not_eligible", gettext("This request needs another mentor."), status=403)
             if EventHelpRequest.objects.filter(state="claimed", claimed_by=assignment,
                     claim_expires_at__gt=now).exclude(pk=row.pk).exists():
-                raise ProgrammeError("mentor_busy", "Finish or release the current request first.")
+                raise ProgrammeError("mentor_busy", gettext("Finish or release the current request first."))
             # Clean expired claims under the same parent lock before the DB's
             # one-claimed-ticket constraint is consulted.
             for stale in EventHelpRequest.objects.select_for_update().filter(state="claimed",
@@ -167,10 +168,10 @@ def command(*, actor, event_id, help_id, payload, action, member_surface=False):
             require_state(row, "claimed")
             assignment, profile = policy.mentor_for(actor, event)
             if row.claimed_by_id != assignment.pk or str(row.claim_uuid) != str(payload["claim_uuid"]) or row.claim_generation != payload["claim_generation"]:
-                raise ProgrammeError("lease_lost", "This claim belongs to another visit.")
+                raise ProgrammeError("lease_lost", gettext("This claim belongs to another visit."))
             if not policy.request_eligible(assignment=assignment, profile=profile, row=row,
                     skill_tags=row.type.skill_tags):
-                raise ProgrammeError("mentor_not_eligible", "This claim is no longer eligible.", status=403)
+                raise ProgrammeError("mentor_not_eligible", gettext("This claim is no longer eligible."), status=403)
             commands.changed(row, claim_expires_at=min(help_expiry.deadline(row, event),
                 now + timedelta(minutes=row.type.claim_minutes)))
         elif action == "release":
@@ -184,7 +185,7 @@ def command(*, actor, event_id, help_id, payload, action, member_surface=False):
         elif action == "reopen":
             require_state(row, "resolved")
             if not note.strip():
-                raise ProgrammeError("reason_required", "Explain why the request is reopening.", status=400)
+                raise ProgrammeError("reason_required", gettext("Explain why the request is reopening."), status=400)
             commands.changed(row, state="open", resolved_at=None, exclusive_until=now + timedelta(minutes=5),
                              last_opened_at=now, open_generation=row.open_generation + 1)
         elif action == "cancel" and member_surface:
@@ -192,7 +193,7 @@ def command(*, actor, event_id, help_id, payload, action, member_surface=False):
             commands.changed(row, state="cancelled", claimed_by=None, cancelled_at=now,
                              claim_uuid=None, claim_expires_at=None)
         else:
-            raise ProgrammeError("invalid_transition", "Unknown help command.", status=400)
+            raise ProgrammeError("invalid_transition", gettext("Unknown help command."), status=400)
         commands.new_row(EventHelpAction, event, request=row, actor=actor, kind=action, note=note)
         notice_locked(row, event, "claim_released" if old_assignee and not row.claimed_by_id else action)
         return row
@@ -214,10 +215,10 @@ def comment(*, actor, event_id, help_id, payload, member_surface=False):
         row = EventHelpRequest.objects.select_for_update().get(pk=help_id, event=event)
         check_version(row, payload["expected_version"])
         if row.state not in ("open", "claimed"):
-            raise ProgrammeError("request_closed", "This request is closed.")
+            raise ProgrammeError("request_closed", gettext("This request is closed."))
         help_expiry.require_live(row, event)
         if not payload["body"].strip() or len(payload["body"]) > 2000:
-            raise ProgrammeError("comment_too_long", "Use 1–2000 characters.", status=400)
+            raise ProgrammeError("comment_too_long", gettext("Use 1–2000 characters."), status=400)
         commands.changed(row)
         return commands.new_row(EventHelpComment, event, request=row, author=actor,
             origin="team" if member_surface else "mentor", body=payload["body"])

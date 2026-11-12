@@ -1,4 +1,5 @@
 """Live mentor eligibility. Display role labels and cached permission unions never suffice."""
+from django.utils.translation import gettext
 from datetime import datetime
 from django.apps import apps
 from django.shortcuts import get_object_or_404
@@ -34,7 +35,7 @@ def mentor_for(actor, event, *, at=None, assignment_id=None, on_shift=True):
     event_authority.require(actor, event, "mentor_queue")
     profile = get_object_or_404(MentorProfile, assignment=assignment, event=event)
     if on_shift and not in_windows(profile.availability or assignment.availability, at or timezone.now()):
-        raise ProgrammeError("mentor_off_shift", "You are outside your mentoring availability.", status=403)
+        raise ProgrammeError("mentor_off_shift", gettext("You are outside your mentoring availability."), status=403)
     return assignment, profile
 
 
@@ -63,7 +64,7 @@ def queue_manager(actor, event):
 
 def require_queue_manager(actor, event):
     if not queue_manager(actor, event):
-        raise ProgrammeError("queue_management_required", "Queue management is required.", status=403)
+        raise ProgrammeError("queue_management_required", gettext("Queue management is required."), status=403)
 
 
 def is_conflicted(*, member_id, team_id, round_id=None):

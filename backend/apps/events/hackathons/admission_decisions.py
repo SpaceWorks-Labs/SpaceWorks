@@ -1,4 +1,5 @@
 """Private staging and atomic release; no participant reads of draft decisions."""
+from django.utils.translation import gettext
 from datetime import timedelta
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -17,7 +18,7 @@ def subject_locked(event, selection):
     else:
         subject = get_object_or_404(HackathonApplication.objects.select_for_update(), event=event, pk=selection["application_id"])
         if subject.cohort_id:
-            fail("cohort_required", "Decide on the sealed team together.", status=400)
+            fail("cohort_required", gettext("Decide on the sealed team together."), status=400)
         applications = [subject]
     return subject, applications
 
@@ -32,7 +33,7 @@ def require_reviews(config, subject, decision):
     key = "cohort_id" if isinstance(subject, HackathonApplicationCohort) else "application_id"
     source_at = subject.sealed_at if isinstance(subject, HackathonApplicationCohort) else subject.answers_changed_at
     if source_at is None:
-        fail("review_coverage_required", "This subject needs a sealed review source.")
+        fail("review_coverage_required", gettext("This subject needs a sealed review source."))
     from apps.events import event_authority
     from .review_workflow import conflicted
     assignments = ApplicationReviewAssignment.objects.filter(**{key: subject.pk}, assigned_at__gte=source_at,
@@ -40,7 +41,7 @@ def require_reviews(config, subject, decision):
     count = len({a.reviewer_id for a in assignments if event_authority.can(a.reviewer, a.event, "review_applications")
                  and not conflicted(a.event_id, a.reviewer_id, subject)})
     if count < config.review_count:
-        fail("review_coverage_required", "This subject needs more distinct completed reviews.")
+        fail("review_coverage_required", gettext("This subject needs more distinct completed reviews."))
 
 
 def release_decision_locked(ctx, decision, *, auto=False):
@@ -50,9 +51,9 @@ def release_decision_locked(ctx, decision, *, auto=False):
     subject, applications = subject_locked(ctx.event, {"application_id": decision.application_id, "cohort_id": decision.cohort_id})
     check_version(subject, decision.expected_subject_version)
     if not applications or any(a.state not in ("submitted", "waitlisted", "rejected") for a in applications):
-        fail("invalid_transition", "This decision needs a submitted or queued application.")
+        fail("invalid_transition", gettext("This decision needs a submitted or queued application."))
     if ctx.config.team_mode == "team_together" and not decision.cohort_id:
-        fail("cohort_required", "Seal the whole team before review.")
+        fail("cohort_required", gettext("Seal the whole team before review."))
     if decision.cohort_id:
         from .admission_cohorts import require_sealed_roster
         require_sealed_roster(subject.team, list(subject.team.memberships.filter(state="active")))
@@ -62,7 +63,7 @@ def release_decision_locked(ctx, decision, *, auto=False):
     require_reviews(ctx.config, subject, decision)
     now = timezone.now()
     if ctx.event.status != "published" or now >= ctx.event.ends_at:
-        fail("applications_closed", "This event no longer accepts decisions.")
+        fail("applications_closed", gettext("This event no longer accepts decisions."))
     state = {"offer": "offered", "waitlist": "waitlisted", "reject": "rejected"}[decision.outcome]
     if state == "offered":
         from .admission_transactions import require_member
@@ -128,13 +129,13 @@ def stage(*, event_id, actor, data):
             check_version(subject, item["expected_version"])
             key = (type(subject).__name__, subject.pk)
             if key in seen:
-                fail("duplicate_subject", "Choose each subject once.", status=400)
+                fail("duplicate_subject", gettext("Choose each subject once."), status=400)
             seen.add(key)
             if not applications or any(a.state not in ("submitted", "waitlisted", "rejected") for a in applications):
-                fail("invalid_transition", "This application cannot receive a staged decision.")
+                fail("invalid_transition", gettext("This application cannot receive a staged decision."))
             selector = {"cohort": subject} if isinstance(subject, HackathonApplicationCohort) else {"application": subject}
             if ApplicationDecision.objects.filter(**selector, active_draft=True).exists():
-                fail("decision_already_staged", "This subject already has a draft decision.")
+                fail("decision_already_staged", gettext("This subject already has a draft decision."))
             from .admission_stage_flow import stage_for_staging
             ApplicationDecision.objects.create(batch=batch, **selector, outcome=item["outcome"],
                 reason_code=item["reason_code"], expected_subject_version=item["expected_version"],
@@ -153,7 +154,7 @@ def finish_batch(*, event_id, actor, data, cancel=False):
             return batch
         check_version(batch, data["expected_version"])
         if batch.state != "draft":
-            fail("invalid_transition", "This batch is no longer a draft.")
+            fail("invalid_transition", gettext("This batch is no longer a draft."))
         decisions = list(batch.decisions.select_for_update().order_by("pk"))
         for decision in decisions:
             if cancel:

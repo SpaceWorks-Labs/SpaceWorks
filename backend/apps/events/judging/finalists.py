@@ -43,13 +43,13 @@ def _rounds(event_id, values, *, lock=False):
     if source.pk == target.pk:
         raise ValidationError({"target_round_id": gettext("Choose a different round for the finalists.")})
     if source.state != "finalized":
-        invalid("Finalize the source round before advancing finalists.")
+        invalid(gettext("Finalize the source round before advancing finalists."))
     if target.state != "draft":
-        invalid("Finalists can only advance into a draft round.")
+        invalid(gettext("Finalists can only advance into a draft round."))
     ancestor = source
     while ancestor is not None:  # Never loop a project back into a round that fed its source.
         if ancestor.advanced_from_id == target.pk:
-            invalid("That round already feeds the source round.")
+            invalid(gettext("That round already feeds the source round."))
         ancestor = ancestor.advanced_from
     return source, target
 
@@ -109,9 +109,9 @@ def apply(event_id, *, actor, data):
             require_version(target, values["expected_version"])
             plan = _plan(source, target, values)
             if plan["fingerprint"] != values["fingerprint"]:
-                raise ProgrammeError("plan_changed", "The finalists changed since the preview. Preview again.")
+                raise ProgrammeError("plan_changed", gettext("The finalists changed since the preview. Preview again."))
             if not plan["finalists"]:
-                invalid("There are no eligible finalists to advance.")
+                invalid(gettext("There are no eligible finalists to advance."))
             advance = FinalistAdvance.objects.create(event=event, source_round=source, target_round=target,
                 selection=values["selection"], top_n=values.get("top_n"), fingerprint=plan["fingerprint"], created_by=actor)
             for row in plan["finalists"]:
@@ -137,13 +137,13 @@ def publish(event_id, *, actor, data):
                 raise Http404
             require_version(advance.target_round, values["expected_version"])
             if current_advance(advance.target_round).pk != advance.pk:
-                invalid("Publish the round's current finalists.")
+                invalid(gettext("Publish the round's current finalists."))
             if FinalistAnnouncement.objects.filter(advance=advance).exists():
-                raise ProgrammeError("already_published", "These finalists are already published.")
+                raise ProgrammeError("already_published", gettext("These finalists are already published."))
             for snapshot_id in advance.finalists.values_list("snapshot_id", flat=True):
                 snapshot = runtime().snapshot(snapshot_id)
                 if not snapshot.current or not snapshot.eligible:
-                    invalid("A finalist is no longer eligible. Advance the finalists again.")
+                    invalid(gettext("A finalist is no longer eligible. Advance the finalists again."))
             row = FinalistAnnouncement.objects.create(event=event, advance=advance, published_at=timezone.now(),
                                                       published_by=actor)
             record(actor, "event.judging.finalists_published", makerspace=event.makerspace, target=row,

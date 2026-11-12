@@ -1,4 +1,5 @@
 """Clock enforcement for help claims; GETs never mutate queue state."""
+from django.utils.translation import gettext
 from datetime import timedelta
 from uuid import uuid4
 from django.db import transaction
@@ -25,9 +26,9 @@ def live_claim(row, at=None):
 
 def require_live(row, event):
     if deadline(row, event) <= timezone.now() or row.state == "expired":
-        raise ProgrammeError("help_expired", "This help request expired.")
+        raise ProgrammeError("help_expired", gettext("This help request expired."))
     if row.state == "claimed" and not live_claim(row):
-        raise ProgrammeError("lease_lost", "This help claim expired. Refresh the queue.")
+        raise ProgrammeError("lease_lost", gettext("This help claim expired. Refresh the queue."))
 
 
 def claim_values(row, event, now):

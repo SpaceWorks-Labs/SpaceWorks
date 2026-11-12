@@ -1,4 +1,5 @@
 """Stable errors without provider or foreign-resource details."""
+from django.utils.translation import gettext
 from rest_framework.exceptions import APIException
 
 
@@ -19,4 +20,4 @@ def fail(code, detail, **kwargs):
 def check_version(row, expected):
     current = row.version if row is not None else 0
     if type(expected) is not int or expected != current:
-        fail("stale_version", "This item changed. Refresh and review it.", version=current)
+        fail("stale_version", gettext("This item changed. Refresh and review it."), version=current)

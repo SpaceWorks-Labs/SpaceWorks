@@ -33,6 +33,7 @@ def current_awards(event):
 def my_prizes(actor, makerspace_id):
     from apps.events.models import Event, SubmissionSnapshot
     from apps.makerspaces.platform import feature_enabled
+    from .options import currency
     from .payout_split import award_status
     from .prize_claims import claim_deadline, claim_projection
     from .prize_shares import leader_of
@@ -69,6 +70,7 @@ def my_prizes(actor, makerspace_id):
         rows.append({"award_id": award.pk, "event_id": event.pk, "event_title": event.title,
                      "prize_name": award.prize_name, "rank": award.rank, "kind": award.prize.kind,
                      "value_text": award.prize.value_text, "status": award_status(award),
+                     "currency": currency(event.makerspace),
                      "my_share": _share(share), "my_payout": _payout(payout),
                      "claim": claim_projection(claim) if claim else None, "claim_deadline": claim_deadline(event),
                      "is_leader": is_leader, "allowed_actions": actions,

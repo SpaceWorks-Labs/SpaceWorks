@@ -6,6 +6,7 @@ new answer version, a decision already sent) is SKIPPED and recorded, never appl
 a subject that is no longer what the staffer reviewed. `advance` moves an application
 to the next stage and leaves its registration and state untouched.
 """
+from django.utils.translation import gettext
 from django.utils import timezone
 
 from apps.audit import services as audit
@@ -28,18 +29,18 @@ def stage_for_staging(event, subject, item):
     outcome = item["outcome"]
     if not stages_active(event):
         if outcome == "advance":
-            fail("stages_not_configured", "Add review stages before advancing applications.", status=400)
+            fail("stages_not_configured", gettext("Add review stages before advancing applications."), status=400)
         return None
     if isinstance(subject, HackathonApplicationCohort):
         if outcome == "advance":
-            fail("stages_individual_only", "Review stages decide on individual applications.", status=400)
+            fail("stages_individual_only", gettext("Review stages decide on individual applications."), status=400)
         return None
     stage = current_stage(subject)
     if outcome == "advance":
         if stage is None or item.get("stage_id") != stage.pk:
-            fail("stage_mismatch", "This application no longer stands in that stage.")
+            fail("stage_mismatch", gettext("This application no longer stands in that stage."))
         if next_stage(stage) is None:
-            fail("no_next_stage", "This is the last stage; offer, waitlist or reject instead.", status=400)
+            fail("no_next_stage", gettext("This is the last stage; offer, waitlist or reject instead."), status=400)
     return stage
 
 
@@ -57,7 +58,7 @@ def require_stage_coverage(stage, subject, decision):
     if decision.review_override_code:
         return
     if coverage(stage, subject) < stage.reviews_per_application:
-        fail("review_coverage_required", "This application needs more completed reviews in its stage.")
+        fail("review_coverage_required", gettext("This application needs more completed reviews in its stage."))
 
 
 def _skip(ctx, decision, reason):

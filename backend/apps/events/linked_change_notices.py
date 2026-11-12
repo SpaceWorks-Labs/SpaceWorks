@@ -15,6 +15,7 @@ invite on a reschedule, the `cancelled` owner fan-out), so nothing is added for 
 while Events or the target module is off; one notice per event version, re-checked at send.
 """
 
+from django.utils.translation import gettext, gettext_noop
 from apps.hardware_requests.notifications_p2 import fanout as loan_fanout, safe_adapter
 from apps.integrations.notification_links import local_link
 from apps.makerspaces.platform import module_enabled
@@ -24,7 +25,7 @@ from apps.operations.notifications_p2 import body, fanout, revision, safe_notifi
 BOOKING_SOURCE = "events.linked_booking_notice"
 LOAN_SOURCE = "events.linked_loan_notice"
 EVENT = "linked_event_changed"
-WORDS = {"moved": "was rescheduled", "cancelled": "was cancelled"}
+WORDS = {"moved": gettext_noop("was rescheduled"), "cancelled": gettext_noop("was cancelled")}
 ACTIVE_BOOKINGS = ("pending", "confirmed")
 OPEN_LOANS = ("pending_approval", "accepted", "issued", "partially_returned")
 MAX_LOANS = 500
@@ -72,12 +73,17 @@ def notify_linked_booking(event, change):
     booking = current_booking(event)
     if booking is None or booking.status not in ACTIVE_BOOKINGS:
         return None
-    what, room = WORDS[change], booking.space.name
-    subject = f"A linked event {what}: booking #{booking.pk}"
-    staff_text = (f"Booking #{booking.pk} in {room} holds the room for an event that {what}. "
-                  "The room booking was not changed. Review it in Bookings.")
-    owner_text = (f"The event your booking #{booking.pk} in {room} is for {what}. Your room booking was "
-                  "not changed. Review it, and contact the space if it should change.")
+    what, room = gettext(WORDS[change]), booking.space.name
+    values = {"what": what, "room": room, "id": booking.pk}
+    subject = gettext("A linked event %(what)s: booking #%(id)s") % values
+    staff_text = gettext(
+        "Booking #%(id)s in %(room)s holds the room for an event that %(what)s. "
+        "The room booking was not changed. Review it in Bookings."
+    ) % values
+    owner_text = gettext(
+        "The event your booking #%(id)s in %(room)s is for %(what)s. Your room booking was "
+        "not changed. Review it, and contact the space if it should change."
+    ) % values
     link = staff_link(space, f"bookings?space={booking.space_id}&booking={booking.pk}&bookingTab=requests")
     version, context = _revision(event, change), {"booking_id": booking.pk, "event_id": event.pk, "change": change}
     result = fanout(row=booking, space=space, feature="bookings", stream="bookings", event=EVENT,

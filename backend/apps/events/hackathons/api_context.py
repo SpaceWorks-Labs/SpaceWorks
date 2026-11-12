@@ -1,4 +1,5 @@
 """Token-only account bootstrap; reads never create application/vault/membership."""
+from django.utils.translation import gettext
 from copy import deepcopy
 from zoneinfo import ZoneInfo
 from django.shortcuts import get_object_or_404
@@ -58,7 +59,7 @@ def context_for_token(*, public_token, actor, request=None):
     # Applications for any one-off event (#128 C-32) share the engine; `kind` tells the two apart.
     hackathon = capabilities["events.hackathons"]
     if config and not (hackathon or feature_enabled(event.makerspace, "events.applications")):
-        fail("not_found", "Not found.", status=404)
+        fail("not_found", gettext("Not found."), status=404)
     eligible, reason = True, None
     try:
         require_registration_access(event, actor)

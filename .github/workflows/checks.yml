@@ -1,7 +1,7 @@
 name: Checks
 
-# CHECKS ONLY (owner decision #108). The pytest and vitest suites are deliberately
-# local-only and gitignored; nothing here runs them.
+# CHECKS ONLY (owner decision #108): fast checks, no test suites. The committed pytest and vitest
+# suites run in tests.yml (decision 244).
 #
 # Required status checks on main. These job ids and names are what branch protection
 # matches, so keep them stable:

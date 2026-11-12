@@ -14,6 +14,7 @@ issue, so the paths cannot drift:
 
 Per-person accountability is unchanged: the pass holder is the requester of record.
 """
+from django.utils.translation import gettext
 from apps.accounts.staff_identity import is_person
 from apps.makerspaces.guest_pass_policy import GuestPassError, guest_passes_on
 from apps.makerspaces.guest_pass_queries import active_pass_for, pass_entitlements
@@ -42,7 +43,7 @@ def admit_self_checkout(makerspace, user, *, taking):
             require_current_term(makerspace, active.membership)
     elif taking and pass_entitlements(active.guest_pass).borrow == "full_with_deposit":
         raise GuestPassError("guest_pass_deposit_required",
-                             "Taking items away needs a deposit; ask the desk to hand them over.", status_code=403)
+                             gettext("Taking items away needs a deposit; ask the desk to hand them over."), status_code=403)
     return active
 
 
@@ -67,7 +68,7 @@ def cap_due(makerspace, requester, due, *, at=None, staff_entered=False):
         return due
     if staff_entered:
         raise GuestPassError("guest_pass_on_site_only",
-                             "This guest pass only covers using items on site; the due time cannot be after the pass ends.",
+                             gettext("This guest pass only covers using items on site; the due time cannot be after the pass ends."),
                              status_code=403)
     return _last_open_close(makerspace, guest_pass)
 
@@ -90,7 +91,7 @@ def _deposit_priced(request):
         priced = deposit_quote(request)
     if priced is None or priced.total <= 0:
         raise GuestPassError("guest_pass_deposit_required",
-                             "A guest must leave a deposit to take items away, and this one has no deposit set.",
+                             gettext("A guest must leave a deposit to take items away, and this one has no deposit set."),
                              status_code=403)
     return priced
 
@@ -127,7 +128,7 @@ def guest_issue_gate(request, actor):
         return None  # anonymous/contact requesters and members are not this gate's business
     guest_pass = active_pass_for(requester, makerspace)
     if guest_pass is None:
-        raise GuestPassError("guest_pass_required", "This person is not a member and holds no active guest pass.",
+        raise GuestPassError("guest_pass_required", gettext("This person is not a member and holds no active guest pass."),
                              status_code=403)
     ent = require_borrowing(guest_pass)
     require_guest_waiver(requester, makerspace, guest_pass)

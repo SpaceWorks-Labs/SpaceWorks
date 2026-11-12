@@ -58,6 +58,8 @@ def submit_request(
         assert_write_allowed(makerspace.id)
         assert_mapped_write_allowed(makerspace.id)
         makerspace = Makerspace.objects.select_for_update().get(pk=makerspace.pk)
+        from apps.managed_hosting.extra_quotas import check_extra_quota
+        check_extra_quota(makerspace, "hardware_requests_monthly")  # decision 328a: refuses only a NEW request
         requester_principal = lock_obligation_owner(requester_principal)
         from apps.hardware_requests.request_submission_locked import submit_locked
         return submit_locked(

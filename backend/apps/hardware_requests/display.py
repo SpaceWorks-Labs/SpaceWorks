@@ -82,3 +82,35 @@ def label_from_candidates(*values, fallback="Member"):
         if label and not is_internal_checkin_username(label):
             return label
     return fallback
+
+
+def _safe_username(value):
+    label = clean_label(value)
+    phone_like = label.lstrip("+").replace(" ", "").replace("-", "").isdigit()
+    if label and not looks_like_email(label) and not is_internal_checkin_username(label) and not phone_like:
+        return label
+    return ""
+
+
+def account_name_label(user, *, fallback="Member"):
+    """An account's display or full name, else a username that is not contact data, else ``fallback``."""
+    if user is None:
+        return fallback
+    for value in (getattr(user, "display_name", ""), user.get_full_name() if hasattr(user, "get_full_name") else ""):
+        if clean_label(value):
+            return clean_label(value)
+    return _safe_username(getattr(user, "username", "")) or fallback
+
+
+def requester_name_label(request, *, fallback="Member"):
+    """A borrower label that NEVER falls back to contact details (email or phone).
+
+    For surfaces whose viewer holds no loan/member-contact authority (an Event Manager reading
+    their event's loans): the captured name, then the account's name or safe username, then a
+    request username that is neither an email, a phone number nor the check-in hash, else ``fallback``.
+    """
+    name = clean_label(getattr(request, "requester_name", ""))
+    if name:
+        return name
+    label = account_name_label(getattr(request, "requester", None), fallback="")
+    return label or _safe_username(getattr(request, "requester_username", "")) or fallback

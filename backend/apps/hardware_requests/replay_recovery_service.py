@@ -1,5 +1,6 @@
 """Review failed attempts without rewriting their domain/evidence history."""
 
+from django.utils.translation import gettext
 from django.db import transaction
 from django.http import Http404
 from django.shortcuts import get_object_or_404
@@ -37,9 +38,9 @@ def validate_replacement(user, source, replacement):
             or replacement.aggregate_id == source.aggregate_id
             or replacement.created_at < source.completed_at
             or replacement.completed_at < source.completed_at):
-        raise ResolutionConflict("Use a fresh succeeded command for the same operation and handover subject.")
+        raise ResolutionConflict(gettext("Use a fresh succeeded command for the same operation and handover subject."))
     if visible_replays(user).filter(replacement_command=replacement).exclude(pk=source.pk).exists():
-        raise ResolutionConflict("That successful command already resolves another failure.")
+        raise ResolutionConflict(gettext("That successful command already resolves another failure."))
 
 
 def resolve_replay(user, pk, *, resolution_code, replacement_command_id=None):
@@ -61,11 +62,11 @@ def resolve_replay(user, pk, *, resolution_code, replacement_command_id=None):
             if (source.resolution_code == resolution_code
                     and source.replacement_command_id == replacement_command_id):
                 return source
-            raise ResolutionConflict("This failure has already been reviewed with a different resolution.")
+            raise ResolutionConflict(gettext("This failure has already been reviewed with a different resolution."))
         if resolution_code == ReplayCommand.Resolution.REPLACED_ONLINE:
             replacement = commands.get(replacement_command_id)
             if replacement is None:
-                raise ResolutionConflict("The replacement is unavailable in your current action scope.")
+                raise ResolutionConflict(gettext("The replacement is unavailable in your current action scope."))
             validate_replacement(user, source, replacement)
         source.resolution_code = resolution_code
         source.resolved_by = user

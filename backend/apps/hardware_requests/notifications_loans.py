@@ -26,7 +26,7 @@ def notify_closed(row, event):
     from .notifications_p2_requests import KIND, request_revision
     title, sentence = (gettext(part) for part in _CLOSED[event])
     link = local_link(row.makerspace, "member")
-    own = {"subject": f"{row.makerspace.name} {title}",
+    own = {"subject": gettext("%(space)s %(title)s") % {"space": row.makerspace.name, "title": title},
            "text": gettext("Your request #%(id)s %(sentence)s") % {"id": row.pk, "sentence": sentence},
            "html": "", "link": link}
     staff = {"subject": gettext("Hardware request #%(id)s %(title)s") % {"id": row.pk, "title": title},

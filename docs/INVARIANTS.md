@@ -1577,7 +1577,26 @@ here, because a loan deposit is raised against a BORROWER who needs an active ac
 a membership. A restricted or suspended (but `is_active`) account can SEE and PAY its own
 charges (decision 260, G-1: paying is how a restriction is cleared; `active_member_memberships(
 allow_restricted=True)` is used by the payments surfaces only). It still refuses a revoked member,
-which is a deliberate pre-existing contract.
+which is a deliberate pre-existing contract. **The session boundary admits it only there (decision
+358 C, `accounts/restricted_admission.py`).** `surface_policy._active`, `validated_device_grant` and the
+native heartbeat refuse every non-active account with the typed 401 `account_restricted` /
+`account_suspended`, EXCEPT a restricted/suspended person's browser session or native MEMBER grant on:
+the eight `OWN_CHARGE_ROUTES`, the signed receipt download (`payment-document-download`), the
+outstanding summary (`member-my-usage`, which answers such an account with `payments` only) and sign-out
+(`auth-logout`, `auth-logout-all`, `device-logout`). The authenticator decides `restricted_ok` from the
+route name before anything else runs; a staff or event grant of such an account, and a deactivated,
+retired or merged account, are never admitted. **Such a person may sign in and refresh (decision 361)**:
+every issuance check asks `restricted_admission.state_may_sign_in` (active, or restricted/suspended for a
+PERSON; a platform account must be active) -- `auth_backends`, `services_device_login`, `services_mfa.active`,
+`assert_social_user_active`, phone login, `lock_session_user`, `surface_policy._active`, cookie and device
+refresh -- while every factor/MFA rule is unchanged. The request-state gate moved into `enforce_request`
+(and `validated_device_grant`), so the resulting session still reaches only the admission set above. A
+restricted person gets MEMBER grants only: device login with `authority=staff` refuses, `issue_device_token_pair`
+refuses a non-member grant, device refresh revokes a restricted person's staff/event grant, and the
+device-context trigger (`_0063_restricted_member_device_guard`) admits restricted/suspended principals for
+`authority='member'` only (without it the heartbeat's `last_used_at` UPDATE raised). The payload carries
+`account_status` (`active|restricted|suspended`) so clients show the pay-what-you-owe screen.
+Never add a route to that set that does not re-check ownership itself.
 
 **Personal usage (analytics 1f-4)** is `GET /member/makerspaces/<id>/my-usage`, next to
 activity. It accepts no target member: every source is filtered by `request.user` and
@@ -2023,6 +2042,28 @@ unpinned; each now has a test under `tests/payments/`:
   `StaffPaymentSerializer` deliberately drops the refund fields so the machine-service queue does
   not grow a query per row. The machine-service waive route now answers 409 on a terminal charge,
   like every other reconciliation route, instead of a silent 200.
+- **Retained Stripe keys keep old Stripe charges alive after a switch to Razorpay** (PAY-REVIEW
+  0.12.0). `raw_credentials_configured` follows the SELECTED provider and governs new checkouts
+  only; the per-space Stripe webhook and `source_for_payment` read `resolution.stripe_keys_retained`
+  instead, exactly as `razorpay_source` already ignores the selection for Razorpay rows. Before,
+  every Stripe event after a switch answered 400, so a pending refund never settled. **Decision
+  360:** after a provider switch the OLD provider's keys stay usable for settling, refunding AND
+  paying old debts online (a new hosted page on an old-vendor row) until the operator clears
+  them, in both directions. Only new charges follow the selection.
+- **Decision 360 money follow-ups (PAY-REVIEW 0.12.0).** The Connect fee on a NEW charge in a
+  three-decimal currency is rounded half-up to a multiple of 10 minor units (stored fees never
+  change). Razorpay native Orders send `payment_capture: 1`, and auto-capture is a documented
+  setup requirement. A refund whose provider answer is unreadable (an exception carrying a 2xx,
+  or `RazorpayUnreadableResponse`) is `outcome_unknown`: it stays PENDING and reserved, never
+  FAILED. `checkout.session.completed` settles only on `payment_status == "paid"`; a Payment is
+  always positive, so `no_payment_required` never settles one. Razorpay deliveries are claimed
+  by event id AND `sha256:<signed body>` (`claim_razorpay_event`), because the delivery-id header
+  is outside the HMAC.
+- **The gateway poll forgets a hosted page only when nothing can still pay it unmatched**
+  (PAY-REVIEW 0.12.0). `_abandon` clears a page's ids when `_expire_checkout_best_effort` returns
+  True (provider confirmed closed; Razorpay `expire_checkout` reads the link back after a refused
+  cancel) or, for a Stripe session whose debit is still processing, after storing its
+  PaymentIntent so `async_payment_succeeded` still matches. Otherwise the row is retried next sweep.
 
 **Native clients use attested device grants, never browser-token shortcuts.** Device login starts with a
 short-lived attestation challenge and creates a revocable `DeviceGrant`; access tokens carry
@@ -2354,6 +2395,21 @@ Apple, GitHub and OIDC all authenticate member accounts only. Provider removal/u
 checks protect member credentials; none can replace a staff/platform password.
 Both settings surfaces refuse clearing a GitHub credential when it would strand a GitHub-only member. Provider-issued GitHub sessions
 use the same version-bound MFA provider proof as other social sign-ins.
+**Native GitHub is a PKCE code exchange on the device ledger, never a custom URL scheme (decision 358 A).**
+`social/github/device/authorize` then `social/github/device` (`accounts/github_native.py`). The app makes the
+PKCE pair and sends only the S256 `code_challenge`; the redirect URI is fixed server-side to
+`PUBLIC_APP_BASE_URL` + `/app/auth/github/callback` (`mobile_link_contract.NATIVE_GITHUB_CALLBACK_PATH`, claimed
+by the primary host's apple-app-site-association; never a custom domain's) and is refused unless https (or a
+local http host). If the browser opens it instead of the app, the SPA's `GithubAppCallbackPage` (rendered
+before tenant bootstrap) keeps the link in memory only, scrubs the address bar, sets `no-referrer`, offers
+"Open the app" (re-opens the same URL) and web sign-in, and is excluded from analytics and replay
+(`analyticsExcludedScreens`, `isBearerUrl`, `replayRoutes`). The `state` is a `SocialLoginNonce` (provider `github`, delivery `device`) anchored exactly like
+the other native providers (`social_nonces.device_anchor`: the caller's grant, or an unspent attestation challenge
+for a first grant), and its digest binds the code challenge, so a wrong `code_verifier` misses the row without
+spending it while a replay or another device's state is refused (`consume_social_nonce`, which skips only the
+ID-token audience check for GitHub). Switches, the verified-primary-email rule, account linking, the staff MFA
+challenge, audits and the grant are the web flow's own (`github_settings`, `github_claims`,
+`resolve_social_identity`, `staff_challenge`, `issue_social_session`); the grant's `login_method` is `social`.
 **Linking GitHub/OIDC from a signed-in session never signs anyone in.** `social/github/link/authorize`,
 `social/oidc/<slug>/link/authorize` and `social/link/callback` (`accounts/social_link_browser.py`)
 reuse the attempt ledger, origin-bound redirect, PKCE and code exchange, but the attempt's nonce
@@ -3550,10 +3606,11 @@ Owner decisions #62, #66, #74, #110c, #111 Q9-Q11, #128 C-1/C-2 and #135 Q-A1-Q-
   second factor after a password prefers it. Attestation is `none`. Only credentials whose `rp_id` is the
   request's RP ID are offered or accepted; a sign-count regression fails like any other check. The user
   handle is opaque (no name, email or phone) and is not used for lookup (credential ids are unique).
-- **Using them (`passkeys/services.py`, `assertion.py`; web only, Q10).** Add, rename and remove need a
-  person's own browser session with recent re-authentication (never a platform account, a native app or a
-  verification-only session); at most 10. Adding or removing bumps `UserMFA.version` and ends every
-  session; the calling browser gets a fresh one (a new passkey proves itself), recovery codes are created
+- **Using them (`passkeys/services.py`, `assertion.py`; web, and native since decision 358 B).** Add, rename
+  and remove need a person's own browser session or native device session (`native.assert_person_session`)
+  with recent re-authentication (never a platform account or a verification-only session); at most 10.
+  Adding or removing bumps `UserMFA.version` and ends every session; the calling browser gets a fresh one
+  (a phone keeps its grant, `keep_grant`, and gets a new token pair; a new passkey proves itself), recovery codes are created
   when the account had none, and adding closes the staff grace. Passwordless sign-in (discoverable
   credentials, conditional UI) yields VERIFIED + `mfa_method=passkey`; staff are never locked out by the
   member-account switch. `begin_mfa`/`verify_mfa` serve the second factor of a password login (S-B's
@@ -3561,6 +3618,24 @@ Owner decisions #62, #66, #74, #110c, #111 Q9-Q11, #128 C-1/C-2 and #135 Q-A1-Q-
   with passkeys and no authenticator can no longer re-authenticate with a password alone
   (`passkey_required`). `begin_proof`/`verify_proof` let U-C's account-merge `credentials` method accept
   the source account's passkey (call them only after the source password matched).
+- **Native ceremonies take no header (decision 358 B, `passkeys/native.py`).** On a device session (or the
+  anonymous `auth/device/passkey/options|login` door) the RP ID is ALWAYS `PUBLIC_APP_BASE_URL`'s host (or
+  `PLATFORM_DOMAIN_SUFFIX` under managed hosting) -- the domain the association files' `webcredentials` /
+  `get_login_creds` bind the approved apps to -- and the expected origin comes from the ATTESTED app
+  identity (grant or attestation challenge): iOS `https://<rp id>`, Android
+  `android:apk-key-hash:<base64url SHA-256 of the signing certificate>` for EVERY active signer on the
+  approved registration (an Android ceremony stores `android-registration:<id>` and
+  `native.expected_origins` resolves the list at verification, so key rotation needs no app or grant
+  change and a removed signer stops verifying; decision 361). Verification stays in `ceremonies.py`. Native passwordless sign-in consumes the attestation challenge first, then the ceremony
+  against the origin recomputed from it, applies `assertion._may_sign_in`, and issues a MEMBER grant with
+  `login_method=passkey` and a VERIFIED `mfa_method=passkey` session (`passkeys/native_login.py`); staff
+  authority is the usual step-up. The second factor of a native password sign-in DOES offer a passkey
+  (decision 361): `mfa_challenge_factors.offered` admits `passkey` for a device challenge whose attestation
+  challenge or grant resolves a native scope (never a settings enrolment), and `begin_mfa`/`verify_mfa`
+  scope the ceremony with `native.mfa_ceremony_scope` instead of the `Origin` header.
+- **Association files on the suffix host (decision 361).** Under `PLATFORM_DOMAIN_SUFFIX` the RP ID is the
+  suffix itself, so `mobile_associations.association_host_kind` serves both files on that host too (kind
+  `suffix`: the shared links without the primary-host-only sign-in callbacks) and iOS `webcredentials` holds.
 - **Who may use them.** `PlatformLoginMethods.passkeys_enabled` (fail-open read, default on) and the
   per-space `security.passkeys_allowed` (strictest across the person's staff spaces; off is stricter and a
   lock forces it off, #157) can only take passkeys away; a failed policy read refuses. Turning them off
@@ -4520,7 +4595,9 @@ EmailLog scrubbing also clears `provider_message_id`; bounce/complaint timestamp
 provider outcome fields remain. Member push deliveries are deleted through either the
 user's inbox rows or push devices. Staff push attempts are deleted through their saved
 recipient or the user's push devices, inside the delivery log's tenant boundary.
-`DeviceActivityDay` rows are deleted through `grant.user` in the final global step,
+`WebSessionActivityDay` rows (browser-session activity, keyed by a salted digest of the session marker, never the
+marker) are deleted through `user` in the same step and are exported to the subject as runtime rows; `ChannelUsageDay`
+holds counts only (no person) and is omitted from every dump. `DeviceActivityDay` rows are deleted through `grant.user` in the final global step,
 including NULL-makerspace activity, only after every tenant has finished. A gated
 tenant keeps its push history and defers all activity cleanup until a later sweep.
 Repeated sweeps do not repeat quota release or final-purge auditing.
@@ -8436,6 +8513,13 @@ tenant-owned field or object key.
 - **Native device payloads stay membership-only.** `X-Makerspace-Id` selection requires
   `validate_native_makerspace_scope()` to find an active local membership, so an organization-only
   space in a device payload would be advertised to the app and rejected on every selected request.
+  One narrow exception (decision 354, `origin_scope_own_charges.py`): a MEMBER grant with no active
+  membership may select the space on the eight own-charge payment routes (`OWN_CHARGE_ROUTES`) when
+  `member_may_see_own_charges` admits it, so a borrower can pay on the phone as on the web. The
+  selection then carries no membership, so `require_native_selected_makerspace` still refuses it
+  everywhere else; never add a route to that set that does not re-check ownership itself. The same set
+  (plus the receipt download, `member-my-usage` and sign-out) is what a restricted or suspended account's
+  member grant still reaches (decision 358 C; see the decision 260 paragraph under the member dashboard).
 - **Auth payload contract:** every entry carries `source=membership|organization`. An org-derived entry
   has `role`, `role_id` and `role_slug` null with `role_name` naming the organization; a makerspace
   reached both ways appears **once**, as the membership entry, with the actions unioned. `user_payload`

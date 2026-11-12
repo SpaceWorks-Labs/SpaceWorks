@@ -208,11 +208,24 @@ tenants never enter platform usage.
 - **platform-services:** uses recorded `provider_source`, both per-device push ledgers, SMS and
   attestation ledgers, and backup coverage. Parent push deliveries and retries are not counted again.
   Connect counts attributed charges, effective settlements and succeeded refunds per currency.
+- **platform-channel-usage / channel-usage ("Web and app use"):** the channel split. Sessions come from
+  `WebSessionActivityDay` (web, written once per session, space and day in `accounts/channel_activity.py`) and
+  `DeviceActivityDay` (iOS and Android); authenticated calls per channel and app area (the Django app that
+  serves the route) come from `ChannelUsageDay`, counted in Redis (or a per-process buffer without Redis) and
+  flushed by `flush_channel_usage_task`. `api_client` (signed clients, access tokens) is calls-only. Phone
+  channels follow the `mobile` module. The space variant needs `view_analytics` and never combines across an
+  organization; the platform variant is superadmin-only. Counts only: no person, session, address or user agent.
+  `platform-usage` also gains `active_web_sessions` beside `active_app_sessions`. The same report carries distinct,
+  new and returning active accounts per channel (computed from user/grant ids inside the builder; only counts
+  leave), app builds per platform (`DeviceActivityDay.app_version`, from the `X-SpaceWorks-App-Version` header) and
+  key-flow completions per channel (`ChannelUsageDay` rows whose area is `flow:<name>`, written by
+  `accounts/channel_middleware.py` for successful POSTs to the routes in `FLOW_ROUTES`). Payment flows count
+  checkouts started: settlement arrives by webhook and has no channel.
 - **platform-usage:** loans, bookings, events, money per currency, machine hours, consumables, growth
   and adoption. Service, manual and booked hours are never added together. Machine reads go through
   `manage_scope_for`. Costs come only from `ConsumableCostRecord`; a missing cost stays unknown, not zero.
 
-Platform routes: `GET /api/v1/admin/platform/analytics/platform-services`, `.../platform-usage` and
+Platform routes: `GET /api/v1/admin/platform/analytics/platform-services`, `.../platform-usage`, `.../platform-channel-usage` and
 `.../makerspaces` (a paginated picker of every servable space).
 
 ## Machines

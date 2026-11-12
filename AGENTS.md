@@ -436,6 +436,7 @@ a build.** These are the rules you must not violate without having read it:
   Prepare the merge, verify it is clean, report exactly what would land, then STOP and hand it over:
   the owner runs the `git merge` and the `git push`. This is stricter than the push rule above and
   overrides the global config's Stage-5 "merge it into `dev`" step, which no longer applies here.
+- **Decisions live in `docs/decisions.md`** (with reasons; record each new one in the same commit as its code); the git-ignored `handover/` folder holds CONTINUE-HERE and TODO for the next session.
 - **Use one dev stack** on :8000/:5000; `dev.sh test` creates separate disposable infrastructure
   without publishing host ports.
 

@@ -848,6 +848,12 @@ certification holders, and the member, guest-pass, volunteer-hours, minors-conse
 Each needs its own area action (never audit access), is never scheduled or combined across spaces, and the
 people exports are identity-bearing. Without `reports` none of them is listed.
 
+Release 0.12.0 also adds **Web and app use** (`channel-usage`): per space, active sessions by channel (web,
+iOS, Android) and authenticated calls by channel and app area (web, iOS, Android, API client), for managers
+holding `view_analytics`. The phone channels need the `mobile` module. The superadmin gets the same view across
+every space (`platform-channel-usage`). Counts only, recorded from this release on; it is never scheduled or
+combined across an organization.
+
 Membership reports add counts-only join-month cohorts and retention at 3/6/12 months (or a chosen
 anniversary), plus per-currency MRR/ARR from recurring terms. Reports require `membership`;
 MRR also requires `VIEW_FINANCE`. Months follow the makerspace timezone. MRR is a plan projection,

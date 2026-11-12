@@ -87,7 +87,7 @@ Frontend: `features/stats/` (`PublicStatsPage`, `PublicStatsTvPage` at `/stats/t
 Public-image POST/PUT presigns live in `inventory/public_image_storage.py` and
 `bookings/storage.py`; both delegate bounded validation and conditional, write-once promotion
 to `inventory/public_image_promotion.py`. Membership owner mail is classified as staff/account
-or community in `makerspaces/notifications_p2_members.py`; `operations/notifications_p2.py`
+or community in `makerspaces/notifications_p2_members.py` (copy in `notifications_p2_members_bodies.py`); `operations/notifications_p2.py`
 keeps the owner route separate from the existing staff-summary category.
 Member-account comeback lives in `accounts/account_restore.py` (locked eligibility and identity-only
 reactivation), `account_restore_email.py` (reset-queue restore links), `account_restore_phone.py`
@@ -1151,6 +1151,17 @@ identity normalization and production minimum-version comparison. `mobile_associ
   `scripts/check-i18n-literals.mjs`, `scripts/i18n-literal-positions.mjs` and
   `scripts/i18n-worker-closure.mjs`. Contributor guide: `docs/i18n.md`.
 
+## Makerspace origin scope and the native staff header (decision 353)
+`makerspaces/origin_scope.py` validates a native `X-Makerspace-Id` and scopes staff custom origins; the route
+tables it reads are `origin_scope_routes_catalog.py` (barrel) and its `origin_scope_*` siblings.
+- `makerspaces/origin_scope_routes_mobstaff.py` owns the MOB-STAFF tables: every `events-programme-admin-*`
+  (and series guest) route resolved to its event/series makerspace by `pk`, plus API-client-adjacent, OAuth app,
+  event image, organization-booking, Telegram test, insights and space-neutral routes, the native-only
+  lookup list, and `NATIVE_STAFF_WEB_ONLY` (staff routes a native grant deliberately cannot reach, with reasons).
+- `makerspaces/origin_scope_native_staff.py` resolves `NATIVE_ONLY_LOOKUPS` (nullable-owner rows such as API
+  clients) for a native header only, so the web superadmin keeps reaching global rows; like `origin_scope_native_slug.py`
+  it adds no RLS binding, source-gate target or staff-origin target.
+
 ## Domain and frontend map
 See [SOURCE-MAP-DOMAINS.md](SOURCE-MAP-DOMAINS.md) for hardware loans, payments,
 printing, events, the frontend directories and connected device monitoring.
@@ -1285,7 +1296,8 @@ proof claims), `staff_identity.require_staff_mfa` the staff gate, `mfa_grace.py`
 `staff_session_policy.py` the staff session clock, `mfa_reset.py` (+ `views_mfa_reset.py`,
 `admin_mfa_reset.py`, `management/commands/reset_mfa.py`, `staff_mfa_readiness.py`) the MFA-reset rule,
 `security_signals.py` the `mfa_changed` signal, and `accounts/passkeys/` the WebAuthn backend (`rp_id`,
-`ceremonies`, `services`, `assertion`, `policy`, `views`, `urls`, `checks`; routes classified in
+`ceremonies`, `services`, `assertion`, `policy`, `views`, `urls`, `checks`; `native` and `native_login` for
+phone ceremonies, decision 358 B, whose sign-in views are `views_device_passkey.py`; routes classified in
 `passkey_route_catalog.py`). `makerspaces/migration_support/retire_staff_mfa.py` backs makerspaces 0119.
 Login security S-C: `accounts/ip_rules.py` (platform allow/deny rules, 60 s cache, `AXES_WHITELIST_CALLABLE`),
 `ip_guard.py` (client source, HMAC keys, failure counters, automatic blocks; remembered devices via S-B's `device_memory.lookup`),

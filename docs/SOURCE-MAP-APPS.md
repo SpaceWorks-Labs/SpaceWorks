@@ -28,8 +28,11 @@ Continuation of [SOURCE-MAP.md](SOURCE-MAP.md).
   exclusion; `rbac_superadmin.py` keeps only the superadmin identity helpers, its path pinned by
   `AUTHORIZATION_SOURCES`). GitHub member-only OAuth lives in `github_browser.py` (PKCE attempts),
   `github_http.py` (bounded token/profile/email exchange), `serializers_github.py` and
-  `views_github.py` (browser start/callback). It reuses the browser-attempt ledger and never issues
-  staff sessions. `login_methods.py` reads platform policy; `login_methods_services.py` applies
+  `views_github.py` (browser start/callback); the native PKCE exchange (358 A) is `github_native.py`,
+  `serializers_github_native.py` and `views_github_native.py`, on the social nonce ledger
+  (`social_nonces.device_anchor`). It reuses the browser-attempt ledger and never issues
+  staff sessions. `restricted_admission.py` is decision 260's session-boundary exception (own charges and
+  sign-out for a restricted/suspended account). `login_methods.py` reads platform policy; `login_methods_services.py` applies
   audited setup/command changes and `login_methods_validation.py` prevents account lockout.
   `management/commands/set_login_methods.py` is the host recovery/configuration entry point.
   Superadmin PII windows: `models_pii_access.py` (`PlatformPiiAccessGrant`), `pii_access.py` (open/close/
@@ -48,7 +51,8 @@ Continuation of [SOURCE-MAP.md](SOURCE-MAP.md).
   `makerspaces/0110`), bootstrap views, dynamic
   CORS, module guards, `module_registry.py` (canonical module registry — all module lists derive from
   it; the `ModuleDefinition` tuple itself lives in `module_registry_catalog.py`, the import-time checks in
-  `module_registry_validation.py`, so add a module to the catalogue), `platform.py` (origin helpers), `limits.py` (fair-use quotas), `lifecycle.py` (archive/purge barrel
+  `module_registry_validation.py`, so add a module to the catalogue), `platform.py` (module/feature switches and the bootstrap payload; frontend URL and origin helpers in
+  `platform_urls.py`, re-exported), `limits.py` (fair-use quotas), `lifecycle.py` (archive/purge barrel
   over `lifecycle_archive.py`, `lifecycle_purge.py` and `lifecycle_storage.py`),
   `models_makerspace_validation.py` owns model clean checks; `theme_validation.py` validates
   the closed theme JSON for control forms and API writes; `theme_contrast.py` owns

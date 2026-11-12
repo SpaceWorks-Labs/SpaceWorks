@@ -114,6 +114,7 @@ How to read the columns:
 | `tasks.purge_auth_challenges_task` | cron(hour=3, minute=30) | 1440 min | platform | exempt | - | Platform-global auth retention. |
 | `tasks.purge_deleted_accounts_task` | cron(hour=3, minute=20) | 1440 min | platform | per tenant | - | Account erasure uses one skip-and-count boundary per tenant. |
 | `tasks.revoke_apple_tokens_task` | on demand | - | - | exempt | - | Platform-global Apple credential revocation; no tenant writes. |
+| `tasks_channel_usage.flush_channel_usage_task` | cron(minute=*) | 1 min | platform | exempt | - | Counts-only channel analytics: moves the cached per-hour web / ios / android / api_client call counts (by channel, app area and makerspace) from Redis into `ChannelUsageDay`. Without Redis (cron mode) each worker buffers in process and writes at most once a minute itself, so this task has nothing to drain; counts are approximate by design. |
 | `tasks_login_security.purge_login_security_task` | cron(hour=3, minute=40) | 1440 min | platform | exempt | - | Platform-global IP auto-block and django-axes telemetry retention (OMITTED/EMPTY rows); no tenant writes. |
 | `tasks_security_alerts.deliver_security_alert_task` | on demand | - | - | exempt | - | Platform security-alert mail for one account (OMITTED/EMPTY SecurityAlert rows); no tenant writes. |
 

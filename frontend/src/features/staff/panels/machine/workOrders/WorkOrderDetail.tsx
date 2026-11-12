@@ -10,6 +10,7 @@ import {
   OPEN_STATUSES, PRIORITY_LABELS, STATUS_LABELS, priorityTone, statusTone, useMoveWorkOrder, type WorkOrder,
 } from "./workOrdersApi";
 import { costBody, EMPTY_COST, MaintenanceCostInput, type CostValue } from "../MaintenanceCostInput";
+import { BoxArt } from "../../../../../components/BoxSpinner";
 
 const date = (iso: string | null) => iso ? formatDateTime(iso) : t`Not yet`;
 
@@ -62,7 +63,7 @@ function CloseDialog({ order, onClose }: { order: WorkOrder; onClose: () => void
       {move.error ? <p role="alert" className="text-sm text-danger">{move.error.message}</p> : null}
       <div className="flex flex-wrap justify-end gap-2 border-t border-line pt-3">
         <button type="button" className="desk-button-ghost" onClick={onClose}>{t`Cancel`}</button>
-        <button type="submit" className="desk-button-success" disabled={move.isPending}>{move.isPending ? t`Closing…` : t`Close work order`}</button>
+        <button type="submit" className="desk-button-success" disabled={move.isPending}>{move.isPending ? <><BoxArt size={16} mono />{t`Closing…`}</> : t`Close work order`}</button>
       </div>
     </form>
   </Modal>;

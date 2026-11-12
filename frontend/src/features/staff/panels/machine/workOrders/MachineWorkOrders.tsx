@@ -6,6 +6,7 @@ import { EmptyState, ErrorBlock } from "../../../../../components/ui";
 import { WorkOrderCreateDialog } from "./WorkOrderCreateDialog";
 import { WorkOrderRow } from "./WorkOrdersScreen";
 import { useWorkOrders } from "./workOrdersApi";
+import { LogoLoader } from "../../../../../components/LogoLoader";
 
 /** The machine drawer's open work orders; each opens on the work-order screen, which replaces the drawer. */
 export function MachineWorkOrders({ makerspaceId, machineId, canCreate }: { makerspaceId: number; machineId: number; canCreate: boolean }) {
@@ -23,7 +24,7 @@ export function MachineWorkOrders({ makerspaceId, machineId, canCreate }: { make
       </div>
     </div>
     {orders.error ? <ErrorBlock error={orders.error} resource={t`work orders`} onRetry={() => { void orders.refetch(); }} /> : null}
-    {orders.isLoading ? <p role="status" className="text-sm text-muted">{t`Loading work orders…`}</p> : null}
+    {orders.isLoading ? <LogoLoader label={t`Loading work orders…`} size={48} className="min-h-16 py-3" /> : null}
     {orders.isSuccess && !rows.length ? <EmptyState message={t`No open work orders for this machine.`} /> : null}
     {rows.length ? <div className="grid gap-2">{rows.map(order => <WorkOrderRow key={order.id} order={order} onOpen={() => openScreen(order.id)} />)}</div> : null}
     {creating ? <WorkOrderCreateDialog makerspaceId={makerspaceId} machineId={machineId} onClose={() => setCreating(false)} /> : null}

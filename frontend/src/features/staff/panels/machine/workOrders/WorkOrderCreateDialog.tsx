@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Modal } from "../../../../../components/ui";
 import type { Machine } from "../../../machinesApi";
 import { PRIORITY_LABELS, useCreateWorkOrder, type WorkOrder, type WorkOrderPriority } from "./workOrdersApi";
+import { BoxArt } from "../../../../../components/BoxSpinner";
 
 /** Open a work order for a machine. With `machineId` the machine is fixed (the drawer); otherwise staff pick one. */
 export function WorkOrderCreateDialog({ makerspaceId, machineId, machines = [], onClose, onCreated }: {
@@ -37,7 +38,7 @@ export function WorkOrderCreateDialog({ makerspaceId, machineId, machines = [], 
       {create.error ? <p role="alert" className="text-sm text-danger sm:col-span-2">{create.error.message}</p> : null}
       <div className="flex flex-wrap justify-end gap-2 border-t border-line pt-3 sm:col-span-2">
         <button type="button" className="desk-button-ghost" onClick={onClose}>{t`Cancel`}</button>
-        <button type="submit" className="desk-button-primary" disabled={!ready || create.isPending}>{create.isPending ? t`Creating…` : t`Create work order`}</button>
+        <button type="submit" className="desk-button-primary" disabled={!ready || create.isPending}>{create.isPending ? <><BoxArt size={16} mono />{t`Creating…`}</> : t`Create work order`}</button>
       </div>
     </form>
   </Modal>;

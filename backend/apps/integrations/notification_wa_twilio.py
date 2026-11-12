@@ -75,6 +75,12 @@ class TwilioWhatsAppProvider:
             return ProviderResult(False, error_code=str(exc), sanitized_error=str(exc))
 
     def send(self, delivery, rendered):
+        try:
+            # Unreadable credentials also make the canonical sender unreadable, which the eligibility gate
+            # below would report as an invalid recipient; say what is actually wrong, and send nothing.
+            self.credentials()
+        except ConfigurationError as exc:
+            return ProviderResult(False, error_code=str(exc), sanitized_error=str(exc))
         from .notification_resolution import eligible, target_eligible
         if not eligible(delivery.envelope) or not target_eligible(delivery.envelope, "whatsapp", delivery.endpoint):
             return ProviderResult(False, error_code="invalid_endpoint")

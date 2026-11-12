@@ -58,6 +58,8 @@ def apply(receipt, data):
         if event.state == "retrying" and data.get("extra"):
             from .notification_wa_meta_ingress import _retry_failure
             result = _retry_failure(config, data["extra"], event)
+        if event.state == "failed" and receipt.provider == "meta" and isinstance(data.get("extra"), dict):
+            _record_failure_code(receipt, event, data["extra"])
         if data.get("inbound_at") and not event.opt_out:
             from django.utils.dateparse import parse_datetime
             from .notification_destination_events import live_destination
@@ -152,3 +154,17 @@ def legacy(receipt, data):
         if data.get("billed_segments") is not None:
             NotificationDelivery.objects.filter(pk=delivery.pk).update(billed_segments=data["billed_segments"])
     return True
+
+
+def _record_failure_code(receipt, event, extra):
+    """Keep the fixed provider failure code on the delivery row (delivery_observed audits the state change)."""
+    from .notification_wa_meta_http import error_result
+    errors = extra.get("errors")
+    error = errors[0] if isinstance(errors, list) and errors and isinstance(errors[0], dict) else {}
+    rows = NotificationDelivery.objects.filter(makerspace_id=receipt.makerspace_id, channel=receipt.channel,
+        provider=receipt.provider, integration_generation=receipt.generation,
+        integration_identity=receipt.integration_identity, sender_key=receipt.sender_key,
+        provider_id=event.provider_id, state="failed")
+    if event.delivery_id is not None:
+        rows = rows.filter(pk=event.delivery_id)
+    rows.update(last_error=error_result(400, {"error": error}).error_code, updated_at=timezone.now())

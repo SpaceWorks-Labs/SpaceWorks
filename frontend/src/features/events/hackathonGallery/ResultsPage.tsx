@@ -4,6 +4,7 @@ import { DetailLayout } from '../../../components/layouts';
 import { EmptyState, Field } from '../../../components/ui';
 import { usePublicResults } from './api';
 import { PublishedPeoplesChoice } from '../peoplesChoice/PeoplesChoiceAward';
+import { SearchField } from "../../../components/ui/SearchField";
 
 export function ResultsPage({ makerspaceSlug, publicToken, eventTitle, peoplesChoice = false, projectHref }: { makerspaceSlug: string; publicToken: string; eventTitle: string;
   /** #181: show the published People's choice award, an extra award beside the judged ones. */
@@ -16,7 +17,7 @@ export function ResultsPage({ makerspaceSlug, publicToken, eventTitle, peoplesCh
     error: query.error?.message, onRetry: () => void query.refetch() }} main={<div className="grid gap-4">
       {/* D13: search the announced awards and finalists by project title or prize. */}
       <form role="search" className="flex flex-wrap items-end gap-2" onSubmit={event => { event.preventDefault(); setSearch(text); }}>
-        <Field label={t`Search results`}><input className="desk-input min-h-11" type="search" maxLength={100} value={text}
+        <Field label={t`Search results`}><SearchField className="desk-input min-h-11" maxLength={100} value={text}
           onChange={e => { setText(e.target.value); if (!e.target.value) setSearch(''); }} placeholder={t`Project or prize`} /></Field>
         <button type="submit" className="desk-button min-h-11">{t`Search`}</button>
         {searching ? <button type="button" className="desk-button-ghost min-h-11 underline underline-offset-4" onClick={() => { setText(''); setSearch(''); }}>{t`Clear search`}</button> : null}

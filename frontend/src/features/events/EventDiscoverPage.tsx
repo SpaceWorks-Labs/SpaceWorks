@@ -10,6 +10,7 @@ import { publicV1Request } from "../../lib/api";
 import { LICENSE_URL } from "../inventory/PublicPageChrome";
 import { DiscoveryEventImage } from "./DiscoveryEventImage";
 import { LogoLoader } from "../../components/LogoLoader";
+import { SearchField } from "../../components/ui/SearchField";
 
 type Results = import("../../generated/api").Discovery;
 const field = "grid min-w-0 flex-1 basis-40 gap-1 text-sm font-semibold sm:flex-none";
@@ -57,7 +58,7 @@ export function EventDiscoverPage() {
     footer={{ credit: "Powered by Space Works", links: [{ label: t`About`, href: "/about" }, { label: t`License`, href: LICENSE_URL, external: true }, { label: t`Privacy`, href: "/privacy" }, { label: t`Terms`, href: "/terms" }, { label: t`Staff sign-in`, href: "/admin" }] }}>
     <div className="grid gap-5">
       <form aria-label={t`Find events`} className="desk-panel flex flex-wrap items-end gap-3 p-4" onSubmit={(e) => { e.preventDefault(); setPage(1); setFilters(draft); }}>
-        <label className={`${field} basis-full sm:basis-64 sm:flex-1`}>{t`Search`}<input className="desk-input w-full" maxLength={200} value={draft.q} onChange={(e) => setDraft({ ...draft, q: e.target.value })} /></label>
+        <label className={`${field} basis-full sm:basis-64 sm:flex-1`}>{t`Search`}<SearchField className="desk-input w-full" maxLength={200} value={draft.q} onChange={(e) => setDraft({ ...draft, q: e.target.value })} /></label>
         <label className={field}>{t`From`}<input className="desk-input w-full" type="date" value={draft.date_from} onChange={(e) => setDraft({ ...draft, date_from: e.target.value })} /></label>
         <label className={field}>{t`Through`}<input className="desk-input w-full" type="date" value={draft.date_to} onChange={(e) => setDraft({ ...draft, date_to: e.target.value })} /></label>
         <label className={field}>{t`Tag`}<input className="desk-input w-full" maxLength={50} value={draft.tag} onChange={(e) => setDraft({ ...draft, tag: e.target.value })} /></label>

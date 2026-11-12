@@ -15,7 +15,7 @@ export const REGISTRY: Record<string, RegistryRow> = {
   containers: { reports: ["inventory-control","qr-scans"], views: [], dashboards: [] },
   stock_transfers: { reports: ["inventory-control","stocktake-variance","stock-transfers","procurement-performance","stock-health","inventory-watch-demand"], views: [], dashboards: [] },
   stocktake: { reports: ["inventory-control","stocktake-variance","stock-transfers","procurement-performance","stock-health","inventory-watch-demand"], views: [], dashboards: [] },
-  reports: { reports: ["report-usage"], views: [], dashboards: [] },
+  reports: { reports: ["report-usage","channel-usage"], views: [], dashboards: [] },
   qr_print_batches: { reports: ["inventory-control","qr-scans"], views: [], dashboards: [] },
   asset_units: { reports: ["inventory-control","most-lent","asset-usage","loan-throughput","inventory-utilisation","overdue-loans","damaged-lost","longest-loans","request-funnel","problem-reports","summary"], views: [], dashboards: [] },
   machines: { reports: ["machine-usage","machine-usage-members","machine-usage-heatmap","machine-downtime","maintenance-activity","machine-service","service-queue-times","printer-jobs","machine-errors","consumable-usage","consumable-pools","warranty-expiry","repairs-parts-used","repairs-technician-workload","repairs-time-by-area","repairs-work-orders","machine-jobs","certification-holders","machine-access-grants","machine-use-by-event","event-machine-use"], views: ["guest_certification_grants","incidents","incident_actions","machines","machine_types","machine_jobs","machine_usage","machine_downtime","machine_access_grants"], dashboards: ["machines"] },

@@ -16,6 +16,7 @@ import { HubHeader } from "./HubHeader";
 import { DOCS_LINKS } from "./hubLinks";
 import "./hub.css";
 import "./featuresPage/features.css";
+import { SearchField } from "../../components/ui/SearchField";
 
 /**
  * /features (decisions 306 and 328 b): every module as a card, grouped like the module switch screens, each
@@ -54,7 +55,7 @@ export function FeaturesPage() {
         <div className="sw-features-search">
           <label htmlFor={searchId} className="sr-only">{t`Search modules and features`}</label>
           <Search size={18} aria-hidden="true" />
-          <input id={searchId} type="search" value={query} onChange={event => setQuery(event.target.value)}
+          <SearchField id={searchId} value={query} onChange={event => setQuery(event.target.value)}
             placeholder={t`Search modules, features and reports`} autoComplete="off" />
         </div>
         {needle ? null : <nav aria-label={t`Groups on this page`}>

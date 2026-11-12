@@ -1,6 +1,7 @@
 import { t } from "@lingui/core/macro";
-import { CornerDownLeft, FileText, Hash, Search, SquareTerminal } from "lucide-react";
+import { CornerDownLeft, FileText, Hash, SquareTerminal } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { SearchField, searchItemStyle } from "../../components/ui/SearchField";
 import { useTransitionNavigate } from "../../lib/motion";
 import { searchDocs } from "./docsIndex";
 import type { DocsSearchHit } from "./docsTypes";
@@ -51,8 +52,7 @@ export function DocsSearchPalette({ open, initialQuery = "", onClose }: { open: 
         if (event.key === "Tab") { event.preventDefault(); input.current?.focus(); }
       }}>
       <div className="sw-doc-palette-input">
-        <Search size={20} aria-hidden="true" className="shrink-0 text-muted" />
-        <input ref={input} type="search" role="combobox" aria-expanded={results.length > 0} aria-controls={listId} aria-autocomplete="list"
+        <SearchField bare clearOnEscape={false} ref={input} role="combobox" aria-expanded={results.length > 0} aria-controls={listId} aria-autocomplete="list"
           aria-activedescendant={results.length ? optionId(active) : undefined} aria-label={t`Search the documentation`}
           placeholder={t`Search pages, sections and API endpoints`} value={query} onChange={event => setQuery(event.target.value)}
           onKeyDown={event => {
@@ -63,11 +63,11 @@ export function DocsSearchPalette({ open, initialQuery = "", onClose }: { open: 
         <kbd className="sw-doc-kbd">{t`Esc`}</kbd>
       </div>
       {query.trim() ? results.length
-        ? <ul id={listId} role="listbox" aria-label={t`Results`} className="sw-doc-palette-list">
+        ? <ul id={listId} role="listbox" aria-label={t`Results`} className="sw-doc-palette-list sw-search-pop">
           {results.map((hit, index) => {
             const Icon = ICONS[hit.kind];
             return <li key={`${hit.kind}-${hit.id}`} id={optionId(index)} role="option" aria-selected={index === active}
-              className="sw-doc-palette-option" onMouseMove={() => setActive(index)} onClick={() => go(hit)}>
+              className="sw-doc-palette-option sw-search-item" style={searchItemStyle(index)} onMouseMove={() => setActive(index)} onClick={() => go(hit)}>
               <Icon size={18} aria-hidden="true" className="mt-0.5 shrink-0 text-muted" />
               <span className="grid min-w-0"><span className="truncate font-semibold text-ink">{hit.title}</span>
                 <span className={`truncate text-sm text-muted ${hit.kind === "operation" ? "code-text" : ""}`}>{hit.context}</span></span>
@@ -75,7 +75,7 @@ export function DocsSearchPalette({ open, initialQuery = "", onClose }: { open: 
             </li>;
           })}
         </ul>
-        : <p role="status" className="px-5 py-8 text-center text-muted">{t`Nothing matches “${query.trim()}”. Try a shorter word.`}</p>
+        : <p role="status" className="sw-search-empty px-5 py-8 text-center text-muted">{t`Nothing matches “${query.trim()}”. Try a shorter word.`}</p>
         : <p className="px-5 py-8 text-center text-muted">{t`Type to search every page, section and API endpoint.`}</p>}
       <p className="sw-doc-palette-foot"><span><kbd className="sw-doc-kbd">↑</kbd> <kbd className="sw-doc-kbd">↓</kbd> {t`to move`}</span>
         <span><kbd className="sw-doc-kbd">↵</kbd> {t`to open`}</span></p>

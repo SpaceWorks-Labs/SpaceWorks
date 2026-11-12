@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { memberRequest } from "../../lib/api";
 import { LogoLoader } from "../../components/LogoLoader";
+import { SearchField } from "../../components/ui/SearchField";
 
 type DirectoryEntry = {
   membership_id: number;
@@ -39,7 +40,7 @@ export function MemberDirectory({ makerspaceId }: { makerspaceId: number }) {
   return (
     <section className="desk-panel p-5">
       <h2 className="title-panel">{t`Members`}</h2>
-      <label className="mt-3 grid gap-1 text-sm sm:max-w-sm">{t`Search members`}<input className="desk-input" type="search" value={search} onChange={event => setSearch(event.target.value)} /></label>
+      <label className="mt-3 grid gap-1 text-sm sm:max-w-sm">{t`Search members`}<SearchField className="desk-input" value={search} onChange={event => setSearch(event.target.value)} /></label>
       {entries.length === 0 ? (
         <EmptyState message={search ? t`No members match. Try another name.` : t`No members have shared a profile yet.`} />
       ) : (

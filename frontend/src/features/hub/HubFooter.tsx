@@ -1,6 +1,6 @@
 import { t } from "@lingui/core/macro";
 import { Link } from "react-router-dom";
-import { SpaceWorksLogo } from "../../components/SpaceWorksLogo";
+import { AnimatedLogoMark } from "../../components/brand/AnimatedLogoMark";
 import { useOrganizationDirectoryEnabled } from "../organizations/publicDirectoryApi";
 import { useHostingConfig } from "../hosting/hostingApi";
 import { ExternalLink } from "./ExternalLink";
@@ -49,7 +49,7 @@ export function HubFooter() {
     <div className="sw-hub-wrap grid grid-cols-2 gap-x-6 gap-y-10 py-12 md:grid-cols-4 md:py-16 lg:grid-cols-[minmax(0,1.3fr)_repeat(4,minmax(0,1fr))]">
       <div className="col-span-2 grid content-start gap-4 md:col-span-4 lg:col-span-1">
         <Link to="/" aria-label={t`Space Works home`} className="w-fit rounded-control focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus">
-          <SpaceWorksLogo variant="stacked" size={180} decorative />
+          <AnimatedLogoMark variant="stacked" size={180} decorative />
         </Link>
         <p className="max-w-xs text-sm leading-6 text-muted">{t`Open-source software for makerspaces, fab labs and community workshops.`}</p>
       </div>

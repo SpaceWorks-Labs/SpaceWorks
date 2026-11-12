@@ -7,6 +7,7 @@ import { EmptyState, ErrorText, ListRow, PagePager } from "../../components/ui";
 import { publicV1Request } from "../../lib/api";
 import { LICENSE_URL } from "../inventory/PublicPageChrome";
 import { LogoLoader } from "../../components/LogoLoader";
+import { SearchField } from "../../components/ui/SearchField";
 
 type Results = { count: number; next: string | null; previous: string | null; results: {
   title: string; description: string; url: string; location: string; makerspace_name: string;
@@ -30,7 +31,7 @@ export function BookingDiscoverPage() {
     footer={{ credit: "Powered by Space Works", links: [{ label: t`About`, href: "/about" }, { label: t`License`, href: LICENSE_URL, external: true }, { label: t`Staff sign-in`, href: "/admin" }] }}>
     <div className="grid gap-5">
       <form aria-label={t`Find resources`} className="desk-panel flex flex-wrap items-end gap-3 p-4" onSubmit={(e) => { e.preventDefault(); setFilters(draft); setPage(1); }}>
-        <label className={`${field} basis-full sm:basis-64 sm:flex-1`}>{t`Search resources`}<input className="desk-input w-full" maxLength={200} value={draft.q} onChange={(e) => setDraft({ ...draft, q: e.target.value })} /></label>
+        <label className={`${field} basis-full sm:basis-64 sm:flex-1`}>{t`Search resources`}<SearchField className="desk-input w-full" maxLength={200} value={draft.q} onChange={(e) => setDraft({ ...draft, q: e.target.value })} /></label>
         <label className={field}>{t`Kind`}<select className="desk-input w-full" value={draft.kind} onChange={(e) => setDraft({ ...draft, kind: e.target.value })}><option value="">{t`All resources`}</option><option value="dev_room">{t`Development room`}</option><option value="meeting">{t`Meeting room`}</option><option value="bench">{t`Bench`}</option><option value="other">{t`Other`}</option><option value="machine">{t`Machine time`}</option></select></label>
         <label className={field}>{t`Location`}<input className="desk-input w-full" maxLength={255} value={draft.location} onChange={(e) => setDraft({ ...draft, location: e.target.value })} /></label>
         <button type="submit" className="desk-button-primary w-full sm:w-auto">{t`Search`}</button>

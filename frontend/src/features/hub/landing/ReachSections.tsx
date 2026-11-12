@@ -5,6 +5,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { PatchMoment } from "../../../components/delight/PatchMoment";
 import { ExternalLink } from "../ExternalLink";
 import { ANDROID_RELEASES_URL, DOCS_LINKS, IOS_RELEASES_URL } from "../hubLinks";
+import { SearchField } from "../../../components/ui/SearchField";
 
 /** Where people use it today: the browser, the installable member area, kiosks, and the released native apps (source public on GitHub). */
 export function AppsSection() {
@@ -60,7 +61,7 @@ export function DocsSection() {
           <label htmlFor="hub-docs-search" className="sr-only">{t`Search the documentation`}</label>
           <div className="relative min-w-0 flex-1 basis-60">
             <Search size={18} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted" aria-hidden="true" />
-            <input id="hub-docs-search" type="search" value={query} onChange={event => setQuery(event.target.value)}
+            <SearchField id="hub-docs-search" value={query} onChange={event => setQuery(event.target.value)}
               placeholder={t`Try “backup”, “Stripe” or “kiosk”`} className="desk-input min-h-12 w-full pl-10" />
           </div>
           <button type="submit" className="desk-button-primary min-h-12 px-5">{t`Search docs`}</button>

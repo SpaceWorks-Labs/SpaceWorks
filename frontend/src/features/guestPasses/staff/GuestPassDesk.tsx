@@ -14,6 +14,7 @@ import { GuestPassIssueDialog } from "./GuestPassIssueDialog";
 import { GuestPassScan } from "./GuestPassScan";
 import { LogoLoader } from "../../../components/LogoLoader";
 import { BoxArt } from "../../../components/BoxSpinner";
+import { SearchField } from "../../../components/ui/SearchField";
 
 const STATUSES = ["", "issued", "active", "expired", "revoked", "converted"];
 const KINDS = ["", "event", "sponsored", "day"];
@@ -53,7 +54,7 @@ export function GuestPassDesk({ makerspaceId, dayPassesOn }: { makerspaceId: num
     <GuestPassScan makerspaceId={makerspaceId} />
     <div className="flex flex-wrap gap-3">
       <label className="grid min-w-0 gap-1 text-xs text-muted">{t`Guest or sponsor`}
-        <input className="desk-input min-h-11" type="search" value={search} onChange={(event) => pick(setSearch)(event.target.value)} /></label>
+        <SearchField className="desk-input min-h-11" value={search} onChange={(event) => pick(setSearch)(event.target.value)} /></label>
       <label className="grid gap-1 text-xs text-muted">{t`Status`}
         <select className="desk-input min-h-11" value={status} onChange={(event) => pick(setStatus)(event.target.value)}>
           {STATUSES.map((value) => <option key={value} value={value}>{value ? passStatusLabel(value) : t`All`}</option>)}</select></label>

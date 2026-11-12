@@ -10,6 +10,7 @@ import { presenceApi } from "./api";
 import { presenceErrorText, presetLabel } from "./presenceCopy";
 import { BoxArt } from "../../components/BoxSpinner";
 import { BoxSpinner } from "../../components/BoxSpinner";
+import { SearchField } from "../../components/ui/SearchField";
 
 type MemberOption = { id: number; user: { id: number; username: string; display_name: string } };
 type Person = { id: number; name: string; detail: string; guest: boolean; waiverOnFile: boolean };
@@ -57,7 +58,7 @@ export function StaffCheckInDialog({ makerspaceId, presets, onClose, onDone }: {
     <div className="grid gap-4">
       <p className="text-sm text-muted">{t`Staff check-in doesn't need the person's location. Use it at the desk or kiosk when self check-in isn't possible.`}</p>
       <Field label={t`Find a member or guest`} hint={t`Type at least two letters of a name or username.`}>
-        <input className="desk-input" type="search" value={query} onChange={(event) => { setQuery(event.target.value); setAccountId(null); setDeskWaiver(false); }} />
+        <SearchField className="desk-input" value={query} onChange={(event) => { setQuery(event.target.value); setAccountId(null); setDeskWaiver(false); }} />
       </Field>
       {members.isFetching || guests.isFetching ? <BoxSpinner label={t`Searching…`} /> : null}
       {members.isError ? <p role="alert" className="text-sm text-danger">{presenceErrorText(members.error).text}</p> : null}

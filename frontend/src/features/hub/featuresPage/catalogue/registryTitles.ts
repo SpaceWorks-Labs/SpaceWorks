@@ -13,6 +13,7 @@ export function reportTitle(key: string): string {
     case "card-studio-activity": return t`Card studio activity`;
     case "cash-book": return t`Cash book by local date`;
     case "certification-holders": return t`Certification history (retired)`;
+    case "channel-usage": return t`Web and app use`;
     case "communications-health": return t`Communications health`;
     case "community-engagement": return t`Community engagement`;
     case "consumable-pools": return t`Consumable pools`;

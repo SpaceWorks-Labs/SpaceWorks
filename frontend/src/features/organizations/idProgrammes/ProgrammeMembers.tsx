@@ -12,6 +12,7 @@ import { StaffPhotoDialog } from "../../cards/StaffPhotoDialog";
 import { downloadProgrammeCard, programmeJobsPath, useAddProgrammeCard, useDecide, useDeleteProgrammeCard, useProgrammeCards,
   type Programme, type ProgrammeCard, type ProgrammeCardStatus } from "./api";
 import { LogoLoader } from "../../../components/LogoLoader";
+import { SearchField } from "../../../components/ui/SearchField";
 
 const STATUS: Record<ProgrammeCardStatus, { label: string; tone: "warn" | "success" | "danger" | "neutral" }> = {
   pending: { label: t`Waiting for approval`, tone: "warn" }, approved: { label: t`Approved`, tone: "success" },
@@ -48,7 +49,7 @@ export function ProgrammeMembers({ programme }: { programme: Programme }) {
       {chips.map((chip) => <button key={chip.value || "all"} type="button" aria-pressed={status === chip.value}
         className={`min-h-11 rounded-full border px-3 text-sm ${status === chip.value ? "border-accent-ink bg-accent-soft text-ink" : "border-line text-muted"}`}
         onClick={() => { setStatus(chip.value); setPage(1); setSelected([]); }}>{chip.label} <span className="tabular-nums">{chip.count}</span></button>)}
-      <input className="desk-input min-h-11 min-w-48 flex-1" type="search" aria-label={t`Search by ID number or exact email`}
+      <SearchField className="desk-input min-h-11 min-w-48 flex-1" aria-label={t`Search by ID number or exact email`}
         placeholder={t`ID number or exact email`} value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} />
     </div>
     {manage ? <AddPerson programmeId={programme.id} /> : null}

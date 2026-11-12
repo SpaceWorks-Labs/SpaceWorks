@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { accessKeys, findCandidates, grantAccess, type Candidate } from "./api";
 import { BoxArt } from "../../components/BoxSpinner";
+import { SearchField } from "../../components/ui/SearchField";
 
 export type AccessTarget = { machines: { id: number; name: string; machine_type: number }[]; types: { id: number; name: string }[] };
 
@@ -44,7 +45,7 @@ export function MachineAccessGrantForm({ makerspaceId, targets, fixed, preselect
         <optgroup label={t`One machine`}>{targets.machines.map(row => <option key={`m${row.id}`} value={`machine:${row.id}`}>{row.name}</option>)}</optgroup>
       </select></label>}
     <label className="grid gap-1 text-sm">{t`Find members`}
-      <input className="desk-input" value={search} onChange={event => setSearch(event.target.value)} placeholder={t`Search by name`} /></label>
+      <SearchField className="desk-input" value={search} onChange={event => setSearch(event.target.value)} placeholder={t`Search by name`} /></label>
     {search.trim() && candidates.data ? <ul className="flex flex-wrap gap-2" aria-label={t`Matching members`}>{candidates.data.results.map(row =>
       <li key={row.user_id}><button type="button" className="desk-button-ghost min-h-11" onClick={() => add(row)}>{t`Add ${row.name}`}</button></li>)}</ul> : null}
     {chosen.length ? <ul className="flex flex-wrap gap-2" aria-label={t`Members to give access`}>{chosen.map(row =>

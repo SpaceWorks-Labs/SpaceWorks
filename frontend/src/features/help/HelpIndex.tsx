@@ -6,6 +6,7 @@ import { RouteLink } from "../../components/ui/RouteLink";
 import { HELP_SECTIONS, SECTION_BY_ID } from "./helpSections";
 import { searchHelp } from "./helpSearch";
 import type { HelpArticle } from "./helpTypes";
+import { SearchField } from "../../components/ui/SearchField";
 
 export type HelpChrome = Pick<PublicLayoutProps, "makerspace" | "nav" | "headerAction" | "liveStatus" | "width" | "footer">;
 
@@ -38,7 +39,7 @@ export function HelpIndex({ chrome, articles, sectionId, loading, signedIn, memb
     <div className="grid gap-8">
       <div role="search" className="grid gap-2">
         <label htmlFor={searchId} className="text-sm font-semibold text-ink">{t`Search the guide`}</label>
-        <input id={searchId} type="search" className="desk-input w-full" value={query} autoComplete="off"
+        <SearchField id={searchId} className="desk-input w-full" value={query} autoComplete="off"
           placeholder={t`Try “return a tool” or “refund”`} onChange={event => setQuery(event.target.value)} />
         <p className="text-sm text-muted" aria-live="polite">{searching ? plural(results.length, { one: "# article matches", other: "# articles match" }) : ""}</p>
       </div>

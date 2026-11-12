@@ -1,6 +1,7 @@
 import { t } from "@lingui/core/macro";
 import { SegmentedControl } from "../../components/ui";
 import { currentMonth, useDiscoveryState } from "./useDiscoveryState";
+import { SearchField } from "../../components/ui/SearchField";
 
 export function DiscoveryControls({ state, searchLabel, filters }: {
   state: ReturnType<typeof useDiscoveryState>;
@@ -9,7 +10,7 @@ export function DiscoveryControls({ state, searchLabel, filters }: {
 }) {
   return <div className="desk-panel mb-5 flex flex-wrap items-end gap-3 p-4">
     <label className="min-w-0 flex-1 basis-full text-sm font-semibold sm:basis-64">{searchLabel}
-      <input type="search" className="desk-input mt-1 w-full" value={state.query} onChange={(event) => state.update({ q: event.target.value })} />
+      <SearchField className="desk-input mt-1 w-full" value={state.query} onChange={(event) => state.update({ q: event.target.value })} />
     </label>
     <label className="min-w-0 flex-1 basis-40 text-sm font-semibold sm:flex-none">{t`Filter`}<select className="desk-input mt-1 w-full" value={state.facet} onChange={(event) => state.update({ filter: event.target.value })}>
         <option value="">{t`All`}</option>{filters.map((filter) => <option key={filter.value} value={filter.value}>{filter.label}</option>)}

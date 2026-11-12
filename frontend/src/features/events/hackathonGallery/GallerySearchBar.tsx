@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Field } from '../../../components/ui';
 import type { GallerySearch } from './api';
 import type { GalleryFieldFilter } from './types';
+import { SearchField } from "../../../components/ui/SearchField";
 
 /** Public gallery search, sort, the award-winners filter (L21b, X54) and one control per public choice
  *  field (S7: the organiser marks a final-stage choice field public). All of it runs on the server. */
@@ -16,7 +17,7 @@ export function GallerySearchBar({ value, onChange, unavailable, filters = [] }:
     onChange({ ...value, fields });
   };
   return <form role="search" className="grid gap-3 sm:flex sm:flex-wrap sm:items-end" onSubmit={event => { event.preventDefault(); onChange({ ...value, q: text }); }}>
-    <Field label={t`Search projects`}><input className="desk-input min-h-11" type="search" maxLength={100} value={text} onChange={e => setText(e.target.value)} /></Field>
+    <Field label={t`Search projects`}><SearchField className="desk-input min-h-11" maxLength={100} value={text} onChange={e => setText(e.target.value)} /></Field>
     <Field label={t`Sort`}><select className="desk-input min-h-11" value={value.sort ?? 'newest'} onChange={e => onChange({ ...value, sort: e.target.value as GallerySearch['sort'] })}>
       <option value="newest">{t`Newest first`}</option><option value="az">{t`A to Z`}</option><option value="awards">{t`Award winners first`}</option></select></Field>
     {filters.map(filter => <Field key={filter.key} label={filter.label}>

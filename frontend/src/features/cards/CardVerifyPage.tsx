@@ -9,7 +9,7 @@ import { BadgeCheck, CalendarX, SearchX, ShieldOff, type LucideIcon } from "luci
 import { useParams } from "react-router-dom";
 
 import { useDelight, useReducedMotion } from "../../components/delight/DelightProvider";
-import { SpaceWorksLogo } from "../../components/SpaceWorksLogo";
+import { AnimatedLogoMark } from "../../components/brand/AnimatedLogoMark";
 import { StructuredApiError, publicV1Request } from "../../lib/api";
 import { spaceNounTitle, type SpaceKind } from "../../lib/spaceNoun";
 import { VerifyStaffPanel } from "./VerifyStaffPanel";
@@ -58,7 +58,7 @@ export function checkedLine(data: Pick<Verification, "checked_at" | "timezone">)
 
 function Shell({ children }: { children: ReactNode }) {
   return <main className="min-h-dvh bg-bg px-4 py-6 text-ink sm:px-8">
-    <SpaceWorksLogo variant="horizontal" size={180} />
+    <AnimatedLogoMark variant="horizontal" size={180} />
     <div className="mx-auto mt-10 w-full max-w-[420px]">{children}</div>
   </main>;
 }

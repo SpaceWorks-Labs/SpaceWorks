@@ -30,6 +30,7 @@ import { useIntakeScope } from "./useIntakeScope";
 import { useRequestDraft } from "./useRequestDraft";
 import { useInventoryCart } from "./publicInventory/useInventoryCart";
 import { usePublicCategories, usePublicInventory, useTenantBootstrap } from "./usePublicInventory";
+import { SearchField } from "../../components/ui/SearchField";
 
 const PAGE_SIZE = 24;
 
@@ -98,7 +99,7 @@ export function PublicInventoryPage({ embedded, resolvedSlug, inheritBranding = 
   const body = <div className="grid min-w-0 gap-6">
     <CatalogSidebar categories={categories} view={view} onSelect={selectView} />
     <Card><form className="flex flex-wrap items-end gap-3" onSubmit={submitSearch}>
-      <Field className="min-w-0 flex-1" label={t`Search inventory`}><input className="desk-input w-full bg-success text-on-success placeholder:text-on-success" placeholder={t`Search tools, machines, kits, or materials`} value={searchInput} onChange={event => setSearchInput(event.target.value)} /></Field>
+      <Field className="min-w-0 flex-1" label={t`Search inventory`}><SearchField fixedIcon adornmentClassName="text-on-success" className="desk-input w-full bg-success text-on-success placeholder:text-on-success" placeholder={t`Search tools, machines, kits, or materials`} value={searchInput} onChange={event => setSearchInput(event.target.value)} /></Field>
       <button className="desk-button-brand" type="submit">{t`Search`}</button>
       {query ? <button className="desk-button" type="button" onClick={() => { setSearchInput(""); setQuery(""); setPage(1); }}>{t`Clear`}</button> : null}
     </form></Card>

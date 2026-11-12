@@ -2,7 +2,7 @@ import { t } from "@lingui/core/macro";
 import { Menu, X } from "lucide-react";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { SpaceWorksLogo } from "../../components/SpaceWorksLogo";
+import { AnimatedLogoMark } from "../../components/brand/AnimatedLogoMark";
 import { ThemeToggle } from "../../components/ThemeToggle";
 import { ExternalLink } from "./ExternalLink";
 import { GITHUB_URL } from "./hubLinks";
@@ -49,8 +49,8 @@ export function HubHeader({ tools }: { tools?: ReactNode }) {
   return <header className="sw-hub-header">
     <div ref={root} className="sw-hub-bar">
       <Link to="/" className="sw-hub-logo" data-sw-logo-target aria-label={t`Space Works home`}>
-        <span className="inline-flex sm:hidden"><SpaceWorksLogo variant="symbol" size={48} decorative /></span>
-        <span className="hidden sm:inline-flex"><SpaceWorksLogo variant="horizontal" size={240} decorative /></span>
+        <span className="inline-flex sm:hidden"><AnimatedLogoMark variant="symbol" size={48} decorative /></span>
+        <span className="hidden sm:inline-flex"><AnimatedLogoMark variant="horizontal" size={240} decorative /></span>
       </Link>
       <nav aria-label={t`Main`} className="hidden items-center gap-1 lg:flex">{links(false)}</nav>
       <div className="ml-auto flex items-center gap-2">

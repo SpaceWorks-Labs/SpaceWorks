@@ -3,7 +3,7 @@ import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { PageMetadata } from "../../components/PageMetadata";
-import { SpaceWorksLogo } from "../../components/SpaceWorksLogo";
+import { AnimatedLogoMark } from "../../components/brand/AnimatedLogoMark";
 import { LayoutFrame, QueryContent } from "../../components/layouts/LayoutFrame";
 import { useTenantBranding } from "../../lib/useTenantBranding";
 import { useTenant } from "../../lib/tenant";
@@ -42,7 +42,7 @@ export function PublicStatsTvPage() {
     <LayoutFrame standalone width="wide" className="py-10">
       <header className="mb-10 flex flex-wrap items-center gap-6">
         {logo ? <img src={logo} alt={name} className="h-16 w-auto max-w-[min(60vw,20rem)] object-contain" />
-          : <SpaceWorksLogo variant="symbol" size={64} />}
+          : <AnimatedLogoMark variant="symbol" size={64} />}
         <div className="min-w-0 flex-[1_1_14rem]">
           <h1 className={logo ? "sr-only" : "break-words font-accent text-3xl font-semibold sm:text-4xl xl:text-5xl"}>{name}</h1>
           {stats ? <p className="mt-2 text-2xl text-muted">{stats.period.label}</p> : null}

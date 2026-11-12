@@ -30,9 +30,7 @@ ENTRIES = (
     P("payment.paid_after_terminal", gettext_noop("Payment paid after terminal"),
       ("event_id", "prior_status", "provider", "provider_payment_id", "resolved_status", "stripe_event_id")),
     P("payment.paid_offline", gettext_noop("Payment paid offline")),
-    P("payment.paid_online", gettext_noop("Payment paid online"),
-      ("event_id", "late_capture", "polled", "provider", "stripe_event_id",
-       "capture_mismatch", "captured_minor", "captured_currency")),
+    P("payment.paid_online", gettext_noop("Payment paid online")),  # metadata is denied: the emitter builds meta at runtime
     P("payment.refund_failed", gettext_noop("Payment refund failed")),
     P("payment.refund_policy_updated", gettext_noop("Payment refund policy updated"),
       ("area", "fields", "plan_id", "removed")),

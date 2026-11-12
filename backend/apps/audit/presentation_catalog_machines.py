@@ -10,12 +10,15 @@ from .presentation_catalog_types import P
 ENTRIES = (
     P("consumable.cost_recorded", gettext_noop("Consumable cost recorded")),
     P("certification.granted", gettext_noop("Certification granted")),
-    P("certification.override", gettext_noop("Certification override"), ("certification_type_id",)),
     P("certification.revoked", gettext_noop("Certification revoked"),
       ("certification_type_id", "membership_id")),
     P("certification_type.created", gettext_noop("Certification type created"), ("machine_type_id",)),
     P("certification_type.deactivated", gettext_noop("Certification type deactivated")),
     P("certification_type.updated", gettext_noop("Certification type updated"), ("fields",)),
+    P("machine_access.granted", gettext_noop("Machine access granted")),  # metadata is denied: the emitter builds meta at runtime
+    P("machine_access.renewed", gettext_noop("Machine access renewed")),  # metadata is denied: the emitter builds meta at runtime
+    P("machine_access.revoked", gettext_noop("Machine access revoked"), ("member_id",)),
+    P("machine.open_access_changed", gettext_noop("Machine open to all members changed")),  # metadata is denied: the emitter builds meta at runtime
     P("machine.created", gettext_noop("Machine created")),
     P("machine.publicity_changed", gettext_noop("Machine publicity changed")),
     P("machine.status_changed", gettext_noop("Machine status changed")),

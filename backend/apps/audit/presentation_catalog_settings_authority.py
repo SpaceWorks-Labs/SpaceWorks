@@ -12,7 +12,7 @@ ENTRIES = (
     P("makerspace.capability_purge_started", gettext_noop("Capability data purge started"), ("capability",)),
     P("makerspace.capability_purged", gettext_noop("Capability data purged"), ("capability",)),
     P("makerspace.module_retired", gettext_noop("Retired module key folded into capabilities"),
-      ("module", "capabilities", "source")),
+      ("module", "capabilities", "folded_into", "added_modules", "source")),
     P("settings.changed", gettext_noop("Setting changed"), ("module", "key", "from", "to", "via", "grant_id")),
     P("settings.grant_created", gettext_noop("Settings grant created"), ("module", "grant_id", "via")),
     P("settings.grant_revoked", gettext_noop("Settings grant revoked"), ("module", "grant_id")),

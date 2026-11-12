@@ -68,7 +68,7 @@ ENTRIES = (
     P("organization.created", gettext_noop("Organization created")),
     P("organization.deleted", gettext_noop("Organization deleted"), ("invitation_count", "membership_count")),
     P("organization.self_created", gettext_noop("Organization created by its owner")),
-    P("organization.review_submitted", gettext_noop("Organization submitted for review"), ("resubmitted",)),
+    P("organization.review_submitted", gettext_noop("Organization submitted for review")),
     P("organization.review_changes_requested", gettext_noop("Organization changes requested"), ("reason",)),
     P("organization.review_approved", gettext_noop("Organization approved"), ("reason",)),
     P("organization.review_declined", gettext_noop("Organization declined"), ("reason",)),

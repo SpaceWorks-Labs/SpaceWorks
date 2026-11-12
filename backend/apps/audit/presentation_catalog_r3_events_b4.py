@@ -6,8 +6,7 @@ from .presentation_catalog_types import P
 
 ENTRIES = (
     P("event.programme.scores_exported", gettext_noop("Judging scores exported"), ("event_id", "round_id", "rows")),
-    P("event.submission_reinstated", gettext_noop("Disqualified project reinstated"),
-      ("event_id", "stage_id", "version", "restored", "skipped", "fee_case_voided")),
+    P("event.submission_reinstated", gettext_noop("Disqualified project reinstated")),  # metadata is denied: the emitter builds meta at runtime
     P("event.programme.snapshot_judging_restored", gettext_noop("Judging work restored for a reinstated project"),
       ("snapshot_id", "count")),
     P("event.programme.results_unpublished", gettext_noop("Results unpublished"), ("version", "result_id")),

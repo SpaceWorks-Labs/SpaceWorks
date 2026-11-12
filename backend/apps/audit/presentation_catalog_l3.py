@@ -87,4 +87,7 @@ ENTRIES = (
     P("wallet_pass.voided", gettext_noop("Wallet pass voided"), ("pass_id", "platform")),
     # Decision 223: guest-pass wallet links and signing credentials (public fingerprint only, never a secret).
     P("wallet_pass.guest_issued", gettext_noop("Guest pass added to a wallet"), ("pass_id", "platform")),
+    # Apple's pass web service: a device asked for (or stopped) updates to a pass. No device id is kept here.
+    P("wallet_pass.device_registered", gettext_noop("Wallet pass device registered"), ("pass_id", "platform", "created")),
+    P("wallet_pass.device_unregistered", gettext_noop("Wallet pass device unregistered"), ("pass_id", "platform")),
 )

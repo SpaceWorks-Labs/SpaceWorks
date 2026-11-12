@@ -17,8 +17,8 @@ ENTRIES = (
     P("booking.included_hours_consumed", gettext_noop("Plan included hours used")),
     P("booking.included_hours_restored", gettext_noop("Plan included hours restored")),
     # B13: the organization hours bank (ids and minute counts only; the staff reason stays on the ledger row).
-    P("booking.org_hours_consumed", gettext_noop("Organization hours used"), ("minutes",)),
-    P("booking.org_hours_released", gettext_noop("Organization hours restored"), ("minutes",)),
+    P("booking.org_hours_consumed", gettext_noop("Organization hours used")),  # metadata is denied: the emitter builds meta at runtime
+    P("booking.org_hours_released", gettext_noop("Organization hours restored")),  # metadata is denied: the emitter builds meta at runtime
     P("organization.hours_allowance_updated", gettext_noop("Organization hours allowance changed"),
       ("allowance_minutes", "period", "previous_allowance_minutes", "previous_period")),
     P("organization.hours_adjusted", gettext_noop("Organization hours granted or adjusted"), ("entry", "minutes")),

@@ -28,6 +28,8 @@ ENTRIES = (
     P("space_control.announcement_emailed", gettext_noop("Platform announcement emailed"), ("recipient_count",)),
     P("managed_hosting.hosting_switch_changed", gettext_noop("Hosting other makerspaces switched"), ("from", "to")),
     P("managed_hosting.throttle_rate_changed", gettext_noop("Request rate limit changed"), ("scope", "from", "to")),
+    P("managed_hosting.limit_defaults_changed", gettext_noop("Platform default limits changed"), ("changed", "from", "to")),
+    P("managed_hosting.limit_threshold_crossed", gettext_noop("Limit warning sent"), ("key", "level", "percent")),
     P("space_control.limits_changed", gettext_noop("Space limits changed"), ("changed", "overrides")),
     P("platform_credential_limit.reached", gettext_noop("Platform credential allowance reached"), ("key", "period")),
     P("managed_hosting.hosting_type_changed", gettext_noop("Hosting type changed (own or hosted space)"),

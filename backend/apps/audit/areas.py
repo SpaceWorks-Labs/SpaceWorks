@@ -4,7 +4,7 @@ An action's area comes from its namespace -- the text before the first dot -- be
 every catalogued action and every dynamic emitter prefix is namespaced by its domain.
 A few exact actions override their namespace. An action whose namespace is not listed
 here belongs to ``platform``, which only the Space Manager and superadmin read, so a
-new namespace fails CLOSED until someone places it (``tests/audit/test_audit_areas.py``
+new namespace fails CLOSED until someone places it (``tests/test_audit_area_scope.py``
 holds every catalogue action and every dynamic prefix to an explicit entry).
 
 ``repairs`` is not unlocked by an action: its rows are split by subject (machines,
@@ -56,7 +56,7 @@ NAMESPACE_AREAS = {
     **_areas((LENDING, HANDOVER), "admin_direct", "box", "evidence", "item", "kit"),
     # To-Buy, vendors and consumable costs are folded per parent (#97): both areas.
     **_areas((LENDING, MACHINES), "procurement", "vendor"),
-    **_areas((MACHINES,), "certification", "certification_type", "consumable", "machine",
+    **_areas((MACHINES,), "certification", "certification_type", "consumable", "machine", "machine_access",
              "machine_consumable_pool", "machine_downtime", "machine_service", "machine_session",
              "machine_type", "machine_type_pricing"),
     **_areas((EVENTS,), "calendar_feed", "event", "event_card", "events", "mentor"),

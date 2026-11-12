@@ -78,6 +78,7 @@ from .presentation_catalog_r2_l4 import ENTRIES as _R2_L4
 from .presentation_catalog_r2_l5 import ENTRIES as _R2_L5
 from .presentation_catalog_r2_l15 import ENTRIES as _R2_L15
 from .presentation_catalog_r2_l10 import ENTRIES as _R2_L10
+from .presentation_catalog_adapter import ENTRIES as _ADAPTER
 from .presentation_catalog_r2_l11 import ENTRIES as _R2_L11
 from .presentation_catalog_r2_l8 import ENTRIES as _R2_L8
 from .presentation_catalog_account_merge import ENTRIES as _ACCOUNT_MERGE
@@ -106,6 +107,10 @@ from .presentation_catalog_r3_events_b6 import ENTRIES as _R3_EVENTS_B6
 from .presentation_catalog_r3_events_badges import ENTRIES as _R3_EVENTS_BADGES
 from .presentation_catalog_r3_org_money import ENTRIES as _R3_ORG_MONEY
 from .presentation_catalog_r3_org_b4 import ENTRIES as _R3_ORG_B4
+from .presentation_catalog_cutout import ENTRIES as _CUTOUT
+from .presentation_catalog_studio import ENTRIES as _STUDIO
+from .presentation_catalog_consumable_profiles import ENTRIES as _CONSUMABLE_PROFILES
+from .presentation_catalog_machine_event import ENTRIES as _MACHINE_EVENT
 
 PRESENTATION_CATALOG = _compose(
     _PROGRAMME,
@@ -121,6 +126,7 @@ PRESENTATION_CATALOG = _compose(
     _R2_L5,
     _R2_L15,
     _R2_L10,
+    _ADAPTER,
     _R2_L11,
     _R2_L8,
     _ACCOUNT_MERGE,
@@ -140,6 +146,9 @@ PRESENTATION_CATALOG = _compose(
     _R3_EVENTS_B6,
     _R3_EVENTS_BADGES,
     _R3_ORG_B4,
+    _CUTOUT,
+    _STUDIO,
+    _MACHINE_EVENT,
     _R3_ORG_MONEY,
     _MESSAGING, _R2_L4, _L12, _L23, _L16, _L3, _L3A, _R2_L6, _R2_L18, _R2_L21A, _R2_L21B, _HACKMONEY,
     _R2_L24,
@@ -156,6 +165,7 @@ PRESENTATION_CATALOG = _compose(
     _R4_AUDIT,
     _LOAN_EQUIPMENT,
     _GUEST_PASSES,
+    _CONSUMABLE_PROFILES,
 )
 
 

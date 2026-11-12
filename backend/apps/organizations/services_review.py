@@ -104,7 +104,7 @@ def decide(organization, actor, decision, reason=""):
     locked.save(update_fields=fields)
     OrganizationReview.objects.create(organization=locked, action=action, actor=actor, reason=reason)
     audit.record(actor, f"organization.review_{action.value}", target=locked,
-                 meta={"reason": reason} if reason else None)
+                 meta={"has_reason": True} if reason else None)  # the text stays on OrganizationReview, never in audit meta
     notifications_review.notify_decision(locked, action.value, reason)
     return locked
 

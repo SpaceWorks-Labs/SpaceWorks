@@ -4,6 +4,7 @@
 it. Existing organizations are `approved` and have no rows. Global platform data: it is
 never part of a tenant dump.
 """
+from django.utils.translation import gettext_noop
 from django.conf import settings
 from django.db import models
 
@@ -11,7 +12,7 @@ from django.db import models
 class OrganizationReview(models.Model):
     class Action(models.TextChoices):
         SUBMITTED = "submitted", "Submitted"
-        CHANGES_REQUESTED = "changes_requested", "Changes requested"
+        CHANGES_REQUESTED = "changes_requested", gettext_noop("Changes requested")
         APPROVED = "approved", "Approved"
         DECLINED = "declined", "Declined"
         SUSPENDED = "suspended", "Suspended"

@@ -1,3 +1,4 @@
+from django.utils.translation import gettext_noop
 from django.conf import settings
 from django.contrib.postgres.indexes import GinIndex
 from django.db import models
@@ -26,8 +27,8 @@ class Organization(models.Model):
     # Review standing (O-B5). Existing and superadmin-created organizations are approved.
     # `suspended` is distinct from `is_active`: members keep their data rights.
     class ReviewStatus(models.TextChoices):
-        PENDING_REVIEW = "pending_review", "Pending review"
-        CHANGES_REQUESTED = "changes_requested", "Changes requested"
+        PENDING_REVIEW = "pending_review", gettext_noop("Pending review")
+        CHANGES_REQUESTED = "changes_requested", gettext_noop("Changes requested")
         APPROVED = "approved", "Approved"
         DECLINED = "declined", "Declined"
         SUSPENDED = "suspended", "Suspended"

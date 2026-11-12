@@ -45,6 +45,14 @@ def features_for(areas, modules=None):
         key for key, definition in FEATURES.items() if definition.parent_module in parents
     }
     features -= EXPLICIT_OPT_IN_FEATURES
+    # A child bundled "on by default once its parent is on" (e.g. `events.team_moderation` under the
+    # opt-in `events.hackathons`) must not outlive a parent the area leaves off, or the set is invalid.
+    while True:
+        orphans = {key for key in features if key in FEATURES
+                   and not set(FEATURES[key].requires_features) <= features}
+        if not orphans:
+            break
+        features -= orphans
     if "inventory" in areas:
         features |= INVENTORY_FEATURES
     else:

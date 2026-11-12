@@ -43,11 +43,13 @@ export function WebTelemetry() {
     setResolved(null); if (!config || !configured) return;
     let current = true; void consentScope(scope.kind === "tenant" ? boot!.makerspace.id : 0, [config, legacy ? window.__WEB_ANALYTICS__ : null]).then(value => { if (current) setResolved({ identity, key: value }); }).catch(() => undefined);
     return () => { current = false; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- boot and scope are covered by identity (makerspace id, scope.kind, config); re-running on a new bootstrap object would reset the resolved consent key
   }, [config, configured, identity, legacy, scope.kind, boot?.makerspace.id]);
   const onChange = useCallback((consent: Consent) => { if (key && config) void updateWebTelemetry(`${key}:${JSON.stringify(consent)}`, config, consent, new URL(window.location.href), identityState === "anonymous", legacy); }, [key, config, legacy, identityState]);
   useEffect(() => {
     if (!config || !configured || !safePage(url) || identityState !== "anonymous") { stopWebTelemetry(); return; }
     if (key) onChange(readConsent(key));
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- url is rebuilt each render from location.pathname, search and hash, which are listed; the URL object itself is never stable
   }, [config, configured, identityState, key, onChange, location.pathname, location.search, location.hash]);
   if (!key || !config || !configured || identityState !== "anonymous" || !safePage(url)) return null;
   return <TelemetryConsent key={key} scope={key} onChange={onChange} />;

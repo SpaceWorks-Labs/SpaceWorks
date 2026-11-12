@@ -2,6 +2,7 @@ import { t } from "@lingui/core/macro";
 import { useEffect, useRef, useState } from "react";
 import { currentTheme } from "../../lib/theme";
 import { loadTurnstile } from "./turnstileScript";
+import { LogoLoader } from "../LogoLoader";
 
 /**
  * The Cloudflare Turnstile check, shown only after a sign-in answers `captcha_required`
@@ -40,9 +41,9 @@ export function TurnstileWidget({ siteKey, action, onToken, onExpired }: {
   return <div className="grid gap-2" role="group" aria-label={t`Confirm you're a person`}>
     <p className="text-sm font-semibold text-ink">{t`Confirm you're a person`}</p>
     <div ref={container} className="min-h-16" />
+    {status === "loading" ? <LogoLoader label={t`Loading the check…`} size={32} className="min-h-10 py-1" /> : null}
     <p aria-live="polite" className="text-sm text-muted">
-      {status === "loading" ? t`Loading the check…` : status === "failed"
-        ? t`The check couldn't load. Check your connection, then try again.` : ""}
+      {status === "failed" ? t`The check couldn't load. Check your connection, then try again.` : ""}
     </p>
   </div>;
 }

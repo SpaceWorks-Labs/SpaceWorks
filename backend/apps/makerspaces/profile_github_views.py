@@ -5,6 +5,9 @@ from rest_framework import serializers
 from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 
+from apps.accounts.authentication import SpaceWorksJWTAuthentication
+
+from .account_profile_access import resolve_by_handle
 from .profile_github import calendar_for
 from .public_profile_views import ERRORS, REDIRECT, PublicProfileBase
 
@@ -20,14 +23,18 @@ class GitHubCalendarSerializer(serializers.Serializer):
 
 
 class PublicProfileGitHubView(PublicProfileBase):
-    @extend_schema(tags=["Public profiles"], auth=[],
+    authentication_classes = [SpaceWorksJWTAuthentication]
+
+    @extend_schema(tags=["Public profiles"],
                    responses={200: GitHubCalendarSerializer, **REDIRECT, **ERRORS},
                    description="Cached GitHub calendar dates and daily counts, separately labelled from SpaceWorks. "
-                               "Requires activity-graph consent. Empty when unconfigured, pending or unavailable.")
+                               "Same readers as the profile; requires the activity-graph switch. "
+                               "Empty when unconfigured, pending or unavailable.")
     def get(self, request, handle):
-        claim, redirect = self.resolve(request, handle, "github")
-        if not claim.profile.show_activity_graph:
-            raise NotFound()
-        if redirect is not None:
-            return redirect
-        return Response(GitHubCalendarSerializer(calendar_for(claim)).data)
+        self.cache_headers()
+        profile, redirected = resolve_by_handle(handle, request.user, request)
+        if not profile.show_activity_graph:
+            raise NotFound()  # checked BEFORE the redirect: a retired URL never confirms a hidden graph
+        if redirected:
+            return Response(status=302, headers={"Location": f"/api/v1/public/profiles/{redirected}/github"})
+        return Response(GitHubCalendarSerializer(calendar_for(profile)).data)

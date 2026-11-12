@@ -3,6 +3,7 @@
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework.response import Response
+from apps.accounts.authentication import SpaceWorksJWTAuthentication
 from .public_profile_views import PublicProfileBase
 from .models import Makerspace
 from .public_page_access import public_page, resolve_handle
@@ -14,10 +15,18 @@ ERRORS = {404: OpenApiResponse(description="Unknown or unavailable public page."
 
 
 class PublicHandleView(PublicProfileBase):
+    """Optional JWT: a signed-in viewer resolves any visible member handle (decision 303a)."""
+
+    authentication_classes = [SpaceWorksJWTAuthentication]
+
     @extend_schema(tags=["Public pages"], auth=[], responses={200: HandleResolution, **ERRORS})
     def get(self, request, handle):
         self.cache_headers()
-        _, payload = resolve_handle(handle, request)
+        viewer = request.user if request.user.is_authenticated else None
+        if viewer is not None:
+            self.headers["Cache-Control"] = "private, no-store"
+            self.headers["Vary"] = f'{self.headers["Vary"]}, Authorization'
+        _, payload = resolve_handle(handle, request, viewer)
         return Response(HandleResolution(payload).data)
 
 

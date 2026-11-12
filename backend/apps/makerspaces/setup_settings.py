@@ -38,8 +38,8 @@ def save_space(actor, space, values, *, restore_feature_configuration=False):
         audit.record(actor, "makerspace.updated", makerspace=space, target=space,
                      meta={"fields": sorted(serializer.validated_data)})
         if before != space.enabled_features:
-            audit.record(actor, "makerspace.features_changed", makerspace=space, target=space,
-                         meta={"before": before, "after": space.enabled_features})
+            from .capability_audit import record_features_changed
+            record_features_changed(actor, space, before, space.enabled_features, via="settings")
     changed_profile = [key for key, value in profile.items() if getattr(space, key) != value]
     if changed_profile:
         for key in changed_profile:

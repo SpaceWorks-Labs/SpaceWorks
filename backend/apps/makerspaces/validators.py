@@ -1,4 +1,4 @@
-from django.utils.translation import gettext
+from django.utils.translation import gettext, gettext_lazy
 from urllib.parse import urlsplit
 
 from django.core.exceptions import ValidationError
@@ -12,7 +12,7 @@ GOOGLE_MAPS_HOSTS = {
     "goo.gl",
     "g.co",
 }
-GOOGLE_MAPS_ERROR = "Enter a valid Google Maps link."
+GOOGLE_MAPS_ERROR = gettext_lazy("Enter a valid Google Maps link.")
 DEFAULT_PRESENCE_PRESETS = [60, 120, 180, 240]
 
 

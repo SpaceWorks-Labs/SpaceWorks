@@ -19,14 +19,17 @@ from apps.makerspaces.membership_join_units import plans_for_unit, unit_by_code
 from apps.makerspaces.models import MembershipPlan
 from apps.makerspaces.servability import servable_queryset
 
-def _UNIT(**kwargs):
-    # inline_serializer returns an instance, so each use (list / nullable) builds its own.
-    return inline_serializer("PublicMemberUnit", {
-        "code": serializers.CharField(), "name": serializers.CharField(), "level": serializers.IntegerField(),
-        "level_name": serializers.CharField(), "parent_code": serializers.CharField(allow_null=True)}, **kwargs)
+class PublicMemberUnitSerializer(serializers.Serializer):
+    code = serializers.CharField()
+    name = serializers.CharField()
+    level = serializers.IntegerField()
+    level_name = serializers.CharField()
+    parent_code = serializers.CharField(allow_null=True)
+
+
 _RESPONSE = inline_serializer("PublicMemberUnits", {
-    "levels": serializers.ListField(child=serializers.CharField()), "units": _UNIT(many=True),
-    "selected": _UNIT(allow_null=True),
+    "levels": serializers.ListField(child=serializers.CharField()), "units": PublicMemberUnitSerializer(many=True),
+    "selected": PublicMemberUnitSerializer(allow_null=True),
     "plan_ids": serializers.ListField(child=serializers.IntegerField(), allow_null=True,
                                       help_text="With `code`: the active plans offered in that unit.")})
 

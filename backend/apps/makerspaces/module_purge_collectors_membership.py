@@ -25,7 +25,9 @@ def membership_public_image_keys(makerspace):
             profile__membership__makerspace=makerspace
         ).values_list("image_key", flat=True)
     )
-    return [key for key in dict.fromkeys(keys) if key]
+    from apps.makerspaces.account_profile_purge import without_account_held
+
+    return without_account_held(list(dict.fromkeys(keys)))
 
 
 def membership_private_keys(makerspace, add):

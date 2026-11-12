@@ -54,7 +54,7 @@ _LENDING_EXTRAS = frozenset({
 # accounts is one `install_module member_accounts` away if they later want the community
 # layer.
 _WORKSHOP_EXTRAS = frozenset({
-    "machines", "machine_service", "printing", "reports",
+    "machines", "machine_service", "reports",
     "notifications", "email",
 })
 

@@ -56,6 +56,9 @@ def upload(kind, owner_id, *, actor, version, file, alt_text):
         if kind == "makerspace":
             from .public_page_lifecycle import event_cleanup_keys
             pending = pending.exclude(event_cleanup_keys())
+        if kind == "makerspace":
+            from apps.managed_hosting.extra_quotas import check_extra_quota
+            check_extra_quota(owner, "public_page_assets")  # decision 328a: refuses only a NEW image
         if page.assets.count() + pending.count() >= MAX_ASSETS:
             raise ValidationError({"file": gettext("A page may retain at most 50 assets, including pending uploads.")})
         charge_storage(kind, owner, len(converted))
@@ -73,7 +76,7 @@ def upload(kind, owner_id, *, actor, version, file, alt_text):
             typed, owner, actor, page = lock_state(kind, owner_id, actor, reserved_version)
             job = Cleanup.objects.select_for_update().filter(pk=job_id, completed_at__isnull=True, attempts=0).first()
             if job is None:
-                raise PageConflict("stale_version", "The upload expired. Upload the image again.")
+                raise PageConflict("stale_version", gettext("The upload expired. Upload the image again."))
             asset = typed.asset.objects.create(page=page, object_key=key, size_bytes=len(converted), alt_text=alt_text.strip())
             job.due_at = timezone.now() + timedelta(hours=24)
             job.save(update_fields=["due_at"])
@@ -90,7 +93,7 @@ def delete(kind, owner_id, asset_id, *, actor, version):
     typed, owner, actor, page = lock_state(kind, owner_id, actor, version)
     asset = get_object_or_404(typed.asset.objects.select_for_update(), pk=asset_id, page=page)
     if typed.asset_reference.objects.filter(asset=asset).exists():
-        raise PageConflict("asset_referenced", "A saved revision retains this image.")
+        raise PageConflict("asset_referenced", gettext("A saved revision retains this image."))
     Cleanup.objects.update_or_create(object_key=asset.object_key, defaults={"owner_kind": kind,
         "owner_id": owner_id, "page_id": page.pk, "size_bytes": asset.size_bytes, "due_at": timezone.now(), "completed_at": None})
     asset.delete()

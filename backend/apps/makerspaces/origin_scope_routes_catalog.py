@@ -8,7 +8,7 @@ from apps.makerspaces.origin_scope_model_lookups import (
     TARGET_SET_LOOKUPS,
 )
 
-PUBLIC_SLUG_ROUTES = {"public-presence-now", "presence-start", "presence-current", "presence-end", "presence-renew", "presence-projects", "presence-preferences", "public-booking-resource", "public-booking-website", "public-booking-website-image", "member-booking-pass", "member-booking-confirmation", "member-booking-confirmation-png", "member-booking-calendar", "member-booking-rotate-checkin", "public-event-organization-eligibility"}
+PUBLIC_SLUG_ROUTES = {"public-presence-now", "public-presence-here-now", "public-machines-now", "public-presence-now-config", "presence-start", "presence-current", "presence-end", "presence-renew", "presence-projects", "presence-preferences", "public-booking-resource", "public-booking-website", "public-booking-website-image", "member-booking-pass", "member-booking-confirmation", "member-booking-confirmation-png", "member-booking-calendar", "member-booking-rotate-checkin", "public-event-organization-eligibility"}
 
 REPLAY_TOKEN_ROUTES = {"kiosk-replay-prepare", "kiosk-replay-execute"}
 # Owner controls resolve their tenant from the job's tracking token (C16).
@@ -155,6 +155,8 @@ MAKERSPACE_KWARG_ROUTES.update(R2_L1_MAKERSPACE_ROUTES)
 MODEL_LOOKUPS.update(R2_L1_LOOKUPS)
 from .origin_scope_routes_r2_l10 import MODEL_LOOKUPS as R2_L10_LOOKUPS
 MODEL_LOOKUPS.update(R2_L10_LOOKUPS)
+from .origin_scope_routes_adapter import MODEL_LOOKUPS as ADAPTER_LOOKUPS  # noqa: E402
+MODEL_LOOKUPS.update(ADAPTER_LOOKUPS)
 from .origin_scope_routes_r2_l12 import MODEL_LOOKUPS as R2_L12_LOOKUPS
 MODEL_LOOKUPS.update(R2_L12_LOOKUPS)
 from .origin_scope_routes_r2_l23 import MODEL_LOOKUPS as R2_L23_LOOKUPS

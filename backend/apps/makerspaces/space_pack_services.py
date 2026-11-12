@@ -7,6 +7,7 @@ from rest_framework.exceptions import PermissionDenied
 from apps.accounts import rbac
 from apps.admin_api.permissions import active_user
 from apps.audit import services as audit
+from .capability_audit import record_features_changed
 from .guards import require_feature
 from .models import SpacePackProfile
 from .role_authority import _superadmin
@@ -52,11 +53,11 @@ def _apply_pack_locked(actor, makerspace, pack, *, base_checksum, creating):
     else:
         require_feature(makerspace, "packs.import")
         if not base_checksum:
-            raise PackError("pack_preview_required", "Preview this pack before applying it.")
+            raise PackError("pack_preview_required", gettext("Preview this pack before applying it."))
     config = keep_target_security(makerspace, validate_configuration(open_pack(pack)))
     steps, preview = prepare(actor, makerspace, config)
     if not creating and preview["base_checksum"] != base_checksum:
-        raise PackConflict("stale_pack_preview", "Configuration changed. Preview the pack again.")
+        raise PackConflict("stale_pack_preview", gettext("Configuration changed. Preview the pack again."))
     # The capability service owns module dependency validation.
     if set(makerspace.enabled_modules or []) != set(config["modules"]):
         from .module_install import ModuleInstallError, replace_modules
@@ -77,6 +78,7 @@ def _apply_pack_locked(actor, makerspace, pack, *, base_checksum, creating):
     serializer = settings_serializer(actor, makerspace, {
         **settings, "enabled_features": config["features"],
     })
+    features_before = list(makerspace.enabled_features or [])
     makerspace = serializer.save()
     audit.record(actor, "makerspace.updated", makerspace=makerspace, target=makerspace,
                  meta={"fields": sorted({key for change in preview["changes"]
@@ -88,8 +90,7 @@ def _apply_pack_locked(actor, makerspace, pack, *, base_checksum, creating):
         audit.record(actor, "makerspace.updated", makerspace=makerspace, target=makerspace,
                      meta={"fields": ["timezone", "opening_hours"]})
     if any(change["section"] == "features" for change in preview["changes"]):
-        audit.record(actor, "makerspace.features_changed", makerspace=makerspace, target=makerspace,
-                     meta={"fields": ["enabled_features"]})
+        record_features_changed(actor, makerspace, features_before, makerspace.enabled_features, via="space_pack")
     from apps.data_export.space_pack_configuration import SECTIONS
     for section, row, values in steps:
         # Names in the pack are references to the TARGET, never source IDs. Newly
@@ -110,9 +111,9 @@ def _apply_pack_locked(actor, makerspace, pack, *, base_checksum, creating):
     # explicit choices after the domain writer has synchronized its aliases.
     makerspace.refresh_from_db()
     if set(makerspace.enabled_features) != set(config["features"]):
-        settings_serializer(actor, makerspace, {"enabled_features": config["features"]}).save()
-        audit.record(actor, "makerspace.features_changed", makerspace=makerspace,
-                     target=makerspace, meta={"fields": ["enabled_features"]})
+        synced = list(makerspace.enabled_features or [])
+        restored = settings_serializer(actor, makerspace, {"enabled_features": config["features"]}).save()
+        record_features_changed(actor, restored, synced, restored.enabled_features, via="space_pack")
     audit.record(actor, "makerspace.space_pack_applied", makerspace=makerspace,
                  target=makerspace, meta={"checksum": pack["checksum"],
                      "sections": sorted({item["section"] for item in preview["changes"]})})

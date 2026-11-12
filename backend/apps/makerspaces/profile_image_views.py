@@ -1,8 +1,8 @@
-"""Avatar and project image upload/attach/clear for the caller's own profile.
+"""Avatar and project image upload/attach/clear for the caller's own account profile.
 
 Mirrors `events.views_admin_image` step for step, including the order of the checks: the
-prefix test runs before anything touches storage, because it is what stops one makerspace
-attaching another's object.
+prefix test runs before anything touches storage, because it is what stops a member attaching
+an object minted for a space they do not belong to.
 
 One endpoint set serves both the avatar and a project image, discriminated by an optional
 `project_id`. Two near-identical triples would have been two places to forget the
@@ -23,9 +23,12 @@ from apps.admin_api.serializers_inventory import (
 from apps.evidence.responses import storage_unavailable_response
 from apps.evidence.storage import StorageUnavailable
 from apps.inventory import public_image_storage
-from apps.makerspaces import profile_images, profile_services
-from apps.makerspaces.profile_serializers import ProfileReadSerializer
-from apps.makerspaces.profile_views import MemberProfileBaseView
+from apps.makerspaces import profile_images
+from apps.makerspaces.models import MakerspaceMembership
+from apps.makerspaces.account_profile import account_profile_for
+from apps.makerspaces.account_profile_read import build_payload
+from apps.makerspaces.account_profile_serializers import AccountProfileSerializer
+from apps.makerspaces.account_profile_views import AccountOwnerView
 from apps.makerspaces.throttles import MemberImagePresignThrottle
 
 IMAGE_KIND = profile_images.IMAGE_KIND
@@ -39,7 +42,7 @@ class ProfileImageAttachRequestSerializer(PublicImageAttachRequestSerializer):
     project_id = serializers.IntegerField(required=False)
 
 
-class MemberProfileImageView(MemberProfileBaseView):
+class AccountProfileImageView(AccountOwnerView):
     # The throttle is a no-op on PUT and DELETE by construction -- see the class -- so
     # declaring it on the view budgets the presign alone.
     throttle_classes = [MemberImagePresignThrottle]
@@ -61,22 +64,26 @@ class MemberProfileImageView(MemberProfileBaseView):
         responses={
             201: PublicImageUploadResponseSerializer,
             400: OpenApiResponse(description="Invalid image upload request."),
-            403: OpenApiResponse(description="An active membership is required."),
             429: OpenApiResponse(description="Too many image upload requests."),
             503: OpenApiResponse(description="Public image storage is unavailable."),
         },
     )
-    def post(self, request, makerspace_id):
-        membership = self.membership(request, makerspace_id)
+    def post(self, request, **kwargs):
+        user = self.actor(request, **kwargs)
+        space = self.audit_space or profile_images.home_space(user)
         serializer = ProfileImageUploadRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         content_type = serializer.validated_data["content_type"]
         ext = public_image_storage.ext_for(
             content_type, serializer.validated_data["filename"]
         )
-        object_key = public_image_storage.build_object_key(
-            IMAGE_KIND, membership.makerspace_id, ext
-        )
+        if space is None:
+            # No active membership: mint in the account namespace, charged to no space.
+            object_key = public_image_storage.build_object_key(
+                profile_images.ACCOUNT_KIND, user.pk, ext
+            )
+        else:
+            object_key = public_image_storage.build_object_key(IMAGE_KIND, space.pk, ext)
         try:
             upload = public_image_storage.presigned_upload(object_key, content_type)
         except StorageUnavailable:
@@ -91,31 +98,34 @@ class MemberProfileImageView(MemberProfileBaseView):
         summary="Attach an uploaded image to the profile or one of its projects",
         request=ProfileImageAttachRequestSerializer,
         responses={
-            200: ProfileReadSerializer,
+            200: AccountProfileSerializer,
             400: OpenApiResponse(description="Invalid image object key or size."),
-            403: OpenApiResponse(description="An active membership is required."),
             503: OpenApiResponse(description="Public image storage is unavailable."),
         },
     )
-    def put(self, request, makerspace_id):
-        membership = self.membership(request, makerspace_id)
+    def put(self, request, **kwargs):
+        user = self.actor(request, **kwargs)
         serializer = ProfileImageAttachRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         object_key = serializer.validated_data["object_key"]
-        profile = profile_services.profile_for(membership)
+        profile = account_profile_for(user)
         project = self._project(profile, serializer.validated_data.get("project_id"))
 
-        if not object_key.startswith(f"{IMAGE_KIND}/{membership.makerspace_id}/"):
+        key_space = profile_images.space_for_key(object_key)
+        own_account_key = object_key.startswith(profile_images.account_key_prefix(user))
+        if not own_account_key and (key_space is None or not MakerspaceMembership.all_tracks.filter(
+            user=user, status="active", makerspace=key_space,
+        ).exists()):
             raise ValidationError(
-                {"object_key": gettext("Image object key is outside this makerspace.")}
+                {"object_key": gettext("Image object key is outside your makerspaces.")}
             )
         if not public_image_storage.is_safe_object_key(object_key):
             raise ValidationError({"object_key": gettext("Invalid image object key.")})
         if public_image_storage.public_image_key_in_use(
-            membership.makerspace_id,
+            key_space.pk if key_space else 0,
             object_key,
-            profile_id=None if project else profile.pk,
-            project_id=project.pk if project else None,
+            account_profile_id=None if project else profile.pk,
+            account_project_id=project.pk if project else None,
         ):
             raise ValidationError({"object_key": gettext("This image is already in use.")})
         try:
@@ -136,23 +146,23 @@ class MemberProfileImageView(MemberProfileBaseView):
             _discard(object_key)
             raise ValidationError({"object_key": gettext("Uploaded file is not a valid image.")})
         if project is not None:
-            profile_images.set_project_image(profile, project, object_key)
+            profile_images.set_project_image(profile, project, object_key, makerspace=self.audit_space)
         else:
-            profile_images.set_avatar(profile, object_key)
-        return Response(ProfileReadSerializer(profile_services.read_profile(membership)).data)
+            profile_images.set_avatar(profile, object_key, makerspace=self.audit_space)
+        profile.refresh_from_db()  # `_swap` writes through a freshly locked row, so ours is stale
+        return Response(AccountProfileSerializer(build_payload(profile, "owner")).data)
 
     @extend_schema(
         tags=["Member profile"],
         summary="Clear a profile or project image",
         responses={
-            200: ProfileReadSerializer,
+            200: AccountProfileSerializer,
             400: OpenApiResponse(description="Unknown project."),
-            403: OpenApiResponse(description="An active membership is required."),
         },
     )
-    def delete(self, request, makerspace_id):
-        membership = self.membership(request, makerspace_id)
-        profile = profile_services.profile_for(membership)
+    def delete(self, request, **kwargs):
+        user = self.actor(request, **kwargs)
+        profile = account_profile_for(user)
         raw_project_id = request.query_params.get("project_id")
         project = None
         if raw_project_id is not None:
@@ -165,8 +175,9 @@ class MemberProfileImageView(MemberProfileBaseView):
         if project is not None:
             profile_images.clear_project_image(profile, project)
         elif profile.avatar_key:
-            profile_images.set_avatar(profile, "")
-        return Response(ProfileReadSerializer(profile_services.read_profile(membership)).data)
+            profile_images.set_avatar(profile, "", makerspace=self.audit_space)
+        profile.refresh_from_db()  # `_swap` writes through a freshly locked row, so ours is stale
+        return Response(AccountProfileSerializer(build_payload(profile, "owner")).data)
 
 
 def _discard(object_key):

@@ -19,7 +19,7 @@ def lock_state(kind, owner_id, actor, version=None):
     if version is not None and (isinstance(version, bool) or not isinstance(version, int) or version < 0):
         raise ValidationError({"version": gettext("Use a nonnegative integer.")})
     if version is not None and version != (page.version if page else 0):
-        raise PageConflict("stale_version", "The page changed. Reload before trying again.")
+        raise PageConflict("stale_version", gettext("The page changed. Reload before trying again."))
     return typed, owner, actor, page
 
 
@@ -75,7 +75,7 @@ def save(kind, owner_id, *, actor, version, document, request=None):
 def publish(kind, owner_id, *, actor, version, draft_revision_id):
     typed, owner, actor, page = lock_state(kind, owner_id, actor, version)
     if page is None or page.draft_revision_id is None or str(page.draft_revision_id) != str(draft_revision_id):
-        raise PageConflict("stale_version", "Only the current saved draft can be published.")
+        raise PageConflict("stale_version", gettext("Only the current saved draft can be published."))
     if not PublicHandle.objects.filter(**owner_filter(kind, owner)).exists():
         raise ValidationError({"handle": gettext("Claim a handle before publishing.")})
     validated_revision(page.draft_revision, kind)

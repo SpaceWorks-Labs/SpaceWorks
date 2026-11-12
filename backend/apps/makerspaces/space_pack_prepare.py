@@ -80,7 +80,7 @@ def prepare(actor, makerspace, config):
         for row in existing:
             identity = identity_for(spec, {key: getattr(row, key) for key in spec.identity})
             if identity in lookup:
-                raise PackError("ambiguous_pack_entry", f"{section} has duplicate local names.")
+                raise PackError("ambiguous_pack_entry", gettext("%(section)s has duplicate local names.") % {"section": section})
             lookup[identity] = row
         maps[section] = lookup
         for item in rows:
@@ -89,15 +89,15 @@ def prepare(actor, makerspace, config):
             row = lookup.get(identity)
             if section == "active_waiver" and (row is None or project_row(row, spec.fields) != item):
                 if scoped_rows(actor, makerspace, spec).filter(version=values["version"]).exists():
-                    raise PackError("pack_waiver_version_exists", "Publish a new waiver version; existing liability text cannot be replaced.")
+                    raise PackError("pack_waiver_version_exists", gettext("Publish a new waiver version; existing liability text cannot be replaced."))
             if section == "item_templates" and row and row.is_archived:
-                raise PackError("archived_pack_entry", "Rename the item template or unarchive its target first.")
+                raise PackError("archived_pack_entry", gettext("Rename the item template or unarchive its target first."))
             if section == "booking_rules" and row and not row.is_active:
-                raise PackError("inactive_pack_entry", "Rename the booking rule or activate its target first.")
+                raise PackError("inactive_pack_entry", gettext("Rename the booking rule or activate its target first."))
             if section == "notification_defaults":
                 from apps.integrations.dispatch_channels import channel_module_blocks
                 if values["enabled"] and channel_module_blocks(candidate, values["channel"]):
-                    raise PackError("pack_module_disabled", "The notification channel module is not installed.")
+                    raise PackError("pack_module_disabled", gettext("The notification channel module is not installed."))
             if section == "email_templates":
                 from apps.admin_api.views_email_templates_common import STREAM_ACTIONS, STREAM_MODULES
                 actions = STREAM_ACTIONS.get(values["stream"], ())
@@ -105,14 +105,14 @@ def prepare(actor, makerspace, config):
                     raise PermissionDenied(gettext("The template requires its stream's management action."))
                 module = STREAM_MODULES.get(values["stream"])
                 if module and module not in config["modules"]:
-                    raise PackError("pack_module_disabled", "The email stream module is not installed.")
+                    raise PackError("pack_module_disabled", gettext("The email stream module is not installed."))
             if section == "item_templates" and values["category"] is not None:
                 name = values["category"]
                 category = maps["categories"].get((name,))
                 if category is None:
                     matching = [entry for entry in config["categories"] if entry["slug"] == name]
                     if not matching:
-                        raise PackError("missing_pack_reference", "An item category is missing.")
+                        raise PackError("missing_pack_reference", gettext("An item category is missing."))
                     category = apps.get_model("inventory.Category")(makerspace=makerspace, **matching[0])
                 values["category"] = category
             if section == "admission_policy":
@@ -124,7 +124,7 @@ def prepare(actor, makerspace, config):
                         makerspace=makerspace, **clean_row(SECTIONS["membership_plans"], matching),
                     )
                 if name and plan is None:
-                    raise PackError("missing_pack_reference", "The admission default plan is missing.")
+                    raise PackError("missing_pack_reference", gettext("The admission default plan is missing."))
                 values["default_plan"] = plan
                 from .membership_admission_settings import validate_policy
                 policy = apps.get_model(spec.model)(makerspace=candidate, **values)
@@ -140,5 +140,5 @@ def prepare(actor, makerspace, config):
     if admission is None and current["admission_policy"] is not None:
         aliases = ("membership_policy", "membership_dues_amount")
         if any(config["settings"][key] != current["settings"][key] for key in aliases):
-            raise PackError("inconsistent_pack_policy", "Include the admission policy when changing its aliases.")
+            raise PackError("inconsistent_pack_policy", gettext("Include the admission policy when changing its aliases."))
     return steps, {"base_checksum": seal(current)["checksum"], "changes": diff}

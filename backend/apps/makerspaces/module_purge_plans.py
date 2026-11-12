@@ -46,7 +46,7 @@ from apps.makerspaces.module_purge_collectors import (
     telegram_destinations_delete,
     webhook_destinations_delete,
 )
-from apps.makerspaces.module_purge_collectors_devices import devices_delete
+from apps.makerspaces.module_purge_collectors_devices import devices_delete, devices_private_keys
 from apps.makerspaces.module_purge_collectors_reimbursements import (
     REIMBURSEMENT_PII_LABELS,
     STAGE_PII_LABELS,
@@ -110,7 +110,6 @@ NOT_SEPARABLE = {
     "asset_units": "Asset units are inventory items with their own QR; they go with the inventory.",
     "member_accounts": "Member accounts are people on the platform, not rows of this makerspace.",
     "mobile": "Mobile device grants belong to each person's account and expire on their own.",
-    "printing": "Print jobs share the machines stack; purge machine_service, then the makerspace.",
 }
 
 
@@ -209,8 +208,10 @@ PLANS = (
     ModulePurgePlan("qr_print_batches", "QR print batches and their items.", qr_print_batches_delete),
     ModulePurgePlan(
         "devices",
-        "Devices, printer bindings, commands, measured reports, label receipts and device event history.",
+        "Devices, printer bindings, machine-type integration bindings, adapter data, commands, measured reports, "
+        "label receipts and device event history.",
         devices_delete,
+        private_keys=devices_private_keys,
     ),
 )
 

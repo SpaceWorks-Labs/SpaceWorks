@@ -70,3 +70,26 @@ def fetch_calendar(username):
         # exception text, URL, username nor response body belongs in our log.
         logger.warning("public_profile.github_fetch_failed", extra={"provider": "github"})
         return None
+
+
+ID_QUERY = "query($login: String!) { user(login: $login) { databaseId } }"
+
+
+def fetch_database_id(username):
+    """The immutable numeric GitHub account id behind a login, or None (unknown / any failure)."""
+    if not configured() or not isinstance(username, str) or not USERNAME.fullmatch(username):
+        return None
+    request = urllib.request.Request(
+        GRAPHQL_URL, data=json.dumps({"query": ID_QUERY, "variables": {"login": username}}).encode(),
+        headers={"Authorization": f"Bearer {settings.GITHUB_API_TOKEN.strip()}",
+                 "Content-Type": "application/json", "User-Agent": "SpaceWorks"},
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=REQUEST_TIMEOUT) as response:
+            raw = response.read(MAX_RESPONSE_BYTES + 1)
+        body = json.loads(raw) if len(raw) <= MAX_RESPONSE_BYTES else {}
+        value = body["data"]["user"]["databaseId"]
+        return value if type(value) is int and value > 0 else None
+    except Exception:
+        logger.warning("public_profile.github_id_fetch_failed", extra={"provider": "github"})
+        return None

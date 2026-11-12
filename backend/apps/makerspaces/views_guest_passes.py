@@ -8,6 +8,7 @@ Every route answers 404 when `membership` or the relevant `membership.*` switch 
 (#95). The sponsor route deliberately answers the SAME 202 whether or not the e-mail has an
 account, so it cannot be used to discover who has one; the outcome shows in "my guests".
 """
+from django.utils.translation import gettext, gettext_lazy
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status
@@ -33,7 +34,7 @@ from apps.makerspaces.serializers_guest_passes import (
 from apps.makerspaces.servability import servable_queryset
 
 MEMBER_TAG, PUBLIC_TAG = "Member guest passes", "Public guest passes"
-_GENERIC = "If that e-mail belongs to an account, the guest has been given a pass for today."
+_GENERIC = gettext_lazy("If that e-mail belongs to an account, the guest has been given a pass for today.")
 
 
 def _space(user, makerspace_id, feature="guest_passes"):
@@ -131,9 +132,9 @@ def _probe_sponsor(sponsor, space):
     policy = policy_for(space)
     _sponsor_membership(sponsor, space, policy, timezone.now())
     if policy.sponsor_must_be_present and not _sponsor_present(sponsor, space):
-        raise GuestPassError("sponsor_presence_required", "Check in at the space before bringing a guest.")
+        raise GuestPassError("sponsor_presence_required", gettext("Check in at the space before bringing a guest."))
     if _concurrent_guests(sponsor, space, timezone.now()) >= policy.max_concurrent_guests_per_sponsor:
-        raise GuestPassError("sponsor_limit", "You already have the maximum number of guests.")
+        raise GuestPassError("sponsor_limit", gettext("You already have the maximum number of guests."))
 
 
 class SponsoredGuestRevokeView(APIView):

@@ -35,9 +35,9 @@ def claim_locked(kind, owner, value):
         return current
     if ((current and now < current.changed_at + HANDLE_COOLDOWN)
             or (not current and PublicHandleRedirect.objects.filter(**query, expires_at__gt=now).exists())):
-        raise PageConflict("handle_cooldown", "Wait 30 days before changing or reclaiming a handle.")
+        raise PageConflict("handle_cooldown", gettext("Wait 30 days before changing or reclaiming a handle."))
     if not name_available(handle, now=now):
-        raise PageConflict("handle_unavailable", "This name is unavailable.")
+        raise PageConflict("handle_unavailable", gettext("This name is unavailable."))
     PublicHandleRedirect.objects.filter(handle__iexact=handle, expires_at__lte=now).delete()
     try:
         with transaction.atomic():
@@ -48,7 +48,7 @@ def claim_locked(kind, owner, value):
             else:
                 current = PublicHandle.objects.create(**query, handle=handle, changed_at=now)
     except IntegrityError as exc:
-        raise PageConflict("handle_unavailable", "This name is unavailable.") from exc
+        raise PageConflict("handle_unavailable", gettext("This name is unavailable.")) from exc
     return current
 
 

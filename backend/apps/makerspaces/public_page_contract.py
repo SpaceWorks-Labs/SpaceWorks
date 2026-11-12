@@ -101,7 +101,7 @@ def normalize_document(value, *, kind, previous=None):
     encoded = json.dumps(data, ensure_ascii=False, separators=(",", ":"), default=str)
     if len(encoded.encode("utf-8")) > MAX_DOCUMENT_BYTES:
         from .public_page_errors import PagePayloadTooLarge
-        raise PagePayloadTooLarge("Document exceeds 131072 UTF-8 bytes.")
+        raise PagePayloadTooLarge(gettext("Document exceeds 131072 UTF-8 bytes."))
     return json.loads(encoded)
 
 

@@ -28,7 +28,8 @@ def page_route_targets(name, kwargs, request):
             return name, set(), True, True
         if result["kind"] == "organization":
             return name, set(), False, True
-        target = claim.makerspace_id or claim.profile.membership.makerspace_id
+        from .profile_images import home_space
+        target = claim.makerspace_id or getattr(home_space(claim.user), "pk", None)
     elif name in EVENT_ROUTES:
         # Venue ownership, never an organizer's linked makerspaces.
         if not apps.is_installed("apps.events"):

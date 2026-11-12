@@ -89,7 +89,7 @@ class SecuritySetting:
         try:
             return sorted({item(entry) if item else entry for entry in value})
         except ValueError as exc:
-            raise ValidationError(f"{self.label}: {exc}", code="invalid_security_value") from exc
+            raise ValidationError(gettext("%(label)s: %(error)s") % {"label": self.label, "error": exc}, code="invalid_security_value") from exc
 
     def satisfies(self, value, floor):
         """True when ``value`` is at least as strict as ``floor``."""

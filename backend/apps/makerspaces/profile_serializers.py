@@ -90,7 +90,7 @@ class ProfileWriteSerializer(PublicationWriteSerializer):
 
 
 class ProjectReadSerializer(serializers.Serializer):
-    id = serializers.IntegerField()
+    id = serializers.IntegerField(required=False)
     title = serializers.CharField()
     subtitle = serializers.CharField()
     tags = serializers.JSONField()
@@ -98,6 +98,7 @@ class ProjectReadSerializer(serializers.Serializer):
     description = serializers.CharField()
     links = serializers.JSONField()
     image_url = serializers.CharField(allow_null=True)
+    imported = serializers.BooleanField(required=False, default=False)
 
 
 class AttendedEventSerializer(serializers.Serializer):
@@ -139,6 +140,7 @@ class ProfileReadSerializer(PublicationWriteSerializer):
     education = serializers.JSONField()
     github_username = serializers.CharField()
     github_contributions = serializers.IntegerField(allow_null=True)
+    github_verified = serializers.BooleanField()
     projects = ProjectReadSerializer(many=True)
     activity = ProfileActivitySerializer()
 

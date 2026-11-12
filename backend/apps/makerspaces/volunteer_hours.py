@@ -13,20 +13,21 @@ from rest_framework.exceptions import ValidationError
 from apps.audit import services as audit
 from apps.makerspaces.community_policy import CommunityError, volunteer_on
 from apps.makerspaces.models import MakerspaceMembership, VolunteerHourEntry
+from django.utils.translation import gettext
 
 
 def _require_member(makerspace, member):
     if not MakerspaceMembership.objects.filter(makerspace=makerspace, user=member, status="active").exists():
-        raise CommunityError("membership_required", "Volunteer hours belong to an active member of this space.")
+        raise CommunityError("membership_required", gettext("Volunteer hours belong to an active member of this space."))
 
 
 def _check(minutes, worked_on, makerspace=None):
     if not isinstance(minutes, int) or not 0 < minutes <= 1440:
-        raise ValidationError({"minutes": "Give between 1 and 1440 minutes."})
+        raise ValidationError({"minutes": gettext("Give between 1 and 1440 minutes.")})
     from apps.makerspaces.local_time import to_local
     today = to_local(makerspace, timezone.now()).date() if makerspace is not None else timezone.localdate()
     if worked_on > today:  # m13: the space's local day
-        raise ValidationError({"worked_on": "Hours cannot be logged for a future day."})
+        raise ValidationError({"worked_on": gettext("Hours cannot be logged for a future day.")})
 
 
 def log_hours(actor, makerspace, member, *, minutes, worked_on, description="", by_staff=False):
@@ -53,7 +54,7 @@ def review_entry(actor, entry, *, approve, note=""):
     with transaction.atomic():
         row = VolunteerHourEntry.objects.select_for_update().select_related("makerspace").get(pk=entry.pk)
         if row.status != VolunteerHourEntry.Status.PENDING:
-            raise CommunityError("entry_not_pending", "This entry has already been decided.", 409)
+            raise CommunityError("entry_not_pending", gettext("This entry has already been decided."), 409)
         row.status = VolunteerHourEntry.Status.APPROVED if approve else VolunteerHourEntry.Status.REJECTED
         row.reviewed_by, row.reviewed_at, row.review_note = actor, timezone.now(), (note or "").strip()[:200]
         row.save(update_fields=["status", "reviewed_by", "reviewed_at", "review_note"])

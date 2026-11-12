@@ -1,4 +1,5 @@
 {% extends "admin/base_site.html" %}
+{% load i18n %}
 
 {% block content %}
 <form method="post">
@@ -10,28 +11,28 @@
   {% endfor %}
 
   <p>
-    These unsettled-charge counts are ADVISORY and may change before the archive runs.
-    Archiving does NOT block on unsettled charges.
+    {% blocktranslate trimmed %}These unsettled-charge counts are ADVISORY and may change before the archive runs.
+    Archiving does NOT block on unsettled charges.{% endblocktranslate %}
   </p>
   <p>
-    Unpaid event payouts stay owed to members, but finance cannot record or settle them
-    while the makerspace is archived. Settlement resumes when it is restored.
+    {% blocktranslate trimmed %}Unpaid event payouts stay owed to members, but finance cannot record or settle them
+    while the makerspace is archived. Settlement resumes when it is restored.{% endblocktranslate %}
   </p>
   <p>
-    If a makerspace has a pending archive request, direct archival will approve that
-    request automatically and notify its requester.
+    {% blocktranslate trimmed %}If a makerspace has a pending archive request, direct archival will approve that
+    request automatically and notify its requester.{% endblocktranslate %}
   </p>
 
   <table>
     <thead>
       <tr>
-        <th scope="col">Name</th>
-        <th scope="col">Slug</th>
-        <th scope="col">Owned pending</th>
-        <th scope="col">Routed pending</th>
-        <th scope="col">Total pending</th>
-        <th scope="col">Unpaid event payouts</th>
-        <th scope="col">Pending archive request</th>
+        <th scope="col">{% translate "Name" %}</th>
+        <th scope="col">{% translate "Slug" %}</th>
+        <th scope="col">{% translate "Owned pending" %}</th>
+        <th scope="col">{% translate "Routed pending" %}</th>
+        <th scope="col">{% translate "Total pending" %}</th>
+        <th scope="col">{% translate "Unpaid event payouts" %}</th>
+        <th scope="col">{% translate "Pending archive request" %}</th>
       </tr>
     </thead>
     <tbody>
@@ -45,10 +46,10 @@
           <td>{{ row.unpaid_event_payouts }}</td>
           <td>
             {% if row.pending_archive_request %}
-              <strong>Will be approved.</strong><br>
+              <strong>{% translate "Will be approved." %}</strong><br>
               {{ row.pending_archive_request.reason|linebreaksbr }}
             {% else %}
-              None
+              {% translate "None" %}
             {% endif %}
           </td>
         </tr>
@@ -58,7 +59,7 @@
 
   <div class="submit-row">
     <input type="submit" value="Archive makerspaces" class="default">
-    <a href=".">Cancel</a>
+    <a href=".">{% translate "Cancel" %}</a>
   </div>
 </form>
 {% endblock %}

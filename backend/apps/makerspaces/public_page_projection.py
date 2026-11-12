@@ -30,8 +30,10 @@ def project_team(entries, revision, request):
     references = {str(row.slot): row.profile for row in revision.member_references.select_related(
         "profile__membership__makerspace", "profile__membership__user")}
     # One handle query for the whole section instead of one per member row.
-    claims = {(row.profile_id, row.user_id): row for row in PublicHandle.objects.filter(
-        profile__in=[profile for profile in references.values() if profile is not None])}
+    claims = {row.user_id: row for row in PublicHandle.objects.filter(
+        user_id__in=[profile.membership.user_id for profile in references.values() if profile is not None])}
+    from .models_account_profile import AccountProfile
+    avatars = dict(AccountProfile.objects.filter(user_id__in=claims).values_list("user_id", "avatar_key"))
     result = []
     scopes = _request_tenant_ids(request) if request else []
     for row in entries:
@@ -41,13 +43,14 @@ def project_team(entries, revision, request):
         profile = references.get(row.get("member_slot_id", row["id"]))
         if not profile_is_public(profile) or any(pk != profile.membership.makerspace_id for pk in scopes):
             continue
-        claim = claims.get((profile.pk, profile.membership.user_id))
+        claim = claims.get(profile.membership.user_id)
         if claim is None:
             continue
         from .public_profile_share import profile_url
         result.append({"id": row["id"], "kind": "member", "role": row["role"],
                        "display_name": display_name_for(profile.membership), "handle": claim.handle,
-                       "url": profile_url(claim), "avatar_url": public_url(profile.avatar_key) or None})
+                       "url": profile_url(claim.handle),
+                       "avatar_url": public_url(avatars.get(claim.user_id, "")) or None})
     return result
 
 

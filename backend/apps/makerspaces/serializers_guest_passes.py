@@ -10,6 +10,7 @@ from rest_framework import serializers
 
 from apps.makerspaces.guest_pass_policy import POLICY_FIELDS
 from apps.makerspaces.models import DayPassProduct, GuestPass, GuestPassPolicy
+from django.utils.translation import gettext
 
 MODES = {
     "borrow": GuestPassPolicy.Borrowing.values, "machines": GuestPassPolicy.Machines.values,
@@ -119,7 +120,7 @@ class WaiverAcceptSerializer(serializers.Serializer):
 
     def validate_accepted(self, value):
         if value is not True:
-            raise serializers.ValidationError("The waiver must be explicitly accepted.")
+            raise serializers.ValidationError(gettext("The waiver must be explicitly accepted."))
         return value
 
 
@@ -165,7 +166,7 @@ class StaffIssueSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         if bool(attrs.get("holder_email")) == bool(attrs.get("holder_id")):
-            raise serializers.ValidationError("Give exactly one of holder_email or holder_id.")
+            raise serializers.ValidationError(gettext("Give exactly one of holder_email or holder_id."))
         return attrs
 
 
@@ -197,10 +198,10 @@ class DayPassProductSerializer(serializers.ModelSerializer):
 
     def validate_entitlements(self, value):
         if not isinstance(value, dict) or set(value) - {"borrow", "machines"}:
-            raise serializers.ValidationError("Use only the keys borrow and machines.")
+            raise serializers.ValidationError(gettext("Use only the keys borrow and machines."))
         for key, allowed in MODES.items():
             if key in value and value[key] not in allowed:
-                raise serializers.ValidationError(f"{key} must be one of {allowed}.")
+                raise serializers.ValidationError(gettext("%(key)s must be one of %(allowed)s.") % {"key": key, "allowed": allowed})
         return value
 
 

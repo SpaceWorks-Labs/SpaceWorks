@@ -11,6 +11,7 @@ from apps.makerspaces.minors import age_of, current_consent
 from apps.makerspaces.models import (
     CommunityPolicy, GuardianConsentTerms, MinorProfile, VolunteerCredit, VolunteerHourEntry,
 )
+from django.utils.translation import gettext
 
 
 class CommunityPolicySerializer(serializers.ModelSerializer):
@@ -45,7 +46,7 @@ class MinorRecordInputSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         if not (attrs.get("user_id") or attrs.get("user_email")):
-            raise serializers.ValidationError({"user_id": "Name the person by id or e-mail."})
+            raise serializers.ValidationError({"user_id": gettext("Name the person by id or e-mail.")})
         return attrs
 
 

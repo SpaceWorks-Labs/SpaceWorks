@@ -43,6 +43,7 @@ def machine_service_delete(makerspace, cursor):
         "machines.MachineConsumableAdjustment",
         "machines.MachineUsageEntry",
         "machines.ServiceRequestConsumption",
+        "machines.ServiceRequestConsumableUsage",
     }
     usage_entries = 0
     if request_ids:
@@ -51,6 +52,10 @@ def machine_service_delete(makerspace, cursor):
         cursor.execute(
             "DELETE FROM machines_servicerequestconsumption "
             "WHERE service_request_id = ANY(%s)",
+            [request_ids],
+        )
+        cursor.execute(
+            "DELETE FROM machines_servicerequestconsumableusage WHERE service_request_id = ANY(%s)",
             [request_ids],
         )
         cursor.execute(

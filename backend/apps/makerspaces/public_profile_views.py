@@ -8,10 +8,14 @@ from rest_framework.views import APIView
 from apps.apiclients.throttling import ClientTierRateThrottle
 from apps.accounts.authentication import SpaceWorksJWTAuthentication
 from apps.hardware_requests.exceptions import ErrorSerializer
+from .account_profile_access import resolve_by_handle
 from .public_profile_access import resolve_public_profile
-from .public_profile_projection import public_profile_payload, public_project, public_projects, public_events, public_event
+from .account_profile_read import build_payload
+from .account_profile_serializers import AccountProfileSerializer
+from .public_profile_projection import public_project
+from .throttles import PROFILE_LOOKUP_THROTTLES
 from .public_profile_serializers import (
-    PublicProfileSerializer, PublicActivitySerializer, PublicEventSerializer,
+    PublicActivitySerializer, PublicEventSerializer,
     PublicProjectSerializer, PublicProjectPageSerializer, PublicEventPageSerializer,
 )
 
@@ -47,54 +51,78 @@ class PublicProfileBase(APIView):
 
 
 class PublicProfileView(PublicProfileBase):
-    authentication_classes = [SpaceWorksJWTAuthentication]
+    """Optional-JWT read of the GLOBAL profile by handle (decision 303).
 
-    @extend_schema(tags=["Public profiles"], responses={200: PublicProfileSerializer, 401: ErrorSerializer, **REDIRECT, **ERRORS})
+    Signed-in callers read any visible profile; logged-out callers additionally need the open-web
+    consent. Every refusal is the same 404.
+    """
+
+    authentication_classes = [SpaceWorksJWTAuthentication]
+    # Signed-in callers see the member audience, so they get a per-account budget (H5);
+    # anonymous callers keep `public_read` (PROFILE_LOOKUP_THROTTLES skip them).
+    throttle_classes = [ClientTierRateThrottle, *PROFILE_LOOKUP_THROTTLES]
+
+    @extend_schema(tags=["Public profiles"], responses={200: AccountProfileSerializer, 401: ErrorSerializer,
+                                                         **REDIRECT, **ERRORS})
     def get(self, request, handle):
-        claim, redirect = self.resolve(request, handle)
-        if redirect is not None:
-            return redirect
-        payload = public_profile_payload(claim)
-        payload["viewer_is_owner"] = bool(request.user.is_authenticated and request.user.pk == claim.user_id)
-        return Response(PublicProfileSerializer(payload).data)
+        self.cache_headers()
+        profile, redirected = resolve_by_handle(handle, request.user, request)
+        if redirected:
+            return Response(status=302, headers={"Location": f"/api/v1/public/profiles/{redirected}/"})
+        if request.user.is_authenticated and request.user.pk == profile.user_id:
+            audience = "owner"
+        else:
+            audience = "member" if request.user.is_authenticated else "public"
+        return Response(AccountProfileSerializer(build_payload(profile, audience, request.user)).data)
 
 
 class PublicProfileActivityView(PublicProfileBase):
-    @extend_schema(tags=["Public profiles"], auth=[], parameters=[
+    authentication_classes = [SpaceWorksJWTAuthentication]
+
+    @extend_schema(tags=["Public profiles"], parameters=[
         OpenApiParameter("from", str, description="First local date (inclusive)."),
         OpenApiParameter("to", str, description="Last local date (inclusive), at most 120 days."),
     ], responses={200: PublicActivitySerializer, 400: ErrorSerializer, **REDIRECT, **ERRORS})
     def get(self, request, handle):
         from .profile_activity_public import daily_activity
-        claim, redirect = self.resolve(request, handle, "activity")
-        if redirect is not None:
-            return redirect
-        return Response(PublicActivitySerializer(daily_activity(claim.profile, request.query_params)).data)
+        self.cache_headers()
+        profile, redirected = resolve_by_handle(handle, request.user, request)
+        if redirected:
+            return Response(status=302, headers={"Location": f"/api/v1/public/profiles/{redirected}/activity"})
+        return Response(PublicActivitySerializer(daily_activity(profile, request.query_params)).data)
 
 
 class PublicProfileEventsView(PublicProfileBase):
-    @extend_schema(tags=["Public profiles"], auth=[], parameters=[OpenApiParameter("page", int)],
+    authentication_classes = [SpaceWorksJWTAuthentication]
+
+    @extend_schema(tags=["Public profiles"], parameters=[OpenApiParameter("page", int)],
                    responses={200: PublicEventPageSerializer, **REDIRECT, **ERRORS})
     def get(self, request, handle):
-        claim, redirect = self.resolve(request, handle, "events")
-        if redirect is not None:
-            return redirect
+        self.cache_headers()
+        profile, redirected = resolve_by_handle(handle, request.user, request)
+        if redirected:
+            return Response(status=302, headers={"Location": f"/api/v1/public/profiles/{redirected}/events"})
+        from .profile_history_public import event_history
+        rows = event_history(profile)
         paginator = PageNumberPagination()
         paginator.page_size = 24
-        rows = paginator.paginate_queryset(public_events(claim.profile), request, view=self)
-        return paginator.get_paginated_response(PublicEventSerializer(
-            [public_event(row) for row in rows], many=True).data)
+        page = paginator.paginate_queryset(rows, request, view=self)
+        return paginator.get_paginated_response(PublicEventSerializer(page, many=True).data)
 
 
 class PublicProfileProjectsView(PublicProfileBase):
-    @extend_schema(tags=["Public profiles"], auth=[], parameters=[OpenApiParameter("page", int)],
+    authentication_classes = [SpaceWorksJWTAuthentication]
+
+    @extend_schema(tags=["Public profiles"], parameters=[OpenApiParameter("page", int)],
                    responses={200: PublicProjectPageSerializer, **REDIRECT, **ERRORS})
     def get(self, request, handle):
-        claim, redirect = self.resolve(request, handle, "projects")
-        if redirect is not None:
-            return redirect
+        self.cache_headers()
+        profile, redirected = resolve_by_handle(handle, request.user, request)
+        if redirected:
+            return Response(status=302, headers={"Location": f"/api/v1/public/profiles/{redirected}/projects"})
+        rows = profile.projects.filter(public_visible=True) if profile.show_projects else []
         paginator = PageNumberPagination()
         paginator.page_size = 24
-        rows = paginator.paginate_queryset(public_projects(claim.profile), request, view=self)
+        page = paginator.paginate_queryset(rows, request, view=self)
         return paginator.get_paginated_response(PublicProjectSerializer(
-            [public_project(row) for row in rows], many=True).data)
+            [public_project(row) for row in page], many=True).data)

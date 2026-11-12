@@ -1,4 +1,4 @@
-"""Generated route namespace snapshot; update deliberately with the drift guard."""
+"""Generated route namespace snapshot (update deliberately with the drift guard), plus reserved brand names."""
 
 RESERVED_SEGMENTS = frozenset({
     '.well-known',
@@ -8,6 +8,7 @@ RESERVED_SEGMENTS = frozenset({
     'api',
     'assets',
     'bookings',
+    'boot.js',
     'checkout',
     'config.js',
     'control',
@@ -67,8 +68,23 @@ RESERVED_SEGMENTS = frozenset({
     'shop',
     # 0.12.0: the public spaces directory (/spaces).
     'spaces',
+    # 0.12.0 decision 306: the public feature list (/features).
+    'features',
+    # 0.12.0 decision 307: the paired space display screen (/display).
+    'display',
+    # Static font files served at /fonts on static hosting (deploy/static/shared/routes.mjs).
+    'fonts',
     'technician-opt-in',
     # 0.12.0 parity A13: the privacy and terms pages.
     'privacy',
     'terms',
+}) | frozenset({
+    # SECURITY-REVIEW L-P1: brand and operational names a member must never hold, because a profile
+    # at /<name> would read as the platform speaking (support, abuse reports, system mail). These
+    # are not routes, so the route-inventory guard does not generate them.
+    'spaceworks', 'space-works', 'support', 'help-desk', 'helpdesk', 'root', 'administrator',
+    'admins', 'sysadmin', 'superuser', 'system', 'official', 'staff-team', 'team', 'moderator',
+    'noreply', 'no-reply', 'no_reply', 'postmaster', 'hostmaster', 'webmaster', 'abuse',
+    'security-team', 'billing', 'payments', 'legal', 'privacy-team', 'profiles', 'profile',
+    'unsubscribe', 'notifications', 'mailer-daemon', 'info', 'contact', 'status',
 })

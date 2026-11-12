@@ -46,11 +46,8 @@ MODULES = (
         "scanner", "Scanner", "QR scanning and container lookup.",
         "boxes", GUARD, group=GROUP_INVENTORY, is_core=True, frontend_workflows=("qr_scan", "container_lookup"),
     ),
-    ModuleDefinition(
-        "printing", "Printing", "3D print request queue (a machine type under `machines`).",
-        "machines", GUARD, group=GROUP_MACHINES, requires_modules=("machine_service",),
-        frontend_workflows=("printing_requests",),
-    ),
+    # `printing` (the 3D print queue) is a retired module key (decision 340b): the printer
+    # queue is one machine type inside `machine_service`, read through `module_aliases`.
     ModuleDefinition(
         "telegram", "Telegram", "Per-makerspace Telegram group alerts (outbound only).",
         "integrations", GUARD, group=GROUP_NOTIFICATIONS, frontend_workflows=("telegram_alerts",),
@@ -104,9 +101,14 @@ MODULES = (
     # is installed, an active account otherwise. Declaring the dependency instead would
     # have dragged `membership` into the default profile and silently made ordinary
     # borrowing require a membership, waiver and presence session.
+    # Every machine type's service requests, the 3D print queue included (decision 340b
+    # folded the retired `printing` module in). `printing_requests` stays a workflow name
+    # here so clients that look for it keep finding it.
     ModuleDefinition(
-        "machine_service", "Machine service", "Machine service requests and consoles.",
-        "machines", GUARD, group=GROUP_MACHINES, frontend_workflows=("machine_service_requests",),
+        "machine_service", "Machine service",
+        "Service requests for every machine type (3D printers, lasers, CNC, cutters) and their consoles.",
+        "machines", GUARD, group=GROUP_MACHINES,
+        frontend_workflows=("machine_service_requests", "printing_requests"),
     ),
     # Members remain the default audience. Opt-in account/invite registration makes
     # an events-only tenant usable without the community membership module.

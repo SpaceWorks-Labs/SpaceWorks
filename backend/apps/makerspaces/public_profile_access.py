@@ -14,15 +14,31 @@ from .servability import is_servable
 from .hosting import canonical_host, is_infra_host
 
 
+def account_is_open_web(user):
+    """The OPEN-WEB audience (logged out, decisions 303b/303c): visible, consented, listable, with a handle."""
+    from .account_profile_read import account_is_listable
+    from .models_account_profile import AccountProfile
+
+    account = AccountProfile.objects.filter(user=user).first()
+    return bool(account and account.is_visible and account.public_visible and account.public_consented_at
+                and account_is_listable(user) and PublicHandle.objects.filter(user_id=user.pk).exists())
+
+
 def profile_is_public(profile):
+    """Is this per-space profile REFERENCE publicly showable? (decisions 304/305)
+
+    Stored references (page team members, event website revisions, event profile photos, certificate
+    print sources) still name a legacy `MemberProfile` row, but it is only an identity token for
+    "this person in this space": the visibility truth is the person's ACCOUNT profile, so a new
+    account with no content on the legacy row shows exactly like an old one, and a hidden account
+    profile stays hidden everywhere. The reference is also space-scoped, so the membership must still
+    be active in a servable space with the membership module on.
+    """
     if profile is None:
         return False
     membership = profile.membership
-    user = membership.user
-    return bool(profile.public_visible and profile.public_consented_at
-                and is_person(user) and user.is_active and user.access_status == "active"
-                and membership.status == "active" and not user.is_tenant_dump_stub
-                and is_servable(membership.makerspace)
+    return bool(account_is_open_web(membership.user)
+                and membership.status == "active" and is_servable(membership.makerspace)
                 and module_enabled(membership.makerspace, "membership"))
 
 
@@ -57,25 +73,15 @@ def _request_tenant_ids(request):
     return scopes
 
 
-def resolve_public_profile(handle, request=None):
-    current = PublicHandle.objects.select_related(
-        "profile__membership__user", "profile__membership__makerspace"
-    ).filter(handle__iexact=handle, user__isnull=False, profile__isnull=False).first()
-    redirected = False
-    if current is None:
-        retired = PublicHandleRedirect.objects.filter(handle__iexact=handle,
-                                                      expires_at__gt=timezone.now(), user__isnull=False).first()
-        if retired:
-            current = PublicHandle.objects.select_related(
-                "profile__membership__user", "profile__membership__makerspace"
-            ).filter(user_id=retired.user_id, profile__isnull=False).first()
-            redirected = current is not None
-    if current is None or not profile_is_public(current.profile):
-        raise NotFound()
-    # Invalid model-level FK assignment must never attach another person's name.
-    if current.user_id != current.profile.membership.user_id:
-        raise NotFound()
-    if request and any(pk != current.profile.membership.makerspace_id
-                       for pk in _request_tenant_ids(request)):
-        raise NotFound()
-    return current, redirected
+def resolve_public_profile(handle, request=None, viewer=None):
+    """`(claim, redirected)`; every refusal is the same 404.
+
+    `viewer=None` is the logged-out open-web audience (crawlers, share cards). A signed-in viewer
+    passes the real user so non-open-web profiles resolve platform-wide (decision 303a).
+    """
+    from django.contrib.auth.models import AnonymousUser
+
+    from .account_profile_access import resolve_by_handle
+
+    profile, redirected = resolve_by_handle(handle, viewer if viewer is not None else AnonymousUser(), request)
+    return PublicHandle.objects.select_related("user").get(user_id=profile.user_id), bool(redirected)

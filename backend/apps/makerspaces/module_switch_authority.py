@@ -10,8 +10,9 @@ superadmin:
   self-host no limit applies (`limits.is_self_host`), so nothing is gated;
 * **every purge** (`purge_module_data`, the /control/ capability purge).
 
-The check reads the dependency closure: installing `printing` also installs
-`machine_service`, so it is gated when either carries a limit.
+The check reads the dependency closure: installing `event_reimbursements` also installs
+`events`, so it is gated when either carries a limit. The `print` limit belongs to
+`machine_service` since the `printing` module was folded into it (decision 340b).
 """
 
 from apps.accounts import rbac
@@ -19,8 +20,7 @@ from apps.accounts import rbac
 # Module key -> the managed fair-use limit keys that cap what it lets a space do.
 LIMIT_GATED_MODULES = {
     "machines": ("machines",),
-    "machine_service": ("machine_service_open", "machine_service_submit"),
-    "printing": ("print",),
+    "machine_service": ("machine_service_open", "machine_service_submit", "print"),
     "events": ("events",),
     "bookings": ("bookings",),
     "membership": ("members",),
@@ -43,10 +43,12 @@ def limit_gated(makerspace, key):
 
     if limits.is_self_host():
         return []
-    installed = set(makerspace.enabled_modules or [])
+    from apps.makerspaces.module_aliases import canonical_module_key, canonical_module_keys
+
+    installed = set(canonical_module_keys(makerspace.enabled_modules))
     return sorted({
         limit_key
-        for module in with_dependencies({key}) - installed
+        for module in with_dependencies({canonical_module_key(key)}) - installed
         for limit_key in LIMIT_GATED_MODULES.get(module, ())
         if limits.resource_limit(makerspace, limit_key) is not None
     })

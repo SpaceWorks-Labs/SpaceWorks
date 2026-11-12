@@ -73,7 +73,7 @@ def public_page(kind, owner, request=None):
     return page
 
 
-def resolve_handle(handle, request=None):
+def resolve_handle(handle, request=None, viewer=None):
     claim = PublicHandle.objects.filter(handle__iexact=handle).first()
     redirected = False
     if claim is None:
@@ -85,9 +85,9 @@ def resolve_handle(handle, request=None):
     if claim is None:
         raise NotFound()
     if claim.user_id:
-        member, _ = resolve_public_profile(claim.handle, request)
+        resolve_public_profile(claim.handle, request, viewer)  # one 404 unless readable by this viewer
         from .public_profile_share import profile_url
-        return claim, {"kind": "member", "handle": claim.handle, "canonical_url": profile_url(member),
+        return claim, {"kind": "member", "handle": claim.handle, "canonical_url": profile_url(claim.handle),
                        "redirected": redirected, "content_url": f"/api/v1/public/profiles/{claim.handle}/"}
     kind = "makerspace" if claim.makerspace_id else "organization"
     owner = getattr(claim, kind)

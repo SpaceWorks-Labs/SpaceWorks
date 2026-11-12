@@ -25,12 +25,11 @@ from apps.makerspaces.member_card_views import (
     MemberCardPhotoView,
     MemberCardPreviewView,
 )
-from apps.makerspaces.profile_image_views import MemberProfileImageView
 from apps.makerspaces.profile_views import (
     MemberDirectoryDetailView,
     MemberDirectoryView,
-    MemberProfileView,
 )
+from apps.makerspaces.profile_legacy_aliases import LegacyProfileImageView, LegacyProfileView
 from .profile_contract_urls import urlpatterns as profile_contract_patterns
 from .urls_membership_l4 import urlpatterns as membership_l4_patterns
 from .urls_guest_passes import urlpatterns as guest_pass_patterns
@@ -71,8 +70,8 @@ urlpatterns = [
     # and stay in the OpenAPI schema, on a deployment that ships no events app.
     path("member/makerspaces/<int:makerspace_id>/referrals", MemberReferralView.as_view(), name="member-referrals"),
     path("member/makerspaces/<int:makerspace_id>/verification", MemberVerificationView.as_view(), name="member-verification"),
-    path("member/makerspaces/<int:makerspace_id>/profile", MemberProfileView.as_view(), name="member-profile"),
-    path("member/makerspaces/<int:makerspace_id>/profile/image", MemberProfileImageView.as_view(), name="member-profile-image"),
+    path("member/makerspaces/<int:makerspace_id>/profile", LegacyProfileView.as_view(), name="member-profile"),
+    path("member/makerspaces/<int:makerspace_id>/profile/image", LegacyProfileImageView.as_view(), name="member-profile-image"),
     path("member/makerspaces/<int:makerspace_id>/member-card", MemberCardOwnView.as_view(), name="member-card"),
     path("member/makerspaces/<int:makerspace_id>/member-card/photo", MemberCardPhotoView.as_view(), name="member-card-photo"),
     path("member/makerspaces/<int:makerspace_id>/member-card/preview.pdf", MemberCardPreviewView.as_view(), name="member-card-preview"),

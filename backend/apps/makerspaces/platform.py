@@ -9,6 +9,7 @@ from apps.makerspaces.theme_validation import public_theme_config
 from apps.makerspaces.servability import is_servable, public_availability_queryset, servable_queryset
 from apps.makerspaces.capabilities import FEATURES
 from apps.makerspaces.capability_eligibility import configuration_feature_enabled
+from apps.makerspaces.module_aliases import canonical_module_key, canonical_module_keys
 from apps.makerspaces.module_registry import is_frontend_exposed, module_available, module_workflows
 from apps.separability.registry import runtime_active
 from apps.makerspaces.loan_visibility import LOAN_MODULES, INVENTORY_ONLY_MODULES
@@ -146,17 +147,17 @@ def module_enabled(makerspace, module_key):
     # module, and this deployment still ships the app that implements it. Merging
     # them here rather than at each call site is what makes tombstoning safe -- a
     # guard added in future code inherits the check without knowing it exists.
-    #
     # `allow_archived=True` is deliberate: this answers a CAPABILITY question, not a
     # liveness one. Letting archival answer it here would tell every caller that an
     # archived tenant's modules are "disabled", which is both false and a change to
     # shipped behaviour -- an archived makerspace is meant to fail its own archived
     # checks with PermissionDenied, not to report that maintenance was uninstalled.
     # The IMPORTING/ABORTED states are new, so refusing them here adds defence in
-    # depth behind the boundary guards without altering any existing contract.
+    # depth behind the boundary guards. Retired keys read as their live key (340b).
+    module_key = canonical_module_key(module_key)
     return (
         is_servable(makerspace, allow_archived=True)
-        and module_key in set(makerspace.enabled_modules or [])
+        and module_key in set(canonical_module_keys(makerspace.enabled_modules))
         and module_available(module_key)
         and inventory_master_allows(makerspace, module_key)
     )
@@ -174,7 +175,7 @@ def available_modules(makerspace):
     hidden = hidden_module_keys()
     return sorted(
         key
-        for key in set(makerspace.enabled_modules or [])
+        for key in set(canonical_module_keys(makerspace.enabled_modules))
         if module_available(key) and key not in hidden
     )
 

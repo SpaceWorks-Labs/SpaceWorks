@@ -1,4 +1,5 @@
 """Configuration read projection. All tenant queries are action-scoped."""
+from django.utils.translation import gettext
 import json
 from django.apps import apps
 from django.core.serializers.json import DjangoJSONEncoder
@@ -64,7 +65,7 @@ def configuration_for(actor, makerspace):
         else:
             identities = [tuple(row[key] for key in spec.identity) for row in values]
             if len(set(identities)) != len(identities):
-                raise PackError("ambiguous_pack_entry", f"{name} has duplicate local names; rename them first.")
+                raise PackError("ambiguous_pack_entry", gettext("%(name)s has duplicate local names; rename them first.") % {"name": name})
             config[name] = sorted(values, key=lambda value: canonical(value))
     return config
 

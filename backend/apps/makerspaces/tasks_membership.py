@@ -22,4 +22,10 @@ def run_membership_renewals_task():
     except Exception:  # pragma: no cover - per-space boundary inside; this guards the task itself
         import logging
         logging.getLogger(__name__).exception("join_followup_sweep_failed")
+    try:
+        from apps.makerspaces.notifications_profile_open import send_open_notices  # decision 303d notice + backfill
+        send_open_notices()
+    except Exception:  # pragma: no cover - per-space boundary inside; this guards the task itself
+        import logging
+        logging.getLogger(__name__).exception("profile_open_notice_sweep_failed")
     return counts

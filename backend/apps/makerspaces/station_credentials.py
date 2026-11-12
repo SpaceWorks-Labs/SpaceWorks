@@ -67,7 +67,7 @@ def reveal(station, *, actor, current_password):
         is_enabled=True,
     ).first()
     if credential is None:
-        raise PasswordStepUpUnavailable("Rotate a station PIN before revealing it.")
+        raise PasswordStepUpUnavailable(gettext("Rotate a station PIN before revealing it."))
     principal = User.objects.select_for_update().get(pk=actor.pk)
     if not principal.has_usable_password():
         raise PasswordStepUpUnavailable()

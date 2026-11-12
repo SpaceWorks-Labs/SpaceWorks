@@ -107,6 +107,6 @@ def source_available(makerspace, key):
         if key in {"lending.loans", "lending.current_loans", "lending.most_popular"}:
             return public_surface_available("request_workflow") and module_enabled(makerspace, "request_workflow")
         return True
-    surface = section
-    required = ("machine_service", "printing") if section == "printing" else (surface,)
-    return public_surface_available(surface) and all(module_enabled(makerspace, module) for module in required)
+    # The `printing` SECTION keeps its name; its module is machine_service (340b).
+    surface = "machine_service" if section == "printing" else section
+    return public_surface_available(surface) and module_enabled(makerspace, surface)

@@ -8,6 +8,7 @@ from apps.accounts import rbac
 from apps.admin_api.permissions import require_action
 from apps.makerspaces.models import Makerspace
 from apps.tenant_migration.gate_runtime import assert_write_allowed
+from .module_aliases import RETIRED_MODULE_ALIASES
 from .module_install import install_module, uninstall_module, ModuleInstallError
 from .module_registry import BY_KEY, core_module_keys, dependents_of, module_available
 from .request_access import effective_policy
@@ -65,6 +66,9 @@ def validate_answers(answers):
     if mode and ((mode == "members") != ("membership" in areas)):
         raise ValidationError({"request_access": gettext("Membership enabled requires members; otherwise choose accounts.")})
     without = answers.get("without", [])
+    if isinstance(without, list):
+        # A retired key (`printing`, 340b) leaves out nothing: it is part of machine_service now.
+        without = [key for key in without if key not in RETIRED_MODULE_ALIASES]
     if not isinstance(without, list) or any(not isinstance(key, str) or key not in BY_KEY or key in core_module_keys() for key in without):
         raise ValidationError({"without": gettext("Use optional module keys.")})
     if "member_accounts" in without:

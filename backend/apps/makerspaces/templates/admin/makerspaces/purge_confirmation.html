@@ -1,4 +1,5 @@
 {% extends "admin/base_site.html" %}
+{% load i18n %}
 
 {% block content %}
 <form method="post">
@@ -10,22 +11,22 @@
   {% endfor %}
 
   <p>
-    ALL data and the audit trail for the selected makerspaces will be permanently destroyed.
-    RETYPE each makerspace slug exactly to confirm purge.
+    {% blocktranslate trimmed %}ALL data and the audit trail for the selected makerspaces will be permanently destroyed.
+    RETYPE each makerspace slug exactly to confirm purge.{% endblocktranslate %}
   </p>
 
   {% for row in impacts %}
-    <p>Advisory unsettled charges for {{ row.object.name }}:
-      {{ row.owned_pending }} owned pending, {{ row.routed_pending }} routed pending,
-      {{ row.total_pending }} total pending. Counts may change before purge.</p>
+    <p>{% blocktranslate trimmed with name=row.object.name owned_pending=row.owned_pending routed_pending=row.routed_pending total_pending=row.total_pending %}Advisory unsettled charges for {{ name }}:
+      {{ owned_pending }} owned pending, {{ routed_pending }} routed pending,
+      {{ total_pending }} total pending. Counts may change before purge.{% endblocktranslate %}</p>
   {% endfor %}
 
   <table>
     <thead>
       <tr>
-        <th scope="col">Name</th>
-        <th scope="col">Slug</th>
-        <th scope="col">Confirm slug</th>
+        <th scope="col">{% translate "Name" %}</th>
+        <th scope="col">{% translate "Slug" %}</th>
+        <th scope="col">{% translate "Confirm slug" %}</th>
       </tr>
     </thead>
     <tbody>
@@ -43,7 +44,7 @@
 
   <div class="submit-row">
     <input type="submit" value="Purge makerspaces" class="default">
-    <a href=".">Cancel</a>
+    <a href=".">{% translate "Cancel" %}</a>
   </div>
 </form>
 {% endblock %}

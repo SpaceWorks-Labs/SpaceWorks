@@ -7,7 +7,7 @@ def collect_private_object_keys(makerspace, *, include_coordination=True):
     from apps.evidence.models import EvidencePhoto
     from apps.events.models import EventAttendanceCertificate, EventCertificateArtwork, EventPageAsset
     from apps.maintenance.models import MaintenanceLogDocument
-    from apps.machines.models import MachineDocument
+    from apps.machines.models import MachineDocument, MachineTypeDocument
     from apps.machines.service_lifecycle import collect_private_object_keys as collect_service
     from apps.procurement.models import ToBuyReceipt
     from apps.warranty.models import WarrantyDocument
@@ -29,6 +29,7 @@ def collect_private_object_keys(makerspace, *, include_coordination=True):
         (ToBuyReceipt, {"to_buy_item__makerspace": makerspace}),
         (MaintenanceLogDocument, {"log__machine__makerspace": makerspace}),
         (MachineDocument, {"machine__makerspace": makerspace}),
+        (MachineTypeDocument, {"makerspace": makerspace}),
     ):
         for key in model.objects.filter(**lookup).values_list("object_key", flat=True):
             add(key)
@@ -92,7 +93,9 @@ def collect_public_image_keys(makerspace, *, include_coordination=True):
     keys.extend(Sponsor.objects.filter(makerspace=makerspace).values_list("logo_key", flat=True))
     if include_coordination:
         keys.extend(_public_coordination_keys(makerspace))
-    return [str(key) for key in dict.fromkeys(keys) if key]
+    from apps.makerspaces.account_profile_purge import without_account_held
+
+    return [str(key) for key in without_account_held([str(k) for k in dict.fromkeys(keys) if k])]
 
 
 def _collect_private_coordination_keys(makerspace, add):

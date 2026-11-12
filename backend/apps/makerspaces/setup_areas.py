@@ -1,5 +1,6 @@
 """Installer areas are bundles over the module and feature registries, not new gates."""
 from .capabilities import FEATURES, prune_features
+from .module_aliases import canonical_module_keys
 from .module_registry import core_module_keys, with_dependencies
 from .capability_definitions_r2_l17 import RESERVED_KEYS
 
@@ -8,7 +9,7 @@ AREAS = {
                   "evidence_uploads", "qr_management", "guest_handover", "asset_units",
                   "containers", "bulk_import", "stock_transfers", "qr_print_batches",
                   "stocktake", "devices"),
-    "machines": ("machines", "machine_service", "printing"),
+    "machines": ("machines", "machine_service"),
     "events": ("events",),
     "bookings": ("bookings",),
     "membership": ("membership", "mobile"),
@@ -62,7 +63,7 @@ def edition_for(areas, organization=False):
 
 
 def area_status(space):
-    installed = set(space.enabled_modules or [])
+    installed = set(canonical_module_keys(space.enabled_modules))
     features = set(space.enabled_features or [])
     result = {}
     for key, modules in AREAS.items():
@@ -80,7 +81,7 @@ def area_status(space):
 
 def active_areas(space):
     """Existing domain configuration survives completing a partial module bundle."""
-    modules = set(space.enabled_modules or [])
+    modules = set(canonical_module_keys(space.enabled_modules))
     anchors = {"machines": "machines", "events": "events", "bookings": "bookings",
                "membership": "membership", "payments": "payments", "reports": "reports"}
     return {"inventory": "loans.enabled" in (space.enabled_features or []),

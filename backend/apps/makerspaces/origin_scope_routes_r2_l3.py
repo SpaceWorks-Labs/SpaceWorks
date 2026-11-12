@@ -14,9 +14,11 @@ MODEL_LOOKUPS = {
         "admin-member-card-download", "admin-member-card-email", "admin-member-card-photo-request",
         "admin-member-card-photo", "admin-member-card-print-face",
     )},
+    "admin-member-card-photo-cutout": _CARD,  # D314c: the background-eraser adapter
+    "admin-event-id-card-photo-cutout": ("events.EventIdCard", "makerspace_id"),
     **{name: ("card_designs.StaffCard", "makerspace_id") for name in (  # O-B4 part 2: staff ID cards
         "admin-staff-card", "admin-staff-card-reissue", "admin-staff-card-revoke", "admin-staff-card-print-face",
-        "admin-staff-card-download",
+        "admin-staff-card-download", "admin-staff-card-photo-cutout",
     )},
     **{name: _DESIGN for name in (
         "admin-card-design", "admin-card-design-templates", "admin-card-design-publish", "admin-card-design-submit",
@@ -27,6 +29,13 @@ MODEL_LOOKUPS = {
         "admin-card-design-revision", "admin-card-design-restore", "admin-card-design-holders",
         "admin-card-design-calibration", "admin-card-design-archive", "admin-card-design-unarchive",
         "admin-card-design-badge-export", "admin-card-design-badge-import", "admin-card-design-badge-convert",
+        "admin-card-design-apply-template",
+        # CARD-STUDIO-2 (decision 344(b)): the space artwork library, the brand kit and the CSV merge.
+        "admin-card-design-asset-library", "admin-card-design-asset-library-delete", "admin-card-design-brand-kit",
+        "admin-card-design-csv-merge", "admin-card-design-barcode",
+    )},
+    **{name: ("card_designs.CardTemplate", "makerspace_id") for name in (  # Card Studio: saved templates
+        "admin-card-template", "admin-card-template-duplicate", "admin-card-template-export",
     )},
     **{name: ("card_designs.CardJob", "makerspace_id") for name in (
         "admin-card-job", "admin-card-job-cancel", "admin-card-job-result",

@@ -141,7 +141,9 @@ def channel_refusal(makerspace, channel, *, queued=False):
     ``queued``: the delivery row already exists (and counts), so the Nth message is not over the limit.
     """
     key = CHANNEL_KEYS.get(channel)
-    message = platform_refusal(makerspace, key, 0 if queued else 1) if key else None
+    # A limit of 0 allows nothing: no row counts yet when the check runs before one exists (staff push alerts).
+    adding = 0 if queued and (key is None or platform_limit(makerspace, key) != 0) else 1
+    message = platform_refusal(makerspace, key, adding) if key else None
     if message:
         note_reached(makerspace, key)
     return message

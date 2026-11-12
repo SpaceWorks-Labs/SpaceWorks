@@ -54,6 +54,11 @@ CELERY_BEAT_SCHEDULE["purge-login-security"] = {
     "task": "apps.accounts.tasks_login_security.purge_login_security_task", "schedule": crontab(hour=3, minute=40),
 }
 # --- end lane S-C
+# --- channel analytics (0.12.0): cached web/ios/android/api_client call counts into ChannelUsageDay.
+CELERY_BEAT_SCHEDULE["flush-channel-usage"] = {
+    "task": "apps.accounts.tasks_channel_usage.flush_channel_usage_task", "schedule": crontab(minute="*"),
+}
+# --- end channel analytics
 
 # --- lane L3 (release 2): card jobs resume (free tick + broker loss), 7-day result purge,
 # wallet-pass refresh after renewals/expiry, and the single "photo needs update" reminder.

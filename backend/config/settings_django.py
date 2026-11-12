@@ -129,6 +129,8 @@ MIDDLEWARE = [
     "axes.middleware.AxesMiddleware",
     # Masks tenant PII for a superadmin inside a space's staff routes (owner decision #115).
     "apps.accounts.platform_tenant_pii.PlatformTenantPiiMiddleware",
+    # Counts-only api_client channel analytics, on the way out (accounts/channel_middleware.py).
+    "apps.accounts.channel_middleware.ChannelUsageMiddleware",
     # #185/#195: one request's superadmin admission to paused spaces (set after authentication).
     "apps.makerspaces.middleware.ServabilityScopeMiddleware",
     # --- lane L8: binds each request's RLS scope once its route is resolved; LAST so every

@@ -25,6 +25,10 @@ SPECTACULAR_SETTINGS = {
     "VERSION": "0.12.0",
     "ENUM_NAME_OVERRIDES": {
         "DevicePlatformEnum": "apps.accounts.models_devices.DevicePlatform.choices",
+        # Two `client_platform` choice sets exist (web/ios/android and the native-only ios/android of
+        # GitHub native sign-in); pin both names so ClientPlatformEnum keeps its generated-client name.
+        "ClientPlatformEnum": "apps.accounts.models_social.SocialClientPlatform.choices",
+        "NativeClientPlatformEnum": [("ios", "iOS"), ("android", "Android")],
         # Each anyOf proof branch has a `type` discriminator. Without unique names
         # spectacular extracts all three as DeviceAttestationPayloadTypeEnum and
         # silently replaces the iOS/development choices with the Android choice.

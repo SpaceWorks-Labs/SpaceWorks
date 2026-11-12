@@ -5,6 +5,8 @@ import { SectionOrderList } from "./SectionOrderList";
 import { usePublicStatsSettings, useSavePublicStatsSettings, type PublicStatsSettings } from "./api";
 import { PublicStatsVisibilityControls } from "./PublicStatsVisibilityControls";
 import { publicStatsPatch, statsDecision, statsEditable } from "./visibility";
+import { LogoLoader } from "../../../components/LogoLoader";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 /**
  * Settings › Public stats (#170): page on/off, the sections and their order, the one fixed
@@ -16,7 +18,7 @@ export function PublicStatsSettingsPanel({ makerspaceId, slug, area }: { makersp
   const [draft, setDraft] = useState<PublicStatsSettings | null>(null);
   useEffect(() => { setDraft(null); }, [query.data, makerspaceId, area]);
   if (!query.data) return query.error ? <p role="alert" className="py-4 text-sm text-danger">{query.error.message}</p>
-    : <p className="py-4 text-sm text-muted">{t`Loading public stats settings…`}</p>;
+    : <LogoLoader label={t`Loading public stats settings…`} size={48} className="min-h-16 py-3" />;
   const { choices } = query.data;
   const editable = (field: string) => !area && statsEditable(statsDecision(query.data!, "settings", field));
   const canEditPage = ["enabled", "sections", "period", "headline", "tv_mode_enabled", "tv_refresh_seconds"].some(editable);
@@ -83,7 +85,7 @@ export function PublicStatsSettingsPanel({ makerspaceId, slug, area }: { makersp
       onChange={(key, visible) => set({ visibility: { ...value.visibility, [key]: visible } })} />
     {canEditPage || canEditVisibility ? <div className="flex flex-wrap gap-2 py-4">
       <button type="button" className="desk-button-primary" disabled={!changed || save.isPending}
-        onClick={() => changed && save.mutate(patch)}>{save.isPending ? t`Saving…` : t`Save public stats`}</button>
+        onClick={() => changed && save.mutate(patch)}>{save.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Save public stats`}</button>
       {draft ? <button type="button" className="desk-button" onClick={() => setDraft(null)}>{t`Discard`}</button> : null}
     </div> : null}
     {save.error ? <p role="alert" className="text-sm text-danger">{save.error.message}</p> : null}

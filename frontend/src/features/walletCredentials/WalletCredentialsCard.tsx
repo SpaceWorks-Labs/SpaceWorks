@@ -7,6 +7,7 @@ import { formatDate } from "../../lib/format";
 import { guestErrorText } from "../guestPasses/api";
 import { walletCredentialsApi, walletKeys, type AppleStatus, type GoogleStatus, type Source, type WalletCredentialsInput, type WalletScope } from "./api";
 import { AppleCredentialForm, GoogleCredentialForm } from "./WalletCredentialForms";
+import { LogoLoader } from "../../components/LogoLoader";
 
 const sourceNote = (source: Source | undefined) => source === "platform" ? t`Using the platform's credentials.`
   : source === "deployment" ? t`Using the deployment's credentials.` : source === "space" ? t`Using this space's credentials.`
@@ -33,7 +34,7 @@ export function WalletCredentialsCard({ scope }: { scope: WalletScope }) {
   return <SettingsSection title={t`Wallet passes`} description={scope.kind === "space"
     ? t`Sign Apple Wallet and Google Wallet passes for member cards and guest passes with this space's own credentials. Secrets are never shown again after saving.`
     : t`Used by every space that has no credentials of its own, while hosting other makerspaces is on. Secrets are never shown again after saving.`}>
-    {query.isLoading ? <p role="status" className="py-4 text-sm text-muted">{t`Loading wallet credentials…`}</p> : null}
+    {query.isLoading ? <LogoLoader label={t`Loading wallet credentials…`} size={48} className="min-h-16 py-3" /> : null}
     {query.isError ? <p role="alert" className="py-4 text-sm text-danger">{guestErrorText(query.error)}</p> : null}
     {data ? <div className="grid gap-4 py-3">
       {reissueNeeded ? <div role="status"><Callout size="inline" tone="warn" lead={t`Your Apple pass type changed.`}

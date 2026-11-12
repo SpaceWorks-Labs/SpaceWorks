@@ -1,0 +1,4 @@
+/* One opacity fade per slide change; nothing loops, so a Raspberry Pi browser stays idle between slides. */
+@keyframes sw-display-fade-in { from { opacity: 0; } to { opacity: 1; } }
+.sw-display-fade { animation: sw-display-fade-in 400ms ease-out both; }
+@media (prefers-reduced-motion: reduce) { .sw-display-fade { animation: none; } }

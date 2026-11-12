@@ -1,3 +1,4 @@
+import { LogoLoader } from "../../components/LogoLoader";
 import { t } from "@lingui/core/macro";
 import { useState, type ReactNode } from "react";
 
@@ -15,7 +16,7 @@ export function SupervisedSessionManager({ sessionId, picker }: {
   const steps = useSupervisedSteps(sessionId);
   const [closing, setClosing] = useState(false);
   const session = query.data;
-  if (query.isLoading) return <p role="status" className="text-sm text-muted">{t`Loading the session…`}</p>;
+  if (query.isLoading) return <LogoLoader label={t`Loading the session…`} />;
   if (query.error || !session) return <div role="alert" className="grid justify-items-start gap-2 text-sm text-danger">
     <p>{supervisedErrorMessage(query.error)}</p>
     <button type="button" className="desk-button" onClick={() => void query.refetch()}>{t`Try again`}</button></div>;

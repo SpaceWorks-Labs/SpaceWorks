@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Field } from "../../components/ui";
 import { supervisedErrorMessage, useOpenSupervisedSession, type SupervisedSession } from "./api";
 import { SupervisedMachineSelect } from "./SupervisedMachineSelect";
+import { BoxArt } from "../../components/BoxSpinner";
 
 /** "Start a supervised session": a certified instructor opens one on a machine, optionally for
  *  an event. `machineId` is fixed on a machine's own page; elsewhere the machine is chosen from the
@@ -38,6 +39,6 @@ export function SupervisedStartForm({ makerspaceId, machineId, onOpened }: {
     </Field>
     {open.error ? <p role="alert" className="text-sm text-danger">{supervisedErrorMessage(open.error)}</p> : null}
     <button type="submit" className="desk-button-primary justify-self-start" disabled={!target || open.isPending}>
-      {open.isPending ? t`Opening…` : t`Open session`}</button>
+      {open.isPending ? <><BoxArt size={16} mono />{t`Opening…`}</> : t`Open session`}</button>
   </form>;
 }

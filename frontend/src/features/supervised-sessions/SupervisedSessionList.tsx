@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ListRow, Pagination, SegmentedControl, StatusPill } from "../../components/ui";
 import { formatDateTime } from "../../lib/format";
 import { supervisedErrorMessage, useSupervisedSessions, type SessionFilter } from "./api";
+import { LogoLoader } from "../../components/LogoLoader";
 
 /** The sessions this person leads (a machine manager sees every session on machines they manage).
  *  `machineId` narrows the list to one machine on the server (`?machine=`). */
@@ -20,7 +21,7 @@ export function SupervisedSessionList({ makerspaceId, machineId, selectedId, onO
       <SegmentedControl label={t`Session status`} value={status} onChange={value => { setStatus(value as SessionFilter); setPage(1); }}
         options={[{ value: "open", label: t`Open` }, { value: "closed", label: t`Closed` }]} />
     </div>
-    {query.isLoading ? <p role="status" className="text-sm text-muted">{t`Loading sessions…`}</p>
+    {query.isLoading ? <LogoLoader label={t`Loading sessions…`} size={48} className="min-h-16 py-3" />
       : query.error ? <div role="alert" className="grid justify-items-start gap-2 text-sm text-danger"><p>{supervisedErrorMessage(query.error)}</p>
         <button type="button" className="desk-button" onClick={() => void query.refetch()}>{t`Try again`}</button></div>
       : rows.length ? <div className="grid gap-3">{rows.map(row => {

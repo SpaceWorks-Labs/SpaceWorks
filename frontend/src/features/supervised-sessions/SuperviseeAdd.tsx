@@ -2,6 +2,7 @@ import { t } from "@lingui/core/macro";
 import { useState, type ReactNode } from "react";
 
 import { SuperviseePeoplePicker } from "./SuperviseePeoplePicker";
+import { BoxArt } from "../../components/BoxSpinner";
 
 /** Add a supervisee. The default control searches the people the instructor may supervise
  *  (checked in, or registered for the session's event); staff pass their own picker instead. */
@@ -16,6 +17,6 @@ export function SuperviseeAdd({ sessionId, onAdd, pending, picker }: {
     if (ready && !pending) onAdd(Number(value), () => setValue(""));
   }}>
     {picker ? picker(value, setValue) : <SuperviseePeoplePicker sessionId={sessionId} value={value} onChange={setValue} />}
-    <button type="submit" className="desk-button-primary" disabled={!ready || pending}>{pending ? t`Adding…` : t`Add supervisee`}</button>
+    <button type="submit" className="desk-button-primary" disabled={!ready || pending}>{pending ? <><BoxArt size={16} mono />{t`Adding…`}</> : t`Add supervisee`}</button>
   </form>;
 }

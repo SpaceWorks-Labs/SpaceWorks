@@ -9,9 +9,10 @@ import { Toggle } from "../../components/card-designer/inspectorFields";
 import { ErrorBlock } from "../../components/ui/ErrorBlock";
 import { Modal } from "../../components/ui/Modal";
 import { SegmentedControl } from "../../components/ui/SegmentedControl";
-import { Skeleton } from "../../components/ui/Skeleton";
 import { staffRequest } from "../../lib/api";
 import { useStartCardJob } from "./cardJobs";
+import { LogoLoader } from "../../components/LogoLoader";
+import { BoxArt } from "../../components/BoxSpinner";
 
 export type SheetFilter = { status?: "active" | "all"; card_ids?: number[]; plan_id?: number; expiring_within_days?: number;
   /** Event cards only. */
@@ -53,7 +54,7 @@ export function SheetPreviewDialog({ open, onClose, previewPath, jobsPath, filte
     <button type="button" className="desk-button min-h-11" onClick={close}>{t`Cancel`}</button>
     <button type="button" className="desk-button-primary min-h-11" disabled={!data?.total || preview.isFetching || start.isPending}
       onClick={() => start.mutate({ kind: "bulk_sheet", ...settings }, { onSuccess: close })}>
-      {start.isPending ? t`Starting…` : t`Start print job`}</button>
+      {start.isPending ? <><BoxArt size={16} mono />{t`Starting…`}</> : t`Start print job`}</button>
   </div>}>
     <div className="grid gap-4">
       <div className="flex flex-wrap items-end gap-3">
@@ -65,7 +66,7 @@ export function SheetPreviewDialog({ open, onClose, previewPath, jobsPath, filte
       </div>
       <p className="text-xs text-muted">{order === "duplex" ? t`For printers that print both sides: each back sheet follows its front sheet.`
         : t`For one-sided printers: all fronts first, then turn the stack over for the backs.`}</p>
-      {preview.isLoading ? <Skeleton className="h-72 w-full" /> : null}
+      {preview.isLoading ? <LogoLoader size={48} className="min-h-72 py-3" /> : null}
       {preview.isError ? <ErrorBlock error={preview.error} resource={t`sheet preview`} onRetry={() => void preview.refetch()} /> : null}
       {data ? <div className="grid gap-3" aria-busy={preview.isFetching}>
         <p role="status" className="text-sm font-semibold text-ink">{sheetSummary(data)}

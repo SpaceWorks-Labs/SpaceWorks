@@ -6,6 +6,7 @@ import { Field, StatusPill } from "../../../components/ui";
 import { formatDate } from "../../../lib/format";
 import { guestErrorText } from "../../guestPasses/api";
 import { communityKeys, communityStaffApi } from "../api";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 /**
  * The guardian-consent text, versioned like a waiver. Publishing a new version keeps the old one
@@ -23,7 +24,7 @@ export function GuardianTermsPanel({ makerspaceId, canPublish }: { makerspaceId:
   const active = terms.data?.find((row) => row.is_active);
   return <section aria-labelledby="guardian-terms-title" className="grid gap-3 rounded-2xl border border-line p-4">
     <h3 id="guardian-terms-title" className="title-section">{t`Guardian consent text`}</h3>
-    {terms.isLoading ? <p role="status" className="text-sm text-muted">{t`Loading consent text…`}</p> : null}
+    {terms.isLoading ? <LogoLoader label={t`Loading consent text…`} size={48} className="min-h-16 py-3" /> : null}
     {terms.isError ? <p role="alert" className="text-sm text-danger">{guestErrorText(terms.error)}</p> : null}
     {terms.isSuccess && !active ? <p className="text-sm text-warn-ink">{t`No consent text is published, so no guardian can sign yet.`}</p> : null}
     {active ? <div className="grid gap-2">

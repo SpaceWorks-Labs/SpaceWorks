@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import { SettingsActions, SettingsRow, SettingsSection } from "../../../components/ui";
 import { guestErrorText, guestKeys, guestStaffApi, type GuestPassPolicy } from "../../guestPasses/api";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 type Waiver = Pick<GuestPassPolicy, "waiver_required_on_site" | "waiver_gate_without_passes">;
 const pick = (policy: GuestPassPolicy): Waiver =>
@@ -30,7 +31,7 @@ export function GuestWaiverSettings({ makerspaceId, passesOn }: { makerspaceId: 
       checked={Boolean(draft?.[field])} onChange={(event) => draft && setDraft({ ...draft, [field]: event.target.checked })} />{label}</label>;
 
   return <SettingsSection title={t`Visitor waiver`} description={t`Whether a non-member must accept the current waiver before checking in.`}>
-    {policy.isLoading ? <p role="status" className="py-4 text-sm text-muted">{t`Loading the waiver rule…`}</p> : null}
+    {policy.isLoading ? <LogoLoader label={t`Loading the waiver rule…`} size={48} className="min-h-16 py-3" /> : null}
     {policy.isError ? <div role="alert" className="flex flex-wrap items-center gap-3 py-4 text-sm text-danger">
       {guestErrorText(policy.error)}
       <button type="button" className="desk-button" onClick={() => void policy.refetch()}>{t`Try again`}</button></div> : null}

@@ -1,7 +1,7 @@
 import { t } from "@lingui/core/macro";
 import { CornerDownLeft, FileText, Hash, Search, SquareTerminal } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useTransitionNavigate } from "../../lib/motion";
 import { searchDocs } from "./docsIndex";
 import type { DocsSearchHit } from "./docsTypes";
 
@@ -24,7 +24,7 @@ function useApiHits(query: string) {
 
 /** Ctrl/⌘+K palette over titles, headings, summaries and API operations; a keyboard-first combobox. */
 export function DocsSearchPalette({ open, initialQuery = "", onClose }: { open: boolean; initialQuery?: string; onClose: () => void }) {
-  const navigate = useNavigate();
+  const navigate = useTransitionNavigate();
   const [query, setQuery] = useState(initialQuery);
   const [active, setActive] = useState(0);
   const input = useRef<HTMLInputElement>(null);

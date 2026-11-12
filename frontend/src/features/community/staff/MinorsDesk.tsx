@@ -10,6 +10,7 @@ import { communityKeys, communityStaffApi, type Consent, type MinorProfile } fro
 import { DeskConsentDialog, RecordMinorDialog } from "./MinorDialogs";
 import { GuardianTermsPanel } from "./GuardianTermsPanel";
 import { MinorConsentHistory } from "./MinorConsentHistory";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 /**
  * Members › Minors (decision 223 k): who is recorded as under age, their guardian, and whether a
@@ -37,7 +38,7 @@ export function MinorsDesk({ makerspaceId, canManageMakerspace }: { makerspaceId
         <p className="max-w-prose text-sm text-muted">{t`People under the adult age need a current guardian consent. Staff see an age or an "under age" declaration, never a birth date.`}</p>
         <button type="button" className="desk-button-primary min-h-11" onClick={() => setRecording(true)}>{t`Record a minor`}</button>
       </div>
-      {minors.isLoading ? <p role="status" className="text-sm text-muted">{t`Loading minors…`}</p> : null}
+      {minors.isLoading ? <LogoLoader label={t`Loading minors…`} size={48} className="min-h-16 py-3" /> : null}
       {minors.isError ? <p role="alert" className="text-sm text-danger">{guestErrorText(minors.error)}</p> : null}
       {minors.isSuccess && !rows.length ? <EmptyState message={t`No minors recorded.`} /> : null}
       <ul className="grid gap-3">

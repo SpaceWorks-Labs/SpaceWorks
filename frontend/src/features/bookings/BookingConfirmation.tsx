@@ -2,10 +2,11 @@ import { formatLocale } from "../../lib/format";
 import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { Card, ErrorText, Skeleton, TicketCard } from "../../components/ui";
+import { Card, ErrorText, TicketCard } from "../../components/ui";
 import { memberRequestBlob } from "../../lib/api";
 import { bookingStatusLabel } from "./bookingStatusLabel";
 import { confirmationPath, downloadBookingFile, useBookingConfirmation } from "./bookingConfirmationApi";
+import { LogoLoader } from "../../components/LogoLoader";
 
 function ConfirmationQr({ slug, token, revision }: { slug: string; token: string; revision: string }) {
   const [url, setUrl] = useState("");
@@ -22,7 +23,7 @@ function ConfirmationQr({ slug, token, revision }: { slug: string; token: string
   }, [slug, token, revision]);
   return error ? <p role="alert" className="grid h-full place-items-center text-center text-sm text-danger">{error}</p>
     : url ? <img className="max-w-full" src={url} alt={t`Private booking QR for staff arrival scanning`} referrerPolicy="no-referrer" />
-    : <div role="status" aria-label={t`Loading private QR...`} className="h-full"><Skeleton className="h-full w-full" /></div>;
+    : <LogoLoader label={t`Loading private QR...`} size={48} className="min-h-16 py-3" />;
 }
 
 const statusWords = bookingStatusLabel;
@@ -43,7 +44,7 @@ export function BookingConfirmation({ slug, token, onClose }: { slug: string; to
     ...(booking.location ? [{ label: t`Location`, value: booking.location }] : [])] : [];
   const caption = "Keep this QR private. Staff scan it to record arrival from 30 minutes before your booking until its end.";
   return <section aria-label={t`Private booking confirmation`} className="mt-3 grid min-w-0 gap-4">
-    {detail.isPending ? <p role="status" className="text-sm text-muted">{t`Loading confirmation...`}</p> : null}
+    {detail.isPending ? <LogoLoader label={t`Loading confirmation...`} size={48} className="min-h-16 py-3" /> : null}
     {error ? <ErrorText message={error.message} /> : null}
     {booking ? <>
       {booking.qr_value ? <TicketCard organisation="Booking confirmation" title={booking.space_name} fields={fields} caption={caption}

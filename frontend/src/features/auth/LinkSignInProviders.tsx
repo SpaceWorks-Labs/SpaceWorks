@@ -11,6 +11,7 @@ import {
   type LinkableProvider, type RedirectProvider,
 } from "./socialLink";
 import type { SocialConfig } from "./socialSdk";
+import { BoxArt } from "../../components/BoxSpinner";
 
 type IdTokenChoice = Extract<LinkableProvider, { clientId: string }>;
 
@@ -73,5 +74,5 @@ function AppleLink({ choice, onLinked, onError }: { choice: IdTokenChoice; onLin
   return <button type="button" className="desk-button min-h-11" disabled={pending} onClick={() => {
     setPending(true);
     linkApple(choice.clientId).then(onLinked, onError).finally(() => setPending(false));
-  }}>{pending ? t`Linking Apple…` : t`Link Apple`}</button>;
+  }}>{pending ? <><BoxArt size={16} mono />{t`Linking Apple…`}</> : t`Link Apple`}</button>;
 }

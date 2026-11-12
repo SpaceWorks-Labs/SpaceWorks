@@ -1,4 +1,5 @@
 import { t } from "@lingui/core/macro";
+import { BoxArt } from "../../../components/BoxSpinner";
 import type { ReactNode } from "react";
 import { useSyncExternalStore } from "react";
 import { RefreshCw } from "lucide-react";
@@ -39,7 +40,7 @@ export function SpacesError({ onRetry, retrying }: { onRetry: () => void; retryi
   return <StatePanel art="moods/error" tone="error" live="alert"
     title={online ? t`Couldn't load spaces` : t`You're offline`}
     actions={<button type="button" className="desk-button-primary gap-2" onClick={onRetry} disabled={retrying}>
-      <RefreshCw aria-hidden="true" size={18} className={retrying ? "motion-safe:animate-spin" : ""} />{retrying ? t`Retrying` : t`Retry`}
+      {retrying ? <BoxArt size={18} mono /> : <RefreshCw aria-hidden="true" size={18} />}{retrying ? t`Retrying` : t`Retry`}
     </button>}>
     <p>{online ? t`The list didn't arrive. Check your connection and try again.` : t`Spaces load again as soon as you're back online.`}</p>
   </StatePanel>;

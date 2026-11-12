@@ -7,6 +7,7 @@ import { useState } from "react";
 import { PhotoPicker } from "../../components/photo-crop/PhotoPicker";
 import { ErrorText, Modal } from "../../components/ui";
 import { staffRequest } from "../../lib/api";
+import { CutoutPanel } from "../cardEraser/CutoutPanel";
 
 type Presign = { object_key: string; url: string; fields?: Record<string, string>; method?: string; headers?: Record<string, string> };
 
@@ -53,6 +54,7 @@ export function StaffPhotoDialog({ holderName, photoPath, aspect = 18 / 22, onCl
         <span>{holderName} {t` agreed to this photo being stored privately and printed on their card.`}</span></label>
       <PhotoPicker aspect={aspect} disabled={!consent} busy={state.busy} onPhoto={(photo) => void upload(photo)} />
       {state.error ? <ErrorText message={state.error} /> : null}
+      {holderName !== null ? <CutoutPanel target={{ scope: "staff", photoPath }} /> : null}
     </div>
   </Modal>;
 }

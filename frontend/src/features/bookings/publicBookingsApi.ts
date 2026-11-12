@@ -40,6 +40,8 @@ export type PublicBookingInput = {
   ends_at: string;
   custom_answers?: CustomAnswers | null;
   website?: string;
+  /** Optional, machine-time bookings only: an event the member may act for (decision 342). */
+  event_id?: number;
   /** The digest of the price preview the member saw (lane L15); 409 `price_changed` if it moved. */
   quote_digest?: string;
 };

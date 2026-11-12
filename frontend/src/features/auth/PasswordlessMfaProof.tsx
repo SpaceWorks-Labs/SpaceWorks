@@ -3,6 +3,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { ErrorText } from "../../components/ui";
 import { reauthenticationSessionKey, reauthenticationStatus, requestEnrollmentEmail } from "./reauthenticationApi";
 import { reauthenticateSocial } from "./reauthenticationSocial";
+import { LogoLoader } from "../../components/LogoLoader";
 
 export function PasswordlessMfaProof() {
   const status = useQuery({ queryKey: reauthenticationSessionKey(), queryFn: reauthenticationStatus, retry: false });
@@ -13,7 +14,7 @@ export function PasswordlessMfaProof() {
   return <section className="grid gap-3" aria-label={t`Verify enrollment`}>
     <p className="text-sm text-muted">{t`Verify a freshly entered linked identity-provider credential, or confirm the emailed one-time link in this browser before enrolling.`}</p>
     <p className="text-sm text-muted">{t`Google and Apple accounts use the email confirmation option to enroll an authenticator.`}</p>
-    {status.isLoading ? <p role="status" className="text-sm text-muted">{t`Loading identity providers...`}</p> : null}
+    {status.isLoading ? <LogoLoader label={t`Loading identity providers...`} size={48} className="min-h-16 py-3" /> : null}
     <div className="grid gap-2">
       {status.data?.providers.map((provider) => <button key={provider} type="button" className="desk-button w-full" disabled={busy} onClick={() => social.mutate(provider)}>{t`Verify with ${provider}`}</button>)}
       <button type="button" className="desk-button w-full" disabled={busy} onClick={() => email.mutate()}>{t`Email enrollment confirmation`}</button>

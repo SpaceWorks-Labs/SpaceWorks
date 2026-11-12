@@ -1,7 +1,9 @@
 import { t } from "@lingui/core/macro";
+import { LogoLoader } from "../../components/LogoLoader";
 import { ArrowLeft, ArrowRight, Pencil } from "lucide-react";
 import { lazy, Suspense, useCallback, useEffect, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
+import { TransitionLink as Link } from "../../lib/motion";
 import { PageMetadata } from "../../components/PageMetadata";
 import { DocsToc } from "./DocsToc";
 import { articleBody } from "./docsSource";
@@ -65,7 +67,7 @@ export function DocArticle({ entry }: { entry: DocEntry }) {
         <a href={editUrl(entry.source)} target="_blank" rel="noreferrer noopener" className="sw-doc-edit">
           <Pencil size={14} aria-hidden="true" />{t`Edit this page on GitHub`}<span className="sr-only">{t`(opens in a new tab)`}</span></a>
       </div>
-      {body.status === "ready" ? <Suspense fallback={<p role="status" className="py-6 text-muted">{t`Loading page…`}</p>}><DocsMarkdown body={body.text} source={entry.source} index={allDocs} onRendered={markRendered} /></Suspense>
+      {body.status === "ready" ? <Suspense fallback={<LogoLoader label={t`Loading page…`} />}><DocsMarkdown body={body.text} source={entry.source} index={allDocs} onRendered={markRendered} /></Suspense>
         : body.status === "error" ? <div role="alert" className="sw-doc-callout" data-kind="caution">
           <p className="sw-doc-callout-title">{t`This page could not be loaded.`}</p>
           <div className="sw-doc-callout-body"><p>{t`Check your connection and try again.`}</p>

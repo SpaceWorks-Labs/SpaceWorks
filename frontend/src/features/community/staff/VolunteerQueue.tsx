@@ -9,6 +9,8 @@ import { MembershipPagination } from "../../staff/MembershipPagination";
 import { communityKeys, communityStaffApi } from "../api";
 import { entryStatusLabel, hoursLabel } from "../labels";
 import { VolunteerCredits } from "./VolunteerCredits";
+import { LogoLoader } from "../../../components/LogoLoader";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 /** Members › Volunteering (decision 223 k): approve logged hours, import verified event shifts, credits. */
 export function VolunteerQueue({ makerspaceId }: { makerspaceId: number }) {
@@ -33,10 +35,10 @@ export function VolunteerQueue({ makerspaceId }: { makerspaceId: number }) {
           <select className="desk-input min-h-11" value={status} onChange={(event) => { setStatus(event.target.value); setPage(1); }}>
             <option value="pending">{entryStatusLabel("pending")}</option><option value="approved">{entryStatusLabel("approved")}</option>
             <option value="rejected">{entryStatusLabel("rejected")}</option><option value="">{t`All`}</option></select></label>
-        <button type="button" className="desk-button min-h-11" disabled={importShifts.isPending} onClick={() => importShifts.mutate()}>{importShifts.isPending ? t`Importing…` : t`Offer verified event shifts`}</button>
+        <button type="button" className="desk-button min-h-11" disabled={importShifts.isPending} onClick={() => importShifts.mutate()}>{importShifts.isPending ? <><BoxArt size={16} mono />{t`Importing…`}</> : t`Offer verified event shifts`}</button>
       </div>
       {importShifts.data ? <p role="status" className="text-sm text-muted">{t`${importShifts.data.created} shift entries added for approval.`}</p> : null}
-      {hours.isLoading ? <p role="status" className="text-sm text-muted">{t`Loading volunteer hours…`}</p> : null}
+      {hours.isLoading ? <LogoLoader label={t`Loading volunteer hours…`} size={48} className="min-h-16 py-3" /> : null}
       {hours.isError ? <p role="alert" className="text-sm text-danger">{guestErrorText(hours.error)}</p> : null}
       {hours.isSuccess && !rows.length ? <EmptyState message={status === "pending" ? t`Nothing waiting for approval.` : t`No volunteer hours here.`} /> : null}
       <ul className="grid gap-3">

@@ -3,9 +3,10 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { PublicLayout } from "../../components/layouts";
 import { ThemeToggle } from "../../components/ThemeToggle";
-import { EmptyState, ErrorText, ListRow, Skeleton, PagePager } from "../../components/ui";
+import { EmptyState, ErrorText, ListRow, PagePager } from "../../components/ui";
 import { publicV1Request } from "../../lib/api";
 import { LICENSE_URL } from "../inventory/PublicPageChrome";
+import { LogoLoader } from "../../components/LogoLoader";
 
 type Results = { count: number; next: string | null; previous: string | null; results: {
   title: string; description: string; url: string; location: string; makerspace_name: string;
@@ -34,7 +35,7 @@ export function BookingDiscoverPage() {
         <label className={field}>{t`Location`}<input className="desk-input w-full" maxLength={255} value={draft.location} onChange={(e) => setDraft({ ...draft, location: e.target.value })} /></label>
         <button type="submit" className="desk-button-primary w-full sm:w-auto">{t`Search`}</button>
       </form>
-      {query.isLoading ? <div role="status" aria-label={t`Loading resources`} className="grid gap-3"><span className="sr-only">{t`Loading resources…`}</span>{[0, 1, 2].map(item => <Skeleton key={item} className="h-20" />)}</div> : null}
+      {query.isLoading ? <LogoLoader label={t`Loading resources`} size={48} className="min-h-20 py-3" /> : null}
       {query.error ? <ErrorText message={t`Unable to discover resources.`} onRetry={() => { void query.refetch(); }} /> : null}
       {!query.error && query.data ? <section aria-labelledby="discover-resources-results" className="grid gap-3">
         <h2 id="discover-resources-results" className="title-panel">{query.data.count} resources</h2>

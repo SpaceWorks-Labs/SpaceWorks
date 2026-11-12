@@ -1,3 +1,4 @@
+import { LogoLoader } from "../../../components/LogoLoader";
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -14,7 +15,7 @@ import { communityKeys, communityMemberApi, type Dependent, type GuardianTerms }
  */
 export function GuardianConsentPanel({ makerspaceId }: { makerspaceId: number }) {
   const page = useQuery({ queryKey: communityKeys.guardian(makerspaceId), queryFn: () => communityMemberApi.guardian(makerspaceId), retry: false });
-  if (page.isLoading) return <p role="status" className="text-sm text-muted">{t`Loading guardian consent…`}</p>;
+  if (page.isLoading) return <LogoLoader label={t`Loading guardian consent…`} />;
   if (page.isError || !page.data?.dependents.length) return null;
   return <section aria-labelledby="guardian-consent-title" className="desk-panel grid gap-4 p-5">
     <div><h2 id="guardian-consent-title" className="title-panel">{t`Guardian consent`}</h2>

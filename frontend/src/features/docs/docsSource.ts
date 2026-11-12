@@ -14,7 +14,7 @@ function unquote(value: string) {
 
 /** Flat `key: value` YAML front matter: the only shape the docs use (title, group, order, summary, updated). */
 export function parseFrontMatter(raw: string): { data: FrontMatter; body: string } {
-  const text = raw.replace(/^﻿/, "");
+  const text = raw.replace(/^\uFEFF/, "");
   const match = FRONT.exec(text);
   if (!match) return { data: {}, body: text };
   const data: FrontMatter = {};

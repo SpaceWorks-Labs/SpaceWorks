@@ -74,7 +74,9 @@ describe("ApprovalLevelSelect (#136)", () => {
 
 describe("StaffPhotoDialog (X25)", () => {
   it("keeps the photo controls off until staff confirm the holder agreed", () => {
-    render(<StaffPhotoDialog holderName="Asha" photoPath="/admin/member-cards/4/photo" onClose={vi.fn()} onSaved={vi.fn()} />);
+    // The dialog also hosts the background-eraser panel (D314c), which reads through TanStack Query.
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(<QueryClientProvider client={client}><StaffPhotoDialog holderName="Asha" photoPath="/admin/member-cards/4/photo" onClose={vi.fn()} onSaved={vi.fn()} /></QueryClientProvider>);
     expect(screen.getByLabelText("Choose a photo")).toBeDisabled();
     fireEvent.click(screen.getByRole("checkbox", { name: /Asha agreed to this photo/ }));
     expect(screen.getByLabelText("Choose a photo")).toBeEnabled();

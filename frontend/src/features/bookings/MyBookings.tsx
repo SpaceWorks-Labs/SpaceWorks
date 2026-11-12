@@ -12,6 +12,7 @@ import { memberRequest } from "../../lib/api";
 import { personalRecipientKey } from "../notifications/personalQueryKeys";
 import { DepartureForm, OUTCOME_LABELS, type DepartureInput, type DepartureOutcome } from "./DepartureForm";
 import { ReportProblem } from "../repairs/ReportProblem";
+import { LogoLoader } from "../../components/LogoLoader";
 
 export type MemberBooking = {
   public_token: string;
@@ -93,7 +94,7 @@ function OwnBookings({ slug, recipient, canReport, canReportMachines, initialPer
     <h2 className="title-panel" id="my-bookings-heading">{t`My bookings`}</h2>
     <BookingCalendar key={`${slug}:${recipient}`} slug={slug} />
     <Tabs label={t`Booking period`} activeKey={period} tabs={[{ key: "upcoming", label: t`Upcoming`, href: "#upcoming" }, { key: "past", label: t`Past`, href: "#past" }]} onChange={value => { setPeriod(value as "upcoming" | "past"); setPage(1); setSelected(null); setMoving(null); }}>
-    {bookings.isLoading ? <p className="mt-3 text-sm text-muted" role="status">{t`Loading bookings…`}</p> : null}
+    {bookings.isLoading ? <LogoLoader label={t`Loading bookings…`} size={48} className="min-h-16 py-3" /> : null}
     {error ? <ErrorBlock error={error instanceof Error ? error : new Error(t`Couldn't load bookings. Try again.`)} onRetry={bookings.isError ? () => void bookings.refetch() : undefined} /> : null}
     {bookings.data?.results.length === 0 ? <EmptyState message={period === "upcoming" ? t`No upcoming bookings. Book a bench or room when you need one.` : t`No past bookings yet. Your visits will appear here.`} /> : null}
     <ul className="mt-3 space-y-3">

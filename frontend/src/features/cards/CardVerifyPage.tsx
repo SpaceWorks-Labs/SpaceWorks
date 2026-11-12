@@ -14,6 +14,7 @@ import { StructuredApiError, publicV1Request } from "../../lib/api";
 import { spaceNounTitle, type SpaceKind } from "../../lib/spaceNoun";
 import { VerifyStaffPanel } from "./VerifyStaffPanel";
 import "./cardVerify.css";
+import { LogoLoader } from "../../components/LogoLoader";
 
 type Verification = {
   status: "valid" | "expired" | "revoked"; valid: boolean;
@@ -72,7 +73,7 @@ export function CardVerifyPage() {
   const limited = check.error instanceof StructuredApiError && check.error.status === 429;
   const data = check.data;
 
-  if (check.isLoading) return <Shell><p role="status" className="text-center text-muted">{t`Checking the card…`}</p></Shell>;
+  if (check.isLoading) return <Shell><LogoLoader label={t`Checking the card…`} size={48} className="min-h-16 py-3" /></Shell>;
   if (!data) return <Shell><section className="grid justify-items-center gap-3 rounded-card border border-line bg-panel p-8 text-center">
     <SearchX size={56} aria-hidden="true" className="text-muted" />
     <h1 className="text-xl font-semibold">{limited ? t`Too many checks` : t`Card not found`}</h1>

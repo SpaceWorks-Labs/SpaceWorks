@@ -1,4 +1,5 @@
 import { t } from "@lingui/core/macro";
+import { LogoLoader } from "../../components/LogoLoader";
 import { lazy, Suspense } from "react";
 import { Link, useParams } from "react-router-dom";
 import { PageMetadata } from "../../components/PageMetadata";
@@ -27,7 +28,7 @@ export function DocsPage() {
   const entry = splat && !api ? findDoc(splat) : undefined;
   return <DocsLayout currentId={splat}>
     {openPalette => !splat ? <DocsHome onSearch={openPalette} />
-      : api ? <Suspense fallback={<p role="status" className="py-10 text-muted">{t`Loading the API reference…`}</p>}>
+      : api ? <Suspense fallback={<LogoLoader label={t`Loading the API reference…`} />}>
         <PageMetadata title={t`API reference · Space Works docs`} description={t`Every Space Works API endpoint, grouped by area.`} path={`/docs/${splat}`} />
         <ApiReferenceRoute tag={api[1]} /></Suspense>
       : entry ? <DocArticle key={entry.id} entry={entry} />

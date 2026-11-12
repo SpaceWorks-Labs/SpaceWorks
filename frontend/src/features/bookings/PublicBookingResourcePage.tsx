@@ -18,6 +18,7 @@ import { PublicBookingForm } from "./PublicBookingForm";
 import { BookingResourceWebsite } from "./BookingResourceWebsite";
 import { usePublicBookingResource } from "./bookingWebsiteApi";
 import { photosSection } from "./spacePhotosSection";
+import { LogoLoader } from "../../components/LogoLoader";
 
 export function PublicBookingResourcePage() {
   const { slug = "", resourceToken = "" } = useParams();
@@ -75,7 +76,7 @@ export function PublicBookingResourcePage() {
             {/* The flat per-booking price only; hourly rate cards and member discounts show in the quote once a time is chosen. */}
             {showPrice && Number(resource.payment_amount) > 0 ? <dl><dt className="eyebrow">{t`Price per booking`}</dt><dd className="font-semibold tabular-nums text-ink">{formatMoney(resource.payment_amount, resource.currency)}</dd></dl> : null}
           </div> : null,
-          form: !resource ? null : session === "restoring" ? <p role="status" className="text-sm text-muted">{t`Restoring your session...`}</p>
+          form: !resource ? null : session === "restoring" ? <LogoLoader label={t`Restoring your session...`} size={48} className="min-h-16 py-3" />
             : session === "anonymous" ? <MemberAuthPanel embedded context={<p className="text-sm text-muted">{t`Sign in to submit a booking.`}</p>}
               makerspaceSlug={tenantSlug} onAuthenticated={() => setSession("authenticated")} />
             : <PublicBookingForm key={resourceToken} makerspaceSlug={tenantSlug} space={resource} showCalendar={false} />,

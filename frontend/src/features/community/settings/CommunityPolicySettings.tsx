@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { SettingsActions, SettingsRow, SettingsSection } from "../../../components/ui";
 import { guestErrorText } from "../../guestPasses/api";
 import { communityKeys, communityStaffApi, type CommunityPolicy } from "../api";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 type Flags = { minors: boolean; volunteer: boolean; joinFunnel: boolean };
 
@@ -31,7 +32,7 @@ export function CommunityPolicySettings({ makerspaceId, flags }: { makerspaceId:
     <input className="desk-input w-28" type="number" min={0} max={max} aria-label={label} value={String(draft?.[field] ?? "")}
       onChange={(event) => set(field, Math.max(0, Math.floor(Number(event.target.value) || 0)) as never)} />{suffix}</label>;
   return <SettingsSection title={t`Community`} description={t`Minors and guardian consent, volunteer credit and the join follow-up.`}>
-    {policy.isLoading ? <p role="status" className="py-4 text-sm text-muted">{t`Loading community settings…`}</p> : null}
+    {policy.isLoading ? <LogoLoader label={t`Loading community settings…`} size={48} className="min-h-16 py-3" /> : null}
     {policy.isError ? <p role="alert" className="py-4 text-sm text-danger">{guestErrorText(policy.error)}</p> : null}
     {draft ? <form onSubmit={(event) => { event.preventDefault(); save.mutate(Object.fromEntries(changed.map((field) => [field, draft[field]]))); }}>
       {flags.minors ? <>

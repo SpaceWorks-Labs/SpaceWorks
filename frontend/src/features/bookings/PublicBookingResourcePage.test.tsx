@@ -63,14 +63,14 @@ beforeEach(() => {
 afterEach(() => { clearAccessToken(); vi.unstubAllGlobals(); });
 
 describe("direct public resource bookings", () => {
-  it("explains a machine certification refusal without claiming the booking succeeded", async () => {
-    bookingResponse = () => json({ code: "certification_required", certifications: ["Machine induction"] }, 403);
+  it("explains a machine access refusal without claiming the booking succeeded", async () => {
+    bookingResponse = () => json({ code: "no_machine_access" }, 403);
     setAccessToken("existing-member");
     show();
     fireEvent.change(await screen.findByLabelText("Starts"), { target: { value: "2099-01-01T10:00" } });
     fireEvent.change(screen.getByLabelText("Ends"), { target: { value: "2099-01-01T11:00" } });
     fireEvent.click(screen.getByRole("button", { name: "Book this slot" }));
-    expect(await screen.findByRole("alert")).toHaveTextContent("You need machine training or certification first (Machine induction). Ask space staff how to qualify, then try again.");
+    expect(await screen.findByRole("alert")).toHaveTextContent("A space manager has not given you access to this machine yet. Ask space staff to give you access, then try again.");
     expect(screen.queryByText("Space booked")).not.toBeInTheDocument();
     expect(screen.getByLabelText("Starts")).toHaveValue("2099-01-01T10:00");
   });

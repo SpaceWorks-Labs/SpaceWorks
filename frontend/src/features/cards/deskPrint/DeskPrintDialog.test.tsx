@@ -64,3 +64,21 @@ describe("desk print dialog", () => {
     expect(URL.revokeObjectURL).toHaveBeenCalledTimes(2);
   });
 });
+
+describe("desk print of several selected cards", () => {
+  it("fetches every card's face from the server (so prints are counted) and prints one page per card", async () => {
+    staffRequestBlob.mockResolvedValue(new Blob(["png"]));
+    const batch = { id: "batch", label: "2 member cards", facePaths: ["/admin/member-cards/5/print-face", "/admin/member-cards/6/print-face"] };
+    function Batch() {
+      const queue = useDeskPrintQueue();
+      return <DeskPrintDialog target={batch} queue={queue} onClose={() => undefined} />;
+    }
+    render(<Batch />);
+    fireEvent.click(screen.getByRole("button", { name: "Print" }));
+    await waitFor(() => expect(printNodes).toHaveBeenCalledTimes(1));
+    expect(staffRequestBlob).toHaveBeenCalledTimes(2);
+    expect(staffRequestBlob).toHaveBeenCalledWith("/admin/member-cards/6/print-face?side=front&stock=cr80-landscape");
+    expect(printNodes.mock.calls[0][0]).toHaveLength(2);
+    expect(printNodes.mock.calls[0][2]).toMatchObject({ layout: "per_card" });
+  });
+});

@@ -1,3 +1,4 @@
+import { LogoLoader } from "../../components/LogoLoader";
 import { plural, t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -21,7 +22,7 @@ export function KnownDevicesList() {
     setNotice(t`Device forgotten. Its next sign-in will ask for the extra check.`);
     void invalidateAccountSecurity(client);
   } });
-  if (query.isLoading) return <p role="status" className="text-sm text-muted">{t`Loading devices…`}</p>;
+  if (query.isLoading) return <LogoLoader label={t`Loading devices…`} size={48} className="min-h-16 py-3" />;
   if (query.error) return <ErrorText message={authErrorMessage(query.error, "Couldn't load your devices. Try again.")} onRetry={() => void query.refetch()} />;
   const devices = query.data?.devices ?? [];
   const days = query.data?.remembered_days;

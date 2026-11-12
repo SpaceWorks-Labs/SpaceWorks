@@ -8,6 +8,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 
 import { ErrorBlock, Field, Modal } from "../../components/ui";
 import { getAccessToken, refreshAccessToken, staffRequest } from "../../lib/api";
+import { BoxArt } from "../../components/BoxSpinner";
 
 type StaffPanel = {
   makerspace_id: number; membership_id: number; member_url: string; card_state: "valid" | "expired" | "revoked";
@@ -19,8 +20,8 @@ export function VerifyStaffPanel({ token, onChanged }: { token: string; onChange
   const [revoking, setRevoking] = useState(false);
   const [note, setNote] = useState("");
   const panel = useQuery({ queryKey: ["card-verify-staff", token], retry: false, staleTime: 0, gcTime: 0,
-    queryFn: async () => {
-      if (!getAccessToken("person") && !(await refreshAccessToken("person"))) throw new Error("no session");
+    queryFn: async (): Promise<StaffPanel | null> => {
+      if (!getAccessToken("person") && !(await refreshAccessToken("person"))) return null;
       return staffRequest<StaffPanel>(`/admin/card-verifications/${encodeURIComponent(token)}/staff`, {}, "person");
     } });
   const revoke = useMutation({
@@ -48,7 +49,7 @@ export function VerifyStaffPanel({ token, onChanged }: { token: string; onChange
       footer={<div className="desk-actions flex flex-wrap justify-end gap-2">
         <button type="button" className="desk-button" disabled={revoke.isPending} onClick={() => setRevoking(false)}>{t`Cancel`}</button>
         <button type="button" className="desk-button-danger" disabled={revoke.isPending || note.trim().length < 3}
-          onClick={() => revokeAction && revoke.mutate(revokeAction.path)}>{revoke.isPending ? t`Revoking…` : t`Revoke card`}</button>
+          onClick={() => revokeAction && revoke.mutate(revokeAction.path)}>{revoke.isPending ? <><BoxArt size={16} mono />{t`Revoking…`}</> : t`Revoke card`}</button>
       </div>}>
       <p className="text-sm text-muted">{t`${data.member.name}'s card stops working at the door and on this page.`}</p>
       <Field label={t`Why is it revoked?`} hint={t`Seen by staff only.`} className="mt-3">

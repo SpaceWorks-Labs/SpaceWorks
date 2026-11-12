@@ -1,3 +1,4 @@
+import { LogoLoader } from "../../../components/LogoLoader";
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -9,6 +10,7 @@ import { invalidateAccountSecurity, passkeysKey } from "../securityQueries";
 import { listPasskeys, registerPasskey, removePasskey, renamePasskey } from "./passkeyApi";
 import { PasskeyRow } from "./PasskeyRow";
 import { isPasskeyCancelled, passkeysSupported } from "./webauthn";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 /**
  * The person's passkeys (S-A): add (recent re-authentication, asked for by the shared client),
@@ -42,7 +44,7 @@ export function PasskeyList({ onRecoveryCodes, onSignedOut }: {
   const allowed = query.data?.passkeys_allowed !== false;
   const busy = add.isPending || rename.isPending || remove.isPending;
   const failure = add.error && !isPasskeyCancelled(add.error) ? add.error : rename.error ?? remove.error;
-  if (query.isLoading) return <p role="status" className="text-sm text-muted">{t`Loading passkeys…`}</p>;
+  if (query.isLoading) return <LogoLoader label={t`Loading passkeys…`} size={48} className="min-h-16 py-3" />;
   if (query.error) return <ErrorText message={authErrorMessage(query.error, "Couldn't load your passkeys. Try again.")} onRetry={() => void query.refetch()} />;
   const rows = query.data?.passkeys ?? [];
   return <div className="grid gap-4">
@@ -52,7 +54,7 @@ export function PasskeyList({ onRecoveryCodes, onSignedOut }: {
       onRename={name => rename.mutate({ id: passkey.id, name })} onRemove={() => setRemoving({ id: passkey.id, name: passkey.name || "this passkey" })} /></li>)}</ul>
       : <EmptyState message={t`No passkeys yet. Add one to sign in without typing a password.`} />}
     {allowed ? supported ? <div><button type="button" className="desk-button-primary min-h-11 gap-2" disabled={busy} onClick={() => add.mutate()}>
-      <Fingerprint aria-hidden="true" size={20} />{add.isPending ? t`Waiting for your device…` : t`Add a passkey`}</button></div>
+      <Fingerprint aria-hidden="true" size={20} />{add.isPending ? <><BoxArt size={16} mono />{t`Waiting for your device…`}</> : t`Add a passkey`}</button></div>
       : <p className="text-sm text-muted">{t`This browser can't create passkeys. Try a recent version of Chrome, Edge, Firefox or Safari.`}</p> : null}
     <p role="status" className="text-sm text-ink empty:hidden">{notice}</p>
     {failure ? <ErrorText message={authErrorMessage(failure, "Couldn't change your passkeys. Try again.")} /> : null}

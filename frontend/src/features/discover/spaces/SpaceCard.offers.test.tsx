@@ -25,7 +25,7 @@ describe("SpaceCard (decision 275 change)", () => {
     mount({ ...base, offers: ["inventory", "machines", "events", "bookings", "shop", "memberships", "donations", "rockets" as never] });
     const list = screen.getByRole("list", { name: "What this space offers" });
     expect(within(list).getAllByRole("listitem").map(item => item.textContent)).toEqual(
-      ["Tool lending", "Machines", "Events", "Room bookings", "Shop", "Memberships", "Donations"]);
+      ["Tool loans", "Machines", "Events", "Room bookings", "Shop", "Memberships", "Donations"]);
     expect(list.querySelectorAll("svg")).toHaveLength(7);
   });
 

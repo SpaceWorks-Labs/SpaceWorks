@@ -1,3 +1,4 @@
+import { LogoLoader } from "../../../components/LogoLoader";
 import { t } from "@lingui/core/macro";
 import { useQuery } from "@tanstack/react-query";
 
@@ -21,7 +22,7 @@ const STATE: Record<Exclude<OwnConsentStatus["state"], "not_applicable">, () => 
  */
 export function OwnConsentStatusCard({ makerspaceId }: { makerspaceId: number }) {
   const status = useQuery({ queryKey: communityKeys.ownConsent(makerspaceId), queryFn: () => communityMemberApi.ownConsent(makerspaceId), retry: false });
-  if (status.isLoading) return <p role="status" className="text-sm text-muted">{t`Checking your guardian consent…`}</p>;
+  if (status.isLoading) return <LogoLoader label={t`Checking your guardian consent…`} size={48} className="min-h-16 py-3" />;
   const data = status.data;
   if (status.isError || !data?.applies) return null;
   const state = data.state;

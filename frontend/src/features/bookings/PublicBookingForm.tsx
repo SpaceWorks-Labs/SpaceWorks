@@ -18,6 +18,8 @@ import { PricePreview } from "../payments/PricePreview";
 import { tenantPath, useOptionalTenant } from "../../lib/tenant";
 import { isPriceChanged, PriceChangedNotice } from "../payments/PriceChangedNotice";
 import { isoTime } from "../payments/usePriceQuote";
+import { BoxArt } from "../../components/BoxSpinner";
+import { BookingEventPicker } from "../machine-event-use/BookingEventPicker";
 
 type StandardErrors = Partial<Record<"starts_at" | "ends_at", string>>;
 
@@ -52,6 +54,8 @@ export function PublicBookingForm({ makerspaceSlug, space, showCalendar = true }
   // Set only by a live quote, which PricePreview fetches only while booking charges are on (#184).
   const [owes, setOwes] = useState(false);
   const paymentsHref = tenantPath(useOptionalTenant()?.mode ?? "central", makerspaceSlug, "member/payments");
+  // Decision 342: only a machine-time booking can be logged for an event.
+  const [eventId, setEventId] = useState("");
   const [standardErrors, setStandardErrors] = useState<StandardErrors>({});
   const [answerErrors, setAnswerErrors] = useState<Record<string, string>>({});
   const successRef = useRef<HTMLDivElement>(null);
@@ -96,6 +100,7 @@ export function PublicBookingForm({ makerspaceSlug, space, showCalendar = true }
       ends_at: new Date(endsAt).toISOString(),
       custom_answers: Object.keys(answers).length ? answers : null,
       website,
+      ...(eventId ? { event_id: Number(eventId) } : {}),
       ...(quoteDigest ? { quote_digest: quoteDigest } : {}),
     });
   };
@@ -118,11 +123,12 @@ export function PublicBookingForm({ makerspaceSlug, space, showCalendar = true }
         <CustomFormFields schema={space.custom_form} answers={answers} onChange={setAnswers} errors={{ ...answerErrors, ...serverAnswerErrors }} disabled={booking.isPending} />
         <label className="absolute left-[-10000px] top-auto h-px w-px overflow-hidden" aria-hidden="true">{t`Website`}<input name="website" tabIndex={-1} autoComplete="off" value={website} onChange={(event) => setWebsite(event.target.value)} />
         </label>
+        {space.kind === "machine" ? <BookingEventPicker makerspaceSlug={makerspaceSlug} value={eventId} onChange={setEventId} disabled={booking.isPending} /> : null}
         <PricePreview makerspaceSlug={makerspaceSlug} request={{ domain: "bookings", space_token: space.public_token, starts_at: isoTime(startsAt), ends_at: isoTime(endsAt) }} onDigest={setQuoteDigest} onOwes={setOwes} />
         {isPriceChanged(booking.error) ? <PriceChangedNotice makerspaceSlug={makerspaceSlug} error={booking.error} />
           : booking.error ? <p className="text-sm text-danger" role="alert">{failureMessage(apiError)}</p> : null}
         <button className="desk-button-brand" type="submit" disabled={booking.isPending}>
-          {booking.isPending ? t`Submitting...` : space.approval_mode === "approve" ? t`Submit booking request` : t`Book this slot`}
+          {booking.isPending ? <><BoxArt size={16} mono />{t`Submitting...`}</> : space.approval_mode === "approve" ? t`Submit booking request` : t`Book this slot`}
         </button>
       </form>
     </div>

@@ -8,8 +8,10 @@ import { ErrorBlock, Field, Modal, SegmentedControl } from "../../../components/
 import { deskStock, stockFamilies, type Orientation, type StockFamily } from "./deskStocks";
 import { fetchFaces, printFaces } from "./printFaces";
 import type { QueuedPrint, useDeskPrintQueue } from "./useDeskPrintQueue";
+import { BoxArt } from "../../../components/BoxSpinner";
 
-export type DeskPrintTarget = { id: string; label: string; facePath: string };
+/** One card (`facePath`) or several (`facePaths`, one card per page). Each path is a `.../print-face` route. */
+export type DeskPrintTarget = { id: string; label: string; facePath?: string; facePaths?: string[] };
 
 export function DeskPrintDialog({ target, queue, onClose, onPrinted }: {
   target: DeskPrintTarget | null; queue: ReturnType<typeof useDeskPrintQueue>; onClose: () => void;
@@ -32,14 +34,18 @@ export function DeskPrintDialog({ target, queue, onClose, onPrinted }: {
     if (!target) return;
     setBusy(true); setError(null); setBlocked(false);
     const stock = deskStock(family, orientation);
+    const faces: string[] = [];
     try {
-      const faces = await fetchFaces(target.facePath, stock.key, withBack ? ["front", "back"] : ["front"]);
+      for (const path of target.facePaths ?? (target.facePath ? [target.facePath] : [])) {
+        faces.push(...await fetchFaces(path, stock.key, withBack ? ["front", "back"] : ["front"]));
+      }
       const entry = { id: `${target.id}:${stock.key}:${faces.length}`, label: target.label, stockKey: stock.key,
         widthMm: stock.widthMm, heightMm: stock.heightMm, faces };
       queue.remember(entry);
       onPrinted?.();
       await run(entry);
     } catch (caught) {
+      faces.forEach((url) => URL.revokeObjectURL(url));
       setError(caught);
     } finally {
       setBusy(false);
@@ -50,7 +56,7 @@ export function DeskPrintDialog({ target, queue, onClose, onPrinted }: {
     footer={<div className="desk-actions flex flex-wrap justify-end gap-2">
       <button type="button" className="desk-button" onClick={onClose}>{t`Close`}</button>
       <button type="button" className="desk-button-primary" disabled={busy || offline} onClick={() => void print()}>
-        {busy ? t`Preparing…` : t`Print`}</button>
+        {busy ? <><BoxArt size={16} mono />{t`Preparing…`}</> : t`Print`}</button>
     </div>}>
     <div className="grid gap-4">
       <p className="text-sm text-muted">{t`The card prints at its real size on the stock you choose. Check the printer is set to the same paper size.`}</p>

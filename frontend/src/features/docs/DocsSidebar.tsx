@@ -1,7 +1,7 @@
 import { t } from "@lingui/core/macro";
 import { ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { TransitionLink as Link } from "../../lib/motion";
 import { API_REFERENCE_PATH, docGroups, groupLabel } from "./docsIndex";
 import type { DocEntry } from "./docsTypes";
 

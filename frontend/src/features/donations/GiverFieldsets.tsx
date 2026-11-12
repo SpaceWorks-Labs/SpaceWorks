@@ -4,6 +4,7 @@ import { useMutation } from "@tanstack/react-query";
 
 import { Field } from "../../components/ui";
 import { donationsApi, giveError, type GiverFields } from "./donationsApi";
+import { BoxArt } from "../../components/BoxSpinner";
 
 type Change = (patch: Partial<GiverFields>) => void;
 
@@ -22,7 +23,7 @@ export function GuestIdentity({ slug, value, onChange }: { slug: string; value: 
     <Field label={t`Email`}><input className="desk-input" type="email" required autoComplete="email"
       value={value.donor_email ?? ""} onChange={event => onChange({ donor_email: event.target.value })} /></Field>
     <button type="button" className="desk-button justify-self-start" disabled={!value.donor_email || send.isPending}
-      onClick={() => send.mutate()}>{send.isPending ? t`Sending…` : sentTo ? t`Send a new code` : t`Email me a code`}</button>
+      onClick={() => send.mutate()}>{send.isPending ? <><BoxArt size={16} mono />{t`Sending…`}</> : sentTo ? t`Send a new code` : t`Email me a code`}</button>
     {sentTo ? <p role="status" className="text-sm text-muted">{t`If ${sentTo} can receive mail, a code is on its way.`}</p> : null}
     {send.error ? <p role="alert" className="text-sm text-danger">{giveError(send.error)}</p> : null}
     {sentTo ? <Field label={t`Code from the email`}><input className="desk-input tabular-nums" required inputMode="numeric"

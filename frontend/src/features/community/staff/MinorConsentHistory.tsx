@@ -6,6 +6,7 @@ import { ConfirmDialog, StatusPill } from "../../../components/ui";
 import { formatDate, formatDateTime } from "../../../lib/format";
 import { guestErrorText } from "../../guestPasses/api";
 import { communityKeys, communityStaffApi, type ConsentHistoryRow } from "../api";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 const methodLabel = (method: string) => ({
   guardian_account: t`Signed in the guardian's account`, staff_recorded: t`Recorded at the desk`,
@@ -31,7 +32,7 @@ export function MinorConsentHistory({ makerspaceId, profileId }: { makerspaceId:
   });
   const rows = [...(history.data ?? [])].sort((a, b) => b.signed_at.localeCompare(a.signed_at) || b.id - a.id);
   return <section aria-label={t`Consent history`} className="grid w-full gap-2 border-t border-line pt-3">
-    {history.isLoading ? <p role="status" className="text-sm text-muted">{t`Loading consent history…`}</p> : null}
+    {history.isLoading ? <LogoLoader label={t`Loading consent history…`} size={48} className="min-h-16 py-3" /> : null}
     {history.isError ? <p role="alert" className="text-sm text-danger">{guestErrorText(history.error)}</p> : null}
     {history.isSuccess && !rows.length ? <p className="text-sm text-muted">{t`No consent has been signed yet.`}</p> : null}
     <ul className="grid gap-2">

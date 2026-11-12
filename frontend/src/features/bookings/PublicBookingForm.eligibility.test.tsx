@@ -20,14 +20,14 @@ function shows(error: StructuredApiError) {
 }
 
 describe("public booking eligibility refusals", () => {
-  it("explains a machine certification requirement and names it", () => {
-    expect(shows(new StructuredApiError(403, { code: "certification_required", certifications: ["Laser induction"] })))
-      .toHaveTextContent("You need machine training or certification first (Laser induction). Ask space staff how to qualify, then try again.");
+  it("explains missing machine access (decision 319)", () => {
+    expect(shows(new StructuredApiError(403, { code: "no_machine_access" })))
+      .toHaveTextContent("A space manager has not given you access to this machine yet. Ask space staff to give you access, then try again.");
   });
 
-  it("explains a certification requirement without names", () => {
-    expect(shows(new StructuredApiError(403, { code: "certification_required" })))
-      .toHaveTextContent("You need machine training or certification first. Ask space staff how to qualify, then try again.");
+  it("explains expired machine access", () => {
+    expect(shows(new StructuredApiError(403, { code: "machine_access_expired" })))
+      .toHaveTextContent("Your access to this machine has ended. Ask space staff to renew it, then try again.");
   });
 
   it("tells a non-member how to qualify", () => {

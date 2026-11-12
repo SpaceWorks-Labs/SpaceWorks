@@ -22,8 +22,8 @@
   .sw-spaces-hero-facets { right: -36px; bottom: -84px; width: 248px; }
 }
 
-/* Search sticks on every width; the edge appears only once it is stuck. */
-.sw-spaces-search { position: sticky; top: 0; z-index: 20; padding: 12px 0; background: rgb(var(--color-bg));
+/* Search sticks on every width, just under the 73px hub bar (72px + its hairline); the edge appears only once it is stuck. */
+.sw-spaces-search { position: sticky; top: 73px; z-index: 20; padding: 12px 0; background: rgb(var(--color-bg));
   border-bottom: 1px solid transparent; transition: border-color 120ms ease; }
 .sw-spaces-search[data-stuck] { border-bottom-color: rgb(var(--color-line)); }
 .sw-spaces-filters { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px;
@@ -116,14 +116,6 @@
   .sw-spaces-feature[data-count="1"] .sw-space-body { justify-content: center; padding: 28px 32px; }
   .sw-spaces-feature[data-count="1"] .sw-space-mark { margin-top: 0; }
 }
-
-/* Skeletons share the card geometry exactly, so nothing moves when the list arrives. */
-.sw-space-card.sw-space-skeleton { border-color: rgb(var(--color-line)); }
-.sw-space-card.sw-space-skeleton .sw-space-field, .sw-space-card.sw-space-skeleton .sw-space-mark, .sw-skeleton-bar { background: rgb(var(--color-hover)); }
-.sw-space-card.sw-space-skeleton .sw-space-go { background: rgb(var(--color-hover)); }
-.sw-skeleton-bar { display: block; border-radius: 8px; }
-@keyframes sw-spaces-pulse { 50% { opacity: 0.55; } }
-@media (prefers-reduced-motion: no-preference) { .sw-space-skeleton { animation: sw-spaces-pulse 1.6s ease-in-out infinite; } }
 
 /* States take the grid's place. */
 .sw-spaces-state { display: grid; gap: 20px; align-items: center; padding: 28px 24px; border: 1px solid rgb(var(--color-line));

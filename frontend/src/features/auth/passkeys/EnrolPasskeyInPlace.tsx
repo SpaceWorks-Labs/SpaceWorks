@@ -10,6 +10,7 @@ import { MfaRecoveryCodes } from "../MfaRecoveryCodes";
 import { invalidateAccountSecurity } from "../securityQueries";
 import { registerPasskey } from "./passkeyApi";
 import { isPasskeyCancelled } from "./webauthn";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 /**
  * Add a passkey right where a signed-in person is asked for two-step sign-in (S-D follow-up; GAP2).
@@ -33,7 +34,7 @@ export function EnrolPasskeyInPlace() {
   </div>;
   return <div className="grid gap-2">
     <div><button type="button" className="desk-button-primary min-h-11 gap-2" disabled={add.isPending} aria-busy={add.isPending || undefined}
-      onClick={() => add.mutate()}><Fingerprint aria-hidden="true" size={20} />{add.isPending ? t`Waiting for your device…` : t`Add a passkey now`}</button></div>
+      onClick={() => add.mutate()}><Fingerprint aria-hidden="true" size={20} />{add.isPending ? <><BoxArt size={16} mono />{t`Waiting for your device…`}</> : t`Add a passkey now`}</button></div>
     {add.error && !isPasskeyCancelled(add.error) ? <ErrorText message={authErrorMessage(add.error, "Couldn't add a passkey. Try again, or set up an authenticator app.")} /> : null}
   </div>;
 }

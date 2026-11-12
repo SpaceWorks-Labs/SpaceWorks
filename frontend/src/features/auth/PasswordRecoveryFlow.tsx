@@ -26,13 +26,14 @@ export function PasswordRecoveryFlow({ recoveryContext, signInHref = "/admin", i
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
   const [cooldown, setCooldown] = useState(0);
+  const counting = cooldown > 0;
   useEffect(() => {
-    if (cooldown <= 0) return;
+    if (!counting) return;
     const timer = window.setInterval(() => {
       setCooldown((seconds) => Math.max(0, seconds - 1));
     }, 1000);
     return () => window.clearInterval(timer);
-  }, [cooldown > 0]);
+  }, [counting]);
   const requestCode = async (isResend: boolean) => {
     setPending(true);
     setError("");

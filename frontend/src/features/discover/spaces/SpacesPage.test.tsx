@@ -151,3 +151,21 @@ describe("SpacesPage", () => {
     await expectNoA11yViolations(container);
   });
 });
+
+describe("SpacesPage header", () => {
+  it("uses the same hub bar as the landing: Spaces current, Home/Features/Docs, GitHub, theme and sign in", () => {
+    renderPage({ data: spaces });
+    const bar = screen.getByRole("banner");
+    expect(bar).toHaveClass("sw-hub-header");
+    const main = within(bar).getByRole("navigation", { name: "Main" });
+    expect(within(main).getByRole("link", { name: "Spaces" })).toHaveAttribute("aria-current", "page");
+    for (const name of ["Home", "Features", "Docs"]) expect(within(main).getByRole("link", { name })).not.toHaveAttribute("aria-current");
+    expect(within(bar).getByRole("link", { name: "Sign in" })).toHaveAttribute("href", "/member");
+    expect(within(bar).getByRole("button", { name: "Menu" })).toBeTruthy();
+    expect(screen.getAllByRole("banner")).toHaveLength(1);
+  });
+  it("marks the navbar logo as the splash landing spot", () => {
+    const { container } = renderPage({ data: spaces });
+    expect(container.querySelector("[data-sw-logo-target]")).not.toBeNull();
+  });
+});

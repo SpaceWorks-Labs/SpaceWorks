@@ -4,6 +4,7 @@ import { Link, useLocation } from "react-router-dom";
 import { loaders, tags, version } from "virtual:spaceworks-api-tags";
 import type { ApiTagPayload, ApiTagSummary } from "./apiReferenceModel";
 import { ApiOperationSection, MethodPill } from "./ApiOperationSection";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 export const API_REFERENCE_PATH = "/docs/api/reference";
 
@@ -68,7 +69,7 @@ function ApiTagPage({ summary }: { summary: ApiTagSummary }) {
       {state.failed && state.slug === summary.slug ? <div role="alert" className="grid justify-items-start gap-3 rounded-xl border border-danger-line p-4">
         <p className="text-sm text-danger">{t`Couldn't load this section. Check your connection and try again.`}</p>
         <button type="button" className="desk-button" onClick={() => { setState({ slug: summary.slug }); setAttempt(n => n + 1); }}>{t`Try again`}</button>
-      </div> : !payload ? <p role="status" className="text-sm text-muted">{t`Loading endpoints…`}</p>
+      </div> : !payload ? <LogoLoader label={t`Loading endpoints…`} size={48} className="min-h-16 py-3" />
         : payload.operations.map(operation => <ApiOperationSection key={`${operation.method}:${operation.path}`} operation={operation}
           schemas={payload.schemas} schemes={payload.securitySchemes} origin={origin} />)}
     </div>

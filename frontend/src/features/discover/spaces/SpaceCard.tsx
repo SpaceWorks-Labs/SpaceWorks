@@ -1,6 +1,7 @@
 import { t } from "@lingui/core/macro";
 import { ArrowRight, MapPin } from "lucide-react";
 import { Link } from "react-router-dom";
+import { LogoLoader } from "../../../components/LogoLoader";
 import { identityTone } from "../../../components/ui/tones";
 import type { Makerspace } from "../../../types/inventory";
 import { SpaceNextEvent, SpaceOfferChips } from "./SpaceOffers";
@@ -58,17 +59,7 @@ export function SpaceCard({ space, layout = "grid", headingLevel = 3 }: {
   </article>;
 }
 
-/** Placeholders with the cards' exact geometry, so nothing shifts when the list arrives. */
-export function SpaceCardSkeletons({ count = 6, label = t`Loading spaces` }: { count?: number; label?: string }) {
-  return <div role="status" aria-label={label} className="sw-spaces-grid">
-    <span className="sr-only">{label}</span>
-    {Array.from({ length: count }, (_, index) => <div key={index} className="sw-space-card sw-space-skeleton" aria-hidden="true">
-      <div className="sw-space-field" />
-      <div className="sw-space-body">
-        <span className="sw-space-mark" />
-        <span className="sw-skeleton-bar h-6 w-2/3" /><span className="sw-skeleton-bar h-4 w-1/2" />
-        <div className="sw-space-foot"><span className="sw-skeleton-bar h-7 w-16 rounded-full" /><span className="sw-space-go" /></div>
-      </div>
-    </div>)}
-  </div>;
+/** The loading state of the spaces grid: the Space Works box, with the grid's minimum height reserved. */
+export function SpaceCardSkeletons({ label = t`Loading spaces` }: { count?: number; label?: string }) {
+  return <LogoLoader label={label} className="min-h-72 py-10" />;
 }

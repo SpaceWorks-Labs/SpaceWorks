@@ -5,6 +5,7 @@ import { MailCheck } from "lucide-react";
 import { authErrorMessage } from "../../lib/api/authErrorCopy";
 import { tokenHeaders, useTurnstileGate } from "../../components/auth/useTurnstileGate";
 import { resendLoginCode } from "./mfaApi";
+import { BoxArt } from "../../components/BoxSpinner";
 
 /**
  * "Send a new code" for an emailed sign-in code, with how many resends are left (S-B allows
@@ -32,7 +33,7 @@ export function MfaEmailCodeResend({ challenge, initialResends = 2, turnstileSit
   return <div className="grid gap-3">
     <button type="button" className="desk-button min-h-11 gap-2" disabled={left <= 0 || resend.isPending}
       aria-describedby="mfa-resend-left" onClick={() => resend.mutate(undefined)}>
-      <MailCheck aria-hidden="true" size={20} />{resend.isPending ? t`Sending…` : t`Send a new code`}
+      <MailCheck aria-hidden="true" size={20} />{resend.isPending ? <><BoxArt size={16} mono />{t`Sending…`}</> : t`Send a new code`}
     </button>
     <p id="mfa-resend-left" className="text-sm text-muted">
       {left > 0 ? plural(left, { one: "# resend left.", other: "# resends left." }) : t`No resends left. Restart sign-in to get a new code.`}</p>

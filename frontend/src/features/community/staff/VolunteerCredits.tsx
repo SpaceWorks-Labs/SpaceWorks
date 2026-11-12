@@ -8,6 +8,7 @@ import { guestErrorText } from "../../guestPasses/api";
 import { MembershipPagination } from "../../staff/MembershipPagination";
 import { communityKeys, communityStaffApi } from "../api";
 import { creditLabel, creditStatusLabel, hoursLabel } from "../labels";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 /** Credits earned from approved hours. Only an unused credit can be voided; an applied one is history. */
 export function VolunteerCredits({ makerspaceId }: { makerspaceId: number }) {
@@ -19,7 +20,7 @@ export function VolunteerCredits({ makerspaceId }: { makerspaceId: number }) {
   const rows = credits.data?.results ?? [];
   return <section aria-labelledby="volunteer-credits-title" className="grid gap-3">
     <h3 id="volunteer-credits-title" className="title-section">{t`Volunteer credits`}</h3>
-    {credits.isLoading ? <p role="status" className="text-sm text-muted">{t`Loading credits…`}</p> : null}
+    {credits.isLoading ? <LogoLoader label={t`Loading credits…`} size={48} className="min-h-16 py-3" /> : null}
     {credits.isError ? <p role="alert" className="text-sm text-danger">{guestErrorText(credits.error)}</p> : null}
     {credits.isSuccess && !rows.length ? <EmptyState message={t`No credits earned yet.`} /> : null}
     <ul className="grid gap-2">

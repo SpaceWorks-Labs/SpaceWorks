@@ -1,3 +1,4 @@
+import { LogoLoader } from "../../components/LogoLoader";
 import { formatLocale } from "../../lib/format";
 import { t } from "@lingui/core/macro";
 import { EmptyState } from "../../components/ui/EmptyState";
@@ -37,7 +38,7 @@ export function SpaceDiscoveryCalendar({ slug, space, month, timeZone = "UTC" }:
   const remainder = usePublicAvailability(slug, space.public_token, midpoint.toISOString(), end.toISOString(), enabled && split);
   if (!space.show_public_availability || availability.data?.availability === null || (split && remainder.data?.availability === null)) return <p className="mt-4 text-sm text-muted">{t`Availability is not published. Submit a time for the makerspace to check.`}</p>;
   if (!future) return <p className="mt-4 text-sm text-muted">{t`Choose the current month or a later month to check upcoming availability.`}</p>;
-  if (availability.isLoading || (split && remainder.isLoading)) return <p role="status" className="mt-4 text-sm text-muted">{t`Loading published bookings...`}</p>;
+  if (availability.isLoading || (split && remainder.isLoading)) return <LogoLoader label={t`Loading published bookings...`} />;
   if (availability.error || (split && remainder.error)) return <div role="alert" className="mt-4"><p className="text-sm text-danger">{t`Availability could not be checked. This does not mean the space is free.`}</p><button type="button" className="desk-button" onClick={() => { void availability.refetch(); if (split) void remainder.refetch(); }}>{t`Retry availability`}</button></div>;
   if (!availability.data || (split && !remainder.data)) return null;
   const combined = [...(availability.data.availability ?? []), ...(split ? remainder.data?.availability ?? [] : [])];

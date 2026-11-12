@@ -1,5 +1,6 @@
 import { t } from "@lingui/core/macro";
 import { PanelLeft, Search, X } from "lucide-react";
+import { usePresence } from "../../lib/motion";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { useLocation, useSearchParams } from "react-router-dom";
 import { HubFooter } from "../hub/HubFooter";
@@ -20,6 +21,7 @@ export function DocsLayout({ currentId, children }: { currentId: string; childre
   const drawerButton = useRef<HTMLButtonElement>(null);
   const drawerPanel = useRef<HTMLDivElement>(null);
   const { pathname } = useLocation();
+  const drawerPresence = usePresence(drawer, 180);
   const openPalette = useCallback(() => setPalette(true), []);
   usePaletteShortcut(openPalette);
   useEffect(() => { if (queryParam) setPalette(true); }, [queryParam]);
@@ -49,11 +51,11 @@ export function DocsLayout({ currentId, children }: { currentId: string; childre
           <button ref={drawerButton} type="button" className="desk-button gap-2" aria-expanded={drawer} aria-controls="docs-drawer" onClick={() => setDrawer(true)}>
             <PanelLeft size={18} aria-hidden="true" />{t`Browse docs`}</button>
         </div>
-        <main id="docs-main" tabIndex={-1} className="sw-doc-main">{children(openPalette)}</main>
+        <main id="docs-main" data-sw-main tabIndex={-1} className="sw-doc-main">{children(openPalette)}</main>
       </div>
     </div>
-    {drawer ? <div className="sw-doc-drawer-scrim" onMouseDown={event => { if (event.target === event.currentTarget) setDrawer(false); }}>
-      <div id="docs-drawer" ref={drawerPanel} role="dialog" aria-modal="true" aria-label={t`Documentation sections`} className="sw-doc-drawer">
+    {drawerPresence.present ? <div className="sw-doc-drawer-scrim" data-state={drawerPresence.state} inert={drawerPresence.closing} onMouseDown={event => { if (event.target === event.currentTarget) setDrawer(false); }}>
+      <div id="docs-drawer" ref={drawerPanel} role="dialog" aria-modal="true" aria-label={t`Documentation sections`} data-state={drawerPresence.state} data-edge="left" onAnimationEnd={drawerPresence.onAnimationEnd} className="sw-doc-drawer sw-fx-drawer">
         <div className="flex items-center justify-between gap-3 border-b border-line px-4 py-3">
           <span className="font-extrabold">{t`Documentation`}</span>
           <button type="button" className="desk-button min-w-11 px-2" onClick={() => { setDrawer(false); drawerButton.current?.focus(); }}>

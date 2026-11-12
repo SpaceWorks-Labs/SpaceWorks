@@ -11,7 +11,7 @@ export function SpacesSearchBar({ query, onQuery }: { query: string; onQuery: (v
   useEffect(() => {
     const node = sentinel.current;
     if (!node || typeof IntersectionObserver === "undefined") return;
-    const observer = new IntersectionObserver(([entry]) => setStuck(!entry.isIntersecting));
+    const observer = new IntersectionObserver(([entry]) => setStuck(!entry.isIntersecting), { rootMargin: "-73px 0px 0px 0px" });
     observer.observe(node);
     return () => observer.disconnect();
   }, []);

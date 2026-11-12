@@ -4,6 +4,7 @@ import { EmptyState } from "../../components/ui/EmptyState";
 import { useMemo, useState } from "react";
 
 import { usePublicAvailability } from "./publicBookingsApi";
+import { LogoLoader } from "../../components/LogoLoader";
 
 const WINDOW_DAYS = 14;
 
@@ -47,7 +48,7 @@ export function AvailabilityCalendar({ makerspaceSlug, publicToken }: {
           <button className="desk-button-ghost" type="button" onClick={() => setOffset((value) => value + 1)}>{t`Next 14 days`}</button>
         </div>
       </div>
-      {availability.isLoading ? <p className="mt-3 text-sm text-muted" aria-live="polite">{t`Checking confirmed bookings...`}</p> : null}
+      {availability.isLoading ? <LogoLoader label={t`Checking confirmed bookings...`} size={48} className="min-h-16 py-3" /> : null}
       {availability.error ? (
         <div className="mt-3" role="alert">
           <p className="text-sm text-danger">{t`Availability could not be checked. This does not mean the space is free.`}</p>

@@ -4,6 +4,7 @@ import { isMfaChallenge, type MfaChallenge } from "./mfaApi";
 import { useEffect, useRef, useState } from "react";
 
 import { publicV1Request } from "../../lib/api";
+import { markUsernameReview } from "../profile/username/usernameApi";
 import {
   beginOidcBrowser,
   beginGithubBrowser,
@@ -14,6 +15,7 @@ import {
   type SocialLoginResult,
   type SocialSurface,
 } from "./socialSdk";
+import { BoxArt } from "../../components/BoxSpinner";
 
 export function SocialSignInButtons({
   surface,
@@ -31,10 +33,14 @@ export function SocialSignInButtons({
   const [challenge, setChallenge] = useState<MfaChallenge>();
   const receive = (result: SocialLoginResult | MfaChallenge) => {
     if (isMfaChallenge(result)) { if (onMfaChallenge) onMfaChallenge(result); else setChallenge(result); }
-    else onSuccessRef.current(result);
+    else { if (result.outcome === "created") markUsernameReview(); onSuccessRef.current(result); }
   };
   const googleHost = useRef<HTMLDivElement>(null);
   const onSuccessRef = useRef(onSuccess);
+  const receiveRef = useRef(receive);
+  useEffect(() => {
+    receiveRef.current = receive;
+  });
   const [config, setConfig] = useState<SocialConfig>();
   const [memberAccounts, setMemberAccounts] = useState(true);
   const [error, setError] = useState("");
@@ -64,7 +70,7 @@ export function SocialSignInButtons({
     callbackHandled.current = true;
     void completeOidcBrowserCallback()
       .then((result) => {
-        if (result) receive(result);
+        if (result) receiveRef.current(result);
       })
       .catch((nextError: unknown) => {
         setError(nextError instanceof Error ? nextError.message : t`Identity-provider sign-in failed.`);
@@ -79,7 +85,7 @@ export function SocialSignInButtons({
       host,
       config.google.web_client_id,
       surface,
-      (result) => receive(result),
+      (result) => receiveRef.current(result),
       (nextError) => setError(nextError.message),
     ).catch((nextError: unknown) => {
       setError(nextError instanceof Error ? nextError.message : t`Google sign-in failed.`);
@@ -134,7 +140,7 @@ export function SocialSignInButtons({
               }
             }}
           >
-            {applePending ? t`Connecting to Apple…` : t`Continue with Apple`}
+            {applePending ? <><BoxArt size={16} mono />{t`Connecting to Apple…`}</> : t`Continue with Apple`}
           </button>
         ) : null}
         {oidcProviders.map(([key, provider]) => {

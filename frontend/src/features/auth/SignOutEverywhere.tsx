@@ -6,6 +6,7 @@ import { staffRequest } from "../../lib/api";
 import { currentSessionContext } from "../../lib/api/sessionContext";
 import { clearAccountSessions } from "../../lib/api/sessionTokens";
 import { listQueues, wipeQueue } from "../kiosk/offlineQueueStore";
+import { BoxArt } from "../../components/BoxSpinner";
 
 export function SignOutEverywhere({ signInHref, onSignedOut }: { signInHref: string; onSignedOut?: () => void }) {
   const navigate = useNavigate();
@@ -33,7 +34,7 @@ export function SignOutEverywhere({ signInHref, onSignedOut }: { signInHref: str
   return <section className="grid gap-3" aria-label={t`Sign out everywhere`}>
     <p className="text-sm text-muted">{t`End this account’s sessions on every browser and device.`}</p>
     <button type="button" className="desk-button" disabled={pending} onClick={() => void signOut()}>
-      {pending ? t`Signing out…` : t`Sign out everywhere`}
+      {pending ? <><BoxArt size={16} mono />{t`Signing out…`}</> : t`Sign out everywhere`}
     </button>
     {error ? <p role="alert" className="text-sm text-danger">{error}</p> : null}
   </section>;

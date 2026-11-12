@@ -9,6 +9,8 @@ import { Fingerprint } from "lucide-react";
 import { authErrorMessage } from "../../lib/api/authErrorCopy";
 import { reauthenticateWithPasskey } from "./passkeys/passkeyApi";
 import { isPasskeyCancelled, passkeysSupported } from "./passkeys/webauthn";
+import { LogoLoader } from "../../components/LogoLoader";
+import { BoxArt } from "../../components/BoxSpinner";
 
 export function ReauthenticationDialog() {
   const [open, setOpen] = useState(false);
@@ -52,9 +54,9 @@ export function ReauthenticationDialog() {
     footer={<div className="flex justify-end"><button type="button" className="desk-button w-full sm:w-auto" onClick={() => finish(false)}>{t`Cancel`}</button></div>}>
     <div className="grid gap-4">
       <p className="text-sm text-muted">{t`Verify this browser session before changing permissions or credentials. Verification lasts ten minutes.`}</p>
-      {status.isLoading ? <p role="status" className="text-sm text-muted">{t`Loading verification options…`}</p> : null}
+      {status.isLoading ? <LogoLoader label={t`Loading verification options…`} size={48} className="min-h-16 py-3" /> : null}
       {passkeyOption ? <button type="button" className="desk-button-primary min-h-11 w-full gap-2" disabled={pending} onClick={() => passkey.mutate()}>
-        <Fingerprint aria-hidden="true" size={20} />{passkey.isPending ? t`Waiting for your passkey…` : t`Use a passkey`}</button> : null}
+        <Fingerprint aria-hidden="true" size={20} />{passkey.isPending ? <><BoxArt size={16} mono />{t`Waiting for your passkey…`}</> : t`Use a passkey`}</button> : null}
       {data ? <form className="grid gap-3" onSubmit={(event) => { event.preventDefault(); verify.mutate(); }}>
         {passkeyOption && !data.mfa_enabled ? null : <>
           {data.password_available ? <Field label={t`Current password`}><input className="desk-input w-full" type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} /></Field> : null}

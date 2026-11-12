@@ -7,6 +7,7 @@ import { formatDate } from "../../../lib/format";
 import { guestErrorText } from "../../guestPasses/api";
 import { communityKeys, communityMemberApi } from "../api";
 import { creditLabel, creditStatusLabel, entryStatusLabel, hoursLabel } from "../labels";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 /** A member's volunteer hours and the credits they earned (decision 223 k). Hidden when the feature is off. */
 export function VolunteerLog({ makerspaceId }: { makerspaceId: number }) {
@@ -34,7 +35,7 @@ export function VolunteerLog({ makerspaceId }: { makerspaceId: number }) {
       <div><button type="submit" className="desk-button-brand min-h-11" disabled={!Number(form.minutes) || !form.day || log.isPending}>{log.isPending ? t`Sending…` : t`Send for approval`}</button></div>
       {log.error ? <p role="alert" className="text-sm text-danger">{guestErrorText(log.error)}</p> : null}
     </form>
-    {hours.isLoading ? <p role="status" className="text-sm text-muted">{t`Loading your hours…`}</p> : null}
+    {hours.isLoading ? <LogoLoader label={t`Loading your hours…`} size={48} className="min-h-16 py-3" /> : null}
     {entries.length ? <ul className="grid gap-2" aria-label={t`Your volunteer hours`}>
       {entries.map((row) => <li key={row.id} className="flex flex-wrap items-center gap-2 rounded-control border border-line p-3 text-sm">
         <span className="min-w-0 flex-1 basis-40 text-ink">{hoursLabel(row.minutes)} · {formatDate(row.worked_on)}{row.description ? <span className="text-muted"> · {row.description}</span> : null}</span>

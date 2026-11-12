@@ -1,3 +1,4 @@
+import { LogoLoader } from "../../components/LogoLoader";
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -27,7 +28,7 @@ export function LinkedSignInList() {
     mutationFn: (provider: string) => staffRequest<void>(`/auth/social/providers/${encodeURIComponent(provider)}`, { method: "DELETE" }),
     onSuccess: (_data, provider) => { setRemoving(undefined); setNotice(t`${name(provider)} is no longer linked.`); void client.invalidateQueries({ queryKey: key }); },
   });
-  if (query.isLoading) return <p role="status" className="text-sm text-muted">{t`Loading linked accounts…`}</p>;
+  if (query.isLoading) return <LogoLoader label={t`Loading linked accounts…`} size={48} className="min-h-16 py-3" />;
   if (query.error) return <ErrorText message={authErrorMessage(query.error, "Couldn't load your linked accounts. Try again.")} onRetry={() => void query.refetch()} />;
   const rows = query.data ?? [];
   return <div className="grid gap-4">

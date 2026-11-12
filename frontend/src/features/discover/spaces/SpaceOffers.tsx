@@ -6,7 +6,7 @@ import type { PublicNextEvent, PublicSpaceOffer } from "../../../types/inventory
 
 // A function, not a constant: the labels follow a language switch.
 const OFFERS = (): Record<PublicSpaceOffer, { label: string; icon: LucideIcon }> => ({
-  inventory: { label: t`Tool lending`, icon: Boxes },
+  inventory: { label: t`Tool loans`, icon: Boxes },
   machines: { label: t`Machines`, icon: Cog },
   events: { label: t`Events`, icon: CalendarDays },
   bookings: { label: t`Room bookings`, icon: CalendarClock },

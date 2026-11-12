@@ -5,6 +5,7 @@ import { useMutation } from "@tanstack/react-query";
 import { Field, Modal } from "../../../components/ui";
 import { guestErrorText, operationId } from "../../guestPasses/api";
 import { communityStaffApi, type Consent, type MinorInput, type MinorProfile } from "../api";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 /** Record (or update) a person as a minor, with a birth date or an "under age" declaration. */
 export function RecordMinorDialog({ makerspaceId, onClose, onSaved }: { makerspaceId: number; onClose: () => void; onSaved: () => void }) {
@@ -23,7 +24,7 @@ export function RecordMinorDialog({ makerspaceId, onClose, onSaved }: { makerspa
   const ready = person.trim() && (declared || birth);
   return <Modal open title={t`Record a minor`} onClose={() => { if (!save.isPending) onClose(); }} footer={<div className="flex flex-wrap justify-end gap-2">
     <button type="button" className="desk-button" disabled={save.isPending} onClick={onClose}>{t`Cancel`}</button>
-    <button type="button" className="desk-button-primary" disabled={!ready || save.isPending} onClick={() => save.mutate()}>{save.isPending ? t`Saving…` : t`Save`}</button>
+    <button type="button" className="desk-button-primary" disabled={!ready || save.isPending} onClick={() => save.mutate()}>{save.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Save`}</button>
   </div>}>
     <div className="grid gap-4">
       <Field label={t`Their e-mail or account number`}><input className="desk-input" autoComplete="off" value={person} onChange={(event) => setPerson(event.target.value)} /></Field>
@@ -52,7 +53,7 @@ export function DeskConsentDialog({ makerspaceId, minor, onClose, onSaved }: {
   const save = useMutation({ mutationFn: () => communityStaffApi.recordConsent(makerspaceId, minor.id, { signed_name: name.trim(), accepted, operation_id: key }), onSuccess: onSaved });
   return <Modal open title={t`Desk signature for ${minor.user_name}`} onClose={() => { if (!save.isPending) onClose(); }} footer={<div className="flex flex-wrap justify-end gap-2">
     <button type="button" className="desk-button" disabled={save.isPending} onClick={onClose}>{t`Cancel`}</button>
-    <button type="button" className="desk-button-primary" disabled={!name.trim() || !accepted || save.isPending} onClick={() => save.mutate()}>{save.isPending ? t`Saving…` : t`Record signature`}</button>
+    <button type="button" className="desk-button-primary" disabled={!name.trim() || !accepted || save.isPending} onClick={() => save.mutate()}>{save.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Record signature`}</button>
   </div>}>
     <div className="grid gap-4">
       <p className="text-sm text-muted">{t`Use this when the guardian signed the current consent text on paper or in front of you.`}</p>

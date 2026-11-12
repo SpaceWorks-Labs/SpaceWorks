@@ -3,6 +3,7 @@ import { formatMoney } from "../../lib/money";
 import { Card, StatusPill } from "../../components/ui";
 import { useUpiQr } from "../members/MemberPaymentOffline";
 import { type GiftStatus } from "./donationsApi";
+import { BoxArt } from "../../components/BoxSpinner";
 
 const STATUS: Record<GiftStatus["status"], { label: string; tone: "success" | "warn" | "neutral" }> = {
   paid: { label: t`Received`, tone: "success" }, pending: { label: t`Waiting for payment`, tone: "warn" },
@@ -47,7 +48,7 @@ export function GiftStatusView({ gift, taxReceiptHref, onPayOnline, paying = fal
     {gift.tax_receipt_number && taxReceiptHref ? <a className="desk-button justify-self-start" href={taxReceiptHref}
       rel="noopener" download>{t`Download tax receipt (PDF)`}</a> : null}
     {gift.status === "pending" && gift.online_available && onPayOnline ? <button type="button" className="desk-button-primary justify-self-start"
-      disabled={paying} onClick={onPayOnline}>{paying ? t`Opening checkout…` : t`Pay online`}</button> : null}
+      disabled={paying} onClick={onPayOnline}>{paying ? <><BoxArt size={16} mono />{t`Opening checkout…`}</> : t`Pay online`}</button> : null}
     {gift.status === "pending" ? <OfflineGiftInstructions gift={gift} /> : null}
   </div></Card>;
 }

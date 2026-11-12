@@ -15,6 +15,7 @@ import {
 import { GiftStatusView } from "./GiftStatusView";
 import { GuestIdentity, TaxReceiptFields } from "./GiverFieldsets";
 import { NonprofitNote } from "./NonprofitNote";
+import { BoxArt } from "../../components/BoxSpinner";
 
 type Frequency = "once" | Interval;
 
@@ -99,7 +100,7 @@ export function DonatePage() {
       {give.error ? <p role="alert" className="text-sm text-danger">{giveError(give.error)}</p> : null}
       <div className="grid gap-2">
         <button type="submit" className="desk-button-primary justify-self-start" disabled={give.isPending || !amount}>
-          {give.isPending ? t`Working…` : frequency === "once" ? (data.online_available ? t`Continue to payment` : t`Give`)
+          {give.isPending ? <><BoxArt size={16} mono />{t`Working…`}</> : frequency === "once" ? (data.online_available ? t`Continue to payment` : t`Give`)
             : t`Make my pledge`}</button>
         {!data.online_available ? <p className="text-xs text-muted">{t`Online payment is off here: you'll see how to pay the space directly.`}</p> : null}
       </div>

@@ -155,6 +155,8 @@ def _exchange(target, address, method, body, headers, *, connect_timeout, read_t
                                headers={**(headers or {}), "Host": target.host_header})
             response = connection.getresponse()
             data = b"" if method == "HEAD" else _read_body(response, max_bytes, deadline, truncate)
+            if watchdog.fired:  # the shutdown reads as a clean EOF (read1 returns b""): a cut body is not an answer
+                raise OutboundError("timeout")
             return Response(response.status, {k.lower(): v for k, v in response.getheaders()}, data)
         except OutboundError:
             raise

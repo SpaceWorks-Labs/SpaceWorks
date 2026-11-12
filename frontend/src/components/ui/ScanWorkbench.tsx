@@ -8,9 +8,10 @@ import { Field } from "./Field";
 import { Icon } from "./icon";
 import QrScanner from "./QrScanner";
 import { ResultPanel, type ResultPanelProps } from "./ResultPanel";
-import { Skeleton } from "./Skeleton";
 import { StatusPill } from "./StatusPill";
 import type { Action, QueryState } from "./types";
+import { LogoLoader } from "../LogoLoader";
+import { BoxArt } from "../BoxSpinner";
 
 export type ScanWorkbenchProps = {
   onFind: (value: string) => void;
@@ -54,9 +55,9 @@ export function ScanWorkbench({ onFind, onScan = onFind, searchLabel = "Find a Q
           onFind(value.trim()); setValue(""); refocus.current = true; if (!findPending) input.current?.focus(); }}>
           <Field label={searchLabel} hint={helper} className="min-w-0 flex-1 basis-48"><input ref={input} className="desk-input w-full" type="search"
             value={value} onChange={event => setValue(event.target.value)} disabled={blocked} /></Field>
-          <button type="submit" className="desk-button" disabled={blocked || !value.trim()} aria-busy={findPending || undefined}>{findPending ? t`Finding…` : t`Find`}</button>
+          <button type="submit" className="desk-button" disabled={blocked || !value.trim()} aria-busy={findPending || undefined}>{findPending ? <><BoxArt size={16} mono />{t`Finding…`}</> : t`Find`}</button>
         </form>
-        {state.status === "loading" ? <div role="status" aria-label={t`Loading scanner`}><span className="sr-only">{t`Loading scanner`}</span><Skeleton className="h-32" /></div>
+        {state.status === "loading" ? <LogoLoader label={t`Loading scanner`} size={48} className="min-h-32 py-3" />
           : state.status === "error" ? <ErrorBlock error={new Error(state.error || t`Couldn't load the scanner.`)} onRetry={state.onRetry} />
           : result ? <ResultPanel {...result} /> : <EmptyState message={t`Scan a QR code or find an item to get started.`} />}
         {controls}

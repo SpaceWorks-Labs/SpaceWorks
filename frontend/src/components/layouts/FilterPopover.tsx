@@ -1,6 +1,7 @@
 import { t } from "@lingui/core/macro";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { SlidersHorizontal, X } from "lucide-react";
+import { usePresence } from "../../lib/motion";
 import { Modal } from "../ui";
 import { useLayoutMedia } from "./useLayoutMedia";
 
@@ -12,6 +13,7 @@ export function FilterPopover({ children, count = 0, onClear }: { children: Reac
   const trigger = useRef<HTMLButtonElement>(null);
   const panel = useRef<HTMLDivElement>(null);
   const id = useId();
+  const presence = usePresence(open && desktop);
   const close = () => { setOpen(false); trigger.current?.focus(); };
   useEffect(() => {
     if (!open || !desktop) return;
@@ -32,8 +34,8 @@ export function FilterPopover({ children, count = 0, onClear }: { children: Reac
       }}>
       <SlidersHorizontal aria-hidden="true" className="size-4" />{t`Filters`}{count > 0 ? <span aria-hidden="true" className="rounded-full bg-emphasis px-2 py-0.5 text-xs font-semibold tabular-nums text-on-emphasis">{count}</span> : null}
     </button>
-    {open && desktop ? <div ref={panel} id={id} role="dialog" aria-label={t`Filters`}
-      className={`absolute ${alignStart ? "left-0" : "right-0"} z-30 mt-2 max-h-[70dvh] w-80 max-w-[calc(100vw-2rem)] overflow-y-auto overscroll-contain rounded-2xl border border-line bg-panel p-4 shadow-overlay`}>
+    {presence.present ? <div ref={panel} id={id} role="dialog" aria-label={t`Filters`} data-state={presence.state} onAnimationEnd={presence.onAnimationEnd} inert={presence.closing}
+      className={`sw-fx-menu absolute ${alignStart ? "left-0" : "right-0"} z-30 mt-2 max-h-[70dvh] w-80 max-w-[calc(100vw-2rem)] overflow-y-auto overscroll-contain rounded-2xl border border-line bg-panel p-4 shadow-overlay`}>
       <div className="mb-4 flex items-center justify-between"><span className="font-semibold">{t`Filters`}</span>
         <button type="button" className="desk-button-ghost min-h-11 min-w-11" aria-label={t`Close filters`} onClick={close}><X aria-hidden="true" className="size-4" /></button></div>
       {fields}

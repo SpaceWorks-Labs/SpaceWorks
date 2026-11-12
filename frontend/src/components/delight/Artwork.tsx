@@ -1,5 +1,6 @@
 import { t } from "@lingui/core/macro";
-import { useDelight, useReducedMotion, type DelightArtwork } from "./DelightProvider";
+import { LogoLoader } from "../LogoLoader";
+import { useDelight, type DelightArtwork } from "./DelightProvider";
 import "./delight.css";
 
 /** Artwork remains owned by ARTWORK. Never generate substitute programme illustrations. */
@@ -13,13 +14,9 @@ export function DelightArt({ name, className = "" }: { name: keyof DelightArtwor
   </span>;
 }
 
+/** One loader implementation: the Space Works box-opening animation (see `LogoLoader`). */
 export function BrandLoader({ label = t`Loading` }: { label?: string }) {
-  const { enabled } = useDelight();
-  const reduced = useReducedMotion();
-  return <div role="status" className="flex min-h-11 items-center justify-center gap-3 text-muted">
-    <DelightArt name="loader" className={enabled && !reduced ? "sw-delight-loader h-10 w-10" : "h-10 w-10"} />
-    <span>{label}</span>
-  </div>;
+  return <LogoLoader label={label} size={48} className="min-h-16 py-3" />;
 }
 
 export function MoodGlyph({ mood }: { mood: "welcome" | "success" | "waiting" | "empty" | "error" }) {

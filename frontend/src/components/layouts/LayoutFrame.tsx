@@ -1,8 +1,9 @@
 import { t } from "@lingui/core/macro";
 import { createContext, useContext, type ReactNode } from "react";
-import { EmptyState, ErrorBlock, Skeleton } from "../ui";
+import { EmptyState, ErrorBlock } from "../ui";
 import type { LayoutStateProps } from "./types";
 import "./layouts.css";
+import { LogoLoader } from "../LogoLoader";
 
 export const ContentTarget = createContext(false);
 export const PublicQueryState = createContext<LayoutStateProps | undefined>(undefined);
@@ -38,10 +39,7 @@ export function useLayoutQuery(query: LayoutStateProps): LayoutStateProps {
 
 export function QueryContent({ children, ...props }: LayoutStateProps & { children: ReactNode }) {
   const { state, isEmpty, empty } = useLayoutQuery(props);
-  if (state.status === "loading") return <div role="status" aria-label={t`Loading content`} className="grid gap-3">
-    <span className="sr-only">{t`Loading content`}</span>
-    <Skeleton className="h-24 w-full" /><Skeleton className="h-32 w-full" />
-  </div>;
+  if (state.status === "loading") return <LogoLoader label={t`Loading content`} size={48} className="min-h-24 py-3" />;
   if (state.status === "error") return <ErrorBlock error={new Error(state.error || t`Couldn't load this page. Try again.`)}
     onRetry={state.onRetry} />;
   if (isEmpty) return <EmptyState {...empty ?? { message: t`Nothing here yet.` }} />;

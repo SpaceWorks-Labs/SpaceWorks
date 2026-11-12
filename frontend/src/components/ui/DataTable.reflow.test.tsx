@@ -44,7 +44,8 @@ it("names headerless column pickers and removes hidden columns from the one DOM"
 it("renders the same loading and empty contracts without duplicating cells", async () => {
   const { container, rerender } = render(<DataTable columns={columns} data={[]} loading skeletonCols={1} />);
   expect(screen.getByRole("table")).toHaveAttribute("aria-busy", "true");
-  expect(screen.getAllByRole("cell")).toHaveLength(6);
+  expect(screen.getAllByRole("cell")).toHaveLength(1);
+  expect(screen.getByRole("status", { name: "Loading" })).toBeInTheDocument();
   await expectNoA11yViolations(container);
   rerender(<DataTable columns={columns} data={[]} emptyTitle="No tools yet." emptyDescription="Add your first tool above." />);
   expect(screen.queryByRole("table")).not.toBeInTheDocument();

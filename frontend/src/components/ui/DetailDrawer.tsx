@@ -10,6 +10,7 @@ import {
   subscribe,
   trapDialogFocus,
 } from "./dialogFocus";
+import { usePresence } from "../../lib/motion";
 import { revealFieldAboveKeyboard } from "./keyboardSafe";
 import { OverlayPortal } from "./OverlayPortal";
 
@@ -18,10 +19,13 @@ export type DetailDrawerProps = {
   title: string;
   onClose: () => void;
   children: ReactNode;
+  /** Which edge the panel slides from; the phone navigation drawer uses "left". */
+  edge?: "right" | "left";
 };
 
-export function DetailDrawer({ open, title, onClose, children }: DetailDrawerProps) {
+export function DetailDrawer({ open, title, onClose, children, edge = "right" }: DetailDrawerProps) {
   const titleId = useId();
+  const presence = usePresence(open, 180);
   const layerRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLElement>(null);
   const tokenRef = useRef<symbol | null>(null);
@@ -71,15 +75,16 @@ export function DetailDrawer({ open, title, onClose, children }: DetailDrawerPro
     if (panel && !panel.contains(document.activeElement)) focusFirstDialogElement(panel);
   }, [amTop]);
 
-  if (!open) return null;
+  if (!presence.present) return null;
 
   return (
     <OverlayPortal>
-    <div ref={layerRef} inert={!amTop} className="sw-overlay-layer fixed inset-0 z-50">
+    <div ref={layerRef} inert={!amTop || presence.closing} className="sw-overlay-layer fixed inset-0 z-50">
       <button
         type="button"
         aria-label={t`Close detail drawer`}
-        className="absolute inset-0 bg-scrim/30"
+        data-state={presence.state}
+        className="sw-fx-fade absolute inset-0 bg-scrim/30"
         onClick={onClose}
       />
       <aside
@@ -87,12 +92,15 @@ export function DetailDrawer({ open, title, onClose, children }: DetailDrawerPro
         role="dialog"
         aria-labelledby={titleId}
         ref={panelRef}
+        data-state={presence.state}
+        data-edge={edge}
+        onAnimationEnd={presence.onAnimationEnd}
         tabIndex={-1}
         /* `max-w-xl` (576px) was too narrow for the content this holds: the machine drawer's
            tab row and its two-column forms both overflowed, so tabs were clipped mid-word and
            an "Add" button sat half outside the panel. Widened, and capped at the viewport so
            it can never exceed the screen on a small display. */
-        className="absolute right-0 top-0 flex h-full w-full md:max-w-[min(48rem,100vw)] flex-col border-l border-line bg-panel shadow-overlay focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+        className="sw-fx-drawer absolute right-0 top-0 flex h-full w-full md:max-w-[min(48rem,100vw)] flex-col border-l border-line bg-panel shadow-overlay focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
       >
         {/* Full screen on phones, so the header and body pad for the notch and home indicator. */}
         <header className="flex shrink-0 items-center gap-3 border-b border-line pt-[max(1rem,env(safe-area-inset-top))] pr-[max(1.25rem,env(safe-area-inset-right))] pb-4 pl-[max(1.25rem,env(safe-area-inset-left))] md:pt-4">

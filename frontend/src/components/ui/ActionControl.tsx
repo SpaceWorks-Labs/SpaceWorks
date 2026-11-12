@@ -1,6 +1,7 @@
 import { useId, useState } from "react";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { RouteLink } from "./RouteLink";
+import { BoxArt } from "../BoxSpinner";
 import { Icon } from "./icon";
 import type { Action } from "./types";
 export type ActionControlProps = { action: Action; primary?: boolean; className?: string };
@@ -15,7 +16,7 @@ export function ActionControl({ action, primary = false, className = "" }: Actio
   const style = action.tone === "danger" ? "desk-button-danger-outline"
     : primary ? "desk-button-primary" : "desk-button";
   const classes = `${style} min-w-11 gap-2 ${className}`;
-  const content = <>{action.icon ? <Icon name={action.icon} /> : null}{label}</>;
+  const content = <>{action.pending ? <BoxArt size={16} mono /> : action.icon ? <Icon name={action.icon} /> : null}{label}</>;
   return <>
     {action.href ? <RouteLink href={blocked ? undefined : action.href} role={blocked ? "link" : undefined}
       title={action.disabledReason} aria-disabled={blocked || undefined} aria-busy={action.pending || undefined}

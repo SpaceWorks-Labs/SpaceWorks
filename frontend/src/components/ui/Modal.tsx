@@ -10,6 +10,7 @@ import {
   subscribe,
   trapDialogFocus,
 } from "./dialogFocus";
+import { usePresence } from "../../lib/motion";
 import { revealFieldAboveKeyboard } from "./keyboardSafe";
 import { OverlayPortal } from "./OverlayPortal";
 import { X } from "lucide-react";
@@ -34,6 +35,7 @@ export function Modal({
   backdrop = "plain",
 }: ModalProps) {
   const titleId = useId();
+  const presence = usePresence(open);
   const layerRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const tokenRef = useRef<symbol | null>(null);
@@ -89,15 +91,17 @@ export function Modal({
     if (panel && !panel.contains(document.activeElement)) focusFirstDialogElement(panel);
   }, [amTop]);
 
-  if (!open) return null;
+  if (!presence.present) return null;
 
   return (
     <OverlayPortal>
     <div
       ref={layerRef}
-      inert={!amTop}
+      inert={!amTop || presence.closing}
+      data-state={presence.state}
+      onAnimationEnd={presence.onAnimationEnd}
       // Phones: a bottom sheet with a safe-area-aware footer. Tablet and up: a centred dialog.
-      className={`sw-overlay-layer fixed inset-0 z-50 flex items-end justify-center ${backdropClass} pt-[max(0.5rem,env(safe-area-inset-top))] sm:items-center sm:pr-[max(1rem,env(safe-area-inset-right))] sm:pb-4 sm:pl-[max(1rem,env(safe-area-inset-left))]`}
+      className={`sw-overlay-layer sw-fx-fade fixed inset-0 z-50 flex items-end justify-center ${backdropClass} pt-[max(0.5rem,env(safe-area-inset-top))] sm:items-center sm:pr-[max(1rem,env(safe-area-inset-right))] sm:pb-4 sm:pl-[max(1rem,env(safe-area-inset-left))]`}
       onMouseDown={(event) => { downOnBackdrop.current = event.target === event.currentTarget; }}
       onClick={(event) => {
         // A text-selection drag that starts in a field and ends on the backdrop must not close the dialog.
@@ -111,7 +115,8 @@ export function Modal({
         aria-modal={amTop ? "true" : undefined}
         aria-labelledby={titleId}
         tabIndex={-1}
-        className={`desk-panel shadow-overlay relative flex max-h-full w-full ${maxWidthClass} flex-col overflow-hidden rounded-b-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus sm:max-h-[calc(100dvh-2rem)] sm:rounded-b-xl`}
+        data-state={presence.state}
+        className={`sw-fx-pop desk-panel shadow-overlay relative flex max-h-full w-full ${maxWidthClass} flex-col overflow-hidden rounded-b-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus sm:max-h-[calc(100dvh-2rem)] sm:rounded-b-xl`}
       >
         <div className="shrink-0 border-b border-line py-4 pr-16 pl-[max(1.25rem,env(safe-area-inset-left))] sm:px-5">
           <h2 id={titleId} className="title-panel break-words">

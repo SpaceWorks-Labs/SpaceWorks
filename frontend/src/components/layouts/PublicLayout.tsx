@@ -24,7 +24,7 @@ export type PublicLayoutProps = Omit<LayoutProps, "width"> & PublicBody & {
   width?: "default" | "wide" | "narrow";
   breadcrumb?: { label: string; href?: string }[];
   footer: { credit?: string; links: Action[] };
-  chrome?: "bar" | "canvas";
+  chrome?: "bar" | "canvas" | "none";
 };
 export function PublicLayout({ makerspace, nav, headerAction, liveStatus, width = "default", breadcrumb, aside, children,
   footer, header, hero, chrome, standalone = true, state, isEmpty, empty }: PublicLayoutProps) {

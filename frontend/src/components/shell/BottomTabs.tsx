@@ -1,6 +1,6 @@
 import { t } from "@lingui/core/macro";
 import { Ellipsis } from "lucide-react";
-import { Link } from "react-router-dom";
+import { TransitionLink as Link } from "../../lib/motion";
 import { navKeys } from "./navKeys";
 import { focusRing, type ShellItem } from "./types";
 

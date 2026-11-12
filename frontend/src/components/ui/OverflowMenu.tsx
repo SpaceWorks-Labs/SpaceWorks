@@ -1,5 +1,6 @@
 import { t } from "@lingui/core/macro";
 import { useEffect, useId, useRef, useState } from "react";
+import { usePresence } from "../../lib/motion";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { RouteLink } from "./RouteLink";
 import { Icon } from "./icon";
@@ -20,6 +21,7 @@ export function OverflowMenu({ actions, label = t`More actions`, className = "",
   const menu = useRef<HTMLDivElement>(null);
   const focusLast = useRef(false);
   const id = useId();
+  const presence = usePresence(open);
   const close = (restore = false) => { setOpen(false); if (restore) trigger.current?.focus(); };
   useEffect(() => {
     if (!open) return;
@@ -58,8 +60,8 @@ export function OverflowMenu({ actions, label = t`More actions`, className = "",
           event.preventDefault(); focusLast.current = event.key === "ArrowUp"; toggle(true);
         }
       }}>{showLabel ? <>{label}<Icon name="ChevronDown" /></> : <Icon name="Ellipsis" />}</button>
-    {open ? <div id={id} ref={menu} role="menu" aria-label={label}
-      className={`absolute ${alignStart ? "left-0" : "right-0"} z-30 mt-2 max-h-[min(60dvh,28rem)] w-64 max-w-[calc(100vw-2rem)] overflow-y-auto overscroll-contain rounded-xl border border-line bg-panel p-1 shadow-overlay`}
+    {presence.present ? <div id={id} ref={menu} role="menu" aria-label={label} data-state={presence.state} onAnimationEnd={presence.onAnimationEnd} inert={presence.closing}
+      className={`sw-fx-menu absolute ${alignStart ? "left-0" : "right-0"} z-30 mt-2 max-h-[min(60dvh,28rem)] w-64 max-w-[calc(100vw-2rem)] overflow-y-auto overscroll-contain rounded-xl border border-line bg-panel p-1 shadow-overlay`}
       onKeyDown={event => {
         if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); close(true); }
         else if (event.key === "Tab") close(true);

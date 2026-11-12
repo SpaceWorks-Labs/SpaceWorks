@@ -13,8 +13,8 @@ export type PublicHeaderProps = {
   nav: { label: string; href: string }[];
   account: Action;
   liveStatus?: ReactNode;
-  /** canvas: no bar, for pages that open with a brand field (landing, About). */
-  chrome?: "bar" | "canvas";
+  /** canvas: no bar, for pages that open with a brand field (landing, About). none: the page brings its own header (/spaces uses the hub bar). */
+  chrome?: "bar" | "canvas" | "none";
 };
 
 /** Collapses the inline links into the menu as soon as they no longer fit beside the name. */
@@ -45,7 +45,12 @@ function useNavFits(enabled: boolean, navKey: string) {
 }
 
 /** Name first, links next, then status and the account action at the end. Phones and tablets get a menu. */
-export function PublicHeader({ makerspace, nav, account, liveStatus, chrome = "bar" }: PublicHeaderProps) {
+export function PublicHeader(props: PublicHeaderProps) {
+  // `none`: the page brings its own header. Returned before the bar mounts so its hooks always run in order.
+  return props.chrome === "none" ? null : <PublicHeaderBar {...props} />;
+}
+
+function PublicHeaderBar({ makerspace, nav, account, liveStatus, chrome = "bar" }: PublicHeaderProps) {
   const compact = useLayoutMedia("(max-width: 1023px)");
   const { slot, list, collapsed } = useNavFits(!compact && nav.length > 0, nav.map(link => link.href).join("|"));
   const [open, setOpen] = useState(false);

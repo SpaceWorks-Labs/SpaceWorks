@@ -1,7 +1,10 @@
+import { BoxArt } from "../BoxSpinner";
+
 export type SkeletonProps = { className?: string };
 export type SkeletonRowsProps = { rows?: number; cols: number };
+/** A decorative loading placeholder: the Space Works box (callers announce the loading state themselves). */
 export function Skeleton({ className = "" }: SkeletonProps) {
-  return <div className={`motion-safe:animate-pulse rounded-control bg-line dark:bg-hover ${className}`} aria-hidden="true" />;
+  return <div className={`grid place-items-center ${className}`} aria-hidden="true"><BoxArt size={20} /></div>;
 }
 
 export function SkeletonRows({ rows = 5, cols }: SkeletonRowsProps) {

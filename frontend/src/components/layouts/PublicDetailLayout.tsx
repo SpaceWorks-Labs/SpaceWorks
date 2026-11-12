@@ -8,7 +8,8 @@ import type { ContentSection, LayoutProps } from "./types";
 
 export type PublicDetailLayoutProps = LayoutProps & {
   cover?: { src: string; alt: string };
-  chips?: StatusPillProps[];
+  /** A chip with `href` is a link (e.g. an event tag to Discover); without one it stays a plain label. */
+  chips?: (StatusPillProps & { href?: string })[];
   title: string;
   tagline?: string;
   facts?: { identity: Identity; primary: string; secondary?: string }[];
@@ -24,7 +25,9 @@ export function PublicDetailLayout({ cover, chips = [], title, tagline, facts = 
     {cover ? <img src={cover.src} alt={cover.alt} className="mb-8 aspect-[3.5] w-full rounded-xl object-cover" /> : null}
     <div className="sw-public-columns">
       <div className="min-w-0">
-        <div className="mb-4 flex min-w-0 gap-2 overflow-x-auto">{chips.map(chip => <StatusPill key={chip.label} {...chip} />)}</div>
+        <div className="mb-4 flex min-w-0 gap-2 overflow-x-auto">{chips.map(({ href, ...chip }) => href
+          ? <a key={chip.label} href={href} className="inline-flex min-h-11 shrink-0 items-center rounded-full hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"><StatusPill {...chip} /></a>
+          : <StatusPill key={chip.label} {...chip} />)}</div>
         <PageHeader title={title} />
         {tagline ? <p className="mb-8 break-words font-accent text-xl text-brand-ink md:text-2xl">{tagline}</p> : null}
         <QueryContent {...resolved}>

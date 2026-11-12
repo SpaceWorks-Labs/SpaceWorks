@@ -79,6 +79,7 @@ export default function QrScanner({ onScan, onClose, feedback }: QrScannerProps)
   useEffect(() => {
     onScanRef.current = onScan;
   }, [onScan]);
+  const closeRef = useRef<() => void>(() => {});
   useEffect(() => {
     const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const token = pushDialog({
@@ -91,7 +92,7 @@ export default function QrScanner({ onScan, onClose, feedback }: QrScannerProps)
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (!amTopRef.current) return;
-      if (event.key === "Escape") close();
+      if (event.key === "Escape") closeRef.current();
       if (panel) trapDialogFocus(event, panel);
     };
 
@@ -218,6 +219,7 @@ export default function QrScanner({ onScan, onClose, feedback }: QrScannerProps)
     stopScanner();
     onClose();
   };
+  closeRef.current = close;
 
   return createPortal(
     <div data-replay-block ref={layerRef} inert={!amTop} className="sw-camera-layer fixed inset-0 z-[100] flex items-stretch justify-center bg-scrim/70 sm:items-center sm:p-4" onMouseDown={(event) => { if (event.target === event.currentTarget) close(); }}>

@@ -1,5 +1,6 @@
 import type { AnchorHTMLAttributes } from "react";
-import { Link, useInRouterContext } from "react-router-dom";
+import { useInRouterContext } from "react-router-dom";
+import { TransitionLink } from "../../lib/motion";
 
 /**
  * An in-app link that navigates client-side (no full reload and no "Opening makerspace…" flash)
@@ -9,5 +10,5 @@ import { Link, useInRouterContext } from "react-router-dom";
 export function RouteLink({ href, ...props }: AnchorHTMLAttributes<HTMLAnchorElement>) {
   const inRouter = useInRouterContext();
   const internal = href !== undefined && href.startsWith("/") && !href.startsWith("//") && props.target !== "_blank";
-  return inRouter && internal ? <Link to={href} {...props} /> : <a href={href} {...props} />;
+  return inRouter && internal ? <TransitionLink to={href} {...props} /> : <a href={href} {...props} />;
 }

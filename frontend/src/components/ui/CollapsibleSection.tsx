@@ -1,5 +1,6 @@
 import { plural } from "@lingui/core/macro";
 import { useId, type ReactNode } from "react";
+import { Collapse } from "./Collapse";
 
 type CollapsibleSectionProps = {
   title: string;
@@ -45,7 +46,7 @@ export function CollapsibleSection({
         >
           <span
             aria-hidden="true"
-            className={`text-muted transition-transform ${open ? "rotate-90" : ""}`}
+            className={`text-muted transition-transform duration-[var(--sw-dur-base)] ${open ? "rotate-90" : ""}`}
           >
             ▶
           </span>
@@ -70,7 +71,7 @@ export function CollapsibleSection({
           and dropping the element entirely leaves that pointing at an id that does not
           exist, which is an ARIA violation. Children are still unmounted while collapsed --
           that is what keeps them off the Tab order. */}
-      {open ? <div id={regionId}>{children}</div> : <div id={regionId} hidden />}
+      <Collapse open={open} id={regionId}>{children}</Collapse>
     </section>
   );
 }

@@ -6,6 +6,7 @@ import { ConfirmDialog } from "./ConfirmDialog";
 import { ErrorText } from "./ErrorText";
 import { GALLERY_ACCEPT } from "./galleryUpload";
 import type { GalleryPhoto } from "./Gallery";
+import { BoxArt } from "../BoxSpinner";
 
 export type GalleryEditorProps = {
   photos: GalleryPhoto[];
@@ -52,7 +53,7 @@ export function GalleryEditor({ photos, maxPhotos, canEdit, readOnlyMessage, onU
             <input ref={input} id={inputId} type="file" accept={GALLERY_ACCEPT} className="sr-only" disabled={busy || full}
               onChange={event => { const file = event.target.files?.[0]; event.target.value = ""; if (file) void run(() => onUpload(file)); }} />
             <button type="button" className="desk-button min-h-11" disabled={busy || full} onClick={() => input.current?.click()}>
-              <ImagePlus aria-hidden="true" size={20} /> {busy ? t`Saving…` : full ? t`Gallery full` : t`Add photo`}
+              <ImagePlus aria-hidden="true" size={20} /> {busy ? <><BoxArt size={16} mono />{t`Saving…`}</> : full ? t`Gallery full` : t`Add photo`}
             </button>
           </>
         ) : null}

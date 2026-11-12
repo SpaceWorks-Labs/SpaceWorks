@@ -5,6 +5,7 @@ import { useState } from "react";
 
 import { CameraCapture } from "../ui/CameraCapture";
 import { PhotoCropDialog } from "./PhotoCropDialog";
+import { BoxArt } from "../BoxSpinner";
 
 export const PHOTO_TYPES = "image/png,image/jpeg,image/webp";
 
@@ -16,7 +17,7 @@ export function PhotoPicker({ aspect, disabled = false, busy = false, onPhoto, c
   const off = disabled || busy;
   return <div className="flex flex-wrap items-center gap-2">
     <label className={`desk-button min-h-11 cursor-pointer focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-focus ${off ? "pointer-events-none opacity-60" : ""}`}>
-      {busy ? t`Uploading…` : chooseLabel}
+      {busy ? <><BoxArt size={16} mono />{t`Uploading…`}</> : chooseLabel}
       <input type="file" accept={PHOTO_TYPES} className="sr-only" disabled={off}
         onChange={(event) => { const file = event.target.files?.[0]; event.target.value = ""; if (file) setPicked(file); }} />
     </label>

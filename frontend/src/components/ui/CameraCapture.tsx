@@ -12,6 +12,7 @@ import {
   subscribe,
   trapDialogFocus,
 } from "./dialogFocus";
+import { BoxArt } from "../BoxSpinner";
 
 type CameraCaptureProps = {
   open: boolean;
@@ -114,6 +115,7 @@ function OpenCameraCapture({ onClose, onCapture, label }: Omit<CameraCaptureProp
       popDialog(token);
       if (tokenRef.current === token) tokenRef.current = null;
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- close only reads refs (stopCamera, onCloseRef), so the mount-time copy is never stale; the dialog must register once per mount
   }, []);
 
   useEffect(() => {
@@ -245,7 +247,7 @@ function OpenCameraCapture({ onClose, onCapture, label }: Omit<CameraCaptureProp
           </>
         ) : (
           <button className="desk-button-primary min-h-11 w-full" type="button" disabled={!ready || capturing} onClick={takePhoto}>
-            {capturing ? t`Capturing...` : t`Take photo`}
+            {capturing ? <><BoxArt size={16} mono />{t`Capturing...`}</> : t`Take photo`}
           </button>
         )}
         <button className="desk-button min-h-11 w-full" type="button" onClick={close}>{t`Cancel`}</button>

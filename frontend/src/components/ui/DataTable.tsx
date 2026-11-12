@@ -4,8 +4,7 @@ import { isValidElement, useEffect, useMemo, useRef, useState } from "react";
 
 import { Icon } from "./icon";
 import { EmptyState } from "./EmptyState";
-import { SkeletonRows } from "./Skeleton";
-import { Spinner } from "./Spinner";
+import { LogoLoader } from "../LogoLoader";
 import { ListColumns } from "./ListColumns";
 import type { UrlListState } from "../../lib/useUrlListState";
 
@@ -33,6 +32,7 @@ type SortState = { key: string; direction: "asc" | "desc" };
 export type DataTableProps<T> = {
   columns: DataTableColumn<T>[]; data: T[]; getRowId?: (row: T) => Key; selectedIds?: Key[];
   onSelectionChange?: (ids: Key[]) => void; loading?: boolean; emptyTitle?: string; emptyDescription?: string; emptyAction?: ReactNode;
+  /** Retained for callers: the loading state is the box loader, which needs no column count. */
   skeletonCols?: number;
   ordering?: string; onOrderingChange?: (ordering: string) => void;
   listState?: UrlListState;
@@ -50,11 +50,13 @@ export function DataTable<T>({
   emptyTitle = t`No records`,
   emptyDescription,
   emptyAction,
-  skeletonCols,
   ordering, onOrderingChange, listState, caption,
 }: DataTableProps<T>) {
   const [localSort, setSort] = useState<SortState | null>(null);
-  const sort: SortState | null = ordering !== undefined ? { key: ordering.replace(/^-/, ""), direction: ordering.startsWith("-") ? "desc" : "asc" } : localSort;
+  const sort: SortState | null = useMemo(
+    () => (ordering !== undefined ? { key: ordering.replace(/^-/, ""), direction: ordering.startsWith("-") ? ("desc" as const) : ("asc" as const) } : localSort),
+    [ordering, localSort],
+  );
   const selectedSet = useMemo(() => new Set(selectedIds ?? []), [selectedIds]);
   const visibleIds = useMemo(() => data.map(getRowId), [data, getRowId]);
   const selectionEnabled = Boolean(selectedIds && onSelectionChange);
@@ -135,12 +137,10 @@ export function DataTable<T>({
           </tr>
         </thead>
         <tbody role="rowgroup" className="block md:table-row-group">
-          {loading && skeletonCols ? (
-            <SkeletonRows rows={6} cols={listState ? visibleColumns.length + (selectionEnabled ? 1 : 0) : skeletonCols} />
-          ) : loading ? (
+          {loading ? (
             <tr role="row" className="block md:table-row">
-              <td role="cell" className="block px-3 py-8 text-center md:table-cell" colSpan={visibleColumns.length + (selectionEnabled ? 1 : 0)}>
-                <Spinner />
+              <td role="cell" className="block px-3 py-2 md:table-cell" colSpan={visibleColumns.length + (selectionEnabled ? 1 : 0)}>
+                <LogoLoader size={48} className="min-h-40 py-6" />
               </td>
             </tr>
           ) : (

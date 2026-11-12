@@ -1,6 +1,7 @@
 import { t } from "@lingui/core/macro";
 import { useEffect, useRef } from "react";
 import { Search } from "lucide-react";
+import { useSlideIndicator } from "../../lib/motion";
 import { SpaceWorksLogo } from "../SpaceWorksLogo";
 import { ActionControl } from "../ui";
 import { SidebarSection } from "./SidebarSection";
@@ -11,6 +12,9 @@ import { focusRing, type AppShellProps } from "./types";
 
 export function Sidebar({ variant, workspace, search, nav, activeKey, footerLinks = [], user, status, onNavigate }: Omit<AppShellProps, "children" | "compactNav"> & { onNavigate?: () => void }) {
   const root = useRef<HTMLElement>(null);
+  const scroller = useRef<HTMLElement>(null);
+  const indicator = useRef<HTMLSpanElement>(null);
+  useSlideIndicator(scroller, indicator, '[aria-current="page"].sw-slide-item', activeKey);
   useEffect(() => { root.current?.querySelector('[aria-current="page"]')?.scrollIntoView?.({ block: "nearest" }); }, [activeKey]);
   return <aside ref={root} className="flex h-full min-h-0 w-full flex-col bg-sidebar pl-[env(safe-area-inset-left)] text-ink dark:border-r dark:border-line">
     <div className="shrink-0 space-y-2 px-3.5 pb-3">
@@ -22,7 +26,8 @@ export function Sidebar({ variant, workspace, search, nav, activeKey, footerLink
       </button> : null}
     </div>
     <nav aria-label={variant === "staff" ? t`Staff sections` : t`Member portal`}
-      data-sidebar-scroll onKeyDown={event => navKeys(event, "vertical")} className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain px-3.5 pb-4">
+      ref={scroller} data-sidebar-scroll onKeyDown={event => navKeys(event, "vertical")} className="relative min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain px-3.5 pb-4">
+      <span ref={indicator} aria-hidden="true" className="sw-indicator rounded-lg border border-accent-ink bg-sidebar-active" />
       {nav.map(section => <SidebarSection key={`${user.name}:${section.key}`} section={section} activeKey={activeKey} owner={user.name} onNavigate={onNavigate} />)}
       {footerLinks.map(action => <ActionControl key={action.label} action={action} className="w-full justify-start" />)}
     </nav>

@@ -6,6 +6,7 @@ import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } fr
 
 import { Modal } from "../ui/Modal";
 import { clampView, cropRect, initialView, MAX_ZOOM, MIN_ZOOM, outputSize, pan, zoomTo, type CropView } from "./cropMath";
+import { BoxArt } from "../BoxSpinner";
 
 const PREVIEW_WIDTH = 280;
 
@@ -77,7 +78,7 @@ export function PhotoCropDialog({ file, aspect, onCancel, onDone, title = t`Crop
     footer={<div className="flex flex-wrap justify-end gap-2">
       <button type="button" className="desk-button min-h-11" onClick={onCancel}>{t`Cancel`}</button>
       <button type="button" className="desk-button-primary min-h-11" disabled={!image || busy} onClick={() => void finish()}>
-        {busy ? t`Preparing…` : t`Use this photo`}</button>
+        {busy ? <><BoxArt size={16} mono />{t`Preparing…`}</> : t`Use this photo`}</button>
     </div>}>
     <div className="grid justify-items-center gap-3">
       {error ? <p role="alert" className="text-sm text-danger">{error}</p> : null}

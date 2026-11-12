@@ -1,6 +1,7 @@
 import { t } from "@lingui/core/macro";
 import { useId, useState } from "react";
 import { ChevronDown } from "lucide-react";
+import { Collapse } from "../ui/Collapse";
 import { readStorage, writeStorage } from "../../lib/safeStorage";
 import { SidebarItem } from "./SidebarItem";
 import { focusRing, type ShellSection } from "./types";
@@ -24,9 +25,9 @@ export function SidebarSection({ section, activeKey, owner, onNavigate }: {
       <button type="button" aria-expanded={open} aria-controls={id}
         className={`flex min-h-11 w-full items-center gap-2 rounded-lg px-2.5 text-sm text-muted hover:bg-sidebar-hover ${focusRing}`}
         onClick={() => { setExpanded(!open); writeStorage(storageKey, open ? "closed" : "open"); }}>
-        <ChevronDown aria-hidden="true" size={24} className={open ? "rotate-180" : ""} />{t`More (${section.more.length})`}<span className="sr-only">{" "}{t`in ${section.label ?? ""}`}</span>
+        <ChevronDown aria-hidden="true" size={24} className={`transition-transform duration-[var(--sw-dur-base)] ${open ? "rotate-180" : ""}`} />{t`More (${section.more.length})`}<span className="sr-only">{" "}{t`in ${section.label ?? ""}`}</span>
       </button>
-      {open ? <ul id={id} className="space-y-1">{section.more.map(item => <SidebarItem key={item.key} item={item} activeKey={activeKey} onNavigate={onNavigate} />)}</ul> : null}
+      <Collapse open={open} id={id}><ul className="space-y-1">{section.more.map(item => <SidebarItem key={item.key} item={item} activeKey={activeKey} onNavigate={onNavigate} />)}</ul></Collapse>
     </> : null}
   </section>;
 }

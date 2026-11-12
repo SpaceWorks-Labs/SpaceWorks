@@ -1,5 +1,6 @@
 import { t } from "@lingui/core/macro";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useSlideIndicator } from "../../lib/motion";
 import { RouteLink } from "./RouteLink";
 import { rove } from "./useRovingFocus";
 import type { Tab } from "./types";
@@ -35,14 +36,17 @@ function useScrollAffordance(active: string | undefined, count: number) {
     if (left < element.scrollLeft) element.scrollLeft = Math.max(0, left);
     else if (right > element.scrollLeft) element.scrollLeft = right;
   }, [active]);
-  return { bar, fade };
+  const indicator = useRef<HTMLSpanElement>(null);
+  useSlideIndicator(bar, indicator, '[aria-selected="true"], [aria-current="page"]', active);
+  return { bar, fade, indicator };
 }
 
 export function Tabs({ tabs, activeKey, label = t`Page sections`, onChange, children }: TabsProps) {
   const id = useId();
   const active = tabs.some(tab => tab.key === activeKey) ? activeKey : tabs[0]?.key;
-  const { bar, fade } = useScrollAffordance(active, tabs.length);
-  const content = tabs.map((tab, index) => {
+  const { bar, fade, indicator } = useScrollAffordance(active, tabs.length);
+  const slider = <span key="indicator" ref={indicator} aria-hidden="true" className="sw-indicator sw-tab-indicator" />;
+  const content = [slider, ...tabs.map((tab, index) => {
     const selected = active === tab.key;
     const accessibleLabel = tab.count === undefined ? tab.label : `${tab.label} ${tab.count}`;
     const classes = `desk-tab min-w-11 inline-flex shrink-0 flex-none items-center gap-2 whitespace-nowrap ${selected ? "desk-tab-active" : ""}`;
@@ -52,7 +56,7 @@ export function Tabs({ tabs, activeKey, label = t`Page sections`, onChange, chil
       tabIndex={selected ? 0 : -1} className={classes} onClick={() => onChange(tab.key)}>{body}</button>
       : <RouteLink key={tab.key} href={tab.href} aria-label={accessibleLabel} aria-current={selected ? "page" : undefined}
         className={classes}>{body}</RouteLink>;
-  });
+  })];
   return onChange ? <>
     <div ref={bar} role="tablist" aria-label={label} className={barClass} data-fade={fade}
       onKeyDown={event => rove(event, '[role="tab"]', true)}>{content}</div>

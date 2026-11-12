@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { useLocation } from "react-router-dom";
+import { usePresence } from "../../lib/motion";
 import { focusRing } from "./types";
 
 // A disclosure keeps ordinary button/link semantics and normal Tab navigation.
@@ -8,6 +9,7 @@ export function Disclosure({ label, children, above = false }: { label: ReactNod
   const root = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const id = useId();
+  const presence = usePresence(open);
   const location = useLocation();
   useEffect(() => { setOpen(false); }, [location]);
   useEffect(() => {
@@ -23,7 +25,7 @@ export function Disclosure({ label, children, above = false }: { label: ReactNod
     <button ref={trigger} type="button" aria-expanded={open} aria-controls={id}
       className={`flex min-h-11 w-full items-center gap-2 rounded-xl border border-outline bg-panel p-2 text-left text-ink ${focusRing}`}
       onClick={() => setOpen(!open)}>{label}</button>
-    {open ? <div id={id} className={`absolute right-0 z-40 w-60 max-w-[calc(100vw-2rem)] max-h-[50dvh] overflow-y-auto rounded-xl border border-line bg-panel p-2 shadow-overlay ${above ? "bottom-full mb-2" : "top-full mt-2"}`}
+    {presence.present ? <div id={id} data-state={presence.state} data-above={above ? "" : undefined} onAnimationEnd={presence.onAnimationEnd} inert={presence.closing} className={`sw-fx-menu absolute right-0 z-40 w-60 max-w-[calc(100vw-2rem)] max-h-[50dvh] overflow-y-auto rounded-xl border border-line bg-panel p-2 shadow-overlay ${above ? "bottom-full mb-2" : "top-full mt-2"}`}
       onClick={event => { if ((event.target as HTMLElement).closest("a,button")) { setOpen(false); trigger.current?.focus(); } }}>{children}</div> : null}
   </div>;
 }

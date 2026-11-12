@@ -2,6 +2,7 @@ import { t } from "@lingui/core/macro";
 import { ErrorText, StatusPill } from "../../components/ui";
 import type { RestoreOperation } from "./backupApi";
 import { deploymentRestoreStageLabel } from "./backupLabels";
+import { BoxArt } from "../../components/BoxSpinner";
 
 export function RestoreDecision({ operation, onDecide, pending = false }: {
   operation: RestoreOperation;
@@ -25,7 +26,7 @@ export function RestoreDecision({ operation, onDecide, pending = false }: {
       <p className="mt-4 tabular-nums text-sm">{t`Decision window: ${seconds}s`}</p>
       <p className="mt-2 text-sm text-ink">{t`Proceed only after reviewing the all-table report. “Reset authority” quarantines every principal and invalidates restored credentials.`}</p>
       <div className="mt-4 flex flex-wrap gap-3">
-        <button className="desk-button-primary" disabled={pending} onClick={() => onDecide("proceed")}>{pending ? t`Saving decision…` : t`Proceed`}</button>
+        <button className="desk-button-primary" disabled={pending} onClick={() => onDecide("proceed")}>{pending ? <><BoxArt size={16} mono />{t`Saving decision…`}</> : t`Proceed`}</button>
         <button className="desk-button" disabled={pending} onClick={() => onDecide("reset")}>{t`Proceed and reset authority`}</button>
         <button className="desk-button-danger-outline" disabled={pending} onClick={() => onDecide("abort")}>{t`Abort safely`}</button>
       </div>

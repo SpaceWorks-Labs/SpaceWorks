@@ -17,6 +17,7 @@ import { ModuleDefaultsSection } from "./platformConsole/PlatformDefaultsSection
 import { SettingsSectionNav } from "./SettingsSectionNav";
 import { platformSettingsGroups, platformSettingsLinks } from "./platformSettingsGroups";
 import { WalletCredentialsCard } from "../walletCredentials/WalletCredentialsCard";
+import { EraserProviderCard } from "../cardEraser/EraserProviderCard";
 import { LegalPagesEditor } from "../legal/LegalPagesEditor";
 
 type Props = { platformHosting: boolean; unavailableApps?: readonly string[] };
@@ -55,6 +56,7 @@ export function PlatformSettingsPanel({ platformHosting }: Props) {
     { key: "chat-templates", label: t`Chat templates`, description: t`The default wording of chat and SMS messages.`, rows: <ChatTemplatesSection /> },
     { key: "mobile-apps", label: t`Mobile apps`, description: t`The phone apps allowed to sign in, and the links that open them.`, rows: <MobileAppsSection /> },
     { key: "wallet", label: t`Wallet passes`, description: t`The wallet-pass credentials every space uses unless it sets its own.`, rows: <WalletCredentialsCard scope={{ kind: "platform" }} /> },
+    { key: "eraser", label: t`Background eraser`, description: t`The background-removal service for card photos every space uses unless it sets its own.`, rows: <EraserProviderCard scope={{ kind: "platform" }} /> },
     // Parity A13: the operator's privacy and terms text, shown on every space without its own.
     { key: "legal", label: t`Privacy and terms`, description: t`The privacy policy and terms of use every space shows unless it writes its own.`, rows: <LegalPagesEditor scope={{ kind: "platform" }} /> },
     { key: "deployment", label: t`Version & deployment`, description: t`Which version runs here and how this server is set up.`, rows: <PlatformDeploymentSection /> },

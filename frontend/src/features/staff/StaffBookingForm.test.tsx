@@ -26,12 +26,11 @@ beforeEach(() => {
 });
 
 describe("Staff booking access controls", () => {
-  it("submits a selected member, UTC times, the confirmed price and accountable certification override", async () => {
+  it("submits a selected member, UTC times, the confirmed price (no certification override any more, decision 319)", async () => {
     render(<StaffBookingForm makerspaceId={2} space={space} />);
     fireEvent.change(screen.getByRole("combobox", { name: "Member" }), { target: { value: "8" } });
     fireEvent.change(screen.getByLabelText("Starts (your local time)"), { target: { value: "2026-11-01T14:00" } });
     fireEvent.change(screen.getByLabelText("Ends (your local time)"), { target: { value: "2026-11-01T15:00" } });
-    fireEvent.change(screen.getByLabelText(/Certification override reason/), { target: { value: "Observed training" } });
     fireEvent.click(screen.getByRole("button", { name: "Review price" }));
     expect(previewPrice).toHaveBeenCalledWith(4, {
       member_id: 8, starts_at: new Date("2026-11-01T14:00").toISOString(), ends_at: new Date("2026-11-01T15:00").toISOString(),
@@ -42,7 +41,6 @@ describe("Staff booking access controls", () => {
     expect(create).toHaveBeenCalledWith({
       member_id: 8, starts_at: new Date("2026-11-01T14:00").toISOString(),
       ends_at: new Date("2026-11-01T15:00").toISOString(), note: "", price_confirmation: DIGEST,
-      certification_override_reason: "Observed training",
     }, expect.any(Object));
   });
 
@@ -96,7 +94,7 @@ describe("Staff booking access controls", () => {
     await waitFor(() => expect(screen.getByRole("option", { name: "Laser" })).toBeInTheDocument());
     expect(getTypes).toHaveBeenCalledWith(2, 1);
     fireEvent.change(screen.getByRole("textbox", { name: "Name" }), { target: { value: "Laser room" } });
-    fireEvent.change(screen.getByRole("combobox", { name: /Machine type for certification/ }), { target: { value: "9" } });
+    fireEvent.change(screen.getByRole("combobox", { name: /Machine type this room is for/ }), { target: { value: "9" } });
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
     expect(submit).toHaveBeenCalledWith(expect.objectContaining({ machine_type: 9 }));
     expect(submit.mock.calls[0][0]).not.toHaveProperty("approval_mode");
@@ -111,13 +109,13 @@ describe("Staff booking access controls", () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(<QueryClientProvider client={client}><BookableSpaceForm makerspaceId={2} onSubmit={vi.fn()} pending={false} submitLabel="Save" /></QueryClientProvider>);
     await screen.findByRole("option", { name: "Laser" });
-    fireEvent.change(screen.getByRole("combobox", { name: /Machine type for certification/ }), { target: { value: "9" } });
+    fireEvent.change(screen.getByRole("combobox", { name: /Machine type this room is for/ }), { target: { value: "9" } });
     fireEvent.click(screen.getByRole("button", { name: "Next" }));
     await screen.findByRole("option", { name: "CNC" });
     expect(getTypes).toHaveBeenCalledWith(2, 2);
-    expect(screen.getByRole("combobox", { name: /Machine type for certification/ })).toHaveValue("9");
+    expect(screen.getByRole("combobox", { name: /Machine type this room is for/ })).toHaveValue("9");
     fireEvent.click(screen.getByRole("button", { name: "Previous" }));
     await screen.findByRole("option", { name: "Laser" });
-    expect(screen.getByRole("combobox", { name: /Machine type for certification/ })).toHaveValue("9");
+    expect(screen.getByRole("combobox", { name: /Machine type this room is for/ })).toHaveValue("9");
   });
 });

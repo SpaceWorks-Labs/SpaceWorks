@@ -10,6 +10,8 @@ import {
   type Pairing,
 } from "./tenantMigrationApi";
 import { ErrorText } from "./tenantMigrationUi";
+import { LogoLoader } from "../../components/LogoLoader";
+import { BoxArt } from "../../components/BoxSpinner";
 
 export function TenantMigrationPairings({ pairings, active = true }: { pairings: Pairing[]; active?: boolean }) {
   const client = useQueryClient();
@@ -65,7 +67,7 @@ export function TenantMigrationPairings({ pairings, active = true }: { pairings:
           <button className="desk-button mt-2" type="button" onClick={() => setSourceText(JSON.stringify(localPairingIdentity, null, 2))}>{t`Use this deployment as source`}</button>
         </div>
       ) : null}
-      {identity.isLoading ? <p className="mt-3 text-sm text-muted">{t`Loading this deployment identity…`}</p> : null}
+      {identity.isLoading ? <LogoLoader label={t`Loading this deployment identity…`} size={48} className="min-h-16 py-3" /> : null}
       <ErrorText error={identity.error} />
 
       <div className="mt-3 grid gap-3 @2xl:grid-cols-3">
@@ -78,7 +80,7 @@ export function TenantMigrationPairings({ pairings, active = true }: { pairings:
         <label className="text-sm text-ink">{t`Target deployment identity JSON`}<textarea className="desk-input mt-1 min-h-40 w-full code-text text-base md:text-xs" value={effectiveTarget} onChange={(event) => setTargetText(event.target.value)} /></label>
       </div>
       <button className="desk-button-primary mt-3" type="button" disabled={!migrationId.trim() || !sourceTenantId.trim() || !archiveDigest.trim() || !sourceText.trim() || !effectiveTarget.trim() || create.isPending} onClick={submit}>
-        {create.isPending ? t`Pinning identities…` : t`Pin this deployment pairing`}
+        {create.isPending ? <><BoxArt size={16} mono />{t`Pinning identities…`}</> : t`Pin this deployment pairing`}
       </button>
       {localError ? <p className="mt-2 text-sm text-danger" role="alert">{localError}</p> : null}
       <ErrorText error={create.error} field="source" />

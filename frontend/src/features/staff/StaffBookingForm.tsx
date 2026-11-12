@@ -11,6 +11,7 @@ import { changedConfirmation, StaffPriceConfirmation } from "./StaffPriceConfirm
 import { StaffBookingReadiness } from "./BookingReadiness";
 import { StaffBookingAvailability, toLocalInput } from "./StaffBookingAvailability";
 import { PagePager } from "../../components/ui";
+import { StaffBookingEventPicker } from "../machine-event-use/StaffBookingEventPicker";
 
 export function StaffBookingForm({ makerspaceId, space, recurringEnabled = false, onSingleCreated, initialWindow }: {
   makerspaceId: number; space: BookableSpace; recurringEnabled?: boolean;
@@ -28,7 +29,6 @@ export function StaffBookingForm({ makerspaceId, space, recurringEnabled = false
   const [start, setStart] = useState(() => toLocalInput(initialWindow?.starts_at));
   const [end, setEnd] = useState(() => toLocalInput(initialWindow?.ends_at));
   const [note, setNote] = useState("");
-  const [reason, setReason] = useState("");
   const [answers, setAnswers] = useState<CustomAnswers>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   // Decision 216: a single booking charges only a price staff reviewed. The server
@@ -41,6 +41,7 @@ export function StaffBookingForm({ makerspaceId, space, recurringEnabled = false
   const unconfirm = () => { ticket.current += 1; setConfirmation(null); setPreviewing(false); setPreviewError(""); };
   const members = useBookingEligibleMembers(space.id, page);
   const create = useStaffCreateBooking(makerspaceId, space.id);
+  const [eventId, setEventId] = useState("");
   const slot = () => ({ member_id: Number(memberId), starts_at: new Date(start).toISOString(), ends_at: new Date(end).toISOString() });
   const review = async () => {
     const mine = ++ticket.current;
@@ -64,11 +65,11 @@ export function StaffBookingForm({ makerspaceId, space, recurringEnabled = false
     create.mutate({
       ...(single ? {} : { count, interval_weeks: intervalWeeks }),
       ...window, note, ...(house ? { house: true } : { member_id }),
+      ...(single && eventId ? { event_id: Number(eventId) } : {}),
       ...(single && !house && confirmation ? { price_confirmation: confirmation.price_confirmation } : {}),
-      ...(!house && reason.trim() ? { certification_override_reason: reason.trim() } : {}),
       ...(space.custom_form?.length ? { custom_answers: answers } : {}),
     }, { onError: error => setConfirmation(changedConfirmation(error)), onSuccess: result => {
-      setMemberId(""); setHouse(false); setAnswers({}); setReason(""); setNote(""); setConfirmation(null);
+      setMemberId(""); setHouse(false); setAnswers({}); setNote(""); setConfirmation(null); setEventId("");
       if ("id" in result && Number.isSafeInteger(result.id) && result.id > 0 && result.space_id === space.id) {
         onSingleCreated?.(result.id);
       }
@@ -79,8 +80,8 @@ export function StaffBookingForm({ makerspaceId, space, recurringEnabled = false
       <h4 className="title-section">{house ? t`House booking` : t`Book for a member`}</h4>
       <p className="text-xs text-muted">{house ? t`For the space's own use, such as an event it runs. No member, no charge and no plan hours; confirmed straight away.` : t`Active membership and current waiver are required. Members can book ahead.`}</p>
       <fieldset className="grid gap-3 sm:grid-cols-2" disabled={create.isPending}>
-        <label className="flex min-h-11 items-center gap-2 text-sm sm:col-span-2"><input type="checkbox" checked={house} onChange={(event) => { setHouse(event.target.checked); setMemberId(""); setReason(""); unconfirm(); }} />{t`House booking (no member, no charge)`}</label>
-        {house ? null : <><label className="grid gap-1 text-sm sm:col-span-2">{t`Member`}<select className="desk-input" required value={memberId} onChange={(event) => { setMemberId(event.target.value); setAnswers({}); setErrors({}); setReason(""); unconfirm(); }}>
+        <label className="flex min-h-11 items-center gap-2 text-sm sm:col-span-2"><input type="checkbox" checked={house} onChange={(event) => { setHouse(event.target.checked); setMemberId(""); unconfirm(); }} />{t`House booking (no member, no charge)`}</label>
+        {house ? null : <><label className="grid gap-1 text-sm sm:col-span-2">{t`Member`}<select className="desk-input" required value={memberId} onChange={(event) => { setMemberId(event.target.value); setAnswers({}); setErrors({}); unconfirm(); }}>
             <option value="">{members.isLoading ? t`Loading members…` : t`Select a member`}</option>
             {members.data?.results.map((member) => <option key={member.member_id} value={member.member_id}>{member.display_name}</option>)}
           </select>
@@ -89,10 +90,8 @@ export function StaffBookingForm({ makerspaceId, space, recurringEnabled = false
         <label className="grid gap-1 text-sm">{t`Starts (your local time)`}<input className="desk-input w-full min-w-0" type="datetime-local" required value={start} onChange={(event) => { setStart(event.target.value); unconfirm(); }} /></label>
         <label className="grid gap-1 text-sm">{t`Ends (your local time)`}<input className="desk-input w-full min-w-0" type="datetime-local" required value={end} onChange={(event) => { setEnd(event.target.value); unconfirm(); }} /></label>
         {recurringEnabled && !house ? <div className="grid gap-2 sm:col-span-2"><label className="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" checked={repeat} onChange={(event) => { setRepeat(event.target.checked); unconfirm(); }} />{t`Repeat weekly in makerspace local time`}</label>{repeat ? <><label className="grid gap-1 text-sm">{t`Occurrences`}<input className="desk-input" type="number" min={2} max={52} value={count} onChange={(event) => setCount(Number(event.target.value))} /></label><label className="grid gap-1 text-sm">{t`Weeks between bookings`}<input className="desk-input" type="number" min={1} max={12} value={intervalWeeks} onChange={(event) => setIntervalWeeks(Number(event.target.value))} /></label><p className="text-xs text-muted">{t`Each occurrence is booked and charged separately. The result lists every conflict.`}</p></> : null}</div> : null}
+        {single && space.kind === "machine" ? <StaffBookingEventPicker makerspaceId={makerspaceId} value={eventId} onChange={setEventId} disabled={create.isPending} /> : null}
         <label className="grid gap-1 text-sm sm:col-span-2">{t`Staff note`}<textarea className="desk-input" maxLength={5000} value={note} onChange={(event) => setNote(event.target.value)} /></label>
-        {space.machine_type && !house ? <label className="grid gap-1 text-sm sm:col-span-2">{t`Certification override reason (optional)`}<input className="desk-input" maxLength={1000} value={reason} onChange={(event) => setReason(event.target.value)} />
-          <span className="text-xs text-muted">{t`Only staff with authority over this machine type may override. Every override is audited.`}</span>
-        </label> : null}
       </fieldset>
       <CustomFormFields schema={space.custom_form} answers={answers} onChange={setAnswers} disabled={create.isPending} errors={{ ...errors, ...customAnswerErrors(create.error instanceof StructuredApiError ? create.error.body.custom_answers : undefined) }} />
       <StaffBookingAvailability spaceId={space.id} start={start} end={end} />

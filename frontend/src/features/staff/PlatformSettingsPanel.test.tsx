@@ -39,10 +39,19 @@ describe("PlatformSettingsPanel", () => {
   it("groups the platform pages like a space's settings and keeps each ?section= link", () => {
     renderPanel("/admin/platform?section=email");
     const nav = within(screen.getByRole("navigation", { name: "Settings pages" }));
-    expect(nav.getAllByRole("list").map(list => list.getAttribute("aria-label"))).toEqual(["People", "Areas", "Money", "Communication", "Integrations", "Administration"]);
+    expect(nav.getAllByRole("list").map(list => list.getAttribute("aria-label"))).toEqual(["Overview", "Spaces", "People & roles", "Messaging & notifications", "Integrations & analytics", "Limits & hosting", "Data & recovery", "Security & audit"]);
     expect(nav.getByRole("link", { name: "Email" })).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("heading", { name: "Email" })).toBeInTheDocument();
     expect(nav.getByRole("link", { name: /Data & recovery.*opens its own page/ })).toHaveAttribute("href", expect.stringContaining("/admin/platform-data"));
+    // Decision 285: Money (Stripe Connect) only exists on a hosted platform, and groups with no platform-wide setting are omitted.
+    expect(nav.queryByRole("list", { name: "Money" })).not.toBeInTheDocument();
+    expect(nav.queryByRole("list", { name: "Inventory" })).not.toBeInTheDocument();
+  });
+
+  it("adds the Money group on a hosted platform", () => {
+    renderPanel("/admin/platform", true);
+    const nav = within(screen.getByRole("navigation", { name: "Settings pages" }));
+    expect(nav.getByRole("list", { name: "Money" })).toBeInTheDocument();
   });
 
   it("filters the menu by title and help text", () => {

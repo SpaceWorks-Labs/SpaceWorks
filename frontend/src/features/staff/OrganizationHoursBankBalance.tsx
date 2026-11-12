@@ -1,3 +1,4 @@
+import { LogoLoader } from "../../components/LogoLoader";
 import { t } from "@lingui/core/macro";
 import { Clock } from "lucide-react";
 import { useState } from "react";
@@ -12,7 +13,7 @@ function LedgerPeek({ organizationId, makerspaceId }: { organizationId: number; 
   const [page, setPage] = useState(1);
   const ledger = useOwnOrganizationHoursLedger(organizationId, makerspaceId, page, true);
   if (ledger.isError) return <ErrorText resource={t`the hours ledger`} onRetry={() => { void ledger.refetch(); }} />;
-  if (!ledger.data) return <p role="status" className="mt-2 text-sm text-muted">{t`Loading the hours ledger…`}</p>;
+  if (!ledger.data) return <LogoLoader label={t`Loading the hours ledger…`} size={48} className="min-h-16 py-3" />;
   return <div className="mt-2 grid gap-2">
     <OrganizationHoursLedgerTable rows={ledger.data.results} showActor={false} />
     <PagePager page={page} setPage={setPage} next={ledger.data.next} />
@@ -26,7 +27,7 @@ function LedgerPeek({ organizationId, makerspaceId }: { organizationId: number; 
  */
 export function OrganizationHoursBankBalance({ organizationId }: { organizationId: number }) {
   const banks = useOwnOrganizationHours(organizationId, true);
-  if (banks.isLoading) return <p role="status" className="text-sm text-muted">{t`Loading hours balance…`}</p>;
+  if (banks.isLoading) return <LogoLoader label={t`Loading hours balance…`} size={48} className="min-h-16 py-3" />;
   if (banks.isError) {
     if (banks.error instanceof StructuredApiError && banks.error.status === 404) return null;
     return <ErrorText resource={t`the hours balance`} onRetry={() => { void banks.refetch(); }} />;

@@ -6,6 +6,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { staffRequest } from "../../lib/api";
 import { channelLabel } from "../notifications/channelCatalog";
+import { LogoLoader } from "../../components/LogoLoader";
 
 type Policy = { quiet_start: string; quiet_end: string; digest_at: string; channels: string[]; bounce_configured: boolean; daily_digest_default: boolean };
 const channels = ["email", "telegram", "slack", "mattermost", "discord", "native_push", "webhook"];
@@ -30,7 +31,7 @@ export function NotificationTimingSettings({ makerspaceId, timezone }: { makersp
       <label className="min-h-11 flex gap-2 text-sm @lg:col-span-3"><input type="checkbox" checked={values.daily_digest_default} onChange={(event) => setDraft({ ...values, daily_digest_default: event.target.checked })} />{t`Daily digests on by default`}</label>
       <div className="flex flex-wrap gap-3 @lg:col-span-3">{channels.map((channel) => <label key={channel} className="min-h-11 flex gap-2 text-sm"><input type="checkbox" checked={values.channels.includes(channel)} onChange={(event) => setDraft({ ...values, channels: event.target.checked ? [...values.channels, channel] : values.channels.filter((item) => item !== channel) })} />{channelLabel(channel)}</label>)}</div>
       <label className="grid gap-1 text-sm @lg:col-span-3">{t`Inbound bounce signing secret`}<input type="password" className="desk-input" autoComplete="new-password" minLength={32} maxLength={200} value={secret} onChange={(event) => setSecret(event.target.value)} /><span className="text-xs text-muted">{values.bounce_configured ? t`Configured. Leave blank to keep it; enter a new secret to rotate.` : t`Use at least 32 characters. Configure the same secret in your provider adapter.`}</span></label>
-    </fieldset> : <p role="status">{t`Loading delivery times…`}</p>}
+    </fieldset> : <LogoLoader label={t`Loading delivery times…`} size={48} className="min-h-16 py-3" />}
     {policy.error || save.error ? <p role="alert" className="text-danger">{(save.error ?? policy.error)?.message}</p> : null}
     <SettingsEditorActions dirty={Boolean(draft || secret)} onDiscard={() => { setDraft(null); setSecret(""); }} pending={save.isPending} disabled={!values || save.isPending} />
     {save.isSuccess ? <p role="status">{t`Delivery policy saved.`}</p> : null}

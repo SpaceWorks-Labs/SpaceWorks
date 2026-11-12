@@ -10,6 +10,7 @@ import { useStaffGet, type Makerspace } from "./panels/shared";
 import { FirstRunWizard } from "./firstRun/FirstRunWizard";
 import { nothingSetUp, readWizardProgress } from "./firstRun/firstRunWizardState";
 import { nounTitleOf } from "../../lib/spaceNoun";
+import { LogoLoader } from "../../components/LogoLoader";
 
 /**
  * The dashboard "Next steps" card. Completion comes from the server (setup-state), so the card
@@ -48,7 +49,7 @@ export function SetupChecklist({ makerspace, owner, allowedTabs, guestOnly, sing
       </div>
       <button className="desk-button-ghost" type="button" aria-label={t`Hide setup checklist`} onClick={() => { writeStorage(key, "true"); setDismissed(true); }}>{t`Hide`}</button>
     </div>
-    {query.isLoading ? <p role="status" className="mt-3 text-sm">{t`Checking setup…`}</p> : null}
+    {query.isLoading ? <LogoLoader label={t`Checking setup…`} size={48} className="min-h-16 py-3" /> : null}
     {query.error ? <p role="alert" className="mt-3 text-sm text-danger">{t`Could not check setup: ${query.error.message}`}</p> : null}
     {steps.length ? <div className="mt-4 grid gap-3">
       <ProgressBar label={t`${nounTitle} setup`} value={done / steps.length} />

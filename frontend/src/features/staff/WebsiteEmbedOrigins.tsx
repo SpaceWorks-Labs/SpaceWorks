@@ -2,6 +2,8 @@ import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { staffRequest } from "../../lib/api";
+import { LogoLoader } from "../../components/LogoLoader";
+import { BoxArt } from "../../components/BoxSpinner";
 
 export function WebsiteEmbedOrigins({ makerspaceId }: { makerspaceId: number }) {
   const key = ["website-embed-origins", makerspaceId];
@@ -20,10 +22,10 @@ export function WebsiteEmbedOrigins({ makerspaceId }: { makerspaceId: number }) 
   return <form className="grid gap-2 border-t border-line pt-4" onSubmit={(e) => { e.preventDefault(); save.mutate(); }}>
     <label className="grid gap-2 text-sm font-semibold text-ink">{t`Website embed origins`}<textarea className="desk-input w-full min-w-0 font-normal" rows={3} value={origins} onChange={(e) => setOrigins(e.target.value)} disabled={query.isLoading || Boolean(query.error)} /></label>
     <p className="text-sm text-muted">{t`One exact HTTPS origin per line, for example https://partner.example. No paths or wildcards. Empty disables embeds. Each domain's website and embed features must also be enabled.`}</p>
-    {query.isLoading ? <p role="status" className="text-sm text-muted">{t`Loading embed settings…`}</p> : null}
+    {query.isLoading ? <LogoLoader label={t`Loading embed settings…`} size={48} className="min-h-16 py-3" /> : null}
     {query.error || save.error ? <p role="alert" className="text-sm text-danger">{(query.error || save.error)?.message}</p> : null}
     {query.error ? <button className="desk-button w-fit" type="button" onClick={() => query.refetch()}>{t`Retry embed settings`}</button> : null}
-    <button className="desk-button-primary w-fit" type="submit" disabled={query.isLoading || Boolean(query.error) || save.isPending}>{save.isPending ? t`Saving…` : t`Save embed origins`}</button>
+    <button className="desk-button-primary w-fit" type="submit" disabled={query.isLoading || Boolean(query.error) || save.isPending}>{save.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Save embed origins`}</button>
     {save.isSuccess ? <p role="status" className="text-sm text-success-ink">{t`Embed origins saved.`}</p> : null}
   </form>;
 }

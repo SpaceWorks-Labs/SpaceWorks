@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 
 import { staffRequest } from "../../lib/api";
 import { formatLocale } from "../../lib/format";
+import { LogoLoader } from "../../components/LogoLoader";
 
 type Label = { kind: "booking" | "event" | "reserved"; event_id?: number; title?: string; event_status?: string };
 /** `tentative`: a pending booking that holds its slot because it is an event's venue (decision 223 (m)). */
@@ -66,7 +67,7 @@ export function StaffBookingAvailability({ spaceId, start, end }: { spaceId: num
     return () => controller.abort();
   }, [path]);
   if (path === null) return null;
-  if (result?.path !== path) return <p className="text-sm text-muted" role="status">{t`Checking room availability…`}</p>;
+  if (result?.path !== path) return <LogoLoader label={t`Checking room availability…`} size={48} className="min-h-16 py-3" />;
   const data = result.data;
   if (!data) return <p className="text-sm text-muted">{t`Room availability is unavailable. The booking is still checked when you submit.`}</p>;
   const message = verdict(data.requested);

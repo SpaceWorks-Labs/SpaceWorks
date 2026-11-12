@@ -20,6 +20,8 @@ import {
 import { TenantMigrationIdentityDecisions } from "./TenantMigrationIdentityDecisions";
 import { ImportUploadResume, useImportArchiveUpload } from "./TenantMigrationUpload";
 import { ErrorText, parseReceipt, ReceiptOutput, StatusPill } from "./tenantMigrationUi";
+import { LogoLoader } from "../../components/LogoLoader";
+import { BoxArt } from "../../components/BoxSpinner";
 
 export function TenantMigrationImports({ pairings, active = true, phase = "import" }: { pairings: Pairing[]; active?: boolean; phase?: "import" | "verify" | "cutover" }) {
   const [archive, setArchive] = useState<File | null>(null);
@@ -43,11 +45,11 @@ export function TenantMigrationImports({ pairings, active = true, phase = "impor
       <button className="desk-button-primary mt-3" type="button" disabled={!archive || !digest.trim() || create.isPending} onClick={() => {
         if (archive) create.mutate({ file: archive, sourceArchiveDigest: digest.trim() });
       }}>
-        {create.isPending ? t`Uploading encrypted archive…` : t`Create target import`}
+        {create.isPending ? <><BoxArt size={16} mono />{t`Uploading encrypted archive…`}</> : t`Create target import`}
       </button>
       <ErrorText error={create.error} field="source_archive_digest" />
       </section> : null}
-      {active && imports.isLoading ? <p className="mt-4 text-sm text-muted">{t`Loading import jobs…`}</p> : null}
+      {active && imports.isLoading ? <LogoLoader label={t`Loading import jobs…`} size={48} className="min-h-16 py-3" /> : null}
       {active ? <ErrorText error={imports.error} /> : null}
       <div className="grid gap-4">
         {(imports.data ?? []).map((job) => (
@@ -175,7 +177,7 @@ function ImportJobCard({ job: listedJob, pairing, drivingUpload, active, phase }
         <label className="mt-2 flex min-h-11 items-center gap-2 text-sm text-ink">
           <input className="h-5 w-5 accent-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus" type="checkbox" checked={reviewedIdentities} onChange={(event) => setReviewedIdentities(event.target.checked)} />
           {t`I reviewed every per-person identity decision shown above or in its prior review record.`}</label>
-        <button className="desk-button-primary mt-3" type="button" disabled={!reviewedIdentities || run.isPending} onClick={() => run.mutate()}>{run.isPending ? t`Starting materialization…` : t`Run reviewed import`}</button>
+        <button className="desk-button-primary mt-3" type="button" disabled={!reviewedIdentities || run.isPending} onClick={() => run.mutate()}>{run.isPending ? <><BoxArt size={16} mono />{t`Starting materialization…`}</> : t`Run reviewed import`}</button>
         <ErrorText error={run.error} field="target_identity" />
       </div>
     ) : null}
@@ -187,7 +189,7 @@ function VerificationReportView({ report, loading, error }: { report?: Verificat
   return (
     <section className="mt-3 rounded-md border border-line bg-accent-soft p-3" aria-label={t`Import verification report`}>
       <h4 className="title-section">{t`Verification report`}</h4>
-      {loading ? <p className="mt-2 text-sm text-muted">{t`Loading the persisted verification report…`}</p> : null}
+      {loading ? <LogoLoader label={t`Loading the persisted verification report…`} size={48} className="min-h-16 py-3" /> : null}
       <ErrorText error={error} />
       {report ? <>
         <p className="mt-2 text-sm text-ink">{t`Target makerspace ${report.target_makerspace_id} · ${report.identities_linked} linked · ${report.identities_created} walk-ins · ${report.external_references_created} external references`}</p>

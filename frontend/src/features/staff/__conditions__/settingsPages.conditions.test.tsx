@@ -52,7 +52,7 @@ vi.mock("../../notifications/ChannelDeliveryLog", () => ({ ChannelDeliveryLog: (
 
 // Decision 246: which Settings pages exist per role (manager or not) and per module/capability switch (#183B).
 const BASE = "/m/lab/admin/settings";
-const ALL_MODULES = ["staff_admin", "membership", "presence", "bookings", "events", "machines", "printing", "notifications", "request_workflow"];
+const ALL_MODULES = ["staff_admin", "membership", "presence", "bookings", "events", "machines", "machine_service", "notifications", "request_workflow"];
 const ALL_FEATURES = ["loans.enabled", "charges.pricing"];
 const space = (modules: string[], features: string[]) => ({ id: 7, name: "Community lab", slug: "lab", enabled_modules: modules, enabled_features: features }) as unknown as Makerspace;
 beforeEach(() => { hosting.available = false; hosting.calls = []; retry.mockClear(); });
@@ -92,7 +92,7 @@ describe("settings pages with a module or capability off", () => {
     ["bookings", ["bookings"], []],
     ["events", ["events"], []],
     ["presence", ["presence"], []],
-    ["materials", ["machines", "printing"], []],
+    ["materials", ["machines", "machine_service"], []],
     ["lending", [], ["loans.enabled"]],
     ["pricing", [], ["charges.pricing"]],
   ])("%s page disappears when %j / %j are off and stays when on", (page, modules, features) => {

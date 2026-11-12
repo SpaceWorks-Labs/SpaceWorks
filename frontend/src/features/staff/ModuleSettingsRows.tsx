@@ -8,7 +8,10 @@ export type ModuleRow = {
   available: boolean; requires: string[]; pulls_in: string[]; required_by: string[]; workflows: string[];
   /** #128 C-10: on the managed platform a limit-gated install is the superadmin's. */
   install_requires_superadmin?: boolean; limits?: string[];
+  /** Why the actor cannot switch it (server-derived): core, not_shipped or limit. */
+  lock_reason?: LockReason | null;
 };
+export type LockReason = "core" | "not_shipped" | "limit";
 export type ModuleGroup = {
   key: string; label: string; description: string; always_on: boolean;
   installed_count: number; module_count: number; modules: ModuleRow[];
@@ -16,6 +19,12 @@ export type ModuleGroup = {
 export type ModulesResponse = {
   groups: ModuleGroup[];
   /** Superadmin only: what this deployment ships. */
+  /** Superadmin only: the real /control/ capability-purge URL for this space (reverse() on the server). */
+  capability_purge_url?: string | null;
+  /** Decision 329 (c): feature switches this deployment cannot turn on (their own app or a needed module is not shipped). */
+  feature_locks?: Record<string, "not_shipped">;
+  /** Arch review 7: each feature's direct prerequisites from the capability registry (resolve transitively). */
+  feature_requirements?: Record<string, { modules: string[]; features: string[] }>;
   deployment: { apps: { app_label: string; label?: string; shipped: boolean; note: string }[]; env_line: string; requires_restart: boolean } | null;
 };
 

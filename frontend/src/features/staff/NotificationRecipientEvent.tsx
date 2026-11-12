@@ -13,7 +13,7 @@ import {
   EMPTY_SCOPE,
 } from "./notificationDestinationTypes";
 
-type Draft = {
+export type Draft = {
   kind: RecipientKind;
   role_id: number | null;
   user_id: number | null;
@@ -93,6 +93,7 @@ export function EventRecipients({
         <div className="grid gap-2 border-b border-line pb-2 last:border-0" key={index}>
           <RecipientTarget
             data={data}
+            staffOnly={STAFF_ONLY_FEATURES.has(feature)}
             index={index}
             rule={rule}
             rules={rules}
@@ -131,8 +132,12 @@ export function EventRecipients({
   );
 }
 
-function RecipientTarget({ data, index, rule, rules, update }: {
+/** Families whose selection names staff only: the member's own notices are not chosen here (decision 343). */
+export const STAFF_ONLY_FEATURES = new Set(["printing"]);
+
+export function RecipientTarget({ data, index, rule, rules, update, staffOnly = false }: {
   data: RecipientRulesResponse;
+  staffOnly?: boolean;
   index: number;
   rule: Draft;
   rules: Draft[];
@@ -154,8 +159,8 @@ function RecipientTarget({ data, index, rule, rules, update }: {
       >
         <option value="role">{t`A role`}</option>
         <option value="user">{t`A named member`}</option>
-        <option value="members">{t`All members`}</option>
-        <option value="requester">{t`The person it is about`}</option>
+        {staffOnly ? null : <option value="members">{t`All members`}</option>}
+        {staffOnly ? null : <option value="requester">{t`The person it is about`}</option>}
       </select>
       {rule.kind === "role" ? (
         <select

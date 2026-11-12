@@ -2,6 +2,7 @@ import { t } from "@lingui/core/macro";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { staffRequest } from "../../lib/api";
+import { BoxArt } from "../../components/BoxSpinner";
 
 export function StaffLoanRenew({ makerspaceId, requestId }: { makerspaceId: number; requestId: number }) {
   const client = useQueryClient();
@@ -17,7 +18,7 @@ export function StaffLoanRenew({ makerspaceId, requestId }: { makerspaceId: numb
   });
   return <span>
     <button className="desk-button" type="button" disabled={renew.isPending} onClick={() => renew.mutate()}>
-      {renew.isPending ? t`Renewing…` : t`Renew loan`}
+      {renew.isPending ? <><BoxArt size={16} mono />{t`Renewing…`}</> : t`Renew loan`}
     </button>
     {renew.error ? <span className="block text-xs text-danger" role="alert">{renew.error.message}</span> : null}
   </span>;

@@ -1,10 +1,11 @@
 import { plural, t } from "@lingui/core/macro";
 import { useState } from "react";
 
-import { EmptyState, ErrorBlock, ErrorText, ListRow, OverflowMenu, RelativeTime, Skeleton, StatusPill, PagePager } from "../../components/ui";
+import { EmptyState, ErrorBlock, ErrorText, ListRow, OverflowMenu, RelativeTime, StatusPill, PagePager } from "../../components/ui";
 import type { OrganizationDetail } from "./organizationsApi";
 import { useUpdateOrganizationMember } from "../organizations/organizationSelfServiceApi";
 import { useOrganizationMemberships } from "./organizationsApi";
+import { LogoLoader } from "../../components/LogoLoader";
 
 /** Governance actions get plain names; makerspace action codes stay readable as a fallback. */
 const actionLabel = (action: string) => ({ manage_organization_profile: t`Manage organization profile`,
@@ -21,7 +22,7 @@ export function OrganizationMemberships({ organization }: { organization: Organi
   return (
     <section className="rounded-xl border border-line bg-bg p-4" aria-labelledby="organization-members-heading">
       <h3 className="title-section" id="organization-members-heading">{t`Memberships`}</h3>
-      {memberships.isLoading ? <Skeleton className="mt-3 h-28 w-full" /> : null}
+      {memberships.isLoading ? <LogoLoader size={48} className="min-h-28 py-3" /> : null}
       {update.error ? <ErrorBlock className="mt-3" error={update.error} /> : null}
       <p className="mt-2 text-sm text-muted">{t`Invite another governor before removing the last governor. Changing authority requires recent identity verification.`}</p>
       {memberships.error ? <ErrorText resource={t`organization members`} onRetry={() => { void memberships.refetch(); }} /> : null}

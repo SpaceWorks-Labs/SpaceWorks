@@ -9,6 +9,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { StatusPill as Badge } from "../../components/ui";
 import { staffRequest } from "../../lib/api";
 import { type Makerspace, useStaffGet } from "./StaffPanels";
+import { LogoLoader } from "../../components/LogoLoader";
 
 type ApiSettings = {
   slack_webhook_url_set: boolean;
@@ -69,7 +70,7 @@ export function MakerspaceWebhookSettings({ makerspace, enabledModules }: { make
         /> : null}
       </div>
       {settings.isLoading ? (
-        <p className="mt-3 text-sm text-muted">{t`Loading webhook settings…`}</p>
+        <LogoLoader label={t`Loading webhook settings…`} size={48} className="min-h-16 py-3" />
       ) : null}
       {settings.error ? (
         <p className="mt-3 text-sm text-danger">{settings.error.message}</p>

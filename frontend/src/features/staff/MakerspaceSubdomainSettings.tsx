@@ -8,6 +8,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { StatusPill as Badge, RelativeTime } from "../../components/ui";
 import { staffRequest } from "../../lib/api";
 import { type Makerspace, useStaffGet } from "./StaffPanels";
+import { LogoLoader } from "../../components/LogoLoader";
+import { BoxArt } from "../../components/BoxSpinner";
 
 type Props = {
   makerspace: Makerspace;
@@ -96,7 +98,7 @@ export function MakerspaceSubdomainSettings({ makerspace, settings }: Props) {
               />
             </label>
             <button className="desk-button-primary" type="submit" disabled={submitDisabled}>
-              {submitRequest.isPending ? t`Submitting…` : t`Submit request`}
+              {submitRequest.isPending ? <><BoxArt size={16} mono />{t`Submitting…`}</> : t`Submit request`}
             </button>
           </form>
         )}
@@ -109,7 +111,7 @@ export function MakerspaceSubdomainSettings({ makerspace, settings }: Props) {
         ) : null}
         {requests.error ? <ErrorBlock error={new Error(t`Couldn't load subdomain. Try again.`)} onRetry={() => { void requests.refetch(); }} /> : null}
 
-        {requests.isLoading ? <p className="text-sm text-muted">{t`Loading requests…`}</p> : null}
+        {requests.isLoading ? <LogoLoader label={t`Loading requests…`} size={48} className="min-h-16 py-3" /> : null}
         {history.length > 0 ? (
           <ul className="grid gap-2">
             {history.map((request) => (

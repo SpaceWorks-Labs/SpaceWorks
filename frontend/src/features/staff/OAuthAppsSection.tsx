@@ -9,6 +9,7 @@ import { staffRequest } from "../../lib/api";
 import { ApiClientSecretReveal } from "./ApiClientSecretReveal";
 import { splitOrigins } from "./apiClientsApi";
 import { useStaffGet } from "./StaffPanels";
+import { BoxArt } from "../../components/BoxSpinner";
 
 type OAuthApp = { id: number; name: string; client_id: string; client_type: "confidential" | "public";
   redirect_uris: string[]; allowed_scopes: string[]; is_active: boolean };
@@ -56,7 +57,7 @@ export function OAuthAppsSection({ makerspaceId }: { makerspaceId: number }) {
         {scope}</label>)}
     </fieldset>
     <button className="desk-button-primary" disabled={!name.trim() || !splitOrigins(uris).length || !scopes.length || create.isPending}
-      onClick={() => create.mutate()}>{create.isPending ? t`Registering…` : t`Register app`}</button>
+      onClick={() => create.mutate()}>{create.isPending ? <><BoxArt size={16} mono />{t`Registering…`}</> : t`Register app`}</button>
     {create.error ? <ErrorText message={create.error.message} /> : null}
     {created ? <div className="grid gap-1"><p className="text-sm">{t`Client ID: `}<span className="tabular-nums [overflow-wrap:anywhere]">{created.client_id}</span></p>
       {created.client_secret ? <ApiClientSecretReveal secret={created.client_secret} onDismiss={() => setCreated(null)} /> : null}</div> : null}

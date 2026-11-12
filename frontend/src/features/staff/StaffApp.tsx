@@ -1,7 +1,6 @@
 import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { SpaceWorksBadge } from "../../components/SpaceWorksLogo";
 import { Card } from "../../components/ui";
 import { onMfaEnrollmentRequired } from "../../lib/api/mfaEnrollment";
 import { MfaFlow } from "../auth/MfaFlow";
@@ -12,6 +11,7 @@ import { MakerspacePicker } from "./MakerspacePicker";
 import { PlatformSignInPanel } from "./PlatformSignInPanel";
 import { RecoveryQuarantinePanel } from "./RecoveryQuarantinePanel";
 import { StaffAccessDenied } from "./StaffAccessDenied";
+import { LogoLoader } from "../../components/LogoLoader";
 import { MfaEnrollmentScreen, MfaGraceBanner, NoStaffRoleScreen } from "./StaffGateScreens";
 import { StaffWorkspace } from "./StaffWorkspace";
 import { SUPERADMIN_GLOBAL_TABS, tabFromStaffPath } from "./staffTabs";
@@ -22,8 +22,7 @@ function StaffLoading({ message, restoring = false }: { message: string; restori
   return (
     <main id="main-content" className="grid min-h-dvh min-w-0 place-items-center px-4 sm:px-5">
       <Card className={`w-full max-w-md text-sm font-semibold text-muted ${restoring ? "flex flex-col items-center gap-4 p-8 text-center" : "p-6"}`}>
-        <SpaceWorksBadge className={restoring ? undefined : "mb-5"} />
-        <p role="status">{message}</p>
+        <LogoLoader label={message} showLabel className={restoring ? "py-0" : "py-2"} />
       </Card>
     </main>
   );
@@ -48,7 +47,7 @@ export function StaffApp({ guestOnly = false }: { guestOnly?: boolean }) {
   if (session.mfaChallenge) return <MfaFlow key={session.mfaChallenge.challenge} challenge={session.mfaChallenge} onComplete={session.mfaCompleted} onCancel={() => session.setMfaChallenge(undefined)} />;
   if (!user && session.platform) return <PlatformSignInPanel error={session.login.error?.message} isPending={session.login.isPending} onSubmit={session.login.mutate} />;
   if (!user) {
-    return <MemberAuthPanel eyebrow={guestOnly ? t`Front desk` : t`Staff console`} makerspaceSlug={session.routeMakerspaceSlug ?? ""}
+    return <MemberAuthPanel eyebrow={guestOnly ? t`Front desk` : t`Staff console`} loginTitle={t`Sign in to the staff console`} makerspaceSlug={session.routeMakerspaceSlug ?? ""}
       onAuthenticated={() => { void session.personAuthenticated(); }}
       footer={<a className="text-sm font-semibold underline" href="/admin?context=platform">{t`Platform administrator? Sign in here`}</a>} />;
   }

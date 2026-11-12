@@ -4,6 +4,7 @@ import { Pagination } from "../../components/ui";
 import { useAnalyticsMakerspaces, type AnalyticsMakerspace } from "./platformAnalyticsApi";
 import type { AnalyticsPeriod } from "./panels/analyticsApi";
 import { PlatformTenantAnalytics } from "./PlatformTenantAnalytics";
+import { LogoLoader } from "../../components/LogoLoader";
 
 export function PlatformAnalyticsPicker({ period }: { period: AnalyticsPeriod }) {
   const [page, setPage] = useState(1);
@@ -21,7 +22,7 @@ export function PlatformAnalyticsPicker({ period }: { period: AnalyticsPeriod })
       {space && !spaces.data?.results.some(row => row.id === space.id) ? <option value={space.id}>{space.name}</option> : null}
       {spaces.data?.results.map(row => <option key={row.id} value={row.id}>{row.name}</option>)}
     </select></label>
-    {spaces.isLoading ? <p role="status">{t`Loading makerspaces…`}</p> : spaces.isError ? <div role="alert"><p>{t`Couldn't load the makerspace picker.`}</p><button type="button" className="desk-button" onClick={() => void spaces.refetch()}>{t`Retry`}</button></div> : !spaces.data?.results.length ? <p>{t`No makerspaces are available for this report.`}</p> : null}
+    {spaces.isLoading ? <LogoLoader label={t`Loading makerspaces…`} size={48} className="min-h-16 py-3" /> : spaces.isError ? <div role="alert"><p>{t`Couldn't load the makerspace picker.`}</p><button type="button" className="desk-button" onClick={() => void spaces.refetch()}>{t`Retry`}</button></div> : !spaces.data?.results.length ? <p>{t`No makerspaces are available for this report.`}</p> : null}
     {spaces.data && (spaces.data.next || spaces.data.previous) ? <Pagination page={page} totalPages={Math.ceil(spaces.data.count / 24)} onChange={setPage} /> : null}
     {space ? <PlatformTenantAnalytics key={space.id} space={space} period={period} initialReport={pickerReport} /> : <p className="text-sm text-muted">{t`Choose a space to open its scoped analytics.`}</p>}
   </section>;

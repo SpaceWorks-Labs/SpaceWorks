@@ -1,11 +1,11 @@
 import { t } from "@lingui/core/macro";
+import { LogoLoader } from "../../components/LogoLoader";
 import { ModuleAnalytics } from "./panels/ModuleAnalytics";
 import { capabilityOn } from "../../lib/features";
 import { MyNotificationSettings } from "../notifications/MyNotificationSettings";
 import { Suspense, type ReactNode } from "react";
 
 import { ListLayout } from "../../components/layouts";
-import { Skeleton } from "../../components/ui";
 import type { StaffAuthUser } from "../../lib/api";
 import { featureEnabled } from "../../lib/features";
 import { getStaffAccess, REFUND_SUBJECT_ACTIONS } from "./staffAccess";
@@ -85,31 +85,31 @@ export function StaffTabContent({
   lockedMakerspaceId?: number;
 }) {
   if (activeTab === "platform-dashboard" && isSuperadmin && !singleTenantLocked) {
-    return <StaffPanelErrorBoundary resetKey="platform-dashboard"><Suspense fallback={<Skeleton className="h-40 w-full" />}><PlatformProgrammeDashboard /></Suspense></StaffPanelErrorBoundary>;
+    return <StaffPanelErrorBoundary resetKey="platform-dashboard"><Suspense fallback={<LogoLoader label={t`Loading panel`} />}><PlatformProgrammeDashboard /></Suspense></StaffPanelErrorBoundary>;
   }
   if (activeTab === "platform-spaces" && isSuperadmin && !singleTenantLocked) {
-    return <StaffPanelErrorBoundary resetKey="platform-spaces"><Suspense fallback={<Skeleton className="h-40 w-full" />}><PlatformSpacesPanel /></Suspense></StaffPanelErrorBoundary>;
+    return <StaffPanelErrorBoundary resetKey="platform-spaces"><Suspense fallback={<LogoLoader label={t`Loading panel`} />}><PlatformSpacesPanel /></Suspense></StaffPanelErrorBoundary>;
   }
   // The other platform pages (People & access, Security, Data & recovery, Settings, Analytics) need no chosen space.
   if (PLATFORM_CONSOLE_PAGES.includes(activeTab) && isSuperadmin && !singleTenantLocked) {
-    return <StaffPanelErrorBoundary resetKey={activeTab}><Suspense fallback={<Skeleton className="h-40 w-full" />}>
+    return <StaffPanelErrorBoundary resetKey={activeTab}><Suspense fallback={<LogoLoader label={t`Loading panel`} />}>
       <PlatformConsoleContent activeTab={activeTab} activeMakerspace={activeMakerspace} makerspaces={makerspaces} currentUser={currentUser} onAuthRefresh={onAuthRefresh} />
     </Suspense></StaffPanelErrorBoundary>;
   }
   if (activeTab === "organizations") {
-    return <StaffPanelErrorBoundary resetKey="organizations"><Suspense fallback={<Skeleton className="h-40 w-full" />}><OrganizationsPanel isSuperadmin={isSuperadmin} makerspaces={makerspaces} /></Suspense></StaffPanelErrorBoundary>;
+    return <StaffPanelErrorBoundary resetKey="organizations"><Suspense fallback={<LogoLoader label={t`Loading panel`} />}><OrganizationsPanel isSuperadmin={isSuperadmin} makerspaces={makerspaces} /></Suspense></StaffPanelErrorBoundary>;
   }
   if (activeTab === "granted" && (currentUser.event_grants?.length || currentUser.booking_grants?.length)) {
     if (singleTenantLocked && lockedMakerspaceId === undefined) return <ListLayout header={{ title: t`Assigned resources` }} state={{ status: "ready" }}
       isEmpty empty={{ message: t`Unable to resolve this makerspace.` }} body={{ kind: "rows", rows: null }} />;
-    return <StaffPanelErrorBoundary resetKey="granted"><Suspense fallback={<Skeleton className="h-40 w-full" />}><GrantedResourcesPanel eventGrants={currentUser.event_grants} bookingGrants={Boolean(currentUser.booking_grants?.length)} bookingGrantList={currentUser.booking_grants} makerspaceId={singleTenantLocked ? lockedMakerspaceId : undefined} /></Suspense></StaffPanelErrorBoundary>;
+    return <StaffPanelErrorBoundary resetKey="granted"><Suspense fallback={<LogoLoader label={t`Loading panel`} />}><GrantedResourcesPanel eventGrants={currentUser.event_grants} bookingGrants={Boolean(currentUser.booking_grants?.length)} bookingGrantList={currentUser.booking_grants} makerspaceId={singleTenantLocked ? lockedMakerspaceId : undefined} /></Suspense></StaffPanelErrorBoundary>;
   }
   // Cross-venue organizer pages read no space: an organization member without a space role opens them too.
   if (!activeMakerspace && activeTab === "organized" && !isSuperadmin) {
-    return <StaffPanelErrorBoundary resetKey="organized"><Suspense fallback={<Skeleton className="h-40 w-full" />}><OrganizedEventsPanel /></Suspense></StaffPanelErrorBoundary>;
+    return <StaffPanelErrorBoundary resetKey="organized"><Suspense fallback={<LogoLoader label={t`Loading panel`} />}><OrganizedEventsPanel /></Suspense></StaffPanelErrorBoundary>;
   }
   if (!activeMakerspace && activeTab === "organization-analytics" && !isSuperadmin && !singleTenantLocked) {
-    return <StaffPanelErrorBoundary resetKey="organization-analytics"><Suspense fallback={<Skeleton className="h-40 w-full" />}><OrganizationAnalyticsPanel makerspaces={makerspaces} /></Suspense></StaffPanelErrorBoundary>;
+    return <StaffPanelErrorBoundary resetKey="organization-analytics"><Suspense fallback={<LogoLoader label={t`Loading panel`} />}><OrganizationAnalyticsPanel makerspaces={makerspaces} /></Suspense></StaffPanelErrorBoundary>;
   }
   if (!activeMakerspace) {
     return <ListLayout header={{ title: t`No makerspace` }} state={{ status: "ready" }}
@@ -123,7 +123,7 @@ export function StaffTabContent({
   const has = (action: string) => isSuperadmin || actorActions.includes(action);
   return (
     <StaffPanelErrorBoundary resetKey={`${makerspaceKey}:${activeTab}`}>
-      <AllowedTabsContext.Provider value={allowedTabs}><Suspense fallback={<div className="p-4"><Skeleton className="h-40 w-full" /></div>}>
+      <AllowedTabsContext.Provider value={allowedTabs}><Suspense fallback={<LogoLoader label={t`Loading panel`} />}>
       {/* #234 addendum 3(a): what is left of the limits this person manages; nothing when unlimited. */}
       {isSuperadmin && !singleTenantLocked ? <PlatformSpaceBreadcrumb spaceName={activeMakerspace.name} tab={activeTab} /> : null}
       <AreaAllowances key={`allowances:${makerspaceKey}`} makerspaceId={makerspaceKey} tab={activeTab} />
@@ -172,12 +172,12 @@ export function StaffTabContent({
           canConfigureMachineTypes={canConfigureMachineTypes}
           maintenanceEnabled={capabilityOn(activeMakerspace, "machines.maintenance")}
           machineServiceEnabled={activeMakerspace.enabled_modules?.includes("machine_service") ?? false}
-          printingEnabled={activeMakerspace.enabled_modules?.includes("printing") ?? false}
+          printingEnabled={activeMakerspace.enabled_modules?.includes("machine_service") ?? false}
           reportsEnabled={activeMakerspace.enabled_modules?.includes("reports") ?? false}
           guestOnly={guestOnly}
           makerspaceSlug={activeMakerspace.slug}
           singleTenantLocked={singleTenantLocked}
-          printerAdapter={has("manage_devices") && ["devices", "machine_service"].every((key) => activeMakerspace.enabled_modules?.includes(key))}
+          adapterConsole={has("manage_devices") && capabilityOn(activeMakerspace, "machines.integrations") && (activeMakerspace.enabled_modules?.includes("devices") ?? false)} printerAdapter={has("manage_devices") && ["devices", "machine_service"].every((key) => activeMakerspace.enabled_modules?.includes(key))}
           delegatedRecipientRulesEnabled={
             isMachineOnly &&
             (activeMakerspace.enabled_modules ?? []).includes("notifications") &&
@@ -202,7 +202,7 @@ export function StaffTabContent({
           isSuperadmin={isSuperadmin}
           onAuthRefresh={onAuthRefresh}
           membershipEnabled={(activeMakerspace.enabled_modules ?? []).includes("membership")}
-          presenceEnabled={(activeMakerspace.enabled_modules ?? []).includes("presence")}
+          presenceEnabled={(activeMakerspace.enabled_modules ?? []).includes("presence")} machinesEnabled={(activeMakerspace.enabled_modules ?? []).includes("machines")}
           canManageMakerspace={canManageMakerspace}
           canViewFinance={has("view_finance")}
           canRecordPayment={has("record_payment")}

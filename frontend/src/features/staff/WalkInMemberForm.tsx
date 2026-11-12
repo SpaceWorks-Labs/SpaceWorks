@@ -11,6 +11,8 @@ import type { AdmissionRequest, PublicAdmission } from "../members/membershipAdm
 import { useStaffChargesOn } from "./useStaffChargesOn";
 import { formatMoney, formatPrice } from "../../lib/money";
 import { WalkInGuestPassResult, type WalkInGuestPass } from "../guestPasses/staff/WalkInGuestPassResult";
+import { LogoLoader } from "../../components/LogoLoader";
+import { BoxArt } from "../../components/BoxSpinner";
 
 type WalkInMember = { user_id: number; display_name: string; username: string; admission_request?: AdmissionRequest }
   | WalkInGuestPass;
@@ -101,7 +103,7 @@ export function WalkInMemberForm({
       <h3 className="title-section">{t`Add a walk-in`}</h3>
       <p className="mt-1 text-xs text-muted">
         {t`Creates a person record for the handover trail. It is not an account and cannot sign in.`}</p>
-      {admission.isPending ? <p className="mt-2 text-sm text-muted">{t`Loading admission conditions…`}</p> : null}
+      {admission.isPending ? <LogoLoader label={t`Loading admission conditions…`} size={48} className="min-h-16 py-3" /> : null}
       {admission.error ? <p className="mt-2 text-sm text-danger" role="alert">{admission.error.message}</p> : null}
       {admission.data?.join_mode === "closed" ? <p className="mt-2 text-sm text-muted">{t`Membership applications are closed.`}</p> : null}
       {admission.data?.join_mode === "vouch" ? <p className="mt-2 text-sm text-muted">{t`This application needs ${admission.data.vouches_required} member vouch(es).`}</p> : null}
@@ -158,7 +160,7 @@ export function WalkInMemberForm({
             if (!Object.keys(errors).length) create.mutate();
           }}
         >
-          {create.isPending ? t`Adding…` : t`Add walk-in`}
+          {create.isPending ? <><BoxArt size={16} mono />{t`Adding…`}</> : t`Add walk-in`}
         </button>
         <button className="desk-button" type="button" onClick={() => setOpen(false)}>
           {t`Cancel`}</button>

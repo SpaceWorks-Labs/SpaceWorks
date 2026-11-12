@@ -9,6 +9,7 @@ import { useScopeOptions } from "./NotificationDestinations";
 import { EventRecipients } from "./NotificationRecipientEvent";
 import type { RecipientRulesResponse } from "./notificationDestinationTypes";
 import { notificationEventLabel } from "../notifications/notificationEventLabels";
+import { LogoLoader } from "../../components/LogoLoader";
 
 const FEATURE_LABELS: Record<string, string> = {
   events: t`Events`,
@@ -18,7 +19,9 @@ const FEATURE_LABELS: Record<string, string> = {
   members: t`Members`,
   payments: t`Payments`,
   stock: t`Stock and procurement`,
-  certifications: t`Certifications`,
+  certifications: t`Machine access`,
+  // Decision 343: which staff get machine-service job notices (the `printing` family is machine service's).
+  printing: t`Machine service jobs`,
 };
 
 const RECIPIENTS_KEY = (makerspaceId: number) =>
@@ -65,7 +68,7 @@ export function NotificationRecipientPicker({
           : t`Pick recipients per event. Leave an event empty to notify everyone whose role covers it, which is the default. A member who has turned notifications off is never mailed, even when selected.`}
       </p>
 
-      {data.isLoading ? <p className="mt-3 text-sm text-muted">{t`Loading…`}</p> : null}
+      {data.isLoading ? <LogoLoader label={t`Loading…`} size={48} className="min-h-16 py-3" /> : null}
       {!data.isLoading && features.length === 0 ? (
         <p className="mt-3 text-sm text-muted">
           {t`None of the modules with selectable recipients are installed.`}</p>

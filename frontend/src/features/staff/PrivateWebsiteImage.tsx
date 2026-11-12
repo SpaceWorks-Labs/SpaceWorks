@@ -1,3 +1,4 @@
+import { LogoLoader } from "../../components/LogoLoader";
 import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -14,7 +15,7 @@ export function PrivateWebsiteImage({ url, alt }: { url: string; alt: string }) 
     setSrc(objectUrl);
     return () => URL.revokeObjectURL(objectUrl);
   }, [query.data]);
-  if (query.isLoading) return <p role="status">{t`Loading image…`}</p>;
+  if (query.isLoading) return <LogoLoader label={t`Loading image…`} size={48} className="min-h-16 py-3" />;
   if (query.error) return <p role="alert">{t`Unable to preview ${alt}.`}</p>;
   return src ? <img className="my-3 max-h-64 max-w-full rounded-lg object-contain" src={src} alt={alt} /> : null;
 }

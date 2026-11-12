@@ -1,7 +1,7 @@
 import { t } from "@lingui/core/macro";
 import { SettingsRow } from "../../components/ui";
 import { SettingsEditorActions } from "./SettingsEditorActions";
-import { useEffect, useState } from "react";
+import { useMemo, useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { staffRequest } from "../../lib/api";
@@ -12,7 +12,9 @@ type Props = { makerspace: Makerspace; settings?: Makerspace; loading: boolean }
 
 function ReminderPolicy({ makerspace, settings, loading, domain }: Props & { domain: Domain }) {
   const field = `${domain}_reminder_lead_hours` as const;
-  const current = settings?.[field] ?? makerspace[field] ?? [24];
+  const settingsHours = settings?.[field];
+  const makerspaceHours = makerspace[field];
+  const current = useMemo(() => settingsHours ?? makerspaceHours ?? [24], [settingsHours, makerspaceHours]);
   const [draft, setDraft] = useState(current.join(", "));
   const [dirty, setDirty] = useState(false);
   const [error, setError] = useState("");

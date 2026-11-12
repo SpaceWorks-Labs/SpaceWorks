@@ -20,6 +20,8 @@ import {
   type ReceiptEnvelope,
 } from "./tenantMigrationApi";
 import { ErrorText, openDownload, parseReceipt, ReceiptOutput, StatusPill } from "./tenantMigrationUi";
+import { LogoLoader } from "../../components/LogoLoader";
+import { BoxArt } from "../../components/BoxSpinner";
 
 export function TenantMigrationExports({
   makerspaceId,
@@ -113,12 +115,12 @@ export function TenantMigrationExports({
         </label>
       </div>
       <button className="desk-button-primary mt-3" type="button" disabled={!selectedApproval || !recipient.trim() || createExport.isPending} onClick={() => createExport.mutate()}>
-        {createExport.isPending ? t`Requesting encrypted export…` : t`Create encrypted migration export`}
+        {createExport.isPending ? <><BoxArt size={16} mono />{t`Requesting encrypted export…`}</> : t`Create encrypted migration export`}
       </button>
       <ErrorText error={createExport.error} field="target_age_recipient" />
       </> : null}
 
-      {exportsQuery.isLoading ? <p className="mt-4 text-sm text-muted">{t`Loading migration exports…`}</p> : null}
+      {exportsQuery.isLoading ? <LogoLoader label={t`Loading migration exports…`} size={48} className="min-h-16 py-3" /> : null}
       <ErrorText error={exportsQuery.error} />
       <div className="mt-4 grid gap-3">
         {(exportsQuery.data ?? []).map((listedJob, index) => {

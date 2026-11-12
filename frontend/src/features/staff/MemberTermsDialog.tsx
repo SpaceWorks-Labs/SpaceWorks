@@ -19,6 +19,8 @@ import { useStaffChargesOn } from "./useStaffChargesOn";
 import { formatMoney } from "./paymentsApi";
 import { MemberLifecycleDetails } from "./membershipLifecycle/MemberLifecycleDetails";
 import { StaffIncludedHours } from "./memberActivity/StaffIncludedHours";
+import { LogoLoader } from "../../components/LogoLoader";
+import { BoxArt } from "../../components/BoxSpinner";
 
 /** Mount with `key={membershipId}`; the plan choice is per dialog, not per panel. */
 export function MemberTermsDialog({
@@ -89,10 +91,10 @@ export function MemberTermsDialog({
           </select>
         </Field>
         <button className="desk-button-primary" type="submit" disabled={!selectedPlan || start.isPending}>
-          {start.isPending ? t`Starting…` : t`Start term`}
+          {start.isPending ? <><BoxArt size={16} mono />{t`Starting…`}</> : t`Start term`}
         </button>
       </form>
-      {terms.isLoading ? <p className="mt-3 text-sm text-muted">{t`Loading terms…`}</p> : null}
+      {terms.isLoading ? <LogoLoader label={t`Loading terms…`} size={48} className="min-h-16 py-3" /> : null}
       {terms.data?.length === 0 ? <EmptyState message={t`No terms yet.`} /> : null}
       {terms.data?.length ? (
         <ul className="mt-3 divide-y divide-line text-sm">

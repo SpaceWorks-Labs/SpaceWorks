@@ -28,6 +28,8 @@ import { StaffListContext } from "./StaffListContext";
 import { PlanUnitsField } from "./units/PlanUnitsField";
 import { PlanSacField, planSacOn, validatePlanSac } from "../finance/PlanSacField";
 import { EMPTY_JOIN_FIELDS, JoinFieldsSection, joinPlanFields, joinPlanInput, type JoinPlanFields } from "./JoinFieldsSection";
+import { LogoLoader } from "../../components/LogoLoader";
+import { BoxArt } from "../../components/BoxSpinner";
 
 type PlanForm = {
   name: string;
@@ -154,7 +156,7 @@ export function MembershipPlansSection({ makerspaceId, features = [] }: { makers
         {t`Plans price a membership term. Members are put on a plan from the roster ("Terms"); a plan with terms cannot be deleted, only deactivated.`}</p>
       <PlanPriceNote makerspaceId={makerspaceId} />
       {chargesOn ? null : <p className="mb-3 text-sm text-muted">{t`Membership charges are off in this space, so membership is free.`}</p>}
-      {plans.isLoading ? <p className="text-sm text-muted">{t`Loading plans…`}</p> : null}
+      {plans.isLoading ? <LogoLoader label={t`Loading plans…`} size={48} className="min-h-16 py-3" /> : null}
       {plans.isError ? <p className="text-sm text-danger" role="alert">{planErrorText(plans.error, "Could not load plans.")}</p> : null}
       {plans.data?.length === 0 ? <EmptyState message={t`No plans yet. Add your first membership plan below.`} /> : null}
       {plans.data?.map((plan) => (
@@ -209,7 +211,7 @@ export function MembershipPlansSection({ makerspaceId, features = [] }: { makers
         {sacOn ? <PlanSacField value={form.sac_code ?? ""} onChange={(value) => set("sac_code", value)} /> : null}
         <div className="flex flex-wrap items-end gap-2">
           <button className="desk-button-primary" type="submit" disabled={save.isPending}>
-            {save.isPending ? t`Saving…` : editing ? t`Save plan` : t`Create plan`}
+            {save.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : editing ? t`Save plan` : t`Create plan`}
           </button>
           {editing ? <button className="desk-button" type="button" onClick={cancelEdit}>{t`Cancel`}</button> : null}
         </div>

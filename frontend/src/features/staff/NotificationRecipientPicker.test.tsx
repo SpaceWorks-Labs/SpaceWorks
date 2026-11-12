@@ -32,7 +32,7 @@ it("labels the new families and changes the selected event to that family's firs
   expect(screen.getByRole("option", { name: "Stock and procurement" })).toBeInTheDocument();
   expect(screen.getByTestId("selected-event")).toHaveTextContent("stock:low_stock");
   fireEvent.change(area, { target: { value: "certifications" } });
-  expect(screen.getByRole("option", { name: "Certifications" })).toBeInTheDocument();
+  expect(screen.getByRole("option", { name: "Machine access" })).toBeInTheDocument();
   expect(screen.getByTestId("selected-event")).toHaveTextContent("certifications:granted");
   expect(screen.queryByRole("option", { name: "Payment received" })).not.toBeInTheDocument();
 });

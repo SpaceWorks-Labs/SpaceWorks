@@ -1,6 +1,7 @@
 import { t } from "@lingui/core/macro";
 import { ArrowUpRight } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { useTransitionNavigate } from "../../lib/motion";
 import { useState, type MouseEvent } from "react";
 
 import { useLayoutMedia } from "../../components/layouts/useLayoutMedia";
@@ -31,7 +32,7 @@ const itemClass = "flex min-h-11 shrink-0 items-center gap-2 rounded-control px-
  */
 export function SettingsSectionNav({ titles, links = {}, active, href, canLeave, groups: source = settingsGroups(), help }: Props) {
   const phone = useLayoutMedia("(max-width: 767px)");
-  const navigate = useNavigate();
+  const navigate = useTransitionNavigate();
   const [query, setQuery] = useState("");
   const words = phone ? [] : query.toLowerCase().split(/\s+/).filter(Boolean);
   const matches = (id: string) => {

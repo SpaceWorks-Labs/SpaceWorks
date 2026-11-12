@@ -9,6 +9,7 @@ import type { ApiPath } from "../../generated/api";
 import { staffRequest } from "../../lib/api";
 import type { Makerspace } from "./StaffPanels";
 import { CustomDomainGuide, domainStatusLabel, domainStatusTone, type DomainRecord, type DomainStatus } from "./CustomDomainGuide";
+import { BoxArt } from "../../components/BoxSpinner";
 
 type Props = {
   makerspace: Makerspace;
@@ -127,7 +128,7 @@ export function MakerspaceCustomDomainSettings({ makerspace, settings, loading }
                   disabled={verifyDisabled}
                   onClick={() => verifyDomain.mutate()}
                 >
-                  {verifyDomain.isPending ? t`Checking...` : t`Verify domain`}
+                  {verifyDomain.isPending ? <><BoxArt size={16} mono />{t`Checking...`}</> : t`Verify domain`}
                 </button>
                 {token ? <span className="break-all text-xs text-muted">{t`Token: ${token}`}</span> : null}
               </div>

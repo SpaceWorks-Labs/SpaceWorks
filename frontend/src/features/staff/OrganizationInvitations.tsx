@@ -2,13 +2,15 @@ import { t } from "@lingui/core/macro";
 import { useState, type FormEvent } from "react";
 
 import { invitationStateLabel, organizationActionLabel } from "./lifecycleLabels";
-import { ActionControl, EmptyState, ErrorText, ListRow, RelativeTime, Skeleton, StatusPill, PagePager } from "../../components/ui";
+import { ActionControl, EmptyState, ErrorText, ListRow, RelativeTime, StatusPill, PagePager } from "../../components/ui";
 import type { OrganizationDetail } from "./organizationsApi";
 import {
   useCreateOrganizationInvitation,
   useOrganizationInvitations,
   useRevokeOrganizationInvitation,
 } from "./organizationsApi";
+import { LogoLoader } from "../../components/LogoLoader";
+import { BoxArt } from "../../components/BoxSpinner";
 
 function toggle(values: string[], value: string) {
   return values.includes(value) ? values.filter((item) => item !== value) : [...values, value];
@@ -50,12 +52,12 @@ export function OrganizationInvitations({ organization }: { organization: Organi
         </div></fieldset>
         <label className="grid max-w-md gap-1 text-sm font-semibold">{t`Invitee email (optional)`}<input className="desk-input font-normal" type="email" maxLength={254} value={inviteeEmail} onChange={(event) => setInviteeEmail(event.target.value)} /><span className="text-xs font-normal text-muted">{t`We email the link there, and to their own chat channels if they already have a verified account. Only a fingerprint of the address is kept.`}</span></label>
         <label className="grid max-w-48 gap-1 text-sm font-semibold">{t`Expires in days`}<input className="desk-input" type="number" min="1" max="30" value={expiresInDays} onChange={(event) => setExpiresInDays(Number(event.target.value))} /></label>
-        <button className="desk-button-primary w-fit" type="submit" disabled={create.isPending}>{create.isPending ? t`Creating...` : t`Create invitation`}</button>
+        <button className="desk-button-primary w-fit" type="submit" disabled={create.isPending}>{create.isPending ? <><BoxArt size={16} mono />{t`Creating...`}</> : t`Create invitation`}</button>
         {create.error ? <p className="text-sm text-danger" role="alert">{create.error.message}</p> : null}
       </form>
       {redeemUrl ? <div className="mt-4 rounded-xl border border-success bg-success-soft p-4 text-success-ink"><p className="font-semibold">{t`Copy this link now`}</p><p className="mt-1 break-all code-text text-xs">{redeemUrl}</p><button className="desk-button mt-3" type="button" onClick={() => navigator.clipboard.writeText(redeemUrl)}>{t`Copy link`}</button></div> : null}
 
-      {invitations.isLoading ? <Skeleton className="mt-5 h-24 w-full" /> : null}
+      {invitations.isLoading ? <LogoLoader size={48} className="min-h-24 py-3" /> : null}
       {invitations.isError ? <ErrorText resource={t`invitations`} onRetry={() => { void invitations.refetch(); }} /> : null}
       {revoke.error ? <ErrorText message={revoke.error.message} /> : null}
       {invitations.data && !invitations.data.results.length ? <EmptyState message={t`No invitations yet. Create a link to bring in your team.`} /> : null}

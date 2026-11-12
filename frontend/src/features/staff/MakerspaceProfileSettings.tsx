@@ -9,6 +9,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { staffRequest, StructuredApiError } from "../../lib/api";
 import { MakerspaceHoursEditor } from "./MakerspaceHoursEditor";
 import { hoursDraft, serializeHours, validateHours, type MakerspaceProfile } from "./makerspaceProfileForm";
+import { LogoLoader } from "../../components/LogoLoader";
 
 function countryLabel(code: string) {
   return new Intl.DisplayNames(["en"], { type: "region" }).of(code) ?? code;
@@ -40,12 +41,13 @@ export function MakerspaceProfileSettings({ makerspaceId }: { makerspaceId: numb
       }
     },
   });
-  useEffect(() => { mutation.reset(); }, [makerspaceId, mutation.reset]);
+  const { reset: resetMutation } = mutation;
+  useEffect(() => { resetMutation(); }, [makerspaceId, resetMutation]);
   const changed = () => { setDirty(true); setSaved(false); setError(null); };
   return <SettingsQueryState query={query} resource={t`profile`}><><div className="grid min-w-0 gap-4">
 
 
-    {query.isPending ? <p role="status">{t`Loading profile…`}</p> : null}
+    {query.isPending ? <LogoLoader label={t`Loading profile…`} size={48} className="min-h-16 py-3" /> : null}
     {query.error ? <ErrorBlock error={new Error(t`Couldn't load profile. Try again.`)} onRetry={() => { void query.refetch(); }} /> : null}
     {draft ? <form className="grid gap-4" onSubmit={event => {
       event.preventDefault();

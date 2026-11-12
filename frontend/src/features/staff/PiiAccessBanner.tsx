@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { Callout, ErrorText, Field, StatusPill } from "../../components/ui";
 import { closePiiAccess, getPiiAccess, openPiiAccess, piiAccessKey, type PiiAccessGrant, type PiiAccessStatus } from "../../lib/api/piiAccess";
+import { BoxArt } from "../../components/BoxSpinner";
 
 const time = (value: string) => new Date(value).toLocaleTimeString(formatLocale(), { hour: "2-digit", minute: "2-digit" });
 
@@ -62,7 +63,7 @@ export function PiiAccessBanner({ makerspaceId, compact = false }: { makerspaceI
       </Field>
       <div className="flex flex-wrap gap-2">
         <button className="desk-button" type="submit" disabled={open.isPending || reason.trim().length < 10}>
-          {open.isPending ? t`Opening…` : t`Open for 30 minutes`}</button>
+          {open.isPending ? <><BoxArt size={16} mono />{t`Opening…`}</> : t`Open for 30 minutes`}</button>
         <button className="desk-button" type="button" onClick={() => { setAsking(false); setReason(""); }}>{t`Cancel`}</button>
       </div>
       {open.error ? <ErrorText message={open.error.message} /> : null}

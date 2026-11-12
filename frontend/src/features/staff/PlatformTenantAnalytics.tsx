@@ -1,3 +1,4 @@
+import { LogoLoader } from "../../components/LogoLoader";
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -21,7 +22,7 @@ export function PlatformTenantAnalytics({ space, period, initialReport }: {
   const [exportError, setExportError] = useState("");
   const dashboard = useQuery({ queryKey: ["platform-tenant-dashboard", space.id], enabled: showDashboard, retry: false,
     queryFn: () => staffRequest<DashboardAnalytics & DashboardCounts>(`${base}/dashboard`) });
-  if (catalog.isLoading) return <p role="status">{t`Loading this makerspace's reports…`}</p>;
+  if (catalog.isLoading) return <LogoLoader label={t`Loading this makerspace's reports…`} />;
   if (catalog.isError) return <div role="alert"><p>{t`Access to this makerspace's analytics is blocked or unavailable.`}</p>
     <button type="button" className="desk-button" onClick={() => void catalog.refetch()}>{t`Retry`}</button></div>;
   const reports = (catalog.data?.results ?? []).filter(report => report.available !== false);
@@ -44,7 +45,7 @@ export function PlatformTenantAnalytics({ space, period, initialReport }: {
   return <div className="min-w-0 space-y-4">
     <button type="button" className="desk-button" aria-expanded={showDashboard} onClick={() => setShowDashboard(!showDashboard)}>{t`Open ${space.name} dashboard`}</button>
     {showDashboard ? <section aria-label={`${space.name} dashboard`}>
-      {dashboard.isLoading ? <p role="status">{t`Loading dashboard…`}</p> : dashboard.isError ? <div role="alert">
+      {dashboard.isLoading ? <LogoLoader label={t`Loading dashboard…`} size={48} className="min-h-16 py-3" /> : dashboard.isError ? <div role="alert">
         <p>{t`Couldn't load this makerspace's dashboard.`}</p><button type="button" onClick={() => void dashboard.refetch()}>{t`Retry dashboard`}</button></div> : dashboard.data ? <>
         <dl className="grid gap-3 sm:grid-cols-3">{TILES.filter(tile => typeof dashboard.data?.[tile.key] === "number").map(tile =>
           <div key={tile.key}><dt>{tile.label}</dt><dd>{dashboard.data?.[tile.key]}</dd></div>)}</dl>

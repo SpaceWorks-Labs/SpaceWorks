@@ -1,88 +1,45 @@
 import { t } from "@lingui/core/macro";
-import { SettingsRow } from "../../components/ui";
 import { SettingsEditorActions } from "./SettingsEditorActions";
-import { useEffect, useState, type CSSProperties } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { staffRequest } from "../../lib/api";
-import { BODY_TEXT, FIXED_INKS, BRAND_SURFACES, brandContrastReport, brandPaletteStyle, deriveBrandPalette } from "../../lib/brandColours";
+import { colourPresets } from "../../lib/colourPresets";
+import { AudienceTabs } from "./colours/AudienceTabs";
+import { ColourField } from "./colours/ColourField";
+import { ContrastPanel } from "./colours/ContrastPanel";
+import { ModeField } from "./colours/ModeField";
+import { useColourDraft } from "./colours/useColourDraft";
 import type { Makerspace } from "./StaffPanels";
 
 type Props = { makerspace: Makerspace; settings?: Makerspace; loading: boolean };
 
 export function MakerspaceThemeSettings({ makerspace, settings, loading }: Props) {
-  const queryClient = useQueryClient();
-  const saved = settings?.theme_config ?? {};
-  const savedPrimary = typeof saved.primary_color === "string" ? saved.primary_color : "";
-  const savedAccent = typeof saved.accent_color === "string" ? saved.accent_color : "";
-  const [primary, setPrimary] = useState(savedPrimary);
-  const [accent, setAccent] = useState(savedAccent);
-  useEffect(() => {
-    setPrimary(savedPrimary);
-    setAccent(savedAccent);
-  }, [makerspace.id, savedPrimary, savedAccent]);
-  const theme = { ...saved, primary_color: primary.trim(), accent_color: accent.trim() };
-  const report = brandContrastReport(theme);
-  const changed = theme.primary_color !== (saved.primary_color ?? "") || theme.accent_color !== (saved.accent_color ?? "");
-  const save = useMutation({
-    mutationFn: (input: { id: number; slug: string; theme: Record<string, string> }) => staffRequest<Makerspace>(`/admin/makerspaces/${input.id}`, {
-      method: "PATCH", body: JSON.stringify({ theme_config: input.theme }),
-    }),
-    onSuccess: (_result, input) => {
-      queryClient.invalidateQueries({ queryKey: ["makerspace-settings", input.id] });
-      queryClient.invalidateQueries({ queryKey: ["makerspaces"] });
-      queryClient.invalidateQueries({ queryKey: ["staff", "makerspaces"] });
-      queryClient.invalidateQueries({ queryKey: ["tenant-bootstrap", input.slug] });
-      queryClient.invalidateQueries({ queryKey: ["member"] });
-      queryClient.invalidateQueries({ queryKey: ["runtime-tenant"] });
-      queryClient.invalidateQueries({ queryKey: ["runtime-tenant-origin"] });
-    },
-  });
-  useEffect(() => { save.reset(); }, [makerspace.id]);
-  return <SettingsRow label={t`Public and member colours`} helper={t`The colours of your public pages and the member area. Staff screens keep the standard theme.`}><form className="@container mt-6 space-y-3" onSubmit={(event) => {
-    event.preventDefault();
-    if (settings && report.valid && changed && !loading && !save.isPending) save.mutate({ id: makerspace.id, slug: makerspace.slug, theme });
-  }}>
-
-    <p className="text-sm text-muted">{t`Leave blank to use Maker Teal. Staff screens always use the Space Works palette.`}</p>
-    <div className="grid gap-3 @md:grid-cols-2">
-      <label className="grid gap-1 text-sm" htmlFor="theme-primary">{t`Primary fill`}<input id="theme-primary" className="desk-input" placeholder="#006e63" value={primary} disabled={loading || save.isPending} onChange={(event) => setPrimary(event.target.value)} />
-      </label>
-      <label className="grid gap-1 text-sm" htmlFor="theme-accent">{t`Link colour seed`}<input id="theme-accent" className="desk-input" placeholder={t`Derived from primary`} value={accent} disabled={loading || save.isPending} onChange={(event) => setAccent(event.target.value)} />
-      </label>
-    </div>
-    <div className="grid gap-3 @md:grid-cols-2">
-      {(["light", "dark"] as const).map((mode) => {
-        const palette = deriveBrandPalette(theme, mode);
-        const preview = report.valid ? palette : deriveBrandPalette({}, mode);
-        const style = {
-          ...brandPaletteStyle(preview),
-          "--color-ink": BODY_TEXT[mode][0].join(" "),
-          "--color-muted": BODY_TEXT[mode][1].join(" "),
-          "--color-focus": FIXED_INKS[mode][0].join(" "),
-        } as CSSProperties;
-        const worstText = Math.min(...palette.pairs.filter((pair) => pair.minimum === 4.5).map((pair) => pair.ratio));
-        const worstUI = Math.min(...palette.pairs.filter((pair) => pair.minimum === 3).map((pair) => pair.ratio));
-        const surface = BRAND_SURFACES[mode][0].join(" ");
-        return <div key={mode} data-testid={`theme-preview-${mode}`} style={{ ...style, backgroundColor: `rgb(${surface})`, color: `rgb(${BODY_TEXT[mode][0].join(" ")})` }} className="">
-          <p className="font-semibold">{mode === "light" ? t`Light preview` : t`Dark preview`}</p>
-          {!report.valid ? <p className="text-xs">{t`Product palette fallback shown; ratios below describe the entered colours.`}</p> : null}
-          <a href="#theme-primary" className="my-2 block text-sm underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus" style={{ color: `rgb(${preview.ink.join(" ")})` }}>{t`Example link`}</a>
-          <button className="desk-button-brand" type="button">{t`Example action`}</button>
-          <div className="min-h-11 mt-2 flex gap-2 text-sm">
-            {(["hover", "active"] as const).map((state) => <span key={state} className="rounded-control px-3 py-2" style={{ backgroundColor: `rgb(${preview[state].join(" ")})`, color: `rgb(${preview.foreground.join(" ")})` }}>{state === "hover" ? t`Hover` : t`Active`}</span>)}
-          </div>
-          <div className="mt-2 rounded-xl p-3" style={{ backgroundColor: `rgb(${preview.soft.join(" ")})`, color: `rgb(${BODY_TEXT[mode][1].join(" ")})` }}>{t`Brand soft with muted text`}</div>
-          <p className="mt-2 text-xs">{t`Text minimum ${worstText.toFixed(2)}:1 (AA 4.5:1); component minimum ${worstUI.toFixed(2)}:1 (AA 3:1).`}</p>
-        </div>;
-      })}
-    </div>
-    <div aria-live="polite">
-      {report.errors.map((error) => <p className="text-sm text-danger" key={error}>{error}</p>)}
-      {report.failures.map((pair) => <p className="text-sm text-danger" key={`${pair.mode}-${pair.pair}`}>{t`${pair.mode}: ${pair.pair} is ${pair.ratio.toFixed(2)}:1; requires ${pair.minimum}:1.`}</p>)}
-      {report.valid ? <p className="text-sm text-success-ink">{t`All checked pairs meet WCAG AA in both modes.`}</p> : <p className="text-sm text-danger">{t`Enter a #RGB or #RRGGBB colour. Public pages use Maker Teal until valid colours are saved.`}</p>}
-      {save.error ? <p className="text-sm text-danger">{save.error.message}</p> : null}
-      {save.isSuccess && !changed ? <p className="text-sm text-success-ink">{t`Colours saved.`}</p> : null}
-    </div>
-    <SettingsEditorActions dirty={changed} onDiscard={() => { setPrimary(savedPrimary); setAccent(savedAccent); }} pending={save.isPending} disabled={!settings || loading || save.isPending || !changed || !report.valid} />
-  </form></SettingsRow>;
+  const { draft, setDraft, theme, report, blocked, dirty, mutation, save, undoSave, canUndo, discard } = useColourDraft(makerspace, settings);
+  const busy = loading || mutation.isPending;
+  const isDefault = !draft.primary && !draft.accent;
+  return <section aria-labelledby="space-colours" className="@container py-5">
+    <h3 id="space-colours" className="title-section">{t`Colours`}</h3>
+    <p className="mt-1 text-sm text-muted">{t`Two colours, shown on the screens each audience sees. Preview them in light and solid-black dark before saving.`}</p>
+    <form className="mt-4 grid gap-6 @4xl:grid-cols-[minmax(0,24rem)_minmax(0,1fr)]" onSubmit={(event) => { event.preventDefault(); if (!loading) save(); }}>
+      <div className="grid content-start gap-4 @4xl:sticky @4xl:top-4 @4xl:self-start">
+        <ColourField label={t`Primary fill`} value={draft.primary} placeholder="#006e63" disabled={busy} invalid={report.errors.some((e) => e.startsWith("primary"))}
+          helper={t`Buttons and filled areas. Leave blank for Maker Teal.`} onChange={(primary) => setDraft({ ...draft, primary })} />
+        <ColourField label={t`Link colour seed`} value={draft.accent} placeholder={t`Same as primary`} disabled={busy} invalid={report.errors.some((e) => e.startsWith("accent"))}
+          helper={t`Links, outlines and the accent on receipts. Blank follows the primary fill.`} onChange={(accent) => setDraft({ ...draft, accent })} />
+        <fieldset className="grid gap-2" disabled={busy}>
+          <legend className="text-sm font-semibold">{t`Presets`}</legend>
+          <div className="flex flex-wrap gap-2">{colourPresets().map((preset) => <button key={preset.id} type="button" className="desk-button" aria-pressed={draft.primary === preset.primary && draft.accent === preset.accent}
+            onClick={() => setDraft({ ...draft, primary: preset.primary, accent: preset.accent })}>
+            <span aria-hidden="true" className="mr-2 inline-block h-4 w-4 rounded-full border border-outline" style={{ backgroundColor: preset.primary || "rgb(0 110 99)" }} />{preset.name}</button>)}</div>
+          <div><button type="button" className="desk-button-ghost" disabled={isDefault} onClick={() => setDraft({ ...draft, primary: "", accent: "" })}>{t`Reset to Space Works default`}</button></div>
+        </fieldset>
+        <ModeField value={draft.mode} disabled={busy} onChange={(mode) => setDraft({ ...draft, mode })} />
+        <ContrastPanel theme={theme} pairs={report.pairs} errors={report.errors} valid={report.valid} onFix={(key, value) => setDraft({ ...draft, [key === "primary_color" ? "primary" : "accent"]: value })} />
+        <div aria-live="polite">
+          {mutation.error ? <p className="text-sm text-danger">{mutation.error.message}</p> : null}
+          {mutation.isSuccess && !dirty ? <p className="text-sm text-success-ink">{t`Colours saved.`}</p> : null}
+          {canUndo ? <button type="button" className="desk-button-ghost" disabled={mutation.isPending} onClick={undoSave}>{t`Undo last save`}</button> : null}
+        </div>
+      </div>
+      <AudienceTabs theme={theme} />
+      <div className="@4xl:col-span-2"><SettingsEditorActions dirty={dirty} onDiscard={discard} pending={mutation.isPending} disabled={!settings || busy || !dirty || blocked} /></div>
+    </form>
+  </section>;
 }

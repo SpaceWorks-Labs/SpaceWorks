@@ -129,6 +129,8 @@ describe("PaymentsPanel", () => {
       if (_path.includes("saved-views")) return Promise.resolve({ count: 0, next: null, previous: null, results: [] });
       // Decision 241/242: the by-area summary above the ledger is its own request, not a list read.
       if (_path.includes("area-queue/summary")) return Promise.resolve({ groups: [] });
+      // Parity C20: the header reads the payment settings for the test-mode badge.
+      if (_path.includes("payment-settings")) return Promise.resolve({ test_mode: false });
       listRequests += 1;
       if (listRequests === 1) return Promise.resolve({ count: 1, next: null, previous: null, results: [payment] });
       return new Promise<Paginated<PaymentRow>>((resolve) => { finishRefetch = resolve; });

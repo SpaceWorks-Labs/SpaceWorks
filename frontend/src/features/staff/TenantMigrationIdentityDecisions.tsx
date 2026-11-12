@@ -10,6 +10,7 @@ import {
   type ImportJob,
 } from "./tenantMigrationApi";
 import { ErrorText } from "./tenantMigrationUi";
+import { BoxArt } from "../../components/BoxSpinner";
 
 type DraftDecision = Omit<ImportIdentityDecision, "source_user_id">;
 
@@ -113,7 +114,7 @@ export function TenantMigrationIdentityDecisions({ job, active = true }: { job: 
           })}
           onClick={() => submit.mutate()}
         >
-          {submit.isPending ? t`Submitting decisions…` : t`Submit all identity decisions`}
+          {submit.isPending ? <><BoxArt size={16} mono />{t`Submitting decisions…`}</> : t`Submit all identity decisions`}
         </button>
       ) : submit.data ? <p className="mt-3 text-sm font-semibold text-success-ink">{t`Identity decisions accepted. Review the choices above before running the import.`}</p> : (
         <p className="mt-3 text-sm text-warn-ink">{t`Decisions were accepted in an earlier session. The API returns the exact people but not the saved mapping choices; verify the prior review record before running.`}</p>

@@ -4,13 +4,14 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Field } from "../../components/ui";
 import { staffRequest } from "../../lib/api";
 import { Panel } from "./panels/shared";
+import { LogoLoader } from "../../components/LogoLoader";
 
 type Waiver = { has_waiver: boolean; version?: string; body?: string };
 
 export function MembershipWaiverPanel({ makerspaceId }: { makerspaceId: number }) {
   const current = useQuery({ queryKey: ["members", makerspaceId, "waiver"], queryFn: () => staffRequest<Waiver>(`/admin/makerspaces/${makerspaceId}/waiver`) });
   return <Panel title={t`Current waiver`}>
-    {current.isPending ? <p className="text-sm text-muted">{t`Loading current waiver…`}</p> : null}
+    {current.isPending ? <LogoLoader label={t`Loading current waiver…`} size={48} className="min-h-16 py-3" /> : null}
     {current.isError ? <p role="alert" className="text-sm text-danger">{current.error.message}</p> : null}
     {current.data ? <WaiverForm key={current.data.version ?? "none"} makerspaceId={makerspaceId} current={current.data} /> : null}
   </Panel>;

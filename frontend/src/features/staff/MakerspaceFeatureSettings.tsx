@@ -1,104 +1,41 @@
 import { t } from "@lingui/core/macro";
-import { toast } from "../../components/ui/toastStore";
+import { Link, useLocation } from "react-router-dom";
 import { SettingsRow } from "../../components/ui";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-
-import { StatusPill as Badge } from "../../components/ui";
-import { staffRequest } from "../../lib/api";
+import { consoleSessionHref } from "../../lib/api/sessionContext";
 import { FEATURE_DEFINITIONS, featureGroup, isSecurityFeature } from "../../lib/features";
-import { featureHelp } from "../../lib/featureHelp";
+import { RETIRED_FEATURES } from "../../lib/retiredFeatures";
 import { moduleLabel } from "../../lib/moduleLabels";
+import { staffPathState, staffTabPath } from "./staffTabs";
 import type { Makerspace } from "./panels/shared";
 
-type Props = {
-  makerspace: Makerspace;
-  settings?: Makerspace;
-  loading: boolean;
-};
+type Props = { makerspace: Makerspace; settings?: Makerspace; loading: boolean };
 
-// Parentless features are never gated by a module. The inventory family (inventory.*,
-// loans.*) is listed under "Inventory" (#97, C-9); the rest under "General".
-const PARENTLESS = new Set(["inventory", "general"]);
-// Group keys that are not module keys get their own names; module keys are named by moduleLabel.
-const GROUP_LABELS = (): Record<string, string> => ({ inventory: t`Inventory`, general: t`General` });
-
-const MODULE_FEATURES = Object.entries(
-  FEATURE_DEFINITIONS.filter(feature => !isSecurityFeature(feature.key)).reduce<Record<string, typeof FEATURE_DEFINITIONS>>((groups, feature) => {
+/**
+ * One way to switch features: the Areas & add-ons screen. This is only the summary and the way in,
+ * with a deep link to each area's card (`?module=<key>` opens and scrolls to it).
+ */
+export function MakerspaceFeatureSettings({ makerspace, settings }: Props) {
+  const { pathname } = useLocation();
+  const guest = pathname.startsWith("/guest-admin");
+  const base = staffTabPath("modules", guest, staffPathState(pathname, guest).makerspaceSlug || null);
+  const enabled = new Set(settings?.enabled_features ?? makerspace.enabled_features ?? []);
+  const areas = new Map<string, { on: number; total: number }>();
+  for (const feature of FEATURE_DEFINITIONS) {
+    if (isSecurityFeature(feature.key) || RETIRED_FEATURES.has(feature.key)) continue;
     const group = featureGroup(feature);
-    groups[group] = [...(groups[group] ?? []), feature];
-    return groups;
-  }, {}),
-);
-
-export function MakerspaceFeatureSettings({ makerspace, settings, loading }: Props) {
-  const queryClient = useQueryClient();
-  const enabledModules = settings?.enabled_modules ?? makerspace.enabled_modules ?? [];
-  const enabledFeatures = settings?.enabled_features ?? makerspace.enabled_features ?? [];
-  const update = useMutation({
-    mutationFn: (next: string[]) =>
-      staffRequest<Makerspace>(`/admin/makerspaces/${makerspace.id}`, {
-        method: "PATCH",
-        body: JSON.stringify({ enabled_features: next }),
-      }),
-    onSuccess: async (_data, next) => { await (() => {
-      queryClient.invalidateQueries({ queryKey: ["makerspace-settings", makerspace.id] });
-      queryClient.invalidateQueries({ queryKey: ["makerspaces"] });
-      queryClient.invalidateQueries({ queryKey: ["staff", "makerspaces"] });
-    })(); toast(next.length ? t`Features updated.` : t`All features turned off.`, { undo: async () => { await ((next: string[]) =>
-      staffRequest<Makerspace>(`/admin/makerspaces/${makerspace.id}`, {
-        method: "PATCH",
-        body: JSON.stringify({ enabled_features: next }),
-      }))(enabledFeatures); await (() => {
-      queryClient.invalidateQueries({ queryKey: ["makerspace-settings", makerspace.id] });
-      queryClient.invalidateQueries({ queryKey: ["makerspaces"] });
-      queryClient.invalidateQueries({ queryKey: ["staff", "makerspaces"] });
-    })(); } }); },
-  });
-
-  const toggleFeature = (key: string, checked: boolean) => {
-    const next = checked
-      ? [...enabledFeatures, key]
-      : enabledFeatures.filter((feature) => feature !== key);
-    update.mutate(next);
-  };
-
-  return (
-    <SettingsRow label={t`Feature settings`} helper={t`Whole areas are switched on or off under Areas & add-ons. Each feature below has its own switch; turning one off hides it and keeps its data.`}><div className="@container grid min-w-0 gap-4">
-      <div className="grid min-w-0 gap-2">
-
-
-        <div className="flex flex-wrap gap-2">
-          {enabledModules.map((module) => <Badge label="" key={module} tone="neutral">{moduleLabel(module)}</Badge>)}
-        </div>
-        {update.error ? <p className="text-sm text-danger" role="alert">{update.error.message}</p> : null}
-      </div>
-      <div className="mt-4 grid gap-3">
-        {MODULE_FEATURES.map(([module, features]) => {
-          const isGeneral = PARENTLESS.has(module);
-          const moduleEnabled = isGeneral || enabledModules.includes(module);
-          return (
-            <fieldset key={module} className="grid gap-2 rounded border border-line p-3">
-              <legend className="px-1 text-sm font-semibold text-ink">{GROUP_LABELS()[module] ?? moduleLabel(module)}</legend>
-              {!moduleEnabled ? <p className="text-sm text-muted">{t`Turn this area on under Areas & add-ons to use these.`}</p> : null}
-              {features.map((feature) => (
-                <label key={feature.key} className="min-h-11 flex items-start gap-3 text-sm text-ink">
-                  <input
-                    className="mt-1 h-4 w-4"
-                    type="checkbox"
-                    aria-label={feature.label}
-                    aria-describedby={featureHelp(feature.key) ? `feature-help-${feature.key}` : undefined}
-                    checked={enabledFeatures.includes(feature.key)}
-                    disabled={loading || update.isPending || !moduleEnabled}
-                    onChange={(event) => toggleFeature(feature.key, event.target.checked)}
-                  />
-                  <span className="grid gap-0.5"><span>{feature.label}</span>
-                    {featureHelp(feature.key) ? <span id={`feature-help-${feature.key}`} className="text-muted">{featureHelp(feature.key)}</span> : null}</span>
-                </label>
-              ))}
-            </fieldset>
-          );
-        })}
-      </div>
-    </div></SettingsRow>
-  );
+    const entry = areas.get(group) ?? { on: 0, total: 0 };
+    areas.set(group, { on: entry.on + (enabled.has(feature.key) ? 1 : 0), total: entry.total + 1 });
+  }
+  const link = (module: string) => consoleSessionHref(`${base}?module=${module}`);
+  return <SettingsRow label={t`Feature settings`} helper={t`Areas and the features inside them are switched on or off in one place: Areas & add-ons. Switching one off hides it and keeps its data.`}>
+    <div className="grid min-w-0 gap-3">
+      <Link className="desk-button w-fit" to={consoleSessionHref(base)}>{t`Open Areas & add-ons`}</Link>
+      <ul aria-label={t`Features by area`} className="grid gap-1 text-sm">
+        {[...areas].filter(([, count]) => count.on > 0).map(([area, count]) => <li key={area} className="flex min-h-11 flex-wrap items-center justify-between gap-2 border-t border-line first:border-0">
+          <Link className="font-semibold text-ink underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus" to={link(area)}>{area === "inventory" ? t`Inventory` : area === "general" ? t`General` : moduleLabel(area)}</Link>
+          <span className="text-muted">{t`${count.on} of ${count.total} on`}</span>
+        </li>)}
+      </ul>
+    </div>
+  </SettingsRow>;
 }

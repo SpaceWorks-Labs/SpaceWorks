@@ -5,6 +5,7 @@ import { EmptyState, ErrorText, ListRow, RelativeTime, StatusPill } from "../../
 import { ACTIVE_RESTORE_STAGES, listSpaceBackups, listSpaceRestores, requestSpaceBackup, startSpaceRestore } from "./spaceRestoreApi";
 import { SpaceRestoreFlow } from "./SpaceRestoreFlow";
 import { spaceRestoreStageLabel } from "./backupLabels";
+import { BoxArt } from "../../components/BoxSpinner";
 
 const TRIGGER = (): Record<string, string> => ({ nightly: t`Nightly`, on_demand: t`Back up now`, safety: t`Before a restore`,
   extracted: t`From a whole-platform backup` });
@@ -26,7 +27,7 @@ export function SpaceBackupSection({ makerspaceId }: { makerspaceId: number }) {
   return <div className="grid gap-4">
     <div className="flex flex-wrap items-center gap-3">
       <button className="desk-button-primary" type="button" disabled={backupNow.isPending} onClick={() => backupNow.mutate()}>
-        {backupNow.isPending ? t`Starting backup…` : t`Back up now`}</button>
+        {backupNow.isPending ? <><BoxArt size={16} mono />{t`Starting backup…`}</> : t`Back up now`}</button>
       {backupNow.isSuccess ? <span role="status" className="text-sm text-muted">{t`Backup started; it appears below when it completes.`}</span> : null}
     </div>
     {backupNow.error ? <ErrorText message={backupNow.error.message} /> : null}

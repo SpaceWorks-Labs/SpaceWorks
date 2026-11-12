@@ -1,3 +1,4 @@
+import { LogoLoader } from "../../components/LogoLoader";
 import { t } from "@lingui/core/macro";
 import { useEffect, useState, type FormEvent } from "react";
 
@@ -7,6 +8,7 @@ import { OrganizationHoursLedgerTable, minutesToHours } from "./OrganizationHour
 import {
   useOrganizationHoursBank, useOrganizationHoursLedger, useOrganizationHoursWrites, type HoursPeriod,
 } from "./organizationHoursApi";
+import { BoxArt } from "../../components/BoxSpinner";
 
 const MAX_HOURS = 100000;
 const toMinutes = (hours: string) => Math.round(Number(hours) * 60);
@@ -30,7 +32,7 @@ export function OrganizationHoursBankEditor({ makerspaceId, organizationId }: { 
     if (bank.data) { setHours(String(bank.data.allowance_minutes / 60)); setPeriod(bank.data.period); }
   }, [bank.data]);
   useEffect(() => setPage(1), [organizationId, makerspaceId]);
-  if (bank.isPending) return <p role="status" className="text-sm text-muted">{t`Loading hours bank…`}</p>;
+  if (bank.isPending) return <LogoLoader label={t`Loading hours bank…`} size={48} className="min-h-16 py-3" />;
   if (bank.isError) return <p role="alert" className="text-sm text-danger">{t`The hours bank is unavailable for this organization.`}</p>;
   const data = bank.data;
   const allowanceReady = validHours(hours) && Number(hours) >= 0 && Number(hours) <= MAX_HOURS;
@@ -68,7 +70,7 @@ export function OrganizationHoursBankEditor({ makerspaceId, organizationId }: { 
         </select></Field>
       <div className="flex items-end">
         <button type="submit" className="desk-button-primary w-full sm:w-fit" disabled={!allowanceReady || saveAllowance.isPending}>
-          {saveAllowance.isPending ? t`Saving…` : t`Save allowance`}</button></div>
+          {saveAllowance.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Save allowance`}</button></div>
       {saveAllowance.error ? <p role="alert" className="text-sm text-danger sm:col-span-3">{saveAllowance.error.message}</p> : null}
     </form>
     {data.configured ? <form className="grid gap-3 sm:grid-cols-3" onSubmit={adjustSubmit}>
@@ -79,7 +81,7 @@ export function OrganizationHoursBankEditor({ makerspaceId, organizationId }: { 
         <input className="desk-input" maxLength={500} value={reason} onChange={event => setReason(event.target.value)} /></Field>
       <div className="flex items-end">
         <button type="submit" className="desk-button w-full sm:w-fit" disabled={!adjustReady || adjust.isPending}>
-          {adjust.isPending ? t`Saving…` : t`Add to ledger`}</button></div>
+          {adjust.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Add to ledger`}</button></div>
       {adjust.error ? <p role="alert" className="text-sm text-danger sm:col-span-3">{adjust.error.message}</p> : null}
     </form> : null}
     <h5 className="text-sm font-semibold">{t`Ledger`}</h5>

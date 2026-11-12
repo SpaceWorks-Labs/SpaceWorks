@@ -1,68 +1,36 @@
 import { t } from "@lingui/core/macro";
-import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { SettingsLayout, type SettingsLayoutSection } from "../../components/layouts";
-import { ErrorText } from "../../components/ui";
-import { invalidateToastUndo, toast, toastSession } from "../../components/ui/toastStore";
-import { StructuredApiError, staffRequest } from "../../lib/api";
-import { useStaffGet } from "./panels/shared";
+import { staffRequest } from "../../lib/api";
+import { useStaffGet, type Makerspace } from "./panels/shared";
 import { adminQueryState } from "./adminPresentation";
-import { DeploymentModules, ModuleSettingsRow, type ModulesResponse } from "./ModuleSettingsRows";
-
-const errorText = (error: unknown) => error instanceof StructuredApiError
-  ? error.detail ?? error.message : t`Couldn't change this area. Try again.`;
+import { DeploymentModules, type ModulesResponse } from "./ModuleSettingsRows";
+import { ModulesBody } from "./modules/ModulesBody";
+import { buildAreas } from "./modules/moduleModel";
+import { useModuleSwitches } from "./modules/useModuleSwitches";
+import { listSpaceRoles } from "./panels/staffRoles/staffRolesApi";
 
 export function ModulesPanel({ makerspaceId }: { makerspaceId: number }) {
-  const client = useQueryClient();
-  const [pendingModules, setPendingModules] = useState(new Set<string>());
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const queryKey = ["modules", makerspaceId];
-  const modules = useStaffGet<ModulesResponse>(queryKey, `/admin/makerspace/${makerspaceId}/modules`);
-  const refresh = async () => {
-    await Promise.all([
-      client.invalidateQueries({ queryKey }),
-      client.invalidateQueries({ queryKey: ["staff", "makerspaces"] }),
-      client.invalidateQueries({ queryKey: ["report-catalog"] }),
-      client.invalidateQueries({ queryKey: ["operations-report"] }),
-      client.invalidateQueries({ queryKey: ["platform-overview"] }),
-      client.invalidateQueries({ queryKey: ["platform-dashboard"] }),
-    ]);
-  };
-  const changeModule = ({ key, action }: { key: string; action: "install" | "uninstall" }) =>
-    staffRequest(`/admin/makerspace/${makerspaceId}/modules/${action}`, { method: "POST", body: JSON.stringify({ key }) });
-  const change = useMutation({
-    mutationFn: changeModule,
-    onMutate: ({ key }) => {
-      setPendingModules(current => new Set(current).add(key));
-      setErrors(current => ({ ...current, [key]: "" }));
-      invalidateToastUndo(`module:${makerspaceId}:${key}`);
-      return toastSession();
-    },
-    onError: (error, { key }) => setErrors(current => ({ ...current, [key]: errorText(error) })),
-    onSettled: (_data, _error, { key }) => setPendingModules(current => { const next = new Set(current); next.delete(key); return next; }),
-    onSuccess: async (_data, { key, action }, session) => {
-      await refresh();
-      if (session !== toastSession()) return;
-      const label = modules.data?.groups.flatMap(group => group.modules).find(module => module.key === key)?.label ?? key;
-      toast(action === "install" ? t`${label} switched on.` : t`${label} switched off.`, {
-        undoKey: `module:${makerspaceId}:${key}`,
-        undo: async () => { await changeModule({ key, action: action === "install" ? "uninstall" : "install" }); await refresh(); },
-      });
-    },
-  });
-  const groups = modules.data?.groups ?? [];
+  const modules = useStaffGet<ModulesResponse>(["modules", makerspaceId], `/admin/makerspace/${makerspaceId}/modules`);
+  const settings = useQuery({ queryKey: ["makerspace-settings", makerspaceId], queryFn: () => staffRequest<Makerspace>(`/admin/makerspaces/${makerspaceId}`) });
+  const roles = useQuery({ queryKey: ["staff", "roles", makerspaceId], queryFn: () => listSpaceRoles(makerspaceId), retry: false });
+  const switches = useModuleSwitches(makerspaceId);
+  const groups = modules.data?.groups;
+  const locks = modules.data?.feature_locks;
+  const requirements = modules.data?.feature_requirements;
+  const areas = useMemo(() => buildAreas(groups ?? [], settings.data?.enabled_features ?? [], locks ?? {}, requirements ?? {}),
+    [groups, settings.data?.enabled_features, locks, requirements]);
   const sections: SettingsLayoutSection[] = [
-    ...groups.map(group => ({ id: `modules-${group.key}`, title: group.always_on ? t`${group.label} · Always on` : t`${group.label} · ${group.installed_count} of ${group.module_count}`,
-      description: group.description,
-      rows: <>{group.modules.map(module => <div key={module.key} className="border-t border-line first:border-0">
-        <ModuleSettingsRow module={module} pending={pendingModules.has(module.key)}
-          onChange={action => change.mutate({ key: module.key, action })} />
-        {errors[module.key] ? <ErrorText message={errors[module.key]} /> : null}
-      </div>)}</> })),
+    { id: "modules", rows: <ModulesBody areas={areas} roles={roles.data ?? []} switches={switches} /> },
+    { id: "data-kept", title: t`When you switch something off`, rows: <div className="grid gap-2 text-sm text-muted">
+      <p>{t`Nothing is deleted. Switch it back on and everything returns. Deleting an area's data is a separate, explicit step that only the platform administrator can take.`}</p>
+      {modules.data?.capability_purge_url ? <a className="w-fit font-semibold text-ink underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus" href={modules.data.capability_purge_url}>{t`Open this space's capability purge`}</a> : null}
+    </div> },
     ...(modules.data?.deployment ? [{ id: "deployment", title: t`Deployment`, rows: <DeploymentModules deployment={modules.data.deployment} /> }] : []),
   ];
-  return <SettingsLayout header={{ title: t`Areas & add-ons`, subtitle: t`Turn whole areas (Inventory, Machines, Events, Bookings, Shop) and add-ons (SMS, chat apps, analytics) on or off for this space. Turning one off hides it and keeps its data; turning it back on restores everything. Deleting data is a separate step only the platform administrator can take.` }}
-    state={adminQueryState(modules, "modules")} isEmpty={groups.length === 0}
+  return <SettingsLayout header={{ title: t`Areas & add-ons`, subtitle: t`Turn whole areas (Inventory, Machines, Events, Bookings, Shop) and add-ons (SMS, chat apps, analytics) on or off for this space, with the features inside each. Group them by area or by the role that uses them.` }}
+    state={adminQueryState(modules, "modules")} isEmpty={!groups || groups.length === 0}
     empty={{ message: t`Nothing to switch on yet. Ask whoever runs your server to check its configuration.` }}
     sections={sections} />;
 }

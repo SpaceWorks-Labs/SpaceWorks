@@ -6,6 +6,8 @@ import { staffRequest } from "../../lib/api";
 import { bookingKeys, type BookableSpace, type Booking } from "./bookingsApi";
 import { StaffBookingAvailability } from "./StaffBookingAvailability";
 import { OrganizationHoursBankEditor } from "./OrganizationHoursBankEditor";
+import { LogoLoader } from "../../components/LogoLoader";
+import { BoxArt } from "../../components/BoxSpinner";
 
 type OrganizationChoice = { organization_id: number; name: string; contacts: { member_id: number; name: string }[] };
 
@@ -53,7 +55,7 @@ export function StaffOrganizationBookingForm({ makerspaceId, space }: { makerspa
   return <form className="mb-4 grid gap-3 rounded-lg border border-line p-3" onSubmit={submit}>
     <h4 className="title-section">{t`Book for an organization`}</h4>
     <p className="text-xs text-muted">{t`For a partner organization's event. The room charge, if any, is recorded against the contact you choose.`}</p>
-    {choices.isPending ? <p role="status" className="text-sm text-muted">{t`Loading organizations…`}</p> : null}
+    {choices.isPending ? <LogoLoader label={t`Loading organizations…`} size={48} className="min-h-16 py-3" /> : null}
     {choices.isError ? <p role="alert" className="text-sm text-danger">{t`Organizations are unavailable. Check that organization bookings are switched on.`}</p> : null}
     {choices.isSuccess && !choices.data.length ? <p className="text-sm">{t`No organization is linked to this space yet.`}</p> : null}
     {choices.data?.length ? <fieldset className="grid gap-3 sm:grid-cols-2" disabled={create.isPending}>
@@ -75,6 +77,6 @@ export function StaffOrganizationBookingForm({ makerspaceId, space }: { makerspa
     <StaffBookingAvailability spaceId={space.id} start={start} end={end} />
     {create.error ? <p role="alert" className="text-sm text-danger">{create.error.message}</p> : null}
     {create.isSuccess ? <p role="status" className="text-sm text-success-ink">{create.data.status === "pending" ? t`Booking requested; it awaits approval.` : t`Booking created.`}</p> : null}
-    <button type="submit" className="desk-button-primary w-full sm:w-fit" disabled={!ready || create.isPending}>{create.isPending ? t`Booking…` : t`Create organization booking`}</button>
+    <button type="submit" className="desk-button-primary w-full sm:w-fit" disabled={!ready || create.isPending}>{create.isPending ? <><BoxArt size={16} mono />{t`Booking…`}</> : t`Create organization booking`}</button>
   </form>;
 }

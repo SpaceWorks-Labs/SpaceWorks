@@ -6,6 +6,7 @@ import { staffRequest } from "../../lib/api";
 import { formatDateTime } from "../../lib/format";
 import { opsStatusLabel } from "./opsPresentation";
 import { StaffListContext } from "./StaffListContext";
+import { LogoLoader } from "../../components/LogoLoader";
 
 // Decision 216 item 13: independent facts shown side by side, each with its own source.
 type Subject = { tenant: number; kind: "event" | "booking"; id: number };
@@ -34,7 +35,7 @@ function RelatedFacts({ tenant, kind, id, actorId }: Subject & { actorId: number
     <button className="desk-button w-fit" type="button" aria-expanded={open} aria-controls={panelId}
       onClick={() => setOpen(value => !value)}>{open ? t`Hide related activity` : t`View related activity`}</button>
     <div id={panelId} className="grid gap-2" hidden={!open}>{open ? <>
-      {facts.isPending ? <p role="status">{t`Loading related activity…`}</p> : null}
+      {facts.isPending ? <LogoLoader label={t`Loading related activity…`} size={48} className="min-h-16 py-3" /> : null}
       {facts.isError ? <p role="alert">{t`Related activity is unavailable for your access.`}</p> : null}
       {facts.data ? <div className="grid gap-3 sm:grid-cols-2">
         {facts.data.registrations ? <Card title={t`Registrations`} source={facts.data.registrations.source}>

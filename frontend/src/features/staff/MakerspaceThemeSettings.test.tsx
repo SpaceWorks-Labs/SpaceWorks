@@ -19,16 +19,16 @@ function show() {
 it("previews safe derived colours and rejects only malformed input", () => {
   show();
   fireEvent.change(screen.getByLabelText("Primary fill"), { target: { value: "#777" } });
-  expect(screen.getByTestId("theme-preview-light")).toHaveTextContent("AA 4.5:1");
-  expect(screen.getByTestId("theme-preview-dark")).toHaveTextContent("AA 3:1");
-  expect(screen.getByTestId("theme-preview-light").style.getPropertyValue("--color-on-brand")).toBe("0 0 0");
+  expect(screen.getByText(/Text must reach 4.5:1 and component edges 3:1/)).toBeVisible();
+  expect(screen.getByTestId("preview-member-light").style.getPropertyValue("--color-on-brand")).toBe("0 0 0");
   expect(screen.getByRole("button", { name: "Save changes" })).toBeEnabled();
-  expect(screen.getAllByText("Brand soft with muted text")).toHaveLength(2);
-  expect(screen.getAllByRole("link", { name: "Example link" })).toHaveLength(2);
+  fireEvent.click(screen.getByRole("tab", { name: "All" }));
+  for (const surface of ["member", "public"]) for (const mode of ["light", "dark"]) expect(screen.getByTestId(`preview-${surface}-${mode}`).style.getPropertyValue("--color-brand")).toBe("119 119 119");
   fireEvent.change(screen.getByLabelText("Primary fill"), { target: { value: "red" } });
   expect(screen.getByText(/primary_color must be a #RGB/)).toBeVisible();
   expect(screen.getByRole("button", { name: "Save changes" })).toBeDisabled();
-  expect(screen.getByTestId("theme-preview-light")).toHaveTextContent("Product palette fallback shown");
+  expect(screen.getByText(/Enter a #RGB or #RRGGBB colour/)).toBeVisible();
+  expect(screen.getByTestId("preview-member-light").style.getPropertyValue("--color-brand")).toBe("0 110 99");
 });
 
 it("prevents a write before settings are available", () => {
@@ -70,8 +70,8 @@ it("saves valid colours, preserves unrelated theme keys and refreshes public/mem
   vi.mocked(staffRequest).mockResolvedValue(space);
   const invalidate = show();
   fireEvent.change(screen.getByLabelText("Primary fill"), { target: { value: "#004400" } });
-  expect(screen.getByTestId("theme-preview-light").style.getPropertyValue("--color-on-brand")).toBe("255 244 232");
-  expect(screen.getByTestId("theme-preview-dark").style.getPropertyValue("--color-brand-ink")).not.toBe(screen.getByTestId("theme-preview-light").style.getPropertyValue("--color-brand-ink"));
+  expect(screen.getByTestId("preview-member-light").style.getPropertyValue("--color-on-brand")).toBe("255 244 232");
+  expect(screen.getByTestId("preview-member-dark").style.getPropertyValue("--color-brand-ink")).not.toBe(screen.getByTestId("preview-member-light").style.getPropertyValue("--color-brand-ink"));
   fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
   await waitFor(() => expect(staffRequest).toHaveBeenCalledWith("/admin/makerspaces/7", {
     method: "PATCH", body: JSON.stringify({ theme_config: { mode: "system", primary_color: "#004400", accent_color: "", logo_url: "https://example.com/logo.png" } }),

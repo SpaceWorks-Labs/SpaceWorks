@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { AuthLayout } from "../../components/layouts";
 import { AuthShowcase } from "../auth/AuthShowcase";
 import { PasswordInput } from "../auth/PasswordInput";
+import { BoxArt } from "../../components/BoxSpinner";
 
 /**
  * The platform superadmin's own sign-in (`?context=platform`). It is the only separate
@@ -30,7 +31,7 @@ export function PlatformSignInPanel({ error, isPending, onSubmit }: {
       <Link className="justify-self-end text-sm font-semibold underline" to="/admin/reset-password?context=platform&step=request">{t`Forgot password?`}</Link>
       {error ? <p className="text-sm text-danger" role="alert">{error}</p> : null}
       <button className="desk-button-primary w-full" type="submit" disabled={isPending || !username.trim() || !password}>
-        {isPending ? t`Signing in…` : t`Sign in`}
+        {isPending ? <><BoxArt size={16} mono />{t`Signing in…`}</> : t`Sign in`}
       </button>
     </form>} />;
 }

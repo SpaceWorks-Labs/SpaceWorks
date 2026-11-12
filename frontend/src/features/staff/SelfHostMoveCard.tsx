@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ErrorText, Field, KeyValueCard, RelativeTime, StatusPill } from "../../components/ui";
 import type { Tone } from "../../components/ui/types";
 import { getSelfHostMove, requestSelfHostMove, type SelfHostMoveRequest } from "./selfHostMoveApi";
+import { BoxArt } from "../../components/BoxSpinner";
 
 const OPEN = new Set(["requested", "approved", "exporting"]);
 const TONES: Record<SelfHostMoveRequest["status"], Tone> = {
@@ -37,7 +38,7 @@ export function SelfHostMoveCard({ makerspaceId }: { makerspaceId: number }) {
         <textarea className="desk-input min-h-20" maxLength={2000} value={note} onChange={(event) => setNote(event.target.value)} />
       </Field>
       <div><button type="submit" className="desk-button" disabled={send.isPending}>
-        {send.isPending ? t`Sending…` : t`Request a move to self-host`}</button></div>
+        {send.isPending ? <><BoxArt size={16} mono />{t`Sending…`}</> : t`Request a move to self-host`}</button></div>
       {send.error ? <ErrorText message={send.error.message} /> : null}
     </form>}
   </div>;

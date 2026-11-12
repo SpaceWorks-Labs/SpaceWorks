@@ -35,6 +35,7 @@ import { BulkDecideBar } from "./membershipLifecycle/BulkDecideBar";
 import { FinancialYearSetting } from "./membershipLifecycle/FinancialYearSetting";
 import { assignableRoles, type MembershipRoles } from "./panels/roleSets";
 import type { StaffRole } from "./panels/rolesApi";
+import { LogoLoader } from "../../components/LogoLoader";
 
 type RosterMember = AdminMembership & MembershipRoles;
 type RosterResponse = Omit<MembershipListResponse, "results"> & { results: RosterMember[] };
@@ -49,7 +50,7 @@ export const membershipErrorText = (error: unknown) =>
 // Waiver management and witnessed acceptance are core liability controls. Invitation stays,
 // because a STAFF invitation keeps working with
 // the module off (`invite_membership` discriminates on the role's granted actions).
-export function MembersPanel({ makerspaceId, membershipEnabled, presenceEnabled = false, canManageMakerspace = true, canViewFinance = false, canRecordPayment = false, actorActions, isSuperadmin, onAuthRefresh, enabledFeatures = [], makerspaceSlug = "" }: { makerspaceId: number; membershipEnabled: boolean; presenceEnabled?: boolean; canManageMakerspace?: boolean; canViewFinance?: boolean; canRecordPayment?: boolean; actorActions: string[]; isSuperadmin: boolean; onAuthRefresh: () => void; enabledFeatures?: string[]; makerspaceSlug?: string }) {
+export function MembersPanel({ makerspaceId, membershipEnabled, presenceEnabled = false, machinesEnabled = false, canManageMakerspace = true, canViewFinance = false, canRecordPayment = false, actorActions, isSuperadmin, onAuthRefresh, enabledFeatures = [], makerspaceSlug = "" }: { makerspaceId: number; membershipEnabled: boolean; presenceEnabled?: boolean; machinesEnabled?: boolean; canManageMakerspace?: boolean; canViewFinance?: boolean; canRecordPayment?: boolean; actorActions: string[]; isSuperadmin: boolean; onAuthRefresh: () => void; enabledFeatures?: string[]; makerspaceSlug?: string }) {
   const client = useQueryClient();
   const [params, setParams] = useSearchParams();
   const requestedSection = params.get("section") ?? "members";
@@ -177,7 +178,7 @@ export function MembersPanel({ makerspaceId, membershipEnabled, presenceEnabled 
         approvePending={approve.isPending} declinePending={revokeRequest.isPending} selectedRole={selectedRole}
         askChanges={membershipEnabled && enabledFeatures.includes("membership.ask_changes")} onChanged={refresh}
         onApprove={() => approve.mutate(row.id)} onDecline={() => { revokeRequest.reset(); setDecision({ id: row.id, kind: "request", title: row.state === "invited" ? t`Cancel invitation` : t`Decline membership request` }); }} />)}
-      {requests.isLoading ? <p className="text-sm text-muted">{t`Loading requests…`}</p> : null}
+      {requests.isLoading ? <LogoLoader label={t`Loading requests…`} size={48} className="min-h-16 py-3" /> : null}
       {requests.isError ? <p role="alert" className="text-sm text-danger">{membershipErrorText(requests.error)}</p> : null}
       {requests.isSuccess && !requestRows.length ? <p className="text-sm text-muted">{t`No membership requests on this page.`}</p> : null}
       <MembershipPagination label="requests" page={requestPage} next={requests.data?.next} previous={requests.data?.previous} fetching={requests.isFetching} onPage={setRequestPage} /></Panel> : null}
@@ -186,10 +187,10 @@ export function MembersPanel({ makerspaceId, membershipEnabled, presenceEnabled 
     {presenceEnabled && tab === "presence" ? presencePolicy.isSuccess
       ? <PresenceRoster makerspaceId={makerspaceId} presets={configuredPresets?.length ? configuredPresets : DEFAULT_PRESETS} />
       : presencePolicy.isError ? <p role="alert">{t`Couldn't load check-in durations. `}<button type="button" onClick={() => { void presencePolicy.refetch(); }}>{t`Try again`}</button></p>
-      : <p role="status">{t`Loading check-in durations…`}</p> : null}
+      : <LogoLoader label={t`Loading check-in durations…`} size={48} className="min-h-16 py-3" /> : null}
     {canManageMakerspace && tab === "waivers" ? <MembershipWaiverPanel makerspaceId={makerspaceId} /> : null}
     {communityMemberTabs(enabledFeatures, membershipEnabled).some((item) => item.key === tab) ? <CommunityMemberTab tab={tab} makerspaceId={makerspaceId} features={enabledFeatures} canManageMakerspace={canManageMakerspace} /> : null}
-    {lifecycle.some((item) => item.key === tab) ? <MembershipLifecycleTab tab={tab} makerspaceId={makerspaceId} slug={makerspaceSlug} features={enabledFeatures} canManageMakerspace={canManageMakerspace} standing={params.get("standing") ?? ""} canManageUnits={isSuperadmin || actorActions.includes("manage_member_units")} canManageCards={isSuperadmin || actorActions.includes("manage_member_cards")} /> : null}
+    {lifecycle.some((item) => item.key === tab) ? <MembershipLifecycleTab tab={tab} makerspaceId={makerspaceId} slug={makerspaceSlug} features={enabledFeatures} canManageMakerspace={canManageMakerspace} standing={params.get("standing") ?? ""} canManageUnits={isSuperadmin || actorActions.includes("manage_member_units")} canManageCards={isSuperadmin || actorActions.includes("manage_member_cards")} canGrantMachineAccess={machinesEnabled && (isSuperadmin || actorActions.includes("manage_machines"))} /> : null}
     {error ? <p className="text-sm text-danger" role="alert">{membershipErrorText(error)}</p> : null}
   </> }} detail={<>
     <MemberActivityDrawer makerspaceId={makerspaceId} />

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Field } from "../../components/ui";
 import { staffRequest } from "../../lib/api";
+import { BoxArt } from "../../components/BoxSpinner";
 
 type Sender = { sender_name: string; reply_to: string; updated_at: string | null };
 
@@ -25,6 +26,6 @@ export function OrganizationEmailSender({ organizationId }: { organizationId: nu
     </div>
     {save.error ? <p role="alert" className="text-sm text-danger">{save.error instanceof Error ? save.error.message : t`Couldn't save the sender.`}</p> : null}
     {save.isSuccess ? <p role="status" className="text-sm">{t`Sender saved.`}</p> : null}
-    <button type="submit" className="desk-button-primary justify-self-start" disabled={save.isPending}>{save.isPending ? t`Saving…` : t`Save sender`}</button>
+    <button type="submit" className="desk-button-primary justify-self-start" disabled={save.isPending}>{save.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Save sender`}</button>
   </form>;
 }

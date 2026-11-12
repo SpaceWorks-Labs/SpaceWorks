@@ -2,7 +2,8 @@ import { t } from "@lingui/core/macro";
 import { useContext, useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
+import { useTransitionNavigate } from "../../lib/motion";
 import { Callout, DataTable, type Action } from "../../components/ui";
 import { ListLayout } from "../../components/layouts";
 import { capabilityOn } from "../../lib/features";
@@ -46,7 +47,7 @@ export function PaymentsPanel({ makerspaceId, makerspaceName, actorActions = [],
   area?: AreaKey; embedded?: boolean;
 }) {
   const location = useLocation();
-  const navigate = useNavigate();
+  const navigate = useTransitionNavigate();
   const { makerspace } = useContext(StaffListContext);
   const [documentsOpen, setDocumentsOpen] = useState(false);
   const finance = isSuperadmin || actorActions.includes("view_finance");

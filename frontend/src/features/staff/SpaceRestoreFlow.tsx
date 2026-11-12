@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { FlowLayout } from "../../components/layouts";
 import { Callout, ErrorText, StatusPill } from "../../components/ui";
 import { abortSpaceRestore, confirmSpaceRestore, getSpaceRestore, type SpaceRestore } from "./spaceRestoreApi";
+import { LogoLoader } from "../../components/LogoLoader";
 
 const STEP: Record<SpaceRestore["stage"], string> = {
   requested: "preview", staging: "preview", preview_ready: "confirm", applying: "progress",
@@ -45,7 +46,7 @@ export function SpaceRestoreFlow({ restoreId, onClose }: { restoreId: string; on
 
 function RestoreWork({ op, slug, onSlug }: { op: SpaceRestore; slug: string; onSlug: (value: string) => void }) {
   const preview = op.preview;
-  if (op.stage === "requested" || op.stage === "staging") return <p role="status" className="text-sm text-muted">{t`Preparing the preview…`}</p>;
+  if (op.stage === "requested" || op.stage === "staging") return <LogoLoader label={t`Preparing the preview…`} size={48} className="min-h-16 py-3" />;
   if (op.stage === "applying") return <div role="status" className="grid gap-3">
     <StatusPill label={t`Restoring · ${op.progress.percent ?? 0}%`} tone="warn" />
     <progress className="w-full" max={100} value={op.progress.percent ?? 0} aria-label={t`Restore progress`} />

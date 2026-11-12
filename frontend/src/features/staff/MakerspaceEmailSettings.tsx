@@ -10,6 +10,7 @@ import { type Makerspace, useStaffGet } from "./StaffPanels";
 import { EmailTransportFields } from "../deployment/EmailTransportFields";
 import { useEmailSettings } from "../deployment/useEmailSettings";
 import { SpaceEmailSender } from "./SpaceEmailSender";
+import { LogoLoader } from "../../components/LogoLoader";
 
 type NotificationRecipient = {
   id: number;
@@ -94,7 +95,7 @@ function MakerspaceEmailEditor({ makerspace }: { makerspace: Makerspace }) {
           </div>
           <SettingsEditorActions dirty={recipientsDirty} onDiscard={() => { setRecipientChecks(Object.fromEntries((recipients.data ?? []).map(recipient => [recipient.id, recipient.receives_notifications]))); setRecipientsDirty(false); }} pending={saveRecipients.isPending} disabled={!recipients.isSuccess || !recipientsDirty || saveRecipients.isPending || !recipients.data?.length} onSave={() => saveRecipients.mutate()} />
         </div>
-        {recipients.isLoading ? <p className="mt-3 text-sm text-muted">{t`Loading recipients…`}</p> : null}
+        {recipients.isLoading ? <LogoLoader label={t`Loading recipients…`} size={48} className="min-h-16 py-3" /> : null}
         <div className="mt-4 grid gap-2">
           {recipients.data?.map((recipient) => (
             <label

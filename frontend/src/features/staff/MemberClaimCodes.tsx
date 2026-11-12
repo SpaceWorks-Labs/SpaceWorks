@@ -5,6 +5,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { staffRequest } from "../../lib/api";
 import { Card, EmptyState, ErrorBlock, ListRow, RelativeTime, StatusPill } from "../../components/ui";
+import { LogoLoader } from "../../components/LogoLoader";
+import { BoxArt } from "../../components/BoxSpinner";
 
 export type ClaimableMember = {
   /** Null for a live guest-pass holder (0.12.0), who borrows without a membership. */
@@ -108,7 +110,7 @@ export function MemberClaimCodes({
           disabled={!membershipId || issue.isPending}
           onClick={() => issue.mutate()}
         >
-          {issue.isPending ? t`Issuing…` : t`Issue claim code`}
+          {issue.isPending ? <><BoxArt size={16} mono />{t`Issuing…`}</> : t`Issue claim code`}
         </button>
       </div>
       {!walkIns.length ? <EmptyState message={t`No eligible walk-ins in this member list.`} /> : null}
@@ -134,7 +136,7 @@ export function MemberClaimCodes({
             meta={<span className="flex flex-wrap items-center gap-2"><StatusPill label={t`Active`} tone="success" /><span>{t`Expires `}<RelativeTime date={claim.expires_at} /></span></span>}
             right={<button className="desk-button" type="button" disabled={revoke.isPending} onClick={() => revoke.mutate(claim.id)}>{t`Revoke`}</button>} />
         ))}
-        {active.isLoading ? <p className="text-sm text-muted">{t`Loading active claim codes…`}</p> : null}
+        {active.isLoading ? <LogoLoader label={t`Loading active claim codes…`} size={48} className="min-h-16 py-3" /> : null}
         {active.isSuccess && !active.data?.length ? <EmptyState message={t`No active claim codes.`} /> : null}
       </div>
       {active.error ? <ErrorBlock error={active.error} resource={t`claim codes`} onRetry={() => void active.refetch()} /> : null}

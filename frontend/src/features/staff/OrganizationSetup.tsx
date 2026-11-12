@@ -5,6 +5,7 @@ import { ConfirmDialog, ListRow, OverflowMenu, StatusPill, PagePager } from "../
 import { FlowLayout } from "../../components/layouts/FlowLayout";
 import type { Makerspace } from "./panels/shared";
 import { useChangeOrganizationLink, useCreateOrganization, useOrganizationLinks, type OrganizationLink } from "./organizationsApi";
+import { LogoLoader } from "../../components/LogoLoader";
 
 export function OrganizationCreate({ onCreated, onClose = () => {} }: { onCreated: (id: number) => void; onClose?: () => void }) {
   const [name, setName] = useState("");
@@ -33,7 +34,7 @@ export function OrganizationLinks({ id, makerspaces }: { id: number; makerspaces
     <label>{t`Makerspace`}<select className="desk-input block w-full" value={space} onChange={event => setSpace(event.target.value)}><option value="">{t`Choose space`}</option>{makerspaces.map(row => <option key={row.id} value={row.id}>{row.name}</option>)}</select></label>
     <label>{t`Relationship`}<select className="desk-input block max-w-full" value={relationship} onChange={event => setRelationship(event.target.value as OrganizationLink["relationship"])}>{["affiliate", "manager", "owner"].map(value => <option key={value}>{value}</option>)}</select></label>
     <button className="desk-button" disabled={!space || change.isPending} onClick={() => setPending({ makerspace_id: Number(space), relationship })}>{t`Link or update relationship`}</button>
-    {links.isLoading ? <p role="status">{t`Loading links…`}</p> : null}
+    {links.isLoading ? <LogoLoader label={t`Loading links…`} size={48} className="min-h-16 py-3" /> : null}
     {links.error || change.error ? <p role="alert" className="text-danger">{(links.error ?? change.error)?.message}</p> : null}
     <div className="grid gap-3">{links.data?.results.map(row => <ListRow key={row.id} title={row.makerspace_name} identity={{ kind: "icon", icon: "Settings", tone: "accent" }} right={<div className="flex flex-wrap items-center gap-3"><StatusPill label={organizationRelationshipLabel(row.relationship)} /><OverflowMenu actions={[{ label: t`Unlink`, tone: "danger", disabled: change.isPending, disabledReason: t`Wait while the relationship is updated.`, onClick: () => setPending({ makerspace_id: row.makerspace_id }) }]} /></div>} />)}</div>
     <PagePager page={page} setPage={setPage} next={links.data?.next} />

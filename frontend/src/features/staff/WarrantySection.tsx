@@ -1,5 +1,5 @@
 import { t } from "@lingui/core/macro";
-import { ConfirmDialog, ErrorBlock, SettingsActions, SettingsRow, Skeleton } from "../../components/ui";
+import { ConfirmDialog, ErrorBlock, SettingsActions, SettingsRow } from "../../components/ui";
 import { useEffect, useId, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -14,6 +14,7 @@ import {
   type WarrantyHostKind,
   type WarrantyPayload,
 } from "./warrantyApi";
+import { LogoLoader } from "../../components/LogoLoader";
 
 type WarrantySectionProps = {
   hostKind: WarrantyHostKind;
@@ -107,7 +108,7 @@ export function WarrantySection({ hostKind, hostId, disabled = false }: Warranty
         <WarrantyStatusBadge status={current?.status ?? "unknown"} />
       </div>
 
-      {warranty.isLoading ? <Skeleton className="mt-4 h-40" /> : null}
+      {warranty.isLoading ? <LogoLoader size={48} className="min-h-40 py-3" /> : null}
       {warranty.error ? <ErrorBlock resource={t`warranty details`} error={warranty.error} onRetry={() => { void warranty.refetch(); }} /> : null}
 
       <div className="mt-3 divide-y divide-line">

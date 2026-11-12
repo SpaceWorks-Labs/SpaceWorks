@@ -7,8 +7,10 @@ import { DataState } from "./panels/OperationsReportState";
 import { PLATFORM_CHART_SPECS, usePlatformAnalytics, type AnalyticsMakerspace } from "./platformAnalyticsApi";
 import { PlatformAnalyticsPicker } from "./PlatformAnalyticsPicker";
 import { PlatformSpaceComparison } from "./PlatformSpaceComparison";
+import { PlatformReportGroups } from "./PlatformReportGroups";
 import type { PlatformDashboard } from "./platformMonitoringApi";
 import type { ChartRecord } from "./panels/charts/chartSpec";
+import { LogoLoader } from "../../components/LogoLoader";
 
 /** Names each row's makerspace and keeps only the reported dimensions, never raw ids. */
 export function platformChartRows(rows: ChartRecord[], spaces: AnalyticsMakerspace[] = []): ChartRecord[] {
@@ -27,6 +29,7 @@ export function PlatformAnalyticsPanels({ spaces }: { spaces?: PlatformDashboard
     <PlatformReport reportKey="platform-services" title={t`Platform services`} period={period} />
     <PlatformReport reportKey="platform-usage" title={t`Platform usage`} period={period} />
     <PlatformSpaceComparison period={period} spaces={spaces} />
+    <PlatformReportGroups />
     <PlatformAnalyticsPicker period={period} />
   </div>;
 }
@@ -42,7 +45,7 @@ function PlatformReport({ reportKey, title, period }: {
     <p className="mb-3 text-sm text-muted">{reportKey === "platform-services"
       ? t`Platform service usage across every makerspace. Connect has no provider-attempt failure history.`
       : t`Business activity, module adoption, growth and app adoption across every makerspace. Money and consumption stay separated by currency and unit.`}</p>
-    {query.isLoading ? <p role="status">{t`Loading ${title.toLowerCase()}…`}</p> : <DataState loading={false} error={query.error} empty={!rows.length} onRetry={() => void query.refetch()}>
+    {query.isLoading ? <LogoLoader label={t`Loading ${title.toLowerCase()}…`} size={48} className="min-h-16 py-3" /> : <DataState loading={false} error={query.error} empty={!rows.length} onRetry={() => void query.refetch()}>
       <AnalyticsData title={title} rows={rows} spec={spec}
         hint={reportKey === "platform-services" ? "stacked_bar" : "multi_line"} meta={query.data?.meta} />
     </DataState>}

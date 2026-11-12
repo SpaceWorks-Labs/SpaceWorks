@@ -12,6 +12,7 @@ import {
 } from "./tenantMigrationApi";
 import { ActionControl } from "../../components/ui";
 import { ErrorText, StatusPill } from "./tenantMigrationUi";
+import { BoxArt } from "../../components/BoxSpinner";
 
 export function TenantMigrationDisclosure({ makerspaceId, active = true }: { makerspaceId: number; active?: boolean }) {
   const client = useQueryClient();
@@ -121,7 +122,7 @@ export function TenantMigrationDisclosure({ makerspaceId, active = true }: { mak
                 }))} />
                 {t`I reviewed every person and understand the approved fields leave this deployment.`}</label>
               <button className="desk-button-primary mt-2" type="button" disabled={!acknowledged || approve.isPending} onClick={() => approve.mutate()}>
-                {approve.isPending ? t`Approving exact closure…` : t`Approve exact closure`}
+                {approve.isPending ? <><BoxArt size={16} mono />{t`Approving exact closure…`}</> : t`Approve exact closure`}
               </button>
             </div>
           )}

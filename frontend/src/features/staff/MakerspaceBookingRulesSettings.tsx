@@ -11,6 +11,7 @@ import { useStaffGet } from "./StaffPanels";
 import type { Makerspace } from "./panels/shared";
 import { bookingKeys } from "./bookingsApi";
 import type { Paginated } from "./eventsApiTypes";
+import { LogoLoader } from "../../components/LogoLoader";
 
 type SpaceRules = {
   id: number;
@@ -66,7 +67,7 @@ export function MakerspaceBookingRulesSettings({ makerspace }: { makerspace: Pic
     <SettingsQueryState query={spaces} resource={t`booking rules`}><SettingsRow label={t`Booking rules per space`} helper={t`Buffers reserve time around each booking. A cancellation cutoff of 0 allows members to cancel any time before the booking starts.`}><div className="@container grid min-w-0 gap-4">
 
 
-      {spaces.isLoading ? <p className="mt-3 text-sm text-muted">{t`Loading bookable spaces…`}</p> : null}
+      {spaces.isLoading ? <LogoLoader label={t`Loading bookable spaces…`} size={48} className="min-h-16 py-3" /> : null}
       {!spaces.isLoading && activeSpaces.length === 0 ? (
         <p className="mt-3 text-sm text-muted">{t`No active bookable spaces on this page.`}</p>
       ) : null}
@@ -93,6 +94,7 @@ function SpaceRuleRow({ makerspaceId, space }: { makerspaceId: number; space: Sp
     setDraft(draftFromSpace(space));
     setFieldErrors({});
     setRowError("");
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- space is reseeded field by field (id and the listed rule fields); depending on the whole object would discard the draft on every refetch
   }, [
     space.id,
     space.min_booking_duration_minutes,

@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Field, SettingsRow, StatusPill } from "../../components/ui";
 import { StructuredApiError, staffRequest } from "../../lib/api";
 import { formatDateTime } from "../../lib/format";
+import { BoxArt } from "../../components/BoxSpinner";
 
 /** Parity E-B8 (A19) fields on the makerspace payload; typed locally until `generated/api.ts` is regenerated. */
 type SenderSettings = { email_from_name?: string; email_reply_to?: string; smtp_verified?: boolean;
@@ -56,7 +57,7 @@ export function SpaceEmailSender({ makerspaceId }: { makerspaceId: number }) {
           {verified && space.data?.smtp_verified_at ? <span className="text-sm text-muted">{t`Last passed ${formatDateTime(space.data.smtp_verified_at)}`}</span> : null}
         </div>
         <button type="button" className="desk-button justify-self-start" disabled={test.isPending} onClick={() => test.mutate()}>
-          {test.isPending ? t`Sending test…` : t`Send a test email`}</button>
+          {test.isPending ? <><BoxArt size={16} mono />{t`Sending test…`}</> : t`Send a test email`}</button>
         <p className="text-sm text-muted">{t`The test goes to your own account's email address.`}</p>
         {test.data ? <p role="status" className="text-sm text-success-ink">{testResultMessage(test.data.code)}</p> : null}
         {failure ? <p role="alert" className="text-sm text-danger">{failure}</p> : null}
@@ -70,7 +71,7 @@ export function SpaceEmailSender({ makerspaceId }: { makerspaceId: number }) {
           onChange={event => { setReplyTo(event.target.value); save.reset(); }} /></Field>
         {save.error ? <p role="alert" className="text-sm text-danger">{save.error.message}</p> : null}
         {save.isSuccess && !dirty ? <p role="status" className="text-sm text-muted">{t`Sender details saved.`}</p> : null}
-        <button type="submit" className="desk-button-primary justify-self-start" disabled={!dirty || save.isPending}>{save.isPending ? t`Saving…` : t`Save sender details`}</button>
+        <button type="submit" className="desk-button-primary justify-self-start" disabled={!dirty || save.isPending}>{save.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Save sender details`}</button>
       </form>
     </SettingsRow> : null}
   </>;

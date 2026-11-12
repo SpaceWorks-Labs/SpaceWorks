@@ -12,6 +12,7 @@ import { DESTINATIONS_KEY } from "./channels";
 import { ScopePicker } from "./ScopePicker";
 import { SigningSecretReveal } from "./SigningSecretReveal";
 import { type ScopeOptions } from "./scopeOptions";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 export function DestinationForm({
   basePath,
@@ -177,7 +178,7 @@ export function DestinationForm({
       {error ? <p className="text-sm text-danger">{error}</p> : null}
       <div className="flex flex-wrap gap-2">
         <button className="desk-button-primary" disabled={save.isPending} type="submit">
-          {save.isPending ? t`Saving…` : t`Save room`}
+          {save.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Save room`}
         </button>
         <button className="desk-button-ghost" onClick={onDone} type="button">
           {t`Cancel`}</button>

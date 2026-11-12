@@ -6,6 +6,7 @@ import { staffRequest } from "../../../lib/api";
 import type { NotificationDestination } from "../notificationDestinationTypes";
 import { DESTINATIONS_KEY } from "./channels";
 import { SigningSecretReveal } from "./SigningSecretReveal";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 type RotateResult = { destination: NotificationDestination; signing_secret: string; previous_valid_until: string | null };
 
@@ -35,7 +36,7 @@ export function RotateSigningSecret({ basePath, destination, makerspaceId, onClo
     </Field>
     {rotate.error ? <p role="alert" className="text-sm text-danger">{rotate.error.message}</p> : null}
     <div className="flex flex-wrap gap-2">
-      <button type="submit" className="desk-button-primary" disabled={!valid || rotate.isPending}>{rotate.isPending ? t`Rotating…` : t`Rotate secret`}</button>
+      <button type="submit" className="desk-button-primary" disabled={!valid || rotate.isPending}>{rotate.isPending ? <><BoxArt size={16} mono />{t`Rotating…`}</> : t`Rotate secret`}</button>
       <button type="button" className="desk-button-ghost" onClick={onClose} disabled={rotate.isPending}>{t`Cancel`}</button>
     </div>
   </form>;

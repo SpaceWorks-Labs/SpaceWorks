@@ -13,7 +13,7 @@ const options = { machineTypes: [], machines: [], categories: [] };
 const webhook: NotificationDestination = { id: 9, channel: "webhook", label: "Ops hook", telegram_chat_id: "", is_active: true,
   payload_version: 2, credential_set: true, signing_secret_set: true, scope: { machine_type_ids: [], machine_ids: [], category_ids: [] },
   created_at: "2026-11-01T00:00:00Z", updated_at: "2026-11-01T00:00:00Z" };
-const wrap = (ui: JSX.Element) => <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>{ui}</QueryClientProvider>;
+const wrap = (ui: import("react").ReactElement) => <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>{ui}</QueryClientProvider>;
 
 beforeEach(() => { request.mockReset(); });
 

@@ -86,7 +86,7 @@ def _top_five_series(rows):
 
 def build_machine_usage_members(makerspace_id, *, limit=None, date_range=None, grain="day", actor=None):
     groups = {}
-    for space, scope in spaces(makerspace_id, ("machines",), actor, identities=True):
+    for space, scope in spaces(makerspace_id, ("machines",), actor, identities=True, area_named=True):
         for fact in usage_facts(space, scope, date_range, grain):
             # Null is an explicit unattributed bucket, never requester or logged_by.
             key = (fact["period"], fact["member_id"], fact["measure"], fact["machine_type_id"])

@@ -195,7 +195,7 @@ def money(actor, space, now):
     out = [item("payments_pending", sum(g["pending"] for g in groups), "payments", status="pending"),
            item("payments_overdue", sum(g["overdue"] for g in groups), "payments", due_state="overdue"),
            item("paid_claims_waiting", sum(g["claims"] for g in groups), "payments", view="claims")]
-    cases = RefundCase.objects.filter(makerspace=space, status__in=RefundCase.ACTIVE_STATUSES)
+    cases = RefundCase.objects.filter(payment__makerspace=space, status__in=RefundCase.ACTIVE_STATUSES)
     if owned is not None:
         cases = cases.filter(payment__subject_type__in=owned)
     out.append(item("refund_cases_open", cases.count(), "refunds"))
@@ -227,7 +227,7 @@ def build_attention(actor, space, *, area=None, now=None):
             items = builder(actor, space, now)
         except Exception as exc:  # one failing area must not blank the whole home (U13)
             logger.error("Attention counter failed", extra={"makerspace_id": space.pk, "area": key,
-                                                            "error_type": type(exc).__name__})
+                                                            "error_type": type(exc).__name__}, exc_info=True)
             errors.append(key)
             continue
         if items:

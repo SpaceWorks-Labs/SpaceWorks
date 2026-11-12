@@ -104,8 +104,8 @@ def build_booking_lead_time(makerspace_id, *, limit=None, date_range=None, grain
 def build_booking_top_members(makerspace_id, *, limit=None, date_range=None, actor=None):
     if makerspace_id is None:
         raise PermissionDenied(gettext("Member rankings require a single makerspace."))
+    # Decision 242(h): the booking manager's own action opens the named rows; view_audit is not required.
     require_action(actor, rbac.Action.MANAGE_BOOKINGS, makerspace_id)
-    require_action(actor, rbac.Action.VIEW_AUDIT, makerspace_id)
     records = []
     for space in report_spaces(makerspace_id, "bookings"):
         qs = apply_range(Booking.objects.filter(space__makerspace=space, member__isnull=False,

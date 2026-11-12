@@ -37,6 +37,7 @@ class BookingReservationReportRowSerializer(serializers.Serializer):
     ends_at = serializers.DateTimeField()
     status = serializers.CharField()
     created_at = serializers.DateTimeField()
+    organization = serializers.CharField(allow_blank=True, allow_null=True)  # decision 223 (k): report v2 column
 
 
 class BookingAnswerReportRowSerializer(serializers.Serializer):

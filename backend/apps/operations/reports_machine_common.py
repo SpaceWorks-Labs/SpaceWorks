@@ -12,7 +12,7 @@ from apps.accounts import rbac
 from apps.admin_api.permissions import active_user, require_action
 from apps.machines import role_scope
 from apps.machines.models import Machine, MachineServiceRequest
-from apps.makerspaces.guards import require_module
+from apps.operations.report_sources import require_source
 from apps.operations.report_types import ReportResult
 from apps.operations.reports_common import limited, report_spaces
 from apps.payments.money import trim_money
@@ -21,7 +21,7 @@ GRAINS = ("day", "week", "month")
 CENT = Decimal("0.01")
 
 
-def spaces(makerspace_id, modules, actor=None, *, identities=False):
+def spaces(makerspace_id, modules, actor=None, *, identities=False, area_named=False):
     """None actor is the existing trusted internal/org builder seam.
 
     HTTP and scheduled dispatch always forward their actor. A resolved local role
@@ -52,10 +52,12 @@ def spaces(makerspace_id, modules, actor=None, *, identities=False):
         return
     for space in queryset:
         for module in modules:
-            require_module(space, module)
+            require_source(space, module)
         if actor is not None:
             require_action(actor, rbac.Action.MANAGE_MACHINES, space.pk)
-            if identities:
+            if identities and not area_named:
+                # Decision 242(h): `area_named` reports (machine top members) open to the
+                # machine manager's own action, already required above, without view_audit.
                 require_action(actor, rbac.Action.VIEW_AUDIT, space.pk)
         scope = role_scope.manage_scope_for(actor, space.pk) if actor is not None else role_scope.EXEMPT
         yield space, scope

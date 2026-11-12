@@ -1,3 +1,4 @@
+import type { ConsumableEntry } from "../../../machine-consumables/entries";
 import type { BoardAction, StaffJob } from "./machineJobsApi";
 
 /** Actions that open a form; the rest of `BoardAction` run straight from the card. */
@@ -23,7 +24,8 @@ const optional = (value: string) => value.trim() ? value.trim() : undefined;
 const number = (value: string) => Number(value || 0);
 
 /** The request body for one job action. Printers keep their gram fields; other types use the generic quantity. */
-export function jobActionBody(action: DialogAction, values: JobFormValues, options: { hasPool: boolean; printer: boolean }) {
+export function jobActionBody(action: DialogAction, values: JobFormValues, options: { hasPool: boolean; printer: boolean; entries?: ConsumableEntry[] }) {
+  const entries = options.entries?.length ? options.entries : undefined;
   const planned = options.hasPool ? optional(values.quantity) : undefined;
   const plannedKey = options.printer ? "planned_grams" : "planned_quantity";
   const actualKey = options.printer ? "actual_grams" : "actual_quantity";
@@ -31,11 +33,11 @@ export function jobActionBody(action: DialogAction, values: JobFormValues, optio
   switch (action) {
     case "accept": return { estimated_minutes: number(values.estimated_minutes), ...(options.printer && planned ? { planned_grams: planned } : {}), ...(values.override_length ? { override_length: true } : {}) };
     case "start": return { machine_id: values.machine_id ? Number(values.machine_id) : null, consumable_pool_id: pool, estimated_minutes: number(values.estimated_minutes), [plannedKey]: planned };
-    case "quote": return { estimated_minutes: number(values.estimated_minutes), quantity: planned ?? null, consumable_pool_id: pool ?? null, note: values.note.trim() };
+    case "quote": return { estimated_minutes: number(values.estimated_minutes), quantity: planned ?? null, consumable_pool_id: pool ?? null, note: values.note.trim(), ...(entries ? { consumable_estimates: entries } : {}) };
     case "request-changes": return { code: values.code, message: values.message.trim() };
     case "reject": return { reason: values.reason.trim(), ...(values.code ? { code: values.code } : {}) };
-    case "complete": return { actual_minutes: number(values.actual_minutes), [actualKey]: planned, pickup_location: values.pickup_location.trim() };
-    case "fail": return { actual_minutes: number(values.actual_minutes), [actualKey]: planned, percent_complete: number(values.percent_complete), reason: values.reason.trim(), ...(values.code ? { code: values.code } : {}), ...(values.fault ? { fault: values.fault } : {}) };
+    case "complete": return { actual_minutes: number(values.actual_minutes), [actualKey]: planned, pickup_location: values.pickup_location.trim(), ...(entries ? { profile_consumptions: entries } : {}) };
+    case "fail": return { actual_minutes: number(values.actual_minutes), [actualKey]: planned, percent_complete: number(values.percent_complete), reason: values.reason.trim(), ...(values.code ? { code: values.code } : {}), ...(values.fault ? { fault: values.fault } : {}), ...(entries ? { profile_consumptions: entries } : {}) };
     case "collect": return { pickup_code: values.pickup_code.trim(), collector_name: values.collector_name.trim() };
     case "urgent": return { urgent: true, reason: values.reason.trim() };
     case "assign": return { machine_id: values.machine_id ? Number(values.machine_id) : null };

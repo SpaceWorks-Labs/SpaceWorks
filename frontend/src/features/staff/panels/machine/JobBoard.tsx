@@ -2,18 +2,20 @@ import { plural, t } from "@lingui/core/macro";
 import { useState, type ReactNode } from "react";
 
 import type { PrinterPool } from "../../../../generated/api";
-import { ConfirmDialog, EmptyState, ErrorBlock, Skeleton, StatusPill } from "../../../../components/ui";
+import { ConfirmDialog, EmptyState, ErrorBlock, StatusPill } from "../../../../components/ui";
 import { isBuiltinPrinterType, type Machine, type MachineType, type MeteringUnit } from "../../machinesApi";
 import { BatchCompleteDialog, BatchStartDialog } from "./BatchDialogs";
 import { reorderPosition } from "./boardOrder";
 import { useQueueDrag } from "./boardDrag";
 import { JobActionDialog } from "./JobActionDialog";
+import { JobConsumablesDialog } from "./JobConsumablesDialog";
 import { JobFilesDialog } from "./filePreview/JobFilesDialog";
 import { JobBoardCard, type CardHandlers } from "./JobBoardCard";
 import type { DialogAction } from "./jobActionBody";
 import { machineStatusLabel } from "./machineStatusLabel";
 import { useJobAction, useJobBoard, useJobInvalidation, type StaffJob } from "./machineJobsApi";
 import { poolUnits, unitLabels, usablePools } from "./servicePools";
+import { LogoLoader } from "../../../../components/LogoLoader";
 
 type Props = {
   makerspaceId: number; machineType: MachineType; machines: Machine[]; pools: PrinterPool[];
@@ -28,6 +30,7 @@ export function JobBoard({ makerspaceId, machineType, machines, pools, batchEnab
   const [dialog, setDialog] = useState<{ job: StaffJob; action: DialogAction } | null>(null);
   const [uncollected, setUncollected] = useState<StaffJob | null>(null);
   const [filesOf, setFilesOf] = useState<StaffJob | null>(null);
+  const [consumablesOf, setConsumablesOf] = useState<StaffJob | null>(null);
   const [selected, setSelected] = useState<number[]>([]);
   const [batching, setBatching] = useState(false);
   const [completing, setCompleting] = useState<{ batchId: number; jobs: StaffJob[] } | null>(null);
@@ -43,8 +46,9 @@ export function JobBoard({ makerspaceId, machineType, machines, pools, batchEnab
     onDirect: (job, action, body) => direct.mutate({ id: job.id, action, body }),
     onUncollected: setUncollected,
     onFiles: setFilesOf,
+    onConsumables: setConsumablesOf,
   };
-  if (board.isLoading) return <div role="status" aria-label={t`Loading queue board`} className="grid gap-3"><Skeleton className="h-24 w-full" /><Skeleton className="h-40 w-full" /></div>;
+  if (board.isLoading) return <LogoLoader label={t`Loading queue board`} size={48} className="min-h-24 py-3" />;
   if (board.error) return <ErrorBlock error={board.error} resource={t`queue board`} onRetry={() => { void board.refetch(); }} />;
   const data = board.data;
   if (!data) return null;
@@ -86,6 +90,7 @@ export function JobBoard({ makerspaceId, machineType, machines, pools, batchEnab
       <Column title={t`Waiting on member`} count={data.waiting_on_member.length} empty={t`No jobs waiting for changes or a quote decision.`}>{data.waiting_on_member.map(job => card(job))}</Column>
       <Column title={t`Ready to collect`} count={data.ready.length} empty={t`Nothing waiting for pickup.`}>{data.ready.map(job => card(job))}</Column>
     </div>
+    {consumablesOf ? <JobConsumablesDialog job={consumablesOf} makerspaceId={makerspaceId} onClose={() => setConsumablesOf(null)} /> : null}
     {dialog ? <JobActionDialog key={`${dialog.job.id}-${dialog.action}`} job={dialog.job} action={dialog.action} makerspaceId={makerspaceId} typeId={machineType.id}
       machines={machines} pools={poolsFor} unitLabel={unitLabel} hasPool={!!poolUnit} printer={printer} onClose={() => setDialog(null)} /> : null}
     {batching ? <BatchStartDialog jobs={chosen} makerspaceId={makerspaceId} typeId={machineType.id} machines={machines} pools={poolsFor}

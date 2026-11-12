@@ -13,6 +13,7 @@ import type { Machine } from "../../../machinesApi";
 import { opsQueryState } from "../../../opsPresentation";
 import { SessionMemberSelect } from "./SessionMemberSelect";
 import { StaffSessionCard } from "./StaffSessionCard";
+import { BoxArt } from "../../../../../components/BoxSpinner";
 
 const FILTERS = [
   { key: "live", label: t`Live` },
@@ -55,7 +56,7 @@ function StartForMember({ makerspaceId, machines, onClose }: { makerspaceId: num
       <SessionMemberSelect machineId={Number(machine)} value={member} onChange={setMember} />
       {start.isError ? <p role="alert" className="text-sm text-danger">{sessionErrorMessage(start.error)}</p> : null}
       <button className="desk-button-primary justify-self-start" disabled={start.isPending || !machine || !member}>
-        {start.isPending ? t`Starting…` : t`Start session`}</button>
+        {start.isPending ? <><BoxArt size={16} mono />{t`Starting…`}</> : t`Start session`}</button>
     </form>
   </Modal>;
 }

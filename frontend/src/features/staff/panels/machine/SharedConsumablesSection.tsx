@@ -8,6 +8,7 @@ import { staffRequest } from "../../../../lib/api";
 import { blankPool, ConsumablePoolCreateForm } from "./ConsumablePoolCreateForm";
 import { poolLabel, poolQueryKey } from "./servicePools";
 import { PriceOverrideCard } from "../../pricing/PriceOverrideCard";
+import { BoxArt } from "../../../../components/BoxSpinner";
 
 type Props = {
   visible?: boolean;
@@ -168,7 +169,7 @@ export function ConsumablePoolList({ makerspaceId, pools, visible = true, draft,
                       />
                     </label>
                     <button className="desk-button-primary" disabled={!validAdjustment || adjustPool.isPending} type="submit">
-                      {adjustPool.isPending ? t`Saving...` : t`Save adjustment`}
+                      {adjustPool.isPending ? <><BoxArt size={16} mono />{t`Saving...`}</> : t`Save adjustment`}
                     </button>
                     <button className="desk-button-ghost" disabled={adjustPool.isPending} type="button" onClick={() => { setAdjustingId(null); setQuantityDelta(""); adjustPool.reset(); }}>
                       {t`Cancel`}</button>

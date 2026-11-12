@@ -14,6 +14,7 @@ import {
   type ConsumableMeasurement,
   type MachineConsumable,
 } from "../../machinesApi";
+import { BoxArt } from "../../../../components/BoxSpinner";
 
 export function ConsumablesTab({ machineId, canEdit, canOperate }: {
   machineId: number;
@@ -112,7 +113,7 @@ export function ConsumablesTab({ machineId, canEdit, canOperate }: {
           </label>
           <button className="desk-button-primary justify-self-start" type="submit"
             disabled={link.isPending || (measurement === "count" ? !productId : !label.trim())}>
-            {link.isPending ? t`Linking...` : measurement === "count" ? t`Link product` : t`Add grams consumable`}
+            {link.isPending ? <><BoxArt size={16} mono />{t`Linking...`}</> : measurement === "count" ? t`Link product` : t`Add grams consumable`}
           </button>
         </form>
       ) : null}
@@ -151,7 +152,7 @@ function ConsumableRow({ item, machineId, canOperate, canEdit, removing, onRemov
               onChange={(event) => setQuantity(event.target.value)} required />
           </label>
           <button className="desk-button-primary" type="submit" disabled={log.isPending || !quantity}>
-            {log.isPending ? t`Logging...` : t`Log consumption`}
+            {log.isPending ? <><BoxArt size={16} mono />{t`Logging...`}</> : t`Log consumption`}
           </button>
         </form>
       ) : null}

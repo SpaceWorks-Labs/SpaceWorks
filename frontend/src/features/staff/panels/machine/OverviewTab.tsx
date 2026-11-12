@@ -17,6 +17,7 @@ import { useMachineStatus } from "./useMachineStatus";
 import { ImageUploader } from "../../ImageUploader";
 import { MachinePublicSettings } from "../MachinePublicSettings";
 import { PriceOverrideCard } from "../../pricing/PriceOverrideCard";
+import { BoxArt } from "../../../../components/BoxSpinner";
 
 const MACHINE_STATUSES: MachineStatus[] = ["idle", "running", "reserved", "maintenance", "offline"];
 type MachineForm = Pick<Machine, "name" | "location" | "notes" | "firmware_version" | "camera_feed_url">;
@@ -103,7 +104,7 @@ export function OverviewTab({ machine, makerspaceId, canManageMachines, canEdit,
           </select>
           <button className="desk-button-primary" type="button"
             disabled={!canOperate || setStatusMutation.isPending} onClick={() => setStatusMutation.mutate()}>
-            {setStatusMutation.isPending ? t`Setting...` : t`Set status`}
+            {setStatusMutation.isPending ? <><BoxArt size={16} mono />{t`Setting...`}</> : t`Set status`}
           </button>
 
         </div>

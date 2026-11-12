@@ -11,6 +11,8 @@ import { deviceQueryKeys } from "../../../deviceQueryKeys";
 import type { Machine } from "../../../machinesApi";
 import { useBindingMutation, usePrinterBindings, type PrinterBinding } from "./printerApi";
 import { PrinterJobsList } from "./PrinterJobsList";
+import { LogoLoader } from "../../../../../components/LogoLoader";
+import { BoxArt } from "../../../../../components/BoxSpinner";
 
 export function PrinterBindingsSection({ makerspaceId, machineTypeId, machines }: {
   makerspaceId: number; machineTypeId: number; machines: Machine[];
@@ -27,7 +29,7 @@ export function PrinterBindingsSection({ makerspaceId, machineTypeId, machines }
   return <section className="grid gap-3 rounded-xl border border-line bg-panel p-3" aria-label={t`Printer connections`}>
     <h3 className="title-panel">{t`Printer connections`}</h3>
     <p className="text-sm text-muted">{t`Connect an enrolled printer device to a machine of this type. Add and enrol devices in the Devices tab.`}</p>
-    {bindings.isLoading ? <p role="status" className="text-sm text-muted">{t`Loading printer connections…`}</p> : null}
+    {bindings.isLoading ? <LogoLoader label={t`Loading printer connections…`} size={48} className="min-h-16 py-3" /> : null}
     {bindings.error ? <ErrorBlock error={bindings.error} resource={t`printer connections`} onRetry={() => void bindings.refetch()} /> : null}
     {bindings.isSuccess && !rows.length ? <p className="text-sm text-muted">{t`No printer is connected to these machines yet.`}</p> : null}
     <ul className="grid gap-2" aria-label={t`Connected printers`}>
@@ -77,7 +79,7 @@ function AddBinding({ makerspaceId, machines, printers }: {
     <label className="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" className="h-5 w-5" checked={autoApply}
       onChange={event => setAutoApply(event.target.checked)} />{t`Apply results automatically`}</label>
     <button type="submit" className="desk-button-primary min-h-11" disabled={!deviceId || !machineId || change.isPending}>
-      {change.isPending ? t`Connecting…` : t`Connect printer`}</button>
+      {change.isPending ? <><BoxArt size={16} mono />{t`Connecting…`}</> : t`Connect printer`}</button>
     {change.error ? <div className="basis-full"><ErrorBlock error={change.error} /></div> : null}
   </form>;
 }

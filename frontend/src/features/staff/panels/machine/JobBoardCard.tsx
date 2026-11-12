@@ -12,12 +12,16 @@ import type { BoardAction, StaffJob } from "./machineJobsApi";
 import { ServiceEtaLine } from "./ServiceEtaLine";
 import { useStaffChargesOn } from "../../useStaffChargesOn";
 import { ChargeSettle } from "../../areaPayments/ChargeSettle";
+import { EventLinkToggle } from "../../../machine-event-use/EventLinkToggle";
+import { readStoredMakerspace } from "../../staffTabs";
 
 export type CardHandlers = {
   onDialog: (job: StaffJob, action: DialogAction) => void;
   onDirect: (job: StaffJob, action: BoardAction, body?: object) => void;
   onUncollected: (job: StaffJob) => void;
   onFiles: (job: StaffJob) => void;
+  /** Decision 341: opens the job's consumables (estimates and amounts used). */
+  onConsumables?: (job: StaffJob) => void;
 };
 type Props = CardHandlers & {
   job: StaffJob; overdue?: boolean; noShow?: boolean; pending?: boolean;
@@ -32,7 +36,7 @@ const JOB_PAYMENT_KEYS = [["machine-job-board"], ["machine-service-requests"], [
 const changeLabel = (code?: string) => CHANGE_CODES.find(([value]) => value === code)?.[1];
 
 /** One job on the queue board: what it is, why it needs attention, and the next step as the primary button. */
-export function JobBoardCard({ job, overdue, noShow, pending, move, select, drag, onDialog, onDirect, onUncollected, onFiles }: Props) {
+export function JobBoardCard({ job, overdue, noShow, pending, move, select, drag, onDialog, onDirect, onUncollected, onFiles, onConsumables }: Props) {
   const quoteTotal = job.quote_snapshot?.total ? `${job.quote_snapshot.total} ${(job.quote_snapshot.currency ?? "").toUpperCase()}`.trim() : "";
   const paid = PAID.has(job.payment?.status ?? "");
   const neededBy = job.needed_by ? new Date(`${job.needed_by}T00:00:00`).toLocaleDateString(formatLocale()) : "";
@@ -44,7 +48,8 @@ export function JobBoardCard({ job, overdue, noShow, pending, move, select, drag
   const files = [{ label: job.files?.length ? t`Files (${job.files.length})` : t`Add a file`, onClick: () => onFiles(job) }];
   // #184 G3: with machine charges off there is no quote to send (the server refuses one).
   const chargesOn = useStaffChargesOn("machines");
-  const overflow = [...files, ...overflowActions(job, overdue, chargesOn, { onDialog, onDirect, onUncollected, onFiles })];
+  const consumables = onConsumables && ["pending", "accepted", "quoted", "in_progress", "completed"].includes(job.status) ? [{ label: t`Consumables`, onClick: () => onConsumables(job) }] : [];
+  const overflow = [...files, ...consumables, ...overflowActions(job, overdue, chargesOn, { onDialog, onDirect, onUncollected, onFiles })];
   const { dragging = false, over = false, ...dragHandlers } = drag ?? ({} as Partial<CardDrag>);
   const frame = over ? "border-accent outline-2 outline-dashed outline-focus" : "border-line";
   return <li className={`grid gap-2 rounded-2xl border bg-panel p-3 ${frame}${dragging ? " opacity-60" : ""}${drag ? " cursor-grab" : ""}`}
@@ -72,6 +77,7 @@ export function JobBoardCard({ job, overdue, noShow, pending, move, select, drag
       {job.pickup_location && job.status === "completed" ? <StatusPill tone="neutral" label={t`At ${job.pickup_location}`} /> : null}
     </div>
     <ServiceEtaLine request={job as unknown as MachineServiceRequest} />
+    <EventLinkToggle makerspaceId={readStoredMakerspace()} kind="request" id={job.id} eventTitle={job.event?.title} />
     {/* Decision 242(a): record the cash or waive the job charge right here (M3). */}
     <ChargeSettle charge={job.payment} invalidateKeys={JOB_PAYMENT_KEYS} />
     <div className="flex flex-wrap items-center gap-2">

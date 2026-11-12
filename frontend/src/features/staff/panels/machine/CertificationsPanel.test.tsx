@@ -1,3 +1,4 @@
+// Decision 319 (addendum): machine certifications / inductions are retired; the screen is unmounted. Cases kept, skipped.
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -12,7 +13,7 @@ function show() {
   render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })}><CertificationsPanel makerspaceId={1} machineTypeId={2} /></QueryClientProvider>);
 }
 
-describe("certification administration", () => {
+describe.skip("certification administration", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(staffRequest).mockImplementation(async (path) => {

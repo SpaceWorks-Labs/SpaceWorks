@@ -4,6 +4,8 @@ import { useEffect, useId, useState } from "react";
 import { FILE_GROUPS } from "./jobLabels";
 import { errorCode, useJobSettings, useSaveJobSettings, type JobSettings } from "./machineJobsApi";
 import { useStaffChargesOn } from "../../useStaffChargesOn";
+import { LogoLoader } from "../../../../components/LogoLoader";
+import { BoxArt } from "../../../../components/BoxSpinner";
 
 const READ_ONLY = (): Record<string, string> => ({
   setting_not_delegated: t`Only the Space Manager, or a manager they have handed these settings to, can change them.`,
@@ -31,7 +33,7 @@ export function JobSettingsEditor({ makerspaceId, machineTypeId, visible = true 
     <h3 id={`${id}-title`} className="title-panel">{t`Job requests`}</h3>
     <p className="my-2 text-sm text-muted">{t`How members send jobs to this machine type, how they are priced, and what a failed job costs.`}</p>
     {lockCode ? <p role="status" className="mb-2 rounded-md border border-line bg-surface p-3 text-sm">{READ_ONLY()[lockCode]}</p> : null}
-    {query.isLoading ? <p role="status">{t`Loading job settings…`}</p> : null}
+    {query.isLoading ? <LogoLoader label={t`Loading job settings…`} size={48} className="min-h-16 py-3" /> : null}
     {draft ? <form className="grid gap-3" onSubmit={event => { event.preventDefault();
       // A refused save shows the stored values read-only, never the edit the server would not take.
       save.mutate(draft, { onError: error => { if (READ_ONLY()[errorCode(error) ?? ""] && query.data) setDraft(query.data); } }); }}>
@@ -64,7 +66,7 @@ export function JobSettingsEditor({ makerspaceId, machineTypeId, visible = true 
               ? [...draft.file_groups, value] : draft.file_groups.filter(group => group !== value) })} />{label}</label>)}</div>
         </fieldset>
       </fieldset>
-      {!readOnly ? <button className="desk-button-primary w-fit" disabled={save.isPending}>{save.isPending ? t`Saving…` : t`Save job settings`}</button> : null}
+      {!readOnly ? <button className="desk-button-primary w-fit" disabled={save.isPending}>{save.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Save job settings`}</button> : null}
       {save.isSuccess ? <p role="status" className="text-sm">{t`Job settings saved.`}</p> : null}
     </form> : null}
     {[query.error, save.error].map((error, index) => error instanceof Error && !(errorCode(error) && READ_ONLY()[errorCode(error)!])

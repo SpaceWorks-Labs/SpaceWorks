@@ -14,6 +14,7 @@ import type { Machine } from "../../machinesApi";
 import { StaffListContext } from "../../StaffListContext";
 import { machineTypeSegment } from "../../staffTabs";
 import type { StaffJob } from "./machineJobsApi";
+import { LogoLoader } from "../../../../components/LogoLoader";
 
 /** `GET machine-bookings` row (decision 242, MC11), hand-typed until the client is regenerated. */
 type MachineBookingRow = { id: number; machine_id: number; machine_name: string; member_name: string; starts_at: string; ends_at: string; status: string };
@@ -58,7 +59,7 @@ export function MachineRelatedTab({ machine, makerspaceId, canManageMachines, ju
     ...(serviceOn ? [{ key: "jobs", label: t`Service queue`, helper: t`All ${machine.machine_type.name} jobs`,
       count: jobs.isLoading ? null : jobRows.filter(job => isOpen(job.status)).length, href: link("machines", {}, `${typePath}/queue`) }] : []),
     ...(!incidents.hidden ? [{ key: "incidents", label: t`Incidents`, helper: t`Reported on this machine`, count: incidents.count, href: link("incidents", { machine: machine.id }) }] : []),
-    ...(canManageMachines ? [{ key: "certifications", label: t`Certifications`, helper: t`Who may use ${machine.machine_type.name} machines`, href: link("machines", {}, `${typePath}/certifications`) }] : []),
+    ...(canManageMachines ? [{ key: "access", label: t`Machine access`, helper: t`Who may use ${machine.machine_type.name} machines`, href: link("machines", {}, `${typePath}/access`) }] : []),
     { key: "repairs", label: t`Repairs`, helper: t`Repair jobs and work orders`, href: link("repairs") },
     { key: "tobuy", label: t`To-Buy`, helper: t`Parts and supplies to order`, href: link("tobuy") },
     { key: "bookings", label: t`Bookings`, helper: t`Machine time bookings`, href: link("bookings") },
@@ -73,7 +74,7 @@ export function MachineRelatedTab({ machine, makerspaceId, canManageMachines, ju
     <RelatedLinks links={links} empty={t`Nothing else is linked to this machine that you can open.`} />
     {serviceOn ? <section className="grid gap-2" aria-label={t`Recent jobs`}>
       <h3 className="title-section">{t`Recent jobs`}</h3>
-      {jobs.isLoading ? <p role="status" className="text-sm text-muted">{t`Loading jobs…`}</p>
+      {jobs.isLoading ? <LogoLoader label={t`Loading jobs…`} size={48} className="min-h-16 py-3" />
         : jobs.isError ? <div role="alert" className="flex flex-wrap items-center gap-3 text-sm text-danger"><p>{t`Couldn't load jobs.`}</p>
           <button type="button" className="desk-button" onClick={() => { void jobs.refetch(); }}>{t`Retry`}</button></div>
         : !jobRows.length ? <p className="text-sm text-muted">{t`No jobs on this machine yet.`}</p>
@@ -83,7 +84,7 @@ export function MachineRelatedTab({ machine, makerspaceId, canManageMachines, ju
     </section> : null}
     {timeBooking && !bookings.isError ? <section className="grid gap-2" aria-label={t`Machine bookings`}>
       <h3 className="title-section">{t`Machine bookings`}</h3>
-      {bookings.isLoading ? <p role="status" className="text-sm text-muted">{t`Loading bookings…`}</p>
+      {bookings.isLoading ? <LogoLoader label={t`Loading bookings…`} size={48} className="min-h-16 py-3" />
         : !bookingRows.length ? <p className="text-sm text-muted">{t`No bookings for this machine.`}</p>
         : <div className="grid gap-2">{bookingRows.slice(0, 10).map(row => <ListRow key={row.id} title={row.member_name || t`Booking #${row.id}`}
           identity={{ kind: "date", date: row.starts_at }} meta={`${formatDateTime(row.starts_at)} – ${formatDateTime(row.ends_at)}`}

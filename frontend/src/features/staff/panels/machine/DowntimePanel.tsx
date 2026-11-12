@@ -4,6 +4,8 @@ import { useState } from "react";
 
 import { ErrorBlock, StatCard, StatusPill } from "../../../../components/ui";
 import { localInputValue, useMachineDowntime, useMachineLockout, useUpdateDowntime, type DowntimePeriod } from "./machineDowntimeApi";
+import { LogoLoader } from "../../../../components/LogoLoader";
+import { BoxArt } from "../../../../components/BoxSpinner";
 
 const when = (iso: string | null) => iso ? formatDateTime(iso) : "";
 
@@ -28,7 +30,7 @@ export function LockoutNotice({ machineId }: { machineId: number }) {
 export function DowntimePanel({ machineId, canEdit }: { machineId: number; canEdit: boolean }) {
   const downtime = useMachineDowntime(machineId);
   if (downtime.error) return <ErrorBlock error={downtime.error} resource={t`downtime`} onRetry={() => { void downtime.refetch(); }} />;
-  if (!downtime.data) return downtime.isLoading ? <p role="status" className="text-sm text-muted">{t`Loading downtime…`}</p> : null;
+  if (!downtime.data) return downtime.isLoading ? <LogoLoader label={t`Loading downtime…`} size={48} className="min-h-16 py-3" /> : null;
   const { summary, periods } = downtime.data;
   return <section className="grid gap-3" aria-labelledby={`downtime-${machineId}`}>
     <h3 id={`downtime-${machineId}`} className="title-section">{t`Downtime`}</h3>
@@ -58,7 +60,7 @@ function OpenPeriodForm({ machineId, period }: { machineId: number; period: Down
     update.mutate({ reason: reason.trim(), expected_back_at: back ? new Date(back).toISOString() : null }); }}>
     <label className="eyebrow grid gap-1">{t`Reason`}<input className="desk-input" maxLength={300} value={reason} onChange={event => setReason(event.target.value)} /></label>
     <label className="eyebrow grid gap-1">{t`Expected back`}<input className="desk-input w-full min-w-0" type="datetime-local" value={back} onChange={event => setBack(event.target.value)} /></label>
-    <button className="desk-button-primary w-fit" disabled={update.isPending}>{update.isPending ? t`Saving…` : t`Save downtime`}</button>
+    <button className="desk-button-primary w-fit" disabled={update.isPending}>{update.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Save downtime`}</button>
     {update.isSuccess ? <p role="status" className="self-center text-sm">{t`Saved.`}</p> : null}
     {update.error ? <p role="alert" className="text-sm text-danger sm:col-span-2">{update.error.message}</p> : null}
   </form>;

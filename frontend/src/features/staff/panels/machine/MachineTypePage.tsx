@@ -2,7 +2,7 @@ import { plural, t } from "@lingui/core/macro";
 import { QueueSummary } from "../../../machine-service/QueueSummary";
 import { machineStatusLabel } from "./machineStatusLabel";
 import { MaterialCataloguePanel } from "./MaterialCataloguePanel";
-import { CertificationsPanel } from "./CertificationsPanel";
+import { MachineAccessPanel } from "../../../machine-access/MachineAccessPanel";
 import { MachineReminderPolicy } from "./MachineReminderPolicy";
 import { JobBoard } from "./JobBoard";
 import { JobSettingsEditor } from "./JobSettingsEditor";
@@ -26,6 +26,7 @@ import { ConsumablePoolList } from "./SharedConsumablesSection";
 import type { ServiceDraft } from "./serviceDrafts";
 import { PrinterBindingsSection } from "./integrations/PrinterBindingsSection";
 import { TypeIntegrationSection } from "./integrations/TypeIntegrationSection";
+import { MachineTypeWizard } from "./typeWizard/MachineTypeWizard";
 
 type Props = {
   detail?: ReactNode; indexHref?: string; settings?: ReactNode; statusFilter: string; onStatusFilter: (value: "all" | Machine["status"]) => void; onRetry: () => void; poolError?: string; onRetryPools: () => void;
@@ -55,6 +56,8 @@ type Props = {
   printerAdapter?: boolean;
   /** 0.12.0 row 14: the active view comes from the URL path and each tab links to its own path. */
   routedView?: { active: string; href: (view: string) => string };
+  /** Link to another staff tab, for the setup editor's pointers to screens it does not re-implement. */
+  tabHref?: (tab: string) => string;
 };
 
 
@@ -70,8 +73,9 @@ type Props = {
 export function MachineTypePage({ enabledFeatures = [], makerspaceId, canManage, canConfigureMachineTypes = false,
   machineServiceEnabled, printingEnabled, reportsEnabled = true, machineType, allMachines, visibleMachines,
   typePools, formPools, existingPools, machinesLoading, machinesFailed, onSelectMachine, draft, setDraft,
-  detail, indexHref, settings, statusFilter, onStatusFilter, onRetry, poolError, onRetryPools, onWorkOrders, onSessions, printerAdapter = false, routedView }: Props) {
+  detail, indexHref, settings, statusFilter, onStatusFilter, onRetry, poolError, onRetryPools, onWorkOrders, onSessions, printerAdapter = false, routedView, tabHref }: Props) {
   const [creating, setCreating] = useState(false);
+  const [setupOpen, setSetupOpen] = useState(false);
   const [createdMachineId, setCreatedMachineId] = useState<number | null>(null);
   // Lifted here so the Service queue tab header can open manual usage in one click.
   const [logging, setLogging] = useState(false);
@@ -80,7 +84,7 @@ export function MachineTypePage({ enabledFeatures = [], makerspaceId, canManage,
   const service = machineServiceEnabled && canManage;
   const choices = [{ key: "machines", label: t`Machines`, count: allMachines.length },
     ...(service ? [{ key: "queue", label: t`Service queue` }, { key: "board", label: t`Queue board` }, { key: "consumables", label: t`Consumables` }] : []),
-    ...(machineType.can_create_machine === true ? [{ key: "certifications", label: t`Certifications` }] : []),
+    ...(machineType.can_create_machine === true ? [{ key: "access", label: t`Machine access` }] : []),
     ...(canConfigureMachineTypes || settings || printerAdapter ? [{ key: "settings", label: t`Settings` }] : [])];
   const queryView = useOpsTabs("view", choices, "machines");
   const view = routedView ? {
@@ -117,8 +121,10 @@ export function MachineTypePage({ enabledFeatures = [], makerspaceId, canManage,
       <ConsumablePoolCreateForm visible={view.active === "consumables"} makerspaceId={makerspaceId} machineType={machineType} existingPools={existingPools} />
       <ConsumablePoolList visible={view.active === "consumables"} makerspaceId={makerspaceId} pools={typePools} />
     </> : null}
-    {machineType.can_create_machine === true ? <CertificationsPanel visible={view.active === "certifications"} makerspaceId={makerspaceId} machineTypeId={machineType.id} /> : null}
+    {machineType.can_create_machine === true && view.active === "access" ? <MachineAccessPanel makerspaceId={makerspaceId} machineTypeId={machineType.id}
+      targets={{ types: [{ id: machineType.id, name: machineType.name }], machines: allMachines.map(row => ({ id: row.id, name: row.name, machine_type: machineType.id })) }} /> : null}
     <>
+      {canConfigureMachineTypes && view.active === "settings" ? <div><button type="button" className="desk-button min-h-11" onClick={() => setSetupOpen(true)}>{t`Edit type setup`}</button></div> : null}
       {canConfigureMachineTypes && (enabledFeatures.includes("machines.material_catalogue") || enabledFeatures.includes("machines.structured_intake")) ? <MaterialCataloguePanel visible={view.active === "settings"} makerspaceId={makerspaceId} typeId={machineType.id} custom={machineType.makerspace !== null} materialsEnabled={enabledFeatures.includes("machines.material_catalogue")} intakeEnabled={enabledFeatures.includes("machines.structured_intake")} /> : null}
       {canConfigureMachineTypes ? <MachineReminderPolicy visible={view.active === "settings"} makerspaceId={makerspaceId} machineTypeId={machineType.id} /> : null}
       {canConfigureMachineTypes && machineServiceEnabled ? <JobSettingsEditor visible={view.active === "settings"} makerspaceId={makerspaceId} machineTypeId={machineType.id} /> : null}
@@ -131,6 +137,8 @@ export function MachineTypePage({ enabledFeatures = [], makerspaceId, canManage,
         onDone={() => { const id = createdMachineId; setCreating(false); setCreatedMachineId(null); if (id !== null) onSelectMachine(id); }} />}
       footer={createdMachineId === null ? { next: { label: t`Add machine`, onClick: () => document.querySelector<HTMLFormElement>("#machine-create-form")?.requestSubmit() } }
         : { next: { label: t`Done`, onClick: () => { const id = createdMachineId; setCreating(false); setCreatedMachineId(null); onSelectMachine(id); } } }} /> : null}
+    {setupOpen ? <MachineTypeWizard makerspaceId={makerspaceId} machineType={machineType} onClose={() => setSetupOpen(false)} enabledFeatures={enabledFeatures}
+      machineServiceEnabled={machineServiceEnabled} printerAdapter={printerAdapter} hrefFor={tabHref} /> : null}
     {detail}
   </>;
   return <div onClickCapture={view.onClickCapture}>

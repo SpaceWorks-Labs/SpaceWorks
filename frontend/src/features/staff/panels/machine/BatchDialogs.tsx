@@ -8,6 +8,7 @@ import { splitByEstimate } from "./boardOrder";
 import { ACTION_ERROR_HELP } from "./jobLabels";
 import { errorCode, useBatchComplete, useBatchStart, type StaffJob } from "./machineJobsApi";
 import { poolLabel } from "./servicePools";
+import { BoxArt } from "../../../../components/BoxSpinner";
 
 type Plan = { estimated_minutes: string; consumable_pool_id: string; quantity: string };
 const errorText = (error: Error | null) => error ? ACTION_ERROR_HELP[errorCode(error) ?? ""] ?? error.message : "";
@@ -49,7 +50,7 @@ export function BatchStartDialog({ jobs, makerspaceId, typeId, machines, pools, 
       {start.error ? <p role="alert" className="text-sm text-danger">{errorText(start.error)}</p> : null}
       <div className="flex flex-wrap justify-end gap-2 border-t border-line pt-3">
         <button type="button" className="desk-button-ghost" onClick={() => onClose(false)}>{t`Cancel`}</button>
-        <button type="submit" className="desk-button-primary" disabled={!machineId || start.isPending}>{start.isPending ? t`Starting…` : t`Start batch`}</button>
+        <button type="submit" className="desk-button-primary" disabled={!machineId || start.isPending}>{start.isPending ? <><BoxArt size={16} mono />{t`Starting…`}</> : t`Start batch`}</button>
       </div>
     </form>
   </Modal>;
@@ -93,7 +94,7 @@ export function BatchCompleteDialog({ batchId, jobs, makerspaceId, typeId, unitL
       {complete.error ? <p role="alert" className="text-sm text-danger">{errorText(complete.error)}</p> : null}
       <div className="flex flex-wrap justify-end gap-2 border-t border-line pt-3">
         <button type="button" className="desk-button-ghost" onClick={onClose}>{t`Cancel`}</button>
-        <button type="submit" className="desk-button-success" disabled={complete.isPending}>{complete.isPending ? t`Completing…` : t`Complete batch`}</button>
+        <button type="submit" className="desk-button-success" disabled={complete.isPending}>{complete.isPending ? <><BoxArt size={16} mono />{t`Completing…`}</> : t`Complete batch`}</button>
       </div>
     </form>
   </Modal>;

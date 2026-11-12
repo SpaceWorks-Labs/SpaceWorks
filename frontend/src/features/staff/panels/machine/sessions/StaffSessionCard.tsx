@@ -6,8 +6,10 @@ import { StatusPill } from "../../../../../components/ui";
 import { money } from "../../../../payments/usePriceQuote";
 import { sessionErrorMessage, sessionKeys, staffSessionAction, type StaffSession } from "../../../../machine-sessions/api";
 import { CHARGE_LABELS, duration, SOURCES, STOP_REASONS, when } from "../../../../machine-sessions/sessionFormat";
+import { EventLinkToggle } from "../../../../machine-event-use/EventLinkToggle";
 import { SessionMemberSelect } from "./SessionMemberSelect";
 import { ChargeSettle } from "../../../areaPayments/ChargeSettle";
+import { BoxArt } from "../../../../../components/BoxSpinner";
 
 type Mode = "idle" | "correct" | "assign";
 
@@ -51,26 +53,27 @@ export function StaffSessionCard({ session, makerspaceId }: { session: StaffSess
         value={minutes} onChange={event => setMinutes(event.target.value)} /></label>
       <label className="eyebrow grid gap-1">{t`Reason`}<input className="desk-input" required maxLength={500} value={reason}
         onChange={event => setReason(event.target.value)} placeholder={t`Why the time changes`} /></label>
-      <button className="desk-button-primary" disabled={busy}>{busy ? t`Saving…` : t`Save correction`}</button>
+      <button className="desk-button-primary" disabled={busy}>{busy ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Save correction`}</button>
     </form> : null}
     {mode === "assign" ? <form className="grid gap-2" onSubmit={event => {
       event.preventDefault(); action.mutate({ name: "assign", body: { member_id: Number(member), reason: reason.trim() } }); }}>
       <SessionMemberSelect machineId={session.machine_id} value={member} onChange={setMember} />
       <label className="eyebrow grid gap-1">{t`Reason`}<input className="desk-input" required maxLength={500} value={reason}
         onChange={event => setReason(event.target.value)} placeholder={t`How you know whose session it was`} /></label>
-      <button className="desk-button-primary justify-self-start" disabled={busy || !member}>{busy ? t`Saving…` : t`Assign`}</button>
+      <button className="desk-button-primary justify-self-start" disabled={busy || !member}>{busy ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Assign`}</button>
     </form> : null}
     <div className="flex flex-wrap gap-2">
       {session.status === "live" ? <button type="button" className="desk-button" disabled={busy}
-        onClick={() => action.mutate({ name: "stop" })}>{busy ? t`Stopping…` : t`Stop session`}</button> : null}
+        onClick={() => action.mutate({ name: "stop" })}>{busy ? <><BoxArt size={16} mono />{t`Stopping…`}</> : t`Stop session`}</button> : null}
       {session.needs_review && mode === "idle" ? <>
         {session.member_id ? <button type="button" className="desk-button-primary" disabled={busy}
-          onClick={() => action.mutate({ name: "confirm" })}>{busy ? t`Confirming…` : t`Confirm`}</button> : null}
+          onClick={() => action.mutate({ name: "confirm" })}>{busy ? <><BoxArt size={16} mono />{t`Confirming…`}</> : t`Confirm`}</button> : null}
         <button type="button" className="desk-button" onClick={() => setMode("correct")}>{t`Correct time`}</button>
         {!session.member_id ? <button type="button" className="desk-button" onClick={() => setMode("assign")}>{t`Assign member`}</button> : null}
       </> : null}
       {mode !== "idle" ? <button type="button" className="desk-button" onClick={() => setMode("idle")}>{t`Cancel`}</button> : null}
     </div>
+    <EventLinkToggle makerspaceId={makerspaceId} kind="session" id={session.id} eventTitle={session.event?.title} />
     {action.isError ? <p role="alert" className="text-sm text-danger">{sessionErrorMessage(action.error)}</p> : null}
     {/* Decision 242(a): settle the session's charge where the session is shown (M5). */}
     <ChargeSettle makerspaceId={makerspaceId} invalidateKeys={[sessionKeys.staffAll(makerspaceId)]}

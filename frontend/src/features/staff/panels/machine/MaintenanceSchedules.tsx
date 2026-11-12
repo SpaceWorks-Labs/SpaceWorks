@@ -11,6 +11,7 @@ import {
   type MaintenanceSchedule,
   type ScheduleInput,
 } from "./maintenanceApi";
+import { BoxArt } from "../../../../components/BoxSpinner";
 
 const emptySchedule = (): ScheduleInput => ({
   description: "",
@@ -112,7 +113,7 @@ export function MaintenanceSchedules({
               {fields(editDraft, setEditDraft, "Edit schedule")}
               <div className="flex flex-wrap gap-2 sm:col-span-3">
                 <button className="desk-button-primary" type="submit" disabled={update.isPending}>
-                  {update.isPending ? t`Saving...` : t`Save schedule`}
+                  {update.isPending ? <><BoxArt size={16} mono />{t`Saving...`}</> : t`Save schedule`}
                 </button>
                 <button className="desk-button-ghost" type="button" onClick={() => setEditing(null)}>
                   {t`Cancel`}</button>
@@ -170,7 +171,7 @@ export function MaintenanceSchedules({
           <h4 className="title-section sm:col-span-3">{t`New schedule`}</h4>
           {fields(draft, setDraft, "New schedule")}
           <button className="desk-button-primary sm:col-span-3 sm:w-fit" type="submit" disabled={create.isPending}>
-            {create.isPending ? t`Creating...` : t`Create schedule`}
+            {create.isPending ? <><BoxArt size={16} mono />{t`Creating...`}</> : t`Create schedule`}
           </button>
         </form>
       ) : null}

@@ -8,6 +8,8 @@ import {
   certificationKeys, getCertificationGrants, getCertificationMembers,
   grantCertification, renewCertification, revokeCertification,
 } from "../../certificationsApi";
+import { LogoLoader } from "../../../../components/LogoLoader";
+import { BoxArt } from "../../../../components/BoxSpinner";
 
 export function CertificationGrants({ typeId, active }: { typeId: number; active: boolean }) {
   const client = useQueryClient();
@@ -31,7 +33,7 @@ export function CertificationGrants({ typeId, active }: { typeId: number; active
     },
   });
   return <div className="grid gap-3">
-    {grants.isLoading ? <p role="status">{t`Loading training records…`}</p> : null}
+    {grants.isLoading ? <LogoLoader label={t`Loading training records…`} size={48} className="min-h-16 py-3" /> : null}
     {grants.isSuccess && !grants.data.count ? <EmptyState message={t`No grants yet.`} /> : null}
     <ul className="grid gap-2">{grants.data?.results.map((grant) => <li key={grant.id} className="rounded-lg border border-line p-3 text-sm">
       <strong>{grant.member_name}</strong><p className="text-muted">{t`Granted ${new Date(grant.granted_at).toLocaleDateString(formatLocale())} · `}{grant.revoked_at ? t`Revoked` : grant.is_live ? t`Valid` : t`Expired`} · {grant.expires_at ? t`Expires ${new Date(grant.expires_at).toLocaleDateString(formatLocale())}` : t`No expiry`}</p>
@@ -43,7 +45,7 @@ export function CertificationGrants({ typeId, active }: { typeId: number; active
     {active ? <form className="grid gap-2" onSubmit={(e) => { e.preventDefault(); mutate.mutate(null); }}>
       <label className="grid gap-1 text-sm">{t`Member`}<select className="desk-input" required value={member} onChange={(e) => setMember(e.target.value)}><option value="">{t`Select a member`}</option>{members.data?.results.map((row) => <option key={row.id} value={row.id}>{row.name}</option>)}</select></label>
       <PagePager page={page} setPage={next => { setPage(next); setMember(""); }} next={members.data?.next} disabled={members.isFetching} />
-      <button className="desk-button-primary w-fit" disabled={!member || mutate.isPending}>{mutate.isPending ? t`Saving…` : t`Grant certification`}</button>
+      <button className="desk-button-primary w-fit" disabled={!member || mutate.isPending}>{mutate.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Grant certification`}</button>
     </form> : null}
     {[grants.error, members.error, mutate.error].map((error, index) => error instanceof Error ? <p role="alert" className="text-sm text-danger" key={index}>{error.message}</p> : null)}
     <ConfirmDialog open={action !== null} title={action?.kind === "renew" ? t`Renew certification?` : t`Revoke certification?`} message={action?.kind === "renew" ? t`A new grant will record reassessed training from today. The previous record stays in history.` : t`The member will lose this grant immediately. The training record stays in history.`} confirmLabel={action?.kind === "renew" ? t`Renew` : t`Revoke`} tone={action?.kind === "revoke" ? "danger" : "default"} pending={mutate.isPending} onConfirm={() => { if (action) mutate.mutate(action); }} onCancel={() => setAction(null)} />

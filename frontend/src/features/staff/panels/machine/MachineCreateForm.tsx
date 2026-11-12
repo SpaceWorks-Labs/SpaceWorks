@@ -12,6 +12,7 @@ import {
   type Machine,
   type MachineType,
 } from "../../machinesApi";
+import { BoxArt } from "../../../../components/BoxSpinner";
 
 type Props = {
   makerspaceId: number;
@@ -200,7 +201,7 @@ export function MachineCreateForm({ makerspaceId, machineType, onCreated, onDone
             </div>
             <button className={`desk-button min-h-11 justify-self-start ${focusRing}`} type="submit"
               disabled={warranty.isPending || !hasWarrantyDetails}>
-              {warranty.isPending ? t`Saving warranty...` : t`Save warranty`}
+              {warranty.isPending ? <><BoxArt size={16} mono />{t`Saving warranty...`}</> : t`Save warranty`}
             </button>
             {warranty.isSuccess ? <p className="text-sm text-success-ink">{t`Warranty details saved.`}</p> : null}
             {warranty.error instanceof Error ? (

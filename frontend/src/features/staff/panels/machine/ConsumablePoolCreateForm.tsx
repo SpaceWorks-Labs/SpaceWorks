@@ -7,6 +7,7 @@ import { staffRequest } from "../../../../lib/api";
 import { isBuiltinPrinterType, type MachineType } from "../../machinesApi";
 import { PoolColourSelector } from "./PoolColourSelector";
 import { poolPath, poolQueryKey, type PoolUnit } from "./servicePools";
+import { BoxArt } from "../../../../components/BoxSpinner";
 
 type Props = {
   visible?: boolean;
@@ -144,7 +145,7 @@ export function ConsumablePoolCreateForm({ makerspaceId, machineType, existingPo
           {pool.isPublic ? t`Visible to requesters` : t`Hidden from requesters`}
         </button>
         <button className="desk-button-primary" disabled={!pool.material.trim() || !pool.quantity || createPool.isPending} type="submit">
-          {createPool.isPending ? t`Adding...` : printerType ? t`Add filament` : t`Add pool`}
+          {createPool.isPending ? <><BoxArt size={16} mono />{t`Adding...`}</> : printerType ? t`Add filament` : t`Add pool`}
         </button>
       </div>
       {createPool.error instanceof Error ? <p className="text-sm text-danger">{createPool.error.message}</p> : null}

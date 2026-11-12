@@ -1,6 +1,7 @@
 // Printer jobs for this type's connected printers: send the in-progress request running on a
 // machine to its printer, follow progress, and apply a reported result through the normal
 // job workflow (completion, usage and consumables are applied server-side).
+import { LogoLoader } from "../../../../../components/LogoLoader";
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
 
@@ -8,6 +9,7 @@ import { ErrorBlock, StatusPill } from "../../../../../components/ui";
 import type { Machine } from "../../../machinesApi";
 import { useJobBoard } from "../machineJobsApi";
 import { useJobMutation, usePrinterJob, usePrinterJobs, type PrinterBinding, type PrinterJob, type PrinterJobState } from "./printerApi";
+import { BoxArt } from "../../../../../components/BoxSpinner";
 
 const STATE: Record<PrinterJobState, { label: string; tone: "neutral" | "accent" | "warn" | "success" | "danger" }> = {
   awaiting: { label: t`Sent, waiting for the printer`, tone: "accent" }, reported: { label: t`Result reported`, tone: "warn" },
@@ -50,7 +52,7 @@ export function PrinterJobsList({ makerspaceId, machineTypeId, machines, binding
 
 function JobDetail({ id }: { id: string }) {
   const detail = usePrinterJob(id);
-  if (detail.isLoading) return <p role="status" className="text-sm text-muted">{t`Loading job…`}</p>;
+  if (detail.isLoading) return <LogoLoader label={t`Loading job…`} size={48} className="min-h-16 py-3" />;
   if (detail.error || !detail.data) return <ErrorBlock error={detail.error} resource={t`printer job`} />;
   const job: PrinterJob = detail.data;
   const facts = [
@@ -92,7 +94,7 @@ function SendJob({ makerspaceId, machineTypeId, bindings, label }: {
       <input className="desk-input min-h-11" value={externalId} maxLength={120} placeholder={t`File or job name on the printer`}
         onChange={event => setExternalId(event.target.value)} /></label>
     <button type="submit" className="desk-button min-h-11" disabled={!bindingId || !requestId || !externalId.trim() || send.isPending}>
-      {send.isPending ? t`Sending…` : t`Send to printer`}</button>
+      {send.isPending ? <><BoxArt size={16} mono />{t`Sending…`}</> : t`Send to printer`}</button>
     {send.error ? <div className="basis-full"><ErrorBlock error={send.error} /></div> : null}
   </form>;
 }

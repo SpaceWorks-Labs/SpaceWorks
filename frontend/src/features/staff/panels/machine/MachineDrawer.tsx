@@ -21,10 +21,12 @@ import { WarrantyTab } from "./WarrantyTab";
 import { MachineRelatedTab } from "./MachineRelatedTab";
 import { SessionList } from "./sessions/SessionsScreen";
 import { SessionQrCard } from "./sessions/SessionQrCard";
+import { MachineAccessPanel } from "../../../machine-access/MachineAccessPanel";
+import { OpenToAllToggle } from "../../../machine-access/OpenToAllToggle";
 import { SupervisedMachineTab } from "../../../supervised-sessions/SupervisedMachineTab";
 
 const BASE_TABS = ["Overview", "Operators", "Consumables", "Usage", "Documents", "Errors"] as const;
-type MachineTab = (typeof BASE_TABS)[number] | "Maintenance" | "Warranty" | "Sessions" | "Supervised" | "Related";
+type MachineTab = (typeof BASE_TABS)[number] | "Maintenance" | "Warranty" | "Sessions" | "Supervised" | "Access" | "Related";
 const JUMP_TABS: readonly MachineTab[] = ["Maintenance", "Consumables", "Sessions", "Warranty"];
 
 export function MachineDrawer({
@@ -64,6 +66,8 @@ export function MachineDrawer({
     ...(canManageMachines && enabledFeatures.includes("machines.sessions") ? ["Sessions" as const] : []),
     // Decision 223 (d): supervised workshop sessions; operators instruct, managers oversee.
     ...((canManageMachines || details?.can_operate) && enabledFeatures.includes("machines.supervised_sessions") ? ["Supervised" as const] : []),
+    // Decision 319: who may use this machine (granted by the space manager), and the open-to-all switch.
+    ...(canManageMachines ? ["Access" as const] : []),
     // MC11: jobs, incidents and links into every other area that touches this machine.
     "Related" as const,
   ];
@@ -92,6 +96,10 @@ export function MachineDrawer({
                 canUnretire={details.can_unretire}
               />
             ) : null}
+            {activeTab === "Access" ? <div className="grid gap-4">
+              <OpenToAllToggle machineId={machineId} makerspaceId={makerspaceId} value={details.open_to_all_members === true} canEdit={details.can_manage === true} />
+              <MachineAccessPanel makerspaceId={makerspaceId} machineId={machineId} targets={{ machines: [], types: [] }} />
+            </div> : null}
             {activeTab === "Operators" ? (
               <OperatorsTab machineId={machineId} canDelegate={details.can_delegate} />
             ) : null}

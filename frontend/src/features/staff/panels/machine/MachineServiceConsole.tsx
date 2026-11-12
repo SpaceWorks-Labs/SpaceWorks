@@ -16,6 +16,7 @@ import { clearedActionDraft } from "./serviceDrafts";
 import { cancelBody, openAction } from "./cancelEstimate";
 import type { ServiceActionName, ServiceDraft } from "./serviceDrafts";
 import { poolQueryKey, poolUnits, unitLabels, usablePools } from "./servicePools";
+import { LogoLoader } from "../../../../components/LogoLoader";
 
 type Props = {
   visible?: boolean;
@@ -119,7 +120,7 @@ export function MachineServiceConsole({ makerspaceId, canManage, machineType, ma
             <ListRow key={request.id} title={request.title} identity={{ kind: "avatar", name: request.requester_name || "Member", seed: String(request.id) }}
                 meta={<> {t`${request.requester_name} · Planned ${request.planned_quantity ?? "0"} ${unitLabel} · actual ${request.actual_consumed_quantity ?? "0"} ${unitLabel}`}<ServiceEtaLine request={request} /></>}
                 right={<div className="flex flex-wrap items-center gap-2"><StatusBadge status={request.status} label={machineStatusLabel(request.status)} /><ServiceActions request={request} onAction={name => setDraft(current => openAction(current, request, name))} /></div>} />
-          )) ?? <p className="text-sm text-muted">{t`Loading service queue...`}</p>}
+          )) ?? <LogoLoader label={t`Loading service queue...`} size={48} className="min-h-16 py-3" />}
         </div>}</ServiceQueueTabs>
         {draft.action ? (
           <Modal open title={`${draft.action.name} job`} onClose={() => setDraft(current => ({ ...current, action: null }))}><ServiceActionForm

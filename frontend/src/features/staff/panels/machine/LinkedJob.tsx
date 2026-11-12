@@ -7,6 +7,7 @@ import { formatDate, formatDateTime } from "../../../../lib/format";
 import { useCrossLink } from "../../crossLinks/staffHref";
 import { useStaffGet } from "../shared";
 import { jobStatusLabel } from "./ServiceConsoleSections";
+import { LogoLoader } from "../../../../components/LogoLoader";
 
 type JobRow = Partial<MachineServiceRequest> & { id: number; title: string; status: string };
 
@@ -43,7 +44,7 @@ export function LinkedJob({ jobId }: { jobId: number }) {
   const close = () => setParams((current) => { const next = new URLSearchParams(current); next.delete("job"); return next; }, { replace: true });
   return <DetailDrawer open title={job.data?.title ?? t`Job`} onClose={close}>
     <section aria-label={t`Linked job`} className="grid gap-3">
-      {job.isLoading ? <p className="text-sm text-muted">{t`Loading job…`}</p> : null}
+      {job.isLoading ? <LogoLoader label={t`Loading job…`} size={48} className="min-h-16 py-3" /> : null}
       {job.isError ? <p role="alert" className="text-sm">{t`Couldn't load this job. It may be outside your machines.`}</p> : null}
       {job.data ? <JobFacts job={job.data} /> : null}
       <button type="button" className="desk-button-ghost justify-self-start text-sm" onClick={close}>{t`Close job`}</button>

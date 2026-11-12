@@ -1,5 +1,6 @@
 // The machine-type integration foundation (`machines.integrations`, off by default): bind the
 // printer agent to this type, switch it on, and read the live status its printers report.
+import { LogoLoader } from "../../../../../components/LogoLoader";
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
 
@@ -16,7 +17,7 @@ export function TypeIntegrationSection({ makerspaceId, machineTypeId }: { makers
   return <section className="grid gap-3 rounded-xl border border-line bg-panel p-3" aria-label={t`Printer agent`}>
     <h3 className="title-panel">{t`Printer agent`}</h3>
     <p className="text-sm text-muted">{t`Lets connected printers of this type pull their approved jobs and report live status. It is created switched off.`}</p>
-    {integrations.isLoading ? <p role="status" className="text-sm text-muted">{t`Loading integrations…`}</p> : null}
+    {integrations.isLoading ? <LogoLoader label={t`Loading integrations…`} size={48} className="min-h-16 py-3" /> : null}
     {integrations.error ? <ErrorBlock error={integrations.error} resource={t`integrations`} onRetry={() => void integrations.refetch()} /> : null}
     {rows.map(row => <div key={row.id} className="flex flex-wrap items-center gap-3 rounded-control border border-line p-3">
       <span className="min-w-0 flex-1 text-sm font-semibold text-ink">{t`Printer agent`}</span>
@@ -37,7 +38,7 @@ export function TypeIntegrationSection({ makerspaceId, machineTypeId }: { makers
 }
 
 function StatusTable({ rows, loading, error }: { rows: IntegrationStatus[]; loading: boolean; error: unknown }) {
-  if (loading) return <p role="status" className="text-sm text-muted">{t`Loading printer status…`}</p>;
+  if (loading) return <LogoLoader label={t`Loading printer status…`} size={48} className="min-h-16 py-3" />;
   if (error) return <ErrorBlock error={error} resource={t`printer status`} />;
   if (!rows.length) return <p className="text-sm text-muted">{t`No connected printer has reported yet.`}</p>;
   return <ul className="grid gap-2" aria-label={t`Printer status`}>

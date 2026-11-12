@@ -6,6 +6,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { addMachineUsage, collectionResults, getMachineUsage, machineKeys } from "../../machinesApi";
+import { BoxArt } from "../../../../components/BoxSpinner";
 
 export function UsageTab({ machineId, makerspaceId, canOperate }: {
   machineId: number;
@@ -60,7 +61,7 @@ export function UsageTab({ machineId, makerspaceId, canOperate }: {
           <UsageAttributionFields machineId={machineId} member={member} startedAt={startedAt}
             onChange={value => { if (value.member !== undefined) setMember(value.member); if (value.started_at !== undefined) setStartedAt(value.started_at); }} />
           <button className="desk-button-primary" type="submit" disabled={add.isPending || !hours}>
-            {add.isPending ? t`Logging...` : t`Add usage`}
+            {add.isPending ? <><BoxArt size={16} mono />{t`Logging...`}</> : t`Add usage`}
           </button>
         </form>
       ) : null}

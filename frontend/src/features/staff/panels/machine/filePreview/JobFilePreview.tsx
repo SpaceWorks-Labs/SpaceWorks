@@ -8,6 +8,7 @@ import { ASK_PREVIEW_BYTES, checkMesh, MAX_PREVIEW_BYTES, MAX_PREVIEW_MS } from 
 import type { PreviewResult } from "../../../../events/hackathonSubmissions/types";
 import { extensionOf, KIND_LABELS, previewKind } from "./previewKinds";
 import { MAX_SVG_BYTES, sanitizeSvg } from "./svgFile";
+import { BoxSpinner } from "../../../../../components/BoxSpinner";
 
 const MeshCanvas = lazy(() => import("../../../../events/hackathonSubmissions/MeshCanvas"));
 type State = "idle" | "confirm" | "loading" | "ready" | "failed";
@@ -74,7 +75,7 @@ export function JobFilePreview({ fileId, filename, bytes, load }: {
     {state === "confirm" ? <Callout size="panel" tone="warn" lead="This is a large file."
       body={t`The preview may use a lot of memory on this device. You can download the original instead.`} /> : null}
     {state === "failed" ? <p role="status" className="text-sm text-muted">{t`Preview unavailable. You can still download the original file.`}</p> : null}
-    {state === "loading" ? <div role="status" className="flex flex-wrap items-center gap-2"><Spinner />{t`Preparing preview…`}<ActionControl action={{ label: t`Cancel preview`, onClick: () => { stop.current(); setState("idle"); } }} /></div> : null}
+    {state === "loading" ? <div className="flex flex-wrap items-center gap-2"><BoxSpinner label={t`Preparing preview…`} /><ActionControl action={{ label: t`Cancel preview`, onClick: () => { stop.current(); setState("idle"); } }} /></div> : null}
     {state === "ready" && mesh?.kind === "mesh" ? <Suspense fallback={<Spinner />}><MeshCanvas meshes={mesh.meshes} label={t`3D preview of ${filename}`} /></Suspense> : null}
     {state === "ready" && image ? <img src={image} alt={`${KIND_LABELS[kind]} of ${filename}`}
       className="max-h-96 w-full rounded-xl border border-line bg-panel object-contain p-2" /> : null}

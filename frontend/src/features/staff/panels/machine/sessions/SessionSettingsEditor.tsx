@@ -4,6 +4,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { fetchSessionSettings, saveSessionSettings, sessionErrorMessage, sessionKeys } from "../../../../machine-sessions/api";
 import { errorCode } from "../machineJobsApi";
+import { LogoLoader } from "../../../../../components/LogoLoader";
+import { BoxArt } from "../../../../../components/BoxSpinner";
 
 const READ_ONLY = (): Record<string, string> => ({
   setting_not_delegated: t`Only the Space Manager, or a manager they have handed this setting to, can change it.`,
@@ -25,11 +27,11 @@ export function SessionSettingsEditor({ makerspaceId, machineTypeId, visible = t
   return <section className="rounded-xl border border-line bg-panel p-3" aria-labelledby={`${id}-title`}>
     <h3 id={`${id}-title`} className="title-panel">{t`Machine sessions`}</h3>
     <p className="my-2 text-sm text-muted">{t`A session nobody stops ends by itself after this long, at check-out or at closing time, and waits for a staff check.`}</p>
-    {query.isLoading ? <p role="status">{t`Loading session settings…`}</p> : null}
+    {query.isLoading ? <LogoLoader label={t`Loading session settings…`} size={48} className="min-h-16 py-3" /> : null}
     {query.data ? <form className="flex flex-wrap items-end gap-3" onSubmit={event => { event.preventDefault(); save.mutate(Number(minutes)); }}>
       <label className="grid gap-1 text-sm">{t`Longest session (minutes)`}<input className="desk-input w-40" type="number" min={5} max={1440} required value={minutes}
           onChange={event => setMinutes(event.target.value)} disabled={save.isPending || Boolean(lock)} /></label>
-      {!lock ? <button className="desk-button-primary" disabled={save.isPending}>{save.isPending ? t`Saving…` : t`Save`}</button> : null}
+      {!lock ? <button className="desk-button-primary" disabled={save.isPending}>{save.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Save`}</button> : null}
     </form> : null}
     {save.isSuccess ? <p role="status" className="mt-2 text-sm">{t`Session setting saved.`}</p> : null}
     {lock ? <p role="status" className="mt-2 text-sm">{lock}</p> : null}

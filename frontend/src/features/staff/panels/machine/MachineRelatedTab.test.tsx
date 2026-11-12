@@ -44,7 +44,7 @@ describe("MachineRelatedTab (MC11)", () => {
     expect(api.staffRequest).toHaveBeenCalledWith("/admin/makerspaces/4/machine-service/requests?machine=12", expect.anything());
     const related = screen.getByRole("region", { name: "Related" });
     expect(within(related).getByRole("link", { name: /Service queue/ })).toHaveAttribute("href", "/m/lab/admin/machines/3-laser/queue");
-    expect(within(related).getByRole("link", { name: /Certifications/ })).toHaveAttribute("href", "/m/lab/admin/machines/3-laser/certifications");
+    expect(within(related).getByRole("link", { name: /Machine access/ })).toHaveAttribute("href", "/m/lab/admin/machines/3-laser/access");
     expect(await within(related).findByRole("link", { name: /Incidents/ })).toHaveAttribute("href", "/m/lab/admin/incidents?machine=12");
     expect(within(related).getByRole("link", { name: /To-Buy/ })).toBeInTheDocument();
     expect(within(related).queryByRole("link", { name: /Bookings/ })).toBeNull();

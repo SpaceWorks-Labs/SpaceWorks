@@ -12,6 +12,7 @@ import {
   machineKeys,
   uploadMachineDocument,
 } from "../../machinesApi";
+import { BoxArt } from "../../../../components/BoxSpinner";
 
 export function DocumentsTab({ machineId, canEdit }: { machineId: number; canEdit: boolean }) {
   const queryClient = useQueryClient();
@@ -70,7 +71,7 @@ export function DocumentsTab({ machineId, canEdit }: { machineId: number; canEdi
           </label>
           <button className="desk-button-primary" type="submit"
             disabled={upload.isPending || !file || !docType.trim()}>
-            {upload.isPending ? t`Uploading...` : t`Upload`}
+            {upload.isPending ? <><BoxArt size={16} mono />{t`Uploading...`}</> : t`Upload`}
           </button>
         </form>
       ) : null}

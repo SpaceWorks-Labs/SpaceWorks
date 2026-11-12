@@ -7,6 +7,7 @@ import { certificationKeys, createCertificationType, deactivateCertificationType
 import { CertificationTypeForm } from "./CertificationTypeForm";
 import { CertificationGrants } from "./CertificationGrants";
 import { InductionEventsSection } from "./InductionEventsSection";
+import { LogoLoader } from "../../../../components/LogoLoader";
 
 export function CertificationsPanel({ makerspaceId, machineTypeId , visible = true }: { visible?: boolean; makerspaceId: number; machineTypeId: number }) {
   const client = useQueryClient();
@@ -22,7 +23,7 @@ export function CertificationsPanel({ makerspaceId, machineTypeId , visible = tr
   if (!visible) return null;
   return <section className="grid gap-3 rounded-xl border border-line bg-panel p-3" aria-label={t`Certifications`}>
     <h3 className="title-panel">{t`Certifications`}</h3>
-    {types.isLoading ? <p role="status">{t`Loading certifications…`}</p> : null}
+    {types.isLoading ? <LogoLoader label={t`Loading certifications…`} size={48} className="min-h-16 py-3" /> : null}
     {types.isSuccess && !rows.length ? <EmptyState message={t`No certifications defined for this machine type.`} /> : null}
     {rows.map((row) => <article key={row.id} className="grid gap-2 rounded-lg border border-line p-3">
       <h4 className="title-section">{row.name}{!row.is_active ? " (inactive)" : ""}</h4><p className="text-sm text-muted">{row.validity_days ? t`Valid for ${row.validity_days} days` : t`No expiry`}{row.is_required_for_service ? t` · Service required` : ""}{row.is_required_for_booking ? t` · Booking required` : ""}</p>

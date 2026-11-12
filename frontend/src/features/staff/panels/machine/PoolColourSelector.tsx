@@ -6,6 +6,7 @@ import type { PrinterPool } from "../../../../generated/api";
 import { staffRequest, type StaffAuthUser } from "../../../../lib/api";
 import { machineKeys, updateMachineType, type MachineType } from "../../machinesApi";
 import { PoolColourSwatchControl } from "./PoolColourSwatchControl";
+import { BoxArt } from "../../../../components/BoxSpinner";
 
 type Props = {
   makerspaceId: number;
@@ -59,7 +60,7 @@ export function PoolColourSelector({ makerspaceId, machineType, existingPools, v
   const [customHex, setCustomHex] = useState("#000000");
   const [customError, setCustomError] = useState("");
   const [addedColours, setAddedColours] = useState<Array<{ name: string; hex: string }>>([]);
-  const configuredColours = machineType?.capability_config?.accepted_colours ?? [];
+  const configuredColours = useMemo(() => machineType?.capability_config?.accepted_colours ?? [], [machineType]);
   const colourNames = useMemo(() => {
     const names = new Map<string, string>();
     [...configuredColours, ...addedColours.map(({ name }) => name)].forEach((name) => {
@@ -178,7 +179,7 @@ export function PoolColourSelector({ makerspaceId, machineType, existingPools, v
             <PoolColourSwatchControl legend={t`Custom colour swatch`} value={customHex} onChange={setCustomHex} />
             <div className="flex flex-wrap gap-2">
               <button className="desk-button-primary" disabled={appendColour.isPending} type="button" onClick={confirmCustom}>
-                {appendColour.isPending ? t`Saving...` : t`Save custom colour`}
+                {appendColour.isPending ? <><BoxArt size={16} mono />{t`Saving...`}</> : t`Save custom colour`}
               </button>
               <button className="desk-button-ghost" type="button" onClick={() => { setAddingCustom(false); setCustomError(""); appendColour.reset(); }}>
                 {t`Cancel`}</button>

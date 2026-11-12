@@ -13,6 +13,7 @@ import {
   machineKeys,
   type MachineAccessLevel,
 } from "../../machinesApi";
+import { BoxArt } from "../../../../components/BoxSpinner";
 
 export function OperatorsTab({ machineId, canDelegate }: { machineId: number; canDelegate: boolean }) {
   const queryClient = useQueryClient();
@@ -77,7 +78,7 @@ export function OperatorsTab({ machineId, canDelegate }: { machineId: number; ca
             </select>
           </label>
           <button className="desk-button-primary" type="submit" disabled={add.isPending || !userId}>
-            {add.isPending ? t`Adding...` : t`Add`}
+            {add.isPending ? <><BoxArt size={16} mono />{t`Adding...`}</> : t`Add`}
           </button>
         </form>
       ) : null}

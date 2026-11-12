@@ -10,6 +10,7 @@ import { JobActionFields } from "./JobActionFields";
 import { initialJobValues, jobActionBody, type JobFormValues } from "./jobActionBody";
 import { ACTION_ERROR_HELP } from "./jobLabels";
 import { errorCode, type StaffJob } from "./machineJobsApi";
+import { BoxArt } from "../../../../components/BoxSpinner";
 
 /**
  * Audit row MC3: the pickup desk's hand-over, with the same fields as the Machine Manager's board --
@@ -39,7 +40,7 @@ export function HandoverCollectDialog({ job, makerspaceId, onDone, onClose }: {
       <div className="flex flex-wrap justify-end gap-2 border-t border-line pt-3">
         <button type="button" className="desk-button-ghost" onClick={onClose}>{t`Cancel`}</button>
         <button type="submit" className="desk-button-primary" disabled={collect.isPending}>
-          {collect.isPending ? t`Saving…` : t`Mark collected`}</button>
+          {collect.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Mark collected`}</button>
       </div>
     </form>
   </Modal>;

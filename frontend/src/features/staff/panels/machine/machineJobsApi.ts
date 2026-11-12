@@ -11,6 +11,7 @@ export type StaffJob = Omit<MachineServiceRequest, "status"> & {
   queued_at?: string | null; urgent?: boolean; urgent_reason?: string; needed_by?: string | null; copies?: number;
   own_material?: boolean; material_note?: string; member_estimate_minutes?: number | null;
   preassigned_machine_id?: number | null; batch_id?: number | null; changes_requested_at?: string | null;
+  event?: { id: number; title: string } | null;
   changes_code?: string; changes_message?: string; member_note?: string; reject_code?: string;
   quote_snapshot?: { total?: string; currency?: string } | null; quoted_at?: string | null;
   quote_expires_at?: string | null; quote_approved_at?: string | null; prepay?: boolean; fail_code?: string;

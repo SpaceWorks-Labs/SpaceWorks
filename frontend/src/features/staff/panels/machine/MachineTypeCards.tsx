@@ -1,7 +1,8 @@
 import { plural, t } from "@lingui/core/macro";
-import { EmptyState, ListRow, Skeleton, StatusPill } from "../../../../components/ui";
+import { EmptyState, ListRow, StatusPill } from "../../../../components/ui";
 import type { Identity } from "../../../../components/ui/types";
 import type { Machine, MachineType, MachineStatus } from "../../machinesApi";
+import { LogoLoader } from "../../../../components/LogoLoader";
 
 type Props = {
   machineTypes: MachineType[];
@@ -47,11 +48,7 @@ export function MachineTypeCards({
 }: Props) {
   if (typesLoading) {
     return (
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3" aria-label={t`Loading machine types`}>
-        {[0, 1, 2].map((slot) => (
-          <Skeleton key={slot} className="h-28 w-full" />
-        ))}
-      </div>
+      <LogoLoader label={t`Loading machine types`} size={48} className="min-h-28 py-3" />
     );
   }
 

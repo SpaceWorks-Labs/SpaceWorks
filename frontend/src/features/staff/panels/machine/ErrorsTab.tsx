@@ -6,6 +6,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { addMachineErrorLog, collectionResults, getMachineErrorLogs, machineKeys } from "../../machinesApi";
+import { BoxArt } from "../../../../components/BoxSpinner";
 
 export function ErrorsTab({ machineId, canOperate }: { machineId: number; canOperate: boolean }) {
   const queryClient = useQueryClient();
@@ -50,7 +51,7 @@ export function ErrorsTab({ machineId, canOperate }: { machineId: number; canOpe
           </label>
           <button className="desk-button-primary justify-self-start" type="submit"
             disabled={add.isPending || !severity.trim() || !message.trim()}>
-            {add.isPending ? t`Logging...` : t`Add error log`}
+            {add.isPending ? <><BoxArt size={16} mono />{t`Logging...`}</> : t`Add error log`}
           </button>
         </form>
       ) : null}

@@ -2,7 +2,7 @@ import { t } from "@lingui/core/macro";
 import { MaintenanceFeedControl } from "./MaintenanceFeedControl";
 import { useState } from "react";
 
-import { EmptyState, Skeleton, ErrorBlock, ListRow, RelativeTime } from "../../../../components/ui";
+import { EmptyState, ErrorBlock, ListRow, RelativeTime } from "../../../../components/ui";
 import { MaintenanceDocuments } from "./MaintenanceDocuments";
 import { MaintenanceSchedules } from "./MaintenanceSchedules";
 import { DowntimePanel, LockoutNotice } from "./DowntimePanel";
@@ -15,6 +15,8 @@ import {
   type MaintenanceSchedule,
 } from "./maintenanceApi";
 import { costBody, EMPTY_COST, MaintenanceCostInput, type CostValue } from "./MaintenanceCostInput";
+import { LogoLoader } from "../../../../components/LogoLoader";
+import { BoxArt } from "../../../../components/BoxSpinner";
 
 type MaintenanceTabProps = {
   metersEnabled?: boolean;
@@ -36,10 +38,7 @@ export function MaintenanceTab({
 
   if (schedules.isLoading || logs.isLoading) {
     return (
-      <div className="grid gap-3" aria-label={t`Loading maintenance details`}>
-        <Skeleton className="h-28 w-full" />
-        <Skeleton className="h-40 w-full" />
-      </div>
+      <LogoLoader label={t`Loading maintenance details`} size={48} className="min-h-40 py-3" />
     );
   }
 
@@ -163,7 +162,7 @@ function ScheduleCompletionForm({ makerspaceId, machineId, schedule, onCancel, o
         <div className="flex flex-wrap gap-2 sm:col-span-2">
           <button className="desk-button-primary" type="submit"
             disabled={complete.isPending || !summary.trim()}>
-            {complete.isPending ? t`Completing...` : t`Complete maintenance`}
+            {complete.isPending ? <><BoxArt size={16} mono />{t`Completing...`}</> : t`Complete maintenance`}
           </button>
           <button className="desk-button-ghost" type="button" onClick={onCancel} disabled={complete.isPending}>
             {t`Cancel`}</button>
@@ -232,7 +231,7 @@ function MaintenanceLogForm({ makerspaceId, machineId }: {
           {t`Set machine status to idle`}</label>
         <button className="desk-button-primary justify-self-start" type="submit"
           disabled={log.isPending || !summary.trim()}>
-          {log.isPending ? t`Logging...` : t`Log maintenance`}
+          {log.isPending ? <><BoxArt size={16} mono />{t`Logging...`}</> : t`Log maintenance`}
         </button>
       </form>
       {log.error instanceof Error ? (

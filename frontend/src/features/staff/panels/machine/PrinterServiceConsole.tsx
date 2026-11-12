@@ -16,6 +16,7 @@ import { clearedActionDraft } from "./serviceDrafts";
 import { cancelBody, openAction } from "./cancelEstimate";
 import type { ServiceActionName, ServiceDraft } from "./serviceDrafts";
 import { poolQueryKey, usablePools } from "./servicePools";
+import { LogoLoader } from "../../../../components/LogoLoader";
 
 type Props = {
   visible?: boolean;
@@ -132,7 +133,7 @@ export function PrinterServiceConsole({ makerspaceId, canManage, printingEnabled
               <ListRow key={request.id} title={request.title} identity={{ kind: "avatar", name: request.requester_name || "Member", seed: String(request.id) }}
                 meta={<> {t`${request.requester_name} · Planned ${request.planned_grams} g · actual ${request.actual_consumed_quantity ?? "0"} g`}<ServiceEtaLine request={request} /></>}
                 right={<div className="flex flex-wrap items-center gap-2"><StatusBadge status={request.status} label={machineStatusLabel(request.status)} /><ServiceActions request={request} onAction={name => setDraft(current => openAction(current, request, name))} /></div>} />
-            )) ?? <p className="text-sm text-muted">{t`Loading printer queue…`}</p>}
+            )) ?? <LogoLoader label={t`Loading printer queue…`} size={48} className="min-h-16 py-3" />}
           </div>}</ServiceQueueTabs>
           {draft.action ? <Modal open title={`${draft.action.name} job`} onClose={() => setDraft(current => ({ ...current, action: null }))}><ActionForm action={draft.action.name} values={draft.actionValues} setValues={(actionValues) => setDraft((current) => ({ ...current, actionValues }))} printers={machines} pools={actionPools} pending={runAction.isPending} onCancel={() => setDraft((current) => ({ ...current, action: null }))} onSubmit={() => runAction.mutate()} /><ErrorBlock error={runAction.error} /></Modal> : null}
         </Subsection>) : undefined} manualForm={<ManualUsageForm draft={draft} setDraft={setDraft} printers={machines} pools={manualPools} pending={submitManual.isPending} onSubmit={() => submitManual.mutate()} />} manualRows={<div className="mt-3 grid gap-2">{manualUsage.data && !printerUsage.length ? <EmptyState message={t`No manual usage logged yet. Log the first entry.`} /> : null}{printerUsage.map(entry => <ListRow key={entry.id} title={`${entry.duration_minutes} min`} meta={<>{entry.consumed_grams} g{entry.outcome === "failed" ? ` · ${entry.percent_complete}%` : ""}</>} right={<StatusBadge status={entry.outcome} label={machineStatusLabel(entry.outcome)} />} />)}</div>} reports={printingEnabled && reportsEnabled ? (<Subsection title={t`Printer reports`}>

@@ -12,6 +12,8 @@ FIELD_ADDITIONS = {
 }
 OMITTED_MODELS = {
     "accounts.DeviceActivityDay": "Runtime grant activity; target sessions start with no history.",
+    "accounts.WebSessionActivityDay": "Runtime browser-session activity; target sessions start with no history.",
+    "accounts.ChannelUsageDay": "Deployment-local channel/area call counts; no person, never portable.",
     "accounts.AttestationVerificationLog": "Anonymous deployment attestation outcomes, not tenant data.",
     "integrations.PushDeliveryAttempt": "Runtime staff push delivery to source-local devices; never portable.",
     "integrations.SmsSendLog": "Runtime provider outcomes; deployment history does not travel.",

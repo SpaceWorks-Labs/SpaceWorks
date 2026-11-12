@@ -136,6 +136,8 @@ RELATIONAL_USER_FIELDS |= frozenset({("machines.MachineUsageEntry", "member"), (
 _EXCLUDED_USER_EDGE_REASONS[("integrations.PushDeliveryAttempt", "recipient")] = "Runtime delivery ownership is exported only through the personal allowlist; never a portable tenant user edge."
 RELATIONAL_USER_FIELDS |= frozenset({("integrations.MessagingConsent", "user"), ("integrations.MessagingDelivery", "user")})
 _EXCLUDED_USER_EDGE_REASONS[("integrations.MessagingDelivery", "user")] = "Personal runtime telemetry is omitted from tenant artifacts."
+RELATIONAL_USER_FIELDS |= frozenset({("accounts.WebSessionActivityDay", "user")})
+_EXCLUDED_USER_EDGE_REASONS[("accounts.WebSessionActivityDay", "user")] = "Runtime browser-session activity is omitted; target sessions start with no history."
 USER_EDGES = {}
 for _fidelity in Fidelity:
     for _label, _field in RELATIONAL_USER_FIELDS | RAW_USER_REFERENCE_FIELDS:

@@ -13,7 +13,8 @@ RUNTIME_FIELDS = {
     "integrations.NotificationDelivery": ("id", "makerspace_id", "envelope_id", "channel", "provider", "state", "attempt_count", "ambiguous_count", "next_attempt_at", "last_error", "created_at", "updated_at"),
     "integrations.NotificationEndpoint": ("id", "makerspace_id", "channel", "provider", "destination", "provider_subject", "verification_state", "verified_at", "consented_at", "consent_version", "revoked_at", "last_inbound_at", "created_at"),
     "integrations.MessagingDelivery": ("id", "makerspace_id", "channel", "audience", "feature", "event", "context", "status", "progress_rank", "skip_reason", "error_code", "attempts", "estimated_segments", "billed_segments", "created_at", "accepted_at", "sent_at", "delivered_at", "read_at", "failed_at"),
-    "accounts.DeviceActivityDay": ("id", "makerspace_id", "platform", "local_day", "created_at"),
+    "accounts.DeviceActivityDay": ("id", "makerspace_id", "platform", "app_version", "local_day", "created_at"),
+    "accounts.WebSessionActivityDay": ("id", "makerspace_id", "local_day", "created_at"),
     "notifications.MemberPushDelivery": ("id", "platform", "provider_source", "status", "attempts", "sent_at", "created_at"),
     "integrations.PushDeliveryAttempt": ("id", "platform", "provider_source", "status", "attempts", "sent_at", "created_at"),
 }
@@ -40,6 +41,10 @@ def runtime_subject_query(model, user, makerspace_id):
         return every_row(model).filter(user__in=ids, makerspace_id=makerspace_id)
     if label == "accounts.DeviceActivityDay":
         return every_row(model).filter(grant__user__in=ids).filter(
+            Q(makerspace_id=makerspace_id) | Q(makerspace__isnull=True),
+        )
+    if label == "accounts.WebSessionActivityDay":
+        return every_row(model).filter(user__in=ids).filter(
             Q(makerspace_id=makerspace_id) | Q(makerspace__isnull=True),
         )
     if label == "notifications.MemberPushDelivery":

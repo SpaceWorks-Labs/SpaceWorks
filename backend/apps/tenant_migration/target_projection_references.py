@@ -24,7 +24,6 @@ FK_POLICIES = {
         "Revisions only reference promoted artwork; remap its retained identity.",
     ),
     ("makerspaces.MembershipAdditionalRole", "role"): ForeignKeyPolicy(ReferenceDisposition.DROP_ROW, "Source roles never become target authority."),
-    ("machines.MembershipMachineScope", "machine"): ForeignKeyPolicy(ReferenceDisposition.DROP_ROW, "A resolved machine must not revive source authority."),
     ("machines.MembershipMachineTypeScope", "machine_type"): ForeignKeyPolicy(ReferenceDisposition.DROP_ROW, "A resolved type must not revive source authority."),
     ("inventory.InventoryProduct", "category"): ForeignKeyPolicy(ReferenceDisposition.REMAP_RESOLVED, "Use the category slug resolution map."),
     ("integrations.DestinationCategoryScope", "category"): ForeignKeyPolicy(ReferenceDisposition.REMAP_RESOLVED, "Use the category slug resolution map."),
@@ -35,6 +34,14 @@ FK_POLICIES = {
         ReferenceDisposition.REMAP_RESOLVED,
         "Remap retained application history; vouches for dropped open applications do not travel.",
     ),
+    # Parity O-B1: the unit an applicant chose follows its application, so an open application's choice is dropped with it.
+    ("makerspaces.MembershipRequestUnit", "request"): ForeignKeyPolicy(
+        ReferenceDisposition.REMAP_RESOLVED,
+        "Remap retained application history; the unit choice of a dropped open application does not travel.",
+    ),
+    # Machine access grants and event machine links name a machine type, which resolves like every other type reference.
+    ("machines.MachineAccessGrant", "machine_type"): ForeignKeyPolicy(ReferenceDisposition.REMAP_RESOLVED, "Use the built-in/custom machine type map."),
+    ("events.MachineEventLink", "machine_type"): ForeignKeyPolicy(ReferenceDisposition.REMAP_RESOLVED, "Use the built-in/custom machine type map."),
     # Release 2 L4: both point at application history, which is remapped like a vouch's request.
     ("makerspaces.ImportedMember", "invitation"): ForeignKeyPolicy(
         ReferenceDisposition.REMAP_RESOLVED,

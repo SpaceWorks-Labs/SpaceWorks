@@ -23,7 +23,7 @@ from apps.backup.capture_managers import every_row
 
 def export_row_policy(model_label, row):
     """Return ``(emit_row, contributes_live_edges)`` before closure traversal."""
-    if model_label == "makerspaces.MembershipVouch":
+    if model_label in {"makerspaces.MembershipVouch", "makerspaces.MembershipRequestUnit"}:
         # A vouch is retained history only when its application is retained. Apply
         # this before the user closure too, so a dropped application's voucher
         # cannot introduce an unrelated global identity into the portable archive.

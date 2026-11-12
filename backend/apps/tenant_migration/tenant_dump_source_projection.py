@@ -142,10 +142,8 @@ def _close_conditional_rows(rows):
     kept_requests = {
         row["id"] for row in rows.get("makerspaces.MembershipRequest", ())
     }
-    rows["makerspaces.MembershipVouch"] = tuple(
-        row for row in rows.get("makerspaces.MembershipVouch", ())
-        if row["request_id"] in kept_requests
-    )
+    for label in ("makerspaces.MembershipVouch", "makerspaces.MembershipRequestUnit"):
+        rows[label] = tuple(row for row in rows.get(label, ()) if row["request_id"] in kept_requests)
     kept_destinations = {
         row["id"] for row in rows.get("integrations.NotificationDestination", ())
     }

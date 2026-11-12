@@ -67,4 +67,16 @@ MEMBERSHIP_DEPENDENT_MODELS = {
         retained_by_import=True,
         reason="A title held by one membership; it travels with the membership.",
     ),
+    # Parity O-B1 (member units): a member's unit and a staff member's unit scope travel with their membership.
+    "makerspaces.MembershipUnit": MembershipDependency(
+        retained_by_import=True,
+        reason="The unit one membership belongs to; it travels with the membership and the unit tree.",
+    ),
+    "makerspaces.StaffUnitScope": MembershipDependency(
+        retained_by_import=True,
+        reason=(
+            "A staff-track membership's unit scope travels with that membership; it only narrows what the "
+            "target role already grants and is inert while the target's unit_scoped_staff switch is off."
+        ),
+    ),
 }

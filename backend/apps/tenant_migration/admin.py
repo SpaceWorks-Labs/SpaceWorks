@@ -24,7 +24,7 @@ class ReadOnlyMigrationAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
 
 class DisclosureClosureApprovalAdmin(ReadOnlyMigrationAdmin):
     list_display = (
-        "id", "makerspace", "closure_digest", "approved_by", "approved_at", "revoked_at",
+        "id", "makerspace", "approved_by", "approved_at", "revoked_at",
     )
     list_filter = ("makerspace", "approved_at", "revoked_at")
     search_fields = ("makerspace__name",)
@@ -33,7 +33,7 @@ class DisclosureClosureApprovalAdmin(ReadOnlyMigrationAdmin):
 
 class TenantMigrationExportJobAdmin(ReadOnlyMigrationAdmin):
     list_display = (
-        "export_job", "closure_digest", "archive_digest", "format_version",
+        "export_job", "format_version",
     )
     list_filter = ("export_job__makerspace", "format_version")
     readonly_fields = tuple(field.name for field in TenantMigrationExportJob._meta.fields)

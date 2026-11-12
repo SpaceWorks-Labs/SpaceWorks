@@ -65,6 +65,22 @@ OBJECT_MUTATION_PARTICIPANTS = {
     "apps.maintenance.services_documents.delete_log_document": "Runs inside the model-resolved maintenance document route.",
     "apps.maintenance.services_documents.finalize_log_document": "Runs inside the model-resolved maintenance document route.",
     "apps.makerspaces.lifecycle_storage._delete_public_image_keys": "Tenant purge is an express source-gate exclusion.",
+    "apps.card_designs.templates_files._store": "Runs inside the template and artwork import routes, which resolve their tenant before storing.",
+    "apps.devices.services_adapter_artifacts._upload": "Runs inside the adapter media routes (device or staff), which resolve their tenant first.",
+    "apps.devices.services_adapter_artifacts.complete": "Runs inside the adapter media routes (device or staff), which resolve their tenant first.",
+    "apps.events.programme.cover_finalize._discard": "Failed-conversion cleanup inside the tenant-resolved event and series cover routes.",
+    "apps.events.programme.cover_finalize.convert_to_webp": "Called by the tenant-resolved event and event-series cover image routes.",
+    "apps.events.services_deletion.delete_draft": "Runs inside the tenant-resolved admin event route; the cover is released after commit.",
+    "apps.machines.type_documents.attach": "Runs inside the tenant-resolved machine type setup route.",
+    "apps.machines.type_documents.presign": "Runs inside the tenant-resolved machine type setup route.",
+    "apps.machines.type_documents.remove": "Runs inside the tenant-resolved machine type setup route.",
+    "apps.makerspaces.account_profile_purge.purge_account_profile": (
+        "Account-level purge of one person's own profile images; the account is global, not tenant-owned."
+    ),
+    "apps.makerspaces.member_card_storage._write_photo": "Reached only through the member-card photo route and the join-photo copy, both tenant-resolved.",
+    "apps.makerspaces.membership_join_fields.apply_join_photo": "Runs after commit inside the tenant-resolved join and card-issue routes.",
+    "apps.makerspaces.membership_join_fields.presign_join_photo": "Called by the tenant-resolved admission route.",
+    "apps.makerspaces.profile_images._release": "Reached only through the authenticated member profile image route and the account purge.",
     "apps.warranty.services.finalize_document": "Runs inside the model-resolved warranty document route.",
     "apps.warranty.services.presign_document": "Runs inside the model-resolved warranty document route.",
     "apps.operations.report_delivery_storage.delete_report_object": (

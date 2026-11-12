@@ -28,8 +28,9 @@ def setup_event(*, staff=False):
     tenant = Makerspace.objects.create(
         name="Clone venue", slug="clone-venue", enabled_modules=["events"],
     )
-    actor = User.objects.create_user(username="clone-actor", access_status="active",
-        **({"account_kind": "staff", "staff_makerspace": tenant} if staff else {}))
+    # One account per person: staff authority is a staff-track membership the caller assigns
+    # (`assign_builtin_roles`), never an account kind, so `staff` only documents intent here.
+    actor = User.objects.create_user(username="clone-actor", access_status="active")
     start = timezone.now() + timedelta(days=1)
     event = Event.objects.create(
         makerspace=tenant, title="Original", starts_at=start,

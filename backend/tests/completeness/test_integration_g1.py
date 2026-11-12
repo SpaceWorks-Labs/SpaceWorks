@@ -1,5 +1,6 @@
 """G1 integration: dashboard payments_to_record and the real console targets in attention/search links."""
 from decimal import Decimal
+from itertools import count
 
 import pytest
 from django.urls import reverse
@@ -51,8 +52,11 @@ def test_people_counters_name_real_members_sections_not_community():
     assert {link["tab"] for link in links} <= REAL_TABS
 
 
+_SUBJECT_IDS = count(1)  # one charge per (space, subject type, subject id): payment_one_per_subject
+
+
 def _loan_payment(space, user, subject_type="loan_late_fee"):
-    return Payment.objects.bulk_create([Payment(member=user, makerspace=space, subject_type=subject_type, subject_id=1,
+    return Payment.objects.bulk_create([Payment(member=user, makerspace=space, subject_type=subject_type, subject_id=next(_SUBJECT_IDS),
                                                 amount=Decimal("5.00"), currency="usd", created_by=user)])[0]
 
 
@@ -89,7 +93,7 @@ def test_handover_desk_owns_loan_charges_only():
 def test_ledger_due_filter_validates_and_filters():
     from datetime import timedelta
     from django.utils import timezone
-    from apps.hardware_requests.models import HardwareRequest
+    from apps.hardware_requests.models import HardwareRequest, HardwareRequestItem
     from tests.return_helpers import make_accepted_request, make_product
 
     space = _space("g1-ledger")
@@ -99,6 +103,7 @@ def test_ledger_due_filter_validates_and_filters():
     assert client.get(url, {"due": "bogus"}).status_code == 400
     loan = make_accepted_request(space, make_product(space), 1)
     HardwareRequest.objects.filter(pk=loan.pk).update(status="issued", return_due_at=timezone.now() + timedelta(days=2))
+    HardwareRequestItem.objects.filter(request=loan).update(issued_quantity=1)  # the ledger lists issued items
     soon = client.get(url, {"due": "soon"}).json()["count"]
     today = client.get(url, {"due": "today"}).json()["count"]
     assert (today, soon) == (0, 1)

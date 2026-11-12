@@ -17,7 +17,7 @@ from apps.payments.models import Payment
 from apps.payments.payout_session import PAYOUT_REPORT_KEYS, full_session, is_payout_report, require_full_session
 from tests.bookings.test_booking_response_money import _Booking, _NoPayments, _Payments
 
-WEEK = {day: [{"start": "09:00", "end": "17:00"}] for day in ("monday", "tuesday", "wednesday", "thursday", "friday")}
+WEEK = {day: [{"start": "09:00", "end": "17:00"}] for day in ("mon", "tue", "wed", "thu", "fri")}
 SPACE = SimpleNamespace(timezone="UTC", opening_hours={"weekly": WEEK})
 
 

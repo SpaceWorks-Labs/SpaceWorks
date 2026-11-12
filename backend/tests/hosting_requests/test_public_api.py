@@ -83,7 +83,7 @@ def test_open_verifies_once_then_reads(django_capture_on_commit_callbacks):
     assert again.status_code == 200 and again.data["status"] == "submitted"
     assert again.data["rejection_reason"] is None
     assert set(again.data) == {"status", "space_name", "created_at", "verified_at", "decided_at", "rejection_reason",
-                               "changes_note", "revisions", "editable"}
+                               "changes_note", "revisions", "editable", "requested_kind"}
 
 
 def test_rejected_status_shows_the_reason():

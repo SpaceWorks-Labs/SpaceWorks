@@ -14,6 +14,7 @@ tests follow the catalogue instead of hard-coding who may read what:
 import pytest
 from django.urls import reverse
 
+from apps.accounts import rbac
 from apps.makerspaces.models import Makerspace
 from apps.makerspaces.module_registry import MODULE_KEYS
 from apps.makerspaces.role_catalog import ROLE_BY_SLUG, ROLE_CATALOG
@@ -39,7 +40,10 @@ def world(slug):
 
 
 def holds(slug, definition):
-    return any(action in ROLE_BY_SLUG[slug].granted_actions for action in definition_actions(definition))
+    # Effective actions: the stored grants plus the implied ones (the Space Manager reaches shop and card
+    # reports through `manage_makerspace`, not a stored grant).
+    effective = rbac.expand_implied_actions(ROLE_BY_SLUG[slug].granted_actions)
+    return any(action in effective for action in definition_actions(definition))
 
 
 def definition(key):

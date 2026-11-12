@@ -7,7 +7,7 @@ from rest_framework.exceptions import ValidationError
 
 from apps.card_designs import contrast, data_fields, design_file, fonts, stocks
 from apps.card_designs.default_templates import LABELS, TEMPLATES, build, default_document
-from apps.card_designs.layout import normalize_document, upgrade
+from apps.card_designs.layout import MAX_LAYERS, normalize_document, upgrade
 
 
 def _text(**extra):
@@ -92,7 +92,7 @@ def test_layers_stay_on_the_card_and_ids_are_unique():
     with pytest.raises(ValidationError):
         normalize_document(_doc([layer, copy.deepcopy(layer)]))
     with pytest.raises(ValidationError):
-        normalize_document(_doc([_text() for _ in range(41)]))
+        normalize_document(_doc([_text() for _ in range(MAX_LAYERS + 1)]))
 
 
 def test_fonts_come_only_from_the_card_font_library():

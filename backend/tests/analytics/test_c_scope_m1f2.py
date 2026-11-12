@@ -3,7 +3,7 @@ from io import BytesIO, StringIO
 
 import pytest
 from openpyxl import load_workbook
-from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.exceptions import NotFound, PermissionDenied
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
 
@@ -58,14 +58,18 @@ def test_no_type_links_means_no_machine_analytics(c_lab, key):
 def test_real_source_module_gates_are_enforced_even_for_direct_builders(c_lab, key):
     definition = REPORT_REGISTRY[key]
     space = c_lab["space"]
-    for module in definition.required_modules:
-        before = list(space.enabled_modules)
-        space.enabled_modules = [item for item in before if item != module]
-        space.save(update_fields=["enabled_modules"])
-        with pytest.raises(ValidationError):
+    from apps.operations.report_sources import is_capability, parts
+    for source in definition.required_modules:
+        # A source is a module key or a capability key (`machines.maintenance`): switch it off where it is stored.
+        # An off switch leaves no surface, so the builder answers 404 (SurfaceOff is a NotFound), not a 400.
+        field = "enabled_features" if is_capability(source) else "enabled_modules"
+        before = list(getattr(space, field))
+        setattr(space, field, [item for item in before if item not in parts(source)])
+        space.save(update_fields=[field])
+        with pytest.raises(NotFound):
             definition.builder()(space.pk, actor=c_lab["owner"])
-        space.enabled_modules = before
-        space.save(update_fields=["enabled_modules"])
+        setattr(space, field, before)
+        space.save(update_fields=[field])
 
 
 def test_optional_sources_are_not_read_when_their_modules_are_off(c_lab):
@@ -76,9 +80,13 @@ def test_optional_sources_are_not_read_when_their_modules_are_off(c_lab):
     assert {row["measure"] for row in result["typed_rows"]} == {"manual"}
 
 
-def test_member_ranking_requires_audit_and_keeps_machine_type_scope(c_lab):
+def test_member_ranking_opens_to_the_area_manager_and_keeps_machine_type_scope(c_lab):
+    # Decision 242(h): the machine manager reads the named rows of their own area without view_audit;
+    # the inventory-only staff role still has no machine authority at all.
     with pytest.raises(PermissionDenied):
-        reports.report_data("machine-usage-members", c_lab["space"].pk, actor=c_lab["manager"])
+        reports.report_data("machine-usage-members", c_lab["space"].pk, actor=c_lab["inventory"])
+    own = reports.report_data("machine-usage-members", c_lab["space"].pk, actor=c_lab["manager"], date_range=c_lab["date_range"])
+    assert {row["machine_type_id"] for row in own["typed_rows"]} == {c_lab["laser"].machine_type_id}
     assign_builtin_roles(c_lab["manager"], c_lab["space"], "machine_manager", "inventory_manager",
                          machine_types=[c_lab["laser"].machine_type])
     response = reports.report_data("machine-usage-members", c_lab["space"].pk, actor=c_lab["manager"], date_range=c_lab["date_range"])
@@ -94,10 +102,13 @@ def test_catalog_and_http_paths_use_machine_authority(c_lab):
     base = f"/api/v1/admin/makerspace/{c_lab['space'].pk}"
     keys = {row["key"] for row in client.get(f"{base}/reports/catalog").data["results"]}
     assert "machine-usage" in keys
-    assert "machine-usage-members" not in keys
+    # Decision 242(h): the machine manager's own named rows are listed and readable without view_audit.
+    assert "machine-usage-members" in keys
     assert client.get(f"{base}/analytics/machine-usage").status_code == 200
-    assert client.get(f"{base}/analytics/machine-usage-members").status_code == 403
-    assert client.get(f"{base}/reports/machine-usage-members/export").status_code == 403
+    assert client.get(f"{base}/analytics/machine-usage-members").status_code == 200
+    inventory = authenticated_client(c_lab["inventory"])
+    assert "machine-usage-members" not in {row["key"] for row in inventory.get(f"{base}/reports/catalog").data["results"]}
+    assert inventory.get(f"{base}/analytics/machine-usage-members").status_code == 403
     other = f"/api/v1/admin/makerspace/{c_lab['foreign'].pk}/analytics/machine-usage"
     assert client.get(other).status_code == 404
 

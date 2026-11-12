@@ -1047,6 +1047,7 @@ def test_admin_cannot_manage_other_makerspace_api_clients():
     assert ApiClient.objects.count() == 0
 
 
+@pytest.mark.skip(reason="U-A1: separate staff accounts (/staff-accounts/) are retired; a staff role is a staff-track membership on an existing person")
 def test_superadmin_can_create_and_list_inventory_manager():
     makerspace = make_space("inventory-manager-superadmin")
     root = make_user("inventory-manager-superadmin", role=User.Role.SUPERADMIN, access_status="active")
@@ -1070,6 +1071,7 @@ def test_create_staff_rejects_nonexistent_makerspace_without_orphaning_user():
     assert not User.objects.filter(username__startswith="orphan-candidate").exists()
 
 
+@pytest.mark.skip(reason="U-A1: separate staff accounts (/staff-accounts/) are retired; a staff role is a staff-track membership on an existing person")
 def test_space_manager_can_create_inventory_manager_in_own_makerspace():
     makerspace = make_space("inventory-manager-delegated")
     manager = make_member("inventory-manager-delegator", makerspace)

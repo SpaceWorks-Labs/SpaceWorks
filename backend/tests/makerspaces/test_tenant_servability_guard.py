@@ -116,6 +116,33 @@ EXEMPTIONS = {
     ("makerspaces/guest_pass_day.py", "sell_day_pass"),
     ("operations/reports_shop_products.py", "build_shop_stock_value"),
     ("shop/event_offers.py", "_variants"),
+    # 0.12.0 (member units, title cards, public offers): a MEMBER UNIT's, CARD DESIGN's, MEMBERSHIP TITLE's,
+    # MEMBERSHIP PLAN's or SHOP PRODUCT's own `archived_at` (a retired row kept for its history), never the
+    # makerspace's; each caller already resolves a servable space (the unit services run under the member-unit
+    # module gate, the quota counters under a loaded space, the public offers over the servable public list).
+    ("admin_api/bulk_import_members_units.py", "resolve_import_unit"),
+    ("card_designs/resolution_roles.py", "get_or_create_variant"),
+    ("card_designs/resolution_roles.py", "resolve_event_card"),
+    ("card_designs/resolution_roles.py", "variant"),
+    ("card_designs/title_cards.py", "status_of"),
+    ("card_designs/title_cards.py", "title_rows"),
+    ("card_designs/views_badges.py", "_event_designs"),
+    ("inventory/public_offers.py", "build_public_offers"),
+    ("makerspaces/member_unit_assign.py", "_live_unit"),
+    ("makerspaces/member_unit_assign.py", "set_plan_units"),
+    ("makerspaces/member_units.py", "archive_unit"),
+    ("makerspaces/member_units.py", "create_unit"),
+    ("makerspaces/member_units.py", "move_unit"),
+    ("makerspaces/member_units.py", "restore_unit"),
+    ("makerspaces/member_units.py", "tree"),
+    ("makerspaces/membership_join_units.py", "_existing_unit"),
+    ("makerspaces/membership_join_units.py", "_invite_unit"),
+    ("makerspaces/membership_join_units.py", "apply_request_unit"),
+    ("makerspaces/membership_join_units.py", "unit_by_code"),
+    ("managed_hosting/extra_quota_counters.py", "member_units"),
+    ("managed_hosting/extra_quota_counters.py", "membership_plans"),
+    ("managed_hosting/extra_quota_counters.py", "shop_products"),
+    ("operations/reports_unit_league.py", "_tallies"),
 }
 
 

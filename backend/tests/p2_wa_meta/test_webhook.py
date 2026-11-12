@@ -182,15 +182,22 @@ def test_callback_retry_budget_is_bounded(wa, monkeypatch):
     assert delivery.state == "failed" and not delivery.retryable and fallback == [delivery.envelope_id]
 
 
-def test_closed_source_gate_returns_typed_error_without_mutation(wa, monkeypatch):
+def test_stop_is_accepted_and_protected_while_the_source_gate_is_closed(wa, monkeypatch):
+    # Decision 351: an opt-out is always honoured. The durable sender-side suppression commits with the
+    # journal receipt and never depends on the tenant gate, so a closed gate answers 200, not 423; only
+    # the tenant-owned endpoint revocation waits (deferred replay) until the gate reopens.
+    from apps.integrations.models_messaging_consent import MessagingSuppression
     from apps.tenant_migration.gate_errors import SourceMigrationGateClosed
-    def closed(*args, **kwargs):
+
+    def closed(makerspace_id):
         raise SourceMigrationGateClosed("closed")
-    monkeypatch.setattr("apps.integrations.notification_wa_meta_ingress.tenant_write", closed)
+
+    monkeypatch.setattr("apps.tenant_migration.gate_runtime._assert_gate_state", closed)
     endpoint = wa.endpoint()
     response = wa.post(wa.payload("messages", [wa.message("STOP")]))
     endpoint.refresh_from_db()
-    assert response.status_code == 423 and response.data["code"] == "tenant_migration_quiesced"
+    assert response.status_code == 200 and response.data == {"accepted": True}
+    assert MessagingSuppression.objects.filter(channel="whatsapp", lifted_at=None).exists()
     assert endpoint.revoked_at is None
 
 

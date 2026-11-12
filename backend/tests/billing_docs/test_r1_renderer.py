@@ -24,7 +24,7 @@ def legacy_document():
         money_at=datetime(2026, 10, 16, 20, tzinfo=timezone.utc), payer_label="payer",
         lines=[{"label": "Charge", "quantity": "1", "unit_amount": "10.00", "total": "10.00"}],
         amount="10.00", currency="usd", settlement_method="cash", settlement_reference="cash-1",
-        reverses_id=None, branding_logo_key="", branding_logo_sha256="")
+        reverses_id=None, branding_logo_key="", branding_logo_sha256="", tax_breakdown=None)
 
 
 def png(colour="red", size=(1200, 600)):

@@ -88,7 +88,7 @@ def test_replay_is_identical_and_changed_digest_is_conflict(domain):
     first = execute(domain, "submit", saved["version"], operation_id=operation_id)
     assert execute(domain, "submit", saved["version"], operation_id=operation_id) == first
     assert SubmissionSnapshot.objects.count() == 1
-    with pytest.raises(SubmissionError, match="idempotency conflict"):
+    with pytest.raises(SubmissionError, match="idempotency_conflict"):
         execute(domain, "submit", saved["version"] + 1, operation_id=operation_id)
 
 

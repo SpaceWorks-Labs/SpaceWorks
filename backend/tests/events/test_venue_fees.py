@@ -71,4 +71,4 @@ def test_free_fee_raises_nothing_and_switch_off_refuses(django_capture_on_commit
     assert not Payment.objects.filter(subject_type="event_venue_fee").exists()
     off = l6_space("off", features=[])
     other = _draft(off)
-    assert _put(make_staff(off), other, {"payer_id": organiser.pk, "mode": "free"}).status_code == 400
+    assert _put(make_staff(off), other, {"payer_id": organiser.pk, "mode": "free"}).status_code == 404  # off switch: no surface (#95)

@@ -24,9 +24,8 @@ def _series(space, staff):
         registration_audience="accounts", recurrence_timezone="UTC",
         dtstart_local_date=(timezone.now() + timedelta(days=1)).date(), dtstart_local_time=time(10),
         recurrence_rule="FREQ=DAILY;COUNT=3", duration_minutes=60,
+        is_public=True,  # occurrences copy the series' visibility when they are materialized
     )
-    EventSeries.objects.filter(pk=series.pk).update(is_public=True)
-    series.refresh_from_db()
     publish_series(series, actor=staff)
     return series
 
@@ -62,4 +61,4 @@ def test_passes_switch_off_is_refused():
     staff = make_staff(space)
     series = _series(space, staff)
     url = reverse("member-series-passes", kwargs={"makerspace_id": space.pk, "series_id": series.pk})
-    assert client_for(verified("buyer")).get(url).status_code == 400
+    assert client_for(verified("buyer")).get(url).status_code == 404  # off switch: no surface (#95)

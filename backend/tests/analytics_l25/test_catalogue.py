@@ -34,7 +34,9 @@ DOCS = Path(__file__).resolve().parents[3] / "docs" / "analytics-views.md"
 
 ALLOWED = {("donations", "wants_tax_receipt"), ("members", "display_name"), ("members", "email"),
            # 0.12: the incident register links a guest pass by id; the column holds a number, no guest detail.
-           ("incidents", "pass_id")}
+           ("incidents", "pass_id"),
+           # Decision 342: the id of the machine SESSION a link is on -- a number, not a login session.
+           ("machine_event_links", "session_id")}
 
 
 @pytest.mark.parametrize("view", all_views(), ids=lambda view: view.name)
@@ -116,7 +118,9 @@ def test_shop_and_payout_people_are_masked_and_never_named():
 R12 = ("loan_event_contexts", "loan_booking_contexts", "loan_charges", "included_hours_usage", "day_pass_products", "guest_passes",
        "guest_certification_grants", "incidents", "incident_actions",
        # Decision 327: machine grants, device adapters, card jobs and event certificates.
-       "machine_access_grants", "adapter_usage", "adapter_access_decisions", "card_jobs", "event_certificates")
+       "machine_access_grants", "adapter_usage", "adapter_access_decisions", "card_jobs", "event_certificates",
+       # Decision 342: machine sessions and service requests logged for an event (ids and counts, no person).
+       "machine_event_links")
 
 
 def test_release_twelve_views_are_registered_at_version_three():

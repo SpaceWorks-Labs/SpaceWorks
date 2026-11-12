@@ -71,7 +71,7 @@ def test_event_video_requirements_cannot_raise_server_limits(policy):
 def test_no_probe_wrapper_is_fail_closed(tmp_path):
     path = tmp_path / "input.mp4"
     path.write_bytes(b"input")
-    with pytest.raises(SubmissionError, match="video probe unavailable"):
+    with pytest.raises(SubmissionError, match="video_probe_unavailable"):
         probe_video(path, sandbox_command=())
 
 

@@ -26,7 +26,8 @@ def test_singlebox_cron_reaches_due_backup_reconcile_offsite_and_retention_jobs(
         row for row in scheduler.SCHEDULED_TASKS if row[0] in names
     ))
     monkeypatch.setattr(tasks, "schedule_deployment_backup",
-                        lambda: calls.append("build") or SimpleNamespace(status=BackupRun.Status.COMPLETE))
+                        lambda: calls.append("build") or SimpleNamespace(
+                            status=BackupRun.Status.COMPLETE, archives=SimpleNamespace(filter=lambda **kwargs: [])))
     monkeypatch.setattr(tasks, "dispatch_offsite_push", lambda: calls.append("dispatch") or True)
     monkeypatch.setattr(tasks, "reconcile_artifact_uploads", lambda: calls.append("reconcile") or 0)
     monkeypatch.setattr(tasks, "purge_expired_archives", lambda: calls.append("prune") or 0)

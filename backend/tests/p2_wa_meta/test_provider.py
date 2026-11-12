@@ -20,9 +20,11 @@ def http(monkeypatch, *, code=200, payload=None, retry_after=""):
         calls.append((method, url, kwargs))
         body = payload if payload is not None else {"messages": [{"id": "wamid.accepted"}]}
         if method == "GET" and payload is None:
-            body = {"data": [{"name": "loan_approved", "language": "en", "status": "APPROVED"},
-                {"name": "opt_in", "language": "en", "status": "APPROVED"},
-                {"name": "diagnostic", "language": "en", "status": "APPROVED"}]}
+            # Meta approves a template with a body whose {{1}}..{{n}} placeholders match the bound variables
+            # (document_header_approved); mirror each stored binding so the sync keeps it approved.
+            body = {"data": [{"name": row.template_name, "language": row.locale, "status": "APPROVED",
+                "components": [{"type": "BODY", "text": " ".join(["Body"] + ["{{%d}}" % n for n in range(1, len(row.variables) + 1)])}]}
+                for row in WhatsAppTemplate.objects.all()]}
         return SimpleNamespace(status_code=code, headers={"Retry-After": retry_after}, json=lambda: body)
     monkeypatch.setattr("requests.request", request)
     return calls

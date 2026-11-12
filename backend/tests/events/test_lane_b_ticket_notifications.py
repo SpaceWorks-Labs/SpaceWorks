@@ -66,7 +66,9 @@ def test_foreign_account_or_tenant_cannot_download_ticket_or_read_its_details():
     foreign = event_space("ticket-foreign")
     for extension in ("ticket.png", "ticket/"):
         assert client_for(stranger).get(ticket_url(space, row, extension)).status_code == 404
-        assert client_for(staff).get(ticket_url(space, row, extension)).status_code == 403
+        # Staff authority is a staff-track row, not community membership (U-A1): to the ticket routes a
+        # staffer who is not the holder is simply a non-owner, so the answer is the same 404 (no enumeration).
+        assert client_for(staff).get(ticket_url(space, row, extension)).status_code == 404
         assert client_for(owner).get(ticket_url(foreign, row, extension)).status_code == 404
     assert not AuditLog.objects.filter(action="event.ticket_downloaded").exists()
 
@@ -88,7 +90,8 @@ def test_owned_ticket_details_have_only_authorized_event_fields_and_no_credentia
     # The live-ticket serializer adds the owner's own attendance stamp and credential
     # mode (legacy/v2/inert, never the credential itself) and the event id.
     assert set(response.data) == {"registration_id", "status", "event", "ticket_png_available",
-                                  "attended_at", "credential_mode", "delivery_mode", "map_url", "join_url"}
+                                  "attended_at", "credential_mode", "delivery_mode", "map_url", "join_url",
+                                  "pay_by"}  # Parity E-B5: the end of an open pay window
     assert set(response.data["event"]) == {"id", "status", "title", "description", "starts_at", "ends_at", "location", "public_token", "timezone_name"}
     assert response.data["event"]["status"] == "published"
     assert response.data["registration_id"] == row.pk and response.data["event"]["title"] == event.title

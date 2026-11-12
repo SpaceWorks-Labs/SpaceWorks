@@ -19,7 +19,11 @@ pytestmark = pytest.mark.skipif(
 
 def test_every_legacy_pg_restore_reprovisions_before_later_django_commands():
     script = RESTORE.read_text(encoding="utf-8")
-    restores = [match.start() for match in re.finditer(r"\bpg_restore --", script)]
+    # The pg_restore invocations live in restore-database-ops.sh behind these helpers; each call
+    # site in restore.sh is one database restore that must be followed by a grant reprovision.
+    restores = [match.start() for match in re.finditer(
+        r"\brestore_db_(?:rollback|scratch_load|replace)(?=[\s;])", script
+    )]
     reprovisions = [
         match.start() for match in re.finditer(
             r"\breprovision_grants(?=[\s;])", script

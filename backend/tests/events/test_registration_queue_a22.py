@@ -14,10 +14,10 @@ from tests.events.orders_helpers import l6_space, make_staff, verified
 pytestmark = pytest.mark.django_db
 
 
-def _event(space, title, *, days=2, capacity=1):
+def _event(space, title, *, days=2, capacity=1, **values):
     starts = timezone.now() + timedelta(days=days)
     return Event.objects.create(makerspace=space, title=title, starts_at=starts, ends_at=starts + timedelta(hours=2),
-                                registration_audience="accounts", is_public=True, status="published", capacity=capacity)
+                                registration_audience="accounts", is_public=True, status="published", capacity=capacity, **values)
 
 
 def _registration(event, name, status):
@@ -86,7 +86,7 @@ def test_events_module_off_hides_the_queue():
 def test_approving_from_the_queue_uses_the_audited_registration_route():
     space = l6_space("queue-approve")
     manager = make_staff(space, "queue-approve-mgr")
-    row = _registration(_event(space, "Approve me", capacity=5), "ivy", "pending_approval")
+    row = _registration(_event(space, "Approve me", capacity=5, registration_requires_approval=True), "ivy", "pending_approval")
     response = client_for(manager).post(reverse("admin-event-registration-approve", kwargs={"pk": row.pk}), {}, format="json")
     assert response.status_code == 200, response.data
     assert AuditLog.objects.filter(action__startswith="event.registration").exists()

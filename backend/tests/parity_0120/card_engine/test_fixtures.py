@@ -31,4 +31,4 @@ def test_compat_fixture_matches_the_server_code():
 
 def test_the_plan_fixture_covers_every_case_kind():
     kinds = {case["kind"] for case in json.loads((FIXTURES / "studio_plan_cases.json").read_text(encoding="utf-8"))["cases"]}
-    assert kinds == {"place", "gradient", "rich_plan"}
+    assert kinds == {"barcode", "gradient", "icon", "mask_radius", "photo_pick", "place", "polygon", "rich_plan"}

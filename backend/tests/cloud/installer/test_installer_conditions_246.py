@@ -139,7 +139,8 @@ def test_a_plain_redis_url_off_the_private_network_is_refused_and_a_tls_one_take
     assert result.returncode == 0, result.stderr
     env = (tmp_path / ".env").read_text(encoding="utf-8")
     assert "CELERY_BROKER_URL='rediss://default:tok@x.upstash.io:6379?ssl_cert_reqs=required'" in env
-    assert "tok@x.upstash.io:6379'" in env and "redis://default" not in env.replace("rediss://", "")
+    # The saved URL always carries the certificate mode (normalize_redis_url), so the bare URL never appears.
+    assert "tok@x.upstash.io:6379'" not in env and "redis://default" not in env.replace("rediss://", "")
 
 
 def test_a_transaction_pooler_is_refused_for_the_owner_url_too(tmp_path):

@@ -41,7 +41,7 @@ def test_overwrite_after_verification_cannot_change_ready_hash():
     # Crash after final-copy reconciles identical bytes, never overwrites.
     assert promote(storage, source=frozen, target_key="final/owned", sha256=digest, mime="application/octet-stream") == final
     fake.put_object(Bucket="private", Key="foreign-final", Body=b"evil")
-    with pytest.raises(SubmissionError, match="final key collision"):
+    with pytest.raises(SubmissionError, match="final_key_collision"):
         promote(storage, source=frozen, target_key="foreign-final", sha256=digest, mime="application/octet-stream")
 
 

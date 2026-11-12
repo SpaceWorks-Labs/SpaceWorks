@@ -8,6 +8,7 @@ import secrets
 
 from django.utils import timezone
 
+from apps.makerspaces.loan_context_generations import new_generations
 from apps.makerspaces.models import Makerspace, MakerspaceMembership
 
 
@@ -57,7 +58,17 @@ EXPECTED_TARGET_VALUES = {
         "charges.donations", "bookings.calendar_feed", "events.calendar_feed", "events.gallery_search",
         "shop.holds", "shop.public_stock", "shop.receipts", "charges.shop", "platform.help_centre",
         "inventory.maintenance_reminders", "bookings.room_maintenance_reminders",
+        # Default-on events, email and legal capabilities added since.
+        "events.team_moderation", "events.crew_kinds", "events.badge_designer", "events.badge_desk_print",
+        "events.role_badges", "events.discovery_filters", "events.space_insights", "email.sender_identity",
+        "legal.space_pages",
     ],
+    ("events.EventRegistration", "pay_by"): None,
+    ("events.HackathonTeam", "deleted_at"): None,
+    ("events.HackathonTeam", "deleted_snapshot"): {},
+    ("inventory.EquipmentKitTemplate", "published_for_contexts"): False,
+    ("machines.ServiceRequestConsumableUsage", "device_ref"): "",
+    ("makerspaces.Makerspace", "loan_context_generations"): new_generations,
     ("makerspaces.MakerspaceMembership", "receives_notifications"): True,
     ("makerspaces.MakerspaceMembership", "role"): MakerspaceMembership.Role.CUSTOM,
     ("makerspaces.MakerspaceMembership", "can_refer"): True,

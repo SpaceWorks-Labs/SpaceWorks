@@ -51,13 +51,14 @@ def test_unservable_tenants_refuse_both_enrollment_routes(state):
         Makerspace.objects.filter(pk=space.pk).update(archived_at=timezone.now())
     else:
         Makerspace.objects.filter(pk=space.pk).update(lifecycle_state=state)
-    assert _challenge(created["enrollment"]).status_code in (400, 403)
+    # An unservable tenant is refused; an importing or aborted one answers 404 like a tenant that is not there.
+    assert _challenge(created["enrollment"]).status_code in (400, 403, 404)
     complete = APIClient().post(
         reverse("devices:device-enrollment-complete", args=[created["enrollment"]["enrollment_id"]]),
         {"token": created["enrollment"]["token"], "public_key": encode_key(generate_keypair()[1]),
          "challenge": "A" * 43, "signature": encode_key(b"\0" * 64)}, format="json",
     )
-    assert complete.status_code in (400, 403)
+    assert complete.status_code in (400, 403, 404)
     assert Device.objects.get(pk=created["device"]["id"]).status == "pending"
 
 

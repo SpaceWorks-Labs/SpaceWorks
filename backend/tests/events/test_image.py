@@ -76,6 +76,10 @@ def mock_public_storage(monkeypatch, *, size=123, managed=False):
     monkeypatch.setattr(
         'apps.inventory.public_image_storage.object_size', lambda object_key: size
     )
+    # The cover is re-encoded to WebP (programme/cover_finalize) after promotion; that step has
+    # its own coverage, so here it is the identity and the attached key stays the uploaded key.
+    for view in ('views_admin_image', 'views_series_image'):
+        monkeypatch.setattr(f'apps.events.{view}.convert_to_webp', lambda object_key: object_key)
     delete = Mock()
     monkeypatch.setattr('apps.inventory.public_image_storage.delete_object', delete)
     return delete

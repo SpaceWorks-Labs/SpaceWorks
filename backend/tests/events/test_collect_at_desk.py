@@ -36,7 +36,7 @@ def test_desk_records_a_cash_receipt():
 
 def test_desk_collect_switch_off():
     event, staff, registration = _pending(l6_space(features=["events.orders"]))
-    assert _collect(staff, registration, {"method": "cash"}).status_code == 400
+    assert _collect(staff, registration, {"method": "cash"}).status_code == 404  # off switch: no surface (#95)
 
 
 def test_add_guest_pay_link():

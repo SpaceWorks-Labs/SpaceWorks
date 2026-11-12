@@ -43,7 +43,9 @@ def report_page(source, *, audit=True):
     ("series_organizer", False), ("grant", False)])
 def test_report_projection_query_cost_is_constant_with_reports_enabled(source, audit):
     _, user, events = report_page(source, audit=audit)
-    expected = (["analytics", "exports"] + ([] if source == "grant" else ["pdf"])) if audit else []
+    # Decision 248 / EB1: a grantee holding manage_registrations on the event reads its analytics and
+    # export without tenant audit; the PDF stays with the managers. Everyone else needs the audit read.
+    expected = (["analytics", "exports"] + ([] if source == "grant" else ["pdf"])) if audit or source == "grant" else []
     counts = []
     for size in (1, 24):
         page = events[:size]
@@ -72,4 +74,7 @@ def test_report_projection_preserves_permission_conjunction_and_active_account_c
         space.enabled_modules.remove("reports")
         space.save(update_fields=["enabled_modules"])
     context = event_list_context(SimpleNamespace(user=user), events)
-    assert all(row["report_features"] == [] for row in ReportProjection(events, many=True, context=context).data)
+    # Without the audit read a registrations grantee still gets analytics and exports (decision 248),
+    # so that state is the one that is not empty; every other state removes the grant's reports.
+    expected = ["analytics", "exports"] if state == "no_audit" else []
+    assert all(row["report_features"] == expected for row in ReportProjection(events, many=True, context=context).data)

@@ -7,6 +7,7 @@ from django.test.utils import isolate_apps
 from django.utils import timezone
 
 from apps.integrations.models_recipients import NotificationRecipientKind
+from apps.makerspaces.loan_context_generations import new_generations
 from apps.tenant_migration.projection_guards import (
     DECLARED_UNIQUE_CONSTRAINT_RISKS,
     ProjectionRegistryError,
@@ -44,6 +45,11 @@ def test_each_target_owned_projection_value(edge, expected, monkeypatch):
         assert apps.get_model(edge[0])._meta.get_field(edge[1]).default is secrets.token_hex
         monkeypatch.setattr(secrets, "token_bytes", lambda nbytes=None: b"\x42" * (nbytes or 32))
         assert policy.resolved_value(*edge) == "42" * 32
+    elif expected is new_generations:
+        # Fresh random context tokens per tenant: same shape, never the source's values.
+        assert policy.use_model_default
+        first, second = policy.resolved_value(*edge), policy.resolved_value(*edge)
+        assert set(first) == set(new_generations()) and first != second
     elif expected is timezone.now:
         assert policy.resolver is timezone.now
         started = timezone.now()
@@ -100,7 +106,7 @@ def test_authority_rows_follow_the_explicit_drop_or_decision_22_policy():
 
 def test_only_open_membership_request_states_are_authority_rows():
     policy = ROW_POLICIES["makerspaces.MembershipRequest"]
-    assert policy.condition == ("state", frozenset({"requested", "invited", "awaiting_vouches"}))
+    assert policy.condition == ("state", frozenset({"requested", "invited", "awaiting_vouches", "changes_requested"}))
     assert row_disposition("makerspaces.MembershipRequest", {"state": "awaiting_vouches"}, None) == "drop"
 
 

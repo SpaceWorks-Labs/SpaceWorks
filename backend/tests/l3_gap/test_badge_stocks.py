@@ -20,6 +20,9 @@ def _badge(width, height):
         layer["y_mm"], layer["height_mm"] = round(layer["y_mm"] * scale_y, 2), round(layer["height_mm"] * scale_y, 2)
         if layer["type"] == "event_credential_qr":
             layer["width_mm"] = layer["height_mm"] = max(20, min(layer["width_mm"], layer["height_mm"]))
+            # The 20 mm QR floor can overhang a small page once x is scaled, so keep it inside the page.
+            layer["x_mm"] = round(min(layer["x_mm"], width - layer["width_mm"]), 2)
+            layer["y_mm"] = round(min(layer["y_mm"], height - layer["height_mm"]), 2)
     return {**document, "page_width_mm": width, "page_height_mm": height}
 
 

@@ -28,8 +28,18 @@ def test_invitation_audit_meta_remaps_each_id_to_its_declared_model(action, fiel
     }
 
 
-@pytest.mark.parametrize("action, field, target_label", EDGES)
-def test_invitation_audit_meta_guard_refuses_a_missing_declaration(action, field, target_label):
+# The guard only demands declarations for ids the code still emits. Staff invitations now audit as
+# `staff_invitation.*` (the `staff.invitation_*` names above remain for historical rows), so the live
+# edges are the ones whose removal must be refused.
+LIVE_EDGES = (
+    ("staff_invitation.accepted", "membership_id"),
+    ("staff_invitation.sent", "machine_type_ids"),
+    ("staff_invitation.sent", "machine_ids"),
+)
+
+
+@pytest.mark.parametrize("action, field", LIVE_EDGES)
+def test_invitation_audit_meta_guard_refuses_a_missing_declaration(action, field):
     declarations = dict(AUDIT_META_REFERENCES)
     del declarations[(action, field)]
     with pytest.raises(ReferenceRegistryError, match="audit meta ID paths drifted"):

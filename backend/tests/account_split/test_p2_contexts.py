@@ -11,7 +11,10 @@ from apps.accounts.surface_policy import validate_account_token
 from apps.makerspaces.models import Makerspace
 from .p1_helpers import staff
 
-pytestmark = pytest.mark.django_db
+pytestmark = [
+    pytest.mark.django_db,
+    pytest.mark.skip(reason="U-A1/U-B: one account per person - member, staff and platform principals can no longer share an e-mail (uniq_person_email), and login has only the member/platform surfaces with no per-makerspace staff cookie; the premise of this module is retired"),
+]
 PASSWORD = "Separate accounts password 965!"
 ORIGIN = "http://localhost:5000"
 LOGIN = "/api/v1/auth/login"

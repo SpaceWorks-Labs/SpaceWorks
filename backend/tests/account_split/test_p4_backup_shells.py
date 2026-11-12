@@ -15,7 +15,10 @@ from tests.backup.conftest import installed_producer_capability  # noqa: F401
 from .p1_helpers import staff
 from .p4_auth_helpers import staff_auth_history
 
-pytestmark = pytest.mark.django_db(transaction=True)
+pytestmark = [
+    pytest.mark.django_db(transaction=True),
+    pytest.mark.skip(reason="U-A1: separate staff accounts and their retired-shell account-context trigger no longer exist (staff is a staff-track membership on the person's one account), so there is no staff shell to reverse"),
+]
 
 
 def test_ordinary_connection_cannot_reverse_a_retired_staff_shell():

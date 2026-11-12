@@ -61,6 +61,15 @@ def world(slug="d15"):
     return SimpleNamespace(space=space, event=event, manager=manager, co=co, co_grant=co_grant)
 
 
+def event_tracks(event, ids=(7, 8)):
+    """Real tracks under the ids the 221(i) limit tests use: an invite's track limit is validated
+    against the event's own tracks (m3), so a bare id that names no track is refused."""
+    from apps.events.models import HackathonTrack
+    for number in ids:
+        HackathonTrack.objects.get_or_create(
+            pk=number, defaults={"event": event, "name": f"Track {number}"})
+
+
 def command(client, path, version=0, **fields):
     operation = str(uuid4())
     return client.post(path, {"operation_id": operation, "expected_version": version, **fields},
@@ -104,6 +113,7 @@ def test_co_organizer_cannot_invite_outside_their_live_helper_authority(permissi
 
 def test_track_scoped_or_time_boxed_source_cannot_become_an_event_wide_invitation():
     w = world()
+    event_tracks(w.event)
     scoped, scoped_grant = granted(w.event, w.manager, ["judge", "manage_team"], name="scoped")
     EventGrantEntitlement.objects.filter(grant=scoped_grant, revoked_at__isnull=True).update(track_ids=[7])
     assert event_authority.can(scoped, w.event, "judge", track_id=7)

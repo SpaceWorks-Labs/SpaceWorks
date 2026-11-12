@@ -207,7 +207,8 @@ def test_member_directory_uses_opaque_soft_cards():
     if not frontend.exists():
         pytest.skip("Frontend source mount unavailable")
     directory = (frontend / "features" / "members" / "MemberDirectory.tsx").read_text(encoding="utf-8")
-    assert '"bg-brand-soft"' in directory
-    assert '"bg-accent-soft"' in directory
-    assert 'className="desk-panel mt-2 border-brand p-3"' in directory
+    # The design revamp moved the rows onto the shared `ListRow` primitive (opaque surface tokens), so the
+    # directory no longer carries its own soft-card classes; what must stay is the absence of a translucent tint.
+    assert "<ListRow" in directory
+    assert 'className="desk-panel p-5"' in directory
     assert not re.search(r"(?:bg|text)-(?:brand|accent|secondary)/\d", directory)

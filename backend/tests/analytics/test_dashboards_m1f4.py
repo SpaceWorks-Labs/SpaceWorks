@@ -39,10 +39,11 @@ def keys(payload):
 
 @pytest.mark.parametrize("roles,expected", [
     (("inventory_manager",), INVENTORY),
-    (("machine_manager",), MACHINES),
+    # Decision 242(h): an area manager sees the named top-member rows of their own area without view_audit.
+    (("machine_manager",), MACHINES | {"machine-usage-members"}),
     (("event_manager",), {"event-funnel"}),
-    (("booking_manager",), {"booking-occupancy"}),
-    (("event_manager", "booking_manager"), {"event-funnel", "booking-occupancy"}),
+    (("booking_manager",), {"booking-occupancy", "booking-top-members"}),
+    (("event_manager", "booking_manager"), {"event-funnel", "booking-occupancy", "booking-top-members"}),
     (("inventory_manager", "machine_manager"), INVENTORY | MACHINES | {"machine-usage-members"}),
     (("space_manager",), {widget.key for widget in WIDGETS}),
 ])
@@ -81,7 +82,9 @@ def test_identity_widgets_need_module_action_and_audit(monkeypatch):
     space = lab()
     actor = staff_account(space, "dashboard-disclosure", "space_manager")
     original = rbac.can
-    for denied, forbidden in ((rbac.Action.VIEW_AUDIT, {"top-borrowers", "overdue-loans", "booking-top-members", "machine-usage-members"}),
+    # Decision 242(h): without view_audit the area rankings stay open to the area's own manager; the
+    # inventory identity widgets (borrowers) still need view_audit.
+    for denied, forbidden in ((rbac.Action.VIEW_AUDIT, {"top-borrowers", "overdue-loans"}),
                               (rbac.Action.MANAGE_BOOKINGS, {"booking-occupancy", "booking-top-members"})):
         monkeypatch.setattr(rbac, "can", lambda user, action, tenant, denied=denied: action != denied and original(user, action, tenant))
         assert forbidden.isdisjoint({widget.key for widget in visible_widgets(actor, space)})
@@ -132,7 +135,9 @@ def test_handover_only_gets_three_queues_and_no_analytics():
     assert response.status_code == 200, response.data
     assert response.data["widgets"] == []
     assert response.data["scope_mode"] == "handover"
-    assert response.data["queue_tiles"] == {"ready_to_issue": 1, "due_returns": 2, "pickups": 1}
+    # Decision 248 / IN11: the desk also sees the due-today, overdue and to-record tiles.
+    assert response.data["queue_tiles"] == {"ready_to_issue": 1, "due_returns": 2, "pickups": 1,
+                                            "due_today": 0, "overdue": 2, "to_record": 0}
     assert "low_stock" not in response.data and "pending_payments" not in response.data
 
 

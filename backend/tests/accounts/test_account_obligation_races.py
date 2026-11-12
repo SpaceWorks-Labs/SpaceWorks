@@ -38,12 +38,10 @@ def _writer(kind, space, owner, actor, monkeypatch):
             "apps.hardware_requests.direct_loan_workflow.validate_evidence_upload",
             lambda *args, **kwargs: SimpleNamespace(size=10),
         )
+        # Decision 223: the desk admits the borrower (presence, term, guest pass) through guest_lending.
         monkeypatch.setattr(
-            "apps.hardware_requests.direct_loan_workflow.require_active_member_presence",
-            lambda *args: SimpleNamespace(membership=None),
-        )
-        monkeypatch.setattr(
-            "apps.hardware_requests.direct_loan_workflow.require_current_term", lambda *args: None,
+            "apps.hardware_requests.direct_loan_workflow.guest_lending.admit_borrower",
+            lambda *args, **kwargs: SimpleNamespace(membership=None, guest_pass=None),
         )
         return lambda: issue_direct_loan(
             space, actor, borrower=owner, evidence_id=evidence.pk, remark="Handout",

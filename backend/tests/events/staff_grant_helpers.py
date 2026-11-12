@@ -7,10 +7,10 @@ from tests.events.collab_helpers import make_staff
 from tests.events.ticketing_helpers import account, event_space, open_event
 
 
-def grant_fixture(permission="edit_details"):
-    space = event_space("event-grants")
+def grant_fixture(permission="edit_details", *, slug="event-grants", grantee="event-grantee"):
+    space = event_space(slug)
     manager = make_staff(space)
-    user = account("event-grantee")
+    user = account(grantee)
     user.set_password("staff-grant-password-123")
     user.email_verified_at = timezone.now()
     user.save(update_fields=["password", "email_verified_at"])

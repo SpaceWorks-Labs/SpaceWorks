@@ -149,6 +149,10 @@ def test_managed_limit_blocks_publish_and_self_host_ignores_cap():
             services.publish(make_event(space, status=Event.Status.DRAFT), actor=actor)
         assert caught.value.get_codes() == {"limit": "limit_reached"}
     with override_settings(PLATFORM_DOMAIN_SUFFIX=""):
+        # Decision 281 addendum: a limit the superadmin SET applies to an own space too, so the
+        # self-host "no cap" case is a space with no override (own spaces default to unlimited).
+        space.resource_limit_overrides = {}
+        space.save(update_fields=["resource_limit_overrides"])
         published = services.publish(
             make_event(space, title="Self hosted", status=Event.Status.DRAFT),
             actor=actor,
@@ -197,7 +201,7 @@ def test_only_ended_to_upcoming_published_edit_checks_quota(monkeypatch):
     assert len(calls) == 1
     assert calls[0][0][0].pk == event.makerspace_id
     assert calls[0][0][1:] == ("events",)
-    assert calls[0][1] == {"adding": 1}
+    assert calls[0][1] == {"adding": 1, "count_monthly": False}  # same event, already counted monthly
 
 
 def test_capacity_zero_registers_and_positive_capacity_waitlists():

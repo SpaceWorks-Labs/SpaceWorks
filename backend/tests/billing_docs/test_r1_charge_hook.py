@@ -22,6 +22,13 @@ from tests.return_helpers import make_space, make_member
 pytestmark = pytest.mark.django_db
 
 
+def _subject_id(rows, subject_type):
+    """Subjects added after release 1 (events, shop, donations, day passes) raise their charge by
+    id only; the bill hook needs the canonical seam, not the domain row, so a bare id stands in."""
+    row = rows.get(subject_type)
+    return row.pk if row is not None else 987654
+
+
 def charge_inputs(subject_type, slug="r1-hook"):
     space = make_space(slug)
     actor = make_member(slug + "-staff", space)
@@ -40,7 +47,7 @@ def charge_inputs(subject_type, slug="r1-hook"):
         membership=rows["makerspace_membership"], plan=plan(space), starts_at=timezone.now(),
         ends_at=timezone.now() + timedelta(days=30))
     return dict(makerspace=space, member=payer, created_by=actor, subject_type=subject_type,
-                subject_id=rows[subject_type].pk, amount=Decimal("10.00"), currency="usd")
+                subject_id=_subject_id(rows, subject_type), amount=Decimal("10.00"), currency="usd")
 
 
 @pytest.mark.parametrize("subject_type", Payment.SubjectType.values)

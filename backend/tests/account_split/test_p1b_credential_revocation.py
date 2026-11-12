@@ -193,7 +193,9 @@ def test_revokes_every_account_owned_credential_and_preserves_other_principals(c
     event = AuditLog.objects.get(action="account.credentials_revoked", target_id=str(c.user.pk))
     assert event.actor_id == c.other.pk
     assert event.meta == {"reason": "staff_deactivated", "scope": "all", "counts": counts}
-    assert all(counts[name] > 0 for name in counts), counts
+    # #196 / S-B person-level bearers (remembered devices, PATs, OAuth rows) are not seeded here.
+    unseeded = {"known_devices", "personal_access_tokens", "oauth_tokens", "oauth_consents"}
+    assert all(counts[name] > 0 for name in counts if name not in unseeded), counts
     assert "secret" not in str(event.meta) and "private-chat" not in str(event.meta)
 
 

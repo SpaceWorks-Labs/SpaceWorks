@@ -76,7 +76,8 @@ def test_owner_confirms_a_claim_on_their_own_charge_only():
     space.enabled_features = sorted(set(space.enabled_features) | {"billing.offline_claims"})
     space.save(update_fields=["enabled_features"])
     own = PaymentClaim.objects.create(makerspace=space, payment=booking, claimant=booking.member, reference="UTR1",
-                                      paid_on="2026-11-01", method="upi")
+                                      paid_on="2026-11-01", method="upi",
+                                      amount=booking.amount)
     url = reverse("payment-area-claim-confirm", args=[space.pk, own.pk])
     assert authenticated_client(inv).post(url).status_code == 404  # lending does not own bookings
     assert authenticated_client(bk).post(url).status_code == 200
@@ -90,4 +91,8 @@ def test_cash_refund_extends_to_the_owning_area_manager_but_not_donations():
     sub = Payment.SubjectType
     assert sub.BOOKING in CASH_RECORD_ACTIONS and sub.EVENT_ORDER in CASH_RECORD_ACTIONS
     assert sub.LOAN_DEPOSIT in CASH_RECORD_ACTIONS and sub.MACHINE_SESSION in CASH_RECORD_ACTIONS
-    assert sub.DONATION not in CASH_RECORD_ACTIONS and sub.SPONSORSHIP not in CASH_RECORD_ACTIONS
+    # Decision 242(c)/252: gifts and sponsorship map to `manage_donations`, which no area manager holds --
+    # only Fundraising and the Space Manager record their cash.
+    from apps.accounts import rbac
+    assert CASH_RECORD_ACTIONS[sub.DONATION] == rbac.Action.MANAGE_DONATIONS
+    assert CASH_RECORD_ACTIONS[sub.SPONSORSHIP] == rbac.Action.MANAGE_DONATIONS

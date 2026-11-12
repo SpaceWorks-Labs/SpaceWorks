@@ -90,6 +90,10 @@ def test_email_source_is_actual_connection_including_platform_fallback(own, sett
         space.smtp_host = "smtp.example.com"
         space.smtp_port = 587
         space.save(update_fields=["smtp_host", "smtp_port"])
+        # Parity E-B8: a space's own SMTP is used only after its test message was accepted.
+        from django.utils import timezone
+        from apps.integrations.space_smtp_gate import mark_verified
+        mark_verified(space, timezone.now())
     from unittest.mock import patch
     with patch("apps.integrations.email.validate_smtp_endpoint"):
         log = dispatch_email(makerspace=space, to_email="member@example.test", subject="Status", text_body="Status", sync=True)

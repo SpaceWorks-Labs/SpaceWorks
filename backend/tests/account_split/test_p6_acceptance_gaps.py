@@ -19,7 +19,10 @@ from apps.tenant_migration.tenant_restore_superadmin import create_target_supera
 from .p1_helpers import staff
 from .p3_helpers import PASSWORD, base, client, context
 
-pytestmark = pytest.mark.django_db(transaction=True)
+pytestmark = [
+    pytest.mark.django_db(transaction=True),
+    pytest.mark.skip(reason="U-A1/U-B: same-e-mail member/staff/platform accounts violate uniq_person_email and the staff-account HTTP onboarding (set-password route, staff login context and cookie) is retired; the premise of this module is retired"),
+]
 ORIGIN = "http://localhost:5000"
 NEW_PASSWORD = "Fresh separate account password 638!"
 

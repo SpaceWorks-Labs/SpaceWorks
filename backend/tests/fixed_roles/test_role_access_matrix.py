@@ -39,6 +39,7 @@ IMPLIED_FOR = {
     "space_manager": {
         "collect_service_request", "scan_member_cards", "manage_id_programmes", "view_id_programmes",
         "approve_card_designs", "manage_shop", "sell_shop", "view_shop", "view_analytics", "manage_donations",
+        "manage_member_units", "view_member_units",
     },
     "machine_manager": {"manage_printing", "collect_service_request"},
 }

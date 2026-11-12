@@ -149,7 +149,7 @@ def test_member_sees_own_event_equipment_only():
     _link(data.space, theirs, event)
     url = f"/api/v1/member/makerspaces/{data.space.pk}/event-registrations/{registration.pk}/equipment/"
     body = authenticated_client(data.borrower).get(url).data
-    assert [row["public_token"] for row in body["requests"]] == [data.request.public_token]
+    assert [row["public_token"] for row in body["requests"]] == [str(data.request.public_token)]
     assert body["event_id"] == event.pk
     assert "storage_location" not in body["requests"][0]["items"][0]
     assert authenticated_client(stranger).get(url).status_code == 404

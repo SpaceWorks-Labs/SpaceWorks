@@ -10,7 +10,10 @@ from apps.accounts.models_mfa import MFAChallenge
 from apps.accounts.models_social import SocialIdentity
 from apps.events.services_staff_grants import revoke_grant
 from tests.accounts.oidc_browser_helpers import make_provider, metadata
-from tests.accounts.mfa_helpers import complete_enrollment
+from django.utils import timezone
+
+from apps.accounts.mfa_crypto import totp
+from tests.accounts.mfa_helpers import enrolled
 from tests.events.staff_grant_helpers import grant_fixture
 from tests.events.test_staff_grant_auth import PLATFORM_ORIGIN, staff_origin
 from tests.events.ticketing_helpers import event_space
@@ -126,20 +129,23 @@ def test_staff_oidc_refuses_disabled_tenant_and_inactive_account(oidc_staff):
 
 
 def test_member_oidc_mfa_challenge_retains_member_kind(oidc_staff):
+    # Decision 62: staff MFA is a platform rule (the per-space switch is retired), so a grant holder who
+    # HAS enrolled a factor proves it at every sign-in; an unenrolled one still gets a member session.
     space, _, user, _, _ = oidc_staff
-    space.enabled_features = [*space.enabled_features, "security.staff_mfa_required"]
-    # Security keys change only through the security service; write the fixture row directly.
-    type(space).objects.filter(pk=space.pk).update(enabled_features=space.enabled_features)
+    _, secret = enrolled(user)
     origin = staff_origin(space)
     response = finish(start(origin), origin)
     assert response.status_code == 200, response.data
-    assert response.data["mfa_required"] and response.data["enrollment_required"]
+    assert response.data["mfa_required"] and not response.data["enrollment_required"]
     assert "access" not in response.data and "refresh_token" not in response.cookies
     challenge = MFAChallenge.objects.get(user=user)
     assert challenge.context["surface"] == "member"
     assert challenge.context["kind"] == "person"
     assert challenge.context["makerspace"] is None
     assert challenge.context["origin"] == origin
-    completed = complete_enrollment(APIClient(), response, HTTP_ORIGIN=origin)
+    code = totp(secret, int(timezone.now().timestamp() // 30))
+    completed = APIClient().post("/api/v1/auth/mfa/verify", {"challenge": response.data["challenge"], "code": code},
+                                 format="json", HTTP_ORIGIN=origin)
+    assert completed.status_code == 200, completed.data
     token = RefreshToken(completed.cookies["refresh_token"].value)
     assert token["surface"] == "member" and token["kind"] == "person"

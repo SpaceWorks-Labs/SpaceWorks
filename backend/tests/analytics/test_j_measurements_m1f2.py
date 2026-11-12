@@ -83,12 +83,12 @@ def test_connect_attributed_ledger_facts_keep_currencies_and_do_not_invent_failu
     space = make_space("j-connect")
     actor = platform_actor()
     member = make_member("j-connect-member", space)
-    membership = MakerspaceMembership.objects.get(user=member, makerspace=space)
+    membership = MakerspaceMembership.staff_tracks.get(user=member, makerspace=space)  # make_member holds a staff-track row
     for currency, amount in (("usd", "10.00"), ("eur", "20.00")):
         # Membership type has a unique subject, so use a distinct member per charge.
         if currency == "eur":
             member = make_member("j-connect-eur-member", space)
-            membership = MakerspaceMembership.objects.get(user=member, makerspace=space)
+            membership = MakerspaceMembership.staff_tracks.get(user=member, makerspace=space)  # make_member holds a staff-track row
         payment = Payment.objects.create(makerspace=space, subject_type="makerspace_membership", subject_id=membership.pk,
                                           member=member, created_by=actor, provider="stripe", stripe_provider="connect",
                                           stripe_connected_account_id="acct_private", status="paid_online", amount=amount, currency=currency)

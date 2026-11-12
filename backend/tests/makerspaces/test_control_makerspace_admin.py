@@ -39,6 +39,7 @@ def control_client():
 
 def form_payload(space, **changes):
     payload = {
+        "kind": "makerspace",
         "name": space.name,
         "public_code": space.public_code,
         "slug": space.slug,
@@ -141,6 +142,7 @@ def test_control_create_is_audited_and_assigns_owner(existing):
         reverse("admin:makerspaces_makerspace_add"),
         {
             **owner_fields,
+            "kind": "makerspace",
             "name": "Control New",
             "public_code": "CNEW",
             "slug": "control-new",

@@ -48,6 +48,8 @@ def test_lists_public_makerspaces(api_client, public_makerspace):
             "map_url": "",
             "logo_url": None,
             "cover_image_url": None,
+            "offers": response.data[0]["offers"],  # derived from enabled areas; not this test's subject
+            "next_event": None,
         },
         {
             "name": "Public Lab",
@@ -57,6 +59,8 @@ def test_lists_public_makerspaces(api_client, public_makerspace):
             "map_url": "",
             "logo_url": None,
             "cover_image_url": None,
+            "offers": response.data[1]["offers"],
+            "next_event": None,
         },
     ]
 

@@ -15,7 +15,7 @@ from apps.makerspaces.models import Makerspace
 from apps.makerspaces.module_profiles import RECOMMENDED, profile_modules
 
 
-pytestmark = pytest.mark.django_db
+pytestmark = [pytest.mark.django_db, pytest.mark.skip(reason="Anonymous request submission was removed (makerspaces 0105 drops anonymous_requests_enabled; submission requires an authenticated member)")]
 
 
 @pytest.fixture(autouse=True)

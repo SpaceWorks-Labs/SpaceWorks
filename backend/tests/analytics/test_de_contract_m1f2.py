@@ -103,18 +103,21 @@ def test_exports_are_allowlisted_and_disclosure_safe(key, fmt):
     assert_report_disclosure_safe(decoded)
 
 
-def test_booking_manager_requires_additional_audit_authority_for_rankings(monkeypatch):
+def test_booking_manager_reads_own_area_rankings_without_audit_authority(monkeypatch):
+    # Decision 242(h): named rows for an area manager's own area do not need view_audit.
     space, actor = setup("de-ranking-authority")
     seed(space, actor)
     original = rbac.can
     monkeypatch.setattr(rbac, "can", lambda who, action, resource=None: False if action == rbac.Action.VIEW_AUDIT else original(who, action, resource))
-    with pytest.raises(PermissionDenied):
-        reports.report_data("booking-top-members", space.pk, actor=actor)
-    with pytest.raises(PermissionDenied):
-        reports.report_rows("booking-top-members", space.pk, actor=actor)
+    assert reports.report_data("booking-top-members", space.pk, actor=actor)["typed_rows"] is not None
+    assert reports.report_rows("booking-top-members", space.pk, actor=actor) is not None
     response = authenticated_client(actor).get(f"/api/v1/admin/makerspace/{space.pk}/reports/catalog")
     assert response.status_code == 200
-    assert "booking-top-members" not in str(response.data)
+    assert "booking-top-members" in str(response.data)
+    # Without the area action itself the ranking stays closed.
+    monkeypatch.setattr(rbac, "can", lambda who, action, resource=None: False if action in (rbac.Action.VIEW_AUDIT, rbac.Action.MANAGE_BOOKINGS) else original(who, action, resource))
+    with pytest.raises(PermissionDenied):
+        reports.report_data("booking-top-members", space.pk, actor=actor)
 
 
 @pytest.mark.parametrize("slug,admitted", [("booking_manager", BOOKING_KEYS[:-1]),

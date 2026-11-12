@@ -53,12 +53,18 @@ def _call(client, verb, url):
         return error
 
 
+def _retired(response):
+    return response.status_code == 410 and b"certifications_retired" in response.content
+
+
 def _sweep(client, space, verbs, accept):
     failures = []
     for route in ROUTES:
         url = fill(route, space.pk)
         for verb in verbs:
             response = _call(client, verb, url)
+            if not isinstance(response, Exception) and _retired(response):
+                continue  # decision 319 addendum: the retired certification surface answers 410 before auth or lookup
             if isinstance(response, Exception):
                 failures.append(f"{verb.upper()} {route}: raised {type(response).__name__}")
             elif response.status_code >= 500 or not accept(response, verb):

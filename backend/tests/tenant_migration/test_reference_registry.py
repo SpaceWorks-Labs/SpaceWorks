@@ -83,6 +83,7 @@ def test_payment_subject_guard_rejects_a_removed_enum_value():
 def test_omitted_target_guard_is_total_and_rejects_a_removed_rule():
     assert retained_relations_to_omitted_models() == {
         ("presence.PresenceSession", "created_via_claim_session"),
+        ("presence.PresenceSession", "account_project"),  # account-level projects are omitted from a dump
         ("payments.PaymentClaim", "pay_link"),  # release 2 L5: a claim outlives its dropped pay link
     }
     changed = dict(OMITTED_TARGET_RELATIONS)

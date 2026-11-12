@@ -85,7 +85,7 @@ def test_meta_positional_body_and_delivery_callback_identity(settings):
     req = http.call_args.args[0]
     data = json.loads(req.data)
     assert result.message_id == "wamid.1"
-    assert "/v23.0/123/messages" in req.full_url
+    assert f"/{settings.WHATSAPP_META_GRAPH_VERSION}/123/messages" in req.full_url  # the configured Graph version
     assert data["biz_opaque_callback_data"] == "99"
     assert data["template"]["components"] == [{"type": "body", "parameters": [
         {"type": "text", "text": "42"}, {"type": "text", "text": "2026-10-17"}]}]

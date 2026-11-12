@@ -84,8 +84,13 @@ def test_member_360_shows_counts_everywhere_but_rows_only_for_managed_areas():
     body = authenticated_client(people).get(reverse("admin-member-activity", args=[space.pk, member.pk]))
     assert body.status_code == 200 and not body.json()["errors"]
     assert all(area["rows_visible"] for area in body.json()["areas"] if area["area"] in {"lending", "bookings"})
-    # A Booking Manager lacks manage_members, so the route itself refuses rather than leaking counts.
-    assert authenticated_client(booking).get(reverse("admin-member-activity", args=[space.pk, member.pk])).status_code in (403, 404)
+    # Decision 248: counts are open to every staff role with an area action; rows only for managed areas.
+    # A Booking Manager sees counts everywhere and rows only for bookings.
+    response = authenticated_client(booking).get(reverse("admin-member-activity", args=[space.pk, member.pk]))
+    assert response.status_code == 200
+    by_area = {area["area"]: area for area in response.json()["areas"]}
+    assert by_area["bookings"]["rows_visible"] is True
+    assert by_area["lending"]["rows_visible"] is False and by_area["lending"]["rows"] is None
 
 
 def test_technician_reads_incidents_on_covered_types_but_never_records_or_triages():

@@ -25,6 +25,8 @@ EXPECTED_FIELDS = {
     'accent_preset',
     # L1: how people attend (null while online events are off) and the noindex flag.
     'delivery_mode', 'indexable',
+    # S13: deadlines render in the event's zone; #178: stage deadlines (detail only, [] elsewhere).
+    'timezone_name', 'submission_stages',
     'public_token',
     'title',
     'description',
@@ -32,6 +34,8 @@ EXPECTED_FIELDS = {
     'ends_at',
     'location',
     'location_kind',
+    # External venue (0.12.0): the organiser's published address and map link for a public event.
+    'venue_address', 'venue_map_url',
     'custom_form',
     'capacity',
     'show_registration_count', 'registration_count',

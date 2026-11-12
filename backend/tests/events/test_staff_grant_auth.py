@@ -105,13 +105,13 @@ def test_social_sign_in_accepts_only_grants_in_staff_origin_scope(monkeypatch, s
 
 def test_staff_authority_discovery_and_payload_do_not_escape_selected_space():
     space, _, user, event, _ = grant_fixture()
-    scoped = SimpleNamespace(headers={}, selected_makerspace_id=space.pk)
+    scoped = SimpleNamespace(headers={}, META={}, selected_makerspace_id=space.pk)
     assert_staff_authority(user, scoped)
     payload = user_payload(user, request=scoped)
     assert payload["makerspaces"] == []
     assert payload["event_grants"][0]["permissions"] == ["edit_details"]
     assert payload["event_grants"][0]["event_id"] == event.pk
-    foreign = SimpleNamespace(headers={}, selected_makerspace_id=event_space("auth-foreign").pk)
+    foreign = SimpleNamespace(headers={}, META={}, selected_makerspace_id=event_space("auth-foreign").pk)
     with pytest.raises(SocialResolutionError):
         assert_staff_authority(user, foreign)
     assert user_payload(user, request=foreign)["event_grants"] == []
@@ -133,18 +133,16 @@ def test_member_refresh_keeps_session_but_actions_revalidate_grant(settings):
 
 
 def test_mfa_policy_counts_grant_staff_without_granting_tenant_actions():
+    # Decision 62: staff MFA is mandatory for every person with elevated authority, including a
+    # resource grant, whatever the (retired) per-space switch said; it is not a tenant action.
     space, manager, user, _, grant = grant_fixture()
-    assert not mfa_policy.required(user)
-    space.enabled_features = [*space.enabled_features, "security.staff_mfa_required"]
-    # Security keys change only through the security service; write the fixture row directly.
-    type(space).objects.filter(pk=space.pk).update(enabled_features=space.enabled_features)
     assert mfa_policy.required(user)
     assert not rbac.effective_actions(user, space.pk)
+    # No factor yet: member features are never blocked (#128 C-1), so sign-in still succeeds.
     response = APIClient().post(reverse("auth-login"), {
         "username": user.username, "password": "staff-grant-password-123", "surface": "delegated",
     }, format="json")
-    assert response.status_code == 200 and response.data["enrollment_required"]
-    assert "access" not in response.data
+    assert response.status_code == 200 and "access" in response.data
     revoke_grant(grant, actor=manager)
     assert not mfa_policy.required(user)
 

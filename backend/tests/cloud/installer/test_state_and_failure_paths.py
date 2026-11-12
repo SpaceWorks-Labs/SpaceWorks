@@ -147,9 +147,10 @@ def test_storage_proxy_has_large_part_limit_and_api_limit_stays_separate(tmp_pat
 
 
 def test_all_restore_sql_paths_fail_fast_and_never_restore_ownership():
-    source = (ROOT / "scripts/restore.sh").read_text()
+    # The pg_restore commands moved out of restore.sh into the shared database helpers.
+    source = (ROOT / "scripts/restore-database-ops.sh").read_text()
     commands = [line for line in source.splitlines() if "pg_restore " in line]
-    assert len(commands) == 4
+    assert len(commands) == 3
     assert all("--exit-on-error" in line and "--no-owner" in line and "--no-acl" in line for line in commands)
 
 

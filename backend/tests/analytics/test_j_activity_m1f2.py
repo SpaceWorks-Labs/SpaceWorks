@@ -21,7 +21,8 @@ pytestmark = pytest.mark.django_db
 
 
 def presence(space, actor, start, minutes=60, ended=None):
-    membership = make_membership(actor, space)
+    membership = (MakerspaceMembership.objects.filter(user=actor, makerspace=space).first()
+                  or make_membership(actor, space))  # one community row per person and space
     return PresenceSession.objects.create(makerspace=space, member=actor, membership=membership,
                                           started_at=start, expires_at=start + timedelta(minutes=minutes), ended_at=ended)
 

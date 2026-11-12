@@ -14,7 +14,10 @@ from tests.encryption.conftest import enabled_encryption
 from tests.tenant_migration.materialization_helpers import portable_import_case
 from .p1_helpers import staff
 
-pytestmark = pytest.mark.django_db(transaction=True)
+pytestmark = [
+    pytest.mark.django_db(transaction=True),
+    pytest.mark.skip(reason="U-A1: transport no longer carries a separate account_kind='staff' account per makerspace; a staff role is a staff-track membership on the person's one account, so these staff-account round-trip expectations are retired"),
+]
 
 
 def authority(space):

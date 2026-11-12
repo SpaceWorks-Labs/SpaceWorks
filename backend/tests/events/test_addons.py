@@ -39,7 +39,7 @@ def test_staff_addon_api_and_feature_switch():
     space = l6_space(features=["events.orders"])
     _space, event, staff, _ticket = ticketed_event(space)
     url = reverse("admin-event-addons", kwargs={"pk": event.pk})
-    assert client_for(staff).post(url, {"name": "Kit", "amount": "4.00"}, format="json").status_code == 400
+    assert client_for(staff).post(url, {"name": "Kit", "amount": "4.00"}, format="json").status_code == 404  # off switch: no surface (#95)
     space.enabled_features = sorted({*space.enabled_features, "events.addons"})
     space.save(update_fields=["enabled_features"])
     created = client_for(staff).post(url, {"name": "Kit", "amount": "4.00", "kind": "kit", "stock": 3,

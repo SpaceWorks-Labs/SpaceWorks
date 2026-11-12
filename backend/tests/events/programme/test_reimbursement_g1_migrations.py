@@ -15,7 +15,7 @@ from apps.makerspaces.role_catalog import ROLE_BY_SLUG
 
 # The lane's own migrations, as numbered after landing on the events programme (g2) leaves.
 NEW = {
-    "events": (52, 57), "payments": (26, 30), "event_reimbursements": (1, 5),
+    "events": (52, 57), "payments": (26, 30), "event_reimbursements": (1, 10),  # 0006-0010 add the stage, crew-pool (audience) and staff-claim columns
     "encryption": (10, 11), "accounts": (44, 44), "makerspaces": (106, 107),
 }
 # Staging renumbered the lane onto the merged leaves; the programme's own 0052/0053 and

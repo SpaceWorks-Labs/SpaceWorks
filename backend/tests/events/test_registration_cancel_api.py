@@ -9,6 +9,8 @@ from drf_spectacular.generators import SchemaGenerator
 from rest_framework.test import APIClient, APIRequestFactory
 from rest_framework.exceptions import ValidationError
 
+from apps.makerspaces.guards import SurfaceOff
+
 from apps.accounts.models import User
 from apps.audit.models import AuditLog
 from apps.events import services
@@ -171,7 +173,7 @@ def test_cancellation_service_rechecks_a_disabled_module_before_mutating():
     registration = register(make_event(space), member)
     space.enabled_modules = [key for key in space.enabled_modules if key != "events"]
     space.save(update_fields=["enabled_modules"])
-    with pytest.raises(ValidationError):
+    with pytest.raises(SurfaceOff):  # an off module leaves no surface (#95): the service refuses typed
         services.cancel_registration(registration, actor=member)
     registration.refresh_from_db()
     assert registration.status == "registered"

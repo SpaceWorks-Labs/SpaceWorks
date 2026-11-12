@@ -58,8 +58,12 @@ def test_bill_list_kind_filter_live_settlement_and_owner_finance_access():
     finance = custom_actor(space, ["view_finance"])
     staff_url = reverse("staff-payment-document-url", args=[space.pk, bill.pk])
     assert authenticated_client(finance).get(staff_url).status_code == 200
-    inventory = custom_actor(space, ["edit_inventory"], name="r1-inventory")
-    assert authenticated_client(inventory).get(staff_url).status_code == 404
+    # Decisions 241/242(a): the area owner of a charge reads its documents; this deposit is
+    # a lending charge, so the lending owner (issue_request) may, and an unrelated area may not.
+    lending = custom_actor(space, ["issue_request"], name="r1-lending")
+    assert authenticated_client(lending).get(staff_url).status_code == 200
+    events = custom_actor(space, ["manage_events"], name="r1-events")
+    assert authenticated_client(events).get(staff_url).status_code == 404
     foreign = make_space("r1-doc-foreign")
     assert authenticated_client(finance).get(reverse("staff-payment-document-url", args=[foreign.pk, bill.pk])).status_code == 404
 

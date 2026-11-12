@@ -33,6 +33,9 @@ def document(request, lane, payment):
 @pytest.fixture
 def document_mail(lane, document, monkeypatch, settings):
     settings.EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
+    # Tenant mail needs the opt-in `email` module (dispatch.email_module_blocks), off for a new space.
+    lane.space.enabled_modules = sorted(set(lane.space.enabled_modules or []) | {"email"})
+    lane.space.save(update_fields=["enabled_modules"])
     monkeypatch.setattr("apps.integrations.email.makerspace_mail_connection", lambda space: (None, "billing@example.test"))
     monkeypatch.setattr("apps.integrations.timing_dispatch.defer_log", lambda *args, **kwargs: False)
     rendered = []

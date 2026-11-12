@@ -28,7 +28,7 @@ def test_every_area_manager_sees_public_site_enabled_in_the_console_list(role):
     space = make_space(f"switch-list-{role}")
     Makerspace.objects.filter(pk=space.pk).update(public_site_enabled=True)
     manager = make_member(f"switch-list-{role}-user", space, membership_role=role)
-    response = authenticated_client(manager).get("/api/v1/admin/makerspaces/")
+    response = authenticated_client(manager).get("/api/v1/admin/makerspaces")
     assert response.status_code == 200, response.content
     rows = [row for row in response.json() if row["id"] == space.pk]
     assert rows and rows[0]["public_site_enabled"] is True

@@ -133,12 +133,17 @@ def test_revoked_membership_never_gets_usage_or_old_money():
 
 
 @pytest.mark.parametrize("access", ["restricted", "suspended"])
-def test_restricted_accounts_are_refused_even_when_they_own_money(access):
+def test_restricted_accounts_can_read_only_their_own_money(access):
+    # Decision 260 (G-1): paying a debt is how a restriction is cleared, so a restricted or suspended
+    # account still reads the payment summary in its own name -- and nothing else.
     space, actor = lab(), account("usage-account-restricted")
     charge(space, actor)
     actor.access_status = access
     actor.save(update_fields=["access_status"])
-    assert client(actor).get(url(space)).status_code == 403
+    response = client(actor).get(url(space))
+    assert response.status_code == 200, response.data
+    assert set(response.data) == {"usage_available", "payments"}
+    assert response.data["usage_available"] is False
 
 
 def test_unrelated_and_unservable_tenant_usage_is_refused():

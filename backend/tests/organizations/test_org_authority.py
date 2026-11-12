@@ -84,19 +84,18 @@ def test_org_action_reaches_every_linked_space_without_conferring_identity():
     assert rbac.resolve_scope(user) == set()
 
 
-def test_organization_member_and_staff_account_keep_separate_authority():
+def test_organization_grant_and_staff_role_union_on_one_person():
     user = make_user("local-and-org-authority")
     makerspace = make_makerspace("local-and-org-space")
     organization = make_organization("local-and-org")
     link(organization, makerspace, OrganizationMakerspace.Relationship.MANAGER)
     grant(organization, user, [rbac.Action.EDIT_INVENTORY])
-    from tests.accounts.account_factories import make_staff
+    from tests.accounts.account_factories import grant_staff_role
 
-    staff = make_staff(makerspace, username="local-and-org-staff", email=user.email,
-                       role_slug="event_manager")
-    assert rbac.effective_actions(user, makerspace.id) == {rbac.Action.EDIT_INVENTORY}
-    assert rbac.effective_actions(staff, makerspace.id) == {rbac.Action.MANAGE_EVENTS}
-    assert not user.makerspace_memberships.exists()
+    # U-A1: one account per person, so the staff-track row lands on the same person.
+    grant_staff_role(user, makerspace, role_slug="event_manager")
+    assert rbac.effective_actions(user, makerspace.id) >= {
+        rbac.Action.EDIT_INVENTORY, rbac.Action.MANAGE_EVENTS}
 
 
 def test_archived_linked_space_excludes_org_authority():

@@ -27,7 +27,9 @@ def test_platform_terminal_hours_use_actual_duration(status):
         completed_at=timezone.now() if status != "failed" else None)
     rows = [r for r in usage(actor)["typed_rows"] if r["metric"] == "service_machine_hours"]
     assert len(rows) == 1
-    assert Decimal(rows[0]["value"]) == Decimal("1.17")
+    # 70 actual minutes = 1.1667 h. The JSON projection formats decimals as fixed-point text with a third
+    # place when one is present (the money formatter, 1.167); the point is actual (70), not estimate (120) or 25%.
+    assert abs(Decimal(rows[0]["value"]) - Decimal(70) / 60) < Decimal("0.005")
 
 
 @pytest.mark.parametrize("service_enabled", [True, False])

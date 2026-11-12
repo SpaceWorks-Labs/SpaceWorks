@@ -15,6 +15,7 @@ from apps.operations.report_schedule_services import schedule_inputs
 from apps.operations.views_report_helpers import date_range_from_dates
 from tests.operations.report_assertions import assert_report_disclosure_safe
 from tests.operations.test_membership_analytics import at, event, member, term
+from tests.fixed_roles.helpers import staff_account
 from tests.return_helpers import authenticated_client, make_space
 
 pytestmark = pytest.mark.django_db
@@ -99,7 +100,8 @@ def test_membership_tenant_and_deployment_scopes_never_disclose_foreign_person(k
     other_member = member(other, "fg-foreign-person", at("2025-01-01"))
     term(own, own_member, "OwnPlan", at("2025-01-01"), at("2028-01-01"))
     term(other, other_member, "ForeignPlan", at("2025-01-01"), at("2028-01-01"), amount="999")
-    actor = own_member.user
+    # One account per person: a plain member holds no report authority, so the reader is a Space Manager.
+    actor = staff_account(own, "fg-own-reader", "space_manager")
     assert builder(other.pk, actor=actor).records == []
     payload = report_data(key, own.pk, actor=actor, grain="month")
     assert "ForeignPlan" not in str(payload) and "fg-foreign-person" not in str(payload)
@@ -123,7 +125,8 @@ def test_calendar_filters_match_preview_download_and_schedule_without_double_con
     # Both timestamps fall just after local midnight on February 1, before UTC midnight.
     membership = member(space, "fg-calendar-person", at("2026-01-31T19:00:00"))
     term(space, membership, "Boundary", at("2026-01-31T19:00:00"), at("2027-01-01"))
-    client = authenticated_client(membership.user)
+    reader = staff_account(space, "fg-calendar-reader", "space_manager")
+    client = authenticated_client(reader)
     route = f"/api/v1/admin/makerspace/{space.pk}"
     for key in ("membership-growth", "member-retention", "membership-revenue"):
         query = "start=2026-02-01&end=2026-02-01"
@@ -135,7 +138,7 @@ def test_calendar_filters_match_preview_download_and_schedule_without_double_con
                                    filters={"start": "2026-02-01", "end": "2026-02-01"})
         window, filters = schedule_inputs(schedule, at("2026-03-01"))
         payload = report_data(key, space.pk, date_range=window, report_filters=filters,
-                              grain="month" if key == "membership-revenue" else "day", actor=membership.user)
+                              grain="month" if key == "membership-revenue" else "day", actor=reader)
         assert payload["typed_rows"] == response.data["typed_rows"]
         download = client.get(f"{route}/reports/{key}/export?format=csv&{query}")
         assert download.status_code == 200

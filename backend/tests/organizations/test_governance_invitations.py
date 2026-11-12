@@ -96,13 +96,13 @@ def test_governance_only_account_can_open_central_staff_session():
         {
             "username": actor.username,
             "password": "central-governance-password",
-            "surface": "delegated",
+            "surface": "member",
         },
         format="json",
     )
 
     assert response.status_code == 200
-    assert response.data["surface"] == "delegated"
+    assert response.data["surface"] == "member"
     assert response.data["user"]["makerspaces"] == []
 
 

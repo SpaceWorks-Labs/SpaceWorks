@@ -13,6 +13,8 @@ from django.test import RequestFactory
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
+from apps.makerspaces.guards import SurfaceOff
+
 from apps.accounts.models import User
 from apps.audit.models import AuditLog
 from apps.events import services_series, services_series_organizers
@@ -101,7 +103,7 @@ def test_service_refuses_when_the_events_module_is_off():
     series = _series(space, manager)
     org = Organization.objects.create(name="Partner Org", slug="partner-org")
     disable_module(space, "events")
-    with pytest.raises(ValidationError):
+    with pytest.raises(SurfaceOff):  # an off module leaves no surface (#95)
         services_series_organizers.add_series_organizer(series, actor=_superadmin(), organization=org)
     assert not EventSeriesOrganizer.objects.exists()
 

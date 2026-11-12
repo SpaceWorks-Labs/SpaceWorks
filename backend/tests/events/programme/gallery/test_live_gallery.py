@@ -94,7 +94,7 @@ def test_private_profile_has_no_name_or_card_fallback(monkeypatch):
 
 def test_completed_gallery_has_a_separate_gate_from_expired_event_website(monkeypatch):
     space = SimpleNamespace(public_site_enabled=True)
-    event = SimpleNamespace(pk=42, makerspace=space, is_public=True, status="completed",
+    event = SimpleNamespace(pk=42, makerspace=space, is_public=True, status="completed", page_state="live",
                             ends_at=timezone.now() - timedelta(days=100))
     model = Mock()
     model.objects.select_related.return_value.filter.return_value.first.return_value = event

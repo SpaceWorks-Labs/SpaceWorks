@@ -18,7 +18,7 @@ def test_usage_picker_excludes_staff_revoked_and_foreign_memberships():
     kind = MachineType.objects.create(makerspace=space, name="Usage type", slug="recon-picker-type")
     machine = Machine.objects.create(makerspace=space, machine_type=kind, name="Usage machine")
     member = User.objects.create_user(username="recon-picker-member", email="same@example.test")
-    staff = make_staff(space, username="recon-picker-staff", email="same@example.test")
+    staff = make_staff(space, username="recon-picker-staff", email="staff@example.test")  # one person per email (uniq_person_email)
     revoked = User.objects.create_user(username="recon-picker-revoked")
     foreign = User.objects.create_user(username="recon-picker-foreign")
     make_membership(member, space)

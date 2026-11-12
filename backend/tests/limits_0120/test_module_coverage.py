@@ -69,4 +69,6 @@ def test_each_new_key_is_registered_everywhere(key):
 
 
 def test_counter_table_matches_specs():
-    assert set(COUNTERS) == set(SPECS)
+    # A request RATE (unit `per_minute`) is enforced at the throttle and has no usage counter to read.
+    rates = {key for key, spec in SPECS.items() if spec[0] == "per_minute"}
+    assert set(COUNTERS) == set(SPECS) - rates

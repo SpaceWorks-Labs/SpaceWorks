@@ -22,7 +22,8 @@ def test_member_broadcast_emits_owned_envelopes_instead_of_legacy_mail(world):
     row, count = send_broadcast(world.space, actor=world.staff, title="Member news", body="The lab is open.")
     envelopes = NotificationEnvelope.objects.filter(source_kind="membership.broadcast", source_id=str(row.pk))
     assert envelopes.count() == count
-    assert set(envelopes.values_list("recipient_id", flat=True)) == {world.owner.pk, world.staff.pk, world.other.pk}
+    # A member broadcast reaches community-track members only; the staff person holds a staff-track row.
+    assert set(envelopes.values_list("recipient_id", flat=True)) == {world.owner.pk, world.other.pk}
     assert not EmailLog.objects.filter(event="broadcast").exists()
     envelope = envelopes.get(recipient=world.owner)
     world.owner.makerspace_memberships.filter(makerspace=world.space).update(receives_notifications=False)

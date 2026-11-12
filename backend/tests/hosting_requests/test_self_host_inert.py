@@ -63,5 +63,5 @@ def test_managed_without_mail_or_base_url_keeps_public_routes_off(settings, monk
     settings.PUBLIC_APP_BASE_URL = ""
     assert anonymous().post(SUBMIT, payload(), format="json").status_code == 404
     settings.PUBLIC_APP_BASE_URL = "https://app.space-works.test"
-    assert anonymous().get("/api/v1/config").data["hosting_requests"] == {"enabled": True}
+    assert anonymous().get("/api/v1/config").data["hosting_requests"] == {"enabled": True, "kinds": ["makerspace", "organization"]}
     assert re.match(r"^2\d\d$", str(anonymous().post(SUBMIT, payload(), format="json").status_code))

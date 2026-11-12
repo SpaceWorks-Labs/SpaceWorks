@@ -246,7 +246,9 @@ def test_every_catalogue_event_has_a_template_route_a_source_a_default_and_a_pre
     assert not bad_source, bad_source
     # Link-change events are webhook-only and listed by `link_webhooks`; everything else must have copy.
     allowed_webhook_only = {"event_booking_linked", "event_loan_linked", "event_loan_unlinked",
-                            "booking_loan_linked", "booking_loan_unlinked"}
+                            "booking_loan_linked", "booking_loan_unlinked",
+                            # The staff escalation reuses the `return_reminder` copy (`chat_templates.chat_entry`).
+                            "overdue_escalated"}
     assert not [pair for pair in missing if pair[1] not in allowed_webhook_only], missing
 
 

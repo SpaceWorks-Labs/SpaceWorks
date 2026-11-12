@@ -120,6 +120,10 @@ def ensure_builtin_machine_types(request):
         import importlib
 
         importlib.import_module("apps.machines.migrations.0002_seed_builtin_machine_types").seed_builtins(django_apps, None)
+        # Migrations 0012/0017 then gave the printer and the metered packs their capability config;
+        # a bare 0002 row would fail the printer-contract validators (`schema`, `accepted_materials`).
+        importlib.import_module("apps.machines.migrations.0012_printer_machine_type_configuration").configure_printer_type(django_apps, None)
+        importlib.import_module("apps.machines.migrations.0017_seed_machine_type_metering_packs").forward(django_apps, None)
 
 
 @pytest.fixture(autouse=True)

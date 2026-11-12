@@ -39,6 +39,7 @@ PUBLIC_PRODUCT_FIELDS = {
     "image_url",
     "borrowing_terms",
     "expected_back_on",  # L12: inventory.expected_back (null unless switched on and opted in)
+    "event_only",  # lent only through an event: the client shows no request button
 }
 
 

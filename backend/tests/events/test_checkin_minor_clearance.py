@@ -37,8 +37,10 @@ def test_online_check_in_refused_when_guardian_consent_lapsed():
 def test_check_in_passes_when_guardian_clearance_holds():
     space = make_space("minor-ok")
     registration = register(make_event(space), make_member(space))
+    # An online check-in is a staffer's act (the DB constraint requires an actor for it).
+    from tests.events.collab_helpers import make_staff
     with mock.patch(HELPER, return_value=None):
-        updated = mark_attended(registration, actor=None)
+        updated = mark_attended(registration, actor=make_staff(space))
     assert updated.status == EventRegistration.Status.ATTENDED
 
 

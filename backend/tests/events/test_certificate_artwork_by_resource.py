@@ -39,15 +39,14 @@ def test_resource_id_resolves_to_the_private_bytes(bytes_read):
 @pytest.mark.django_db
 def test_another_events_resource_id_is_a_404(bytes_read):
     space, manager, editor, event, grant = grant_fixture()
-    _s2, _m2, _e2, other, _g2 = grant_fixture()
+    _s2, _m2, _e2, other, _g2 = grant_fixture(slug="event-grants-2", grantee="event-grantee-2")
     foreign = _row(other, "two")
-    with pytest.raises(Http404):
-        _get(editor, event, foreign.resource_id)
+    # DRF turns the view's Http404 into a 404 response rather than letting it propagate.
+    assert _get(editor, event, foreign.resource_id).status_code == 404
 
 
 @pytest.mark.django_db
 def test_unpromoted_artwork_is_a_404(bytes_read):
     space, manager, editor, event, grant = grant_fixture()
     row = _row(event, "three", promoted=False)
-    with pytest.raises(Http404):
-        _get(editor, event, row.resource_id)
+    assert _get(editor, event, row.resource_id).status_code == 404

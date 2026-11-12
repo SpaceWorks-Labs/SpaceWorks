@@ -41,6 +41,7 @@ def test_only_first_announcement_sets_retention_anchor(monkeypatch, already_anno
     monkeypatch.setattr(workflow, "runtime", lambda: ports)
     monkeypatch.setattr(workflow, "audit", Mock())
     monkeypatch.setattr(workflow, "notice", Mock())
+    monkeypatch.setattr("apps.events.judging.options.options_for", lambda event_id: None)  # no DB in this unit test
     response = workflow.publish(42, actor=actor, data={"operation_id": str(uuid4()),
         "expected_version": 2, "result_revision_id": 101})
     assert response["state"] == "published"

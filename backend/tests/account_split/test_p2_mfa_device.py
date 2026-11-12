@@ -148,15 +148,19 @@ def test_reauthentication_fingerprint_and_intents_bind_account_kind():
 
 
 def test_member_method_switches_preserve_platform_and_staff_password_login():
-    space, _, worker, platform = accounts()
+    space, member, worker, platform = accounts()
     policy = PlatformLoginMethods(password_enabled=False, social_enabled=False)
     validate_login_methods(policy)
     policy.save()
     body = {"username": platform.username, "password": PASSWORD, "context": "platform"}
     result = APIClient().post("/api/v1/auth/login", body, format="json", HTTP_ORIGIN=ORIGIN)
     assert result.status_code == 200 and result.data["access"]
-    # U-A1: a staff-track holder is a person, so the member password switch governs them too.
+    # #62: the member password switch never locks out a person holding a staff role.
     body = {"username": worker.username, "password": PASSWORD, "context": "person"}
+    kept = APIClient().post("/api/v1/auth/login", body, format="json", HTTP_ORIGIN=ORIGIN)
+    assert kept.status_code == 200 and kept.data["access"]
+    # An ordinary member (no staff role) is refused while the switch is off.
+    body = {"username": member.username, "password": PASSWORD, "context": "person"}
     refused = APIClient().post("/api/v1/auth/login", body, format="json", HTTP_ORIGIN=ORIGIN)
     assert refused.status_code != 200 and "access" not in refused.data
 

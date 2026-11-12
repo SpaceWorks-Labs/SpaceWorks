@@ -233,8 +233,6 @@ def test_both_guards_share_one_waiver_rule(guard):
 @pytest.mark.parametrize(
     "module_path",
     [
-        "apps.hardware_requests.self_checkout_views",
-        "apps.hardware_requests.direct_loan_workflow",
         "apps.hardware_requests.public_views",
     ],
 )
@@ -257,3 +255,25 @@ def test_hardware_surfaces_still_bind_the_presence_guard(module_path):
         require_active_member_presence
     )
     assert not hasattr(module, "require_active_member")
+
+
+@pytest.mark.parametrize(
+    "module_path",
+    ["apps.hardware_requests.self_checkout_views", "apps.hardware_requests.direct_loan_workflow"],
+)
+def test_self_checkout_and_direct_handout_bind_the_presence_guard_through_guest_lending(module_path):
+    """Decision 223: these two admit a member OR a pass holder through `guest_lending`, whose
+    `require_member_or_guest` still runs the presence guard first (presence defaults on) and only
+    falls back to a live guest pass when the person is not an active member."""
+    import importlib
+    import inspect
+
+    from apps.hardware_requests import guest_lending
+    from apps.presence import guest_guard
+
+    module = importlib.import_module(module_path)
+    assert module.guest_lending is guest_lending
+    assert not hasattr(module, "require_active_member")
+    assert guest_guard.require_active_member_presence is require_active_member_presence
+    assert inspect.signature(guest_guard.require_member_or_guest).parameters["presence"].default is True
+    assert guest_lending.require_member_or_guest is guest_guard.require_member_or_guest

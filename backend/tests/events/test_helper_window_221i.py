@@ -6,12 +6,13 @@ from django.utils import timezone
 
 from apps.events.contributions.authority import inherited_window
 from apps.events.contributions.models_roles import EventGrantEntitlement
-from tests.events.test_decision15_coorganizer_journeys import REFUSED, granted, world  # noqa: F401
+from tests.events.test_decision15_coorganizer_journeys import REFUSED, event_tracks, granted, world  # noqa: F401
 
 pytestmark = pytest.mark.django_db
 
 
 def limited(w, **fields):
+    event_tracks(w.event)
     user, grant = granted(w.event, w.manager, ["judge", "manage_team"], name="limited")
     EventGrantEntitlement.objects.filter(grant=grant, revoked_at__isnull=True).update(**fields)
     return user

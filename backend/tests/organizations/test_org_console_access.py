@@ -49,7 +49,7 @@ def login(user, makerspace=None):
         kwargs["HTTP_ORIGIN"] = f"https://{makerspace.frontend_domain}"
     return APIClient().post(
         LOGIN,
-        {"username": user.username, "password": PASSWORD, "surface": "delegated"},
+        {"username": user.username, "password": PASSWORD, "surface": "member"},
         format="json",
         **kwargs,
     )
@@ -64,9 +64,9 @@ def test_org_only_actor_can_obtain_scoped_and_originless_staff_sessions():
     originless = login(user)
 
     assert scoped.status_code == 200
-    assert scoped.data["surface"] == "delegated"
+    assert scoped.data["surface"] == "member"
     assert originless.status_code == 200
-    assert originless.data["surface"] == "delegated"
+    assert originless.data["surface"] == "member"
 
 
 @pytest.mark.parametrize("blocked_by", ["grant", "organization", "makerspace"])
@@ -128,7 +128,7 @@ def test_membership_entry_unions_org_actions_without_duplication():
 
     make_membership(user, makerspace)
     staff = make_staff(makerspace, username="org-console-union-staff",
-                       email=user.email, role_slug="booking_manager")
+                       role_slug="booking_manager")
 
     rows = user_payload(user)["makerspaces"]
 

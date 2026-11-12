@@ -21,6 +21,7 @@ def test_broken_explicit_platform_transport_never_uses_environment(settings):
     fallback.assert_not_called()
 
 
+@pytest.mark.django_db  # a space's platform fallback reads the platform-allowed switch (decision 281)
 def test_tenant_inheritance_and_explicit_transport_remain_separate():
     from apps.makerspaces.models import Makerspace
     tenant = Makerspace(name="Tenant", slug="tenant", smtp_host="stale.invalid")

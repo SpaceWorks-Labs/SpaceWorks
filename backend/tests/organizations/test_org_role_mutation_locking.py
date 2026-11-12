@@ -62,7 +62,7 @@ def _machine_scope_case(slug):
         slug=f"{slug}-type",
         name=f"{slug} type",
     )
-    target = make_user(f"{slug}-target", account_kind="staff", staff_makerspace=makerspace)
+    target = make_user(f"{slug}-target")
     membership = assign_builtin_roles(target, makerspace, "machine_manager")
     client = APIClient()
     # The machine-scope PUT is a step-up route; record a recent proof.

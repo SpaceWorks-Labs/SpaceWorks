@@ -38,8 +38,8 @@ def test_tracks_endpoint_is_readable_by_a_limited_co_organizer_but_scoped_to_the
     from rest_framework.test import APIClient
     from apps.events.judging.models_definitions import HackathonTrack
     space, _manager, user, event, _grant = _limited_co_organizer(track_ids=[])
-    mine = HackathonTrack.objects.create(event=event, makerspace=space, name="Mine")
-    other = HackathonTrack.objects.create(event=event, makerspace=space, name="Other")
+    mine = HackathonTrack.objects.create(event=event, name="Mine")
+    other = HackathonTrack.objects.create(event=event, name="Other")
     EventGrantEntitlement.objects.filter(grant=_grant).update(track_ids=[mine.pk])
     client = APIClient()
     client.force_authenticate(user)

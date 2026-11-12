@@ -124,7 +124,7 @@ def test_fetch_rechecks_live_personal_authority(media, lane, change):
             feature="payments", channel="whatsapp", enabled=False)
     elif change == "module_disabled":
         from tests.module_helpers import disable_module
-        disable_module(media.space, "notifications")
+        disable_module(media.space, "whatsapp")  # the addressed channel's own module gates it, not the inbox module
     elif change == "document_gate":
         media.space.enabled_features = [key for key in media.space.enabled_features if key != "billing.documents"]
         media.space.save(update_fields=["enabled_features"])

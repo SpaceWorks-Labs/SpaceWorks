@@ -57,10 +57,10 @@ def test_badge_and_report_query_cost_is_constant_for_200_events(source, audit, r
             data = BadgeReportProjection(page, many=True, context=context).data
         if not reports:
             assert not any(call.args[1] == rbac.Action.VIEW_AUDIT for call in check.call_args_list)
-        # Every source holds manage_registrations, so the badge hint is on regardless of
-        # audit. Reports admit the tenant Event Manager, or a grant holder who also holds
-        # tenant VIEW_AUDIT (the resource-grant conjunction).
-        allowed = reports and (source == "tenant" or audit)
+        # Every source holds manage_registrations, so the badge hint is on regardless of audit. Report hints
+        # follow the reports module: the tenant Event Manager and, by decision 248 / EB1, a grantee with
+        # manage_registrations on this event both get the event analytics.
+        allowed = reports
         assert data == [{"badge_sensitive_fields_allowed": True,
                          "report_features": ["analytics"] if allowed else []}] * size
         counts.append(len(queries))

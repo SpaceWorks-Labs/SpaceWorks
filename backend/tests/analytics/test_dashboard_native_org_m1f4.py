@@ -57,14 +57,17 @@ def test_native_org_authority_does_not_widen_locally_visible_widgets(settings, m
     grant(org, actor, [rbac.Action.MANAGE_EVENTS])
     web = client(actor).get(url(space))
     assert web.status_code == 200, web.data
-    # U-A1: organization authority belongs to the person, so it widens the widgets on both surfaces.
+    # U-A1: organization authority belongs to the person, so it widens the web widgets.
     assert "event-funnel" in keys(web.data)
     # Dashboard tenant discovery remains local-membership-based on both surfaces.
     assert client(actor).get(url(org_only)).status_code == 404
     native, _ = native_client(actor, settings, monkeypatch)
     response = native.get(url(space), HTTP_X_MAKERSPACE_ID=str(space.pk))
     assert response.status_code == 200, response.data
-    assert keys(response.data) == keys(web.data)
+    # Native device sessions stay membership-only (INVARIANTS: "Native device payloads stay
+    # membership-only"; `rbac_organizations` cuts org authority for them): the web-only org widening
+    # is the one difference between the two surfaces.
+    assert keys(response.data) == keys(web.data) - {"event-funnel"}
     assert native.get(url(org_only), HTTP_X_MAKERSPACE_ID=str(org_only.pk)).status_code == 403
 
 

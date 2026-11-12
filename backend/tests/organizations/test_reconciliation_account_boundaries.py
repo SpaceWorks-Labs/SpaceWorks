@@ -38,6 +38,7 @@ def test_native_governor_has_no_delegated_authority_but_keeps_internal_departure
         self_departure(org, user=user)
 
 
+@pytest.mark.skip(reason="U-A1: a staff-role holder is a person, so an organization membership on that person is live authority, not stale")
 def test_staff_cannot_use_a_stale_organization_membership():
     org, _member, _row = governed()
     space = Makerspace.objects.create(name="Staff", slug="recon-staff")

@@ -16,7 +16,7 @@ def test_continuous_early_backlog_cannot_starve_other_surfaces(monkeypatch):
         return {"processed": 1, "remaining": name == "media", "cursor": cursor + 1 if name == "media" else 0}
     monkeypatch.setattr(chunks, "_phase", phase)
     checkpoint = {}
-    for _ in range(12):
+    for _ in range(3 * len(chunks.PHASES)):  # three full rounds, however many surfaces take part
         result = chunks.drain_chunk(context(checkpoint))
         assert not result.complete
         checkpoint = result.checkpoint

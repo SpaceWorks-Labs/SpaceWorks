@@ -2,6 +2,7 @@ import pytest
 from django.utils import timezone
 
 from apps.integrations.notification_resolution import email_eligible
+from apps.makerspaces.models import MakerspaceMembership
 
 pytestmark = pytest.mark.django_db
 
@@ -31,7 +32,8 @@ def test_staff_audience_does_not_relax_campaign_or_unknown_source_email(world, s
 @pytest.mark.parametrize("withdrawal", ["revoked", "opted_out", "inactive", "restricted", "foreign", "member_account"])
 def test_unverified_staff_allowance_requires_current_tenant_staff_authority(world, withdrawal):
     envelope = world.envelope(user=world.staff, audience="staff")
-    membership = world.staff.makerspace_memberships.get(makerspace=world.space)
+    # The staff authority is the staff-track row (one account per person); the default manager is community-only.
+    membership = MakerspaceMembership.staff_tracks.get(user=world.staff, makerspace=world.space)
     assert email_eligible(envelope)
     if withdrawal == "revoked":
         membership.status = "revoked"

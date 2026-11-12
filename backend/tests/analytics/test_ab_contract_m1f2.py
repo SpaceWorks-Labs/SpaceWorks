@@ -82,8 +82,13 @@ def test_source_module_off_blocks_http_and_direct_source_queries(key):
         return  # inventory-control is an optional-section composite.
     space = make_space("ab-gating")
     actor = make_member("ab-gating-manager", space)
-    space.enabled_modules = sorted((set(space.enabled_modules) | {"reports"}) - {definition.required_modules[0]})
-    space.save(update_fields=["enabled_modules"])
+    # A source is a module key, a capability key (`machines.tobuy`) or an any-of pair of capabilities
+    # (report_sources); switch every part off, each in the field that stores it.
+    from apps.operations.report_sources import is_capability, parts
+    off = parts(definition.required_modules[0])
+    space.enabled_modules = sorted((set(space.enabled_modules) | {"reports"}) - {p for p in off if not is_capability(p)})
+    space.enabled_features = sorted(set(space.enabled_features or []) - {p for p in off if is_capability(p)})
+    space.save(update_fields=["enabled_modules", "enabled_features"])
     response = authenticated_client(actor).get(reverse("analytics-generic", args=[space.pk, key]))
     assert response.status_code == 404
     kwargs = {"actor": actor} if key in {"consumable-usage", "consumable-pools", "procurement-performance",

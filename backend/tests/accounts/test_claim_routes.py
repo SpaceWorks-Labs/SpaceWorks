@@ -42,12 +42,13 @@ def test_current_all_active_tree_has_a_complete_claim_matrix(settings):
     names = {row.view_name for row in validate_claim_route_matrix()}
     assert {"member-event-history", "member-my-usage", "auth-account-deletion",
             "auth-account-restore-email", "auth-logout-all"} <= names
-    # Release 2 has 114 claimable programme names after session-only routes are
-    # excluded. Reimbursements add 27 member-surface names.
+    # Release 2 has 117 claimable programme names after session-only routes are
+    # excluded (114 plus the three member routes the programme gained late). Reimbursements add
+    # 27 member-surface names.
     from apps.accounts.programme_route_catalog import ROUTES
     from apps.apiclients.scope_registry_programme import SESSION_ONLY
     programme = {name for name, _methods, _target in ROUTES if name not in SESSION_ONLY}
-    assert len(programme) == 114
+    assert len(programme) == 117
     from apps.accounts.reimbursement_route_catalog import ROUTES as REIMBURSEMENT_ROUTES
     reimbursements = {name for name, _methods, _target, surface in REIMBURSEMENT_ROUTES if surface == "member"}
     assert len(reimbursements) == 27

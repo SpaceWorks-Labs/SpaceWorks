@@ -198,7 +198,8 @@ def test_api_access_catalog_preserves_defaults_and_can_be_muted_via_scoped_api()
     space = make_space("api-resolution-rules")
     actor = make_member("api-resolution-manager", space)
     assert FEATURE_EVENTS[FEATURE] == (EVENT, "subdomain_request_resolved", "email.failed", "scheduled_report",
-                                      "space_restore_completed", "space_restore_failed", "selfhost_move_status")
+                                      "space_restore_completed", "space_restore_failed", "emergency_rekey_started",
+                                      "emergency_rekey_completed", "emergency_rekey_failed", "selfhost_move_status")
     assert DEFAULT_CHANNEL_STATE[FEATURE] == {
         channel: channel in {"email", "telegram", "in_app"} for channel in NotificationChannel.values
     }

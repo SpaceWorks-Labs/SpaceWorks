@@ -105,7 +105,8 @@ def test_every_registered_changelist_renders_for_a_superadmin(settings, monkeypa
             url = reverse(f"admin:{opts.app_label}_{opts.model_name}_changelist")
         except NoReverseMatch:
             continue
-        status = client.get(url).status_code
+        # A changelist may deliberately redirect to its own page (backup keys): that page must render.
+        status = client.get(url, follow=True).status_code
         if status != 200:
             failures.append((opts.label_lower, status))
     assert failures == []
@@ -120,7 +121,7 @@ def test_the_per_space_limits_page_and_home_render():
     limits = client.get(reverse("admin:managed_hosting_spacehostingtype_limits"))
     assert limits.status_code == 200 and b'data-testid="control-limits"' in limits.content
     assert space.name.encode() in limits.content
-    assert limits["Cache-Control"] == "private, no-store"
+    assert {"private", "no-store"} <= {part.strip() for part in limits["Cache-Control"].split(",")}
     home = client.get(reverse("admin:index")).content.decode()
     for marker in ('data-testid="control-group-map"', 'data-testid="control-home-backups"',
                    'data-testid="control-home-limits"', 'data-testid="control-internal-records"'):

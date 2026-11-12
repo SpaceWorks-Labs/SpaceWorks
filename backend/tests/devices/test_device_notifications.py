@@ -46,7 +46,8 @@ def test_device_fallback_is_active_manage_devices_staff_in_this_tenant():
     staff_client(second, "device-alert-foreign")
     make_member("device-alert-inventory", first, membership_role=MakerspaceMembership.Role.INVENTORY_MANAGER)
     inactive = make_member("device-alert-inactive", first)
-    MakerspaceMembership.objects.filter(makerspace=first, user=inactive).update(status="revoked")
+    # make_member holds a staff-track row (one account per person), which the default manager does not see.
+    MakerspaceMembership.staff_tracks.filter(makerspace=first, user=inactive).update(status="revoked")
     assert staff_emails_for_feature(first, "devices", event="offline") == [manager.email]
     assert staff_user_ids_for_feature(first, "devices", event="offline") == [manager.pk]
 

@@ -12,7 +12,10 @@ from apps.audit.models import AuditLog
 from apps.makerspaces.models import Makerspace, MakerspaceMembership
 from .p3_helpers import PASSWORD, base, client, context
 
-pytestmark = pytest.mark.django_db(transaction=True)
+pytestmark = [
+    pytest.mark.django_db(transaction=True),
+    pytest.mark.skip(reason="U-A1: the /admin/makerspaces/<id>/staff-accounts/ routes, staff-invitation delivery and the separate staff account kind are retired (404); staff authority is a staff-track membership on the person's one account"),
+]
 
 
 @pytest.fixture

@@ -8,6 +8,7 @@ from django.utils import timezone
 
 from apps.accounts.models import User
 from apps.makerspaces.models import MakerspaceMembership
+from tests.accounts.account_factories import make_membership
 from tests.fixed_roles.helpers import staff_account
 from tests.return_helpers import authenticated_client, make_space
 
@@ -24,7 +25,7 @@ def _space(slug, modules=(), features=()):
 
 def _member(space, name):
     user = User.objects.create_user(username=name, email=f"{name}@example.test", display_name=name)
-    MakerspaceMembership.objects.create(user=user, makerspace=space, status="active")
+    make_membership(user, space)  # a membership needs the tenant's built-in Member role (DB-enforced)
     return user
 
 
@@ -261,9 +262,9 @@ def test_shop_product_list_filters_low_stock_only():
 
     space = _space("c1b-shop", modules=("shop",))
     boss = staff_account(space, "c1b-shop-boss", "space_manager")
-    low = ShopProduct.objects.create(makerspace=space, name="Low tee")
+    low = ShopProduct.objects.create(makerspace=space, name="Low tee", slug="low-tee")
     ShopVariant.objects.create(makerspace=space, product=low, price="10.00", on_hand=1, reorder_point=3)
-    fine = ShopProduct.objects.create(makerspace=space, name="Fine tee")
+    fine = ShopProduct.objects.create(makerspace=space, name="Fine tee", slug="fine-tee")
     ShopVariant.objects.create(makerspace=space, product=fine, price="10.00", on_hand=50, reorder_point=3)
     response = authenticated_client(boss).get(reverse("admin-shop-products", args=[space.pk]) + "?low_stock=true")
     names = [row["name"] for row in response.json()["results"]]

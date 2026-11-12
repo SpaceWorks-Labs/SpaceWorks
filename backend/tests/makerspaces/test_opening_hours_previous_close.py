@@ -5,7 +5,7 @@ from types import SimpleNamespace
 from apps.makerspaces.opening_hours import next_opening, previous_close
 
 _WEEK = {day: [{"start": "09:00", "end": "17:00"}] for day in
-         ("monday", "tuesday", "wednesday", "thursday", "friday")}
+         ("mon", "tue", "wed", "thu", "fri")}
 _SPACE = SimpleNamespace(timezone="UTC", opening_hours={"weekly": _WEEK})
 
 
@@ -31,5 +31,5 @@ def test_weekend_rolls_back_to_friday_close_and_mirrors_next_opening():
 
 
 def test_a_schedule_that_never_opened_in_range_returns_none():
-    closed = SimpleNamespace(timezone="UTC", opening_hours={"weekly": {"monday": []}, "exceptions": {}})
+    closed = SimpleNamespace(timezone="UTC", opening_hours={"weekly": {"mon": []}, "exceptions": {}})
     assert previous_close(closed, _at(9, 20), days=30) is None

@@ -1,10 +1,11 @@
 import { t } from "@lingui/core/macro";
-import { useEffect, useState } from "react";
+import { useMemo, useEffect, useState } from "react";
 
-import { Callout, EmptyState, Skeleton } from "../../../components/ui";
+import { Callout, EmptyState } from "../../../components/ui";
 import { StructuredApiError, staffRequestBlob } from "../../../lib/api";
 import type { AnalyticsScope } from "./analyticsApi";
 import { type GrafanaDashboard, renderPath, useGrafanaEmbed, useGrafanaSummary } from "./grafanaApi";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 const errorText = (error: unknown, fallback: string) =>
   error instanceof StructuredApiError ? error.detail ?? error.message : fallback;
@@ -18,7 +19,7 @@ function PublicDashboard({ scope, dashboard }: { scope: AnalyticsScope; dashboar
     return <Callout size="inline" tone="danger" lead="This dashboard could not open."
       body={errorText(embed.error, "Check the Grafana connection.")} />;
   }
-  if (!embed.data) return <Skeleton className="h-96 w-full" />;
+  if (!embed.data) return <LogoLoader size={48} className="min-h-96 py-3" />;
   return (
     <div className="grid gap-2">
       <iframe className="h-[70vh] min-h-96 w-full rounded-xl border border-line bg-bg" src={embed.data.url}
@@ -56,7 +57,7 @@ function RenderedDashboard({ scope, dashboard }: { scope: AnalyticsScope; dashbo
       {error ? <Callout size="inline" tone="danger" lead="This dashboard could not be drawn."
         body={errorText(error, "Check the Grafana connection and its image renderer.")} />
         : image ? <img className="w-full rounded-xl border border-line bg-bg" src={image} alt={dashboard.title} />
-          : <Skeleton className="h-96 w-full" />}
+          : <LogoLoader size={48} className="min-h-96 py-3" />}
       <div><button className="desk-button" type="button" onClick={() => setVersion((value) => value + 1)}>{t`Refresh image`}</button></div>
     </div>
   );
@@ -66,12 +67,12 @@ function RenderedDashboard({ scope, dashboard }: { scope: AnalyticsScope; dashbo
 export function GrafanaViewer({ scope }: { scope: AnalyticsScope }) {
   const summary = useGrafanaSummary(scope, true);
   const [selected, setSelected] = useState<string | null>(null);
-  const dashboards = summary.data?.dashboards ?? [];
+  const dashboards = useMemo(() => summary.data?.dashboards ?? [], [summary.data]);
   useEffect(() => {
     if (selected === null || !dashboards.some((entry) => entry.uid === selected)) setSelected(dashboards[0]?.uid ?? null);
   }, [dashboards, selected]);
 
-  if (summary.isLoading) return <Skeleton className="h-40 w-full" />;
+  if (summary.isLoading) return <LogoLoader size={48} className="min-h-40 py-3" />;
   if (summary.error || !summary.data) {
     return <Callout size="inline" tone="danger" lead="Grafana dashboards could not load."
       body={errorText(summary.error, "Try again in a moment.")} />;

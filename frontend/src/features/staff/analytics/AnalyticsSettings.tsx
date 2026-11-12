@@ -1,7 +1,7 @@
 import { t } from "@lingui/core/macro";
 import { useEffect, useState, type FormEvent } from "react";
 
-import { Callout, Skeleton } from "../../../components/ui";
+import { Callout } from "../../../components/ui";
 import { StructuredApiError } from "../../../lib/api";
 import { AnalyticsLoginCard } from "./AnalyticsLoginCard";
 import { AnalyticsProviderChoice } from "./AnalyticsProviderChoice";
@@ -11,6 +11,7 @@ import {
   type AnalyticsDashboard, type AnalyticsScope, useAnalyticsConnection, useUpdateAnalyticsConnection, usesGrafana,
   usesMetabase,
 } from "./analyticsApi";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 type DashboardDraft = { id: string; title: string };
 const toDraft = (rows: AnalyticsDashboard[]): DashboardDraft[] => rows.map((row) => ({ id: String(row.id), title: row.title }));
@@ -31,7 +32,7 @@ export function AnalyticsSettings({ scope }: { scope: AnalyticsScope }) {
     setDetails(Boolean(connection.data.show_member_details));
   }, [connection.data]);
 
-  if (connection.isLoading) return <Skeleton className="h-40 w-full" />;
+  if (connection.isLoading) return <LogoLoader size={48} className="min-h-40 py-3" />;
   if (connection.error || !connection.data) {
     return <Callout size="inline" tone="danger" lead="Connection settings could not load."
       body={connection.error instanceof StructuredApiError ? connection.error.message : t`Try again.`} />;

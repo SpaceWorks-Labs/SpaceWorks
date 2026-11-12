@@ -3,17 +3,18 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { CardDesigner } from "../../../components/card-designer/CardDesigner";
 import type { CardDesign } from "../../../components/card-designer/cardTypes";
-import { ErrorBlock, Field, Skeleton } from "../../../components/ui";
+import { ErrorBlock, Field } from "../../../components/ui";
 import { staffRequest } from "../../../lib/api";
 import { eventOptions, type StaffTicket } from "../eventTicketingApi";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 /**
  * Ticket design per ticket type (parity D17). "Every ticket type" edits the event's design; choosing a type
  * edits (and on first use creates, from the event pass) that type's own design, which wins over the event's
  * for its holders. Resolution on the server: ticket type, then event, then the organisation default.
  */
-export function TicketTypeDesigns({ eventId, eventDesign, ticketTypesOn }: {
-  eventId: number; eventDesign: CardDesign; ticketTypesOn: boolean;
+export function TicketTypeDesigns({ eventId, makerspaceId, eventDesign, ticketTypesOn }: {
+  eventId: number; makerspaceId?: number; eventDesign: CardDesign; ticketTypesOn: boolean;
 }) {
   const [typeId, setTypeId] = useState("");
   const types = useQuery({ queryKey: ["event", eventId, "ticket-types", "all"], enabled: ticketTypesOn, retry: false,
@@ -31,9 +32,9 @@ export function TicketTypeDesigns({ eventId, eventDesign, ticketTypesOn }: {
         <option value="">{t`Every ticket type`}</option>
         {rows.map(row => <option key={row.id} value={row.id}>{row.name}</option>)}
       </select></Field> : null}
-    {typeId && typed.isLoading ? <Skeleton className="h-40 w-full" /> : null}
+    {typeId && typed.isLoading ? <LogoLoader size={48} className="min-h-40 py-3" /> : null}
     {typeId && typed.isError ? <ErrorBlock error={typed.error} resource={t`ticket design`} /> : null}
-    {design ? <CardDesigner key={design.id} designId={design.id} canEdit={design.can_edit}
+    {design ? <CardDesigner key={design.id} designId={design.id} makerspaceId={makerspaceId} canEdit={design.can_edit}
       title={chosen ? t`Ticket design: ${chosen.name}` : t`Ticket design`} /> : null}
   </div>;
 }

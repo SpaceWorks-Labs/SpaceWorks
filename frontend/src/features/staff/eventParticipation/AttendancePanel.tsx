@@ -2,6 +2,7 @@ import { formatLocale } from "../../../lib/format";
 import { plural, t } from "@lingui/core/macro";
 import { Card, ErrorText, Metric } from "../../../components/ui";
 import { useStaffCommand, useStaffQuery, type AttendanceSummary, type Switches } from "./api";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 /**
  * "Are you still coming?" (X43). Staff send it from here; nothing sends it automatically, and
@@ -25,7 +26,7 @@ export function AttendancePanel({ eventId, canConfigure }: { eventId: number; ca
     {data ? <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
       <Metric label={t`Asked`} value={data.asked} /><Metric label={t`Still coming`} value={data.yes} />
       <Metric label={t`Not coming`} value={data.no} /><Metric label={t`No answer yet`} value={data.pending} />
-    </div> : <p role="status">{t`Loading replies…`}</p>}
+    </div> : <LogoLoader label={t`Loading replies…`} size={48} className="min-h-16 py-3" />}
     {data && (data.released || data.left_to_staff) ? <p className="text-sm text-muted">
       {data.left_to_staff
         ? plural(data.released, { one: `# place released; ${data.left_to_staff} from group orders left for you to handle.`, other: `# places released; ${data.left_to_staff} from group orders left for you to handle.` })

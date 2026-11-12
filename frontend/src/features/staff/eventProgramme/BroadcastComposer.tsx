@@ -9,6 +9,7 @@ import { BroadcastToolbar } from "./BroadcastToolbar";
 import { isProtectedDenial } from "./sessionScope";
 import { BroadcastDesignPicker } from "./BroadcastDesignPicker";
 import { BroadcastTemplateGallery } from "./BroadcastTemplateGallery";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 export const EMPTY_BROADCAST: BroadcastDraft = { subject: "", body: "", statuses: ["registered", "attended"], attendance: "any", render_schema_version: 2, design: "classic", ctas: [] };
 const asDraft = (row: BroadcastCampaign): BroadcastDraft => ({ subject: row.subject, body: row.body, statuses: row.statuses, attendance: row.attendance,
@@ -82,7 +83,7 @@ export function BroadcastComposer({ makerspaceId, eventId, initial, existing, on
       </p>
       <div className="flex flex-wrap items-center justify-end gap-2">
         {saved || written ? <button className="desk-button-danger-outline" type="button" disabled={discard.isPending} onClick={() => setPending({ kind: "discard" })}>{t`Discard draft…`}</button> : null}
-        <button className="desk-button-primary" type="submit" disabled={create.isPending || !draft.statuses.length}>{create.isPending ? t`Saving…` : saved ? t`Save and review` : t`Save draft`}</button>
+        <button className="desk-button-primary" type="submit" disabled={create.isPending || !draft.statuses.length}>{create.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : saved ? t`Save and review` : t`Save draft`}</button>
       </div>
     </div>
   </form>

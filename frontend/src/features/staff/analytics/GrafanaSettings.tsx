@@ -1,13 +1,14 @@
 import { t } from "@lingui/core/macro";
 import { useEffect, useState, type FormEvent } from "react";
 
-import { Callout, Skeleton } from "../../../components/ui";
+import { Callout } from "../../../components/ui";
 import { StructuredApiError } from "../../../lib/api";
 import type { AnalyticsScope } from "./analyticsApi";
 import { GrafanaDashboardsEditor } from "./GrafanaDashboardsEditor";
 import { GrafanaTokenCard } from "./GrafanaTokenCard";
 import { GrafanaToolsCard } from "./GrafanaToolsCard";
 import { type GrafanaDashboardEntry, useGrafanaConnection, useGrafanaMutations } from "./grafanaApi";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 const message = (error: unknown) => error instanceof StructuredApiError ? error.message : t`Try again.`;
 
@@ -26,7 +27,7 @@ export function GrafanaSettings({ scope }: { scope: AnalyticsScope }) {
     setDashboards(connection.data.dashboards.map((row) => ({ ...row })));
   }, [connection.data]);
 
-  if (connection.isLoading) return <Skeleton className="h-40 w-full" />;
+  if (connection.isLoading) return <LogoLoader size={48} className="min-h-40 py-3" />;
   if (connection.error || !connection.data) {
     return <Callout size="inline" tone="danger" lead="Grafana settings could not load." body={message(connection.error)} />;
   }

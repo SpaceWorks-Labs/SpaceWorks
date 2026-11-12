@@ -1,3 +1,4 @@
+import { LogoLoader } from "../../../components/LogoLoader";
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -28,7 +29,7 @@ export function EventAddonPanel({ event, makerspaceId, section, access, staffCla
   const account = useQuery({ queryKey: ["event-addon-actor", ...sessionScope()], queryFn: () => staffRequest<AuthUserPayload>("/auth/me"),
     gcTime: 0, retry: false });
   if (account.error) return <ErrorBlock error={account.error} />;
-  if (!account.data) return <p role="status">{t`Loading your event access…`}</p>;
+  if (!account.data) return <LogoLoader label={t`Loading your event access…`} />;
   const scope = { actorId: account.data.id, makerspaceId, eventId: event.id };
   return section === "stage-forms" ? <StagePanel scope={scope} event={event} access={access} /> : <SupportPanel scope={scope} staffClaims={staffClaims} />;
 }

@@ -3,6 +3,7 @@ import { useState, type ReactNode } from 'react';
 import { ErrorText, Field, Modal } from '../../../components/ui';
 import { commandErrorText } from '../../events/programmeCommandErrors';
 import { useOrganiserTeamMembers, type OrganiserTeam } from './organiserTeamApi';
+import { LogoLoader } from '../../../components/LogoLoader';
 
 function Footer({ pending, disabled, label, onCancel, onConfirm }: { pending: boolean; disabled: boolean; label: string; onCancel: () => void; onConfirm: () => void }) {
   return <div className="desk-actions flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
@@ -40,7 +41,7 @@ export function MoveMemberDialog({ eventId, team, targets, pending, error, onCan
     footer={<Footer pending={pending} disabled={!member || !chosen} label={pending ? t`Moving…` : t`Move member`} onCancel={onCancel}
       onConfirm={() => chosen && onMove(Number(member), chosen)} />}>
     <Body error={error ?? members.error}>
-      {members.isLoading ? <p role="status" className="text-sm text-muted">{t`Loading the roster…`}</p> : null}
+      {members.isLoading ? <LogoLoader label={t`Loading the roster…`} size={48} className="min-h-16 py-3" /> : null}
       <Field label={t`Member`}><select className="desk-input min-h-11" value={member} onChange={e => setMember(e.target.value)}>
         <option value="">{t`Choose a member`}</option>
         {(members.data?.members ?? []).map(row => <option key={row.member_id} value={row.member_id}>{label(row)}</option>)}</select></Field>

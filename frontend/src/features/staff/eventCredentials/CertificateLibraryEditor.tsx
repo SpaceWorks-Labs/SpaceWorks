@@ -1,8 +1,10 @@
+import { LogoLoader } from "../../../components/LogoLoader";
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { staffRequest } from "../../../lib/api";
 import type { LayerDocument } from "./layout";
+import type { CardDocument } from "../../../components/card-designer/cardTypes";
 
 type Template = { id: number; name: string; version: number; archived: boolean };
 type Upload = { id: number; upload_url: string; headers: Record<string, string> };
@@ -13,7 +15,7 @@ type Upload = { id: number; upload_url: string; headers: Record<string, string> 
  * template owns (reserve → PUT to the staging key → finalize). Event copies keep their own revisions.
  */
 export function CertificateLibraryEditor({ makerspaceId, templateId, document }: {
-  makerspaceId: number; templateId: number; document: LayerDocument;
+  makerspaceId: number; templateId: number; document: LayerDocument | CardDocument;
 }) {
   const client = useQueryClient();
   const base = `/admin/makerspaces/${makerspaceId}/event-certificate-library/${templateId}/`;
@@ -35,7 +37,7 @@ export function CertificateLibraryEditor({ makerspaceId, templateId, document }:
     operation_id: crypto.randomUUID(), expected_version: detail.data?.version, name: (name ?? detail.data?.name ?? "").trim(),
     parameters: document, artwork_id: artwork,
   }) }), onSuccess: () => { setArtwork(null); void client.invalidateQueries({ queryKey: listKey }); } });
-  if (detail.isLoading) return <p role="status" className="text-sm text-muted">{t`Loading template…`}</p>;
+  if (detail.isLoading) return <LogoLoader label={t`Loading template…`} />;
   if (!detail.data) return detail.error ? <p role="alert" className="text-sm text-danger">{detail.error.message}</p> : null;
   const value = name ?? detail.data.name;
   const error = upload.error || save.error;

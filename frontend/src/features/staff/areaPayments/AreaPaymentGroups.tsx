@@ -1,9 +1,10 @@
 import { t } from "@lingui/core/macro";
 import { useQuery } from "@tanstack/react-query";
 
-import { ErrorBlock, Skeleton } from "../../../components/ui";
+import { ErrorBlock } from "../../../components/ui";
 import { formatMoney } from "../paymentsApi";
 import { areaKeys, areaLabel, areaPaymentsApi, owedText, type AreaGroup } from "./areaPaymentsApi";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 /**
  * Decision 241/242: money waiting, one card per area, from `area-queue/summary`. Each card is a
@@ -14,7 +15,7 @@ export function AreaPaymentGroups({ makerspaceId, active, onSelect, pinned }: {
   makerspaceId: number; active: string; onSelect?: (area: string) => void; pinned?: string;
 }) {
   const summary = useQuery({ queryKey: areaKeys.summary(makerspaceId), queryFn: () => areaPaymentsApi.summary(makerspaceId) });
-  if (summary.isLoading) return <div role="status" aria-label={t`Loading money by area`}><Skeleton className="h-20 w-full" /></div>;
+  if (summary.isLoading) return <LogoLoader label={t`Loading money by area`} size={48} className="min-h-20 py-3" />;
   if (summary.error) return <ErrorBlock error={summary.error} resource={t`money by area`} onRetry={() => { void summary.refetch(); }} />;
   const groups = (summary.data?.groups ?? []).filter(group => !pinned || group.area === pinned);
   if (!groups.length) return <p className="text-sm text-muted">{t`Nothing waiting to be collected.`}</p>;

@@ -4,6 +4,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { staffRequest, staffRequestBlob } from "../../../lib/api";
 import { CommandSession } from "../../events/hackathonAdmission/transport";
 import type { LayerDocument, Stock } from "./layout";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 export type InstalledSeed = { id: number; event_id: number; event_version: number; kind: string; document: LayerDocument; stock: Stock | null };
 type Seed = { seed_id: string; seed_version: number; document: LayerDocument };
@@ -26,7 +27,7 @@ export function SeedPicker({ eventId, version, kind, stock, onInstall }: {
   return <fieldset className="grid gap-3 rounded-control border border-line p-3" disabled={install.isPending || preview.isPending}>
     <legend className="font-semibold">{t`Default designs`}</legend>
     <label className="grid gap-1 text-sm">{t`Theme`}<select className="desk-input" value={theme} onChange={(event) => setTheme(event.target.value)}><option value="light">{t`Light`}</option><option value="dark">{t`Dark`}</option></select></label>
-    {query.isPending ? <p role="status">{t`Loading designs…`}</p> : null}
+    {query.isPending ? <LogoLoader label={t`Loading designs…`} size={48} className="min-h-16 py-3" /> : null}
     {query.data?.results.map((seed) => <div className="flex flex-wrap items-center gap-2" key={seed.seed_id}>
       <span className="text-sm">{seed.seed_id.replace(/-/g, " ")}</span>
       <button className="desk-button" type="button" onClick={() => preview.mutate(seed)}>{t`Preview sample`}</button>

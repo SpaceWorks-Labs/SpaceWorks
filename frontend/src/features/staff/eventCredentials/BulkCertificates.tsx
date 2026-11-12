@@ -4,6 +4,7 @@ import { Award } from "lucide-react";
 import { CertificatePublicationControls } from "./CertificatePublicationControls";
 import { IssuedCertificatesList } from "./IssuedCertificatesList";
 import { useBatch, useIssue, useIssuePlan, useSample, type IssueGroup, type IssuePlan } from "./issueApi";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 const groupOptions = (): { value: IssueGroup; label: string; hint: string }[] => [
   { value: "attendance", label: t`Attendance`, hint: t`Everyone marked as attended.` },
@@ -34,7 +35,7 @@ export function BulkCertificates({ eventId }: { eventId: number }) {
           }} /><span><span className="font-semibold text-ink">{group.label}.</span> {group.hint}</span></label>)}
       </fieldset>
       <button type="button" className="desk-button justify-self-start" disabled={!groups.length || planner.isPending}
-        onClick={() => { reset(); planner.mutate(groups, { onSuccess: (value) => setPlan(value) }); }}>{planner.isPending ? t`Checking who is eligible…` : t`Preview recipients`}</button>
+        onClick={() => { reset(); planner.mutate(groups, { onSuccess: (value) => setPlan(value) }); }}>{planner.isPending ? <><BoxArt size={16} mono />{t`Checking who is eligible…`}</> : t`Preview recipients`}</button>
       {plan ? <div className="grid gap-3">
         <p className="font-semibold text-ink">{t`${plan.recipients.length} will receive a certificate`}{plan.skipped.length ? t`; ${plan.skipped.length} skipped` : ""}.</p>
         {Object.keys(plan.counts).length ? <ul className="flex flex-wrap gap-2 text-sm">{Object.entries(plan.counts).map(([kind, count]) => <li key={kind}
@@ -49,7 +50,7 @@ export function BulkCertificates({ eventId }: { eventId: number }) {
             <span className="text-ink">{row.name}</span> · {row.kind_title}: <span className="text-muted">{row.reason}</span></li>)}</ul></details> : null}
         {plan.recipients.length ? <>
           <button type="button" className="desk-button justify-self-start" disabled={sample.isPending} onClick={() => sample.mutate(plan.recipients[0],
-            { onSuccess: (blob) => setSampleUrl(URL.createObjectURL(blob)) })}>{sample.isPending ? t`Rendering…` : t`Show ${plan.recipients[0].name}'s certificate`}</button>
+            { onSuccess: (blob) => setSampleUrl(URL.createObjectURL(blob)) })}>{sample.isPending ? <><BoxArt size={16} mono />{t`Rendering…`}</> : t`Show ${plan.recipients[0].name}'s certificate`}</button>
           {sampleUrl ? <iframe className="h-96 w-full rounded-control border border-line" src={sampleUrl} title={t`Sample certificate for the first recipient`} /> : null}
           <label className="flex min-h-11 items-start gap-3 text-sm"><input type="checkbox" className="mt-1 h-5 w-5" checked={publish} onChange={(event) => setPublish(event.target.checked)} />
             <span>{t`Let anyone with the link or QR code check these certificates (issuer, event, date, kind and status; names only if the holder chooses).`}</span></label>

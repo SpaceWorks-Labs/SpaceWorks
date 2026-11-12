@@ -5,6 +5,7 @@ import { Callout } from "../../../components/ui";
 import { StructuredApiError } from "../../../lib/api";
 import type { AnalyticsScope } from "./analyticsApi";
 import { downloadGrafanaBundle, type GrafanaConnection, useGrafanaMutations } from "./grafanaApi";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 const message = (error: unknown) => error instanceof StructuredApiError ? error.detail ?? error.message : t`Try again.`;
 
@@ -29,7 +30,7 @@ export function GrafanaToolsCard({ scope, connection }: { scope: AnalyticsScope;
     <div className="grid gap-3">
       <div className="grid gap-2">
         <div><button className="desk-button" type="button" disabled={test.isPending || !connection.grafana_url}
-          onClick={() => test.mutate()}>{test.isPending ? t`Testing…` : t`Test connection`}</button></div>
+          onClick={() => test.mutate()}>{test.isPending ? <><BoxArt size={16} mono />{t`Testing…`}</> : t`Test connection`}</button></div>
         <p className="text-sm text-muted">{t`Checks that Grafana answers and that the saved token can list dashboards.`}</p>
         {test.error ? <Callout size="inline" tone="danger" lead="Test failed." body={message(test.error)} /> : null}
         {result ? (

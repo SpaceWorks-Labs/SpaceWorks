@@ -12,6 +12,7 @@ import { AllowedTabsContext } from "./allowedTabsContext";
 import { AreaGroupList, TotalsLine } from "./AreaGroupList";
 import { allGroupKeys, areaChoices, combine, filterAreas } from "./areaGrouping";
 import { areaOverviewKeys, fetchAreaOverview, type AreaSection } from "./areaOverviewApi";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 const RELATED = ["reports", "audit", "notifications"];
 
@@ -98,7 +99,7 @@ export function AreaOverview({ makerspaceId, section }: { makerspaceId: number; 
         <button type="button" className="desk-button" onClick={() => setOpen(new Set())}>{t`Close all`}</button>
       </div> : null}
     </div>
-    {query.isLoading ? <p role="status" className="text-sm text-muted">{t`Loading…`}</p> : null}
+    {query.isLoading ? <LogoLoader label={t`Loading…`} size={48} className="min-h-16 py-3" /> : null}
     {query.error ? <p role="alert" className="text-sm text-danger">{denied
       ? t`This list is not switched on for the areas you manage.`
       : query.error instanceof Error ? query.error.message : t`Something went wrong. Try again.`}</p> : null}

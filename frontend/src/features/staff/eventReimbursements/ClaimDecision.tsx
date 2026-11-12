@@ -10,6 +10,7 @@ import { reimbursementAdminPath, useClaimReviewCommand } from "./api";
 import { MinorAmountInput } from "../../forms/MinorAmountInput";
 import type { ClaimReviewDetail, DecisionCommand, DecisionOutcome, LineDecision } from "./types";
 import { ReasonSelect, type ReasonCode } from "./reasonCodes";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 export function decisionBody(row: ClaimReviewDetail, outcome: DecisionOutcome, lines: LineDecision[], reason: string, note: string, due: string): DecisionCommand {
   const total = lines.reduce((sum, line) => sum + line.approved_minor, 0);
@@ -60,7 +61,7 @@ export function ClaimDecision({ scope, row, correction = false, onDirtyChange }:
       <Field label={t`Decision reason`}><ReasonSelect value={reason} onChange={code => { setReason(code); setConfirmed(false); }} /></Field>
       <Field label={t`Decision note`}><textarea className="desk-input" required maxLength={5000} rows={4} value={note} onChange={event => { setNote(event.target.value); setConfirmed(false); }} /></Field>
       <label className="flex min-h-11 items-start gap-3"><input type="checkbox" required checked={confirmed} onChange={event => setConfirmed(event.target.checked)} />{t`I reviewed the expense allocations, eligibility evidence, cap and decision.`}</label>
-      <button type="submit" className="desk-button-primary" disabled={!confirmed}>{mutation.isPending ? t`Saving…` : correction ? t`Append corrected decision` : t`Confirm finance decision`}</button></fieldset>
+      <button type="submit" className="desk-button-primary" disabled={!confirmed}>{mutation.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : correction ? t`Append corrected decision` : t`Confirm finance decision`}</button></fieldset>
     {error || mutation.error ? <p role="alert">{error || commandError(mutation.error)}</p> : mutation.isSuccess ? <p role="status">{t`Decision recorded.`}</p> : null}
   </form>;
 }

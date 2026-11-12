@@ -9,6 +9,7 @@ import { ConfirmDialog } from "../../../components/ui";
 import { useConvertBadge, useImportBadge } from "./badgeApi";
 import { downloadBadgeFile, readBadgeFile, type BadgeFileProblem } from "./badgeFile";
 import type { BadgeSettings } from "./badgeNormalize";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 export type Notice = { tone: "danger" | "success"; text: string; unmatched?: string[] } | null;
 
@@ -65,12 +66,12 @@ export function BadgeFileActions({ eventId, design, settings, longNames, canEdit
       onClick={() => downloadBadgeFile(settings)}>{t`Export design`}</button>
     {canEdit ? <>
       <button type="button" className="desk-button-ghost min-h-11" disabled={importing.isPending}
-        onClick={() => fileInput.current?.click()}>{importing.isPending ? t`Importing…` : t`Import design`}</button>
+        onClick={() => fileInput.current?.click()}>{importing.isPending ? <><BoxArt size={16} mono />{t`Importing…`}</> : t`Import design`}</button>
       <input ref={fileInput} type="file" accept="application/json,.json" hidden aria-label={t`Badge design file`}
         onChange={(event) => { const file = event.target.files?.[0]; event.target.value = ""; if (file) void importFile(file); }} />
     </> : null}
     <button type="button" className="desk-button min-h-11" disabled={printing} onClick={() => void testPrint()}>
-      {printing ? t`Preparing…` : t`Print test card`}</button>
+      {printing ? <><BoxArt size={16} mono />{t`Preparing…`}</> : t`Print test card`}</button>
     {canEdit ? <button type="button" className="desk-button-ghost min-h-11" onClick={() => setConfirming(true)}>
       {t`Convert to free canvas…`}</button> : null}
     <ConfirmDialog open={confirming} tone="danger" pending={convert.isPending}

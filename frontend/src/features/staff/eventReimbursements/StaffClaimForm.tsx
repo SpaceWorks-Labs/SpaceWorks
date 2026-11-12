@@ -1,3 +1,4 @@
+import { LogoLoader } from "../../../components/LogoLoader";
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -8,6 +9,7 @@ import { travelCategoryLabel } from "../../events/reimbursements/labels";
 import { commandError, usePrivateCommand, type EventScope } from "../../events/stagedForms/privateQueries";
 import { MinorAmountInput } from "../../forms/MinorAmountInput";
 import { reimbursementAdminKey, reimbursementAdminPath, useProgramme } from "./api";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 /** POST …/reimbursements/staff-claims/ (parity C17); `operation_id` and the Idempotency-Key come from the shared command hook. */
 type StaffClaimCommand = { expected_version: 0; beneficiary_registration_id?: number; category: string;
@@ -44,7 +46,7 @@ export function StaffClaimForm({ scope, onFiled }: { scope: EventScope; onFiled:
     queryFn: () => staffRequest<{ results: Registration[] }>(`/admin/events/${scope.eventId}/registrations/?${new URLSearchParams({ page: "1", ...(search.trim() ? { q: search.trim() } : {}) })}`) });
   const currency = programme.data?.currency ?? "";
   const categories = programme.data?.settings?.allowed_categories ?? [];
-  if (programme.isPending) return <p role="status">{t`Loading the reimbursement programme…`}</p>;
+  if (programme.isPending) return <LogoLoader label={t`Loading the reimbursement programme…`} />;
   if (!programme.data?.initialized) return <p className="text-sm text-muted">{t`Set up the reimbursement programme and its budget before filing claims.`}</p>;
   const people = (registrations.data?.results ?? []).filter(row => !row.status || LIVE.has(row.status));
   // Staff claims draw on the crew pool when the event has one, else the participants' pool (server rule).
@@ -73,7 +75,7 @@ export function StaffClaimForm({ scope, onFiled }: { scope: EventScope; onFiled:
         {categories.map(value => <option key={value} value={value}>{travelCategoryLabel(value)}</option>)}</select></Field>
       <Field label={t`Amount (${currency.toUpperCase()})`}><MinorAmountInput className="desk-input" required currency={currency} value={amount} onChange={setAmount} /></Field>
       <Field label={t`Note for the reviewer (optional)`}><textarea className="desk-input min-h-20" maxLength={2000} value={note} onChange={event => setNote(event.target.value)} /></Field>
-      <button type="submit" className="desk-button-primary justify-self-start" disabled={!ready}>{command.isPending ? t`Filing…` : t`File claim`}</button>
+      <button type="submit" className="desk-button-primary justify-self-start" disabled={!ready}>{command.isPending ? <><BoxArt size={16} mono />{t`Filing…`}</> : t`File claim`}</button>
     </fieldset>
     {command.error ? <p role="alert" className="text-sm text-danger">{staffClaimError(command.error)}</p> : null}
   </form>;

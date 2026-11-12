@@ -7,6 +7,7 @@ import type { PoolDetail } from "../../../generated/api";
 import { commandError, usePrivateCommand, type EventScope } from "../../events/stagedForms/privateQueries";
 import { reimbursementAdminKey, reimbursementAdminPath, useProgramme } from "./api";
 import { MinorAmountInput } from "../../forms/MinorAmountInput";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 /** The request queue row as the API sends it (the screening projection). */
 export type ScreeningRow = { id: number; version: number; state: string; currency: string; kind?: string;
@@ -87,7 +88,7 @@ function BookingModal({ scope, row, cancel, onClose }: { scope: EventScope; row:
           <Field label={t`Paid by`}><select className="desk-input" value={method} onChange={event => setMethod(event.target.value)}>
             {METHODS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></Field>
           <Field label={t`Booking reference (optional)`}><input className="desk-input" maxLength={64} value={reference} onChange={event => setReference(event.target.value)} /></Field></>}
-        <button type="submit" className="desk-button-primary">{pending ? t`Saving…` : cancel ? t`Cancel booking` : t`Record booking`}</button>
+        <button type="submit" className="desk-button-primary">{pending ? <><BoxArt size={16} mono />{t`Saving…`}</> : cancel ? t`Cancel booking` : t`Record booking`}</button>
       </fieldset>
       {record.error || undo.error ? <p role="alert">{commandError(record.error || undo.error)}</p> : null}
     </form></Modal>;

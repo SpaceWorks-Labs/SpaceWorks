@@ -7,8 +7,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CardDesigner } from "../../../components/card-designer/CardDesigner";
 import type { CardDesign } from "../../../components/card-designer/cardTypes";
 import { useCardDesignQuery } from "../../../components/card-designer/designerApi";
-import { Badge, ErrorBlock, OverflowMenu, SegmentedControl, Skeleton } from "../../../components/ui";
+import { Badge, ErrorBlock, OverflowMenu, SegmentedControl } from "../../../components/ui";
 import { staffRequest, staffRequestBlob } from "../../../lib/api";
+import { BulkPhotoUploadButton } from "../../cardEraser/BulkPhotoUploadButton";
 import { CardJobList, JOB_LABELS, useStartCardJob } from "../../cards/cardJobs";
 import { SheetPreviewDialog } from "../../cards/SheetPreviewDialog";
 import { StaffPhotoDialog } from "../../cards/StaffPhotoDialog";
@@ -16,17 +17,19 @@ import { RoleBadgeTabs } from "../eventBadges/RoleBadgeTabs";
 import { EventCardApproval } from "./EventCardApproval";
 import { EventCardExtras } from "./EventCardExtras";
 import { TicketTypeDesigns } from "./TicketTypeDesigns";
+import { LogoLoader } from "../../../components/LogoLoader";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 type EventCard = { id: number; registration: number | null; role: string; printed_name: string; status: "active" | "revoked";
   valid_until: string | null; issued_at: string; revoked_at: string | null; photo_set: boolean };
 const ROLES = ["attendee", "speaker", "mentor", "judge", "volunteer", "crew"];
 
-export function EventCardsPanel({ eventId, features }: { eventId: number; features: readonly string[] }) {
+export function EventCardsPanel({ eventId, features, makerspaceId }: { eventId: number; features: readonly string[]; makerspaceId?: number }) {
   const designs = useQuery({ queryKey: ["event-card-designs", eventId],
     queryFn: () => staffRequest<Partial<Record<"event_card" | "event_ticket", CardDesign>>>(`/admin/events/${eventId}/card-designs`) });
   const cardsOn = features.includes("events.id_cards");
   const [view, setView] = useState<"cards" | "design" | "ticket">(cardsOn ? "cards" : "ticket");
-  if (designs.isLoading) return <Skeleton className="h-40 w-full" />;
+  if (designs.isLoading) return <LogoLoader size={48} className="min-h-40 py-3" />;
   if (designs.isError || !designs.data) return <ErrorBlock error={designs.error} resource={t`event card designs`} />;
   const options = [...(designs.data.event_card ? [{ value: "cards", label: t`ID cards` }, { value: "design", label: t`Card design` }] : []),
     ...(designs.data.event_ticket ? [{ value: "ticket", label: t`Ticket design` }] : [])];
@@ -36,22 +39,22 @@ export function EventCardsPanel({ eventId, features }: { eventId: number; featur
   return <section className="grid gap-4" aria-label={t`Event cards and tickets`}>
     <h3 className="text-lg font-semibold text-ink">{t`Cards and tickets`}</h3>
     <SegmentedControl label={t`Cards and tickets`} value={view} options={options} onChange={(value) => setView(value as typeof view)} />
-    {view === "cards" && card ? <><EventCardList eventId={eventId} designId={card.id} /><EventCardExtras eventId={eventId} /></> : null}
+    {view === "cards" && card ? <><EventCardList eventId={eventId} designId={card.id} makerspaceId={makerspaceId} /><EventCardExtras eventId={eventId} /></> : null}
     {view === "design" && card ? <>
       <EventCardApproval eventId={eventId} />
-      {features.includes("events.badge_designer") ? <RoleBadgeTabs eventId={eventId} />
-        : <CardDesigner key={card.id} designId={card.id} canEdit={card.can_edit} title={t`Event card design`} />}
+      {features.includes("events.badge_designer") ? <RoleBadgeTabs eventId={eventId} makerspaceId={makerspaceId} />
+        : <CardDesigner key={card.id} designId={card.id} makerspaceId={makerspaceId} canEdit={card.can_edit} title={t`Event card design`} />}
     </> : null}
     {view === "ticket" && ticket ? <>
       <EventCardApproval eventId={eventId} />
       <p className="text-sm text-muted">{t`The published ticket is attached as a PDF to each confirmation email.`}</p>
       {/* Parity D17 (E-F5): a design per ticket type, picked here; the event's design stays the default. */}
-      <TicketTypeDesigns eventId={eventId} eventDesign={ticket} ticketTypesOn={features.includes("events.ticket_types")} />
+      <TicketTypeDesigns eventId={eventId} makerspaceId={makerspaceId} eventDesign={ticket} ticketTypesOn={features.includes("events.ticket_types")} />
     </> : null}
   </section>;
 }
 
-function EventCardList({ eventId, designId }: { eventId: number; designId: number }) {
+function EventCardList({ eventId, designId, makerspaceId }: { eventId: number; designId: number; makerspaceId?: number }) {
   const design = useCardDesignQuery(designId);
   const published = Boolean(design.data?.published_at);
   const client = useQueryClient();
@@ -94,11 +97,12 @@ function EventCardList({ eventId, designId }: { eventId: number; designId: numbe
     </div>
     <div className="flex flex-wrap gap-2">
       <button type="button" className="desk-button-primary min-h-11" disabled={!published || issue.isPending} onClick={() => issue.mutate()}>
-        {issue.isPending ? t`Issuing…` : t`Issue cards now`}</button>
+        {issue.isPending ? <><BoxArt size={16} mono />{t`Issuing…`}</> : t`Issue cards now`}</button>
       <button type="button" className="desk-button min-h-11" disabled={!rows.length} onClick={() => setPreviewing(true)}>
         {JOB_LABELS.bulk_sheet}…</button>
       <button type="button" className="desk-button min-h-11" disabled={!rows.length} onClick={() => startJob.mutate({ kind: "zip", ...printFilter })}>
         {JOB_LABELS.zip}</button>
+      {makerspaceId && rows.length ? <BulkPhotoUploadButton makerspaceId={makerspaceId} kind="event_card" eventId={eventId} onDone={() => void refresh()} /> : null}
     </div>
     {issue.data ? <p role="status" className="text-sm text-muted">{issue.data.issued} issued, {issue.data.revoked} withdrawn.</p> : null}
     {[issue.error, revoke.error, role.error, startJob.error, cards.error].find(Boolean) ? <ErrorBlock error={[issue.error, revoke.error, role.error, startJob.error, cards.error].find(Boolean)} /> : null}

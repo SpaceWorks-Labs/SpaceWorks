@@ -1,3 +1,4 @@
+import { LogoLoader } from "../../../components/LogoLoader";
 import { t } from "@lingui/core/macro";
 import { registrationStatusLabel } from "../../members/registrationLabels";
 import { LayoutTemplate } from "lucide-react";
@@ -14,7 +15,7 @@ export function audienceText(template: Pick<BroadcastTemplate, "statuses" | "att
 /** Starter cards prefill subject, message, audience and design; nothing is sent from here. */
 export function BroadcastTemplateGallery({ templates, onPick }: { templates: UseQueryResult<BroadcastTemplate[]>; onPick: (template: BroadcastTemplate) => void }) {
   // 404 while events.broadcast_templates is off: the gallery is simply not offered.
-  if (templates.isLoading) return <p role="status" className="text-sm text-muted">{t`Loading starter templates…`}</p>;
+  if (templates.isLoading) return <LogoLoader label={t`Loading starter templates…`} />;
   if (templates.error || !templates.data?.length) return null;
   return <section aria-labelledby="broadcast-templates-title" className="grid gap-3">
     <div className="flex items-center gap-2"><LayoutTemplate aria-hidden="true" className="size-5 text-accent-ink" /><h4 id="broadcast-templates-title" className="font-accent text-lg text-ink">{t`Start from a template`}</h4></div>

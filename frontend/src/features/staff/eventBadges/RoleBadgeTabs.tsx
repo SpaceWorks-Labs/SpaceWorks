@@ -6,15 +6,16 @@ import { useState } from "react";
 
 import { CardDesigner } from "../../../components/card-designer/CardDesigner";
 import { useCardDesignQuery } from "../../../components/card-designer/designerApi";
-import { ConfirmDialog, ErrorBlock, SegmentedControl, Skeleton } from "../../../components/ui";
+import { ConfirmDialog, ErrorBlock, SegmentedControl } from "../../../components/ui";
 import { useBadgeDesigns, useStartRoleBadge, type BadgeDesigns, type BadgeRoleRow } from "./badgeApi";
 import { BadgeDesigner } from "./BadgeDesigner";
 import { roleLabels, type BadgeRole } from "./badgeLabels";
+import { LogoLoader } from "../../../components/LogoLoader";
 
-export function RoleBadgeTabs({ eventId }: { eventId: number }) {
+export function RoleBadgeTabs({ eventId, makerspaceId }: { eventId: number; makerspaceId?: number }) {
   const info = useBadgeDesigns(eventId);
   const [role, setRole] = useState<BadgeRole>("attendee");
-  if (info.isLoading) return <Skeleton className="h-96 w-full" />;
+  if (info.isLoading) return <LogoLoader size={48} className="min-h-96 py-3" />;
   if (info.isError || !info.data) return <ErrorBlock error={info.error} resource={t`badge designs`} onRetry={() => void info.refetch()} />;
   const labels = roleLabels();
   const rows = info.data.role_badges ? info.data.roles : info.data.roles.filter((row) => row.role === "attendee");
@@ -22,11 +23,11 @@ export function RoleBadgeTabs({ eventId }: { eventId: number }) {
   return <div className="grid gap-3">
     {rows.length > 1 ? <SegmentedControl label={t`Badge for`} value={row.role} onChange={(value) => setRole(value as BadgeRole)}
       options={rows.map((item) => ({ value: item.role, label: labels[item.role] }))} /> : null}
-    <RoleBody key={row.role} eventId={eventId} row={row} info={info.data} label={labels[row.role]} />
+    <RoleBody key={row.role} eventId={eventId} makerspaceId={makerspaceId} row={row} info={info.data} label={labels[row.role]} />
   </div>;
 }
 
-function RoleBody({ eventId, row, info, label }: { eventId: number; row: BadgeRoleRow; info: BadgeDesigns; label: string }) {
+function RoleBody({ eventId, makerspaceId, row, info, label }: { eventId: number; makerspaceId?: number; row: BadgeRoleRow; info: BadgeDesigns; label: string }) {
   const start = useStartRoleBadge(eventId);
   const [confirmRestart, setConfirmRestart] = useState(false);
   const attendee = row.role === "attendee";
@@ -51,21 +52,21 @@ function RoleBody({ eventId, row, info, label }: { eventId: number; row: BadgeRo
       <ConfirmDialog open={confirmRestart} tone="danger" pending={start.isPending} title={t`Replace this draft with a new badge design?`}
         message={t`The free-canvas draft is replaced by a fresh badge from the badge designer. The published version keeps printing until you publish again.`}
         confirmLabel={t`Replace the draft`} onCancel={() => setConfirmRestart(false)} onConfirm={() => begin(true)} />
-      <FreeCanvas designId={row.design_id} />
+      <FreeCanvas designId={row.design_id} makerspaceId={makerspaceId} />
     </div>;
   }
   return <BadgeDesignLoader eventId={eventId} designId={row.design_id} info={info} label={label} />;
 }
 
-function FreeCanvas({ designId }: { designId: number }) {
+function FreeCanvas({ designId, makerspaceId }: { designId: number; makerspaceId?: number }) {
   const design = useCardDesignQuery(designId);
-  if (!design.data) return design.isError ? <ErrorBlock error={design.error} resource={t`card design`} /> : <Skeleton className="h-96 w-full" />;
-  return <CardDesigner key={designId} designId={designId} canEdit={design.data.can_edit} title={t`Badge (free canvas)`} />;
+  if (!design.data) return design.isError ? <ErrorBlock error={design.error} resource={t`card design`} /> : <LogoLoader size={48} className="min-h-96 py-3" />;
+  return <CardDesigner key={designId} designId={designId} makerspaceId={makerspaceId} canEdit={design.data.can_edit} title={t`Badge (free canvas)`} />;
 }
 
 function BadgeDesignLoader({ eventId, designId, info, label }: { eventId: number; designId: number; info: BadgeDesigns; label: string }) {
   const design = useCardDesignQuery(designId);
-  if (design.isLoading) return <Skeleton className="h-96 w-full" />;
+  if (design.isLoading) return <LogoLoader size={48} className="min-h-96 py-3" />;
   if (design.isError || !design.data) return <ErrorBlock error={design.error} resource={t`badge design`} onRetry={() => void design.refetch()} />;
   return <BadgeDesigner key={designId} eventId={eventId} design={design.data} info={info} roleLabel={label}
     onConverted={() => void design.refetch()} />;

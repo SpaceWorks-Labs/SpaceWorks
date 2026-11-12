@@ -6,6 +6,7 @@ import { staffRequest } from "../../../lib/api";
 import { sessionScope, useClearDeniedQuery } from "./sessionScope";
 import { StageFunnel, type StageFunnelRow } from "./StageFunnel";
 import { ColumnChart, dayLabel, windowLabel, WrittenAnswers } from "./AnalyticsColumns";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 type Count = { label: string; count: number };
 export type AnalyticsExtras = {
@@ -42,7 +43,7 @@ export function EventAnalyticsExtras({ makerspaceId, eventId }: { makerspaceId: 
   const query = useQuery({ queryKey: key, queryFn: () => staffRequest<AnalyticsExtras>(`/admin/events/${eventId}/analytics/extras/`) });
   useClearDeniedQuery(query.error, key);
   const data = query.data;
-  if (!data) return query.isLoading ? <p role="status" className="text-sm">{t`Loading arrivals and answers…`}</p> : null;
+  if (!data) return query.isLoading ? <LogoLoader label={t`Loading arrivals and answers…`} size={48} className="min-h-16 py-3" /> : null;
   const arrived = data.arrivals.reduce((sum, row) => sum + row.count, 0);
   const busiest = [...data.arrivals].sort((a, b) => b.count - a.count)[0];
   const visits = data.short_link_visits?.reduce((sum, row) => sum + row.count, 0) ?? 0;

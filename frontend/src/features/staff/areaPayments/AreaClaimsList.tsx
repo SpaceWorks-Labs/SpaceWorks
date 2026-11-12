@@ -2,11 +2,12 @@ import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { EmptyState, ErrorBlock, Skeleton } from "../../../components/ui";
+import { EmptyState, ErrorBlock } from "../../../components/ui";
 import { NoteDialog } from "../../finance/NoteDialog";
 import { MAKER_CHECKER_NOTICE } from "../PaymentReconcileActions";
 import { formatMoney, invalidatePaymentViews, settlementMethodLabel } from "../paymentsApi";
 import { areaErrorText, areaKeys, areaPaymentsApi, type AreaClaim } from "./areaPaymentsApi";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 /**
  * Decision 242(b): members' "I paid" claims on the caller's own-area charges. Confirming writes the
@@ -28,7 +29,7 @@ export function AreaClaimsList({ makerspaceId, area }: { makerspaceId: number; a
     },
     onError: () => { setMessage(""); void claims.refetch(); },
   });
-  if (claims.isLoading) return <div role="status" aria-label={t`Loading claims`}><Skeleton className="h-24 w-full" /></div>;
+  if (claims.isLoading) return <LogoLoader label={t`Loading claims`} size={48} className="min-h-24 py-3" />;
   if (claims.error) return <ErrorBlock error={claims.error} resource={t`payment claims`} onRetry={() => { void claims.refetch(); }} />;
   // Every claim on a charge the caller owns, in any of their areas (the server narrows the rows).
   const rows = claims.data?.results ?? [];

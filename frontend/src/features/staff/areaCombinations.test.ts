@@ -12,7 +12,7 @@ type Area = typeof AREAS[number];
 const CORE = ["staff_admin", "notifications", "member_accounts", "public_inventory", "request_workflow", "qr_management", "evidence_uploads", "scanner"];
 const AREA_MODULES: Record<Area, string[]> = {
   inventory: ["containers", "stocktake", "bulk_import", "qr_print_batches", "stock_transfers", "guest_handover"],
-  machines: ["machines", "machine_service", "printing"], events: ["events"], bookings: ["bookings"], shop: ["shop"], membership: ["membership"],
+  machines: ["machines", "machine_service"], events: ["events"], bookings: ["bookings"], shop: ["shop"], membership: ["membership"],
 };
 const AREA_FEATURES: Record<Area, string[]> = {
   inventory: ["loans.enabled", "inventory.self_checkout", "inventory.tobuy", "inventory.warranty", "loans.renewals"],

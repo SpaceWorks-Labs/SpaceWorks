@@ -9,6 +9,7 @@ import { MinorAmountInput } from "../../forms/MinorAmountInput";
 import { travelCategoryLabel } from "../../events/reimbursements/labels";
 import type { AllocationCommand, ClaimReviewDetail } from "./types";
 import { ReasonSelect } from "./reasonCodes";
+import { BoxArt } from "../../../components/BoxSpinner";
 type Action = "extend" | "attendance-attestations" | "receipt-allocation-overrides";
 export function ClaimFinanceAction({ scope, row, action, onClose }: { scope: EventScope; row: ClaimReviewDetail; action: Action; onClose: () => void }) {
   const [reason, setReason] = useState("");
@@ -56,7 +57,7 @@ export function ClaimFinanceAction({ scope, row, action, onClose }: { scope: Eve
         {action === "attendance-attestations" ? <Field label={t`Venue evidence references`} hint={t`Comma separated references of authorized venue evidence.`}><input className="desk-input" required value={evidence} onChange={event => setEvidence(event.target.value)} /></Field> : null}
         <Field label={t`Reason`}><ReasonSelect value={reason} onChange={setReason} /></Field>
         <Field label={t`Finance note`}><textarea className="desk-input" required rows={3} maxLength={5000} value={note} onChange={event => setNote(event.target.value)} /></Field>
-        <button type="submit" className="desk-button-primary">{mutation.isPending ? t`Recording…` : t`Confirm and record`}</button></fieldset>
+        <button type="submit" className="desk-button-primary">{mutation.isPending ? <><BoxArt size={16} mono />{t`Recording…`}</> : t`Confirm and record`}</button></fieldset>
       {error || mutation.error ? <p role="alert">{error || commandError(mutation.error)}</p> : null}
     </form></Modal>;
 }

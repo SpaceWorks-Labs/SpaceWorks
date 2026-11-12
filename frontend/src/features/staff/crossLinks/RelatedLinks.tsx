@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 
 import { Icon } from "../../../components/ui";
 import { RouteLink } from "../../../components/ui/RouteLink";
+import { BoxSpinner } from "../../../components/BoxSpinner";
 
 export type RelatedLink = {
   key: string;
@@ -37,7 +38,7 @@ export function RelatedLinks({ title = t`Related`, links, empty, children }: {
             {link.helper ? <span className="text-sm text-muted [overflow-wrap:anywhere]">{link.helper}</span> : null}
           </span>
           <span className="flex shrink-0 items-center gap-2 text-sm text-muted">
-            {link.count === null ? <span role="status" aria-label={t`Loading count`}>…</span>
+            {link.count === null ? <BoxSpinner label={t`Loading count`} size={16} />
               : typeof link.count === "number" ? <span className="rounded-full bg-surface px-2 py-0.5 font-semibold text-ink">{link.count}</span> : null}
             <Icon name="ArrowRight" className="h-4 w-4" />
           </span>

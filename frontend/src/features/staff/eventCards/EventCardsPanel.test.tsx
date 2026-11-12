@@ -40,3 +40,28 @@ it('enables issuance after publishing through the canonical design mutation even
   await waitFor(() => expect(screen.getByRole('button', { name: 'Issue cards now' })).toBeEnabled())
   expect(screen.queryByText('Publish the card design to start issuing cards.')).toBeNull()
 })
+
+const card = { id: 5, printed_name: 'Asha', role: 'attendee', status: 'active', photo_set: false }
+const stubEventApi = () => request.mockImplementation(async (path: string) => {
+  if (path === '/admin/events/7/card-designs') return { event_card: { id: 42, published_at: '2026-11-07T00:00:00Z', can_edit: true } }
+  if (path === '/admin/card-designs/42') return { id: 42, published_at: '2026-11-07T00:00:00Z', can_edit: true }
+  if (path === '/admin/events/7/id-cards') return [card]
+  if (path === '/admin/events/7/card-jobs') return []
+  throw new Error(`Unexpected private card test path: ${path}`)
+})
+const showPanel = (props: { makerspaceId?: number }) => render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+  <EventCardsPanel eventId={7} features={['events.id_cards']} {...props} /></QueryClientProvider>)
+
+it('offers the bulk photo upload for this event once cards exist and the space is known', async () => {
+  stubEventApi()
+  showPanel({ makerspaceId: 3 })
+  fireEvent.click(await screen.findByRole('button', { name: 'Upload many photos' }))
+  expect(await screen.findByRole('checkbox', { name: /agreed to them being stored privately/ })).toBeVisible()
+})
+
+it('hides the bulk photo upload without a space id', async () => {
+  stubEventApi()
+  showPanel({})
+  await screen.findByRole('button', { name: 'Issue cards now' })
+  expect(screen.queryByRole('button', { name: 'Upload many photos' })).toBeNull()
+})

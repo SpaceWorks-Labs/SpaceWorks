@@ -6,6 +6,7 @@ import { staffRequest } from "../../../lib/api";
 import { formatDateTime } from "../../../lib/format";
 import type { Paginated } from "../eventsApiTypes";
 import { eventErrorText } from "../eventUi";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 type SeriesInvite = { id: number; expires_at: string | null; revoked_at: string | null; created_at: string };
 const MAX_BATCH = 200;
@@ -58,7 +59,7 @@ export function SeriesInvitesPanel({ seriesId, disabled = false }: { seriesId: n
       <p className="text-sm text-muted" aria-live="polite">{parsed.valid.length ? plural(parsed.valid.length, { one: "# address ready to add.", other: "# addresses ready to add." }) : t`Paste the addresses to invite.`}
         {parsed.invalid.length ? ` ${t`Not an address: ${parsed.invalid.slice(0, 3).join(", ")}`}` : ""}</p>
       {tooMany ? <p role="alert" className="text-sm text-danger">{t`Add at most ${MAX_BATCH} addresses at a time.`}</p> : null}
-      <button type="submit" className="desk-button-primary justify-self-start" disabled={disabled || add.isPending || !parsed.valid.length || tooMany}>{add.isPending ? t`Adding…` : t`Add to the list`}</button>
+      <button type="submit" className="desk-button-primary justify-self-start" disabled={disabled || add.isPending || !parsed.valid.length || tooMany}>{add.isPending ? <><BoxArt size={16} mono />{t`Adding…`}</> : t`Add to the list`}</button>
       {result ? <p role="status" className="text-sm text-success-ink">{result}</p> : null}
       {add.error ? <p role="alert" className="text-sm text-danger">{eventErrorText(add.error)}</p> : null}
     </form></Card>

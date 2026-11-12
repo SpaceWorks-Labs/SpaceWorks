@@ -1,3 +1,4 @@
+import { LogoLoader } from "../../../components/LogoLoader";
 import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 import { StructuredApiError } from "../../../lib/api";
@@ -10,7 +11,7 @@ export function WebTelemetrySettings({ scope }: { scope: AnalyticsScope }) {
   const { query, save } = useWebTelemetry(scope);
   const [draft, setDraft] = useState<WebTelemetryConfig | null>(null);
   useEffect(() => { if (query.data) setDraft(structuredClone(query.data.config)); }, [query.data]);
-  if (query.isPending) return <p role="status">{t`Loading web telemetry settings…`}</p>;
+  if (query.isPending) return <LogoLoader label={t`Loading web telemetry settings…`} />;
   if (query.error || !draft) return <p role="alert">{t`Web telemetry settings could not load.`}</p>;
   const page = (patch: Partial<WebTelemetryConfig["pageview"]>) => setDraft({ ...draft, pageview: { ...draft.pageview, ...patch } });
   const replay = (patch: Partial<WebTelemetryConfig["replay"]>) => setDraft({ ...draft, replay: { ...draft.replay, ...patch } });

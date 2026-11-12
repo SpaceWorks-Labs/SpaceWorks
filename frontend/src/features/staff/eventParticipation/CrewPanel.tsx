@@ -4,6 +4,7 @@ import { Card, ErrorText } from "../../../components/ui";
 import { useStaffCommand, useStaffQuery, type Catering, type CrewKind, type CrewRow, type Switches } from "./api";
 import { CREW_KINDS, CrewRowCard, crewKindLabel } from "./CrewRowCard";
 import { useCrewOrder } from "./useCrewOrder";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 /**
  * The event crew (#128 C-36). A crew place is free and never counts against capacity. Being on
@@ -50,7 +51,7 @@ export function CrewPanel({ eventId, signupUrl, kinds = false }: { eventId: numb
           <input type="checkbox" checked={switches.data![key]} disabled={save.isPending} onChange={e => toggle(key, e.target.checked)} />{label}</label>)}
       {switches.data.crew_signup_open ? <p className="break-all text-sm text-muted">{t`Share: `}<a className="underline" href={signupUrl}>{signupUrl}</a></p> : null}
     </fieldset></Card> : null}
-    {roster.isLoading ? <p role="status">{t`Loading crew…`}</p> : null}
+    {roster.isLoading ? <LogoLoader label={t`Loading crew…`} size={48} className="min-h-16 py-3" /> : null}
     {roster.data?.length === 0 ? <p className="text-sm text-muted">{filtered ? t`Nobody of this kind is on the crew.` : t`Nobody is on the crew yet.`}</p> : null}
     {waiting.length ? <ul className="grid gap-2" aria-label={t`Waiting for review`}>{waiting.map(row => card(row))}</ul> : null}
     {order.rows.length ? <div className="grid gap-2">

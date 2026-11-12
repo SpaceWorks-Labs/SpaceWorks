@@ -74,6 +74,8 @@ export type Booking = {
   created_at: string;
   /** Phase 2 (hand-typed until the client is regenerated). */
   space_name?: string;
+  /** Decision 342: the event a machine-time booking is logged for. */
+  event?: { id: number; title: string } | null;
   decision_reason?: string;
   departed_at?: string | null;
   departures?: BookingDeparture[];

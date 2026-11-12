@@ -1,6 +1,6 @@
 import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
-import { Card, Skeleton } from "../../../components/ui";
+import { Card } from "../../../components/ui";
 import { eventErrorText } from "../eventUi";
 import { ShortLinkCard } from "../../events/shortLinks/ShortLinkCard";
 import { PublishingQuestions, type Listing, type PageState } from "../eventPublishing/PublishingQuestions";
@@ -10,6 +10,7 @@ import { useOperationId } from "./useOperationId";
 import { isProtectedDenial } from "./sessionScope";
 import { useEvent, useUpdateEvent } from "../eventsApi";
 import { signupAnswersFor, signupPatch, type SignupAnswers } from "../eventPublishing/SignupsQuestion";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 /** L1 adds "who can find" and the page state; the generated type catches up at merge. */
 type PublishingRow = Publishing & { listing?: Listing; page_state?: PageState };
@@ -49,7 +50,7 @@ export function EventPublishingPanel({ eventId, uploadsPending = false }: { even
     release_saved_website: release, ...(row.website_revision !== null ? { website_revision: row.website_revision } : {}),
   } as Partial<Publishing> & { operation_id: string; expected_version: number }, { onSuccess: () => { setDraft(null); setRelease(false); } });
   return <section className="grid gap-4" aria-label={t`Publishing`}><h3 className="title-section">{t`Three questions before sharing`}</h3>
-    {query.isLoading ? <Skeleton className="h-36 w-full" /> : null}{query.error ? <p role="alert" className="text-sm text-danger">{eventErrorText(query.error)}</p> : null}
+    {query.isLoading ? <LogoLoader size={48} className="min-h-36 py-3" /> : null}{query.error ? <p role="alert" className="text-sm text-danger">{eventErrorText(query.error)}</p> : null}
     {row && answers ? <Card><div className="grid gap-4">
       <PublishingQuestions answers={answers} published={published} idPrefix={`publishing-${eventId}`} onChange={edit}
         signups={signups ?? signupBase ?? undefined} onSignupsChange={signupBase && !closed ? patch => setSignups({ ...(signups ?? signupBase), ...patch }) : undefined}

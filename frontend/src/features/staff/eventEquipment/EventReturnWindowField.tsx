@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Field } from "../../../components/ui";
 import { eventErrorText } from "../eventUi";
 import { useReturnWindow } from "./eventEquipmentApi";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 const text = (hours: number | null) => (hours ? String(hours) : "");
 
@@ -29,7 +30,7 @@ export function EventReturnWindowField({ makerspaceId, eventId, hours }: { maker
     </Field>
     <div className="flex flex-wrap items-center gap-2">
       <button className="desk-button" type="submit" disabled={!valid || !dirty || save.isPending}>
-        {save.isPending ? t`Saving…` : t`Save return window`}</button>
+        {save.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Save return window`}</button>
       {dirty ? <button className="desk-button-ghost" type="button" disabled={save.isPending} onClick={() => setDraft(null)}>{t`Discard`}</button> : null}
     </div>
     {!valid ? <p className="text-sm text-danger" role="alert">{t`Enter a whole number of hours from 0 to 720, or leave it blank.`}</p> : null}

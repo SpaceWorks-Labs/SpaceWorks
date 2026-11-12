@@ -6,10 +6,12 @@ import type { PrintAccepted, PrintDetail } from "../../../generated/api";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { staffRequest, staffRequestBlob } from "../../../lib/api";
 import type { LayerDocument, LegacyDocument } from "./layout";
+import type { CardDocument } from "../../../components/card-designer/cardTypes";
 import type { DesignStock as Stock } from "./badgeStocks";
 
-export type DesignInput = { parameters: LayerDocument; artwork_id: number | null };
-export type CertificateDesign = { id: number | null; parameters: LayerDocument | LegacyDocument; artwork_id: number | null; event_version: number;
+/** `parameters` is a v2 layout (stored revisions) or a Studio v3 certificate document (new saves, decision 315). */
+export type DesignInput = { parameters: LayerDocument | CardDocument; artwork_id: number | null };
+export type CertificateDesign = { id: number | null; parameters: LayerDocument | LegacyDocument | CardDocument; artwork_id: number | null; event_version: number;
   certificate_kind?: string; uses_default?: boolean; own_designs?: string[] };
 const key = (eventId: number, kind = "") => ["events", "credentials", eventId, "certificate-design", kind, ...sessionScope()] as const;
 

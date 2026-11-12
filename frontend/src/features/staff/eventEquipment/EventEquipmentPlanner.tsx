@@ -10,6 +10,8 @@ import { PlanPreview, PlanResults, WindowSummary, windowCounts, windowStatusPill
 import { useEquipmentPicker, useEquipmentPlan, useWindowAvailability, type PlanBody, type PlanResponse } from "./eventEquipmentApi";
 import { PersonLinesOverride, personLines, type LineOverrides } from "./EventEquipmentPersonLines";
 import { EventPanelPager } from "../EventPanelPager";
+import { LogoLoader } from "../../../components/LogoLoader";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 type Participant = { id: number; name: string; status: string };
 type Props = { makerspaceId: number; eventId: number; participants: Participant[]; canEditWindow: boolean };
@@ -68,7 +70,7 @@ function Planner({ makerspaceId, eventId, participants, canEditWindow }: Props) 
     {canEditWindow && windowQuery.data ? <EventReturnWindowField makerspaceId={makerspaceId} eventId={eventId} hours={windowQuery.data.equipment_return_hours} /> : null}
     <fieldset className="grid min-w-0 gap-2" disabled={plan.isPending}>
       <legend className="mb-1 text-sm font-semibold text-ink">{t`Equipment`}</legend>
-      {picker.isPending ? <p className="text-sm text-muted" role="status">{t`Loading equipment…`}</p> : null}
+      {picker.isPending ? <LogoLoader label={t`Loading equipment…`} size={48} className="min-h-16 py-3" /> : null}
       {picker.isError ? <p className="text-sm text-danger" role="alert">{t`Equipment is unavailable for your access.`}</p> : null}
       {picker.isSuccess && !rows.length ? <p className="text-sm text-muted">{t`No requestable equipment is listed for this event.`}</p> : null}
       {windowQuery.isError ? <p className="text-sm text-muted">{t`Availability for the event window could not be checked.`}</p> : null}
@@ -115,15 +117,15 @@ function Planner({ makerspaceId, eventId, participants, canEditWindow }: Props) 
     <div className="flex flex-wrap gap-2">
       {results ? <>
         {results.some((row) => row.outcome === "error") ? <button className="desk-button" type="button" disabled={plan.isPending}
-          onClick={() => operation && plan.mutate(body(false, operation))}>{plan.isPending ? t`Retrying…` : t`Retry failed`}</button> : null}
+          onClick={() => operation && plan.mutate(body(false, operation))}>{plan.isPending ? <><BoxArt size={16} mono />{t`Retrying…`}</> : t`Retry failed`}</button> : null}
         <button className="desk-button" type="button" disabled={plan.isPending} onClick={reset}>{t`Plan more`}</button>
       </> : preview ? <>
         <button className="desk-button-primary" type="button" disabled={plan.isPending} onClick={() => {
           const id = operation ?? crypto.randomUUID(); setOperation(id); plan.mutate(body(false, id));
-        }}>{plan.isPending ? t`Creating requests…` : plural(people.length, { one: "Create # request", other: "Create # requests" })}</button>
+        }}>{plan.isPending ? <><BoxArt size={16} mono />{t`Creating requests…`}</> : plural(people.length, { one: "Create # request", other: "Create # requests" })}</button>
         <button className="desk-button" type="button" disabled={plan.isPending} onClick={changed}>{t`Change plan`}</button>
       </> : <button className="desk-button" type="button" disabled={plan.isPending || !chosen || !people.length || chosen > 20 || emptyOverride}
-        onClick={() => plan.mutate(body(true, crypto.randomUUID()), { onSuccess: setPreview })}>{plan.isPending ? t`Checking…` : t`Preview plan`}</button>}
+        onClick={() => plan.mutate(body(true, crypto.randomUUID()), { onSuccess: setPreview })}>{plan.isPending ? <><BoxArt size={16} mono />{t`Checking…`}</> : t`Preview plan`}</button>}
     </div>
   </section>;
 }

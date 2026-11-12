@@ -8,6 +8,7 @@ import { staffRequest } from "../../../lib/api";
 import { CERTIFICATE_KINDS } from "./designer/samples";
 import { savePng, useIssued, type IssuedRow } from "./issueApi";
 import { EventPanelPager } from "../EventPanelPager";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 const REASONS = [{ value: "staff_revoked", label: t`Withdrawn by organisers` }, { value: "attendance_corrected", label: t`Records corrected` },
   { value: "event_cancelled", label: t`Event cancelled` }];
@@ -61,7 +62,7 @@ export function IssuedCertificatesList({ eventId }: { eventId: number }) {
       <label className="grid gap-1 text-sm">{t`Kind`}<select className="desk-input" value={kind} onChange={(event) => { setKind(event.target.value); setPage(1); }}>
         <option value="">{t`All kinds`}</option>{CERTIFICATE_KINDS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></label>
     </div>
-    {query.isLoading ? <p role="status" className="text-sm text-muted">{t`Loading issued certificates…`}</p> : null}
+    {query.isLoading ? <LogoLoader label={t`Loading issued certificates…`} size={48} className="min-h-16 py-3" /> : null}
     {query.error ? <p role="alert" className="text-sm text-danger">{query.error.message}</p> : null}
     {query.data && !query.data.results.length ? <p className="text-sm text-muted">{t`Nothing issued yet.`}</p> : null}
     <ul className="grid gap-2">{query.data?.results.map((row) => <Row key={row.id} row={row} eventId={eventId}

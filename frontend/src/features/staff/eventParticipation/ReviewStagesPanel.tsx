@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Card, ErrorText, StatusBadge } from "../../../components/ui";
 import { StagePlanner } from "./StagePlanner";
 import { useStaffCommand, useStaffQuery, type Stage } from "./api";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 const stageStateLabel = (state: Stage["state"]) => ({ draft: t`Draft`, open: t`Open`, closed: t`Closed` })[state];
 
@@ -42,7 +43,7 @@ export function ReviewStagesPanel({ eventId }: { eventId: number }) {
       <p className="text-sm text-muted">{t`Applications move through the stages in order. Advance them from the decisions list.`}</p>
     </header>
     {command.error ? <ErrorText message={command.error.message} /> : null}
-    {stages.isLoading ? <p role="status">{t`Loading stages…`}</p> : null}
+    {stages.isLoading ? <LogoLoader label={t`Loading stages…`} size={48} className="min-h-16 py-3" /> : null}
     {stages.data?.length === 0 ? <p className="text-sm text-muted">{t`No stages yet. Without stages, applications use one review round.`}</p> : null}
     {stages.data?.map(stage => <Card key={stage.id}><div className="grid gap-3">
       <div className="flex flex-wrap items-center justify-between gap-3">

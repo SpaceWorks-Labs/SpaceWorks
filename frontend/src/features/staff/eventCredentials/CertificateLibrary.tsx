@@ -3,13 +3,14 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { staffRequest } from "../../../lib/api";
 import type { LayerDocument } from "./layout";
+import type { CardDocument } from "../../../components/card-designer/cardTypes";
 import { CertificateLibraryEditor } from "./CertificateLibraryEditor";
 
 type LibraryRow = { id: number; name: string; version: number };
-type Revision = { id: number; parameters: LayerDocument; artwork_id: number | null };
+type Revision = { id: number; parameters: LayerDocument | CardDocument; artwork_id: number | null };
 type Page<T> = { results: T[] };
 
-export function CertificateLibrary({ makerspaceId, eventId, document, eventVersion, eventRevisionId }: { makerspaceId: number; eventId: number; document: LayerDocument; eventVersion?: number; eventRevisionId?: number | null }) {
+export function CertificateLibrary({ makerspaceId, eventId, document, eventVersion, eventRevisionId }: { makerspaceId: number; eventId: number; document: LayerDocument | CardDocument; eventVersion?: number; eventRevisionId?: number | null }) {
   const [name, setName] = useState("");
   const [selected, setSelected] = useState(0);
   const base = `/admin/makerspaces/${makerspaceId}/event-certificate-library/`;

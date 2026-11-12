@@ -12,9 +12,10 @@ import { MinorAmountInput } from "../../forms/MinorAmountInput";
 import { CrewPoolPanel } from "./TravelAndCrewPool";
 import type { ProgrammeDetail } from "./types";
 import { ReasonSelect } from "./reasonCodes";
+import { LogoLoader } from "../../../components/LogoLoader";
 export function ReimbursementProgramme({ scope, onDirtyChange }: { scope: EventScope; onDirtyChange?: (dirty: boolean) => void }) {
   const query = useProgramme(scope);
-  if (!query.data) return <div><p role={query.error ? "alert" : "status"}>{query.error ? commandError(query.error) : t`Loading reimbursement programme…`}</p>
+  if (!query.data) return <div>{query.error ? <p role="alert">{commandError(query.error)}</p> : <LogoLoader label={t`Loading reimbursement programme…`} size={48} className="min-h-16 py-3" />}
     {query.error ? <button type="button" className="desk-button" onClick={() => void query.refetch()}>{t`Retry`}</button> : null}</div>;
   return <div className="grid gap-6"><ProgrammeEditor key={query.data.version ?? 0} scope={scope} row={query.data} onDirtyChange={onDirtyChange} />
     <CrewPoolPanel scope={scope} /></div>;

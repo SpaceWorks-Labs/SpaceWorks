@@ -11,6 +11,7 @@ import { ClaimDecision } from "./ClaimDecision";
 import { ClaimFinanceAction } from "./ClaimFinanceAction";
 import type { ClaimReviewDetail } from "./types";
 import { ReasonSelect, reasonLabel } from "./reasonCodes";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 export function ClaimReview({ scope, claimId, onReceipt, onDirtyChange }: { scope: EventScope; claimId: number;
   onReceipt: (assetId: number) => void; onDirtyChange?: (dirty: boolean) => void }) {
@@ -59,7 +60,7 @@ function Recommendation({ scope, row, onDirtyChange }: { scope: EventScope; row:
       <Field label={t`Recommendation`}><select className="desk-input" value={recommendation} onChange={event => setRecommendation(event.target.value)}><option value="approve">{t`Approve`}</option><option value="partial">{t`Partially approve`}</option><option value="reject">{t`Reject`}</option><option value="request_info">{t`Request more information`}</option></select></Field>
       <Field label={t`Reason`}><ReasonSelect value={reason} onChange={setReason} /></Field>
       <Field label={t`Screening note`}><textarea className="desk-input" required rows={4} maxLength={5000} value={note} onChange={event => setNote(event.target.value)} /></Field>
-      <button type="submit" className="desk-button-primary">{mutation.isPending ? t`Saving…` : t`Submit recommendation`}</button></fieldset>
+      <button type="submit" className="desk-button-primary">{mutation.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Submit recommendation`}</button></fieldset>
     {mutation.error ? <p role="alert">{commandError(mutation.error)}</p> : mutation.isSuccess ? <p role="status">{t`Recommendation saved.`}</p> : null}
   </form>;
 }

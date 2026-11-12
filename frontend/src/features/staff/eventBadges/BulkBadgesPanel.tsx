@@ -8,6 +8,7 @@ import { enqueueReceipt, newReceipt, PX_PER_MM, printNodes, type PrintReceipt } 
 import { CardJobList, useStartCardJob } from "../../cards/cardJobs";
 import { DeskBadgeFace, deskSize } from "./DeskBadgeFace";
 import { designFor, fetchDesk, sendDeskReceipts, STATUS_SETS, type BadgeReceipt, type DeskResponse, type StatusSet } from "./deskBadgeApi";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 export function statusSetLabels(): Record<StatusSet, string> {
   return {
@@ -75,7 +76,7 @@ export function BulkBadgesPanel({ eventId, canPrint }: { eventId: number; canPri
     <div className="flex flex-wrap gap-2">
       <button type="button" className="desk-button-primary min-h-11" disabled={start.isPending}
         onClick={() => start.mutate({ kind: "bulk_sheet", status_set: statusSet, paper })}>{t`Download PDF`}</button>
-      <button type="button" className="desk-button min-h-11" disabled={busy} onClick={() => void printHere()}>{busy ? t`Preparing…` : t`Print from this browser`}</button>
+      <button type="button" className="desk-button min-h-11" disabled={busy} onClick={() => void printHere()}>{busy ? <><BoxArt size={16} mono />{t`Preparing…`}</> : t`Print from this browser`}</button>
     </div>
     {message || start.error ? <p role="alert" className="text-sm text-danger">{message ?? start.error?.message}</p> : null}
     <CardJobList listPath={jobsPath} />

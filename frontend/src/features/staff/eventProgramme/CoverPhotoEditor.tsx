@@ -6,6 +6,8 @@ import { coverFileName, coverFileProblem, DEFAULT_COVER_EDITS, renderCover, type
 import { CoverCropStage } from "./CoverCropStage";
 import { CoverAdjustControls, CoverCropControls } from "./CoverControls";
 import { isProtectedDenial } from "./sessionScope";
+import { LogoLoader } from "../../../components/LogoLoader";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 type Props = {
   onSave: (file: File, altText: string) => Promise<void>;
@@ -92,12 +94,12 @@ export function CoverPhotoEditor({ onSave, onPendingChange, title = t`Give the e
       </div>
       {describe ? <label className="grid gap-1 text-sm">{t`Image description`}<input className="desk-input" maxLength={300} value={alt} onChange={event => setAlt(event.target.value)}
         placeholder={t`Describe the people, place or work shown`} /></label> : null}
-    </> : source ? <p role="status" className="text-sm text-muted">{t`Opening the image…`}</p> : null}
+    </> : source ? <LogoLoader label={t`Opening the image…`} size={48} className="min-h-16 py-3" /> : null}
     <div role="status" aria-live="polite" className="text-sm empty:hidden">{saving ? t`Saving cover…` : saved ? <span className="text-success-ink">{t`Cover saved.`}</span> : ""}</div>
     {error ? <p role="alert" className="text-sm text-danger">{error}</p> : null}
     <div className="flex flex-wrap justify-end gap-2">
       {onCancel ? <button className="desk-button" type="button" disabled={saving} onClick={onCancel}>{t`Cancel`}</button> : null}
-      <button className="desk-button-primary" type="button" disabled={!source || !natural || saving} onClick={() => { void save(); }}>{saving ? t`Saving cover…` : t`Save cover`}</button>
+      <button className="desk-button-primary" type="button" disabled={!source || !natural || saving} onClick={() => { void save(); }}>{saving ? <><BoxArt size={16} mono />{t`Saving cover…`}</> : t`Save cover`}</button>
     </div>
   </section></Card>;
 }

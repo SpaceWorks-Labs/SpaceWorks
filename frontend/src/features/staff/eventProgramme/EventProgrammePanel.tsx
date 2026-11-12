@@ -1,3 +1,4 @@
+import { LogoLoader } from "../../../components/LogoLoader";
 import { t } from "@lingui/core/macro";
 import { IssueRoleCertificate } from '../eventCredentials/IssueRoleCertificate'
 import { useQuery } from '@tanstack/react-query'
@@ -36,7 +37,7 @@ export function EventProgrammePanel({ event, makerspaceId, section, access, feat
   const mlhPresets = useMlhPresets(event.id, section === 'programme-setup') // EP-9
   if (!programmeSection) return null
   if (account.error) return <ErrorBlock error={account.error} />
-  if (!account.data) return <p role="status">{t`Loading your programme access…`}</p>
+  if (!account.data) return <LogoLoader label={t`Loading your programme access…`} />
   const scope = { makerspaceId, eventId: event.id, accountId: account.data.id }
   const credentials = eventCredentialTools(event, access, features)
   if (section === 'programme-setup') return <div className="grid gap-8"><HackathonConfigPanel eventId={event.id} FormEditor={ProgrammeDraftForm} mlhPresets={mlhPresets} />
@@ -58,7 +59,7 @@ export function EventProgrammePanel({ event, makerspaceId, section, access, feat
       {access.edit ? <EventCertificateDesigner makerspaceId={makerspaceId} eventId={event.id} /> : access.manager ? <BulkCertificates eventId={event.id} /> : null}
       <DeskBadgeSwitch eventId={event.id} registrationIds={[]} canEdit={access.edit} canPrint={access.checkIn} />
     </> : null}
-    {credentials.cards || credentials.tickets ? <EventCardsPanel eventId={event.id} features={features} /> : null}
+    {credentials.cards || credentials.tickets ? <EventCardsPanel eventId={event.id} features={features} makerspaceId={makerspaceId} /> : null}
   </div>
   if (section === 'settings') return <div className="grid gap-6">
     {access.edit ? <ProgrammeFormEditor eventId={event.id} formKey="registration" /> : null}

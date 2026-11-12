@@ -5,6 +5,7 @@ import { SettingsSection } from "../../../components/ui";
 import { StructuredApiError } from "../../../lib/api";
 import { eventErrorText } from "../eventUi";
 import { useEmbedPolicy, useReportSwitches, useSaveEmbedPolicy, useSaveReportSwitch, type EmbedPolicy } from "./eventSurfaceApi";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 const READ_ONLY = { setting_locked: t`The Space Manager has locked this setting.`,
   setting_not_delegated: t`Ask the Space Manager to give you control of event settings.` } as Record<string, string>;
@@ -69,7 +70,7 @@ export function EventEmbedPolicyCard({ makerspaceId }: { makerspaceId: number })
         <p role="status" className="text-sm text-muted">{copied}</p>
       </div>
       <div className="flex flex-wrap gap-2">
-        <button type="button" className="desk-button-primary" disabled={!draft || save.isPending} onClick={() => draft && save.mutate(draft)}>{save.isPending ? t`Saving…` : t`Save embeds`}</button>
+        <button type="button" className="desk-button-primary" disabled={!draft || save.isPending} onClick={() => draft && save.mutate(draft)}>{save.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Save embeds`}</button>
         {draft ? <button type="button" className="desk-button" onClick={() => setDraft(null)}>{t`Discard`}</button> : null}
       </div>
       {save.error ? <p role="alert" className="text-sm text-danger">{eventErrorText(save.error)}</p> : null}

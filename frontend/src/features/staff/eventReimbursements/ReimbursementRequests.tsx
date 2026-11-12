@@ -12,6 +12,7 @@ import type { AwardCommand, RequestReviewRow } from "./types";
 import { BookedTravelActions, type ScreeningRow } from "./TravelAndCrewPool";
 import { MinorAmountInput } from "../../forms/MinorAmountInput";
 import { ReasonSelect } from "./reasonCodes";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 export function ReimbursementRequests({ scope }: { scope: EventScope }) {
   const [page, setPage] = useState(1);
@@ -51,7 +52,7 @@ function AwardDecision({ scope, row, onClose }: { scope: EventScope; row: Reques
           {row.tiers.length ? <Field label={t`Policy tier`}><select className="desk-input" required value={tier} onChange={event => { setTier(event.target.value); const selected = row.tiers.find(item => item.key === event.target.value); if (selected) setAmount(selected.amount_minor); }}><option value="">{t`Choose a tier`}</option>{row.tiers.map(item => <option key={item.key} value={item.key}>{item.label} · {formatMinorMoney(item.amount_minor, row.currency)}</option>)}</select></Field> : null}
           <Field label={t`Accept by (your local time)`}><input className="desk-input" type="datetime-local" required value={due} onChange={event => setDue(event.target.value)} /></Field></> : null}
         <Field label={t`Decision reason`}><ReasonSelect value={reason} onChange={setReason} /></Field>
-        <button type="submit" className="desk-button-primary">{mutation.isPending ? t`Saving…` : t`Confirm decision`}</button></fieldset>
+        <button type="submit" className="desk-button-primary">{mutation.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Confirm decision`}</button></fieldset>
       {error || mutation.error ? <p role="alert">{error || commandError(mutation.error)}</p> : null}
     </form></Modal>;
 }

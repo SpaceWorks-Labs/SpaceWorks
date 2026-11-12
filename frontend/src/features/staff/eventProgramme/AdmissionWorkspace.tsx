@@ -1,3 +1,4 @@
+import { LogoLoader } from "../../../components/LogoLoader";
 import { t } from "@lingui/core/macro";
 import { useState } from 'react'
 import { ErrorBlock, Pagination } from '../../../components/ui'
@@ -18,7 +19,7 @@ export function AdmissionWorkspace({ event, canManage }: { event: StaffEvent; ca
   const openReview = (id: number | null) => setParams(previous => { const next = new URLSearchParams(previous); if (id) next.set('applicationReview', String(id)); else next.delete('applicationReview'); return next })
   if (review > 0) return <div className="grid gap-4"><button className="desk-button" onClick={() => openReview(null)}>{t`Back to applications`}</button><ReviewWorkbench eventId={event.id} reviewId={review} /></div>
   if (canManage && config.error) return <ErrorBlock error={config.error} onRetry={() => void config.refetch()} />
-  if (canManage && !config.data) return <p role="status">{t`Loading admission settings…`}</p>
+  if (canManage && !config.data) return <LogoLoader label={t`Loading admission settings…`} />
   return <div className="grid gap-5">
     <AdmissionPanel eventId={event.id} configVersion={config.data?.version ?? 0} canManage={canManage} reviewers={(grants.data?.results ?? [])
       .filter(row => row.permissions.includes('review_applications')).map(row => ({ id: row.user, label: t`Reviewer ${row.user}` }))} onReview={openReview}

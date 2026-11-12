@@ -2,13 +2,12 @@ import { t } from "@lingui/core/macro";
 
 import { StructuredApiError } from "../../../lib/api";
 
-/** 403 `certification_required` on linking or replacing a machine booking: the booker or,
- * since decision 221b, the event organizer lacks the machine type's certification. */
-export function certificationText(error: unknown): string | null {
-  if (!(error instanceof StructuredApiError) || error.code !== "certification_required") return null;
-  const names = Array.isArray(error.body.certifications)
-    ? error.body.certifications.filter((name): name is string => typeof name === "string").join(", ") : "";
-  return names
-    ? t`The booker or the event organizer is missing a required certification for this machine (${names}). Staff with authority over the machine type may give an override reason.`
-    : t`The booker or the event organizer is missing a required certification for this machine. Staff with authority over the machine type may give an override reason.`;
+/** 403 `no_machine_access` / `machine_access_expired` on linking or replacing a machine booking: the booker or,
+ * since decision 221b, the event organizer has no machine access grant for the machine (decision 319).
+ * A space manager gives access in Machines > Machine access; there is no override any more. */
+export function machineAccessText(error: unknown): string | null {
+  if (!(error instanceof StructuredApiError)) return null;
+  if (error.code === "machine_access_expired") return t`The booker or the event organizer's access to this machine has ended. A space manager can renew it in Machines, under Machine access.`;
+  if (error.code === "no_machine_access") return t`The booker or the event organizer has not been given access to this machine. A space manager can give it in Machines, under Machine access.`;
+  return null;
 }

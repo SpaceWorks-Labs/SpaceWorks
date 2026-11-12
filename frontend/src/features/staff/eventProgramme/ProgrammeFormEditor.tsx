@@ -11,6 +11,7 @@ import { eventErrorText } from "../eventUi";
 import { DirtySaveBar } from "./DirtySaveBar";
 import { useOperationId } from "./useOperationId";
 import { isProtectedDenial, sessionScope, useClearDeniedQuery } from "./sessionScope";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 type FormDocument = { version: number; schema: VersionedCustomFormSchema };
 type Selector = { posting_id?: number; round_id?: number; track_id?: number };
@@ -36,7 +37,7 @@ export function ProgrammeFormEditor({ eventId, formKey, selector = {} }: { event
   useEffect(() => { if (denied) { setDraft(null); setSample({ answers: {}, derivations: {}, save_choices: {}, saved_detail_versions: {} }); setPreview(false); } }, [denied]);
   if (denied) return <p role="alert" className="text-sm text-danger">{t`This form is no longer available for your access.`}</p>;
   return <section className="grid gap-4" aria-label={t`Registration form editor`}><h3 className="title-section">{t`Questions and saved details`}</h3>
-    {query.isLoading ? <p role="status">{t`Loading form…`}</p> : null}{query.error ? <p role="alert" className="text-sm text-danger">{eventErrorText(query.error)}</p> : null}
+    {query.isLoading ? <LogoLoader label={t`Loading form…`} size={48} className="min-h-16 py-3" /> : null}{query.error ? <p role="alert" className="text-sm text-danger">{eventErrorText(query.error)}</p> : null}
     {row ? <>{row.schema && !Array.isArray(row.schema) ? <FormBuilderV2 value={row.schema} onChange={schema => { setDraft({ ...row, schema }); validation.reset(); }} errors={customAnswerErrors(validation.data?.errors)} /> : <><CustomFormBuilder value={row.schema} onChange={schema => setDraft({ ...row, schema })} /><button className="desk-button justify-self-start" type="button" onClick={() => setDraft({ ...row, schema: upgradeLegacyForm(row.schema as import("../../forms/customFormTypes").CustomFormSchema, `${formKey}-${eventId}`) })}>{t`Upgrade draft to form v2`}</button><p className="text-sm text-muted">{t`Upgrading changes new submissions to stable option IDs and enables conditions. Existing answer snapshots keep their original revision.`}</p></>}
       <div className="flex flex-wrap gap-2"><button className="desk-button" type="button" aria-expanded={preview} onClick={() => setPreview(!preview)}>{t`Preview questions`}</button><button className="desk-button" type="button" disabled={validation.isPending} onClick={() => validation.mutate()}>{t`Validate sample`}</button></div>
       {preview ? row.schema && !Array.isArray(row.schema) ? <FormV2Fields schema={row.schema} value={sample} onChange={setSample} /> : <CustomFormFields schema={row.schema} answers={sample.answers as CustomAnswers} onChange={answers => setSample({ ...sample, answers })} /> : null}

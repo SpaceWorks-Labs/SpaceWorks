@@ -12,7 +12,7 @@ const scope = { actorId: 1, makerspaceId: 2, eventId: 3 };
 const programme = { initialized: true, id: 8, version: 1, currency: "usd", finance_policy_revision: 1, allowed_categories: ["rail", "lodging"],
   pools: [{ id: 1, version: 1, currency: "usd", total_minor: 50000, available_minor: 40000, reserved_minor: 0, committed_minor: 10000, audience: "participants" },
     { id: 2, version: 1, currency: "usd", total_minor: 20000, available_minor: 15000, reserved_minor: 0, committed_minor: 5000, audience: "crew" }] };
-const wrap = (ui: JSX.Element) => <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })}>{ui}</QueryClientProvider>;
+const wrap = (ui: import("react").ReactElement) => <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })}>{ui}</QueryClientProvider>;
 
 beforeEach(() => {
   staffRequest.mockReset();

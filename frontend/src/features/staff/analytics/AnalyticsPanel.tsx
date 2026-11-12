@@ -1,13 +1,14 @@
 import { t } from "@lingui/core/macro";
-import { useEffect, useState } from "react";
+import { useMemo, useEffect, useState } from "react";
 
-import { Callout, EmptyState, Skeleton } from "../../../components/ui";
+import { Callout, EmptyState } from "../../../components/ui";
 import { StructuredApiError } from "../../../lib/api";
 import { AnalyticsSettings } from "./AnalyticsSettings";
 import { PublicFirebaseSettings } from "./PublicFirebaseSettings";
 import { GrafanaViewer } from "./GrafanaViewer";
 import { WebTelemetrySettings } from "./WebTelemetrySettings";
 import { type AnalyticsScope, useAnalyticsEmbed, useAnalyticsSummary, usesGrafana, usesMetabase } from "./analyticsApi";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 const errorText = (error: unknown, fallback: string) =>
   error instanceof StructuredApiError ? error.detail ?? error.message : fallback;
@@ -19,7 +20,7 @@ export function AnalyticsPanel({ scope }: { scope: AnalyticsScope }) {
   const summary = useAnalyticsSummary(scope);
   const [selected, setSelected] = useState<number | null>(null);
   const [managing, setManaging] = useState(false);
-  const dashboards = summary.data?.dashboards ?? [];
+  const dashboards = useMemo(() => summary.data?.dashboards ?? [], [summary.data]);
   useEffect(() => {
     if (selected === null || !dashboards.some((entry) => entry.id === selected)) setSelected(dashboards[0]?.id ?? null);
   }, [dashboards, selected]);
@@ -27,7 +28,7 @@ export function AnalyticsPanel({ scope }: { scope: AnalyticsScope }) {
   const embed = useAnalyticsEmbed(scope, summary.data?.configured && metabase ? selected : null);
   const title = scope.kind === "platform" ? "Platform analytics" : "Analytics";
 
-  if (summary.isLoading) return <section className="desk-panel p-5"><Skeleton className="h-40 w-full" /></section>;
+  if (summary.isLoading) return <section className="desk-panel p-5"><LogoLoader size={48} className="min-h-40 py-3" /></section>;
   if (summary.error || !summary.data) {
     return <section className="desk-panel p-5"><Callout size="panel" tone="danger" lead="Analytics could not load."
       body={errorText(summary.error, "Try again in a moment.")} />{scope.kind === "platform" ? <PublicFirebaseSettings /> : <p>{t`Ask a platform administrator to configure Firebase web notifications.`}</p>}</section>;
@@ -63,7 +64,7 @@ export function AnalyticsPanel({ scope }: { scope: AnalyticsScope }) {
           {embed.error ? (
             <Callout size="inline" tone="danger" lead="This dashboard could not open."
               body={errorText(embed.error, "Check the Metabase connection.")} />
-          ) : !embed.data ? <Skeleton className="h-96 w-full" /> : (
+          ) : !embed.data ? <LogoLoader size={48} className="min-h-96 py-3" /> : (
             <div className="grid gap-2">
               <iframe className="h-[70vh] min-h-96 w-full rounded-xl border border-line bg-bg" src={embed.data.url}
                 title={dashboards.find((entry) => entry.id === selected)?.title ?? t`Dashboard`}

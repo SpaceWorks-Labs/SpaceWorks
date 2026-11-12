@@ -9,6 +9,7 @@ import { useChargesOn } from "../../../lib/charges";
 import { useTenantPath } from "../../../lib/tenant";
 import { fetchShop, money, ticketingKeys } from "./ticketingApi";
 import { changeTicketType, safeCheckoutUrl, transferTicket } from "./ticketingMemberApi";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 type Props = {
   makerspaceId: number; makerspaceSlug: string; registrationId: number; status: string;
@@ -44,7 +45,7 @@ function TransferCard({ makerspaceId, registrationId }: { makerspaceId: number; 
     {transfer.error ? <ErrorText message={errorMessage(transfer.error)} /> : null}
     {transfer.data ? <p role="status" className="text-sm text-ink"><time dateTime={transfer.data.expires_at}>{t`Offer sent. It expires ${formatDateTime(transfer.data.expires_at)}.`}</time></p> : null}
     <button type="submit" className="desk-button justify-self-start" disabled={transfer.isPending || !email.trim()}>
-      {transfer.isPending ? t`Sending…` : t`Send the transfer offer`}</button>
+      {transfer.isPending ? <><BoxArt size={16} mono />{t`Sending…`}</> : t`Send the transfer offer`}</button>
   </form></Card>;
 }
 
@@ -81,6 +82,6 @@ function ChangeTypeCard({ makerspaceId, makerspaceSlug, registrationId, publicTo
       </div>
     </div> : null}
     <button type="submit" className="desk-button justify-self-start" disabled={change.isPending || !choice}>
-      {change.isPending ? t`Changing…` : t`Change my ticket`}</button>
+      {change.isPending ? <><BoxArt size={16} mono />{t`Changing…`}</> : t`Change my ticket`}</button>
   </form></Card>;
 }

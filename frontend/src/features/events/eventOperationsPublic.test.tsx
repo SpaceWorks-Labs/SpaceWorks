@@ -3,7 +3,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { publicV1Request } from "../../lib/api";
-import { EventDiscoverPage } from "./EventDiscoverPage";
+import { EventDiscoverPage, organizerOptions } from "./EventDiscoverPage";
 import { EventVenueDetails, venueMapHref } from "./EventVenueDetails";
 import { PayByNotice } from "./PayByNotice";
 vi.mock("../../lib/api", async importOriginal => ({ ...await importOriginal<typeof import("../../lib/api")>(), publicV1Request: vi.fn() }));
@@ -38,13 +38,21 @@ describe("pay window (E-B5)", () => {
 describe("discover filters (A14)", () => {
   it("applies tag and organiser from the link and shows them as removable chips", async () => {
     window.history.replaceState(null, "", "/discover/events?tag=robotics&organization=makers-guild");
-    vi.mocked(publicV1Request).mockResolvedValue({ count: 0, next: null, previous: null, results: [] });
+    vi.mocked(publicV1Request).mockImplementation(async path => String(path).startsWith("/discover/events/organizers/")
+      ? { next: null, results: [{ slug: "makers-guild", name: "Makers Guild" }, { slug: "gear-club", name: "Gear Club" }] }
+      : { count: 0, next: null, previous: null, results: [] });
     render(<QueryClientProvider client={new QueryClient()}><MemoryRouter><EventDiscoverPage /></MemoryRouter></QueryClientProvider>);
-    await waitFor(() => expect(publicV1Request).toHaveBeenCalled());
-    expect(String(vi.mocked(publicV1Request).mock.calls[0][0])).toContain("tag=robotics");
-    expect(String(vi.mocked(publicV1Request).mock.calls[0][0])).toContain("organization=makers-guild");
+    const listCalls = () => vi.mocked(publicV1Request).mock.calls.map(([path]) => String(path)).filter(path => path.startsWith("/discover/events/?"));
+    await waitFor(() => expect(listCalls().length).toBeGreaterThan(0));
+    expect(listCalls()[0]).toContain("tag=robotics");
+    expect(listCalls()[0]).toContain("organization=makers-guild");
+    expect(await screen.findByRole("button", { name: /Organiser: Makers Guild/ })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "Gear Club" })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /Tag: robotics/ }));
-    await waitFor(() => expect(String(vi.mocked(publicV1Request).mock.calls.at(-1)?.[0])).not.toContain("tag="));
-    expect(screen.getByRole("button", { name: /Organiser: makers-guild/ })).toBeInTheDocument();
+    await waitFor(() => expect(listCalls().at(-1)).not.toContain("tag="));
+  });
+  it("keeps a linked organiser selectable even when it no longer appears in the list", () => {
+    expect(organizerOptions([{ slug: "a", name: "A" }], "gone")).toEqual([{ slug: "a", name: "A" }, { slug: "gone", name: "gone" }]);
+    expect(organizerOptions([{ slug: "a", name: "A" }], "a")).toHaveLength(1);
   });
 });

@@ -4,6 +4,7 @@ import { Box, Download } from "lucide-react";
 import { ActionControl, Callout, Spinner } from "../../../components/ui";
 import { ASK_PREVIEW_BYTES, checkMesh, MAX_PREVIEW_BYTES, MAX_PREVIEW_MS } from "./previewBounds";
 import type { PreviewResult } from "./types";
+import { BoxSpinner } from "../../../components/BoxSpinner";
 
 const MeshCanvas = lazy(() => import("./MeshCanvas"));
 
@@ -76,7 +77,7 @@ export function AssetPreview({ assetId, bytes, filename, extension, load, downlo
     {state === "confirm" ? <Callout size="panel" tone="warn" lead="This is a large file."
       body={t`Loading the preview may use significant memory. You can download the original instead.`} /> : null}
     {state === "failed" ? <p role="status" className="text-sm text-muted">{t`Preview unavailable. You can still download the original file.`}</p> : null}
-    {state === "loading" ? <div role="status"><Spinner />{t`Preparing preview… `}<ActionControl action={{ label: t`Cancel preview`, onClick: () => { stop.current(); setState("idle"); } }} /></div> : null}
+    {state === "loading" ? <div className="flex flex-wrap items-center gap-2"><BoxSpinner label={t`Preparing preview…`} /><ActionControl action={{ label: t`Cancel preview`, onClick: () => { stop.current(); setState("idle"); } }} /></div> : null}
     {state === "ready" && result?.kind === "mesh" ? <Suspense fallback={<Spinner />}><MeshCanvas meshes={result.meshes} /></Suspense> : null}
     {state === "ready" && image ? <img src={image} alt={t`PCB preview of ${filename}`} className="max-h-96 w-full rounded-xl border border-line bg-panel object-contain" /> : null}
     <div className="flex flex-wrap gap-3">{state !== "loading" ? <ActionControl action={{

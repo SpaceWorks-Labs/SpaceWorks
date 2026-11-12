@@ -1,3 +1,4 @@
+import { LogoLoader } from "../../../components/LogoLoader";
 import { t } from "@lingui/core/macro";
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -52,7 +53,7 @@ export function ProgrammeRolePage({ scope, context, postingId, applicationId, ba
   }), [scope.accountId, scope.eventId, scope.makerspaceId, context, application.data?.form, posting.data])
   const error = application.error || posting.error
   if (error) return <ErrorBlock error={error} onRetry={() => { void application.refetch(); void posting.refetch() }} />
-  if (!posting.data || (applicationId && !application.data)) return <p role="status">{t`Loading your role application…`}</p>
+  if (!posting.data || (applicationId && !application.data)) return <LogoLoader label={t`Loading your role application…`} />
   return <RoleApplicationForm scope={scope} posting={posting.data} application={application.data ?? posting.data.application ?? null}
     bridge={bridge} completionReady onSaved={savedId => navigate(`${base}/role-applications/${savedId}`)} />
 }

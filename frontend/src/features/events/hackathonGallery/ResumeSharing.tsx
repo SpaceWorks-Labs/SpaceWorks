@@ -4,6 +4,7 @@ import { ErrorBlock, Field, Pagination, StatusPill } from '../../../components/u
 import { useSharing, type MemberScope } from './api';
 import { PrivateProgrammeBoundary } from './PrivateProgrammeBoundary';
 import { isAccessLoss } from './accessLoss';
+import { LogoLoader } from '../../../components/LogoLoader';
 
 function ResumeSharingForm({ scope, readyResumes }: { scope: MemberScope; readyResumes: { id: number; label: string }[] }) {
   const [page, setPage] = useState(1); const { consents, mutate } = useSharing(scope, true, page);
@@ -15,7 +16,7 @@ function ResumeSharingForm({ scope, readyResumes }: { scope: MemberScope; readyR
   return <section className="grid gap-4" aria-label={t`Sponsor résumé sharing`}>
     <h2 className="title-section">{t`Choose who can read your résumé`}</h2>
     <p className="text-sm text-muted">{t`Sharing is optional and limited to recruiting by the sponsor you choose. Only that sponsor’s active track representatives can read it when your frozen project belongs to their track. A volunteer or mentor role alone does not qualify.`}</p>
-    {consents.isLoading ? <p role="status">{t`Loading your sharing choices…`}</p> : null}
+    {consents.isLoading ? <LogoLoader label={t`Loading your sharing choices…`} size={48} className="min-h-16 py-3" /> : null}
     <form className="grid gap-3" onSubmit={e => {
       e.preventDefault(); if (!sponsor || !consent) return;
       const previous = consents.data?.results.find(row => row.sponsor_id === sponsor.id && row.asset_id === Number(assetId));

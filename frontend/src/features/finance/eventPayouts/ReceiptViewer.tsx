@@ -6,6 +6,7 @@ import { staffRequestBlob } from "../../../lib/api";
 import { payoutPath } from "./api";
 import { scopeIdentity } from "./format";
 import type { FinanceScope, Receipt } from "./types";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 export function ReceiptViewer({ scope, receipt }: { scope: FinanceScope; receipt: Receipt }) {
   return <ReceiptContent key={`${scopeIdentity(scope.actorId, scope.makerspaceId)}:${receipt.id}:${receipt.generation}:${receipt.state}:${receipt.allowed_actions?.join()}`}
@@ -49,7 +50,7 @@ function ReceiptContent({ scope, receipt }: { scope: FinanceScope; receipt: Rece
     <h3 className="flex items-center gap-2 font-semibold"><FileText aria-hidden="true" size={18} />{t`Receipt ${receipt.id}`}</h3>
     <p className="break-all text-sm text-muted">{t`${receipt.mime} · ${formatNumber(receipt.bytes)} bytes · generation ${receipt.generation} · ${receipt.state}`}</p>
     <p className="break-all text-xs text-muted">{t`SHA-256: ${receipt.sha256}`}</p>
-    {allowed ? <button type="button" className="desk-button min-h-11" disabled={pending} onClick={() => { void open(); }}>{pending ? t`Opening receipt…` : t`Open finance receipt`}</button>
+    {allowed ? <button type="button" className="desk-button min-h-11" disabled={pending} onClick={() => { void open(); }}>{pending ? <><BoxArt size={16} mono />{t`Opening receipt…`}</> : t`Open finance receipt`}</button>
       : <p className="text-sm text-muted">{t`Receipt bytes are unavailable. Retained metadata remains part of the financial record.`}</p>}
     {error ? <p role="alert">{t`The receipt could not be opened. Access may have changed or its bytes may have expired. Reload to check.`}</p> : null}
     {url ? <><p className="text-sm text-muted">{t`Private preview closes when you leave this view. Only download to an approved finance location.`}</p>

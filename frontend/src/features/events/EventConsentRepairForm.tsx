@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { staffRequest, StructuredApiError, tenantMemberRequest } from "../../lib/api";
 import type { EventEligibility } from "./OrganizationEventAdmission";
+import { BoxArt } from "../../components/BoxSpinner";
 
 /** Renew only the owned registration's consent; admission and saved answers stay intact. */
 export function EventConsentRepairForm({ makerspaceSlug, publicToken, waiver, onRepaired, partner }: {
@@ -59,7 +60,7 @@ export function EventConsentRepairForm({ makerspaceSlug, publicToken, waiver, on
     {repair.error ? <p role="alert" className="text-sm text-danger">{repair.error instanceof StructuredApiError
       ? repair.error.detail ?? repair.error.message : t`Unable to renew consent. Please try again.`}</p> : null}
     <button className="desk-button-brand w-full sm:w-auto sm:justify-self-start" type="submit" disabled={repair.isPending}>
-      {repair.isPending ? t`Saving consent...` : t`Save consent`}
+      {repair.isPending ? <><BoxArt size={16} mono />{t`Saving consent...`}</> : t`Save consent`}
     </button>
   </form>;
 }

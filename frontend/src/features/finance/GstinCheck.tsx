@@ -3,6 +3,7 @@ import { useMutation } from "@tanstack/react-query";
 
 import { staffRequest } from "../../lib/api";
 import { financeError } from "./financeApi";
+import { BoxArt } from "../../components/BoxSpinner";
 
 type GstinResult = { valid: true; gstin: string; state_code: string; state_name: string };
 
@@ -16,7 +17,7 @@ export function GstinCheck({ makerspaceId, gstin }: { makerspaceId: number; gsti
   const current = check.variables === value;
   return <div className="flex flex-wrap items-center gap-2 sm:col-span-2">
     <button type="button" className="desk-button-ghost" disabled={value.length !== 15 || check.isPending} onClick={() => check.mutate(value)}>
-      {check.isPending ? t`Checking…` : t`Check GSTIN`}</button>
+      {check.isPending ? <><BoxArt size={16} mono />{t`Checking…`}</> : t`Check GSTIN`}</button>
     {current && check.data ? <p role="status" className="text-sm">{t`Valid GSTIN for ${check.data.state_name} (state ${check.data.state_code}).`}</p> : null}
     {current && check.error ? <p role="alert" className="text-sm text-danger">{financeError(check.error)}</p> : null}
   </div>;

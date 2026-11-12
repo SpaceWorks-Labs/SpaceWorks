@@ -7,6 +7,8 @@ import { formatDate } from "../../../lib/format";
 import { guestErrorText, guestKeys, guestMemberApi, operationId } from "../api";
 import { passStatusLabel, passStatusTone } from "../labels";
 import { memberAllowancesKey, useMemberAllowances } from "../../members/MemberAllowances";
+import { LogoLoader } from "../../../components/LogoLoader";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 /**
  * "Bring a guest" for an active member (decision 223 b). The answer is always the same sentence
@@ -41,12 +43,12 @@ export function BringAGuest({ makerspaceId }: { makerspaceId: number }) {
         <input className="desk-input" type="email" autoComplete="off" value={email} onChange={(event) => { setEmail(event.target.value); invite.reset(); }} />
       </Field>
       <button type="submit" className="desk-button-brand min-h-11" disabled={!email.trim() || invite.isPending || noneLeft}
-        title={noneLeft ? t`You already have the most guests allowed at once. Withdraw a pass or wait until one ends.` : undefined}>{invite.isPending ? t`Sending…` : t`Bring guest`}</button>
+        title={noneLeft ? t`You already have the most guests allowed at once. Withdraw a pass or wait until one ends.` : undefined}>{invite.isPending ? <><BoxArt size={16} mono />{t`Sending…`}</> : t`Bring guest`}</button>
     </form>
     {noneLeft ? <p role="status" className="text-sm text-muted">{t`You already have the most guests allowed at once. Withdraw a pass or wait until one ends.`}</p> : null}
     {invite.data ? <p role="status" className="text-sm text-success-ink">{invite.data.detail}</p> : null}
     {invite.error ? <p role="alert" className="text-sm text-danger">{guestErrorText(invite.error)}</p> : null}
-    {guests.isLoading ? <p role="status" className="text-sm text-muted">{t`Loading your guests…`}</p> : null}
+    {guests.isLoading ? <LogoLoader label={t`Loading your guests…`} size={48} className="min-h-16 py-3" /> : null}
     {rows.length ? <ul className="grid gap-2" aria-label={t`Your guests`}>
       {rows.map((row) => <li key={row.id} className="flex flex-wrap items-center gap-2 rounded-control border border-line p-3 text-sm">
         <span className="min-w-0 flex-1 basis-40 font-semibold text-ink">{row.guest_name || t`Guest`}<span className="font-normal text-muted"> · {formatDate(row.pass_date)}</span></span>

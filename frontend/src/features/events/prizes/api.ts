@@ -1,4 +1,5 @@
 import { t } from "@lingui/core/macro";
+import { useStableKey } from '../../../lib/useStableKey';
 import { useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { memberRequest, tenantPublicRequest } from '../../../lib/api';
@@ -6,7 +7,8 @@ import { onSessionCleared } from '../../../lib/api/sessionContext';
 import type { MyPrizeRead, MyPrizeReadPage, PublicPrizeRead, Team } from '../../../generated/api';
 import { command, type Page } from '../hackathonGallery/types';
 
-export type MyPrize = MyPrizeRead;
+/** `currency` is the space currency every amount on the prize is in (regenerated types will carry it). */
+export type MyPrize = MyPrizeRead & { currency?: string };
 export type PrizeScope = { makerspaceId: number; actorId: number };
 export type PrizeCommand = { eventId: number; suffix: string; version: number; fields?: Record<string, unknown> };
 
@@ -15,8 +17,8 @@ export const eventBase = (makerspaceId: number, eventId: number) => `/member/mak
 
 /** "My prizes" (hack-money G3/G4/G6/G7): every award of a published result naming this member. */
 export function useMyPrizes(scope: PrizeScope, page = 1) {
-  const client = useQueryClient(); const key = prizesKey(scope);
-  useEffect(() => onSessionCleared(() => client.removeQueries({ queryKey: key })), [client, ...key]);
+  const client = useQueryClient(); const key = useStableKey(prizesKey(scope));
+  useEffect(() => onSessionCleared(() => client.removeQueries({ queryKey: key })), [client, key]);
   const list = useQuery({ queryKey: [...key, page], retry: false, staleTime: 0,
     queryFn: () => memberRequest<MyPrizeReadPage>(`/member/makerspaces/${scope.makerspaceId}/prizes/?page=${page}`, { cache: 'no-store' }) });
   // Payee details and the PAN are sent once and never cached: the response is the masked claim only.
@@ -52,11 +54,36 @@ export function usePublicPrizes(slug: string, token: string, enabled = true) {
     } });
 }
 
-export const STATUS_LABELS: Record<string, string> = {
-  owed: t`Owed to you`, paid: t`Paid`, part_paid: t`Partly paid`, fulfilled: t`Handed over`,
-  sponsor_paid: t`Paid by the sponsor`, forfeited: t`Forfeited`,
-};
-export const KIND_LABELS: Record<string, string> = { cash: t`Cash`, item: t`Item`, credit: t`Credit`, perk: t`Perk` };
+/** Built at render time so the wording follows the member's language (a module-level `t` map would freeze it). */
+export function statusLabel(status: string): string {
+  switch (status) {
+    case 'owed': return t`Owed to you`;
+    case 'paid': return t`Paid`;
+    case 'part_paid': return t`Partly paid`;
+    case 'fulfilled': return t`Handed over`;
+    case 'sponsor_paid': return t`Paid by the sponsor`;
+    case 'forfeited': return t`Forfeited`;
+    default: return status.replace(/_/g, ' ');
+  }
+}
+export function kindLabel(kind: string): string {
+  switch (kind) {
+    case 'cash': return t`Cash`;
+    case 'item': return t`Item`;
+    case 'credit': return t`Credit`;
+    case 'perk': return t`Perk`;
+    default: return kind.replace(/_/g, ' ');
+  }
+}
+export function shareLabel(state: string): string {
+  switch (state) {
+    case 'proposed': return t`waiting for you to confirm`;
+    case 'confirmed': return t`confirmed`;
+    case 'declined': return t`declined`;
+    case 'forfeited': return t`forfeited`;
+    default: return state.replace(/_/g, ' ');
+  }
+}
 
 export function statusTone(status: string): 'success' | 'warn' | 'danger' | 'neutral' {
   if (status === 'paid' || status === 'fulfilled' || status === 'sponsor_paid') return 'success';

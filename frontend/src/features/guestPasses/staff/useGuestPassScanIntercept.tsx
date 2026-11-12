@@ -4,6 +4,7 @@ import { useMutation } from "@tanstack/react-query";
 import { capabilityOn } from "../../../lib/features";
 import { guestErrorText, guestStaffApi } from "../api";
 import { GuestPassScanResult, isGuestPassToken } from "./GuestPassScan";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 type Space = { id: number; enabled_modules?: string[]; enabled_features?: string[] };
 
@@ -21,7 +22,7 @@ export function useGuestPassScanIntercept(space: Space) {
     return true;
   };
   const panel = enabled && (scan.isPending || scan.data || scan.error) ? <div className="grid gap-2">
-    {scan.isPending ? <p role="status" className="text-sm text-muted">{t`Checking guest pass…`}</p> : null}
+    {scan.isPending ? <LogoLoader label={t`Checking guest pass…`} size={48} className="min-h-16 py-3" /> : null}
     {scan.data ? <GuestPassScanResult result={scan.data} /> : null}
     {scan.error ? <p role="alert" className="text-sm text-danger">{guestErrorText(scan.error)}</p> : null}
   </div> : null;

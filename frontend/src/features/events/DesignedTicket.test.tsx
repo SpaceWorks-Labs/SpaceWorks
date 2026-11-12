@@ -8,7 +8,7 @@ vi.mock("../../lib/api", async (original) => ({ ...await original<object>(), mem
 
 import { DesignedTicket } from "./DesignedTicket";
 
-const wrap = (ui: JSX.Element) => <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>{ui}</QueryClientProvider>;
+const wrap = (ui: import("react").ReactElement) => <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>{ui}</QueryClientProvider>;
 const fallback = <p>Generic ticket card</p>;
 
 beforeEach(() => {

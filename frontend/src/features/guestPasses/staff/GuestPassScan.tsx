@@ -6,6 +6,7 @@ import { Field, StatusPill } from "../../../components/ui";
 import { formatDateTime } from "../../../lib/format";
 import { guestErrorText, guestStaffApi, type ScanResult } from "../api";
 import { entitlementSummary, passKindLabel, scanReasonLabel } from "../labels";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 /** A guest-pass QR carries `gp1.<id>.<signature>` (decision 223 L4). */
 export const isGuestPassToken = (value: string) => /^gp1\.\d+\.[A-Za-z0-9_-]+$/.test(value.trim());
@@ -33,7 +34,7 @@ export function GuestPassScan({ makerspaceId }: { makerspaceId: number }) {
       <Field label={t`Pass code`} hint={t`Scan the guest's QR in the Scanner tab, or paste the code here.`} className="min-w-0 flex-1 basis-56">
         <input className="desk-input" autoComplete="off" value={token} onChange={(event) => { setToken(event.target.value); scan.reset(); }} />
       </Field>
-      <button className="desk-button min-h-11" type="submit" disabled={!token.trim() || scan.isPending}>{scan.isPending ? t`Checking…` : t`Check pass`}</button>
+      <button className="desk-button min-h-11" type="submit" disabled={!token.trim() || scan.isPending}>{scan.isPending ? <><BoxArt size={16} mono />{t`Checking…`}</> : t`Check pass`}</button>
     </form>
     {scan.data ? <GuestPassScanResult result={scan.data} /> : null}
     {scan.error ? <p role="alert" className="text-sm text-danger">{guestErrorText(scan.error)}</p> : null}

@@ -30,6 +30,7 @@ export function MemberSeriesPassPage() {
   const chargesOn = useChargesOn("events", space.makerspaceSlug); // #184: a free events domain shows no pass price
   const navigate = useNavigate();
   const [restoring, setRestoring] = useState(!getAccessToken());
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- restoring is read only as its mount-time value: one token restore per mount, and re-running after setRestoring(false) would refresh the token again
   useEffect(() => { if (restoring) refreshAccessToken().finally(() => setRestoring(false)); }, []);
   const id = /^\d+$/.test(seriesId) ? Number(seriesId) : 0;
   const passes = useQuery({ queryKey: ["member-series-passes", space.makerspaceId, id], retry: false,

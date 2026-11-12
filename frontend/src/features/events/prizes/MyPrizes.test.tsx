@@ -18,7 +18,7 @@ vi.mock('./api', async original => ({
 const template = { country: 'IN', method: 'upi', template_key: 'in_upi', template_version: 1, routing_document_required: false,
   fields: [{ key: 'holder_name', required: true, label: 'Account holder name', help: '' }, { key: 'upi_id', required: true, label: 'UPI ID', help: '' }] };
 const prize = (patch: Partial<MyPrizeRead> = {}): MyPrizeRead => ({
-  award_id: 5, event_id: 42, event_title: 'Build Weekend', prize_name: 'Best build', rank: 1, kind: 'cash', value_text: '',
+  award_id: 5, event_id: 42, event_title: 'Build Weekend', prize_name: 'Best build', rank: 1, kind: 'cash', value_text: '', currency: 'INR',
   status: 'owed', my_share: null, my_payout: null, claim: null, claim_deadline: null, is_leader: true,
   allowed_actions: ['propose_split', 'claim'], tax_id_requested: false, payee_templates: [template], ...patch,
 });
@@ -81,6 +81,31 @@ describe('My prizes', () => {
     expect(screen.getByText(/PAN ••••••234F/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Remove my payee details' }));
     expect(mutate).toHaveBeenLastCalledWith(expect.objectContaining({ suffix: 'prize-awards/5/claim/remove/' }), expect.anything());
+  });
+});
+
+describe('My prizes after the claim window', () => {
+  it('offers no claim or split once the deadline has passed, even if the server still lists them', () => {
+    prizes.rows = [prize({ claim_deadline: '2020-01-01T00:00:00Z' })];
+    render(<MyPrizes scope={scope} />);
+    expect(screen.queryByRole('button', { name: 'Claim this prize' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Split with my team' })).toBeNull();
+    expect(screen.getByText(/The claim window closed on/)).toBeInTheDocument();
+  });
+  it('shows a share with its currency and its state in words', () => {
+    prizes.rows = [{ ...prize({ allowed_actions: [], my_share: { id: 1, award_id: 5, member_id: 17, amount: '4500.00', state: 'confirmed', version: 1, confirmed_at: null } }), currency: 'inr' }];
+    render(<MyPrizes scope={scope} />);
+    expect(screen.getByText('₹4,500.00')).toBeInTheDocument();
+    expect(screen.getByText(/confirmed/)).toBeInTheDocument();
+  });
+  it('accepts a share below 0.01 for a three-decimal currency and totals it exactly', () => {
+    prizes.rows = [{ ...prize(), currency: 'kwd' }];
+    render(<MyPrizes scope={scope} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Split with my team' }));
+    fireEvent.change(screen.getByLabelText('Ada'), { target: { value: '0.005' } });
+    fireEvent.change(screen.getByLabelText('Lin'), { target: { value: '0.005' } });
+    expect(screen.getByText(/0\.010/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Propose split' })).toBeEnabled();
   });
 });
 

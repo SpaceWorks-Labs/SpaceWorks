@@ -2,7 +2,7 @@ import { formatDateTime } from "../../../lib/format";
 import { t } from "@lingui/core/macro";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { FormPageLayout } from "../../../components/layouts";
-import { ActionControl, Callout, Field, Spinner } from "../../../components/ui";
+import { ActionControl, Callout, Field } from "../../../components/ui";
 import { useSubmission, useSubmissionCommand } from "./api";
 import { ProgrammeCharges } from "./ProgrammeCharges";
 import { LinkEditor } from "./LinkEditor";
@@ -12,6 +12,7 @@ import { AssetList } from "./AssetList";
 import { StageAnswerFields, StageChecklist, StageTracker } from "./StageTracker";
 import { parts, submissionErrorMessage } from "./stageRules";
 import type { Project, SubmissionScope, UploadSpec } from "./types";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 const blank: Project = { title: "", tagline: "", problem: "", description: "", challenges: "", tech_tags: [],
   ai_declaration: { used: false, details: "" }, reuse_declaration: { used: false, details: "" },
@@ -48,7 +49,7 @@ export function SubmissionEditor({ scope, uploadOrigins, formats, tracks = [], p
       version.current = result.version; operation.current = crypto.randomUUID(); setDirty(false);
     } catch { /* Mutation error stays visible and the operation ID survives retry. */ }
   }
-  if (query.isLoading) return <div role="status"><Spinner />{t`Loading project…`}</div>;
+  if (query.isLoading) return <LogoLoader label={t`Loading project…`} size={48} className="min-h-16 py-3" />;
   if (query.isError) return <Callout size="panel" tone="danger" lead="Could not load your project."
     action={{ label: t`Retry`, onClick: () => void query.refetch() }} />;
   const requirements = query.data?.requirements;

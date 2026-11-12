@@ -5,13 +5,32 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { PublicLayout } from "../../components/layouts";
 import { ThemeToggle } from "../../components/ThemeToggle";
-import { EmptyState, ErrorText, ListRow, Skeleton, StatusPill, PagePager } from "../../components/ui";
+import { EmptyState, ErrorText, ListRow, StatusPill, PagePager } from "../../components/ui";
 import { publicV1Request } from "../../lib/api";
 import { LICENSE_URL } from "../inventory/PublicPageChrome";
 import { DiscoveryEventImage } from "./DiscoveryEventImage";
+import { LogoLoader } from "../../components/LogoLoader";
 
 type Results = import("../../generated/api").Discovery;
 const field = "grid min-w-0 flex-1 basis-40 gap-1 text-sm font-semibold sm:flex-none";
+
+type Organizer = { slug: string; name: string };
+type OrganizerPage = { next: string | null; results: Organizer[] };
+
+/** Public organisers of the events Discover lists now (slug and name only), every page of them. */
+async function loadOrganizers() {
+  const rows: Organizer[] = [];
+  for (let page = 1; page <= 20; page += 1) {
+    const data = await publicV1Request<OrganizerPage>(`/discover/events/organizers/?page=${page}`);
+    rows.push(...data.results);
+    if (!data.next) break;
+  }
+  return rows;
+}
+
+/** The list, plus a slug that arrived in a link but no longer organises anything listed (so the chip still reads true). */
+export const organizerOptions = (rows: Organizer[], current: string) =>
+  current && !rows.some(row => row.slug === current) ? [...rows, { slug: current, name: current }] : rows;
 
 type Filters = { q: string; date_from: string; date_to: string; tag: string; organization: string };
 /** Parity E-F3 (A14): `?tag=` and `?organization=<slug>` arrive from links on event and organisation pages. */
@@ -24,6 +43,7 @@ function initialFilters(): Filters {
 export function EventDiscoverPage() {
   const [filters, setFilters] = useState<Filters>(initialFilters);
   const [draft, setDraft] = useState(filters);
+  const organizers = useQuery({ queryKey: ["event-discover-organizers"], staleTime: 300_000, queryFn: loadOrganizers });
   const [page, setPage] = useState(1);
   const query = useQuery({ queryKey: ["event-discover", filters, page], staleTime: 0,
     queryFn: () => publicV1Request<Results>(`/discover/events/?${new URLSearchParams(Object.fromEntries(Object.entries({ ...filters, page: String(page) }).filter(([, value]) => value)))}`),
@@ -41,12 +61,14 @@ export function EventDiscoverPage() {
         <label className={field}>{t`From`}<input className="desk-input w-full" type="date" value={draft.date_from} onChange={(e) => setDraft({ ...draft, date_from: e.target.value })} /></label>
         <label className={field}>{t`Through`}<input className="desk-input w-full" type="date" value={draft.date_to} onChange={(e) => setDraft({ ...draft, date_to: e.target.value })} /></label>
         <label className={field}>{t`Tag`}<input className="desk-input w-full" maxLength={50} value={draft.tag} onChange={(e) => setDraft({ ...draft, tag: e.target.value })} /></label>
-        <label className={field}>{t`Organiser`}<input className="desk-input w-full" maxLength={50} placeholder={t`organisation-name`} value={draft.organization}
-          onChange={(e) => setDraft({ ...draft, organization: e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, "") })} /></label>
+        <label className={field}>{t`Organiser`}<select className="desk-input w-full" value={draft.organization} onChange={(e) => setDraft({ ...draft, organization: e.target.value })}>
+          <option value="">{t`Any organiser`}</option>
+          {organizerOptions(organizers.data ?? [], draft.organization).map(row => <option key={row.slug} value={row.slug}>{row.name}</option>)}
+        </select></label>
         <button className="desk-button-primary w-full sm:w-auto">{t`Find events`}</button>
       </form>
-      <DiscoverChips filters={filters} onRemove={key => { const next = { ...filters, [key]: "" }; setPage(1); setFilters(next); setDraft(next); }} />
-      {query.isLoading ? <div role="status" aria-label={t`Loading events`} className="grid gap-3"><span className="sr-only">{t`Loading events…`}</span>{[0, 1, 2].map(item => <Skeleton key={item} className="h-20" />)}</div> : null}
+      <DiscoverChips filters={filters} organizers={organizers.data ?? []} onRemove={key => { const next = { ...filters, [key]: "" }; setPage(1); setFilters(next); setDraft(next); }} />
+      {query.isLoading ? <LogoLoader label={t`Loading events`} size={48} className="min-h-20 py-3" /> : null}
       {query.error ? <ErrorText message={t`Unable to discover events. Check your dates and try again.`} onRetry={() => { void query.refetch(); }} /> : null}
       {!query.error && query.data ? <section aria-labelledby="discover-events-results" className="grid gap-3">
         <h2 id="discover-events-results" className="title-panel">{plural(query.data.count, { one: "# event", other: "# events" })}</h2>
@@ -68,8 +90,9 @@ export function EventDiscoverPage() {
 }
 
 /** The active tag and organiser filters as removable chips, so a link-applied filter is visible and easy to drop. */
-function DiscoverChips({ filters, onRemove }: { filters: Filters; onRemove: (key: "tag" | "organization") => void }) {
-  const chips = ([["tag", t`Tag: ${filters.tag}`], ["organization", t`Organiser: ${filters.organization}`]] as const).filter(([key]) => filters[key]);
+function DiscoverChips({ filters, organizers, onRemove }: { filters: Filters; organizers: Organizer[]; onRemove: (key: "tag" | "organization") => void }) {
+  const organiser = organizers.find(row => row.slug === filters.organization)?.name ?? filters.organization;
+  const chips = ([["tag", t`Tag: ${filters.tag}`], ["organization", t`Organiser: ${organiser}`]] as const).filter(([key]) => filters[key]);
   if (!chips.length) return null;
   return <ul className="flex flex-wrap gap-2" aria-label={t`Active filters`}>{chips.map(([key, label]) => <li key={key}>
     <button type="button" className="inline-flex min-h-11 items-center gap-2 rounded-full border border-line bg-panel px-4 text-sm font-semibold text-ink hover:border-brand-boundary"

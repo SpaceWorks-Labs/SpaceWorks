@@ -9,6 +9,7 @@ import { ResumeSharing } from '../hackathonGallery/ResumeSharing'
 import { uploadOrigins } from './uploadPolicy'
 import { ownSavedDetails } from '../../accountSavedDetails/api'
 import { savedDetailsKey } from '../../accountSavedDetails/types'
+import { LogoLoader } from '../../../components/LogoLoader'
 
 export function EventResumePanel({ scope }: { scope: EventScope }) {
   const [page, setPage] = useState(1), [file, setFile] = useState<File | null>(null), [copy, setCopy] = useState(false)
@@ -57,7 +58,7 @@ export function EventResumePanel({ scope }: { scope: EventScope }) {
     {copy ? <button className="desk-button" disabled={!source || mutate.isPending} onClick={() => mutate.mutate(undefined)}>{t`Copy saved résumé to this event`}</button> : null}
     {copy && saved.isSuccess && !source ? <p>{t`No ready résumé is saved in your account.`}</p> : null}
     <ErrorBlock error={rows.error || upload.error || mutate.error || saved.error} onRetry={() => void rows.refetch()} />
-    {rows.isPending ? <p role="status">{t`Loading event résumés…`}</p> : null}
+    {rows.isPending ? <LogoLoader label={t`Loading event résumés…`} size={48} className="min-h-16 py-3" /> : null}
     {rows.data?.results.map(row => <article key={row.asset_id} className="grid gap-3 rounded-xl border border-line bg-panel p-4">
       <p>{row.filename || t`Résumé ${row.asset_id}`} · <span role="status">{row.state}</span></p>
       <div className="flex flex-wrap gap-3"><button className="desk-button" disabled={row.state !== 'ready'} onClick={() => {

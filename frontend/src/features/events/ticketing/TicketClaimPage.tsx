@@ -32,6 +32,7 @@ export function TicketClaimPage({ kind }: { kind: "claim" | "transfer" }) {
   const makerspaceSlug = tenant.mode === "single" ? tenant.slug : slug ?? "";
   const tenantPath = useTenantPath(makerspaceSlug);
   const [restoring, setRestoring] = useState(!getAccessToken());
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- restoring is read only as its mount-time value: one token restore per mount, and re-running after setRestoring(false) would refresh the token again
   useEffect(() => { if (restoring) refreshAccessToken().finally(() => setRestoring(false)); }, []);
   const preview = useQuery({ queryKey: ticketingKeys.claim(kind, token), queryFn: () => previewClaim(kind, token),
     enabled: !restoring && Boolean(token), retry: false });

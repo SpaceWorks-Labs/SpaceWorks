@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { SettingsActions, SettingsRow, SettingsSection } from "../../../components/ui";
 import { guestErrorText, guestKeys, guestStaffApi, type GuestPassPolicy } from "../api";
 import { BORROW_MODES, MACHINE_MODES, borrowModeLabel, machineModeLabel } from "../labels";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 const count = (value: string) => (value.trim() === "" ? null : Math.max(0, Math.floor(Number(value))));
 /** EV-25: the waiver switches are edited in Settings › Visitor waiver (reachable with passes off), so this form never sends them. */
@@ -34,14 +35,14 @@ export function GuestPassPolicySettings({ makerspaceId }: { makerspaceId: number
       onChange={(event) => set(field, (optional ? count(event.target.value) : count(event.target.value) ?? 0) as never)} />;
 
   return <SettingsSection title={t`Guest pass rules`} description={t`Live passes keep the rules they were issued with; changes apply to new passes.`}>
-    {policy.isLoading ? <p role="status" className="py-4 text-sm text-muted">{t`Loading guest pass rules…`}</p> : null}
+    {policy.isLoading ? <LogoLoader label={t`Loading guest pass rules…`} size={48} className="min-h-16 py-3" /> : null}
     {policy.isError ? <p role="alert" className="py-4 text-sm text-danger">{guestErrorText(policy.error)}</p> : null}
     {draft ? <form onSubmit={(event) => { event.preventDefault(); save.mutate(draft); }}>
       <SettingsRow label={t`Guest borrowing`} helper={t`On site only: items are due back by the end of the pass. Full borrowing always takes a deposit.`}>
         <select className="desk-input w-full" aria-label={t`Guest borrowing`} value={draft.guest_borrowing_mode} onChange={(event) => set("guest_borrowing_mode", event.target.value as GuestPassPolicy["guest_borrowing_mode"])}>
           {BORROW_MODES.map((mode) => <option key={mode} value={mode}>{borrowModeLabel(mode)}</option>)}</select>
       </SettingsRow>
-      <SettingsRow label={t`Guest machine use`} helper={t`Supervised: only inside a certified instructor's session. After induction: a certification granted at an induction event.`}>
+      <SettingsRow label={t`Guest machine use`} helper={t`Supervised: only inside an instructor's session. After access: once a space manager has given the guest access to that machine.`}>
         <select className="desk-input w-full" aria-label={t`Guest machine use`} value={draft.guest_machine_mode} onChange={(event) => set("guest_machine_mode", event.target.value as GuestPassPolicy["guest_machine_mode"])}>
           {MACHINE_MODES.map((mode) => <option key={mode} value={mode}>{machineModeLabel(mode)}</option>)}</select>
       </SettingsRow>

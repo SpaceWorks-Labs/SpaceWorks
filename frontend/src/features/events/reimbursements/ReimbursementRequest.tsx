@@ -7,10 +7,11 @@ import { reimbursementPath, useApplicantCommand, useReimbursement } from "./api"
 import { useUnsavedChanges } from "../stagedForms/UnsavedChanges";
 import { commandError } from "../stagedForms/privateQueries";
 import type { ReimbursementOverview, ReimbursementScope } from "./types";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 export function ReimbursementRequest({ scope, onDirtyChange }: { scope: ReimbursementScope; onDirtyChange?: (dirty: boolean) => void }) {
   const query = useReimbursement(scope);
-  if (!query.data) return <p role={query.error ? "alert" : "status"}>{query.error ? commandError(query.error) : t`Loading support request…`}</p>;
+  if (!query.data) return query.error ? <p role="alert">{commandError(query.error)}</p> : <LogoLoader label={t`Loading support request…`} size={48} className="min-h-16 py-3" />;
   if (!query.data.available || !query.data.request_context) return <p role="status">{t`Travel support is unavailable for this event.`}</p>;
   return <RequestEditor key={query.data.request?.version ?? 0} scope={scope} overview={query.data} onDirtyChange={onDirtyChange} />;
 }

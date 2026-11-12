@@ -12,6 +12,8 @@ import {
 } from "../labels";
 import { GuestPassIssueDialog } from "./GuestPassIssueDialog";
 import { GuestPassScan } from "./GuestPassScan";
+import { LogoLoader } from "../../../components/LogoLoader";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 const STATUSES = ["", "issued", "active", "expired", "revoked", "converted"];
 const KINDS = ["", "event", "sponsored", "day"];
@@ -59,7 +61,7 @@ export function GuestPassDesk({ makerspaceId, dayPassesOn }: { makerspaceId: num
         <select className="desk-input min-h-11" value={kind} onChange={(event) => pick(setKind)(event.target.value)}>
           {KINDS.map((value) => <option key={value} value={value}>{value ? passKindLabel(value) : t`All`}</option>)}</select></label>
     </div>
-    {roster.isLoading ? <p role="status" className="text-sm text-muted">{t`Loading guest passes…`}</p> : null}
+    {roster.isLoading ? <LogoLoader label={t`Loading guest passes…`} size={48} className="min-h-16 py-3" /> : null}
     {roster.isError ? <div role="alert" className="flex flex-wrap items-center gap-3 text-sm text-danger"><p>{guestErrorText(roster.error)}</p>
       <button type="button" className="desk-button" onClick={() => void roster.refetch()}>{t`Try again`}</button></div> : null}
     {roster.isSuccess && !rows.length ? <EmptyState message={status || kind || q ? t`No passes match these filters.` : t`No guest passes yet. Issue one, or let members bring guests.`} /> : null}
@@ -91,7 +93,7 @@ function GuestPassRow({ row, stamping, onStamp, onRevoke }: { row: StaffPass; st
       <StatusPill tone={passStatusTone(row.status)} label={passStatusLabel(row.status)} />
       {payment ? <StatusPill tone={row.payment_status === "pending" ? "warn" : "neutral"} label={payment} /> : null}
       {row.waiver_accepted_at ? <StatusPill tone="success" label={t`Waiver accepted`} />
-        : live ? <button type="button" className="desk-button min-h-11" disabled={stamping} onClick={onStamp}>{stamping ? t`Recording…` : t`Waiver accepted at the desk`}</button> : null}
+        : live ? <button type="button" className="desk-button min-h-11" disabled={stamping} onClick={onStamp}>{stamping ? <><BoxArt size={16} mono />{t`Recording…`}</> : t`Waiver accepted at the desk`}</button> : null}
       {live ? <button type="button" className="desk-button-ghost min-h-11" onClick={onRevoke}>{t`Withdraw pass`}</button> : null}
     </div>
   </li>;

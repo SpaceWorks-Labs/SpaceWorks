@@ -1,3 +1,4 @@
+import { LogoLoader } from "../../../components/LogoLoader";
 import { formatLocale } from "../../../lib/format";
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
@@ -26,7 +27,7 @@ export function AttendanceReplyPage() {
     method: "POST", body: JSON.stringify({ answer, note }) }),
   onSuccess: data => client.setQueryData(["member-attendance", eventId], data) });
   if (own.error) return <div className="mx-auto max-w-xl p-4"><ErrorText message={t`This page is not available.`} /></div>;
-  if (!own.data) return <div className="mx-auto max-w-xl p-4"><p role="status">{t`Loading…`}</p></div>;
+  if (!own.data) return <LogoLoader label={t`Loading…`} />;
   const data = own.data, settled = data.effect !== "none";
   return <div className="mx-auto grid max-w-xl gap-4 p-4">
     <h1 className="font-display text-2xl text-ink">{t`Are you still coming?`}</h1>

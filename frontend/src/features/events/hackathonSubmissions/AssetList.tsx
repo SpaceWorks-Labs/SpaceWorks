@@ -8,6 +8,7 @@ import type { Asset, SubmissionScope } from "./types";
 import { AssetPreview } from "./AssetPreview";
 import { OriginalVideo } from "./OriginalVideo";
 import { TextTablePreview } from "./TextTablePreview";
+import { BoxSpinner } from "../../../components/BoxSpinner";
 
 export function AssetList({ scope, assetIds, publicIds, onConsent, onRemove, disabled, onReadinessChange }: {
   scope: SubmissionScope; assetIds: number[]; publicIds: number[]; disabled: boolean;
@@ -30,7 +31,7 @@ export function AssetList({ scope, assetIds, publicIds, onConsent, onRemove, dis
   }
   return <section aria-label={t`Project files`} className="grid gap-3">
     {assetIds.map((id, index) => <Card key={id}><div className="grid gap-3">
-      <p className="text-sm text-ink">{t`File ${id}: `}<span role="status">{queries[index].isError ? t`Status unavailable` : queries[index].data?.state ?? t`Loading…`}</span></p>
+      <p className="text-sm text-ink">{t`File ${id}: `}{queries[index].isError ? <span role="status">{t`Status unavailable`}</span> : queries[index].data?.state ? <span role="status">{queries[index].data.state}</span> : <BoxSpinner label={t`Loading…`} size={16} />}</p>
       <label className="flex min-h-11 items-center gap-3 text-sm"><input type="checkbox" disabled={disabled} checked={publicIds.includes(id)}
         onChange={event => onConsent(id, event.target.checked)} />{t`Allow this file in the published project gallery`}</label>
       <div className="flex flex-wrap gap-3"><ActionControl action={{ label: t`Download file ${id}`, disabled: queries[index].data?.state !== "ready", onClick: () => { void download(id).catch(() => queries[index].refetch()); } }} />

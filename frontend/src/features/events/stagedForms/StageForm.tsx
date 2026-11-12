@@ -14,12 +14,13 @@ import { useUnsavedChanges } from "./UnsavedChanges";
 import { commandError } from "./privateQueries";
 import { useFormUploads } from "./uploads";
 import { useNow } from "./useNow";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 export function StageForm({ scope, responseId, uploadFiles, onDirtyChange }: { scope: StageScope; responseId: number;
   uploadFiles?: UploadFormFiles; onDirtyChange?: (dirty: boolean) => void }) {
   const query = useStageResponse(scope, responseId);
   const [saved, setSaved] = useState<CommandResult | null>(null);
-  if (!query.data) return <div><p role={query.error ? "alert" : "status"}>{query.error ? commandError(query.error) : t`Loading form…`}</p>
+  if (!query.data) return <div>{query.error ? <p role="alert">{commandError(query.error)}</p> : <LogoLoader label={t`Loading form…`} size={48} className="min-h-16 py-3" />}
     {query.error ? <button type="button" className="desk-button" onClick={() => void query.refetch()}>{t`Retry`}</button> : null}</div>;
   return <><StageEditor key={`${query.data.id}:${query.data.version}`} scope={scope} response={query.data} uploadFiles={uploadFiles} onSaved={setSaved} onDirtyChange={onDirtyChange} />
     {saved?.form_save_intents ? <FormSaveIntentsNotice actorId={scope.actorId} intents={saved.form_save_intents} /> : saved?.save_operation_id ? <SaveIntentNotice actorId={scope.actorId} operationId={saved.save_operation_id} /> : null}</>;
@@ -58,7 +59,7 @@ function StageEditor({ scope, response, uploadFiles, onSaved, onDirtyChange }: {
       {closed ? <p role="status">{t`This form is read-only. Your previous submissions remain available.`}</p> : null}
       {response.selected_revision ? <p role="status">{t`Submitted revision ${response.selected_revision}. A new submission preserves your earlier answers.`}</p> : null}
       {!closed ? <div className="grid gap-2"><p className="text-sm text-muted">{t`Saved details are suggestions. Review them before submitting. Saving sensitive details is optional.`}</p>
-        {prefill.isPending ? <p role="status">{t`Loading saved suggestions…`}</p> : prefill.error ? <p role="status">{t`Saved suggestions are unavailable. You can fill in this form yourself.`}</p> : null}
+        {prefill.isPending ? <LogoLoader label={t`Loading saved suggestions…`} size={48} className="min-h-16 py-3" /> : prefill.error ? <p role="status">{t`Saved suggestions are unavailable. You can fill in this form yourself.`}</p> : null}
         {prefill.data ? <button type="button" className="desk-button min-h-11" onClick={() => change(applyStageSuggestions(response.schema, value, prefill.data!))}>{t`Use saved details for empty answers`}</button> : null}</div> : null}
       <fieldset disabled={closed || !canSave || mutation.isPending} className="grid min-w-0 gap-4"><legend className="sr-only">{t`Stage answers`}</legend>
         <FormV2Fields schema={response.schema} value={value} onChange={change} context="stage" uploadFiles={uploadFiles ?? uploads.upload} />

@@ -9,6 +9,7 @@ import { CollectionSheetGrid } from "./CollectionSheetGrid";
 import { MAX_SHEET_ROWS, collectionApi, sheetErrorText, type CollectionSheetResponse } from "./collectionApi";
 import { localToday, parsePasted, sheetProblems, toInput, type SheetRow } from "./collectionSheetRows";
 import { invalidateFinance } from "./financeApi";
+import { BoxArt } from "../../components/BoxSpinner";
 
 const open = (row: SheetRow) => !row.result || row.result.outcome === "failed";
 
@@ -91,7 +92,7 @@ export function CollectionSheet({ makerspaceId, makerChecker }: { makerspaceId: 
       <span className="text-sm text-muted tabular-nums">{t`${pending.length} to record`}</span>
       <button type="button" className="desk-button-primary" disabled={!pending.length || blocked || record.isPending}
         onClick={() => record.mutate(pending)}>
-        {record.isPending ? t`Recording…` : makerChecker
+        {record.isPending ? <><BoxArt size={16} mono />{t`Recording…`}</> : makerChecker
           ? plural(pending.length, { one: "File # payment for confirmation", other: "File # payments for confirmation" })
           : plural(pending.length, { one: "Record # payment", other: "Record # payments" })}
       </button>

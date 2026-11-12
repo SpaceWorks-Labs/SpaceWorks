@@ -1,6 +1,7 @@
 import { t } from "@lingui/core/macro";
 import { useState, type DragEvent } from "react";
 import { FileCheck2, FileX2, Upload } from "lucide-react";
+import { BoxSpinner } from "../../../components/BoxSpinner";
 
 /** SHA-256 of a file, as lowercase hex, computed in the browser. The file never leaves the device. */
 export async function sha256Hex(file: Blob) {
@@ -31,7 +32,7 @@ export function CertificateFileCheck({ expected }: { expected: string }) {
       <input type="file" accept="application/pdf,.pdf" className="sr-only" onChange={(event) => { void check(event.target.files?.[0]); event.target.value = ""; }} />
     </label>
     <div aria-live="polite">
-      {state.status === "checking" ? <p className="text-sm text-muted">{t`Checking `}{state.name}…</p> : null}
+      {state.status === "checking" ? <BoxSpinner label={`${t`Checking `}${state.name}…`} /> : null}
       {state.status === "match" ? <p className="flex items-start gap-2 rounded-control border border-success bg-success-soft p-3 text-sm text-success-ink">
         <FileCheck2 size={18} aria-hidden="true" className="mt-0.5 shrink-0" /><span><strong>{t`This file matches the issued certificate.`}</strong> {t` It has not been changed since it was issued.`}</span></p> : null}
       {state.status === "mismatch" ? <p className="flex items-start gap-2 rounded-control border border-danger-line bg-panel p-3 text-sm text-danger">

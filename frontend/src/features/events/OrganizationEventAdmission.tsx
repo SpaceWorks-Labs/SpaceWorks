@@ -10,6 +10,7 @@ import { EventConsentRepairForm } from "./EventConsentRepairForm";
 import type { PublicEventDetail } from "./eventTicketTypes";
 
 import type { EventEligibility } from "../../generated/api";
+import { LogoLoader } from "../../components/LogoLoader";
 export type { EventEligibility } from "../../generated/api";
 
 export const organizationEligibilityKey = (slug: string, token: string, accountId?: number) =>
@@ -56,7 +57,7 @@ function OrganizationAdmissionCheck({ event, makerspaceSlug, organisation }: Adm
     retry: false, staleTime: 0, gcTime: 0, refetchOnMount: "always",
     refetchOnWindowFocus: false, refetchOnReconnect: false,
   });
-  if (restoring || account.isLoading || eligibility.isLoading) return <p role="status" className={note}>{t`Checking organization eligibility…`}</p>;
+  if (restoring || account.isLoading || eligibility.isLoading) return <LogoLoader label={t`Checking organization eligibility…`} size={48} className="min-h-16 py-3" />;
   const signIn = [account.error, eligibility.error].some(error => error instanceof StructuredApiError && error.status === 401);
   if (signIn) return <MemberAuthPanel embedded context={<p className={note}>{t`Sign in to check your membership in a participating organization.`}</p>} makerspaceSlug={makerspaceSlug} onAuthenticated={() => {
     void account.refetch();

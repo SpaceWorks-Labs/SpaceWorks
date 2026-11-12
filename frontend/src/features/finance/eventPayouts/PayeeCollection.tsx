@@ -1,3 +1,4 @@
+import { LogoLoader } from "../../../components/LogoLoader";
 import { t } from "@lingui/core/macro";
 import { paymentMethodLabel } from "../../../lib/money";
 import { useEffect, useRef, useState } from "react";
@@ -10,10 +11,11 @@ import { fieldLabel, templateFields } from "./payeeTemplates";
 import { usePrivateRequest } from "./usePrivateRequest";
 import { collectedPayee, permits } from "./types";
 import type { CommandResult, PayeeContext, PayoutDetail } from "./types";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 export function PayeeCollection({ actorId, payout }: { actorId: number; payout: PayoutDetail }) {
   const query = usePayeeContext(actorId, payout.id);
-  if (query.isPending) return <p role="status">{t`Loading enabled payment methods…`}</p>;
+  if (query.isPending) return <LogoLoader label={t`Loading enabled payment methods…`} />;
   if (query.error) return <div role="alert">{t`Payment methods could not be loaded. `}<button className="desk-button min-h-11" onClick={() => { void query.refetch(); }}>{t`Retry payment methods`}</button></div>;
   if (!query.data) return null;
   return <CollectionForm key={`${scopeIdentity(actorId)}:${payout.id}:${payout.version}:${JSON.stringify(query.data.templates)}:${query.data.allowed_actions?.join()}`}
@@ -87,7 +89,7 @@ function CollectionForm({ actorId, payout, context }: { actorId: number; payout:
           onChange={event => { setDetails({ ...details, [field]: event.target.value }); setConsent(false); }} />}</label>)}
       {chosen?.[1] === "paypal" || chosen?.[1] === "wise" ? <p className="text-sm text-muted">{t`Provide only your receiving email. Never provide a password, API key or login code.`}</p> : null}
       <label className="flex min-h-11 items-center gap-3"><input type="checkbox" checked={consent} onChange={event => setConsent(event.target.checked)} />{t`I checked these details and agree to their use for this reimbursement.`}</label>
-      <button className="desk-button min-h-11" type="submit" disabled={!valid || request.pending}>{request.pending ? t`Saving routing…` : payee ? t`Submit corrected routing` : t`Submit payment routing`}</button>
+      <button className="desk-button min-h-11" type="submit" disabled={!valid || request.pending}>{request.pending ? <><BoxArt size={16} mono />{t`Saving routing…`}</> : payee ? t`Submit corrected routing` : t`Submit payment routing`}</button>
       {dirty ? <button type="button" className="desk-button min-h-11" onClick={() => { setDetails({}); setConsent(false); }}>{t`Discard entered details`}</button> : null}
     </form> : <p>{t`No supported payment method is enabled. Contact finance to enable a country template before entering details.`}</p> : <p>{t`Payment routing is not currently requested.`}</p>}
     {permits(payout, "delete_payee") && permits(context, "delete_payee") ? <>

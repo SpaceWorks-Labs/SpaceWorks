@@ -1,4 +1,5 @@
 import { t } from "@lingui/core/macro";
+import { useStableKey } from '../../../lib/useStableKey';
 import { useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { memberRequest, tenantPublicRequest } from '../../../lib/api';
@@ -10,9 +11,9 @@ import { useClearOnAccessLoss } from './accessLoss';
 export type MemberScope = { makerspaceId: number; eventId: number; actorId: number };
 export const memberKey = (scope: MemberScope) => ['programme-sharing', 'member', scope.actorId, scope.makerspaceId, scope.eventId] as const;
 export function useSharing(scope: MemberScope, loadConsents = true, pageNumber = 1) {
-  const client = useQueryClient(); const key = memberKey(scope);
-  useEffect(() => onSessionCleared(() => client.removeQueries({ queryKey: key })), [client, ...key]);
-  useEffect(() => () => { void client.cancelQueries({ queryKey: key }); client.removeQueries({ queryKey: key }); }, [client, ...key]);
+  const client = useQueryClient(); const key = useStableKey(memberKey(scope));
+  useEffect(() => onSessionCleared(() => client.removeQueries({ queryKey: key })), [client, key]);
+  useEffect(() => () => { void client.cancelQueries({ queryKey: key }); client.removeQueries({ queryKey: key }); }, [client, key]);
   const base = `/member/makerspaces/${scope.makerspaceId}/events/${scope.eventId}/`;
   const consents = useQuery({ queryKey: [...key, 'resume-consents', pageNumber], retry: false, enabled: loadConsents,
     queryFn: async () => {

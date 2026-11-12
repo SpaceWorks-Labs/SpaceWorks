@@ -16,6 +16,7 @@ import { CollectionSheet } from "./CollectionSheet";
 import { financeApi, financeKeys } from "./financeApi";
 import { useRoutedSubTab } from "../staff/useRoutedSubTab";
 import { AreaOverview } from "../staff/areaOverview/AreaOverview";
+import { LogoLoader } from "../../components/LogoLoader";
 
 type Space = { id: number; name?: string; enabled_modules?: string[]; enabled_features?: string[] };
 
@@ -56,7 +57,7 @@ export function FinancePanel({ makerspace, canViewFinance, canRecordPayment }: {
       <h2 id="finance-heading" className="title-page">{t`Finance`}</h2>
       <p className="text-sm text-muted">{t`Every amount `}{makerspace.name ?? t`your makerspace`} {t` took in or paid out, by month and area. Nothing here moves money by itself.`}</p>
     </header>
-    {access.isLoading && ledgerOn ? <p role="status" className="text-sm text-muted">{t`Loading finance…`}</p> : null}
+    {access.isLoading && ledgerOn ? <LogoLoader label={t`Loading finance…`} size={48} className="min-h-16 py-3" /> : null}
     {!sections.length && !access.isLoading
       ? <p className="rounded-lg border border-line bg-panel p-4 text-sm text-muted">{denied
         ? t`Finance shows the money for the areas you manage. You don't manage one in this space.`

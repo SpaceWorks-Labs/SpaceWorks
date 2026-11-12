@@ -6,6 +6,7 @@ import { DetailLayout } from '../../../components/layouts'
 import { ActionControl, Card, Field, StatusPill, Pagination } from '../../../components/ui'
 import type { EventScope, HelpComment, HelpRequest, Page } from './types'
 import { basePath, errorText, programmeKey, requestFor, useProgrammeCommand, useProgrammeDetail, type Surface } from './api'
+import { LogoLoader } from '../../../components/LogoLoader'
 
 export function HelpDetail({ scope, helpId, surface = 'member', onClose }: {
   scope: EventScope; helpId: number; surface?: Surface; onClose: () => void
@@ -44,7 +45,7 @@ export function HelpDetail({ scope, helpId, surface = 'member', onClose }: {
           confirm: action === 'cancel' ? { title: t`Cancel this help request?`, message: t`A claimed mentor will be released. Your team stays together.` } : undefined,
           onClick: () => perform(action) }} />)}</div>
       <section aria-label={t`Comments`} className="grid gap-3"><h2 className="title-section">{t`Conversation`}</h2>
-        {comments.isPending ? <p role="status">{t`Loading comments…`}</p> : null}
+        {comments.isPending ? <LogoLoader label={t`Loading comments…`} size={48} className="min-h-16 py-3" /> : null}
         {comments.error ? <p role="alert" className="text-danger">{errorText(comments.error)}</p> : null}
         {comments.data?.results.map(item => <Card key={item.id}><p className="mb-2 text-xs text-muted">{item.origin === 'team' ? t`Team` : t`Mentor`} · {formatDateTime(item.created_at)}</p><p className="whitespace-pre-wrap break-words">{item.body}</p></Card>)}
         <Pagination page={page} totalPages={Math.ceil((comments.data?.count ?? 0) / 24)} onChange={setPage} />

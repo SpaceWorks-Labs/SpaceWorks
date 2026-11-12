@@ -5,10 +5,10 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
 
 import { CenteredCardLayout } from "../../components/layouts";
-import { Skeleton } from "../../components/ui";
 import { memberRequest, refreshAccessToken, StructuredApiError } from "../../lib/api";
 import { useTenant, useTenantPath } from "../../lib/tenant";
 import { MemberAuthPanel } from "../members/MemberAuthPanel";
+import { LogoLoader } from "../../components/LogoLoader";
 
 const CLAIM_STORAGE_KEY = "spaceworks.speakerClaim";
 type Claimed = { speaker_id: number; display_name: string; event: { id: number; title: string; starts_at: string; ends_at: string } };
@@ -68,7 +68,7 @@ export function SpeakerClaimPage() {
     body={done ? <p>{t`${done.display_name} is now linked to ${done.event.title}, ${new Date(done.event.starts_at).toLocaleString(formatLocale())}. It appears in your event history.`}</p>
       : <p>{t`Claim this invitation to link your account to the event as a speaker. The link works once.`}</p>}
     content={<div className="grid gap-3 empty:hidden">
-      {restoring ? <Skeleton className="h-24 w-full" /> : null}
+      {restoring ? <LogoLoader size={48} className="min-h-24 py-3" /> : null}
       {!token && !done ? <p className="text-sm text-danger" role="alert">{t`The speaker link is missing its token. Open the original link again.`}</p> : null}
       {account && !done ? <p className="text-sm text-ink">{t`Signed in${account.username ? ` as ${account.username}` : ""}.`}</p> : null}
       {claim.error ? <p className="text-sm text-danger" role="alert">{claimError(claim.error)}</p> : null}

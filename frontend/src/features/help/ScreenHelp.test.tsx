@@ -68,6 +68,12 @@ describe("Help links on staff sub-screens", () => {
     }
   });
 
+  it("links the Machines device-adapters screen to its article and mounts it", () => {
+    expect(STAFF_SUBSCREEN_HELP["machines.adapters"]).toEqual({ article: "space-manager/device-adapters", topic: "device adapters" });
+    inStaff(<ScreenHelp screen="machines.adapters" />);
+    expect(screen.getByRole("link", { name: "Help with device adapters (opens in a new tab)" })).toHaveAttribute("href", "/m/tinkerspace/help/space-manager/device-adapters");
+  });
+
   it("puts the account security page's Help link on the two-step article", () => {
     const source = Object.entries(SOURCES).find(([path]) => path.endsWith("/auth/MfaAccountPage.tsx"))?.[1] ?? "";
     expect(source).toContain('<HelpLink article="member/two-step-sign-in"');

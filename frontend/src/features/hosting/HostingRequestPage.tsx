@@ -9,6 +9,7 @@ import { useHostingConfig, useHostingKinds, useSubmitHostingRequest } from "./ho
 import { HostingKindChooser } from "./HostingKindChooser";
 import { EMPTY_HOSTING_FORM, HOSTING_ACK, hostingErrorText, hostingFieldErrors, hostingRequestBody, type HostingFormKey } from "./hostingForm";
 import { HostingRequestFields } from "./HostingRequestFields";
+import { BoxArt } from "../../components/BoxSpinner";
 
 const STEPS = () => [
   t`Confirm your email.`,
@@ -38,7 +39,7 @@ export function HostingRequestPage() {
   const errors = hostingFieldErrors(submit.error);
   const set = (key: HostingFormKey, value: string) => setForm((current) => ({ ...current, [key]: value }));
   return <PublicLayout makerspace={{ name: "Space Works", slug: "", homeHref: "/" }} chrome="canvas"
-    nav={[{ label: t`Browse spaces`, href: "/" }, { label: t`About`, href: "/about" }]} headerAction={{ label: t`Sign in`, href: "/member" }}
+    nav={[{ label: t`Browse spaces`, href: "/spaces" }, { label: t`About`, href: "/about" }]} headerAction={{ label: t`Sign in`, href: "/member" }}
     liveStatus={<ThemeToggle variant="icon" />} width="narrow" hero={<HostingHero organizations={organizations} />}
     state={config.isError ? { status: "error", error: t`Couldn't load this page. Try again.`, onRetry: () => { void config.refetch(); } }
       : config.isLoading ? { status: "loading" } : { status: "ready" }}
@@ -64,7 +65,7 @@ export function HostingRequestPage() {
           {hostingErrorText(submit.error, "Hosting requests aren't open right now.")}
         </p> : null}
         <button className="desk-button-brand w-full sm:w-fit" type="submit" disabled={submit.isPending}>
-          {submit.isPending ? t`Sending…` : t`Send request`}
+          {submit.isPending ? <><BoxArt size={16} mono />{t`Sending…`}</> : t`Send request`}
         </button>
       </form>}
     </div>

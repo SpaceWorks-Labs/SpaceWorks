@@ -1,3 +1,4 @@
+import { LogoLoader } from "../../../components/LogoLoader";
 import { t } from "@lingui/core/macro";
 import type { ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
@@ -14,10 +15,10 @@ export function PublicProgrammeEntry({ publicToken, slug, features, children, ve
   const context = useQuery({ queryKey: ['public-programme-entry', slug, publicToken, ...sessionScope()], enabled,
     queryFn: async () => parseProgrammeContext(await memberRequest(`/public/event-programmes/${encodeURIComponent(publicToken)}/context/`)),
     retry: false, staleTime: 0, gcTime: 0 })
-  if (!features) return <p role="status">{t`Loading event options…`}</p>
+  if (!features) return <LogoLoader label={t`Loading event options…`} />
   if (!enabled || (context.data?.programme.kind === 'ordinary' && !versionedForm)) return children
   return <div className="grid gap-3"><p className="text-sm text-muted">{t`Review this event’s application and programme using your member account.`}</p>
     <a className="desk-button-brand" href={programmeHref(publicToken, 'application', slug)}>{t`Open application and programme`}</a>
-    {context.isPending ? <p role="status" className="text-sm">{t`Checking the current programme…`}</p> : null}
+    {context.isPending ? <LogoLoader label={t`Checking the current programme…`} size={48} className="min-h-16 py-3" /> : null}
   </div>
 }

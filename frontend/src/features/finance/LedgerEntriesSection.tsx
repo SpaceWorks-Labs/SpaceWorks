@@ -9,6 +9,7 @@ import { LedgerEntryForm } from "./LedgerEntryForm";
 import {
   DOMAIN_LABELS, financeApi, financeError, financeKeys, invalidateFinance, words, type FinanceAccess, type LedgerEntry,
 } from "./financeApi";
+import { LogoLoader } from "../../components/LogoLoader";
 
 /** Expenses and other receipts in the caller's areas: record, open a receipt, void with a reason. */
 export function LedgerEntriesSection({ makerspaceId, access }: { makerspaceId: number; access: FinanceAccess }) {
@@ -38,7 +39,7 @@ export function LedgerEntriesSection({ makerspaceId, access }: { makerspaceId: n
       {canRecord ? <button type="button" className="desk-button" onClick={() => setAdding(true)}>
         <BookOpen aria-hidden="true" size={16} />{t`Record money`}</button> : null}
     </div>
-    {entries.isLoading ? <p role="status" className="text-sm text-muted">{t`Loading entries…`}</p> : null}
+    {entries.isLoading ? <LogoLoader label={t`Loading entries…`} size={48} className="min-h-16 py-3" /> : null}
     {entries.error ? <p role="alert" className="text-sm text-danger">{financeError(entries.error)}</p> : null}
     {entries.data?.count === 0 ? <p className="text-sm text-muted">{t`No expenses or other receipts yet. Purchases, repairs and payouts recorded elsewhere appear here too.`}</p> : null}
     <ul className="grid gap-2">

@@ -1,3 +1,4 @@
+import { LogoLoader } from "../../../components/LogoLoader";
 import { t } from "@lingui/core/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ReactNode } from "react";
@@ -7,6 +8,7 @@ import { memberRequest } from "../../../lib/api";
 import { PayNextStep } from "../../payments/PayNextStep";
 import { guestErrorText, guestKeys, guestMemberApi, type HolderPass } from "../api";
 import { entitlementSummary, passKindLabel, passStatusLabel, passStatusTone, passWindow } from "../labels";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 const WALLET_LABELS: Record<string, string> = { apple: t`Add to Apple Wallet`, google: t`Save to Google Wallet` };
 
@@ -28,7 +30,7 @@ export function MyGuestPasses({ makerspaceId, paymentsHref, joinSlot }: {
     // Apple's download link lives for a minute, so it opens straight away.
     onSuccess: (data) => { window.location.assign(data.url); },
   });
-  if (mine.isLoading) return <p role="status" className="text-sm text-muted">{t`Loading your passes…`}</p>;
+  if (mine.isLoading) return <LogoLoader label={t`Loading your passes…`} />;
   if (mine.isError) return null; // Feature off (404) or signed out: the section simply isn't there.
   const passes = mine.data?.passes ?? [];
   if (!passes.length) return null;
@@ -78,10 +80,10 @@ function WaiverStep({ makerspaceId, accepting, onAccept }: { makerspaceId: numbe
     queryFn: () => memberRequest<{ has_waiver: boolean; body?: string; version?: string }>(`/member/makerspaces/${makerspaceId}/waiver`) });
   return <div className="grid gap-3">
     <p className="text-sm text-muted">{t`Accept the space's waiver before you arrive.`}</p>
-    {waiver.isLoading ? <p role="status" className="text-sm text-muted">{t`Loading the waiver…`}</p> : null}
+    {waiver.isLoading ? <LogoLoader label={t`Loading the waiver…`} size={48} className="min-h-16 py-3" /> : null}
     {waiver.data?.has_waiver ? <div tabIndex={0} role="region" aria-label={waiver.data.version ? t`Waiver, version ${waiver.data.version}` : t`Waiver`}
       className="max-h-64 max-w-prose overflow-y-auto whitespace-pre-wrap break-words rounded-control border border-line p-3 text-sm text-muted">{waiver.data.body}</div> : null}
     {waiver.isError ? <p className="text-sm text-muted">{t`Ask staff at the desk to show you the waiver text, or accept it there.`}</p> : null}
-    <button type="button" className="desk-button-brand min-h-11" disabled={accepting || waiver.isLoading} onClick={onAccept}>{accepting ? t`Saving…` : t`Accept waiver`}</button>
+    <button type="button" className="desk-button-brand min-h-11" disabled={accepting || waiver.isLoading} onClick={onAccept}>{accepting ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Accept waiver`}</button>
   </div>;
 }

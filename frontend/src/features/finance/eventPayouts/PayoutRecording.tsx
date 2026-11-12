@@ -5,6 +5,7 @@ import { usePayoutCommand } from "./api";
 import { money, reasonIsValid, utcInstant } from "./format";
 import { collectedPayee, permits } from "./types";
 import type { FinanceScope, PayoutDetail, PayoutEntry } from "./types";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 export function PayoutRecording({ scope, payout, amends }: { scope: FinanceScope; payout: PayoutDetail; amends?: PayoutEntry }) {
   const payee = collectedPayee(payout.payee);
@@ -44,7 +45,7 @@ export function PayoutRecording({ scope, payout, amends }: { scope: FinanceScope
     {method === "other" || amends ? <label className="grid gap-1">{amends ? t`Correction reason code` : t`Finance reason code`}<input className="desk-input" value={reason} onChange={event => setReason(event.target.value)} /></label> : null}
     {amends ? <label className="flex min-h-11 items-center gap-3"><input type="checkbox" checked={isVoid} onChange={event => { setIsVoid(event.target.checked); setConfirmed(false); }} />{t`Void an erroneous record (does not return money)`}</label> : null}
     <label className="flex min-h-11 items-center gap-3"><input type="checkbox" checked={confirmed} onChange={event => setConfirmed(event.target.checked)} />{t`I confirm this records a payment or corrects its history.`}</label>
-    <button className="desk-button min-h-11" type="submit" disabled={!valid || mutation.isPending}>{mutation.isPending ? t`Saving…` : amends ? t`Append correction` : t`Record completed payout`}</button>
+    <button className="desk-button min-h-11" type="submit" disabled={!valid || mutation.isPending}>{mutation.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : amends ? t`Append correction` : t`Record completed payout`}</button>
     {mutation.error ? <p role="alert">{t`This record was not saved. Reload current versions and confirm your recent finance authentication.`}</p> : null}
     {mutation.isSuccess ? <p role="status">{t`The payout history was saved.`}</p> : null}
   </form>;

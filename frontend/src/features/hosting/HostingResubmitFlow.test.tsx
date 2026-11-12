@@ -13,7 +13,7 @@ it("edits, reviews and resubmits with the link token and the reviewer note", asy
   render(<QueryClientProvider client={new QueryClient()}><MemoryRouter>
     <HostingResubmitFlow token="tok" onDone={() => {}} request={{ status: "changes_requested", space_name: "Old name", created_at: "2026-10-01T00:00:00Z",
       verified_at: null, decided_at: null, rejection_reason: null, changes_note: "Add opening hours", editable: true,
-      location: "Kochi", description: "A community workshop for everyone.", revisions: [], space_website_url: "", proposed_slug: "", new_organization_name: "" }} />
+      location: "Kochi", description: "A community workshop for everyone.", revisions: [], space_website_url: "", proposed_slug: "", new_organization_name: "", requested_kind: "makerspace" }} />
   </MemoryRouter></QueryClientProvider>);
   expect(screen.getByText("Add opening hours")).toBeVisible();
   fireEvent.change(screen.getByLabelText("Makerspace name"), { target: { value: "New name" } });

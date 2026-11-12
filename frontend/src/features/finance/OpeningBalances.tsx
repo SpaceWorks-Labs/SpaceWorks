@@ -7,6 +7,8 @@ import { staffRequest } from "../../lib/api";
 import { formatLocale } from "../../lib/format";
 import { formatMoney } from "../staff/paymentsApi";
 import { financeError, type FinanceAccess } from "./financeApi";
+import { LogoLoader } from "../../components/LogoLoader";
+import { BoxArt } from "../../components/BoxSpinner";
 
 export type OpeningBalance = { fy_start: string; currency: string; cash_amount: string; bank_amount: string; set_at: string };
 
@@ -36,7 +38,7 @@ export function OpeningBalances({ makerspaceId, access }: { makerspaceId: number
     <p className="text-sm text-muted">{t`What the year started with, in cash and in the bank. Totals elsewhere count from these. A change adds a new revision; the old one stays on record.`}</p>
     <Field label={t`Financial year containing`} hint={t`Any date inside the year. Leave blank for the current year.`}>
       <input className="desk-input" type="date" value={fy} onChange={event => setFy(event.target.value)} /></Field>
-    {rows.isLoading ? <p role="status" className="text-sm text-muted">{t`Loading opening balances…`}</p> : null}
+    {rows.isLoading ? <LogoLoader label={t`Loading opening balances…`} size={48} className="min-h-16 py-3" /> : null}
     {rows.error ? <p role="alert" className="text-sm text-danger">{financeError(rows.error)}</p> : null}
     {rows.data && !rows.data.length ? <p className="text-sm text-muted">{t`No opening balances are set for this year.`}</p> : null}
     <ul className="grid gap-2">
@@ -58,7 +60,7 @@ export function OpeningBalances({ makerspaceId, access }: { makerspaceId: number
       </div>
       {save.error ? <p role="alert" className="text-sm text-danger">{financeError(save.error)}</p> : null}
       <div className="flex justify-end"><button type="submit" className="desk-button-primary" disabled={!ready || save.isPending}>
-        {save.isPending ? t`Saving…` : t`Save opening balance`}</button></div>
+        {save.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Save opening balance`}</button></div>
     </form> : null}
   </div>;
 }

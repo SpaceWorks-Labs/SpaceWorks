@@ -2,10 +2,12 @@ import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 import { Copy, Download, Link, QrCode, RefreshCw } from "lucide-react";
 import writerWasmUrl from "zxing-wasm/writer/zxing_writer.wasm?url";
-import { ConfirmDialog, Skeleton } from "../../../components/ui";
+import { ConfirmDialog } from "../../../components/ui";
 import { StructuredApiError } from "../../../lib/api";
 import { eventErrorText } from "../../staff/eventUi";
 import { useCreateShortLink, useRegenerateShortLink, useShortLink, type ShortLinkVisitDay } from "./shortLinkApi";
+import { LogoLoader } from "../../../components/LogoLoader";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 /** Decorative 30-day sparkline; the visible total carries the information. */
 export function VisitSparkline({ days }: { days: ShortLinkVisitDay[] }) {
@@ -50,11 +52,11 @@ export function ShortLinkCard({ eventId, published }: { eventId: number; publish
   if (query.error instanceof StructuredApiError && query.error.status === 404) return null;
   return <section aria-labelledby={`short-link-${eventId}`} className="grid min-w-0 gap-3 rounded-xl border border-line bg-panel p-4">
     <h3 id={`short-link-${eventId}`} className="title-section flex items-center gap-2"><Link aria-hidden="true" size={18} />{t`Short link`}</h3>
-    {query.isLoading ? <Skeleton className="h-16 w-full" /> : null}
+    {query.isLoading ? <LogoLoader size={48} className="min-h-16 py-3" /> : null}
     {error ? <p role="alert" className="text-sm text-danger">{eventErrorText(error)}</p> : null}
     {link && !link.url ? <div className="grid gap-2">
       <p className="text-sm text-muted">{published ? t`Make a short link to put on posters and chats. It always opens this event.` : t`Publish the event first; a short link only opens a published event.`}</p>
-      <button type="button" className="desk-button justify-self-start" disabled={!published || create.isPending} onClick={() => create.mutate()}>{create.isPending ? t`Making link…` : t`Create short link`}</button>
+      <button type="button" className="desk-button justify-self-start" disabled={!published || create.isPending} onClick={() => create.mutate()}>{create.isPending ? <><BoxArt size={16} mono />{t`Making link…`}</> : t`Create short link`}</button>
     </div> : null}
     {link?.url ? <div className="grid gap-3">
       <a className="min-h-11 break-all py-2 font-semibold text-brand-ink underline" href={link.url}>{link.url}</a>

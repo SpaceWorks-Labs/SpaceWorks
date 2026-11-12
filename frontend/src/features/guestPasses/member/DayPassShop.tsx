@@ -6,6 +6,7 @@ import { Field } from "../../../components/ui";
 import { formatMoney, formatPrice } from "../../../lib/money";
 import { PayNextStep } from "../../payments/PayNextStep";
 import { guestErrorText, guestKeys, guestMemberApi, operationId, type PurchaseResult } from "../api";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 /**
  * Buy a day pass from the member area (decision 223 b). A priced pass is pending until paid,
@@ -30,7 +31,7 @@ export function DayPassShop({ makerspaceId, paymentsHref }: { makerspaceId: numb
   return <section aria-labelledby="day-pass-title" className="desk-panel grid gap-4 p-5">
     <div><h2 id="day-pass-title" className="title-panel">{t`Day passes`}</h2>
       <p className="mt-1 text-sm text-muted">{t`Visit for a day without joining. A day pass is not a membership.`}</p></div>
-    {offers.isLoading ? <p role="status" className="text-sm text-muted">{t`Loading day passes…`}</p> : null}
+    {offers.isLoading ? <LogoLoader label={t`Loading day passes…`} size={48} className="min-h-16 py-3" /> : null}
     <Field label={t`Day`} hint={t`Leave blank for today.`} className="max-w-xs">
       <input className="desk-input" type="date" value={day} onChange={(event) => setDay(event.target.value)} />
     </Field>

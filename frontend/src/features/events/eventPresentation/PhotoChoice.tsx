@@ -6,6 +6,7 @@ import { memberRequest } from "../../../lib/api";
 import type { ProfileOption as Option, Presentation } from '../../../generated/api';
 import { CommandSession } from '../hackathonAdmission/transport';
 import { sessionScope, useClearDeniedQuery } from '../../staff/eventProgramme/sessionScope';
+import { LogoLoader } from '../../../components/LogoLoader';
 
 export function PhotoChoice({ makerspaceId, eventId, eventName, actorId = 0 }: { makerspaceId: number; eventId: number; eventName: string; actorId?: number }) {
   const base = `/member/makerspaces/${makerspaceId}/events/${eventId}`;
@@ -34,7 +35,7 @@ export function PhotoChoice({ makerspaceId, eventId, eventName, actorId = 0 }: {
   if (denied) return <p role="alert">{t`Photo choices are no longer available for your access.`}</p>;
   return <details className="rounded-control border border-line p-3" onToggle={event => setOpen(event.currentTarget.open)}><summary className="min-h-11 cursor-pointer font-semibold text-ink">{t`Badge photo and public cards`}</summary>
     {open ? <><p className="my-2 text-sm text-muted">{t`Choose a profile for ${eventName}. No profile is selected automatically. Photos come from your existing makerspace profiles.`}</p>
-    {current.isLoading || options.isLoading ? <p role="status">{t`Loading your choices…`}</p> : <fieldset disabled={save.isPending || !current.data} className="grid gap-3">
+    {current.isLoading || options.isLoading ? <LogoLoader label={t`Loading your choices…`} size={48} className="min-h-16 py-3" /> : <fieldset disabled={save.isPending || !current.data} className="grid gap-3">
       <label className="grid gap-1 text-sm">{t`Profile source`}<select className="desk-input" value={profileId ?? ""} onChange={(event) => {
         setDirty(true); setProfileId(event.target.value ? Number(event.target.value) : null); setPrintConsent(false); setScopes([]);
       }}><option value="">{t`No photo or profile`}</option>{options.data?.options.map((row) => <option value={row.profile_id} key={row.profile_id}>{row.makerspace_name} — {row.has_photo ? t`photo available` : t`no photo`}</option>)}</select></label>

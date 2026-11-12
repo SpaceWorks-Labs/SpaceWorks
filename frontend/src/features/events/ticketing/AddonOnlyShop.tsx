@@ -10,6 +10,7 @@ import { shopError } from "./EventTicketShop";
 import { OrderSummary } from "./OrderSummary";
 import { basketRequest, emptyBasket, TicketShopPicker, type Basket } from "./TicketShopPicker";
 import { fetchShop, placeOrder, policyLine, quoteOrder, ticketingKeys, type OrderQuote } from "./ticketingApi";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 /**
  * Hack-money G9 (`events.accepted_addons`): on an event that reviews registrations, a person whose place is
@@ -49,8 +50,8 @@ export function AddonOnlyShop({ makerspaceSlug, makerspaceId, publicToken, order
     {!quote ? <p className="text-sm text-muted">{policyLine(shop.policy)}</p> : <OrderSummary quote={quote} />}
     {review.error || pay.error ? <ErrorText message={shopError(pay.error ?? review.error)} /> : null}
     {quote ? <button type="button" className="desk-button-brand w-full" disabled={pay.isPending} onClick={() => pay.mutate()}>
-      {pay.isPending ? t`Placing order…` : Number(quote.quote.total) > 0 ? t`Continue to payment` : t`Confirm order`}</button>
+      {pay.isPending ? <><BoxArt size={16} mono />{t`Placing order…`}</> : Number(quote.quote.total) > 0 ? t`Continue to payment` : t`Confirm order`}</button>
       : <button type="button" className="desk-button-brand w-full" disabled={!chosen || review.isPending} onClick={() => review.mutate()}>
-        {review.isPending ? t`Pricing…` : t`Review add-ons`}</button>}
+        {review.isPending ? <><BoxArt size={16} mono />{t`Pricing…`}</> : t`Review add-ons`}</button>}
   </section>;
 }

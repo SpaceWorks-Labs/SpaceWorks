@@ -2,6 +2,7 @@ import { t } from "@lingui/core/macro";
 import { useEffect, useState, type ReactNode } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { memberRequestBlob } from "../../lib/api";
+import { BoxArt } from "../../components/BoxSpinner";
 
 const path = (registrationId: number, format: "png" | "pdf") => `/member/event-registrations/${registrationId}/ticket?format=${format}`;
 
@@ -39,7 +40,7 @@ export function DesignedTicket({ registrationId, eventTitle, enabled, fallback }
     <figcaption className="flex flex-wrap items-center justify-between gap-2 text-sm text-muted">
       <span>{t`Show this at check-in. It stops working once you are checked in.`}</span>
       <button type="button" className="desk-button" disabled={pdf.isPending} onClick={() => pdf.mutate()}>
-        {pdf.isPending ? t`Preparing PDF…` : t`Download ticket PDF`}</button>
+        {pdf.isPending ? <><BoxArt size={16} mono />{t`Preparing PDF…`}</> : t`Download ticket PDF`}</button>
     </figcaption>
     {pdf.error ? <p role="alert" className="text-sm text-danger">{t`The ticket PDF could not be prepared. Try again.`}</p> : null}
   </figure>;

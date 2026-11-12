@@ -6,6 +6,8 @@ import { EmptyState, Field, Modal, SettingsSection, StatusPill } from "../../../
 import { formatPrice } from "../../../lib/money";
 import { guestErrorText, guestKeys, guestStaffApi, type DayPassProduct, type Entitlements } from "../api";
 import { BORROW_MODES, MACHINE_MODES, borrowModeLabel, entitlementSummary, machineModeLabel } from "../labels";
+import { LogoLoader } from "../../../components/LogoLoader";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 type Draft = { name: string; amount: string; currency: string; daily_cap: string; is_public: boolean; is_active: boolean; entitlements: Entitlements };
 const blank = (currency: string): Draft => ({ name: "", amount: "0", currency, daily_cap: "", is_public: true, is_active: true, entitlements: {} });
@@ -29,7 +31,7 @@ export function DayPassProductsSettings({ makerspaceId }: { makerspaceId: number
   const archive = useMutation({ mutationFn: (id: number) => guestStaffApi.archiveProduct(makerspaceId, id), onSuccess: done });
   const rows = products.data ?? [];
   return <SettingsSection title={t`Day passes`} description={t`A priced pass records the amount owed under membership charges and can be paid online when online payments are on. A day pass gives no credit toward joining.`}>
-    {products.isLoading ? <p role="status" className="py-4 text-sm text-muted">{t`Loading day passes…`}</p> : null}
+    {products.isLoading ? <LogoLoader label={t`Loading day passes…`} size={48} className="min-h-16 py-3" /> : null}
     {products.isError ? <p role="alert" className="py-4 text-sm text-danger">{guestErrorText(products.error)}</p> : null}
     {products.isSuccess && !rows.length ? <EmptyState message={t`No day passes yet.`} /> : null}
     <ul className="grid gap-3 py-3">
@@ -69,7 +71,7 @@ function DayPassEditor({ editing, pending, error, onChange, onClose, onSave }: {
   return <Modal open title={editing.id === null ? t`Add a day pass` : t`Edit day pass`} onClose={() => { if (!pending) onClose(); }}
     footer={<div className="flex flex-wrap justify-end gap-2">
       <button type="button" className="desk-button" disabled={pending} onClick={onClose}>{t`Cancel`}</button>
-      <button type="button" className="desk-button-primary" disabled={pending || !draft.name.trim()} onClick={onSave}>{pending ? t`Saving…` : t`Save day pass`}</button>
+      <button type="button" className="desk-button-primary" disabled={pending || !draft.name.trim()} onClick={onSave}>{pending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Save day pass`}</button>
     </div>}>
     <div className="grid gap-4">
       <Field label={t`Name`}><input className="desk-input" maxLength={120} value={draft.name} onChange={(event) => set("name", event.target.value)} /></Field>

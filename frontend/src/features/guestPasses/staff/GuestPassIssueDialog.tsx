@@ -5,6 +5,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Field, Modal } from "../../../components/ui";
 import { formatMoney, formatPrice } from "../../../lib/money";
 import { guestErrorText, guestKeys, guestStaffApi, operationId, personRef, type PurchaseResult } from "../api";
+import { LogoLoader } from "../../../components/LogoLoader";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 type Mode = "issue" | "sell";
 
@@ -52,7 +54,7 @@ export function GuestPassIssueDialog({ makerspaceId, mode, onClose }: { makerspa
   return <Modal open title={title} onClose={() => { if (!save.isPending) onClose(); }} footer={<div className="flex flex-wrap justify-end gap-2">
     <button type="button" className="desk-button" disabled={save.isPending} onClick={onClose}>{t`Cancel`}</button>
     <button type="button" className="desk-button-primary" disabled={!ref || save.isPending || (mode === "sell" && !chosen)} onClick={() => save.mutate()}>
-      {save.isPending ? t`Saving…` : mode === "sell" ? t`Record sale` : t`Issue pass`}</button>
+      {save.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : mode === "sell" ? t`Record sale` : t`Issue pass`}</button>
   </div>}>
     <div className="grid gap-4">
       <p className="text-sm text-muted">{t`A pass is a dated permit for an existing account. It is never a membership and the guest gets no member card.`}</p>
@@ -63,7 +65,7 @@ export function GuestPassIssueDialog({ makerspaceId, mode, onClose }: { makerspa
         <input className="desk-input" inputMode="numeric" value={sponsor} onChange={(event) => setSponsor(event.target.value.replace(/\D/g, ""))} />
       </Field> : null}
       {mode === "sell" ? <Field label={t`Day pass`}>
-        {products.isLoading ? <p role="status" className="text-sm text-muted">{t`Loading day passes…`}</p>
+        {products.isLoading ? <LogoLoader label={t`Loading day passes…`} size={48} className="min-h-16 py-3" />
           : live.length ? <select className="desk-input" value={chosen ?? ""} onChange={(event) => setProductId(Number(event.target.value))}>
             {live.map((row) => <option key={row.id} value={row.id}>{`${row.name} · ${formatPrice(row.amount, row.currency)}`}</option>)}
           </select> : <p className="text-sm text-muted">{t`No day passes are on sale. Add one under Settings › Guest passes.`}</p>}

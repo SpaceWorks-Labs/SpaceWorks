@@ -22,7 +22,7 @@ export const borrowModeLabel = (mode: string) => ({
 
 export const machineModeLabel = (mode: string) => ({
   none: t`No machine use`, supervised: t`Supervised use in an instructor's session`,
-  after_induction_cert: t`After a certification from an induction event`,
+  after_induction_cert: t`After a space manager gives machine access`,
 } as Record<string, string>)[mode] ?? mode;
 
 /** What a pass allows, in one line for a card or a row. */

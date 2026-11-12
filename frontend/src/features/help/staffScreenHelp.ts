@@ -69,6 +69,7 @@ export const STAFF_SCREEN_HELP: Readonly<Record<string, string>> = {
 // screen mounts `<ScreenHelp screen="..." />`. A sub-screen covered by its tab's article needs
 // no line (the tab's link already opens it).
 export const STAFF_SUBSCREEN_HELP: Readonly<Record<string, { article: string; topic: string }>> = {
+  "machines.adapters": { article: "space-manager/device-adapters", topic: "device adapters" },
   "cards.programmes": { article: "space-manager/id-programmes", topic: "ID programmes" },
   "members.import": { article: "space-manager/member-import", topic: "importing members" },
   "events.certificates": { article: "event-manager/cards-certificates-feedback", topic: "certificates and event cards" },

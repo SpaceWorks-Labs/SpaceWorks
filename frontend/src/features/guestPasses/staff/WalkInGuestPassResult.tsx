@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { formatDateTime } from "../../../lib/format";
 import { StructuredApiError } from "../../../lib/api";
 import { guestErrorText, guestKeys, guestStaffApi } from "../api";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 /** The walk-in answer when the space registers non-members on a guest pass (decision 223 i). */
 export type WalkInGuestPass = {
@@ -26,7 +27,7 @@ export function WalkInGuestPassResult({ makerspaceId, result }: { makerspaceId: 
     <p className="text-sm text-muted">{t`This space registers walk-ins as guests, not members. The pass decides what they may borrow or use today.`}</p>
     {accepted ? <p className="text-sm text-success-ink">{t`Waiver accepted.`}</p> : <div className="flex flex-wrap items-center gap-3">
       <button type="button" className="desk-button min-h-11" disabled={stamp.isPending} onClick={() => stamp.mutate()}>
-        {stamp.isPending ? t`Recording…` : t`Waiver accepted at the desk`}</button>
+        {stamp.isPending ? <><BoxArt size={16} mono />{t`Recording…`}</> : t`Waiver accepted at the desk`}</button>
       <span className="text-xs text-muted">{t`Tick only after the guest has read and accepted the current waiver.`}</span>
     </div>}
     {stamp.error ? <p role="alert" className="text-sm text-danger">{forbidden ? t`Ask a member manager to record the waiver under Members › Guests.` : guestErrorText(stamp.error)}</p> : null}

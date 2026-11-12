@@ -1,3 +1,4 @@
+import { LogoLoader } from "../../../components/LogoLoader";
 import { formatLocale } from "../../../lib/format";
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
@@ -33,7 +34,7 @@ export function CrewSignupPage() {
     body: JSON.stringify({ crew_role: role, dietary, notes, show_publicly: shown }) }), onSuccess: save });
   const withdraw = useMutation({ mutationFn: () => memberRequest<State>(url + "withdraw/", { method: "POST", body: "{}" }), onSuccess: save });
   if (state.error) return <div className="mx-auto max-w-xl p-4"><ErrorText message={t`This crew sign-up is not open.`} /></div>;
-  if (!state.data) return <div className="mx-auto max-w-xl p-4"><p role="status">{t`Loading…`}</p></div>;
+  if (!state.data) return <LogoLoader label={t`Loading…`} />;
   const data = state.data, live = data.crew && ["applied", "approved"].includes(data.crew.state);
   return <div className="mx-auto grid max-w-xl gap-4 p-4">
     <h1 className="font-display text-2xl text-ink">{t`Join the crew`}</h1>

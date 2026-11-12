@@ -5,6 +5,7 @@ import { EmptyState, ErrorBlock } from '../../../components/ui';
 import { useMyPrizes, type PrizeCommand, type PrizeScope } from './api';
 import { PrizeCard } from './PrizeCard';
 import { PagePager } from "../../../components/ui";
+import { LogoLoader } from '../../../components/LogoLoader';
 
 /** Member "My prizes" (hack-money G3/G4/G6/G7). Nothing here moves money: finance records every payout by hand. */
 export function MyPrizes({ scope }: { scope: PrizeScope }) {
@@ -18,7 +19,7 @@ export function MyPrizes({ scope }: { scope: PrizeScope }) {
       <p className="text-sm text-muted">{t`Prizes you won in this space. Split a cash prize with your team, then tell the organisers where to pay you.`}</p>
     </div></div>
     <ErrorBlock error={list.error || send.error} onRetry={list.error ? () => void list.refetch() : undefined} />
-    {list.isLoading ? <p role="status">{t`Loading your prizes…`}</p> : null}
+    {list.isLoading ? <LogoLoader label={t`Loading your prizes…`} size={48} className="min-h-16 py-3" /> : null}
     {data && !data.count ? <EmptyState title={t`No prizes yet`} description={t`Prizes appear here once results naming your team are published.`} /> : null}
     {data?.results.map(prize => <PrizeCard key={prize.award_id} prize={prize} makerspaceId={scope.makerspaceId}
       actorId={scope.actorId} pending={send.isPending} send={run} />)}

@@ -7,6 +7,7 @@ import { StructuredApiError } from "../../lib/api";
 import { currencyExponent, decimalToMinor, formatMoney } from "../../lib/money";
 import { collectionApi, type CashHandoverResult } from "./collectionApi";
 import { localToday } from "./collectionSheetRows";
+import { BoxArt } from "../../components/BoxSpinner";
 
 export type Holder = { collector_id: number; collector: string; currency: string; cash_in_hand: string };
 
@@ -57,7 +58,7 @@ export function CashHandoverDialog({ makerspaceId, holder, onClose, onDone }: {
       <div className="flex flex-wrap justify-end gap-2">
         <button type="button" className="desk-button-ghost" disabled={save.isPending} onClick={onClose}>{t`Cancel`}</button>
         <button type="submit" className="desk-button-primary" disabled={!ready || save.isPending}>
-          {save.isPending ? t`Saving…` : t`Record hand-over`}</button>
+          {save.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Record hand-over`}</button>
       </div>
     </form>
   </Modal>;

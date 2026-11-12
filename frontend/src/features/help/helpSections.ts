@@ -21,7 +21,7 @@ export const HELP_SECTIONS: readonly HelpSection[] = [
     summary: t`Hand tools over and take them back, with the scans, photos and notes each one needs.`,
     audience: { actions: ["issue_request", "issue_direct_loan", "return_request", "collect_service_request"], spaceManager: true } },
   { id: "machine-manager", title: t`Machine Manager`,
-    summary: t`Machines, job requests, quotes, sessions, certifications and maintenance.`,
+    summary: t`Machines, machine access, job requests, quotes, sessions and maintenance.`,
     audience: { actions: ["manage_machines", "manage_printing"], spaceManager: true } },
   { id: "technician", title: t`Technician`,
     summary: t`Repair jobs assigned to you, scheduled maintenance and taking things out of service.`,

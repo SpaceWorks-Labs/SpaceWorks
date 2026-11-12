@@ -1,3 +1,4 @@
+import { LogoLoader } from "../../../components/LogoLoader";
 import { t } from "@lingui/core/macro";
 import { ContributorDesk, ContributorShifts } from './ContributorDesk'
 import { OrdinaryProgrammeRegistration } from './OrdinaryProgrammeRegistration'
@@ -30,7 +31,7 @@ function MemberContent({ publicToken, accountId }: { publicToken: string; accoun
   const location = useLocation(), navigate = useNavigate()
   const { context, application } = useAdmission(publicToken, accountId)
   if (context.error) return <ErrorBlock error={context.error} onRetry={() => void context.refetch()} />
-  if (!context.data) return <p role="status">{t`Loading the current event requirements…`}</p>
+  if (!context.data) return <LogoLoader label={t`Loading the current event requirements…`} />
   const current = context.data
   const base = programmeHref(publicToken, '', current.makerspace.slug).replace(/\/$/, '')
   const scope = { accountId, eventId: current.event.id, makerspaceId: current.makerspace.id }

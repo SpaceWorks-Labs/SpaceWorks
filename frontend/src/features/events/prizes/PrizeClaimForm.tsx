@@ -4,7 +4,7 @@ import { Field } from '../../../components/ui';
 import type { PayeeTemplate } from '../../../generated/api';
 
 const methodLabels = (): Record<string, string> => ({
-  bank_transfer: t`Bank transfer`, upi: 'UPI', paypal: t`PayPal`, wise: t`Wise`, cash: t`Cash`, cheque: t`Cheque`, other: t`Other`,
+  bank_transfer: t`Bank transfer`, upi: t`UPI`, paypal: t`PayPal`, wise: t`Wise`, cash: t`Cash`, cheque: t`Cheque`, other: t`Other`,
 });
 const fieldLabels = (): Record<string, string> => ({
   holder_name: t`Account holder name`, account_number: t`Account number`, ifsc: t`IFSC code`, bank_name: t`Bank name`,
@@ -53,7 +53,7 @@ export function PrizeClaimForm({ templates, askPan, pending, onSubmit, onCancel 
           value={details[field.key] ?? ''} onChange={event => setDetails(value => ({ ...value, [field.key]: event.target.value }))} />
       </Field>)}
       {askPan ? <Field label={t`PAN (optional)`} hint={t`Five letters, four digits, one letter; stored encrypted and shown only masked.`}
-        error={panBad ? 'Enter a valid PAN, for example ABCDE1234F.' : undefined}>
+        error={panBad ? t`Enter a valid PAN, for example ABCDE1234F.` : undefined}>
         <input className="desk-input min-h-11" autoComplete="off" maxLength={10} value={pan}
           onChange={event => setPan(event.target.value.toUpperCase())} />
       </Field> : null}

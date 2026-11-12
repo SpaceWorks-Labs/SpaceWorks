@@ -1,3 +1,4 @@
+import { LogoLoader } from "../../../components/LogoLoader";
 import { t } from "@lingui/core/macro";
 import { useTenant, tenantPath, useOptionalTenant } from "../../../lib/tenant";
 import { useTenantBootstrap } from "../../inventory/usePublicInventory";
@@ -9,7 +10,7 @@ export function TicketShopEntry({ makerspaceSlug, publicToken, free = false }: {
   const mode = useOptionalTenant()?.mode ?? "central";
   const bootstrap = useTenantBootstrap(makerspaceSlug, tenant.mode === "central");
   const makerspaceId = tenant.mode === "single" ? tenant.makerspaceId : bootstrap.data?.makerspace.id;
-  if (!makerspaceId) return <p role="status">{t`Loading tickets…`}</p>;
+  if (!makerspaceId) return <LogoLoader label={t`Loading tickets…`} />;
   return <EventTicketShop makerspaceSlug={makerspaceSlug} makerspaceId={makerspaceId} publicToken={publicToken} free={free}
     ordersHref={orderId => tenantPath(mode, makerspaceSlug, `member/orders/${orderId}`)} />;
 }

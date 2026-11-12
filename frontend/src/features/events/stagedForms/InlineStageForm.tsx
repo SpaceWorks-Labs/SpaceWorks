@@ -7,6 +7,7 @@ import { applyStageSuggestions } from "./formPayload";
 import { useFormUploads } from "./uploads";
 import { stagePath } from "./api";
 import type { StageScope } from "./types";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 export type InlineStageContext = { stage_form_id: number; title: string; schema: FormSchemaV2; form_revision_id: number;
   event_date_revision: number; creation_operation_id: string };
@@ -23,7 +24,7 @@ export function InlineStageForm({ scope, context, value, onChange, onBusyChange,
   useEffect(() => { onBusyChange(uploads.busy); return () => onBusyChange(false); }, [uploads.busy, onBusyChange]);
   return <section className="grid gap-4" aria-label={context.title}><h2 className="title-section">{context.title}</h2>
     <p className="text-sm text-muted">{t`This form is submitted with your application. Review saved suggestions and choose separately whether to save sensitive details.`}</p>
-    {prefill.data ? <button type="button" className="desk-button justify-self-start" disabled={disabled || uploads.busy} onClick={() => onChange(applyStageSuggestions(context.schema, value, prefill.data!))}>{t`Use saved details for empty answers`}</button> : prefill.error ? <p role="status">{t`Saved suggestions are unavailable. You can complete this form yourself.`}</p> : <p role="status">{t`Loading saved suggestions…`}</p>}
+    {prefill.data ? <button type="button" className="desk-button justify-self-start" disabled={disabled || uploads.busy} onClick={() => onChange(applyStageSuggestions(context.schema, value, prefill.data!))}>{t`Use saved details for empty answers`}</button> : prefill.error ? <p role="status">{t`Saved suggestions are unavailable. You can complete this form yourself.`}</p> : <LogoLoader label={t`Loading saved suggestions…`} size={48} className="min-h-16 py-3" />}
     <fieldset disabled={disabled} className="min-w-0"><legend className="sr-only">{context.title} answers</legend><FormV2Fields context="stage" schema={context.schema} value={value} onChange={onChange} uploadFiles={uploads.upload} /></fieldset>
   </section>;
 }

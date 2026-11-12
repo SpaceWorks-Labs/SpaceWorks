@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { Card, Field } from '../../../components/ui'
 import type { EventScope } from './types'
 import { errorText, useProgrammeCommand, type Surface } from './api'
+import { BoxArt } from '../../../components/BoxSpinner'
 
 export function HelpComposer({ scope, surface, teams, categories }: {
   scope: EventScope; surface: Surface; teams: Array<{ id: number; label: string }>; categories: Array<{ key: string; label: string }>
@@ -28,6 +29,6 @@ export function HelpComposer({ scope, surface, teams, categories }: {
     <Field label={t`What do you need help with?`}><textarea className="desk-input min-h-28" maxLength={2000} value={summary} onChange={event => setSummary(event.target.value)} required /></Field>
     <Field label={t`Table or bench`} hint={t`Optional. Use your event's table label.`}><input className="desk-input" maxLength={40} value={table} onChange={event => setTable(event.target.value)} /></Field>
     {command.error ? <p role="alert" className="text-danger">{errorText(command.error)}</p> : null}
-    <button type="submit" className="desk-button-primary min-h-11" disabled={command.isPending || (!dropIn && !team) || !category}>{command.isPending ? t`Sending…` : t`Request help`}</button>
+    <button type="submit" className="desk-button-primary min-h-11" disabled={command.isPending || (!dropIn && !team) || !category}>{command.isPending ? <><BoxArt size={16} mono />{t`Sending…`}</> : t`Request help`}</button>
   </form></Card>
 }

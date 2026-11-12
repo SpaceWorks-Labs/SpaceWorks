@@ -28,6 +28,7 @@ export function MemberEventHistoryPage() {
   const space = tenant.mode === "single" ? tenant.bootstrap : bootstrap.data;
   const spaceName = space?.branding?.display_name || space?.makerspace.name || "Makerspace";
   const [restoring, setRestoring] = useState(!getAccessToken());
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- restoring is read only as its mount-time value: one token restore per mount, and re-running after setRestoring(false) would refresh the token again
   useEffect(() => { if (restoring) refreshAccessToken().finally(() => setRestoring(false)); }, []);
   const identity = useQuery({ queryKey: ["member", "history-account"], queryFn: () => memberRequest<{ id: number }>("/auth/me"),
     enabled: !restoring, retry: false, staleTime: 0, gcTime: 0, refetchOnMount: "always" });

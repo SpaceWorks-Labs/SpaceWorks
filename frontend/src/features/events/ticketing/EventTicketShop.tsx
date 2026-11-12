@@ -1,3 +1,4 @@
+import { LogoLoader } from "../../../components/LogoLoader";
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -9,6 +10,7 @@ import { basketRequest, emptyBasket, TicketShopPicker, type Basket } from "./Tic
 import {
   fetchShop, placeOrder, policyLine, quoteOrder, ticketingKeys, unlockShop, type OrderQuote, type TicketShop,
 } from "./ticketingApi";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 const MESSAGES: Record<string, string> = {
   sold_out: t`Not enough places are left for that choice.`,
@@ -55,7 +57,7 @@ export function EventTicketShop({ makerspaceSlug, makerspaceId, publicToken, ord
     onSuccess: result => window.location.assign(result.checkout_url || ordersHref(result.order.id)),
     onError: error => { if (error instanceof StructuredApiError && error.code === "price_changed") setQuote(null); },
   });
-  if (shopQuery.isLoading) return <p role="status">{t`Loading tickets…`}</p>;
+  if (shopQuery.isLoading) return <LogoLoader label={t`Loading tickets…`} />;
   if (!shop) return <ErrorText message={shopError(shopQuery.error) || t`Tickets are not available.`} />;
   const chosen = basketRequest(basket, shop.ticket_types).tickets.length > 0;
   const change = (next: Basket) => { setBasket(next); setQuote(null); };
@@ -77,8 +79,8 @@ export function EventTicketShop({ makerspaceSlug, makerspaceId, publicToken, ord
     {!quote ? <p className="text-sm text-muted">{policyLine(shop.policy)}</p> : <OrderSummary quote={quote} />}
     {review.error || pay.error ? <ErrorText message={shopError(pay.error ?? review.error)} /> : null}
     {quote ? <button type="button" className="desk-button-brand w-full" disabled={pay.isPending} onClick={() => pay.mutate()}>
-      {pay.isPending ? t`Placing order…` : Number(quote.quote.total) > 0 ? t`Continue to payment` : t`Confirm order`}</button>
+      {pay.isPending ? <><BoxArt size={16} mono />{t`Placing order…`}</> : Number(quote.quote.total) > 0 ? t`Continue to payment` : t`Confirm order`}</button>
       : <button type="button" className="desk-button-brand w-full" disabled={!chosen || review.isPending} onClick={() => review.mutate()}>
-        {review.isPending ? t`Pricing…` : t`Review order`}</button>}
+        {review.isPending ? <><BoxArt size={16} mono />{t`Pricing…`}</> : t`Review order`}</button>}
   </div>;
 }

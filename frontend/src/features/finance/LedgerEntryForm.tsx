@@ -7,6 +7,7 @@ import {
   DOMAIN_LABELS, EXPENSE_CATEGORIES, METHODS, RECEIPT_CATEGORIES, financeApi, financeError, invalidateFinance,
   uploadReceipt, words, type FinanceAccess,
 } from "./financeApi";
+import { BoxArt } from "../../components/BoxSpinner";
 
 /** Record an expense or another receipt in an area the caller may record in. Append-only. */
 export function LedgerEntryForm({ makerspaceId, access, onClose }: {
@@ -55,7 +56,7 @@ export function LedgerEntryForm({ makerspaceId, access, onClose }: {
       {save.error ? <p role="alert" className="text-sm text-danger">{financeError(save.error)}</p> : null}
       <div className="flex flex-wrap justify-end gap-2">
         <button type="button" className="desk-button-ghost" onClick={onClose}>{t`Cancel`}</button>
-        <button type="submit" className="desk-button" disabled={save.isPending}>{save.isPending ? t`Saving…` : t`Record`}</button>
+        <button type="submit" className="desk-button" disabled={save.isPending}>{save.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Record`}</button>
       </div>
     </form>
   </Modal>;

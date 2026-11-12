@@ -24,6 +24,13 @@ DESTINATIONS = (
     ("item", "/m/{slug}/items/{item}", "/items/{item}"),
 )
 
+# Sign-in callbacks the app claims on the deployment's PRIMARY web host only (decision 358 A).
+# GitHub redirects the native authorization code here as an HTTPS universal link / Android App
+# Link, never a custom URL scheme; it is an auth callback, not a notification destination, so
+# `is_supported_link` deliberately does not accept it.
+NATIVE_GITHUB_CALLBACK_PATH = "/app/auth/github/callback"
+NATIVE_AUTH_CALLBACK_PATHS = (NATIVE_GITHUB_CALLBACK_PATH,)
+
 # Prefixes the association files list as explicit exclusions.
 EXCLUDED_PREFIXES = ("/m/{slug}/admin", "/control", "/admin", "/api", "/docs", "/redoc", "/schema")
 

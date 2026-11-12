@@ -137,15 +137,10 @@ describe("dark tokens (one solid black family)", () => {
     expect(dark).toMatch(/--shadow-color: 0 0 0;/);
   });
 
-  it("keeps every dark chart mark at 3:1 or more on the page and on cards", () => {
-    const charts = block(chrome, ":root.dark");
-    const resolve = (name: string) => {
-      const ref = (charts.match(new RegExp(`--chart-${name}: var\\(--color-([\\w-]+)\\)`)) ?? block(chrome, ":root").match(new RegExp(`--chart-${name}: var\\(--color-([\\w-]+)\\)`)))!;
-      return token(ref[1]);
-    };
-    for (const name of ["accent", "info", "success", "warn", "danger"]) {
-      for (const ground of ["bg", "surface", "panel"]) expect([name, ground, contrast(resolve(name), token(ground)) >= 3]).toEqual([name, ground, true]);
-    }
+  it("keeps every dark chart mark boundary at 3:1 or more on the page and on cards", () => {
+    // Decision 380: series fills are the same bright brand colours as light; the hairline edge carries the boundary.
+    const edge = block(chrome, ":root.dark").match(/--chart-edge: ([0-9 ]+);/)![1].split(" ").map(Number) as RGB;
+    for (const ground of ["bg", "surface", "panel"]) expect([ground, contrast(edge, token(ground)) >= 3]).toEqual([ground, true]);
   });
 
   it("keeps solid status marks perceivable on the dark panel", () => {

@@ -2,17 +2,18 @@
 @layer base {
   :root {
     --radius-control: 10px;
-    --chart-accent: var(--color-accent);
-    --chart-info: var(--color-info-ink);
-    --chart-success: var(--color-success-ink);
-    --chart-warn: var(--color-warn-ink);
+    /* Decision 380: the five bright brand colours, the SAME in light and dark, in brand order (teal, orange,
+       citron, sky, yellow). Contrast comes from --chart-edge, never from dulling a fill. Danger is not a series. */
+    --chart-1: 0 110 99;
+    --chart-2: 255 116 71;
+    --chart-3: 223 255 143;
+    --chart-4: 181 205 255;
+    --chart-5: 255 212 71;
+    --chart-edge: 20 44 42; /* Deep Ink: 1px mark edge / line casing, over 12:1 on white and cream */
     --chart-danger: var(--color-danger);
   }
   :root.dark {
-    --chart-accent: var(--color-accent-ink); /* teal marks are 1.76:1 on the dark panel */
-    --chart-info: var(--color-info);
-    --chart-success: var(--color-success);
-    --chart-warn: var(--color-warn);
+    --chart-edge: 255 244 232; /* Warm Cream hairline: lifts teal (2.99:1 on the #141414 panel) over the 3:1 floor */
   }
 }
 @media (max-width: 639px) {

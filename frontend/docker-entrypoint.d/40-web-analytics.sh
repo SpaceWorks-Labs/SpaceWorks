@@ -32,19 +32,28 @@ for extra in $(printf '%s' "${WEB_TELEMETRY_ALLOWED_ORIGINS:-}" | tr ',' ' '); d
   [ "$validated" = "$extra" ] || fail
   telemetry_origins="$telemetry_origins $validated"
 done
-if [ -z "$script$collect$domain$telemetry_origins" ]; then exit 0; fi
+# Cloudflare Turnstile (sign-in CAPTCHA) is allowed only when the deployment configured it;
+# its widget frame needs no frame-src entry because this policy sets no frame-src at all.
+turnstile_origin=''
+[ -z "${TURNSTILE_SITE_KEY:-}" ] || turnstile_origin=' https://challenges.cloudflare.com'
+# Every deployment gets a script baseline, so an injected <script> has a CSP backstop even with
+# analytics and telemetry off. index.html carries no inline script (boot code is /boot.js), so
+# neither 'unsafe-inline' nor a hash is needed. connect-src stays unset here: API and object-storage
+# origins vary per deployment and are declared only by the opt-in policy below.
+script_sources="'self' 'wasm-unsafe-eval' https://accounts.google.com https://appleid.cdn-apple.com"
+baseline="object-src 'none'; base-uri 'self'"
+if [ -z "$script$collect$domain$telemetry_origins" ]; then
+  printf '%s\n' "add_header Content-Security-Policy \"script-src $script_sources$turnstile_origin; $baseline\" always;" >> "$headers"
+  exit 0
+fi
 extra_origins=''
 for extra in ${WEB_ANALYTICS_EXTRA_CONNECT_ORIGINS:-}; do
   validated="$(origin "$extra")"
   [ "$validated" = "$extra" ] || fail
   extra_origins="$extra_origins $validated"
 done
-# Cloudflare Turnstile (sign-in CAPTCHA) is allowed only when the deployment configured it;
-# its widget frame needs no frame-src entry because this policy sets no frame-src at all.
-turnstile_origin=''
-[ -z "${TURNSTILE_SITE_KEY:-}" ] || turnstile_origin=' https://challenges.cloudflare.com'
 # Opt-in deployments declare external API/object-storage origins here explicitly.
-printf '%s\n' "add_header Content-Security-Policy \"script-src 'self' 'wasm-unsafe-eval' https://accounts.google.com https://appleid.cdn-apple.com $script_origin$telemetry_origins$turnstile_origin; connect-src 'self' https://accounts.google.com https://oauth2.googleapis.com https://appleid.apple.com $collect_origin$extra_origins$telemetry_origins$turnstile_origin\" always;" >> "$headers"
+printf '%s\n' "add_header Content-Security-Policy \"script-src $script_sources $script_origin$telemetry_origins$turnstile_origin; connect-src 'self' https://accounts.google.com https://oauth2.googleapis.com https://appleid.apple.com $collect_origin$extra_origins$telemetry_origins$turnstile_origin; $baseline\" always;" >> "$headers"
 if [ -n "$script" ]; then
 cat >> "${TENANT_CONFIG_PATH:-/usr/share/nginx/html/config.js}" <<EOF
 window.__WEB_ANALYTICS__ = {scriptUrl: "$script", collectUrl: "$collect", domain: "$domain"};

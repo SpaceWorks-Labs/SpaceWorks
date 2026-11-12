@@ -59,6 +59,9 @@ Pillow
 # AGPL-3.0-compatible and listed in NOTICE.
 pillow-heif==1.8.1
 reportlab[shaping]>=4.5.1,<5
+# Card barcodes (decision 345(c)): Code 39, EAN-13/UPC-A, PDF417, Data Matrix, Aztec. Apache-2.0, pure Python.
+# 0.20 (2026-08-27): 0.21 is younger than the two-week age rule.
+pystrich==0.20
 python-bidi>=0.6,<0.7
 arabic-reshaper>=3,<4
 python-dateutil>=2.9,<3

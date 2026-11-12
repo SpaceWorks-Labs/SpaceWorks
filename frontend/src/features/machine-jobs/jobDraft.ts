@@ -1,16 +1,17 @@
 import { intakePayload, type IntakeValues, type TypeIntake } from "../inventory/MachineIntakeForm";
+import { entriesPayload, entriesProblem, type EntryValues } from "../machine-consumables/entries";
 import type { PublicFilamentPool } from "../printing/publicApi";
 import type { JobSubmitBody, JobType } from "./types";
 
 export type JobDraft = {
   title: string; description: string; sourceLink: string; copies: number; neededBy: string;
   ownMaterial: boolean; materialNote: string; material: string; color: string; poolId: string; grams: string; settings: string;
-  intake: IntakeValues; acks: { pickup: boolean; failure: boolean; content: boolean };
+  eventId: string; consumables: EntryValues; intake: IntakeValues; acks: { pickup: boolean; failure: boolean; content: boolean };
 };
 
 export const emptyDraft: JobDraft = {
   title: "", description: "", sourceLink: "", copies: 1, neededBy: "", ownMaterial: false, materialNote: "",
-  material: "", color: "", poolId: "", grams: "", settings: "", intake: {}, acks: { pickup: false, failure: false, content: false },
+  material: "", color: "", poolId: "", grams: "", settings: "", eventId: "", consumables: {}, intake: {}, acks: { pickup: false, failure: false, content: false },
 };
 
 const trimmed = (value: string) => value.trim() || undefined;
@@ -31,6 +32,8 @@ export function detailsProblem(draft: JobDraft, type: JobType | undefined, intak
       && (draft.intake[field.key] === undefined || draft.intake[field.key] === ""));
     if (missing) return `Fill in "${missing.label}".`;
   }
+  const consumable = entriesProblem(type?.consumables ?? [], draft.consumables);
+  if (consumable) return consumable;
   if (type?.is_printer && draft.material && !draft.ownMaterial && !draft.poolId && !draft.color) return "Choose a colour for that material.";
   return "";
 }
@@ -41,6 +44,8 @@ export function submitBody(type: JobType, draft: JobDraft, fileIds: number[], in
     queue_id: type.queue_id, title: draft.title.trim(), description: trimmed(draft.description), source_link: trimmed(draft.sourceLink),
     file_ids: fileIds, copies: draft.copies, needed_by: draft.neededBy || undefined, own_material: draft.ownMaterial,
     material_note: draft.ownMaterial ? trimmed(draft.materialNote) : undefined,
+    event_id: draft.eventId ? Number(draft.eventId) : undefined,
+    ...(type.consumables?.length && entriesPayload(type.consumables, draft.consumables).length ? { consumable_estimates: entriesPayload(type.consumables, draft.consumables) } : {}),
     acknowledgements: { pickup_policy: draft.acks.pickup, failure_policy: draft.acks.failure, own_content: draft.acks.content },
   };
   if (!type.is_printer) return { ...base, capability_payload: intakePayload(intake, draft.intake) };

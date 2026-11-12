@@ -8,6 +8,7 @@ import { Callout, ConfirmDialog } from "../../components/ui";
 import { money } from "../payments/usePriceQuote";
 import { approveQuote, changedQuote, declineQuote, jobErrorMessage } from "./api";
 import type { JobQuote, MemberJob } from "./types";
+import { BoxArt } from "../../components/BoxSpinner";
 
 function QuoteLines({ quote }: { quote: JobQuote }) {
   return <dl className="grid gap-2 text-sm">
@@ -50,7 +51,7 @@ export function JobQuoteCard({ job, paymentsHref, onUpdated }: { job: MemberJob;
     {decline.isError ? <p className="text-sm text-danger" role="alert">{jobErrorMessage(decline.error)}</p> : null}
     <div className="flex flex-wrap gap-3">
       <button type="button" className="desk-button-brand" disabled={approve.isPending || decline.isPending || expired} onClick={() => approve.mutate(quote.digest)}>
-        {approve.isPending ? t`Approving…` : priceChanged ? t`Approve new price` : t`Approve quote`}</button>
+        {approve.isPending ? <><BoxArt size={16} mono />{t`Approving…`}</> : priceChanged ? t`Approve new price` : t`Approve quote`}</button>
       <button type="button" className="desk-button" disabled={approve.isPending || decline.isPending} onClick={() => setDeclining(true)}>{t`Decline`}</button>
     </div>
     {expired ? <p className="text-sm text-muted">{t`This quote has expired. Ask staff for a new one.`}</p> : null}

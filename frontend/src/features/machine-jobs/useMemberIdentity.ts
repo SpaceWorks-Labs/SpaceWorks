@@ -8,6 +8,7 @@ export function useMemberIdentity() {
   const [restoring, setRestoring] = useState(() => !getAccessToken("person"));
   useEffect(() => {
     if (restoring) void refreshAccessToken("person").finally(() => setRestoring(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- restoring is read only as its mount-time value: one token restore per mount, and re-running after setRestoring(false) would refresh the token again
   }, []); // one restore per mount
   const identity = useQuery({ queryKey: ["member", "profile"], queryFn: () => memberRequest<{ username?: string; email_verified?: boolean }>("/auth/me"),
     enabled: !restoring, retry: false });

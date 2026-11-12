@@ -8,6 +8,8 @@ import { formatError, JobFilesStep } from "./JobFilesStep";
 import { JobUploadError, uploadJobFiles, type FileErrors } from "./jobUploads";
 import { extensionList } from "./JobTypeStep";
 import type { MemberJob } from "./types";
+import { LogoLoader } from "../../components/LogoLoader";
+import { BoxArt } from "../../components/BoxSpinner";
 
 /**
  * "Needs changes": the staff message, then the member's answer -- a note and, when the files were
@@ -44,12 +46,12 @@ export function JobChangesPanel({ job, slug, onUpdated }: { job: MemberJob; slug
       </Field>
       {type ? <JobFilesStep accepted={extensionList(type)} typeName={type.name} models={models} screenshots={screenshots} errors={errors} disabled={send.isPending} optional
         onChange={next => { if (next.models) setModels(next.models); if (next.screenshots) setScreenshots(next.screenshots); setErrors({}); }} />
-        : types.isPending ? <p className="text-sm text-muted" role="status">{t`Loading file options…`}</p>
+        : types.isPending ? <LogoLoader label={t`Loading file options…`} size={48} className="min-h-16 py-3" />
           : <p className="text-sm text-muted">{t`New files can't be added here right now. Reply with a note, or ask staff.`}</p>}
       {progress ? <p className="text-sm text-muted" role="status">{progress}</p> : null}
       {send.isError ? <p className="text-sm text-danger" role="alert">{jobErrorMessage(send.error)}</p> : null}
       <button type="submit" className="desk-button-brand justify-self-start" disabled={empty || badFile || send.isPending}>
-        {send.isPending ? t`Sending…` : t`Send changes`}</button>
+        {send.isPending ? <><BoxArt size={16} mono />{t`Sending…`}</> : t`Send changes`}</button>
     </form>
   </section>;
 }

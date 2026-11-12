@@ -1,4 +1,5 @@
 import { t } from "@lingui/core/macro";
+import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -10,12 +11,16 @@ import { MemberJobsShell, type MemberJobsContext } from "../machine-jobs/MemberJ
 import {
   fetchSessionPreview, refusalText, sessionErrorMessage, sessionKeys, startSession, stopSession, type SessionPreview,
 } from "./api";
+import { MachineTypeGuide } from "../machine-guide/MachineTypeGuide";
+import { EventPurposePicker } from "../machine-event-use/EventPurposePicker";
 import { SessionTimerCard } from "./SessionTimerCard";
 import { duration, rateLine, when } from "./sessionFormat";
+import { BoxArt } from "../../components/BoxSpinner";
 
 /** The "Use this machine" sheet: what a session costs and its rules, then Start. */
-function StartSheet({ preview, onStart, starting, error }: {
+function StartSheet({ preview, onStart, starting, error, makerspaceId, eventId, onEvent }: {
   preview: SessionPreview; onStart: () => void; starting: boolean; error?: string;
+  makerspaceId?: number; eventId: string; onEvent: (eventId: string) => void;
 }) {
   return <section className="desk-panel grid gap-4 p-5" aria-labelledby="use-machine-title">
     <div><h2 id="use-machine-title" className="title-panel">{t`Use this machine`}</h2>
@@ -30,10 +35,11 @@ function StartSheet({ preview, onStart, starting, error }: {
         <dd>{when(preview.closes_at)}</dd></div> : null}
     </dl>
     <p className="text-sm text-muted">{t`A session you forget to stop ends by itself at the longest length, when you check out or at closing time.`}{preview.billing ? t` The price shown is the price used; staff confirm any charge.` : ""}</p>
+    <EventPurposePicker makerspaceId={makerspaceId} value={eventId} onChange={onEvent} disabled={starting} />
     {preview.can_start ? null : <div role="status"><Callout size="inline" tone="warn" lead={refusalText(preview.refusal)} /></div>}
     {error ? <p role="alert" className="text-sm text-danger">{error}</p> : null}
     <button type="button" className="desk-button-brand min-h-12 justify-self-stretch sm:justify-self-start"
-      disabled={!preview.can_start || starting} onClick={onStart}>{starting ? t`Starting…` : t`Start session`}</button>
+      disabled={!preview.can_start || starting} onClick={onStart}>{starting ? <><BoxArt size={16} mono />{t`Starting…`}</> : t`Start session`}</button>
   </section>;
 }
 
@@ -46,7 +52,8 @@ function UseMachine({ machineId, context }: { machineId: number; context: Member
     void client.invalidateQueries({ queryKey: sessionKeys.preview(machineId) });
     void client.invalidateQueries({ queryKey: sessionKeys.allMine });
   };
-  const start = useMutation({ mutationFn: (digest: string) => startSession(machineId, digest), onSuccess: refresh,
+  const [eventId, setEventId] = useState("");
+  const start = useMutation({ mutationFn: (digest: string) => startSession(machineId, digest, ...(eventId ? [Number(eventId)] as const : [])), onSuccess: refresh,
     onError: error => { if (error instanceof StructuredApiError && error.code === "price_changed") refresh(); } });
   const stop = useMutation({ mutationFn: (id: number) => stopSession(id), onSuccess: refresh });
   const data = preview.data;
@@ -64,9 +71,11 @@ function UseMachine({ machineId, context }: { machineId: number; context: Member
     status={data ? <StatusPill tone={live ? "info" : data.can_start ? "success" : "warn"} label={live ? t`In use by you` : data.can_start ? t`Ready` : t`Not available now`} /> : undefined}
     meta={data ? [data.machine_type_name] : undefined}
     main={data ? <div className="grid gap-5">
+      {live ? null : <MachineTypeGuide makerspaceId={context.makerspaceId} typeId={data.machine_type_id} when="session_start" />}
       {live ? <SessionTimerCard session={live} maxMinutes={data.max_minutes} onStop={() => stop.mutate(live.id)} stopping={stop.isPending}
         error={stop.isError ? sessionErrorMessage(stop.error) : undefined} />
         : <StartSheet preview={data} onStart={() => start.mutate(data.digest)} starting={start.isPending}
+          makerspaceId={context.makerspaceId} eventId={eventId} onEvent={setEventId}
           error={start.isError ? sessionErrorMessage(start.error) : undefined} />}
       {stop.isSuccess && !live ? <p role="status" className="text-sm">{t`Session stopped after ${duration(stop.data.minutes)}.`}{stop.data.charge_state === "raised" ? t` Its charge is in your payments.` : ""}</p> : null}
       {/* Decision 223 (d): a certified instructor leads a workshop on this machine from here. */}

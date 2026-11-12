@@ -5,6 +5,7 @@ import { StatusPill } from "../../components/ui";
 import { money } from "../payments/usePriceQuote";
 import type { MemberSession } from "./api";
 import { clock, rateLine, when } from "./sessionFormat";
+import { BoxArt } from "../../components/BoxSpinner";
 
 /** Seconds since `startedAt`, re-read once a second while mounted. */
 function useElapsed(startedAt: string) {
@@ -40,6 +41,6 @@ export function SessionTimerCard({ session, maxMinutes, onStop, stopping, error 
     </dl> : <p className="text-sm text-muted">{t`This machine is free to use.`}</p>}
     {error ? <p role="alert" className="text-sm text-danger">{error}</p> : null}
     <button type="button" className="desk-button-brand min-h-12 justify-self-stretch sm:justify-self-start" disabled={stopping} onClick={onStop}>
-      {stopping ? t`Stopping…` : t`Stop session`}</button>
+      {stopping ? <><BoxArt size={16} mono />{t`Stopping…`}</> : t`Stop session`}</button>
   </section>;
 }

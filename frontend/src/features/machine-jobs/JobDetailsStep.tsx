@@ -1,14 +1,16 @@
 import { t } from "@lingui/core/macro";
 import { Field } from "../../components/ui";
+import { EntryFields } from "../machine-consumables/EntryFields";
 import { IntakeFields, type IntakeValues, type TypeIntake } from "../inventory/MachineIntakeForm";
 import { groupPoolsByMaterial } from "../printing/PublicPrintRequestForm";
 import type { PublicFilamentPool } from "../printing/publicApi";
+import { MachineTypeGuide } from "../machine-guide/MachineTypeGuide";
 import { todayIso, type JobDraft } from "./jobDraft";
 import type { JobType } from "./types";
 
 type Props = {
   draft: JobDraft; update: (patch: Partial<JobDraft>) => void; type: JobType;
-  intake?: TypeIntake; pools?: PublicFilamentPool[]; poolsError?: Error | null; disabled?: boolean;
+  intake?: TypeIntake; pools?: PublicFilamentPool[]; poolsError?: Error | null; disabled?: boolean; makerspaceId?: number;
 };
 
 /** The printer's material pickers: the space's catalogue (material, then colour) and its live spools. */
@@ -40,9 +42,10 @@ function PrinterMaterial({ draft, update, intake, pools, poolsError }: Omit<Prop
 }
 
 /** Step 3: what to make, how many, by when, and on what material. */
-export function JobDetailsStep({ draft, update, type, intake, pools, poolsError, disabled }: Props) {
+export function JobDetailsStep({ draft, update, type, intake, pools, poolsError, disabled, makerspaceId }: Props) {
   return <fieldset className="grid gap-5" disabled={disabled}>
     <legend className="title-section mb-1">{t`Job details`}</legend>
+    <MachineTypeGuide makerspaceId={makerspaceId} typeId={type.machine_type_id} when="job_request" />
     <Field label={t`Title`}><input className="desk-input w-full" required maxLength={200} value={draft.title} onChange={event => update({ title: event.target.value })} /></Field>
     <Field label={t`Notes for staff (optional)`} hint={t`Size, finish, anything staff should know.`}>
       <textarea className="desk-input min-h-24 w-full" maxLength={4000} value={draft.description} onChange={event => update({ description: event.target.value })} />
@@ -62,6 +65,11 @@ export function JobDetailsStep({ draft, update, type, intake, pools, poolsError,
     </Field> : intake?.intake_schema.fields?.length ? <div className="grid gap-3">
       <IntakeFields intake={intake} values={draft.intake} setValues={change => update({ intake: change(draft.intake) as IntakeValues })} />
     </div> : null}
+    {type.consumables?.length ? <section className="grid gap-3" aria-label={t`What the job will use`}>
+      <h3 className="title-section">{t`What the job will use`}</h3>
+      <p className="text-sm text-muted">{t`Your best estimate, so staff can plan stock and price it. Staff confirm the real amounts when the job is done.`}</p>
+      <EntryFields rows={type.consumables} values={draft.consumables} onChange={consumables => update({ consumables })} />
+    </section> : null}
     <label className="flex min-h-11 items-center gap-3 text-sm font-semibold text-ink">
       <input type="checkbox" className="h-5 w-5 shrink-0 accent-brand" checked={draft.ownMaterial} onChange={event => update({ ownMaterial: event.target.checked })} />
       {t`I'm bringing my own material`}</label>

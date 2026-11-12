@@ -47,9 +47,9 @@ describe("Use this machine", () => {
 
   it("explains a refusal in words and keeps Start disabled", async () => {
     api.fetchSessionPreview.mockResolvedValue(preview({ can_start: false,
-      refusal: { code: "certification_required", detail: "x", certifications: ["Laser safety"] } }));
+      refusal: { code: "no_machine_access", detail: "x" } }));
     show();
-    expect(await screen.findByText(/You need the certification for this machine first. \(Laser safety\)/)).toBeVisible();
+    expect(await screen.findByText(/A space manager has not given you access to this machine yet/)).toBeVisible();
     expect(screen.getByRole("button", { name: "Start session" })).toBeDisabled();
   });
 

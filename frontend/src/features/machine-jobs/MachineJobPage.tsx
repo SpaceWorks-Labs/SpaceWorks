@@ -10,6 +10,9 @@ import { cancelOwnServiceRequest } from "../machine-service/api";
 import { ServiceCancelButton } from "../machine-service/ServiceCancelButton";
 import { fetchMyJob, jobKeys } from "./api";
 import { JobChangesPanel } from "./JobChangesPanel";
+import { JobConsumablesReportCard } from "./JobConsumablesReportCard";
+import { MemberJobWatch } from "./MemberJobWatch";
+import { MemberJobMedia } from "./MemberJobMedia";
 import { JobPickupCard } from "./JobPickupCard";
 import { JobQueueStatus } from "./JobQueueStatus";
 import { JobQuoteCard } from "./JobQuoteCard";
@@ -55,6 +58,7 @@ function JobDetail({ id, context }: { id: number; context: MemberJobsContext }) 
       <JobPickupCard job={job} />
       <JobQuoteCard job={job} paymentsHref={context.path("member/payments")} onUpdated={updated} />
       <JobChangesPanel job={job} slug={context.slug} onUpdated={updated} />
+      <JobConsumablesReportCard job={job} onUpdated={() => { void query.refetch(); }} />
       {job.label === "in_queue" || job.label === "in_progress" ? <section className="desk-panel p-5" aria-label={t`Queue and estimate`}><JobQueueStatus job={job} /></section> : null}
       {job.label === "submitted" ? <p className="text-sm text-muted">{t`Staff will review your job. You'll see a quote here if it needs one.`}</p> : null}
       <section className="desk-panel grid gap-3 p-5" aria-labelledby="job-timeline-title">
@@ -63,6 +67,9 @@ function JobDetail({ id, context }: { id: number; context: MemberJobsContext }) 
       </section>
       {job.machine_name && (context.features ?? []).includes("machines.issue_reporting") ? <div className="justify-self-start">
         <ReportProblem source={{ makerspace_id: job.makerspace_id, machine_job_id: job.id }} label={t`Report a problem with the machine`} /></div> : null}
+      {job.label === "in_progress" && job.machine_name && (context.features ?? []).includes("machines.integrations.video") ? <MemberJobWatch jobId={job.id} /> : null}
+      {job.machine_name && ((context.features ?? []).includes("machines.integrations.artifacts") || (context.features ?? []).includes("machines.integrations.detections"))
+        ? <MemberJobMedia jobId={job.id} artifacts={(context.features ?? []).includes("machines.integrations.artifacts")} detections={(context.features ?? []).includes("machines.integrations.detections")} /> : null}
       {job.can_cancel ? <div className="justify-self-start"><ServiceCancelButton title={job.title} onCancel={() => cancelOwnServiceRequest(job.id)}
         invalidate={[jobKeys.detail(id), jobKeys.all, activityKey]} /></div> : null}
     </div> : null}

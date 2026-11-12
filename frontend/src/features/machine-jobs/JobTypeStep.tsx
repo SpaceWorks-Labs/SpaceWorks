@@ -1,4 +1,5 @@
 import { plural, t } from "@lingui/core/macro";
+import { MachineTypeGuide } from "../machine-guide/MachineTypeGuide";
 import type { JobType } from "./types";
 
 const QUOTE_HINT: Record<JobType["quotes"], string> = {
@@ -29,8 +30,8 @@ export function preselectType(types: JobType[], params: URLSearchParams): JobTyp
  * Step 1: which machine type. Each option says what it accepts and how it is run and priced.
  * `showPrice` false (machine charges off, #184) drops the quote and prepay lines.
  */
-export function JobTypeStep({ types, value, onChange, showPrice = true }: { types: JobType[]; value: number | null; onChange: (queueId: number) => void; showPrice?: boolean }) {
-  return <fieldset className="grid gap-3">
+export function JobTypeStep({ types, value, onChange, showPrice = true, makerspaceId }: { types: JobType[]; value: number | null; onChange: (queueId: number) => void; showPrice?: boolean; makerspaceId?: number }) {
+  return <div className="grid gap-4"><fieldset className="grid gap-3">
     <legend className="title-section mb-1">{t`What should make it?`}</legend>
     <p className="text-sm text-muted">{t`Pick the kind of machine. Staff choose the exact machine when your job runs.`}</p>
     {types.map(type => {
@@ -47,5 +48,7 @@ export function JobTypeStep({ types, value, onChange, showPrice = true }: { type
         </span>
       </label>;
     })}
-  </fieldset>;
+  </fieldset>
+  <MachineTypeGuide makerspaceId={makerspaceId} typeId={types.find(type => type.queue_id === value)?.machine_type_id} />
+  </div>;
 }

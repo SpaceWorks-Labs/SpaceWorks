@@ -12,7 +12,7 @@ export type MemberSession = {
   id: number; makerspace_id: number; machine_id: number; machine_name: string; machine_type_name: string;
   source: SessionSource; status: SessionStatus; started_at: string; ended_at: string | null; minutes: number;
   stop_reason: string; flagged: boolean; charge_state: ChargeState; rate: SessionRate | null; amount: string | null;
-  payment: SessionPayment | null;
+  payment: SessionPayment | null; event?: { id: number; title: string } | null;
 };
 
 export type SessionAmendment = { id: number; kind: "correct" | "assign" | "confirm"; minutes: number | null; member_id: number | null;
@@ -23,9 +23,10 @@ export type StaffSession = MemberSession & {
   duration_minutes: number; amendments: SessionAmendment[];
 };
 
-export type SessionRefusal = { code: string; detail: string; certifications?: string[] };
+export type SessionRefusal = { code: string; detail: string };
 export type SessionPreview = {
-  machine_id: number; machine_name: string; machine_type_name: string; machine_status: string; billing: boolean;
+  /** Optional: lets the start sheet show the type's training notes. */
+  machine_type_id?: number; machine_id: number; machine_name: string; machine_type_name: string; machine_status: string; billing: boolean;
   rate: SessionRate | null; digest: string; max_minutes: number; closes_at: string | null; can_start: boolean;
   refusal: SessionRefusal | null; live_session: MemberSession | null;
 };
@@ -44,8 +45,9 @@ export const sessionKeys = {
 const json = (body?: unknown) => body === undefined ? undefined : JSON.stringify(body);
 
 export const fetchSessionPreview = (machineId: number) => memberRequest<SessionPreview>(`/member/machines/${machineId}/session`);
-export const startSession = (machineId: number, digest: string) =>
-  memberRequest<MemberSession>(`/member/machines/${machineId}/sessions/start`, { method: "POST", body: json({ digest }) });
+export const startSession = (machineId: number, digest: string, eventId?: number) =>
+  memberRequest<MemberSession>(`/member/machines/${machineId}/sessions/start`,
+    { method: "POST", body: json({ digest, ...(eventId ? { event_id: eventId } : {}) }) });
 export const stopSession = (id: number) => memberRequest<MemberSession>(`/member/machine-sessions/${id}/stop`, { method: "POST" });
 export const fetchMySessions = (makerspaceId?: number) =>
   memberRequest<MemberSession[]>(`/member/machine-sessions${makerspaceId != null ? `?makerspace=${makerspaceId}` : ""}`);
@@ -68,7 +70,8 @@ const REFUSALS = (): Record<string, string> => ({
   membership_required: t`Only active members of this space can use its machines.`,
   waiver_acceptance_required: t`Accept the space's current waiver in your member area first.`,
   presence_required: t`Check in at the space first, then scan the machine again.`,
-  certification_required: t`You need the certification for this machine first.`,
+  no_machine_access: t`A space manager has not given you access to this machine yet. Ask them to.`,
+  machine_access_expired: t`Your access to this machine has ended. Ask a space manager to renew it.`,
   machine_unavailable: t`This machine is down or under maintenance.`,
   machine_locked_out: t`Overdue safety maintenance blocks this machine for now.`,
   machine_booked: t`Someone else has booked this machine for now.`,
@@ -85,8 +88,7 @@ const REFUSALS = (): Record<string, string> => ({
 
 export function refusalText(refusal: SessionRefusal | null | undefined) {
   if (!refusal) return "";
-  const base = REFUSALS()[refusal.code] ?? refusal.detail;
-  return refusal.certifications?.length ? `${base} (${refusal.certifications.join(", ")})` : base;
+  return REFUSALS()[refusal.code] ?? refusal.detail;
 }
 
 export function sessionErrorMessage(error: unknown) {

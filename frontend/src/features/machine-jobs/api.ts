@@ -47,6 +47,9 @@ const post = <T>(path: string, body?: unknown) =>
 
 export const approveQuote = (id: number, digest: string) => post<MemberJob>(`/member/machine-jobs/${id}/approve-quote`, { digest });
 export const declineQuote = (id: number) => post<MemberJob>(`/member/machine-jobs/${id}/decline-quote`);
+/** Decision 341: report what the member's own job used (each consumable once). */
+export const reportJobConsumables = (id: number, entries: { key: string; quantity: string; attributes: Record<string, string> }[]) =>
+  post<unknown>(`/member/machine-jobs/${id}/consumables`, entries);
 export const resubmitJob = (id: number, note: string, fileIds: number[]) =>
   post<MemberJob>(`/member/machine-jobs/${id}/resubmit`, { note, file_ids: fileIds });
 

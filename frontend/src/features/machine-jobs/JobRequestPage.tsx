@@ -22,6 +22,7 @@ import { JobTypeStep, extensionList } from "./JobTypeStep";
 import { JOB_STEPS, useJobRequest, type JobStep } from "./useJobRequest";
 import { useMemberIdentity } from "./useMemberIdentity";
 import { machineIntakeAvailable } from "../inventory/machineIntakeAvailability";
+import { LogoLoader } from "../../components/LogoLoader";
 
 const STEP_LABELS: Record<JobStep, string> = { type: t`Machine type`, files: t`Files`, details: t`Details`, confirm: t`Confirm and send` };
 
@@ -49,11 +50,11 @@ export function JobRequestPage() {
   const displayName = bootstrap?.branding.display_name || bootstrap?.makerspace.name || formatSlug(makerspaceSlug) || "Makerspace";
   const member = useMemberIdentity();
   const available = machineIntakeAvailable(bootstrap, makerspaceSlug) && !!bootstrap?.features.includes("machines.job_requests");
-  const printingAvailable = bootstrap?.makerspace.slug === makerspaceSlug && Boolean(bootstrap?.modules.includes("printing"));
+  const printingAvailable = bootstrap?.makerspace.slug === makerspaceSlug && Boolean(bootstrap?.modules.includes("machine_service"));
   const flow = useJobRequest(makerspaceSlug, bootstrap?.features ?? [], search, id => navigate(tenantPath(`member/machine-jobs/${id}`)), available, printingAvailable);
   const { types, type, step, draft, submit } = flow;
 
-  if (tenant.mode === "central" && bootstrapQuery.isLoading) return <div role="status">{t`Loading…`}</div>;
+  if (tenant.mode === "central" && bootstrapQuery.isLoading) return <LogoLoader label={t`Loading…`} size={48} className="min-h-16 py-3" />;
   if (tenant.mode === "central" && bootstrapQuery.isError) return <div role="alert">{t`Couldn’t load the space. Try again.`}</div>;
   if (!available) return <div role="status">{t`Online machine requests aren't available here. Ask space staff for help.`}</div>;
 
@@ -83,14 +84,15 @@ export function JobRequestPage() {
   const error: CalloutProps | undefined = submit.isError && !(submit.error instanceof JobUploadError) ? { size: "panel", tone: "danger",
     lead: "Couldn't send your request.", body: jobErrorMessage(submit.error), action: refusalAction(submit.error, tenantPath("member")) } : undefined;
 
-  const work = !type || step === "type" ? <JobTypeStep types={types.data ?? []} value={type?.queue_id ?? null} onChange={flow.chooseType} showPrice={showPrice} />
+  const work = !type || step === "type" ? <JobTypeStep types={types.data ?? []} value={type?.queue_id ?? null} onChange={flow.chooseType} showPrice={showPrice} makerspaceId={bootstrap?.makerspace.id} />
     : step === "files" ? <div className="grid gap-4">
       {submit.error instanceof JobUploadError ? <p className="text-sm text-danger" role="alert">{submit.error.message}</p> : null}
       <JobFilesStep accepted={accepted} typeName={type.name} models={flow.models} screenshots={flow.screenshots} errors={flow.fileErrors} onChange={flow.changeFiles} disabled={busy} /></div>
       : step === "details" ? <JobDetailsStep draft={draft} update={flow.update} type={type} intake={flow.intake.data} pools={flow.pools.data}
-        poolsError={flow.pools.error} disabled={busy} />
+        poolsError={flow.pools.error} disabled={busy} makerspaceId={bootstrap?.makerspace.id} />
         : <div className="grid gap-5">
           <JobConfirmStep type={type} draft={draft} fileCount={flow.models.length} screenshotCount={flow.screenshots.length} disabled={busy} showPrice={showPrice}
+            makerspaceId={bootstrap?.makerspace.id} onEvent={eventId => flow.update({ eventId })}
             onAck={(key, value) => flow.update({ acks: { ...draft.acks, [key]: value } })} />
           <PricePreview makerspaceSlug={makerspaceSlug} request={{ domain: "machines", machine_type_id: type.machine_type_id,
             pool_id: printingAvailable && draft.poolId ? Number(draft.poolId) : undefined, quantity: Number(draft.grams) > 0 ? draft.grams.trim() : undefined }} />

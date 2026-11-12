@@ -71,19 +71,19 @@ describe("JobRequestPage", () => {
     expect(api.fetchJobTypes).not.toHaveBeenCalled(); expect(api.stageJobFile).not.toHaveBeenCalled(); expect(api.submitJob).not.toHaveBeenCalled();
   });
 
-  it("offers a generic printer job without fetching printing pools when Printing is off", async () => {
+  // Decision 340b: the 3D print queue is part of Machine service, so its filament pools load whenever
+  // machine service is on; there is no separate Printing module to leave off.
+  it("loads printing pools for a printer job whenever Machine service is on", async () => {
     show();
     await fillToConfirm();
     expect(screen.getByRole("button", { name: "Send request" })).toBeEnabled();
-    expect(fetchPools).not.toHaveBeenCalled();
+    await waitFor(() => expect(fetchPools).toHaveBeenCalled());
     fireEvent.click(screen.getByRole("button", { name: "Send request" }));
     expect(await screen.findByText("Job page")).toBeInTheDocument();
     expect(api.submitJob).toHaveBeenCalledWith("lab", expect.objectContaining({ queue_id: 3, title: "Bracket" }));
-    expect(fetchPools).not.toHaveBeenCalled();
   });
 
-  it("omits a previously selected pool when Printing turns off during upload", async () => {
-    availability.modules = [...availability.modules, "printing"];
+  it("does not submit when Machine service turns off during upload", async () => {
     fetchPools.mockResolvedValue([{ id: 42, material: "PLA", color: "Blue" }]);
     let finishUpload!: (value: number) => void;
     api.stageJobFile.mockImplementation(() => new Promise<number>(resolve => { finishUpload = resolve; }));
@@ -102,11 +102,13 @@ describe("JobRequestPage", () => {
     expect(screen.getByRole("button", { name: "Send request" })).toBeEnabled();
     fireEvent.click(screen.getByRole("button", { name: "Send request" }));
     await waitFor(() => expect(api.stageJobFile).toHaveBeenCalledTimes(1));
-    availability.modules = availability.modules.filter(key => key !== "printing");
+    availability.modules = availability.modules.filter(key => key !== "machine_service");
     rendered.rerender(view());
     finishUpload(91);
-    expect(await screen.findByText("Job page")).toBeInTheDocument();
-    expect(api.submitJob).toHaveBeenCalledWith("lab", expect.objectContaining({ consumable_pool_id: null }));
+    expect(await screen.findByText("Online machine requests aren't available here. Ask space staff for help.")).toBeInTheDocument();
+    await new Promise(resolve => setTimeout(resolve, 0));
+    expect(api.submitJob).not.toHaveBeenCalled();
+    expect(screen.queryByText("Job page")).toBeNull();
   });
 
   it("lists every type with its formats, quote and unattended hints", async () => {

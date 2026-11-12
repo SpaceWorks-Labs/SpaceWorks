@@ -34,6 +34,7 @@ export function useJobRequest(slug: string, features: string[], search: URLSearc
     if (!chosen) return;
     setQueueId(chosen.queue_id);
     if (search.has("type") || search.has("queue")) setStep("files");
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- queueId and search are read once when the type list first arrives; re-running on a later queue or search change would overwrite the member's pick
   }, [types.data]); // preselect once, when the list arrives
 
   const type = types.data?.find(row => row.queue_id === queueId);
@@ -71,7 +72,7 @@ export function useJobRequest(slug: string, features: string[], search: URLSearc
     if (next === queueId) return;
     staged.current.clear();
     setFileErrors({});
-    setDraft(current => ({ ...current, intake: {}, material: "", color: "", poolId: "" }));
+    setDraft(current => ({ ...current, intake: {}, consumables: {}, material: "", color: "", poolId: "" }));
     setQueueId(next);
   }
   function changeFiles(next: { models?: File[]; screenshots?: File[] }) {

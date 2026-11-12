@@ -1,5 +1,6 @@
 import { formatLocale } from "../../lib/format";
 import { plural, t } from "@lingui/core/macro";
+import { EventPurposePicker } from "../machine-event-use/EventPurposePicker";
 import type { JobDraft } from "./jobDraft";
 import type { JobType } from "./types";
 
@@ -12,8 +13,9 @@ const ACKS: { key: keyof JobDraft["acks"]; text: string }[] = [
 const FREE_FAILURE = "I understand jobs can fail. Staff will tell me what happened and whether a re-run applies.";
 
 /** Step 4: a last look at the job and the three promises the space asks for. `showPrice` false: machine charges are off (#184). */
-export function JobConfirmStep({ type, draft, fileCount, screenshotCount, onAck, disabled, showPrice = true }: {
+export function JobConfirmStep({ type, draft, fileCount, screenshotCount, onAck, disabled, showPrice = true, makerspaceId, onEvent }: {
   type: JobType; draft: JobDraft; fileCount: number; screenshotCount: number; disabled?: boolean; showPrice?: boolean;
+  makerspaceId?: number; onEvent?: (eventId: string) => void;
   onAck: (key: keyof JobDraft["acks"], value: boolean) => void;
 }) {
   const rows = [
@@ -28,6 +30,7 @@ export function JobConfirmStep({ type, draft, fileCount, screenshotCount, onAck,
     <dl className="grid gap-2 text-sm">{rows.map(([label, value]) => <div key={label} className="grid grid-cols-[8rem_1fr] gap-3">
       <dt className="text-muted">{label}</dt><dd className="min-w-0 break-words text-ink">{value}</dd></div>)}</dl>
     {showPrice && type.quotes !== "off" ? <p className="text-sm text-muted">{t`If staff price this job, you'll get a quote to approve before it joins the queue.`}</p> : null}
+    {onEvent ? <EventPurposePicker makerspaceId={makerspaceId} value={draft.eventId} onChange={onEvent} disabled={disabled} /> : null}
     <fieldset className="grid gap-3" disabled={disabled}>
       <legend className="title-section mb-1">{t`Before you send it`}</legend>
       {ACKS.map(ack => <label key={ack.key} className="flex min-h-11 items-start gap-3 text-sm text-ink">

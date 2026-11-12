@@ -1,5 +1,6 @@
 import { t } from "@lingui/core/macro";
 import { formatLocale } from "../../lib/format";
+import type { ConsumableEntry, EntryRow } from "../machine-consumables/entries";
 import { serviceStatusLabel, serviceStatusTone, type ServiceRequestEta } from "../machine-service/types";
 
 /** One machine type taking job requests (GET /public/{slug}/machine-jobs/types). */
@@ -7,6 +8,8 @@ export type JobType = {
   queue_id: number; name: string; machine_type_id: number; machine_type_name: string; machine_type_slug: string;
   is_printer: boolean; file_groups: string[]; accepted_extensions: string[];
   quotes: "auto" | "off" | "above" | "always"; prepay: boolean; runs_unattended: boolean; max_open_jobs: number | null;
+  /** Decision 341: the profile rows the member estimates when requesting. */
+  consumables?: (EntryRow & { kind: string; estimate_by: string; member_reports: boolean })[];
 };
 
 export type JobQuote = { total: string; currency: string; lines: { label: string; net: string }[]; digest: string };
@@ -22,7 +25,14 @@ export type MemberJob = {
   timeline: { step: string; at: string }[]; changes_message: string; quote: JobQuote | null;
   quote_expires_at: string | null; awaiting_payment: boolean; reason: string; fail_code: string;
   failure_outcome: "requeued" | "charged" | "free" | "staff_decide" | ""; pickup_code: string; pickup_location: string;
-  copies: number; needed_by: string | null; created_at: string;
+  copies: number; needed_by: string | null; created_at: string; event?: { id: number; title: string } | null;
+  /** Decision 341: consumables the member may report on this job, with what is already recorded. */
+  report_consumables?: ReportableConsumable[];
+};
+
+export type ReportableConsumable = {
+  key: string; name: string; kind: string; unit: string; required: boolean;
+  attributes: Partial<Record<"material" | "colour" | "thickness" | "size", string[]>>; recorded_quantity: string | null;
 };
 
 export type JobSubmitBody = {
@@ -31,6 +41,8 @@ export type JobSubmitBody = {
   capability_payload?: { schema_version: number; values: Record<string, string | number | boolean> };
   material?: string; color?: string; consumable_pool_id?: number | null; estimated_filament_grams?: string | null;
   preferred_settings?: string;
+  event_id?: number;
+  consumable_estimates?: ConsumableEntry[];
   acknowledgements: { pickup_policy: boolean; failure_policy: boolean; own_content: boolean };
 };
 

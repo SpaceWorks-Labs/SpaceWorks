@@ -1,4 +1,5 @@
 """OpenAPI shapes for the badge designer routes (E-B1)."""
+from drf_spectacular.utils import extend_schema_serializer
 from rest_framework import serializers
 
 from .serializers import CardDesignSerializer
@@ -35,6 +36,7 @@ class BadgeRoleStartSerializer(serializers.Serializer):
     restart = serializers.BooleanField(default=False, help_text="Replace the design with a fresh badge_v1 one.")
 
 
+@extend_schema_serializer(component_name="CardBadgeDesignResult")
 class BadgeDesignResultSerializer(serializers.Serializer):
     design = CardDesignSerializer()
     created = serializers.BooleanField()

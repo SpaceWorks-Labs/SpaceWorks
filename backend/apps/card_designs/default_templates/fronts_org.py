@@ -9,8 +9,9 @@ from .fronts import H, W, _caption, _code
 
 # key -> theme -> (background, ink, label, accent, accent2); `label` is a caption colour that passes on `background`.
 PALETTES = {
-    "aurora": {"light": ("#EEF6FF", "#0B132B", "#00695C", "#2EC4B6", "#8E7CFF"),
-               "dark": ("#0B132B", "#F1F7FF", "#7FE3D6", "#2EC4B6", "#8E7CFF")},
+    # Aurora wears the brand palette (decision 317a): Maker Teal header, Citron ribbon, Warm Cream body, Deep Ink text.
+    "aurora": {"light": ("#FFF4E8", "#142C2A", "#006E63", "#006E63", "#DFFF8F"),
+               "dark": ("#142C2A", "#FFF4E8", "#DFFF8F", "#006E63", "#DFFF8F")},
     "kasavu": {"light": ("#FBF3DC", "#3B2A00", "#7A5A00", "#C9A227", "#C9A227"),
                "dark": ("#2B1B0E", "#F7E7B4", "#E6C86A", "#C9A227", "#C9A227")},
     "ribbon": {"light": ("#FFFFFF", "#1F1F2E", "#A31D3B", "#A31D3B", "#F3C3CD"),
@@ -24,7 +25,7 @@ PALETTES = {
     "standard_portrait": {"light": ("#FFF4E8", "#142C2A", "#006E63", "#006E63", "#DFFF8F"),
                           "dark": ("#142C2A", "#FFF4E8", "#DFFF8F", "#006E63", "#DFFF8F")},
 }
-ON_ACCENT = {"aurora": "#0B132B", "kasavu": "#2B1B0E", "ribbon": "#FFFFFF", "confetti": "#1B1B3A",
+ON_ACCENT = {"aurora": "#FFF4E8", "kasavu": "#2B1B0E", "ribbon": "#FFFFFF", "confetti": "#1B1B3A",
              "midnight": "#0B0F1A", "sunrise": "#4A2200", "standard_portrait": "#FFF4E8"}
 
 
@@ -47,6 +48,7 @@ def aurora(domain, theme):
     bg, ink, label, a1, a2 = PALETTES["aurora"][theme]
     on = ON_ACCENT["aurora"]
     b = Builder("aurora").band("Aurora top", 0, 0, W, 10, a1).band("Aurora ribbon", 0, 10, W, 1.6, a2)
+    b.band("Aurora tail", 0, 11.6, 12, 0.9, "#FF7447")  # the short Workshop Orange tail under the ribbon
     _title(b, "{{space}}", on, y=3.2, w=70)
     b.photo(5, 15, 18, 22).field("Name", "name", 26, 15, 32, 7.6, size=11, weight=700, colour=ink)
     _info(b, 26, 32, ink, label, y=24).qr(_code(domain), 63.3, 17, 19)

@@ -3,7 +3,10 @@ from reportlab.lib.colors import HexColor
 
 from .contrast import colour_under, to_hex
 from .data_fields import merge
+from .rendering_text import is_compat
 from .rendering_background import colour_for, draw_image, mono
+from .rendering_photo import draw_image_layer as _image, draw_photo as _photo
+from .rendering_shapes import draw_shape as _shape
 
 INK = "#142C2A"
 PLACEHOLDER = "#D7E9E5"  # teal at ~15 % on cream: ink initials on it pass 4.5:1
@@ -35,14 +38,20 @@ def draw_layer(canvas, document, side, index, layer, context):
 def _text(canvas, document, side, index, layer, context, box):
     from .rendering_text import draw
     x, y, w, h = box
-    text = merge(layer["text"], context.values, allow_sensitive=context.allow_sensitive)
-    if not text.strip():
-        return
+    from . import rendering_rich
     colour = layer["colour"]
     if document.get("mono"):
         under = mono(to_hex(colour_under(side, index, context.asset_colours)))
         colour = "#FFFFFF" if under == "#000000" else "#000000"
-    draw(canvas, text, layer, colour=colour, x=x, top=y + h, box_width=w, box_height=h)
+    if rendering_rich.is_rich(layer) or (layer.get("translations") and getattr(context, "locale", "") in layer["translations"]):
+        rendering_rich.draw(canvas, document, layer, context, box, mono_colour=colour if document.get("mono") else None)
+        return
+    text = merge(layer["text"], context.values, allow_sensitive=context.allow_sensitive)
+    if not text.strip():
+        return
+    from .rendering_text import draw_compat, is_compat
+    (draw_compat if is_compat(document) else draw)(canvas, text, layer, colour=colour, x=x, top=y + h, box_width=w,
+                                                   box_height=h)
 
 
 def _rounded(canvas, x, y, w, h, radius, *, fill=True, stroke=False):
@@ -50,25 +59,6 @@ def _rounded(canvas, x, y, w, h, radius, *, fill=True, stroke=False):
         canvas.roundRect(x, y, w, h, min(radius, w / 2, h / 2), fill=int(fill), stroke=int(stroke))
     else:
         canvas.rect(x, y, w, h, fill=int(fill), stroke=int(stroke))
-
-
-def _shape(canvas, document, side, index, layer, context, box):
-    from reportlab.lib.units import mm
-    x, y, w, h = box
-    fill, stroke = layer.get("fill"), layer.get("stroke")
-    if fill:
-        canvas.setFillColor(HexColor(colour_for(document, fill)))
-    if stroke:
-        canvas.setStrokeColor(HexColor(colour_for(document, stroke)))
-        canvas.setLineWidth(max(0.1, layer.get("stroke_mm", 0.3)) * mm)
-    shape = layer.get("shape", "rect")
-    if shape == "line":
-        canvas.setStrokeColor(HexColor(colour_for(document, stroke or fill or INK)))
-        canvas.line(x, y + h / 2, x + w, y + h / 2)
-    elif shape == "ellipse":
-        canvas.ellipse(x, y, x + w, y + h, fill=int(bool(fill)), stroke=int(bool(stroke)))
-    else:
-        _rounded(canvas, x, y, w, h, layer.get("radius_mm", 0) * mm, fill=bool(fill), stroke=bool(stroke))
 
 
 def _perforation(canvas, document, side, index, layer, context, box):
@@ -98,11 +88,6 @@ def _perforation(canvas, document, side, index, layer, context, box):
         canvas.circle(px, py, radius, fill=1, stroke=0)
 
 
-def _image(canvas, document, side, index, layer, context, box):
-    draw_image(canvas, context.assets.get(layer["asset_id"]), *box, fit=layer.get("fit", "contain"),
-               grey=document.get("mono", False))
-
-
 def _logo(canvas, document, side, index, layer, context, box):
     x, y, w, h = box
     if layer["source"] == "symbol":
@@ -123,34 +108,6 @@ def _logo(canvas, document, side, index, layer, context, box):
     draw_image(canvas, data, x, y, w, h, grey=document.get("mono", False))
 
 
-def _photo(canvas, document, side, index, layer, context, box):
-    from .rendering_text import draw
-    x, y, w, h = box
-    shape = layer.get("shape", "rounded")
-    canvas.saveState()
-    path = canvas.beginPath()
-    if shape == "circle":
-        path.ellipse(x, y, w, h)
-    elif shape == "rounded":
-        path.roundRect(x, y, w, h, min(w, h) * 0.14)
-    else:
-        path.rect(x, y, w, h)
-    canvas.clipPath(path, stroke=0, fill=0)
-    from .rendering_extras import filtered_photo
-    photo = filtered_photo(context.photo, layer)
-    if not draw_image(canvas, photo, x, y, w, h, fit="cover", grey=document.get("mono", False)):
-        # A tinted tile, so the photo frame still reads on a cream or white card.
-        canvas.setFillColor(HexColor("#E6E6E6" if document.get("mono") else PLACEHOLDER))
-        canvas.rect(x, y, w, h, fill=1, stroke=0)
-        name = str(context.values.get("name", ""))
-        initials = "".join(word[:1] for word in name.split()[:2]).upper() or "·"
-        style = {"font_family": "Outfit", "font_weight": 700, "font_size_pt": max(6, min(w, h) / 2.2),
-                 "align": "center", "valign": "middle", "line_height": 1.0, "tracking_pt": 0, "shrink_to_fit": True}
-        draw(canvas, initials, style, colour="#000000" if document.get("mono") else INK,
-             x=x, top=y + h, box_width=w, box_height=h)
-    canvas.restoreState()
-
-
 def _qr(canvas, document, side, index, layer, context, box):
     from reportlab.graphics import renderPDF
     from reportlab.graphics.barcode.qr import QrCodeWidget
@@ -163,6 +120,13 @@ def _qr(canvas, document, side, index, layer, context, box):
     canvas.setFillColor(HexColor("#FFFFFF"))
     canvas.rect(x, y, w, h, fill=1, stroke=0)
     side_pt = min(w, h)
+    if context.preview and is_compat(document):  # a v2 certificate preview keeps its own dummy pattern
+        canvas.setFillColor(HexColor(INK))
+        for i in range(7):
+            for j in range(7):
+                if (i + j) % 3 == 0:
+                    canvas.rect(x + i * side_pt / 7, y + j * side_pt / 7, side_pt / 9, side_pt / 9, fill=1, stroke=0)
+        return
     if context.preview or not payload:
         canvas.setFillColor(HexColor(INK))
         cell = side_pt / 25
@@ -184,6 +148,19 @@ def _barcode(canvas, document, side, index, layer, context, box):
     draw_barcode(canvas, layer, context, box)
 
 
+def _icon(canvas, document, side, index, layer, context, box):
+    from .rendering_icons import draw_icon
+    draw_icon(canvas, document, layer, box)
+
+
+def _certificate(name):
+    def drawer(*args):
+        from . import rendering_certificate
+        return getattr(rendering_certificate, name)(*args)
+    return drawer
+
+
 DRAWERS = {"text": _text, "data_field": _text, "shape": _shape, "band": _shape, "perforation": _perforation,
            "barcode": _barcode, "image": _image, "logo": _logo, "photo": _photo, "desk_qr": _qr, "verify_qr": _qr,
-           "checkin_qr": _qr}
+           "checkin_qr": _qr, "certificate_id": _text, "icon": _icon, "signature": _certificate("draw_signature"),
+           "signature_row": _certificate("draw_signature_row"), "seal": _certificate("draw_seal")}

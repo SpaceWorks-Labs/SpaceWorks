@@ -14,3 +14,10 @@ class CardDesignsConfig(AppConfig):
         register_staff_holder()
         from .registration import register_runtime
         register_runtime()
+        from django.db.models.signals import post_delete
+        from .cutouts import release_deleted
+        from .models_cutout import CardPhotoCutout
+        post_delete.connect(release_deleted, sender=CardPhotoCutout, dispatch_uid="card_photo_cutout_release")
+        from .models_cutout import CardPhotoBatchItem
+        from .photo_batch import release_item_file
+        post_delete.connect(release_item_file, sender=CardPhotoBatchItem, dispatch_uid="card_photo_batch_item_release")

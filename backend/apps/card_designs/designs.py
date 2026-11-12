@@ -53,7 +53,7 @@ def validated(makerspace_id, document, *, check_contrast=True, domain=None):
 def save(actor, design, document, *, expected_revision, acted_for=None, unlock=False):
     design = CardDesign.objects.select_for_update().get(pk=design.pk)
     if expected_revision != design.revision:
-        raise DesignConflict({"revision": "Someone else saved this design. Reload to see their changes."})
+        raise DesignConflict({"revision": gettext("Someone else saved this design. Reload to see their changes.")})
     from .badge_source import ensure_unlocked
     if not unlock:
         ensure_unlocked(design.document, document)  # E-B1: a badge_v1 design is edited in the badge designer
@@ -130,7 +130,7 @@ def decide(actor, design, *, approve, note=""):
     if row is None:
         raise ValidationError({"detail": gettext("Nothing is waiting for approval.")})
     if row.revision != design.revision:
-        raise DesignConflict({"revision": "The design changed after it was submitted."})
+        raise DesignConflict({"revision": gettext("The design changed after it was submitted.")})
     row.decision = CardDesignApproval.Decision.APPROVED if approve else CardDesignApproval.Decision.REJECTED
     row.decided_by, row.decided_at, row.note = actor, timezone.now(), (note or "")[:300]
     row.save(update_fields=["decision", "decided_by", "decided_at", "note"])

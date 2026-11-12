@@ -17,6 +17,10 @@ def face(family, weight):
     from reportlab.pdfbase import pdfmetrics
     from reportlab.pdfbase.ttfonts import TTFont
 
+    from .fonts import is_outline
+    if is_outline(family, weight):
+        from .rendering_outline import codes, pseudo_name
+        return pseudo_name(family, weight), codes(family, weight)
     from .font_store import local_path
     path = local_path(family, weight)
     if path is None:
@@ -67,10 +71,38 @@ def visual(value):
     return value
 
 
-def width(value, layer, size):
+def string_width(part, font, size):
+    from .rendering_outline import is_outline_name
+    if is_outline_name(font):
+        from .rendering_outline import string_width as outline_width
+        return outline_width(part, font, size)
     from reportlab.pdfbase.pdfmetrics import stringWidth
-    return sum(stringWidth(part, font, size) for font, part in runs(value, layer["font_family"], layer["font_weight"])) \
-        + max(0, len(value) - 1) * layer.get("tracking_pt", 0)
+    return stringWidth(part, font, size)
+
+
+def width(value, layer, size):
+    items = runs(value, layer["font_family"], layer["font_weight"])
+    return sum(string_width(part, font, size) for font, part in items) + max(0, len(value) - 1) * layer.get("tracking_pt", 0)
+
+
+def draw_runs(canvas, items, x, y, size, tracking=0.0, *, stroke=False):
+    """Draw (font, text) runs left to right from baseline (x, y); returns the x after the last run.
+
+    `stroke=True` strokes the glyph outlines instead of filling them (the caller sets colour and line width)."""
+    from .rendering_outline import draw_string, is_outline_name
+    for font, value in items:
+        if is_outline_name(font):
+            x = draw_string(canvas, value, font, size, x, y, tracking, fill=0 if stroke else 1, stroke=1 if stroke else 0)
+            continue
+        output = canvas.beginText(x, y)
+        if stroke:
+            output.setTextRenderMode(1)
+        output.setCharSpace(tracking)
+        output.setFont(font, size)
+        output.textOut(value)
+        canvas.drawText(output)
+        x += string_width(value, font, size) + len(value) * tracking
+    return x
 
 
 def wrap(text, layer, size, box_width):
@@ -143,16 +175,78 @@ def draw(canvas, text, layer, *, colour, x, top, box_width, box_height):
     leading = size * layer["line_height"]
     block = len(lines) * leading
     offset = {"top": 0, "middle": (box_height - block) / 2, "bottom": box_height - block}[layer.get("valign", "top")]
-    canvas.setFillColor(HexColor(colour))
+    canvas.setFillColor(HexColor(colour), alpha=layer.get("opacity", 100) / 100)
     y = top - max(0, offset) - size * 0.9
     for line in lines:
         line = visual(line)
         used = width(line, layer, size)
         shift = {"left": 0, "center": (box_width - used) / 2, "right": box_width - used}[layer["align"]]
-        output = canvas.beginText(x + shift, y)
-        output.setCharSpace(layer.get("tracking_pt", 0))
-        for font, value in runs(line, layer["font_family"], layer["font_weight"]):
-            output.setFont(font, size)
-            output.textOut(value)
-        canvas.drawText(output)
+        draw_runs(canvas, runs(line, layer["font_family"], layer["font_weight"]), x + shift, y, size,
+                  layer.get("tracking_pt", 0))
         y -= leading
+
+
+# --- Certificate v2 compat metrics (decision 315): old certificates print byte-for-byte the same layout. ---
+COMPAT = "certificate_v2"
+
+
+def is_compat(document):
+    """True for a document compiled from a stored v2 certificate (`certificate_compile.compile_v2`)."""
+    return (document.get("source") or {}).get("kind") == COMPAT
+
+
+def wrap_compat(text, layer, size, box_width):
+    """The v2 certificate wrapper: None when one character cluster is wider than the box (the caller shrinks)."""
+    from apps.operations.printable_fonts import clusters
+    lines = []
+    for paragraph in text.split("\n"):
+        line = ""
+        for word in paragraph.split(" "):
+            candidate = f"{line} {word}" if line else word
+            if width(visual(candidate), layer, size) <= box_width:
+                line = candidate
+                continue
+            if line:
+                lines.append(line)
+            line = ""
+            for cluster in clusters(word):
+                if width(visual(line + cluster), layer, size) > box_width:
+                    if not line:
+                        return None
+                    lines.append(line)
+                    line = ""
+                line += cluster
+        lines.append(line)
+    return lines
+
+
+def fit_compat(text, layer, box_width, box_height):
+    """(size, lines) under the v2 metrics: shrink in 0.5 pt steps to 6 pt; overflow raises (never clips). Pure: no canvas."""
+    from django.utils.translation import gettext
+    from rest_framework.exceptions import ValidationError
+    if len(text) > 1000:
+        raise ValidationError({"layout": gettext("Merged text exceeds 1000 characters.")})
+    text = text.upper() if layer.get("uppercase") else text
+    size = layer["font_size_pt"]
+    while True:
+        lines = wrap_compat(text, layer, size, box_width)
+        if lines is not None and len(lines) * size * layer["line_height"] <= box_height:
+            return size, lines
+        if size <= MIN_PT or not layer.get("shrink_to_fit", True):
+            raise ValidationError({"layout": gettext("Text does not fit at a legible size. Enlarge its box.")})
+        size = max(MIN_PT, size - 0.5)
+
+
+def draw_compat(canvas, text, layer, *, colour, x, top, box_width, box_height):
+    """v2 metrics: first baseline = top - size, leading = size x line_height, no one-line preference, overflow raises."""
+    from reportlab.lib.colors import HexColor
+    size, lines = fit_compat(text, layer, box_width, box_height)
+    canvas.setFillColor(HexColor(colour))
+    y = top - size
+    for line in lines:
+        line = visual(line)
+        used = width(line, layer, size)
+        shift = {"left": 0, "center": (box_width - used) / 2, "right": box_width - used}[layer.get("align", "left")]
+        draw_runs(canvas, runs(line, layer["font_family"], layer["font_weight"]), x + shift, y, size,
+                  layer.get("tracking_pt", 0))
+        y -= size * layer["line_height"]

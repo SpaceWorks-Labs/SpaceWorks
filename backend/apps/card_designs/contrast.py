@@ -39,11 +39,43 @@ def blend(under, over, alpha):
     return tuple(u * (1 - alpha) + o * alpha for u, o in zip(under, over))
 
 
+def gradient_t(spec, x, y, width, height):
+    """Position 0-100 along a gradient at page point (x, y) mm; radial honours centre and radius."""
+    if spec.get("type") == "radial":
+        half = (math.hypot(width / 2, height / 2) or 1) * spec.get("radius_pct", 100) / 100
+        t = math.hypot(x - width * spec.get("cx_pct", 50) / 100, y - height * spec.get("cy_pct", 50) / 100) / half
+    else:
+        angle = math.radians(spec.get("angle_deg", 0))
+        dx, dy = math.sin(angle), -math.cos(angle)
+        span = abs(width * dx) + abs(height * dy) or 1
+        t = ((x - width / 2) * dx + (y - height / 2) * dy) / span + 0.5
+    return max(0.0, min(1.0, t)) * 100
+
+
+def overlay_blend(colour, overlay, x, y, width, height):
+    """`colour` seen through the side overlay gradient (straight alpha) at the point."""
+    if not overlay:
+        return colour
+    stops = overlay["stops"]
+    t = gradient_t(overlay, x, y, width, height)
+    previous = stops[0]
+    for stop in stops:
+        if t <= stop["at"]:
+            gap = (stop["at"] - previous["at"]) or 1
+            k = (t - previous["at"]) / gap
+            over = blend(rgb(previous["colour"]), rgb(stop["colour"]), k)
+            alpha = (previous["alpha_pct"] + (stop["alpha_pct"] - previous["alpha_pct"]) * k) / 100
+            return blend(colour, over, alpha)
+        previous = stop
+    return blend(colour, rgb(stops[-1]["colour"]), stops[-1]["alpha_pct"] / 100)
+
+
 def _gradient_at(background, x, y, width, height):
     stops = sorted(background["stops"], key=lambda stop: stop["at"])
     if background.get("type") == "radial":
         half = math.hypot(width / 2, height / 2) or 1
-        t = math.hypot(x - width / 2, y - height / 2) / half
+        half *= background.get("radius_pct", 100) / 100
+        t = math.hypot(x - width * background.get("cx_pct", 50) / 100, y - height * background.get("cy_pct", 50) / 100) / half
     else:
         angle = math.radians(background.get("angle_deg", 0))
         # CSS convention: 0deg points up, 90deg points right.
@@ -76,6 +108,7 @@ def colour_under(side, layer_index, asset_colours=None):
     layer = layers[layer_index]
     x, y = layer["x_mm"] + layer["w_mm"] / 2, layer["y_mm"] + layer["h_mm"] / 2
     colour = background_at(side["background"], x, y, side["page_width_mm"], side["page_height_mm"], asset_colours)
+    colour = overlay_blend(colour, side.get("overlay"), x, y, side["page_width_mm"], side["page_height_mm"])
     for below in layers[:layer_index]:
         if below.get("hidden") or below["kind"] not in ("shape", "band") or not below.get("fill"):
             continue
@@ -90,10 +123,13 @@ def unreadable_layers(side, asset_colours=None):
     """Names of text layers that fall below 4.5:1 on this side."""
     failing = []
     for index, layer in enumerate(side["layers"]):
-        if layer.get("hidden") or layer["kind"] not in ("text", "data_field"):
+        if layer.get("hidden") or layer.get("decorative") or layer["kind"] not in ("text", "data_field", "certificate_id"):
             continue
         under = colour_under(side, index, asset_colours)
-        text = blend(under, rgb(layer["colour"]), layer.get("opacity", 100) / 100)
-        if ratio(text, under) < MINIMUM_RATIO:
+        if layer.get("highlight"):  # the bar sits under the text: that is the colour it is read against
+            under = blend(under, rgb(layer["highlight"]["colour"]), layer.get("opacity", 100) / 100)
+        colours = [layer["colour"], *(span["colour"] for span in layer.get("spans") or [] if span.get("colour"))]
+        if any(ratio(blend(under, rgb(colour), layer.get("opacity", 100) / 100), under) < MINIMUM_RATIO
+               for colour in colours):
             failing.append(layer.get("name") or layer["id"])
     return failing

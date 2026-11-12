@@ -39,6 +39,9 @@ class CardHolderSampleSerializer(PiiMaskingSerializerMixin, serializers.Serializ
     name = serializers.CharField(allow_blank=True)
     number = serializers.CharField(allow_blank=True)
     label = serializers.CharField(allow_blank=True)
+    cutout = serializers.DictField(child=serializers.BooleanField(), required=False,
+                                   help_text="`available`: a ready cut-out of the holder's current photo exists; "
+                                             "`use_cutout`: the holder or staff chose it.")
 
     def to_representation(self, instance):
         from apps.accounts.pii_presentation import is_platform_superadmin, mask_data, pii_visible

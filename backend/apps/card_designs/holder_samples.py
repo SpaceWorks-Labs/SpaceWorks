@@ -57,8 +57,9 @@ def holder(actor, design, holder_id):
 def row(kind, card):
     spec = spec_for(kind)
     values = spec.snapshot(card)
+    from .cards import cutout_flags
     return {"id": card.pk, "kind": kind, "name": str(values.get("name") or ""), "number": str(values.get("number") or ""),
-            "label": spec.label(card) or ""}
+            "label": spec.label(card) or "", "cutout": cutout_flags(kind, card)}
 
 
 def preview_context(kind, card, document):

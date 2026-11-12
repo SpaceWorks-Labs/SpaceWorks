@@ -22,6 +22,13 @@ class RenderContext:
     logos: dict = field(default_factory=dict, repr=False)
     assets: dict = field(default_factory=dict, repr=False)
     asset_colours: dict = field(default_factory=dict)
+    # Card Studio: the holder's derived cut-out (PNG with alpha) and whether the holder chose to use it; the locale
+    # picks a text layer's `translations` entry.
+    photo_cutout: bytes | None = field(default=None, repr=False)
+    use_cutout: bool = False
+    locale: str = ""
+    # Certificates (decision 315): {slot: {"name", "title", "image": bytes | None, "approved": bool}}.
+    signatories: dict = field(default_factory=dict, repr=False)
     preview: bool = False
     preview_label: str = ""
 
@@ -34,7 +41,7 @@ def page_size(document):
 
 def draw_side(canvas, document, side_name, context, *, origin=(0.0, 0.0), mirror=False):
     """Draw one side with its bottom-left corner at `origin` (points)."""
-    from .rendering_background import draw_background, draw_preview_mark, draw_watermark
+    from .rendering_background import draw_background, draw_overlay, draw_preview_mark, draw_watermark
     from .rendering_layers import draw_layer
     side = document[side_name]
     canvas.saveState()
@@ -45,9 +52,11 @@ def draw_side(canvas, document, side_name, context, *, origin=(0.0, 0.0), mirror
         path.rect(0, 0, width, height)
         canvas.clipPath(path, stroke=0, fill=0)
         draw_background(canvas, document, side, context)
+        draw_overlay(canvas, document, side)
         draw_watermark(canvas, document, side, context)
+        hidden_groups = {group["id"] for group in side.get("groups", []) if group.get("hidden")}
         for index, layer in enumerate(side["layers"]):
-            if not layer.get("hidden"):
+            if not layer.get("hidden") and layer.get("group") not in hidden_groups:
                 draw_layer(canvas, document, side, index, layer, context)
         if context.preview and context.preview_label:
             draw_preview_mark(canvas, side, context.preview_label)

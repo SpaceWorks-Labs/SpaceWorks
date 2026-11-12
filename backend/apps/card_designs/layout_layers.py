@@ -7,27 +7,38 @@ from rest_framework.exceptions import ValidationError
 
 from . import stocks
 from .contrast import HEX
+from . import layout_certificate as certificate
+from . import layout_studio as studio
+from . import studio_icons
+from .studio_geometry import POLYGON_SHAPES
 from .data_fields import valid_tag, validate_text
 
 KINDS = ("text", "data_field", "image", "logo", "photo", "desk_qr", "verify_qr", "checkin_qr", "barcode", "shape", "band",
-         "perforation")
+         "perforation", "icon", *certificate.CERTIFICATE_KINDS)
 QR_KINDS = ("desk_qr", "verify_qr", "checkin_qr")
 COMMON = {"id", "kind", "name", "x_mm", "y_mm", "w_mm", "h_mm", "rotation", "opacity", "locked", "hidden", "group"}
 TEXT = {"text", "field", "font_family", "font_weight", "font_size_pt", "align", "valign", "colour",
-        "uppercase", "tracking_pt", "line_height", "shrink_to_fit"}
+        "uppercase", "tracking_pt", "line_height", "shrink_to_fit",
+        # Card Studio (decision 314): rich text, effects, translations.
+        "spans", "stroke", "shadow", "highlight", "underline", "translations", "decorative"}
+FRAME = {"zoom", "focal_x_pct", "focal_y_pct", "flip_x", "flip_y", "radius_mm", "outline", "shadow"}
 EXTRA = {
     "text": TEXT, "data_field": TEXT,
-    "image": {"asset_id", "fit"},
+    "image": {"asset_id", "fit", "mask"} | FRAME,
     "logo": {"source", "tile"},
-    "photo": {"shape", "filter", "duotone_dark", "duotone_light"},
+    "photo": {"shape", "filter", "duotone_dark", "duotone_light", "variant"} | FRAME,
     "desk_qr": set(), "verify_qr": set(), "checkin_qr": set(),
-    "barcode": {"source", "show_text"},
-    "shape": {"shape", "fill", "stroke", "stroke_mm", "radius_mm"},
-    "band": {"fill", "radius_mm"},
+    "barcode": {"source", "show_text", "symbology"},
+    "shape": {"shape", "fill", "stroke", "stroke_mm", "radius_mm", "fill_gradient", "flip_x", "flip_y", "shadow"},
+    "band": {"fill", "radius_mm", "shadow"},
     "perforation": {"colour", "orientation"},
+    "icon": studio_icons.ICON_KEYS,  # decision 344(b): a key into the vendored icon library, never path data
+    **certificate.EXTRA,  # certificate documents only (decision 315)
 }
 LOGO_SOURCES = ("space", "organisation", "event", "symbol", *(f"sponsor_{n}" for n in range(1, 7)))
 PHOTO_FILTERS = ("none", "grey", "duotone")
+PHOTO_VARIANTS = ("original", "cutout", "auto")  # auto = the holder's own use-cut-out choice
+SHAPES = ("rect", "rounded", "circle", "ellipse", "arch", "line", *POLYGON_SHAPES)
 BARCODE_SOURCES = ("number", "desk")
 # Code128 at a 0.19 mm module: the 32-character desk code needs ~75 mm, a short number ~30 mm.
 BARCODE_MIN_WIDTH_MM = {"number": 30.0, "desk": 75.0}
@@ -108,6 +119,18 @@ def _text(value, row):
     row["shrink_to_fit"] = _bool(row, "shrink_to_fit", True)
 
 
+def _check_face(family, weight):
+    """A span's face must be in the library; a bare weight is checked against the layer's own family later."""
+    from .fonts import canonical, family_weights
+    if family is None:
+        return
+    weights = family_weights(canonical(family))
+    if not weights:
+        raise ValidationError({"spans": gettext('“{value}” is not in the card font library.').format(value=family)})
+    if weight is not None and weight not in weights:
+        raise ValidationError({"spans": gettext('{value} ships weights {value2}.').format(value=family, value2=', '.join(map(str, weights)))})
+
+
 def _photo_filter(value, row):
     row["filter"] = value.get("filter", "none")
     if row["filter"] not in PHOTO_FILTERS:
@@ -117,21 +140,28 @@ def _photo_filter(value, row):
 
 
 def _barcode(value, row):
-    """A Code128 barcode of the printed number, or of the desk code (the same staff-only
-    payload as the desk QR, for USB barcode scanners at the desk; never the check token)."""
+    """A barcode of the printed number, or of the desk code (the same staff-only payload as the desk QR, for USB
+    scanners at the desk; never the check token). `symbology` (decision 345(c), default Code 128 and then omitted)."""
+    from .barcode_symbols import SYMBOLOGIES, minimum
     row["source"] = value.get("source", "number")
     row["show_text"] = _bool(value, "show_text", True)
     if row["source"] not in BARCODE_SOURCES:
         raise ValidationError({"layers": gettext("A barcode carries the card number or the desk code.")})
-    minimum = BARCODE_MIN_WIDTH_MM[row["source"]]
-    if row["w_mm"] < minimum - 0.01 or row["h_mm"] < BARCODE_MIN_HEIGHT_MM - 0.01 or row["opacity"] != 100             or row["rotation"] % 90:
-        raise ValidationError({"layers": gettext('This barcode needs {minimum:g} x {BARCODE_MIN_HEIGHT_MM:g} mm, full opacity and a right-angle turn so scanners can read it.').format(minimum=minimum, BARCODE_MIN_HEIGHT_MM=BARCODE_MIN_HEIGHT_MM)})
+    symbology = value.get("symbology", "code128")
+    if symbology not in SYMBOLOGIES:
+        raise ValidationError({"layers": gettext("Barcodes are Code 128, Code 39, EAN-13, UPC-A, PDF417, Data Matrix or Aztec.")})
+    if symbology != "code128":
+        row["symbology"] = symbology
+    min_w, min_h = minimum(symbology, row["source"])
+    if row["w_mm"] < min_w - 0.01 or row["h_mm"] < min_h - 0.01 or row["opacity"] != 100 or row["rotation"] % 90:
+        raise ValidationError({"layers": gettext('This barcode needs {minimum:g} x {BARCODE_MIN_HEIGHT_MM:g} mm, full opacity and a right-angle turn so scanners can read it.').format(minimum=min_w, BARCODE_MIN_HEIGHT_MM=min_h)})
 
 
-def normalize_layer(value, width, height, stock):
+def normalize_layer(value, width, height, stock, document_kind="card"):
     if not isinstance(value, dict) or value.get("kind") not in KINDS:
         raise ValidationError({"layers": gettext("Unknown layer kind.")})
     kind = value["kind"]
+    certificate.check_allowed(kind, document_kind)
     if kind == "band":  # early drafts stored shape keys on bands; they carry no meaning there
         value = {key: item for key, item in value.items() if key not in ("shape", "stroke", "stroke_mm")}
     if set(value) - (COMMON | EXTRA[kind]):
@@ -143,24 +173,44 @@ def normalize_layer(value, width, height, stock):
     row["locked"] = _bool(value, "locked")
     row["hidden"] = _bool(value, "hidden")
     row["group"] = asset_id(value["group"]) if value.get("group") else None
+    if row["hidden"] and document_kind == "certificate" and kind in certificate.ALWAYS_PRESENT:
+        raise ValidationError({"layers": gettext("The verification QR and certificate number cannot be hidden.")})
     _geometry(value, row, width, height)
+    if kind == "data_field" and "spans" in value:
+        raise ValidationError({"layers": gettext("Only text layers take spans.")})
+    if kind == "text" and value.get("spans") is not None:
+        clean, joined = studio.spans(value["spans"], _check_face)
+        value = {**value, "text": joined}
     if kind in ("text", "data_field"):
         _text(value, row)
+        if kind == "text" and value.get("spans") is not None:
+            row["spans"] = clean
+        studio.text_extras(value, row)
+        if value.get("decorative"):  # background lettering: exempt from the 4.5:1 text check, never read aloud
+            row["decorative"] = studio.flag(value["decorative"], "decorative")
     elif kind == "image":
         row["asset_id"] = asset_id(value.get("asset_id"))
         row["fit"] = value.get("fit", "contain")
-        if row["fit"] not in ("cover", "contain"):
-            raise ValidationError({"layers": gettext("Images cover or contain their box.")})
+        if row["fit"] not in studio.FITS:
+            raise ValidationError({"layers": gettext("Images cover, contain or stretch their box.")})
+        studio.frame(value, row)
     elif kind == "logo":
         row["source"] = value.get("source", "space")
         row["tile"] = _bool(value, "tile")
         if row["source"] not in LOGO_SOURCES:
             raise ValidationError({"layers": gettext("Logos come from the space, organisation, event or symbol.")})
+        if document_kind == "certificate" and row["source"] != "symbol":
+            raise ValidationError({"layers": gettext("On a certificate, upload a logo as an image layer; only the Space Works symbol is a logo slot.")})
     elif kind == "photo":
         row["shape"] = value.get("shape", "rounded")
-        if row["shape"] not in ("circle", "rounded", "square"):
-            raise ValidationError({"layers": gettext("Photos are circle, rounded or square.")})
+        if row["shape"] not in ("circle", "rounded", "square", "arch"):
+            raise ValidationError({"layers": gettext("Photos are circle, rounded, square or arch.")})
         _photo_filter(value, row)
+        if value.get("variant", "original") not in PHOTO_VARIANTS:
+            raise ValidationError({"layers": gettext("A photo shows the original, the cut-out or the holder's choice.")})
+        if value.get("variant", "original") != "original":
+            row["variant"] = value["variant"]
+        studio.frame(value, row, allow_mask=False)
     elif kind in QR_KINDS:
         minimum = stocks.qr_minimum_mm(stock)
         if min(row["w_mm"], row["h_mm"]) < minimum - 0.01 or row["opacity"] != 100 or row["rotation"] % 90:
@@ -173,12 +223,23 @@ def normalize_layer(value, width, height, stock):
         row["radius_mm"] = _number(value.get("radius_mm", 0), 0, 20, "radius_mm")
         if kind == "shape":
             row["shape"] = value.get("shape", "rect")
-            if row["shape"] not in ("rect", "ellipse", "line"):
-                raise ValidationError({"layers": gettext("Shapes are rectangles, ellipses or lines.")})
+            if row["shape"] not in SHAPES:
+                raise ValidationError({"layers": gettext("Shapes are rectangles, rounded, circles, ellipses, arches, lines, triangles, diamonds, hexagons or stars.")})
+            if value.get("fill_gradient") is not None:
+                row["fill_gradient"] = studio.gradient(value["fill_gradient"], "fill_gradient", alpha=True)
+            for key in ("flip_x", "flip_y"):
+                if key in value and studio.flag(value[key], key):
+                    row[key] = True
             row["stroke"] = _hex(value.get("stroke"), "stroke", nullable=True)
             row["stroke_mm"] = _number(value.get("stroke_mm", 0.3), 0, 5, "stroke_mm")
-        if row["fill"] is None and row.get("stroke") is None:
+        if value.get("shadow") is not None:
+            row["shadow"] = studio.shadow(value["shadow"])
+        if row["fill"] is None and row.get("stroke") is None and "fill_gradient" not in row:
             raise ValidationError({"layers": gettext("A shape needs a fill or an outline.")})
+    elif kind == "icon":
+        studio_icons.normalize(value, row, _hex, studio.flag)
+    elif kind in certificate.CERTIFICATE_KINDS:
+        certificate.normalize(kind, value, row, _text)
     elif kind == "perforation":
         row["colour"] = _hex(value.get("colour", "#D5D0C6"), "colour")
         row["orientation"] = value.get("orientation", "vertical")

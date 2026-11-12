@@ -136,6 +136,10 @@ class CardPreviewSerializer(serializers.Serializer):
     long_names = serializers.BooleanField(default=False)
     holder_id = serializers.IntegerField(required=False, min_value=1,
                                          help_text="Preview as this real holder (see the design's holders list).")
+    bleed_mm = serializers.FloatField(default=0, min_value=0, max_value=5,
+                                      help_text="Print-ready: mirror bleed around the trim (0 = trim only).")
+    crop_marks = serializers.BooleanField(default=False, help_text="Print-ready PDF: crop marks in a 7 mm slug.")
+    dpi = serializers.ChoiceField(choices=(150, 300), default=150, help_text="PNG resolution.")
 
 
 class CardTemplateSerializer(serializers.Serializer):

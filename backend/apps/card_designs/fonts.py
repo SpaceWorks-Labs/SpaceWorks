@@ -23,9 +23,25 @@ from functools import lru_cache
 from pathlib import Path
 
 BRAND_DIR = Path(__file__).resolve().parent.parent / "events" / "certificates" / "fonts"
+# Card Studio (decision 314): vendored open faces live beside the card engine, with their licences.
+STUDIO_DIR = Path(__file__).resolve().parent / "fonts"
 BRAND = {
-    "Outfit": {weight: f"Outfit-{weight}.ttf" for weight in (400, 500, 600, 700)},
-    "Unbounded": {weight: f"Unbounded-{weight}.ttf" for weight in (400, 500, 600, 700)},
+    "Outfit": {weight: f"Outfit-{weight}.ttf" for weight in (300, 400, 500, 600, 700, 800)},
+    "Unbounded": {weight: f"Unbounded-{weight}.ttf" for weight in (400, 500, 600, 700, 800)},
+    "Bebas Neue": {400: "BebasNeue-400.ttf"},
+    "Pacifico": {400: "Pacifico-400.ttf"},
+    "DM Serif Display": {400: "DMSerifDisplay-400.ttf"},
+}
+# Faces ReportLab cannot embed (CFF outlines in an OpenType container, file unmodified by licence): the
+# renderer draws their glyph outlines as vector paths (`rendering_outline.py`). Two single-weight families so the
+# legacy "Gilroy" token (always Outfit) keeps meaning what stored designs expect.
+OUTLINE = {"Gilroy Light": {300: "Gilroy-Light.otf"}, "Gilroy ExtraBold": {800: "Gilroy-ExtraBold.otf"}}
+# The Studio allow-list, shown first in the font picker: (family, category, licence file).
+STUDIO_FONTS = {
+    "Gilroy Light": ("sans", "Gilroy-Free-Font-EULA.txt"), "Gilroy ExtraBold": ("sans", "Gilroy-Free-Font-EULA.txt"),
+    "Outfit": ("sans", "OFL-Outfit.txt"), "Unbounded": ("display", "OFL-Unbounded.txt"),
+    "Bebas Neue": ("display", "OFL-BebasNeue.txt"), "Pacifico": ("handwriting", "OFL-Pacifico.txt"),
+    "DM Serif Display": ("serif", "OFL-DMSerifDisplay.txt"),
 }
 LEGACY_FAMILIES = {"Gilroy": "Outfit"}
 CATEGORIES = ("sans", "serif", "display", "handwriting", "mono")
@@ -69,10 +85,17 @@ def bundled_noto():
     return found
 
 
+def is_outline(family, weight):
+    return weight in OUTLINE.get(family, {})
+
+
 def bundled_path(family, weight):
     family = canonical(family)
+    if family in OUTLINE and weight in OUTLINE[family]:
+        return STUDIO_DIR / OUTLINE[family][weight]
     if family in BRAND and weight in BRAND[family]:
-        return BRAND_DIR / BRAND[family][weight]
+        name = BRAND[family][weight]
+        return (STUDIO_DIR if (STUDIO_DIR / name).exists() else BRAND_DIR) / name
     return bundled_noto().get(family, {}).get(weight)
 
 
@@ -81,7 +104,7 @@ def family_weights(family):
     if not isinstance(family, str):
         return ()
     family = canonical(family)
-    weights = set(BRAND.get(family, {})) | set(bundled_noto().get(family, {}))
+    weights = set(BRAND.get(family, {})) | set(OUTLINE.get(family, {})) | set(bundled_noto().get(family, {}))
     weights |= set(catalogue().get(family, {}).get("weights", ()))
     return tuple(sorted(weights))
 
@@ -93,8 +116,9 @@ def is_bundled(family, weight):
 def describe(family):
     family = canonical(family)
     row = catalogue().get(family)
-    if family in BRAND:
-        return {"family": family, "category": "sans", "weights": family_weights(family),
+    if family in BRAND or family in OUTLINE:
+        category = STUDIO_FONTS.get(family, ("sans",))[0]
+        return {"family": family, "category": category, "weights": family_weights(family),
                 "scripts": ("latin", "latin-ext"), "popularity": 0, "bundled": True}
     if row is None and family in bundled_noto():
         return {"family": family, "category": "sans", "weights": family_weights(family),
@@ -107,7 +131,8 @@ def describe(family):
 def search(query="", *, category="", script="", limit=60, offset=0):
     """Brand faces first, then catalogue families by popularity."""
     query = (query or "").strip().lower()
-    names = list(BRAND) + sorted(set(catalogue()) - set(BRAND), key=lambda name: (catalogue()[name]["popularity"] or 99999, name))
+    names = list(STUDIO_FONTS) + [name for name in BRAND if name not in STUDIO_FONTS] + sorted(
+        set(catalogue()) - set(BRAND) - set(OUTLINE), key=lambda name: (catalogue()[name]["popularity"] or 99999, name))
     rows = []
     for name in names:
         row = describe(name)

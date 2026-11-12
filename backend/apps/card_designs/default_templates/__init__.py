@@ -9,6 +9,8 @@ the 4.5:1 contrast check in both themes, and QR codes sit on white at 18 mm or m
 from django.utils.translation import gettext
 from . import backs, backs_org, fronts, fronts_org
 from .builders import CREAM, INK, WHITE, document
+from .certificates import CERTIFICATE_BUILDERS, CERTIFICATE_LOOKS
+from .studio import BUILDERS as _STUDIO, STUDIO_LOOKS
 from .themes import THEMES, apply
 
 # Bump when a shipped fallback layout changes; completed outputs remain immutable.
@@ -76,11 +78,19 @@ def _look(key):
 ORG_LOOKS = {"aurora": "Aurora", "kasavu": "Kasavu", "ribbon": "Ribbon", "confetti": "Confetti",
              "midnight": "Midnight", "sunrise": "Sunrise", "standard_portrait": "Standard portrait"}
 TEMPLATES = {"classic": classic, "bold": bold, "minimal": minimal, "community": community, "student": student,
-             "event_pass": event_pass, **{key: _look(key) for key in ORG_LOOKS}}
+             "event_pass": event_pass, **{key: _look(key) for key in ORG_LOOKS}, **_STUDIO}
 LABELS = {"classic": "Classic", "bold": "Bold", "minimal": "Minimal", "community": "Community",
-          "student": "Student", "event_pass": "Event pass", **ORG_LOOKS}
+          "student": "Student", "event_pass": "Event pass", **ORG_LOOKS, **STUDIO_LOOKS}
 DEFAULT_FOR_DOMAIN = {"member_cards": "classic", "id_programme": "community", "event_card": "event_pass",
                       "event_ticket": "event_pass", "staff_cards": "classic"}
+
+
+def build_certificate(key, theme="light"):
+    """A built-in certificate look (decision 315): a version 3 `kind: certificate` document."""
+    from rest_framework.exceptions import ValidationError
+    if key not in CERTIFICATE_BUILDERS or theme not in THEMES:
+        raise ValidationError({"template": gettext("Choose one of the certificate templates, light or dark.")})
+    return CERTIFICATE_BUILDERS[key](theme)
 
 
 def build(key, domain, theme="light"):

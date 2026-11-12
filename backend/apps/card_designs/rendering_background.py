@@ -46,6 +46,50 @@ def draw_image(canvas, data, x, y, width, height, *, fit="contain", alpha=1.0, g
     return True
 
 
+def paint_gradient(canvas, spec, width, height):
+    """A linear or radial gradient across the box (0, 0, width, height) in points; CSS angle convention."""
+    from reportlab.lib.colors import HexColor
+    from .studio_geometry import gradient_line, radial_circle
+    colours = [HexColor(stop["colour"]) for stop in spec["stops"]]
+    positions = [stop["at"] / 100 for stop in spec["stops"]]
+    if spec["type"] == "radial":
+        cx, cy, radius = radial_circle(spec, width, height)
+        canvas.radialGradient(cx, height - cy, radius, colours, positions, extend=True)
+        return
+    x0, y0, x1, y1 = gradient_line(spec, width, height)
+    canvas.linearGradient(x0, height - y0, x1, height - y1, colours, positions, extend=True)
+
+
+def draw_background_image(canvas, background, data, width, height):
+    """Uploaded background: fit, zoom, focal point and blur (blur_mm) through the effects raster when asked for."""
+    if not data:
+        return
+    plain = (background.get("fit", "cover") in ("cover", "contain") and not background.get("zoom")
+             and "focal_x_pct" not in background and "focal_y_pct" not in background and not background.get("blur_mm"))
+    if plain:
+        draw_image(canvas, data, 0, 0, width, height, fit=background.get("fit", "cover"))
+        return
+    from reportlab.lib.units import mm
+    from .rendering_media import blurred_background
+    composed = blurred_background(data, background, width / mm, height / mm)
+    if composed is not None:
+        from reportlab.lib.utils import ImageReader
+        canvas.drawImage(ImageReader(composed), 0, 0, width=width, height=height, mask="auto")
+
+
+def draw_overlay(canvas, document, side):
+    """The side's gradient overlay (stops carry alpha), laid over the background and under the layers."""
+    overlay = side.get("overlay")
+    if not overlay or document.get("mono"):
+        return
+    from reportlab.lib.units import mm
+    from reportlab.lib.utils import ImageReader
+    from .rendering_media import overlay_image
+    width, height = side["page_width_mm"], side["page_height_mm"]
+    canvas.drawImage(ImageReader(overlay_image(overlay, width, height)), 0, 0, width=width * mm, height=height * mm,
+                     mask="auto")
+
+
 def draw_background(canvas, document, side, context):
     from reportlab.lib.colors import HexColor
     from reportlab.lib.units import mm
@@ -57,25 +101,13 @@ def draw_background(canvas, document, side, context):
         return
     kind = background["kind"]
     if kind == "gradient":
-        import math
-        colours = [HexColor(stop["colour"]) for stop in background["stops"]]
-        positions = [stop["at"] / 100 for stop in background["stops"]]
-        if background["type"] == "radial":
-            canvas.radialGradient(width / 2, height / 2, math.hypot(width, height) / 2, colours, positions,
-                                  extend=True)
-        else:
-            angle = math.radians(background["angle_deg"])
-            dx, dy = math.sin(angle), math.cos(angle)
-            half = (abs(width * dx) + abs(height * dy)) / 2
-            cx, cy = width / 2, height / 2
-            canvas.linearGradient(cx - dx * half, cy - dy * half, cx + dx * half, cy + dy * half, colours,
-                                  positions, extend=True)
+        paint_gradient(canvas, background, width, height)
         return
     fill = background.get("colour") if kind == "colour" else background.get("fallback", "#FFFFFF")
     canvas.setFillColor(HexColor(fill))
     canvas.rect(0, 0, width, height, fill=1, stroke=0)
     if kind == "image":
-        draw_image(canvas, context.assets.get(background["asset_id"]), 0, 0, width, height, fit=background["fit"])
+        draw_background_image(canvas, background, context.assets.get(background["asset_id"]), width, height)
         if background.get("dim_pct"):
             canvas.saveState()
             canvas.setFillColor(HexColor("#000000"))

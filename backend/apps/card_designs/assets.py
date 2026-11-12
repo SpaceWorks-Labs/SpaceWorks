@@ -44,10 +44,10 @@ def finalize(actor, makerspace, asset_id):
     if data is None:
         raise ValidationError({"asset_id": gettext("Upload not found; upload the image first.")})
     png, width, height, mean = normalise(data, max_edge=EDGES[row.kind])
-    put_bytes(row.object_key, png, "image/png")
     with transaction.atomic():
         row = CardDesignAsset.objects.select_for_update().get(pk=row.pk)
-        add_storage(makerspace, len(png))
+        add_storage(makerspace, len(png))  # charge before the write: a space at its cap leaves no orphan object
+        put_bytes(row.object_key, png, "image/png")
         row.content_type, row.size_bytes, row.sha256 = "image/png", len(png), hashlib.sha256(png).hexdigest()
         row.width_px, row.height_px, row.mean_colour, row.ready = width, height, mean, True
         row.save(update_fields=["content_type", "size_bytes", "sha256", "width_px", "height_px", "mean_colour",

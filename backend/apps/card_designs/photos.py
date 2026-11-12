@@ -50,11 +50,13 @@ def attach_bytes(actor, kind, card, data, *, consent):
         raise ValidationError({"consent": gettext("A photo needs the holder's consent to be stored.")})
     png, _w, _h, _mean = normalise(data, max_edge=1200, keep_alpha=False)
     key = final_key(card)
-    put_bytes(key, png, "image/png")
     with transaction.atomic():
         row = type(card).objects.select_for_update().get(pk=card.pk)
         old_key, old_size = row.photo_object_key, row.photo_size_bytes or 0
+        # Charge first: a space at its storage cap is refused before any bytes reach the bucket (no orphan object).
         add_storage(row.makerspace, len(png))
+        put_bytes(key, png, "image/png")
+        transaction.on_commit(lambda: _purge_stale_cutout(kind, row))
         row.photo_object_key, row.photo_content_type, row.photo_size_bytes = key, "image/png", len(png)
         row.photo_consent_at, row.photo_consent_version = timezone.now(), CONSENT_VERSION
         row.save(update_fields=["photo_object_key", "photo_content_type", "photo_size_bytes", "photo_consent_at",
@@ -69,6 +71,12 @@ def attach_bytes(actor, kind, card, data, *, consent):
         if old_key:
             transaction.on_commit(lambda: (delete_quietly(old_key), free_storage(row.makerspace, old_size)))
     return row
+
+
+def _purge_stale_cutout(kind, card):
+    """A replaced photo leaves its cut-out stale (never printed); delete it so its storage charge goes back too."""
+    from .cutout_staleness import purge_if_stale
+    purge_if_stale(kind, card)
 
 
 def finalize(actor, kind, card, *, object_key, consent):
@@ -88,6 +96,8 @@ def remove(actor, kind, card):
     card.photo_consent_at, card.photo_consent_version = None, ""
     card.save(update_fields=["photo_object_key", "photo_content_type", "photo_size_bytes", "photo_consent_at",
                              "photo_consent_version", "updated_at"])
+    from .cutouts import purge_for_card
+    purge_for_card(kind, card)  # D314c: the derived cut-out goes with its original
     delete_quietly(key)
     free_storage(card.makerspace, size)
     if kind == "programme_card":

@@ -14,7 +14,7 @@ ENROLLMENT_TOKEN = "enrollment_token"
 DEVICE_SIGNATURE = "device_signature"
 AUTH_MODES = frozenset({ENROLLMENT_TOKEN, DEVICE_SIGNATURE})
 DEVICE_URL_PREFIX = "api/v1/device/"
-ALL_KINDS = frozenset({"printer", "label_printer", "generic"})
+ALL_KINDS = frozenset({"printer", "label_printer", "generic", "adapter"})
 
 
 @dataclass(frozen=True)
@@ -50,6 +50,10 @@ DEVICE_ROUTES.update(label_routes(DeviceRoute, DEVICE_SIGNATURE))
 from .route_registry_r2 import integration_routes
 
 DEVICE_ROUTES.update(integration_routes(DeviceRoute, DEVICE_SIGNATURE))
+
+from .route_registry_adapter import adapter_routes
+
+DEVICE_ROUTES.update(adapter_routes(DeviceRoute, DEVICE_SIGNATURE))
 
 
 def entry_for(request):

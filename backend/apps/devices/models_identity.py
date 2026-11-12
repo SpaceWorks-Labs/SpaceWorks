@@ -22,6 +22,7 @@ class Device(models.Model):
         PRINTER = "printer", "Printer"
         LABEL_PRINTER = "label_printer", gettext_noop("Label printer")
         GENERIC = "generic", "Generic"
+        ADAPTER = "adapter", gettext_noop("Device adapter")
 
     class Status(models.TextChoices):
         PENDING = "pending", gettext_noop("Pending enrollment")

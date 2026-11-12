@@ -259,3 +259,15 @@ payment ID to refund excess in the provider dashboard; do not overwrite the orig
 Member documents use GET `.../payment-documents` and GET
 `.../payment-documents/{document_id}/download-url` in their member makerspace scope.
 The download grant is user-bound and expires after five minutes.
+
+
+## Native access to staff routes, rate limits and sign-in (0.12.0)
+
+- A native staff grant sends `X-Makerspace-Id` on every staff route. The server must resolve the route's makerspace
+  from the path, the object, the body or a link token; otherwise it answers 403 "Makerspace target could not be
+  resolved". Object-id routes for consumable pools, asset QR codes, membership records, report schedules and
+  warranties, and the scanned member-card check link, resolve it from 0.12.0. Leave the header off global routes.
+- Throttled routes answer 429 with `Retry-After`. New limits: username check 20/min and 300/day, signed-in
+  profile reads 30/min and 500/day, adapter watch start 10/min.
+- A new account without a username gets `403` with `code: handle_required` on writes; see the mobile PRD.
+- The full parity record and open items are in [docs/mobile/MOBILE-API-0.12.0.md](mobile/MOBILE-API-0.12.0.md).

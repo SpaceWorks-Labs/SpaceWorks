@@ -128,6 +128,31 @@ its refund anchor. A different capture on an already settled charge raises one
 captured amount in minor units and currency. Staff refund that excess in the provider
 dashboard; the original charge and its refund balance remain unchanged.
 
+## Provider setup and switching (self-host)
+
+- **Razorpay: turn on automatic capture.** In the Razorpay Dashboard (Account & Settings ›
+  Payment capture) set capture to automatic. Native Orders also ask for it per order
+  (`payment_capture: 1`), but an account setting can override that. A payment that is only
+  *authorised* is never marked paid here, and Razorpay refunds it automatically after a few days.
+  The payment settings screen shows this hint under the Razorpay fields.
+- **Switching provider keeps the old one usable until you clear its keys.** The provider you
+  select decides only where *new* checkouts go. Charges raised under the old provider still belong
+  to it: while its keys stay saved, its webhook keeps settling late payments, refunds and
+  disputes, staff can refund those charges online, and a member can still pay an old unpaid debt
+  of that provider online. Both directions work this way (Stripe to Razorpay and back). Clear the
+  old keys once its refunds and disputes are finished. After that, old debts are paid at the desk.
+  A switch is refused while the other provider still has an open checkout page or in-app payment.
+- **Stripe Connect fee for three-decimal currencies.** KWD, BHD, OMR, JOD and TND move in 10-fils
+  steps at Stripe, so the platform fee on a new charge is rounded to a multiple of 10 fils.
+  Existing charges keep the fee stored when they were raised.
+- **Webhooks.** A Stripe checkout counts as paid only when Stripe says `payment_status: paid`.
+  Razorpay deliveries are deduplicated by their delivery id and by a hash of the signed body,
+  because Razorpay's delivery id is not covered by its signature.
+- **A refund answer nobody can read** (a timeout, a 5xx, or a 2xx with an unreadable body) leaves
+  the refund *pending* with its amount reserved. The audit log records it as `outcome_unknown`,
+  and the gateway poll or the provider's webhook settles it. It is never treated as a refusal,
+  so a retry cannot refund the same money twice.
+
 ## Tax and GST
 
 `billing.tax` (off by default, a Space Manager-only finance setting, never delegable) turns on the

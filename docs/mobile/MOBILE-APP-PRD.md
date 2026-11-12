@@ -730,7 +730,7 @@ Other built backend analytics surfaces are listed for scope clarity:
 strategy is `sum|group_sum|row_union|weighted_rate|global_rank|distinct_person`.
 Always keep breakdown beside total. Native sessions gain no organization-derived authority;
 organization-only staff and organization screens remain outside v1. Superadmin-only
-`GET /admin/platform/analytics/{report_key}` (`platform-services|platform-usage`) returns
+`GET /admin/platform/analytics/{report_key}` (`platform-services|platform-usage|platform-channel-usage`) returns
 `{rows,typed_rows?,meta?,report_key?,chart_spec}`; `/admin/platform/analytics/makerspaces`
 is a paginated `{id,name,slug}` picker with `report_key` and `page` parameters. These platform
 surfaces are web-only because native superadmin sign-in is refused. Hidden service counts
@@ -1024,6 +1024,203 @@ marker: refetch on screen open, pull-to-refresh and app foreground, never on a t
 here use the standard page envelope except `checks`, `lines` and `history`, which are bounded
 arrays inside one object.
 
+#### Full API list for 0.12.0 and native parity
+
+Every new or changed operation, grouped by audience, with its operation ID and a native-access status, is in
+[MOBILE-API-0.12.0.md](MOBILE-API-0.12.0.md). It also records the parity audit of every call the web app
+makes. Read its "How native tokens are admitted" section before building any staff screen: a staff route
+needs `X-Makerspace-Id`, and global routes (`/member/profile`, `/auth/...`) must not carry it.
+
+#### Profile, username and privacy (member)
+
+Stories: as a member I keep one profile across every space and organization I belong to, choose my username,
+and control who sees it.
+
+| Method + path | Request / response | Notes |
+|---|---|---|
+| GET, PUT, PATCH `/member/profile` | `AccountProfileWrite` / `MemberAccountProfile` | Visibility `is_visible`, open-web `public_visible` with `publication_consent` (send `true` when turning it on, a fresh consent is required), section switches `show_*` |
+| POST, DELETE `/member/profile/handle` | `Handle` / `HandleRead` | Claim or change the username; DELETE releases it (a 30 day wait before claiming another) |
+| GET `/handles/check?handle=` | `HandleCheckResponse {handle, available, reason, suggestion}` | No sign-in needed; 20/min and 300/day per account (per IP when signed out) |
+| POST, PUT, DELETE `/member/profile/image` | upload then attach | Avatar |
+| GET, POST `/member/profile/achievements`, PATCH, DELETE `.../{id}` | `Achievement` | |
+| GET, POST `/member/profile/timeline`, GET, PATCH, DELETE `.../{id}` | `Timeline` / `TimelinePage` | Experience, education, volunteering |
+| GET, POST `/member/profile/project-import` | `ImportableSubmission`, `ImportInput` / `ImportedProject` | Import a hackathon project |
+| GET `/profiles/by-account/{user_id}/`, GET `/public/profiles/{handle}/` (+ `/activity`, `/events`, `/projects`, `/github`) | `MemberAccountProfile` | Read someone else's profile; 30/min and 500/day per signed-in reader, so cache. Non-co-members see only name, handle, avatar and public sections |
+
+`MemberAccountProfile.public_reconfirm_pending` true means an account merge asked the person to confirm
+open-web publication again: show a prompt; any explicit `public_visible` choice clears it. The older
+per-space routes `/member/makerspaces/{id}/profile...` still answer and return the same data. Refusal codes:
+403 `handle_required` on writes until a username exists (see "Sign-in on mobile"), 400 validation, 429.
+
+#### Machines for members
+
+| Method + path | Response | Notes |
+|---|---|---|
+| GET `/member/makerspaces/{id}/machine-access` | `MemberMachineAccess {grants, open_machines}` | My access grants (per machine or type, optional expiry) and machines open to all members |
+| GET `/member/makerspaces/{id}/machines` | `MemberMachinePage` | Machines I may use |
+| GET `/member/machines/{machine_id}/session` | `SessionPreview {can_start, refusal, digest, rate, max_minutes, live_session}` | Preview before starting |
+| POST `/member/machines/{machine_id}/sessions/start` | body `SessionStart {digest, event_id?}` → `MemberSession` | `event_id` = "this is for an event" |
+| POST `/member/machine-sessions/{id}/stop`, GET `/member/machine-sessions` | `MemberSession {event, charge_state, amount}` | |
+| GET `/member/makerspaces/{id}/machine-use/events/` | `[MachineUseEventOption {id, title, starts_at, ends_at}]` | The events I may pick |
+| POST `/public/{slug}/machine-jobs` (+ `/uploads`, GET `/types`) | `JobSubmit {…, consumable_estimates, event_id}`; `JobType.consumables` lists the type's consumables | One job flow for every machine type; per-type consumables with units |
+| GET `/member/machine-jobs`, `/{id}` | `MemberJob {event, report_consumables}` | Poll while a job is open (about every 30 s on the job screen only) |
+| POST `/member/machine-jobs/{id}/consumables` | `[ConsumableEntry {key, quantity, attributes}]` → `[JobConsumableUsage]` | Self-report what you used |
+| GET `/member/makerspaces/{id}/machine-types/{type_id}/guide`, `/member/machine-type-documents/{id}/url` | `MachineTypeGuide`, `TypeDocumentUrl` | Setup guide and documents (short-lived URL) |
+| POST `/public/{slug}/spaces/{token}/book/` | `PublicBookingInput {…, event_id?}` | Machine or room booking for an event |
+
+Access to a machine is by explicit grant (not certification). A refused start returns the reason in
+`SessionPreview.refusal` and 403/409 with a typed `code`; show it as text.
+
+#### My card, photo and wallet passes (member)
+
+`GET /member/cards` lists my cards (`kind` + `card_id`); `GET .../face`, `/download`, `/settings`, `PATCH
+.../settings`, `POST .../email`, `POST .../rotate-link`. Photo: `POST|PUT|DELETE .../photo` (PNG, JPEG or WebP up
+to 8 MB; EXIF and location data are stripped on the server), `POST .../photo/accept|discard|cleanup`. Background
+removal: `GET|POST|PUT|PATCH|DELETE .../photo/cutout` (`CutoutRequest {consent}`, `CutoutOptOut {opted_out}`);
+show the space's notice that card photos may be sent to its background-removal service, and let the member opt
+out (the original photo is then used). Wallet: `POST .../wallet/{platform}` returns a `CardJob` to poll at
+`GET /member/card-jobs/{id}` then `/result`; guest passes: `POST /member/makerspaces/{id}/guest-passes/{pass_id}/wallet/{platform}`.
+Older single-card routes `/member/makerspaces/{id}/member-card...` remain.
+
+#### Watching a machine, space "now" data, notifications and limits (member)
+
+- Adapter watch (job owner only): `POST /member/adapter-watch/requests/{request_id}` starts a watch (`Watch`,
+  10/min), `GET .../{id}/frame` (still image), `GET|POST .../{id}/signal`, `POST .../{id}/talk`, `DELETE
+  .../{id}`; relay calls are limited to 300/min. Artifacts and detections for a job:
+  `GET /member/adapter-artifacts/requests/{request_id}`, `/member/adapter-detections/requests/{request_id}`,
+  `GET /member/adapter-artifacts/{id}/url`. Errors use `DeviceError`.
+- Space now: `GET /public/makerspaces/{slug}/presence/here-now/` (`HereNow {audience, people, others_count,
+  total}`), `/machines/now/` (`MachinesNow {in_use, free, out_of_service, items}`), `/presence/now-config/`
+  (which sections the space shows). Refetch on screen open and every 30 to 60 s while visible. Display screens
+  use `/space-displays/*` with their own secret and are not app routes.
+- Notifications: `GET /notifications/inbox/{makerspace_id}` and `/families` (the notification families for the
+  preference screen). Push is device-registered; see "Push notifications".
+- Usage and limits for members: `GET /member/makerspaces/{id}/my-usage` and `/allowances` (`MemberAllowances`).
+  A Space Manager sees module limits and usage at `GET /admin/makerspace/{makerspace_id}/limits` (read-only).
+  Hitting a limit answers 4xx with a typed `code` and message; existing data is untouched.
+
+#### Staff essentials on a phone (native staff grant, `X-Makerspace-Id` required)
+
+| Task | Routes |
+|---|---|
+| Hand out, return, with evidence | the request and direct-handout routes in "Request lifecycle"; evidence rules in "Event-desk issue and return" |
+| Scan, register an external QR | `POST /admin/qr/scan`, `/qr/resolve`, `POST /admin/qr/external` (assign an existing printed code); scan a member card check link: `GET /admin/card-verifications/{token}/staff` |
+| Machine job queue | `/admin/machine-service/requests/{id}/accept|reject|start|complete|fail|cancel|reprint`; job consumables `GET|POST /admin/makerspaces/{id}/machine-jobs/{job}/consumables`; set or clear the event link `GET|PUT /admin/makerspace/{id}/machine-use/{kind}/{id}/event`, options `GET .../machine-use/events` |
+| Machine access | `GET|POST /admin/makerspaces/{id}/machine-access`, `GET .../machine-access/candidates`, `POST /admin/machine-access/{grant}/revoke`, `PATCH /admin/machines/{id}/open-access` |
+| Shelf pointer | `GET .../shelf-pointer/locations`, `POST .../shelf-pointer/show` and `/clear`, `POST .../shelf-pointer/coverage` ("Show on shelf" only where a calibrated pointer covers the target); stocktake with the pointer guide: `GET|POST .../shelf-checks`, `GET /admin/shelf-checks/{id}` |
+| Presence | `GET .../presence-sessions/{account_id}/related` (related block), `GET .../presence-sessions/check-in-guests` |
+| Guest passes | `POST /admin/makerspaces/{id}/guest-passes/scan` |
+
+Staff routes answer 403 to a member grant. Stock quantities, evidence and audit rules are the web rules.
+
+#### Throttles and 429
+
+Every throttled route answers `429` with a `Retry-After` header (seconds). Back off and show a calm message;
+never retry in a tight loop. New limits in 0.12.0: username check 20/min and 300/day; profile reads 30/min and
+500/day (signed in); adapter watch start 10/min and relay 300/min; native sign-in and refresh as listed under
+"Sign-in on mobile". Typed refusal bodies are `{detail, code}`; branch on `code`, show `detail`.
+
+#### Sign-in on mobile
+
+Use the device flow only: attestation challenge, `POST /auth/device/login`, `POST /auth/device/refresh`,
+`POST /auth/device/logout`. Staff and event authority are step-ups that require MFA at sign-in and, for staff, a
+fixed makerspace. A new account without a username gets `403 {"code":"handle_required"}` on writes: show the
+username screen (`GET /handles/check`, then `POST /member/profile/handle`) and retry; `GET /auth/me` carries
+`handle_required` and `handle_suggestion`. Browser-only: cookie refresh and `GET /auth/browser-state` (use the
+refresh token), `/notifications/browser-firebase/*` (use `POST /integrations/push/devices`).
+
+Sign-in doors the app offers, each only when the deployment's login-method switch enables it: password; the
+emailed code for an unusual sign-in (`mfa_required` with `purpose:"risk"`, finish at `/auth/mfa/verify` with
+`factor:"email_code"`); phone OTP (`/auth/phone/login/start|confirm`, `delivery:"device"`); Google, Apple and
+OIDC by native ID-token exchange (`/auth/social/nonce`, then `/auth/social/{google|apple|oidc/{slug}}` with
+`delivery:"device"`); GitHub by a PKCE code exchange; passkeys. Platform (superadmin) accounts never sign in on
+the phone (owner decision 356).
+
+**GitHub on the phone (decision 358 A).** GitHub has no ID token, so the app runs an authorization-code + PKCE
+exchange and the server binds it to the attested device:
+
+1. Make a PKCE pair: `code_verifier` = 43-128 random characters from `A-Z a-z 0-9 - . _ ~`; `code_challenge` =
+   base64url(SHA-256(verifier)) without `=` padding. Keep the verifier in memory only.
+2. First sign-in on this device: `POST /auth/device/attestation-challenge`, then `POST
+   /auth/social/github/device/authorize {client_platform:"ios"|"android", code_challenge, code_challenge_method:"S256",
+   challenge}`. Already signed in on this device (re-linking the session): send the device bearer and omit
+   `challenge`. Send no `Origin` or cookies. Answer `{authorization_url, state, redirect_uri, expires_in}`.
+3. Open `authorization_url` in `ASWebAuthenticationSession` (iOS) or Custom Tabs (Android). GitHub returns to
+   `redirect_uri`, which is always `https://<the deployment's public web host>/app/auth/github/callback?code=...&state=...`.
+   The app claims that path as an HTTPS universal link / Android App Link (iOS: `applinks:<host>` in Associated
+   Domains, the server's apple-app-site-association lists the path; Android: an `autoVerify` intent filter for
+   `https://<host>/app/auth/github/callback`, verified by the server's assetlinks.json). Never register a custom URL
+   scheme. Check the returned `state` equals the one you started with.
+4. `POST /auth/social/github/device {code, state, code_verifier, client_platform, challenge, attestation,
+   app_version}` (`challenge` + `attestation` for a first grant, the same challenge as step 2; the device bearer
+   otherwise). The answer is the same as the Google/Apple device exchange: `{access, refresh, user, outcome,
+   device_grant, device_trust}`, or `200 {mfa_required:true, ...}` for a person MFA is mandatory for (finish at
+   `/auth/mfa/verify`). Refusals: `404 social_unavailable` (GitHub off or not configured: hide the button), `401
+   social_invalid` (wrong verifier, unknown or used state: restart from step 1), `409 social_device_restart_required`
+   (the attestation challenge was spent: restart from a new challenge), `403` account rules (`registration_disabled`,
+   `account_link_required`, `access_denied`), `426`, `429`. The state lasts `expires_in` seconds; the attestation
+   challenge has its own shorter life, so start step 2 only when the person taps the button. If the phone
+   opened the redirect in the browser, the web page there says "Open in the Space Works app" and its button
+   re-opens the same link; make sure the app link is verified so this rarely happens.
+
+**Passkeys on the phone (decision 358 B).** The relying-party ID is the deployment's public web domain, the
+same domain the app's associated domains (iOS `webcredentials:<host>`) and Android Digital Asset Links
+(`get_login_creds`) bind to; the server never takes it from a header.
+
+- Sign in: `POST /auth/device/attestation-challenge`; `POST /auth/device/passkey/options {platform, app_id,
+  environment, challenge}` returns `{ceremony, options}`; pass `options` (a WebAuthn `PublicKeyCredentialRequestOptions`
+  JSON: `challenge`, `rpId`, `userVerification:"required"`, empty `allowCredentials` for a discoverable passkey) to
+  `ASAuthorizationPlatformPublicKeyCredentialProvider` (iOS) or Credential Manager `GetPublicKeyCredentialOption`
+  (Android); send the result as JSON (base64url binary fields) in `POST /auth/device/passkey/login {platform, app_id,
+  environment, challenge, attestation, ceremony, credential, app_version}`. The answer is the device token set
+  `{access, refresh, user, device_grant, device_trust}`; the session counts as MFA-verified, so a staff step-up
+  (`/auth/device/staff-grant`) can follow. `ceremony` is single use and lives 5 minutes.
+- Add a passkey (Settings, signed in): prove recent sign-in first (`403 recent_reauth_required` means `POST
+  /auth/reauth...`, then retry), then `POST /auth/passkeys/register/options` (`{ceremony, options}` = creation
+  options) and `POST /auth/passkeys/register/verify {ceremony, credential, name}`. Adding ends every OTHER session; the
+  answer carries this phone's new `access` and `refresh` (store them) plus `recovery_codes` the first time.
+- List, rename, remove: `GET /auth/passkeys`, `PATCH|DELETE /auth/passkeys/{id}` (rename and remove need recent
+  re-authentication; remove may answer `signed_out:true`, then sign in again). Re-authenticate with a passkey:
+  `POST /auth/reauth/passkey/options`, then `POST /auth/reauth/passkey {ceremony, credential}`.
+- Errors: `400 passkey_failed` (try again), `400 rp_id_unavailable` (the server has no public web domain: hide
+  passkeys), `403 passkeys_unavailable` (switched off for this deployment or this person: hide passkeys), `401`
+  (attestation challenge invalid or spent), `426`, `429`.
+- Second factor after a PASSWORD sign-in: when `factors` lists `passkey`, call `POST /auth/mfa/passkey/options
+  {challenge}` (no `Origin`), run the request options through the platform authenticator, then `POST
+  /auth/mfa/verify {challenge, factor:"passkey", webauthn:{ceremony, credential}}`.
+- Android: sign the app with any certificate listed on its approved registration (several are allowed for key
+  rotation); each one's `android:apk-key-hash` origin is accepted.
+
+Codes the app must handle: `200 {mfa_required:true, challenge, factors, purpose}` (finish at `/auth/mfa/verify`
+with a TOTP, recovery or email code); `403 recent_reauth_required` (prove it at `/auth/reauth`, then retry);
+`403 email_verification_required` (enter the emailed code at `/auth/email-verification/confirm`); `401
+account_suspended` or `account_restricted` (show the account state, do not loop to sign-in; the same session can
+still list and pay the person's own charges, read receipts and `my-usage`, and sign out, decision 260). A
+restricted or suspended person can also sign in and refresh (decision 361): the sign-in answer's
+`user.account_status` is `restricted` or `suspended`, so open straight on the pay-what-you-owe screen; any other `401`
+(refresh, and if refresh fails sign in again); `429` with `Retry-After`. Sign-up, password reset (`forgot-password`
+then `reset-password` with the emailed code) and email verification need no browser. Changing the password signs
+every session out, the phone's included. Sessions: `GET /auth/device/grants`, `DELETE /auth/device/grants/{id}`,
+`POST /auth/logout-all`. The full record is in [MOBILE-API-0.12.0.md](MOBILE-API-0.12.0.md).
+
+#### Payments on mobile
+
+List my charges at `GET /member/makerspaces/{id}/payments` and poll it after paying. To pay in the app call `POST
+/member/makerspaces/{id}/payments/{payment_id}/mobile-intent` (native session only, `X-Makerspace-Id` equal to the
+path): the answer is either the Stripe PaymentSheet parameters (`client_secret`, `publishable_key`) or the
+Razorpay order (`key_id`, `order_id`, `amount_minor`, `currency`, `name`, `description`), chosen by the `vendor`
+field. Calling it again for the same charge returns the same intent, so a retry never charges twice. Secret keys
+are never sent. Refusals: 404 (not your pending charge, or online paying is not installed on this server), 503
+`payments_unavailable` (no online payment for this charge: show "pay at the desk"; the list row then has
+`online_payment_available:false`), 409 `payment_rail_conflict` or `payment_settlement_pending`, 429. 3-D Secure is
+handled by the provider SDK; the payment's `status` in the list changes when the server receives the provider's
+webhook. Someone who borrowed hardware without being a member can still see and pay their own charges here. Other
+member routes: `paid-claim` (say you paid offline), `refund-request`, `payment-documents` and `download-url` for
+receipts (fetch the returned URL with the bearer). Staff on a phone can record a manual payment (`mark-offline`
+with method, reference and received date, corrected with `amend-settlement`), refund, and read the ledger, with
+the web authority; Stripe Connect onboarding returns an `authorize_url` that must be opened in a browser. Details:
+[MOBILE-API-0.12.0.md](MOBILE-API-0.12.0.md).
+
 ## 8. Phases
 
 Each phase ends with **tests green in CI, a commit (or a few small ones) per repo, and a short phase
@@ -1059,6 +1256,21 @@ Done when, in **each** repo:
 6. Screens: server-URL entry (validates by calling `/api/v1/health/`), sign-in placeholder, tab shell
    (Home, Inventory, Activity, Inbox, Profile; a Staff tab hidden by default), light/dark, font scaling.
 7. `AGENTS.md` in the repo (copy §10 below) and `docs/WHITE-LABEL.md` skeleton.
+
+### Analytics in the apps
+
+The superadmin and Space Managers see "Web and app use": how much people use the web console versus the iOS and
+Android apps, and which features each one uses. The server counts this itself from authenticated API calls, so the
+apps need no extra code for it. If an app also sends events to a product-analytics or crash tool (PostHog, Firebase
+Analytics, Sentry, Clarity), tag every event with `client: "ios"` or `client: "android"` (the web build sends
+`client: "web"`) and use the same event names as the web build so the two can be compared. Send no personal data:
+no name, email, phone, member or account id, address, device identifier, token, free text or screen contents.
+Event names and a coarse feature area are enough.
+
+Send your build on every API request in the optional `X-SpaceWorks-App-Version` header (1-32 characters of
+letters, digits, `.`, `+`, `_` or `-`, for example `2.1.0+45`; anything else is ignored). The server records it
+once per device and day so the superadmin can see which app builds are in use per platform (iOS or Android). It is
+a build string only; never put a person, device or account identifier in it.
 
 ## 9. Things the owner provides or manages (not the developer)
 

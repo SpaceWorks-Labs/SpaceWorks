@@ -6,7 +6,6 @@ default. The FK lives on `CardDesign`, never on the ticket model. L6 owns the ev
 confirmation email and attaches this PDF through `render_ticket` (the contract).
 """
 from django.utils.text import slugify
-from django.utils.translation import gettext
 from rest_framework.exceptions import APIException, NotFound
 
 from apps.card_designs.holders_member import fmt_date
@@ -30,17 +29,11 @@ def _event_local(event, moment):
 def merge_values(registration):
     """E-B2 (D17): date, time, venue, price, order and team merge fields for the ticket designer."""
     from .id_cards_holder import team_for
+    from .ticket_price_label import price_label
     event = registration.event
     start, end = _event_local(event, event.starts_at), _event_local(event, event.ends_at)
     ticket_type = registration.ticket_type if registration.ticket_type_id else None
-    price = ""
-    if ticket_type is not None:
-        from apps.payments.money import money_text
-        if ticket_type.amount:
-            from apps.payments.donations.services import space_currency
-            price = f"{space_currency(event.makerspace)} {money_text(ticket_type.amount)}".strip()
-        else:
-            price = gettext("Free")
+    price = price_label(event, ticket_type)
     seat = getattr(registration, "order_seat", None)
     return {"date": fmt_date(start), "time": f"{start:%H:%M} – {end:%H:%M}",
             "venue": (event.location or event.venue_address or "")[:120], "price": price,

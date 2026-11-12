@@ -7,6 +7,7 @@ The monthly `event_badge_prints_monthly` limit counts these rows.
 """
 from uuid import uuid4
 
+from django.utils.translation import gettext_noop
 from django.conf import settings
 from django.db import models
 
@@ -15,8 +16,8 @@ class EventBadgePrint(models.Model):
     class Method(models.TextChoices):
         DESK = "desk", "Desk"
         STATION = "station", "Station"
-        OFFLINE = "offline", "Offline desk"
-        BULK = "bulk", "Bulk job"
+        OFFLINE = "offline", gettext_noop("Offline desk")
+        BULK = "bulk", gettext_noop("Bulk job")
 
     makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.CASCADE, related_name="+")
     event = models.ForeignKey("events.Event", on_delete=models.CASCADE, related_name="badge_prints")

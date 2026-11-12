@@ -230,7 +230,14 @@ class EventAdminSerializer(EventPublicSurfaceFields, OrganizationAudienceFields,
         from apps.payments.models import MakerspacePaymentSettings
         cache = self.context.setdefault("event_currency", {})
         if obj.makerspace_id not in cache:
-            cache[obj.makerspace_id] = MakerspacePaymentSettings.for_makerspace(obj.makerspace).default_currency
+            # Read through the venue's `payment_settings` relation so a list that select_related it
+            # costs no query here; `for_makerspace` always issues a fresh one.
+            from django.core.exceptions import ObjectDoesNotExist
+            try:
+                settings_row = obj.makerspace.payment_settings
+            except ObjectDoesNotExist:
+                settings_row = MakerspacePaymentSettings(makerspace=obj.makerspace)
+            cache[obj.makerspace_id] = settings_row.default_currency
         return cache[obj.makerspace_id]
 
     @extend_schema_field(serializers.BooleanField())

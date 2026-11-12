@@ -204,7 +204,10 @@ def can_delegate_helpers(*, actor, target, permissions, scope: DelegationScope):
         return False
     if event_authority.can_manage_grants(actor, target):
         return True
-    if not event_authority.can(actor, target, "manage_team"):
+    # A track-limited manage_team is not an unscoped authority (`grant_ids`), so it is asked about
+    # the very tracks the invitation would cover; the per-source loop below then checks the limits.
+    if not (event_authority.can(actor, target, "manage_team") or (scope.track_ids and all(
+            event_authority.can(actor, target, "manage_team", track_id=track) for track in scope.track_ids))):
         return False
     sources = active_entitlements(event_id=target.pk).filter(Q(event=target) | Q(series_id=target.series_id,
         series__isnull=False), grant__user=actor)

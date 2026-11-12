@@ -104,9 +104,14 @@ def my_limit(actor, event):
     """
     if actor is None or event_authority._is_series(event) or event_authority.can_manage_grants(actor, event):
         return None
-    if "manage_team" not in event_authority.permissions_for(actor, event):
+    # `permissions_for` answers unscoped questions only and drops a track-limited source, which is
+    # exactly the co-organizer this prefill is for; ask the live entitlements directly.
+    from django.db.models import Q
+    from .contributions.authority import active_entitlements, inherited_window
+    if not event_authority._active(actor) or not active_entitlements(event_id=event.pk).filter(
+            Q(event=event) | Q(series_id=event.series_id, series__isnull=False),
+            grant__user=actor, permissions__contains=["manage_team"]).exists():
         return None
-    from .contributions.authority import inherited_window
     tracks = _inherited_tracks(actor, event, ("manage_team",))
     start, end = inherited_window(actor=actor, target=event, permissions=("manage_team",), track_ids=tracks)
     if not is_limited((tracks, start, end)):

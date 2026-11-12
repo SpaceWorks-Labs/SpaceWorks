@@ -39,6 +39,8 @@ PUBLIC_EVENT_FIELDS = (
     'organizers',
     'series', 'registration_audience', 'category', 'tags', 'ticket_types', 'ticket_selection_required', 'promo_codes_enabled',
     'delivery_mode', 'indexable',
+    # S13 (deadlines show in the event's zone) and #178 (stage deadlines, event detail only).
+    'timezone_name', 'submission_stages',
 )
 
 

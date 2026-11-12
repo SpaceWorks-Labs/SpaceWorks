@@ -32,8 +32,12 @@ RESTORABLE = (EventRegistration.Status.REGISTERED, EventRegistration.Status.WAIT
 
 
 def annotate_registration_restore_history(queryset):
-    """Read projection: check durable history in SQL once for the entire roster."""
-    return queryset.select_related("event__makerspace").annotate(
+    """Read projection: check durable history in SQL once for the entire roster.
+
+    `attendance_reply` rides along as a join: the serializer reads it for every row, and a
+    reverse one-to-one fetched lazily is one extra query per registration (an N+1 on the roster).
+    """
+    return queryset.select_related("event__makerspace", "attendance_reply").annotate(
         restore_has_consumption=Exists(AuditLog.objects.filter(
             makerspace_id=OuterRef("event__makerspace_id"),
             target_type="events.eventregistration",

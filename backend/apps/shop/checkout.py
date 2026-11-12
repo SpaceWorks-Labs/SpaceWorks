@@ -9,6 +9,7 @@ credentials. A free basket is paid at once. Pickup only (Q-S3): at the space, or
 of its events with `shop.event_pickup` on.
 """
 
+from django.utils.translation import gettext
 import logging
 from dataclasses import dataclass
 from datetime import timedelta
@@ -45,10 +46,10 @@ def buyer_for(request, space, data):
         name = (user.get_full_name() or getattr(user, "display_name", "") or user.username).strip()
         return Buyer(account=user, name=name[:200], email=(user.email or "")[:254], actor=user)
     if not feature_enabled(space, "shop.guest_checkout"):
-        raise ShopRefused("guest_identity_required", "Sign in to order from this shop.")
+        raise ShopRefused("guest_identity_required", gettext("Sign in to order from this shop."))
     name, email, code = (str(data.get(key) or "").strip() for key in ("guest_name", "guest_email", "email_code"))
     if not name or not email or not code:
-        raise ShopRefused("guest_identity_required", "Sign in, or give your name, email and the code we emailed you.")
+        raise ShopRefused("guest_identity_required", gettext("Sign in, or give your name, email and the code we emailed you."))
     from apps.hardware_requests.contact_verification import consume_code, normalize_email
     from apps.makerspaces.anonymous_requesters import get_or_create_anonymous_requester
 
@@ -62,7 +63,7 @@ def send_code(space, email):
 
     require_feature(space, "shop.guest_checkout")
     if "@" not in str(email or ""):
-        raise ShopRefused("guest_identity_required", "Enter a valid email address.")
+        raise ShopRefused("guest_identity_required", gettext("Enter a valid email address."))
     issue_code(space, email)
 
 
@@ -76,7 +77,7 @@ def pickup_choice(space, data):
     event = Event.objects.filter(pk=data.get("pickup_event_id"), makerspace=space, status=Event.Status.PUBLISHED,
                                  ends_at__gt=timezone.now()).first()
     if event is None:
-        raise ShopRefused("pickup_event_invalid", "Choose one of this space's upcoming events.")
+        raise ShopRefused("pickup_event_invalid", gettext("Choose one of this space's upcoming events."))
     return ShopOrder.Pickup.EVENT, event
 
 
@@ -95,7 +96,7 @@ def _prior_order(space, buyer, key):
     same = prior.buyer_id == getattr(buyer.account, "pk", None) and (
         not buyer.is_guest or (prior.guest_email or "").lower() == (buyer.email or "").lower())
     if not same:
-        raise ShopRefused("idempotency_key_reused", "That Idempotency-Key belongs to another order.")
+        raise ShopRefused("idempotency_key_reused", gettext("That Idempotency-Key belongs to another order."))
     return prior, order_payment(prior)
 
 

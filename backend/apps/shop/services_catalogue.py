@@ -7,6 +7,7 @@ kit's bundle parts need `shop.bundles` (Q-S12). Stock moves only through the ava
 module. Every write is audited with a literal action.
 """
 
+from django.utils.translation import gettext
 import re
 
 from django.db import transaction
@@ -38,28 +39,28 @@ def _slug(space, wanted, name, exclude=None):
 
 def _check_product(space, values):
     if values.get("hsn_code") and not HSN.match(values["hsn_code"]):
-        raise ShopRefused("variant_invalid", "An HSN code is 4 to 8 digits.")
+        raise ShopRefused("variant_invalid", gettext("An HSN code is 4 to 8 digits."))
     if values.get("bundle_mode") and values.get("kind", ShopProduct.Kind.KIT) != ShopProduct.Kind.KIT:
-        raise ShopRefused("variant_invalid", "Only a kit can be sold as a bundle of its parts.")
+        raise ShopRefused("variant_invalid", gettext("Only a kit can be sold as a bundle of its parts."))
 
 
 def _linked(space, product_id):
     if product_id in (None, ""):
         return None
     if not feature_enabled(space, "shop.consumable_link"):
-        raise ShopRefused("link_invalid", "Selling inventory consumables is switched off.")
+        raise ShopRefused("link_invalid", gettext("Selling inventory consumables is switched off."))
     from apps.inventory.models import InventoryProduct, TrackingMode
     item = InventoryProduct.objects.filter(pk=product_id, makerspace=space, is_consumable=True, is_archived=False,
                                            tracking_mode=TrackingMode.QUANTITY).first()
     if item is None:
-        raise ShopRefused("link_invalid", "Choose a consumable of this space; lendable tools are never sold.")
+        raise ShopRefused("link_invalid", gettext("Choose a consumable of this space; lendable tools are never sold."))
     return item
 
 
 def _check_options(options):
     if not isinstance(options, dict) or len(options) > 3 or any(
             not isinstance(k, str) or not isinstance(v, str) or len(k) > 40 or len(v) > 40 for k, v in options.items()):
-        raise ShopRefused("variant_invalid", "Options are up to three short name/value pairs, e.g. size: M.")
+        raise ShopRefused("variant_invalid", gettext("Options are up to three short name/value pairs, e.g. size: M."))
 
 
 def _save_variant(space, product, data, actor, variant=None):
@@ -72,10 +73,10 @@ def _save_variant(space, product, data, actor, variant=None):
     if "linked_product_id" in data:
         linked = _linked(space, data["linked_product_id"])
         if linked is not None and variant.pk and variant.on_hand:
-            raise ShopRefused("link_invalid", "Sell or count out this item's own stock before linking it.")
+            raise ShopRefused("link_invalid", gettext("Sell or count out this item's own stock before linking it."))
         variant.linked_product = linked
     if variant.sku and ShopVariant.objects.filter(makerspace=space, sku=variant.sku).exclude(pk=variant.pk).exists():
-        raise ShopRefused("variant_invalid", "That SKU is already used in this shop.")
+        raise ShopRefused("variant_invalid", gettext("That SKU is already used in this shop."))
     variant.save()
     if created:
         audit.record(actor, "shop.variant_created", makerspace=space, target=variant,
@@ -91,12 +92,12 @@ def _components(space, product, rows, actor):
         product.components.all().delete()
         return
     if not feature_enabled(space, "shop.bundles"):
-        raise ShopRefused("feature_off", "Kit bundles are switched off.", feature="shop.bundles")
+        raise ShopRefused("feature_off", gettext("Kit bundles are switched off."), feature="shop.bundles")
     ids = [int(row["variant_id"]) for row in rows]
     parts = {v.pk: v for v in ShopVariant.objects.filter(makerspace=space, pk__in=ids, archived_at__isnull=True)
              .exclude(product=product).exclude(product__bundle_mode=True)}
     if len(parts) != len(set(ids)):
-        raise ShopRefused("variant_invalid", "A bundle part must be another item of this shop.")
+        raise ShopRefused("variant_invalid", gettext("A bundle part must be another item of this shop."))
     product.components.all().delete()
     ShopKitComponent.objects.bulk_create([
         ShopKitComponent(makerspace=space, kit=product, component=parts[int(r["variant_id"])],

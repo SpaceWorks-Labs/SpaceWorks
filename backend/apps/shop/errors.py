@@ -5,7 +5,7 @@ The codes the brief names: `out_of_stock`, `hold_expired`, `price_changed`, `per
 errors (`feature_off`, `guest_identity_required`, `order_not_cancellable`, ...).
 """
 
-from django.utils.translation import gettext_lazy
+from django.utils.translation import gettext_lazy, gettext
 from rest_framework.exceptions import APIException
 
 from apps.payments.pricing.errors import ChargesOff
@@ -40,5 +40,5 @@ def out_of_stock(error, labels=None):
     """An availability `OutOfStock` as a typed 409 naming the variant and what is left."""
     variant_id = getattr(error, "variant_id", None)
     label = (labels or {}).get(variant_id, "An item")
-    return ShopRefused("out_of_stock", f"{label} does not have enough stock left.",
+    return ShopRefused("out_of_stock", gettext("%(label)s does not have enough stock left.") % {"label": label},
                        variant_id=variant_id, available=getattr(error, "available", 0))

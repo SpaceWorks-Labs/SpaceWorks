@@ -8,6 +8,7 @@ or decline in the refund queue: nothing is refunded automatically (#59). An orde
 every unit came back is marked `refunded`.
 """
 
+from django.utils.translation import gettext
 from datetime import timedelta
 from decimal import ROUND_DOWN, Decimal
 
@@ -45,9 +46,9 @@ def record_return(order, *, actor, rows, reason=""):
     write_allowed(order.makerspace)
     window = ShopSettings.for_makerspace(order.makerspace).returns_window_days
     if order.status not in RETURNABLE or not order.paid_at:
-        raise ShopRefused("return_window_closed", "Only a paid order can take a return.")
+        raise ShopRefused("return_window_closed", gettext("Only a paid order can take a return."))
     if window <= 0 or timezone.now() > order.paid_at + timedelta(days=window):
-        raise ShopRefused("return_window_closed", "The returns window for this order has closed.")
+        raise ShopRefused("return_window_closed", gettext("The returns window for this order has closed."))
     lines = {line.pk: line for line in order.lines.select_related("variant__product")}
     bundles = bool((order.pricing_snapshot or {}).get("bundles"))
     payment = order_payment(order)
@@ -56,12 +57,12 @@ def record_return(order, *, actor, rows, reason=""):
         line, quantity = lines.get(int(row.get("line_id", 0))), int(row.get("quantity") or 0)
         disposition = row.get("disposition") or ShopOrderReturn.Disposition.RESTOCK
         if line is None or quantity < 1 or disposition not in ShopOrderReturn.Disposition.values:
-            raise ShopRefused("return_exceeds_sold", "Each return names a line of this order, a quantity and "
-                                                     "restock or write-off.")
+            raise ShopRefused("return_exceeds_sold", gettext("Each return names a line of this order, a quantity and "
+                                                     "restock or write-off."))
         already = returned_quantity(line) + pending.get(line.pk, 0)
         if already + quantity > line.quantity:
-            raise ShopRefused("return_exceeds_sold", f"Only {line.quantity - already} of "
-                                                     f"{line.label} can still come back.", line_id=line.pk)
+            raise ShopRefused("return_exceeds_sold", gettext("Only %(count)s of %(label)s can still come back.")
+                                                     % {"count": line.quantity - already, "label": line.label}, line_id=line.pk)
         pending[line.pk] = pending.get(line.pk, 0) + quantity
         return_shop_stock(order, shop_stock_units(line.variant, quantity, bundles=bundles), actor=actor,
                           write_off=disposition == ShopOrderReturn.Disposition.WRITE_OFF,
@@ -72,7 +73,7 @@ def record_return(order, *, actor, rows, reason=""):
                                     disposition=disposition, amount=amount, reason=(reason or "")[:200],
                                     created_by=actor))
     if not made:
-        raise ShopRefused("return_exceeds_sold", "Choose at least one item to take back.")
+        raise ShopRefused("return_exceeds_sold", gettext("Choose at least one item to take back."))
     case = None
     if payment is not None and owed > 0:
         case = add_due_share(payment, amount=owed, reason_code="shop_return", actor=actor,

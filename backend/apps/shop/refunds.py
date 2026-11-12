@@ -6,6 +6,7 @@ is the ordinary refund-case queue. The direct staff refund routes refuse shop or
 same guard for gifts (`payments.donations.refunds`); the two subject lists join at merge.
 """
 
+from django.utils.translation import gettext
 from apps.payments.exceptions_refunds import RefundNotAllowed
 
 CASE_ONLY_SUBJECTS = ("shop_order",)
@@ -13,5 +14,5 @@ CASE_ONLY_SUBJECTS = ("shop_order",)
 
 def refuse_direct_refund(payment):
     if payment is not None and payment.subject_type in CASE_ONLY_SUBJECTS:
-        raise RefundNotAllowed("Shop sales are refunded through a refund case that staff approve.",
+        raise RefundNotAllowed(gettext("Shop sales are refunded through a refund case that staff approve."),
                                "refund_via_case_only")

@@ -10,6 +10,7 @@ never waits for a checker. With `shop.cash_up` on, a cash sale needs an open cas
 and belongs to it.
 """
 
+from django.utils.translation import gettext
 from django.db import transaction
 from django.utils import timezone
 
@@ -33,7 +34,7 @@ def _session_for(space, method):
         return None
     session = open_session(space)
     if session is None or session.status != ShopCashSession.Status.OPEN:
-        raise ShopRefused("cash_session_closed", "Open the cash drawer (a cash session) before taking cash.")
+        raise ShopRefused("cash_session_closed", gettext("Open the cash drawer (a cash session) before taking cash."))
     return session
 
 
@@ -44,7 +45,7 @@ def _settle(payment, actor, settlement):
 
     locked = Payment.objects.select_for_update(of=("self",)).select_related("makerspace").get(pk=payment.pk)
     if locked.status != Payment.Status.PENDING:
-        raise ShopRefused("order_not_payable", "This charge is already settled.")
+        raise ShopRefused("order_not_payable", gettext("This charge is already settled."))
     return apply_reconciliation(locked, actor, Payment.Status.PAID_OFFLINE, settlement)
 
 
@@ -70,7 +71,7 @@ def pos_sale(space, *, actor, lines, member=None, method="cash", reference="", r
     from .pricing import priced_basket
 
     if method not in DESK_METHODS:
-        raise ShopRefused("order_not_payable", "Choose cash, UPI or card.")
+        raise ShopRefused("order_not_payable", gettext("Choose cash, UPI or card."))
     with transaction.atomic():
         space = require_module_locked(space, "shop")
         write_allowed(space)
@@ -106,19 +107,19 @@ def collect_payment(order, *, actor, method="cash", reference="", received_at=No
     from .settlement import settle_locked
 
     if method not in DESK_METHODS:
-        raise ShopRefused("order_not_payable", "Choose cash, UPI or card.")
+        raise ShopRefused("order_not_payable", gettext("Choose cash, UPI or card."))
     with transaction.atomic():
         order = ShopOrder.objects.select_for_update().select_related("makerspace").get(pk=order.pk)
         write_allowed(order.makerspace)
         if order.status not in ShopOrder.OPEN_STATUSES:
-            raise ShopRefused("order_not_payable", "This order is not waiting for payment.", status=order.status)
+            raise ShopRefused("order_not_payable", gettext("This order is not waiting for payment."), status=order.status)
         from .pickup_status import pickup_requires_staff_confirmation
         if hand_over and pickup_requires_staff_confirmation(order):  # decision 221(h), as collect() refuses
-            raise ShopRefused("pickup_interrupted", "This order's event pickup was interrupted. Move the pickup to "
-                                                    "the space before handing it over.")
+            raise ShopRefused("pickup_interrupted", gettext("This order's event pickup was interrupted. Move the pickup to "
+                                                    "the space before handing it over."))
         payment = order_payment(order)
         if payment is None:
-            raise ShopRefused("order_not_payable", "This order has nothing to pay.")
+            raise ShopRefused("order_not_payable", gettext("This order has nothing to pay."))
         session = _session_for(order.makerspace, method)
         _settle(payment, actor, _receipt(payment, method, reference, received_at))
         settle_locked(order, actor=actor, collect=hand_over)

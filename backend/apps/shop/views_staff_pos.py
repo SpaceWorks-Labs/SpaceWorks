@@ -5,6 +5,7 @@ sees every session of the space (Q-S10 (c)). Product images are public-bucket im
 the usual presign -> attach flow (`MANAGE_SHOP`).
 """
 
+from django.utils.translation import gettext
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiParameter, extend_schema
@@ -36,7 +37,7 @@ def _member(space, member_id):
 
     if not MakerspaceMembership.objects.filter(makerspace=space, user_id=member_id, status="active").exists():
         from .errors import ShopRefused
-        raise ShopRefused("not_found", "That person is not a member of this space.")
+        raise ShopRefused("not_found", gettext("That person is not a member of this space."))
     return User.objects.get(pk=member_id)
 
 

@@ -7,6 +7,7 @@ person holding `manage_shop` (or `record_payment`) confirms it (#128 C-5, Q-S19)
 the close is final. Every step is audited; a closed session is frozen.
 """
 
+from django.utils.translation import gettext
 from decimal import Decimal
 
 from django.db import transaction
@@ -34,7 +35,7 @@ def open_cash(space, *, actor, opening_float):
     space = require_module_locked(space, "shop")
     write_allowed(space)
     if ShopCashSession.objects.filter(makerspace=space).exclude(status=ShopCashSession.Status.CLOSED).exists():
-        raise ShopRefused("cash_session_open", "A cash session is already open; close it first.")
+        raise ShopRefused("cash_session_open", gettext("A cash session is already open; close it first."))
     session = ShopCashSession.objects.create(makerspace=space, currency=_currency(space),
                                              opening_float=Decimal(opening_float), opened_by=actor)
     audit.record(actor, "shop.cash_session_opened", makerspace=space, target=session,
@@ -71,7 +72,7 @@ def _finish(session, actor):
 def close_cash(session, *, actor, counted_cash, note=""):
     session = ShopCashSession.objects.select_for_update().select_related("makerspace").get(pk=session.pk)
     if session.status != ShopCashSession.Status.OPEN:
-        raise ShopRefused("cash_session_closed", "This cash session is not open.")
+        raise ShopRefused("cash_session_closed", gettext("This cash session is not open."))
     now = timezone.now()
     expected, _receipts, _refunds = expected_cash(session, until=now)
     counted = Decimal(counted_cash)
@@ -91,11 +92,11 @@ def close_cash(session, *, actor, counted_cash, note=""):
 def confirm_cash(session, *, actor):
     session = ShopCashSession.objects.select_for_update().select_related("makerspace").get(pk=session.pk)
     if session.status != ShopCashSession.Status.CLOSING:
-        raise ShopRefused("cash_session_check", "This cash session is not waiting for a second check.")
+        raise ShopRefused("cash_session_check", gettext("This cash session is not waiting for a second check."))
     if session.closed_by_id == getattr(actor, "pk", None):
-        raise ShopRefused("cash_session_check", "A second person must confirm the cash-up.")
+        raise ShopRefused("cash_session_check", gettext("A second person must confirm the cash-up."))
     space_id = session.makerspace_id
     if not (rbac.can(actor, rbac.Action.MANAGE_SHOP, space_id) or rbac.can(actor, rbac.Action.RECORD_PAYMENT,
                                                                             space_id)):
-        raise ShopRefused("cash_session_check", "Only a shop manager or finance staff can confirm a cash-up.")
+        raise ShopRefused("cash_session_check", gettext("Only a shop manager or finance staff can confirm a cash-up."))
     return _finish(session, actor)

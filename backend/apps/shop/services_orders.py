@@ -15,6 +15,7 @@
 Every transition is audited with a literal action.
 """
 
+from django.utils.translation import gettext
 from datetime import timedelta
 
 from django.db import transaction
@@ -42,7 +43,7 @@ def mark_ready(order, *, actor):
 
     order = _locked(order)
     if order.status != ShopOrder.Status.PAID:
-        raise ShopRefused("order_not_collectable", "Only a paid order can be marked ready.")
+        raise ShopRefused("order_not_collectable", gettext("Only a paid order can be marked ready."))
     order.status, order.ready_at = ShopOrder.Status.READY, timezone.now()
     order.save(update_fields=["status", "ready_at"])
     audit.record(actor, "shop.order_ready", makerspace=order.makerspace, target=order, meta={"order_id": order.pk})
@@ -69,9 +70,9 @@ def move_event_pickup_to_space(order, *, actor):
                 target_id=str(order.pk), action="shop.order_pickup_moved_to_space").exists():
             return order
     if not active:
-        raise ShopRefused("pickup_change_unavailable", "Only an active order can change its pickup.")
+        raise ShopRefused("pickup_change_unavailable", gettext("Only an active order can change its pickup."))
     if not pickup_requires_staff_confirmation(order):
-        raise ShopRefused("pickup_change_unavailable", "This order does not need an alternate pickup.")
+        raise ShopRefused("pickup_change_unavailable", gettext("This order does not need an alternate pickup."))
     prior_event = order.pickup_event
     event_id = prior_event.pk if prior_event is not None and prior_event.makerspace_id == order.makerspace_id else None
     order.pickup_at, order.pickup_event = ShopOrder.Pickup.SPACE, None
@@ -87,7 +88,7 @@ def move_event_pickup_to_space(order, *, actor):
 def find_by_code(space, code):
     order = ShopOrder.objects.filter(makerspace=space, pickup_code=str(code or "").strip().upper()).first()
     if order is None:
-        raise ShopRefused("pickup_code_invalid", "No order has that pickup code.")
+        raise ShopRefused("pickup_code_invalid", gettext("No order has that pickup code."))
     return order
 
 
@@ -95,13 +96,13 @@ def find_by_code(space, code):
 def collect(order, *, actor, code=None):
     order = _locked(order)
     if code is not None and str(code).strip().upper() != order.pickup_code:
-        raise ShopRefused("pickup_code_invalid", "That pickup code does not match this order.")
+        raise ShopRefused("pickup_code_invalid", gettext("That pickup code does not match this order."))
     if order.status not in ShopOrder.PAID_STATUSES:
-        raise ShopRefused("order_not_collectable", "Only a paid order can be collected.", status=order.status)
+        raise ShopRefused("order_not_collectable", gettext("Only a paid order can be collected."), status=order.status)
     from .pickup_status import pickup_requires_staff_confirmation
     if pickup_requires_staff_confirmation(order):  # decision 221(h): move the pickup first
-        raise ShopRefused("pickup_interrupted", "This order's event pickup was interrupted. Move the pickup to "
-                                                "the space before handing it over.")
+        raise ShopRefused("pickup_interrupted", gettext("This order's event pickup was interrupted. Move the pickup to "
+                                                "the space before handing it over."))
     order.status, order.collected_at, order.collected_by = ShopOrder.Status.COLLECTED, timezone.now(), actor
     order.save(update_fields=["status", "collected_at", "collected_by"])
     audit.record(actor, "shop.order_collected", makerspace=order.makerspace, target=order,
@@ -137,7 +138,7 @@ def _close_unpaid(order, actor, reason):
 def cancel_unpaid(order, *, actor, reason="buyer"):
     order = _locked(order)
     if order.status not in ShopOrder.OPEN_STATUSES:
-        raise ShopRefused("order_not_cancellable", "Only an unpaid order can be cancelled here.")
+        raise ShopRefused("order_not_cancellable", gettext("Only an unpaid order can be cancelled here."))
     return _close_unpaid(order, actor, reason)
 
 
@@ -164,10 +165,10 @@ def cancel_uncollected(order, *, actor, reason=""):
     order = _locked(order)
     window = timedelta(days=ShopSettings.for_makerspace(order.makerspace).uncollected_cancel_days)
     if order.status not in ShopOrder.PAID_STATUSES or not order.paid_at:
-        raise ShopRefused("order_not_cancellable", "Only a paid, uncollected order can be cancelled this way.")
+        raise ShopRefused("order_not_cancellable", gettext("Only a paid, uncollected order can be cancelled this way."))
     if timezone.now() < order.paid_at + window:
-        raise ShopRefused("order_not_cancellable", "This order can be cancelled once it has waited "
-                                                   f"{window.days} days for pickup.")
+        raise ShopRefused("order_not_cancellable", gettext("This order can be cancelled once it has waited %(days)s days for pickup.")
+                                                   % {"days": window.days})
     # Units a return already took back were restocked or written off, and their share already
     # went to the refund case: neither happens twice (decision 216 item 11).
     return_shop_stock(order, order_pairs(order, remaining=True), actor=actor, reason="Uncollected order cancelled")

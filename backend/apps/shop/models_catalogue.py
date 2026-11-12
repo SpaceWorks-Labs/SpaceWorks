@@ -45,6 +45,7 @@ class ShopSettings(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
+        verbose_name_plural = "shop settings"
         constraints = [
             models.CheckConstraint(condition=Q(second_reminder_days__gt=models.F("first_reminder_days")),
                                    name="shop_settings_reminders_ordered"),

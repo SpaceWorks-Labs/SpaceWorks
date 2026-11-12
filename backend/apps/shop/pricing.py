@@ -7,6 +7,7 @@ same function serves the preview and the order, so preview = charge (L15 A8); `t
 adds the per-product tax split when `shop.tax` is on (Q-S2).
 """
 
+from django.utils.translation import gettext
 from collections import OrderedDict
 from dataclasses import dataclass, field
 
@@ -42,14 +43,14 @@ def _merged(raw_lines):
         try:
             variant_id, quantity = int(row["variant_id"]), int(row["quantity"])
         except (KeyError, TypeError, ValueError):
-            raise ShopRefused("variant_invalid", "Each line needs an item and a quantity.") from None
+            raise ShopRefused("variant_invalid", gettext("Each line needs an item and a quantity.")) from None
         if quantity < 1 or quantity > MAX_QUANTITY:
-            raise ShopRefused("variant_invalid", "Choose a quantity between 1 and 999.")
+            raise ShopRefused("variant_invalid", gettext("Choose a quantity between 1 and 999."))
         merged[variant_id] = merged.get(variant_id, 0) + quantity
     if not merged:
-        raise ShopRefused("order_empty", "Add at least one item.")
+        raise ShopRefused("order_empty", gettext("Add at least one item."))
     if len(merged) > MAX_LINES:
-        raise ShopRefused("variant_invalid", "An order holds at most 50 different items.")
+        raise ShopRefused("variant_invalid", gettext("An order holds at most 50 different items."))
     return merged
 
 
@@ -66,7 +67,7 @@ def resolve_items(space, raw_lines, *, public, lock=False):
     found = {row.pk: row for row in rows}
     missing = [pk for pk in merged if pk not in found]
     if missing:
-        raise ShopRefused("item_unavailable", "Some items are no longer on sale.", variant_ids=missing)
+        raise ShopRefused("item_unavailable", gettext("Some items are no longer on sale."), variant_ids=missing)
     return [(found[pk], quantity) for pk, quantity in merged.items()]
 
 
@@ -83,7 +84,7 @@ def check_rules(space, items, member):
     if feature_enabled(space, "shop.member_prices") and member is None:
         blocked = sorted({variant.product.name for variant, _ in items if variant.product.members_only})
         if blocked:
-            raise ShopRefused("member_only", "Only members of this space can buy these items.", items=blocked)
+            raise ShopRefused("member_only", gettext("Only members of this space can buy these items."), items=blocked)
     if feature_enabled(space, "shop.order_limits"):
         per_product = {}
         for variant, quantity in items:
@@ -91,7 +92,7 @@ def check_rules(space, items, member):
         for variant, _ in items:
             limit = variant.product.max_per_order
             if limit and per_product[variant.product_id] > limit:
-                raise ShopRefused("per_order_limit", f"You can take at most {limit} of {variant.product.name}.",
+                raise ShopRefused("per_order_limit", gettext("You can take at most %(limit)s of %(product)s.") % {"limit": limit, "product": variant.product.name},
                                   product_id=variant.product_id, limit=limit)
 
 

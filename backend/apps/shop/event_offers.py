@@ -7,6 +7,7 @@ line on the registration. Everything here needs the Shop module, `shop.event_pic
 Events module; with any off the list is hidden (404) and kept.
 """
 
+from django.utils.translation import gettext
 from django.db import transaction
 from django.utils import timezone
 
@@ -23,7 +24,7 @@ STAFF_EVENT_LIMIT = 50
 def require_offers(space):
     # Events first: with it off `shop.event_pickup` reads off too, and the owner of the switch is what to name.
     if not module_enabled(space, "events"):
-        raise ShopRefused("feature_off", "Events are switched off for this space.", feature="events")
+        raise ShopRefused("feature_off", gettext("Events are switched off for this space."), feature="events")
     require_feature(space, "shop.event_pickup")
     return space
 
@@ -62,7 +63,7 @@ def _variants(space, variant_ids):
         makerspace=space, pk__in=ids, is_active=True, archived_at__isnull=True,
         product__archived_at__isnull=True, product__is_active=True)}
     if len(rows) != len(ids):
-        raise ShopRefused("variant_invalid", "Choose live items from this shop.")
+        raise ShopRefused("variant_invalid", gettext("Choose live items from this shop."))
     return ids
 
 
@@ -76,7 +77,7 @@ def set_offers(space, event_id, variant_ids, *, actor):
         require_offers(space)
         event = _staff_events(space, actor).filter(pk=event_id).select_for_update().first()
         if event is None:
-            raise ShopRefused("pickup_event_invalid", "Choose one of this space's upcoming events.")
+            raise ShopRefused("pickup_event_invalid", gettext("Choose one of this space's upcoming events."))
         ids = _variants(space, variant_ids)
         current = {row.variant_id: row for row in ShopEventOffer.objects.filter(event=event)}
         removed = [pk for pk in current if pk not in ids]
@@ -107,7 +108,7 @@ def public_offers(space, token):
     require_public_surface("events")
     event = public_events(space).filter(public_token=token, ends_at__gt=timezone.now()).first()
     if event is None:
-        raise ShopRefused("not_found", "This event has no shop items.")
+        raise ShopRefused("not_found", gettext("This event has no shop items."))
     offered = list(ShopEventOffer.objects.filter(makerspace=space, event=event).values_list("variant_id", flat=True))
     products = []
     for product in public_products(space).filter(variants__pk__in=offered).distinct():

@@ -22,14 +22,14 @@ def is_on(space, key=None):
 
 def require_shop(space):
     if not module_enabled(space, "shop"):
-        raise ShopRefused("shop_closed", "This space does not run a shop.")
+        raise ShopRefused("shop_closed", gettext("This space does not run a shop."))
     return space
 
 
 def require_feature(space, key):
     require_shop(space)
     if not feature_enabled(space, key):
-        raise ShopRefused("feature_off", "This shop feature is switched off.", feature=key)
+        raise ShopRefused("feature_off", gettext("This shop feature is switched off."), feature=key)
     return space
 
 
@@ -50,7 +50,7 @@ def public_space(slug):
     space = get_public_makerspace(slug)
     require_public_surface("shop")
     if not getattr(space, "public_site_enabled", True):
-        raise ShopRefused("shop_closed", "This space does not run a shop.")
+        raise ShopRefused("shop_closed", gettext("This space does not run a shop."))
     return require_feature(space, "shop.online")
 
 
@@ -78,7 +78,7 @@ def require_charges(space):
     from apps.payments.availability import charge_tracking_enabled
 
     if not charge_tracking_enabled(space, "shop"):
-        raise ShopRefused("charges_off", "Shop sales are not being recorded here; turn on shop charges first.")
+        raise ShopRefused("charges_off", gettext("Shop sales are not being recorded here; turn on shop charges first."))
     return space
 
 

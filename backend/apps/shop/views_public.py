@@ -4,6 +4,7 @@ Anonymous reads; ordering needs a signed-in person, or a guest with a confirmed 
 `shop.guest_checkout` is on (Q-S5). With the module or `shop.online` off every route is 404.
 """
 
+from django.utils.translation import gettext
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework.pagination import PageNumberPagination
@@ -122,5 +123,5 @@ class PublicShopOrderStatusView(_Public):
         space = public_space(makerspace_slug)
         order = order_for_token(token, makerspace=space)
         if order is None:
-            raise ShopRefused("not_found", "Order not found.")
+            raise ShopRefused("not_found", gettext("Order not found."))
         return Response(ShopBuyerOrderSerializer(order).data)

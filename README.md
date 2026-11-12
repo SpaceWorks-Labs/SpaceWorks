@@ -156,7 +156,7 @@ makerspace; leave one out and nothing else changes.
 
 | Area | Works with |
 | --- | --- |
-| **Phone apps** | The API and registrations for your own branded Android and iOS apps, for members and staff, with push notifications and staff access as a verified step-up ([mobile integration](docs/mobile-integration.md)) |
+| **Phone apps** | The API and registrations for your own branded Android and iOS apps, for members and staff, with push notifications and staff access as a verified step-up ([mobile integration](docs/mobile-integration.md)). Download the apps from GitHub Releases: [Android](https://github.com/SpaceWorks-Labs/SpaceWorks-Android/releases/latest), [iOS](https://github.com/SpaceWorks-Labs/SpaceWorks-iOS/releases/latest) |
 | **Connected machines** | Printers and label printers on your own network, enrolled with a signed device identity; jobs report back through the normal workflow ([device protocol](docs/device-protocol.md)) |
 | **Messages** | Email, in-app inbox, Telegram, Slack, Mattermost, Discord, SMS and WhatsApp (Twilio or Meta), routed to the [rooms and people](docs/notification-routing.md) you choose |
 | **Sign-in** | Password, Google, Apple, GitHub, your own OIDC provider and phone codes ([sign-in methods](docs/sign-in-and-borrowing.md)) |

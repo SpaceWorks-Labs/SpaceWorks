@@ -1,3 +1,4 @@
+from django.utils.translation import gettext_noop
 from django.conf import settings
 from django.db import models
 
@@ -11,8 +12,8 @@ class SpaceHostingType(models.Model):
     """
 
     class Kind(models.TextChoices):
-        OWN = "own", "Own space"
-        HOSTED = "hosted", "Hosted space"
+        OWN = "own", gettext_noop("Own space")
+        HOSTED = "hosted", gettext_noop("Hosted space")
 
     makerspace = models.OneToOneField("makerspaces.Makerspace", on_delete=models.CASCADE,
                                       related_name="hosting_type_row")

@@ -7,6 +7,7 @@ import {
   chargeAccountability, chargeErrorMessage, invalidateLoanCharges, suggestionHint,
   type LoanAccountabilityChargeResult, type LoanAccountabilityRow,
 } from "./loanChargesApi";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 const AMOUNT = /^\d+(\.\d{1,3})?$/;
 
@@ -70,7 +71,7 @@ export function AccountabilityChargeForm({ makerspaceId, requestId, currency, ro
       </label>
       {error ? <p id={`${ids}-error`} className="text-sm text-danger" role="alert">{error}</p> : null}
       <button className="desk-button-primary w-full sm:w-fit" type="submit">
-        {mutation.isPending ? t`Saving…` : saveLabel}
+        {mutation.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : saveLabel}
       </button>
     </fieldset>
   </form>;

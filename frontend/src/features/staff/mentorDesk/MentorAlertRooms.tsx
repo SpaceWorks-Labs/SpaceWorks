@@ -6,6 +6,7 @@ import { staffRequest } from '../../../lib/api'
 import { StructuredApiError } from '../../../lib/api/errors'
 import { Card } from '../../../components/ui'
 import type { EventScope } from '../../events/contributions/types'
+import { BoxArt } from '../../../components/BoxSpinner'
 
 type Room = { id: number; label: string; channel: 'telegram' | 'slack' | 'discord' | 'mattermost'; is_active: boolean }
 type Routes = { rooms: Room[]; destination_ids: number[] }
@@ -35,6 +36,6 @@ export function MentorAlertRooms({ scope }: { scope: EventScope }) {
       : <p className="text-sm">{t`This space has no chat rooms yet. Add one in notification settings first.`}</p>}
     {save.error ? <p role="alert" className="text-sm text-danger">{save.error instanceof Error ? save.error.message : t`Could not save the rooms.`}</p> : null}
     {save.isSuccess ? <p role="status" className="text-sm">{t`Rooms saved.`}</p> : null}
-    {rooms.length ? <button type="button" className="desk-button justify-self-start" disabled={save.isPending} onClick={() => save.mutate(chosen)}>{save.isPending ? t`Saving…` : t`Save rooms`}</button> : null}
+    {rooms.length ? <button type="button" className="desk-button justify-self-start" disabled={save.isPending} onClick={() => save.mutate(chosen)}>{save.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Save rooms`}</button> : null}
   </section></Card>
 }

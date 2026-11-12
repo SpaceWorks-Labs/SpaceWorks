@@ -14,6 +14,7 @@ import { RevokeWaiverDialog } from "./RevokeWaiverDialog";
 import { WaiveFeesDialog } from "./WaiveFeesDialog";
 import { WaiverHistory } from "./WaiverHistory";
 import { ChargeSettle } from "../areaPayments/ChargeSettle";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 type LoanLike = { id: number; status: string; makerspace_id?: number };
 
@@ -70,7 +71,7 @@ function LoanChargesSection({ makerspaceId, requestId, inDisclosure = false }: {
   const [revoking, setRevoking] = useState<LoanFeeWaiver | null>(null);
   const [openRow, setOpenRow] = useState<number | null>(null);
   const [notice, setNotice] = useState("");
-  if (query.isLoading) return <p className="text-sm text-muted" role="status">{t`Loading charges…`}</p>;
+  if (query.isLoading) return <LogoLoader label={t`Loading charges…`} size={48} className="min-h-16 py-3" />;
   if (query.error) {
     if (isHiddenError(query.error)) return inDisclosure ? <p className="text-sm text-muted">{t`Charges are not available to you for this loan.`}</p> : null;
     return <p className="text-sm text-danger" role="alert">{t`Couldn't load this loan's charges.${" "}`}

@@ -1,3 +1,4 @@
+import { LogoLoader } from "../../../components/LogoLoader";
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -46,7 +47,7 @@ export function MembershipInsightsReports({ makerspaceId }: { makerspaceId: numb
     return entry ? [{ key, entry }] : [];
   });
   const current = reports.find((report) => report.key === selected) ?? reports[0];
-  if (catalog.isLoading) return <p role="status" className="text-sm text-muted">{t`Loading membership reports…`}</p>;
+  if (catalog.isLoading) return <LogoLoader label={t`Loading membership reports…`} size={48} className="min-h-16 py-3" />;
   if (!current) return null;
   const range = fy.data?.presets.find((row) => row.key === preset) ?? fy.data?.presets[0];
   const dated = current.key !== FORECAST;

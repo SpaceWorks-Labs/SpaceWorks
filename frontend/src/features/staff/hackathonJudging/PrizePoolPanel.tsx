@@ -1,3 +1,4 @@
+import { LogoLoader } from "../../../components/LogoLoader";
 import { plural, t } from "@lingui/core/macro";
 import { ErrorBlock, Metric } from '../../../components/ui';
 import { usePrizePool } from './hackmoneyApi';
@@ -7,7 +8,7 @@ import { formatMoney } from '../../../lib/money';
 /** G8: prize money announced against sponsorship earmarked to this event's pool, and what was paid, taxed, owed and recovered. */
 export function PrizePoolPanel({ scope }: { scope: Scope }) {
   const pool = usePrizePool(scope, true);
-  if (pool.isLoading) return <p role="status">{t`Loading prize pool…`}</p>;
+  if (pool.isLoading) return <LogoLoader label={t`Loading prize pool…`} />;
   if (!pool.data) return <ErrorBlock error={pool.error} onRetry={() => void pool.refetch()} />;
   const data = pool.data; const money = (value: string) => formatMoney(value, data.currency);
   return <section className="grid gap-3" aria-label={t`Prize pool`}>

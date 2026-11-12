@@ -7,6 +7,7 @@ import { EmptyState, Field, ListRow, Modal, StatusPill } from "../../../componen
 import { StructuredApiError } from "../../../lib/api";
 import { lifecycleApi, lifecycleKeys, type ErasureRow } from "../membershipLifecycleApi";
 import { Panel } from "../panels/shared";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 const errorText = (error: unknown) => (error instanceof StructuredApiError ? error.message : t`That did not work.`);
 
@@ -37,7 +38,7 @@ export function ErasureQueue({ makerspaceId }: { makerspaceId: number }) {
         <button className="desk-button" type="button" disabled={decide.isPending} onClick={() => setDeciding(null)}>{t`Cancel`}</button>
         <button className="desk-button-primary" type="button"
           disabled={decide.isPending || (rejecting && !note.trim())} onClick={() => deciding && decide.mutate(deciding)}>
-          {decide.isPending ? t`Saving…` : rejecting ? t`Reject` : t`Approve and erase`}</button>
+          {decide.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : rejecting ? t`Reject` : t`Approve and erase`}</button>
       </div>}>
       <div className="grid gap-3">
         {!rejecting ? <p className="text-sm text-ink">{t`The membership ends now. Their record, titles, profile and application answers here are erased.`}</p> : null}

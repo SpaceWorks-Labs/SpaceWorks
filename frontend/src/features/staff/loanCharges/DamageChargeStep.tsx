@@ -9,6 +9,7 @@ import { formatMoney } from "../paymentsApi";
 import { AccountabilityChargeForm, rowTitle } from "./AccountabilityChargeForm";
 import { freeNotice, useLoanCharges } from "./LoanChargesPanel";
 import { undecidedRows, type LoanAccountabilityChargeResult, type LoanAccountabilityRow } from "./loanChargesApi";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 type Resolution = { damaged: number; missing: number };
 
@@ -58,7 +59,7 @@ export function DamageChargeStep({ makerspaceId, requestId }: { makerspaceId: nu
   const step = useStepRows(makerspaceId, requestId);
   const [later, setLater] = useState(false);
   if (step.query.error) return null;
-  if (!step.ready) return <p className="text-sm text-muted" role="status">{t`Checking damaged and lost items…`}</p>;
+  if (!step.ready) return <LogoLoader label={t`Checking damaged and lost items…`} size={48} className="min-h-16 py-3" />;
   if (!step.rows.length) return null;
   if (later) return <p className="text-sm text-muted">{t`Charges left for later. Set them from the Charges section on request #${requestId}.`}</p>;
   const allDone = step.rows.every(row => step.outcomes[row.id]);

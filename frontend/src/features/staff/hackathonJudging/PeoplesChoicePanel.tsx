@@ -1,3 +1,4 @@
+import { LogoLoader } from "../../../components/LogoLoader";
 import { plural, t } from "@lingui/core/macro";
 import { useState } from 'react';
 import { Heart } from 'lucide-react';
@@ -23,7 +24,7 @@ export const fromLocalInput = (value: string) => (value ? new Date(value).toISOS
 export function PeoplesChoicePanel({ scope, payouts }: { scope: Scope; payouts: boolean }) {
   const { settings, standings, save, publish } = usePeoplesChoice(scope);
   const row = settings.data;
-  if (settings.isLoading) return <p role="status">{t`Loading People’s choice…`}</p>;
+  if (settings.isLoading) return <LogoLoader label={t`Loading People’s choice…`} />;
   if (!row) return <ErrorBlock error={settings.error} onRetry={() => void settings.refetch()} />;
   const final = row.state === 'published';
   return <section className="grid gap-4" aria-label={t`People's choice`}>

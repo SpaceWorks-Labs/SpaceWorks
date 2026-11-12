@@ -4,6 +4,7 @@ import { Card, Field } from '../../../components/ui'
 import { errorText, useProgrammeCommand } from '../../events/contributions/api'
 import type { EventScope, Shift } from '../../events/contributions/types'
 import { SetupText, Toggle, ids, iso, localDate, tags, edited } from './setupFields'
+import { BoxArt } from '../../../components/BoxSpinner'
 
 export interface ShiftConfig extends Shift {
   signup_deadline: string; mentor_assignment_id: number | null; grace_minutes: number
@@ -63,6 +64,6 @@ export function ShiftEditor({ scope, initial, onSaved }: { scope: EventScope; in
       {initial && kind === 'office_hours' ? <><Toggle checked={cancel} onChange={setCancel}>{t`Cancel existing team bookings and notify teams before rescheduling`}</Toggle>
         {cancel ? <Field label={t`Reschedule reason`}><textarea className="desk-input" required maxLength={2000} value={reason} onChange={event => setReason(event.target.value)} /></Field> : null}</> : null}
       {error || command.error ? <p role="alert" className="text-danger">{errorText(error ?? command.error)}</p> : null}
-      <button type="submit" className="desk-button-primary min-h-11" disabled={command.isPending}>{command.isPending ? t`Saving…` : t`Save shift`}</button>
+      <button type="submit" className="desk-button-primary min-h-11" disabled={command.isPending}>{command.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Save shift`}</button>
     </form></Card>
 }

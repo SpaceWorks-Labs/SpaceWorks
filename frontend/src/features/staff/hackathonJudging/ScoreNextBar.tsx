@@ -5,6 +5,8 @@ import { ErrorBlock } from '../../../components/ui';
 import { useAssignment } from './api';
 import { useNextProject } from './l21bApi';
 import type { Assignment, Scope } from './types';
+import { LogoLoader } from '../../../components/LogoLoader';
+import { BoxArt } from '../../../components/BoxSpinner';
 
 export type JudgeAction = 'score' | 'rank' | 'recuse' | 'skip';
 /** Submitting, recusing or skipping finishes a project; a private draft does not. */
@@ -44,7 +46,7 @@ export function ScoreNextBar({ scope, assignments, renderEditor, onOpen }: { sco
         {current ? <button type="button" className="desk-button min-h-11" onClick={() => setCurrent(null)}>{t`Stop scoring`}</button> : null}</div>
     </div>
     <div role="status" className="text-sm">
-      {next.isPending ? t`Finding your next project…` : null}
+      {next.isPending ? <><BoxArt size={16} mono />{t`Finding your next project…`}</> : null}
       {!next.isPending && caughtUp !== null ? <p className="flex items-center gap-2 font-semibold text-success-ink">
         <CheckCircle2 aria-hidden="true" className="size-4" />{t`You're all caught up. Nothing is left for you to score in this round.`}</p> : null}
     </div>
@@ -52,6 +54,6 @@ export function ScoreNextBar({ scope, assignments, renderEditor, onOpen }: { sco
     {current && opened.data ? <div className="grid gap-3 border-t border-line pt-3">
       <h3 ref={heading} tabIndex={-1} className="title-section outline-none">{t`Now scoring: ${opened.data.title}`}</h3>
       {renderEditor(opened.data, (action, fields) => { if (finishesProject(action, fields)) advance(current.roundId); })}
-    </div> : current && opened.isLoading ? <p role="status" className="text-sm text-muted">{t`Opening the project…`}</p> : null}
+    </div> : current && opened.isLoading ? <LogoLoader label={t`Opening the project…`} size={48} className="min-h-16 py-3" /> : null}
   </section>;
 }

@@ -24,6 +24,7 @@ export function MentorRoundsPanel({ scope, roundId, sessionId, renderForm }: {
 }) {
   const query = useProgrammeDetail<Round>(scope, 'admin', `/mentor-rounds/${roundId}/`, true, true)
   const command = useProgrammeCommand(scope, 'admin')
+  const { mutate: sendCommand } = command
   const [selected, setSelected] = useState<TeamVisit | null>(null)
   const [lease, setLease] = useState<Lease | null>(null)
   const [answers, setAnswers] = useState<Record<string, unknown>>({})
@@ -44,11 +45,11 @@ export function MentorRoundsPanel({ scope, roundId, sessionId, renderForm }: {
     if (!lease || command.isPending || row?.state !== 'live') return
     const timer = window.setInterval(() => {
       if (document.visibilityState === 'hidden' || Date.parse(lease.expires_at) <= Date.now()) return
-      command.mutate({ path: `/mentor-rounds/${roundId}/teams/${lease.team_id}/heartbeat/`, version: lease.version,
+      sendCommand({ path: `/mentor-rounds/${roundId}/teams/${lease.team_id}/heartbeat/`, version: lease.version,
         fields: { lease_uuid: lease.lease_uuid, generation: lease.generation } }, { onSuccess: value => setLease(asLease(value)) })
     }, 30_000)
     return () => window.clearInterval(timer)
-  }, [lease, command.mutate, command.isPending, roundId, row?.state])
+  }, [lease, sendCommand, command.isPending, roundId, row?.state])
   const choose = async (team: TeamVisit) => {
     setSelected(team); setLease(team.lease); setAnswers({}); setDraftError(null); setAway(false); setNominate(false)
     try { setAnswers(await readRoundDraft(draftScope, team.team_id) ?? {}) } catch (error) { setDraftError(error) }

@@ -7,6 +7,7 @@ import type { Criterion, Prize, Round, Scope, Track } from './types';
 import { changedFields, editableDefinition } from './definitionDraft';
 import { panelIds, RoundSettingsFields, type RoundSettings } from './RoundSettingsFields';
 import { RoundStageField } from './RoundStageField';
+import { BoxArt } from '../../../components/BoxSpinner';
 
 export function DefinitionEditor({ scope, pairwiseEnabled = false }: { scope: Scope; pairwiseEnabled?: boolean }) {
   const [kind, setKind] = useState<'tracks' | 'prizes' | 'judging-rounds'>('tracks');
@@ -111,6 +112,6 @@ export function DefinitionEditor({ scope, pairwiseEnabled = false }: { scope: Sc
     {mutate.error ? <div className="grid gap-2"><p className="text-sm text-muted">{t`Your edits are still here. Review the saved version before reapplying a changed definition.`}</p>
       <button className="desk-button min-h-11" type="button" onClick={() => void reload()}>{t`Discard my edits and reload the saved definition`}</button></div> : null}
     <p role="status" className="text-sm text-muted">{message}</p>
-    <button className="desk-button-primary min-h-11" disabled={mutate.isPending} type="submit">{mutate.isPending ? t`Saving…` : t`Save definition`}</button>
+    <button className="desk-button-primary min-h-11" disabled={mutate.isPending} type="submit">{mutate.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Save definition`}</button>
   </form>;
 }

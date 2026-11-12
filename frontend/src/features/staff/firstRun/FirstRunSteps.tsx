@@ -1,3 +1,4 @@
+import { LogoLoader } from "../../../components/LogoLoader";
 import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -9,6 +10,7 @@ import { hoursDraft, serializeHours, validateHours, type MakerspaceProfile } fro
 import { StaffRoleFields, validRoleSet, type RoleDraft } from "../panels/staffRoles/StaffRoleEditor";
 import { deliveryText, grantStaffRole, listStaffRoles, staffRoleErrorText } from "../panels/staffRoles/staffRolesApi";
 import type { Makerspace } from "../panels/shared";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 /** Each step saves through the same endpoint its Settings page uses, then refreshes setup progress. */
 type StepProps = { makerspace: Makerspace; onSaved: () => void };
@@ -72,7 +74,7 @@ export function HoursStep({ makerspace, onSaved }: StepProps) {
     mutationFn: () => staffRequest<MakerspaceProfile>(path, { method: "PATCH", body: JSON.stringify({ opening_hours: serializeHours(hours) }) }),
     onSuccess: updated => { client.setQueryData(["makerspace-profile", makerspace.id], updated); refresh(); onSaved(); },
   });
-  if (profile.isPending) return <p role="status">{t`Loading your hours…`}</p>;
+  if (profile.isPending) return <LogoLoader label={t`Loading your hours…`} />;
   if (profile.error) return <ErrorText message={t`Couldn't load your hours. Skip this step and set them later in Settings.`} />;
   return <form id="first-run-step" className="grid gap-3" onSubmit={event => {
     event.preventDefault();
@@ -101,7 +103,7 @@ export function StaffStep({ makerspace }: StepProps) {
       setEmail(""); setDraft({ roles: [], machine_type_ids: [], machine_ids: [] }); refresh(["staff", "invitations", makerspace.id]);
     },
   });
-  if (roles.isPending) return <p role="status">{t`Loading staff roles…`}</p>;
+  if (roles.isPending) return <LogoLoader label={t`Loading staff roles…`} />;
   if (roles.error) return <ErrorText message={staffRoleErrorText(roles.error)} />;
   const policy = roles.data.policy;
   if (!policy.email_invites_available) {
@@ -116,7 +118,7 @@ export function StaffStep({ makerspace }: StepProps) {
       </Field>
       <StaffRoleFields policy={policy} draft={draft} onChange={setDraft} />
     </fieldset>
-    <button type="submit" className="desk-button w-fit" disabled={!ready || invite.isPending}>{invite.isPending ? t`Sending…` : t`Send invitation`}</button>
+    <button type="submit" className="desk-button w-fit" disabled={!ready || invite.isPending}>{invite.isPending ? <><BoxArt size={16} mono />{t`Sending…`}</> : t`Send invitation`}</button>
     {invite.error ? <ErrorText message={staffRoleErrorText(invite.error)} /> : null}
     {notice ? <p role="status" className="text-sm">{notice}</p> : null}
     {sent.length ? <p className="text-sm text-muted">{t`Invited so far: ${sent.join(", ")}`}</p> : null}

@@ -10,6 +10,8 @@ import { EventPanelPager } from "../EventPanelPager";
 import { panelEmpty, panelRow } from "../eventPanelStyles";
 import { useEventOrders } from "./staffTicketingApi";
 import { EventOrderDetail } from "./EventOrderDetail";
+import { LogoLoader } from "../../../components/LogoLoader";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 /** G27/G35 staff view: every order with its buyer, total and seats; unclaimed seats stay visible,
  * and a disputed payment is flagged (nothing is cancelled automatically). */
@@ -29,11 +31,11 @@ export function EventOrdersList({ eventId, makerspaceId, exportsOn = false }: { 
     <div className="flex flex-wrap items-center justify-between gap-2">
       <h3 className="title-section flex items-center gap-2"><ShoppingBag aria-hidden="true" size={18} />{t`Orders`}</h3>
       {exportsOn && makerspaceId ? <button type="button" className="desk-button min-h-11" disabled={csv.isPending || !rows.length} onClick={() => csv.mutate()}>
-        <Download aria-hidden="true" size={16} />{csv.isPending ? t`Preparing CSV…` : t`Download orders CSV`}</button> : null}
+        <Download aria-hidden="true" size={16} />{csv.isPending ? <><BoxArt size={16} mono />{t`Preparing CSV…`}</> : t`Download orders CSV`}</button> : null}
     </div>
     <TestModeNotice makerspaceId={makerspaceId} />
     {csv.error ? <p role="alert" className="text-sm text-danger">{t`The orders CSV could not be prepared. Try again.`}</p> : null}
-    {orders.isLoading ? <p role="status" className="text-sm text-muted">{t`Loading orders…`}</p> : null}
+    {orders.isLoading ? <LogoLoader label={t`Loading orders…`} size={48} className="min-h-16 py-3" /> : null}
     {orders.error ? <p role="alert" className="text-sm text-danger">{orders.error.message}</p> : null}
     {!orders.isLoading && !rows.length ? <p className={panelEmpty}>{t`No orders yet.`}</p> : null}
     <ul className="grid gap-3">{rows.map(order => {

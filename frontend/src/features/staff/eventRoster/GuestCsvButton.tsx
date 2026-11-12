@@ -5,6 +5,7 @@ import { useMutation } from "@tanstack/react-query";
 import { ErrorText } from "../../../components/ui";
 import { staffRequestBlob } from "../../../lib/api";
 import { StaffListContext } from "../StaffListContext";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 /**
  * EB1: the guest list as CSV from the Registrations tab, for anyone holding manage_registrations
@@ -30,7 +31,7 @@ function GuestCsvExport({ eventId, status, q }: { eventId: number; status?: stri
   } });
   return <div className="mb-4 grid gap-1">
     <button type="button" className="desk-button w-fit" disabled={exportCsv.isPending} onClick={() => exportCsv.mutate()}>
-      {exportCsv.isPending ? t`Preparing guest list…` : status || q ? t`Download these guests (CSV)` : t`Download guest list (CSV)`}</button>
+      {exportCsv.isPending ? <><BoxArt size={16} mono />{t`Preparing guest list…`}</> : status || q ? t`Download these guests (CSV)` : t`Download guest list (CSV)`}</button>
     {exportCsv.error ? <ErrorText message={t`Couldn't download the guest list. Try again.`} /> : null}
   </div>;
 }

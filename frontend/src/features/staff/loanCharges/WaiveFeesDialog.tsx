@@ -7,6 +7,7 @@ import {
   WAIVER_COMPONENTS, chargeErrorMessage, invalidateLoanCharges, waiveLoanFees,
   type LoanCharge, type LoanFeeWaiverResult, type WaiverComponent,
 } from "./loanChargesApi";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 export const WAIVE_SUMMARY = "Pending charges become waived. Paid charges are not reversed: each opens a refund "
   + "case for staff approval. The refundable deposit is never waived.";
@@ -70,7 +71,7 @@ export function WaiveFeesDialog({ makerspaceId, requestId, charges, onClose }: {
     footer={<div className="desk-actions flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
       <button className="desk-button w-full sm:w-auto" type="button" disabled={mutation.isPending} onClick={close}>{t`Cancel`}</button>
       <button className="desk-button-primary w-full sm:w-auto" type="button" disabled={mutation.isPending} onClick={submit}>
-        {mutation.isPending ? t`Waiving…` : t`Waive fees`}</button>
+        {mutation.isPending ? <><BoxArt size={16} mono />{t`Waiving…`}</> : t`Waive fees`}</button>
     </div>}>
     <div className="grid gap-4">
       <fieldset className="grid gap-1" disabled={mutation.isPending}>

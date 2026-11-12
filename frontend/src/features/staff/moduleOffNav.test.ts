@@ -8,7 +8,7 @@ import { filterTabsByEnabledModules } from "./staffTabs";
 // #183B: a module or capability that is off leaves no nav, menu or tab entry behind.
 const MODULES = [
   "public_inventory", "request_workflow", "staff_admin", "scanner", "evidence_uploads", "qr_management",
-  "notifications", "printing", "machines", "devices", "machine_service", "events", "bookings", "membership",
+  "notifications", "machines", "devices", "machine_service", "events", "bookings", "membership",
   "stock_transfers", "stocktake", "containers", "bulk_import", "qr_print_batches", "reports", "shop", "analytics",
   "presence", "payments",
 ];

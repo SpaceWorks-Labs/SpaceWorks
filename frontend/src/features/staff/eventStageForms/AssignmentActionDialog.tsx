@@ -7,6 +7,7 @@ import { commandError, type EventScope } from "../../events/stagedForms/privateQ
 import { utcInstant } from "../../events/stagedForms/formPayload";
 import { stageAdminPath, useAssignmentCommand } from "./api";
 import type { AssignmentAction, ManagedAssignment } from "./types";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 const titles = (): Record<AssignmentAction, string> => ({ extend: t`Extend assignment`, reopen: t`Reopen assignment`, cancel: t`Cancel assignment`, reassign: t`Reassign assignment` });
 const confirmLabels = (): Record<AssignmentAction, string> => ({ extend: t`Confirm extend`, reopen: t`Confirm reopen`, cancel: t`Confirm cancel`, reassign: t`Confirm reassign` });
@@ -40,7 +41,7 @@ export function AssignmentActionDialog({ scope, assignment, action, onClose }: {
         <Field label={t`Reason code`}><input className="desk-input" required maxLength={64} pattern="[a-z][a-z0-9_]{0,63}" value={code} onChange={event => setCode(event.target.value)} /></Field>
         <Field label={t`Reason for participant`}><textarea className="desk-input" required maxLength={5000} rows={3} value={reason} onChange={event => setReason(event.target.value)} /></Field>
         <label className="flex min-h-11 items-start gap-3"><input type="checkbox" required checked={confirmed} onChange={event => setConfirmed(event.target.checked)} /><span>{t`I confirm the assignment, revision, deadline and requirement change shown above.`}</span></label>
-        <button type="submit" className={action === "cancel" ? "desk-button-danger-outline" : "desk-button-primary"} disabled={!confirmed || !assignment.allowed_actions.includes(action)}>{mutation.isPending ? t`Saving…` : confirmLabels()[action]}</button></fieldset>
+        <button type="submit" className={action === "cancel" ? "desk-button-danger-outline" : "desk-button-primary"} disabled={!confirmed || !assignment.allowed_actions.includes(action)}>{mutation.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : confirmLabels()[action]}</button></fieldset>
       {error || mutation.error ? <p role="alert">{error || commandError(mutation.error)}</p> : null}
     </form></Modal>;
 }

@@ -30,6 +30,8 @@ export type MachineTypeCapabilityConfig = {
 export type Machine = {
   public_fields?: string[];
   status_since?: string;
+  /** Decision 319: when on, every active member may use this machine without a grant. */
+  open_to_all_members?: boolean;
   id: number;
   makerspace: number;
   machine_type: MachineType;

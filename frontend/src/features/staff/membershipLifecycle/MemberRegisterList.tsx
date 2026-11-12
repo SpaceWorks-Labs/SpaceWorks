@@ -9,9 +9,11 @@ import { StructuredApiError, staffRequestBlob } from "../../../lib/api";
 import { useUrlListState } from "../../../lib/useUrlListState";
 import { SavedViewsMenu } from "../SavedViewsMenu";
 import { STANDING_LABELS, lifecycleApi, lifecycleKeys, standingTone, type RegisterRow, type RowResult } from "../membershipLifecycleApi";
+import { RegisterMachineAccessBar } from "../../machine-access/RegisterMachineAccessBar";
 import { RegisterBulkBar, RegisterBulkResults, type BulkAbilities } from "./RegisterBulkBar";
 import { RegisterFilters } from "./RegisterFilters";
 import { REGISTER_FILTER_DEFAULTS, activeRegisterFilters, chipFromStanding, registerChips, registerFilterParams, registerQuery, rowResultLabel, type RegisterFilterValues } from "./registerModel";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 const ROW_CAP = 2000;
 const errorText = (error: unknown) => (error instanceof StructuredApiError ? error.message : t`Couldn't load the register.`);
@@ -23,8 +25,10 @@ const day = (value: string | null) => (value ? new Date(value).toLocaleDateStrin
  * CSV export, and bulk actions with a result for every row. Filters live in the address, so a view can be
  * shared or saved. A unit-scoped staff member only ever sees their unit (the server narrows every query).
  */
-export function MemberRegisterList({ makerspaceId, initialStanding = "", features = [], canManageCards = false }: {
+export function MemberRegisterList({ makerspaceId, initialStanding = "", features = [], canManageCards = false, canGrantMachineAccess = false }: {
   makerspaceId: number; initialStanding?: string; features?: string[]; canManageCards?: boolean;
+  /** Decision 319: may give machine access (MANAGE_MACHINES) and the machines module is on. */
+  canGrantMachineAccess?: boolean;
 }) {
   const on = (key: string) => features.includes(`membership.${key}`);
   const list = useUrlListState({ ...REGISTER_FILTER_DEFAULTS, chip: chipFromStanding(initialStanding) }, "reg.");
@@ -45,7 +49,7 @@ export function MemberRegisterList({ makerspaceId, initialStanding = "", feature
     },
   });
   const can: BulkAbilities = { titles: on("titles"), units: on("units"), reminders: on("renewal_desk"), cards: canManageCards };
-  const bulkOn = on("register_bulk") && Object.values(can).some(Boolean);
+  const bulkOn = on("register_bulk") && (Object.values(can).some(Boolean) || canGrantMachineAccess);
   const rows = register.data ?? [];
   const masked = rows.some((row) => row.pii_masked);
   const outcome = new Map((results ?? []).map((item) => [item.id, item]));
@@ -84,13 +88,14 @@ export function MemberRegisterList({ makerspaceId, initialStanding = "", feature
         ? rows.length >= ROW_CAP ? t`Showing the first ${ROW_CAP} members. Narrow the filters, or export the full register.` : t`${rows.length} members`
         : ""}</p>
       <button className="desk-button" type="button" disabled={exportCsv.isPending} onClick={() => exportCsv.mutate()}>
-        {exportCsv.isPending ? t`Preparing…` : t`Export CSV`}</button>
+        {exportCsv.isPending ? <><BoxArt size={16} mono />{t`Preparing…`}</> : t`Export CSV`}</button>
     </div>
     {masked ? <p className="text-sm text-muted">{t`Names and emails are hidden. Open a personal-data access window to see them.`}</p> : null}
     {exportCsv.error ? <p role="alert" className="text-sm text-danger">{errorText(exportCsv.error)}</p> : null}
     {register.isError ? <p role="alert" className="text-sm text-danger">{errorText(register.error)}</p> : null}
     {bulkOn ? <RegisterBulkBar makerspaceId={makerspaceId} selected={selected.map(Number)} can={can} matchCount={rows.length} filter={registerFilterParams(values)} onClear={() => setSelected([])}
       onResults={(next) => { setResults(next); setSelected([]); }} /> : null}
+    {bulkOn && canGrantMachineAccess ? <RegisterMachineAccessBar makerspaceId={makerspaceId} selected={selected.map(Number)} onDone={() => setSelected([])} /> : null}
     {results ? <RegisterBulkResults results={results} rows={rows} onDismiss={() => setResults(null)} /> : null}
     {register.isError ? null : <DataTable caption={t`Members`} columns={columns} data={rows} loading={register.isLoading} skeletonCols={6}
       getRowId={(row) => row.membership_id} {...(bulkOn ? { selectedIds: selected, onSelectionChange: setSelected } : {})}

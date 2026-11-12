@@ -6,6 +6,7 @@ import { ActionControl, Card, Field, StatusPill } from '../../../components/ui'
 import type { AdminSignup, EventScope, RoleApplication, Shift } from '../../events/contributions/types'
 import { errorText, useProgrammeCommand, useProgrammeDetail, useProgrammeList } from '../../events/contributions/api'
 import { contributionRoleLabel, contributionStateLabel, shiftActionLabel, shiftAttendanceLabel } from '../../events/contributions/labels'
+import { LogoLoader } from '../../../components/LogoLoader'
 
 interface AdminShift extends Shift { signups: AdminSignup[] }
 
@@ -15,7 +16,7 @@ function ShiftSignups({ scope, shiftId }: { scope: EventScope; shiftId: number }
   const [minutes, setMinutes] = useState('')
   const [reason, setReason] = useState('')
   return <section className="mt-4 grid gap-3" aria-label={t`Shift signups`}>
-    {query.isPending ? <p role="status">{t`Loading signups…`}</p> : null}
+    {query.isPending ? <LogoLoader label={t`Loading signups…`} size={48} className="min-h-16 py-3" /> : null}
     {query.error || command.error ? <p role="alert" className="text-danger">{errorText(query.error ?? command.error)}</p> : null}
     <Field label={t`Corrected minutes`} hint={t`For an already verified shift. Another organizer must verify your own hours.`}><input className="desk-input" type="number" min={0} max={1440} value={minutes} onChange={event => setMinutes(event.target.value)} /></Field>
     <Field label={t`Correction reason`}><textarea className="desk-input" maxLength={2000} value={reason} onChange={event => setReason(event.target.value)} /></Field>

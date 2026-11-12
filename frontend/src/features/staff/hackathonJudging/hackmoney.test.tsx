@@ -26,20 +26,30 @@ beforeEach(() => { request.mockReset(); });
 describe('hack-money staff helpers', () => {
   it('proposes TDS only when on and above the threshold (#181, record only)', () => {
     const proposal = { enabled: true, rate: '30.00', threshold: '10000.00' };
-    expect(proposedTds('20000', proposal)).toBe('6000.00');
-    expect(proposedTds('10000', proposal)).toBe('');
-    expect(proposedTds('20000', { ...proposal, enabled: false })).toBe('');
-    expect(proposedTds('', proposal)).toBe('');
+    expect(proposedTds('20000', proposal, 'inr')).toBe('6000.00');
+    expect(proposedTds('10000', proposal, 'inr')).toBe('');
+    expect(proposedTds('20000', { ...proposal, enabled: false }, 'inr')).toBe('');
+    expect(proposedTds('', proposal, 'inr')).toBe('');
+  });
+  it('rounds the proposal at the currency minor unit with decimal maths, never a float', () => {
+    const proposal = { enabled: true, rate: '10.00', threshold: '0.00' };
+    expect(proposedTds('1234.567', proposal, 'kwd')).toBe('123.457');  // 3 places
+    expect(proposedTds('1234.55', proposal, 'jpy')).toBe('123');       // 0 places, half-up
+    expect(proposedTds('0.29', { ...proposal, rate: '10.00' }, 'usd')).toBe('0.03'); // 0.029 -> 0.03
+    expect(proposedTds('20000.10', { enabled: true, rate: '7.55', threshold: '100.00' }, 'inr')).toBe('1510.01');
   });
 });
 
 describe('PrizeAwardCard', () => {
   it('prefills the proposed tax on a cash prize and records gross plus TDS', () => {
     const record = vi.fn();
-    wrap(<PrizeAwardCard scope={scope} award={award()} claims recording={false} onRecord={record} />);
+    wrap(<PrizeAwardCard scope={scope} award={award()} claims recording={false} currency="inr" onRecord={record} />);
     expect((screen.getByLabelText('Tax deducted (TDS)') as HTMLInputElement).value).toBe('6000.00');
+    // A payout needs a reference: the button stays off until one is typed.
+    expect((screen.getByRole('button', { name: 'Record payout' }) as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.change(screen.getByLabelText(/^Reference/), { target: { value: ' UTR123 ' } });
     fireEvent.click(screen.getByRole('button', { name: 'Record payout' }));
-    expect(record).toHaveBeenCalledWith(expect.objectContaining({ award_id: 9, tds_amount: '6000.00' }));
+    expect(record).toHaveBeenCalledWith(expect.objectContaining({ award_id: 9, tds_amount: '6000.00', reference: 'UTR123' }));
   });
   it('offers fulfilment instead of a payout for a non-cash or sponsor-paid prize', () => {
     wrap(<PrizeAwardCard scope={scope} award={award({ kind: 'item', value_text: 'Pi kit' })} claims recording={false} onRecord={vi.fn()} />);

@@ -5,6 +5,7 @@ import { useMutation } from "@tanstack/react-query";
 import { Field, Modal } from "../../../components/ui";
 import { StructuredApiError } from "../../../lib/api";
 import { lifecycleApi } from "../membershipLifecycleApi";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 const REFUSALS: Record<string, () => string> = {
   membership_changes_already_asked: () => t`This application was already sent back once. Approve or decline it instead.`,
@@ -34,7 +35,7 @@ export function RequestChangesDialog({ makerspaceId, requestId, applicant, onClo
     footer={<div className="flex flex-wrap justify-end gap-2">
       <button className="desk-button" type="button" disabled={send.isPending} onClick={close}>{t`Cancel`}</button>
       <button className="desk-button-primary" type="button" disabled={send.isPending || !reason.trim()} onClick={() => send.mutate()}>
-        {send.isPending ? t`Sending…` : t`Send back for changes`}</button>
+        {send.isPending ? <><BoxArt size={16} mono />{t`Sending…`}</> : t`Send back for changes`}</button>
     </div>}>
     <div className="grid gap-3">
       <p className="text-sm text-muted">{t`They get your note by notification, edit their answers and send the application back once. Its expiry restarts so they have time.`}</p>

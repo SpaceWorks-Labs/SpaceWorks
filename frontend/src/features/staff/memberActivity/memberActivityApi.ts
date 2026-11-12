@@ -17,7 +17,7 @@ export type MemberActivityRow = {
 export type MemberActivityBlock = {
   area: MemberActivityArea; count: number; rows_visible: boolean; rows: MemberActivityRow[] | null;
   open?: number; pending?: number; owed?: Record<string, string>;
-  guest_passes?: number; volunteer_entries?: number; certifications?: number;
+  guest_passes?: number; volunteer_entries?: number; machine_access?: number;
 };
 export type MemberActivity = {
   member_id: number; areas: MemberActivityBlock[]; errors: string[];

@@ -9,6 +9,7 @@ import { useEvent } from "../eventsApi";
 import { eventErrorText } from "../eventUi";
 import { useEventRoomChoices } from "../eventVenueApi";
 import { useVenueFee, type VenueFeeInput } from "./staffTicketingApi";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 const blank: VenueFeeInput = { payer_id: 0, mode: "inherit", basis: "flat", amount: null, room_id: null };
 
@@ -45,7 +46,7 @@ export function EventVenueFeeForm({ eventId, disabled = false }: { eventId: numb
     save.mutate({ ...values, amount: values.mode === "custom" ? values.amount ?? "0.00" : null }); }}>
     <div className="flex flex-wrap items-center justify-between gap-2"><h3 className="title-section">{t`Venue fee for hosting`}</h3>
       <ScreenHelp screen="events.venue-fees" className="" /></div>
-    {fee.isLoading ? <p role="status" className="text-sm text-muted">{t`Loading the venue fee…`}</p> : null}
+    {fee.isLoading ? <LogoLoader label={t`Loading the venue fee…`} size={48} className="min-h-16 py-3" /> : null}
     {fee.data ? <p className="text-sm text-muted">{fee.data.status === "charged" ? t`${fee.data.payer_name} pays ${fee.data.quote_total} · charged.`
       : fee.data.status === "free" ? t`${fee.data.payer_name} pays ${fee.data.quote_total} · nothing to charge.`
       : t`${fee.data.payer_name} pays ${fee.data.quote_total} · charged when the event is published.`}</p> : null}

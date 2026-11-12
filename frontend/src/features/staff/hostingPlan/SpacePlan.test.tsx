@@ -21,11 +21,18 @@ const INVOICE = { id: 5, number: "INV-0005", makerspace: null, makerspace_name: 
   due_on: "2026-11-30", period_start: null, period_end: null, status: "open", overdue: true, paid_at: null, voided_at: null, void_reason: "",
   receipts: [], online_payable: true, created_at: "2026-11-01T00:00:00Z" };
 
+/** The Space Manager's limits payload (decision 328a): the same numbers as PLAN, grouped by module. */
+const LIMITS = {
+  makerspace_id: 7, groups: [{ key: "inventory", label: "Inventory" }, { key: "events", label: "Events" }, { key: "membership", label: "Membership" }],
+  rows: PLAN.resources.map(row => ({ ...row, module: "x", group: row.key === "events_monthly" ? "events" : row.key === "members" ? "membership" : "inventory", source: "plan" })),
+};
+
 function setup(config: Record<string, unknown>) {
   publicV1Request.mockResolvedValue(config);
   staffRequest.mockImplementation(async (path: string, init?: RequestInit) => {
     if (init?.method === "POST") return { url: "https://pay.example.com/session/1" };
     if (path.endsWith("/hosting-plan")) return PLAN;
+    if (path.endsWith("/limits")) return LIMITS;
     if (path.endsWith("/hosting-invoices")) return [INVOICE];
     return { makerspace_id: 7, managed: true, resources: [] };
   });
@@ -48,7 +55,7 @@ describe("Space Manager plan usage", () => {
     await screen.findByRole("heading", { name: "Usage & limits" });
     expect(screen.queryByRole("heading", { name: "Starter" })).not.toBeInTheDocument();
     expect(await screen.findByRole("progressbar", { name: "Members used" })).toBeInTheDocument();
-    expect(staffRequest).toHaveBeenCalledWith("/admin/makerspace/7/hosting-plan");
+    expect(staffRequest).toHaveBeenCalledWith("/admin/makerspace/7/limits");
   });
 
   it("shows each limit's level, the warnings and the trial end", async () => {
@@ -60,7 +67,9 @@ describe("Space Manager plan usage", () => {
     expect(screen.getByRole("progressbar", { name: "New events this month used" })).toHaveAttribute("aria-valuenow", "100");
     expect(screen.getByRole("progressbar", { name: "Members used" })).toHaveAttribute("aria-valuenow", "40");
     expect(screen.getByText(/Trial ends/)).toBeInTheDocument();
+    expect(screen.getAllByText("from the plan").length).toBeGreaterThan(0);
     expect(staffRequest).toHaveBeenCalledWith("/admin/makerspace/7/hosting-plan");
+    expect(staffRequest).toHaveBeenCalledWith("/admin/makerspace/7/limits");
   });
 
   it("keeps the visible payment action in its accessible name and names the invoice", async () => {
@@ -96,22 +105,23 @@ describe("Space Manager plan usage", () => {
     INVOICE.online_payable = true;
   });
 
-  it("groups the space quotas and platform use by area with their levels, read-only", async () => {
-    const quotas = { ...PLAN, plan: null, hosted: false, resources: [], warnings: [],
-      space_quota_resources: [{ key: "bookings_monthly", label: "bookings created this month", used: 9, limit: 10, unit: "count", percent: 90, level: "warning", area: "bookings" }],
-      platform_resources: [{ key: "platform_sms_monthly", label: "sms", used: 50, limit: 50, unit: "count", percent: 100, level: "limit", area: "messaging" },
-        { key: "platform_email_monthly", label: "email", used: 3, limit: null, unit: "count", percent: null, level: "ok", area: "messaging" }] };
+  it("groups limits by module with their levels and source, read-only", async () => {
+    const limits = { makerspace_id: 7, groups: [{ key: "bookings", label: "Bookings" }, { key: "notifications", label: "Notifications" }],
+      rows: [
+        { key: "bookings_monthly", label: "bookings created this month", used: 9, limit: 10, unit: "count", percent: 90, level: "warning", module: "bookings", group: "bookings", source: "default" },
+        { key: "platform_sms_monthly", label: "sms", used: 50, limit: 50, unit: "count", percent: 100, level: "limit", module: "sms", group: "notifications", source: "override" }] };
     publicV1Request.mockResolvedValue({});
-    staffRequest.mockImplementation(async (path: string) => path.endsWith("/hosting-plan") ? quotas : { makerspace_id: 7, managed: false, resources: [] });
+    staffRequest.mockImplementation(async (path: string) => path.endsWith("/limits") ? limits : path.endsWith("/hosting-plan") ? PLAN : { makerspace_id: 7, managed: false, resources: [] });
     render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
       <TenantUsagePanel makerspace={{ id: 7, name: "North Lab", slug: "north-lab", public_code: "NL" } as Makerspace} />
     </QueryClientProvider>);
     const bookings = (await screen.findByRole("heading", { name: "Bookings" })).closest("section")!;
     expect(within(bookings).getByText("New bookings this month")).toBeInTheDocument();
     expect(within(bookings).getByText("Near limit")).toBeInTheDocument();
-    const messaging = screen.getByRole("heading", { name: "Messaging" }).closest("section")!;
+    expect(within(bookings).getByText("platform default")).toBeInTheDocument();
+    const messaging = screen.getByRole("heading", { name: "Notifications" }).closest("section")!;
     expect(within(messaging).getByText("At limit")).toBeInTheDocument();
-    expect(within(messaging).getByText(/Using 3 · no limit/)).toBeInTheDocument();
+    expect(within(messaging).getByText("Set for this space")).toBeInTheDocument();
     expect(within(messaging).getByRole("progressbar", { name: "Texts through the platform this month used" })).toHaveAttribute("aria-valuenow", "100");
     expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
   });

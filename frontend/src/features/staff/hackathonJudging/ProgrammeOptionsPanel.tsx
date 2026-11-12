@@ -1,3 +1,4 @@
+import { LogoLoader } from "../../../components/LogoLoader";
 import { t } from "@lingui/core/macro";
 import { useState } from 'react';
 import { ErrorBlock, Field } from '../../../components/ui';
@@ -27,7 +28,7 @@ type SwitchKey = typeof SWITCHES[number][0] | typeof REFUND_SWITCHES[number][0] 
 export function ProgrammeOptionsPanel({ scope, entryFees, paidTeams, deposits = false }: { scope: Scope; entryFees: boolean; paidTeams: boolean; deposits?: boolean }) {
   const { query, save, sendResults } = useProgrammeOptions(scope);
   const options = query.data; const resultVersion = options?.published_result_version;
-  if (query.isLoading) return <p role="status">{t`Loading programme options…`}</p>;
+  if (query.isLoading) return <LogoLoader label={t`Loading programme options…`} />;
   if (!options) return <ErrorBlock error={query.error} onRetry={() => void query.refetch()} />;
   const toggle = (key: SwitchKey, label: string) => <label key={key} className="flex min-h-11 items-center gap-3">
     <input type="checkbox" checked={Boolean(options[key])}

@@ -4,6 +4,7 @@ import { ErrorText, KeyValueCard, Modal, RelativeTime, StatusPill } from "../../
 import { staffRequest } from "../../../lib/api";
 import { money, ORDER_STATUS } from "../../events/ticketing/ticketingApi";
 import type { StaffOrder } from "./staffTicketingApi";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 const SEAT_LABEL: Record<string, string> = { unclaimed: t`Not claimed yet`, claimed: t`Claimed`, void: t`Void` };
 
@@ -13,7 +14,7 @@ export function EventOrderDetail({ orderId, onClose }: { orderId: number; onClos
     queryFn: () => staffRequest<StaffOrder>(`/admin/event-orders/${orderId}/`) });
   const row = order.data;
   return <Modal open onClose={onClose} title={t`Order #${orderId}`} size="xl">
-    {order.isLoading ? <p role="status" className="text-sm text-muted">{t`Loading order…`}</p> : null}
+    {order.isLoading ? <LogoLoader label={t`Loading order…`} size={48} className="min-h-16 py-3" /> : null}
     {order.error ? <ErrorText message={order.error.message} onRetry={() => void order.refetch()} /> : null}
     {row ? <div className="grid gap-4">
       <div className="flex flex-wrap gap-2">

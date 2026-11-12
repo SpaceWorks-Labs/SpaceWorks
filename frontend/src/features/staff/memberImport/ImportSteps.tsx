@@ -1,6 +1,7 @@
 import { t } from "@lingui/core/macro";
 import { Field, StatusPill } from "../../../components/ui";
 import type { ImportPreview } from "../membershipLifecycleApi";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 const REASONS = (): Record<string, string> => ({
   email_invalid: t`Email missing or invalid`, starts_on_invalid: t`Start date not understood`, ends_on_invalid: t`End date not understood`,
@@ -37,7 +38,7 @@ export function ImportMapping({ fields, headers, mapping, onMapping, pending, on
       </select>
     </Field>)}
     <div className="sm:col-span-2"><button className="desk-button" type="button" disabled={pending} onClick={onRefresh}>
-      {pending ? t`Checking…` : t`Check again with these columns`}</button></div>
+      {pending ? <><BoxArt size={16} mono />{t`Checking…`}</> : t`Check again with these columns`}</button></div>
   </fieldset>;
 }
 

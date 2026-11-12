@@ -4,6 +4,7 @@ import { Card, Field } from '../../../components/ui'
 import type { Aggregate, EventScope } from '../../events/contributions/types'
 import { errorText, useProgrammeCommand } from '../../events/contributions/api'
 import { SetupText, Toggle, ids, iso, localDate, tags, edited } from './setupFields'
+import { BoxArt } from '../../../components/BoxSpinner'
 
 const postingPermissionLabel = (permission: string) => ({ mentor_queue: t`Mentor help queue`, check_in: t`Check people in`,
   publish_schedule: t`Publish the schedule` } as Record<string, string>)[permission] ?? permission.replace(/_/g, ' ')
@@ -63,6 +64,6 @@ export function PostingEditor({ scope, initial, renderFormBuilder, onSaved }: {
       {renderFormBuilder({ schema, onChange: setSchema, disabled: command.isPending })}
       <Field label={t`Posting state`}><select className="desk-input min-h-11" value={state} onChange={event => setState(event.target.value)}><option value="draft">{t`Draft`}</option><option value="open">{t`Open`}</option><option value="closed">{t`Closed`}</option></select></Field>
       {error || command.error ? <p role="alert" className="text-danger">{errorText(error ?? command.error)}</p> : null}
-      <button className="desk-button-primary min-h-11" disabled={command.isPending} type="submit">{command.isPending ? t`Saving…` : t`Save posting`}</button>
+      <button className="desk-button-primary min-h-11" disabled={command.isPending} type="submit">{command.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Save posting`}</button>
     </form></Card>
 }

@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useStableKey } from '../../../lib/useStableKey';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { staffRequest } from '../../../lib/api';
 import { onSessionCleared } from '../../../lib/api/sessionContext';
@@ -15,8 +16,8 @@ const base = (scope: Scope) => `/admin/events/${scope.eventId}/`;
  */
 export function usePairwise(scope: Scope, enabled: boolean) {
   const client = useQueryClient();
-  const key = [...judgingKey(scope), 'pairwise'];
-  useEffect(() => onSessionCleared(() => client.removeQueries({ queryKey: key })), [client, ...key]);
+  const key = useStableKey([...judgingKey(scope), 'pairwise']);
+  useEffect(() => onSessionCleared(() => client.removeQueries({ queryKey: key })), [client, key]);
   const rounds = useQuery({ queryKey: key, enabled, retry: false,
     queryFn: () => staffRequest<Page<PairwiseState>>(`${base(scope)}pairwise-rounds/`) });
   const act = useMutation({ retry: false, mutationFn: ({ round, action, version, fields = {} }: {

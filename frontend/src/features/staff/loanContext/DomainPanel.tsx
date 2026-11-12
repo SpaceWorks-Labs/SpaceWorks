@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Choices, Participants } from "./Choices";
 import { deleteContext, getContext, putContext, type Context, type Domain } from "./api";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 export function DomainPanel({ tenant, request, domain, scope }: { tenant: number; request: number; domain: Domain; scope: string }) {
   const client = useQueryClient();
@@ -73,7 +74,7 @@ export function DomainPanel({ tenant, request, domain, scope }: { tenant: number
   </section>;
   return <section className="grid gap-3 rounded-xl border border-line p-4" aria-label={domain === "event" ? t`Event context` : t`Booking context`}>
     <h3 className="title-section">{domain === "event" ? t`Event context` : t`Booking context`}</h3>
-    {query.isPending ? <p role="status">{t`Loading context…`}</p> : query.isError ? <p role="status">{t`Context is unavailable for this access.`}</p> : current?.active ? <>
+    {query.isPending ? <LogoLoader label={t`Loading context…`} size={48} className="min-h-16 py-3" /> : query.isError ? <p role="status">{t`Context is unavailable for this access.`}</p> : current?.active ? <>
       {selected !== undefined ? <p>{domain === "event" ? t`Event #${selected}` : t`Booking #${selected}`}</p> : null}
       {domain === "event" && current.may_view_participant === false ? <p>{t`Participant details are unavailable for this access.`}</p> : null}
       {domain === "event" && !current.can_write ? <p>{t`Changes require the appropriate request and event registration permissions and an editable request.`}</p> : null}

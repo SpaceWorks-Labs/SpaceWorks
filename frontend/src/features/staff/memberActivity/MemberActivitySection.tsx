@@ -11,6 +11,7 @@ import {
   AREA_LABELS, areaTarget, rowTarget, useMemberActivity, type MemberActivityArea, type MemberActivityBlock,
 } from "./memberActivityApi";
 import { StaffIncludedHours } from "./StaffIncludedHours";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 /**
  * PE1 / decision 242(e): one member's footprint across every area. Every area shows its count
@@ -26,7 +27,7 @@ export function MemberActivitySection({ makerspaceId, userId }: { makerspaceId: 
   if (status === 403 || status === 404) return null;
   return <section className="grid min-w-0 gap-3 border-t border-line pt-4" aria-labelledby={`member-activity-${userId}`}>
     <h2 id={`member-activity-${userId}`} className="title-panel">{t`Activity across the space`}</h2>
-    {activity.isLoading ? <p role="status" className="text-sm text-muted">{t`Loading activity…`}</p> : null}
+    {activity.isLoading ? <LogoLoader label={t`Loading activity…`} size={48} className="min-h-16 py-3" /> : null}
     {activity.error ? <div role="alert" className="flex flex-wrap items-center gap-3 text-sm text-danger"><p>{t`Couldn't load this member's activity.`}</p>
       <button className="desk-button" type="button" onClick={() => { void activity.refetch(); }}>{t`Retry`}</button></div> : null}
     {activity.data ? <>
@@ -60,7 +61,7 @@ function AreaBlock({ block, userId }: { block: MemberActivityBlock; userId: numb
     ...Object.entries(block.owed ?? {}).map(([currency, amount]) => t`${formatMoney(amount, currency)} owed`),
     block.guest_passes ? t`${block.guest_passes} guest passes` : "",
     block.volunteer_entries ? t`${block.volunteer_entries} volunteer entries` : "",
-    block.certifications ? t`${block.certifications} certifications` : "",
+    block.machine_access ? t`${block.machine_access} machine access grants` : "",
   ].filter(Boolean);
   return <li className="grid min-w-0 gap-2 rounded-control border border-line bg-panel p-3">
     <div className="flex min-w-0 flex-wrap items-baseline justify-between gap-2">

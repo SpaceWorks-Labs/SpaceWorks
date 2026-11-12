@@ -16,6 +16,7 @@ import { InventoryLendingFlags } from "./panels/InventoryLendingFlags";
 import { emptyForm, type ItemForm } from "./panels/InventoryPanelShared";
 import { StaffListContext } from "./StaffListContext";
 import { filterTabsByEnabledModules } from "./staffTabs";
+import { RETIRED_FEATURES } from "../../lib/retiredFeatures";
 
 const { staffRequest } = vi.hoisted(() => ({ staffRequest: vi.fn() }));
 vi.mock("../../lib/api", async () => ({ ...(await vi.importActual<typeof import("../../lib/api")>("../../lib/api")), staffRequest }));
@@ -39,7 +40,8 @@ const NEW_KEYS: [string, string | null][] = [
 describe("features.ts mirrors the new capabilities", () => {
   it.each(NEW_KEYS)("%s has parent %s and is off while that parent is off", (key, parent) => {
     expect(FEATURE_DEFINITIONS.find(feature => feature.key === key)?.parent_module).toBe(parent);
-    expect(capabilityOn({ enabled_modules: parent ? [parent] : [], enabled_features: [key] }, key)).toBe(true);
+    // Decision 319 (module audit 0.12.0): a retired switch reads off even when stored and its parent is on.
+    expect(capabilityOn({ enabled_modules: parent ? [parent] : [], enabled_features: [key] }, key)).toBe(!RETIRED_FEATURES.has(key));
     expect(capabilityOn({ enabled_modules: parent ? [parent] : [], enabled_features: [] }, key)).toBe(false);
     if (parent) expect(capabilityOn({ enabled_modules: [], enabled_features: [key] }, key)).toBe(false);
   });

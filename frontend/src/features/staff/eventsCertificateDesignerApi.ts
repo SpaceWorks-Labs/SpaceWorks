@@ -19,6 +19,10 @@ export const certificateDesignerKeys = {
   artwork: (eventId: number, artworkId: number) => [...eventKeys.detail(eventId), "certificate-artwork", artworkId] as const,
 };
 
+/** Artwork by the `resource_id` that old certificate image layers store (same staff authority as the numeric route). */
+export const certificateArtworkByResource = (eventId: number, resourceId: string) =>
+  staffRequestBlob(`/admin/events/${eventId}/certificate-artwork/by-resource/${encodeURIComponent(resourceId)}/`);
+
 /** The private artwork bytes, read with the staff session; artwork rows are immutable, so cache by id. */
 export function useCertificateArtwork(eventId: number, artworkId: number | null) {
   return useQuery({ queryKey: certificateDesignerKeys.artwork(eventId, artworkId ?? 0), enabled: artworkId !== null,

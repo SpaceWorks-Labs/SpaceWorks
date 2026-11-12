@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { Modal } from "../../../components/ui";
 import { chargeErrorMessage, invalidateLoanCharges, revokeLoanWaiver, type LoanFeeWaiver } from "./loanChargesApi";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 /** Revoking is a new append-only row: it changes only charges raised from now on. */
 export function RevokeWaiverDialog({ makerspaceId, requestId, waiver, onClose }: {
@@ -29,7 +30,7 @@ export function RevokeWaiverDialog({ makerspaceId, requestId, waiver, onClose }:
     footer={<div className="desk-actions flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
       <button className="desk-button w-full sm:w-auto" type="button" disabled={mutation.isPending} onClick={close}>{t`Keep waiver`}</button>
       <button className="desk-button-danger w-full sm:w-auto" type="button" disabled={mutation.isPending} onClick={submit}>
-        {mutation.isPending ? t`Revoking…` : t`Revoke waiver`}</button>
+        {mutation.isPending ? <><BoxArt size={16} mono />{t`Revoking…`}</> : t`Revoke waiver`}</button>
     </div>}>
     <div className="grid gap-4">
       <p className="text-sm text-muted">{t`Revoking affects only charges not raised yet. Nothing already waived or sent to a refund case is reopened.`}</p>

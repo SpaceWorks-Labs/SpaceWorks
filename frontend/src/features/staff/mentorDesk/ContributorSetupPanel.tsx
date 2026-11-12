@@ -6,6 +6,7 @@ import type { EventScope, Shift } from '../../events/contributions/types'
 import { errorText, useProgrammeDetail, useProgrammeList } from '../../events/contributions/api'
 import { PostingEditor, type PostingConfig, type RoleFormBuilder } from './PostingEditor'
 import { ShiftEditor, type ShiftConfig } from './ShiftEditor'
+import { LogoLoader } from '../../../components/LogoLoader'
 
 export function ContributorSetupPanel({ scope, renderFormBuilder }: { scope: EventScope; renderFormBuilder: RoleFormBuilder }) {
   const [tab, setTab] = useState('postings')
@@ -28,7 +29,7 @@ export function ContributorSetupPanel({ scope, renderFormBuilder }: { scope: Eve
       {tab === 'postings' && selected !== null && (selected === 'new' || posting) ? <PostingEditor key={selected} scope={scope} initial={posting} renderFormBuilder={renderFormBuilder} onSaved={() => setSelected(null)} /> : null}
       {tab === 'shifts' && selected !== null ? selected === 'new' ? <ShiftEditor key="new" scope={scope} onSaved={() => setSelected(null)} />
         : shift.data ? <ShiftEditor key={`${selected}:${shift.data.version}`} scope={scope} initial={shift.data} onSaved={() => setSelected(null)} />
-          : <p role={shift.error ? 'alert' : 'status'}>{shift.error ? errorText(shift.error) : t`Loading shift…`}</p> : null}
+          : shift.error ? <p role="alert">{errorText(shift.error)}</p> : <LogoLoader label={t`Loading shift…`} size={48} className="min-h-16 py-3" /> : null}
       {query.data?.results.map(row => <Card key={row.id}><div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="title-section">{'title' in row ? row.title : row.task}</h2>
         <ActionControl action={{ label: t`Edit ${'title' in row ? row.title : row.task}`, onClick: () => setSelected(row.id) }} />

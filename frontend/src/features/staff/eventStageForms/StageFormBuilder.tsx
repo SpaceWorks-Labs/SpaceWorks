@@ -9,11 +9,12 @@ import { useUnsavedChanges } from "../../events/stagedForms/UnsavedChanges";
 import { stageAdminPath, useDefinitionCommand, useStageDefinition } from "./api";
 import { defaultStageSettings, StageSettingsFields } from "./StageSettingsFields";
 import type { StageDefinition, StageSettings } from "./types";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 export function StageFormBuilder({ scope, stageFormId, allowedActions, onCreated, onDirtyChange }: { scope: EventScope; stageFormId?: number;
   allowedActions: string[]; onCreated: (id: number) => void; onDirtyChange?: (dirty: boolean) => void }) {
   const query = useStageDefinition(scope, stageFormId);
-  if (stageFormId && !query.data) return <p role={query.error ? "alert" : "status"}>{query.error ? commandError(query.error) : t`Loading stage form…`}</p>;
+  if (stageFormId && !query.data) return query.error ? <p role="alert">{commandError(query.error)}</p> : <LogoLoader label={t`Loading stage form…`} size={48} className="min-h-16 py-3" />;
   if (query.data && Object.keys(defaultStageSettings()).some(key => !(key in query.data!))) return <p role="alert">{t`The stage settings response is incomplete. Reload after the event service is updated.`}</p>;
   return <Builder key={`${stageFormId ?? "new"}:${query.data?.version ?? 0}`} scope={scope} definition={query.data} allowedActions={allowedActions} onCreated={onCreated} onDirtyChange={onDirtyChange} />;
 }

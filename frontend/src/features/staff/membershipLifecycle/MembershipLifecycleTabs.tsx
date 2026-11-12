@@ -31,15 +31,16 @@ export function lifecycleTabs(features: string[], membershipEnabled: boolean): T
   return tabs.filter(([, , on]) => on).map(([key, label]) => ({ key, label, href: `#${key}` }));
 }
 
-export function MembershipLifecycleTab({ tab, makerspaceId, slug, features, canManageMakerspace, standing, canManageUnits = canManageMakerspace, canManageCards = false }: {
+export function MembershipLifecycleTab({ tab, makerspaceId, slug, features, canManageMakerspace, standing, canManageUnits = canManageMakerspace, canManageCards = false, canGrantMachineAccess = false }: {
   tab: string; makerspaceId: number; slug: string; features: string[]; canManageMakerspace: boolean; standing: string;
   /** `manage_member_units` (parity O-F1); defaults to the Space Manager, who holds it. */
   canManageUnits?: boolean;
   /** `manage_member_cards`: the register's bulk issue/email card actions (parity O-F2). */
   canManageCards?: boolean;
+  canGrantMachineAccess?: boolean;
 }) {
   const [importing, setImporting] = useState(false);
-  if (tab === "register") return <MemberRegisterList makerspaceId={makerspaceId} initialStanding={standing} features={features} canManageCards={canManageCards} />;
+  if (tab === "register") return <MemberRegisterList makerspaceId={makerspaceId} initialStanding={standing} features={features} canManageCards={canManageCards} canGrantMachineAccess={canGrantMachineAccess} />;
   if (tab === "renewals") return <RenewalDesk makerspaceId={makerspaceId} />;
   if (tab === "insights") return <div className="grid gap-6"><MembershipInsights makerspaceId={makerspaceId} /><MembershipInsightsReports makerspaceId={makerspaceId} /></div>;
   if (tab === "units") return <MembersUnitsTab makerspaceId={makerspaceId} canManageUnits={canManageUnits} importOn={has(features, "import")} />;

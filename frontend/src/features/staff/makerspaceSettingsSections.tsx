@@ -49,6 +49,7 @@ import { ChannelSetupPanel } from "../notifications/ChannelSetupPanel";
 import { PlatformCredentialsPanel } from "../notifications/PlatformCredentialsPanel";
 import { ChannelDeliveryLog } from "../notifications/ChannelDeliveryLog";
 import { PresencePrivacySettings } from "../presence/PresencePrivacySettings";
+import { DisplaysSettings } from "../spaceDisplay/DisplaysSettings";
 import { PublicPageBuilder } from "../publicPages/PublicPageBuilder";
 import { useHostingAvailability } from "../hosting/hostingApi";
 import { HostingInvitations } from "./HostingInvitations";
@@ -56,6 +57,7 @@ import { communitySettingsSections } from "../community/settings/communitySettin
 import { unitsSettingsSections } from "./units/unitsSettingsSection";
 import { joinRegisterSettingsSections } from "./membershipLifecycle/joinRegisterSettings";
 import { WALLET_SWITCHES, walletSettingsSections } from "../walletCredentials/walletSettingsSection";
+import { eraserSettingsSections } from "../cardEraser/eraserSettingsSection";
 import { LegalPagesEditor } from "../legal/LegalPagesEditor";
 
 type Input = { makerspace: Makerspace; settings?: Makerspace; loading: boolean; isSuperadmin: boolean; canManageMakerspace: boolean };
@@ -145,7 +147,7 @@ export function useMakerspaceSettingsSections({ makerspace, settings, loading, i
       {canManageMakerspace ? <MakerspaceProfileSettings makerspaceId={makerspace.id} /> : null}
     </> },
     { id: "branding", title: t`Branding & public site`, rows: <>
-      <MakerspaceBrandingSettings {...shared} />{enabledModules.includes("printing") || enabledModules.includes("machine_service") ? printRecovery : null}
+      <MakerspaceBrandingSettings {...shared} />{enabledModules.includes("machine_service") ? printRecovery : null}
       {settings?.platform_hosting === true ? <MakerspaceSubdomainSettings makerspace={makerspace} settings={settings} /> : null}
       <MakerspaceCustomDomainSettings {...shared} />
       {canManageMakerspace ? <MakerspaceDirectoryVisibility {...shared} /> : null}
@@ -174,18 +176,21 @@ export function useMakerspaceSettingsSections({ makerspace, settings, loading, i
       {enabledModules.includes("membership") ? <MakerspaceMembershipSettings {...shared} /> : null}<MakerspaceGeofenceSettings {...shared} />
     </> }] : []),
     ...walletSettingsSections(settings ?? makerspace, canManageMakerspace), // ID-11
+    ...eraserSettingsSections(settings ?? makerspace, canManageMakerspace), // D314c
     // Decision 223: Settings › Guest passes and Settings › Community, each behind its capabilities.
     ...communitySettingsSections(settings ?? makerspace, canManageMakerspace),
     ...unitsSettingsSections(settings ?? makerspace, canManageMakerspace), // parity O-F1: Settings › People › Member units
     ...joinRegisterSettingsSections(settings ?? makerspace, canManageMakerspace), // parity O-F2: Settings › People › Joining
     ...(canManageMakerspace && enabledModules.includes("presence") ? [{ id: "presence", title: t`Presence privacy`,
       rows: <PresencePrivacySettings key={makerspace.id} makerspaceId={makerspace.id} slug={makerspace.slug} /> }] : []),
+    ...(canManageMakerspace && enabledModules.includes("presence") && (settings?.enabled_features ?? []).includes("presence.public_display") ? [{ id: "displays", title: t`Display screens`,
+      rows: <DisplaysSettings key={makerspace.id} makerspaceId={makerspace.id} spaceName={makerspace.name} /> }] : []),
     ...(enabledModules.includes("bookings") ? [{ id: "bookings", title: t`Bookings`, rows: <>
       <MakerspaceBookingSettings {...shared} /><MakerspaceBookingRulesSettings makerspace={makerspace} />
     </> }] : []),
     ...(canManageMakerspace && enabledModules.includes("events") ? [{ id: "events", title: t`Events`,
       rows: <EventDefaultsSettings key={makerspace.id} makerspaceId={makerspace.id} /> }] : []),
-    ...(enabledModules.includes("machines") || enabledModules.includes("printing")
+    ...(enabledModules.includes("machines") || enabledModules.includes("machine_service")
       ? [{ id: "materials", title: t`Machines & materials`, rows: <MakerspaceFilamentSettings {...shared} /> }] : []),
     { id: "money", title: t`Payments & billing`, rows: <>
       <MakerspacePaymentSettings makerspace={settings ?? makerspace} />

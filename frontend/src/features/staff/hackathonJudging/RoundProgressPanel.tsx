@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { ErrorBlock, Field } from '../../../components/ui';
 import { useRoundProgress } from './l21bApi';
 import type { Round, Scope } from './types';
+import { LogoLoader } from '../../../components/LogoLoader';
 
 const RULE = { two_sd: 'over 2 SD from the project mean', spread_25: 'over 25 points from another judge' } as const;
 
@@ -18,7 +19,7 @@ export function RoundProgressPanel({ scope, rounds }: { scope: Scope; rounds: Ro
     {!live.length ? <p className="text-sm text-muted">{t`Progress appears once a round is open.`}</p> : <Field label={t`Round`}>
       <select className="desk-input min-h-11" value={roundId} onChange={e => setRoundId(Number(e.target.value))}>
         {live.map(round => <option key={round.id} value={round.id}>{round.key}</option>)}</select></Field>}
-    {query.isLoading ? <p role="status">{t`Loading progress…`}</p> : null}
+    {query.isLoading ? <LogoLoader label={t`Loading progress…`} size={48} className="min-h-16 py-3" /> : null}
     <ErrorBlock error={query.error} onRetry={() => void query.refetch()} />
     {data ? <div className="grid gap-5">
       <div><h4 className="font-semibold">{t`Below the review target (${data.target})`}</h4>

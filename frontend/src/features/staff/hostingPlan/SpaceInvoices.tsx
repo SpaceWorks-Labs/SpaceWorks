@@ -1,17 +1,18 @@
 import { t } from "@lingui/core/macro";
-import { EmptyState, ErrorText, ListRow, Skeleton } from "../../../components/ui";
+import { EmptyState, ErrorText, ListRow } from "../../../components/ui";
 import { authErrorMessage } from "../../../lib/api/authErrorCopy";
 import { InvoiceStatus } from "../platformSpaces/InvoiceStatus";
 import { StructuredApiError } from "../../../lib/api/errors";
 import { formatMoney } from "../platformSpaces/plansApi";
 import { paymentMethodLabel } from "../../../lib/money";
 import { useInvoiceCheckout, useSpaceInvoices } from "./spacePlanApi";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 /** The space's hosting invoices; an open one can be paid online when the platform takes online payments. */
 export function SpaceInvoices({ makerspaceId }: { makerspaceId: number }) {
   const invoices = useSpaceInvoices(makerspaceId, true);
   const checkout = useInvoiceCheckout(makerspaceId);
-  if (invoices.isLoading) return <Skeleton className="h-24 w-full" />;
+  if (invoices.isLoading) return <LogoLoader size={48} className="min-h-24 py-3" />;
   if (invoices.isError) return <ErrorText resource={t`invoices`} onRetry={() => { void invoices.refetch(); }} />;
   const rows = invoices.data ?? [];
   if (!rows.length) return <EmptyState message={t`No hosting invoices yet.`} />;

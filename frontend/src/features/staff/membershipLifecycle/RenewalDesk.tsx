@@ -6,6 +6,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { EmptyState, Field, ListRow, Modal, StatusPill } from "../../../components/ui";
 import { StructuredApiError } from "../../../lib/api";
 import { STANDING_LABELS, lifecycleApi, lifecycleKeys, standingTone, type WorklistRow } from "../membershipLifecycleApi";
+import { LogoLoader } from "../../../components/LogoLoader";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 const errorText = (error: unknown) => (error instanceof StructuredApiError ? error.message : t`That did not work. Try again.`);
 const day = (value: string) => new Date(value).toLocaleDateString(formatLocale());
@@ -30,11 +32,11 @@ export function RenewalDesk({ makerspaceId }: { makerspaceId: number }) {
     <p className="text-sm text-muted">{t`Members whose term ends in the next 30 days, who are in grace, or who lapsed recently. A reminder goes out at most once a day per member.`}</p>
     <div className="flex flex-wrap items-center gap-2">
       <button className="desk-button-primary" type="button" disabled={!selected.length || remind.isPending} onClick={() => remind.mutate()}>
-        {remind.isPending ? t`Sending…` : `Remind ${selected.length || ""} selected`.replace("  ", " ")}
+        {remind.isPending ? <><BoxArt size={16} mono />{t`Sending…`}</> : `Remind ${selected.length || ""} selected`.replace("  ", " ")}
       </button>
       {remind.data ? <p role="status" className="text-sm text-muted">{t`Sent ${remind.data.sent.length}; ${remind.data.skipped.length} already reminded today or not due.`}</p> : null}
     </div>
-    {worklist.isLoading ? <p className="text-sm text-muted">{t`Loading the worklist…`}</p> : null}
+    {worklist.isLoading ? <LogoLoader label={t`Loading the worklist…`} size={48} className="min-h-16 py-3" /> : null}
     {worklist.isError ? <p role="alert" className="text-sm text-danger">{errorText(worklist.error)}</p> : null}
     {worklist.isSuccess && !rows.length ? <EmptyState message={t`Nobody is due for renewal right now.`} /> : null}
     {rows.map((row) => <ListRow key={row.id} title={row.name || row.email} identity={{ kind: "avatar", name: row.name || row.email, seed: String(row.id) }}
@@ -52,7 +54,7 @@ export function RenewalDesk({ makerspaceId }: { makerspaceId: number }) {
       footer={<div className="flex flex-wrap justify-end gap-2">
         <button className="desk-button" type="button" onClick={() => setExtending(null)} disabled={extend.isPending}>{t`Cancel`}</button>
         <button className="desk-button-primary" type="button" disabled={extend.isPending || !reason.trim() || !/^[1-9]\d*$/.test(days)}
-          onClick={() => extending && extend.mutate(extending)}>{extend.isPending ? t`Saving…` : t`Extend`}</button>
+          onClick={() => extending && extend.mutate(extending)}>{extend.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Extend`}</button>
       </div>}>
       <div className="grid gap-3">
         <Field label={t`Extend by (days)`}><input className="desk-input" inputMode="numeric" value={days} onChange={(event) => setDays(event.target.value)} /></Field>

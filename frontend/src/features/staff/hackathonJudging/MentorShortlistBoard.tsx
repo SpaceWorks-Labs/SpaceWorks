@@ -6,6 +6,7 @@ import { staffRequest } from '../../../lib/api';
 import type { Page } from '../../events/hackathonGallery/types';
 import { judgingKey } from './api';
 import type { Scope } from './types';
+import { LogoLoader } from '../../../components/LogoLoader';
 
 type Signal = { team_id: number; fresh_nominations: number; repeat_nominations: number;
   final_rating_count: number; final_rating_mean: string | null; top_two_picks: number };
@@ -16,7 +17,7 @@ export function MentorShortlistBoard({ scope }: { scope: Scope }) {
   return <section className="grid gap-4" aria-label={t`Private mentor shortlist signals`}>
     <h3 className="title-section">{t`Private mentor shortlist signals`}</h3>
     <p className="text-sm text-muted">{t`Use these separate Mentor Desk observations during integrity and shortlist review. Judging calculations use only submitted rubric judgments or ranking ballots.`}</p>
-    {query.isLoading ? <p role="status">{t`Loading mentor signals…`}</p> : null}
+    {query.isLoading ? <LogoLoader label={t`Loading mentor signals…`} size={48} className="min-h-16 py-3" /> : null}
     <ErrorBlock error={query.error} onRetry={() => void query.refetch()} />
     {!query.isLoading && !query.isError && !query.data?.count ? <EmptyState title={t`No mentor signals yet`} description={t`Nominations and final-round observations appear here when Mentor Desk is in use.`} /> : null}
     {!query.isError && query.data?.results.map(row => <article key={row.team_id} className="rounded-xl border border-line bg-panel p-4">

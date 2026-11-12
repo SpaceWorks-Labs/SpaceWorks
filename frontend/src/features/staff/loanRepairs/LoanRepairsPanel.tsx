@@ -12,6 +12,7 @@ import {
   getLoanRepairs, handOffToRepairs, isHiddenError, loanCanHaveRepairs, loanRepairsKey,
   type LoanRepairIssue, type LoanRepairLine,
 } from "./loanRepairsApi";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 type LoanLike = { id: number; status: string; makerspace_id?: number };
 
@@ -64,7 +65,7 @@ function LoanRepairsSection({ makerspaceId, requestId, showEmpty }: { makerspace
     onSuccess: (_result, accountabilityId) => setNotes(current => { const next = { ...current }; delete next[accountabilityId]; return next; }),
     onSettled: () => queryClient.invalidateQueries({ queryKey: loanRepairsKey(makerspaceId, requestId) }),
   });
-  if (query.isLoading) return showEmpty ? <p className="text-sm text-muted" role="status">{t`Loading repairs…`}</p> : null;
+  if (query.isLoading) return showEmpty ? <LogoLoader label={t`Loading repairs…`} size={48} className="min-h-16 py-3" /> : null;
   if (query.error && isHiddenError(query.error)) return showEmpty ? <p className="text-sm text-muted">{t`Repairs are not available to you for this loan.`}</p> : null;
   if (query.error) return <p className="text-sm text-danger" role="alert">{t`Couldn't load this loan's repairs.`}</p>;
   const lines = query.data?.lines ?? [];

@@ -5,6 +5,7 @@ import { ErrorText, Field, Modal } from '../../../components/ui';
 import { toast } from '../../../components/ui/toastStore';
 import { CommandSession } from '../../events/hackathonAdmission/transport';
 import { commandErrorText } from '../../events/programmeCommandErrors';
+import { BoxArt } from '../../../components/BoxSpinner';
 
 type Reinstated = { restored_assignments: number; skipped_assignments: number };
 
@@ -30,7 +31,7 @@ export function ReinstateDialog({ eventId, project, onClose }: {
   return <Modal open={!!project} onClose={close} title={t`Reinstate ${project?.title ?? ''}?`} footer={<div className="desk-actions flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
     <button type="button" className="desk-button w-full sm:w-auto" disabled={reinstate.isPending} onClick={close}>{t`Cancel`}</button>
     <button type="button" className="desk-button-primary w-full sm:w-auto" disabled={reinstate.isPending || !reason.trim()} onClick={() => reinstate.mutate()}>
-      {reinstate.isPending ? t`Reinstating…` : t`Reinstate project`}</button></div>}>
+      {reinstate.isPending ? <><BoxArt size={16} mono />{t`Reinstating…`}</> : t`Reinstate project`}</button></div>}>
     <div className="grid gap-4">
       <p className="text-sm text-muted">{t`The project becomes eligible again. Judging assignments it lost come back to judges who can still judge it, with their earlier scores. An open entry-fee refund is cancelled.`}</p>
       <Field label={t`Reason`} hint={t`Recorded in the event history.`}>

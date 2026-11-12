@@ -2,6 +2,7 @@ import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import QrScanner from "../../../components/ui/QrScanner";
 import { staffRequest } from "../../../lib/api";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 export function HandoverBoxScan({ code, onCode, makerspaceId }: { code: string; onCode: (code: string) => void; makerspaceId: number }) {
   const [input, setInput] = useState("");
@@ -25,6 +26,6 @@ export function HandoverBoxScan({ code, onCode, makerspaceId }: { code: string; 
     <button className="desk-button" type="button" disabled={busy || !input.trim()} onClick={() => void scan(input)}>{t`Check box QR`}</button>
     {code ? <p role="status" className="[overflow-wrap:anywhere]">{t`Verified box: ${code}`}</p> : null}
     {error ? <p role="alert" className="text-danger">{error}</p> : null}
-    {scanner ? <QrScanner feedback={error ? <p role="alert">{error}</p> : busy ? <p role="status">{t`Checking container…`}</p> : null} onScan={payload => { if (!busy) void scan(payload); }} onClose={() => setScanner(false)} /> : null}
+    {scanner ? <QrScanner feedback={error ? <p role="alert">{error}</p> : busy ? <LogoLoader label={t`Checking container…`} size={48} className="min-h-16 py-3" /> : null} onScan={payload => { if (!busy) void scan(payload); }} onClose={() => setScanner(false)} /> : null}
   </div>;
 }

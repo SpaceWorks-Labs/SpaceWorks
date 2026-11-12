@@ -9,6 +9,7 @@ import {
   WIZARD_STEPS, readWizardProgress, wizardStepDone, wizardStepHint, wizardStepTitle, writeWizardProgress,
   type WizardStepKey,
 } from "./firstRunWizardState";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 /** Steps whose primary button saves the step's form before moving on. */
 const SAVES: readonly WizardStepKey[] = ["name", "hours"];
@@ -52,7 +53,7 @@ export function FirstRunWizard({ makerspace, owner, state, onClose }: {
       {key === "name" ? <NameStep makerspace={makerspace} onSaved={() => go(step + 1)} /> : null}
       {key === "logo" ? <LogoStep makerspace={makerspace} onSaved={() => go(step + 1)} /> : null}
       {key === "hours" ? <HoursStep makerspace={makerspace} onSaved={() => go(step + 1)} /> : null}
-      {key === "areas" ? <Suspense fallback={<p role="status">{t`Loading areas…`}</p>}><ModulesPanel makerspaceId={makerspace.id} /></Suspense> : null}
+      {key === "areas" ? <Suspense fallback={<LogoLoader label={t`Loading areas…`} size={48} className="min-h-16 py-3" />}><ModulesPanel makerspaceId={makerspace.id} /></Suspense> : null}
       {key === "staff" ? <StaffStep makerspace={makerspace} onSaved={() => go(step + 1)} /> : null}
     </div>
   </Modal>;

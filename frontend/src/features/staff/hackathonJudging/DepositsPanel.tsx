@@ -1,3 +1,4 @@
+import { LogoLoader } from "../../../components/LogoLoader";
 import { formatLocale } from "../../../lib/format";
 import { t } from "@lingui/core/macro";
 import { ErrorBlock, StatusPill } from '../../../components/ui';
@@ -15,7 +16,7 @@ const OUTCOMES: Record<DepositRow['outcome'], [string, 'success' | 'warn' | 'neu
 export function DepositsPanel({ scope }: { scope: Scope }) {
   const { summary, settle } = useDeposits(scope, true);
   const options = useProgrammeOptions(scope).query.data;
-  if (summary.isLoading) return <p role="status">{t`Loading deposits…`}</p>;
+  if (summary.isLoading) return <LogoLoader label={t`Loading deposits…`} />;
   if (!summary.data) return <ErrorBlock error={summary.error} onRetry={() => void summary.refetch()} />;
   const data = summary.data;
   const count = (kind: DepositRow['outcome']) => data.rows.filter(row => row.outcome === kind).length;

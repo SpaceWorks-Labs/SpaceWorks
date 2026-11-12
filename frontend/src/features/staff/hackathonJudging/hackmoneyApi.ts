@@ -8,7 +8,7 @@ import type {
 import { judgingKey } from './api';
 import { postCommand } from './l21bApi';
 import type { Scope } from './types';
-import { fixedMoney } from '../../../lib/money';
+import { moneyToMilli, percentOfMoney } from '../../../lib/money';
 
 /** Hack-money (#180, #181) staff hooks. Nothing here moves money: every write records what staff did. */
 const path = (scope: Scope, suffix: string) => `/admin/events/${scope.eventId}/${suffix}`;
@@ -88,10 +88,13 @@ export function useMissingTeamCharges(scope: Scope, enabled: boolean) {
 }
 
 /** The TDS the space's setting proposes for a gross amount (record only, #181); '' when none. */
-export function proposedTds(amount: string, proposal: { enabled: boolean; rate: string; threshold: string } | undefined): string {
-  const gross = Number(amount);
-  if (!proposal?.enabled || !Number.isFinite(gross) || gross <= Number(proposal.threshold)) return '';
-  return fixedMoney(Math.round(gross * Number(proposal.rate) * 10) / 1000);
+export type TaxProposal = { enabled: boolean; rate: string; threshold: string };
+
+/** Decimal-safe (BigInt thousandths), rounded at the currency's own minor unit like the server's proposal. */
+export function proposedTds(amount: string, proposal: TaxProposal | undefined, currency: string): string {
+  const gross = moneyToMilli(amount), limit = moneyToMilli(proposal?.threshold ?? '');
+  if (!proposal?.enabled || gross === null || limit === null || gross <= limit) return '';
+  return percentOfMoney(amount, proposal.rate, currency) ?? '';
 }
 
 export const today = () => new Date().toISOString().slice(0, 10);

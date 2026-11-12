@@ -15,6 +15,7 @@ Selection is either explicit `membership_ids` or a `filter` (the shared contract
 `admin_api.member_register_filters`); a filter that matches more than MAX_ROWS rows is refused (400), never
 silently truncated. Unit scope (O-B1) narrows both: a member outside the actor's unit is reported `not_found`.
 """
+from django.core.exceptions import PermissionDenied as DjangoPermissionDenied
 from django.db import transaction
 from django.http import Http404
 from django.utils.translation import gettext
@@ -138,7 +139,7 @@ def apply_bulk(actor, space, action, *, membership_ids=None, filter_params=None,
             with transaction.atomic():
                 RUNNERS[action](actor, row, options)
             results.append({"id": membership_id, "ok": True, "code": ""})
-        except (APIException, Http404) as exc:
+        except (APIException, Http404, DjangoPermissionDenied) as exc:
             results.append({"id": membership_id, "ok": False, "code": _code(exc)})
     applied = sum(item["ok"] for item in results)
     audit.record(actor, "membership.register_bulk_applied", makerspace=space, target=space,

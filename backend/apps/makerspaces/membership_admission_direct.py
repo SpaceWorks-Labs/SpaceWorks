@@ -19,7 +19,7 @@ def prepare_direct_admission(actor, makerspace, user, role):
     paid = charge_tracking_enabled(makerspace, "membership") and (
         policy.joining_fee > 0 or (policy.default_plan and policy.default_plan.amount > 0))
     if (policy.payment_timing == "before_activation" and paid) or vouching_on(makerspace, policy) or application_schema_for(makerspace, policy):
-        raise AdmissionError("membership_application_required", "Use the admission application to complete this makerspace's join conditions.")
+        raise AdmissionError("membership_application_required", gettext("Use the admission application to complete this makerspace's join conditions."))
     row = MembershipRequest.objects.create(
         makerspace=makerspace, user=user, kind="request", state="requested",
         requested_by=actor, assigned_role=role, admission_managed=True,

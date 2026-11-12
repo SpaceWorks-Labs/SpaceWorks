@@ -35,7 +35,7 @@ ASKABLE_STATES = ("requested", "awaiting_vouches")
 
 def _locked(request_id, makerspace_id):
     space = Makerspace.objects.select_for_update().get(pk=makerspace_id)
-    row = MembershipRequest.objects.select_for_update().select_related("selected_plan", "user").get(
+    row = MembershipRequest.objects.select_for_update(of=("self",)).select_related("selected_plan", "user").get(
         pk=request_id, makerspace=space)
     return space, row
 

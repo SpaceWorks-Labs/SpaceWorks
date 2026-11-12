@@ -16,9 +16,9 @@ from apps.makerspaces.limits_core import RESOURCE_LABELS
 
 
 def custom_domain_allowed(makerspace) -> bool:
-    from apps.makerspaces import domain_verification
+    from apps.makerspaces import limits
 
-    if domain_verification.is_self_host():
+    if limits.is_self_host():  # the shared seam: self-host AND hosting off
         return True
     from apps.managed_hosting.hosting_type import is_hosted
 

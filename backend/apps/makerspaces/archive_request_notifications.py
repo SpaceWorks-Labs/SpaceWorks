@@ -27,10 +27,10 @@ def _send_created(archive_request_id):
         ).get(pk=archive_request_id)
         review_path = reverse("admin:makerspaces_makerspace_changelist")
         review_query = urlencode({"q": archive_request.makerspace.slug})
-        body = (
-            f"{archive_request.makerspace.name} has requested archival.\n\n"
-            f"Review the request in the control plane: {review_path}?{review_query}"
-        )
+        body = gettext(
+            "%(name)s has requested archival.\n\n"
+            "Review the request in the control plane: %(path)s?%(query)s"
+        ) % {"name": archive_request.makerspace.name, "path": review_path, "query": review_query}
         recipients = User.objects.filter(
             is_active=True,
             is_superuser=True,

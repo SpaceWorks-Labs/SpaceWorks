@@ -1,24 +1,14 @@
-"""Maker profiles: what a member chooses to show the rest of their makerspace.
+"""LEGACY per-membership maker profiles, and the global public-handle namespace.
 
-**Hung off `MakerspaceMembership`, never off `User`.** Scoped PII encryption is
-per-makerspace and `User` is platform-global, which is exactly why `accounts.User` is
-absent from the PII registry — so a profile attached to the user could not be scoped to
-anything. Per-membership is also the truer model: what someone chooses to publish to one
-space is not automatically theirs to publish in another, and the Activities section is
-that space's events.
+`MemberProfile`, `MemberProject` and `ProfileTimelineEntry` are the pre-0.12 per-membership
+model. Decisions 304/305 replaced them with the account-level `AccountProfile`
+(`models_account_profile`); these rows stay in place and READ-ONLY for one more release (no data
+is deleted in this release) and are only read by the migration that merges them, the per-space
+activity graph / GitHub calendar, and the legacy-consent checks of presence and crew pages.
 
-**Deliberately NOT `ScopedPiiModelMixin`.** The encryption layer protects contact
-identifiers held about a person; every field here is content the member wrote and asked
-to have shown. Encrypting a field whose purpose is publication buys nothing and would
-drag in the envelope, dual-read and blind-index machinery for it. The identifying fields
-still live on `User`, outside the registry for the reason above. `separability.E001` only
-fires for models that take the mixin, and its own hint names dropping the mixin as the
-correct answer for a model that holds no PII of that kind.
-
-**Visibility is opt-in and defaults to off.** A directory that published every member the
-day it shipped would publish people who never asked, and the privacy floor for the
-member-visible directory (display name and avatar only, never email or phone) only means
-anything if being listed at all is a choice.
+`PublicHandle` is the one user-level namespace claim. Its `profile` pointer is the legacy
+per-membership profile and is now OPTIONAL: a handle resolves through its `user` to the
+account profile, so an account created after 0.12 has a handle with no legacy profile at all.
 """
 
 from django.utils.translation import gettext_lazy
@@ -123,7 +113,9 @@ class PublicHandle(models.Model):
 
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
                               related_name="public_handle", null=True, blank=True)
-    profile = models.ForeignKey(MemberProfile, on_delete=models.CASCADE, related_name="handles", null=True, blank=True)
+    # SET_NULL, not CASCADE (decision 305): the handle belongs to the ACCOUNT, so purging a legacy
+    # per-membership profile (a membership-module purge) must never delete the person's handle.
+    profile = models.ForeignKey(MemberProfile, on_delete=models.SET_NULL, related_name="handles", null=True, blank=True)
     makerspace = models.OneToOneField("makerspaces.Makerspace", null=True, blank=True,
                                      on_delete=models.CASCADE, related_name="public_handle")
     organization = models.OneToOneField("organizations.Organization", null=True, blank=True,
@@ -138,7 +130,7 @@ class PublicHandle(models.Model):
             models.CheckConstraint(condition=models.Q(handle__regex=HANDLE_PATTERN),
                                    name="public_handle_grammar"),
             models.CheckConstraint(condition=(
-                models.Q(user__isnull=False, profile__isnull=False, makerspace__isnull=True, organization__isnull=True)
+                models.Q(user__isnull=False, makerspace__isnull=True, organization__isnull=True)
                 | models.Q(user__isnull=True, profile__isnull=True, makerspace__isnull=False, organization__isnull=True)
                 | models.Q(user__isnull=True, profile__isnull=True, makerspace__isnull=True, organization__isnull=False)
             ), name="public_handle_typed_owner"),
@@ -150,7 +142,7 @@ class PublicHandleRedirect(models.Model):
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True,
                              on_delete=models.CASCADE, related_name="public_handle_redirects")
-    profile = models.ForeignKey(MemberProfile, on_delete=models.CASCADE, related_name="handle_redirects", null=True, blank=True)
+    profile = models.ForeignKey(MemberProfile, on_delete=models.SET_NULL, related_name="handle_redirects", null=True, blank=True)
     makerspace = models.ForeignKey("makerspaces.Makerspace", null=True, blank=True,
                                    on_delete=models.CASCADE, related_name="public_handle_redirects")
     organization = models.ForeignKey("organizations.Organization", null=True, blank=True,
@@ -170,7 +162,7 @@ class PublicHandleRedirect(models.Model):
             models.UniqueConstraint(Lower("handle"), name="profile_redirect_ci_unique"),
             models.CheckConstraint(condition=models.Q(handle__regex=HANDLE_PATTERN), name="redirect_handle_grammar"),
             models.CheckConstraint(condition=(
-                models.Q(user__isnull=False, profile__isnull=False, makerspace__isnull=True, organization__isnull=True)
+                models.Q(user__isnull=False, makerspace__isnull=True, organization__isnull=True)
                 | models.Q(user__isnull=True, profile__isnull=True, makerspace__isnull=False, organization__isnull=True)
                 | models.Q(user__isnull=True, profile__isnull=True, makerspace__isnull=True, organization__isnull=False)
             ), name="redirect_handle_typed_owner"),

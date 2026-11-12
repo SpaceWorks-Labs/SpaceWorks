@@ -5,6 +5,7 @@ Three capabilities, all under `membership`, all off by default, all keeping thei
 `minors_on` / `volunteer_on` / `funnel_on` first, so a switched-off feature is inert everywhere (decision
 218: off removes it everywhere).
 """
+from django.utils.translation import gettext
 from django.db import transaction
 from rest_framework.exceptions import APIException, ValidationError
 
@@ -69,7 +70,7 @@ def update_policy(actor, makerspace, data):
                 changed.append(name)
         for key, names in _GATES.items():
             if any(name in changed for name in names) and not membership_feature_on(makerspace, key):
-                raise CommunityError("feature_disabled", f"Turn on membership.{key} to change these settings.")
+                raise CommunityError("feature_disabled", gettext("Turn on membership.%(key)s to change these settings.") % {"key": key})
         policy.updated_by = actor
         policy.full_clean(exclude=["updated_by"])
         policy.save()

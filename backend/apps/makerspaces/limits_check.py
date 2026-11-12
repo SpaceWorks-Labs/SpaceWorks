@@ -1,4 +1,5 @@
 """The managed fair-use quota check (split from `limits_usage`, which re-exports it)."""
+from django.utils.translation import gettext
 from rest_framework import serializers
 
 from apps.makerspaces.limits_core import RESOURCE_LABELS
@@ -48,10 +49,10 @@ def check_quota(makerspace, key, *, adding=1, count_monthly=True, monthly_adding
         plan_name = plan_name_for_limit(locked, key)
         if plan_name is not None:
             raise plan_limit_error(plan_name, resource, limit)
-        message = (
-            f"You've reached the free {resource} limit for this space — "
+        message = gettext(
+            "You've reached the free %(resource)s limit for this space — "
             "ask the operator to raise it or self-host."
-        )
+        ) % {"resource": resource}
         raise serializers.ValidationError(
             {"limit": message}, code="limit_reached"
         )

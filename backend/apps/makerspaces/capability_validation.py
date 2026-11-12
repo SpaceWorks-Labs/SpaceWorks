@@ -1,6 +1,7 @@
 """Capability normalization, dependencies and feature pruning."""
 from django.utils.translation import gettext
 from django.core.exceptions import ValidationError
+from .module_aliases import canonical_module_keys
 from .module_registry import BY_KEY, core_module_keys, module_dependencies
 from .capability_definitions import FEATURE_DEFINITIONS, FEATURES, FEATURE_MODULES
 
@@ -48,7 +49,7 @@ def prune_features(enabled_features, enabled_modules):
     Returns ``(kept, dropped)``, both sorted in registry order, so the caller can audit
     what it removed rather than dropping it silently.
     """
-    modules = set(enabled_modules)
+    modules = set(canonical_module_keys(enabled_modules))
     requested = set(enabled_features) & FEATURES.keys()
     supported = {key for key in requested if set(feature_required_modules(key)) <= modules}
     # A default-on child stays selected but dormant until its required features
@@ -117,8 +118,10 @@ def _canonical_modules(value):
     # Core modules are structural: the system is incoherent without them, so they are
     # added back rather than rejected. Rejecting would make every caller carry the core
     # set, and would fail otherwise-valid operations on a row that somehow lost one.
-    # Unknown legacy keys are still preserved -- this only ever adds.
-    return sorted(set(value) | core_module_keys())
+    # Unknown legacy keys are still preserved -- this only ever adds. A RETIRED key is not
+    # unknown: it is rewritten to the key it was folded into (`printing` -> `machine_service`,
+    # decision 340b), so an old client's list or an older dump keeps its meaning.
+    return sorted(set(canonical_module_keys(value)) | core_module_keys())
 
 def _canonical_features(value):
     if not isinstance(value, (list, tuple)) or not all(

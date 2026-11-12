@@ -18,6 +18,7 @@ from apps.accounts.reauthentication import require_recent_reauth
 
 from . import capability_purge
 from django.utils.translation import gettext_lazy
+from django.utils.translation import gettext
 
 _URL_NAME = "makerspaces_makerspace_capability_purge"
 
@@ -56,7 +57,7 @@ class MakerspaceCapabilityPurgeAdminMixin:
             key, confirm = request.POST.get("key", ""), request.POST.get("confirm", "")
             try:
                 if not key or confirm.strip() != key:
-                    raise ValidationError("Type the capability key exactly to confirm the purge.")
+                    raise ValidationError(gettext("Type the capability key exactly to confirm the purge."))
                 counts = capability_purge.purge_capability(space, key, request.user)
             except ValidationError as exc:
                 self.message_user(request, "; ".join(exc.messages), messages.ERROR)

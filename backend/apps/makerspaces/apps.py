@@ -21,6 +21,8 @@ class MakerspacesConfig(AppConfig):
         from .public_profile_cache import register_signals
         from .profile_activity_sources import register_builtin_sources
         register_signals()
+        from .profile_github_queue import register_signals as register_github_signals
+        register_github_signals()
         register_builtin_sources()
         from .profile_activity_p2 import register_sources
         register_sources()
@@ -40,6 +42,8 @@ class MakerspacesConfig(AppConfig):
         register_guest_pass_notifications()
         from .notifications_guardian import register as register_guardian_notifications
         register_guardian_notifications()
+        from .notifications_profile_open import register as register_profile_open_notifications
+        register_profile_open_notifications()
 
         def invalidate_hosting_cache(**kwargs):
             # Any write to frontend_domain / frontend_domain_status must drop the

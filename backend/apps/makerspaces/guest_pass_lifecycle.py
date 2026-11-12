@@ -8,6 +8,7 @@
   it (`active_pass_for` checks the window), so a missed sweep cannot unlock anything.
 * `mark_converted` -- called when the holder becomes a member (decision 223(k) join funnel).
 """
+from django.utils.translation import gettext
 from django.db import transaction
 from django.utils import timezone
 
@@ -22,10 +23,10 @@ def stamp_waiver(actor, guest_pass, *, at_desk=False, now=None):
     with transaction.atomic():
         row = GuestPass.objects.select_for_update().get(pk=guest_pass.pk)
         if row.status not in GuestPass.LIVE_STATUSES:
-            raise GuestPassError("pass_not_live", "This pass can no longer be updated.")
+            raise GuestPassError("pass_not_live", gettext("This pass can no longer be updated."))
         waiver = MakerspaceWaiver.objects.filter(makerspace_id=row.makerspace_id, is_active=True).first()
         if waiver is None:
-            raise GuestPassError("no_waiver_published", "This space has no waiver to accept.")
+            raise GuestPassError("no_waiver_published", gettext("This space has no waiver to accept."))
         row.accepted_waiver, row.waiver_version, row.waiver_accepted_at = waiver, waiver.version, now
         row.save(update_fields=["accepted_waiver", "waiver_version", "waiver_accepted_at"])
         # Ids and the version only: the waiver body never enters the audit log.
@@ -42,7 +43,7 @@ def revoke_pass(actor, guest_pass, reason=""):
     with transaction.atomic():
         row = GuestPass.objects.select_for_update(of=("self",)).select_related("makerspace", "product").get(pk=guest_pass.pk)
         if row.status not in GuestPass.LIVE_STATUSES:
-            raise GuestPassError("pass_not_live", "This pass is already closed.")
+            raise GuestPassError("pass_not_live", gettext("This pass is already closed."))
         row.status, row.revoked_by, row.revoked_at = GuestPass.Status.REVOKED, actor, now
         row.revoked_reason = (reason or "")[:255]
         row.save(update_fields=["status", "revoked_by", "revoked_at", "revoked_reason"])

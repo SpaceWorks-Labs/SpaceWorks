@@ -185,4 +185,6 @@ from .capability_purge_plans_r3_org_b4 import plans as _r3_org_b4_plans  # noqa:
 PLANS += _r3_org_b4_plans(CapabilityPurgePlan)
 from .capability_purge_plans_l3b import plans as _l3b_plans  # noqa: E402
 PLANS += _l3b_plans(CapabilityPurgePlan)
+from .capability_purge_plans_r3_display2 import plans as _r3_display2_plans  # noqa: E402
+PLANS += _r3_display2_plans(CapabilityPurgePlan)
 BY_KEY = {plan.key: plan for plan in PLANS}

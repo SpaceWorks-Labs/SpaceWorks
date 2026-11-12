@@ -5,6 +5,7 @@ routes through `apps.makerspaces.lifecycle` -- the single lifecycle source -- an
 writes `archived_at` itself.
 """
 
+from django.utils.translation import gettext
 from django.contrib import admin, messages
 from django.contrib.admin.helpers import ACTION_CHECKBOX_NAME
 from django.core.exceptions import ValidationError
@@ -37,7 +38,7 @@ class MakerspaceLifecycleActionsMixin:
             }
             context = {
                 **self.admin_site.each_context(request),
-                "title": "Archive selected makerspaces",
+                "title": gettext("Archive selected makerspaces"),
                 "makerspaces": [
                     {
                         "object": makerspace,
@@ -98,7 +99,7 @@ class MakerspaceLifecycleActionsMixin:
         if "confirm_purge" not in request.POST:
             context = {
                 **self.admin_site.each_context(request),
-                "title": "Purge selected makerspaces",
+                "title": gettext("Purge selected makerspaces"),
                 "queryset": makerspaces,
                 "impacts": visible_archive_impacts(makerspaces),
                 "opts": self.model._meta,

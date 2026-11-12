@@ -45,7 +45,7 @@ def settings_for(makerspace):
 def ensure_join_allowed(makerspace):
     row = settings_for(makerspace)
     if module_enabled(makerspace, "membership") and row.join_mode == "closed":
-        raise AdmissionError("membership_closed", "This makerspace is closed to new memberships.")
+        raise AdmissionError("membership_closed", gettext("This makerspace is closed to new memberships."))
     return row
 
 
@@ -120,7 +120,8 @@ def update_settings(actor, makerspace, values):
         row.save()
         # The settings editor opts in to these gates. Later disabling a feature makes
         # its stored configuration inert, just like every other module feature.
-        features = set(makerspace.enabled_features or [])
+        features_before = list(makerspace.enabled_features or [])
+        features = set(features_before)
         plan_vouch, plan_form = plan_feature_needs(makerspace)
         for key, enabled in (("membership.vouching", row.join_mode == "vouch" or plan_vouch),
                              ("membership.application_form", bool(row.application_schema) or plan_form)):
@@ -135,5 +136,10 @@ def update_settings(actor, makerspace, values):
         makerspace.save(update_fields=["enabled_features", "membership_policy", "membership_dues_amount"])
         audit.record(actor, "membership.admission_settings_updated", makerspace=makerspace,
                      target=row, meta={"fields": sorted(values), "recipe": recipe})
+        # The editor flips `membership.vouching` / `membership.application_form` itself, so the
+        # switch change is audited like any other feature switch (module audit 0.12.0).
+        from apps.makerspaces.capability_audit import record_features_changed
+        record_features_changed(actor, makerspace, features_before, makerspace.enabled_features,
+                                via="membership_settings")
         record_settings(actor, makerspace, before, row, decisions)
     return row

@@ -7,6 +7,7 @@ free). A paid day pass gives no credit toward joining; staff may waive the joini
 The pass stays unusable until its charge is settled or waived (`guest_pass_queries.payment_cleared`),
 so a pending debt never unlocks anything.
 """
+from django.utils.translation import gettext
 import logging
 from decimal import Decimal
 
@@ -35,13 +36,13 @@ def save_product(actor, makerspace, data, product=None):
         creating = product is None
         product = product or DayPassProduct(makerspace=makerspace)
         if product.archived_at is not None:
-            raise GuestPassError("product_archived", "An archived product cannot be edited.")
+            raise GuestPassError("product_archived", gettext("An archived product cannot be edited."))
         for name, value in data.items():
             setattr(product, name, value)
         if product.amount > 0:
             from apps.payments.availability import charge_tracking_enabled
             if not charge_tracking_enabled(makerspace, "membership"):
-                raise GuestPassError("charges_off", "Turn on membership charges before pricing a day pass.")
+                raise GuestPassError("charges_off", gettext("Turn on membership charges before pricing a day pass."))
         product.full_clean(exclude=["makerspace"])
         product.save()
         audit.record(actor, "membership.day_pass_product_saved", makerspace=makerspace, target=product,
@@ -66,9 +67,9 @@ def _check_caps(makerspace, product, day, policy):
         status=GuestPass.Status.REVOKED)
     # m19: walk-in / staff free passes carry no product and never count toward the day-pass cap.
     if policy.day_pass_daily_cap and sold.filter(product__isnull=False).count() >= policy.day_pass_daily_cap:
-        raise GuestPassError("day_pass_sold_out", "Day passes are sold out for that day.")
+        raise GuestPassError("day_pass_sold_out", gettext("Day passes are sold out for that day."))
     if product.daily_cap and sold.filter(product=product).count() >= product.daily_cap:
-        raise GuestPassError("day_pass_sold_out", "This day pass is sold out for that day.")
+        raise GuestPassError("day_pass_sold_out", gettext("This day pass is sold out for that day."))
 
 
 def sell_day_pass(actor, makerspace, holder, product, *, day=None, operation_id=None, now=None):
@@ -87,14 +88,14 @@ def sell_day_pass(actor, makerspace, holder, product, *, day=None, operation_id=
         makerspace = require_membership_feature_locked(makerspace, "day_passes")
         product = DayPassProduct.objects.select_for_update().filter(pk=product.pk, makerspace=makerspace).first()
         if product is None or not product.is_active or product.archived_at is not None:
-            raise GuestPassError("product_unavailable", "That day pass is not on sale.", status_code=404)
+            raise GuestPassError("product_unavailable", gettext("That day pass is not on sale."), status_code=404)
         replay = replay_pass(makerspace, holder, operation_id)
         if replay is not None:  # a retry returns the first call's pass and its charge, whatever the caps say now
             return replay, Payment.objects.filter(
                 makerspace=makerspace, subject_id=replay.pk, subject_type=Payment.SubjectType.GUEST_PASS).first()
         priced = product.amount > Decimal("0")
         if priced and not charge_tracking_enabled(makerspace, "membership"):
-            raise GuestPassError("charges_off", "This space is not charging for passes; ask staff for a free pass.")
+            raise GuestPassError("charges_off", gettext("This space is not charging for passes; ask staff for a free pass."))
         start, end, pass_day = day_window(makerspace, day, now)
         policy = policy_for(makerspace)
         check_holder(holder, makerspace)

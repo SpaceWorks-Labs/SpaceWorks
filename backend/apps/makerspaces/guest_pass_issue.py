@@ -9,6 +9,7 @@ Every path runs inside `transaction.atomic()` under the makerspace lock
 (`require_membership_feature_locked`), so concurrent issuance cannot overshoot a sponsor's
 guest limit or a daily cap. A pass is never a `MakerspaceMembership`.
 """
+from django.utils.translation import gettext
 from datetime import timedelta
 
 from django.db import IntegrityError, transaction
@@ -30,7 +31,7 @@ def day_window(makerspace, day=None, now=None):
     today = to_local(makerspace, now).date()
     day = day or today
     if day < today:
-        raise GuestPassError("pass_day_in_past", "A pass cannot start on a day that has already passed.")
+        raise GuestPassError("pass_day_in_past", gettext("A pass cannot start on a day that has already passed."))
     start, end = local_day_bounds(makerspace, day)
     return (max(start, now) if day == today else start), end, day
 
@@ -45,16 +46,16 @@ def check_holder(holder, makerspace):
     if (getattr(holder, "account_kind", None) != "member" or not holder.is_active
             or holder.access_status != "active" or holder.retired_at is not None
             or getattr(holder, "merged_into_id", None) is not None):
-        raise GuestPassError("guest_not_eligible", "That account cannot receive a guest pass.")
+        raise GuestPassError("guest_not_eligible", gettext("That account cannot receive a guest pass."))
     if MakerspaceMembership.objects.filter(makerspace=makerspace, user=holder, status="active").exists():
-        raise GuestPassError("already_member", "This person is already a member and does not need a pass.")
+        raise GuestPassError("already_member", gettext("This person is already a member and does not need a pass."))
     from apps.makerspaces.minors_guard import require_minor_clearance  # decision 223 (k)
     require_minor_clearance(holder, makerspace, "guest_pass")
 
 
 def _check_visit_cap(holder, makerspace, policy):
     if policy.hard_visit_cap and visit_summary(holder, makerspace)["hard_cap_reached"]:
-        raise GuestPassError("visit_cap_reached", "This guest has reached the visit limit; membership is required.")
+        raise GuestPassError("visit_cap_reached", gettext("This guest has reached the visit limit; membership is required."))
 
 
 def replay_pass(makerspace, holder, operation_id):
@@ -70,7 +71,7 @@ def replay_pass(makerspace, holder, operation_id):
     if existing is None:
         return None
     if existing.holder_id != holder.pk:
-        raise GuestPassError("operation_id_reused", "That operation id belongs to a different guest.",
+        raise GuestPassError("operation_id_reused", gettext("That operation id belongs to a different guest."),
                              status_code=409)
     return existing
 
@@ -93,7 +94,7 @@ def create_pass(makerspace, holder, kind, valid_from, valid_until, pass_date, *,
                 entitlements=frozen_entitlements(policy, template), issued_by=issuer, operation_id=operation_id,
             )
     except IntegrityError as exc:
-        raise GuestPassError("pass_exists_today", "This guest already has a pass for that day.") from exc
+        raise GuestPassError("pass_exists_today", gettext("This guest already has a pass for that day.")) from exc
     audit.record(issuer, "membership.guest_pass_issued", makerspace=makerspace, target=row,
                  meta={"kind": kind, "holder_id": holder.pk, "sponsor_id": sponsor.pk if sponsor else None})
     from apps.makerspaces.notifications_guest_passes import notify_pass_issued
@@ -106,10 +107,10 @@ def _sponsor_membership(sponsor, makerspace, policy, now):
         makerspace=makerspace, user=sponsor, status="active", user__is_active=True, user__access_status="active",
     ).first()
     if membership is None:
-        raise GuestPassError("sponsor_not_member", "Only an active member can bring a guest.", status_code=403)
+        raise GuestPassError("sponsor_not_member", gettext("Only an active member can bring a guest."), status_code=403)
     since = membership.activated_at or membership.created_at
     if since > now - timedelta(days=policy.sponsor_min_tenure_days):
-        raise GuestPassError("sponsor_tenure", "You have not been a member long enough to bring a guest.")
+        raise GuestPassError("sponsor_tenure", gettext("You have not been a member long enough to bring a guest."))
     return membership
 
 
@@ -137,11 +138,11 @@ def issue_sponsored_pass(sponsor, makerspace, guest, *, operation_id=None, now=N
             return replay, False
         membership = _sponsor_membership(sponsor, makerspace, policy, now)
         if sponsor.pk == guest.pk:
-            raise GuestPassError("guest_not_eligible", "You cannot sponsor yourself.")
+            raise GuestPassError("guest_not_eligible", gettext("You cannot sponsor yourself."))
         if policy.sponsor_must_be_present and not _sponsor_present(sponsor, makerspace):
-            raise GuestPassError("sponsor_presence_required", "Check in at the space before bringing a guest.")
+            raise GuestPassError("sponsor_presence_required", gettext("Check in at the space before bringing a guest."))
         if _concurrent_guests(sponsor, makerspace, now) >= policy.max_concurrent_guests_per_sponsor:
-            raise GuestPassError("sponsor_limit", "You already have the maximum number of guests.")
+            raise GuestPassError("sponsor_limit", gettext("You already have the maximum number of guests."))
         start, end, day = day_window(makerspace, now=now)
         return create_pass(makerspace, guest, GuestPass.Kind.SPONSORED, start, end, day, issuer=sponsor,
                            sponsor=sponsor, sponsor_membership=membership, operation_id=operation_id, policy=policy)
@@ -165,7 +166,7 @@ def issue_staff_pass(actor, makerspace, holder, *, day=None, sponsor=None, opera
             membership = MakerspaceMembership.objects.filter(
                 makerspace=makerspace, user=sponsor, status="active").first()
             if membership is None:
-                raise GuestPassError("sponsor_not_member", "The sponsor must be an active member.")
+                raise GuestPassError("sponsor_not_member", gettext("The sponsor must be an active member."))
         start, end, pass_day = day_window(makerspace, day, now)
         kind = GuestPass.Kind.SPONSORED if sponsor is not None else GuestPass.Kind.DAY
         return create_pass(makerspace, holder, kind, start, end, pass_day, issuer=actor, sponsor=sponsor,

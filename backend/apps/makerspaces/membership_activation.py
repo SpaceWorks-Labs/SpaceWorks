@@ -107,6 +107,10 @@ def _activate_membership(actor, makerspace, user, role, *, request=None, source,
             apply_request_unit(membership, driving_request, actor)  # parity O-B1: the unit the request chose
             from apps.makerspaces.membership_join_fields import apply_on_activation
             apply_on_activation(membership, driving_request, actor)  # parity O-B2: phone, state, photo
+            # Decision 305: the per-space reference token page/event-revision editors list, so a new
+            # member is selectable immediately (join approval, invitation, walk-in upgrade, reactivation).
+            from apps.makerspaces.account_profile import ensure_legacy_pointer
+            ensure_legacy_pointer(membership)
 
         role_changes = {}
         if adding or source == "approval":

@@ -48,7 +48,7 @@ def create(makerspace, actor, reason):
             _require_archive_authority(actor, locked)
             if not is_servable(locked):
                 raise ArchiveRequestConflict(
-                    "An unavailable makerspace cannot request archival.",
+                    gettext("An unavailable makerspace cannot request archival."),
                     "makerspace_already_archived",
                 )
             requests = list(
@@ -62,7 +62,7 @@ def create(makerspace, actor, reason):
                 # Without a per-space cooldown, managers can withdraw and immediately
                 # recreate requests to fan governance mail out to every superadmin.
                 raise ArchiveRequestConflict(
-                    "Wait one hour after the previous archive request before creating another.",
+                    gettext("Wait one hour after the previous archive request before creating another."),
                     "archive_request_cooldown",
                 )
 
@@ -225,7 +225,7 @@ def _lock_request(request_id, makerspace_id):
         )
     except MakerspaceArchiveRequest.DoesNotExist as exc:
         raise ArchiveRequestConflict(
-            "Archive request does not belong to this makerspace.",
+            gettext("Archive request does not belong to this makerspace."),
             "archive_request_not_found",
         ) from exc
 
@@ -233,7 +233,7 @@ def _lock_request(request_id, makerspace_id):
 def _require_pending(archive_request):
     if archive_request.status != MakerspaceArchiveRequest.Status.PENDING:
         raise ArchiveRequestConflict(
-            "Only a pending archive request can make this transition.",
+            gettext("Only a pending archive request can make this transition."),
             "archive_request_not_pending",
         )
 

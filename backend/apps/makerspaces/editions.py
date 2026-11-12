@@ -28,7 +28,7 @@ ORGANIZATION = "organization"
 _LOAN_AND_MACHINE_KEYS = frozenset({
     "public_inventory", "request_workflow", "scanner", "asset_units", "containers",
     "bulk_import", "stock_transfers", "qr_print_batches", "guest_handover",
-    "stocktake", "machines", "machine_service", "printing",
+    "stocktake", "machines", "machine_service",
     # Enrolled printers/label printers serve the machine and QR-label spine.
     "devices",
 })
@@ -76,7 +76,9 @@ def hidden_module_keys() -> frozenset:
 
 def public_surface_available(module_key: str) -> bool:
     """False when the edition hides this module's PUBLIC surface (staff surfaces stay)."""
-    return module_key not in hidden_module_keys()
+    from apps.makerspaces.module_aliases import canonical_module_key
+
+    return canonical_module_key(module_key) not in hidden_module_keys()
 
 
 def require_public_surface(module_key: str) -> None:

@@ -14,7 +14,9 @@ from django.db import transaction
 
 from apps.audit import services as audit
 from apps.makerspaces.capabilities import prune_features, validate_capabilities
+from apps.makerspaces.capability_audit import switch_context
 from apps.makerspaces.models import Makerspace
+from apps.makerspaces.module_aliases import RETIRED_MODULE_ALIASES, canonical_module_key, canonical_module_keys
 from apps.makerspaces.module_profiles import MINIMAL, profile_features, profile_modules
 from apps.makerspaces.request_access import effective_policy
 from apps.makerspaces.module_registry import (
@@ -34,6 +36,7 @@ class ModuleInstallError(Exception):
 
 def replace_modules(makerspace, modules, actor=None):
     """Apply an explicitly reviewed complete set through the same uninstall guards."""
+    modules = canonical_module_keys(modules)
     if set(modules) - BY_KEY.keys() or any(not module_available(key) for key in modules):
         raise ModuleInstallError("Unknown or unavailable module.")
     with transaction.atomic():
@@ -44,7 +47,7 @@ def replace_modules(makerspace, modules, actor=None):
 
 def module_status(makerspace):
     """Every registered module with its state for this makerspace."""
-    enabled = set(makerspace.enabled_modules or [])
+    enabled = set(canonical_module_keys(makerspace.enabled_modules))
     core = core_module_keys()
     return [
         {
@@ -64,7 +67,11 @@ def module_status(makerspace):
 
 
 def install_module(makerspace, key, actor=None):
-    """Enable `key` and anything it requires. Returns the keys newly added."""
+    """Enable `key` and anything it requires. Returns the keys newly added.
+
+    A retired key installs the module it was folded into (`printing` -> `machine_service`).
+    """
+    key = canonical_module_key(key)
     if key not in BY_KEY:
         raise ModuleInstallError(f"Unknown module {key!r}.")
     # Refused rather than silently accepted: installing a module this deployment does
@@ -110,7 +117,17 @@ def _tracking_defaults(modules):
 
 
 def uninstall_module(makerspace, key, actor=None):
-    """Disable `key`, keeping its data. Refuses core and depended-on modules."""
+    """Disable `key`, keeping its data. Refuses core and depended-on modules.
+
+    A retired key is refused rather than mapped: switching off `printing` used to leave the
+    rest of machine service running, so reading it as "uninstall machine_service" would
+    switch off far more than the caller asked for.
+    """
+    if key in RETIRED_MODULE_ALIASES:
+        raise ModuleInstallError(
+            f"{key} is no longer a separate module; it is part of {RETIRED_MODULE_ALIASES[key]}. "
+            f"Uninstall {RETIRED_MODULE_ALIASES[key]} to switch it off."
+        )
     if key not in BY_KEY:
         raise ModuleInstallError(f"Unknown module {key!r}.")
     if key in core_module_keys():
@@ -192,6 +209,8 @@ def _apply(locked, modules, actor, add_features=()):
             # away is the kind of change an operator will otherwise discover only
             # when something stops charging.
             "features_dropped_with_modules": dropped_features,
+            # Who acted at which level (module audit 0.12.0); see `capability_audit`.
+            **switch_context(actor, "modules"),
         }
         if request_access_changed:
             meta["request_access"] = {

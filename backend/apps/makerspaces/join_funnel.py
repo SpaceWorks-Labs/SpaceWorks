@@ -9,6 +9,7 @@
   pass here), joined (of those, a membership activated on or after the first attendance). Distinct people,
   so the aggregate across spaces is not summable.
 """
+from django.utils.translation import gettext
 from apps.makerspaces.community_policy import CommunityError, funnel_on
 from apps.makerspaces.models import GuestPass, MakerspaceMembership
 from apps.makerspaces.platform import module_enabled
@@ -25,9 +26,9 @@ def _guest_pass_prefill(user, makerspace, pass_id):
 
 def join_prefill(user, makerspace, *, registration_id=None, guest_pass_id=None):
     if not funnel_on(makerspace):
-        raise CommunityError("join_funnel_off", "The join call to action is not enabled here.", 404)
+        raise CommunityError("join_funnel_off", gettext("The join call to action is not enabled here."), 404)
     if MakerspaceMembership.objects.filter(makerspace=makerspace, user=user, status="active").exists():
-        raise CommunityError("already_member", "You are already a member of this space.", 409)
+        raise CommunityError("already_member", gettext("You are already a member of this space."), 409)
     found = None
     if guest_pass_id:
         found = _guest_pass_prefill(user, makerspace, guest_pass_id)
@@ -35,7 +36,7 @@ def join_prefill(user, makerspace, *, registration_id=None, guest_pass_id=None):
         from apps.events.join_funnel_adapter import registration_prefill
         found = registration_prefill(user, makerspace, registration_id)
     if found is None:
-        raise CommunityError("source_not_found", "That event ticket or guest pass is not yours.", 404)
+        raise CommunityError("source_not_found", gettext("That event ticket or guest pass is not yours."), 404)
     return found
 
 

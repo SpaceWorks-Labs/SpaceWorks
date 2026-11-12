@@ -2,6 +2,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import NotFound
 
 from apps.makerspaces.models import Makerspace
+from apps.makerspaces.module_aliases import canonical_module_key, canonical_module_keys
 from apps.makerspaces.module_registry import module_available
 from apps.makerspaces.platform import feature_enabled, inventory_master_allows, module_enabled
 
@@ -27,7 +28,7 @@ class SurfaceOff(NotFound):
 
 
 def module_off(module_key, message=None):
-    return SurfaceOff("module", module_key, message)
+    return SurfaceOff("module", canonical_module_key(module_key), message)
 
 
 def feature_off(feature_key, message=None):
@@ -55,9 +56,10 @@ def require_module_for_servable(makerspace, module_key):
 
     if not isinstance(makerspace, Makerspace):
         raise TypeError("A servability-checked Makerspace instance is required.")
+    module_key = canonical_module_key(module_key)
     require_public_surface(module_key)
     if (
-        module_key not in set(makerspace.enabled_modules or [])
+        module_key not in set(canonical_module_keys(makerspace.enabled_modules))
         or not module_available(module_key)
         or not inventory_master_allows(makerspace, module_key)
     ):

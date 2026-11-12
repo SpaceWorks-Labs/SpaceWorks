@@ -9,6 +9,7 @@ from apps.evidence.storage import StorageUnavailable
 from apps.inventory import public_image_storage
 from apps.makerspaces.models import Makerspace
 from django.utils.translation import gettext_lazy
+from django.utils.translation import gettext
 
 
 class MakerspaceAdminForm(forms.ModelForm):
@@ -26,14 +27,14 @@ class MakerspaceAdminForm(forms.ModelForm):
         for name in ("logo", "cover"):
             upload = cleaned.get(f"{name}_upload")
             if upload and cleaned.get(f"clear_{name}"):
-                raise forms.ValidationError(f"Choose upload or clear {name}, not both.")
+                raise forms.ValidationError(gettext("Choose upload or clear %(name)s, not both.") % {"name": name})
             if not upload:
                 continue
             if not self.instance.pk:
-                raise forms.ValidationError("Save the makerspace before uploading images.")
+                raise forms.ValidationError(gettext("Save the makerspace before uploading images."))
             if upload.size > settings.PUBLIC_IMAGE_MAX_BYTES:
                 raise forms.ValidationError(
-                    f"Image must be {settings.PUBLIC_IMAGE_MAX_BYTES} bytes or smaller."
+                    gettext("Image must be %(bytes)s bytes or smaller.") % {"bytes": settings.PUBLIC_IMAGE_MAX_BYTES}
                 )
             try:
                 cleaned[f"_{name}_ext"] = public_image_storage.ext_for(

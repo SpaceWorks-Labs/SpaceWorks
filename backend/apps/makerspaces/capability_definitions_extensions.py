@@ -14,6 +14,7 @@ from .capability_definitions_r2_l2 import definitions as r2_l2_definitions
 from .capability_definitions_r2_l4 import definitions as r2_l4_definitions
 from .capability_definitions_r2_l5 import definitions as r2_l5_definitions
 from .capability_definitions_r2_l15 import definitions as r2_l15_definitions
+from .capability_definitions_adapter_media import definitions as adapter_media_definitions
 from .capability_definitions_r2_l10 import definitions as r2_l10_definitions
 from .capability_definitions_r2_l12 import definitions as r2_l12_definitions
 from .capability_definitions_r2_l19 import definitions as r2_l19_definitions
@@ -42,6 +43,8 @@ from .capability_definitions_r3_events_b6 import definitions as r3_events_b6_def
 from .capability_definitions_r3_events_b7 import definitions as r3_events_b7_definitions
 from .capability_definitions_r3_events_b8 import definitions as r3_events_b8_definitions
 from .capability_definitions_l3b import definitions as l3b_definitions
+from .capability_definitions_cutout import definitions as cutout_definitions
+from .capability_definitions_r3_display2 import definitions as r3_display2_definitions
 
 
 def extension_features(feature_type):
@@ -59,6 +62,7 @@ def extension_features(feature_type):
         *r2_l5_definitions(feature_type),
         *r2_l15_definitions(feature_type),
         *r2_l10_definitions(feature_type),
+        *adapter_media_definitions(feature_type),
         *r2_l12_definitions(feature_type),
         *r2_l19_definitions(feature_type),
         *r2_l23_definitions(feature_type),
@@ -86,4 +90,6 @@ def extension_features(feature_type):
         *r3_events_b7_definitions(feature_type),
         *r3_events_b8_definitions(feature_type),
         *l3b_definitions(feature_type),
+        *cutout_definitions(feature_type),
+        *r3_display2_definitions(feature_type),
     )

@@ -18,6 +18,7 @@ from rest_framework.exceptions import APIException, ValidationError
 from apps.audit import services as audit
 from apps.makerspaces.community_policy import CommunityError, policy_for
 from apps.makerspaces.models import GuardianConsent, GuardianConsentTerms, MinorProfile
+from django.utils.translation import gettext
 
 
 class GuardianTermsConflict(APIException):
@@ -44,9 +45,9 @@ def parse_birth_date(value, today=None, makerspace=None):
     try:
         born = date.fromisoformat(value)
     except (TypeError, ValueError):
-        raise ValidationError({"date_of_birth": "Use a date as YYYY-MM-DD."})
+        raise ValidationError({"date_of_birth": gettext("Use a date as YYYY-MM-DD.")})
     if born > today or born.year < today.year - 120:
-        raise ValidationError({"date_of_birth": "Enter a real birth date."})
+        raise ValidationError({"date_of_birth": gettext("Enter a real birth date.")})
     return born
 
 
@@ -93,11 +94,11 @@ def record_minor(actor, makerspace, user, *, date_of_birth="", declared_under_ag
     if date_of_birth:
         born = parse_birth_date(date_of_birth, makerspace=makerspace)
         if years_since(born.isoformat(), makerspace=makerspace) >= policy.adult_age:
-            raise ValidationError({"date_of_birth": "This person is not under the age of majority here."})
+            raise ValidationError({"date_of_birth": gettext("This person is not under the age of majority here.")})
     elif not declared_under_age:
-        raise ValidationError({"date_of_birth": "Give a birth date, or declare the person under age."})
+        raise ValidationError({"date_of_birth": gettext("Give a birth date, or declare the person under age.")})
     if guardian_user is not None and guardian_user.pk == user.pk:
-        raise ValidationError({"guardian_user": "A person cannot be their own guardian."})
+        raise ValidationError({"guardian_user": gettext("A person cannot be their own guardian.")})
     _write_gate(makerspace)
     with transaction.atomic():
         profile = MinorProfile.objects.select_for_update().filter(makerspace=makerspace, user=user).first()
@@ -134,14 +135,14 @@ def publish_terms(actor, makerspace, body, version):
     """Publish new guardian-consent text. The previous active version is kept, superseded."""
     body, version = (body or "").strip(), (version or "").strip()
     if not body or not version:
-        raise ValidationError({"body": "Give the consent text and a version."})
+        raise ValidationError({"body": gettext("Give the consent text and a version.")})
     try:
         with transaction.atomic():
             # Lock the space row so concurrent publishes run one after the other; the unique
             # version / single-active constraints stay as the backstop, mapped to a typed 409.
             type(makerspace).objects.select_for_update().filter(pk=makerspace.pk).first()
             if GuardianConsentTerms.objects.filter(makerspace=makerspace, version=version).exists():
-                raise ValidationError({"version": "This version already exists."})
+                raise ValidationError({"version": gettext("This version already exists.")})
             now = timezone.now()
             GuardianConsentTerms.objects.filter(makerspace=makerspace, is_active=True).update(
                 is_active=False, superseded_at=now)
@@ -164,13 +165,13 @@ def sign_consent(actor, profile, signed_name, *, accepted, method, operation_id=
     """
     now = now or timezone.now()
     if accepted is not True or not (signed_name or "").strip():
-        raise CommunityError("consent_not_accepted", "Accept the terms and type your full name to sign.", 400)
+        raise CommunityError("consent_not_accepted", gettext("Accept the terms and type your full name to sign."), 400)
     makerspace = profile.makerspace
     terms = active_terms(makerspace)
     if terms is None:
-        raise CommunityError("guardian_terms_missing", "This space has not published guardian consent terms yet.", 409)
+        raise CommunityError("guardian_terms_missing", gettext("This space has not published guardian consent terms yet."), 409)
     if method == GuardianConsent.Method.GUARDIAN_ACCOUNT and profile.guardian_user_id != actor.pk:
-        raise CommunityError("not_the_guardian", "Only the named guardian can sign in their own account.")
+        raise CommunityError("not_the_guardian", gettext("Only the named guardian can sign in their own account."))
     _write_gate(makerspace)
     with transaction.atomic():
         row = MinorProfile.objects.select_for_update().get(pk=profile.pk)
@@ -178,7 +179,7 @@ def sign_consent(actor, profile, signed_name, *, accepted, method, operation_id=
             replay = GuardianConsent.objects.filter(makerspace=makerspace, operation_id=operation_id).first()
             if replay is not None:
                 if replay.profile_id != row.pk:  # m16: another person's id is a client bug, never a replay
-                    raise CommunityError("operation_id_reused", "That operation id belongs to a different record.", 409)
+                    raise CommunityError("operation_id_reused", gettext("That operation id belongs to a different record."), 409)
                 return replay
         valid_days = policy_for(makerspace).consent_valid_days
         consent = GuardianConsent.objects.create(

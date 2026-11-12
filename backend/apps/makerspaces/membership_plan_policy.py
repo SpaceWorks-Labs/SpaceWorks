@@ -116,15 +116,19 @@ def staff_only_questions(schema):
     return [q for q in schema.get("questions", []) if q.get("visibility") == "server"]
 
 
-def sync_plan_features(makerspace):
+def sync_plan_features(makerspace, actor=None):
     """Dependency completion (#87) for per-plan overrides: a plan that uses vouching or
     its own application form switches the matching membership feature on. Add-only:
-    the space settings editor owns switching them off. Caller holds the space lock."""
+    the space settings editor owns switching them off. Caller holds the space lock.
+    The switch it flips is audited as a feature change (module audit 0.12.0)."""
+    from apps.makerspaces.capability_audit import record_features_changed
     from apps.makerspaces.membership_admission_settings import plan_feature_needs
     vouch, form = plan_feature_needs(makerspace)
-    features = set(makerspace.enabled_features or [])
+    before = list(makerspace.enabled_features or [])
+    features = set(before)
     wanted = {key for key, needed in (("membership.vouching", vouch), ("membership.application_form", form))
               if needed}
     if wanted - features:
         makerspace.enabled_features = sorted(features | wanted)
         makerspace.save(update_fields=["enabled_features"])
+        record_features_changed(actor, makerspace, before, makerspace.enabled_features, via="membership_plans")

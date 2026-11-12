@@ -80,7 +80,7 @@ def request_membership(user, makerspace, application_answers=None, *, plan_id=No
                     kind="request", state="requested", requested_by=user, assigned_role=_member_role(makerspace),
                 )
         except IntegrityError as exc:
-            raise AdmissionError("membership_request_exists", "An open membership request already exists.") from exc
+            raise AdmissionError("membership_request_exists", gettext("An open membership request already exists.")) from exc
         _prepare(row, user, policy, application_answers, plan, join_fields)
         record_request_unit(row, unit)
         audit.record(user, "membership.requested", makerspace=makerspace, target=row)
@@ -120,7 +120,7 @@ def claim_invitation(user, request_id, application_answers=None):
             from apps.makerspaces.membership_legacy import legacy_claim_invitation
             return legacy_claim_invitation(user, request_id)
         if row.kind != "invite" or row.state != "invited" or row.user_id not in (None, user.pk):
-            raise AdmissionError("membership_invitation_unclaimable", "Invitation is not claimable.")
+            raise AdmissionError("membership_invitation_unclaimable", gettext("Invitation is not claimable."))
         if normalized_email(user.email) != row.invite_email:
             raise PermissionDenied()
         from apps.makerspaces.membership_plan_policy import plan_policy
@@ -159,14 +159,14 @@ def approve_request(actor, request, assigned_role, plan=None):
             return legacy_approve_request(actor, row, assigned_role, plan)
         ensure_join_allowed(makerspace)
         if row.kind == "invite" and not row.admission_managed:
-            raise AdmissionError("membership_invitation_unclaimed", "The applicant must claim this invitation first.")
+            raise AdmissionError("membership_invitation_unclaimed", gettext("The applicant must claim this invitation first."))
         if not row.admission_managed:
             # Pre-configuration applications retain the policy under which they were
             # submitted. An upgrade or later edit must not impose an unanswered form.
             from apps.makerspaces.membership_legacy import legacy_approve_request
             return legacy_approve_request(actor, row, assigned_role, plan)
         if row.state not in ("requested", "invited", "awaiting_vouches") or row.approved_at:
-            raise AdmissionError("membership_request_terminal", "This membership request is no longer approvable.")
+            raise AdmissionError("membership_request_terminal", gettext("This membership request is no longer approvable."))
         if not row.user or not row.user.is_active or row.user.access_status != "active":
             raise ValidationError({"detail": gettext("The applicant needs an unrestricted active account.")})
         existing = MakerspaceMembership.objects.filter(makerspace=makerspace, user=row.user).first()
@@ -199,7 +199,7 @@ def advance(actor, row, policy):
     policy = plan_policy(row.makerspace, row.selected_plan, policy)
     row.user = lock_obligation_owner(row.user)
     if row.expires_at and row.expires_at <= timezone.now():
-        raise AdmissionError("membership_request_expired", "This membership application has expired.")
+        raise AdmissionError("membership_request_expired", gettext("This membership application has expired."))
     if vouching_on(row.makerspace, policy):
         from apps.makerspaces.membership_vouching import require_vouches
         require_vouches(row, policy)
@@ -214,5 +214,5 @@ def advance(actor, row, policy):
             notify_admission(row, "awaiting_payment")
         return row
     if payment and payment.status == "canceled":
-        raise AdmissionError("membership_payment_canceled", "The admission charge was canceled.")
+        raise AdmissionError("membership_payment_canceled", gettext("The admission charge was canceled."))
     return activate_admission(actor, row)

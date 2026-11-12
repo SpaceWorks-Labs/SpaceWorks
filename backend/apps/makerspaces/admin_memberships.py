@@ -6,6 +6,7 @@ from apps.makerspaces.models import (
     MakerspaceMembership,
     MemberCard,
     MakerspaceWaiver,
+    AccountProfile,
     MemberProfile,
     MemberProject,
     MembershipRequest,
@@ -87,6 +88,22 @@ class MembershipRequestAdmin(PiiMaskingAdminMixin, SuperuserOnlyModelAdmin, Mode
     pii_extra_fields = ("invite_email",)
     list_display = ("makerspace", "kind", "state", "user", "invite_email", "created_at")
     readonly_fields = tuple(field.name for field in MembershipRequest._meta.fields)
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return request.method in ("GET", "HEAD") and super().has_change_permission(request, obj)
+
+
+@admin.register(AccountProfile)
+class AccountProfileAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
+    """Read-only global profile (decision 305): a person's own words, visible here for reports only."""
+
+    list_display = ("user", "is_visible", "public_visible", "updated_at")
+    list_filter = ("is_visible", "public_visible")
+    search_fields = ("user__username", "user__display_name")
+    readonly_fields = tuple(field.name for field in AccountProfile._meta.fields)
 
     def has_add_permission(self, request):
         return False

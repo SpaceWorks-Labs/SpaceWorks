@@ -23,6 +23,7 @@ from apps.accounts.reauthentication import require_recent_reauth
 from . import security_settings
 from .security_settings_registry import REGISTRY
 from django.utils.translation import gettext_lazy
+from django.utils.translation import gettext
 
 ACTIONS = ("set", "lock", "unlock", "open_pii", "close_pii")
 
@@ -50,7 +51,7 @@ def _parsed(key, raw, *, floor):
         try:
             return int(text)
         except ValueError as exc:
-            raise ValidationError(f"{setting.label} takes a whole number.") from exc
+            raise ValidationError(gettext("%(label)s takes a whole number.") % {"label": setting.label}) from exc
     if setting.kind == LIST:
         return [item for item in re.split(r"[\s,]+", text) if item]
     return text
@@ -122,7 +123,7 @@ class MakerspaceSecurityAdminMixin:
     def _apply_security_action(self, request, space, data):
         action, key, actor = data["action"], data["key"], request.user
         if action in {"set", "lock", "unlock"} and not key:
-            raise ValidationError("Choose a setting.")
+            raise ValidationError(gettext("Choose a setting."))
         if action == "set":
             security_settings.set_setting(actor, space, key, _parsed(key, data, floor=False),
                                           via=security_settings.PLATFORM)
@@ -135,5 +136,5 @@ class MakerspaceSecurityAdminMixin:
         else:
             grant = pii_access.active_grants(actor).filter(makerspace=space).first()
             if grant is None:
-                raise ValidationError("No PII access window is open here.")
+                raise ValidationError(gettext("No PII access window is open here."))
             pii_access.close_grant(actor, grant)

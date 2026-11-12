@@ -2,11 +2,16 @@
 
 from django import forms
 from django.contrib import messages
+from django.utils.translation import gettext
 
 from apps.audit import services as audit
 from apps.makerspaces.capabilities import FEATURE_DEFINITIONS, validate_capabilities
+from apps.makerspaces.capability_audit import switch_context
+from apps.makerspaces.capability_definitions import RETIRED_FEATURES
 from apps.makerspaces.admin_images import MakerspaceAdminForm as ImageMakerspaceAdminForm
+from apps.makerspaces.admin_capability_sections import capability_sections
 from apps.makerspaces.admin_capability_completion import FEATURES, complete_selection, matrix_rules
+from apps.makerspaces.module_aliases import canonical_module_keys
 from apps.makerspaces.module_registry import BY_KEY, MODULES, module_available
 from apps.makerspaces.request_access import effective_policy
 from apps.makerspaces.admin_security import MakerspaceSecurityAdminMixin
@@ -28,6 +33,8 @@ class CapabilityMatrixWidget(forms.CheckboxSelectMultiple):
         # exactly what clean_capabilities would. No checkbox is ever disabled: a disabled
         # checkbox is omitted from POST, which would silently clear it on save.
         context["capability_rules"] = matrix_rules()
+        context["capability_sections"] = capability_sections(
+            [option for _group, options, _index in context["widget"]["optgroups"] for option in options])
         return context
 
 
@@ -70,6 +77,8 @@ class MakerspaceAdminForm(ImageMakerspaceAdminForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        # A retired key still stored on an old row reads as its live key (`printing`, 340b).
+        stored_modules = canonical_module_keys(self.instance.enabled_modules)
         # Sourced from the registry, not "defaults + keys already on the row". That old
         # rule meant a module absent from the defaults could never be offered on a new
         # makerspace -- which is why `notifications` was enforced but unreachable.
@@ -81,19 +90,19 @@ class MakerspaceAdminForm(ImageMakerspaceAdminForm):
         known = {definition.key for definition in MODULES}
         choices.extend(
             (f"module:{key}", f"{key.replace('_', ' ').title()} (unrecognised)")
-            for key in (self.instance.enabled_modules or [])
+            for key in stored_modules
             if key not in known
         )
         choices.extend(
             (f"feature:{item.key}", _choice_label(item))
-            for item in FEATURE_DEFINITIONS
+            for item in FEATURE_DEFINITIONS if item.key not in RETIRED_FEATURES
         )
         self.fields["capabilities"].choices = choices
-        selected = [f"module:{key}" for key in self.instance.enabled_modules or []]
+        selected = [f"module:{key}" for key in stored_modules]
         selected.extend(f"feature:{key}" for key in self.instance.enabled_features or [])
         self.initial["capabilities"] = selected
         self.capability_before = {
-            "modules": sorted(set(self.instance.enabled_modules or [])),
+            "modules": sorted(set(stored_modules)),
             "features": sorted(set(self.instance.enabled_features or [])),
         }
         # Captured here, from the UNMODIFIED instance: `clean_capabilities` rewrites
@@ -105,7 +114,8 @@ class MakerspaceAdminForm(ImageMakerspaceAdminForm):
 
     def clean_capabilities(self):
         values = self.cleaned_data["capabilities"]
-        modules = [value.removeprefix("module:") for value in values if value.startswith("module:")]
+        modules = canonical_module_keys(
+            [value.removeprefix("module:") for value in values if value.startswith("module:")])
         features = [value.removeprefix("feature:") for value in values if value.startswith("feature:")
                     and not is_security_feature(value.removeprefix("feature:"))]
         features += [key for key in self.capability_before["features"] if is_security_feature(key)]
@@ -117,8 +127,10 @@ class MakerspaceAdminForm(ImageMakerspaceAdminForm):
         unavailable = [key for key in result.added if not module_available(key)]
         if unavailable:
             raise forms.ValidationError(
-                f"The ticked modules and features require {', '.join(unavailable)}, which this "
-                "deployment does not ship (TOMBSTONED_APPS)."
+                gettext(
+                    "The ticked modules and features require %(keys)s, which this "
+                    "deployment does not ship (TOMBSTONED_APPS)."
+                ) % {"keys": ", ".join(unavailable)}
             )
         self.capability_dependencies_added = result.added
         self.capability_turned_off = result.turned_off_modules + result.turned_off_features
@@ -156,7 +168,7 @@ class MakerspaceCapabilityAdminMixin(MakerspaceCapabilityPurgeAdminMixin, Makers
             self.message_user(request, f"Also turned off {_labels(turned_off)}: they need a module "
                               "you unticked.", messages.WARNING)
         if change and (before != after or request_access_changed):
-            meta = {"before": before, "after": after}
+            meta = {"before": before, "after": after, **switch_context(request.user, "control")}
             if dependencies_added:
                 meta["dependencies_added"] = dependencies_added
             if turned_off:

@@ -11,7 +11,7 @@ from apps.evidence.models import EvidenceObjectRetentionState, EvidencePhoto
 from apps.inventory import public_image_storage
 from apps.inventory.models import InventoryProduct
 from apps.machines import storage as machine_storage
-from apps.machines.models import Machine, MachineDocument, ServiceRequestFile
+from apps.machines.models import Machine, MachineDocument, MachineTypeDocument, ServiceRequestFile
 from apps.maintenance import storage as maintenance_storage
 from apps.maintenance.models import MaintenanceLogDocument
 from apps.makerspaces.models import MemberCard, Makerspace, MemberProfile, MemberProject
@@ -80,6 +80,7 @@ class Command(BaseCommand):
                 "print_files": self._sum(ServiceRequestFile.objects.filter(makerspace=makerspace).values_list("object_key", "size_bytes"), machine_storage.object_size, True),
                 "public_images": self._sum(((key, None) for key in self._public_image_keys(makerspace)), public_image_storage.object_size),
                 "machine_documents": self._sum(((key, None) for key in MachineDocument.objects.filter(machine__makerspace=makerspace).values_list("object_key", flat=True)), machine_storage.object_size),
+                "machine_type_documents": self._sum(MachineTypeDocument.objects.filter(makerspace=makerspace).values_list("object_key", "size_bytes"), machine_storage.object_size, True),
                 "warranty_documents": self._sum(((key, None) for key in WarrantyDocument.objects.filter(warranty__makerspace=makerspace).values_list("object_key", flat=True)), warranty_storage.object_size),
                 "procurement_receipts": self._sum(((key, None) for key in ToBuyReceipt.objects.filter(to_buy_item__makerspace=makerspace).values_list("object_key", flat=True)), procurement_storage.object_size),
                 # Charged on upload by `maintenance/services_documents.py` and collected by
@@ -202,4 +203,11 @@ class Command(BaseCommand):
                 profile__membership__makerspace=makerspace
             ).values_list("image_key", flat=True)
         )
+        # Account-level profile images (decision 305) are charged to the space whose namespace
+        # minted the key, which the key itself names: `member/<space_id>/...`.
+        from apps.makerspaces.models import AccountProfile, AccountProject
+
+        prefix = f"member/{makerspace.pk}/"
+        keys.update(AccountProfile.objects.filter(avatar_key__startswith=prefix).values_list("avatar_key", flat=True))
+        keys.update(AccountProject.objects.filter(image_key__startswith=prefix).values_list("image_key", flat=True))
         return {key for key in keys if key}

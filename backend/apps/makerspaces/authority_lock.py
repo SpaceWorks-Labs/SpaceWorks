@@ -13,6 +13,7 @@ Callers lock the object they mutate AFTER this, never before, so the tenant row 
 first lock on every path that touches it.
 """
 
+from django.utils.translation import gettext_lazy
 from django.db import transaction
 from rest_framework.exceptions import PermissionDenied
 
@@ -20,7 +21,7 @@ from apps.accounts.models import User
 from apps.makerspaces.models import Makerspace, MakerspaceRole, MembershipAdditionalRole
 from apps.makerspaces.role_authority import _locked_actor_actions
 
-ACCESS_CHANGED = "Your access changed while saving. Reload and try again."
+ACCESS_CHANGED = gettext_lazy("Your access changed while saving. Reload and try again.")
 
 
 def lock_actor_authority(actor, makerspace_id):

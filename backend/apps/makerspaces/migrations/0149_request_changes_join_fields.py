@@ -34,7 +34,7 @@ class Migration(migrations.Migration):
             condition=models.Q(("state__in", OPEN), ("user__isnull", False)), fields=("makerspace", "user"),
             name="uniq_open_membership_request_user")),
         migrations.AddConstraint(model_name="membershiprequest", constraint=models.UniqueConstraint(
-            condition=models.Q(models.Q(("state__in", OPEN)), models.Q(("invite_email", ""), _negated=True)),
+            condition=models.Q(("state__in", OPEN), models.Q(("invite_email", ""), _negated=True)),
             fields=("makerspace", "invite_email"), name="uniq_open_membership_request_email")),
         migrations.AddField(model_name="membershipplan", name="join_photo",
                             field=models.CharField(choices=FIELD_MODES, default="off", max_length=8)),

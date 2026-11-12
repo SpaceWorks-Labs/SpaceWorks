@@ -7,7 +7,7 @@ lifecycle records the staff User, PIN failure/session start record ``actor=None`
 carry the Station identity in metadata.
 """
 
-from django.utils.translation import gettext
+from django.utils.translation import gettext, gettext_lazy
 from datetime import timedelta
 from uuid import UUID, uuid4
 
@@ -34,7 +34,7 @@ from apps.makerspaces.station_sessions import resolve_session as resolve_shared,
 
 KIOSK_FEATURE = "inventory.kiosk"
 KIOSK_KINDS = (Station.Kind.SCANNER, Station.Kind.HANDOVER)
-STATION_REFUSAL = "Invalid station request."
+STATION_REFUSAL = gettext_lazy("Invalid station request.")
 COOKIE_NAME = "sw_kiosk_station"
 COOKIE_SALT = "spaceworks.kiosk.station-cookie.v1"
 

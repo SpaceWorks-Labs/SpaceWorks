@@ -53,8 +53,10 @@ def plans_for_unit(queryset, unit):
     if unit is None:
         return queryset.filter(unit_links__isnull=True)
     from django.db.models import Q
-    ancestors = [int(part) for part in unit.path.strip("/").split("/") if part]
-    return queryset.filter(Q(unit_links__isnull=True) | Q(unit_links__unit_id__in=ancestors)).distinct()
+    # `path` is a materialised path of CODES ("/SOUTH/KOCHI/"), not ids: a plan offered in an ancestor
+    # is offered here too.
+    ancestors = [part for part in unit.path.strip("/").split("/") if part]
+    return queryset.filter(Q(unit_links__isnull=True) | Q(unit_links__unit__code__in=ancestors)).distinct()
 
 
 def resolve_join_unit(space, user, plan, unit_code=None, invite_code=None):

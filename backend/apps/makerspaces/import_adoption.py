@@ -191,6 +191,8 @@ def adopt_pending_membership(user, pending):
             created_at=pending.created_at
         )
         membership.created_at = pending.created_at
+        from apps.makerspaces.account_profile import ensure_legacy_pointer
+        ensure_legacy_pointer(membership)  # decision 305: the reference token for page/event editors
         pending.adopted_at = timezone.now()
         pending.adopted_membership = membership
         pending.unresolved_reason = ""

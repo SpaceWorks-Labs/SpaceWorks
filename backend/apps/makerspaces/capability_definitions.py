@@ -26,6 +26,13 @@ class FeatureDefinition:
     app_label: str | None = None
 
 
+# Decision 319 (addendum): machine certifications, certification reminders and induction events are
+# RETIRED as a feature. The keys stay registered so stored settings, purge plans and drift guards keep
+# resolving, but they always read off (decision 218: off = removed everywhere) and no screen offers them.
+# Records are never deleted; `machines.access_grants` replaced them.
+RETIRED_FEATURES = frozenset({"machines.certifications", "machines.certification_reminders",
+                              "machines.induction_events"})
+
 FEATURE_DEFINITIONS = (
     FeatureDefinition("packs.import", "staff_admin", "Space packs",
                       "Export and apply configuration-only packs with a diff preview."),
@@ -177,6 +184,12 @@ FEATURE_DEFINITIONS = (
         "Native push notifications to this makerspace's registered devices; still "
         "requires platform FCM/APNs credentials.",
         default_enabled=True,
+    ),
+    FeatureDefinition(
+        "presence.public_display", "presence", "Space display screens",
+        "Pair TV or kiosk screens that rotate who is here now, the events calendar, machines now and an "
+        "announcement. Shows only what the public page shows to a logged-out visitor.",
+        default_enabled=False,
     ),
     FeatureDefinition(
         "presence.geofence", None, "Presence geofence",

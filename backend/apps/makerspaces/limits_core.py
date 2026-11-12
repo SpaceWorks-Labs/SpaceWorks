@@ -56,6 +56,12 @@ EXTRA_QUOTA_LIMIT_KEYS = frozenset({
     "machine_sessions_monthly", "storage_evidence_bytes", "storage_public_images_bytes", "webhook_endpoints",
     "member_cards_issued_monthly", "wallet_passes", "member_units", "collection_sheet_rows_monthly", "staff_cards_issued_monthly",
     "series_invites", "checkin_lists", "saved_views", "hackathon_stages", "event_badge_prints_monthly",
+    "paired_displays", "adapter_bridges", "adapter_watch_streams", "adapter_snapshots", "adapter_artifacts",
+    "photo_cutout_jobs_monthly", "card_templates",
+    # 0.12.0 (decision 328a): the module-by-module sweep added a limit where a module creates something countable.
+    "hardware_requests_monthly", "stock_transfers_monthly", "stocktake_sessions_monthly",
+    "reimbursement_claims_monthly", "public_page_assets", "scheduled_reports", "adapter_media_bytes",
+    "adapter_telemetry_points", "anthias_players", "shelf_checks_monthly",
 })
 KNOWN_LIMIT_KEYS = (NUMERIC_LIMIT_KEYS | BOOLEAN_LIMIT_KEYS | PLATFORM_CREDENTIAL_LIMIT_KEYS
                     | SPACE_QUOTA_LIMIT_KEYS | EXTRA_QUOTA_LIMIT_KEYS)
@@ -105,24 +111,26 @@ def resource_limit(makerspace, key) -> int | None:
     from apps.makerspaces import limits
 
     # Owner 2026-11-11 (decision 281 addendum): a limit the superadmin SET on a space applies to that
-    # space whether it is own or hosted. Plans and built-in values stay hosted-only (decision 236);
-    # nothing is stored by default, so nothing is enforced by default.
+    # space whether it is own or hosted. Decision 328a: when a space sets none, a hosted space's plan answers,
+    # then the platform default for the key (`managed_hosting.limit_defaults`), then no limit at all.
     overrides = makerspace.resource_limit_overrides or {}
     if key in overrides:
         value = overrides[key]
         if value is None or isinstance(value, bool) or value == -1:
             return None
         return int(value)
+    from apps.managed_hosting.limit_defaults import platform_default
+
     if limits.is_self_host():
-        return None
+        return platform_default(key)
     from apps.managed_hosting.hosting_type import is_hosted
 
     if not is_hosted(makerspace):
-        return None
+        return platform_default(key)
     from apps.managed_hosting.enforcement import NOT_SET, plan_limit
 
     planned = plan_limit(makerspace, key)
-    return None if planned is NOT_SET else planned
+    return platform_default(key) if planned is NOT_SET else planned
 
 
 def suggested_limit(key) -> int | None:

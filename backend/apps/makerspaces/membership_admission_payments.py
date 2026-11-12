@@ -1,4 +1,5 @@
 """First-term debt and settlement-driven admission; the payment rail stays optional."""
+from django.utils.translation import gettext
 from apps.operations.cloud_jobs import bounded
 
 import logging
@@ -24,14 +25,14 @@ def charge_admission(row, actor, policy):
         return Payment.objects.select_for_update().get(pk=row.admission_payment_id, makerspace=row.makerspace, member=row.user)
     plan = row.selected_plan
     if plan and (plan.makerspace_id != row.makerspace_id or not plan.is_active):
-        raise AdmissionError("membership_plan_unavailable", "The admission plan is no longer available.")
+        raise AdmissionError("membership_plan_unavailable", gettext("The admission plan is no longer available."))
     from apps.makerspaces.membership_plan_policy import joining_fee_for
     fee, fee_currency = joining_fee_for(row.makerspace, policy, plan, row.user, rejoining=row.rejoining)
     row.first_term_amount = plan.amount if plan else 0
     row.joining_fee = fee
     row.charge_currency = plan.currency if plan else fee_currency
     if plan and row.joining_fee > 0 and plan.currency != fee_currency:
-        raise AdmissionError("membership_currency_mismatch", "The joining fee and plan must use the same currency.")
+        raise AdmissionError("membership_currency_mismatch", gettext("The joining fee and plan must use the same currency."))
     if not charge_tracking_enabled(row.makerspace, "membership"):
         # #184 G8: membership money is not tracked here, so joining is free whatever the
         # payment timing -- nothing is recorded as owed, and the first term carries no price.
@@ -61,9 +62,9 @@ def activate_admission(actor, row):
     from apps.makerspaces.membership_plan_services import create_term
 
     if row.user is None or not row.user.is_active or row.user.access_status != "active":
-        raise AdmissionError("membership_applicant_unavailable", "The applicant account is no longer eligible.")
+        raise AdmissionError("membership_applicant_unavailable", gettext("The applicant account is no longer eligible."))
     if row.assigned_role is None or row.assigned_role.granted_actions:
-        raise AdmissionError("membership_role_unavailable", "Community admission requires a member role.")
+        raise AdmissionError("membership_role_unavailable", gettext("Community admission requires a member role."))
     membership = _activate_membership(
         actor, row.makerspace, row.user, row.assigned_role,
         request=row, source="approval", skip_dues=True,
@@ -108,7 +109,7 @@ def close_admission(actor, row, state="canceled"):
     from apps.makerspaces.membership_admission import OPEN_STATES, transition
     from apps.payments.reconciliation import cancel_pending
     if row.state not in OPEN_STATES:
-        raise AdmissionError("membership_request_terminal", "This application is no longer open.")
+        raise AdmissionError("membership_request_terminal", gettext("This application is no longer open."))
     transition(actor, row, state)
     if row.admission_payment_id:
         cancel_pending(makerspace=row.makerspace, subject_type=Payment.SubjectType.MEMBERSHIP_REQUEST,

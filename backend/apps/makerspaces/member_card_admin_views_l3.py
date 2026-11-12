@@ -114,7 +114,9 @@ class MemberCardDownloadView(APIView):
 
     @extend_schema(tags=TAGS, summary="Download one member card (PDF, or PNG of one side at 300 dpi)", request=None,
                    parameters=[OpenApiParameter("format", str, enum=["pdf", "png"]),
-                               OpenApiParameter("side", str, enum=["front", "back"])],
+                               OpenApiParameter("side", str, enum=["front", "back"]),
+                               OpenApiParameter("bleed_mm", float, description="Print-ready: 0-5 mm mirror bleed."),
+                               OpenApiParameter("crop_marks", bool, description="Print-ready PDF: crop marks.")],
                    responses={(200, "application/pdf"): OpenApiTypes.BINARY, (200, "image/png"): OpenApiTypes.BINARY,
                               **errors(400, 401, 403, 404)})
     def get(self, request, pk):
@@ -123,8 +125,10 @@ class MemberCardDownloadView(APIView):
         card = _card(request.user, pk)
         if not card.is_active:
             raise PermissionDenied(gettext("A revoked card cannot be downloaded."))
+        from apps.card_designs.print_export import options_from_query
         fmt, side = request.query_params.get("format", "pdf"), request.query_params.get("side", "front")
-        data, content_type, filename = render("member_card", card, fmt=fmt, side=side)
+        data, content_type, filename = render("member_card", card, fmt=fmt, side=side,
+                                              **options_from_query(request.query_params))
         record_download(request.user, "member_card", card, fmt, side)
         response = HttpResponse(data, content_type=content_type)
         response["Content-Disposition"] = f'attachment; filename="{filename}"'

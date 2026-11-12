@@ -1,6 +1,7 @@
 """Shared feature configuration policy and live, batched tenant eligibility."""
 
 from .capabilities import FEATURE_MODULES, FEATURES
+from .capability_definitions import RETIRED_FEATURES
 from .loan_visibility import LOAN_FEATURES
 from .module_registry import module_available
 from apps.separability.registry import runtime_active
@@ -8,6 +9,8 @@ from apps.separability.registry import runtime_active
 
 def configuration_feature_enabled(makerspace, key):
     """Evaluate loaded configuration only; callers must separately check servability."""
+    if key in RETIRED_FEATURES:
+        return False
     if key in LOAN_FEATURES and not configuration_feature_enabled(makerspace, "loans.enabled"):
         return False
     definition = FEATURES.get(key)
@@ -25,6 +28,27 @@ def configuration_feature_enabled(makerspace, key):
     return all(module in modules and module_available(module) for module in required_modules) and all(
         configuration_feature_enabled(makerspace, feature) for feature in definition.requires_features
     )
+
+
+def unavailable_features(keys):
+    """Keys that can never read on in this deployment: retired, or their app/module is not shipped.
+
+    A switch turned ON for one of these would be stored, report success and change nothing, the
+    same dead capability `module_install.install_module` refuses for a module. Callers refuse
+    only the keys a request newly turns on: a deployment-level decision never rewrites what a
+    tenant already stored (uninstall and tombstoning are both reversible).
+    """
+    out = []
+    for key in keys:
+        definition = FEATURES.get(key)
+        if definition is None:
+            continue
+        required = (definition.parent_module, *definition.requires_modules)
+        if (key in RETIRED_FEATURES
+                or (definition.app_label is not None and not runtime_active(definition.app_label))
+                or any(module is not None and not module_available(module) for module in required)):
+            out.append(key)
+    return sorted(out)
 
 
 def feature_enabled_servable_ids(makerspace_ids, key):

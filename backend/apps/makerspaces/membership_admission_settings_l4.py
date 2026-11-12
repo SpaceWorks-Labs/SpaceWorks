@@ -31,7 +31,7 @@ def gate_settings(makerspace, values, row):
                        or values[name] in ("never", "after_lapse")]
         if changed and not membership_feature_on(makerspace, key):
             raise PermissionDenied({"code": "feature_disabled", "feature": f"membership.{key}",
-                                    "detail": gettext('Turn on membership.{key} to change: {value}.').format(key=key, value=', '.join(changed))})
+                                    "detail": gettext("Turn on membership.%(key)s to change: %(value)s.") % {"key": key, "value": ", ".join(changed)}})
     return values
 
 

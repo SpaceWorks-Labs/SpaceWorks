@@ -59,7 +59,7 @@ def test_taken_numbers_are_skipped_and_exhaustion_is_a_typed_409():
     scheme = CardNumberScheme.objects.get(makerspace=space)
     scheme.pattern = "ZZ"  # no SEQ: every attempt yields the same text
     scheme.save()
-    MemberCard.objects.create(makerspace=space, membership=None, card_number=901, number_text="ZZ")
+    MemberCard.objects.create(makerspace=space, membership=None, card_number=9001, number_text="ZZ")
     with pytest.raises(numbering.CardNumberExhausted):
         numbering.next_number(member(space, "z")[1], scheme)
 

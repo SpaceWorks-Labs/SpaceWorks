@@ -141,8 +141,7 @@ def test_bulk_needs_its_switch_the_rbac_action_a_valid_selection_and_at_most_200
         bulk.apply_bulk(boss, space, "move_unit", membership_ids=[member.pk], filter_params={}, options={})
     ids = list(range(1, 400))
     assert len(bulk.select_ids(boss, space, bulk.MANAGE, ids, None)) == bulk.MAX_ROWS
-    from tests.audit_explorer_helpers import custom_role_member
-    nobody = custom_role_member(space, "ob2-no-cards", [rbac.Action.MANAGE_MEMBERS])
+    nobody = member.user  # manage_members implies manage_member_cards, so use a plain member with no authority
     with pytest.raises(PermissionDenied):
         bulk.apply_bulk(nobody, space, "issue_cards", membership_ids=[member.pk])
     from apps.makerspaces.guards import SurfaceOff

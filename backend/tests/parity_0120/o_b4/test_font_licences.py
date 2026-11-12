@@ -10,8 +10,8 @@ COMMERCIAL_GILROY = re.compile(r"^Gilroy-(Regular|Medium|SemiBold|Bold)\.(otf|tt
 SKIP = {"node_modules", ".git", ".venv", "venv", "__pycache__"}
 
 
-def test_brand_families_are_exactly_outfit_and_unbounded():
-    assert set(fonts.BRAND) == {"Outfit", "Unbounded"}
+def test_brand_families_are_outfit_unbounded_and_the_studio_open_faces():
+    assert set(fonts.BRAND) == {"Outfit", "Unbounded", "Bebas Neue", "Pacifico", "DM Serif Display"}  # Card Studio, 314
 
 
 def test_catalogue_is_the_google_open_licence_catalogue():
@@ -22,9 +22,8 @@ def test_catalogue_is_the_google_open_licence_catalogue():
 
 
 def test_shipped_brand_faces_carry_their_open_licence():
-    folder = fonts.BRAND_DIR
     for family in fonts.BRAND:
-        assert (folder / f"OFL-{family}.txt").is_file()
+        assert (fonts.STUDIO_DIR / f"OFL-{family.replace(' ', '')}.txt").is_file() or (fonts.BRAND_DIR / f"OFL-{family}.txt").is_file()
 
 
 def test_no_commercial_gilroy_weights_anywhere_in_the_repo():

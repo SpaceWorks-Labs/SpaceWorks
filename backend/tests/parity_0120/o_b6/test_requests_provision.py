@@ -14,7 +14,8 @@ pytestmark = pytest.mark.django_db
 
 
 def org_payload(**overrides):
-    return payload(requested_kind="organization", location="", new_organization_name="", **overrides)
+    values = {"requested_kind": "organization", "location": "", "new_organization_name": "", **overrides}
+    return payload(**values)
 
 
 @pytest.mark.usefixtures("managed")

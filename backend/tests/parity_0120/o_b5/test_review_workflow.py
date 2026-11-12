@@ -26,8 +26,11 @@ def account(name="applicant"):
 
 
 def superadmin():
-    return User.objects.create_user(username="root", email="root@example.test", is_superuser=True,
-                                    role=User.Role.SUPERADMIN)
+    return User.objects.create_superuser(
+        username="root", email="root@example.test", password="x" * 20,
+        account_kind=User.AccountKind.PLATFORM, role=User.Role.SUPERADMIN,
+        access_status=User.AccessStatus.ACTIVE,
+    )
 
 
 @pytest.fixture

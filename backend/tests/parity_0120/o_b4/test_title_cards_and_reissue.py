@@ -16,7 +16,7 @@ def _title(space, name):
 
 
 def test_title_cards_report_status_and_live_card_counts():
-    space = card_space("tc-list")
+    space = card_space("tc-list", features=("membership.titles",))
     sm = manager(space)
     chair = _title(space, "Chair")
     _title(space, "Treasurer")
@@ -32,7 +32,7 @@ def test_title_cards_report_status_and_live_card_counts():
 
 
 def test_primary_title_change_reissues_the_live_card_when_the_switch_is_on():
-    space = card_space("tc-reissue", features=("membership.title_card_reissue",))
+    space = card_space("tc-reissue", features=("membership.titles", "membership.title_card_reissue"))
     MemberCardSettings.objects.update_or_create(makerspace=space, defaults={"public_verify": True})
     sm = manager(space)
     a, b = _title(space, "A"), _title(space, "B")
@@ -52,7 +52,7 @@ def test_primary_title_change_reissues_the_live_card_when_the_switch_is_on():
 
 
 def test_no_reissue_when_the_switch_is_off():
-    space = card_space("tc-off")
+    space = card_space("tc-off", features=("membership.titles",))
     sm = manager(space)
     _user, membership = member(space)
     card = services.issue_card(sm, membership)

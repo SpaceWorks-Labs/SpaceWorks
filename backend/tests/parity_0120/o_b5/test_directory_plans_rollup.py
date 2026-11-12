@@ -32,7 +32,8 @@ def person(name):
 
 
 def member(user, makerspace, status="active"):
-    return MakerspaceMembership.objects.create(user=user, makerspace=makerspace, role="member", status=status)
+    from tests.accounts.account_factories import make_membership
+    return make_membership(user, makerspace, status=status)
 
 
 def test_directory_needs_every_gate(settings):
@@ -45,14 +46,14 @@ def test_directory_needs_every_gate(settings):
     assert [o.slug for o in directory_organizations()] == ["ok"]
     settings.ORGANIZATION_PUBLIC_DIRECTORY_ENABLED = False
     assert not directory_organizations().exists()
-    assert APIClient().get(reverse("public-organization-directory")).status_code == 404
+    assert APIClient(HTTP_HOST="localhost").get(reverse("public-organization-directory")).status_code == 404
 
 
 def test_directory_route_searches_by_name(settings):
     settings.ORGANIZATION_PUBLIC_DIRECTORY_ENABLED = True
     org("alpha")
     org("beta")
-    data = APIClient().get(reverse("public-organization-directory"), {"search": "alp"}).json()
+    data = APIClient(HTTP_HOST="localhost").get(reverse("public-organization-directory"), {"search": "alp"}).json()
     assert [r["slug"] for r in data["results"]] == ["alpha"]
     assert "contact_email" not in data["results"][0]
 

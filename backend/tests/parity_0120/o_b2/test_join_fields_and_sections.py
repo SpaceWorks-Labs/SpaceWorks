@@ -131,7 +131,10 @@ def test_the_join_photo_never_replaces_a_photo_the_card_already_has():
     photo = {**_PHOTO, "object_key": _PHOTO["object_key"].format(space=space.pk)}
     membership = _activate_with(space, actor, applicant, {"photo": photo})
     card = issue_card(actor, membership)
-    MemberCard.objects.filter(pk=card.pk).update(photo_object_key="member-cards/1/existing")
+    from django.utils import timezone
+    MemberCard.objects.filter(pk=card.pk).update(  # the photo columns are all-or-nothing (DB check)
+        photo_object_key="member-cards/1/existing", photo_content_type="image/png", photo_size_bytes=10,
+        photo_consent_at=timezone.now(), photo_consent_version="v1")
     card.refresh_from_db()
     with patch("apps.evidence.storage.delete_object") as dropped, \
             patch("apps.makerspaces.member_card_storage.finalize_photo") as finalize:

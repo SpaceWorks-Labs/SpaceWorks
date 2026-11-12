@@ -72,11 +72,10 @@ def test_ask_changes_off_blocks_new_asks_but_never_strands_a_waiting_applicant()
     sent = changes.request_changes(actor, row, "Fix it")
     features_off(space, "ask_changes")
     assert changes.resubmit(applicant, sent, {}).state == "requested"
-    other_space, other_actor, other_applicant, other = _open_application()
-    features_off(other_space, "ask_changes")
+    other = _application(space, user("ob2-second-applicant"))  # same space: the fixture slug is fixed
     from apps.makerspaces.guards import SurfaceOff
     with pytest.raises(SurfaceOff):
-        changes.request_changes(other_actor, other, "Fix it")
+        changes.request_changes(actor, other, "Fix it")
 
 
 def test_a_unit_scoped_lead_cannot_send_back_a_request_outside_their_unit():
@@ -84,6 +83,12 @@ def test_a_unit_scoped_lead_cannot_send_back_a_request_outside_their_unit():
     from apps.makerspaces.models_member_units import MembershipRequestUnit
     space, boss = units_space("ob2-changes-scope")
     features_on(space, "ask_changes")
+    from apps.makerspaces.membership_admission_settings import update_settings
+    from apps.makerspaces.models import MembershipPlan
+    plan = MembershipPlan.objects.create(makerspace=space, name="Default admission plan", interval="monthly",
+                                         amount=0, currency="usd")
+    update_settings(boss, space, {"join_mode": "approval", "payment_timing": "after_activation",
+                                  "default_plan": plan})  # makes new requests admission-managed
     south, kochi, north = tree(boss, space)
     scoped_actor, staff_row = lead(space, "ob2-scoped-lead")
     assign.set_staff_unit_scope(boss, staff_row, south.pk)

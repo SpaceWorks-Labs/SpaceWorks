@@ -29,7 +29,7 @@ def test_cash_in_hand_subtracts_hand_overs_and_ignores_non_cash():
     for reference, method, amount in (("A", "cash", "100.00"), ("B", "cash", "50.00"), ("C", "upi", "30.00")):
         mark_offline(dues(space, payer, amount), manager, settlement_details(reference=reference, method=method))
     record_cash_handover(actor=manager, space=space, collector=manager, amount=Decimal("120.00"), currency="inr")
-    row = report_data("cash-in-hand", space.pk, actor=manager)["rows"][0]
+    row = report_data("cash-in-hand", space.pk, actor=manager)["typed_rows"][0]
     assert (row["received_cash"], row["handed_over"], row["cash_in_hand"]) == ("150.00", "120.00", "30.00")
 
 
@@ -51,7 +51,7 @@ def test_revenue_by_plan_is_net_of_refunds_and_per_currency():
                                      subject_id=term.pk, member=payer, amount=Decimal("100.00"), currency="inr",
                                      created_by=manager)
     mark_offline(payment, manager, settlement_details(reference="G"))
-    rows = report_data("membership-revenue-by-plan", space.pk, actor=manager)["rows"]
+    rows = report_data("membership-revenue-by-plan", space.pk, actor=manager)["typed_rows"]
     assert rows[0]["plan_name"] == "Gold" and rows[0]["collected"] == "100.00" and rows[0]["net"] == "100.00"
 
 
@@ -69,7 +69,7 @@ def test_renewal_forecast_is_cumulative_and_skips_non_renewing_plans():
     MembershipTerm.objects.create(membership=membership, plan=fixed, starts_at=now - timedelta(days=300),
                                   ends_at=now + timedelta(days=10))
     rows = {row["horizon_days"]: row
-            for row in report_data("membership-renewal-forecast", space.pk, actor=manager)["rows"]}
+            for row in report_data("membership-renewal-forecast", space.pk, actor=manager)["typed_rows"]}
     assert rows[60]["terms_ending"] == 1 and rows[60]["expected_amount"] == "80.00"
     assert rows[90]["terms_ending"] == 1
 

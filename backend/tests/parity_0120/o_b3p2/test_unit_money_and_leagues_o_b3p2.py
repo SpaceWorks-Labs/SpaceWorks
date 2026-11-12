@@ -58,7 +58,7 @@ def test_both_league_reports_are_registered_counts_only_and_gated_on_units():
 
 def test_unit_league_rolls_members_up_the_tree_and_never_names_anyone():
     space, boss, _actor, _members, _units = _setup("ob3p2-league")
-    rows = {row["unit_code"]: row for row in report_data("membership-unit-league", space.pk, actor=boss)["rows"]}
+    rows = {row["unit_code"]: row for row in report_data("membership-unit-league", space.pk, actor=boss)["typed_rows"]}
     assert rows["SOUTH"]["members"] == 1 and rows["SOUTH"]["direct_members"] == 0
     assert rows["KOCHI"]["members"] == 1 and rows["KOCHI"]["direct_members"] == 1
     assert rows["NORTH"]["members"] == 1 and rows["KOCHI"]["parent_code"] == "SOUTH"
@@ -68,16 +68,16 @@ def test_unit_league_rolls_members_up_the_tree_and_never_names_anyone():
 
 def test_level_league_counts_units_and_direct_members_per_level():
     space, boss, _actor, _members, _units = _setup("ob3p2-level")
-    rows = {row["level_name"]: row for row in report_data("membership-level-league", space.pk, actor=boss)["rows"]}
+    rows = {row["level_name"]: row for row in report_data("membership-level-league", space.pk, actor=boss)["typed_rows"]}
     assert (rows["Region"]["units"], rows["Region"]["members"]) == (2, 1)  # SOUTH and NORTH; NORTH holds one
     assert (rows["District"]["units"], rows["District"]["members"]) == (1, 1)
 
 
 def test_a_unit_scoped_actor_sees_their_own_subtree_in_the_leagues():
     space, _boss, actor, _members, _units = _setup("ob3p2-league-scope")
-    units = report_data("membership-unit-league", space.pk, actor=actor)["rows"]
+    units = report_data("membership-unit-league", space.pk, actor=actor)["typed_rows"]
     assert {row["unit_code"] for row in units} == {"SOUTH", "KOCHI"}
-    levels = report_data("membership-level-league", space.pk, actor=actor)["rows"]
+    levels = report_data("membership-level-league", space.pk, actor=actor)["typed_rows"]
     assert {row["level_name"]: row["units"] for row in levels} == {"Region": 1, "District": 1}
 
 
@@ -129,10 +129,10 @@ def test_cash_in_hand_for_a_scoped_actor_is_only_their_own_in_scope_cash():
     space, boss, actor, (inside, outside, _n), _units = _setup("ob3p2-cash")
     mark_offline(_charge(space, inside, "40.00"), actor, settlement_details(reference="A"))
     mark_offline(_charge(space, outside, "60.00"), boss, settlement_details(reference="B"))
-    scoped = report_data("cash-in-hand", space.pk, actor=actor)["rows"]
+    scoped = report_data("cash-in-hand", space.pk, actor=actor)["typed_rows"]
     assert [(row["collector_id"], row["received_cash"]) for row in scoped] == [(actor.pk, "40.00")]
     wide = {row["collector_id"]: row["received_cash"]
-            for row in report_data("cash-in-hand", space.pk, actor=boss)["rows"]}
+            for row in report_data("cash-in-hand", space.pk, actor=boss)["typed_rows"]}
     assert wide == {actor.pk: "40.00", boss.pk: "60.00"}
 
 
@@ -142,7 +142,7 @@ def test_revenue_by_plan_narrows_for_a_scoped_actor():
     mark_offline(_charge(space, outside, "70.00"), boss, settlement_details(reference="B"))
 
     def total(who):
-        rows = report_data("membership-revenue-by-plan", space.pk, actor=who)["rows"]
+        rows = report_data("membership-revenue-by-plan", space.pk, actor=who)["typed_rows"]
         return sum(Decimal(row["collected"]) for row in rows)
 
     assert total(boss) == Decimal("100.00") and total(actor) == Decimal("30.00")

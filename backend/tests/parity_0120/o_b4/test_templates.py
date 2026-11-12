@@ -7,7 +7,7 @@ from apps.card_designs.layout import normalize_document
 
 def test_seven_looks_were_added_and_the_revision_moved():
     assert set(ORG_LOOKS) == {"aurora", "kasavu", "ribbon", "confetti", "midnight", "sunrise", "standard_portrait"}
-    assert len(LABELS) == 13 and REVISION >= 3
+    assert len(LABELS) == 16 and REVISION >= 3  # 13 + the three Card Studio looks
 
 
 @pytest.mark.parametrize("key", sorted(TEMPLATES))

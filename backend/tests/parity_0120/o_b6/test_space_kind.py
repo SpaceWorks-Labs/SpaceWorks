@@ -25,7 +25,8 @@ def test_organization_defaults_turn_events_memberships_bookings_on_inventory_mac
     areas = active_areas(space)
     assert areas["events"] and areas["membership"] and areas["bookings"]
     assert not areas["machines"] and not areas["inventory"]
-    assert "request_workflow" not in space.enabled_modules and "machines" not in space.enabled_modules
+    # request_workflow is a core module (always installed, lending stays off); only machines is optional.
+    assert "machines" not in space.enabled_modules
 
 
 def test_organization_areas_stay_switchable_later():
@@ -66,5 +67,5 @@ def test_superadmin_creates_an_organization_workspace_through_the_console_api():
 def test_kind_cannot_change_after_creation():
     actor = person("kind-lock", superadmin=True)
     space = Makerspace.objects.create(name="Fixed", slug="fixed")
-    response = client(actor).patch(f"{BASE}/{space.pk}/", {"kind": "organization"}, format="json")
+    response = client(actor).patch(f"{BASE}/{space.pk}", {"kind": "organization"}, format="json")
     assert response.status_code == 400 and "kind" in response.data

@@ -95,7 +95,7 @@ def test_account_suspension_revokes_and_reads_revoked_live():
     card = services.issue(sm, staff)
     user.access_status = User.AccessStatus.SUSPENDED
     user.save(update_fields=["access_status"])
-    assert registered()["staff_card"].standing(card) == "revoked"
+    assert registered()["staff_card"].standing(StaffCard.objects.get(pk=card.pk)) == "revoked"  # a fresh read, not the cached user
     hooks.after_user_access_changed(sm, user)
     card.refresh_from_db()
     assert card.revoked_at is not None and card.revoked_reason == "account_restricted"

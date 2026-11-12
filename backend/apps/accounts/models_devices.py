@@ -128,7 +128,7 @@ class DeviceGrant(models.Model):
     event_id = models.PositiveBigIntegerField(null=True, blank=True, editable=False)
     credential_generation = models.PositiveIntegerField(default=0, editable=False)
     login_method = models.CharField(max_length=16, blank=True, default="", choices=[
-        ("password", "Password"), ("phone", "Phone"), ("social", "Social"),
+        ("password", "Password"), ("phone", "Phone"), ("social", "Social"), ("passkey", "Passkey"),
     ])
     platform = models.CharField(max_length=16, choices=DevicePlatform.choices)
     app_id = models.CharField(max_length=255)
@@ -149,7 +149,7 @@ class DeviceGrant(models.Model):
                 authority="member", staff_makerspace_id__isnull=True, event_id__isnull=True,
             # A staff grant is a step-up after ANY primary method (S-B, #62; trigger 0049).
             ) | models.Q(authority="staff", staff_makerspace_id__isnull=False, event_id__isnull=True,
-                         login_method__in=("password", "phone", "social"))
+                         login_method__in=("password", "phone", "social", "passkey"))
               # L21b (#173): a native event-role grant names one event and no staff space.
               | models.Q(authority="event", staff_makerspace_id__isnull=True, event_id__isnull=False)),
             name="device_grant_account_context",

@@ -9,6 +9,7 @@ from rest_framework_simplejwt.token_blacklist.models import (
 )
 
 from apps.accounts.models import User
+from apps.accounts.restricted_admission import state_may_sign_in
 
 
 def rotate_refresh_token(raw_refresh, *, token_class, validate, mint):
@@ -36,7 +37,7 @@ def rotate_refresh_token(raw_refresh, *, token_class, validate, mint):
         except User.DoesNotExist as exc:
             raise TokenError("Token is invalid") from exc
         if (not owner.is_active or owner.is_tenant_dump_stub or owner.deletion_requested_at
-                or owner.access_status != User.AccessStatus.ACTIVE):
+                or not state_may_sign_in(owner)):  # decision 361
             raise TokenError("Account is not available")
         try:
             outstanding = OutstandingToken.objects.select_for_update().get(jti=jti, user_id=owner_id)

@@ -16,7 +16,7 @@ def revoke_account_sessions(user):
     """Account utility: User first, without later tenant/invitation locks."""
     from apps.accounts.session_issuance import lock_session_user
 
-    locked = lock_session_user(user)
+    locked = lock_session_user(user)  # admits a restricted or suspended person (decision 361)
     locked.credential_generation += 1
     locked.save(update_fields=["credential_generation"])
     counts = revoke_authentication(locked, now=timezone.now(), revoke_invitations=False)

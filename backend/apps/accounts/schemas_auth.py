@@ -73,6 +73,11 @@ class AuthUserPayload(serializers.Serializer):
     kind = serializers.ChoiceField(choices=("person", "platform"),
                                    help_text="person: one account per person; platform: the superadmin.")
     is_platform = serializers.BooleanField(help_text="True for the platform superadmin account.")
+    account_status = serializers.ChoiceField(
+        choices=("active", "restricted", "suspended"),
+        help_text="Decision 361: restricted or suspended means this session reaches ONLY the person's own charges "
+                  "(list, pay, receipts, my-usage) and sign-out; every other route answers 401 "
+                  "account_restricted / account_suspended. Show the pay-what-you-owe screen.")
     has_staff_role = serializers.BooleanField(
         help_text="The person holds an active staff role in at least one servable makerspace.")
     has_elevated_authority = serializers.BooleanField(

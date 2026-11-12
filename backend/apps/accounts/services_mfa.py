@@ -17,12 +17,13 @@ from apps.accounts.models import User
 from apps.accounts.models_mfa import UserMFA
 from apps.accounts.services_tokens import blacklist_outstanding_tokens
 from apps.makerspaces.secrets import decrypt_value, encrypt_value
+from apps.accounts.restricted_admission import state_may_sign_in
 
 
 def active(user):
     if (not user.is_active or user.is_tenant_dump_stub or user.is_walk_in or user.retired_at is not None
             or user.deletion_requested_at is not None
-            or user.access_status != User.AccessStatus.ACTIVE):
+            or not state_may_sign_in(user)):  # decision 361: a restricted person may finish sign-in
         raise AuthenticationFailed(gettext("Account is not available."))
     from apps.accounts.principal_guards import refuse_anonymous_requester_credential
     from apps.backup.recovery import assert_token_issuance_allowed

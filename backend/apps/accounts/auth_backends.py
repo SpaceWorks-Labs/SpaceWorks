@@ -28,6 +28,13 @@ class SpaceWorksModelBackend(ModelBackend):
         return bool(
             not getattr(user, "is_tenant_dump_stub", False)
             and getattr(user, "retired_at", None) is None
-            and getattr(user, "access_status", "active") == "active"
+            # Decision 361: a restricted or suspended PERSON may sign in; the session it gets
+            # reaches only their own charges and sign-out (`restricted_admission`).
+            and _state_may_sign_in(user)
             and super().user_can_authenticate(user)
         )
+
+
+def _state_may_sign_in(user):
+    from apps.accounts.restricted_admission import state_may_sign_in
+    return state_may_sign_in(user)

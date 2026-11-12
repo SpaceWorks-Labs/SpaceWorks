@@ -21,6 +21,7 @@ from .services_phone import (
     _issue,
 )
 from apps.accounts.staff_identity import is_person, person_q
+from apps.accounts.restricted_admission import state_may_sign_in
 
 
 def start_login(raw_phone, *, delivery="web", client_platform="web", challenge=None):
@@ -43,7 +44,8 @@ def start_login(raw_phone, *, delivery="web", client_platform="web", challenge=N
         phone_e164=phone_e164,
         phone_verified_at__isnull=False,
         is_tenant_dump_stub=False,
-        access_status=User.AccessStatus.ACTIVE,
+        # Decision 361: a restricted or suspended person may sign in (to pay what they owe).
+        access_status__in=(User.AccessStatus.ACTIVE, User.AccessStatus.RESTRICTED, User.AccessStatus.SUSPENDED),
     ).first()
     archived = bool(user and not user.email and restorable(user))
     if user is None or (not archived and (not user.is_active or user.deletion_requested_at)):
@@ -103,7 +105,7 @@ def confirm_login_challenge(raw_phone, code, *, delivery):
             if (is_person(owner) and owner.phone_e164 == phone_e164 and owner.phone_verified_at is not None
                     and not owner.is_tenant_dump_stub and owner.is_active
                     and owner.deletion_requested_at is None
-                    and owner.access_status == User.AccessStatus.ACTIVE):
+                    and state_may_sign_in(owner)):  # decision 361
                 user = owner
             if user is None:
                 audit_events.record_auth_event(

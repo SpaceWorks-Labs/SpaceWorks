@@ -6,7 +6,10 @@
   the login door started. S-B's ``mfa_challenges._finish`` calls ``verify_mfa`` for the
   ``passkey`` factor and stamps ``mfa_policy.stamp(user, row, "passkey")``.
 - Re-authentication (``begin_reauth``/``finish_reauth``): a fresh passkey is a full
-  step-up (possession plus user verification) for the ten-minute window.
+  step-up (possession plus user verification) for the ten-minute window; a phone session
+  uses it too (358 B), scoped by `native.ceremony_scope`.
+- Native passwordless sign-in lives in `native_login.py` and reuses ``_may_sign_in`` and
+  ``ceremonies.verify_assertion``.
 - Proof of another account (``begin_proof``/``verify_proof``): U-C's account-merge
   ``credentials`` method may accept the SOURCE account's passkey instead of its TOTP.
 
@@ -99,13 +102,19 @@ def _live_challenge(raw):
 
 
 def begin_mfa(request, raw_challenge):
-    """Options for the second factor of one pending MFA challenge (never consumed here)."""
+    """Options for the second factor of one pending MFA challenge (never consumed here).
+
+    A device challenge (a native password sign-in, 361 item 4) is scoped to its attested app
+    (`native.mfa_ceremony_scope`); a browser challenge must come from the origin it started on.
+    """
+    from apps.accounts.passkeys.native import mfa_ceremony_scope, mfa_device_identity
     from apps.accounts.staff_identity import is_person
-    origin, rp_id = request_origin_and_rp_id(request)
     challenge = _live_challenge(raw_challenge)
     context = challenge.context or {}
-    if (context.get("origin", "") != origin or context.get("surface") == "control" or context.get("device")
-            or not is_person(challenge.user)):
+    device = bool(context.get("device"))
+    origin, rp_id = mfa_ceremony_scope(context, request)
+    if ((not device and context.get("origin", "") != origin) or context.get("surface") == "control"
+            or (device and mfa_device_identity(context) is None) or not is_person(challenge.user)):
         raise PasskeyFailed()
     assert_usable(challenge.user)
     return ceremonies.assertion_options(CEREMONY_MFA, origin=origin, rp_id=rp_id, user=challenge.user,
@@ -115,7 +124,13 @@ def begin_mfa(request, raw_challenge):
 def verify_mfa(challenge, ceremony_id, credential, request):
     """For S-B's ``mfa_challenges._finish``: ``challenge`` is the locked ``MFAChallenge``.
     Returns the verified ``WebAuthnCredential``; raises ``PasskeyFailed`` otherwise."""
-    origin = normalize_origin(request.headers.get("Origin", ""))
+    from apps.accounts.passkeys.native import mfa_ceremony_scope
+    from apps.accounts.passkeys.rp_id import RpIdUnavailable
+    try:
+        origin = (mfa_ceremony_scope(challenge.context, request)[0] if (challenge.context or {}).get("device")
+                  else normalize_origin(request.headers.get("Origin", "")))
+    except RpIdUnavailable as exc:
+        raise PasskeyFailed() from exc
     ceremony = ceremonies.consume(ceremony_id, CEREMONY_MFA, origin=origin)
     if ceremony.mfa_challenge_id != challenge.pk or not passkeys_usable(challenge.user):
         raise PasskeyFailed()
@@ -123,18 +138,18 @@ def verify_mfa(challenge, ceremony_id, credential, request):
 
 
 def begin_reauth(request):
-    from apps.accounts.passkeys.services import assert_web_person
-    user = assert_web_person(request)
+    from apps.accounts.passkeys.native import assert_person_session, ceremony_scope
+    user = assert_person_session(request)
     assert_usable(user)
-    origin, rp_id = request_origin_and_rp_id(request)
+    origin, rp_id = ceremony_scope(request)
     return ceremonies.assertion_options(CEREMONY_REAUTH, origin=origin, rp_id=rp_id, user=user)
 
 
 def finish_reauth(request, ceremony_id, credential):
     from apps.accounts import audit_events, reauthentication
-    from apps.accounts.passkeys.services import assert_web_person
-    user = assert_web_person(request)
-    origin, _rp_id = request_origin_and_rp_id(request)
+    from apps.accounts.passkeys.native import assert_person_session, ceremony_scope
+    user = assert_person_session(request)
+    origin, _rp_id = ceremony_scope(request)
     ceremony = ceremonies.consume(ceremony_id, CEREMONY_REAUTH, origin=origin)
     try:
         if ceremony.user_id != user.pk or not passkeys_usable(user):

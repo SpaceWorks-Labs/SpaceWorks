@@ -60,6 +60,9 @@ class PasskeyRegisteredSerializer(serializers.Serializer):
     access = serializers.CharField(help_text="A fresh session: every other session ended with this change.")
     surface = serializers.CharField()
     user = AuthUserPayload()
+    refresh = serializers.CharField(required=False, help_text="Native session only: the grant's new refresh token "
+                                                              "(a browser gets the refresh cookie instead).")
+    device_grant = serializers.DictField(required=False, help_text="Native session only: the kept device grant.")
 
 
 class PasskeyRemovedSerializer(serializers.Serializer):
@@ -68,6 +71,8 @@ class PasskeyRemovedSerializer(serializers.Serializer):
     access = serializers.CharField(required=False)
     surface = serializers.CharField(required=False)
     user = AuthUserPayload(required=False)
+    refresh = serializers.CharField(required=False, help_text="Native session only: the grant's new refresh token.")
+    device_grant = serializers.DictField(required=False, help_text="Native session only: the kept device grant.")
 
 
 class PasskeyLoginSerializer(serializers.Serializer):

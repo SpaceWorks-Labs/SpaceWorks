@@ -121,6 +121,8 @@ def user_payload(user, request=None, *, session_authority=None):
         "must_change_password": user.must_change_password,
         "kind": payload_kind(user),
         "is_platform": is_platform(user),
+        # Decision 361: a restricted or suspended person signs in to pay what they owe.
+        "account_status": _account_status(user),
         "has_staff_role": person and has_staff_role(user),
         "has_elevated_authority": person and has_elevated_authority(user),
         # 0.12.0 audit row 9: the console shows its cross-venue Organizations group only to a
@@ -174,3 +176,8 @@ def _session_authority(user, request, issued_surface):
         token = getattr(request, "auth", None)
         surface = token.get("surface", "member") if token else "member"
     return "member" if surface == VERIFICATION_ONLY_SURFACE else surface
+
+
+def _account_status(user):
+    from apps.accounts.restricted_admission import account_status
+    return account_status(user)

@@ -134,7 +134,7 @@ def _finish_global(user_id, expected, counts):
 def _global_rows(user):
     from apps.accounts.models import (EmailVerificationChallenge, PhoneVerificationChallenge,
                                      PasswordResetEnvelope, SocialIdentity, MFAChallenge, AccountRestoreIntent,
-                                     DeviceActivityDay)
+                                     DeviceActivityDay, WebSessionActivityDay)
     installation = _model("notifications.BrowserFirebaseInstallation")
     if installation is not None:
         every_row(installation).filter(user=user).delete()
@@ -158,6 +158,7 @@ def _global_rows(user):
     # Includes unselected (NULL-makerspace) activity. Wait for every tenant gate
     # before removing this grant-owned history; the revoked grants themselves stay.
     DeviceActivityDay.objects.filter(grant__user=user).delete()
+    WebSessionActivityDay.objects.filter(user=user).delete()  # incl. unselected (NULL-makerspace) rows
     # The global profile (decision 305) is account-level: its rows go with the account and its public
     # image objects are deleted after commit (best effort; a failed delete leaves an unreferenced object).
     from apps.makerspaces.account_profile_purge import purge_account_profile

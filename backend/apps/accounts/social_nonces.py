@@ -103,6 +103,22 @@ def native_apple_audience(settings_row, identity):
     return app_id if _audience_is_allowed(app_id, settings_row.apple_native_app_ids) else ""
 
 
+def device_anchor(request, client_platform, challenge):
+    """``(grant, attestation_challenge)`` a device nonce is bound to: the caller's live grant,
+    or else an unspent approved attestation challenge (a first grant). Shared with the native
+    GitHub exchange (`github_native.py`), so every provider binds a device the same way."""
+    grant = getattr(request, "device_grant", None)
+    attestation_challenge = None
+    if grant is None:
+        attestation_challenge = live_approved_challenge(challenge)
+        if attestation_challenge is None:
+            raise SocialNonceRejected
+    platform = (attestation_challenge or grant).platform
+    if client_platform != ("ios" if platform == "apple" else "android"):
+        raise SocialNonceRejected
+    return grant, attestation_challenge
+
+
 def create_social_nonce(
     request, *, provider, surface, delivery, client_platform, challenge=None
 ):
@@ -117,19 +133,10 @@ def create_social_nonce(
             raise SocialNonceRejected
         grant = None
     else:
-        if grant is None:
-            # Taken as an argument rather than re-read from request.data: the view
-            # splats the validated serializer data, so the parameter is the validated
-            # value and reaching back into the raw request would bypass that validation.
-            attestation_challenge = live_approved_challenge(challenge)
-            if attestation_challenge is None:
-                raise SocialNonceRejected
-            platform = attestation_challenge.platform
-        else:
-            platform = grant.platform
-        expected = "ios" if platform == "apple" else "android"
-        if client_platform != expected:
-            raise SocialNonceRejected
+        # Taken as an argument rather than re-read from request.data: the view
+        # splats the validated serializer data, so the parameter is the validated
+        # value and reaching back into the raw request would bypass that validation.
+        grant, attestation_challenge = device_anchor(request, client_platform, challenge)
         if provider == SocialProvider.APPLE and not native_apple_audience(
             settings_row, attestation_challenge or grant,
         ):
@@ -217,6 +224,10 @@ def consume_social_nonce(
         # legitimate Google native login. It is checked against the platform-configured
         # audience for this provider and platform -- the same value token verification
         # used -- which is what "the audience is bound" actually means here.
+        if provider == SocialProvider.GITHUB:
+            # GitHub issues no ID token, so there is no provider audience to bind: its OAuth
+            # client id is fixed server-side and the PKCE challenge is bound into the digest.
+            return row, challenge
         _settings_row, expected_audience = provider_settings(provider, client_platform)
         if provider == SocialProvider.APPLE:
             expected_audience = native_apple_audience(_settings_row, challenge)

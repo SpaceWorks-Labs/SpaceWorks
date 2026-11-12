@@ -59,9 +59,13 @@ def token_kind(user):
 
 
 def _active(user):
+    """The account may hold a session at all. A restricted or suspended PERSON may (decision
+    361); what such a session reaches is decided per request in `enforce_request`."""
+    from apps.accounts.restricted_admission import state_may_sign_in
     if (not user.is_active or user.retired_at is not None or user.is_tenant_dump_stub
-            or user.access_status != "active" or getattr(user, "merged_into_id", None) is not None):
-        raise AuthenticationFailed(gettext("Account is not available."))
+            or not state_may_sign_in(user) or getattr(user, "merged_into_id", None) is not None):
+        from apps.accounts.account_status_refusal import account_refusal
+        raise account_refusal(user, gettext("Account is not available."))
 
 
 def assert_surface(user, surface, request=None):
@@ -116,6 +120,9 @@ _NATIVE_MEMBER_REFUSED = frozenset({
     "booking-staff-invite-redeem",
 })  # #173: a native member grant may redeem an event staff invite (it then steps up natively).
 _STAFF_CLASSES = frozenset({MEMBERSHIP_ONLY, DELEGABLE})
+# Delegable-classed routes a native MEMBER grant still reaches: each checks its own authority in the view
+# (the document's signed grant; the invite token, admitted by `_member_surface_path_allowed` below).
+_NATIVE_MEMBER_MAY_USE = frozenset({"payment-document-download", "event-staff-invite-redeem"})
 
 
 def _staff_admits(user, token, request, targets, *, grant):
@@ -148,9 +155,14 @@ def _staff_admits(user, token, request, targets, *, grant):
     return True
 
 
-def enforce_request(user, token, request, *, grant=None):
+def enforce_request(user, token, request, *, grant=None, restricted_ok=False):
     """Route-class gate for one authenticated request. ``grant`` is the validated native
-    device grant, when the token carries one."""
+    device grant, when the token carries one; ``restricted_ok`` is decision 260's own-charge
+    and sign-out admission, decided by the authenticator from the route."""
+    if user.access_status != "active" and not restricted_ok:
+        # Decision 260/361: a restricted or suspended session reaches only its admission set.
+        from apps.accounts.account_status_refusal import account_refusal
+        raise account_refusal(user, gettext("Account is not available."))
     validate_account_token(user, token)
     assert_surface(user, token.get("surface"), request)
     from apps.accounts.authentication import _member_surface_path_allowed
@@ -175,7 +187,7 @@ def enforce_request(user, token, request, *, grant=None):
     if native and admits_event_route(user, token, request, name, grant):
         return  # #173: an event grant reaches its own event's programme routes and nothing staff.
     if native and staff_grant is None and (
-        (classification == DELEGABLE and name != "payment-document-download") or name in _NATIVE_MEMBER_REFUSED
+        (classification == DELEGABLE and name not in _NATIVE_MEMBER_MAY_USE) or name in _NATIVE_MEMBER_REFUSED
     ):
         raise PermissionDenied(gettext("Native member sessions cannot use delegated authority."))
     if classification == SHARED_ACCOUNT_UTILITY:

@@ -1,10 +1,11 @@
-"""Adding, renaming and removing a person's passkeys (web only, #66 / Q10).
+"""Adding, renaming and removing a person's passkeys (#66; web and, since 358 B, native).
 
 Every change needs a recent re-authentication, runs under the User lock and, for an add
 or a removal, bumps ``UserMFA.version`` and ends every session, exactly like an
-authenticator change. The browser that made the change gets a fresh session carrying
-the proof it still holds (a new passkey proves itself). Removing the last factor of a
-person staff MFA is mandatory for is refused (``last_factor``).
+authenticator change. The browser or phone that made the change gets a fresh session
+carrying the proof it still holds (a new passkey proves itself); a phone keeps its grant.
+Removing the last factor of a person staff MFA is mandatory for is refused (``last_factor``).
+A native ceremony's RP ID and origin come from `native.ceremony_scope`, never a header.
 """
 
 from django.utils.translation import gettext
@@ -21,7 +22,7 @@ from apps.accounts.models_webauthn import WebAuthnCredential
 from apps.accounts.passkeys import ceremonies
 from apps.accounts.passkeys.ceremonies import MAX_PASSKEYS, PasskeyFailed
 from apps.accounts.passkeys.policy import assert_usable, passkeys_usable
-from apps.accounts.passkeys.rp_id import request_origin_and_rp_id
+from apps.accounts.passkeys.native import assert_person_session, ceremony_scope, session_after_change
 from apps.audit import services as audit
 
 _TRANSPORTS = frozenset({"usb", "nfc", "ble", "internal", "hybrid", "cable", "smart-card"})
@@ -43,7 +44,7 @@ def assert_web_person(request):
 
 def _gate(request):
     from apps.accounts.reauthentication import require_recent_reauth
-    user = assert_web_person(request)
+    user = assert_person_session(request)
     require_recent_reauth(request)
     return user
 
@@ -53,7 +54,7 @@ def begin_registration(request):
     assert_usable(user)
     if WebAuthnCredential.objects.filter(user=user).count() >= MAX_PASSKEYS:
         raise PasskeyFailed(gettext("You can keep up to %(max)s passkeys. Remove one first.") % {"max": MAX_PASSKEYS})
-    origin, rp_id = request_origin_and_rp_id(request)
+    origin, rp_id = ceremony_scope(request)
     return ceremonies.registration_options(user, origin=origin, rp_id=rp_id)
 
 
@@ -72,11 +73,12 @@ def browser_session(user, request, surface="member"):
             "user": user_payload(user, request=request, session_authority=surface)}
 
 
-def _changed(user, mfa):
+def _changed(user, mfa, request):
     from apps.accounts.services_tokens import blacklist_outstanding_tokens
     mfa.version = uuid.uuid4()
     mfa.save()
-    blacklist_outstanding_tokens(user)
+    # A phone keeps the grant that made the change (its refresh families are revoked).
+    blacklist_outstanding_tokens(user, keep_grant=getattr(request, "device_grant", None))
 
 
 def finish_registration(request, ceremony_id, credential, name=""):
@@ -87,7 +89,7 @@ def finish_registration(request, ceremony_id, credential, name=""):
     from apps.accounts.models_mfa import UserMFA
     user = _gate(request)
     assert_usable(user)
-    origin, _rp_id = request_origin_and_rp_id(request)
+    origin, _rp_id = ceremony_scope(request)
     ceremony = ceremonies.consume(ceremony_id, "registration", origin=origin)
     if ceremony.user_id != user.pk:
         raise PasskeyFailed()
@@ -108,12 +110,12 @@ def finish_registration(request, ceremony_id, credential, name=""):
         codes = None
         if not mfa.recovery_digests:
             codes, mfa.recovery_digests = recovery_codes()
-        _changed(user, mfa)
+        _changed(user, mfa, request)
         audit.record(user, "auth.passkey_registered", target=user)
         close_grace(user)
         security_signals.send_mfa_changed(user, security_signals.PASSKEY_ADDED)
         stamp(user, mfa, MFA_METHOD_PASSKEY)
-        session = browser_session(user, request)
+        session = session_after_change(user, request, browser_session)
     return row, codes, session
 
 
@@ -134,13 +136,13 @@ def _reissue(user, request, mfa, method):
     still holds; None when that proof is gone (the person signs in again)."""
     from apps.accounts.mfa_policy import is_enrolled, stamp, totp_enabled
     if not is_enrolled(user, mfa):
-        return browser_session(user, request)
+        return session_after_change(user, request, browser_session)
     still_valid = ((method in (MFA_METHOD_TOTP, MFA_METHOD_RECOVERY) and totp_enabled(user, mfa))
                    or (method == MFA_METHOD_PASSKEY and WebAuthnCredential.objects.filter(user=user).exists()))
     if not still_valid:
         return None
     stamp(user, mfa, method)
-    return browser_session(user, request)
+    return session_after_change(user, request, browser_session)
 
 
 def remove(request, pk):
@@ -168,8 +170,11 @@ def remove(request, pk):
         row.delete()
         if not others and not totp_enabled(user, mfa):
             mfa.recovery_digests = []
-        _changed(user, mfa)
+        _changed(user, mfa, request)
         audit.record(user, "auth.passkey_removed", target=user)
         security_signals.send_mfa_changed(user, security_signals.PASSKEY_REMOVED)
         session = _reissue(user, request, mfa, method)
+        if session is None and getattr(request, "device_grant", None) is not None:
+            from apps.accounts.services_tokens import revoke_device_grant
+            revoke_device_grant(request.device_grant)  # its proof is gone: the phone signs in again
     return session

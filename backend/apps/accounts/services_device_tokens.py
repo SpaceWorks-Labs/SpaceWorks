@@ -25,6 +25,7 @@ from apps.accounts.services_staff_grants import LOST, UNSERVABLE, revoke_staff_g
 from apps.accounts.tokens import SpaceWorksRefreshToken, current_auth_generation
 from apps.accounts.session_issuance import lock_session_user
 from apps.accounts.staff_identity import has_staff_role, is_person
+from apps.accounts.restricted_admission import state_may_sign_in
 
 
 def mobile_grant_creation_enabled():
@@ -57,6 +58,9 @@ def issue_device_token_pair(user, grant, *, family=None):
         raise AuthenticationFailed(gettext("Invalid device authorization."))
     assert_token_issuance_allowed(user)
     staff = grant.authority == DeviceGrant.Authority.STAFF
+    if grant.authority != DeviceGrant.Authority.MEMBER and user.access_status != user.AccessStatus.ACTIVE:
+        # Decision 361: a restricted or suspended person holds member grants only.
+        raise AuthenticationFailed(gettext("Invalid device authorization."))
     if staff or grant.authority == DeviceGrant.Authority.EVENT:
         from apps.accounts.mfa_policy import VERIFIED, source_for
         if source_for(user) != VERIFIED:
@@ -173,7 +177,9 @@ def rotate_device_refresh(raw, *, app_version=None):
             user.is_tenant_dump_stub
             or not user.is_active
             or user.deletion_requested_at is not None
-            or user.access_status != user.AccessStatus.ACTIVE
+            or not state_may_sign_in(user)
+            # Decision 361: a restricted or suspended person keeps refreshing a MEMBER grant only.
+            or (user.access_status != user.AccessStatus.ACTIVE and grant.authority != DeviceGrant.Authority.MEMBER)
         ):
             blacklist_device_family(family, revoke_grant=True)
         elif (

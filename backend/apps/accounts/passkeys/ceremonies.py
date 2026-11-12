@@ -120,12 +120,18 @@ def consume(ceremony_id, purpose, *, origin):
     return ceremony
 
 
+def _expected_origin(ceremony):
+    """The browser's exact origin, or an Android ceremony's active signers (`native.py`, 361)."""
+    from apps.accounts.passkeys.native import expected_origins
+    return expected_origins(ceremony.origin)
+
+
 def verify_registration(ceremony, credential):
     from webauthn import verify_registration_response
     try:
         return verify_registration_response(
             credential=credential, expected_challenge=unb64url(ceremony.challenge),
-            expected_rp_id=ceremony.rp_id, expected_origin=ceremony.origin, require_user_verification=True)
+            expected_rp_id=ceremony.rp_id, expected_origin=_expected_origin(ceremony), require_user_verification=True)
     except Exception as exc:  # malformed JSON, bad attestation, wrong origin/RP: one answer
         raise PasskeyFailed() from exc
 
@@ -155,7 +161,7 @@ def verify_assertion(ceremony, credential, *, user=None):
     try:
         verified = verify_authentication_response(
             credential=credential, expected_challenge=unb64url(ceremony.challenge),
-            expected_rp_id=ceremony.rp_id, expected_origin=ceremony.origin,
+            expected_rp_id=ceremony.rp_id, expected_origin=_expected_origin(ceremony),
             credential_public_key=bytes(row.public_key), credential_current_sign_count=row.sign_count,
             require_user_verification=ceremony.purpose != CEREMONY_MFA)
     except Exception as exc:

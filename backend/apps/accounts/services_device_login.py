@@ -67,12 +67,14 @@ def password_login(request, data, challenge, verified):
 
 def _password_login_locked(request, data, challenge, verified, staff_space):
     user = authenticate_native(request, data["username"], data["password"])
+    from apps.accounts.restricted_admission import state_may_sign_in
     if (not user or user.is_tenant_dump_stub or user.retired_at is not None
-            or user.deletion_requested_at is not None or user.access_status != "active"):
+            or user.deletion_requested_at is not None or not state_may_sign_in(user)):
         raise DevicePasswordRejected("invalid_credentials")
     assert_grant_user_allowed(user)
     staff = data["authority"] == "staff"
-    if staff and (staff_space is None or not has_staff_role(user, staff_space)):
+    # Decision 361: a restricted or suspended person gets a MEMBER grant only, never staff authority.
+    if staff and (staff_space is None or user.access_status != "active" or not has_staff_role(user, staff_space)):
         raise DevicePasswordRejected("staff_access_required")
     # Staff keep password sign-in when the deployment turned it off for members (#62).
     if not password_login_enabled() and not has_staff_role(user):

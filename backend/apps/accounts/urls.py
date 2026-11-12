@@ -51,6 +51,8 @@ from apps.accounts.views_account_restore import (
     AccountRestoreEmailView, AccountRestorePhoneView, AccountRestoreSocialStartView, AccountRestoreSocialCompleteView,
 )
 from apps.accounts.views_github import GithubBrowserCallbackView, GithubBrowserStartView
+from apps.accounts.views_github_native import GithubNativeLoginView, GithubNativeStartView
+from apps.accounts.views_device_passkey import DevicePasskeyLoginView, DevicePasskeyOptionsView
 from apps.accounts.views_social_link_browser import GithubLinkStartView, OidcLinkStartView, SocialLinkCallbackView
 from apps.organizations.views_redeem import OrganizationInvitationRedeemView
 from apps.organizations.views_self_service import OrganizationSelfServiceView
@@ -74,6 +76,9 @@ urlpatterns = [
     path("social/github/callback", GithubBrowserCallbackView.as_view(), name="social-github-browser-callback"),
     # Linking from a signed-in session: session-bound attempts that never mint a session.
     path("social/github/link/authorize", GithubLinkStartView.as_view(), name="social-github-link-start"),
+    # 358 A: native GitHub sign-in (PKCE, app-link redirect, device delivery).
+    path("social/github/device/authorize", GithubNativeStartView.as_view(), name="social-github-device-start"),
+    path("social/github/device", GithubNativeLoginView.as_view(), name="social-github-device"),
     path("social/oidc/<slug:slug>/link/authorize", OidcLinkStartView.as_view(), name="social-oidc-link-start"),
     path("social/link/callback", SocialLinkCallbackView.as_view(), name="social-link-callback"),
     path(
@@ -93,6 +98,9 @@ urlpatterns = [
     path("social/providers/<str:provider>", SocialProviderDetailView.as_view(), name="social-provider-detail"),
     path("device/attestation-challenge", DeviceAttestationChallengeView.as_view(), name="device-attestation-challenge"),
     path("device/login", DeviceLoginView.as_view(), name="device-login"),
+    # 358 B: passwordless passkey sign-in on a phone, ending in an attested member grant.
+    path("device/passkey/options", DevicePasskeyOptionsView.as_view(), name="device-passkey-options"),
+    path("device/passkey/login", DevicePasskeyLoginView.as_view(), name="device-passkey-login"),
     path("device/refresh", DeviceRefreshView.as_view(), name="device-refresh"),
     path("device/logout", DeviceLogoutView.as_view(), name="device-logout"),
     path("device/staff-grant", DeviceStaffGrantView.as_view(), name="device-staff-grant"),

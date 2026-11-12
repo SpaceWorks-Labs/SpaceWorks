@@ -1,8 +1,9 @@
 """Which second factors a challenge offers, and checking the one the person answered.
 
 ``factors[]`` in a challenge response lists, in ``login_security_contract.FACTORS`` order:
-``totp`` (an enabled authenticator), ``passkey`` (a passkey usable for this person, web
-sign-ins only: passkeys are web-only in v1), ``recovery`` (unused recovery codes), or for
+``totp`` (an enabled authenticator), ``passkey`` (a passkey usable for this person; on a
+native sign-in too since decision 361, scoped to the attested app), ``recovery`` (unused
+recovery codes), or for
 an unusual-sign-in check ``email_code`` alone. An unenrolled challenge offers nothing: the
 person enrols first.
 """
@@ -24,9 +25,11 @@ def offered(user, row, context):
     factors = []
     if totp_enabled(user, row):
         factors.append(FACTOR_TOTP)
-    if not (context or {}).get("device") and (context or {}).get("surface") != "control" and has_passkey(user):
+    if (context or {}).get("surface") != "control" and has_passkey(user):
+        from apps.accounts.passkeys.native import device_passkey_factor_available
         from apps.accounts.passkeys.policy import passkeys_usable
-        if passkeys_usable(user):
+        device = (context or {}).get("device")
+        if passkeys_usable(user) and (not device or device_passkey_factor_available(context)):
             factors.append(FACTOR_PASSKEY)
     if totp_enabled(user, row) and row.recovery_digests:
         factors.append(FACTOR_RECOVERY)

@@ -54,18 +54,21 @@ class SpaceWorksJWTAuthentication(JWTAuthentication):
         # grants/governance to enter delegated staff routes, and the route gate needs the
         # grant's authority (a staff grant is a step-up fixed to one makerspace).
         grant = None
+        # Decision 260: a restricted or suspended account still reaches its own charges and sign-out.
+        from apps.accounts.restricted_admission import restricted_route_admitted
+        restricted_ok = restricted_route_admitted(user, request)
         if token.get("device_grant_id"):
             from apps.accounts.native_session import mark_native_session
             user.native_device_session = True
             mark_native_session(user)
             if not token.get("device_family_id"):
                 raise AuthenticationFailed(gettext("Invalid device authorization."))
-            grant = validated_device_grant(user, token)
+            grant = validated_device_grant(user, token, restricted_ok=restricted_ok)
             # #162(2): a member grant carries no staff authority, a staff grant only its tenant's.
             from apps.accounts.session_authority import limit_staff_authority
             limit_staff_authority(user, [grant.staff_makerspace_id] if grant.authority == "staff" else ())
         from apps.accounts.surface_policy import enforce_request
-        enforce_request(user, token, request, grant=grant)
+        enforce_request(user, token, request, grant=grant, restricted_ok=restricted_ok)
         from apps.accounts.mfa_policy import assert_verified
         assert_verified(user, token)
         from apps.backup.recovery import assert_principal_allowed
@@ -83,9 +86,9 @@ class SpaceWorksJWTAuthentication(JWTAuthentication):
         if surface == VERIFICATION_ONLY_SURFACE and not _verification_path_allowed(
             request.path
         ):
-            raise PermissionDenied(
-                gettext("Verify the account email before accessing member APIs.")
-            )
+            # Typed (decision 355) so a phone app routes to its verify-email screen.
+            raise PermissionDenied({"detail": gettext("Verify the account email before accessing member APIs."),
+                                    "code": "email_verification_required"})
         if grant is None:
             from apps.accounts.web_sessions import validate_session
             validate_session(user, token)
@@ -95,6 +98,8 @@ class SpaceWorksJWTAuthentication(JWTAuthentication):
             request.session_authority = surface
             from apps.makerspaces.handle_gate import assert_handle_chosen
             assert_handle_chosen(request, user)  # decision 308: typed `handle_required`
+            from apps.accounts.channel_activity import note_web_request
+            note_web_request(request, user, token)
             return authenticated
         staff = grant.authority == "staff"
         if grant.authority in ("staff", "event") and token.get("mfa_source") != "verified":
@@ -116,10 +121,12 @@ class SpaceWorksJWTAuthentication(JWTAuthentication):
                 if key in kwargs and str(kwargs[key]) != str(selected):
                     raise PermissionDenied(gettext("Makerspace target does not match the selected makerspace."))
         _assert_source_gate(request, user)
-        grant = heartbeat_device_grant(user, token)
+        grant = heartbeat_device_grant(user, token, restricted_ok=restricted_ok)
         request.device_grant = grant
         from apps.accounts.device_activity import record_device_activity
-        record_device_activity(grant, getattr(request, "selected_makerspace_membership", None))
+        from apps.accounts.channel_activity import app_version_from, note_phone_request
+        record_device_activity(grant, getattr(request, "selected_makerspace_membership", None), app_version_from(request))
+        note_phone_request(request, grant, getattr(request, "selected_makerspace_membership", None))
         from apps.accounts.native_event_grants import session_authority_for
         request.session_authority = session_authority_for(grant) if grant.authority != "member" else surface
         from apps.makerspaces.handle_gate import assert_handle_chosen

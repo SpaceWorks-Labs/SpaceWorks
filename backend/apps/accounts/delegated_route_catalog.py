@@ -49,6 +49,7 @@ admin-users-space-managers auth-claim-redeem auth-email-verification-confirm
 auth-email-verification-resend auth-forgot-password auth-login auth-member-sign-up
 auth-phone-link-confirm auth-phone-link-start auth-phone-login-confirm auth-phone-login-start
 auth-phone-unlink auth-reset-password device-attestation-challenge device-login device-refresh
+device-passkey-options device-passkey-login social-github-device-start social-github-device
 machine-material-detail machine-materials machine-type-intake maintenance-feed
 maintenance-feed-calendar notifications-list notifications-read notifications-read-all
 notifications-unread-count operations-dashboard social-apple social-github-browser-callback

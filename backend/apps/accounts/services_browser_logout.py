@@ -17,6 +17,7 @@ def revoke_browser_cookie(raw, context, request):
     # Revocation may have committed while we waited for User. Recheck the
     # blacklist inside the lock before modifying either token or session marker.
     token = decode_cookie(raw, context)
+    # A restricted or suspended person passes these too (decision 361), so they can sign out.
     validate_account_token(actor, token)
     assert_surface(actor, token.get("surface"), request)
     token.blacklist()

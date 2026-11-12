@@ -64,6 +64,7 @@ def tenant_ids(user):
         ("integrations.NotificationEndpointChallenge", "user", "makerspace"),
         ("integrations.EmailLog", "recipient", "makerspace"),
         ("accounts.DeviceActivityDay", "grant__user", "makerspace"),
+        ("accounts.WebSessionActivityDay", "user", "makerspace"),
         ("notifications.MemberPushDelivery", "inbox_row__user", "inbox_row__makerspace"),
         ("notifications.MemberPushDelivery", "envelope_delivery__envelope__recipient", "envelope_delivery__makerspace"),
         ("integrations.NotificationIngress", "signed_user", "makerspace_reference"),

@@ -13,19 +13,25 @@ from apps.accounts.session_issuance import lock_session_user, validate_session_g
 from apps.accounts.staff_identity import is_person
 
 
-def validated_device_grant(user, token, *, lock=False):
+def validated_device_grant(user, token, *, lock=False, restricted_ok=False):
+    """``restricted_ok``: decision 260 admits a restricted or suspended account's MEMBER grant
+    on its own-charge and sign-out routes only (`restricted_admission.py`); a staff or event
+    grant of such an account stays refused."""
     try:
         grants = DeviceGrant.objects.select_related("registration")
         if lock:
             grants = grants.select_for_update(of=("self",))
         grant = grants.filter(pk=token["device_grant_id"], user=user).first()
         staff = bool(grant and grant.authority == DeviceGrant.Authority.STAFF)
+        state_ok = user.access_status == User.AccessStatus.ACTIVE or (
+            restricted_ok and grant is not None and grant.authority == DeviceGrant.Authority.MEMBER
+            and user.access_status in (User.AccessStatus.RESTRICTED, User.AccessStatus.SUSPENDED))
         valid = bool(
             grant and grant.status == DeviceGrant.Status.ACTIVE
             and grant.revoked_at is None
             and registration_is_eligible(grant.registration)
             and is_person(user)
-            and user.is_active and user.access_status == User.AccessStatus.ACTIVE
+            and user.is_active and state_ok
             and grant.credential_generation == user.credential_generation
             and (not staff or grant.staff_makerspace_id is not None)
             and DeviceRefreshFamily.objects.filter(
@@ -47,16 +53,17 @@ def validated_device_grant(user, token, *, lock=False):
         state = event_role_state(user, grant.event_id) if lock else revoke_if_event_role_lost(user, grant.event_id)
         valid = state == EVENT_ACTIVE
     if not valid:
-        raise AuthenticationFailed(gettext("Device authorization is no longer active."))
+        from apps.accounts.account_status_refusal import account_refusal
+        raise account_refusal(user, gettext("Device authorization is no longer active."))
     return grant
 
 
 @transaction.atomic
-def heartbeat_device_grant(user, token):
+def heartbeat_device_grant(user, token, *, restricted_ok=False):
     # The grant UPDATE trigger locks User too. Own User first, just as logout-all,
     # recovery and deletion do, then recheck authority after any lock wait.
     user = lock_session_user(user)
     validate_session_generation(user, token)
-    grant = validated_device_grant(user, token, lock=True)
+    grant = validated_device_grant(user, token, lock=True, restricted_ok=restricted_ok)
     DeviceGrant.objects.filter(pk=grant.pk).update(last_used_at=timezone.now())
     return grant

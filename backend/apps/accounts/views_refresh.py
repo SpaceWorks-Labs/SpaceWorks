@@ -28,6 +28,7 @@ from apps.accounts.schemas_auth import (
 from apps.accounts.serializers import LoginSerializer, SpaceWorksTokenRefreshSerializer, user_payload
 from apps.accounts.tokens import SpaceWorksRefreshToken
 from apps.accounts.session_context import SessionContextSerializer, cookie_name, decode_cookie, request_context
+from apps.accounts.restricted_admission import state_may_sign_in
 
 
 def _refresh_user_is_active(token_str):
@@ -41,7 +42,7 @@ def _refresh_user_is_active(token_str):
         user
         and not user.is_tenant_dump_stub
         and user.is_active
-        and user.access_status == User.AccessStatus.ACTIVE
+        and state_may_sign_in(user)  # decision 361: a restricted person keeps refreshing
     )
 
 

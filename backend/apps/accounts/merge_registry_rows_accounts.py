@@ -30,6 +30,7 @@ ROWS = (
     (K, "accounts.SavedDetailUpdateIntent", "user", "Immutable history (DB-guarded); actor_ids_for follows the alias."),
     (K, "accounts.SocialIdentity", "user", "Credential, session or proof bound to the account; never moves."),
     (K, "accounts.StaffInvitation", "accepted_by account created_by", "Credential, session or proof bound to the account; never moves."),
+    (K, "accounts.WebSessionActivityDay", "user", "Runtime telemetry tied to the account's own sessions (purge deletes it); never moves."),
     (K, "accounts.User", "merged_into", "Alias chains stay intact; actor_ids_for walks them transitively."),
     (K, "accounts.UserMFA", "user", "Credential, session or proof bound to the account; never moves."),
     (K, "accounts.User_groups", "user", "Credential, session or proof bound to the account; never moves."),

@@ -46,6 +46,8 @@ from .saved_details.models import (
 
 __all__ = [
     'DeviceActivityDay',
+    'WebSessionActivityDay',
+    'ChannelUsageDay',
     'AttestationVerificationLog',
 
     'ReauthenticationSession',
@@ -86,7 +88,9 @@ __all__ += ["AccountPurgeProgress", "AccountPurgeObject", "AppleRefreshCredentia
 
 from apps.accounts.models_account_restore import AccountRestoreIntent  # noqa: E402
 __all__ += ["AccountRestoreIntent"]
-from .models_activity import DeviceActivityDay, AttestationVerificationLog  # noqa: F401
+from .models_activity import (  # noqa: F401
+    AttestationVerificationLog, ChannelUsageDay, DeviceActivityDay, WebSessionActivityDay,
+)
 from .models_pii_access import PlatformPiiAccessGrant  # noqa: E402,F401
 __all__ += ["PlatformPiiAccessGrant"]
 

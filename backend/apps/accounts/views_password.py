@@ -165,7 +165,9 @@ class ForgotPasswordView(APIView):
         # envelope write. It reveals only the same mail capability
         # already published by /api/v1/config.
         payload = request.data if isinstance(request.data, Mapping) else {}
-        if payload.get("context", "person") in {"person", "member"} and not email_enabled():
+        context = payload.get("context", "person")
+        # A non-string context is unhashable: let the serializer answer 400, never a 500.
+        if isinstance(context, str) and context in {"person", "member"} and not email_enabled():
             return Response(
                 RECOVERY_UNAVAILABLE, status=status.HTTP_503_SERVICE_UNAVAILABLE
             )

@@ -29,6 +29,10 @@ def revoke_authentication(user, *, now, revoke_invitations=True):
         counts["outstanding_tokens"] += int(created)
     grants = list(DeviceGrant.objects.filter(user=user, status=DeviceGrant.Status.ACTIVE))
     families = list(DeviceRefreshFamily.objects.filter(user=user, revoked_at__isnull=True))
+    from apps.integrations.models_push import PushDevice
+    # Count before the grants go: revoking a grant already invalidates its push destinations,
+    # so counting afterwards would report zero for devices this revocation did switch off.
+    live_push = list(PushDevice.objects.filter(user=user, active=True).values_list("pk", flat=True))
     for grant in grants:
         revoke_device_grant(grant)  # Also invalidates this grant's push destinations.
     # Include families whose grants were already revoked by a prior operation.
@@ -37,10 +41,8 @@ def revoke_authentication(user, *, now, revoke_invitations=True):
             blacklist_device_family(family)
     counts["device_grants"] = len(grants)
     counts["refresh_families"] = len(families)
-    from apps.integrations.models_push import PushDevice
-    counts["push_devices"] = PushDevice.objects.filter(user=user, active=True).update(
-        active=False, invalidated_at=now,
-    )
+    PushDevice.objects.filter(user=user, active=True).update(active=False, invalidated_at=now)
+    counts["push_devices"] = len(live_push)
     # S-B: every remembered device is forgotten with the sessions it signed in.
     from apps.accounts.device_memory import revoke_all
     counts["known_devices"] = revoke_all(user, now=now)

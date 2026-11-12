@@ -6,6 +6,7 @@ import hmac
 from rest_framework.exceptions import AuthenticationFailed
 
 from apps.accounts.models import User
+from apps.accounts.restricted_admission import state_may_sign_in
 from apps.accounts.staff_identity import context_label
 
 
@@ -28,7 +29,9 @@ def lock_session_user(authenticated):
         user is None or user.is_tenant_dump_stub or not user.is_active
         or user.retired_at is not None
         or user.deletion_requested_at is not None
-        or user.access_status != User.AccessStatus.ACTIVE
+        # Decision 361: a restricted or suspended person may hold a session (its reach is
+        # decided per request); a platform account must be active.
+        or not state_may_sign_in(user)
         or context_label(user) != context_label(authenticated)
         or user.merged_into_id is not None
         or user.credential_generation != authenticated.credential_generation

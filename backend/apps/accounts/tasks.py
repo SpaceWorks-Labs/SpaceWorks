@@ -4,6 +4,7 @@ from apps.accounts.saved_details.tasks import process_saved_details  # noqa: F40
 from apps.accounts.services_challenge_purge import purge_spent_challenges
 from apps.accounts.services_password_reset_drain import drain_password_reset_envelopes
 from apps.accounts.tasks_login_security import purge_login_security_task  # noqa: F401 -- S-C retention
+from apps.accounts.tasks_channel_usage import flush_channel_usage_task  # noqa: F401 -- channel analytics
 from apps.accounts.tasks_security_alerts import deliver_security_alert_task  # noqa: F401 -- S-B alerts
 
 

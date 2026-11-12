@@ -1,5 +1,6 @@
-"""Passkey endpoints (web only). Errors: ``passkey_failed``, ``passkeys_unavailable``,
-``rp_id_unavailable``, ``last_factor``, ``recent_reauth_required``."""
+"""Passkey endpoints for a browser or (358 B) a phone session. Errors: ``passkey_failed``,
+``passkeys_unavailable``, ``rp_id_unavailable``, ``last_factor``, ``recent_reauth_required``.
+Native passwordless sign-in is under ``auth/device/passkey/*`` (`native_login.py`)."""
 
 import json
 
@@ -13,7 +14,8 @@ from apps.accounts.auth_cookies import set_refresh_cookies
 from apps.accounts.models_webauthn import WebAuthnCredential
 from apps.accounts.passkeys import assertion, services
 from apps.accounts.passkeys.policy import passkeys_usable
-from apps.accounts.passkeys.rp_id import RpIdUnavailable, request_origin_and_rp_id
+from apps.accounts.passkeys.native import assert_person_session, ceremony_scope
+from apps.accounts.passkeys.rp_id import RpIdUnavailable
 from apps.accounts.passkeys.serializers import (
     PasskeyListSerializer, PasskeyLoginSerializer, PasskeyMfaOptionsRequestSerializer,
     PasskeyOptionsSerializer, PasskeyReauthenticatedSerializer, PasskeyRegisteredSerializer,
@@ -43,6 +45,8 @@ def _options(result):
 
 
 def _with_session(request, payload, session):
+    if getattr(request, "device_grant", None) is not None:
+        return _private({**payload, **session})  # a phone gets its new refresh token in the body
     raw = session.pop("refresh")
     response = _private({**payload, **session})
     set_refresh_cookies(response, raw, request)
@@ -51,7 +55,7 @@ def _with_session(request, payload, session):
 
 def _rp_id(request):
     try:
-        return request_origin_and_rp_id(request)[1]
+        return ceremony_scope(request)[1]
     except RpIdUnavailable:
         return None
 
@@ -71,7 +75,7 @@ class PasskeyListView(APIView):
 
     @extend_schema(tags=TAGS, summary="List my passkeys", responses={200: PasskeyListSerializer, **errors(401, 403)})
     def get(self, request):
-        user = services.assert_web_person(request)
+        user = assert_person_session(request)
         rp_id = _rp_id(request)
         rows = WebAuthnCredential.objects.filter(user=user).order_by("created_at", "pk")
         return _private({"passkeys": PasskeySerializer(rows, many=True, context={"rp_id": rp_id}).data,

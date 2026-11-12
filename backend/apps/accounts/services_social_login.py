@@ -17,6 +17,7 @@ from apps.makerspaces.origin_scope import (
     staff_origin_scope,
 )
 from apps.accounts.staff_identity import is_person
+from apps.accounts.restricted_admission import state_may_sign_in
 
 
 def assert_social_user_active(user):
@@ -26,7 +27,7 @@ def assert_social_user_active(user):
         or not user.is_active
         or user.retired_at is not None
         or user.deletion_requested_at is not None
-        or user.access_status != User.AccessStatus.ACTIVE
+        or not state_may_sign_in(user)  # decision 361: a restricted person may sign in
     ):
         from apps.accounts.services_social_identity import SocialResolutionError
 

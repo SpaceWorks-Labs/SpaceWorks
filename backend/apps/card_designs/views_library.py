@@ -1,4 +1,5 @@
 """The space's artwork library and brand kit, reached through a design the caller may edit (decision 344(b))."""
+from django.utils.translation import gettext
 from django.http import HttpResponse
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema
@@ -30,7 +31,7 @@ class CardAssetLibraryView(APIView):
         design = require_edit(request.user, design_for(request.user, pk))
         kind = request.query_params.get("kind") or None
         if kind and kind not in KINDS:
-            raise ValidationError({"kind": "Use background, watermark or image."})
+            raise ValidationError({"kind": gettext("Use background, watermark or image.")})
         rows = asset_library.list_assets(design.makerspace, kind)
         return Response(CardLibraryAssetSerializer(rows, many=True).data)
 

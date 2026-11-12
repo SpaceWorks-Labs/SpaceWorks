@@ -4,7 +4,7 @@
 {version: 3, kind?: certificate, guides?, stock, page_width_mm?, page_height_mm? (custom only), back_enabled, mono,
  watermark: {kind: none|text|image, text, asset_id, opacity_pct 4-30, angle_deg -60..60, colour},
  front: Side, back: Side}
-Side {page_width_mm, page_height_mm, background, layers: [0..40]}   (z-order = list order)
+Side {page_width_mm, page_height_mm, background, layers: [0..60]}   (z-order = list order)
 ```
 
 A document never carries an object key, a URL or a person's data: images are owned

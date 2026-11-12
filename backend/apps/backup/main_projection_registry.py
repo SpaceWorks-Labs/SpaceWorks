@@ -75,12 +75,12 @@ PROJECT_GLOBAL_BOUNDARIES = frozenset({
 })
 
 # Auto-created M2M models are physical tables even though they have no project
-# model class of their own. Keep this literal so a new authority-bearing M2M
-# cannot silently inherit a deployment-global disposition.
+# model class of their own. Keep this literal so a new authority-bearing M2M never inherits a global disposition.
 AUTO_CREATED_M2M_TABLES = {
     "accounts_user_groups": (RowDisposition.RETAIN_GLOBAL, None),
     "accounts_user_user_permissions": (RowDisposition.RETAIN_GLOBAL, None),
     "auth_group_permissions": (RowDisposition.RETAIN_GLOBAL, None),
+    "presence_displayscreen_players": (RowDisposition.RETAIN_GLOBAL, None),
 }
 
 # These rows are tenant-owned for deployment projection even though manager data

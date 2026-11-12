@@ -39,4 +39,6 @@ RELEASE2_FUNCTIONS = frozenset({
     "events_hackathonprizepayout_scope_guard",
     "events_stage_scope_guard",
     "events_peopleschoice_scope_guard",
+    # 0.12.0 SECURITY-REVIEW L-A4: adapter event, access and usage logs are append-only (devices 0013).
+    "devices_adapter_log_append_only",
 })

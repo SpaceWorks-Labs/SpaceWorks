@@ -60,6 +60,11 @@ FIELD_OBJECT_RULES = (
     FieldObjectRule("accounts.AccountSavedDetailsExportJob", "object_key", BucketRule.PRIVATE,
                     ReferencePolicy.COORDINATION_ONLY, coordination_reason="account_export_coordination"),
     FieldObjectRule("events.EventCertificateLibraryArtwork", "object_key", BucketRule.PRIVATE),
+    # Adapter photo/recording artifacts are short-lived private media (the row stays as a `purged` marker once the
+    # bytes expire): coordination only, never captured as backup bytes.
+    FieldObjectRule("devices.AdapterArtifact", "object_key", BucketRule.PRIVATE,
+                    ReferencePolicy.COORDINATION_ONLY, coordination_path="makerspace_id",
+                    coordination_reason="adapter_artifact_ephemeral_media"),
     FieldObjectRule("events.BadgePrintJob", "object_key", BucketRule.PRIVATE,
                     ReferencePolicy.COORDINATION_ONLY, coordination_path="event__makerspace_id",
                     coordination_reason="event_print_coordination"),
@@ -124,6 +129,7 @@ FIELD_OBJECT_RULES = (
     FieldObjectRule("inventory.InventoryProduct", "image_key", BucketRule.PUBLIC_IMAGE),
     FieldObjectRule("machines.Machine", "image_key", BucketRule.PUBLIC_IMAGE),
     FieldObjectRule("machines.MachineDocument", "object_key", BucketRule.PRIVATE),
+    FieldObjectRule("machines.MachineTypeDocument", "object_key", BucketRule.PRIVATE),
     FieldObjectRule("machines.ServiceRequestFile", "object_key", BucketRule.PRIVATE),
     FieldObjectRule("maintenance.MaintenanceLogDocument", "object_key", BucketRule.PRIVATE),
     # L16: a private repair photo (staging-key presign, promoted once on attach).
@@ -131,6 +137,12 @@ FIELD_OBJECT_RULES = (
     FieldObjectRule("makerspaces.Makerspace", "cover_image_key", BucketRule.PUBLIC_IMAGE),
     FieldObjectRule("makerspaces.Makerspace", "logo_key", BucketRule.PUBLIC_IMAGE),
     FieldObjectRule("makerspaces.MemberProfile", "avatar_key", BucketRule.PUBLIC_IMAGE),
+    # Decision 305: account-level profile images. The rows are omitted from every space archive, so the
+    # objects are coordination (account custody), never archive content.
+    FieldObjectRule("makerspaces.AccountProfile", "avatar_key", BucketRule.PUBLIC_IMAGE,
+                    ReferencePolicy.COORDINATION_ONLY, coordination_reason="account_level_profile_image"),
+    FieldObjectRule("makerspaces.AccountProject", "image_key", BucketRule.PUBLIC_IMAGE,
+                    ReferencePolicy.COORDINATION_ONLY, coordination_reason="account_level_profile_image"),
     # A member card photo is a face: private bucket, short-lived signed reads only.
     FieldObjectRule("makerspaces.MemberCard", "photo_object_key", BucketRule.PRIVATE),
     FieldObjectRule("makerspaces.MemberProject", "image_key", BucketRule.PUBLIC_IMAGE),

@@ -12,6 +12,7 @@ changes an archive's identity, expiry or restore point: only its bytes, digest, 
 recorded recipients. The new bytes are uploaded to a new key and streamed back for size
 and SHA-256 before the row switches; the old object is deleted after commit.
 """
+from django.utils.translation import gettext
 import hashlib
 import subprocess
 import tempfile
@@ -76,12 +77,12 @@ def _rewrap(source, target, identity, recipients):
     encrypt = subprocess.run([*args, "-o", str(target)], stdin=decrypt.stdout, stderr=subprocess.DEVNULL)
     decrypt.stdout.close()
     if decrypt.wait() != 0 or encrypt.returncode != 0:
-        raise KeyRotationError("reencrypt_failed", "The archive could not be re-encrypted.")
+        raise KeyRotationError("reencrypt_failed", gettext("The archive could not be re-encrypted."))
 
 
 def reencrypt_archive(row, *, actor=None, identity_file=None):
     if not can_reencrypt(row, identity_file):
-        raise KeyRotationError("not_reencryptable", "Only a one-space archive this server can open can be re-encrypted.")
+        raise KeyRotationError("not_reencryptable", gettext("Only a one-space archive this server can open can be re-encrypted."))
     recipients = selection_for(row)
     identity = identity_file or settings.TENANT_MIGRATION_AGE_IDENTITY_FILE
     new_key = f"backup-archives/{row.scope}/{row.pk}.reencrypted-{uuid.uuid4().hex[:12]}.tar.age"
@@ -89,14 +90,14 @@ def reencrypt_archive(row, *, actor=None, identity_file=None):
         source, target, check = (Path(workdir, name) for name in ("old.age", "new.age", "check.age"))
         _download(row.object_key, source)
         if _sha256(source) != row.archive_sha256:
-            raise KeyRotationError("archive_digest_mismatch", "The stored archive does not match its recorded digest.")
+            raise KeyRotationError("archive_digest_mismatch", gettext("The stored archive does not match its recorded digest."))
         _rewrap(source, target, identity, recipients)
         digest, size = _sha256(target), target.stat().st_size
         storage.upload_archive(new_key, target)
         _download(new_key, check)
         if _sha256(check) != digest:
             storage.delete_archive(new_key)
-            raise KeyRotationError("reencrypt_unverified", "The re-encrypted archive did not read back intact.")
+            raise KeyRotationError("reencrypt_unverified", gettext("The re-encrypted archive did not read back intact."))
     with transaction.atomic():
         locked = BackupArchive.objects.select_for_update().get(pk=row.pk)
         if locked.archive_sha256 != row.archive_sha256 or locked.status != BackupArchive.Status.AVAILABLE:
@@ -118,7 +119,7 @@ def purge_archive(row, *, actor=None):
     """Delete a stale archive's bytes now; the row stays only if a restore names it."""
     for key in (row.object_key, row.staging_object_key, storage.staging_locator(row.pk)):
         if key and not storage.delete_archive(key):
-            raise KeyRotationError("purge_failed", "The archive bytes could not be deleted; try again.")
+            raise KeyRotationError("purge_failed", gettext("The archive bytes could not be deleted; try again."))
     storage.delete_archive_prefix(f"backup-archives/staging/{row.pk}/")
     with transaction.atomic():
         locked = BackupArchive.objects.select_for_update().get(pk=row.pk)

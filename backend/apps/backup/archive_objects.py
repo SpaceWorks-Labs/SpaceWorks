@@ -76,6 +76,10 @@ NON_OBJECT_KEY_FIELDS = frozenset({
     ("card_designs.CardFont", "font_key"),
     ("card_designs.CardJob", "idempotency_key"),
     ("card_designs.CardJob", "result_key"),
+    # D314c: derived cut-outs and bulk-photo-batch files are omitted, regenerable / temporary private objects.
+    ("card_designs.CardPhotoCutout", "source_key"),
+    ("card_designs.CardPhotoCutout", "cutout_key"),
+    ("card_designs.CardPhotoBatchItem", "file_key"),
     # Superadmin hosting billing: an encrypted provider credential, never a bucket locator.
     ("managed_hosting.PlatformHostingBillingSettings", "stripe_secret_key"),
     ("operations.ReportMetricRollup", "dimension_key"),

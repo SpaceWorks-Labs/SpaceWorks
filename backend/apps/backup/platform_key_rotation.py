@@ -9,6 +9,7 @@ and ``assert_not_retired`` refuses a retired key for every later build, so an ol
 is never used again. Retained archives still encrypted to a retired key are listed;
 the operator re-encrypts them (``archive_reencrypt``) or purges them.
 """
+from django.utils.translation import gettext
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import transaction
@@ -100,15 +101,15 @@ def record_rotation(actor, kind):
     kind = Kind(kind)
     current = current_fingerprint(kind)
     if current is None:
-        raise KeyRotationError("key_missing", f"{SETTING[kind]} is not configured.")
+        raise KeyRotationError("key_missing", gettext("%(setting)s is not configured.") % {"setting": SETTING[kind]})
     rows = BackupKeyFingerprint.objects.select_for_update().filter(kind=kind)
     if rows.filter(fingerprint=current, retired_at__isnull=False).exists():
-        raise KeyRotationError("key_reused", "This key was rotated out before; a retired key is never reused.")
+        raise KeyRotationError("key_reused", gettext("This key was rotated out before; a retired key is never reused."))
     previous = set(rows.filter(retired_at__isnull=True).exclude(fingerprint=current).values_list("fingerprint", flat=True))
     for row in BackupArchive.objects.filter(status=BackupArchive.Status.AVAILABLE).iterator():
         previous |= archive_fingerprints(row)[kind] - {current}
     if not previous:
-        raise KeyRotationError("key_unchanged", "No earlier key is known; change the configured key first.")
+        raise KeyRotationError("key_unchanged", gettext("No earlier key is known; change the configured key first."))
     now = timezone.now()
     for fingerprint in sorted(previous):
         row, _ = BackupKeyFingerprint.objects.get_or_create(kind=kind, fingerprint=fingerprint)

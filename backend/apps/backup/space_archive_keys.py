@@ -12,6 +12,7 @@ cache entry the console polls. Platform-wide archives and the platform/server ke
 rotations stay on the server.
 """
 
+from django.utils.translation import gettext
 import logging
 
 from django.core.cache import cache
@@ -64,11 +65,11 @@ def queue(actor, space, archive_id, action):
     row = next((row for row in stale_archives() if str(row.pk) == str(archive_id)
                 and row.scope == BackupArchive.Scope.MAKERSPACE and row.makerspace_id == space.pk), None)
     if row is None:
-        raise ArchiveKeyConflict("archive_not_stale", "That archive is not one of this space's archives on a retired key.")
+        raise ArchiveKeyConflict("archive_not_stale", gettext("That archive is not one of this space's archives on a retired key."))
     if (job_state(row.pk) or {}).get("state") in {"queued", "running"}:
-        raise ArchiveKeyConflict("archive_job_running", "A job for this archive is already running.")
+        raise ArchiveKeyConflict("archive_job_running", gettext("A job for this archive is already running."))
     if action == "reencrypt" and not can_reencrypt(row):
-        raise ArchiveKeyConflict("not_reencryptable", "This server cannot open that archive: purge it or let it expire.")
+        raise ArchiveKeyConflict("not_reencryptable", gettext("This server cannot open that archive: purge it or let it expire."))
     _set(row.pk, action, "queued")
     audit.record(actor, "backup.archive_key_job_queued", makerspace=space, target=row,
                  meta={"via": "console", "job": action})

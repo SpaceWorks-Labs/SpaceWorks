@@ -8,6 +8,7 @@ Key rotation itself (with the private key) stays on the server by design; the co
 says where to run it.
 """
 
+from django.utils.translation import gettext
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers, status
@@ -93,10 +94,10 @@ class RestoreDrillListView(RecentReauthenticationMixin, GenericAPIView):
         body.is_valid(raise_exception=True)
         space = get_object_or_404(Makerspace, pk=body.validated_data["makerspace_id"])
         if not drills_configured():
-            raise DrillConflict("Restore drills need this server's restore identity (TENANT_MIGRATION_AGE_*).")
+            raise DrillConflict(gettext("Restore drills need this server's restore identity (TENANT_MIGRATION_AGE_*)."))
         archive = latest_restorable_archive(space.pk)
         if archive is None:
-            raise DrillConflict("This space has no backup a drill can open yet. Back it up first.")
+            raise DrillConflict(gettext("This space has no backup a drill can open yet. Back it up first."))
         from .tasks import run_restore_drill_now_task
 
         audit.record(request.user, "backup.drill_requested", makerspace=space, target=archive)

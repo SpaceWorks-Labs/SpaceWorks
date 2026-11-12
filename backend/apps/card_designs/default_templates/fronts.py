@@ -62,7 +62,7 @@ def community(domain):
             .photo(5, 6, 19, 24, shape="rounded")
             .text("Space name", "{{space}}", 28, 6, 31, 4, size=7, weight=700, colour=TEAL, upper=True)
             .field("Name", "name", 28, 11.5, 31, 8.8, size=11, weight=700)
-            .label_value("Number", "number", 28, 21, 31, value_height=3.2)
+            .label_value("Number", "number", 28, 21, 34, value_height=3.2)
             .label_value("Valid until", "valid_until", 28, 28, 31, value_height=3.2)
             .label_value("Plan", "plan", 28, 35, 31, value_height=3.2)
             .text("Footer", "{{organisation}}", 5, 47, 55, 4, size=7, weight=600, colour=CREAM)

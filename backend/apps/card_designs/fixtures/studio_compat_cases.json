@@ -3340,7 +3340,7 @@
        "tracking_pt": 0.4,
        "uppercase": true,
        "valign": "top",
-       "w_mm": 31.0,
+       "w_mm": 34.0,
        "x_mm": 28.0,
        "y_mm": 21.0
       },
@@ -3366,7 +3366,7 @@
        "tracking_pt": 0.0,
        "uppercase": false,
        "valign": "top",
-       "w_mm": 31.0,
+       "w_mm": 34.0,
        "x_mm": 28.0,
        "y_mm": 24.0
       },
@@ -3815,7 +3815,7 @@
        "tracking_pt": 0.4,
        "uppercase": true,
        "valign": "top",
-       "w_mm": 31,
+       "w_mm": 34,
        "x_mm": 28,
        "y_mm": 21
       },
@@ -3839,7 +3839,7 @@
        "tracking_pt": 0,
        "uppercase": false,
        "valign": "top",
-       "w_mm": 31,
+       "w_mm": 34,
        "x_mm": 28,
        "y_mm": 24
       },

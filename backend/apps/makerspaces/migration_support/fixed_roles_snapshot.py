@@ -29,7 +29,9 @@ def read_snapshot(models, connection, makerspace_id=None):
     alias = connection.alias
     snapshot = {}
     for label, fields in PRE_SCHEMA_FIELDS.items():
-        query = models[label].objects.using(alias).order_by("id")
+        # _base_manager: the live MakerspaceMembership.objects filters on `track`, a column the
+        # pre-0088 schema the preview reads does not have (decision 63 added it later).
+        query = models[label]._base_manager.using(alias).order_by("id")
         if makerspace_id is not None:
             if label == "makerspaces.Makerspace":
                 query = query.filter(pk=makerspace_id)

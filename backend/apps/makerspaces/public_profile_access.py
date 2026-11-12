@@ -14,17 +14,22 @@ from .servability import is_servable
 from .hosting import canonical_host, is_infra_host
 
 
-def account_is_open_web(user):
-    """The OPEN-WEB audience (logged out, decisions 303b/303c): visible, consented, listable, with a handle."""
+def account_is_open_web(user, *, has_handle=None):
+    """The OPEN-WEB audience (logged out, decisions 303b/303c): visible, consented, listable, with a handle.
+
+    ``has_handle`` lets a caller that already loaded the handles (one query for a whole team section)
+    skip the per-row existence query.
+    """
     from .account_profile_read import account_is_listable
     from .models_account_profile import AccountProfile
 
     account = AccountProfile.objects.filter(user=user).first()
     return bool(account and account.is_visible and account.public_visible and account.public_consented_at
-                and account_is_listable(user) and PublicHandle.objects.filter(user_id=user.pk).exists())
+                and account_is_listable(user)
+                and (has_handle if has_handle is not None else PublicHandle.objects.filter(user_id=user.pk).exists()))
 
 
-def profile_is_public(profile):
+def profile_is_public(profile, *, has_handle=None):
     """Is this per-space profile REFERENCE publicly showable? (decisions 304/305)
 
     Stored references (page team members, event website revisions, event profile photos, certificate
@@ -37,7 +42,7 @@ def profile_is_public(profile):
     if profile is None:
         return False
     membership = profile.membership
-    return bool(account_is_open_web(membership.user)
+    return bool(account_is_open_web(membership.user, has_handle=has_handle)
                 and membership.status == "active" and is_servable(membership.makerspace)
                 and module_enabled(membership.makerspace, "membership"))
 

@@ -84,8 +84,16 @@ def send_expiring_notices(now=None, makerspace=None):
         status__in=GuestPass.LIVE_STATUSES, valid_until__gt=now, valid_until__lte=now + timedelta(hours=1))
     if makerspace is not None:
         rows = rows.filter(makerspace=makerspace)
+    from apps.integrations.models_contract import NotificationEnvelope
     count = 0
     for row in rows[:500]:
+        # The envelope dedup key already makes a repeat a no-op; skipping a pass whose notice
+        # for this window exists keeps the sweep's "notified" count honest (decision 246).
+        if NotificationEnvelope.objects.filter(
+            makerspace_id=row.makerspace_id, source_kind=SOURCE, source_id=str(row.pk),
+            event="guest_pass_expiring", revision=revision(row.pk, row.valid_until.isoformat()),
+        ).exists():
+            continue
         notify_pass_expiring(row)
         count += 1
     return count

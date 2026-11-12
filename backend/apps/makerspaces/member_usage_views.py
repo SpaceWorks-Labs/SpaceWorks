@@ -12,7 +12,7 @@ from apps.makerspaces.member_activity_service import active_membership
 from apps.makerspaces.models import MakerspaceMembership
 from apps.makerspaces.platform import module_enabled
 from apps.makerspaces.servability import servable_queryset
-from apps.payments.member_access import member_may_see_own_charges
+from apps.payments.member_access import member_may_see_own_charges, member_payment_actor
 from .member_usage_serializers import MemberUsageSerializer
 from .member_usage_service import member_usage, payment_usage
 
@@ -47,8 +47,11 @@ class MemberUsageView(APIView):
         space = get_object_or_404(servable_queryset(), pk=makerspace_id)
         member = request.user
         membership = active_membership(member, space.pk)
-        # The usage surface is not the narrow rejoining-admission payment exception.
-        if membership is None and MakerspaceMembership.objects.filter(user=member, makerspace=space).exists():
+        # The usage surface is not the narrow rejoining-admission payment exception. A restricted or
+        # suspended member's own ACTIVE membership still admits their money (decision 260); a
+        # revoked or otherwise inactive one does not.
+        if (membership is None and MakerspaceMembership.objects.filter(user=member, makerspace=space).exists()
+                and member_payment_actor(member, space.pk) is None):
             raise PermissionDenied()
         money_visible = member_may_see_own_charges(member, space.pk)
         if membership is None and not money_visible:

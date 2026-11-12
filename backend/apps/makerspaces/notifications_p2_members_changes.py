@@ -1,5 +1,5 @@
 """Parity O-B2: the two join-funnel notices -- an application sent back for changes (to the applicant) and its
-resubmission (to staff). Called from `notifications_p2_members.request_body`."""
+resubmission (to staff). Called from `notifications_p2_members_bodies.request_body`."""
 from django.utils.translation import gettext
 
 from apps.integrations.notification_links import local_link

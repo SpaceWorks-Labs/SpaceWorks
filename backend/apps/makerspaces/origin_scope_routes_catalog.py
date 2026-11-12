@@ -19,6 +19,10 @@ SERVICE_TOKEN_ROUTES = {"member-machine-service-owner"}
 # QR under its selected header. An unknown payload adds no target; the view 404s.
 QR_PAYLOAD_ROUTES = {"qr-resolve", "qr-scan"}
 
+# A scanned member-card check link names its tenant only through the link token (mobile staff scan;
+# an unknown token adds no target and the view answers its uniform 404).
+CARD_VERIFY_TOKEN_ROUTES = {"admin-card-verification-staff"}
+
 # Only these creation routes take their authoritative tenant from the body.
 BODY_SCOPED_ROUTES = {"qr-boxes", "qr-containers", "qr-tools", "qr-external-assign"}
 
@@ -173,3 +177,11 @@ from .origin_scope_routes_r2_l6 import MODEL_LOOKUPS as R2_L6_LOOKUPS
 MODEL_LOOKUPS.update(R2_L6_LOOKUPS)
 from .origin_scope_routes_r2_l22 import MODEL_LOOKUPS as R2_L22_LOOKUPS  # noqa: E402
 MODEL_LOOKUPS.update(R2_L22_LOOKUPS)
+# Decision 353 (MOB-STAFF): staff routes a native staff header could not resolve (api clients, OAuth apps, bulk
+# decisions, event image, organization bookings, Telegram test, space-neutral pickers).
+from . import origin_scope_routes_mobstaff as _mobstaff  # noqa: E402
+MODEL_LOOKUPS.update(_mobstaff.MODEL_LOOKUPS)
+TARGET_SET_LOOKUPS.update(_mobstaff.TARGET_SET_LOOKUPS)
+BODY_SCOPED_ROUTES |= _mobstaff.BODY_SCOPED_ROUTES
+QUERY_SCOPED_ROUTES |= _mobstaff.QUERY_SCOPED_ROUTES
+NATIVE_HEADER_GLOBAL_ROUTES |= _mobstaff.NATIVE_HEADER_GLOBAL_ROUTES

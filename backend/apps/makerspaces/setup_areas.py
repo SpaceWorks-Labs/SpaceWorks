@@ -24,6 +24,9 @@ ALWAYS_FEATURES = {"billing.reminders", "charges.enabled", "billing.documents",
 # The inventory family is parentless, so the area names its switches; To-Buy and warranty
 # replace the retired `procurement` module this area used to install (#97, C-9).
 INVENTORY_FEATURES = {"inventory.self_checkout", "inventory.kiosk", "inventory.tobuy", "inventory.warranty"}
+# L21b: gallery search is stored selected-but-dormant until the opt-in gallery is enabled
+# (validate_capabilities(..., dormant_defaults=...) admits it), so the orphan sweep below spares it.
+DORMANT_DEFAULTS = frozenset({"events.gallery_search"})
 EXPLICIT_OPT_IN_FEATURES = frozenset({
     "events.hackathons", "events.mentoring", "events.mentor_rounds",
     "events.volunteering", "events.project_gallery", "events.pairwise_judging",
@@ -48,7 +51,7 @@ def features_for(areas, modules=None):
     # A child bundled "on by default once its parent is on" (e.g. `events.team_moderation` under the
     # opt-in `events.hackathons`) must not outlive a parent the area leaves off, or the set is invalid.
     while True:
-        orphans = {key for key in features if key in FEATURES
+        orphans = {key for key in features if key in FEATURES and key not in DORMANT_DEFAULTS
                    and not set(FEATURES[key].requires_features) <= features}
         if not orphans:
             break

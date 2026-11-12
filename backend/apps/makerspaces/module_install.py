@@ -144,7 +144,10 @@ def uninstall_module(makerspace, key, actor=None):
             raise ModuleInstallError(
                 f"{key} is required by {', '.join(blockers)}. Uninstall those first."
             )
-        _apply(locked, before - {key}, actor)
+        # A stored retired alias of `key` (e.g. `printing` for `machine_service`) reads as `key`,
+        # so leaving it behind would canonicalize the module straight back on (decision 340b).
+        aliases = {alias for alias, live in RETIRED_MODULE_ALIASES.items() if live == key}
+        _apply(locked, before - {key} - aliases, actor)
     makerspace.refresh_from_db(fields=["enabled_modules"])
     return [key]
 

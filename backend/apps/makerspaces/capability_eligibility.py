@@ -3,6 +3,7 @@
 from .capabilities import FEATURE_MODULES, FEATURES
 from .capability_definitions import RETIRED_FEATURES
 from .loan_visibility import LOAN_FEATURES
+from .module_aliases import canonical_module_keys
 from .module_registry import module_available
 from apps.separability.registry import runtime_active
 
@@ -20,7 +21,8 @@ def configuration_feature_enabled(makerspace, key):
         return False
     if definition.app_label is not None and not runtime_active(definition.app_label):
         return False
-    modules = set(makerspace.enabled_modules or [])
+    # A stored retired key (e.g. `printing`) still reads as the module it folded into (decision 340b).
+    modules = set(canonical_module_keys(makerspace.enabled_modules))
     required_modules = (
         module for module in (definition.parent_module, *definition.requires_modules)
         if module is not None

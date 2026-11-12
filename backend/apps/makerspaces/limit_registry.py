@@ -72,7 +72,7 @@ ENFORCEMENT = {
     "kiosk_stations": ("makerspaces/kiosk_station_services.py", "kiosk_stations"),
     "devices": ("devices/services_identity.py", '"devices"'),
     "adapter_bridges": ("devices/services_identity.py", "adapter_bridges"),
-    "adapter_watch_streams": ("devices/services_adapter_watch.py", "adapter_watch_streams"),
+    "adapter_watch_streams": ("devices/services_adapter_media.py", "adapter_watch_streams"),
     "adapter_snapshots": ("devices/services_adapter_watch.py", "adapter_snapshots"),
     "adapter_artifacts": ("devices/services_adapter_artifacts.py", "adapter_artifacts"),
     "machine_jobs_monthly": ("machines/service_workflow_actions.py", "machine_jobs_monthly"),

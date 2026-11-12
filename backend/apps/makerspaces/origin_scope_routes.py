@@ -9,6 +9,7 @@ from .origin_scope_routes_catalog import (  # noqa: F401 - re-exported tables
     REPLAY_TOKEN_ROUTES,
     SERVICE_TOKEN_ROUTES,
     QR_PAYLOAD_ROUTES,
+    CARD_VERIFY_TOKEN_ROUTES,
     BODY_SCOPED_ROUTES,
     MAKERSPACE_KWARG_ROUTES,
     PRINTER_MAKERSPACE_ROUTES,
@@ -109,7 +110,7 @@ def _authoritative_route_targets(request, view=None):
         or url_name in QUERY_SCOPED_ROUTES or url_name in NATIVE_HEADER_GLOBAL_ROUTES
         or url_name in REPLAY_TOKEN_ROUTES or url_name in PUBLIC_SLUG_ROUTES
         or url_name in QR_PAYLOAD_ROUTES or url_name in BODY_SCOPED_ROUTES
-        or url_name in SERVICE_TOKEN_ROUTES)
+        or url_name in SERVICE_TOKEN_ROUTES or url_name in CARD_VERIFY_TOKEN_ROUTES)
     if url_name in BODY_SCOPED_ROUTES:
         body = getattr(request, "data", {})
         target = _positive_int(body.get("makerspace_id")) if hasattr(body, "get") else None
@@ -118,6 +119,12 @@ def _authoritative_route_targets(request, view=None):
             targets.add(target)
     if url_name in QR_PAYLOAD_ROUTES:
         resolved = _qr_payload_makerspace_id(request)
+        if resolved is not None:
+            targets.add(resolved)
+    if url_name in CARD_VERIFY_TOKEN_ROUTES:
+        resolved = apps.get_model("card_designs.CardVerifyToken").objects.filter(
+            token=kwargs.get("token"), member_card__isnull=False,
+        ).values_list("makerspace_id", flat=True).first()
         if resolved is not None:
             targets.add(resolved)
     if url_name in PUBLIC_SLUG_ROUTES:
@@ -160,7 +167,7 @@ def _authoritative_route_targets(request, view=None):
             targets.add(parsed)
 
     if url_name in MODEL_LOOKUPS:
-        pk = kwargs.get('pk')
+        pk = kwargs.get('pk', kwargs.get('product_pk'))
         resolved = _lookup_makerspace_id(url_name, pk) if pk is not None else None
         invalid = invalid or resolved is None
         if resolved is not None:

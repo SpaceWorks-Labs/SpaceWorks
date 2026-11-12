@@ -41,7 +41,7 @@ def project_team(entries, revision, request):
             result.append(row)
             continue
         profile = references.get(row.get("member_slot_id", row["id"]))
-        if not profile_is_public(profile) or any(pk != profile.membership.makerspace_id for pk in scopes):
+        if not profile_is_public(profile, has_handle=bool(profile) and profile.membership.user_id in claims) or any(pk != profile.membership.makerspace_id for pk in scopes):
             continue
         claim = claims.get(profile.membership.user_id)
         if claim is None:

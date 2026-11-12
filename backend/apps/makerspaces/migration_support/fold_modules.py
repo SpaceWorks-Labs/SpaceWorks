@@ -77,7 +77,9 @@ def editors(apps, alias):
     OrgMembership = apps.get_model("organizations", "OrganizationMembership")
     Link = apps.get_model("organizations", "OrganizationMakerspace")
     result, managers = {}, set()
-    for membership in Membership.objects.using(alias).filter(
+    # `_base_manager`: the live model's default manager is community-track only (decision 63
+    # account split); this scan must see staff-track rows too, and a historical model has no track.
+    for membership in Membership._base_manager.using(alias).filter(
             status="active", user__is_active=True).select_related("assigned_role").order_by("pk"):
         actions = _membership_actions(apps, alias, membership)
         if "manage_makerspace" in actions:

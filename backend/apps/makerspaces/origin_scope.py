@@ -97,8 +97,14 @@ def validate_native_makerspace_scope(request, user, grant):
         status='active',
     ), relation="makerspace").select_related('makerspace', 'assigned_role')
     membership = memberships.first()
+    own_charges = False
     if membership is None:
-        raise PermissionDenied(gettext('Makerspace selection is not available.'))
+        from .origin_scope_own_charges import admits_own_charge_selection
+        # Decision 354: an account-only borrower selects the space only for their own charges.
+        own_charges = not staff_grant and getattr(grant, 'authority', 'member') == 'member' and (
+            admits_own_charge_selection(request, user, makerspace_id))
+        if not own_charges:
+            raise PermissionDenied(gettext('Makerspace selection is not available.'))
 
     url_name, targets, invalid, native_route_allowed = request_route_targets(
         request
@@ -109,6 +115,12 @@ def validate_native_makerspace_scope(request, user, grant):
         if slug is not None:
             targets, native_route_allowed = targets | slug[0], True
             invalid = invalid or slug[1] or len(targets) > 1
+    if not native_route_allowed:
+        from .origin_scope_native_staff import native_staff_targets
+        staff = native_staff_targets(request)  # nullable-owner lookups, native only (MOB-STAFF)
+        if staff is not None:
+            targets, native_route_allowed = targets | staff[0], True
+            invalid = invalid or staff[1] or len(targets) > 1
     from .origin_scope_routes_public_pages import GLOBAL_ROUTES
     if url_name in GLOBAL_ROUTES:
         raise PermissionDenied(gettext("Global organization pages cannot select a makerspace."))
@@ -126,6 +138,7 @@ def validate_native_makerspace_scope(request, user, grant):
         )
     request.selected_makerspace_id = makerspace_id
     request.selected_makerspace_membership = membership
+    request.selected_makerspace_own_charges = own_charges
     request.selected_makerspace_route = url_name
     return makerspace_id
 

@@ -202,3 +202,36 @@ BASE_MODEL_LOOKUPS.update(PRINTER_MODEL_LOOKUPS)
 from .origin_scope_routes_7c import LABEL_MODEL_LOOKUPS
 
 BASE_MODEL_LOOKUPS.update(LABEL_MODEL_LOOKUPS)
+
+# Mobile staff reach these by object id (consumable pools, asset QR/status, product QR history and asset list);
+# the target is the owning makerspace, so a native header must match it.
+BASE_MODEL_LOOKUPS.update({
+    'admin-machine-service-printer-pool-detail': ('machines.MachineConsumablePool', 'makerspace_id'),
+    'admin-machine-service-printer-pool-adjustments': ('machines.MachineConsumablePool', 'makerspace_id'),
+    'asset-qr': ('inventory.InventoryAsset', 'makerspace_id'),
+    'admin-inventory-asset-fix-status': ('inventory.InventoryAsset', 'makerspace_id'),
+    'admin-inventory-asset-qr-history': ('inventory.InventoryAsset', 'makerspace_id'),
+    'admin-inventory-qr-history': ('inventory.InventoryProduct', 'makerspace_id'),
+    'admin-inventory-assets': ('inventory.InventoryProduct', 'makerspace_id'),
+})
+
+# Decision 353 (mobile parity): the membership console reaches these by object id; the tenant is the owner's makerspace.
+BASE_MODEL_LOOKUPS.update({
+    **{name: ('makerspaces.MakerspaceMembership', 'makerspace_id') for name in (
+        'admin-membership-extend', 'admin-membership-record', 'admin-membership-title-assignments',
+        'admin-membership-title-unassign', 'admin-membership-consents', 'admin-membership-history',
+        'admin-membership-waiver-witness', 'admin-membership-verify', 'admin-membership-unverify',
+        'admin-membership-terms',
+    )},
+    'admin-membership-term-cancel': ('makerspaces.MembershipTerm', 'membership__makerspace_id'),
+    'admin-membership-plan-detail': ('makerspaces.MembershipPlan', 'makerspace_id'),
+    'admin-membership-plan-archive': ('makerspaces.MembershipPlan', 'makerspace_id'),
+    'admin-membership-title-detail': ('makerspaces.MembershipTitle', 'makerspace_id'),
+    'admin-membership-invite-link-revoke': ('makerspaces.MembershipInviteLink', 'makerspace_id'),
+    'admin-invitation-request-invite': ('makerspaces.InvitationRequest', 'makerspace_id'),
+    'admin-invitation-request-decline': ('makerspaces.InvitationRequest', 'makerspace_id'),
+    'report-schedule-detail': ('operations.ReportSchedule', 'makerspace_id'),
+    'report-schedule-run-now': ('operations.ReportSchedule', 'makerspace_id'),
+    'admin-asset-warranty': ('inventory.InventoryAsset', 'makerspace_id'),
+    'asset-generate': ('inventory.InventoryProduct', 'makerspace_id'),
+})

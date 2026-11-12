@@ -71,6 +71,7 @@ frontend/.pwa-browser/
 
 # Test suites are committed (decision 244). Only run artefacts stay ignored.
 backend/.affected-tests.txt
+backend/.ci-shard-tests.txt
 .pytest_cache/
 .coverage
 coverage/

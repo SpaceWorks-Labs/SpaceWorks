@@ -13,7 +13,26 @@ REST_FRAMEWORK = {
     # opts into AllowAny. Public views are marked AllowAny in Step 3b.
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     "EXCEPTION_HANDLER": "apps.hardware_requests.exceptions.workflow_exception_handler",
+    # Decision 336c: a generous deployment-wide ceiling for every view WITHOUT its own
+    # throttle_classes. Views that declare throttles keep exactly theirs; provider webhooks
+    # opt out with `throttle_classes = []`. One class counts each request: per signed device,
+    # per account, or per API client / client IP. See config/throttles.py. Dotted paths, not
+    # imports: rest_framework must not be imported while settings are loading.
+    "DEFAULT_THROTTLE_CLASSES": (
+        "config.throttles.DeploymentDeviceRateThrottle",
+        "config.throttles.DeploymentUserRateThrottle",
+        "config.throttles.DeploymentAnonRateThrottle",
+    ),
     "DEFAULT_THROTTLE_RATES": {
+        "deployment_anon": env("THROTTLE_DEPLOYMENT_ANON", default="600/min"),
+        "deployment_user": env("THROTTLE_DEPLOYMENT_USER", default="1200/min"),
+        "deployment_device": env("THROTTLE_DEPLOYMENT_DEVICE", default="600/min"),
+        # Decision 336b/c: profile lookups by account id or handle (signed-in readers, per
+        # account) and the username availability check (per account, else per IP).
+        "profile_lookup": env("THROTTLE_PROFILE_LOOKUP", default="30/min"),
+        "profile_lookup_daily": env("THROTTLE_PROFILE_LOOKUP_DAILY", default="500/day"),
+        "handle_check": env("THROTTLE_HANDLE_CHECK", default="20/min"),
+        "handle_check_daily": env("THROTTLE_HANDLE_CHECK_DAILY", default="300/day"),
         "login": env("THROTTLE_LOGIN", default="10/min"),
         "mfa_verify": env("THROTTLE_MFA_VERIFY", default="10/min"),
         "mfa_challenge": env("THROTTLE_MFA_CHALLENGE", default="10/min"),
@@ -69,6 +88,12 @@ REST_FRAMEWORK = {
             "THROTTLE_MEMBER_VERIFICATION_EMAIL", default="5/hour"
         ),
         "telegram_webhook": env("THROTTLE_TELEGRAM_WEBHOOK", default="60/min"),
+        "anthias_player_call": env("THROTTLE_ANTHIAS_PLAYER_CALL", default="20/min"),
+        "image_adapter_test": env("THROTTLE_IMAGE_ADAPTER_TEST", default="10/min"),
+        "device_adapter": env("THROTTLE_DEVICE_ADAPTER", default="300/min"),
+        "device_adapter_credential": env("THROTTLE_DEVICE_ADAPTER_CREDENTIAL", default="60/min"),
+        "adapter_watch_start": env("THROTTLE_ADAPTER_WATCH_START", default="10/min"),
+        "adapter_watch_relay": env("THROTTLE_ADAPTER_WATCH_RELAY", default="300/min"),
         "public_request_submit": env(
             "THROTTLE_PUBLIC_REQUEST_SUBMIT",
             default="10/min",

@@ -82,6 +82,7 @@ urlpatterns = [
     path("mfa/reauth/", control_reauthentication, name="control-reauthentication"),
     path("", include("apps.makerspaces.website_urls")),
     *separable("events", "", "apps.events.urls_embed"),  # release 2 L1: framable event card
+    *separable("events", "api/v1/discover/", "apps.events.urls_discover"),  # parity E-F3: organiser picker
     path("mfa/control/", control_mfa, name="control-mfa"),
     *separable("tenant_migration", "", "apps.tenant_migration.urls_selfhost_download"),  # #190
     path(
@@ -138,6 +139,7 @@ urlpatterns = [
     *separable("bookings", "api/v1/public/", "apps.bookings.urls_public"),
     *separable("bookings", "api/v1/booking-integration/", "apps.bookings.urls_integration"),
     *separable("presence", "api/v1/public/", "apps.presence.urls"),
+    *separable("presence", "api/v1/", "apps.presence.urls_display"),
     # The LEDGER is unconditional: money owed, its receipts and its reconciliation
     # outlive any decision about shipping a provider integration.
     path("api/v1/", include("apps.payments.urls")),

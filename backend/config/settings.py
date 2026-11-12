@@ -87,6 +87,13 @@ try:
 except ValueError as exc:
     raise ImproperlyConfigured(str(exc)) from exc
 
+# Decision 339: visibility timeout, socket timeouts and rediss:// certificate checks for the
+# broker and result URLs that are final from here on (docs/architecture/redis.md).
+from config.settings_redis import celery_transport_settings
+globals().update(celery_transport_settings(
+    CELERY_BROKER_URL, CELERY_RESULT_BACKEND, eager=CELERY_TASK_ALWAYS_EAGER,
+))
+
 if SPACEWORKS_DEPLOYMENT_MODE == "managed" or CLOUD_TASK_PROFILE:
     from config.cloud_settings.wiring import cloud_task_modules
     CELERY_IMPORTS = cloud_task_modules(tombstones=TOMBSTONED_APPS)
@@ -148,6 +155,9 @@ REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"].update({
     "card_render": "120/hour",
 })
 CARD_FONT_DOWNLOADS_ENABLED = env.bool("CARD_FONT_DOWNLOADS_ENABLED", default=True)
+# Decision 315: a NEWLY issued v2 certificate pins the shared Card Studio renderer into its snapshot when this is on.
+# Default OFF until the certificate compat fixtures have passed in CI; Studio (v3) certificates always use it.
+CERTIFICATE_SHARED_RENDERER = env.bool("CERTIFICATE_SHARED_RENDERER", default=False)
 CARD_FONT_SOURCE_URL = env("CARD_FONT_SOURCE_URL", default="https://fonts.googleapis.com/css2")
 CARD_FONT_CACHE_DIR = env("CARD_FONT_CACHE_DIR", default="")
 CARD_PHOTO_MODEL_PATH = env("CARD_PHOTO_MODEL_PATH", default="")
@@ -158,6 +168,22 @@ WALLET_APPLE_KEY_FILE = env("WALLET_APPLE_KEY_FILE", default="")
 WALLET_APPLE_WWDR_FILE = env("WALLET_APPLE_WWDR_FILE", default="")
 WALLET_GOOGLE_ISSUER_ID = env("WALLET_GOOGLE_ISSUER_ID", default="")
 WALLET_GOOGLE_SERVICE_ACCOUNT_FILE = env("WALLET_GOOGLE_SERVICE_ACCOUNT_FILE", default="")
+
+# --- Device Adapter API (decisions 310-321): operator-settable knobs. Defaults match the consumers in apps/devices. ---
+# Offline access lists and signed time use an Ed25519 key per version, derived from SECRET_KEY. Raise the version to rotate;
+# the previous key stays listed in `hello` for the grace days after ROTATED_AT (epoch seconds).
+ADAPTER_CACHE_KEY_VERSION = env.int("ADAPTER_CACHE_KEY_VERSION", default=1)
+ADAPTER_CACHE_KEY_ROTATED_AT = env.int("ADAPTER_CACHE_KEY_ROTATED_AT", default=0)
+ADAPTER_CACHE_KEY_GRACE_DAYS = env.int("ADAPTER_CACHE_KEY_GRACE_DAYS", default=7)
+ADAPTER_ACCESS_CACHE_TTL_SECONDS = env.int("ADAPTER_ACCESS_CACHE_TTL_SECONDS", default=900)
+# JSON object of artifact kind -> days, e.g. {"timelapse": 14}; kinds not listed keep their built-in default.
+ADAPTER_ARTIFACT_RETENTION_DAYS = env.json("ADAPTER_ARTIFACT_RETENTION_DAYS", default={})
+ADAPTER_TELEMETRY_RAW_HOURS = env.int("ADAPTER_TELEMETRY_RAW_HOURS", default=24)
+ADAPTER_TELEMETRY_MINUTE_DAYS = env.int("ADAPTER_TELEMETRY_MINUTE_DAYS", default=7)
+ADAPTER_TELEMETRY_QUARTER_DAYS = env.int("ADAPTER_TELEMETRY_QUARTER_DAYS", default=90)
+# Optional TURN relay for camera watch sessions. Both must be set; an empty secret means off.
+ADAPTER_TURN_URLS = env.list("ADAPTER_TURN_URLS", default=[])
+ADAPTER_TURN_SECRET = env("ADAPTER_TURN_SECRET", default="")
 # --- end lane L3
 
 # --- lane L13 (release 2): the import-source enum (upload or public Google Sheet) gets one stable name.

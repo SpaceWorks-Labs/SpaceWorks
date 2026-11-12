@@ -50,6 +50,22 @@ CELERY_BEAT_SCHEDULE = {
         "task": "apps.devices.tasks.scan_offline_devices_task",
         "schedule": crontab(minute="*"),
     },
+    "adapter-safety-sweep": {
+        "task": "apps.devices.tasks.adapter_safety_sweep_task",
+        "schedule": crontab(minute="*"),
+    },
+    "adapter-webhook-sweep": {
+        "task": "apps.devices.tasks.adapter_webhook_sweep_task",
+        "schedule": crontab(minute="*"),
+    },
+    "adapter-media-sweep": {
+        "task": "apps.devices.tasks.adapter_media_sweep_task",
+        "schedule": crontab(minute="*/10"),
+    },
+    "purge-adapter-recordings": {
+        "task": "apps.devices.tasks.purge_adapter_recordings_task",
+        "schedule": crontab(hour=3, minute=40),
+    },
     "cleanup-kiosk-replay-commands": {
         "task": "apps.hardware_requests.tasks_replay.cleanup_replay_commands_task",
         "schedule": crontab(hour=3, minute=20),
@@ -182,7 +198,8 @@ CELERY_BEAT_SCHEDULE = {
     # Offsite destinations: enqueue, push+verify and prune. Never under the backup
     # operation lock, and an outage only backs the journal row off.
     "push-offsite-backups": {
-        "task": "apps.backup.tasks.push_offsite_backups_task",
+        # The registered name: the task is defined in tasks_offsite (tasks.py only re-exports it).
+        "task": "apps.backup.tasks_offsite.push_offsite_backups_task",
         "schedule": crontab(minute="*/5"),
     },
     "purge-expired-backup-archives": {

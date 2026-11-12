@@ -2,7 +2,7 @@
 
 from config.settings_django import MIDDLEWARE
 from config.settings_http import CONTENT_SECURITY_POLICY
-from config.settings_runtime import DEBUG, ImproperlyConfigured, build_logging, env
+from config.settings_runtime import DEBUG, SPACEWORKS_DEPLOYMENT_MODE, ImproperlyConfigured, build_logging, env
 from config.settings_schema import SPECTACULAR_SETTINGS
 
 # --- Observability -----------------------------------------------------------------------
@@ -33,6 +33,13 @@ METRICS_TOKEN = env("METRICS_TOKEN", default="")
 # operator allows private/local ones, e.g. Grafana beside SpaceWorks on one compose network.
 # The platform connection (superadmin) may always use a private address.
 GRAFANA_ALLOW_PRIVATE_HOSTS = env.bool("GRAFANA_ALLOW_PRIVATE_HOSTS", default=False)
+
+# Decision 325 / 336(g): an Anthias player usually sits on the space's LAN, so private addresses are allowed by
+# default on self-host; a managed deployment (it hosts other people's spaces) defaults to public addresses only.
+# Cloud-metadata and link-local addresses, loopback, multicast and the deployment's own service networks
+# (OUTBOUND_BLOCKED_NETWORKS plus the container's directly connected networks) are refused regardless.
+ANTHIAS_ALLOW_PRIVATE_HOSTS = env.bool("ANTHIAS_ALLOW_PRIVATE_HOSTS", default=SPACEWORKS_DEPLOYMENT_MODE != "managed")
+OUTBOUND_BLOCKED_NETWORKS = env.list("OUTBOUND_BLOCKED_NETWORKS", default=[])
 
 # Error tracking is opt-in and only imported when a DSN is configured, so the SDK is never
 # on the import path of a deployment that did not ask for it. PII stays off: scoped PII

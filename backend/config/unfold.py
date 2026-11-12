@@ -102,13 +102,13 @@ UNFOLD = {
     "SHOW_HISTORY": True,
     "SHOW_VIEW_ON_SITE": True,
     # No forced THEME: the operator's light/dark choice (or the system's) is kept, and both sets
-    # are on brand -- light on Warm Cream, dark on true black with teal-lit ink (decision 225).
+    # are on brand -- light on Warm Cream, dark on one solid black family, neutral greys (decision 316).
     "BORDER_RADIUS": "10px",
     # Fonts (free Gilroy ExtraBold + Outfit), the true-black page, links, focus and badges.
     "STYLES": [lambda request: static("control/control.css")],
     "COLORS": {
         # Neutrals are brand mixes, light end to dark end: Warm Cream, the light surface/hover/
-        # line/outline/muted tokens, then the dark set's hairline, hover and surface, and black.
+        # line/outline/muted tokens, then the dark set's neutral hairline, hover and surface greys (44, 28, 11), and black (decision 316).
         # Unfold reads 50-500 in light mode and 300-950 in dark mode.
         "base": {
             "50": "255 244 232",
@@ -118,9 +118,9 @@ UNFOLD = {
             "400": "130 138 131",
             "500": "91 104 99",
             "600": "61 78 74",
-            "700": "66 136 126",
-            "800": "26 62 57",
-            "900": "13 30 27",
+            "700": "44 44 44",
+            "800": "28 28 28",
+            "900": "11 11 11",
             "950": "0 0 0",
         },
         # Derived sRGB mixes: Teal toward Cream (50-400), Teal at 500/600,

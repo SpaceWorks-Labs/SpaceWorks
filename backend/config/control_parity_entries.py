@@ -68,6 +68,7 @@ ENTRIES = (
     ("makerspaces.importeduserreconciliation", web("Platform → space moves → identity decisions", "tenant-migration-import-decisions")),
     # /control/ itself only reads these (change permission is GET-only): a member's own words are theirs.
     ("makerspaces.memberprofile", host(f"Read-only even in /control/: members edit their own profiles; anything else is raw record repair: {SERVER}")),
+    ("makerspaces.accountprofile", host(f"Read-only even in /control/: people edit their own global profile; anything else is raw record repair: {SERVER}")),
     ("makerspaces.memberproject", host(f"Read-only even in /control/: members edit their own projects; anything else is raw record repair: {SERVER}")),
     ("presence.presencesession", web(f"{S} → Members → In the space → End", "admin-presence-end")),
     # Security

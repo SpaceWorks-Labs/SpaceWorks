@@ -55,6 +55,8 @@ GLOBAL_ADMIN_MODELS = {
     "accounts.platformloginmethods",
     "accounts.passwordresetenvelope",
     "accounts.socialidentity",
+    # Decision 305: the global profile belongs to the person, not to a space.
+    "makerspaces.accountprofile",
     # Platform-scoped for the same reason as the built-in providers: identity resolves
     # before a makerspace is selected, so an OIDC provider cannot belong to one.
     "accounts.oidcprovider",

@@ -76,7 +76,15 @@ def cache_config(cache_url):
     not the deployment the rule is about.
     """
     if cache_url:
-        return {"BACKEND": "django.core.cache.backends.redis.RedisCache", "LOCATION": cache_url}
+        # ResilientRedisCache (config/redis_cache.py): a Redis outage degrades rate limits to
+        # per-process counters instead of answering 500 to every throttled route. The short
+        # socket timeouts bound what a dead Redis costs one request; health checks drop
+        # half-open connections after a Redis restart.
+        return {
+            "BACKEND": "config.redis_cache.ResilientRedisCache",
+            "LOCATION": cache_url,
+            "OPTIONS": {"socket_connect_timeout": 1, "socket_timeout": 2, "health_check_interval": 30},
+        }
     return {
         "BACKEND": "django.core.cache.backends.db.DatabaseCache",
         "LOCATION": "spaceworks_cache",

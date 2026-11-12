@@ -109,6 +109,9 @@ CELERY_BEAT_SCHEDULE["platform-announcement-emails"] = {
 CELERY_BEAT_SCHEDULE["managed-hosting-sweep"] = {
     "task": "apps.managed_hosting.tasks.sweep_managed_hosting_task", "schedule": crontab(minute=41),
 }
+CELERY_BEAT_SCHEDULE["limit-threshold-sweep"] = {  # decision 328a: 80 / 100 percent warnings, deduped per crossing
+    "task": "apps.managed_hosting.tasks.sweep_limit_thresholds_task", "schedule": crontab(minute="7,37"),
+}
 # The managed-hosting limiter (#187A) is OFF by default: with MANAGED_PLANS_ENABLED false nothing
 # of it is visible or enforced and self-host behaves exactly as before. It also needs a managed
 # deployment (PLATFORM_DOMAIN_SUFFIX). Online hosting checkout is a second switch, also off.

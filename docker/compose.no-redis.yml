@@ -1,0 +1,48 @@
+# No Redis at all (the installer's "None (cron mode)" choice; SPACEWORKS_REDIS=none selects this overlay).
+# Redis and the Celery worker are parked. Background jobs run inline in the request that starts them,
+# the cache is the database cache, live screens poll, and the `beat` slot becomes a scheduler loop that
+# runs `manage.py run_scheduled_tasks --due-only` once a minute: the reminders, expiries and sweeps that
+# beat used to fire, from cron instead. The authenticated HTTP tick (decision 43) stays free-profile only,
+# so this overlay deliberately does not set that profile. It is the same brokerless task profile the
+# cloud files use (CLOUD_TASK_PROFILE=brokerless, CLOUD_SCHEDULER=external).
+# Each variable is set to a literal "": the base file's ${CELERY_BROKER_URL:-redis://redis:6379/0} would
+# otherwise turn an empty .env value back into the bundled Redis address.
+x-no-redis-env: &no-redis-env
+  CLOUD_TASK_PROFILE: brokerless
+  CLOUD_SCHEDULER: external
+  CELERY_BROKER_URL: ""
+  CELERY_RESULT_BACKEND: ""
+  CELERY_TASK_ALWAYS_EAGER: "True"
+  CACHE_URL: ""
+  LIVE_REDIS_URL: ""
+services:
+  redis:
+    profiles: [redis-disabled]
+  worker:
+    profiles: [redis-disabled]
+    depends_on:
+      redis: !reset null
+  backend:
+    environment: *no-redis-env
+    depends_on:
+      redis: !reset null
+  live:
+    environment: *no-redis-env
+    depends_on:
+      redis: !reset null
+  migrate:
+    environment: *no-redis-env
+  beat:
+    environment: *no-redis-env
+    command:
+      - "--role"
+      - "beat"
+      - "sh"
+      - "-c"
+      - "while true; do python manage.py run_scheduled_tasks --due-only --lane scheduler; python manage.py run_scheduled_tasks --due-only --lane worker; sleep 60; done"
+    depends_on:
+      redis: !reset null
+  candidate-backend:
+    environment: *no-redis-env
+    depends_on:
+      redis: !reset null

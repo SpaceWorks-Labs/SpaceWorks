@@ -50,9 +50,13 @@ services:
       mc anonymous set download local/public-images;
       '
   redis:
-    image: redis:7-alpine
+    image: redis:${REDIS_IMAGE_TAG:-7.4.11-alpine}
     container_name: spaceworks-redis
     restart: unless-stopped
+    # Decision 339: AOF so queued jobs survive a restart; volatile-lru evicts only keys with a TTL (cache
+    # entries), never the Celery queues, which carry none. Never published on a host port.
+    command: ["redis-server", "--appendonly", "yes", "--appendfsync", "everysec", "--maxmemory", "${REDIS_MAXMEMORY:-512mb}", "--maxmemory-policy", "volatile-lru"]
+    volumes: [redis_data:/data]
     healthcheck: {test: ["CMD", "redis-cli", "ping"], interval: 5s, timeout: 5s, retries: 5}
   backend:
     build:
@@ -352,4 +356,5 @@ services:
 volumes:
   makerspace_manager_pgdata:
   minio_data:
+  redis_data:
   celerybeat_data:

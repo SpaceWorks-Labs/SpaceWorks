@@ -85,9 +85,13 @@ services:
       mc anonymous set download "local/$$PUBLIC_IMAGE_BUCKET";
       '
   redis:
-    image: redis:7-alpine
+    image: redis:${REDIS_IMAGE_TAG:-7.4.11-alpine}
     restart: *default-restart
     logging: *default-logging
+    # Decision 339: AOF so queued jobs survive a restart; volatile-lru evicts only keys with a TTL (cache
+    # entries), never the Celery queues, which carry none. Never published on a host port.
+    command: ["redis-server", "--appendonly", "yes", "--appendfsync", "everysec", "--maxmemory", "${REDIS_MAXMEMORY:-512mb}", "--maxmemory-policy", "volatile-lru"]
+    volumes: [redis_data:/data]
     healthcheck: {test: ["CMD", "redis-cli", "ping"], interval: 10s, timeout: 5s, retries: 6}
   backend:
     image: ${MAKERSPACE_BACKEND_IMAGE:-ghcr.io/spaceworks-labs/spaceworks-backend}:${MAKERSPACE_IMAGE_TAG:-latest}
@@ -175,6 +179,15 @@ services:
       MIN_NATIVE_APP_VERSION_ANDROID: ${MIN_NATIVE_APP_VERSION_ANDROID:-}
       CARD_FONT_DOWNLOADS_ENABLED: ${CARD_FONT_DOWNLOADS_ENABLED:-True}
       CARD_PHOTO_MODEL_PATH: ${CARD_PHOTO_MODEL_PATH:-/var/lib/spaceworks/models/u2netp.onnx}
+      ADAPTER_CACHE_KEY_VERSION: ${ADAPTER_CACHE_KEY_VERSION:-1}
+      ADAPTER_CACHE_KEY_ROTATED_AT: ${ADAPTER_CACHE_KEY_ROTATED_AT:-0}
+      ADAPTER_CACHE_KEY_GRACE_DAYS: ${ADAPTER_CACHE_KEY_GRACE_DAYS:-7}
+      ADAPTER_ACCESS_CACHE_TTL_SECONDS: ${ADAPTER_ACCESS_CACHE_TTL_SECONDS:-900}
+      ADAPTER_TELEMETRY_RAW_HOURS: ${ADAPTER_TELEMETRY_RAW_HOURS:-24}
+      ADAPTER_TELEMETRY_MINUTE_DAYS: ${ADAPTER_TELEMETRY_MINUTE_DAYS:-7}
+      ADAPTER_TELEMETRY_QUARTER_DAYS: ${ADAPTER_TELEMETRY_QUARTER_DAYS:-90}
+      ADAPTER_TURN_URLS: ${ADAPTER_TURN_URLS:-}
+      ADAPTER_TURN_SECRET: ${ADAPTER_TURN_SECRET:-}
       ROUTE_METRICS_ENABLED: ${ROUTE_METRICS_ENABLED:-False}
       PROMETHEUS_MULTIPROC_DIR: ${PROMETHEUS_MULTIPROC_DIR:-/tmp/spaceworks-prometheus}
       METRICS_TOKEN: ${METRICS_TOKEN:-}
@@ -377,5 +390,6 @@ services:
 volumes:
   makerspace_manager_pgdata:
   minio_data:
+  redis_data:
   celerybeat_data:
   card_models:

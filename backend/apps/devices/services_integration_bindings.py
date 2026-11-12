@@ -51,7 +51,7 @@ def create_integration(actor, makerspace_id, machine_type, *, kind, enabled, con
                 "config_schema_version": row.config_schema_version})
             return row
     except IntegrityError as exc:
-        raise IntegrationConflict("This machine type already has that integration.",
+        raise IntegrationConflict(gettext("This machine type already has that integration."),
                                   code="integration_exists") from exc
 
 

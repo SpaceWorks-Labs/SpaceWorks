@@ -13,6 +13,7 @@ seam (``record_service_cost``):
   review (``needs_review``) whatever the binding's auto-apply policy; a completion
   follows the binding's ``auto_apply_terminal`` (off by default, so staff apply it).
 """
+from django.utils.translation import gettext
 from django.db import IntegrityError, transaction
 from django.db.models import Q
 from django.utils import timezone
@@ -82,15 +83,15 @@ def _attach(principal, request_id, external_job_id):
             request = MachineServiceRequest.objects.select_for_update(no_key=True).filter(
                 pk=request_id, makerspace=makerspace).first()
             if request is None:
-                raise IntegrationConflict("This job is not in the device's queue.", code="job_unknown")
+                raise IntegrationConflict(gettext("This job is not in the device's queue."), code="job_unknown")
             _binding, machine, _integration = device_binding(device, lock=True)
             live = PrinterJob.objects.filter(service_request=request, state__in=LIVE_STATES).first()
             if live is not None:
                 if live.device_id == device.pk and live.external_job_id == external_job_id:
                     return live
-                raise IntegrationConflict("This job already has a different printer run.", code="job_conflict")
+                raise IntegrationConflict(gettext("This job already has a different printer run."), code="job_conflict")
             if request.status != Status.IN_PROGRESS or request.assigned_machine_id != machine.pk:
-                raise IntegrationConflict("Staff must start this job on the device's machine first.",
+                raise IntegrationConflict(gettext("Staff must start this job on the device's machine first."),
                                           code="job_not_started")
             now = timezone.now()
             command = DeviceCommand.objects.create(
@@ -103,7 +104,7 @@ def _attach(principal, request_id, external_job_id):
             record(makerspace, device, "printer_job_created", job=job, command=command, outcome="agent_started")
             return job
     except IntegrityError as exc:
-        raise IntegrationConflict("This run identity is already used.", code="job_conflict") from exc
+        raise IntegrationConflict(gettext("This run identity is already used."), code="job_conflict") from exc
 
 
 def _terminal(principal, request_id, serializer):
@@ -113,7 +114,7 @@ def _terminal(principal, request_id, serializer):
     job = PrinterJob.objects.filter(device=device, service_request_id=request_id,
                                     external_job_id=data["external_job_id"]).first()
     if job is None:
-        raise IntegrationConflict("Report the start of this job first.", code="job_not_reported_started")
+        raise IntegrationConflict(gettext("Report the start of this job first."), code="job_not_reported_started")
     job, _claimed = claim_result(principal, job.pk, serializer.result_payload(), hold=data["event"] == "failed")
     if job.state == "reported":
         return apply_report(principal, job.pk)

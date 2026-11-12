@@ -9,7 +9,7 @@ from rest_framework.exceptions import ValidationError
 
 from apps.devices.errors_printers import PrinterConflict
 from apps.devices.models import PrinterJob, PrinterJobConsumption
-from apps.devices.printer_access import live_target, locked_device, owned_job
+from apps.devices.printer_access import auto_applies, live_target, locked_device, owned_job
 from apps.devices.serializers_printers import ResultSerializer, TelemetrySerializer
 from apps.devices.services_printer_events import record
 from apps.machines.models import MachineConsumable
@@ -52,23 +52,23 @@ def claim_result(principal, job_id, data, *, hold=False):
             makerspace, device = locked_device(principal)
             job, command = owned_job(device, job_id)
             if command.status != "acknowledged" or job.state == "cancelled":
-                raise PrinterConflict("Result requires an acknowledged command.")
+                raise PrinterConflict(gettext("Result requires an acknowledged command."))
             if payload["external_job_id"] != job.external_job_id:
-                raise PrinterConflict("External job identity does not match.")
+                raise PrinterConflict(gettext("External job identity does not match."))
             if job.reported_at is not None:
                 if job.terminal_operation_id != payload["operation_id"] or job.report_sha256 != digest:
-                    raise PrinterConflict("Terminal report is immutable.")
+                    raise PrinterConflict(gettext("Terminal report is immutable."))
                 return job, False
             request, machine, binding = live_target(job, device)
             consumables = validate_measurements(request, machine, payload)
             if PrinterJob.objects.filter(device=device, terminal_operation_id=payload["operation_id"]).exclude(pk=job.pk).exists():
-                raise PrinterConflict("Operation identity has already been used.")
+                raise PrinterConflict(gettext("Operation identity has already been used."))
             job.terminal_operation_id = payload["operation_id"]
             job.report_sha256 = digest
             job.reported_at = timezone.now()
             for field in ("outcome", "actual_minutes", "failure_reason", "percent_complete", "actual_grams", "actual_quantity"):
                 setattr(job, field, payload[field])
-            job.state = "reported" if binding.auto_apply_terminal and not hold else "needs_review"
+            job.state = "reported" if auto_applies(binding) and not hold else "needs_review"
             job.save(update_fields=["terminal_operation_id", "report_sha256", "reported_at", "outcome", "actual_minutes",
                                    "failure_reason", "percent_complete", "actual_grams", "actual_quantity", "state"])
             with connection.cursor() as cursor:
@@ -81,7 +81,7 @@ def claim_result(principal, job_id, data, *, hold=False):
                 record(makerspace, device, "printer_result_needs_review", job=job, command=command, outcome="manual_approval")
             return job, True
     except IntegrityError as exc:
-        raise PrinterConflict("Operation identity conflicts with an existing report.") from exc
+        raise PrinterConflict(gettext("Operation identity conflicts with an existing report.")) from exc
 
 
 def telemetry(principal, job_id, data):
@@ -92,10 +92,10 @@ def telemetry(principal, job_id, data):
         makerspace, device = locked_device(principal)
         job, command = owned_job(device, job_id)
         if command.status != "acknowledged" or job.state != "awaiting":
-            raise PrinterConflict("Telemetry requires an acknowledged nonterminal job.")
+            raise PrinterConflict(gettext("Telemetry requires an acknowledged nonterminal job."))
         live_target(job, device)
         if payload["external_job_id"] != job.external_job_id:
-            raise PrinterConflict("External job identity does not match.")
+            raise PrinterConflict(gettext("External job identity does not match."))
         now = timezone.now()
         job.telemetry_state = payload["telemetry_state"]
         job.progress_percent = payload["progress_percent"]

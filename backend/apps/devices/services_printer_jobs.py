@@ -48,4 +48,4 @@ def create_job(actor, makerspace_id, *, binding_id, service_request_id, external
             record(makerspace, device, "printer_job_created", actor=actor, job=job, command=command)
             return job
     except IntegrityError as exc:
-        raise PrinterConflict("External job or active request already has a printer job.") from exc
+        raise PrinterConflict(gettext("External job or active request already has a printer job.")) from exc

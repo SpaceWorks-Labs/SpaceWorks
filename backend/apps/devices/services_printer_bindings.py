@@ -37,7 +37,7 @@ def create_binding(actor, makerspace_id, *, device_id, machine_id, enabled=True,
             record(makerspace, device, "printer_bound", actor=actor, machine=machine)
             return binding
     except IntegrityError as exc:
-        raise PrinterConflict("Device or machine already has a binding.") from exc
+        raise PrinterConflict(gettext("Device or machine already has a binding.")) from exc
 
 
 def update_binding(actor, binding_id, changes):

@@ -25,6 +25,10 @@ def create_device(actor, makerspace_id, *, kind, name, offline_threshold_seconds
         makerspace = lock_tenant(makerspace_id)
         from apps.managed_hosting.extra_quotas import check_extra_quota
         check_extra_quota(makerspace, "devices")  # decision 284: typed 409 devices_quota_reached
+        if kind == Device.Kind.ADAPTER:  # decision 312: 404 while the switch is off; own limit key
+            from apps.devices.adapter_access import require_adapters
+            require_adapters(makerspace_id)
+            check_extra_quota(makerspace, "adapter_bridges")
         device = Device.objects.create(
             makerspace=makerspace, kind=kind, name=name,
             offline_threshold_seconds=offline_threshold_seconds, created_by=actor,

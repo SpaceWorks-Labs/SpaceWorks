@@ -15,6 +15,9 @@ from apps.devices.printer_access import live_target, locked_device, owned_comman
 from apps.devices.services_printer_events import record
 
 
+JOB_COMMAND_KINDS = ("printer_job", "adapter_job")
+
+
 def retry_at(now, attempts):
     return now + timedelta(seconds=min(3600, 2 ** min(attempts, 12)))
 
@@ -45,7 +48,7 @@ def validate_delivery_target(makerspace, device, command):
     # Unknown kinds are never delivered.
     job = PrinterJob.objects.select_for_update().filter(command=command).first()
     try:
-        if command.device_key_version != device.key_version or command.kind != "printer_job" or job is None:
+        if command.device_key_version != device.key_version or command.kind not in JOB_COMMAND_KINDS or job is None:
             raise ValidationError(gettext("Unknown or stale command."))
         live_target(job, device)
     except ValidationError:
@@ -72,18 +75,22 @@ def expire_lease(makerspace, device, command, now, *, job=None):
             job.state = PrinterJob.State.CANCELLED
             job.save(update_fields=["state"])
         record(makerspace, device, "command_delivery_failed", command=command,
-               job=job if command.kind == "printer_job" else None,
+               job=job if command.kind in JOB_COMMAND_KINDS else None,
                label=job if command.kind == "label_print" else None, outcome="lease_expired")
     return True
 
 
-def lease_command(principal, *, now=None):
+def lease_command(principal, *, now=None, kinds=None):
+    """Lease the next command. ``kinds`` narrows it (the adapter job lease); the generic route never delivers an
+    ``adapter_job`` because those carry an adapter-shaped lease the printer protocol cannot read."""
     now = now or timezone.now()
     with transaction.atomic():
         makerspace, device = locked_device(principal)
         candidates = DeviceCommand.objects.select_for_update(skip_locked=True).filter(
             device=device, makerspace=makerspace, status__in=["queued", "leased"],
-            next_attempt_at__lte=now).order_by("created_at", "id")
+            next_attempt_at__lte=now)
+        candidates = (candidates.filter(kind__in=kinds) if kinds else candidates.exclude(kind="adapter_job")
+                      ).order_by("created_at", "id")
         for command in candidates:
             job = validate_delivery_target(makerspace, device, command)
             if job is None:
@@ -92,6 +99,12 @@ def lease_command(principal, *, now=None):
                 continue
             if command.status != DeviceCommand.Status.QUEUED:
                 continue
+            if command.kind == "adapter_job":
+                from apps.devices.services_adapter_safety import area_blocked
+                from apps.devices.printer_access import target_binding
+                gate = target_binding(device, job.machine)
+                if gate is None or area_blocked(gate):
+                    continue  # stays queued until the area is confirmed clear (server-enforced)
             if command.attempts >= settings.DEVICE_COMMAND_MAX_ATTEMPTS:
                 command.status = DeviceCommand.Status.DELIVERY_FAILED
                 command.save(update_fields=["status", "updated_at"])
@@ -102,7 +115,7 @@ def lease_command(principal, *, now=None):
                     job.state = PrinterJob.State.CANCELLED
                     job.save(update_fields=["state"])
                 record(makerspace, device, "command_delivery_failed", command=command,
-                       job=job if command.kind == "printer_job" else None,
+                       job=job if command.kind in JOB_COMMAND_KINDS else None,
                        label=job if command.kind == "label_print" else None, outcome="attempts_exhausted")
                 continue
             token = secrets.token_urlsafe(32)
@@ -112,8 +125,11 @@ def lease_command(principal, *, now=None):
             command.lease_expires_at = now + timedelta(seconds=settings.DEVICE_COMMAND_LEASE_SECONDS)
             command.save(update_fields=["status", "attempts", "lease_token_digest", "lease_expires_at", "updated_at"])
             record(makerspace, device, "command_leased", command=command,
-                   job=job if command.kind == "printer_job" else None,
+                   job=job if command.kind in JOB_COMMAND_KINDS else None,
                    label=job if command.kind == "label_print" else None)
+            if command.kind == "adapter_job":
+                from apps.devices.services_adapter_safety import clear_area_marker
+                clear_area_marker(gate)  # one area-clear confirmation covers exactly one job
             payload = {"command_id": command.pk, "kind": command.kind, "lease_token": token,
                        "lease_expires_at": command.lease_expires_at}
             if command.kind == "label_print":
@@ -134,7 +150,7 @@ def acknowledge(principal, command_id, lease_token, *, now=None):
         command = owned_command(device, command_id)
         digest = protocol.sha256_hex(str(lease_token).encode("utf-8"))
         if command.lease_token_digest is None or not secrets.compare_digest(command.lease_token_digest, digest):
-            raise PrinterConflict("Lease token does not own this command.")
+            raise PrinterConflict(gettext("Lease token does not own this command."))
         if command.status == DeviceCommand.Status.ACKNOWLEDGED:
             return command
         if command.kind == "label_print" and command.status != DeviceCommand.Status.LEASED:
@@ -143,7 +159,7 @@ def acknowledge(principal, command_id, lease_token, *, now=None):
             raise PrinterConflict()
         job = validate_delivery_target(makerspace, device, command)
         if job is None:
-            error = PrinterConflict("Command target is no longer available.")
+            error = PrinterConflict(gettext("Command target is no longer available."))
         elif expire_lease(makerspace, device, command, now, job=job):
             error = LeaseExpired()
         elif command.status != DeviceCommand.Status.LEASED:
@@ -153,7 +169,7 @@ def acknowledge(principal, command_id, lease_token, *, now=None):
             command.acknowledged_at = now
             command.save(update_fields=["status", "acknowledged_at", "updated_at"])
             record(makerspace, device, "command_acknowledged", command=command,
-                   job=job if command.kind == "printer_job" else None,
+                   job=job if command.kind in JOB_COMMAND_KINDS else None,
                    label=job if command.kind == "label_print" else None)
     # Expiry and cancellation must survive the 410/409 response.
     if error:

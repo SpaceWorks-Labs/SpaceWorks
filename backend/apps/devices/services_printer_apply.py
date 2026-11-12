@@ -9,7 +9,7 @@ from rest_framework.exceptions import NotFound, ValidationError
 from apps.devices.errors_printers import PrinterConflict
 from apps.devices.models import Device, PrinterJob
 from apps.devices.principal import DevicePrincipal
-from apps.devices.printer_access import authorize_staff, live_target, locked_device, owned_job, scope_printers
+from apps.devices.printer_access import auto_applies, authorize_staff, live_target, locked_device, owned_job, scope_printers
 from apps.devices.services_printer_events import record
 from apps.devices.services_printer_reports import claim_result, fingerprint, validate_measurements
 from apps.machines import service_workflow_actions as workflow
@@ -33,9 +33,9 @@ def _apply(principal, job_id, *, actor=None):
         if job.state == "applied":
             return job
         if command.status != "acknowledged" or job.state not in {"reported", "needs_review"} or job.reported_at is None:
-            raise PrinterConflict("No terminal claim is available for application.")
+            raise PrinterConflict(gettext("No terminal claim is available for application."))
         request, machine, binding = live_target(job, device)
-        if actor is None and (job.state != "reported" or not binding.auto_apply_terminal):
+        if actor is None and (job.state != "reported" or not auto_applies(binding)):
             return job
         rows = list(job.consumptions.select_related("machine_consumable").all())
         if any(row.machine_consumable is None or row.machine_consumable.machine_id != machine.pk for row in rows):
@@ -46,7 +46,7 @@ def _apply(principal, job_id, *, actor=None):
                    "percent_complete": job.percent_complete, "actual_grams": job.actual_grams,
                    "actual_quantity": job.actual_quantity, "consumptions": consumptions}
         if fingerprint(payload) != job.report_sha256:
-            raise PrinterConflict("Stored report integrity check failed.")
+            raise PrinterConflict(gettext("Stored report integrity check failed."))
         validate_measurements(request, machine, payload)
         kwargs = {"actual_minutes": job.actual_minutes, "consumptions": consumptions}
         if job.actual_quantity is not None:
@@ -95,8 +95,9 @@ def apply_report(principal, job_id, *, actor=None):
             return job
 
 
-def report_result(principal, job_id, data):
-    job, _claimed = claim_result(principal, job_id, data)
+def report_result(principal, job_id, data, *, hold=False):
+    """``hold`` forces staff review whatever the binding's auto-apply policy (an adapter's failed report)."""
+    job, _claimed = claim_result(principal, job_id, data, hold=hold)
     # A crash after claim may leave REPORTED; matching retry safely resumes that state.
     # NEEDS_REVIEW is never retried automatically.
     if job.state == "reported":

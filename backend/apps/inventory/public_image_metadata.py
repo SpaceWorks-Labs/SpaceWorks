@@ -48,6 +48,11 @@ def public_image_key_in_use(
     )
     if profile_id is not None:
         profiles = profiles.exclude(pk=profile_id)
+    if account_profile_id is not None:
+        # Per-membership pointer rows mirror their account's avatar (`mirror_avatar`); they are the
+        # same owner's copy of the key, never a second claimant.
+        profiles = profiles.exclude(
+            membership__user__in=AccountProfile.objects.filter(pk=account_profile_id).values("user"))
     if profiles.exists():
         return True
     projects = MemberProject.objects.filter(

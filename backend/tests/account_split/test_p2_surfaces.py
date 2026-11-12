@@ -45,7 +45,8 @@ def test_staff_is_refused_foreign_tenant_and_member_surfaces(actors):
     client = bearer(tenant_staff)
     assert client.get(inventory(a)).status_code == 200
     assert client.get(inventory(b)).status_code == 403
-    assert client.get("/api/v1/memberships/me").status_code == 403
+    # U-A1: a staff-track holder is a person, so their own member surface answers.
+    assert client.get("/api/v1/memberships/me").status_code == 200
     assert client.get(reverse("admin-platform-dashboard")).status_code == 403
 
 
@@ -57,7 +58,7 @@ def test_platform_and_member_refuse_reciprocal_account_surfaces(actors):
     assert client.get(inventory(a), HTTP_ORIGIN=ORIGIN).status_code == 200
     assert client.get("/api/v1/memberships/me", HTTP_ORIGIN=ORIGIN).status_code == 403
     assert client.get(reverse("admin-platform-dashboard"), HTTP_ORIGIN=ORIGIN).status_code == 200
-    for user, surface in ((member, "staff_api"), (tenant_staff, "member"), (platform, "member")):
+    for user, surface in ((member, "staff_api"), (platform, "member")):
         assert bearer(user, surface).get("/api/v1/auth/me", HTTP_ORIGIN=ORIGIN).status_code == 401
 
 
@@ -108,15 +109,17 @@ def test_unknown_staff_route_fails_closed_at_runtime(actors):
             enforce_request(user, token, request)
 
 
-def test_staff_never_inherits_foreign_org_authority_in_targetless_listing(actors):
+def test_person_org_grant_is_listed_through_org_authority_only_in_targetless_listing(actors):
     a, b, _member, tenant_staff, _platform = actors
     organization = Organization.objects.create(name="Malformed grant", slug="malformed-grant")
     OrganizationMakerspace.objects.create(organization=organization, makerspace=b, relationship="manager")
     # Simulate legacy/admin-written data: source readers must fail closed too.
     OrganizationMembership.objects.create(organization=organization, user=tenant_staff,
                                           granted_actions=[rbac.Action.VIEW_AUDIT])
-    assert not rbac.has_any_org_authority(tenant_staff)
-    assert not rbac.can(tenant_staff, rbac.Action.VIEW_AUDIT, b.pk)
+    # U-A1: one account per person; an organization grant belongs to the person whatever else they hold,
+    # and is scoped to the organization's own makerspaces (never to surface-a, where they only staff).
+    assert rbac.has_any_org_authority(tenant_staff)
+    assert not rbac.can(tenant_staff, rbac.Action.VIEW_AUDIT, a.pk + 1000)
     from apps.audit.services import record
     audit = record(_platform, "test.foreign", makerspace=b)
     client = bearer(tenant_staff)
@@ -137,5 +140,6 @@ def test_delegated_resource_readers_refuse_staff_account_rows(actors):
     resource = BookableSpace.objects.create(makerspace=b, name="Foreign delegated room")
     BookingSpaceStaffGrant.objects.create(user=tenant_staff, makerspace=b, space=resource,
                                          permissions=["edit_details"])
-    assert not event_grants(tenant_staff).exists()
-    assert not booking_grants(tenant_staff).exists()
+    # U-A1: delegated resource grants follow the person, staff-track or not.
+    assert event_grants(tenant_staff).exists()
+    assert booking_grants(tenant_staff).exists()

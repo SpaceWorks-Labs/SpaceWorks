@@ -4,6 +4,7 @@ A player's basic-auth password is stored only as Fernet ciphertext (`apps.makers
 returned by any API. Neither model has an accounts.User foreign key: who changed what is in the audit log.
 `AnthiasAssetLink` is the mapping that lets an edit update the asset instead of creating a duplicate.
 """
+from django.utils.translation import gettext_noop
 from django.db import models
 
 from apps.makerspaces.models import Makerspace
@@ -12,8 +13,8 @@ from apps.makerspaces.secrets import decrypt_value, encrypt_value
 
 class AnthiasPlayer(models.Model):
     class Status(models.TextChoices):
-        NEVER = "never", "Never synced"
-        OK = "ok", "In sync"
+        NEVER = "never", gettext_noop("Never synced")
+        OK = "ok", gettext_noop("In sync")
         ERROR = "error", "Error"
 
     makerspace = models.ForeignKey(Makerspace, on_delete=models.CASCADE, related_name="anthias_players")

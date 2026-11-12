@@ -4,6 +4,7 @@ import logging
 from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
+from django.utils.translation import gettext
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
@@ -76,7 +77,7 @@ def _apply(player, data):
         try:
             host = clean_host(data["host_url"])
         except AnthiasError:
-            raise PresenceError("invalid_host", "Use http:// or https:// and a host, for example http://192.168.1.20.") from None
+            raise PresenceError("invalid_host", gettext("Use http:// or https:// and a host, for example http://192.168.1.20.")) from None
         if player.pk and host != player.host_url and "password" not in data:
             # Decision 336(g): the stored password belongs to the old host. Repointing the player elsewhere and
             # pressing Test would otherwise send it to whatever now answers there.
@@ -106,13 +107,13 @@ class AnthiasPlayersView(StaffPresenceView):
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
         if not data.get("name") or not data.get("host_url"):
-            raise PresenceError("missing_fields", "A name and a host are required.")
+            raise PresenceError("missing_fields", gettext("A name and a host are required."))
         with tenant_write(space.pk):
             require_staff(request.user, space, settings=True)
             from apps.managed_hosting.extra_quotas import check_extra_quota
             check_extra_quota(space, "anthias_players")  # decision 328a: refuses only a NEW player
             if AnthiasPlayer.objects.filter(makerspace=space).count() >= MAX_PLAYERS:
-                raise PresenceError("anthias_players_limit", "A space can register up to 10 players.", status_code=409)
+                raise PresenceError("anthias_players_limit", gettext("A space can register up to 10 players."), status_code=409)
             player = AnthiasPlayer(makerspace=space)
             _apply(player, data)
             player.save()

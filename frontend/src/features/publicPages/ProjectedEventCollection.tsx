@@ -7,6 +7,7 @@ import { useChargesOn } from "../../lib/charges";
 import { hostScope, pageApiPath, publicPagePolicy } from "./pageApi";
 import { PublicEventCards } from "./PublicCollectionCards";
 import type { PublicPageProjection, PublicSectionPayloads } from "./pageTypes";
+import { LogoLoader } from "../../components/LogoLoader";
 
 export function ProjectedEventCollection({ collection, token, slug }: {
   collection: PublicSectionPayloads["upcoming_events"]; token?: string; slug?: string;
@@ -24,7 +25,7 @@ export function ProjectedEventCollection({ collection, token, slug }: {
   });
   const data = page === 1 ? collection : query.error ? undefined : query.data;
   return <div className="grid gap-4">
-    {page > 1 && query.isLoading ? <p role="status">{t`Loading public events…`}</p> : query.error && page > 1 ? <ErrorBlock error={query.error} onRetry={() => { void query.refetch(); }} /> : data ? <PublicEventCards rows={data.results} showPrice={showPrice} /> : null}
+    {page > 1 && query.isLoading ? <LogoLoader label={t`Loading public events…`} size={48} className="min-h-16 py-3" /> : query.error && page > 1 ? <ErrorBlock error={query.error} onRetry={() => { void query.refetch(); }} /> : data ? <PublicEventCards rows={data.results} showPrice={showPrice} /> : null}
     <Pagination page={page} pageSize={24} count={data?.count ?? collection.count} totalPages={Math.ceil((data?.count ?? collection.count) / 24)} onChange={setPage} />
   </div>;
 }

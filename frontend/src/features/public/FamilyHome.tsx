@@ -1,7 +1,8 @@
 import { t } from "@lingui/core/macro";
+import { LogoLoader } from "../../components/LogoLoader";
 import { lazy } from "react";
 import { Navigate, useParams, useSearchParams } from "react-router-dom";
-import { CenteredCardLayout, PublicLayout } from "../../components/layouts";
+import { PublicLayout } from "../../components/layouts";
 import { useTenant } from "../../lib/tenant";
 import { publicFamilies, publicHome } from "../../lib/publicHome";
 import { useTenantBootstrap } from "../inventory/usePublicInventory";
@@ -36,6 +37,5 @@ export function FamilyHome() {
 }
 
 export function RouteFallback() {
-  return <div role="status"><CenteredCardLayout state={{ status: "loading" }} title={t`Opening Space Works…`} body=""
-    primary={{ label: t`Loading…`, disabled: true, disabledReason: "The page is opening." }} /></div>;
+  return <LogoLoader label={t`Opening Space Works…`} className="min-h-dvh content-center" />;
 }

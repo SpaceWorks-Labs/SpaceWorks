@@ -1,4 +1,5 @@
 import { formatLocale } from "../../lib/format";
+import { safePublicLink } from "../publicPages/PublicCollectionCards";
 import { t } from "@lingui/core/macro";
 import {
   AtSign, Bot, BrainCircuit, Code, Cpu, FolderGit2, Globe, Hash, HeartHandshake, Link2, Palette, Printer,
@@ -27,6 +28,16 @@ const monthYear = (value: string) => {
 /** Timeline dates are calendar dates (no time zone); an open end reads "Present". */
 export function timelineRange(start: string, end: string | null) {
   return `${monthYear(start)} – ${end ? monthYear(end) : "Present"}`;
+}
+
+/**
+ * A member-typed profile URL as a safe `href`: absolute https only, no credentials, no control
+ * characters. The server enforces the same on write, but rows that skipped the serializer (tenant
+ * import, a /control/ edit) must never put `javascript:` or `data:` into a visitor's link.
+ */
+export function safeProfileHref(value?: string | null): string | undefined {
+  const href = safePublicLink(value);
+  return href && /^https:\/\//i.test(href) ? href : undefined;
 }
 
 /** Brand marks are not in the icon set, so links get a generic glyph and always carry a text label. */

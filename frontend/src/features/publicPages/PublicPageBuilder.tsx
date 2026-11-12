@@ -1,3 +1,4 @@
+import { LogoLoader } from "../../components/LogoLoader";
 import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 import { PageMetadata } from "../../components/PageMetadata";
@@ -44,7 +45,7 @@ function Builder({ owner }: { owner: PageOwner }) {
       if (error instanceof StructuredApiError && error.code === "stale_version") { setStale(true); void query.refetch(); }
     },
   });
-  if (query.isLoading || !local && !query.error) return <p role="status">{t`Loading public page builder…`}</p>;
+  if (query.isLoading || !local && !query.error) return <LogoLoader label={t`Loading public page builder…`} />;
   if (query.error instanceof StructuredApiError && query.error.status === 403) return <p className="text-sm text-muted">{owner.kind === "makerspace"
     ? t`Only this makerspace's Space Manager can edit the public page.` : t`Only this organization's profile managers can edit the public page.`}</p>;
   if (query.error) return <ErrorBlock error={query.error} onRetry={() => { void query.refetch(); }} />;

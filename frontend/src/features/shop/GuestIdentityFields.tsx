@@ -3,6 +3,7 @@ import { useMutation } from "@tanstack/react-query";
 
 import { Field } from "../../components/ui";
 import { requestEmailCode, shopErrorMessage } from "./shopApi";
+import { BoxArt } from "../../components/BoxSpinner";
 
 export type GuestIdentity = { name: string; email: string; code: string };
 export const emptyGuest: GuestIdentity = { name: "", email: "", code: "" };
@@ -22,7 +23,7 @@ export function GuestIdentityFields({ slug, value, onChange, onSignIn }: {
     <Field label={t`Email`} hint={t`We email a one-time code here, and your order updates.`}><input className="desk-input min-h-11" type="email"
       autoComplete="email" value={value.email} onChange={event => { set({ email: event.target.value, code: "" }); send.reset(); }} /></Field>
     <button type="button" className="desk-button min-h-11 justify-self-start" disabled={!value.email.includes("@") || send.isPending}
-      onClick={() => send.mutate()}>{send.isPending ? t`Sending…` : send.isSuccess ? t`Send the code again` : t`Email me a code`}</button>
+      onClick={() => send.mutate()}>{send.isPending ? <><BoxArt size={16} mono />{t`Sending…`}</> : send.isSuccess ? t`Send the code again` : t`Email me a code`}</button>
     <p role="status" className="text-sm text-muted">{send.isSuccess ? t`Code sent to ${value.email.trim()}. It may take a minute.` : ""}</p>
     {send.error ? <p role="alert" className="text-sm text-danger">{shopErrorMessage(send.error)}</p> : null}
     {send.isSuccess ? <Field label={t`Code from the email`}><input className="desk-input min-h-11 tracking-widest" inputMode="numeric"

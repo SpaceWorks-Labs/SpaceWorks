@@ -1,3 +1,4 @@
+import { LogoLoader } from "../../components/LogoLoader";
 import { formatLocale } from "../../lib/format";
 import { t } from "@lingui/core/macro";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -15,6 +16,7 @@ import { forgetPickupEvent, initialPickup } from "./pickupPreference";
 import { ShopQuoteSummary } from "./ShopQuoteSummary";
 import { cartRequest, type CartLine } from "./useShopCart";
 import type { MemberSession } from "./useShopSpace";
+import { BoxArt } from "../../components/BoxSpinner";
 
 /** Review and place: policy first, the server's quote, who is buying, then pay online or at the desk. No effects here. */
 export function ShopCheckout({ slug, shop, lines, session, onSession, onPlaced, path }: {
@@ -71,7 +73,7 @@ export function ShopCheckout({ slug, shop, lines, session, onSession, onPlaced, 
   });
   if (placed) return <ShopOrderPlaced placed={placed} path={path} />;
   if (!lines.length) return null;
-  if (session === "restoring") return <p role="status" className="text-sm text-muted">{t`Checking your sign-in…`}</p>;
+  if (session === "restoring") return <LogoLoader label={t`Checking your sign-in…`} />;
   const needsAccount = !signedIn && (!shop.guest_checkout || signIn);
   const ready = Boolean(quote) && !quoteQuery.isFetching && (signedIn || guestReady(guest));
   const due = Number(quote?.amount_due ?? 0) > 0;
@@ -97,7 +99,7 @@ export function ShopCheckout({ slug, shop, lines, session, onSession, onPlaced, 
     {place.error && !changed ? <p role="alert" className="text-sm text-danger">{shopErrorMessage(place.error, labelFor)}</p> : null}
     {!needsAccount ? <button type="button" className="desk-button-brand min-h-11 w-full" disabled={!ready || place.isPending}
       onClick={() => { if (inFlight.current) return; inFlight.current = true; place.mutate(); }}>
-      {place.isPending ? t`Placing your order…` : changed ? t`Confirm the new total` : payOnline ? t`Continue to payment` : due ? t`Place order, pay at the desk` : t`Place order`}
+      {place.isPending ? <><BoxArt size={16} mono />{t`Placing your order…`}</> : changed ? t`Confirm the new total` : payOnline ? t`Continue to payment` : due ? t`Place order, pay at the desk` : t`Place order`}
     </button> : null}
   </div>;
 }

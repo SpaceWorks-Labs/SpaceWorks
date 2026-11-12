@@ -7,6 +7,7 @@ import { apiError } from "../../lib/api/errors";
 import { hostScope, pageApiPath, publicPagePolicy } from "./pageApi";
 import { currentSessionContext } from "../../lib/api/sessionContext";
 import { personalRecipientKey } from "../notifications/personalQueryKeys";
+import { LogoLoader } from "../../components/LogoLoader";
 
 function legacyArtwork(value: string) {
   try {
@@ -57,5 +58,5 @@ export function PageImage({ url, alt, slug, token, privatePreview = false }: {
   }, [src]);
   if (artwork) return <img src={url} alt={alt} className="max-h-96 w-full rounded-xl object-contain" />;
   if (query.error) return <p className="text-sm text-muted">{t`Image unavailable: ${alt}`}</p>;
-  return src ? <img src={src} alt={alt} className="max-h-96 w-full rounded-xl object-contain" /> : <p role="status" className="text-sm text-muted">{t`Loading image…`}</p>;
+  return src ? <img src={src} alt={alt} className="max-h-96 w-full rounded-xl object-contain" /> : <LogoLoader label={t`Loading image…`} size={48} className="min-h-16 py-3" />;
 }

@@ -1,26 +1,32 @@
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { Pencil, Plus, Trash2 } from "lucide-react";
-import { ConfirmDialog, ErrorBlock, IconButton, SettingsRow, SettingsSection, Skeleton } from "../../../components/ui";
+import { ConfirmDialog, ErrorBlock, IconButton, SettingsRow, SettingsSection } from "../../../components/ui";
 import type { TimelineKind } from "../publicProfileApi";
 import { timelineRange } from "../profileFormat";
-import { TIMELINE_COPY } from "../ProfileSectionTabs";
+import { TIMELINE_COPY } from "../timelineCopy";
 import { fieldError, useTimeline, useTimelineMutations, type TimelineEntry } from "./profileEditApi";
+import { SectionToggle } from "./SectionToggle";
 import { TimelineEntryForm } from "./TimelineEntryForm";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 const KINDS: TimelineKind[] = ["experience", "education", "volunteering"];
 type Editing = { kind: TimelineKind; entry?: TimelineEntry } | null;
 
 /** Experience, education and volunteering. Each entry saves on its own through the timeline API. */
-export function TimelineEditor({ makerspaceId }: { makerspaceId: number }) {
-  const timeline = useTimeline(makerspaceId);
-  const { save, remove } = useTimelineMutations(makerspaceId);
+export function TimelineEditor() {
+  const timeline = useTimeline();
+  const { save, remove } = useTimelineMutations();
   const [editing, setEditing] = useState<Editing>(null);
   const [deleting, setDeleting] = useState<TimelineEntry | null>(null);
   const rows = timeline.data ?? [];
   const open = (next: Editing) => { save.reset(); setEditing(next); };
-  return <SettingsSection title={t`Experience, education and volunteering`} description={t`Shown on your public page when it is published.`}>
-    {timeline.isLoading ? <Skeleton className="my-4 h-24" /> : null}
+  return <SettingsSection title={t`Experience, education and volunteering`} description={t`Shown on your profile. Hide the whole section with its switch.`}>
+    <SettingsRow label={t`Visibility`} helper={t`Volunteering follows the experience switch.`}>
+      <div className="grid gap-1"><SectionToggle section="experience" label={t`Show experience and volunteering`} />
+        <SectionToggle section="education" label={t`Show education`} /></div>
+    </SettingsRow>
+    {timeline.isLoading ? <LogoLoader size={48} className="min-h-24 py-3" /> : null}
     {timeline.error ? <div className="py-4"><ErrorBlock error={new Error(t`Couldn't load your timeline. Try again.`)} onRetry={() => { void timeline.refetch(); }} /></div> : null}
     {!timeline.isLoading && !timeline.error ? KINDS.map(kind => {
       const copy = TIMELINE_COPY[kind];
@@ -48,6 +54,6 @@ export function TimelineEditor({ makerspaceId }: { makerspaceId: number }) {
       onSave={draft => save.mutate({ id: editing.entry?.id, draft }, { onSuccess: () => setEditing(null) })} /> : null}
     <ConfirmDialog open={Boolean(deleting)} tone="danger" title={t`Delete this entry?`} confirmLabel={t`Delete`}
       message={deleting ? t`"${deleting.title}" is removed from your profile and public page.` : ""} pending={remove.isPending}
-      onCancel={() => setDeleting(null)} onConfirm={() => { if (deleting) remove.mutate(deleting.id, { onSettled: () => setDeleting(null) }); }} />
+      onCancel={() => setDeleting(null)} onConfirm={() => { if (deleting?.id !== undefined) remove.mutate(deleting.id, { onSettled: () => setDeleting(null) }); }} />
   </SettingsSection>;
 }

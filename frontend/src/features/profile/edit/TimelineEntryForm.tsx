@@ -2,13 +2,14 @@ import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { Modal } from "../../../components/ui";
 import type { TimelineKind } from "../publicProfileApi";
-import { TIMELINE_COPY } from "../ProfileSectionTabs";
+import { TIMELINE_COPY } from "../timelineCopy";
 import { fieldError, type TimelineDraft, type TimelineEntry } from "./profileEditApi";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 const PLACEHOLDERS: Record<TimelineKind, { title: string; organization: string }> = {
-  experience: { title: t`Role, e.g. Hardware intern`, organization: "Company or team" },
-  education: { title: t`Qualification, e.g. B.Tech, Electronics`, organization: "School or university" },
-  volunteering: { title: t`Role, e.g. Workshop mentor`, organization: "Organisation or community" },
+  experience: { title: t`Role, e.g. Hardware intern`, organization: t`Company or team` },
+  education: { title: t`Qualification, e.g. B.Tech, Electronics`, organization: t`School or university` },
+  volunteering: { title: t`Role, e.g. Workshop mentor`, organization: t`Organisation or community` },
 };
 
 export function blankDraft(kind: TimelineKind): TimelineDraft {
@@ -30,7 +31,7 @@ export function TimelineEntryForm({ entry, kind, pending, error, onCancel, onSav
   return <Modal open onClose={onCancel} title={entry ? t`Edit ${copy.title.toLowerCase()}` : t`Add ${copy.title.toLowerCase()}`} footer={
     <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
       <button type="button" className="desk-button w-full sm:w-auto" disabled={pending} onClick={onCancel}>{t`Cancel`}</button>
-      <button type="submit" form="timeline-entry-form" className="desk-button-primary w-full sm:w-auto" disabled={!ready || pending}>{pending ? t`Saving…` : t`Save`}</button>
+      <button type="submit" form="timeline-entry-form" className="desk-button-primary w-full sm:w-auto" disabled={!ready || pending}>{pending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Save`}</button>
     </div>}>
     <form id="timeline-entry-form" className="grid gap-4" onSubmit={event => { event.preventDefault(); submit(); }}>
       <label className="grid gap-1 text-sm font-semibold text-ink" htmlFor={id("title")}>{t`Title`}<input id={id("title")} className="desk-input font-normal" required maxLength={200} placeholder={PLACEHOLDERS[kind].title}

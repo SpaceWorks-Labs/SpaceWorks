@@ -1,6 +1,7 @@
 import { t } from "@lingui/core/macro";
 import { ClosedNoticeBanner } from "./ClosedNoticeBanner";
 import { OpenNowIndicator } from "./OpenNowIndicator";
+import { SpaceNowSections } from "../spaceDisplay/SpaceNowSections";
 import { useParams } from "react-router-dom";
 import { PublicLayout } from "../../components/layouts";
 import { PageMetadata } from "../../components/PageMetadata";
@@ -63,6 +64,7 @@ export function MakerspacePage({ profileSlug, profileOnly = false }: { profileSl
     <ClosedNoticeBanner bootstrap={bootstrap} />
     <OpenNowIndicator bootstrap={bootstrap} />
     {families.has("events") ? <FeaturedActivities slug={makerspaceSlug} path={path} timeZone={bootstrap.makerspace.timezone} /> : null}
+    <SpaceNowSections slug={makerspaceSlug} bootstrap={bootstrap} path={path} />
     <MakerspaceAreas links={chrome.nav.filter(link => link.href !== path())} />
     {families.has("machines") ? <MachinesSection path={path} /> : null}
     {families.has("bookings") ? <SpacesSection slug={makerspaceSlug} path={path} /> : null}

@@ -72,7 +72,7 @@ describe("makerspace page", () => {
     await screen.findByRole("heading", { name: "Book a space" });
     const h1 = screen.getByRole("heading", { level: 1, name: "Lab" });
     expect(h1.compareDocumentPosition(screen.getByRole("heading", { name: "Featured activities" })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(sections(container)).toEqual(["featured", "explore", "machines", "spaces", "membership", "contact"]);
+    expect(sections(container)).toEqual(["featured", "calendar", "explore", "machines", "spaces", "membership", "contact"]);
     expect(screen.getByRole("navigation", { name: "Quick actions" })).toBeVisible();
     expect(screen.getByRole("link", { name: "Browse inventory" })).toHaveAttribute("href", "/m/lab/inventory");
     expect(screen.queryByRole("button", { name: "Review request" })).toBeNull();

@@ -2,23 +2,17 @@ import { t } from "@lingui/core/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { memberRequest, StructuredApiError } from "../../../lib/api";
-import type { FamilyFlags, TimelineKind } from "../publicProfileApi";
-import type { MemberProfile } from "../../members/memberProfile/types";
+import type { AccountProfile, ProfilePatch, TimelineRow } from "../accountProfileTypes";
 
-/** Hand-typed from the frozen Phase 1b member contract (profile_contract_views.py). */
-export type TimelineEntry = {
-  id: number; kind: TimelineKind; title: string; organization: string; location: string;
-  start: string; end: string | null; description: string; order: number;
-};
+export type TimelineEntry = TimelineRow;
 export type TimelineDraft = Omit<TimelineEntry, "id">;
-export type PublicationPatch = Partial<FamilyFlags> & { public_visible?: boolean; publication_consent?: boolean };
 
-// Shared with MemberProfilePanel so a handle or publication change refreshes the whole form.
-export const memberProfileKey = (makerspaceId: number) => ["member", "profile-page", makerspaceId] as const;
-export const timelineKey = (makerspaceId: number) => ["member", "profile-timeline", makerspaceId] as const;
-const root = (makerspaceId: number) => `/member/makerspaces/${makerspaceId}/profile`;
+/** Every account-level profile route lives under /member/profile (the per-space ones are deprecated aliases). */
+const ROOT = "/member/profile";
+export const ownProfileKey = ["member", "profile", "own"] as const;
+export const timelineKey = ["member", "profile", "timeline"] as const;
 
-/** The server's field message (handle grammar, reserved name, cooldown) beats a generic one. */
+/** The server's field message (handle grammar, reserved name, cooldown, https-only) beats a generic one. */
 export function fieldError(error: unknown, field: string) {
   if (error instanceof StructuredApiError) {
     const value = error.body[field];
@@ -28,55 +22,46 @@ export function fieldError(error: unknown, field: string) {
   return error instanceof Error ? error.message : t`Something went wrong. Try again.`;
 }
 
-function useRefresh(makerspaceId: number) {
-  const client = useQueryClient();
-  return () => client.invalidateQueries({ queryKey: memberProfileKey(makerspaceId) });
+/** GET creates the row and claims the default handle on first call. */
+export function useOwnProfile() {
+  return useQuery({ queryKey: ownProfileKey, queryFn: () => memberRequest<AccountProfile>(ROOT), retry: false });
 }
 
-export function useClaimHandle(makerspaceId: number) {
-  const refresh = useRefresh(makerspaceId);
+/** PATCH with any subset. The 200 body is the saved owner payload, written straight into the cache. */
+export function usePatchProfile() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (body: ProfilePatch) => memberRequest<AccountProfile>(ROOT, { method: "PATCH", body: JSON.stringify(body) }),
+    onSuccess: data => { client.setQueryData(ownProfileKey, data); return client.invalidateQueries({ queryKey: ownProfileKey }); },
+  });
+}
+
+export function useClaimHandle() {
+  const client = useQueryClient();
   return useMutation({
     mutationFn: (handle: string) => memberRequest<{ handle: string; claimed_at: string; changed_at: string }>(
-      `${root(makerspaceId)}/handle`, { method: "POST", body: JSON.stringify({ handle }) }),
-    onSuccess: refresh,
+      `${ROOT}/handle`, { method: "POST", body: JSON.stringify({ handle }) }),
+    onSuccess: () => client.invalidateQueries({ queryKey: ownProfileKey }),
   });
 }
 
-export function useReleaseHandle(makerspaceId: number) {
-  const refresh = useRefresh(makerspaceId);
-  return useMutation({
-    mutationFn: () => memberRequest<void>(`${root(makerspaceId)}/handle`, { method: "DELETE" }),
-    onSuccess: refresh,
-  });
-}
-
-export function usePatchPublication(makerspaceId: number) {
+/** Also turns the open web off and clears the consent stamp (server side). */
+export function useReleaseHandle() {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (body: PublicationPatch) => memberRequest<MemberProfile>(root(makerspaceId), { method: "PATCH", body: JSON.stringify(body) }),
-    // The response is the saved profile; write it straight into the cache, then reconcile.
-    onSuccess: data => {
-      client.setQueryData<MemberProfile>(memberProfileKey(makerspaceId), current => current ? { ...current, ...pickPublication(data) } : data);
-      return client.invalidateQueries({ queryKey: memberProfileKey(makerspaceId) });
-    },
+    mutationFn: () => memberRequest<void>(`${ROOT}/handle`, { method: "DELETE" }),
+    onSuccess: () => client.invalidateQueries({ queryKey: ownProfileKey }),
   });
 }
 
-const PUBLICATION_KEYS = ["handle", "public_visible", "public_consented_at", "show_activity_graph", "show_events", "show_speaking",
-  "show_projects", "show_machine_activity", "show_bookings", "show_loans"] as const;
-// Only publication fields: a dirty profile form keeps its unsaved text, which the panel reseeds from the cache.
-function pickPublication(data: MemberProfile) {
-  return Object.fromEntries(PUBLICATION_KEYS.filter(key => key in data).map(key => [key, data[key]])) as Partial<MemberProfile>;
-}
-
-export function useTimeline(makerspaceId: number) {
+export function useTimeline() {
   return useQuery({
-    queryKey: timelineKey(makerspaceId),
+    queryKey: timelineKey,
     // At most 100 entries in pages of 24, so every page is read and the editor shows them all.
     queryFn: async () => {
       const rows: TimelineEntry[] = [];
       for (let page = 1; page <= 5; page += 1) {
-        const body = await memberRequest<{ next?: string | null; results?: TimelineEntry[] }>(`${root(makerspaceId)}/timeline?page=${page}`);
+        const body = await memberRequest<{ next?: string | null; results?: TimelineEntry[] }>(`${ROOT}/timeline?page=${page}`);
         rows.push(...(Array.isArray(body?.results) ? body.results : []));
         if (!body?.next) break;
       }
@@ -86,17 +71,16 @@ export function useTimeline(makerspaceId: number) {
   });
 }
 
-export function useTimelineMutations(makerspaceId: number) {
+export function useTimelineMutations() {
   const client = useQueryClient();
-  const refresh = () => client.invalidateQueries({ queryKey: timelineKey(makerspaceId) });
+  const refresh = () => Promise.all([client.invalidateQueries({ queryKey: timelineKey }), client.invalidateQueries({ queryKey: ownProfileKey })]);
   const save = useMutation({
     mutationFn: ({ id, draft }: { id?: number; draft: TimelineDraft }) => memberRequest<TimelineEntry>(
-      id ? `${root(makerspaceId)}/timeline/${id}` : `${root(makerspaceId)}/timeline`,
-      { method: id ? "PATCH" : "POST", body: JSON.stringify(draft) }),
+      id ? `${ROOT}/timeline/${id}` : `${ROOT}/timeline`, { method: id ? "PATCH" : "POST", body: JSON.stringify(draft) }),
     onSuccess: refresh,
   });
   const remove = useMutation({
-    mutationFn: (id: number) => memberRequest<void>(`${root(makerspaceId)}/timeline/${id}`, { method: "DELETE" }),
+    mutationFn: (id: number) => memberRequest<void>(`${ROOT}/timeline/${id}`, { method: "DELETE" }),
     onSuccess: refresh,
   });
   return { save, remove };

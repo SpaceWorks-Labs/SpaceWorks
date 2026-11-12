@@ -26,11 +26,11 @@ it("refreshes an expired access token and retries the personalized profile", asy
   const fetcher = vi.fn(async (url: string, options?: RequestInit) => {
     if (url.endsWith("/auth/refresh")) return response({ access: fresh });
     const auth = new Headers(options?.headers).get("Authorization");
-    return auth === `Bearer ${fresh}` ? response({ handle: "maker", viewer_is_owner: true }) : response({}, 401);
+    return auth === `Bearer ${fresh}` ? response({ handle: "maker", audience: "owner" }) : response({}, 401);
   });
   vi.stubGlobal("fetch", fetcher);
   const { result } = profile();
-  await waitFor(() => expect(result.current.data?.viewer_is_owner).toBe(true));
+  await waitFor(() => expect(result.current.data?.audience).toBe("owner"));
   expect(fetcher.mock.calls.filter(([url]) => url.endsWith("/auth/refresh"))).toHaveLength(1);
   const profileCalls = fetcher.mock.calls.filter(([url]) => url.endsWith("/public/profiles/maker/"));
   expect(profileCalls.map(([, options]) => new Headers(options?.headers).get("Authorization")))
@@ -44,12 +44,12 @@ it.each(["refused", "offline", "invalid_refresh"])("falls back to anonymous view
       return failure === "invalid_refresh" ? response({ access: fresh }) : response({}, 401);
     }
     return new Headers(options?.headers).get("Authorization")
-      ? response({}, 401) : response({ handle: "maker", viewer_is_owner: false });
+      ? response({}, 401) : response({ handle: "maker", audience: "public" });
   });
   vi.stubGlobal("fetch", fetcher);
   const { result } = profile();
   await waitFor(() => expect(result.current.isSuccess).toBe(true));
-  expect(result.current.data?.viewer_is_owner).toBe(false);
+  expect(result.current.data?.audience).toBe("public");
   expect(fetcher.mock.calls.some(([url, options]) => url.endsWith("/public/profiles/maker/")
     && !new Headers(options?.headers).get("Authorization"))).toBe(true);
   expect(fetcher.mock.calls.filter(([url]) => url.endsWith("/auth/refresh"))).toHaveLength(1);
@@ -61,11 +61,11 @@ it("retries a verification-only session anonymously without clearing the session
   const fetcher = vi.fn(async (_url: string, options?: RequestInit) =>
     new Headers(options?.headers).get("Authorization")
       ? response({ code: "email_verification_required" }, 403)
-      : response({ handle: "maker", viewer_is_owner: false }));
+      : response({ handle: "maker", audience: "public" }));
   vi.stubGlobal("fetch", fetcher);
   const { result } = profile();
   await waitFor(() => expect(result.current.isSuccess).toBe(true));
-  expect(result.current.data?.viewer_is_owner).toBe(false);
+  expect(result.current.data?.audience).toBe("public");
   expect(getAccessToken()).toBe(fresh);
   expect(fetcher.mock.calls.map(([, options]) => new Headers(options?.headers).get("Authorization")))
     .toEqual([`Bearer ${fresh}`, ""]);

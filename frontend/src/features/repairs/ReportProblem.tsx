@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Modal } from "../../components/ui";
 import { memberRequest } from "../../lib/api";
 import { uploadToStorage, type PrintUpload } from "../printing/publicApi";
+import { BoxArt } from "../../components/BoxSpinner";
 
 /** Where the report comes from: the member's own loan, booking, machine job or machine session (#103, 220(d)2). */
 export type ReportSource = { makerspace_id?: number; makerspace_slug?: string }
@@ -72,7 +73,7 @@ function ReportDialog({ source, onClose }: { source: ReportSource; onClose: () =
         {state.error ? <p role="alert" className="text-sm text-danger">{state.error}</p> : null}
         <div className="flex flex-wrap justify-end gap-2 border-t border-line pt-3">
           <button type="button" className="desk-button-ghost" onClick={onClose}>{t`Cancel`}</button>
-          <button type="submit" className="desk-button-primary" disabled={!ready || state.busy}>{state.busy ? t`Sending…` : t`Send report`}</button>
+          <button type="submit" className="desk-button-primary" disabled={!ready || state.busy}>{state.busy ? <><BoxArt size={16} mono />{t`Sending…`}</> : t`Send report`}</button>
         </div>
       </form>}
   </Modal>;

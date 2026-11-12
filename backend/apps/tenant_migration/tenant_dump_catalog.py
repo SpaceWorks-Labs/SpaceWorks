@@ -101,7 +101,8 @@ class TenantDumpCatalogError(AssertionError):
 # Orchestrator verifies this against actual post-migration schema before release.
 # 0.12.0 pins (216 events/bookings/maintenance, P2-1 workshop machines, 220(d)2, 221(b), then the
 # 221-223 release lanes): each lane's migration additions are folded in; re-pinned at consolidation.
-CATALOG_SCHEMA_SHA256 = "71f0625507abec9a4f200fd0777b29e468afa9220e3e44de8d1517f49960f744"
+# R2-final: accounts WebSessionActivityDay/ChannelUsageDay models and DeviceGrant login_method "passkey"; re-pinned.
+CATALOG_SCHEMA_SHA256 = "79bc0d27f5b4d847745cfb717a76ebe9d82b012ecc8515267aba6e47b73026cf"
 
 
 def catalog_models(apps_registry=apps):

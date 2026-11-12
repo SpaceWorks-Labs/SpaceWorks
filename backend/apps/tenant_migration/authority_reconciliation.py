@@ -2,6 +2,7 @@
 
 SOURCE_PATHS = (
     "accounts/authentication_device.py",
+    "accounts/restricted_admission.py",
     "accounts/account_deletion_presence.py",
     "accounts/credential_revocation.py",
     "accounts/credential_revocation_helpers.py",
@@ -36,6 +37,7 @@ SOURCE_PATHS = (
     "makerspaces/membership_activation.py",
     "makerspaces/membership_renewal_charges.py",
     "makerspaces/notifications_p2_members.py",
+    "makerspaces/notifications_p2_members_bodies.py",
     "makerspaces/notifications_p2_terms.py",
 )
 

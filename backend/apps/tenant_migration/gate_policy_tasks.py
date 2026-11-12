@@ -203,6 +203,10 @@ TASK_INTERNAL_PARTICIPANTS = {
         "Writes only deployment-local last-seen telemetry on ApiClient rows; it moves no "
         "tenant data and so needs no per-tenant gate."
     ),
+    "apps.accounts.tasks_channel_usage.flush_channel_usage_task": (
+        "Writes only deployment-local call counts (ChannelUsageDay, OMITTED from every dump); "
+        "no person or tenant domain data moves, so it needs no per-tenant gate."
+    ),
     "apps.makerspaces.tasks_station.purge_expired_operator_leases_task": (
         "Each tenant's expired kiosk leases use the skip-and-count tenant boundary."
     ),

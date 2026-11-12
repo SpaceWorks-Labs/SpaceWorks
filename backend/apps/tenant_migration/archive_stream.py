@@ -61,7 +61,11 @@ class PortableArchive:
                         f"Archive columns drifted for {model_label}; "
                         f"missing={sorted(expected - actual)}, extra={sorted(actual - expected)}."
                     )
-            missing = {name: "" for name in expected - actual}
+            # Only the previous-format drift (a Format 1 archive) is filled with blanks for portable_staff
+            # to convert. A legacy public-page column stays ABSENT so `row_planning` reconstructs it
+            # (an `identity_id` of "" would be refused as an empty non-null value).
+            missing = ({name: "" for name in expected - actual}
+                       if self._previous_format_columns(model_label, expected, actual) else {})
             if model_label == "accounts.User":
                 from .archive_user_lifecycle import lifecycle_rows
 

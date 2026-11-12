@@ -1,4 +1,5 @@
 """G installs typed event-domain verification without core Accounts importing Events."""
+from django.utils.translation import gettext
 from typing import Protocol
 from dataclasses import dataclass
 from uuid import UUID
@@ -11,12 +12,12 @@ def require_subject(subject):
     if (str(getattr(subject, "kind", "")) not in {"registration", "application", "role_assignment", "stage_response"}
             or any(type(getattr(subject, key, None)) is not int or getattr(subject, key) <= 0
                    for key in ("event_id", "owner_member_id"))):
-        raise SavedDetailsError("invalid_subject", "Form context not found.", 404)
+        raise SavedDetailsError("invalid_subject", gettext("Form context not found."), 404)
     existing, creation = getattr(subject, "subject_id", None), getattr(subject, "creation_operation_id", None)
     if ((existing is None) == (creation is None)
             or existing is not None and (type(existing) is not int or existing <= 0)
             or creation is not None and not isinstance(creation, UUID)):
-        raise SavedDetailsError("invalid_subject", "Form context not found.", 404)
+        raise SavedDetailsError("invalid_subject", gettext("Form context not found."), 404)
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -76,7 +77,7 @@ def require_binding(prepared, subject, locks):
     result = _provider.require_binding(prepared_subject=prepared.subject, actual_subject=subject,
                                       operation_id=prepared.operation_id, locks=locks)
     if not isinstance(result, VerifiedIntentBinding):
-        raise SavedDetailsError("invalid_subject", "Registration context not found.", 404)
+        raise SavedDetailsError("invalid_subject", gettext("Registration context not found."), 404)
     if prepared.outer_operation_id is not None:
         proof = result.form_operation
         expected = (prepared.outer_operation_id, prepared.form_slot, prepared.operation_id,
@@ -84,5 +85,5 @@ def require_binding(prepared, subject, locks):
         if (not isinstance(proof, VerifiedFormOperation)
                 or (proof.outer_operation_id, proof.slot, proof.operation_id, proof.event_id,
                     proof.owner_member_id, proof.subject_kind, proof.subject_id) != expected):
-            raise SavedDetailsError("invalid_subject", "This preparation belongs to another form.", 409)
+            raise SavedDetailsError("invalid_subject", gettext("This preparation belongs to another form."), 409)
     return result

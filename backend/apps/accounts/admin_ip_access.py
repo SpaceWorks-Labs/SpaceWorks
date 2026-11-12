@@ -18,6 +18,7 @@ from apps.accounts.models import IPAccessRule, IPAutoBlock
 from apps.audit import services as audit
 from config.admin_access import SuperuserOnlyModelAdmin
 from django.utils.translation import gettext_lazy
+from django.utils.translation import gettext
 
 
 class IPAccessRuleForm(forms.ModelForm):
@@ -36,7 +37,7 @@ class IPAccessRuleForm(forms.ModelForm):
         try:
             return ip_rules.canonical_cidr(self.cleaned_data["cidr"])
         except ValueError as exc:
-            raise forms.ValidationError("Enter an IP address or a network in CIDR form.") from exc
+            raise forms.ValidationError(gettext("Enter an IP address or a network in CIDR form.")) from exc
 
     def clean(self):
         cleaned = super().clean()

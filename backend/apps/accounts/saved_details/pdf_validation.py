@@ -1,4 +1,5 @@
 """Bounded structural PDF checks; résumé originals never execute server content."""
+from django.utils.translation import gettext
 import io
 
 from pypdf import PdfReader
@@ -12,7 +13,7 @@ _ACTIVE = {"/JS", "/JavaScript", "/OpenAction", "/AA", "/EmbeddedFiles", "/Embed
 
 def validate_pdf(data):
     def invalid():
-        return SavedDetailsError("invalid_pdf", "Use an unencrypted PDF of at most 100 pages without active content.")
+        return SavedDetailsError("invalid_pdf", gettext("Use an unencrypted PDF of at most 100 pages without active content."))
     if not data.startswith(b"%PDF-"):
         raise invalid()
     try:

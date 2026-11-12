@@ -60,17 +60,21 @@ POLICY_OVERRIDE_ALLOWLIST = {
     # only names the WWW-Authenticate realm. Neither ever authenticates a claim session.
     "apps.apiclients.person_auth.PersonalAccessTokenAuthentication": {"authenticate", "authenticate_header"},
     "apps.apiclients.person_auth.OAuthPersonAuthentication": {"authenticate", "authenticate_header"},
-    "apps.apiclients.throttling.ClientTierRateThrottle": {"_tier", "allow_request", "get_cache_key"},
-    "apps.apiclients.throttling.MemberPrincipalRateThrottle": {"_tier", "allow_request", "get_cache_key"},
+    # Deployment-wide per-device budget (decision 336c): overrides the rate lookup and the wait hint.
+    "config.throttles.DeploymentDeviceRateThrottle": {"allow_request", "get_cache_key", "get_rate", "wait"},
+    "config.throttles.DeploymentUserRateThrottle": {"allow_request", "get_cache_key", "get_rate", "wait"},
+    "config.throttles.DeploymentAnonRateThrottle": {"allow_request", "get_cache_key", "get_rate", "wait"},
+    "apps.apiclients.throttling.ClientTierRateThrottle": {"_apply_space_limit", "_tier", "allow_request", "get_cache_key"},
+    "apps.apiclients.throttling.MemberPrincipalRateThrottle": {"_apply_space_limit", "_tier", "allow_request", "get_cache_key"},
     "apps.events.throttles.CollaborativeRegistrationThrottle": {
-        "_tier", "allow_request", "get_cache_key"
+        "_apply_space_limit", "_tier", "allow_request", "get_cache_key"
     },
     # Public feedback reads and submissions take separate budgets. The scope is chosen in
     # `allow_request` rather than a view-level `get_throttles()` override precisely BECAUSE
     # this guard forbids a lifecycle-hook override on a pre-auth route; the override set is
     # therefore identical to its ClientTierRateThrottle base.
     "apps.events.throttles.PublicFeedbackRateThrottle": {
-        "_tier", "allow_request", "get_cache_key"
+        "_apply_space_limit", "_tier", "allow_request", "get_cache_key"
     },
     # The account-less borrow-request budgets (#80). Both override `get_cache_key` only, to
     # return None for an authenticated caller, so a makerspace behind one NAT never
@@ -90,6 +94,10 @@ POLICY_OVERRIDE_ALLOWLIST = {
     "apps.machines.permissions.IsActiveRequester": {"has_permission"},
     "apps.accounts.views_device.IsDeviceAccessToken": {"has_permission"},
     "apps.makerspaces.throttles.MemberImagePresignThrottle": {"get_cache_key"},
+    "apps.makerspaces.throttles.ProfileLookupThrottle": {"allow_request", "get_cache_key", "wait"},
+    "apps.makerspaces.throttles.ProfileLookupDailyThrottle": {"allow_request", "get_cache_key", "wait"},
+    "apps.makerspaces.throttles.HandleCheckThrottle": {"allow_request", "get_cache_key", "wait"},
+    "apps.makerspaces.throttles.HandleCheckDailyThrottle": {"allow_request", "get_cache_key", "wait"},
     # Events programme and saved-detail budgets only declare scope/rate.
     "apps.accounts.saved_details.views.VaultThrottle": set(),
     "apps.events.contributions.api_common.ProgrammeThrottle": set(),
@@ -108,6 +116,9 @@ POLICY_OVERRIDE_ALLOWLIST = {
 # authentication; a hook on any other class, or a new hook on a listed class, stays a
 # build failure.
 LIFECYCLE_OVERRIDE_ALLOWLIST = {
+    # initial: raises 410 before any handler runs (machine certifications were retired); it
+    # refuses every request and never authenticates or grants claim authority.
+    "apps.machines.retired.RetiredCertificationView": {"initial"},
     # initial: super().initial() first, then refuses API-client sessions and non-owners;
     # handle_exception: maps key-unavailable/fenced errors to typed 503/423 responses;
     # finalize_response: private no-store headers.

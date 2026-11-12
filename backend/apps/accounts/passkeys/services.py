@@ -52,7 +52,7 @@ def begin_registration(request):
     user = _gate(request)
     assert_usable(user)
     if WebAuthnCredential.objects.filter(user=user).count() >= MAX_PASSKEYS:
-        raise PasskeyFailed(f"You can keep up to {MAX_PASSKEYS} passkeys. Remove one first.")
+        raise PasskeyFailed(gettext("You can keep up to %(max)s passkeys. Remove one first.") % {"max": MAX_PASSKEYS})
     origin, rp_id = request_origin_and_rp_id(request)
     return ceremonies.registration_options(user, origin=origin, rp_id=rp_id)
 
@@ -96,9 +96,9 @@ def finish_registration(request, ceremony_id, credential, name=""):
     with transaction.atomic():
         user = User.objects.select_for_update().get(pk=user.pk)
         if WebAuthnCredential.objects.filter(user=user).count() >= MAX_PASSKEYS:
-            raise PasskeyFailed(f"You can keep up to {MAX_PASSKEYS} passkeys. Remove one first.")
+            raise PasskeyFailed(gettext("You can keep up to %(max)s passkeys. Remove one first.") % {"max": MAX_PASSKEYS})
         if WebAuthnCredential.objects.filter(credential_id=credential_id).exists():
-            raise PasskeyFailed("This passkey is already registered.")
+            raise PasskeyFailed(gettext("This passkey is already registered."))
         row = WebAuthnCredential.objects.create(
             user=user, credential_id=credential_id, public_key=verified.credential_public_key,
             sign_count=verified.sign_count, transports=_transports(credential), aaguid=str(verified.aaguid or ""),
@@ -159,6 +159,12 @@ def remove(request, pk):
         if required(user) and not totp_enabled(user, mfa) and not (others and passkeys_usable(user)):
             raise PermissionDenied({"detail": gettext("Staff need a second factor. Set up an authenticator or another "
                                               "passkey before removing this one."), "code": LAST_FACTOR})
+        from apps.accounts.credential_inventory import would_strand
+        if would_strand(user, drop_passkey_pk=row.pk):
+            # A member who signs in only with passkeys would lock themselves out for good.
+            raise PermissionDenied({"detail": gettext("This passkey is your only way to sign in. Add a password, "
+                                                      "a sign-in provider or another passkey first."),
+                                    "code": "last_credential"})
         row.delete()
         if not others and not totp_enabled(user, mfa):
             mfa.recovery_digests = []

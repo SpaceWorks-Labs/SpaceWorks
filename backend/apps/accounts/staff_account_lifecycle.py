@@ -109,7 +109,7 @@ def disable_account(actor, user_id, *, reason=""):
             for space_id in sorted(set(spaces)):
                 assert_write_allowed(space_id)
         except SourceMigrationGateError:
-            raise StaffRoleRefused(TENANT_GATED, "A makerspace of this person is temporarily read-only.") from None
+            raise StaffRoleRefused(TENANT_GATED, gettext("A makerspace of this person is temporarily read-only.")) from None
         revoke_all_credentials(target, reason="account.disabled", actor=actor)
         target = lock_credentials(target)
         if not target.is_active:

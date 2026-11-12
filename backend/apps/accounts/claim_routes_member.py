@@ -141,17 +141,12 @@ MEMBER_CLAIM_ROUTES = {
     # D3 records that mixed ownership so it cannot be mistaken for a plain local read.
     ("member-profile", "GET"): LocallyFiltered(tenant=ID),
     ("member-profile", "HEAD"): LocallyFiltered(tenant=ID),
-    ("member-profile", "PUT"): Allowed(
-        tenant=ID, audited=True, ownership=RowOwnership.LOCALLY_FILTERED
-    ),
+    # The profile is GLOBAL (decision 304): a write from a tenant-scoped claim session would edit
+    # account-level data, so every write refuses (reads stay locally filtered).
+    ("member-profile", "PUT"): Refused(gettext_noop("The global profile requires a full account session.")),
     **_options("member-profile"),
-    ("member-profile-image", "POST"): Allowed(tenant=ID, audited=False),
-    ("member-profile-image", "PUT"): Allowed(
-        tenant=ID, audited=True, ownership=RowOwnership.LOCALLY_FILTERED
-    ),
-    ("member-profile-image", "DELETE"): Allowed(
-        tenant=ID, audited=True, ownership=RowOwnership.LOCALLY_FILTERED
-    ),
+    **{("member-profile-image", method): Refused(gettext_noop("The global profile requires a full account session."))
+       for method in ("POST", "PUT", "DELETE")},
     **_options("member-profile-image"),
     # Member ID cards (forward plan phase 5): same rule as the calendar-feed bearer token —
     # a walk-in claim session never holds or edits a durable credential.

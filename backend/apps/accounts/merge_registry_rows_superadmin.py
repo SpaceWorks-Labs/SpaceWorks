@@ -12,6 +12,7 @@ ROWS = (
     (R, "managed_hosting.HostingInvoice", "created_by", _MOVE),
     (R, "managed_hosting.PlatformHostingBillingSettings", "updated_by", _MOVE),
     (R, "managed_hosting.PlatformThrottleRate", "updated_by", _MOVE),
+    (R, "managed_hosting.PlatformLimitDefault", "updated_by", _MOVE),
     (R, "managed_hosting.SpaceHostingType", "updated_by", _MOVE),
     (K, "managed_hosting.HostingInvoiceReceipt", "recorded_by",
      "Append-only payment receipt; actor_ids_for follows the alias."),

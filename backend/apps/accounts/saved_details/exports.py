@@ -1,4 +1,5 @@
 """Owner-only short-lived archives contain vault values and independently owned files."""
+from django.utils.translation import gettext
 from datetime import timedelta
 import hashlib
 import tempfile
@@ -40,7 +41,7 @@ def create_export(actor_id, operation_id):
         if previous is not None:
             return previous
         if AccountSavedDetailsExportJob.objects.filter(user=actor, state__in=["queued", "building"]).exists():
-            raise SavedDetailsError("export_pending", "An export is already being prepared.", 409)
+            raise SavedDetailsError("export_pending", gettext("An export is already being prepared."), 409)
         job = AccountSavedDetailsExportJob.objects.create(user=actor,
             object_key=f"account-export/{uuid4()}.zip", expires_at=timezone.now() + timedelta(hours=24))
         record(actor, "account.saved_details_export_requested", target=job)
@@ -77,7 +78,7 @@ def build_export(job_id):
                         authorize_key()
                         own_export(actor.pk, job.job_uuid)
                         if not MemberSavedAsset.objects.filter(pk=asset.pk, user=actor, state="ready", version=asset.version).exists():
-                            raise SavedDetailsError("asset_not_ready", "A résumé changed during export.", 409)
+                            raise SavedDetailsError("asset_not_ready", gettext("A résumé changed during export."), 409)
                         from .asset_policy import require_ready
                         require_ready(asset)
                     with zipped.open(f"resumes/{asset.public_id}.pdf", "w") as target:

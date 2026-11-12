@@ -18,6 +18,7 @@ from apps.accounts import staff_account_lifecycle as lifecycle
 from apps.accounts.reauthentication import require_recent_reauth
 from apps.accounts.staff_identity import is_person, person_q
 from django.utils.translation import gettext_lazy
+from django.utils.translation import gettext
 
 
 class DisableAccountForm(forms.Form):
@@ -40,7 +41,7 @@ class StaffLifecycleAdminMixin:
     def delete_model(self, request, obj):
         locked = type(obj)._base_manager.select_for_update().get(pk=obj.pk)
         if not is_person(locked):
-            raise PermissionDenied("Platform accounts and inert shells cannot be deleted.")
+            raise PermissionDenied(gettext("Platform accounts and inert shells cannot be deleted."))
         from .booking_decision_deletion import clear_booking_decision_creators
         clear_booking_decision_creators([locked.pk])
         return super().delete_model(request, locked)
@@ -50,7 +51,7 @@ class StaffLifecycleAdminMixin:
         ids = list(queryset.order_by("pk").values_list("pk", flat=True))
         locked = list(queryset.model._base_manager.select_for_update().filter(pk__in=ids).order_by("pk"))
         if len(locked) != len(ids) or any(not is_person(user) for user in locked):
-            raise PermissionDenied("Platform accounts and inert shells cannot be deleted.")
+            raise PermissionDenied(gettext("Platform accounts and inert shells cannot be deleted."))
         from .booking_decision_deletion import clear_booking_decision_creators
         clear_booking_decision_creators(ids)
         return super().delete_queryset(request, queryset.filter(pk__in=ids))
@@ -59,7 +60,7 @@ class StaffLifecycleAdminMixin:
         """The bulk reset/restrict/restore actions act on personal accounts only; a platform
         account or inert shell in the selection refuses the whole batch (403)."""
         if queryset.exclude(person_q()).exists():
-            raise PermissionDenied("Platform accounts and inert shells require their explicit lifecycle actions.")
+            raise PermissionDenied(gettext("Platform accounts and inert shells require their explicit lifecycle actions."))
 
     def _one_person(self, request, queryset):
         try:
@@ -88,7 +89,7 @@ class StaffLifecycleAdminMixin:
             return None
         if "apply" not in request.POST:
             return TemplateResponse(request, "admin/accounts/disable_account_action.html", {
-                **self.admin_site.each_context(request), "title": "Disable account", "person": person,
+                **self.admin_site.each_context(request), "title": gettext("Disable account"), "person": person,
                 "opts": self.model._meta, "action_name": "disable_account",
                 "action_checkbox_name": ACTION_CHECKBOX_NAME, "form": DisableAccountForm(),
             })

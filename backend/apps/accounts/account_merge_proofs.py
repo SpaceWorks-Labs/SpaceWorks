@@ -42,7 +42,7 @@ def start(survivor, identifier, method):
     require_survivor(survivor)
     from apps.accounts.account_merge_eligibility import MERGE_NOT_ALLOWED
     if method == Intent.Method.EMAIL_CODES and not (survivor.email or "").strip():
-        raise MergeRefused(MERGE_NOT_ALLOWED, "Add an email address to this account first.")
+        raise MergeRefused(MERGE_NOT_ALLOWED, gettext("Add an email address to this account first."))
     now = timezone.now()
     with transaction.atomic():
         for open_intent in Intent.objects.select_for_update().filter(survivor=survivor, state__in=OPEN):

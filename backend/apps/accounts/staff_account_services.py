@@ -70,10 +70,10 @@ def grant(actor, space_id, *, user_id, roles, machine_type_ids=(), machine_ids=(
         target = User.objects.filter(pk=user_id).first()
         if target is None or not is_community_member(space, target):
             raise StaffRoleRefused(NOT_COMMUNITY_MEMBER,
-                                   "Staff roles are granted to community members of this makerspace. Invite by email instead.")
+                                   gettext("Staff roles are granted to community members of this makerspace. Invite by email instead."))
         require_authority(actor, space, target=target, roles=roles)
         if MakerspaceMembership.staff_tracks.filter(makerspace=space, user=target).exists():
-            raise StaffRoleRefused(ALREADY_STAFF, "This person already has a staff row here; change or restore it.")
+            raise StaffRoleRefused(ALREADY_STAFF, gettext("This person already has a staff row here; change or restore it."))
         scopes = resolve_machine_types(space, roles, machine_type_ids)
         machines = resolve_machines(space, roles, machine_ids)
         check_staff_quota(space)

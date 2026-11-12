@@ -24,6 +24,18 @@ DEVICE_REFRESH_CLAIMS = ("device_grant_id", "device_family_id")
 payload_kind = token_kind
 
 
+def handle_state(user, person):
+    """Decision 308: the account's handle, and the blocking-step flag + suggestion when it has none."""
+    if not person or getattr(user, "account_kind", "") != "member" or user.is_walk_in:
+        return {"handle": None, "handle_required": False, "handle_suggestion": None}
+    from apps.makerspaces.public_profile_handles import suggestion_for
+    from apps.makerspaces.models_profiles import PublicHandle
+
+    handle = PublicHandle.objects.filter(user_id=user.pk).values_list("handle", flat=True).first()
+    return {"handle": handle, "handle_required": handle is None,
+            "handle_suggestion": None if handle else suggestion_for(user)}
+
+
 def user_payload(user, request=None, *, session_authority=None):
     from apps.accounts import rbac
     from apps.machines import role_scope
@@ -99,6 +111,7 @@ def user_payload(user, request=None, *, session_authority=None):
         "session_authority": _session_authority(user, request, session_authority),
         "id": user.id,
         "username": user.username,
+        **handle_state(user, person),
         "email": user.email,
         "display_name": user.display_name,
         "phone": user.phone,

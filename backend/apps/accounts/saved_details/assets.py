@@ -1,4 +1,5 @@
 """Owner résumé lifecycle with account budget reservation and detached validation."""
+from django.utils.translation import gettext
 from datetime import timedelta
 from uuid import uuid4
 
@@ -25,7 +26,7 @@ def owned_asset(actor_id, asset_id, *, lock=False):
     query = MemberSavedAsset.objects.select_for_update() if lock else MemberSavedAsset.objects
     row = query.filter(pk=asset_id, user_id=actor_id).first()
     if row is None:
-        raise SavedDetailsError("not_found", "Résumé not found.", 404)
+        raise SavedDetailsError("not_found", gettext("Résumé not found."), 404)
     return row
 
 
@@ -40,10 +41,10 @@ def project(asset):
 def create_resume(actor_id, body, operation_id):
     require_owner(actor_id)
     if not isinstance(body.get("filename"), str) or not body["filename"].lower().endswith(".pdf") or len(body["filename"]) > 255 or body.get("mime") != "application/pdf":
-        raise SavedDetailsError("invalid_pdf", "Choose a PDF résumé.")
+        raise SavedDetailsError("invalid_pdf", gettext("Choose a PDF résumé."))
     size = body.get("bytes")
     if type(size) is not int or not 1 <= size <= storage.MAX_RESUME_BYTES:
-        raise SavedDetailsError("asset_too_large", "PDF résumés must be at most 10 MiB.", 413)
+        raise SavedDetailsError("asset_too_large", gettext("PDF résumés must be at most 10 MiB."), 413)
     digest = request_digest("resume-create", body)
     previous = replay(actor_id, operation_id, digest)
     key = prepare_account_key(actor_id)
@@ -57,7 +58,7 @@ def create_resume(actor_id, body, operation_id):
                 if not getattr(settings, "PLATFORM_DOMAIN_SUFFIX", ""):
                     limit = max(limit, int(getattr(settings, "ACCOUNT_SAVED_ASSET_BUDGET_BYTES", limit)))
                 if used + size > limit:
-                    raise SavedDetailsError("account_asset_budget_exceeded", "Delete an old résumé before uploading another.", 413)
+                    raise SavedDetailsError("account_asset_budget_exceeded", gettext("Delete an old résumé before uploading another."), 413)
                 public_id = uuid4()
                 prefix = f"account/{public_id}"
                 asset = MemberSavedAsset.objects.create(user=actor, public_id=public_id, size_bytes=size,
@@ -88,9 +89,9 @@ def complete_resume(actor_id, asset_id, body):
         asset = owned_asset(actor_id, asset_id, lock=True)
         require_version(asset.version, body["expected_version"])
         if asset.generation != body["generation"]:
-            raise SavedDetailsError("upload_generation_changed", "Restart this upload.", 409)
+            raise SavedDetailsError("upload_generation_changed", gettext("Restart this upload."), 409)
         if asset.state != "uploading":
-            raise SavedDetailsError("asset_not_ready", "This résumé is no longer accepting uploads.", 409)
+            raise SavedDetailsError("asset_not_ready", gettext("This résumé is no longer accepting uploads."), 409)
         asset.state, asset.version = "validating", asset.version + 1
         asset.save(update_fields=["state", "version", "updated_at"])
         record(actor, "account.saved_resume_validation_requested", target=asset)
@@ -158,7 +159,7 @@ def delete_resume(actor_id, asset_id, body):
         # this asset because put_locked also checks current ready ownership.
         detail = MemberSavedDetail.objects.select_for_update().filter(user=actor, field_key="resume").first()
         if (detail.version if detail else 0) != (before.version if before else 0):
-            raise SavedDetailsError("stale_version", "Your saved résumé changed. Review it before deleting.", 409)
+            raise SavedDetailsError("stale_version", gettext("Your saved résumé changed. Review it before deleting."), 409)
         if (detail and not detail.deleted_at and before and detail.version == before.version
                 and selected and selected.get("asset_id") == asset.pk):
             detail.value_envelope = seal(None, detail, "value_envelope", key)

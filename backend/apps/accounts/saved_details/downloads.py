@@ -61,7 +61,7 @@ def resume_download(request, asset_id):
         from .asset_policy import require_ready
         require_ready(current)
         if current.state != "ready" or current.version != asset.version:
-            raise SavedDetailsError("asset_not_ready", "This résumé is no longer available.", 409)
+            raise SavedDetailsError("asset_not_ready", gettext("This résumé is no longer available."), 409)
     return stream_response(request, key=asset.object_key, version_id=asset.final_version_id,
         size=asset.size_bytes, mime="application/pdf", filename="resume.pdf", authorize=authorize)
 
@@ -70,9 +70,9 @@ def own_export(actor_id, job_uuid):
     require_owner(actor_id)
     job = AccountSavedDetailsExportJob.objects.filter(user_id=actor_id, job_uuid=job_uuid).first()
     if job is None:
-        raise SavedDetailsError("not_found", "Export not found.", 404)
+        raise SavedDetailsError("not_found", gettext("Export not found."), 404)
     if job.expires_at <= timezone.now() or job.state == "expired":
-        raise SavedDetailsError("export_expired", "Create a fresh export.", 410)
+        raise SavedDetailsError("export_expired", gettext("Create a fresh export."), 410)
     return job
 
 
@@ -83,6 +83,6 @@ def export_download(request, job_uuid):
     def authorize():
         authorize_owner()
         if own_export(request.user.pk, job_uuid).state != "ready":
-            raise SavedDetailsError("export_not_ready", "Your export is still being prepared.", 409)
+            raise SavedDetailsError("export_not_ready", gettext("Your export is still being prepared."), 409)
     return stream_response(request, key=job.object_key, version_id=None, size=job.size_bytes,
         mime="application/zip", filename="saved-details.zip", authorize=authorize, expires_at=job.expires_at)

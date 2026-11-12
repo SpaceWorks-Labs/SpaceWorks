@@ -10,6 +10,7 @@ a non-200 answer) lets the password through, because an outage of a third party 
 never stop someone changing a password. ``PASSWORD_BREACH_CHECK_ENABLED`` turns it off.
 """
 
+from django.utils.translation import gettext_lazy
 import hashlib
 import logging
 
@@ -21,8 +22,8 @@ from apps.accounts.login_security_contract import PASSWORD_BREACHED
 
 logger = logging.getLogger(__name__)
 RANGE_URL = "https://api.pwnedpasswords.com/range/{prefix}"
-MESSAGE = ("This password has appeared in a data breach, so it is not safe to use. "
-           "Choose a different password.")
+MESSAGE = (gettext_lazy("This password has appeared in a data breach, so it is not safe to use. "
+           "Choose a different password."))
 
 
 def _transport():

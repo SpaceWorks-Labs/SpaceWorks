@@ -1,4 +1,5 @@
 """Owner prefill uses a server-resolved form context, never a client schema."""
+from django.utils.translation import gettext
 from dataclasses import dataclass
 from datetime import date
 from typing import Protocol
@@ -49,11 +50,11 @@ def prefill(actor_id, request):
     require_owner(actor_id)
     assert_ready()
     if _provider is None:
-        raise SavedDetailsError("not_found", "Registration context not found.", 404)
+        raise SavedDetailsError("not_found", gettext("Registration context not found."), 404)
     context = _provider.resolve(actor_id=actor_id, selector=request["context"])
     if (context.owner_id != actor_id or context.subject_kind not in {"registration", "application", "role_assignment", "stage_response"}
             or context.event_id != request["context"]["event_id"] or context.subject_kind != request["context"]["subject_kind"]):
-        raise SavedDetailsError("not_found", "Registration context not found.", 404)
+        raise SavedDetailsError("not_found", gettext("Registration context not found."), 404)
     if context.subject_kind == "stage_response":
         require_subject(context.subject)
         selector = request["context"]
@@ -62,11 +63,11 @@ def prefill(actor_id, request):
                 or subject.subject_id != selector.get("subject_id")
                 or subject.creation_operation_id != selector.get("creation_operation_id")
                 or "stage_form_id" in selector and context.stage_form_id != selector["stage_form_id"]):
-            raise SavedDetailsError("not_found", "Stage form context not found.", 404)
+            raise SavedDetailsError("not_found", gettext("Stage form context not found."), 404)
     if (request["form_id"], request["form_revision"]) != (context.form_id, context.form_revision):
-        raise SavedDetailsError("form_revision_changed", "Review the revised form.", 409)
+        raise SavedDetailsError("form_revision_changed", gettext("Review the revised form."), 409)
     if request["event_date_revision"] != context.event_date_revision:
-        raise SavedDetailsError("event_date_changed", "Reload the form for the revised event date.", 409,
+        raise SavedDetailsError("event_date_changed", gettext("Reload the form for the revised event date."), 409,
                                 event_date_revision=context.event_date_revision, as_of_date=context.as_of_date.isoformat())
     stage = context.subject_kind == "stage_response"
     rows = MemberSavedDetail.objects.filter(user_id=actor_id)

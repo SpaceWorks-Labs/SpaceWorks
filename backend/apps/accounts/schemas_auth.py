@@ -105,6 +105,13 @@ class AuthUserPayload(serializers.Serializer):
                   "accounts\" nudge (Q17). There is no deadline.",
     )
 
+    handle = serializers.CharField(allow_null=True, help_text="The account's public username (decision 308); null until chosen.")
+    handle_required = serializers.BooleanField(
+        help_text="True when the account still has no handle: show the blocking 'Choose your username' step. "
+                  "State-changing member routes return 403 `handle_required` until one is chosen.")
+    handle_suggestion = serializers.CharField(
+        allow_null=True, help_text="A valid, free handle to pre-fill the step; null when none fits.")
+
     preferred_locale = serializers.CharField(
         allow_null=True, help_text="The account's own language; null follows the makerspace default.")
     effective_locale = serializers.CharField(help_text="The language this request resolved to.")

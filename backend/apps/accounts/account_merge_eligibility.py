@@ -7,6 +7,7 @@ Nothing merges on email alone: these predicates only decide eligibility; the pro
 an unknown identifier, so the start answer never enumerates accounts.
 """
 
+from django.utils.translation import gettext
 import json
 
 from django.db.models import Q
@@ -55,7 +56,7 @@ def account_refusal(user):
 
 def require_survivor(user):
     if account_refusal(user) is not None:
-        raise MergeRefused(MERGE_NOT_ALLOWED, "This account cannot link another account.")
+        raise MergeRefused(MERGE_NOT_ALLOWED, gettext("This account cannot link another account."))
 
 
 def converted_record(source):

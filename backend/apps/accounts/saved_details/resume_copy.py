@@ -3,6 +3,7 @@
 No event model, route or caller-supplied destination enters this account module.
 The event asset owner must separately establish participant eligibility/quota.
 """
+from django.utils.translation import gettext
 from dataclasses import dataclass, field
 from datetime import timedelta
 from typing import Iterator
@@ -39,7 +40,7 @@ def prepare_saved_resume_copy(*, actor_id, asset_id, sha256):
         from .asset_policy import require_ready
         require_ready(current)
         if current.state != "ready" or current.sha256 != sha256 or current.version != source.version:
-            raise SavedDetailsError("asset_not_ready", "Choose your own ready résumé.", 409)
+            raise SavedDetailsError("asset_not_ready", gettext("Choose your own ready résumé."), 409)
     authorize()
     chunks = stream_private(
         locator=ObjectLocator(bucket=storage.bucket(), key=source.object_key, version_id=source.final_version_id or None),
@@ -54,17 +55,17 @@ def prepare_saved_resume_selection(*, actor_id, saved_asset_id, saved_detail_ver
     authorize_owner = owner_read_gate(actor_id)
     detail = MemberSavedDetail.objects.filter(user_id=actor_id, field_key="resume", deleted_at__isnull=True).first()
     if detail is None or detail.version != saved_detail_version:
-        raise SavedDetailsError("saved_detail_changed", "Review your saved résumé selection.", 409)
+        raise SavedDetailsError("saved_detail_changed", gettext("Review your saved résumé selection."), 409)
     value = open_value(detail, "value_envelope")
     if not isinstance(value, dict) or value.get("asset_id") != saved_asset_id:
-        raise SavedDetailsError("saved_detail_changed", "Review your saved résumé selection.", 409)
+        raise SavedDetailsError("saved_detail_changed", gettext("Review your saved résumé selection."), 409)
     copied = prepare_saved_resume_copy(actor_id=actor_id, asset_id=saved_asset_id, sha256=value["sha256"])
 
     def check_selection():
         authorize_owner()
         if not MemberSavedDetail.objects.filter(pk=detail.pk, user_id=actor_id,
                 version=saved_detail_version, deleted_at__isnull=True).exists():
-            raise SavedDetailsError("saved_detail_changed", "Your saved résumé selection changed.", 409)
+            raise SavedDetailsError("saved_detail_changed", gettext("Your saved résumé selection changed."), 409)
 
     def chunks():
         stream = iter(copied.chunks)

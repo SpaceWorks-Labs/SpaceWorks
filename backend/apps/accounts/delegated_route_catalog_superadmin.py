@@ -18,7 +18,7 @@ admin-space-transfer-ownership admin-platform-hosting-requests admin-platform-ho
 admin-platform-hosting-request-approve admin-platform-hosting-request-changes admin-platform-hosting-request-reject
 admin-platform-announcements admin-platform-announcement admin-platform-announcement-cancel
 admin-platform-hosting-plans admin-platform-hosting-plan admin-space-plan admin-platform-space-plan-bulk admin-platform-hosting-invoices
-admin-platform-hosting-invoice-payment admin-platform-hosting-invoice-void admin-platform-hosting-billing-settings admin-platform-hosting-switch admin-space-limits admin-platform-space-limits-bulk admin-space-hosting-type admin-platform-request-limits admin-platform-request-limit
+admin-platform-hosting-invoice-payment admin-platform-hosting-invoice-void admin-platform-hosting-billing-settings admin-platform-hosting-switch admin-space-limits admin-platform-space-limits-bulk admin-space-hosting-type admin-platform-request-limits admin-platform-request-limit admin-platform-limit-defaults
 admin-platform-ip-rules admin-platform-ip-rule admin-platform-ip-blocks admin-platform-ip-block-unblock
 admin-platform-restore-drills admin-platform-restore-drill-settings
 admin-platform-accounts admin-platform-account-disable admin-platform-account-enable
@@ -39,7 +39,7 @@ admin-platform-selfhost-move-export admin-platform-selfhost-move-discard admin-p
 
 MEMBERSHIP_ROUTES = frozenset("""
 admin-makerspace-hosting-plan admin-makerspace-hosting-invoices admin-makerspace-hosting-invoice-checkout
-admin-makerspace-allowances
+admin-makerspace-allowances admin-makerspace-limits
 """.split())
 
 SHARED_ROUTES = frozenset({"platform-notices"})

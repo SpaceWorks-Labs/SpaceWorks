@@ -8,7 +8,7 @@ reachable only from a configured platform origin (``PLATFORM_STAFF_ORIGINS``) an
 username or by an email no person holds, so a person's address never selects it.
 """
 
-from django.utils.translation import gettext
+from django.utils.translation import gettext, gettext_lazy
 from django.conf import settings
 from django.db.models import Q
 from rest_framework.exceptions import AuthenticationFailed, PermissionDenied
@@ -17,7 +17,7 @@ from apps.accounts.models import User
 from apps.accounts.staff_identity import has_staff_role, is_platform, person_q, platform_q
 from apps.accounts.surface_policy import assert_surface
 
-_REFUSED = "No active account found with the given credentials"
+_REFUSED = gettext_lazy("No active account found with the given credentials")
 
 
 def _platform_origin(request):

@@ -22,15 +22,18 @@ _REFUSED = (
     ("claim sessions cannot read or act on machine jobs", (
         ("member-machine-jobs", ("GET", "HEAD")), ("member-machine-job-detail", ("GET", "HEAD")),
         ("member-machine-job-approve-quote", ("POST",)), ("member-machine-job-decline-quote", ("POST",)),
-        ("member-machine-job-resubmit", ("POST",)),
+        ("member-machine-job-resubmit", ("POST",)), ("member-machine-job-consumables", ("POST",)),
         ("public-machine-job-upload", ("POST",)), ("public-machine-job-submit", ("POST",)),
+        ("member-machine-use-events", ("GET", "HEAD")),
     )),
     ("claim sessions cannot start, stop or read machine sessions", (
         ("member-machine-session-preview", ("GET", "HEAD")), ("member-machine-session-start", ("POST",)),
         ("member-machine-sessions", ("GET", "HEAD")), ("member-machine-session-stop", ("POST",)),
     )),
     ("claim sessions cannot lead supervised sessions or list member machines", (
-        ("member-machines", ("GET", "HEAD")), ("member-supervised-session-open", ("POST",)),
+        ("member-machines", ("GET", "HEAD")), ("member-machine-access", ("GET", "HEAD")),
+        ("member-machine-type-guide", ("GET", "HEAD")), ("member-machine-type-document-url", ("GET", "HEAD")),
+        ("member-supervised-session-open", ("POST",)),
         ("member-supervised-sessions", ("GET", "HEAD")), ("member-supervised-session", ("GET", "HEAD")),
         ("member-supervised-supervisees", ("POST",)), ("member-supervised-supervisee-remove", ("DELETE",)),
         ("member-supervised-people", ("GET", "HEAD")), ("member-supervised-use-start", ("POST",)),

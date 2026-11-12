@@ -13,6 +13,9 @@ class EmailVerificationChallenge(models.Model):
     consumed_at = models.DateTimeField(null=True, blank=True)
     failed_attempts = models.PositiveSmallIntegerField(default=0)
     last_sent_at = models.DateTimeField(null=True, blank=True)
+    # SECURITY-REVIEW M14: the username a NEW sign-up chose. It is claimed only when this email is
+    # confirmed, so the availability check can never tell a new address from a registered one.
+    requested_handle = models.CharField(max_length=30, blank=True, default="")
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

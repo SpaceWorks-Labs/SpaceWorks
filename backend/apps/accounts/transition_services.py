@@ -48,6 +48,7 @@ def transition_walk_in_to_account(
     *,
     actor: User | None,
     credential_writer: CredentialWriter | None = None,
+    handle: str | None = None,
 ) -> User:
     """Atomically transition ``user`` and revoke every pre-transition bearer.
 
@@ -78,5 +79,9 @@ def transition_walk_in_to_account(
         if credential_writer is not None:
             credential_writer(locked)
 
+        # Decision 308: the new account gets a username with the upgrade; a chosen one is validated
+        # here (a refusal rolls the whole transition back), otherwise the best suggestion.
+        from apps.makerspaces.public_profile_handles import claim_for_signup
+        claim_for_signup(locked, handle)
         audit.record(actor, "member.walk_in_transitioned", target=locked)
         return locked

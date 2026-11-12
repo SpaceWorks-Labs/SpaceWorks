@@ -12,6 +12,8 @@ ROWS = (
     (R, "card_designs.CardDesignAsset", "uploaded_by", _MUTABLE),
     (R, "card_designs.CardJob", "requested_by", "A job and its temporary file belong to whoever asked; moves to the survivor."),
     (R, "card_designs.CardPhotoRequest", "requested_by", _MUTABLE),
+    (R, "card_designs.CardPhotoCutout", "requested_by", "A derived cut-out belongs to whoever asked; moves to the survivor."),
+    (R, "card_designs.CardPhotoBatch", "created_by", "A temporary photo batch belongs to its creator; moves to the survivor."),
     (R, "events.EventIdCard", "person revoked_by", "The holder's event card follows the person; one live card per registration."),
     (R, "id_programmes.IdProgramme", "created_by", _MUTABLE),
     (U, "id_programmes.IdProgrammeCard", "user",

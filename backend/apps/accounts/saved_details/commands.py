@@ -1,4 +1,5 @@
 """Replay receipts retain safe metadata only, never a second copy of deleted PII."""
+from django.utils.translation import gettext
 from django.utils.crypto import salted_hmac
 from uuid import UUID
 
@@ -18,7 +19,7 @@ def replay(user_id, operation_id, digest, *, key=None):
     if row is None:
         return None
     if row.request_sha256 != digest:
-        raise SavedDetailsError("idempotency_conflict", "Use a new operation ID for changed details.", 409)
+        raise SavedDetailsError("idempotency_conflict", gettext("Use a new operation ID for changed details."), 409)
     return dict(row.response_metadata)
 
 
@@ -44,11 +45,11 @@ def form_intent_statuses(actor_id, form_operations):
         try:
             operation = UUID(str(binding["operation_id"]))
         except (ValueError, TypeError, KeyError, AttributeError) as exc:
-            raise SavedDetailsError("invalid_operation_id", "Use the bound form operation.") from exc
+            raise SavedDetailsError("invalid_operation_id", gettext("Use the bound form operation.")) from exc
         if (operation in seen or binding.get("kind") not in {"registration", "application", "role_assignment", "stage_response"}
                 or type(binding.get("subject_id")) is not int or binding["subject_id"] <= 0
                 or (slot != "base") != (binding["kind"] == "stage_response")):
-            raise SavedDetailsError("invalid_subject", "Use the bound form operations.", 409)
+            raise SavedDetailsError("invalid_subject", gettext("Use the bound form operations."), 409)
         operations[slot] = operation
         seen.add(operation)
     rows = {row.operation_uuid: row for row in SavedDetailUpdateIntent.objects.filter(user_id=actor_id, operation_uuid__in=seen)}
@@ -57,7 +58,7 @@ def form_intent_statuses(actor_id, form_operations):
         row = rows.get(operation)
         binding = form_operations[slot]
         if row and (row.subject_kind, row.subject_id) != (binding["kind"], binding["subject_id"]):
-            raise SavedDetailsError("invalid_subject", "This update belongs to another form.", 409)
+            raise SavedDetailsError("invalid_subject", gettext("This update belongs to another form."), 409)
         result.append({"slot": slot, "operation_id": str(operation), "intent_id": str(row.id) if row else None,
                        "state": row.state if row else "not_requested", "fields": row.field_status if row else {},
                        "status_url": f"/api/v1/member/saved-details/save-intents/{operation}/" if row else None})

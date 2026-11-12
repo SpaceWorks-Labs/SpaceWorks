@@ -38,7 +38,7 @@ class OwnerView(APIView):
     def initial(self, request, *args, **kwargs):
         super().initial(request, *args, **kwargs)
         if getattr(request, "api_client", None) is not None:
-            raise SavedDetailsError("permission_denied", "Sign in with your own member account.", 403)
+            raise SavedDetailsError("permission_denied", gettext("Sign in with your own member account."), 403)
         require_owner(request.user.pk)
 
     def finalize_response(self, request, response, *args, **kwargs):
@@ -50,13 +50,13 @@ class OwnerView(APIView):
     def handle_exception(self, exc):
         if isinstance(exc, PiiUnavailable):
             error = SavedDetailsError(getattr(exc, "code", "account_key_unavailable"),
-                                      "Protected details are unavailable. Try again.", getattr(exc, "status_code", 503))
+                                      gettext("Protected details are unavailable. Try again."), getattr(exc, "status_code", 503))
             response = super().handle_exception(error)
             if getattr(exc, "retry_after", None):
                 response["Retry-After"] = exc.retry_after
             return response
         if isinstance(exc, PiiWriteFenced):
-            exc = SavedDetailsError("pii_write_fenced", "Protected writes are temporarily paused.", 423)
+            exc = SavedDetailsError("pii_write_fenced", gettext("Protected writes are temporarily paused."), 423)
         if isinstance(exc, ValidationError):
             return Response({"code": "invalid_input", "detail": gettext("Check the highlighted fields."), "fields": exc.detail}, status=400)
         return super().handle_exception(exc)
@@ -69,9 +69,9 @@ class OwnerView(APIView):
             try:
                 operation = UUID(self.request.headers.get("Idempotency-Key", ""))
             except (ValueError, TypeError, AttributeError) as exc:
-                raise SavedDetailsError("invalid_operation_id", "Supply a UUID Idempotency-Key.") from exc
+                raise SavedDetailsError("invalid_operation_id", gettext("Supply a UUID Idempotency-Key.")) from exc
             if "operation_id" in body and body["operation_id"] != operation:
-                raise SavedDetailsError("invalid_operation_id", "The operation ID and Idempotency-Key must match.")
+                raise SavedDetailsError("invalid_operation_id", gettext("The operation ID and Idempotency-Key must match."))
             return body, operation
         return body
 

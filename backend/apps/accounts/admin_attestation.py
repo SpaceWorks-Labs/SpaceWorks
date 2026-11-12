@@ -10,6 +10,7 @@ from unfold.admin import ModelAdmin
 from apps.accounts.models_attestation import PlatformAttestationSettings
 from config.admin_access import SuperuserOnlyModelAdmin
 from config.admin_audit import AuditedControlChangeMixin
+from django.utils.translation import gettext
 
 
 class PlatformAttestationSettingsForm(forms.ModelForm):
@@ -34,7 +35,7 @@ class PlatformAttestationSettingsForm(forms.ModelForm):
                 if not isinstance(key, rsa.RSAPrivateKey):
                     raise ValueError("RSA key required")
             except (KeyError, ValueError, TypeError, AttributeError, UnsupportedAlgorithm) as exc:
-                raise forms.ValidationError("Enter a Google service-account JSON with an RSA private key.") from exc
+                raise forms.ValidationError(gettext("Enter a Google service-account JSON with an RSA private key.")) from exc
         return raw
 
     def save(self, commit=True):

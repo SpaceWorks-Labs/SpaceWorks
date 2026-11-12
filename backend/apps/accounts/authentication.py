@@ -93,6 +93,8 @@ class SpaceWorksJWTAuthentication(JWTAuthentication):
                 raise PermissionDenied(gettext("Native makerspace selection requires a device grant."))
             _assert_source_gate(request, user)
             request.session_authority = surface
+            from apps.makerspaces.handle_gate import assert_handle_chosen
+            assert_handle_chosen(request, user)  # decision 308: typed `handle_required`
             return authenticated
         staff = grant.authority == "staff"
         if grant.authority in ("staff", "event") and token.get("mfa_source") != "verified":
@@ -120,6 +122,8 @@ class SpaceWorksJWTAuthentication(JWTAuthentication):
         record_device_activity(grant, getattr(request, "selected_makerspace_membership", None))
         from apps.accounts.native_event_grants import session_authority_for
         request.session_authority = session_authority_for(grant) if grant.authority != "member" else surface
+        from apps.makerspaces.handle_gate import assert_handle_chosen
+        assert_handle_chosen(request, user)  # decision 308: typed `handle_required`
         return user, token
 
     def _authenticate_claim(self, request):

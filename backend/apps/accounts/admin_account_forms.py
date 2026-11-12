@@ -5,6 +5,7 @@ from unfold.forms import UserChangeForm, UserCreationForm
 
 from .models import User
 from .staff_identity import PLATFORM_KIND, is_platform
+from django.utils.translation import gettext
 
 
 class PlatformUserCreationForm(UserCreationForm):
@@ -31,5 +32,5 @@ class AccountUserChangeForm(UserChangeForm):
         role = cleaned.get("role", original.role)
         platform = is_platform(original)
         if is_superuser != platform or (role == User.Role.SUPERADMIN) != platform:
-            raise forms.ValidationError("Create a separate platform account; account kinds cannot be changed.")
+            raise forms.ValidationError(gettext("Create a separate platform account; account kinds cannot be changed."))
         return cleaned

@@ -12,6 +12,7 @@ covers ``actor_id``, which never changes). The source's factor never moves (Q3);
 survivor becomes staff with no factor, the 3-day staff-MFA grace opens (#128 C-1).
 """
 
+from django.utils.translation import gettext
 import uuid
 
 from django.db import DatabaseError, IntegrityError, connection, transaction
@@ -41,7 +42,7 @@ def confirm(request, intent_id, preview_sha256):
     try:
         walk.assert_classified()
     except walk.UnclassifiedReference:
-        raise MergeRefused(MERGE_NOT_ALLOWED, "Linking accounts is unavailable on this server.") from None
+        raise MergeRefused(MERGE_NOT_ALLOWED, gettext("Linking accounts is unavailable on this server.")) from None
     key = _snapshot_key(survivor)
     result, addresses = _merge(survivor.pk, intent_id, preview_sha256, key)
     from apps.accounts.account_merge_mail import send_linked
@@ -78,7 +79,7 @@ def _lock_spaces(ids):
         try:
             assert_write_allowed(pk)
         except SourceMigrationGateClosed:
-            raise MergeRefused(TENANT_GATED, "A makerspace of one account is temporarily unavailable.") from None
+            raise MergeRefused(TENANT_GATED, gettext("A makerspace of one account is temporarily unavailable.")) from None
     list(Makerspace.objects.select_for_update().filter(pk__in=ids).order_by("pk"))
 
 
@@ -93,7 +94,7 @@ def _merge(survivor_id, intent_id, preview_sha256, key):
     intent = locked_intent(survivor, intent_id)
     now = timezone.now()
     if intent.state != Intent.State.PROVED or now >= intent.expires_at or intent.source is None:
-        raise MergeRefused(PROOF_EXPIRED, "Prove the other account again.")
+        raise MergeRefused(PROOF_EXPIRED, gettext("Prove the other account again."))
     source = intent.source
     spaces = _spaces(survivor.pk, source.pk)
     _lock_spaces(spaces)
@@ -101,7 +102,7 @@ def _merge(survivor_id, intent_id, preview_sha256, key):
     # The person confirms exactly what they reviewed (before credentials are revoked,
     # which changes the source's session rows but nothing the preview shows).
     if not preview_sha256 or build(survivor, source)["preview_sha256"] != preview_sha256:
-        raise MergeRefused(PREVIEW_STALE, "The accounts changed. Review the preview again.")
+        raise MergeRefused(PREVIEW_STALE, gettext("The accounts changed. Review the preview again."))
     revoke_all_credentials(source, reason="account_merge", actor=survivor)
     survivor = User.objects.select_for_update().get(pk=survivor.pk)
     source = User.objects.select_for_update().get(pk=source.pk)
@@ -110,12 +111,14 @@ def _merge(survivor_id, intent_id, preview_sha256, key):
     require_survivor(survivor)
     _refuse(source_refusal(source, survivor))
     if set(_spaces(survivor.pk, source.pk)) != set(spaces):
-        raise MergeRefused(PREVIEW_STALE, "The accounts changed. Review the preview again.")
+        raise MergeRefused(PREVIEW_STALE, gettext("The accounts changed. Review the preview again."))
     preview = build(survivor, source)
     addresses = [survivor.email, source_email(source)]
     run_id = uuid.uuid4()
     with connection.cursor() as cursor:
         cursor.execute("SELECT set_config('app.account_unification_run_id', %s, true)", [str(run_id)])
+    from apps.makerspaces.account_profile_account_merge import merge_profiles
+    merge_profiles(source.pk, survivor.pk)  # two profiles for one person: combine content (decision 305)
     counts = _walk(source.pk, survivor.pk, now)
     merged = record(survivor, source, intent, run_id, preview, counts, key, now)
     shell(source, survivor, now)
@@ -146,7 +149,7 @@ def _prove_constraints():
             cursor.execute("SET CONSTRAINTS ALL IMMEDIATE")
             cursor.execute("SET CONSTRAINTS ALL DEFERRED")
     except IntegrityError:
-        raise MergeRefused(MERGE_NOT_ALLOWED, "These accounts cannot be linked automatically.") from None
+        raise MergeRefused(MERGE_NOT_ALLOWED, gettext("These accounts cannot be linked automatically.")) from None
 
 
 def _walk(source_id, survivor_id, now):

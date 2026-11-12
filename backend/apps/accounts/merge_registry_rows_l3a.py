@@ -8,6 +8,7 @@ _HISTORY = "Supervision history; actor_ids_for follows the alias."
 ROWS = (
     (R, "machines.EventInductionLink", "created_by", _ATTRIBUTION),
     (R, "machines.GuestCertificationGrant", "user granted_by revoked_by", _ATTRIBUTION),
+    (R, "machines.MachineAccessGrant", "member granted_by revoked_by", _ATTRIBUTION),
     (K, "machines.SupervisedSession", "instructor closed_by", _HISTORY),
     (K, "machines.SupervisedParticipant", "user added_by", "One row per session and person; history stays on the shell."),
     (K, "machines.SupervisedUse", "user instructor", _HISTORY),

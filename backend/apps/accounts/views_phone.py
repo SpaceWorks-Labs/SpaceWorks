@@ -242,17 +242,36 @@ class PhoneLinkConfirmView(APIView):
 
 
 class PhoneUnlinkView(APIView):
-    """Detach the number. Always safe: every account keeps an email credential."""
+    """Detach the number, unless it is the person's last way in (409 ``last_credential``).
+
+    A phone-only member (no password, provider or passkey) would otherwise sign themselves out
+    for good. A walk-in record is exempt: staff can always hand it a fresh claim code.
+    """
 
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
         tags=["Auth"],
         summary="Unlink the phone number",
-        responses={200: PhoneStatusSerializer, **errors(401, 403)},
+        responses={200: PhoneStatusSerializer, **errors(401, 403, 409)},
     )
     def delete(self, request):
-        user = request.user
+        from django.db import transaction
+
+        from apps.accounts.credential_inventory import would_strand
+        from apps.accounts.models import User
+
+        with transaction.atomic():
+            user = User.objects.select_for_update().get(pk=request.user.pk)
+            if user.phone_e164 and not user.is_walk_in and would_strand(user, drop_phone=True):
+                return Response({"detail": gettext("This number is your only way to sign in. Add a password, "
+                                                   "a sign-in provider or a passkey first."),
+                                 "code": "last_credential"}, status=status.HTTP_409_CONFLICT)
+            self._unlink(user)
+        return Response({"phone_e164": "", "verified": False})
+
+    @staticmethod
+    def _unlink(user):
         if user.phone_e164:
             audit_events.record_auth_event(
                 user,
@@ -265,4 +284,3 @@ class PhoneUnlinkView(APIView):
             # so update_fields cannot drop the write.
             user.phone_verified_at = None
             user.save(update_fields=["phone_e164", "phone_verified_at"])
-        return Response({"phone_e164": "", "verified": False})

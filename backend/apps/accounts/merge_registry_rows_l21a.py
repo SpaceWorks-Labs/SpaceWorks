@@ -19,4 +19,5 @@ ROWS = (
     (K, "events.EventCrewMember", "decided_by", _HISTORY),
     (K, "events.EventCheckInList", "created_by", _HISTORY),
     (K, "events.EventCheckInListScan", "actor", _HISTORY),
+    (K, "events.EventCheckInListScan", "undone_by", _HISTORY),
 )

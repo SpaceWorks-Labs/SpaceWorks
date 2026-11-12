@@ -1,4 +1,5 @@
 """Account ownership never derives from a tenant membership or staff grant."""
+from django.utils.translation import gettext
 from django.contrib.auth import get_user_model
 
 from apps.accounts.staff_identity import is_person
@@ -14,7 +15,7 @@ def require_owner(actor_id, *, lock=False):
     if not user or not user.is_active or not is_person(user) or (
         user.access_status != "active" or user.is_walk_in or user.is_tenant_dump_stub or user.retired_at is not None
     ):
-        raise SavedDetailsError("permission_denied", "Use an active member account.", 403)
+        raise SavedDetailsError("permission_denied", gettext("Use an active member account."), 403)
     return user
 
 

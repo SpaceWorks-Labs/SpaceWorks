@@ -13,7 +13,7 @@ once the mail is sent; an unsent alert keeps them until it expires
 (``SECURITY_ALERT_LINK_TTL_DAYS``), and retention deletes the row 30 days after that.
 """
 
-from django.utils.translation import gettext
+from django.utils.translation import gettext, gettext_noop
 import hashlib
 import logging
 import secrets
@@ -34,10 +34,10 @@ TOKEN_SALT = "accounts.security_alert"
 PLACEHOLDER = "p"  # a sha256 hex digest never starts with "p": the alert is not sent yet
 LOCKOUT_EVERY = timedelta(hours=1)
 SUBJECTS = {
-    ALERT_NEW_DEVICE: "New sign-in to your Space Works account",
-    ALERT_PASSWORD_CHANGED: "Your Space Works password was changed",
-    ALERT_MFA_CHANGED: "Your two-step sign-in changed",
-    ALERT_LOCKOUT: "Your Space Works account was locked",
+    ALERT_NEW_DEVICE: gettext_noop("New sign-in to your Space Works account"),
+    ALERT_PASSWORD_CHANGED: gettext_noop("Your Space Works password was changed"),
+    ALERT_MFA_CHANGED: gettext_noop("Your two-step sign-in changed"),
+    ALERT_LOCKOUT: gettext_noop("Your Space Works account was locked"),
 }
 EVENTS = {
     ALERT_NEW_DEVICE: "security_login_new_device", ALERT_PASSWORD_CHANGED: "security_password_changed",
@@ -120,10 +120,13 @@ def deliver(alert_id):
     context = {"user": row.user, "alert": row, "link": link_for(row, nonce),
                "expires_days": settings.SECURITY_ALERT_LINK_TTL_DAYS}
     try:
+        from config.locale_resolution import override_for
+        with override_for(user=row.user):  # the recipient's language, not the request's
+            subject = gettext(SUBJECTS[row.kind])
+            text_body = render_to_string(f"email/security_{row.kind}.txt", context)
+            html_body = render_to_string(f"email/security_{row.kind}.html", context)
         log = dispatch_email(
-            to_email=row.user.email, subject=SUBJECTS[row.kind],
-            text_body=render_to_string(f"email/security_{row.kind}.txt", context),
-            html_body=render_to_string(f"email/security_{row.kind}.html", context),
+            to_email=row.user.email, subject=subject, text_body=text_body, html_body=html_body,
             makerspace=None, stream="account", event=EVENTS[row.kind], audience="user",
             connection="platform", persist_body=False, sync=True, recipient_id=row.user_id)
         from apps.integrations.transient_mail import accepted
@@ -147,10 +150,13 @@ def send_login_code(user_id, code):
     minutes = max(1, settings.LOGIN_CODE_TTL_SECONDS // 60)
     base = (settings.PUBLIC_APP_BASE_URL or "").rstrip("/")
     context = {"user": user, "code": code, "minutes": minutes, "reset_link": f"{base}/reset-password"}
+    from config.locale_resolution import override_for
+    with override_for(user=user):
+        subject = gettext("Your Space Works sign-in code")
+        text_body = render_to_string("email/security_login_code.txt", context)
+        html_body = render_to_string("email/security_login_code.html", context)
     log = dispatch_email(
-        to_email=user.email, subject=gettext("Your Space Works sign-in code"),
-        text_body=render_to_string("email/security_login_code.txt", context),
-        html_body=render_to_string("email/security_login_code.html", context),
+        to_email=user.email, subject=subject, text_body=text_body, html_body=html_body,
         makerspace=None, stream="account", event=LOGIN_CODE_EVENT, audience="user",
         connection="platform", persist_body=False, sync=True, recipient_id=user.pk)
     from apps.integrations.transient_mail import accepted

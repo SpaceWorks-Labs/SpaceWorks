@@ -63,6 +63,7 @@ class MemberSignUpView(APIView):
             email=data["email"],
             phone=data["phone"],
             password=data["password"],
+            handle=data.get("handle", ""),
         )
         return _generic_ack()
 

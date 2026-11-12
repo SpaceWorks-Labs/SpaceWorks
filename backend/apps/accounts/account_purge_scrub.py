@@ -54,7 +54,8 @@ def _profiles(user, makerspace_id, journal_user):
     for profile in _rows("makerspaces.MemberProfile", membership__user=user,
                          membership__makerspace_id=makerspace_id):
         keys = [profile.avatar_key, *profile.projects.values_list("image_key", flat=True)]
-        for key in set(keys) - {""}:
+        # `account/<user_id>/` keys are charged to no space and deleted by the account-profile purge.
+        for key in {k for k in keys if k and not k.startswith("account/")}:
             # A missing object has no bytes to account for. A storage outage raises
             # and rolls back, leaving both the owning row and its key for a retry.
             size = public_image_storage.object_size(key)

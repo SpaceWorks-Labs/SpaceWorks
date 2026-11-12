@@ -13,6 +13,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts.models_oidc import OidcProvider
+from apps.accounts.oidc_provider_guards import oidc_change_refusal, proposed_row
 from apps.accounts.reauthentication_permissions import RecentReauthenticationMixin
 from apps.admin_api.permissions import IsActiveSuperAdmin
 from apps.audit import services as audit
@@ -63,7 +64,12 @@ class OidcProviderDetailView(RecentReauthenticationMixin, APIView):
         provider = get_object_or_404(OidcProvider, pk=pk)
         body = OidcProviderSerializer(provider, data=request.data, partial=True)
         body.is_valid(raise_exception=True)
-        changed = sorted(field for field, value in body.validated_data.items() if getattr(provider, field) != value)
+        # Same refusals as the /control/ form: never re-point linked sign-ins, never strand anyone.
+        refusal = oidc_change_refusal(provider, proposed_row(provider, body.validated_data))
+        if refusal:
+            return Response({"detail": refusal, "code": "oidc_provider_change_refused"},
+                            status=status.HTTP_400_BAD_REQUEST)
+        changed =sorted(field for field, value in body.validated_data.items() if getattr(provider, field) != value)
         provider = body.save()
         _record(request.user, provider, created=False, changed=changed)
         return Response(OidcProviderSerializer(provider).data)

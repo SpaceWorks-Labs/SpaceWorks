@@ -91,7 +91,7 @@ admin-email-log-retry admin-email-logs admin-email-template-detail admin-email-t
 admin-email-template-reset admin-email-templates admin-event-audience-organizations
 admin-event-badge-template admin-event-badges-pdf admin-event-broadcast-cancel
 admin-event-broadcast-queue admin-event-broadcasts admin-event-bulk-invites admin-event-cancel
-admin-event-categories admin-event-category-detail admin-event-certificate-artwork
+admin-event-categories admin-event-category-detail admin-event-certificate-artwork admin-event-certificate-artwork-by-resource
 admin-event-certificate-artwork-finalize admin-event-certificate-artwork-presign
 admin-event-certificate-download admin-event-certificate-preview admin-event-certificate-reissue
 admin-event-certificate-revoke admin-event-certificate-template admin-event-check-in-offline-roster
@@ -152,7 +152,10 @@ admin-organization-email-sender admin-organization-links admin-organization-list
 admin-organization-membership-detail
 admin-organization-review admin-organization-review-queue admin-organization-resubmit
 admin-organization-member-rollup
-admin-organization-memberships admin-organized-event-attendance admin-organized-event-list admin-presence-check-in-guests admin-presence-end admin-presence-privacy
+admin-organization-memberships admin-organized-event-attendance admin-organized-event-list admin-presence-check-in-guests admin-presence-end admin-presence-privacy admin-presence-related
+admin-presence-displays admin-presence-display-detail admin-presence-display-link admin-presence-display-rotate
+admin-presence-display-players admin-anthias-players admin-anthias-player admin-anthias-player-test
+admin-anthias-player-sync admin-presence-now-config
 admin-presence-sessions-current admin-presence-start admin-recurring-bookings admin-reorder-draft
 admin-reorder-suggestions admin-return-policy admin-role-list-create admin-saved-view-detail
 admin-saved-views admin-search admin-series-staff-grants admin-series-staff-invites
@@ -256,6 +259,8 @@ STAFF_ROLE_ROUTES = frozenset({
 })
 # U-B: a person redeems their own staff invitation (signed in, before any staff role).
 MEMBER_ROUTES |= {"auth-staff-invitation-accept"}
+# Decision 305c: a signed-in reader opens a profile by account id (member-level; the view re-checks the audience).
+MEMBER_ROUTES |= {"profile-by-account"}
 ACCOUNT_MERGE_ROUTES = frozenset({
     "auth-account-merge-start", "auth-account-merge-prove", "auth-account-merge-resend",
     "auth-account-merge-preview", "auth-account-merge-confirm", "auth-account-merge-cancel",

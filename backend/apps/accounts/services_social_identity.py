@@ -6,7 +6,6 @@ from django.utils import timezone
 from apps.accounts.models import User
 from apps.accounts.models_social import SocialIdentity, SocialSurface
 from apps.accounts.principal_guards import is_anonymous_requester
-from apps.accounts.social_staff_providers import surviving_identities
 from apps.accounts.staff_identity import PERSON_KIND, is_person, person_q
 
 
@@ -90,6 +89,12 @@ def resolve_social_identity(
             user.set_unusable_password()
             try:
                 user.save()
+                # Decision 308: a handle is claimed atomically with the account. The provider flow
+                # is a redirect with no form, so the best suggestion is taken here and the person
+                # may change it once without the 30-day wait (the blocking step is for accounts
+                # that end up with none).
+                from apps.makerspaces.public_profile_handles import claim_for_signup
+                claim_for_signup(user)
             except IntegrityError as exc:
                 # A concurrent member signup/provider login may claim the email or
                 # username after our lookup. Roll back; a fresh login resolves it.
@@ -141,7 +146,9 @@ def _explicit_link(identity, user, provider, subject):
 
 
 def unlink_social_identity(user, provider):
-    from apps.accounts.login_methods import password_login_enabled
+    # One "would this strand them?" answer for every guard: a verified phone or a passkey is
+    # a way in too, so a member who has one may drop their last provider (credential_inventory).
+    from apps.accounts.credential_inventory import would_strand
 
     with transaction.atomic():
         locked = User.objects.select_for_update().get(pk=user.pk)
@@ -150,10 +157,7 @@ def unlink_social_identity(user, provider):
         ).first()
         if identity is None:
             raise SocialResolutionError("identity_not_found", 404)
-        other_exists = surviving_identities(
-            locked, SocialIdentity.objects.filter(user=locked).exclude(pk=identity.pk)
-        ).exists()
-        if not (password_login_enabled() and locked.has_usable_password()) and not other_exists:
+        if would_strand(locked, drop_identity_pk=identity.pk):
             raise SocialResolutionError("last_credential", 409)
         identity.delete()
 

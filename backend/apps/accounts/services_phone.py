@@ -16,7 +16,7 @@ so an SMS code is a weaker factor than a password:
   cannot be used to test which numbers have accounts.
 """
 
-from django.utils.translation import gettext
+from django.utils.translation import gettext, gettext_lazy
 import hashlib
 import hmac
 import logging
@@ -44,7 +44,7 @@ RESEND_COOLDOWN = timedelta(seconds=60)
 # signs someone in deserves a narrower window than one that confirms an address.
 CHALLENGE_TTL = timedelta(minutes=5)
 MAX_FAILED_ATTEMPTS = 5
-GENERIC_CONFIRM_ERROR = "Invalid or expired verification code."
+GENERIC_CONFIRM_ERROR = gettext_lazy("Invalid or expired verification code.")
 GENERIC_START_ACK = (
     "If that number is registered, a verification code has been sent to it."
 )

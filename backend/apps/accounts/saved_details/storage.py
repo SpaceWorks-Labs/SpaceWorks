@@ -1,4 +1,5 @@
 """Account-owned storage adapter; bounded SDK calls and no Events dependency."""
+from django.utils.translation import gettext
 from datetime import timedelta
 import hashlib
 
@@ -59,7 +60,7 @@ def verify_resume(asset):
         store = client()
         head = store.head_object(Bucket=bucket(), Key=asset.staging_key)
         if head["ContentLength"] != asset.size_bytes or asset.size_bytes > MAX_RESUME_BYTES:
-            raise SavedDetailsError("invalid_upload_size", "Upload the declared PDF size.")
+            raise SavedDetailsError("invalid_upload_size", gettext("Upload the declared PDF size."))
         source = {"Bucket": bucket(), "Key": asset.staging_key}
         if head.get("VersionId"):
             source["VersionId"] = head["VersionId"]
@@ -70,7 +71,7 @@ def verify_resume(asset):
         finally:
             response["Body"].close()
         if len(data) != asset.size_bytes or not data.startswith(b"%PDF-"):
-            raise SavedDetailsError("invalid_pdf", "Upload a valid PDF résumé.")
+            raise SavedDetailsError("invalid_pdf", gettext("Upload a valid PDF résumé."))
         validate_pdf(data)
         scan_status = scan_pdf(data)
         result = store.put_object(Bucket=bucket(), Key=asset.object_key, Body=data, ContentType="application/pdf")
@@ -96,7 +97,7 @@ def scan_pdf(data):
     except Exception as exc:
         raise unavailable("scanner_unavailable") from exc
     if result != "clean":
-        raise SavedDetailsError("unsafe_pdf", "The résumé did not pass the file safety check.")
+        raise SavedDetailsError("unsafe_pdf", gettext("The résumé did not pass the file safety check."))
     return "clean"
 
 

@@ -1,5 +1,6 @@
 {% extends "admin/base_site.html" %}
+{% load i18n %}
 {% block content %}
-<p>Personal details are masked for you until you open a window. A window lasts 30 minutes, needs a reason and a recent identity check, and is recorded in the audit log of every space this person belongs to.</p>
-<form method="post">{% csrf_token %}{{ form.as_p }}<button type="submit">Reveal for 30 minutes</button></form>
+<p>{% translate "Personal details are masked for you until you open a window. A window lasts 30 minutes, needs a reason and a recent identity check, and is recorded in the audit log of every space this person belongs to." %}</p>
+<form method="post">{% csrf_token %}{{ form.as_p }}<button type="submit">{% translate "Reveal for 30 minutes" %}</button></form>
 {% endblock %}

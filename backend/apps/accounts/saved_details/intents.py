@@ -1,4 +1,5 @@
 """Encrypted pre-event preparation and account-only postcommit application."""
+from django.utils.translation import gettext
 from dataclasses import dataclass, field
 from datetime import timedelta
 import hashlib
@@ -68,16 +69,16 @@ def validate_form_save_conflicts(forms):
     for slot, (form, choices, versions) in sorted(forms.items()):
         require_form_slot(slot)
         if not isinstance(form, ValidatedSaveInput):
-            raise SavedDetailsError("invalid_form_input", "Use the validated owner form.")
+            raise SavedDetailsError("invalid_form_input", gettext("Use the validated owner form."))
         require_subject(form.subject)
         scope = (form.subject.event_id, form.subject.owner_member_id)
         if (owner is not None and owner != scope) or (slot != "base") != (str(form.subject.kind) == "stage_response"):
-            raise SavedDetailsError("invalid_subject", "Forms must belong to the same participant.", 409)
+            raise SavedDetailsError("invalid_subject", gettext("Forms must belong to the same participant."), 409)
         owner = scope
         for key, value in selected_values(form, choices, versions).items():
             prior = selected_by_key.get(key)
             if prior and (prior[1] != value or prior[2] != versions[key]):
-                raise SavedDetailsError("saved_detail_form_conflict", "Review conflicting save choices across forms.", 409,
+                raise SavedDetailsError("saved_detail_form_conflict", gettext("Review conflicting save choices across forms."), 409,
                                         form_slots=[prior[0], slot], field_keys=[key])
             selected_by_key[key] = (slot, value, versions[key])
 
@@ -90,14 +91,14 @@ def prepare_saved_detail_intent(*, actor_id, subject, validated_form, choices, b
     require_subject(subject)
     require_form_operation(outer_operation_id, form_slot, subject)
     if not isinstance(validated_form, ValidatedSaveInput) or validated_form.subject != subject or subject.owner_member_id != actor_id:
-        raise SavedDetailsError("invalid_form_input", "Use the validated owner form.")
+        raise SavedDetailsError("invalid_form_input", gettext("Use the validated owner form."))
     if not isinstance(operation_id, UUID):
-        raise SavedDetailsError("invalid_save_choices", "Check save choices and operation ID.")
+        raise SavedDetailsError("invalid_save_choices", gettext("Check save choices and operation ID."))
     selected = selected_values(validated_form, choices, base_versions)
     if not selected:
         return None
     if len(canonical(selected).encode()) > 32_768:
-        raise SavedDetailsError("saved_details_too_large", "Saved details exceed the size limit.", 413)
+        raise SavedDetailsError("saved_details_too_large", gettext("Saved details exceed the size limit."), 413)
     key = prepare_account_key(actor_id)
     intent = SavedDetailUpdateIntent(id=uuid4(), user_id=actor_id)
     ciphertext = seal(selected, intent, "encrypted_payload", key).encode()
@@ -116,24 +117,24 @@ def insert_prepared_locked(prepared, *, subject, locks):
     if not connection.in_atomic_block or not isinstance(prepared, PreparedSave) or prepared._proof is not _SEAL:
         raise RuntimeError("An in-process preparation and domain transaction are required.")
     if timezone.now() >= prepared.expires_at:
-        raise SavedDetailsError("save_preparation_expired", "Review saved details and submit again.", 409)
+        raise SavedDetailsError("save_preparation_expired", gettext("Review saved details and submit again."), 409)
     require_subject(prepared.subject)
     require_subject(subject)
     prior = prepared.subject
     same = (prior.event_id, prior.owner_member_id, prior.kind) == (subject.event_id, subject.owner_member_id, subject.kind)
     binding = prior.subject_id == subject.subject_id if prior.subject_id is not None else prior.creation_operation_id == prepared.operation_id
     if not same or not binding or subject.subject_id is None or subject.owner_member_id not in locks.account_ids or locks.event_id != subject.event_id:
-        raise SavedDetailsError("invalid_subject", "This preparation belongs to another form.", 409)
+        raise SavedDetailsError("invalid_subject", gettext("This preparation belongs to another form."), 409)
     from .subject_binding import require_binding
     binding = require_binding(prepared, subject, locks)
     if prepared.form_sha256 != binding.form_sha256:
-        raise SavedDetailsError("form_revision_changed", "Review the revised form.", 409)
+        raise SavedDetailsError("form_revision_changed", gettext("Review the revised form."), 409)
     if prepared.event_date_revision != binding.event_date_revision:
-        raise SavedDetailsError("event_date_changed", "Reload the form for the revised event date.", 409)
+        raise SavedDetailsError("event_date_changed", gettext("Reload the form for the revised event date."), 409)
     if prepared.canonical_answer_sha256 != binding.canonical_answer_sha256:
-        raise SavedDetailsError("answers_changed", "Review the changed answers.", 409)
+        raise SavedDetailsError("answers_changed", gettext("Review the changed answers."), 409)
     if set(binding.chosen_fields) != set(prepared.chosen_fields):
-        raise SavedDetailsError("save_choices_changed", "Review the changed save choices.", 409)
+        raise SavedDetailsError("save_choices_changed", gettext("Review the changed save choices."), 409)
     verify_prepared_epoch(subject.owner_member_id, prepared.key_epoch, version=prepared.key_version)
     row = SavedDetailUpdateIntent(
         id=prepared.intent_id, user_id=subject.owner_member_id, operation_uuid=prepared.operation_id,
@@ -232,7 +233,7 @@ def intent_status(actor_id, operation_id):
     require_owner(actor_id)
     row = SavedDetailUpdateIntent.objects.filter(user_id=actor_id, operation_uuid=operation_id).first()
     if row is None:
-        raise SavedDetailsError("not_found", "Saved detail update not found.", 404)
+        raise SavedDetailsError("not_found", gettext("Saved detail update not found."), 404)
     result = {"operation_id": str(row.operation_uuid), "state": row.state, "fields": row.field_status, "retryable": row.state == "pending"}
     if row.failure_code:
         result["code"] = row.failure_code

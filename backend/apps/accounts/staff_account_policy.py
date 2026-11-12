@@ -83,12 +83,12 @@ def require_authority(actor, space, *, target=None, roles=None):
         if not is_person(target):
             raise PermissionDenied(gettext("Staff roles belong to a personal account."))
         if target.pk == actor.pk:
-            raise StaffRoleRefused(SELF_CHANGE, "You cannot change your own staff roles.")
+            raise StaffRoleRefused(SELF_CHANGE, gettext("You cannot change your own staff roles."))
         row = MakerspaceMembership.staff_tracks.filter(user=target, makerspace=space).first()
         if row is not None and SPACE_MANAGER in role_keys(row) and not superadmin:
-            raise StaffRoleRefused(SM_SUPERADMIN_ONLY, "Only the platform administrator manages Space Managers.")
+            raise StaffRoleRefused(SM_SUPERADMIN_ONLY, gettext("Only the platform administrator manages Space Managers."))
     if roles is not None and any(role.slug == SPACE_MANAGER for role in roles) and not superadmin:
-        raise StaffRoleRefused(SM_SUPERADMIN_ONLY, "Only the platform administrator grants the Space Manager role.")
+        raise StaffRoleRefused(SM_SUPERADMIN_ONLY, gettext("Only the platform administrator grants the Space Manager role."))
     return superadmin
 
 
@@ -126,7 +126,7 @@ def protect_last_manager(space, membership):
               and row.user.access_status == User.AccessStatus.ACTIVE
               and not row.user.is_tenant_dump_stub and row.user.retired_at is None]
     if membership.pk in {row.pk for row in active} and len(active) <= 1:
-        raise StaffRoleRefused(LAST_MANAGER, "The last active Space Manager cannot be removed or demoted.")
+        raise StaffRoleRefused(LAST_MANAGER, gettext("The last active Space Manager cannot be removed or demoted."))
 
 
 @contextmanager
@@ -139,7 +139,7 @@ def staff_write(space_id):
         with tenant_write(space_id):
             yield
     except SourceMigrationGateError:
-        raise StaffRoleRefused(TENANT_GATED, "This makerspace is temporarily read-only.") from None
+        raise StaffRoleRefused(TENANT_GATED, gettext("This makerspace is temporarily read-only.")) from None
 
 
 def check_staff_quota(space):
@@ -148,4 +148,4 @@ def check_staff_quota(space):
     try:
         limits.check_quota(space, "staff", adding=1)
     except ValidationError as exc:
-        raise StaffRoleRefused(QUOTA_EXCEEDED, "This makerspace has reached its staff limit.") from exc
+        raise StaffRoleRefused(QUOTA_EXCEEDED, gettext("This makerspace has reached its staff limit.")) from exc

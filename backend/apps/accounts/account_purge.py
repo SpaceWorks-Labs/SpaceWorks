@@ -158,6 +158,10 @@ def _global_rows(user):
     # Includes unselected (NULL-makerspace) activity. Wait for every tenant gate
     # before removing this grant-owned history; the revoked grants themselves stay.
     DeviceActivityDay.objects.filter(grant__user=user).delete()
+    # The global profile (decision 305) is account-level: its rows go with the account and its public
+    # image objects are deleted after commit (best effort; a failed delete leaves an unreferenced object).
+    from apps.makerspaces.account_profile_purge import purge_account_profile
+    purge_account_profile(user)
     # Platform-addressed logs have no tenant gate. Tenant logs were scrubbed above.
     scrub_email_logs(user, None, address)
     for label in ("integrations.PushDevice", "notifications.NotificationInboxRow"):

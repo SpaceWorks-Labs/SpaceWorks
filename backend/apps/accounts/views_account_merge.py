@@ -6,6 +6,7 @@ throttles; proofs and confirm have their own budget. Confirm also needs recent
 re-authentication, and staff MFA when the person already holds elevated authority.
 """
 
+from django.utils.translation import gettext
 import json
 
 from django.db import transaction
@@ -123,7 +124,7 @@ class AccountMergePreviewView(_MergeView):
         with transaction.atomic():
             intent = proofs.locked_intent(request.user, intent_id)
             if intent.state != Intent.State.PROVED or timezone.now() >= intent.expires_at or intent.source is None:
-                raise MergeRefused(PROOF_EXPIRED, "Prove the other account again.")
+                raise MergeRefused(PROOF_EXPIRED, gettext("Prove the other account again."))
             body = build(request.user, intent.source)
             intent.preview_sha256 = body["preview_sha256"]
             intent.save(update_fields=["preview_sha256"])

@@ -43,11 +43,12 @@ from .merge_registry_rows_operations import ROWS as _OPERATIONS
 from .merge_registry_rows_superadmin import ROWS as _SUPERADMIN
 from .merge_registry_rows_guest_passes import ROWS as _GUEST_PASSES
 from .merge_registry_rows_l3b import ROWS as _L3B
+from .merge_registry_rows_account_profile import ROWS as _ACCOUNT_PROFILE
 from .merge_registry_types import (  # noqa: F401 -- re-exported
     KEEP_ON_SHELL, REPOINT, UNIQUE_RESOLVE, compose,
 )
 
-USER_REFERENCES, USER_ID_COLUMNS = compose(_ACCOUNTS, _COMMUNITY, _EVENTS, _OPERATIONS, _MEMBERSHIP, _FINANCE, _PRICING, _L12, _L23, _L16, _L3, _L3A, _L6, _L18, _L21A, _L21B, _L22, _SUBMIT_CONTENT, _HACKMONEY, _PEOPLES_CHOICE, _CERTIFICATES, _SUPERADMIN, _TOKENS, _GUEST_PASSES, _L3B, _E_B2_BADGES)
+USER_REFERENCES, USER_ID_COLUMNS = compose(_ACCOUNTS, _COMMUNITY, _EVENTS, _OPERATIONS, _MEMBERSHIP, _FINANCE, _PRICING, _L12, _L23, _L16, _L3, _L3A, _L6, _L18, _L21A, _L21B, _L22, _SUBMIT_CONTENT, _HACKMONEY, _PEOPLES_CHOICE, _CERTIFICATES, _SUPERADMIN, _TOKENS, _GUEST_PASSES, _L3B, _E_B2_BADGES, _ACCOUNT_PROFILE)
 
 
 def disposition_for(label, field_name):

@@ -15,7 +15,7 @@ proves the address for THIS acceptance only. Codes are stored as HMAC digests bo
 the invitation and the person, live 10 minutes and allow 5 failures per invitation.
 """
 
-from django.utils.translation import gettext
+from django.utils.translation import gettext, gettext_lazy
 import logging
 from datetime import timedelta
 
@@ -36,7 +36,7 @@ from apps.makerspaces.guards import require_feature, require_module
 from apps.makerspaces.models import Makerspace
 
 logger = logging.getLogger(__name__)
-GENERIC_ERROR = "Unable to accept this invitation. Check the link or ask for a new one."
+GENERIC_ERROR = gettext_lazy("Unable to accept this invitation. Check the link or ask for a new one.")
 PURPOSE = "staff_invitation"
 TTL, COOLDOWN, MAX_FAILURES = timedelta(minutes=10), timedelta(seconds=60), 5
 
@@ -63,7 +63,7 @@ def _require_redeemer(user, row):
         raise PermissionDenied(gettext("Sign in to your own account to accept a staff invitation."))
     if not user.email or user.email.strip().lower() != row.email.strip().lower():
         raise StaffRoleRefused(INVITE_EMAIL_MISMATCH,
-                               "This invitation was sent to a different email address. Sign in to that account.")
+                               gettext("This invitation was sent to a different email address. Sign in to that account."))
 
 
 def _lock_redeemable(user, token, makerspace_slug, space_id):
@@ -155,7 +155,7 @@ def _grant(user, row):
     # The inviter's authority is re-checked now: a demoted inviter's link stops working.
     require_authority(creator, space, target=user, roles=roles)
     if MakerspaceMembership.staff_tracks.filter(makerspace=space, user=user).exists():
-        raise StaffRoleRefused(ALREADY_STAFF, "You already have a staff role here.")
+        raise StaffRoleRefused(ALREADY_STAFF, gettext("You already have a staff role here."))
     check_staff_quota(space)
     membership = grant_staff_role(makerspace=space, user=user, roles=roles, actor=creator,
                                   machine_type_ids=list(row.machine_scope_snapshot),

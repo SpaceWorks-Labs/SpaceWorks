@@ -13,6 +13,7 @@
 Only credentials registered on the request's RP ID are offered or accepted.
 """
 
+from django.utils.translation import gettext
 from django.db import transaction
 
 from apps.accounts.login_security_contract import (
@@ -36,7 +37,7 @@ def begin_login(request):
     from apps.accounts.login_methods import passkeys_enabled
     origin, rp_id = request_origin_and_rp_id(request)
     if not passkeys_enabled():
-        raise PasskeysUnavailable("Passkeys are turned off on this deployment.")
+        raise PasskeysUnavailable(gettext("Passkeys are turned off on this deployment."))
     return ceremonies.assertion_options(CEREMONY_LOGIN, origin=origin, rp_id=rp_id)
 
 
@@ -93,7 +94,7 @@ def _live_challenge(raw):
     challenge = MFAChallenge.objects.select_related("user").filter(token_digest=digest(raw)).first()
     if (challenge is None or challenge.consumed_at is not None or challenge.expires_at <= timezone.now()
             or challenge.attempts >= settings.MFA_MAX_ATTEMPTS):
-        raise PasskeyFailed("This sign-in expired. Start again.")
+        raise PasskeyFailed(gettext("This sign-in expired. Start again."))
     return challenge
 
 

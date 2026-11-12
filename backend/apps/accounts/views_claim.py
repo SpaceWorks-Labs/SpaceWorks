@@ -21,6 +21,9 @@ from apps.tenant_migration.gate_runtime import tenant_write
 class ClaimRedemptionView(APIView):
     authentication_classes = []
     permission_classes = [AllowAny]
+    # A claim code mints a member session, so it is a sign-in door like the others: platform IP
+    # deny rules and automatic blocks apply before the code is even looked at (S-C).
+    login_ip_guard = True
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = "member_claim_redeem"
 

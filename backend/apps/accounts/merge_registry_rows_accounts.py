@@ -82,6 +82,18 @@ ROWS = (
     # Release 2 L10/L11: a deferred integration binding's creator, the superadmin who
     # retired a backup key, and the people on a self-host move request.
     (R, "devices.MachineTypeIntegration", "created_by", "Mutable ownership or attribution; moves to the survivor."),
+    # Device Adapter API (decision 312): device-bound state; a credential is bound to the account and never moves.
+    (R, "devices.AdapterBinding", "created_by", "Mutable ownership or attribution; moves to the survivor."),
+    (R, "devices.AdapterCommand", "created_by", "Mutable ownership or attribution; moves to the survivor."),
+    (K, "devices.AdapterCredential", "user", "Credential, session or proof bound to the account; never moves."),
+    (R, "devices.AdapterCredential", "created_by", "Mutable ownership or attribution; moves to the survivor."),
+    (R, "devices.ShelfCheck", "checked_by", "Mutable ownership or attribution; moves to the survivor."),
+    (R, "devices.AdapterPose", "saved_by", "Mutable ownership or attribution; moves to the survivor."),
+    (R, "devices.AdapterAccessLog", "member", "Mutable ownership or attribution; moves to the survivor."),
+    (R, "devices.AdapterWebhook", "created_by", "Mutable ownership or attribution; moves to the survivor."),
+    (R, "devices.AdapterTypeProfile", "updated_by", "Mutable ownership or attribution; moves to the survivor."),
+    (R, "devices.AdapterWatch", "viewer", "Mutable ownership or attribution; moves to the survivor."),
+    (R, "devices.AdapterConfigVersion", "created_by", "Mutable ownership or attribution; moves to the survivor."),
     (K, "backup.BackupKeyFingerprint", "retired_by", "Platform or deployment operation record; never rewritten by a merge."),
     (R, "tenant_migration.SelfHostMoveRequest", "decided_by requested_by", "Mutable ownership or attribution; moves to the survivor."),
 )

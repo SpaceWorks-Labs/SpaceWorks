@@ -8,6 +8,7 @@ registration, sign-in and re-authentication; a second-factor assertion after a p
 asks for it but does not insist (the password was the first factor).
 """
 
+from django.utils.translation import gettext
 import base64
 import hashlib
 import os
@@ -111,7 +112,7 @@ def consume(ceremony_id, purpose, *, origin):
         except (ValidationError, ValueError, TypeError):
             ceremony = None
         if ceremony is None or ceremony.consumed_at is not None or ceremony.expires_at <= now:
-            raise PasskeyFailed("This passkey request expired. Start again.")
+            raise PasskeyFailed(gettext("This passkey request expired. Start again."))
         ceremony.consumed_at = now
         ceremony.save(update_fields=["consumed_at"])
     if ceremony.origin != origin:

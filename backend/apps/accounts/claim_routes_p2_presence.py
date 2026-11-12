@@ -1,7 +1,10 @@
 from django.utils.translation import gettext_noop
 from .claim_route_types import Allowed, AnonymousRead, LocallyFiltered, Refused, SLUG
 
-ROUTES = {("public-presence-now", method): AnonymousRead() for method in ("GET", "HEAD", "OPTIONS")}
+ROUTES = {(name, method): AnonymousRead()
+          for name in ("public-presence-now", "public-presence-here-now", "public-machines-now",
+                     "public-presence-now-config")
+          for method in ("GET", "HEAD", "OPTIONS")}
 for name, methods in (("presence-renew", ("POST",)), ("presence-projects", ("GET", "HEAD"))):
     for method in methods:
         ROUTES[(name, method)] = (Allowed(tenant=SLUG, audited=True) if method == "POST" else LocallyFiltered(tenant=SLUG))

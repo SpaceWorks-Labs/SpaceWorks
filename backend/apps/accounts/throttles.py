@@ -38,11 +38,15 @@ class MemberVerificationEmailThrottle(SimpleRateThrottle):
     scope = "member_verification_email"
 
     def get_cache_key(self, request, view):
-        email = request.data.get("email") or getattr(request.user, "email", "")
-        email = email.strip().lower()
+        from apps.accounts.audit_events import fingerprint
+
+        raw = request.data.get("email") if isinstance(request.data, Mapping) else None
+        email = raw if isinstance(raw, str) and raw.strip() else getattr(request.user, "email", "")
+        email = str(email or "").strip().lower()
         if not email:
             return None
-        return self.cache_format % {"scope": self.scope, "ident": email}
+        # A fingerprint, never the address: cache keys are visible to anyone with Redis access (decision 339).
+        return self.cache_format % {"scope": self.scope, "ident": fingerprint(email)}
 
 
 MemberSignUpEmailThrottle = MemberVerificationEmailThrottle

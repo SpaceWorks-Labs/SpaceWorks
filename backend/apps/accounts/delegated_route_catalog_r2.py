@@ -8,6 +8,9 @@ exactly the classes they had there.
 MEMBERSHIP_ROUTES = set()
 DELEGABLE_ROUTES = set()
 
+# Decision 319, machine access grants: each view checks the machine authority itself (Space Manager, or a
+# Machine Manager inside their machine scope).
+MEMBERSHIP_ROUTES |= {"admin-machine-access", "admin-machine-access-revoke", "admin-machine-access-candidates", "admin-machine-open-access"}
 # Release 2 L4, the membership lifecycle: per-makerspace membership authority only.
 # Each view keeps its own action check.
 MEMBERSHIP_ROUTES |= {
@@ -61,6 +64,17 @@ MEMBERSHIP_ROUTES |= {
     "admin-machine-type-integration-list", "admin-machine-type-integration-detail",
     "admin-machine-type-integration-status", "admin-makerspace-selfhost-move-request",
 }
+# Decision 312: the Device Adapter API's staff routes (MANAGE_DEVICES + machine scope; each view re-checks).
+MEMBERSHIP_ROUTES |= frozenset("""admin-adapter-list admin-adapter-detail admin-adapter-binding-create
+admin-adapter-commands admin-adapter-events admin-adapter-binding-detail admin-adapter-binding-command
+admin-adapter-poses admin-adapter-aim admin-adapter-jog admin-adapter-indicate admin-adapter-position
+admin-adapter-watch-create admin-adapter-watch-detail admin-adapter-watch-snapshot admin-adapter-credentials
+admin-adapter-credential-detail admin-adapter-job-create admin-adapter-binding-config
+admin-adapter-webhook admin-adapter-webhook-rotate admin-adapter-webhook-deliveries admin-adapter-type-profile
+admin-adapter-access-decisions admin-adapter-usage admin-adapter-artifacts admin-adapter-artifact-url
+admin-adapter-detections admin-adapter-telemetry admin-adapter-log-bundle admin-adapter-config-versions
+admin-shelf-coverage admin-shelf-show admin-shelf-clear admin-shelf-locations admin-shelf-checks
+admin-shelf-check-detail""".split())
 # Release-2 lane L12: loans, consumables and To-Buy (delegable); machine jobs, downtime and work orders
 # keep their machine partition / per-subject checks. Every route re-checks its own action.
 DELEGABLE_ROUTES |= frozenset("""admin-consumables admin-consumable-use to-buy-refill-consumable to-buy-mark-bought
@@ -124,6 +138,15 @@ MEMBERSHIP_ROUTES |= frozenset("""admin-staff-cards admin-staff-cards-bulk-issue
 admin-staff-card-design admin-staff-card-jobs""".split())
 DELEGABLE_ROUTES |= frozenset("""admin-staff-card admin-staff-card-reissue admin-staff-card-revoke
 admin-staff-card-print-face admin-staff-card-download""".split())
+# Card Studio (decision 314/315): saved templates. Every view re-checks template_access (card, programme or event
+# management in the space) and, for design-bound steps, authority.can_edit.
+DELEGABLE_ROUTES |= frozenset("""admin-card-templates admin-card-template-import admin-card-template
+admin-card-template-duplicate admin-card-template-export admin-card-design-apply-template
+admin-card-template-builtin""".split())
+# CARD-STUDIO-2 (344(b)): library, brand kit, CSV merge (design routes; views re-check authority.require_edit).
+DELEGABLE_ROUTES |= frozenset("""admin-card-design-asset-library admin-card-design-asset-library-delete
+admin-card-design-brand-kit admin-card-design-csv-merge admin-card-design-barcode""".split())
+MEMBERSHIP_ROUTES |= frozenset({"admin-staff-card-job-preview"})  # same space authority as admin-staff-card-jobs
 # E-B1: the badge designer. Design routes re-check card_designs.authority; event routes the event's edit permission.
 DELEGABLE_ROUTES |= frozenset("""admin-event-badge-designs admin-event-badge-design-role admin-card-design-badge-export
 admin-card-design-badge-import admin-card-design-badge-convert
@@ -254,3 +277,23 @@ MEMBERSHIP_ROUTES |= frozenset({"admin-consumable-planned-shortages"})
 MEMBERSHIP_ROUTES |= frozenset("""admin-notification-destination-rotate-secret admin-makerspace-email-test
 admin-makerspace-legal-page""".split())
 PLATFORM_ONLY_ROUTES |= frozenset({"admin-platform-legal-page"})
+
+# Decision 314(c), the background-eraser adapter: provider settings are the Space Manager's own (manage_makerspace +
+# `cards.photo_cutout`) or the superadmin's; cut-outs and the bulk photo upload re-check each card kind's own photo
+# authority (member cards, staff cards, event organisers) and the same switch, so they are reachable like the
+# single-photo routes.
+MEMBERSHIP_ROUTES |= frozenset({"admin-image-adapter", "admin-image-adapter-test"})
+PLATFORM_ONLY_ROUTES |= frozenset({"admin-platform-image-adapter", "admin-platform-image-adapter-test"})
+DELEGABLE_ROUTES |= frozenset("""admin-member-card-photo-cutout admin-staff-card-photo-cutout
+admin-event-id-card-photo-cutout admin-card-photo-batches admin-card-photo-batch admin-card-photo-batch-files
+admin-card-photo-batch-item admin-card-photo-batch-apply""".split())
+# Decision 342: machine use logged with an event. The set/clear route re-checks MANAGE_MACHINES and machine
+# scope; the event-side routes re-check event authority (event grants included).
+MEMBERSHIP_ROUTES |= {"admin-machine-use-event", "admin-machine-use-event-options"}
+DELEGABLE_ROUTES |= {"admin-event-machine-use", "admin-event-machine-use-cost"}
+# Decisions 341/343: per-type consumable profiles, the type-template catalogue and a job's consumables. Each view
+# re-checks its own authority (the per-type settings rule, the Space Manager for templates, the job's machine scope).
+MEMBERSHIP_ROUTES |= frozenset("""machine-type-consumables machine-type-consumable-detail machine-type-consumable-stock
+machine-type-templates machine-type-template-detail machine-type-template-apply admin-machine-job-consumables
+machine-type-setup machine-type-booking-defaults-apply machine-type-documents machine-type-document-presign
+machine-type-document-detail""".split())

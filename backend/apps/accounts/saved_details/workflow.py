@@ -1,4 +1,5 @@
 """Account-only vault mutations; tombstones prevent stale intents resurrecting data."""
+from django.utils.translation import gettext
 from django.utils import timezone
 
 from apps.audit.services import record
@@ -17,7 +18,7 @@ from .models import MemberSavedAsset, MemberSavedDetail
 
 def require_version(actual, expected):
     if type(expected) is not int or expected != actual:
-        raise SavedDetailsError("stale_version", "This saved detail changed. Review it before saving.", 409, current_version=actual)
+        raise SavedDetailsError("stale_version", gettext("This saved detail changed. Review it before saving."), 409, current_version=actual)
 
 
 def require_resume(user_id, value):
@@ -25,7 +26,7 @@ def require_resume(user_id, value):
         pk=value["asset_id"], user_id=user_id, state="ready", sha256=value["sha256"],
     ).first()
     if asset is None:
-        raise SavedDetailsError("asset_not_ready", "Choose your own ready résumé.", 409)
+        raise SavedDetailsError("asset_not_ready", gettext("Choose your own ready résumé."), 409)
     from .asset_policy import require_ready
     require_ready(asset)
 
@@ -61,7 +62,7 @@ def change_detail(actor_id, field_key, body, *, delete=False):
         return previous
     value = None if delete else normalize(field_key, body["value"])
     if not delete and body.get("save_consent") is not True:
-        raise SavedDetailsError("save_consent_required", "Choose whether to save this detail.")
+        raise SavedDetailsError("save_consent_required", gettext("Choose whether to save this detail."))
     key = prepare_account_key(actor_id)
     with account_write(actor_id), account_key_context(key):
         actor = require_owner(actor_id, lock=True)
@@ -104,5 +105,5 @@ def saved_dob_loader(*, actor_id, version):
     require_owner(actor_id)
     row = MemberSavedDetail.objects.filter(user_id=actor_id, field_key="date_of_birth", deleted_at__isnull=True, version=version).first()
     if row is None:
-        raise SavedDetailsError("stale_version", "Review your saved date of birth.", 409)
+        raise SavedDetailsError("stale_version", gettext("Review your saved date of birth."), 409)
     return open_value(row, "value_envelope")

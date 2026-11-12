@@ -106,7 +106,7 @@ class UserAdmin(PersonPiiRevealAdminMixin, PiiMaskingAdminMixin, StaffLifecycleA
         user = self.get_object(request, id)
         if user is not None and is_shell(user):
             from django.core.exceptions import PermissionDenied
-            raise PermissionDenied("A retired or merged account never signs in again.")
+            raise PermissionDenied(gettext("A retired or merged account never signs in again."))
         if request.method == "POST" and user is not None:
             try:
                 refuse_anonymous_requester_credential(user)

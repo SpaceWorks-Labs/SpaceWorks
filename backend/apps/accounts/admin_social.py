@@ -155,9 +155,30 @@ class SocialIdentityAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
         return False
 
 
+class OidcProviderForm(forms.ModelForm):
+    class Meta:
+        model = OidcProvider
+        fields = "__all__"
+
+    def clean(self):
+        # Same refusals as the web console: never re-point linked sign-ins, never strand anyone.
+        from apps.accounts.oidc_provider_guards import oidc_change_refusal, proposed_row
+
+        cleaned = super().clean()
+        stored = OidcProvider.objects.filter(pk=self.instance.pk).first() if self.instance.pk else None
+        if stored is not None:
+            names = {field.name for field in OidcProvider._meta.concrete_fields}
+            values = {name: value for name, value in cleaned.items() if name in names}
+            message = oidc_change_refusal(stored, proposed_row(stored, values))
+            if message:
+                raise forms.ValidationError(message)
+        return cleaned
+
+
 @admin.register(OidcProvider)
 class OidcProviderAdmin(AuditedControlChangeMixin, SuperuserOnlyModelAdmin, ModelAdmin):
     audit_action = "platform.oidc_provider_saved"
+    form = OidcProviderForm
     """Deployment-configured OpenID Connect providers.
 
     Superadmin-only and platform-scoped, like the built-in providers and for the same

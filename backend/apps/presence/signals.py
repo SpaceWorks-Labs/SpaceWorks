@@ -13,6 +13,10 @@ def changed(sender, instance, **kwargs):
         ids = [instance.makerspace_id]
     elif label == "makerspaces.MemberProject":
         ids = PresenceSession.objects.filter(project_id=instance.pk, ended_at=None).values_list("makerspace_id", flat=True)
+    elif label == "makerspaces.AccountProject":
+        ids = PresenceSession.objects.filter(account_project_id=instance.pk, ended_at=None).values_list("makerspace_id", flat=True)
+    elif label == "makerspaces.AccountProfile":
+        ids = PresenceSession.objects.filter(account_id=instance.user_id, ended_at=None).values_list("makerspace_id", flat=True)
     elif label == "makerspaces.MemberProfile":
         ids = PresenceSession.objects.filter(project__profile=instance, ended_at=None).values_list("makerspace_id", flat=True)
     elif label == "events.Event":
@@ -32,11 +36,13 @@ def changed(sender, instance, **kwargs):
 def register():
     from apps.events.models import Event, EventRegistration
     from apps.makerspaces.models import MakerspaceMembership, MemberProject, MemberProfile
+    from apps.makerspaces.models_account_profile import AccountProfile, AccountProject
     from django.contrib.auth import get_user_model
     # Django SET_NULL runs before post_delete, erasing the session -> project
     # lookup. Invalidate while those links still exist, in the delete transaction.
     pre_delete.connect(changed, sender=MemberProject, dispatch_uid="presence.project.pre_delete", weak=False)
-    for model in (PresenceSession, PresencePreference, PresenceSettings, MemberProject, MemberProfile,
+    pre_delete.connect(changed, sender=AccountProject, dispatch_uid="presence.account_project.pre_delete", weak=False)
+    for model in (PresenceSession, PresencePreference, PresenceSettings, MemberProject, MemberProfile, AccountProject, AccountProfile,
                   Event, EventRegistration, MakerspaceMembership, get_user_model()):
         for signal in (post_save, post_delete):
             signal.connect(changed, sender=model, dispatch_uid=f"presence.{signal}.{model._meta.label}", weak=False)

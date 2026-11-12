@@ -6,7 +6,7 @@ from rest_framework.views import APIView
 
 from apps.apiclients.throttling import MemberPrincipalRateThrottle
 from apps.makerspaces.lookup import get_public_makerspace
-from apps.makerspaces.models import MemberProject
+from apps.makerspaces.models_account_profile import AccountProject
 from . import services
 from .models import PresencePreference
 from .policy import presets, require_account, require_enabled
@@ -86,8 +86,7 @@ class PresenceProjectsView(MemberPresenceView):
     def get(self, request, makerspace_slug):
         space = public_space(request, makerspace_slug)
         require_account(request.user, space)
-        rows = MemberProject.objects.filter(profile__membership__user=request.user,
-                                            profile__membership__makerspace=space).order_by("position", "pk")
+        rows = AccountProject.objects.filter(profile__user=request.user).order_by("position", "pk")
         page = PageNumberPagination()
         return page.get_paginated_response(PresenceProjectSerializer(page.paginate_queryset(rows, request), many=True).data)
 

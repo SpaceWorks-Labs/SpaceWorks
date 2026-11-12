@@ -13,6 +13,7 @@ opens a door; it only changes WHO may check in and WHAT they may do once checked
 * `require_guest_waiver` closes gap G2: an on-site non-member needs the CURRENT waiver on
   their pass or on a live event registration, when the space requires it.
 """
+from django.utils.translation import gettext
 from dataclasses import replace
 
 from django.utils import timezone
@@ -78,10 +79,10 @@ def require_borrowing(guest_pass, *, take_home=False):
     """Refuse a borrow the pass does not allow; returns the entitlements."""
     ent = pass_entitlements(guest_pass)
     if ent.borrow == "none":
-        raise GuestPassError("guest_pass_no_borrow", "Your guest pass does not include borrowing.", status_code=403)
+        raise GuestPassError("guest_pass_no_borrow", gettext("Your guest pass does not include borrowing."), status_code=403)
     if take_home and ent.on_site_only:
         raise GuestPassError("guest_pass_on_site_only",
-                             "Your guest pass only covers using items on site; return them before the pass ends.",
+                             gettext("Your guest pass only covers using items on site; return them before the pass ends."),
                              status_code=403)
     return ent
 

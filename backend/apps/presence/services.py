@@ -1,5 +1,6 @@
 """Transactional presence writers. Lock tenant, then account, then session."""
 
+from django.utils.translation import gettext
 from apps.accounts.account_kind_guards import require_member_account
 from datetime import timedelta
 
@@ -60,11 +61,11 @@ def _create(user, space, membership, duration, *, actor, status, project=None,
     if claim:
         expiry = min(expiry, claim.absolute_expires_at)
     if expiry <= now:
-        raise PresenceError("presence_expired", "The check-in authorization has expired.")
+        raise PresenceError("presence_expired", gettext("The check-in authorization has expired."))
     active = list(_rows(user, space))
     for row in active:
         if (row.expires_at > now and row.expires_at - row.started_at == timedelta(minutes=duration)
-                and row.status == status and row.project_id == getattr(project, "pk", None)
+                and row.status == status and row.account_project_id == getattr(project, "pk", None)
                 and row.event_registration_id == getattr(registration, "pk", None)
                 and row.created_via_claim_session_id == getattr(claim, "pk", None)
                 and (hide_on_display is None or row.hide_on_display == hide_on_display)):
@@ -85,7 +86,7 @@ def _create(user, space, membership, duration, *, actor, status, project=None,
         audit.record(actor, "presence.preference_updated", makerspace=space, target=preference)
     session = PresenceSession.objects.create(
         account=user, member=user, makerspace=space, membership=membership,
-        started_at=now, expires_at=expiry, status=status, project=project,
+        started_at=now, expires_at=expiry, status=status, account_project=project,
         hide_on_display=hidden, created_via_claim_session=claim,
         event_registration=registration,
     )
@@ -119,14 +120,14 @@ def _guest_arrival(user, space, *, staff, actor, desk_waiver):
     from .guest_guard import require_guest_waiver
     guest_pass = active_pass_for(user, space)
     if staff and guest_pass is None:
-        raise PresenceError("account_not_in_space", "Use a member, walk-in or guest-pass holder from this makerspace.",
+        raise PresenceError("account_not_in_space", gettext("Use a member, walk-in or guest-pass holder from this makerspace."),
                             status_code=403)
     if staff and desk_waiver and guest_pass is not None:
         guest_pass = stamp_waiver(actor, guest_pass, at_desk=True)
     try:
         require_guest_waiver(user, space, guest_pass)
     except WaiverAcceptanceRequired:
-        raise PresenceError("waiver_acceptance_required", "Accept the current makerspace waiver first.",
+        raise PresenceError("waiver_acceptance_required", gettext("Accept the current makerspace waiver first."),
                             status_code=403) from None
     return guest_pass
 
@@ -147,18 +148,18 @@ def _start(user, space, duration, *, actor, staff, latitude=None, longitude=None
             # and either way owes the waiver (decision 223 (j), gap G2).
             _guest_arrival(user, space, staff=staff, actor=actor, desk_waiver=waiver_accepted_at_desk)
         if context and (membership is None or context.membership_id != membership.pk):
-            raise PresenceError("claim_scope", "Claim session belongs to another makerspace.", status_code=403)
+            raise PresenceError("claim_scope", gettext("Claim session belongs to another makerspace."), status_code=403)
         validate_duration(space, duration)
         from apps.makerspaces.minors_guard import require_minor_clearance  # decision 223 (k)
         require_minor_clearance(user, space, "presence", staff_present=staff)
         if not staff:
             require_inside(space, latitude=latitude, longitude=longitude, accuracy=accuracy)
         if user.is_walk_in and not staff and claim is None:
-            raise PresenceError("walk_in_staff_required", "Ask staff to check in this walk-in.", status_code=403)
+            raise PresenceError("walk_in_staff_required", gettext("Ask staff to check in this walk-in."), status_code=403)
         guest = membership is None or (staff and user.is_walk_in)
         status = status or ("guest" if guest else "visiting")
         if status not in {"working", "visiting", "guest"} or (guest != (status == "guest")):
-            raise PresenceError("invalid_presence_status", "Choose an eligible status; event attendance requires a live ticket check-in.")
+            raise PresenceError("invalid_presence_status", gettext("Choose an eligible status; event attendance requires a live ticket check-in."))
         project = owned_project(user, space, project_id, status)
         return _create(user, space, membership, duration, actor=actor, status=status,
                        project=project, hide_on_display=hide_on_display, claim=claim)

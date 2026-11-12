@@ -60,7 +60,7 @@ class PresenceSessionSerializer(serializers.ModelSerializer):
     active = serializers.SerializerMethodField()
     names_displayed = serializers.SerializerMethodField()
     personal_opt_out_allowed = serializers.SerializerMethodField()
-    project_id = serializers.IntegerField(read_only=True, allow_null=True)
+    project_id = serializers.IntegerField(source="account_project_id", read_only=True, allow_null=True)
 
     class Meta:
         model = PresenceSession

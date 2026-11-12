@@ -37,7 +37,11 @@ class PresenceSession(models.Model):
     makerspace = models.ForeignKey(Makerspace, on_delete=models.CASCADE)
     membership = models.ForeignKey(MakerspaceMembership, on_delete=models.PROTECT, null=True, blank=True)
     status = models.CharField(max_length=24, choices=Status.choices, default=Status.VISITING)
+    # Legacy per-space project (decision 304); kept for old rows, no longer written.
     project = models.ForeignKey("makerspaces.MemberProject", on_delete=models.SET_NULL, null=True, blank=True)
+    # The account-level project the person is working on (decision 304: one global profile).
+    account_project = models.ForeignKey("makerspaces.AccountProject", on_delete=models.SET_NULL, null=True,
+                                        blank=True, related_name="+")
     event_registration = models.OneToOneField("events.EventRegistration", on_delete=models.SET_NULL,
                                              null=True, blank=True, related_name="presence_session")
     hide_on_display = models.BooleanField(default=False)
@@ -109,3 +113,7 @@ class PresencePreference(models.Model):
     class Meta:
         constraints = [models.UniqueConstraint(fields=["makerspace", "account"],
                                               name="presence_preference_account_space")]
+
+
+from .models_anthias import AnthiasAssetLink, AnthiasPlayer, SpaceNowConfig  # noqa: E402,F401
+from .models_display import DisplayScreen  # noqa: E402,F401  (registers the model with the app)

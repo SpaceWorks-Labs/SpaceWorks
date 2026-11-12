@@ -2,7 +2,7 @@
 from django.utils import timezone
 
 from apps.makerspaces.platform import module_enabled
-from apps.makerspaces.public_profile_access import profile_is_public
+from apps.makerspaces.public_profile_access import account_is_open_web
 from . import cache
 from .models import PresenceSession
 from .policy import require_enabled
@@ -12,17 +12,17 @@ from .privacy import settings_for
 def present_rows(space):
     return PresenceSession.objects.filter(makerspace=space, ended_at=None, expires_at__gt=timezone.now(),
         account__is_active=True, account__access_status="active", account__is_tenant_dump_stub=False
-    ).select_related("account", "makerspace", "membership__assigned_role", "project__profile__membership__user",
-                     "project__profile__membership__makerspace", "event_registration__event__makerspace"
+    ).select_related("account", "makerspace", "membership__assigned_role", "account_project__profile",
+                     "event_registration__event__makerspace"
     ).order_by("started_at", "pk")
 
 
 def _project_title(row, space):
-    project = row.project
+    # The anonymous TV is the logged-out audience: the account profile must be open to the web, its
+    # projects section switched on, and the project itself shown (decisions 303/304).
+    project = row.account_project
     if (project and row.status == "working" and project.public_visible and project.profile.show_projects
-            and project.profile.membership.user_id == row.account_id
-            and project.profile.membership.makerspace_id == space.pk
-            and profile_is_public(project.profile)):
+            and project.profile.user_id == row.account_id and account_is_open_web(row.account)):
         return project.title
     return None
 

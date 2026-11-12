@@ -17,6 +17,7 @@ from apps.makerspaces.models import GuestPass
 
 from .schema import ERRORS
 from .views_staff import StaffPresenceView, staff_space
+from django.utils.translation import gettext
 
 MAX_RESULTS = 20
 
@@ -43,7 +44,7 @@ class StaffCheckInGuestSearchView(StaffPresenceView):
         space = staff_space(request, makerspace_id)
         query = (request.query_params.get("q") or "").strip()
         if len(query) < 2:
-            raise ValidationError({"q": "Type at least two characters."})
+            raise ValidationError({"q": gettext("Type at least two characters.")})
         now = timezone.now()
         rows = (GuestPass.objects.filter(
             Q(holder__display_name__icontains=query) | Q(holder__first_name__icontains=query)

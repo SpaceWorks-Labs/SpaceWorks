@@ -1,6 +1,7 @@
 import type { TelemetryAdapter } from "../controller";
+import { TELEMETRY_CLIENT } from "../client";
 
-type ClarityCommand = ((command: string, value: unknown) => void) & { q?: unknown[][] };
+type ClarityCommand = ((command: string, ...values: unknown[]) => void) & { q?: unknown[][] };
 declare global { interface Window { clarity?: ClarityCommand } }
 /** Confined to an isolated, consented anonymous About document. */
 export function clarity(projectId: string): TelemetryAdapter {
@@ -9,9 +10,10 @@ export function clarity(projectId: string): TelemetryAdapter {
   return { purpose: "replay", async start(signal, admitted) {
     if (signal.aborted || !admitted()) return;
     document.documentElement.setAttribute("data-clarity-mask", "True");
-    const queue: ClarityCommand = (command, value) => { (queue.q ??= []).push([command, value]); };
+    const queue: ClarityCommand = (command, ...values) => { (queue.q ??= []).push([command, ...values]); };
     window.clarity = queue;
     queue("consentv2", { ad_Storage: "denied", analytics_Storage: "granted" });
+    queue("set", "client", TELEMETRY_CLIENT);
     script = document.createElement("script"); script.async = true; script.referrerPolicy = "no-referrer";
     script.src = `https://www.clarity.ms/tag/${encodeURIComponent(projectId)}`;
     if (!signal.aborted && admitted()) document.head.append(script);

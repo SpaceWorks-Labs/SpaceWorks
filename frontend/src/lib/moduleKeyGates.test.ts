@@ -31,4 +31,5 @@ it("every literal module gate in the frontend names a registered module key", ()
   }
   expect(gates).toBeGreaterThan(50);
   expect(unknown).toEqual([]);
-});
+  // Reads every source file in src/: give it room on a loaded machine (the default 5s timed out in a full run).
+}, 30_000);

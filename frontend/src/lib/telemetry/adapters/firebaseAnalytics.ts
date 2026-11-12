@@ -1,4 +1,5 @@
 import type { TelemetryAdapter } from "../controller";
+import { TELEMETRY_CLIENT } from "../client";
 
 type FirebaseConfig = { apiKey: string; authDomain: string; projectId: string; appId: string; measurementId: string };
 export function firebaseAnalytics(config: FirebaseConfig, path: string): TelemetryAdapter {
@@ -11,8 +12,8 @@ export function firebaseAnalytics(config: FirebaseConfig, path: string): Telemet
     const firebase = app.getApps().find(item => item.name === "spaceworks-telemetry") ?? app.initializeApp(config, "spaceworks-telemetry");
     firebaseSdk = sdk;
     analytics = sdk.initializeAnalytics(firebase, { config: { send_page_view: false, allow_google_signals: false, allow_ad_personalization_signals: false } });
-    sdk.logEvent(analytics, "page_view", { page_location: `${location.origin}${path}`, page_referrer: "", page_title: "" });
-  }, pageView(next) { if (analytics) firebaseSdk?.logEvent(analytics, "page_view", { page_location: `${location.origin}${next}`, page_referrer: "", page_title: "" }); }, stop() { if (analytics) firebaseSdk?.setAnalyticsCollectionEnabled(analytics, false); } };
+    sdk.logEvent(analytics, "page_view", { page_location: `${location.origin}${path}`, page_referrer: "", page_title: "", client: TELEMETRY_CLIENT });
+  }, pageView(next) { if (analytics) firebaseSdk?.logEvent(analytics, "page_view", { page_location: `${location.origin}${next}`, page_referrer: "", page_title: "", client: TELEMETRY_CLIENT }); }, stop() { if (analytics) firebaseSdk?.setAnalyticsCollectionEnabled(analytics, false); } };
 }
 
 

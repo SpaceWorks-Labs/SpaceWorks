@@ -1,4 +1,5 @@
 import type { TelemetryAdapter } from "../controller";
+import { TELEMETRY_CLIENT } from "../client";
 
 const errorTypes = new Set(["Error", "TypeError", "ReferenceError", "RangeError", "SyntaxError", "URIError", "EvalError"]);
 function safePath(raw: string | undefined): string | undefined {
@@ -20,7 +21,7 @@ export function sanitizeSentryEvent(event: import("@sentry/browser").ErrorEvent)
       return [{ filename, lineno: safeNumber(frame.lineno), colno: safeNumber(frame.colno), function: safeFunction(frame.function) }];
     }) },
   }));
-  return { type: undefined, event_id: event.event_id, timestamp: event.timestamp, platform: "javascript", level: "error", exception: { values } };
+  return { type: undefined, event_id: event.event_id, timestamp: event.timestamp, platform: "javascript", level: "error", tags: { client: TELEMETRY_CLIENT }, exception: { values } };
 }
 export function sentry(dsn: string, sampleRate: number): TelemetryAdapter {
   let client: import("@sentry/browser").BrowserClient | undefined;

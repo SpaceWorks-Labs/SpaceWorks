@@ -4,6 +4,7 @@ import { ProgrammeDelight } from "./features/events/programme/ProgrammeDelight";
 import { ReauthenticationDialog } from "./features/auth/ReauthenticationDialog";
 import { ChooseUsernameGate } from "./features/profile/username/ChooseUsernameGate";
 import { ReauthenticationReturn } from "./features/auth/ReauthenticationReturn";
+import { GITHUB_APP_CALLBACK_PATH, GithubAppCallbackPage } from "./features/auth/GithubAppCallbackPage";
 import { AppRoutes } from "./AppRoutes";
 import { lazy, Suspense } from "react";
 import { Route, Routes, useLocation } from "react-router-dom";
@@ -26,6 +27,8 @@ export default function App() {
   if (pathname === "/firebase-alerts/setup") return <Suspense fallback={<LogoLoader label={t`Loading notifications…`} />}><FirebaseBridgePage /></Suspense>;
   if (ChartTestPage && pathname === "/__test/charts") return <Suspense fallback={<LogoLoader label={t`Loading chart fixture…`} />}><ChartTestPage /></Suspense>;
   if (pathname === "/reauth/callback" || pathname === "/reauth/confirm") return <ReauthenticationReturn confirmation={pathname === "/reauth/confirm"} />;
+  // Decision 361: GitHub's native app-link redirect opened in a browser; no tenant bootstrap needed.
+  if (pathname === GITHUB_APP_CALLBACK_PATH) return <GithubAppCallbackPage />;
   if (pathname === "/account/restore" || pathname === "/member/archived") {
     return <><AppRoutes mode={tenant.mode} landing={null} /><ReauthenticationDialog /></>;
   }

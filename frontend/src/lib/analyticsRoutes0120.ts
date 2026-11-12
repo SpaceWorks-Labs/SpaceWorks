@@ -8,4 +8,6 @@ export const analyticsPublicRoutes0120 = [
 ];
 
 /** Never analytics or replay: shared screens with no visitor to ask for consent. */
-export const analyticsExcludedScreens = ["/display", "/stats/tv", "/m/:slug/stats/tv"];
+export const analyticsExcludedScreens = ["/display", "/stats/tv", "/m/:slug/stats/tv",
+  // Decision 361: GitHub's native sign-in return carries a one-time code; never observed.
+  "/app/auth/github/callback"];

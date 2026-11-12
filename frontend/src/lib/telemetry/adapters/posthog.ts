@@ -1,4 +1,5 @@
 import type { TelemetryAdapter } from "../controller";
+import { TELEMETRY_CLIENT } from "../client";
 
 /** The caller consolidates same-project PostHog analytics and replay into one instance. */
 export function posthog(projectId: string, origin: string, analytics: boolean, replay: boolean, path: string): TelemetryAdapter {
@@ -17,15 +18,15 @@ export function posthog(projectId: string, origin: string, analytics: boolean, r
       before_send: event => {
         if (event.event === "$snapshot" && replay) return event;
         if (event.event !== "$pageview" || !analytics) return null;
-        return { ...event, properties: { token: projectId, distinct_id: event.properties.distinct_id, $session_id: event.properties.$session_id, $current_url: `${location.origin}${currentPath}` }, $set: undefined, $set_once: undefined, $unset: undefined };
+        return { ...event, properties: { token: projectId, distinct_id: event.properties.distinct_id, $session_id: event.properties.$session_id, client: TELEMETRY_CLIENT, $current_url: `${location.origin}${currentPath}` }, $set: undefined, $set_once: undefined, $unset: undefined };
       },
       __extensionClasses: replay ? { ...extensions.SessionReplayExtensions } : {},
       session_recording: { maskAllInputs: true, maskAllElementAttributes: true, recordHeaders: false, recordBody: false, maskTextSelector: "*", blockSelector: "img,video,canvas,iframe,[data-replay-block]", maskCapturedNetworkRequestFn: () => null } });
     if (signal.aborted || !admitted()) { sdk.opt_out_capturing(); return; }
     sdk.opt_in_capturing({ captureEventName: false });
     if (replay) sdk.startSessionRecording();
-    if (analytics) sdk.capture("$pageview", { $current_url: `${location.origin}${path}` });
-  }, pageView(next) { currentPath = next; if (analytics) instance?.capture("$pageview", { $current_url: `${location.origin}${next}` }); }, stop() { instance?.stopSessionRecording(); instance?.opt_out_capturing(); } };
+    if (analytics) sdk.capture("$pageview", { $current_url: `${location.origin}${path}`, client: TELEMETRY_CLIENT });
+  }, pageView(next) { currentPath = next; if (analytics) instance?.capture("$pageview", { $current_url: `${location.origin}${next}`, client: TELEMETRY_CLIENT }); }, stop() { instance?.stopSessionRecording(); instance?.opt_out_capturing(); } };
 }
 
 

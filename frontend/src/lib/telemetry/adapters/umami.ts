@@ -1,6 +1,7 @@
 import type { TelemetryAdapter } from "../controller";
+import { TELEMETRY_CLIENT } from "../client";
 
-declare global { interface Window { umami?: { track: (payload: { url: string; title: string; referrer: string }) => void } } }
+declare global { interface Window { umami?: { track: (payload: { url: string; title: string; referrer: string; data?: { client: string } }) => void } } }
 /** Official Umami tracker, manually invoked after consent; no automatic pageviews. */
 export function umami(siteId: string, origin: string, path: string): TelemetryAdapter {
   let script: HTMLScriptElement | undefined;
@@ -13,7 +14,7 @@ export function umami(siteId: string, origin: string, path: string): TelemetryAd
       signal.addEventListener("abort", () => { script?.remove(); reject(new Error("Cancelled")); }, { once: true }); // i18n-ignore: abort signal; TelemetryController catches it, never rendered.
       if (admitted() && !signal.aborted) document.head.append(script!); else reject(new Error("Cancelled")); // i18n-ignore: abort signal; TelemetryController catches it, never rendered.
     });
-    if (!signal.aborted && admitted()) window.umami?.track({ url: path, title: "", referrer: "" });
-  }, pageView(next) { window.umami?.track({ url: next, title: "", referrer: "" }); }, stop() { script?.remove(); } };
+    if (!signal.aborted && admitted()) window.umami?.track({ url: path, title: "", referrer: "", data: { client: TELEMETRY_CLIENT } });
+  }, pageView(next) { window.umami?.track({ url: next, title: "", referrer: "", data: { client: TELEMETRY_CLIENT } }); }, stop() { script?.remove(); } };
 }
 

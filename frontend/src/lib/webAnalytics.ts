@@ -1,6 +1,7 @@
 import { matchRoutes } from "react-router-dom";
 import { bookingAnalyticsRoutes } from "./bookingAnalyticsRoutes";
 import { analyticsPublicRoutes0120 } from "./analyticsRoutes0120";
+import { TELEMETRY_CLIENT } from "./telemetry/client";
 
 type AnalyticsConfig = { scriptUrl: string; collectUrl: string; domain: string };
 declare global { interface Window { __WEB_ANALYTICS__?: AnalyticsConfig; plausible?: unknown } }
@@ -26,6 +27,8 @@ let controller: AbortController | undefined;
 let analyticsEverLoaded = false;
 export function isBearerUrl(url: URL): boolean {
   if (url.hash || /(?:^|\/)(?:ticket|tickets|claim|claims|reset-password|station|event-check-in|kiosk|invites?|.*-invite|.*invitations?|embed|reauth)(?:\/|$)/i.test(url.pathname)) return true;
+  // Decision 361: the native GitHub app-link return is a credential screen even without its query.
+  if (/^\/app\/auth(?:\/|$)/.test(url.pathname)) return true;
   if (Array.from(url.searchParams.keys()).some(key => /token|secret|code|nonce|claim|invite|state/i.test(key))) return true;
   // Preserve ordinary console navigation. New/unrecognised public routes fail closed.
   if (/^\/(?:m\/[^/]+\/)?(?:admin|guest-admin|member)(?:\/|$)/.test(url.pathname)) return false;
@@ -73,7 +76,7 @@ export function pageView(url: URL) {
   void fetch(settings.collectUrl, {
     method: "POST", mode: "cors", credentials: "omit", referrerPolicy: "no-referrer",
     headers: { "Content-Type": "text/plain" }, signal: controller.signal,
-    body: JSON.stringify({ n: "pageview", u: `${url.origin}${template}`, d: settings.domain, r: "" }),
+    body: JSON.stringify({ n: "pageview", u: `${url.origin}${template}`, d: settings.domain, r: "", p: { client: TELEMETRY_CLIENT } }),
   }).catch(() => undefined);
 }
 

@@ -1,4 +1,5 @@
 import type { TelemetryAdapter } from "../controller";
+import { TELEMETRY_CLIENT } from "../client";
 
 declare global { interface Window { dataLayer?: unknown[][]; gtag?: (...args: unknown[]) => void } }
 /** GA4 only emits an explicit sanitized page view; default automatic page view is disabled. */
@@ -14,7 +15,7 @@ export function ga4(measurementId: string, path: string): TelemetryAdapter {
     script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(measurementId)}`;
     if (signal.aborted || !admitted()) return;
     document.head.append(script);
-    window.gtag("event", "page_view", { page_location: `${location.origin}${path}`, page_referrer: "", page_title: "" });
-  }, pageView(next) { window.gtag?.("event", "page_view", { page_location: `${location.origin}${next}`, page_referrer: "", page_title: "" }); }, stop() { if (script) Reflect.set(window, `ga-disable-${measurementId}`, true); script?.remove(); } };
+    window.gtag("event", "page_view", { page_location: `${location.origin}${path}`, page_referrer: "", page_title: "", client: TELEMETRY_CLIENT });
+  }, pageView(next) { window.gtag?.("event", "page_view", { page_location: `${location.origin}${next}`, page_referrer: "", page_title: "", client: TELEMETRY_CLIENT }); }, stop() { if (script) Reflect.set(window, `ga-disable-${measurementId}`, true); script?.remove(); } };
 }
 

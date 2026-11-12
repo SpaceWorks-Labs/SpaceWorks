@@ -49,7 +49,7 @@ describe("booking public analytics adapter", () => {
     expect(collect).toHaveBeenCalledOnce();
     const options = collect.mock.calls[0][1];
     expect(JSON.parse(options.body)).toEqual({ n: "pageview",
-      u: "https://space.example/m/:slug/bookings/:resourceToken", d: "space.example", r: "" });
+      u: "https://space.example/m/:slug/bookings/:resourceToken", d: "space.example", r: "", p: { client: "web" } });
     expect(options.referrerPolicy).toBe("no-referrer");
     expect(options.credentials).toBe("omit");
     expect(document.getElementById("web-analytics")?.dataset.manual).toBe("true");

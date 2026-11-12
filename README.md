@@ -20,10 +20,11 @@
 
 </div>
 
-**Space Works is free, open-source software for running a makerspace.** It shows what equipment
-exists, who has borrowed it, what is available, and how every loan, machine job, event and booking
-moves from request to completion. Every physical handover leaves evidence (a QR scan, a photo, a
-remark and an audit entry), so tools stay traceable to people. One self-hosted deployment can run
+**Space Works is free, open-source software for running a makerspace.** It manages the space's
+inventory, machines, events, bookings and members: what you own, where it is, how much is left, who
+is using it, and how every request, machine job, event and booking moves from start to finish. Every
+physical handover leaves evidence (a QR scan, a photo, a remark and an audit entry), so equipment
+stays traceable to people. One self-hosted deployment can run
 **many makerspaces**, each with its own inventory, public URL, staff, chat rooms, QR namespace and
 audit scope. You install only the areas you use, and your members' data stays in your own database.
 Space Works started in the **TinkerSpace Kochi** community; run it for yours, fork it, or adapt it
@@ -64,8 +65,8 @@ For your own domain with HTTPS, an API-only server, external storage or a cloud 
 
 ## Who it is for
 
-- **Makerspaces, hackerspaces, fab labs and community workshops** that lend tools and run shared
-  machines, and want to stop tracking them in spreadsheets and chat threads.
+- **Makerspaces, hackerspaces, fab labs and community workshops** that manage equipment and stock and
+  run shared machines, and want to stop tracking them in spreadsheets and chat threads.
 - **University labs and institutional workshops** that need named accountability for every item
   that leaves the shelf, and may already have their own identity provider.
 - **Networks of spaces** (a city network, a university, a chain) that want one deployment, separate
@@ -77,15 +78,21 @@ For your own domain with HTTPS, an API-only server, external storage or a cloud 
 
 Grouped the way a space actually works. The full list lives in [Features](docs/FEATURES.md).
 
-### Loan out tools and hardware
+### Manage your inventory
 
-- A **public inventory** per makerspace, with per-item control over what the public sees.
-- **Borrow requests** that staff review, accept and issue; **direct handouts** at the front desk; and
-  optional **QR self-checkout and return** for eligible tools.
-- **Evidence on every handover:** a reviewed issue needs a box QR scan and a photo; a return needs a
-  photo and a remark. Boxes, tools and individual assets keep their scan history.
-- Asset units, containers, stock transfers between spaces, printable QR sheets, stocktakes and a
-  "to buy" list, each a module you can leave out.
+- A **catalogue of everything the space owns**: items, categories, photos, specifications and storage
+  locations, with counts that are always right (available, reserved, issued, lost).
+- **Track the way each item needs:** individual units with their own QR code, serial number and history;
+  containers and boxes; and consumable stock with low-stock alerts and a "to buy" list.
+- **QR labels:** print Space Works labels, or keep the labels you already have. Scan an unknown code to
+  create or link the item there and then, or import a spreadsheet that already carries the codes.
+- **Stocktakes**, shelf checks and stock transfers between spaces, with a connected **shelf pointer**
+  that can point at the right shelf.
+- **Lending when you want it:** borrow requests that staff review and issue, front-desk handouts, and
+  optional QR self-checkout and return, each with evidence (a scan, a photo and a remark).
+- A **public catalogue** per space, with per-item control over what visitors see.
+- Warranty, maintenance and purchasing records, and reports on stock, value, use and loans. Each part
+  is a module you can leave out.
 
 ### Run any machine
 
@@ -93,11 +100,17 @@ Grouped the way a space actually works. The full list lives in [Features](docs/F
   PCB mills come built in, and a space can add **its own machine types**: an embroidery machine, a
   lathe, a resin printer, a kiln, a soldering station. Each type sets how use is measured (minutes,
   weight, volume, length or count) and which materials and colours it takes.
+- A guided **"Add a machine type"** setup, started from a template or blank, covering consumables,
+  job form fields, pricing, access, bookings, safety, maintenance, notifications and training notes.
+- **Consumables per machine type**, each with its own unit (grams of filament, millilitres of resin,
+  laser sheets, PCB boards, bit wear, minutes), estimated at request time and recorded at completion.
 - One **service queue** for every type: members request work, staff review, run and hand back the job,
-  with consumables drawn from tracked spools and stock.
-- **Maintenance**, warranty and usage records, and optional **certification** per machine type before
-  a member can book or request work.
-- Per-person machine-type scope, so a Machine Manager sees only their machines.
+  and a job or session can be logged against an event.
+- **Machine access** is given by the Space Manager (or a Machine Manager for their machines), with an
+  optional end date; maintenance, warranty and usage records sit alongside.
+- **Connected machines** through one signed adapter API: status, commands, jobs, access, kiosk
+  checkout, camera and telemetry. Per-person machine-type scope keeps each Machine Manager to their
+  machines.
 
 ### Events and bookings
 
@@ -313,7 +326,7 @@ ten fixed built-in roles:
 | Role | Scope |
 | --- | --- |
 | **Space Manager** | Makerspace administration, settings, staff and domain workflows |
-| **Inventory Manager** | Hardware lifecycle, inventory, QR, evidence and audit; no printing, staff or settings |
+| **Inventory Manager** | The whole inventory: catalogue, stock, units, QR labels, loans, evidence and audit; no machines, staff or settings |
 | **Machine Manager** | Machines, service, maintenance and usage within assigned machine types |
 | **Event Manager** | Events and registration workflows |
 | **Booking Manager** | Resources and reservation workflows |

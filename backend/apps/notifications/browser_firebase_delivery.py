@@ -96,7 +96,7 @@ def _deliver(pk, *, context=None):
             except PushProviderError as exc:
                 registrations = BrowserFirebaseRegistration.objects.filter(pk=pk, active=True)
                 if exc.invalid_token:
-                    registrations.update(active=False, revoked_at=timezone.now())
+                    registrations.update(active=False, revoked_at=timezone.now(), wake_retry_at=None)
                 else:
                     registrations.update(wake_retry_at=timezone.now() + timedelta(seconds=60))
                 return False

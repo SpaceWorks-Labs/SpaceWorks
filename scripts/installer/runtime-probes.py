@@ -12,7 +12,7 @@ import time
 ALLOWED = {
     "database": {"runtime_nonowner_no_pending_migrations"},
     "runtime": {"binaries_and_printable_bundle_verified"},
-    "worker": {"task_roundtrip_verified"},
+    "worker": {"task_roundtrip_verified", "inline_tasks_no_worker"},
     "scheduler": {"heartbeat_and_success_fresh"},
     "live": {"publish_subscribe_verified", "poll_fallback_readiness_verified"},
     "scanner": {"explicitly_disabled", "fresh_signatures_clean_and_infected_verified"},

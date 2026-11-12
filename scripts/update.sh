@@ -269,6 +269,17 @@ if [[ ! -e "$storage_marker" ]]; then
   fi
 fi
 
+# Decision 308(c): existing accounts get their username as handle when it is valid and free (idempotent).
+handle_marker="$ROOT/.spaceworks-handles-claimed-0.12.0"
+if [[ ! -e "$handle_marker" ]]; then
+  say "Giving existing accounts their username as profile handle where it is free (one-off)."
+  if "${COMPOSE[@]}" exec -T backend python manage.py claim_default_handles; then
+    : > "$handle_marker"
+  else
+    warn "Handle backfill did not finish; run 'python manage.py claim_default_handles' in the backend container."
+  fi
+fi
+
 if [[ ! -e "$ROOT/.git" ]]; then
   host_bundle_files
   project_name="$("${COMPOSE[@]}" config --format json | python3 "$UPDATE_SCRIPT_DIR/installer/project-name.py")"

@@ -37,7 +37,7 @@ append_deployment_layers() {
   [[ -z "$frontend" || "$frontend" == yes || "$frontend" == no ]] || { echo 'SPACEWORKS_RUN_FRONTEND must be yes or no.' >&2; return 64; }
   [[ -z "$storage" || "$storage" == bundled || "$storage" == external ]] || { echo 'SPACEWORKS_STORAGE must be bundled or external.' >&2; return 64; }
   [[ -z "$database" || "$database" == bundled || "$database" == external ]] || { echo 'SPACEWORKS_DATABASE must be bundled or external.' >&2; return 64; }
-  [[ -z "$redis" || "$redis" == bundled || "$redis" == external ]] || { echo 'SPACEWORKS_REDIS must be bundled or external.' >&2; return 64; }
+  [[ -z "$redis" || "$redis" == bundled || "$redis" == external || "$redis" == none ]] || { echo 'SPACEWORKS_REDIS must be bundled, external or none.' >&2; return 64; }
   DEPLOYMENT_SUFFIX=''
   if [[ "$frontend" == no ]]; then
     COMPOSE_FILES+=("$prefix/docker/compose.api-only.yml")
@@ -57,6 +57,12 @@ append_deployment_layers() {
   if [[ "$redis" == external ]]; then
     COMPOSE_FILES+=("$prefix/docker/compose.external-redis.yml")
     DEPLOYMENT_SUFFIX+='-external-redis'
+  fi
+  # No Redis at all (cron mode): drops redis and the worker; beat becomes a scheduler loop. Decision 43's
+  # HTTP tick stays free-profile only, so this overlay never sets that profile.
+  if [[ "$redis" == none ]]; then
+    COMPOSE_FILES+=("$prefix/docker/compose.no-redis.yml")
+    DEPLOYMENT_SUFFIX+='-no-redis'
   fi
   control_plane_settings_valid "$layer" || return 64
   if [[ -n "$tunnel_port" && "$layer" == *tls ]]; then
@@ -116,6 +122,12 @@ deployment_services() {
   IMAGE_SERVICES=(orchestration-init migrate orchestration-ready backend live worker beat)
   ROLLBACK_SERVICES=(backend live worker beat)
   RUN_ONCE_SERVICES=(orchestration-init migrate orchestration-ready)
+  if [[ "$(deployment_value SPACEWORKS_REDIS)" == none ]]; then
+    # Cron mode parks the worker (docker/compose.no-redis.yml); naming it would start it with no broker.
+    WORKER_SERVICES=(beat live)
+    IMAGE_SERVICES=(orchestration-init migrate orchestration-ready backend live beat)
+    ROLLBACK_SERVICES=(backend live beat)
+  fi
   if [[ ",$(deployment_value COMPOSE_PROFILES)," == *,clamav,* ]]; then
     IMAGE_SERVICES+=(clamav)
   fi

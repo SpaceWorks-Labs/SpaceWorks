@@ -29,6 +29,9 @@ module_legacy_change_one() {
     IFS=, read -r -a without <<< "$MODULE_WITHOUT"
     for without_key in ${without[@]+"${without[@]}"}; do
       [[ -n "$without_key" ]] || continue
+      # Retired key (decision 340b): the print queue is part of machine_service, so leaving
+      # out `printing` alone changes nothing; name machine_service to switch it off.
+      [[ "$without_key" != printing ]] || continue
       found=0
       for ((i=0; i<${#keys[@]}; i++)); do
         if [[ "${keys[i]}" == "$without_key" ]]; then state[i]=" "; found=1; break; fi

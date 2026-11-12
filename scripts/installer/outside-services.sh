@@ -4,7 +4,7 @@
 # write_outside_environment (called by write_setup_environment) records the answers in .env.
 #
 # Answer keys: DATABASE_CHOICE (1 local, 2 outside) EXTERNAL_DB_URL EXTERNAL_DB_DIRECT_URL
-#   REDIS_CHOICE (1 local, 2 outside) EXTERNAL_REDIS_URL
+#   REDIS_CHOICE (1 local, 2 outside, 3 none = cron mode) EXTERNAL_REDIS_URL
 #   STORAGE (1 local, 2 S3-compatible) S3_ENDPOINT S3_PUBLIC_ENDPOINT S3_REGION PRIVATE_BUCKET
 #   IMAGE_BUCKET S3_ACCESS_KEY S3_SECRET_KEY IMAGE_BASE_URL STORAGE_PROFILE (limited|full) PRESIGN_METHOD
 #   EMAIL_CHOICE (1 later in the control panel, 2 SMTP now) SMTP_HOST SMTP_PORT SMTP_USER
@@ -93,6 +93,11 @@ derive_runtime_database_url() {
   printf 'postgres://%s:%s@%s:%s/%s%s' "$user" "$3" "$DB_HOST" "$DB_PORT" "$DB_NAME" "${DB_QUERY:+?$DB_QUERY}"
 }
 
+# The answer number as the word SPACEWORKS_REDIS and compose-deployment.sh use.
+redis_choice_word() {
+  case "$1" in 2) echo external ;; 3) echo none ;; *) echo bundled ;; esac
+}
+
 normalize_postgres_scheme() { printf 'postgres://%s' "${1#*://}"; }
 
 ask_outside_database() {
@@ -114,8 +119,10 @@ ask_outside_redis() {
   echo 'Redis (queue, cache and live updates):'
   echo '  1) On this server - bundled Redis (recommended).'
   echo '  2) An outside Redis - Upstash, Redis Cloud, ElastiCache or your own. You paste its rediss:// URL.'
-  echo '  (To run with no Redis at all, use the cloud files: docs/deploy/mix-and-match.md, "Redis (optional)".)'
-  question REDIS_CHOICE 'Redis' 1 choices:1,2 || return 1
+  echo '  3) None (cron mode) - no Redis, no worker and no beat. Background jobs run inside the request that starts'
+  echo '     them, scheduled jobs run once a minute from a scheduler container (run_scheduled_tasks), and live'
+  echo '     screens poll instead of streaming. Fine for a small space; choose 1 if many people use it at once.'
+  question REDIS_CHOICE 'Redis' 1 choices:1,2,3 || return 1
   [[ "$REDIS_CHOICE" == 2 ]] || return 0
   question EXTERNAL_REDIS_URL 'Redis URL' '' redis_url || return 1
 }
@@ -207,6 +214,7 @@ outside_summary() {
   local db=local redis=local email='set up later in the control panel'
   [[ "$DATABASE_CHOICE" != 2 ]] || { db='outside PostgreSQL'; [[ -z "$EXTERNAL_DB_DIRECT_URL" ]] || db+=' (pooler + direct URL for migrations)'; }
   [[ "$REDIS_CHOICE" != 2 ]] || redis='outside Redis'
+  [[ "$REDIS_CHOICE" != 3 ]] || redis='none (cron mode)'
   [[ "$EMAIL_CHOICE" != 2 ]] || email="SMTP $SMTP_HOST:$SMTP_PORT"
   printf '  Outside services: database %s; Redis %s; email: %s\n' "$db" "$redis" "$email"
   [[ "$STORAGE" != 2 ]] || printf '  Storage profile: %s (%s upload)\n' "$STORAGE_PROFILE" "$PRESIGN_METHOD"
@@ -218,7 +226,7 @@ outside_summary() {
 write_outside_environment() {
   outside_defaults
   env_setting SPACEWORKS_DATABASE "$([[ "$DATABASE_CHOICE" == 2 ]] && echo external || echo bundled)"
-  env_setting SPACEWORKS_REDIS "$([[ "$REDIS_CHOICE" == 2 ]] && echo external || echo bundled)"
+  env_setting SPACEWORKS_REDIS "$(redis_choice_word "$REDIS_CHOICE")"
   if [[ "$DATABASE_CHOICE" == 2 ]]; then
     local runtime_password mode=direct maintenance
     runtime_password="$(rand_key 32)"

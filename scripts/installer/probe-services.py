@@ -11,6 +11,10 @@ def worker():
     from django.core.cache import cache
     from django.conf import settings
     if app.conf.task_always_eager:
+        # Cron mode (installer Redis choice 3): no broker, so tasks run inline and there is no worker
+        # to round-trip. An eager install that still names a broker is a mistake, not cron mode.
+        if getattr(settings, "CELERY_BROKER_URL", None) == "":
+            return "inline_tasks_no_worker"
         raise ProbeError("worker_eager_is_not_roundtrip")
     # J registers this bounded, nonce-only task. Shared cache acknowledgement works
     # with the existing result-backend=None default; never turn on a result store.

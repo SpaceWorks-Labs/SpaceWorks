@@ -278,9 +278,10 @@ setup_summary() {
   echo "  orchestration is a start-up safety check. It runs once and stops. It's required."
   local services=''
   [[ "${DATABASE_CHOICE:-1}" == 2 ]] || services+='database, '
-  [[ "${REDIS_CHOICE:-1}" == 2 ]] || services+='Redis, '
+  [[ "${REDIS_CHOICE:-1}" =~ ^[23]$ ]] || services+='Redis, '
   [[ "$STORAGE" != 1 ]] || services+='Silo storage (bucket initializer), '
-  services+='API, live events, worker, scheduler'
+  if [[ "${REDIS_CHOICE:-1}" == 3 ]]; then services+='API, live events, scheduler loop (no worker or Redis)'
+  else services+='API, live events, worker, scheduler'; fi
   [[ "$RUN_FRONTEND" == 2 ]] && services+=', API edge' || services+=', website'
   [[ "$HTTPS_MODE" != 2 ]] || services+=', Caddy HTTPS edge'
   echo "  Will run: $services; one-shot database/orchestration initialization and migrations."

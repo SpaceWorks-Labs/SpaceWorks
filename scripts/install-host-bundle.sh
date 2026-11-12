@@ -69,7 +69,7 @@ host_bundle_files() {
     docker-compose.prod.yml docker-compose.cloud.yml docker-compose.free.yml deploy/cloud/free.env.example
     docker/compose.build.yml docker/compose.tls.yml docker/compose.saas.yml
     docker/compose.api-only.yml docker/compose.api-only-edge.yml docker/compose.external-storage.yml
-    docker/compose.external-db.yml docker/compose.external-redis.yml
+    docker/compose.external-db.yml docker/compose.external-redis.yml docker/compose.no-redis.yml
     docker/compose.control-tunnel.yml
     deploy/Caddyfile deploy/Caddyfile.saas deploy/Caddyfile.saas-install frontend/nginx.conf
     deploy/nginx.api-only.conf deploy/storage.caddy deploy/storage-disabled.caddy

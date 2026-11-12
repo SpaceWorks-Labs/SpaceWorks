@@ -2,7 +2,10 @@
 # Inspect state only: docker inspect/config contain secrets and are never printed.
 verify_full_host_completion() {
   local directory="$1" service container state code
-  for service in backend live worker beat; do
+  local services=(backend live worker beat)
+  # Cron mode has no worker; beat is the scheduler loop.
+  [[ "$(deployment_value SPACEWORKS_REDIS)" != none ]] || services=(backend live beat)
+  for service in "${services[@]}"; do
     container="$("${COMPOSE[@]}" ps -q "$service")" || return
     [[ -n "$container" && "$container" != *$'\n'* ]] || return 1
     state="$(docker inspect --format '{{.State.Status}}|{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' "$container")" || return

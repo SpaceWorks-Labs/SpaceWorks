@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Move one component of a running install between this server and an outside service (decision 239).
+# Redis can also be switched to none (cron mode: no Redis, no worker, scheduled jobs from a scheduler loop).
 #   bash scripts/switch-services.sh status
 #   bash scripts/switch-services.sh redis | email | storage [--files-copied] | database
 #   bash scripts/switch-services.sh menu      (the installer's "Change outside services" choice)
@@ -51,7 +52,7 @@ show_status() {
   storage="$(deployment_value SPACEWORKS_STORAGE)"
   printf 'Database: %s\nRedis:    %s\nStorage:  %s\nEmail:    %s\nWebsite:  %s\n' \
     "$([[ "$db" == external ]] && echo 'outside PostgreSQL' || echo 'on this server')" \
-    "$([[ "$redis" == external ]] && echo 'outside Redis' || echo 'on this server')" \
+    "$(case "$redis" in external) echo 'outside Redis' ;; none) echo 'none (cron mode: no Redis or worker)' ;; *) echo 'on this server' ;; esac)" \
     "$([[ "$storage" == external ]] && echo 'outside S3-compatible storage' || echo 'on this server')" \
     "$([[ -n "$(deployment_value EMAIL_HOST)" ]] && echo "SMTP $(deployment_value EMAIL_HOST)" || echo 'set in the control panel')" \
     "$([[ "$(deployment_value SPACEWORKS_RUN_FRONTEND)" == no ]] && echo 'not on this server (API-only)' || echo 'on this server')"
@@ -107,10 +108,11 @@ switch_redis() {
   local current choice url confirm
   current="$(deployment_value SPACEWORKS_REDIS)"; current="${current:-bundled}"
   ask_outside_redis || die 'Cancelled.'
-  [[ "$REDIS_CHOICE" == 2 ]] && choice=external || choice=bundled
+  choice="$(redis_choice_word "$REDIS_CHOICE")"
   [[ "$choice" != external ]] || url="$(normalize_redis_url "$EXTERNAL_REDIS_URL")"
-  [[ "$choice" != "$current" || "$choice" == external ]] || { say 'Redis is already on this server; nothing to change.'; return 0; }
+  [[ "$choice" != "$current" || "$choice" == external ]] || { say "Redis is already set to $choice; nothing to change."; return 0; }
   echo 'Jobs still waiting in the current Redis are dropped by this switch; scheduled work resumes on its own.'
+  [[ "$choice" != none ]] || echo 'Cron mode stops the worker and beat containers; scheduled jobs then run from the scheduler loop once a minute.'
   question confirm 'Switch Redis now?' N choices:Y,y,yes,YES,N,n,no,NO || die 'Cancelled.'
   [[ "$confirm" =~ ^[Yy] ]] || die 'Cancelled; nothing changed.'
   rewrite_env SPACEWORKS_REDIS CELERY_BROKER_URL CACHE_URL LIVE_REDIS_URL

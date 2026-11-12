@@ -1,15 +1,16 @@
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { API_URL } from "../../lib/api";
-import { ErrorText, Field, SettingsSection, Skeleton, StatusPill } from "../../components/ui";
+import { ErrorText, Field, SettingsSection, StatusPill } from "../../components/ui";
 import type { BookingWebsite } from "../bookings/bookingWebsiteTypes";
 import { useBookingWebsite, useBookingWebsiteMutation } from "../bookings/bookingWebsiteApi";
 import { BookingWebsiteSectionCard } from "./BookingWebsiteSectionCard";
 import type { BookableSpace } from "./bookingsApi";
+import { LogoLoader } from "../../components/LogoLoader";
 
 export function BookingWebsiteEditor({ space }: { space: BookableSpace }) {
   const query = useBookingWebsite(space.makerspace_id, space.id);
-  if (query.isLoading) return <div role="status" aria-label={t`Loading website…`} className="grid gap-3"><span className="sr-only">{t`Loading website…`}</span><Skeleton className="h-24 w-full" /><Skeleton className="h-48 w-full" /></div>;
+  if (query.isLoading) return <LogoLoader label={t`Loading website…`} size={48} className="min-h-24 py-3" />;
   return <>
     {query.error ? <div role="alert" className="flex flex-wrap items-center gap-3 rounded-control border border-danger-line bg-panel px-3 py-2 text-sm text-danger">
       <p>{query.error.message}</p><button className="desk-button ml-auto" type="button" onClick={() => query.refetch()}>{t`Retry website`}</button></div> : null}

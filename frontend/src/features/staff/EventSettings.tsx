@@ -6,6 +6,7 @@ import { EventCoverUploader } from "./eventProgramme/EventCoverUploader";
 import { pageStickyActions } from "./stickyActions";
 import type { StaffEvent } from "./eventsApi";
 import { eventAccess } from "./eventStaffPermissions";
+import { BoxArt } from "../../components/BoxSpinner";
 
 /** Names of the series template fields an occurrence can override (backend INHERITABLE_FIELDS). */
 const overrideFieldLabel = (field: string) => ({ title: t`title`, description: t`description`, starts_at: t`start time`,
@@ -39,7 +40,7 @@ export function EventSettings({ event, makerspaceId, values, setValues, save, pe
           canEditDetails={access.edit} canEditSchedule={access.publish} canEditPrice={access.manager} />
         {!readOnly ? <div className={pageStickyActions}>
           <button type="button" className="desk-button" disabled={pending} onClick={() => setValues(valuesFor(event))}>{t`Discard`}</button>
-          <button type="submit" className="desk-button-primary" disabled={pending}>{pending ? t`Saving…` : t`Save changes`}</button>
+          <button type="submit" className="desk-button-primary" disabled={pending}>{pending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Save changes`}</button>
         </div> : null}
       </form>
     </SettingsSection> : null}

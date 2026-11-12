@@ -1,8 +1,9 @@
 import { t } from "@lingui/core/macro";
-import { Skeleton, StatCard } from "../../components/ui";
+import { StatCard } from "../../components/ui";
 import { useEventAnalytics } from "./eventCommunicationsApi";
 import { eventErrorText } from "./eventUi";
 import { EventProgrammeAnalytics } from "./eventProgramme/EventProgrammeAnalytics";
+import { LogoLoader } from "../../components/LogoLoader";
 
 const METRICS = [["registrations", "Registrations"], ["registered", "Registered"], ["attended", "Attended"],
   ["waitlisted", "Waitlisted"], ["cancelled", "Cancelled"], ["feedback_responses", "Feedback responses"],
@@ -23,8 +24,7 @@ export function EventAnalyticsPanel({ makerspaceId, eventId, endsAt, features }:
   return <section className="grid gap-4" aria-label={t`Event analytics`}>
     <h3 className="title-section">{t`Analytics and exports`}</h3>
     <EventProgrammeAnalytics makerspaceId={makerspaceId} eventId={eventId} />
-    {query.isLoading ? <div role="status" className="grid gap-3"><span className="sr-only">{t`Loading analytics…`}</span>
-      <div className="sw-stats">{[0, 1, 2, 3].map((n) => <Skeleton key={n} className="h-28 w-full" />)}</div></div> : null}
+    {query.isLoading ? <LogoLoader label={t`Loading analytics…`} className="min-h-28 py-3" /> : null}
     {query.error || download.error ? <p role="alert" className="text-sm text-danger">{eventErrorText(query.error || download.error)}</p> : null}
     {row ? <div className="sw-stats">{METRICS.map(([key, label]) => <StatCard key={key} label={label} value={row[key] == null ? "—" : String(row[key])} />)}</div> : null}
     {exports || pdf ? <div className="grid gap-2">
@@ -34,6 +34,6 @@ export function EventAnalyticsPanel({ makerspaceId, eventId, endsAt, features }:
         {pdf ? <button className="desk-button" type="button" disabled={download.isPending || new Date(endsAt).getTime() > Date.now()} onClick={() => save("event-attendance-pdf", "pdf")}>{t`Post-event PDF`}</button> : null}
       </div>
     </div> : null}
-    {download.isPending ? <p role="status" className="text-sm text-muted">{t`Preparing download…`}</p> : null}
+    {download.isPending ? <LogoLoader label={t`Preparing download…`} size={48} className="min-h-16 py-3" /> : null}
   </section>;
 }

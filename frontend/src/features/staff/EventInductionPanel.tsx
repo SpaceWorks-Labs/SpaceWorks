@@ -1,3 +1,4 @@
+import { LogoLoader } from "../../components/LogoLoader";
 import { t } from "@lingui/core/macro";
 import { useQuery } from "@tanstack/react-query";
 import { useContext, useState } from "react";
@@ -7,6 +8,7 @@ import { StaffListContext } from "./StaffListContext";
 import { certificationKeys, getCertificationTypes } from "./certificationsApi";
 import { inductionErrorText, inductionResultText, useInduction, useInductionActions, type InductionResult } from "./eventInductionApi";
 import type { StaffEvent } from "./eventsApi";
+import { BoxArt } from "../../components/BoxSpinner";
 
 /**
  * `canLinkEvent` is the event's own authority (`can_manage_staff`: Event Manager, organizer or
@@ -42,7 +44,7 @@ function Induction({ makerspaceId, event, active = true, canLinkEvent = false }:
   const [typeId, setTypeId] = useState(0);
   const [chosen, setChosen] = useState<number[]>([]);
   const [results, setResults] = useState<InductionResult[]>([]);
-  if (overview.isPending) return <p role="status" className="text-sm text-muted">{t`Loading induction…`}</p>;
+  if (overview.isPending) return <LogoLoader label={t`Loading induction…`} />;
   if (overview.isError) return null; // 404: switched off or not a machine manager for this space.
   const data = overview.data;
   const linkedIds = new Set(data.links.map(row => row.certification_type));
@@ -86,7 +88,7 @@ function Induction({ makerspaceId, event, active = true, canLinkEvent = false }:
       })}
       {data.attendees.length ? <button type="button" className="desk-button-primary w-full sm:w-fit" disabled={!chosen.length || !data.can_grant || !started}
         onClick={() => grant.mutate({ user_ids: chosen }, { onSuccess: response => { setResults(response.results); setChosen([]); } })}>
-        {grant.isPending ? t`Granting…` : t`Grant certification to ${chosen.length} selected`}</button> : null}
+        {grant.isPending ? <><BoxArt size={16} mono />{t`Granting…`}</> : t`Grant certification to ${chosen.length} selected`}</button> : null}
     </fieldset> : null}
     {results.length ? <ul className="grid gap-1" aria-label={t`Grant results`} role="status">
       {results.map(row => <li key={`${row.user_id}:${row.certification_type_id}`} className="flex flex-wrap items-center gap-2">

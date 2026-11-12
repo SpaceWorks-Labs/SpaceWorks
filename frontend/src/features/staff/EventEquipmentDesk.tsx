@@ -1,3 +1,4 @@
+import { LogoLoader } from "../../components/LogoLoader";
 import { plural, t } from "@lingui/core/macro";
 import { useQuery } from "@tanstack/react-query";
 import { useContext, useState, type ContextType } from "react";
@@ -48,7 +49,7 @@ function DeskBody({ makerspace, eventId, canScanCards, canEditWindow }: { makers
     queryKey: ["event-equipment-desk", makerspace.id, eventId], retry: false,
     queryFn: ({ signal }) => staffRequest<Desk>(`/admin/makerspace/${makerspace.id}/events/${eventId}/equipment-desk`, { signal }),
   });
-  if (desk.isPending) return <p role="status">{t`Loading event equipment…`}</p>;
+  if (desk.isPending) return <LogoLoader label={t`Loading event equipment…`} />;
   // A 404 means no inventory or event authority here; the desk simply is not offered.
   if (desk.isError) return null;
   const { summary, ready, out, closed } = desk.data;

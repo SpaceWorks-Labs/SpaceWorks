@@ -6,18 +6,18 @@ import { StatusPill } from "../../components/ui";
 import { staffRequest } from "../../lib/api";
 import { consoleSessionHref } from "../../lib/api/sessionContext";
 import { staffPathState, staffTabPath } from "./staffTabs";
+import { LogoLoader } from "../../components/LogoLoader";
 
 /** Decision 216 item 4: the admission checks a booking would meet, read-only. Submit re-verifies. */
 export type ReadinessCheck = {
-  code: "room_outage" | "machine_repair" | "machine_lockout" | "certification";
+  code: "room_outage" | "machine_repair" | "machine_lockout" | "machine_access";
   state: "ok" | "blocked" | "warning";
   detail: string;
-  certifications?: string[];
+  reason?: string;
 };
 export type BookingReadinessResult = { ready: boolean; checks: ReadinessCheck[]; maintenance_link: { machine_id: number } | null };
 
 function label(row: ReadinessCheck) {
-  const names = (row.certifications ?? []).join(", ");
   switch (row.code) {
     case "room_outage":
       return row.state === "blocked" ? t`This room is out of service at that time.`
@@ -27,8 +27,9 @@ function label(row: ReadinessCheck) {
     case "machine_lockout":
       return row.state === "warning" ? t`Overdue safety maintenance locks the machine: it cannot be started until done.`
         : t`No maintenance lockout.`;
-    case "certification":
-      return row.state === "blocked" ? t`Missing certification: ${names}` : t`The member holds the required certifications.`;
+    case "machine_access":
+      return row.state === "blocked" ? (row.reason === "machine_access_expired" ? t`The member's machine access has ended.` : t`The member has not been given access to this machine.`)
+        : t`The member has access to this machine.`;
     default:
       return row.detail;
   }
@@ -57,7 +58,7 @@ function ReadinessPanel({ path, explicit = false }: { path: string | null; expli
     return () => controller.abort();
   }, [path]);
   if (path === null) return null;
-  if (result?.path !== path) return <p className="text-sm text-muted" role="status">{t`Checking room and machine readiness…`}</p>;
+  if (result?.path !== path) return <LogoLoader label={t`Checking room and machine readiness…`} size={48} className="min-h-16 py-3" />;
   // Advisory only: the booking itself re-checks everything. Silent inside the form; a staff
   // member who asked for it explicitly gets an answer either way.
   if (!result.data) return explicit ? <p className="text-sm text-muted" role="status">{t`Readiness checks are unavailable for your access.`}</p> : null;

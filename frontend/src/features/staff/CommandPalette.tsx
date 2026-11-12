@@ -1,8 +1,8 @@
 import { t } from "@lingui/core/macro";
 import { consoleSessionHref } from "../../lib/api/sessionContext";
-import { useEffect, useId, useState } from "react";
+import { useCallback, useEffect, useId, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useTransitionNavigate } from "../../lib/motion";
 
 import { Modal } from "../../components/ui";
 import { staffRequest } from "../../lib/api";
@@ -29,11 +29,11 @@ export function CommandPalette({ makerspaceId, makerspaceSlug, allowedTabs, gues
   makerspaceId: number; makerspaceSlug: string; allowedTabs: readonly string[]; guestOnly: boolean; singleTenantLocked: boolean; ownerName: string;
   actions?: readonly string[]; isSuperadmin?: boolean; open?: boolean; onOpenChange?: (open: boolean) => void;
 }) {
-  const navigate = useNavigate();
+  const navigate = useTransitionNavigate();
   const id = useId();
   const [localOpen, setLocalOpen] = useState(false);
   const open = controlledOpen ?? localOpen;
-  const setOpen = (next: boolean) => { setLocalOpen(next); onOpenChange?.(next); };
+  const setOpen = useCallback((next: boolean) => { setLocalOpen(next); onOpenChange?.(next); }, [onOpenChange]);
   const [search, setSearch] = useState("");
   const [active, setActive] = useState(0);
   const term = useDebouncedValue(search, 250).trim();
@@ -68,7 +68,8 @@ export function CommandPalette({ makerspaceId, makerspaceSlug, allowedTabs, gues
     };
     document.addEventListener("keydown", keydown);
     return () => document.removeEventListener("keydown", keydown);
-  }, [open]);
+  }, [open, setOpen]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- setOpen is deliberately omitted: the palette must close only when the space or owner changes, not when the parent passes a new onOpenChange
   useEffect(() => { setOpen(false); setSearch(""); setActive(0); }, [makerspaceId, ownerName]);
 
   const run = (command?: Command) => {

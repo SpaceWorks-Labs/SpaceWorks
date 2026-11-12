@@ -1,7 +1,7 @@
 import { t } from "@lingui/core/macro";
 import { useState, type FormEvent } from "react";
 
-import { ActionControl, EmptyState, ErrorText, Field, ListRow, Pagination, RelativeTime, Skeleton, StatusPill } from "../../components/ui";
+import { ActionControl, EmptyState, ErrorText, Field, ListRow, Pagination, RelativeTime, StatusPill } from "../../components/ui";
 import type { Tone } from "../../components/ui";
 import {
   useCancelHostingInvitation,
@@ -12,6 +12,8 @@ import {
   type HostingInvitationCreated,
   type HostingScope,
 } from "../hosting/hostingApi";
+import { LogoLoader } from "../../components/LogoLoader";
+import { BoxArt } from "../../components/BoxSpinner";
 
 const PAGE_SIZE = 24;
 const EMPTY = { invitee_email: "", space_name: "", note: "" };
@@ -67,7 +69,7 @@ export function HostingInvitations({ scope }: { scope: HostingScope }) {
         <Field label={t`Note (optional)`} hint={`${form.note.length}/500 · Included in the invitation.`}>
           <textarea className="desk-input min-h-20" maxLength={500} value={form.note} onChange={(event) => set("note", event.target.value)} />
         </Field>
-        <button className="desk-button-primary w-fit" type="submit" disabled={create.isPending}>{create.isPending ? t`Sending…` : t`Send invitation`}</button>
+        <button className="desk-button-primary w-fit" type="submit" disabled={create.isPending}>{create.isPending ? <><BoxArt size={16} mono />{t`Sending…`}</> : t`Send invitation`}</button>
         {create.error ? <p className="text-sm text-danger" role="alert">{create.error.message}</p> : null}
       </form>
       {created ? <div className="mt-4 rounded-xl border border-success bg-success-soft p-4 text-success-ink" role="status">
@@ -83,7 +85,7 @@ export function HostingInvitations({ scope }: { scope: HostingScope }) {
         </div>
       </div> : null}
 
-      {invitations.isLoading ? <Skeleton className="mt-5 h-24 w-full" /> : null}
+      {invitations.isLoading ? <LogoLoader size={48} className="min-h-24 py-3" /> : null}
       {invitations.isError ? <ErrorText resource={t`hosting invitations`} onRetry={() => { void invitations.refetch(); }} /> : null}
       {cancel.error ? <ErrorText message={cancel.error.message} /> : null}
       {data && !data.results.length ? <EmptyState message={t`No hosting invitations yet.`} /> : null}

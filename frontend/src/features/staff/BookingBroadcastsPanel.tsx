@@ -1,9 +1,10 @@
 import { formatLocale } from "../../lib/format";
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
-import { Card, ErrorText, Skeleton, StatusBadge, PagePager } from "../../components/ui";
+import { Card, ErrorText, StatusBadge, PagePager } from "../../components/ui";
 import { useBookingBroadcasts, type BookingCampaign } from "./bookingBroadcastsApi";
 import { opsStatusLabel } from "./opsPresentation";
+import { LogoLoader } from "../../components/LogoLoader";
 
 const fieldLabel = "grid gap-1 text-sm font-semibold text-ink";
 
@@ -45,7 +46,7 @@ export function BookingBroadcastsPanel({ makerspaceId, spaceId }: { makerspaceId
       </fieldset>
       <div className="flex justify-end"><button className="desk-button-primary" type="submit" disabled={compose.isPending || !statuses.length}>{compose.isPending ? t`Saving…` : t`Save draft`}</button></div>
     </form></Card>
-    {history.isLoading ? <div role="status" className="grid gap-3"><span className="sr-only">{t`Loading broadcasts…`}</span><Skeleton className="h-20 w-full" /><Skeleton className="h-20 w-full" /></div> : null}
+    {history.isLoading ? <div role="status" className="grid gap-3"><span className="sr-only">{t`Loading broadcasts…`}</span><LogoLoader size={48} className="min-h-20 py-3" /><LogoLoader size={48} className="min-h-20 py-3" /></div> : null}
     {error ? <ErrorText message={error.message} /> : null}
     {history.data?.results.length ? <ul className="grid gap-3" aria-label={t`Sent and draft broadcasts`}>{history.data.results.map((row) => <li key={row.id} className="grid min-w-0 gap-3 rounded-2xl border border-line bg-panel p-4">
       <div className="flex min-w-0 flex-wrap items-center justify-between gap-2"><p className="title-section min-w-0 break-words">{row.subject}</p><StatusBadge status={row.status} label={opsStatusLabel(row.status)} /></div>

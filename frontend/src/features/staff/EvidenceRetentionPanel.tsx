@@ -40,6 +40,7 @@ export function EvidenceRetentionPanel({ makerspaceId }: { makerspaceId: number 
 
   useEffect(() => {
     if (policy.data) { setDays(String(policy.data.effective_days)); setDaysTouched(false); }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- the draft is reseeded only when the stored policy values change; depending on policy.data would overwrite a typed value on every refetch
   }, [policy.data?.effective_days, policy.data?.override_days]);
 
   const submit = (event: FormEvent) => {

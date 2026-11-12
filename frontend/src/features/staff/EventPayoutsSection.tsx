@@ -1,3 +1,4 @@
+import { LogoLoader } from "../../components/LogoLoader";
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -17,7 +18,7 @@ export function EventPayoutsSection({ makerspaceId }: { makerspaceId: number }) 
     gcTime: 0, retry: false });
   const [selected, setSelected] = useState<string | null>(null);
   if (account.error) return <ErrorBlock error={account.error} />;
-  if (!account.data) return <p role="status">{t`Loading event payouts…`}</p>;
+  if (!account.data) return <LogoLoader label={t`Loading event payouts…`} />;
   const scope = { actorId: account.data.id, makerspaceId };
   return <section className="mt-8 grid gap-6" aria-label={t`Event reimbursement payouts`}>
     {selected ? <>

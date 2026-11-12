@@ -2,6 +2,7 @@ import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { staffRequest } from "../../lib/api";
+import { BoxArt } from "../../components/BoxSpinner";
 
 type ClosedNotice = { public_closed_notice: string; public_reopens_on: string | null };
 
@@ -35,7 +36,7 @@ export function ClosedNoticeSettings({ makerspaceId }: { makerspaceId: number })
         onChange={event => setDraft({ ...value, public_reopens_on: event.target.value || null })} />
     </label>
     <div className="flex flex-wrap gap-2">
-      <button type="button" className="desk-button-primary" disabled={!draft || save.isPending} onClick={() => draft && save.mutate(draft)}>{save.isPending ? t`Saving…` : t`Save banner`}</button>
+      <button type="button" className="desk-button-primary" disabled={!draft || save.isPending} onClick={() => draft && save.mutate(draft)}>{save.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Save banner`}</button>
       {draft ? <button type="button" className="desk-button" onClick={() => setDraft(null)}>{t`Discard`}</button> : null}
     </div>
     {save.error ? <p role="alert" className="text-sm text-danger">{save.error.message}</p> : null}

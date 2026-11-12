@@ -7,6 +7,7 @@ import { AudienceOrganizationPicker } from "./EventPartnerPickers";
 import { useReplaceAudienceOrganizations } from "./eventPartnersApi";
 import type { StaffEvent } from "./eventsApi";
 import { eventErrorText } from "./eventUi";
+import { BoxArt } from "../../components/BoxSpinner";
 
 const asOptions = (rows: StaffEvent["audience_organizations"]) => (rows ?? []).map((row) => ({ id: row.id, label: row.name, detail: row.slug }));
 
@@ -25,7 +26,7 @@ function AudienceEditor({ event, makerspaceId, disabled }: { event: StaffEvent; 
     <div className="grid gap-3">
       <AudienceOrganizationPicker selected={selected} onChange={setSelected} disabled={disabled || replace.isPending} label={t`Audience organizations`} />
       {!disabled && dirty ? <button type="button" className="desk-button-primary justify-self-start" disabled={replace.isPending}
-        onClick={() => replace.mutate(selected.map((row) => row.id))}>{replace.isPending ? t`Saving…` : t`Save audience`}</button> : null}
+        onClick={() => replace.mutate(selected.map((row) => row.id))}>{replace.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Save audience`}</button> : null}
       {replace.error ? <p className="text-sm text-danger" role="alert">{eventErrorText(replace.error)}</p> : null}
     </div>
   </SettingsSection>;

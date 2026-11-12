@@ -2,11 +2,13 @@ import { formatLocale } from "../../lib/format";
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
 
-import { ErrorText, Field, SettingsSection, Skeleton, StatusPill, PagePager } from "../../components/ui";
+import { ErrorText, Field, SettingsSection, StatusPill, PagePager } from "../../components/ui";
 import { BookingPermissionFields } from "./BookingPermissionFields";
 import { useBookingStaffGrantActions, useBookingStaffGrants, useBookingStaffInvites, type BookingStaffGrant, type StaffGrantTarget } from "./bookingStaffGrantsApi";
 import { bookingPermissionLabel, type BookingPermission } from "./bookingStaffPermissions";
 import { eventErrorText } from "./eventUi";
+import { LogoLoader } from "../../components/LogoLoader";
+import { BoxArt } from "../../components/BoxSpinner";
 
 export function BookingStaffAccess({ target }: { target: StaffGrantTarget }) {
   const [email, setEmail] = useState("");
@@ -34,13 +36,13 @@ export function BookingStaffAccess({ target }: { target: StaffGrantTarget }) {
       <Field label={t`Invite email`}><input className="desk-input w-full" type="email" autoComplete="email" value={email} required disabled={pending} onChange={(event) => setEmail(event.target.value)} /></Field>
       <BookingPermissionFields value={permissions} onChange={setPermissions} disabled={pending} />
       <label className="flex min-h-11 items-center gap-2 text-sm text-ink"><input type="checkbox" checked={sendEmail} disabled={pending} onChange={(event) => setSendEmail(event.target.checked)} />{t`Email the invitation link`}</label>
-      <button className="desk-button-primary justify-self-start" type="submit" disabled={pending || !permissions.length}>{invite.isPending ? t`Creating invitation...` : t`Invite staff`}</button>
+      <button className="desk-button-primary justify-self-start" type="submit" disabled={pending || !permissions.length}>{invite.isPending ? <><BoxArt size={16} mono />{t`Creating invitation...`}</> : t`Invite staff`}</button>
     </form>
     {link ? <div className="grid gap-3 py-5" role="status">
       <Field label={t`Invitation link (shown once)`}><input className="desk-input code-text w-full min-w-0 text-xs" readOnly value={link} onFocus={(event) => event.target.select()} /></Field>
       <button className="desk-button justify-self-start" type="button" onClick={() => setLink("")}>{t`Dismiss link`}</button>
     </div> : null}
-    {grants.isLoading || invites.isLoading ? <div className="py-5"><Skeleton className="h-24 w-full" /></div> : null}
+    {grants.isLoading || invites.isLoading ? <div className="py-5"><LogoLoader size={48} className="min-h-24 py-3" /></div> : null}
     {error ? <div className="py-5"><ErrorText message={eventErrorText(error)} /></div> : null}
     <div className="py-5"><h3 className="title-section">{t`Granted staff`}</h3>
       {grants.data?.results.length === 0 ? <p className="mt-2 text-sm text-muted">{t`No staff grants yet.`}</p> : null}

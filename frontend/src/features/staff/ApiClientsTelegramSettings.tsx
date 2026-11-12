@@ -1,10 +1,12 @@
 import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { ConfirmDialog, DangerZone, ErrorBlock, Skeleton, SettingsActions, SettingsRow, StatusPill } from "../../components/ui";
+import { ConfirmDialog, DangerZone, ErrorBlock, SettingsActions, SettingsRow, StatusPill } from "../../components/ui";
 import { staffRequest } from "../../lib/api";
 import { DELIVERY_SETTINGS_KEY } from "./MakerspaceWebhookSettings";
 import { type Makerspace, useStaffGet } from "./StaffPanels";
+import { LogoLoader } from "../../components/LogoLoader";
+import { BoxArt } from "../../components/BoxSpinner";
 type ApiSettings = {
   telegram_group_chat_id: string;
   telegram_bot_token_set: boolean;
@@ -109,9 +111,9 @@ export function ApiClientsTelegramSettings({ makerspace }: { makerspace: Makersp
         disabled={!settings.isSuccess || testTelegram.isPending}
         onClick={() => testTelegram.mutate()}
       >
-        {testTelegram.isPending ? t`Sending…` : t`Send Telegram test alert`}
+        {testTelegram.isPending ? <><BoxArt size={16} mono />{t`Sending…`}</> : t`Send Telegram test alert`}
       </button>
-      {settings.isLoading ? <Skeleton className="mt-3 h-24 w-full" /> : null}
+      {settings.isLoading ? <LogoLoader size={48} className="min-h-24 py-3" /> : null}
       {settings.error ? <ErrorBlock error={new Error(t`Couldn't load Telegram settings. Try again.`)} onRetry={() => { void settings.refetch(); }} /> : null}
       {saveSettings.error ? <p className="mt-2 text-sm text-danger">{saveSettings.error.message}</p> : null}
       {clearTelegramToken.error ? <p className="mt-2 text-sm text-danger">{clearTelegramToken.error.message}</p> : null}

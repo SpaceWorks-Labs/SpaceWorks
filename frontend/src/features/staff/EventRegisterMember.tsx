@@ -10,6 +10,7 @@ import {
 } from "../forms/customFormTypes";
 import { StructuredApiError } from "../../lib/api";
 import { useEventEligibleMembers, useRegisterMemberForEvent, type StaffEvent } from "./eventsApi";
+import { BoxArt } from "../../components/BoxSpinner";
 
 /**
  * Register a member for an event from the roster — the desk counterpart to public
@@ -128,7 +129,7 @@ export function EventRegisterMember({
           onChange={(event) => selectAccount(event.target.value)}
         >
           <option value="">
-            {members.isLoading ? t`Loading members…` : t`Select a member`}
+            {members.isLoading ? <><BoxArt size={16} mono />{t`Loading members…`}</> : t`Select a member`}
           </option>
           {(members.data ?? []).map((row) => (
             <option key={row.member_id} value={row.member_id}>
@@ -142,7 +143,7 @@ export function EventRegisterMember({
           disabled={!memberId || register.isPending}
           onClick={submit}
         >
-          {register.isPending ? t`Registering…` : t`Register`}
+          {register.isPending ? <><BoxArt size={16} mono />{t`Registering…`}</> : t`Register`}
         </button>
       </div>
       {audience === "invite" ? <label className="grid gap-1 text-sm">{t`Invitation code`}<input className="desk-input" maxLength={128} value={inviteCode} onChange={(e) => setInviteCode(e.target.value)} /></label> : null}

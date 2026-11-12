@@ -1,3 +1,4 @@
+import { LogoLoader } from "../../components/LogoLoader";
 import { t } from "@lingui/core/macro";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
@@ -9,6 +10,7 @@ import type { RoomChoice } from "./EventRoomStep";
 import { previewStaffBookingPrice, useBookingEligibleMembers, type StaffBookingQuote } from "./staffBookingApi";
 import { StaffPriceConfirmation } from "./StaffPriceConfirmation";
 import { PagePager } from "../../components/ui";
+import { BoxArt } from "../../components/BoxSpinner";
 
 function span(row: { starts_at: string; ends_at: string }) {
   const format = (value: string) => new Date(value).toLocaleString(formatLocale(), { dateStyle: "medium", timeStyle: "short" });
@@ -54,7 +56,7 @@ export function EventRoomMemberPrice({ space, startsAt, endsAt, value, onChange 
       </select></label>
     <PagePager page={page} setPage={setPage} next={members.data?.next} />
     {value.member_id && !value.price_confirmation ? <button type="button" className="desk-button w-fit" disabled={checking} onClick={() => { void review(); }}>
-      {checking ? t`Checking price…` : t`Review room price`}</button> : null}
+      {checking ? <><BoxArt size={16} mono />{t`Checking price…`}</> : t`Review room price`}</button> : null}
     {quote && value.price_confirmation ? <StaffPriceConfirmation confirmation={quote} approval={space.approval_mode === "approve"} /> : null}
     {members.error || error ? <p role="alert" className="text-danger">{error || members.error?.message}</p> : null}
   </div>;
@@ -71,7 +73,7 @@ export function EventRoomBookingChoices({ spaceId, startsAt, endsAt, value, onCh
     queryFn: () => staffRequest<Paginated<Booking>>(`/admin/spaces/${spaceId}/bookings/?${query}`) });
   const covering = (bookings.data?.results ?? []).filter(row => ["pending", "confirmed"].includes(row.status)
     && row.starts_at <= startsAt && row.ends_at >= endsAt && !row.linked_event);
-  if (bookings.isPending) return <p role="status" className="text-muted">{t`Loading bookings…`}</p>;
+  if (bookings.isPending) return <LogoLoader label={t`Loading bookings…`} />;
   if (bookings.isError) return <p role="alert">{t`Bookings for this room are unavailable.`}</p>;
   if (!covering.length) return <p>{t`No free booking of this room covers the whole event. Choose another option.`}</p>;
   return <label className="grid gap-1">{t`Booking`}

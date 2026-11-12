@@ -6,6 +6,7 @@ import { StatusPill } from "../../components/ui";
 import { staffRequest } from "../../lib/api";
 import { formatMoney } from "./paymentsApi";
 import { StaffListContext } from "./StaffListContext";
+import { LogoLoader } from "../../components/LogoLoader";
 
 // Decision 216 item 8: each money owner side by side, never summed across owners or currencies.
 type Charges = { currency: string; charges: number; owed: string; paid_online: string; paid_offline: string;
@@ -43,7 +44,7 @@ function LinkedFinance({ tenant, eventId, actorId }: { tenant: number; eventId: 
     <button className="desk-button w-fit" type="button" aria-expanded={open} aria-controls={panelId}
       onClick={() => setOpen(value => !value)}>{open ? t`Hide linked finance` : t`View linked finance`}</button>
     <div id={panelId} className="grid gap-2" hidden={!open}>{open ? <>
-      {money.isPending ? <p role="status">{t`Loading linked finance…`}</p> : null}
+      {money.isPending ? <LogoLoader label={t`Loading linked finance…`} size={48} className="min-h-16 py-3" /> : null}
       {money.isError ? <p role="alert">{t`Linked finance is unavailable for your access.`}</p> : null}
       {s ? <div className="grid gap-3 sm:grid-cols-2">
         {s.registration_charges ? <Card title={t`Registration charges`} source={s.registration_charges.source}

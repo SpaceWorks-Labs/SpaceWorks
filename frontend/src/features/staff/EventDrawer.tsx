@@ -15,11 +15,11 @@ import { EventCrossLinks } from "./eventLinks/EventCrossLinks";
 import { EventRegistrationRoster } from "./EventRegistrationRoster";
 import { usePriceDropCheck } from "./priceDrop/usePriceDropCheck";
 import { EventCheckInTab } from "./EventCheckInTab";
+import { EventMachineUsePanel } from "../machine-event-use/EventMachineUsePanel";
 import { EventVenueBookingPanel } from "./EventVenueBookingPanel";
 import { EventVenueSummary } from "./EventVenueSummary";
 import { EventPublishDialog } from "./EventPublishDialog";
 import { EventVenueOffersDialog } from "./EventVenueOffersDialog";
-import { EventInductionPanel } from "./EventInductionPanel";
 import type { VenueOffer } from "./eventVenueApi";
 import { EventDrawerMore } from "./EventDrawerMore";
 import { EventEssentialsEditor } from "./EventEssentialsEditor";
@@ -77,7 +77,9 @@ export function EventDrawer({ eventId, makerspaceId, onClose, onOpenSeries, enab
   useEffect(() => { if (cancel.data?.venue_offers?.length) setOffers(cancel.data.venue_offers); }, [cancel.data]);
   useEffect(() => { if (update.data?.venue_offers?.length) setOffers(update.data.venue_offers); }, [update.data]);
   const bookingsOn = enabledModules.includes("bookings");
+  const machinesOn = enabledModules.includes("machines");
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- the form is reseeded only when the server revision (event.updated_at) changes; depending on the event object would wipe in-progress edits on every refetch
   useEffect(() => { if (event) setValues(valuesFor(event)); }, [event?.updated_at]);
   useEffect(() => setWebsitePublication(undefined), [eventId]);
   const lifecycle = confirm === "publish" ? publish : confirm === "cancel" ? cancel : complete;
@@ -143,8 +145,8 @@ export function EventDrawer({ eventId, makerspaceId, onClose, onOpenSeries, enab
           </> : null}
           <div hidden={tabs.active !== "overview"} className="grid gap-4">
             {access.publish && bookingsOn ? <EventVenueSummary makerspaceId={makerspaceId} eventId={event.id} active={tabs.active === "overview"} /> : null}
-            <EventInductionPanel makerspaceId={makerspaceId} event={event} enabledFeatures={enabledFeatures} enabledModules={enabledModules} active={tabs.active === "overview"} canLinkEvent={access.manager} />
             <EventVenueBookingPanel makerspaceId={makerspaceId} eventId={event.id} readOnly={readOnly} active={tabs.active === "overview"} />
+            {access.registrations && machinesOn ? <EventMachineUsePanel makerspaceId={makerspaceId} eventId={event.id} /> : null}
           </div>
           {access.registrations ? <EventRegistrationRoster key={eventId} visible={tabs.active === "registrations"} event={event} makerspaceId={makerspaceId} offlineCheckInEnabled={event.offline_checkin_enabled} showCheckIn={false} /> : null}
           {/* Parity E-F3 (B25, C16): the filtered guest list with counted presets, reply filter and per-event views. */}

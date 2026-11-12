@@ -5,7 +5,7 @@ import { expect, it, vi } from "vitest";
 import { StructuredApiError } from "../../lib/api";
 import { EventWorkshopMachines } from "./EventWorkshopMachines";
 import { StaffListContext } from "./StaffListContext";
-import { certificationText } from "./eventEquipment/machineLinkErrors";
+import { machineAccessText } from "./eventEquipment/machineLinkErrors";
 
 const route = "/admin/makerspace/3/events/4/workshop-machines";
 const window = { starts_at: "2026-11-20T10:00:00Z", ends_at: "2026-11-20T12:00:00Z" };
@@ -49,9 +49,10 @@ it("offers no unlink on a read-only event", async () => {
   expect(screen.queryByRole("button", { name: /Unlink/ })).toBeNull();
 });
 
-it("names the booker or organizer certification refusal", () => {
-  const error = new StructuredApiError(403, { code: "certification_required", certifications: ["Laser induction"] });
-  expect(certificationText(error)).toContain("booker or the event organizer");
-  expect(certificationText(error)).toContain("Laser induction");
-  expect(certificationText(new Error("x"))).toBeNull();
+it("names the booker or organizer machine access refusal (decision 319)", () => {
+  const error = new StructuredApiError(403, { code: "no_machine_access" });
+  expect(machineAccessText(error)).toContain("booker or the event organizer");
+  expect(machineAccessText(error)).toContain("Machine access");
+  expect(machineAccessText(new StructuredApiError(403, { code: "machine_access_expired" }))).toContain("has ended");
+  expect(machineAccessText(new Error("x"))).toBeNull();
 });

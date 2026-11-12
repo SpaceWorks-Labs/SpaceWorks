@@ -2,11 +2,11 @@ import { formatLocale } from "../../lib/format";
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
 
-import { Skeleton } from "../../components/ui";
 import { EventCertificateActions } from "./EventCertificateActions";
 import { useEventFeedbackResponses } from "./eventFeedbackApi";
 import { eventErrorText } from "./eventUi";
 import { EventPanelPager } from "./EventPanelPager";
+import { LogoLoader } from "../../components/LogoLoader";
 
 export function EventFeedbackResponses({ eventId, makerspaceId, responseCount, canManageCertificates = true }: {
   eventId: number;
@@ -18,7 +18,7 @@ export function EventFeedbackResponses({ eventId, makerspaceId, responseCount, c
   const responses = useEventFeedbackResponses(eventId, page, true);
   return <div className="mt-5">
     <h4 className="title-section">{t`Responses `}<span className="tabular-nums">({responses.data?.count ?? responseCount})</span></h4>
-    {responses.isLoading ? <Skeleton className="mt-2 h-24 w-full" /> : null}
+    {responses.isLoading ? <LogoLoader size={48} className="min-h-24 py-3" /> : null}
     {responses.error ? <p className="mt-2 text-sm text-danger">{eventErrorText(responses.error)}</p> : null}
     {responses.data?.results.map((response) => <article key={response.id} className="mt-2 rounded-lg border border-line p-3 text-sm">
       <p className="font-medium text-ink">{response.identity?.name ?? t`Anonymous response`}</p>

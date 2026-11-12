@@ -1,3 +1,4 @@
+import { LogoLoader } from "../../components/LogoLoader";
 import { plural, t } from "@lingui/core/macro";
 import { useState } from "react";
 
@@ -48,7 +49,7 @@ function CategoryRow({ row, makerspaceId, disabled, onDeleted }: { row: EventCat
 /** Rename, re-slug or delete this space's event categories. Mounted only while its disclosure is open. */
 export function EventCategoryManager({ makerspaceId, disabled = false, onDeleted }: { makerspaceId: number; disabled?: boolean; onDeleted: (id: number) => void }) {
   const categories = useEventCategories(makerspaceId);
-  if (categories.isLoading) return <p role="status" className="text-sm text-muted">{t`Loading categories…`}</p>;
+  if (categories.isLoading) return <LogoLoader label={t`Loading categories…`} />;
   if (!categories.data?.length) return <p className="text-sm text-muted">{t`No categories yet.`}</p>;
   return <ul className="grid gap-2" aria-label={t`Event categories`}>
     {categories.data.map((row) => <CategoryRow key={row.id} row={row} makerspaceId={makerspaceId} disabled={disabled} onDeleted={onDeleted} />)}

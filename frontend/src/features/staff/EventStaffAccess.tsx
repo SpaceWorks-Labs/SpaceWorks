@@ -3,13 +3,14 @@ import { t } from "@lingui/core/macro";
 import { eventPermissionLabel } from "./eventStaffPermissions";
 import { useState } from "react";
 
-import { Card, Skeleton, StatusBadge } from "../../components/ui";
+import { Card, StatusBadge } from "../../components/ui";
 import { EventPermissionFields, RoleLabelField, roleLabelText, type RoleLabel } from "./EventPermissionFields";
 import { useEventStaffGrantActions, useEventStaffGrants, useEventStaffInvites, type EventStaffGrant, type StaffGrantTarget } from "./eventStaffGrantsApi";
 import type { EventPermission } from "./eventStaffPermissions";
 import { eventErrorText } from "./eventUi";
 import { EventInviteLimitFields, emptyInviteLimit, inviteLimitInput, inviteLimitText, useEventTracks, validateInviteLimit } from "./EventInviteLimitFields";
 import { EventPanelPager } from "./EventPanelPager";
+import { LogoLoader } from "../../components/LogoLoader";
 
 const permissionList = (permissions: string[]) => permissions.map(eventPermissionLabel).join(", ");
 const rowCard = "grid min-w-0 gap-3 rounded-2xl border border-line bg-panel p-4";
@@ -61,7 +62,7 @@ export function EventStaffAccess({ target }: { target: StaffGrantTarget }) {
       <label className="grid gap-1 text-sm font-semibold text-ink">{t`Invitation link (shown once)`}<input className="desk-input code-text w-full min-w-0 font-normal" readOnly value={link} onFocus={(event) => event.target.select()} /></label>
       <button className="desk-button justify-self-start" type="button" onClick={() => setLink("")}>{t`Dismiss link`}</button>
     </div> : null}
-    {grants.isLoading || invites.isLoading ? <Skeleton className="h-24 w-full" /> : null}
+    {grants.isLoading || invites.isLoading ? <LogoLoader size={48} className="min-h-24 py-3" /> : null}
     {error ? <p className="text-sm text-danger" role="alert">{eventErrorText(error)}</p> : null}
     <div className="grid gap-3"><h4 className="text-sm font-semibold text-ink">{t`Granted staff`}</h4>
       {grants.data?.results.length === 0 ? <p className="rounded-2xl border border-dashed border-line p-6 text-center text-sm text-muted">{t`No staff grants yet.`}</p> : null}

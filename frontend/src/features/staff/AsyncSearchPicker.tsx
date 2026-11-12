@@ -1,5 +1,6 @@
 import { t } from "@lingui/core/macro";
 import { useEffect, useId, useRef, useState } from "react";
+import { BoxSpinner } from "../../components/BoxSpinner";
 
 export type PickerOption = { id: number; label: string; detail?: string };
 
@@ -57,7 +58,7 @@ export function AsyncSearchPicker({ label, helper, placeholder, selected, option
         }} />
       {expanded ? <ul id={`${id}-list`} role="listbox" aria-label={label}
         className="absolute inset-x-0 top-full z-20 mt-1 max-h-64 overflow-y-auto rounded-xl border border-line bg-panel p-1 shadow-lg">
-        {loading ? <li className="p-3 text-sm text-muted" role="presentation">{t`Searching…`}</li>
+        {loading ? <li className="p-3" role="presentation"><BoxSpinner label={t`Searching…`} /></li>
           : !choices.length ? <li className="p-3 text-sm text-muted" role="presentation">{emptyText}</li>
           : choices.map((row, index) => <li key={row.id} id={`${id}-option-${row.id}`} role="option" aria-selected={index === active}
             className={`flex min-h-11 cursor-pointer flex-col justify-center rounded-lg px-3 py-2 text-sm ${index === active ? "bg-hover" : ""}`}

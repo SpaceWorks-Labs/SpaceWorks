@@ -4,7 +4,7 @@ import { CredentialLostCardActions } from "./eventCredentials/CredentialLostCard
 import { opsStatusLabel } from "./opsPresentation";
 import { useState } from "react";
 
-import { DataTable, EmptyState, Skeleton, StatusBadge } from "../../components/ui";
+import { DataTable, EmptyState, StatusBadge } from "../../components/ui";
 import { EventRegistrationAnswers } from "./EventRegistrationAnswers";
 import { ParticipationChips, ReacceptButton } from "./eventParticipation/RosterParticipation";
 import { offerCancellationUndo, useRestoreRegistration } from "./eventToolsApi";
@@ -37,6 +37,7 @@ import { PayByNotice } from "../events/PayByNotice";
 import { GuestCsvButton } from "./eventRoster/GuestCsvButton";
 import { BulkDecisionBar } from "./bulk/BulkDecisionBar";
 import { EventPanelPager } from "./EventPanelPager";
+import { LogoLoader } from "../../components/LogoLoader";
 
 export function EventRegistrationRoster({ visible = true, event, makerspaceId, offlineCheckInEnabled, showCheckIn = true }: { visible?: boolean;
   event: StaffEvent;
@@ -82,7 +83,7 @@ export function EventRegistrationRoster({ visible = true, event, makerspaceId, o
   if (!visible) return null;
   return <section aria-labelledby="registrations-title">
     <h3 id="registrations-title" className="title-section mb-2">{t`Registrations `}<span className="tabular-nums">({rows.data?.count ?? fallbackCount})</span></h3>
-    {rows.isLoading ? <Skeleton className="h-32 w-full" /> : null}
+    {rows.isLoading ? <LogoLoader size={48} className="min-h-32 py-3" /> : null}
     {rows.error ? <p className="text-sm text-danger">{eventErrorText(rows.error)}</p> : null}
     {ticketsOn ? <TicketedFiltersBar eventId={event.id} value={filters} onChange={next => { setFilters(next); setPage(1); }} />
       : <RegistrationFiltersBar value={filters} tickets={[]} onChange={next => { setFilters(next); setPage(1); }} />}

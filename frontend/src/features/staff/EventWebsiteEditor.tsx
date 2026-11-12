@@ -3,7 +3,7 @@ import { CoverPhotoEditor } from "./eventProgramme/CoverPhotoEditor";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { staffRequest } from "../../lib/api";
-import { Field, SettingsSection, Skeleton, StatusPill } from "../../components/ui";
+import { Field, SettingsSection, StatusPill } from "../../components/ui";
 import type { EventWebsite, WebsiteTarget } from "../events/websiteTypes";
 import { PublicEventWebsite } from "../events/PublicEventWebsite";
 import { EventWebsiteSections } from "./EventWebsiteSections";
@@ -14,6 +14,8 @@ import { PageImage } from "../publicPages/PageImage";
 import { EventWebsiteLayout } from "./EventWebsiteLayout";
 import { websiteDraftPreview, type InheritedCover } from "../events/websiteDraftPreview";
 import { EventWebsiteEditorial } from "./EventWebsiteEditorial";
+import { LogoLoader } from "../../components/LogoLoader";
+import { BoxArt } from "../../components/BoxSpinner";
 
 type EditorProps = {
   target: WebsiteTarget; canEdit: boolean; canPublish: boolean; status: string;
@@ -64,7 +66,7 @@ function WebsiteDraftEditor({ target, canEdit, canPublish, status, inheritedImag
         <p className="mt-1 text-sm text-muted">{t`Saving creates a draft. Release publishes the latest saved draft; an already released website keeps its previous snapshot until you release again.`}</p></div>
       {draft && !query.error ? <button className="desk-button" type="button" aria-pressed={preview} onClick={() => setPreview(!preview)}>{preview ? t`Hide draft preview` : t`Preview draft sections`}</button> : null}
     </div>
-    {query.isLoading ? <div role="status" className="grid gap-3"><span className="sr-only">{t`Loading website…`}</span><Skeleton className="h-24 w-full" /><Skeleton className="h-48 w-full" /></div> : null}
+    {query.isLoading ? <div role="status" className="grid gap-3"><span className="sr-only">{t`Loading website…`}</span><LogoLoader size={48} className="min-h-24 py-3" /><LogoLoader size={48} className="min-h-48 py-3" /></div> : null}
     {error ? <p role="alert" className="text-sm text-danger">{eventErrorText(error)}</p> : null}
     {query.error ? <button className="desk-button justify-self-start" type="button" onClick={() => query.refetch()}>{t`Retry website`}</button> : null}
     {draft && !query.error ? <div className="grid min-w-0 gap-6">
@@ -91,7 +93,7 @@ function WebsiteDraftEditor({ target, canEdit, canPublish, status, inheritedImag
           {dirty ? <p className="mr-auto text-sm text-muted">{t`Save the website before releasing it or changing images.`}</p> : null}
           {canPublish && !terminal ? <><button className="desk-button" type="button" disabled={pending || dirty || conflict || draft.inherited || !draft.revision || status !== "published"} onClick={() => release.mutate({ released: true, revision: draft.revision })}>{t`Release saved draft`}</button>
             {draft.released ? <button className="desk-button" type="button" disabled={pending || dirty || conflict || draft.inherited} onClick={() => release.mutate({ released: false, revision: draft.revision })}>{t`Unrelease website`}</button> : null}</> : null}
-          <button className="desk-button-primary" type="submit" disabled={pending || terminal || conflict || (!canEdit && !canPublish)}>{save.isPending ? t`Saving…` : draft.inherited ? t`Save occurrence override` : t`Save website`}</button>
+          <button className="desk-button-primary" type="submit" disabled={pending || terminal || conflict || (!canEdit && !canPublish)}>{save.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : draft.inherited ? t`Save occurrence override` : t`Save website`}</button>
         </div>
       </form>
       {canEdit && !terminal ? <SettingsSection title={t`Private website images`}>
@@ -106,7 +108,7 @@ function WebsiteDraftEditor({ target, canEdit, canPublish, status, inheritedImag
           <Field label={t`Image description`}><input className="desk-input w-full min-w-0" required maxLength={200} value={alt} onChange={(e) => setAlt(e.target.value)} /></Field>
           <Field label={t`Replace image`}><select className="desk-input w-full min-w-0" value={replaceId ?? ""} onChange={(e) => setReplaceId(e.target.value ? Number(e.target.value) : undefined)}><option value="">{t`Upload new image`}</option>{draft.assets?.map((image) => <option key={image.id} value={image.id}>{image.alt_text}</option>)}</select></Field>
           <Field label={t`Image file`} className="sm:col-span-2"><input className="desk-input w-full min-w-0" type="file" required accept="image/jpeg,image/png,image/webp" onChange={(e) => setFile(e.target.files?.[0] ?? null)} /></Field>
-          <button className="desk-button justify-self-start sm:col-span-2" type="submit" disabled={pending || dirty || Boolean(replaceId && draft.inherited)}>{asset.isPending ? t`Uploading…` : t`Upload image (up to 5 MB)`}</button>
+          <button className="desk-button justify-self-start sm:col-span-2" type="submit" disabled={pending || dirty || Boolean(replaceId && draft.inherited)}>{asset.isPending ? <><BoxArt size={16} mono />{t`Uploading…`}</> : t`Upload image (up to 5 MB)`}</button>
           {draft.assets?.length ? <ul className="grid gap-2 sm:col-span-2" aria-label={t`Website images`}>{draft.assets.map((image) => <li key={image.id} className="flex min-w-0 flex-wrap items-center justify-between gap-2 rounded-xl border border-line p-3">
             <span className="min-w-0 break-words text-sm text-ink">{image.alt_text}</span>
             <button className="desk-button-danger-outline" type="button" disabled={pending || dirty || draft.inherited || image.pinned} onClick={() => asset.mutate(image.id)}>{t`Delete ${image.alt_text}`}{image.pinned ? t` (retained by a revision)` : ""}</button>

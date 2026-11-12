@@ -4,6 +4,7 @@ import { Card, StatusPill } from "../../components/ui";
 import { useEventTicketing, type EventPromo } from "./eventTicketingApi";
 import { EventPanelPager } from "./EventPanelPager";
 import { panelEmpty, panelField, panelInput, panelReveal, panelRow } from "./eventPanelStyles";
+import { LogoLoader } from "../../components/LogoLoader";
 
 export function EventPromosPanel({ visible = true,  eventId, disabled = false }: { visible?: boolean;  eventId: number; disabled?: boolean }) {
   const [page, setPage] = useState(1);
@@ -29,7 +30,7 @@ export function EventPromosPanel({ visible = true,  eventId, disabled = false }:
     </form></Card>
     {code ? <div role="status" className={panelReveal}><p>{t`Copy this code now. It is shown once.`}</p><output className="code-text break-all">{code}</output><button className="desk-button" type="button" onClick={() => setCode("")}>{t`Hide code`}</button></div> : null}
     {error ? <p role="alert" className="text-sm text-danger">{error.message}</p> : null}
-    {rows.isLoading ? <p role="status" className="text-sm text-muted">{t`Loading promo codes…`}</p> : null}
+    {rows.isLoading ? <LogoLoader label={t`Loading promo codes…`} size={48} className="min-h-16 py-3" /> : null}
     {rows.data?.results.length === 0 ? <p className={panelEmpty}>{t`No promo codes yet.`}</p> : null}
     {rows.data?.results.length ? <ul className="grid gap-3">{rows.data.results.map((row) => <li key={row.id} className={panelRow}>
       <div className="min-w-0"><p className="title-section">{t`Promo ${row.id}`}</p>

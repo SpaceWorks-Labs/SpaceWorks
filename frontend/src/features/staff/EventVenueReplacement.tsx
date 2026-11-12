@@ -7,7 +7,7 @@ import type { BookableSpace, Paginated } from "./bookingsApi";
 import { useBookingEligibleMembers, type StaffBookingQuote } from "./staffBookingApi";
 import { changedConfirmation, StaffPriceConfirmation } from "./StaffPriceConfirmation";
 import { StaffBookingAvailability, toLocalInput } from "./StaffBookingAvailability";
-import { certificationText } from "./eventEquipment/machineLinkErrors";
+import { machineAccessText } from "./eventEquipment/machineLinkErrors";
 import { PagePager } from "../../components/ui";
 
 type Request = <Result>(url: string, init: RequestInit) => Promise<Result>;
@@ -81,7 +81,7 @@ function ReplacementForm({ room, makerspaceId, eventId, expectedBookingId, curre
       const next = changedConfirmation(error);
       setConfirmation(next);
       setMessage(next ? (machine ? t`The machine time price changed. Review the new price before replacing.` : t`The room price changed. Review the new price before replacing.`)
-        : certificationText(error) ?? (error instanceof Error ? error.message : t`The booking could not be replaced.`));
+        : machineAccessText(error) ?? (error instanceof Error ? error.message : t`The booking could not be replaced.`));
     } finally {
       if (mine === ticket.current) setPending(false);
     }

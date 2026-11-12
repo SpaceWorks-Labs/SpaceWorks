@@ -7,6 +7,7 @@ import { QueryContent } from "../../components/layouts/LayoutFrame";
 import { OUTCOME_LABELS } from "../bookings/DepartureForm";
 import { opsQueryState } from "./opsPresentation";
 import { useBookingIssues, useResolveIssue, type BookingIssue } from "./bookingQueueApi";
+import { BoxArt } from "../../components/BoxSpinner";
 
 /** Check-out issues (damaged, left early, something wrong), for one space or the whole makerspace. */
 export function BookingIssuesList({ makerspaceId, spaceId, onOpenBooking }: {
@@ -61,7 +62,7 @@ function IssueRow({ issue, makerspaceId, onOpenBooking, showSpace }: {
           </label>
           {resolve.error ? <p role="alert" className="text-sm text-danger">{resolve.error.message}</p> : null}
           <div className="flex gap-2">
-            <button type="submit" className="desk-button-brand min-h-11" disabled={resolve.isPending}>{resolve.isPending ? t`Saving…` : t`Mark resolved`}</button>
+            <button type="submit" className="desk-button-brand min-h-11" disabled={resolve.isPending}>{resolve.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Mark resolved`}</button>
             <button type="button" className="desk-button-ghost min-h-11" onClick={() => setOpen(false)}>{t`Not now`}</button>
           </div>
         </form> : null}

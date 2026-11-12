@@ -64,13 +64,12 @@ it("offers only machine resources and links the chosen booking", async () => {
   await waitFor(() => expect(posted).toEqual([{ booking_id: 21 }]));
 });
 
-it("asks for a certification override reason after a certification refusal", async () => {
+it("explains a machine access refusal and offers no override (decision 319)", async () => {
   const request = vi.fn();
   const posted: Record<string, unknown>[] = [];
   routes(request, body => {
     posted.push(body);
-    if (posted.length === 1) throw new StructuredApiError(403, { code: "certification_required", certifications: ["Laser induction"] });
-    return { ...linkedRow, link_id: 2 };
+    throw new StructuredApiError(403, { code: "no_machine_access" });
   });
   show(request);
   await screen.findByRole("option", { name: "CNC A time" });
@@ -78,10 +77,9 @@ it("asks for a certification override reason after a certification refusal", asy
   await screen.findByRole("option", { name: /#21/ });
   fireEvent.change(screen.getByRole("combobox", { name: "Booking" }), { target: { value: "21" } });
   fireEvent.click(screen.getByRole("button", { name: "Link machine booking" }));
-  const reason = await screen.findByRole("textbox", { name: "Certification override reason" });
-  fireEvent.change(reason, { target: { value: "Supervised session" } });
-  fireEvent.click(screen.getByRole("button", { name: "Link machine booking" }));
-  await waitFor(() => expect(posted[1]).toEqual({ booking_id: 21, certification_override_reason: "Supervised session" }));
+  expect(await screen.findByRole("alert")).toHaveTextContent("has not been given access to this machine");
+  expect(screen.queryByRole("textbox", { name: /override/i })).toBeNull();
+  expect(posted).toEqual([{ booking_id: 21 }]);
 });
 
 it("renders nothing while the machines module is off", () => {

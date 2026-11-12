@@ -4,7 +4,7 @@ import { SeriesGuestList } from "./eventProgramme/SeriesGuestList";
 import { SeriesInvitesPanel } from "./eventProgramme/SeriesInvitesPanel";
 import { useEffect, useState, type FormEvent } from "react";
 
-import { ConfirmDialog, EmptyState, ErrorText, ListRow, Pagination, Skeleton, StatusBadge } from "../../components/ui";
+import { ConfirmDialog, EmptyState, ErrorText, ListRow, Pagination, StatusBadge } from "../../components/ui";
 import { DetailLayout } from "../../components/layouts";
 import { opsQueryState, useOpsTabs, opsStatusLabel } from "./opsPresentation";
 import { EventSeriesCollaborators } from "./EventSeriesCollaborators";
@@ -25,6 +25,7 @@ import {
 } from "./eventSeriesApi";
 import { eventErrorText } from "./eventUi";
 import { pageStickyActions } from "./stickyActions";
+import { LogoLoader } from "../../components/LogoLoader";
 
 type Action = "publish" | "cancel" | "complete" | "extend";
 
@@ -54,6 +55,7 @@ export function EventSeriesDrawer({ seriesId, makerspaceId, onClose, onSelectOcc
   const complete = useEventSeriesAction(makerspaceId, seriesId, "complete");
   const extend = useEventSeriesAction(makerspaceId, seriesId, "extend");
   const action = confirm === "publish" ? publish : confirm === "cancel" ? cancel : confirm === "complete" ? complete : extend;
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- the form is reseeded only when the server revision (query.data.updated_at) changes; depending on the data object would wipe in-progress edits on every refetch
   useEffect(() => { if (query.data) setValues(valuesForSeries(query.data)); }, [query.data?.updated_at]);
   const terminal = query.data?.status === "cancelled" || query.data?.status === "completed";
   const submit = (event: FormEvent) => {
@@ -103,7 +105,7 @@ export function EventSeriesDrawer({ seriesId, makerspaceId, onClose, onSelectOcc
         {showWebsite && tabs.active === "website" ? <EventWebsiteEditor key={`series:${seriesId}`} target={{ kind: "event-series", id: seriesId, makerspaceId }} canEdit={access.edit} canPublish={access.publish} status={query.data.status} inheritedImage={{ url: query.data.image_url ?? null, alt: query.data.title }} /> : null}
         {update.error || action.error ? <p className="text-sm text-danger" role="alert">{eventErrorText(update.error || action.error)}</p> : null}
         {tabs.active === "occurrences" ? <section><h2 className="title-panel">{t`Occurrences`}</h2><p className="mt-1 text-sm text-muted">{t`Choose a date to edit or cancel only that occurrence.`}</p>
-          {occurrences.isLoading ? <Skeleton className="mt-3 h-24 w-full" /> : null}
+          {occurrences.isLoading ? <LogoLoader size={48} className="min-h-24 py-3" /> : null}
           {occurrences.error ? <ErrorText resource={t`occurrences`} onRetry={() => { void occurrences.refetch(); }} /> : null}
           {occurrences.data && !occurrences.data.results.length ? <EmptyState message={t`No occurrences on this page.`} /> : null}
           <div className="mt-3 grid gap-3">{occurrences.data?.results.map(row => <ListRow key={row.id} title={new Date(row.starts_at).toLocaleString(formatLocale())} identity={{ kind: "date", date: row.starts_at }} draft={row.status === "draft"} onClick={() => onSelectOccurrence(row.id)} right={<StatusBadge domain="event" status={row.status} label={opsStatusLabel(row.status)} />} />)}</div>

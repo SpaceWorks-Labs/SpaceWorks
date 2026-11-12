@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Field } from "../../components/ui";
 import { staffRequest } from "../../lib/api";
+import { LogoLoader } from "../../components/LogoLoader";
 
 type Billing = { number_prefix: string; bill_prefix: string; payment_instructions: string; legal_name: string; address: string; tax_id: string; footer: string; account_codes: Record<string, string>; upi_vpa: string; upi_payee_name: string };
 
@@ -34,7 +35,7 @@ export function BillingDocumentsSettings({ makerspaceId }: { makerspaceId: numbe
 
     <button className="desk-button mt-2" type="button" aria-expanded={expanded} onClick={() => setExpanded(!expanded)}>{t`Configure documents`}</button>
     {expanded ? <SettingsQueryState query={policy} resource={t`receipt settings`}><>
-      {policy.isLoading ? <p>{t`Loading billing settings…`}</p> : null}
+      {policy.isLoading ? <LogoLoader label={t`Loading billing settings…`} size={48} className="min-h-16 py-3" /> : null}
       {policy.error || save.error ? <p role="alert" className="text-danger">{(policy.error || save.error)?.message}</p> : null}
       {draft ? <form className="mt-3 grid gap-3" onSubmit={(event) => { event.preventDefault(); save.mutate(); }}>
         {([ ["number_prefix", "Number prefix", 32], ["bill_prefix", "Bill prefix", 32], ["legal_name", "Issuer name", 150], ["address", "Issuer address", 1000], ["tax_id", "Issuer identifier (no tax calculation)", 64], ["footer", "Footer", 1000], ["upi_vpa", "UPI ID for the payment QR (name@bank)", 255], ["upi_payee_name", "UPI payee name", 50] ] as const).map(([name, label, length]) =>

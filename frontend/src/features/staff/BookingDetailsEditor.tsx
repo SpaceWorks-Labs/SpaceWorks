@@ -4,6 +4,7 @@ import { Field, SettingsSection } from "../../components/ui";
 import { CustomFormBuilder } from "../forms/CustomFormBuilder";
 import { pageStickyActions } from "./stickyActions";
 import type { BookableSpace, BookableSpacePayload } from "./bookingsApi";
+import { BoxArt } from "../../components/BoxSpinner";
 
 /** A resource grantee holding `edit_details` changes only the descriptive fields of a space. */
 export function BookingDetailsEditor({ space, pending, onSubmit }: {
@@ -30,7 +31,7 @@ export function BookingDetailsEditor({ space, pending, onSubmit }: {
     </SettingsSection>
     <CustomFormBuilder value={form} onChange={setForm} disabled={pending || !space.is_active} />
     <div className={pageStickyActions}>
-      <button className="desk-button-primary" type="submit" disabled={pending || !space.is_active}>{pending ? t`Saving...` : t`Save details`}</button>
+      <button className="desk-button-primary" type="submit" disabled={pending || !space.is_active}>{pending ? <><BoxArt size={16} mono />{t`Saving...`}</> : t`Save details`}</button>
     </div>
   </form>;
 }

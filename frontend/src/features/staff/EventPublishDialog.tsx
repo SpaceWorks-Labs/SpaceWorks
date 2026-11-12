@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { Modal } from "../../components/ui";
 import { StructuredApiError } from "../../lib/api";
 import { useEventVenue, venueStateText, venueWarningText, type VenuePanel } from "./eventVenueApi";
+import { LogoLoader } from "../../components/LogoLoader";
+import { BoxArt } from "../../components/BoxSpinner";
 
 /** Server refusals the publish dialog explains in place (the generic event error copy covers the rest). */
 export function publishErrorText(error: unknown) {
@@ -40,11 +42,11 @@ export function EventPublishDialog({ open, makerspaceId, eventId, pending, error
       <button type="button" className="desk-button w-full sm:w-auto" disabled={pending} onClick={close}>{t`Cancel`}</button>
       <button type="button" className="desk-button-primary w-full sm:w-auto" disabled={pending || venue.isPending || blocked}
         onClick={() => onPublish(panel?.requires_override && withoutRoom ? { publish_without_room: true } : {})}>
-        {pending ? t`Publishing…` : t`Publish`}</button>
+        {pending ? <><BoxArt size={16} mono />{t`Publishing…`}</> : t`Publish`}</button>
     </div>}>
     <div className="grid gap-3 text-sm">
       <p>{t`Publishing opens registration and shows the event wherever it is listed.`}</p>
-      {venue.isPending ? <p role="status" className="text-muted">{t`Checking the venue…`}</p> : null}
+      {venue.isPending ? <LogoLoader label={t`Checking the venue…`} size={48} className="min-h-16 py-3" /> : null}
       {panel ? <section aria-label={t`Venue check`} className="grid gap-2 rounded-md border border-line p-3">
         <h3 className="font-semibold text-ink">{t`Venue`}</h3>
         <p role={panel.venue.state === "blocked" ? "alert" : undefined}>{venueStateText(panel.venue)}</p>

@@ -5,6 +5,7 @@ import { Card } from "../../components/ui";
 import { EventFields, valuesFor, type EventFormValues } from "./EventFormFields";
 import type { StaffEvent } from "./eventsApi";
 import type { eventAccess } from "./eventStaffPermissions";
+import { BoxArt } from "../../components/BoxSpinner";
 
 /**
  * Inline edit of the essentials on the Overview tab. It shares the drawer's form state and its
@@ -29,7 +30,7 @@ export function EventEssentialsEditor({ event, access, values, setValues, save, 
         canEditDetails={access.edit} canEditSchedule={access.publish} canEditPrice={access.manager} />
       <div className="flex flex-wrap justify-end gap-2">
         <button className="desk-button" type="button" disabled={pending} onClick={close}>{t`Cancel`}</button>
-        <button className="desk-button-primary" type="submit" disabled={pending}>{pending ? t`Saving…` : t`Save essentials`}</button>
+        <button className="desk-button-primary" type="submit" disabled={pending}>{pending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Save essentials`}</button>
       </div>
     </form> : null}
   </Card>;

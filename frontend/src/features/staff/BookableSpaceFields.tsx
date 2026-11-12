@@ -34,7 +34,7 @@ export function BookableSpaceFields({ values, set, machineTypes, typesError, pag
       <SettingsRow label={t`Capacity`} htmlFor={id + "-capacity"} helper={t`Use 0 when no capacity is published.`}>
         <input id={id + "-capacity"} className="desk-input w-full" type="number" min={0} value={values.capacity} onChange={event => set("capacity", Number(event.target.value))} />
       </SettingsRow>
-      {machineKind ? null : <SettingsRow label={t`Machine type for certification`} htmlFor={id + "-machine"} helper={t`Required booking certifications apply when enabled for this machine type.`}>
+      {machineKind ? null : <SettingsRow label={t`Machine type this room is for`} htmlFor={id + "-machine"} helper={t`Members need machine access for this type to book it.`}>
         <select id={id + "-machine"} className="desk-input w-full" value={values.machine_type ?? ""} onChange={event => set("machine_type", event.target.value ? Number(event.target.value) : null)}>
           <option value="">{t`No machine type`}</option>
           {values.machine_type && !machineTypes.some(type => type.id === values.machine_type) ? <option value={values.machine_type}>{t`Linked machine type #${values.machine_type}`}</option> : null}

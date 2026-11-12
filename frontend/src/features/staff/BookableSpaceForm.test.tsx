@@ -32,7 +32,7 @@ describe("booking editor training link", () => {
     const submit = vi.fn();
     show(submit);
     await screen.findByText(/Machine type choices are unavailable/);
-    fireEvent.change(screen.getByRole("combobox", { name: /Machine type for certification/ }), { target: { value: "" } });
+    fireEvent.change(screen.getByRole("combobox", { name: /Machine type this room is for/ }), { target: { value: "" } });
     fireEvent.click(screen.getByText("Save space"));
     expect(submit).toHaveBeenCalledWith(expect.objectContaining({ machine_type: null }));
   });

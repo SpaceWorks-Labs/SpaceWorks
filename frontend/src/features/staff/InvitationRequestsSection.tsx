@@ -12,6 +12,7 @@ import {
   type InvitationRequest,
 } from "./membershipPlansApi";
 import { Panel } from "./panels/shared";
+import { LogoLoader } from "../../components/LogoLoader";
 
 type Role = { id: number; name: string };
 
@@ -49,7 +50,7 @@ export function InvitationRequestsSection({ makerspaceId, roles }: { makerspaceI
       <p className="mb-3 text-sm text-muted">
         {t`People who asked to be invited from the public page. Inviting sends the same membership invitation a manager types by hand.${pendingCount ? ` ${pendingCount} pending.` : ""}`}
       </p>
-      {requests.isLoading ? <p className="text-sm text-muted">{t`Loading invitation requests…`}</p> : null}
+      {requests.isLoading ? <LogoLoader label={t`Loading invitation requests…`} size={48} className="min-h-16 py-3" /> : null}
       {requests.isError ? <p className="text-sm text-danger" role="alert">{planErrorText(requests.error, "Could not load invitation requests.")}</p> : null}
       {requests.data?.length === 0 ? <EmptyState message={t`No invitation requests yet. New requests appear here.`} /> : null}
       {rows.map((row) => {

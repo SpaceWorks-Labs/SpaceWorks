@@ -10,6 +10,7 @@ import { useEventSpeakers, useRemoveSpeaker, type EventSpeaker } from "./eventSp
 import { useEventWebsite } from "./eventWebsiteApi";
 import { panelEmpty, panelRow } from "./eventPanelStyles";
 import { eventErrorText } from "./eventUi";
+import { LogoLoader } from "../../components/LogoLoader";
 
 const STATUS: Record<EventSpeaker["status"], { label: string; tone: Tone }> = {
   linked: { label: t`Linked`, tone: "success" },
@@ -50,7 +51,7 @@ export function EventSpeakersPanel({ eventId, makerspaceId, websiteEnabled, disa
     </div> : null}
     {speakers.error ? <p role="alert" className="text-sm text-danger">{eventErrorText(speakers.error)}</p> : null}
     {remove.error ? <p role="alert" className="text-sm text-danger">{eventErrorText(remove.error)}</p> : null}
-    {speakers.isLoading ? <p role="status" className="text-sm text-muted">{t`Loading speakers…`}</p> : null}
+    {speakers.isLoading ? <LogoLoader label={t`Loading speakers…`} size={48} className="min-h-16 py-3" /> : null}
     {speakers.isSuccess && !rows.length ? <p className={panelEmpty}>{t`No speakers yet. Assign an account or create a claim link.`}</p> : null}
     {rows.length ? <ul className="grid gap-3" aria-label={t`Speakers`}>{rows.map((row) => <li key={row.id} className={panelRow}>
       <div className="min-w-0"><p className="title-section break-words">{row.display_name}</p>

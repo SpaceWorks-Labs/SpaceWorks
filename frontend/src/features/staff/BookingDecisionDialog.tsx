@@ -2,6 +2,7 @@ import { t } from "@lingui/core/macro";
 import { useId, useState } from "react";
 
 import { Modal } from "../../components/ui";
+import { BoxArt } from "../../components/BoxSpinner";
 
 /** Reject (reason required) or cancel (reason optional) with text the requester will see. */
 export function BookingDecisionDialog({ action, bookerName, open, pending, onCancel, onConfirm }: {
@@ -23,7 +24,7 @@ export function BookingDecisionDialog({ action, bookerName, open, pending, onCan
     <Modal open={open} onClose={close} title={title} footer={<div className="flex flex-wrap justify-end gap-2">
       <button type="button" className="desk-button-ghost min-h-11" onClick={close} disabled={pending}>{t`Keep booking`}</button>
       <button type="submit" form={`${id}-form`} className="desk-button-danger min-h-11" disabled={pending}>
-        {pending ? t`Saving…` : title}
+        {pending ? <><BoxArt size={16} mono />{t`Saving…`}</> : title}
       </button>
     </div>}>
       <form id={`${id}-form`} className="grid gap-3" noValidate onSubmit={event => {

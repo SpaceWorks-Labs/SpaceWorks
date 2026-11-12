@@ -35,10 +35,10 @@ describe("decision 242 (U6): new search sources in the palette", () => {
 describe("decision 248: new reports are findable by the roles that can open them", () => {
   it("lists only reports the actor's actions admit, behind the Reports tab", () => {
     const keys = (actions: string[]) => reportCommands(actions, ["reports"], false).map(command => command.query.report);
-    expect(keys(["manage_machines"])).toEqual(["incidents-register", "machine-jobs", "certification-holders"]);
+    expect(keys(["manage_machines"])).toEqual(["incidents-register", "machine-jobs"]); // decision 329: retired report not promoted
     expect(keys(["manage_members"])).toEqual(["roster-export", "guest-passes-export", "volunteer-hours-export", "minors-consent-export"]);
     expect(reportCommands(["manage_members"], ["members"], false)).toEqual([]);
-    expect(reportCommands([], ["reports"], true)).toHaveLength(11);
+    expect(reportCommands([], ["reports"], true)).toHaveLength(10);
   });
 
   it("shows a report command once the person types", async () => {

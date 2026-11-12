@@ -6,6 +6,7 @@ import { EventPanelPager } from "./EventPanelPager";
 import { panelEmpty, panelField, panelInput } from "./eventPanelStyles";
 import { EventTicketRow } from "./EventTicketRow";
 import { useStaffChargesOn } from "./useStaffChargesOn";
+import { LogoLoader } from "../../components/LogoLoader";
 
 export function EventTicketsPanel({ visible = true,  eventId, disabled = false, readOnly = false }: { visible?: boolean;  eventId: number; disabled?: boolean;
   /** A21: registration staff read the ticket types; only event managers add or change them. */
@@ -35,7 +36,7 @@ export function EventTicketsPanel({ visible = true,  eventId, disabled = false, 
       <button className="desk-button-primary justify-self-start" type="submit" disabled={disabled || create.isPending}>{t`Add ticket type`}</button>
     </form></Card>}
     {error ? <p role="alert" className="text-sm text-danger">{error.message}</p> : null}
-    {rows.isLoading ? <p role="status" className="text-sm text-muted">{t`Loading ticket types…`}</p> : null}
+    {rows.isLoading ? <LogoLoader label={t`Loading ticket types…`} size={48} className="min-h-16 py-3" /> : null}
     {rows.data?.results.length === 0 ? <p className={panelEmpty}>{t`No ticket types yet.`}</p> : null}
     {rows.data?.results.length ? <ul className="grid gap-3">{rows.data.results.map((row) => readOnly ? <ReadOnlyTicket key={row.id} row={row} showPrice={chargesOn} />
       : <EventTicketRow key={row.id} row={row} eventId={eventId} disabled={disabled} />)}</ul> : null}

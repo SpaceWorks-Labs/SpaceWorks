@@ -18,6 +18,7 @@ import { staffTabPath } from "./staffTabs";
 
 import { DeploymentPanel } from "../deployment/DeploymentPanel";
 import type { TenantDeploymentSummary } from "../deployment/types";
+import { LogoLoader } from "../../components/LogoLoader";
 
 type HealthStatus = "ok" | "warn" | "error" | "unknown";
 
@@ -90,7 +91,7 @@ export function IntegrationHealthPanel({ makerspace, isSuperadmin = false }: { m
 
             <Badge label="" tone={statusTone(data?.status ?? "unknown")}>{statusLabel(data?.status)}</Badge>
           </div>
-          {health.isLoading ? <p role="status" className="text-sm text-muted">{t`Loading integration health…`}</p> : null}
+          {health.isLoading ? <LogoLoader label={t`Loading integration health…`} size={48} className="min-h-16 py-3" /> : null}
           {health.error ? <ErrorBlock error={new Error(t`Couldn't load integration health. Try again.`)} onRetry={() => { void health.refetch(); }} /> : null}
         </div>
         <div className="flex flex-wrap gap-2">

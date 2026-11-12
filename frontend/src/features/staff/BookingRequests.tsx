@@ -1,3 +1,4 @@
+import { EventLinkToggle } from "../machine-event-use/EventLinkToggle";
 import { formatLocale } from "../../lib/format";
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
@@ -62,6 +63,7 @@ export function BookingRequests({ makerspaceId, spaceId, space, canReconcile, bo
           <div className="text-sm"><a className="flex min-h-11 items-center break-all hover:underline" href={"mailto:" + booking.email}>{booking.email}</a>
             <a className="flex min-h-11 items-center text-muted hover:underline" href={"tel:" + booking.phone}>{booking.phone}</a></div>
           <BookingRowLinks booking={booking} />
+          {space.kind === "machine" ? <EventLinkToggle makerspaceId={makerspaceId} kind="booking" id={booking.id} eventTitle={booking.event?.title} /> : null}
           {booking.is_house ? <p className="text-sm">{t`House booking (no member, no charge)`}</p> : null}
           {booking.organization_name ? <p className="text-sm">{t`For organization: ${booking.organization_name}`}</p> : null}
           {booking.linked_event?.event_status === "cancelled" && ["pending", "confirmed"].includes(booking.status) ? <p className="text-sm" role="status">

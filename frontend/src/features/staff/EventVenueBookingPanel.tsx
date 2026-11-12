@@ -19,6 +19,7 @@ import { EventWorkshopMachines } from "./EventWorkshopMachines";
 import { venueWarningText, type VenueWarning } from "./eventVenueApi";
 import { StaffBookingForm } from "./StaffBookingForm";
 import { EventPanelPager } from "./EventPanelPager";
+import { LogoLoader } from "../../components/LogoLoader";
 
 type Window = { starts_at: string; ends_at: string };
 type Link = {
@@ -170,7 +171,7 @@ function VenueBooking({ makerspaceId, eventId, actorId, readOnly, active = true,
     <button type="button" className="desk-button w-fit" disabled={pending} aria-expanded={open}
       onClick={() => setOpen(value => !value)}>{open ? t`Hide venue booking` : t`Manage venue booking`}</button>
     {open ? <>
-      {query.isPending || query.isFetching ? <p role="status">{t`Checking venue booking…`}</p> : null}
+      {query.isPending || query.isFetching ? <LogoLoader label={t`Checking venue booking…`} size={48} className="min-h-16 py-3" /> : null}
       {query.isError ? <p role="alert">{t`The venue booking is unavailable for your access.`}</p> : null}
       {link?.state === "booking_unavailable" ? <p>{t`The original linked booking is unavailable. Review venue billing with staff.`}</p> : null}
       {link?.state === "linked" && link.event_window && link.booking_window ? <div>

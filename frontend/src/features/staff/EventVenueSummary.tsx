@@ -1,3 +1,4 @@
+import { LogoLoader } from "../../components/LogoLoader";
 import { t } from "@lingui/core/macro";
 
 import { StatusPill } from "../../components/ui";
@@ -19,7 +20,7 @@ export function venueStatusLabel(state: VenueStateName) {
 export function EventVenueSummary({ makerspaceId, eventId, active = true }: { makerspaceId: number; eventId: number; active?: boolean }) {
   const venue = useEventVenue(makerspaceId, eventId, active);
   const crossLink = useCrossLink();
-  if (venue.isPending) return <p role="status" className="text-sm text-muted">{t`Checking the venue…`}</p>;
+  if (venue.isPending) return <LogoLoader label={t`Checking the venue…`} />;
   // 404/403: Bookings or Events off, or no publish authority on this event -- show nothing.
   if (venue.isError || !venue.data) return null;
   const panel = venue.data;

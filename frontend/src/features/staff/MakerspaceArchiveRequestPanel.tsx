@@ -7,6 +7,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { MakerspaceArchiveRequest } from "../../generated/api";
 import { StatusPill as Badge } from "../../components/ui";
 import { StructuredApiError, staffRequest } from "../../lib/api";
+import { BoxArt } from "../../components/BoxSpinner";
 
 const REASON_MAX_LENGTH = 2000;
 
@@ -87,7 +88,7 @@ function AuthorizedArchiveRequestPanel({ makerspaceId }: { makerspaceId: number 
               disabled={withdraw.isPending}
               onClick={() => withdraw.mutate(pending.id)}
             >
-              {withdraw.isPending ? t`Withdrawing…` : t`Withdraw`}
+              {withdraw.isPending ? <><BoxArt size={16} mono />{t`Withdrawing…`}</> : t`Withdraw`}
             </button>
           </div>
           <p className="mt-3 whitespace-pre-wrap text-sm text-ink">{pending.reason}</p>
@@ -138,7 +139,7 @@ function AuthorizedArchiveRequestPanel({ makerspaceId }: { makerspaceId: number 
             type="submit"
             disabled={create.isPending}
           >
-            {create.isPending ? t`Filing request…` : t`Request archival`}
+            {create.isPending ? <><BoxArt size={16} mono />{t`Filing request…`}</> : t`Request archival`}
           </button>
         </form>
       ) : null}

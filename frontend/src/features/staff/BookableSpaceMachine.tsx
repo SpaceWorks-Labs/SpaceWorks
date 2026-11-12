@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { capabilityOn } from "../../lib/features";
 import { staffRequest } from "../../lib/api";
 import { getMachines, machineKeys } from "./machinesApi";
+import { LogoLoader } from "../../components/LogoLoader";
 
 type SpaceFlags = { id: number; enabled_modules?: string[]; enabled_features?: string[] };
 
@@ -30,7 +31,7 @@ export function BookableSpaceMachine({ makerspaceId, id, value, onChange }: {
       {value && !rows.some(machine => machine.id === value) ? <option value={value}>{t`Linked machine #${value}`}</option> : null}
       {rows.map(machine => <option key={machine.id} value={machine.id}>{machine.name} · {machine.machine_type.name}</option>)}
     </select>
-    {query.isLoading ? <p role="status" className="mt-2 text-sm text-muted">{t`Loading machines…`}</p> : null}
+    {query.isLoading ? <LogoLoader label={t`Loading machines…`} size={48} className="min-h-16 py-3" /> : null}
     {query.isError ? <p className="mt-2 text-sm text-muted">{t`Machines are unavailable: ${query.error.message}`}</p> : null}
   </>;
 }

@@ -1,3 +1,4 @@
+// Decision 319 (addendum): machine certifications / inductions are retired; the screen is unmounted. Cases kept, skipped.
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, expect, it, vi } from "vitest";
@@ -42,13 +43,13 @@ beforeEach(() => {
   });
 });
 
-it("stays hidden when the capability is off", () => {
+it.skip("stays hidden when the capability is off", () => {
   show([]);
   expect(mock.request).not.toHaveBeenCalled();
   expect(screen.queryByText("Induction")).not.toBeInTheDocument();
 });
 
-it("grants only checked-in attendees and reports a result per person", async () => {
+it.skip("grants only checked-in attendees and reports a result per person", async () => {
   show();
   expect(await screen.findByText("Laser basics")).toBeInTheDocument();
   expect(screen.getByRole("checkbox", { name: /Linus/ })).toBeDisabled();
@@ -63,14 +64,14 @@ it("grants only checked-in attendees and reports a result per person", async () 
   expect(screen.getByText(/Grace · Laser basics: Not certified: not a member and holds no active guest pass/)).toBeInTheDocument();
 });
 
-it("offers Mark as induction only with authority on the event too (decision 224 b)", async () => {
+it.skip("offers Mark as induction only with authority on the event too (decision 224 b)", async () => {
   show(undefined, undefined, false);
   expect(await screen.findByText("Laser basics")).toBeInTheDocument();
   expect(screen.queryByRole("button", { name: "Mark as induction" })).not.toBeInTheDocument();
   expect(screen.getByText("Linking an induction also needs access to this event.")).toBeInTheDocument();
 });
 
-it("explains a 403 on linking as missing event access", async () => {
+it.skip("explains a 403 on linking as missing event access", async () => {
   const base = mock.request.getMockImplementation()!;
   mock.request.mockImplementation(async (path: string, init?: RequestInit) => {
     if (path === "/admin/makerspaces/3/events/4/induction" && init?.method === "POST") throw new StructuredApiError(403, { detail: "Forbidden" });

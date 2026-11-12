@@ -6,6 +6,7 @@ import { AsyncSearchPicker, type PickerOption } from "./AsyncSearchPicker";
 import { useAssignSpeaker, useInviteSpeaker, useSpeakerCandidates } from "./eventSpeakersApi";
 import { panelField, panelInput, panelReveal } from "./eventPanelStyles";
 import { eventErrorText } from "./eventUi";
+import { BoxArt } from "../../components/BoxSpinner";
 
 export type SpeakerSection = { slug: string; title: string };
 const RELATION = { member: "Member", staff: "Staff", registrant: "Registered for this event" } as const;
@@ -45,7 +46,7 @@ export function AssignSpeakerForm({ eventId, sections, disabled }: { eventId: nu
     <SectionSelect sections={sections} value={section} onChange={setSection} disabled={disabled} />
     <CheckInToggle checked={checkIn} onChange={setCheckIn} disabled={disabled} />
     {assign.error ? <p role="alert" className="text-sm text-danger">{eventErrorText(assign.error)}</p> : null}
-    <button className="desk-button-primary justify-self-start" type="submit" disabled={disabled || !picked || assign.isPending}>{assign.isPending ? t`Assigning…` : t`Assign speaker`}</button>
+    <button className="desk-button-primary justify-self-start" type="submit" disabled={disabled || !picked || assign.isPending}>{assign.isPending ? <><BoxArt size={16} mono />{t`Assigning…`}</> : t`Assign speaker`}</button>
   </form></Card>;
 }
 
@@ -69,7 +70,7 @@ export function InviteSpeakerForm({ eventId, sections, disabled }: { eventId: nu
     <SectionSelect sections={sections} value={section} onChange={setSection} disabled={disabled} />
     <CheckInToggle checked={checkIn} onChange={setCheckIn} disabled={disabled} />
     {invite.error ? <p role="alert" className="text-sm text-danger">{eventErrorText(invite.error)}</p> : null}
-    <button className="desk-button-primary justify-self-start" type="submit" disabled={disabled || !name.trim() || invite.isPending}>{invite.isPending ? t`Creating…` : t`Create claim link`}</button>
+    <button className="desk-button-primary justify-self-start" type="submit" disabled={disabled || !name.trim() || invite.isPending}>{invite.isPending ? <><BoxArt size={16} mono />{t`Creating…`}</> : t`Create claim link`}</button>
   </form>
     {claimUrl ? <div role="status" className={`${panelReveal} mt-4`}>
       <p>{t`Copy this link now. It is shown once and works for one account.`}</p>

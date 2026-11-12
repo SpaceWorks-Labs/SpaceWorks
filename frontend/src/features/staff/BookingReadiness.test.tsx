@@ -45,11 +45,11 @@ it("hides the link when the server withholds it (module off or no machine scope)
   expect(screen.queryByRole("link", { name: "Open machine maintenance record" })).toBeNull();
 });
 
-it("names a missing certification and omits member_id until a member is chosen", async () => {
+it("names missing machine access and omits member_id until a member is chosen", async () => {
   api.staffRequest.mockResolvedValue({ ready: false, maintenance_link: null, checks: [
-    { code: "certification", state: "blocked", detail: "", certifications: ["Laser induction"] }] });
+    { code: "machine_access", state: "blocked", detail: "", reason: "no_machine_access" }] });
   form({ memberId: "" });
-  expect(await screen.findByText("Missing certification: Laser induction")).toBeInTheDocument();
+  expect(await screen.findByText("The member has not been given access to this machine.")).toBeInTheDocument();
   expect(new URL(api.staffRequest.mock.calls[0][0], "http://x").searchParams.has("member_id")).toBe(false);
 });
 

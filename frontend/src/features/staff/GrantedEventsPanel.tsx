@@ -3,7 +3,7 @@ import { t } from "@lingui/core/macro";
 import { eventPermissionLabel } from "./eventStaffPermissions";
 import { useState } from "react";
 
-import { ErrorText, ListRow, Skeleton, StatusBadge } from "../../components/ui";
+import { ErrorText, ListRow, StatusBadge } from "../../components/ui";
 import type { QueryState } from "../../components/ui";
 import { ListLayout } from "../../components/layouts";
 import { EventSeriesDrawer } from "./EventSeriesDrawer";
@@ -15,6 +15,7 @@ import type { GrantedListFrame } from "./GrantedResourcesPanel";
 import { ScopedEventDrawer } from "./ScopedEventDrawer";
 import { SpaceScope } from "./SpaceScope";
 import { EventRegistrationQueue } from "./EventRegistrationQueue";
+import { LogoLoader } from "../../components/LogoLoader";
 
 const permissionList = (permissions: string[] = []) => permissions.map(eventPermissionLabel).join(", ");
 
@@ -54,7 +55,7 @@ export function GrantedEventsPanel({ makerspaceId, grants = [], frame }: { maker
         {series.map((grant) => <ListRow key={grant.series_id} title={grant.title} identity={{ kind: "icon", icon: "Calendar", tone: "accent" }}
           meta={permissionList(grant.permissions)} onClick={() => setSelectedSeries({ id: grant.series_id!, makerspace_id: grant.makerspace_id })} />)}
       </section> : null}
-      {series.length && events.isLoading ? <div role="status" className="grid gap-3"><span className="sr-only">{t`Loading assigned events…`}</span><Skeleton className="h-20 w-full" /><Skeleton className="h-20 w-full" /></div> : null}
+      {series.length && events.isLoading ? <div role="status" className="grid gap-3"><span className="sr-only">{t`Loading assigned events…`}</span><LogoLoader size={48} className="min-h-20 py-3" /><LogoLoader size={48} className="min-h-20 py-3" /></div> : null}
       {series.length && events.error ? <ErrorText message={eventErrorText(events.error)} onRetry={retry} /> : null}
       {rows.length ? <section className="grid gap-3" aria-label={t`Assigned events list`}>{series.length ? <h2 className="title-section">{t`Events`}</h2> : null}
         {rows.map((event) => <ListRow key={event.id} title={event.title} identity={{ kind: "date", date: event.starts_at }} draft={event.status === "draft"}

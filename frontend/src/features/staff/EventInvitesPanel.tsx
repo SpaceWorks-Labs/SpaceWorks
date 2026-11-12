@@ -5,6 +5,7 @@ import { useEventTicketing, type EventCode } from "./eventTicketingApi";
 import { EventBulkInvites } from "./EventBulkInvites";
 import { EventPanelPager } from "./EventPanelPager";
 import { panelEmpty, panelField, panelInput, panelReveal, panelRow } from "./eventPanelStyles";
+import { LogoLoader } from "../../components/LogoLoader";
 
 export function EventInvitesPanel({ visible = true,  eventId, disabled = false }: { visible?: boolean;  eventId: number; disabled?: boolean }) {
   const [page, setPage] = useState(1);
@@ -26,7 +27,7 @@ export function EventInvitesPanel({ visible = true,  eventId, disabled = false }
     </form></Card>
     {code ? <div role="status" className={panelReveal}><p>{t`Copy this code now. It is shown once.`}</p><output className="break-all code-text">{code}</output><button className="desk-button" type="button" onClick={() => setCode("")}>{t`Hide code`}</button></div> : null}
     {error ? <p role="alert" className="text-sm text-danger">{error.message}</p> : null}
-    {rows.isLoading ? <p role="status" className="text-sm text-muted">{t`Loading invitations…`}</p> : null}
+    {rows.isLoading ? <LogoLoader label={t`Loading invitations…`} size={48} className="min-h-16 py-3" /> : null}
     {rows.data?.results.length === 0 ? <p className={panelEmpty}>{t`No invitation codes yet.`}</p> : null}
     {rows.data?.results.length ? <ul className="grid gap-3">{rows.data.results.map((row) => <li key={row.id} className={panelRow}>
       <div className="min-w-0"><p className="title-section">{t`Invitation ${row.id}`}</p><p className="mt-1 text-sm tabular-nums text-muted">{row.uses}/{row.max_uses} uses</p></div>

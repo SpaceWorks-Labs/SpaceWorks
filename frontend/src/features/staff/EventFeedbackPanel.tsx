@@ -2,7 +2,7 @@ import { t } from "@lingui/core/macro";
 import { opsStatusLabel } from "./opsPresentation";
 import { useEffect, useState } from "react";
 
-import { Skeleton, StatusBadge } from "../../components/ui";
+import { StatusBadge } from "../../components/ui";
 import { CustomFormBuilder } from "../forms/CustomFormBuilder";
 import type { CustomFormQuestion } from "../forms/customFormTypes";
 import {
@@ -15,6 +15,8 @@ import {
 } from "./eventFeedbackApi";
 import { EventFeedbackResponses } from "./EventFeedbackResponses";
 import { eventErrorText } from "./eventUi";
+import { LogoLoader } from "../../components/LogoLoader";
+import { BoxArt } from "../../components/BoxSpinner";
 
 const FEEDBACK_TYPES = [
   "short_text", "paragraph", "number", "single_choice", "multi_choice", "dropdown", "yes_no",
@@ -41,6 +43,7 @@ export function EventFeedbackPanel({ visible = true, eventId, makerspaceId, canV
     setQuestions(survey.questions);
     setCertificateEnabled(survey.certificate_enabled);
     setAnonymous(Boolean(survey.anonymous));
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- the draft is reseeded only when the survey id, open state or answered-question set changes (the joined ids are that signature); depending on the survey object would overwrite edits on every refetch
   }, [survey?.id, survey?.is_open, survey?.answered_question_ids.join("|")]);
 
   const error = configure.error || open.error || close.error || template.error;
@@ -55,7 +58,7 @@ export function EventFeedbackPanel({ visible = true, eventId, makerspaceId, canV
       </div>
       {survey ? <StatusBadge status={survey.is_open ? "open" : "closed"} label={opsStatusLabel(survey.is_open ? "open" : "closed")} /> : null}
     </div>
-    {surveyQuery.isLoading ? <Skeleton className="mt-3 h-32 w-full" /> : null}
+    {surveyQuery.isLoading ? <LogoLoader size={48} className="min-h-32 py-3" /> : null}
     {surveyQuery.error ? <p className="mt-3 text-sm text-danger">{eventErrorText(surveyQuery.error)}</p> : null}
     {!surveyQuery.isLoading && !surveyQuery.error ? <div className="mt-4 grid gap-2">
       <label className="grid gap-1 text-sm">{t`Feedback template`}<select className="desk-input" value={selectedTemplate} disabled={pending || hasResponses} onChange={(e) => setSelectedTemplate(e.target.value as FeedbackTemplate)}>
@@ -63,7 +66,7 @@ export function EventFeedbackPanel({ visible = true, eventId, makerspaceId, canV
       </select></label>
       <button className="desk-button w-fit" type="button" disabled={pending || hasResponses} onClick={() => template.mutate(selectedTemplate, { onSuccess: (next) => {
         setTitle(next.title); setThankYou(next.thank_you_text); setQuestions(next.questions); setCertificateEnabled(next.certificate_enabled);
-      } })}>{template.isPending ? t`Applying...` : t`Apply template`}</button>
+      } })}>{template.isPending ? <><BoxArt size={16} mono />{t`Applying...`}</> : t`Apply template`}</button>
       <p className="text-xs text-muted">{hasResponses ? t`Templates cannot replace a survey once it has responses.` : t`Applying a template replaces the current survey questions.`}</p>
     </div> : null}
     {!surveyQuery.isLoading ? <form className="mt-4 grid gap-3" onSubmit={(event) => {

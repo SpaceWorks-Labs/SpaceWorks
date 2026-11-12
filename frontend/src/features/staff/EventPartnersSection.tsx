@@ -54,6 +54,7 @@ export function EventPartnersSection({ values, setValues, hostId, audienceSelect
       const mine = own.data.count <= DEFAULT_LIMIT ? own.data.results.filter((row) => row.granted_actions.includes("manage_events")) : [];
       setValues({ ...values, organizers: mine.map((row) => ({ id: row.id, label: row.name, detail: row.slug })) });
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- values and setValues are omitted: the default organizers are applied once, when own.data arrives while organizers is still null, and re-running on every values change would loop
   }, [own.data, values.organizers]);
   return <section aria-labelledby="event-partners-title" className="mt-6 grid gap-5 border-t border-line pt-5">
     <div>

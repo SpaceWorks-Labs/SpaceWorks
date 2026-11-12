@@ -12,6 +12,7 @@ import { ErrorBlock, SettingsActions, PagePager } from "../../components/ui";
 import { BookableSpaceFields } from "./BookableSpaceFields";
 import { useStaffChargesOn } from "./useStaffChargesOn";
 import { BookableSpaceMachine, useMachineTimeBookingOn } from "./BookableSpaceMachine";
+import { BoxArt } from "../../components/BoxSpinner";
 
 type FormValues = BookableSpacePayload;
 
@@ -112,6 +113,6 @@ export function BookableSpaceForm({ makerspaceId, initialValues = EMPTY_SPACE_FO
     {fields}
     {!disabled ? mode === "settings" ? dirty || pending ? <SettingsActions pending={pending}
       onDiscard={() => setValues(initialValues)} onSave={() => formRef.current?.requestSubmit()} /> : null
-      : <button className="desk-button-primary w-fit" type="submit" disabled={pending}>{pending ? t`Saving…` : submitLabel}</button> : null}
+      : <button className="desk-button-primary w-fit" type="submit" disabled={pending}>{pending ? <><BoxArt size={16} mono />{t`Saving…`}</> : submitLabel}</button> : null}
   </form>;
 }

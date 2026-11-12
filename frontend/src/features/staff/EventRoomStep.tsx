@@ -10,6 +10,7 @@ import { useEventRoomChoices, type EventRoomChoice, type RoomMode, type RoomStep
 import { EventRoomBookingChoices, EventRoomMemberPrice } from "./EventRoomStepParts";
 import { StaffBookingAvailability } from "./StaffBookingAvailability";
 import { PagePager } from "../../components/ui";
+import { LogoLoader } from "../../components/LogoLoader";
 
 export type RoomChoice = { mode: "none" | RoomMode; space_id: number; member_id: number; booking_id: number; price_confirmation: string; note: string };
 export const emptyRoomChoice: RoomChoice = { mode: "none", space_id: 0, member_id: 0, booking_id: 0, price_confirmation: "", note: "" };
@@ -76,7 +77,7 @@ export function EventRoomStep({ makerspaceId, start, end, capacity, value, onCha
     </div>
     {value.mode !== "none" ? <>
       {!windowReady ? <p role="status" className="text-muted">{t`Set the event's start and end first to check rooms for that time.`}</p> : null}
-      {listing.isPending ? <p role="status" className="text-muted">{t`Loading rooms…`}</p> : null}
+      {listing.isPending ? <LogoLoader label={t`Loading rooms…`} size={48} className="min-h-16 py-3" /> : null}
       {listing.isError || (listing.isSuccess && !options.length) ? <p role="alert">{t`No rooms are available to you here. Ask a Booking Manager, or create the event without a room.`}</p> : null}
       {options.length ? <label className="grid gap-1">{t`Room`}
         <select className="desk-input" value={value.space_id} onChange={change => set({ space_id: Number(change.target.value), member_id: 0, booking_id: 0, price_confirmation: "" })}>

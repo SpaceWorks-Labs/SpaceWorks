@@ -3,12 +3,12 @@ import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 
-import { Skeleton } from "../../components/ui";
 import { CenteredCardLayout } from "../../components/layouts";
 import { fetchMe, refreshAccessToken, staffRequest, type StaffAuthUser } from "../../lib/api";
 import { MemberAuthPanel } from "../members/MemberAuthPanel";
 import { eventStaffGrantKeys, type EventStaffGrant } from "./eventStaffGrantsApi";
 import { eventErrorText } from "./eventUi";
+import { LogoLoader } from "../../components/LogoLoader";
 
 const INVITE_STORAGE_KEY = "spaceworks.eventStaffInvite";
 
@@ -75,7 +75,7 @@ export function EventStaffInvitePage() {
     title={t`Event staff invitation`}
     body={<p>{t`Sign in with the invited account and verify its email before accepting. This invitation can be used once.`}</p>}
     content={<div className="grid gap-3 empty:hidden">
-      {restoring ? <Skeleton className="h-32 w-full" /> : null}
+      {restoring ? <LogoLoader size={48} className="min-h-32 py-3" /> : null}
       {!token ? <p className="text-sm text-danger" role="alert">{t`The invitation link is missing its token. Open the original invitation link again.`}</p> : null}
       {user && !redeem.isSuccess ? <p className="text-sm text-ink">{t`Signed in as ${user.username}.`}</p> : null}
       {redeem.error ? <p className="text-sm text-danger" role="alert">{eventErrorText(redeem.error)}</p> : null}

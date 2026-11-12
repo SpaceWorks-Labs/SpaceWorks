@@ -5,6 +5,7 @@ import type { PickerOption } from "./AsyncSearchPicker";
 import { OrganizerPicker } from "./EventPartnerPickers";
 import type { StaffEvent } from "./eventsApi";
 import { useReplaceEventOrganizers } from "./eventsApi";
+import { BoxArt } from "../../components/BoxSpinner";
 
 const asOptions = (rows: StaffEvent["organizers"]) => rows.map((row) => ({ id: row.id, label: row.name, detail: row.slug }));
 
@@ -27,7 +28,7 @@ export function EventOrganizers({ visible = true, event, makerspaceId, disabled 
       </div>
       <OrganizerPicker selected={selected} onChange={setSelected} disabled={disabled} label={t`Organizers`} helper={t`Search the organizations you belong to.`} />
       {!disabled && dirty ? <button className="desk-button-primary justify-self-start" type="button" disabled={replace.isPending}
-        onClick={() => replace.mutate(selected.map((row) => row.id))}>{replace.isPending ? t`Saving...` : t`Save organizers`}</button> : null}
+        onClick={() => replace.mutate(selected.map((row) => row.id))}>{replace.isPending ? <><BoxArt size={16} mono />{t`Saving...`}</> : t`Save organizers`}</button> : null}
       {replace.error ? <p className="text-sm text-danger" role="alert">{replace.error.message}</p> : null}
     </section>
   );

@@ -11,7 +11,8 @@ import { VenueConflictList, type VenueConflict } from "./EventVenueConflicts";
 import { EventVenueReplacement } from "./EventVenueReplacement";
 import { StaffBookingForm } from "./StaffBookingForm";
 import { StaffListContext } from "./StaffListContext";
-import { certificationText } from "./eventEquipment/machineLinkErrors";
+import { machineAccessText } from "./eventEquipment/machineLinkErrors";
+import { LogoLoader } from "../../components/LogoLoader";
 
 type Window = { starts_at: string; ends_at: string };
 type Request = <Result>(url: string, init: RequestInit) => Promise<Result>;
@@ -65,7 +66,7 @@ function WorkshopMachines({ makerspaceId, eventId, readOnly, request, queryKey }
     && data.results.length + data.withheld < data.max_links;
   return <section className="grid gap-2" aria-label={t`Workshop machines`}>
     <h4 className="title-section">{t`Workshop machines`}</h4>
-    {listing.isPending ? <p role="status">{t`Checking workshop machines…`}</p> : null}
+    {listing.isPending ? <LogoLoader label={t`Checking workshop machines…`} size={48} className="min-h-16 py-3" /> : null}
     {listing.isError ? <p role="alert">{t`Workshop machines are unavailable for your access.`}</p> : null}
     {data ? <>
       {data.results.length ? <ul className="grid gap-2" aria-label={t`Linked machine bookings`}>
@@ -139,8 +140,6 @@ function LinkMachine({ makerspaceId, path, eventWindow, request, queryKey, linke
   const [bookingId, setBookingId] = useState(0);
   const [candidate, setCandidate] = useState(0);
   const [creating, setCreating] = useState(false);
-  const [reason, setReason] = useState("");
-  const [needsOverride, setNeedsOverride] = useState(false);
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState("");
   const spaces = useQuery({ queryKey: [...queryKey, "spaces", spacePage], retry: false, gcTime: 0,
@@ -153,21 +152,19 @@ function LinkMachine({ makerspaceId, path, eventWindow, request, queryKey, linke
   const choices = bookings.isError ? [] : (bookings.data?.results ?? []).filter(booking => booking.space_id === spaceId &&
     ["pending", "confirmed"].includes(booking.status) && !linked.includes(booking.id));
   const target = choices.some(booking => booking.id === bookingId) ? bookingId : (candidate && space ? candidate : 0);
-  const reset = () => { setBookingId(0); setCandidate(0); setCreating(false); setNeedsOverride(false); setReason(""); setMessage(""); };
+  const reset = () => { setBookingId(0); setCandidate(0); setCreating(false); setMessage(""); };
 
   async function link() {
     if (!target || pending) return;
     setPending(true); setMessage("");
     try {
-      await request(path, { method: "POST", body: JSON.stringify({ booking_id: target,
-        ...(needsOverride && reason.trim() ? { certification_override_reason: reason.trim() } : {}) }) });
+      await request(path, { method: "POST", body: JSON.stringify({ booking_id: target }) });
       setSpaceId(0); reset();
       await onLinked();
     } catch (error) {
       const code = error instanceof StructuredApiError ? error.code : undefined;
-      if (code === "certification_required") setNeedsOverride(true);
-      setMessage(code === "certification_required"
-        ? certificationText(error) ?? ""
+      setMessage(machineAccessText(error) !== null
+        ? machineAccessText(error) ?? ""
         : code === "machine_under_repair" ? t`This machine is out of service for repair at that time.`
           : t`The machine booking could not be linked. Check the booking and your access, then try again.`);
     } finally {
@@ -187,7 +184,7 @@ function LinkMachine({ makerspaceId, path, eventWindow, request, queryKey, linke
     {spaces.isSuccess && !machines.length ? <p className="text-sm text-muted">{t`No active machine here takes staff reservations.`}</p> : null}
     {space ? <>
       <label className="grid gap-1 text-sm">{t`Booking`}<select className="desk-input" value={bookingId}
-        onChange={event => { setBookingId(Number(event.target.value)); setCandidate(0); setNeedsOverride(false); }}>
+        onChange={event => { setBookingId(Number(event.target.value)); setCandidate(0); }}>
         <option value={0}>{t`Select a booking`}</option>
         {choices.map(booking => <option key={booking.id} value={booking.id}>#{booking.id} · {span(booking)} · {booking.status === "pending" ? t`Pending` : t`Confirmed`}</option>)}
       </select></label>
@@ -199,8 +196,6 @@ function LinkMachine({ makerspaceId, path, eventWindow, request, queryKey, linke
       {candidate ? <p role="status">{t`Booking #${candidate} was created. It is not linked to this event until you link it below.`}</p> : null}
     </> : null}
     {spaces.isError || bookings.isError ? <p role="alert">{t`Booking choices are unavailable.`}</p> : null}
-    {needsOverride ? <label className="grid gap-1 text-sm">{t`Certification override reason`}
-      <input className="desk-input" maxLength={1000} value={reason} onChange={event => setReason(event.target.value)} /></label> : null}
     {message ? <p role="alert">{message}</p> : null}
     <button type="button" className="desk-button w-fit" disabled={!target} onClick={() => { void link(); }}>{t`Link machine booking`}</button>
   </fieldset>;

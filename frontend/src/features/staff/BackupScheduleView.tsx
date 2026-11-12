@@ -1,3 +1,4 @@
+import { LogoLoader } from "../../components/LogoLoader";
 import { t } from "@lingui/core/macro";
 import { useQuery } from "@tanstack/react-query";
 import { ErrorText, RelativeTime } from "../../components/ui";
@@ -8,7 +9,7 @@ export function BackupScheduleView({ onPickSpace }: { onPickSpace: (makerspaceId
   const schedule = useQuery({ queryKey: ["backup-schedule"], queryFn: getBackupSchedule });
   if (schedule.isError) return <ErrorText resource={t`the backup schedule`} onRetry={() => { void schedule.refetch(); }} />;
   const data = schedule.data;
-  if (!data) return <p role="status" className="text-sm text-muted">{t`Loading the schedule…`}</p>;
+  if (!data) return <LogoLoader label={t`Loading the schedule…`} />;
   return <div className="grid gap-3 text-sm">
     <p>{t`Automatic backups are `}<strong>{data.automatic_backups_enabled ? "on" : "off"}</strong>{t`. Whole platform: ${data.platform_nightly}. Each space: ${data.spaces_nightly}. Nightly backups keep ${data.daily_keep_days} days plus ${data.weekly_keep_weeks} weekly copies; “Back up now” keeps ${data.on_demand_keep_days} days.`}</p>
     {!data.server_restore_key_configured ? <p className="text-danger">{t`This server has no restore key, so one-space backups cannot be restored in the app.`}</p> : null}

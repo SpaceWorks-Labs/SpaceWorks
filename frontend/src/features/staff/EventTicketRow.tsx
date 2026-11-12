@@ -9,6 +9,7 @@ import { usePriceDropCheck } from "./priceDrop/usePriceDropCheck";
 import { useStaffChargesOn } from "./useStaffChargesOn";
 import { panelField, panelInput } from "./eventPanelStyles";
 import { eventErrorText } from "./eventUi";
+import { BoxArt } from "../../components/BoxSpinner";
 
 const local = (value: string | null) => {
   if (!value) return "";
@@ -69,7 +70,7 @@ export function EventTicketRow({ row, eventId, disabled }: { row: StaffTicket; e
         : t`Price and audience are fixed because registrations already use this ticket type.`}</p> : null}
       <div className="flex flex-wrap justify-end gap-2 sm:col-span-2">
         <button className="desk-button" type="button" disabled={update.isPending} onClick={() => setEditing(false)}>{t`Cancel`}</button>
-        <button className="desk-button-primary" type="submit" disabled={update.isPending || drop.checking}>{update.isPending ? t`Saving…` : t`Save ticket type`}</button>
+        <button className="desk-button-primary" type="submit" disabled={update.isPending || drop.checking}>{update.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Save ticket type`}</button>
       </div>
     </form> : null}
     {update.error ? <p role="alert" className="text-sm text-danger">{eventErrorText(update.error)}</p> : null}

@@ -9,6 +9,7 @@ import {
   EventInviteLimitFields, inviteLimitError, inviteLimitFromMine, inviteLimitInput, inviteLimitText, useEventTracks, validateInviteLimit,
 } from "./EventInviteLimitFields";
 import type { StaffEvent } from "./eventsApiTypes";
+import { LogoLoader } from "../../components/LogoLoader";
 
 type HelperRole = "volunteer" | "mentor" | "judge" | "sponsor_rep";
 
@@ -91,7 +92,7 @@ export function EventHelperInvites({ eventId, held, myLimit }: { eventId: number
     </div> : null}
     {error ? <p className="text-sm text-danger" role="alert">{inviteLimitError(invite.error) ?? eventErrorText(error)}</p> : null}
     <div className="grid gap-3"><h4 className="text-sm font-semibold text-ink">{t`Helpers you invited`}</h4>
-      {grants.isPending ? <p className="text-sm text-muted" role="status">{t`Loading helpers…`}</p> : null}
+      {grants.isPending ? <LogoLoader label={t`Loading helpers…`} size={48} className="min-h-16 py-3" /> : null}
       {grants.data?.results.length === 0 ? <p className="text-sm text-muted">{t`No helpers yet.`}</p> : null}
       {grants.data?.results.map((grant) => <article key={grant.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-line bg-panel p-4">
         <p className="min-w-0 text-sm text-ink">{t`Account #${grant.user}`}: {grant.permissions.map(permissionLabel).join(", ")}</p>
@@ -100,7 +101,7 @@ export function EventHelperInvites({ eventId, held, myLimit }: { eventId: number
       </article>)}
     </div>
     <div className="grid gap-3"><h4 className="text-sm font-semibold text-ink">{t`Your invitations`}</h4>
-      {invites.isPending ? <p className="text-sm text-muted" role="status">{t`Loading invitations…`}</p> : null}
+      {invites.isPending ? <LogoLoader label={t`Loading invitations…`} size={48} className="min-h-16 py-3" /> : null}
       {invites.data?.results.length === 0 ? <p className="text-sm text-muted">{t`No invitations yet.`}</p> : null}
       {invites.data?.results.map((row) => {
         const open = !row.revoked_at && !row.redeemed_at && new Date(row.expires_at).getTime() > Date.now();

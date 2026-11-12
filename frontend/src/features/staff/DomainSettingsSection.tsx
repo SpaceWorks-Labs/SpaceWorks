@@ -12,6 +12,7 @@ import {
   useDomainSettings,
   useUpdateDomainSettings,
 } from "./domainSettingsApi";
+import { LogoLoader } from "../../components/LogoLoader";
 
 type Props = { makerspaceId: number; domain: SettingsDomain };
 
@@ -34,7 +35,7 @@ export function DomainSettingsSection({ makerspaceId, domain }: Props) {
   // Separate mutations so a failed toggle and a failed settings save report in their own place.
   const toggle = useUpdateDomainSettings(makerspaceId, domain);
   const save = useUpdateDomainSettings(makerspaceId, domain);
-  if (query.isLoading) return <p className="text-sm text-muted">{t`Loading settings…`}</p>;
+  if (query.isLoading) return <LogoLoader label={t`Loading settings…`} size={48} className="min-h-16 py-3" />;
   if (!query.data) {
     return <ErrorBlock error={query.error ?? new Error(t`Couldn't load these settings.`)}
       onRetry={() => { void query.refetch(); }} />;

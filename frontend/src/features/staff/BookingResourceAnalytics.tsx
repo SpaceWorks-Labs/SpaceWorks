@@ -1,10 +1,11 @@
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
 
-import { Card, EmptyState, ErrorText, Field, Skeleton } from "../../components/ui";
+import { Card, EmptyState, ErrorText, Field } from "../../components/ui";
 import { BookingUtilizationSummary } from "./panels/OperationsReportsBookings";
 import { StatCards } from "./panels/OperationsReportsParts";
 import { useBookingResourceReports, type BookingReportKey } from "./bookingReportsApi";
+import { LogoLoader } from "../../components/LogoLoader";
 
 export function BookingResourceAnalytics({ makerspaceId, spaceId, features }: {
   makerspaceId: number; spaceId: number; features: string[];
@@ -38,9 +39,9 @@ export function BookingResourceAnalytics({ makerspaceId, spaceId, features }: {
         {features.includes("pdf") ? <button className="desk-button" type="button" disabled={pending || !validPeriod || !start || !end} onClick={() => save("booking-resource-utilization-pdf", "pdf")}>{t`Utilization PDF`}</button> : null}
       </div>
       {features.includes("pdf") && (!start || !end) ? <p className="text-xs text-muted">{t`Select both dates to download a PDF.`}</p> : null}
-      {pending ? <p role="status" className="text-sm text-muted">{t`Preparing download...`}</p> : null}
+      {pending ? <LogoLoader label={t`Preparing download...`} size={48} className="min-h-16 py-3" /> : null}
     </Card>
-    {analytics && query.isLoading ? <div role="status" aria-label={t`Loading resource analytics...`} className="grid gap-3"><span className="sr-only">{t`Loading resource analytics...`}</span><Skeleton className="h-28 w-full" /><Skeleton className="h-48 w-full" /></div> : null}
+    {analytics && query.isLoading ? <LogoLoader label={t`Loading resource analytics...`} size={48} className="min-h-28 py-3" /> : null}
     {loadError ? <ErrorText message={loadError.message} /> : null}
     {analytics && validPeriod && !query.error && query.data ? query.data.typed_rows.length
       ? <div className="grid gap-6">

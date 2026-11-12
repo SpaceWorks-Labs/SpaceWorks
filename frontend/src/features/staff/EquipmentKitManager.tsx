@@ -7,6 +7,7 @@ import { StaffListContext } from "./StaffListContext";
 import { KitProductPicker } from "./KitProductPicker";
 import { getSessionOwner } from "../../lib/api/sessionTokens";
 import { PagePager } from "../../components/ui";
+import { LogoLoader } from "../../components/LogoLoader";
 
 function kitLineLabel(line: KitLine) {
   const id = line.product_id; const quantity = line.quantity_per_person;
@@ -46,7 +47,7 @@ function KitManager({ scope, tenant, canEdit, actor, context }: { scope: string;
   return <section className="grid gap-3"><h2 className="title-panel">{t`Equipment kits`}</h2>
     <p className="text-sm text-muted">{t`Templates suggest items; saving a kit does not reserve equipment or use stock.`}</p>
     {message ? <p role="status">{message}</p> : null}
-    {list.isPending ? <p className="text-sm text-muted" role="status">{t`Loading kits…`}</p> : list.isError ? <p role="alert">{t`Kits are unavailable.`}</p> : <>
+    {list.isPending ? <LogoLoader label={t`Loading kits…`} size={48} className="min-h-16 py-3" /> : list.isError ? <p role="alert">{t`Kits are unavailable.`}</p> : <>
       {list.data.results.map(row => <div key={row.id} className="flex flex-wrap items-center gap-2 rounded-xl border border-line p-3"><span className="min-w-0 flex-1 break-words text-sm text-ink">{row.name} · {row.published_for_contexts ? t`Published` : t`Private`}</span><button type="button" className="desk-button" onClick={() => edit(row)}>{t`View`}</button>
         {canEdit ? <><button type="button" className="desk-button" disabled={busy || review} onClick={() => void perform(() => publishKit(tenant, row.id, row.revision, !row.published_for_contexts))}>{row.published_for_contexts ? t`Unpublish` : t`Publish`}</button><button type="button" className="desk-button" disabled={busy || review} onClick={() => void perform(() => archiveKit(tenant, row.id, row.revision, !row.archived))}>{row.archived ? t`Restore` : t`Archive`}</button></> : null}</div>)}
       <PagePager page={page} setPage={setPage} next={list.data.next} />

@@ -1,9 +1,11 @@
 import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
-import { ErrorText, Field, SettingsSection, Skeleton } from "../../components/ui";
+import { ErrorText, Field, SettingsSection } from "../../components/ui";
 import { PositionedLayoutEditor } from "../../components/print-layout/PositionedLayoutEditor";
 import { layoutFits, syncElements, type PositionedElement } from "../../components/print-layout/positionedLayout";
 import { downloadPass, useBookingPassDesigner, type BookingPassTemplate } from "./bookingPassApi";
+import { LogoLoader } from "../../components/LogoLoader";
+import { BoxArt } from "../../components/BoxSpinner";
 
 const FIELDS = { name: "Display name", resource: "Resource", booking_window: "Booking window", reference: "Booking reference" };
 const DESCRIPTION = "Passes show only display name, resource, booking window and an optional booking reference. Sample preview uses fictional data. Staff print a pass after recording arrival.";
@@ -16,7 +18,7 @@ export function BookingPassDesigner({ makerspaceId, spaceId }: { makerspaceId: n
   const error = query.error ?? save.error ?? preview.error;
   const busy = save.isPending || preview.isPending;
   function change(value: BookingPassTemplate) { setDraft(value); setSaved(false); }
-  if (query.isPending) return <div role="status" aria-label={t`Loading pass layout...`} className="grid gap-3"><span className="sr-only">{t`Loading pass layout...`}</span><Skeleton className="h-24 w-full" /><Skeleton className="h-48 w-full" /></div>;
+  if (query.isPending) return <LogoLoader label={t`Loading pass layout...`} size={48} className="min-h-24 py-3" />;
   if (query.error || !draft) return <ErrorText message={query.error?.message ?? t`Unable to load pass layout.`} />;
   const width = draft.card_width_mm ?? 90;
   const height = draft.card_height_mm ?? 60;
@@ -61,8 +63,8 @@ export function BookingPassDesigner({ makerspaceId, spaceId }: { makerspaceId: n
           onChange={(next) => change({ ...draft, elements: next as BookingPassTemplate["elements"] })} />
       </div>
       <div className="flex flex-wrap justify-end gap-2 pt-5">
-        <button type="button" className="desk-button" disabled={busy || !valid} onClick={() => preview.mutate(draft, { onSuccess: downloadPass })}>{preview.isPending ? t`Rendering...` : t`Download sample PDF`}</button>
-        <button type="button" className="desk-button-primary" disabled={busy || !valid} onClick={() => save.mutate(draft, { onSuccess: () => setSaved(true) })}>{save.isPending ? t`Saving...` : t`Save pass layout`}</button>
+        <button type="button" className="desk-button" disabled={busy || !valid} onClick={() => preview.mutate(draft, { onSuccess: downloadPass })}>{preview.isPending ? <><BoxArt size={16} mono />{t`Rendering...`}</> : t`Download sample PDF`}</button>
+        <button type="button" className="desk-button-primary" disabled={busy || !valid} onClick={() => save.mutate(draft, { onSuccess: () => setSaved(true) })}>{save.isPending ? <><BoxArt size={16} mono />{t`Saving...`}</> : t`Save pass layout`}</button>
       </div>
     </SettingsSection>
   </section>;

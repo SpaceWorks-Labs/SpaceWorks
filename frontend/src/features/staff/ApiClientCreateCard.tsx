@@ -1,9 +1,11 @@
 import { t } from "@lingui/core/macro";
-import { ErrorBlock, Field, Skeleton } from "../../components/ui";
+import { ErrorBlock, Field } from "../../components/ui";
 import { ApiClientScopePicker } from "./ApiClientScopePicker";
 import { ApiClientSecretReveal } from "./ApiClientSecretReveal";
 import type { ApiClientCreateResponse, ApiClientScopeOption, ApiClientType } from "./apiClientsApi";
 import { splitOrigins } from "./apiClientsApi";
+import { LogoLoader } from "../../components/LogoLoader";
+import { BoxArt } from "../../components/BoxSpinner";
 type Props = {
   canManageMakerspace: boolean;
   label: string;
@@ -90,7 +92,7 @@ export function ApiClientCreateCard({
           <div className="grid gap-2">
             <span className="font-semibold text-ink">{t`What can it do?`}</span>
             <p className="text-xs text-muted">{t`Choose the exact public API access this client needs.`}</p>
-            {scopesLoading ? <Skeleton className="h-32 w-full" /> : null}
+            {scopesLoading ? <LogoLoader size={48} className="min-h-32 py-3" /> : null}
             {!scopesLoading && scopeOptions.length ? (
               <ApiClientScopePicker
                 options={scopeOptions}
@@ -107,7 +109,7 @@ export function ApiClientCreateCard({
           disabled={!label.trim() || !splitOrigins(origins).length || !scopes.length || scopesLoading || !!scopesError || isPending}
           onClick={onSubmit}
         >
-          {isPending ? t`Creating…` : t`Create API client`}
+          {isPending ? <><BoxArt size={16} mono />{t`Creating…`}</> : t`Create API client`}
         </button>
         {error ? <p className="mt-2 text-sm text-danger">{error.message}</p> : null}
         {oneTimeSecret ? <ApiClientSecretReveal secret={oneTimeSecret.client_secret} onDismiss={onDismissSecret} /> : null}
@@ -145,7 +147,7 @@ export function ApiClientCreateCard({
         disabled={!label.trim() || !reason.trim() || !splitOrigins(origins).length || isPending}
         onClick={onSubmit}
       >
-        {isPending ? t`Submitting…` : t`Submit API access request`}
+        {isPending ? <><BoxArt size={16} mono />{t`Submitting…`}</> : t`Submit API access request`}
       </button>
       {submitted ? (
         <p className="mt-2 text-sm text-muted">

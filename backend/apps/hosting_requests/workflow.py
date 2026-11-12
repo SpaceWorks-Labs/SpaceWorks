@@ -127,7 +127,7 @@ def cancel_invitation(actor, *, pk, makerspace_id=None, organization_id=None):
         authority.resolve_organization_inviter(actor, organization_id)
     row = _locked(pk=pk)
     if row.inviter_kind != kind or any(getattr(row, k) != v for k, v in scope.items()):
-        raise HostingRequestConflict("This invitation changed. Refresh and try again.")
+        raise HostingRequestConflict(gettext("This invitation changed. Refresh and try again."))
     _transition(row, S.WITHDRAWN)
     row.withdrawn_at = timezone.now()
     row.save(update_fields=["status", "withdrawn_at", "updated_at"])
@@ -218,7 +218,7 @@ def reject(actor, row_id, reason):
     reason = clean_reason(reason)
     row = _locked(pk=row_id)
     if row.created_makerspace_id is not None:
-        raise HostingRequestConflict("A makerspace was already created from this request.")
+        raise HostingRequestConflict(gettext("A makerspace was already created from this request."))
     _transition(row, S.REJECTED)
     row.decided_at, row.decided_by, row.rejection_reason = timezone.now(), actor, reason
     row.save(update_fields=["status", "decided_at", "decided_by", "rejection_reason", "updated_at"])
@@ -237,7 +237,7 @@ def link_created_makerspace(actor, request_id, makerspace):
     require_superadmin(actor)
     row = HostingRequest.objects.select_for_update().filter(pk=request_id).first()
     if row is None or row.status != S.ACCEPTED or row.created_makerspace_id is not None:
-        raise HostingRequestConflict("Only an accepted request with no makerspace can be linked.")
+        raise HostingRequestConflict(gettext("Only an accepted request with no makerspace can be linked."))
     row.created_makerspace = makerspace
     row.save(update_fields=["created_makerspace", "updated_at"])
     audit.record(

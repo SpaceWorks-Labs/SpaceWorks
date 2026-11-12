@@ -22,10 +22,9 @@ import { readStorage, removeStorage, writeStorage } from "../../lib/safeStorage"
 //                     streams are always present, so the tab always has content.
 const LOAN_TABS = new Set(["requests", "inventory", "categories", "needsfix", "ledger", "accountability", "warranty", "direct", "containers", "transfers", "stocktake", "bulk", "qr", "scanner"]);
 
-const TAB_MODULES: Record<string, string[]> = {
+export const TAB_MODULES: Record<string, string[]> = {
   direct: ["public_inventory"],
   notifications: ["notifications"],
-  printing: ["printing"],
   machines: ["machines"],
   devices: ["devices"],
   handover: ["machine_service"],
@@ -52,7 +51,7 @@ const TAB_MODULES: Record<string, string[]> = {
 
 // Tabs switched by per-parent capabilities rather than a module key (#97, #128 C-9): one
 // To-Buy list and one warranty app serve two parents, so either parent's switch shows it.
-const TAB_FEATURES: Record<string, string[]> = {
+export const TAB_FEATURES: Record<string, string[]> = {
   tobuy: ["inventory.tobuy", "machines.tobuy"],
   warranty: ["inventory.warranty", "machines.warranty"],
   // Lane L5: the finance tab holds the ledger and the money queues, each with its own switch.

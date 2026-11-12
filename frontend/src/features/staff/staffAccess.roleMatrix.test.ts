@@ -139,7 +139,7 @@ describe("decision 217: per-role console", () => {
 // role actually gets once module and capability switches are applied, its landing page,
 // its sidebar headings, and the out-of-area destinations that must stay absent.
 const MODULES = ["public_inventory", "request_workflow", "staff_admin", "scanner", "qr_management", "evidence_uploads",
-  "notifications", "printing", "machines", "devices", "machine_service", "events", "bookings", "membership",
+  "notifications", "machines", "devices", "machine_service", "events", "bookings", "membership",
   "stock_transfers", "stocktake", "containers", "bulk_import", "qr_print_batches", "reports", "shop", "analytics"];
 const FEATURES = ["loans.enabled", "inventory.self_checkout", "inventory.tobuy", "machines.tobuy", "inventory.warranty",
   "machines.warranty", "finance.ledger", "inventory.consumables", "machines.repairs", "inventory.repairs",

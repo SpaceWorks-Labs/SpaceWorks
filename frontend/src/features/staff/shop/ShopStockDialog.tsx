@@ -3,6 +3,7 @@ import { useState } from "react";
 
 import { Field, Modal, SegmentedControl } from "../../../components/ui";
 import { staffShopError, type StockMove } from "./staffShopApi";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 export type StockTarget = { variantId: number; label: string; onHand: number };
 type Mode = "restock" | "adjust";
@@ -27,7 +28,7 @@ export function ShopStockDialog({ target, mode, pending, error, onClose, onSubmi
     footer={<div className="flex flex-wrap justify-end gap-2">
       <button type="button" className="desk-button min-h-11" onClick={onClose} disabled={pending}>{t`Close`}</button>
       <button type="submit" form="shop-stock" className="desk-button-primary min-h-11" disabled={pending || !valid || quantity === 0 || (kind !== "restock" && !reason.trim())}>
-        {pending ? t`Saving…` : t`Record`}</button></div>}>
+        {pending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Record`}</button></div>}>
     <form id="shop-stock" className="grid gap-4" onSubmit={event => { event.preventDefault(); onSubmit({ kind, quantity, reason: reason.trim() }); }}>
       <p className="text-sm text-muted">{t`On hand now: `}<span className="font-semibold tabular-nums text-ink">{target.onHand}</span></p>
       {mode === "adjust" ? <SegmentedControl label={t`Why the count changes`} value={kind} options={ADJUST_KINDS} onChange={next => setKind(next as StockMove["kind"])} /> : null}

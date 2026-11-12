@@ -17,7 +17,6 @@ export type StaffBookingPayload = {
   starts_at: string;
   ends_at: string;
   note: string;
-  certification_override_reason?: string;
   custom_answers?: CustomAnswers;
   /** Digest from the staff price preview; 409 `price_changed` creates nothing (decision 216). */
   price_confirmation?: string;

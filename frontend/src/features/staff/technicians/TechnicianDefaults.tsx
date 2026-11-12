@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ErrorText, Field } from "../../../components/ui";
 import { staffRequest } from "../../../lib/api";
 import { useTechnicians } from "./techniciansApi";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 export type Area = "machines" | "inventory" | "rooms";
 export type TechnicianDefault = { id: number; area: Area; machine_type_id: number | null; room_id: number | null; contact_id: number };
@@ -45,7 +46,7 @@ export function TechnicianDefaults({ makerspaceId, areas }: { makerspaceId: numb
   return <section className="grid gap-3 rounded-lg border border-line p-3" aria-labelledby="technician-defaults-title">
     <div><h3 id="technician-defaults-title" className="title-section">{t`Pre-ticked technicians`}</h3>
       <p className="text-sm text-muted">{t`Who is ticked by default when you send a repair job. You can still change it on each job.`}</p></div>
-    {defaults.isLoading ? <p role="status" className="text-sm text-muted">{t`Loading defaults…`}</p> : null}
+    {defaults.isLoading ? <LogoLoader label={t`Loading defaults…`} size={48} className="min-h-16 py-3" /> : null}
     {defaults.error ? <ErrorText message={defaults.error.message} /> : null}
     {defaults.data && !defaults.data.length ? <p className="text-sm text-muted">{t`No defaults yet.`}</p> : null}
     <ul className="grid gap-2">

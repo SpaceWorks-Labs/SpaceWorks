@@ -6,6 +6,7 @@ import { useMemo, useState } from "react";
 import { ListLayout } from "../../../components/layouts";
 import { staffRequest } from "../../../lib/api";
 import { listAllProducts, staffShopError, staffShopKeys } from "./staffShopApi";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 /** Hand-typed until the client is regenerated (#135 Q-S18 follow-up). */
 export type ShopEventOfferRow = { id: number; title: string; starts_at: string; status: string; variant_ids: number[] };
@@ -60,6 +61,6 @@ export function ShopEventOffers({ makerspaceId }: { makerspaceId: number }) {
       {save.error ? <p role="alert" className="text-sm text-danger">{staffShopError(save.error)}</p> : null}
       {save.isSuccess ? <p role="status" className="text-sm text-muted">{t`Event merch saved.`}</p> : null}
       <button type="button" className="desk-button-primary min-h-11 justify-self-start" disabled={eventId === null || save.isPending}
-        onClick={() => save.mutate()}>{save.isPending ? t`Saving…` : t`Save event merch`}</button>
+        onClick={() => save.mutate()}>{save.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Save event merch`}</button>
     </div>] }} />;
 }

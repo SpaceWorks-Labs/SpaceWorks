@@ -7,6 +7,7 @@ import { financeError } from "../../finance/financeApi";
 import { DeskGiftForm } from "./DeskGiftForm";
 import { GiftActions } from "./GiftActions";
 import { GIFT_STATUS, SOURCE_LABELS, donationStaffApi, donationStaffKeys, type StaffCampaign } from "./staffDonationsApi";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 /** Every gift in the space, newest first: received, waiting and cancelled, with desk recording and a CSV export. */
 export function GiftsList({ makerspaceId, campaigns, canRecord, taxOn }: {
@@ -34,7 +35,7 @@ export function GiftsList({ makerspaceId, campaigns, canRecord, taxOn }: {
       </div>
     </div>
     {exportCsv.error ? <p role="alert" className="text-sm text-danger">{financeError(exportCsv.error)}</p> : null}
-    {gifts.isLoading ? <p role="status" className="text-sm text-muted">{t`Loading gifts…`}</p> : null}
+    {gifts.isLoading ? <LogoLoader label={t`Loading gifts…`} size={48} className="min-h-16 py-3" /> : null}
     {gifts.error ? <p role="alert" className="text-sm text-danger">{financeError(gifts.error)}</p> : null}
     {gifts.data && !gifts.data.length ? <EmptyState message={t`No gifts yet. Share your donation page, or record one received in person.`} /> : null}
     {gifts.data?.map(gift => <ListRow key={gift.id} title={`${gift.currency.toUpperCase()} ${gift.amount} · ${gift.donor_name || t`Anonymous`}`}

@@ -1,3 +1,4 @@
+import { LogoLoader } from "../../../components/LogoLoader";
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -6,6 +7,7 @@ import { ErrorText } from "../../../components/ui";
 import { isSurfaceOff, StructuredApiError } from "../../../lib/api";
 import { UnitPicker } from "./UnitPicker";
 import { unitErrorText, unitKeys, unitsApi } from "./unitsApi";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 /**
  * Which unit one member belongs to (`PUT memberships/<mid>/unit`). A unit-scoped staff member is
@@ -26,7 +28,7 @@ export function MemberUnitField({ makerspaceId, membershipId }: { makerspaceId: 
     },
   });
   if (isSurfaceOff(current.error) || (current.error instanceof StructuredApiError && current.error.status === 403)) return null;
-  if (current.isPending) return <p role="status" className="text-sm text-muted">{t`Loading unit…`}</p>;
+  if (current.isPending) return <LogoLoader label={t`Loading unit…`} size={48} className="min-h-16 py-3" />;
   // Until the server can read the assignment back, the picker starts empty and saving replaces it.
   const known = current.isSuccess;
   const saved = current.data?.unit?.id ?? null;
@@ -37,7 +39,7 @@ export function MemberUnitField({ makerspaceId, membershipId }: { makerspaceId: 
       onChange={next => { save.reset(); setChoice(next); }} />
     <div className="flex flex-wrap items-center gap-2">
       <button type="button" className="desk-button min-h-11" disabled={save.isPending || (known && value === saved) || choice === undefined}
-        onClick={() => save.mutate(value)}>{save.isPending ? t`Saving…` : t`Save unit`}</button>
+        onClick={() => save.mutate(value)}>{save.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Save unit`}</button>
       {save.isSuccess ? <span role="status" className="text-sm text-muted">
         {save.data.unit ? t`Now in ${save.data.unit.name}.` : t`No longer in a unit.`}</span> : null}
     </div>

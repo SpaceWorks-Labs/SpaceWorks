@@ -1,7 +1,7 @@
 import { t } from "@lingui/core/macro";
 import { useQuery } from "@tanstack/react-query";
 
-import { EmptyState, ErrorBlock, ProgressBar, Skeleton, Tabs } from "../../../components/ui";
+import { EmptyState, ErrorBlock, ProgressBar, Tabs } from "../../../components/ui";
 import { capabilityOn } from "../../../lib/features";
 import { formatMoney } from "../../../lib/money";
 import { useRoutedSubTab } from "../useRoutedSubTab";
@@ -12,6 +12,7 @@ import { GiftsList } from "./GiftsList";
 import { PledgesList } from "./PledgesList";
 import { SponsorsSection } from "./SponsorsSection";
 import { donationStaffApi, donationStaffKeys, type StaffCampaign } from "./staffDonationsApi";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 type Space = { id: number; name?: string; enabled_modules?: string[]; enabled_features?: string[] };
 
@@ -67,7 +68,7 @@ export function DonationsArea({ makerspace, actions, isSuperadmin = false }: {
       {t`Donations are switched off for this space. A Space Manager turns them on under Features.`}</p> : null}
     {sections.length ? <Tabs tabs={sections} activeKey={active ?? ""} label={t`Donation sections`} onChange={route.select} /> : null}
     {needsCampaigns && campaigns.error ? <ErrorBlock error={campaigns.error} resource={t`campaigns`} onRetry={() => void campaigns.refetch()} /> : null}
-    {needsCampaigns && campaigns.isLoading ? <Skeleton className="h-16 w-full" /> : null}
+    {needsCampaigns && campaigns.isLoading ? <LogoLoader size={48} className="min-h-16 py-3" /> : null}
     {active === "overview" && campaigns.isSuccess ? <CampaignProgress campaigns={rows} /> : null}
     {active === "gifts" && !campaigns.error ? <GiftsList makerspaceId={makerspace.id} campaigns={rows} canRecord={canRecord} taxOn={taxOn} /> : null}
     {active === "campaigns" && campaigns.isSuccess ? <CampaignsEditor makerspaceId={makerspace.id} campaigns={rows} canRecord={canRecord} /> : null}

@@ -13,6 +13,7 @@ import type { ShopAccess } from "./shopAccess";
 import { ShopReceipt } from "./ShopReceipt";
 import { errorCode, listAllProducts, staffShopError, staffShopKeys } from "./staffShopApi";
 import { posQuote, posSale, type ShopStaffOrder } from "./staffShopOrdersApi";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 const fresh: TillPayment = { method: "cash", reference: "", email: "" };
 
@@ -75,7 +76,7 @@ export function ShopPos({ makerspaceId, access }: { makerspaceId: number; access
         <PosPayment value={payment} onChange={setPayment} receipts={access.features.receipts} />
         {sell.error ? <p role="alert" className="text-sm text-danger">{staffShopError(sell.error)}</p> : null}
         <button type="button" className="desk-button-primary min-h-14 w-full text-lg" disabled={!canSell || sell.isPending} onClick={() => sell.mutate()}>
-          {sell.isPending ? t`Recording sale…` : t`Sell`}</button>
+          {sell.isPending ? <><BoxArt size={16} mono />{t`Recording sale…`}</> : t`Sell`}</button>
         {lines.length ? <button type="button" className="desk-button min-h-11" disabled={sell.isPending} onClick={reset}>{t`Clear the basket`}</button> : null}
       </aside>
     </div>

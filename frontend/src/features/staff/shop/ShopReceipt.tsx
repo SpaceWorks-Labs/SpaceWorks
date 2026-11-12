@@ -9,6 +9,7 @@ import "./shopReceipt.css";
 import { ShopReceiptDocument, type PaperFormat } from "./ShopReceiptDocument";
 import { staffShopError } from "./staffShopApi";
 import { emailReceipt, fetchReceipt } from "./staffShopOrdersApi";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 const FORMAT_KEY = "spaceworks.shop.receiptFormat";
 /** One explicit @page rule per format: a continuous 80 mm roll, or an A4 sheet with normal margins. */
@@ -41,7 +42,7 @@ export function ShopReceipt({ orderId, onBack }: { orderId: number; onBack: () =
       <h2 className="title-section">{t`Email the receipt`}</h2>
       <Field label={t`Email`} hint={t`Leave empty to send it to the buyer's email on the order.`}>
         <input className="desk-input min-h-11" type="email" value={email} onChange={event => { setEmail(event.target.value); send.reset(); }} /></Field>
-      <button type="submit" className="desk-button min-h-11 justify-self-start" disabled={send.isPending}>{send.isPending ? t`Sending…` : t`Send receipt`}</button>
+      <button type="submit" className="desk-button min-h-11 justify-self-start" disabled={send.isPending}>{send.isPending ? <><BoxArt size={16} mono />{t`Sending…`}</> : t`Send receipt`}</button>
       <p role="status" className="text-sm text-muted">{send.isSuccess ? t`Receipt sent.` : ""}</p>
       {send.error ? <p role="alert" className="text-sm text-danger">{staffShopError(send.error)}</p> : null}
     </form> : undefined} />;

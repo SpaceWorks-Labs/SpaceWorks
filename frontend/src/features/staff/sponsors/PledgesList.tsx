@@ -1,3 +1,4 @@
+import { LogoLoader } from "../../../components/LogoLoader";
 import { formatLocale } from "../../../lib/format";
 import { t } from "@lingui/core/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -33,7 +34,7 @@ function PledgeActions({ makerspaceId, pledge }: { makerspaceId: number; pledge:
 export function PledgesList({ makerspaceId, canRecord }: { makerspaceId: number; canRecord: boolean }) {
   const pledges = useQuery({ queryKey: donationStaffKeys.pledges(makerspaceId), queryFn: () => donationStaffApi.pledges(makerspaceId) });
   if (pledges.error) return <p role="alert" className="text-sm text-danger">{financeError(pledges.error)}</p>;
-  if (pledges.isLoading) return <p role="status" className="text-sm text-muted">{t`Loading pledges…`}</p>;
+  if (pledges.isLoading) return <LogoLoader label={t`Loading pledges…`} size={48} className="min-h-16 py-3" />;
   if (!pledges.data?.length) return <EmptyState message={t`No pledges yet.`} />;
   return <div className="grid gap-3">{pledges.data.map(pledge => <ListRow key={pledge.id}
     title={`${pledge.currency.toUpperCase()} ${pledge.amount} ${PERIOD[pledge.interval]} · ${pledge.donor_name || "Guest"}`}

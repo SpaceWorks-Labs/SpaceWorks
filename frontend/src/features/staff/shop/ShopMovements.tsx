@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { Modal } from "../../../components/ui";
 import { listMovements, staffShopError, staffShopKeys } from "./staffShopApi";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 const KIND = (): Record<string, string> => ({ restock: t`Restocked`, count: t`Shelf count`, damage: t`Damaged`, internal_use: t`Used in the space`,
   sale: t`Sold`, returned: t`Returned`, written_off: t`Written off` });
@@ -14,7 +15,7 @@ export function ShopMovements({ makerspaceId, variantId, label, onClose }: { mak
   const rows = query.data?.results ?? [];
   return <Modal open onClose={onClose} title={t`Stock history: ${label}`} size="xl"
     footer={<button type="button" className="desk-button min-h-11" onClick={onClose}>{t`Close`}</button>}>
-    {query.isPending ? <p role="status" className="text-sm text-muted">{t`Loading history…`}</p>
+    {query.isPending ? <LogoLoader label={t`Loading history…`} size={48} className="min-h-16 py-3" />
       : query.error ? <p role="alert" className="text-sm text-danger">{staffShopError(query.error)}</p>
       : !rows.length ? <p className="text-sm text-muted">{t`No stock changes yet.`}</p>
       : <div className="overflow-x-auto"><table className="w-full min-w-[32rem] text-sm">

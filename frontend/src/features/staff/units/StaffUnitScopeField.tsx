@@ -6,6 +6,7 @@ import { ErrorText } from "../../../components/ui";
 import { StructuredApiError } from "../../../lib/api";
 import { UnitPicker } from "./UnitPicker";
 import { unitErrorText, unitKeys, unitsApi } from "./unitsApi";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 /** Off switch, no `manage_member_units`, or a row outside the caller's reach: the server says 404/403. */
 const hidden = (error: unknown) => error instanceof StructuredApiError && [403, 404].includes(error.status);
@@ -38,7 +39,7 @@ export function StaffUnitScopeField({ makerspaceId, membershipId, name }: { make
         disabled={save.isPending} onChange={next => { save.reset(); setChoice(next); }} />
       <div className="flex flex-wrap items-center gap-2">
         <button type="button" className="desk-button min-h-11" disabled={save.isPending || value === current} onClick={() => save.mutate(value)}>
-          {save.isPending ? t`Saving…` : t`Save unit limit`}</button>
+          {save.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Save unit limit`}</button>
         {save.isSuccess ? <span role="status" className="text-sm text-muted">
           {save.data.unit ? t`${name} now works only with ${save.data.unit.name}.` : t`${name} works with the whole space again.`}</span> : null}
       </div>

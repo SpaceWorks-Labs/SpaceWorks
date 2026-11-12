@@ -1,8 +1,9 @@
 import { t } from "@lingui/core/macro";
+import { LogoLoader } from "../../../components/LogoLoader";
 import { lazy, Suspense } from "react";
 
 import { ListLayout } from "../../../components/layouts";
-import { Skeleton, Tabs } from "../../../components/ui";
+import { Tabs } from "../../../components/ui";
 import { ScreenHelp } from "../../help/HelpLink";
 import type { Makerspace } from "../panels/shared";
 import { shopAccess, shopViews, type ShopView } from "./shopAccess";
@@ -35,7 +36,7 @@ export function ShopPanel({ makerspace, actions, isSuperadmin }: { makerspace: M
   return <div className="grid min-w-0 gap-4">
     <Tabs label={t`Shop sections`} tabs={views} activeKey={active} onChange={route.select}>
       <ScreenHelp screen={`shop.${active}`} />
-      <Suspense fallback={<Skeleton className="h-40 w-full" />}>
+      <Suspense fallback={<LogoLoader label={t`Loading panel`} />}>
         {active === "orders" ? <ShopOrders makerspaceId={ms} access={access} /> : null}
         {active === "pos" ? <ShopPos makerspaceId={ms} access={access} /> : null}
         {active === "cash" ? <ShopCashUp makerspaceId={ms} canManage={access.manage} onLeave={() => route.select(views[0].key)} /> : null}

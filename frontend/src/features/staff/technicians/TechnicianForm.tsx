@@ -9,6 +9,7 @@ import {
   CHANNEL_LABELS, useArchiveTechnician, useOptInLink, useSaveTechnician, useWithdrawConsent,
   type Channel, type CoverageRow, type OptInLink, type Technician,
 } from "./techniciansApi";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 type Candidate = { person_id: number; name: string; is_technician: boolean };
 const CHANNELS = Object.keys(CHANNEL_LABELS()) as Channel[];
@@ -76,7 +77,7 @@ export function TechnicianForm({ makerspaceId, technician, canSetCoverage, onClo
       {save.error ? <p role="alert" className="text-sm text-danger">{save.error.message}</p> : null}
       <div className="flex flex-wrap justify-end gap-2 border-t border-line pt-3">
         <button type="button" className="desk-button-ghost" onClick={onClose}>{t`Cancel`}</button>
-        <button type="submit" className="desk-button-primary" disabled={!ready || save.isPending}>{save.isPending ? t`Saving…` : t`Save`}</button>
+        <button type="submit" className="desk-button-primary" disabled={!ready || save.isPending}>{save.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Save`}</button>
       </div>
     </form>
   </Modal>;

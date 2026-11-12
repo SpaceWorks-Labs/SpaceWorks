@@ -9,6 +9,7 @@ import { SettingLock } from "../SettingLock";
 import { effectiveKey, useEffectiveAuthority } from "../settingsAuthorityApi";
 import { fetchSettings, saveSettings, staffShopError, staffShopKeys } from "./staffShopApi";
 import { SHOP_NUMBER_FIELDS, SHOP_SETTING_DEFAULTS, shopSettingsPatch, shopSettingsProblem, type ShopSettingValues } from "./shopSettingsFields";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 /** Shop policy and switches reuse the same per-key authority as every other module. */
 export function ShopSettingsForm({ makerspaceId }: { makerspaceId: number }) {
@@ -38,7 +39,7 @@ export function ShopSettingsForm({ makerspaceId }: { makerspaceId: number }) {
       disabled, disabledReason: problem || (!policy || authority.error ? t`Settings access could not be confirmed.` : t`No editable settings have changed.`) }}
     form={values ? <div className="grid gap-6">
       <SettingsSection title={t`Shop features`}><DomainSettingsSection makerspaceId={makerspaceId} domain="shop" /></SettingsSection>
-      {authority.isPending ? <p role="status" className="text-sm text-muted">{t`Checking settings access…`}</p> : null}
+      {authority.isPending ? <LogoLoader label={t`Checking settings access…`} size={48} className="min-h-16 py-3" /> : null}
       {authority.error ? <ErrorBlock error={authority.error} onRetry={() => { void authority.refetch(); }} /> : null}
       {!authority.error && !policy ? <p role="status" className="text-sm text-muted">{t`Your role cannot change shop settings.`}</p> : null}
       {save.error ? <p role="alert" className="text-sm text-danger">{staffShopError(save.error)}</p> : null}

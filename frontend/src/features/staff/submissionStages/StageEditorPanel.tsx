@@ -1,3 +1,4 @@
+import { LogoLoader } from "../../../components/LogoLoader";
 import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 import { ArrowDown, ArrowUp, Trash2 } from "lucide-react";
@@ -7,6 +8,7 @@ import { blankStage, fromPreset, fromSaved, move, saveBody, stageErrorMessage } 
 import { StageFields } from "./StageFields";
 import { StageTools } from "./StageTools";
 import type { Preset, StageDraft, StagePlan } from "./types";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 const WARNINGS = (): Record<string, string> => ({ ambiguous_deadline_time: t`This deadline is at midnight or noon event time; pick 23:59 or a clearer time.` });
 
@@ -16,7 +18,7 @@ export function StageEditorPanel({ eventId }: { eventId: number }) {
   const [rows, setRows] = useState<StageDraft[]>([]); const [preset, setPreset] = useState("");
   const [dirty, setDirty] = useState(false); const [pending, setPending] = useState<Preset | null>(null);
   useEffect(() => { if (plan.data && !dirty) setRows(fromSaved(plan.data.stages)); }, [plan.data, dirty]);
-  if (plan.isLoading) return <p role="status">{t`Loading submission stages…`}</p>;
+  if (plan.isLoading) return <LogoLoader label={t`Loading submission stages…`} />;
   if (!plan.data) return plan.error ? <ErrorText message={stageErrorMessage(plan.error)} onRetry={() => void plan.refetch()} /> : null;
   const data: StagePlan = plan.data;
   const change = (next: StageDraft[]) => { setRows(next); setDirty(true); };
@@ -59,7 +61,7 @@ export function StageEditorPanel({ eventId }: { eventId: number }) {
     <div className="flex flex-wrap gap-3">
       <button type="button" className="desk-button-primary min-h-11" disabled={!dirty || save.isPending}
         onClick={() => save.mutate(saveBody(rows, data.fingerprint, preset), { onSuccess: () => { setDirty(false); setPreset(""); } })}>
-        {save.isPending ? t`Saving…` : t`Save stages`}</button>
+        {save.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Save stages`}</button>
       {dirty ? <button type="button" className="desk-button min-h-11" onClick={() => { setDirty(false); setPreset(""); void plan.refetch(); }}>{t`Discard changes`}</button> : null}
     </div>
   </section>;

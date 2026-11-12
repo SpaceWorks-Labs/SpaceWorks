@@ -67,7 +67,7 @@ describe("import unit options", () => {
   });
 });
 
-describe("Settings â€º People â€º Member units switches", () => {
+describe("Settings › People › Member units switches", () => {
   it("offers unit-scoped staff only with units on, and turns both off together", async () => {
     staffRequest.mockResolvedValue({});
     const { rerender } = wrap(<UnitSwitchesSettings space={{ id: 4, enabled_features: ["membership.titles"] }} />);

@@ -1,4 +1,5 @@
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
+import { useTransitionNavigate } from "../../lib/motion";
 import { staffPathState } from "./staffTabs";
 
 /**
@@ -10,7 +11,7 @@ import { staffPathState } from "./staffTabs";
  */
 export function useRoutedSubTab() {
   const location = useLocation();
-  const navigate = useNavigate();
+  const navigate = useTransitionNavigate();
   const { subPath } = staffPathState(location.pathname, location.pathname.startsWith("/guest-admin"));
   const segment = subPath.split("/")[0] ?? "";
   const path = location.pathname.replace(/\/+$/, "");

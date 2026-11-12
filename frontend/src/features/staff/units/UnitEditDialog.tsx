@@ -5,6 +5,8 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { ErrorText, Field, Modal } from "../../../components/ui";
 import { levelLabel } from "./unitHierarchy";
 import { unitErrorText, unitKeys, unitsApi, type MemberUnit, type MemberUnitDetail } from "./unitsApi";
+import { LogoLoader } from "../../../components/LogoLoader";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 export type UnitEditTarget = { kind: "create"; parent: MemberUnit | null } | { kind: "edit"; unit: MemberUnit };
 
@@ -21,7 +23,7 @@ export function UnitEditDialog({ makerspaceId, target, units, levels, onClose, o
   return editing && !detail.data
     ? <Modal open title={t`Edit ${editing.name}`} onClose={onClose}>
       {detail.isError ? <ErrorText message={unitErrorText(detail.error)} onRetry={() => void detail.refetch()} />
-        : <p role="status" className="text-sm text-muted">{t`Loading the unit…`}</p>}
+        : <LogoLoader label={t`Loading the unit…`} size={48} className="min-h-16 py-3" />}
     </Modal>
     : <UnitForm makerspaceId={makerspaceId} target={target} detail={detail.data} units={units} levels={levels} onClose={onClose} onSaved={onSaved} />;
 }
@@ -78,7 +80,7 @@ function UnitForm({ makerspaceId, target, detail, units, levels, onClose, onSave
       <div className="flex flex-wrap justify-end gap-2 sm:col-span-2">
         <button type="button" className="desk-button min-h-11" disabled={save.isPending} onClick={onClose}>{t`Cancel`}</button>
         <button className="desk-button-primary min-h-11" disabled={!ready || save.isPending}>
-          {save.isPending ? t`Saving…` : detail ? t`Save unit` : t`Add unit`}</button>
+          {save.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : detail ? t`Save unit` : t`Add unit`}</button>
       </div>
     </form>
   </Modal>;

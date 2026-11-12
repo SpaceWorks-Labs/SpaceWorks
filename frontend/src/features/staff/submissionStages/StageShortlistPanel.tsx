@@ -9,6 +9,7 @@ import { stagesKey, useStageCommands, useStageShortlist } from "./api";
 import { PromoteNext } from "./PromoteNext";
 import { stageErrorMessage } from "./stageDraft";
 import type { SavedStage, ShortlistPlan } from "./types";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 type RoundRow = { id: number; key: string; state: string; submission_stage_id?: number | null };
 
@@ -31,7 +32,7 @@ export function StageShortlistPanel({ eventId, stage }: { eventId: number; stage
   const finalized = (rounds.data?.results ?? []).filter(row => row.state === "finalized" && row.submission_stage_id === stage.id);
   const body = { selection, ...(selection === "top_n" ? { top_n: topN } : { submission_ids: picked }), source_round_id: round ? Number(round) : null };
   const label = data?.label || stage.shortlist_label || "Shortlist";
-  if (!data) return query.error ? <ErrorText message={stageErrorMessage(query.error)} /> : <p role="status">{t`Loading the shortlist…`}</p>;
+  if (!data) return query.error ? <ErrorText message={stageErrorMessage(query.error)} /> : <LogoLoader label={t`Loading the shortlist…`} size={48} className="min-h-16 py-3" />;
   const published = Boolean(data.current?.published_at);
   return <section className="grid gap-3" aria-label={`${label} for ${stage.name}`}>
     {data.pending_triage ? <TriageBlocker eventId={eventId} stageId={stage.id} count={data.pending_triage}

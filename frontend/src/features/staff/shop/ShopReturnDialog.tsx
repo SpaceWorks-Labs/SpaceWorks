@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Field, Modal } from "../../../components/ui";
 import { staffShopError } from "./staffShopApi";
 import type { ReturnRow, ShopStaffOrder } from "./staffShopOrdersApi";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 type Row = { quantity: number; disposition: ReturnRow["disposition"] };
 
@@ -23,7 +24,7 @@ export function ShopReturnDialog({ open, onClose, order, pending, error, onSubmi
     footer={<div className="flex flex-wrap justify-end gap-2">
       <button type="button" className="desk-button min-h-11" onClick={onClose} disabled={pending}>{t`Close`}</button>
       <button type="submit" form="shop-return" className="desk-button-primary min-h-11" disabled={pending || !chosen.length || !reason.trim()}>
-        {pending ? t`Working…` : t`Record return`}</button></div>}>
+        {pending ? <><BoxArt size={16} mono />{t`Working…`}</> : t`Record return`}</button></div>}>
     <form id="shop-return" className="grid gap-4" onSubmit={event => { event.preventDefault(); onSubmit(chosen, reason.trim()); }}>
       <p className="text-sm">{t`The refund is not paid here: a refund case opens for the money, and staff approve it in the Refunds tab.`}</p>
       {order.lines.map(line => {

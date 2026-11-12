@@ -7,6 +7,7 @@ import { StructuredApiError } from "../../../lib/api";
 import { financeError } from "../../finance/financeApi";
 import { donationStaffApi, donationStaffKeys, type DonationSettings } from "./staffDonationsApi";
 import { TaxExemptionsEditor } from "./TaxExemptionsEditor";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 function settingsError(error: unknown) {
   if (error instanceof StructuredApiError && error.status === 403 && error.code === "setting_not_delegated") {
@@ -39,7 +40,7 @@ export function DonationSettingsForm({ makerspaceId, taxOn, canEdit = true }: {
     onSuccess: data => client.setQueryData(donationStaffKeys.settings(makerspaceId), data),
   });
   if (!form) return settings.error ? <p role="alert" className="text-sm text-danger">{financeError(settings.error)}</p>
-    : <p role="status" className="text-sm text-muted">{t`Loading settings…`}</p>;
+    : <LogoLoader label={t`Loading settings…`} size={48} className="min-h-16 py-3" />;
   const set = (patch: Partial<DonationSettings>) => setForm({ ...form, ...patch });
   const india = form.tax_exemptions.some(row => row.scheme === "in_80g");
   return <Card><form className="grid gap-4" aria-label={t`Donation settings`} onSubmit={event => { event.preventDefault(); save.mutate(); }}>

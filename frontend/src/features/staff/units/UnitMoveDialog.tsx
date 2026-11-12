@@ -5,6 +5,7 @@ import { ErrorText, Modal } from "../../../components/ui";
 import { UnitPicker } from "./UnitPicker";
 import { canMoveUnder } from "./unitHierarchy";
 import type { MemberUnit } from "./unitsApi";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 /**
  * The keyboard and touch way to move a unit (drag-and-drop is the pointer shortcut). Only parents the
@@ -30,7 +31,7 @@ export function UnitMoveDialog({ unit, units, levels, pending, error, onClose, o
       {error ? <ErrorText message={error} /> : null}
       <div className="flex flex-wrap justify-end gap-2">
         <button type="button" className="desk-button min-h-11" disabled={pending} onClick={onClose}>{t`Cancel`}</button>
-        <button className="desk-button-primary min-h-11" disabled={pending || unchanged || !allowed}>{pending ? t`Moving…` : t`Move unit`}</button>
+        <button className="desk-button-primary min-h-11" disabled={pending || unchanged || !allowed}>{pending ? <><BoxArt size={16} mono />{t`Moving…`}</> : t`Move unit`}</button>
       </div>
     </form>
   </Modal>;

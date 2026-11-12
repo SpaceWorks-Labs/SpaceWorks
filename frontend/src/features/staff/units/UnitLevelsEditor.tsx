@@ -5,6 +5,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ErrorText, Field } from "../../../components/ui";
 import { MAX_LEVELS } from "./unitHierarchy";
 import { unitErrorText, unitKeys, unitsApi, type LevelTemplate } from "./unitsApi";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 /** The three ready-made templates, named in the viewer's language; the server's copy is the fallback. */
 const TEMPLATE_COPY = (): Record<string, { label: string; levels: string[] }> => ({
@@ -52,7 +53,7 @@ export function UnitLevelsEditor({ makerspaceId, levels, templates }: { makerspa
     <div className="flex flex-wrap items-center gap-2">
       {draft.length < MAX_LEVELS ? <button type="button" className="desk-button min-h-11" onClick={() => { save.reset(); setDraft([...draft, ""]); }}>{t`Add a level`}</button> : null}
       <button type="button" className="desk-button-primary min-h-11" disabled={!dirty || invalid || save.isPending} onClick={() => save.mutate()}>
-        {save.isPending ? t`Saving…` : t`Save level names`}</button>
+        {save.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Save level names`}</button>
       {dirty && invalid ? <span className="text-sm text-muted">{t`Give every level a name of up to 40 characters.`}</span> : null}
     </div>
     {save.error ? <ErrorText message={unitErrorText(save.error)} /> : null}

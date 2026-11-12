@@ -1,3 +1,4 @@
+import { LogoLoader } from "../../../components/LogoLoader";
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -41,7 +42,7 @@ export function UnitsSettings({ makerspaceId, canManage }: { makerspaceId: numbe
   const restore = useMutation({ mutationFn: (unit: MemberUnit) => unitsApi.restore(makerspaceId, unit.id),
     onMutate: () => setNotice(""), onSuccess: unit => done(t`${unit.name} restored.`) });
   if (isSurfaceOff(list.error)) return null;
-  if (list.isPending) return <p role="status" className="text-sm text-muted">{t`Loading units…`}</p>;
+  if (list.isPending) return <LogoLoader label={t`Loading units…`} size={48} className="min-h-16 py-3" />;
   if (list.isError) return <ErrorText message={unitErrorText(list.error)} onRetry={() => void list.refetch()} />;
   const { units, levels, templates, limit, used, scoped } = list.data;
   const editable = canManage && !scoped;

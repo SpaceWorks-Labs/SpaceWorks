@@ -6,6 +6,8 @@ import { ErrorText } from "../../../components/ui";
 import { isSurfaceOff } from "../../../lib/api";
 import { orderedUnits } from "./unitHierarchy";
 import { unitErrorText, unitKeys, unitsApi, useMemberUnits } from "./unitsApi";
+import { LogoLoader } from "../../../components/LogoLoader";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 /**
  * Which units a plan is offered in (`PUT membership-plans/<pid>/units`). Ticking a unit offers the plan
@@ -45,7 +47,7 @@ export function PlanUnitsField({ makerspaceId, planId, planName }: { makerspaceI
       ? t`Offered only in the ticked units and the units beneath them.`
       : t`Offered in every unit. Tick units to limit it.`}</p>
     {failure ? <ErrorText message={unitErrorText(failure)} onRetry={() => { void saved.refetch(); void units.refetch(); }} /> : null}
-    {saved.isPending || units.isPending ? <p role="status" className="text-sm text-muted">{t`Loading units…`}</p> : null}
+    {saved.isPending || units.isPending ? <LogoLoader label={t`Loading units…`} size={48} className="min-h-16 py-3" /> : null}
     {units.isSuccess && !rows.length ? <p className="text-sm text-muted">{t`This space has no units yet.`}</p> : null}
     <ul className="grid gap-1">{rows.map(unit => {
       const parent = coveredBy(unit.id);
@@ -62,7 +64,7 @@ export function PlanUnitsField({ makerspaceId, planId, planName }: { makerspaceI
     })}</ul>
     <div className="flex flex-wrap items-center gap-2">
       <button type="button" className="desk-button min-h-11" disabled={!dirty || save.isPending}
-        onClick={() => save.mutate([...chosen].filter(id => !coveredBy(id)))}>{save.isPending ? t`Saving…` : t`Save units`}</button>
+        onClick={() => save.mutate([...chosen].filter(id => !coveredBy(id)))}>{save.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Save units`}</button>
       {chosen.size ? <button type="button" className="desk-button min-h-11" disabled={save.isPending} onClick={() => { save.reset(); setDraft([]); }}>{t`Offer in every unit`}</button> : null}
       {save.isSuccess && !dirty ? <span role="status" className="text-sm text-muted">{t`Plan units saved.`}</span> : null}
     </div>

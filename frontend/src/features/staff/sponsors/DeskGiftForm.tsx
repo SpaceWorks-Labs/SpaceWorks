@@ -5,6 +5,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Field, Modal } from "../../../components/ui";
 import { financeError } from "../../finance/financeApi";
 import { donationStaffApi, type DeskGiftInput, type StaffCampaign } from "./staffDonationsApi";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 // `ManualSettlement.Method`: how the money reached the space.
 const SETTLEMENT_METHODS = [["cash", "Cash"], ["upi", "UPI"], ["bank_transfer", "Bank transfer"], ["card_machine", "Card machine"],
@@ -61,7 +62,7 @@ export function DeskGiftForm({ makerspaceId, campaigns, taxOn, onClose }: {
       {save.error ? <p role="alert" className="text-sm text-danger">{financeError(save.error)}</p> : null}
       <div className="flex flex-wrap justify-end gap-2">
         <button type="button" className="desk-button-ghost" onClick={onClose}>{t`Cancel`}</button>
-        <button type="submit" className="desk-button" disabled={save.isPending}>{save.isPending ? t`Saving…` : t`Record gift`}</button>
+        <button type="submit" className="desk-button" disabled={save.isPending}>{save.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Record gift`}</button>
       </div>
     </form>
   </Modal>;

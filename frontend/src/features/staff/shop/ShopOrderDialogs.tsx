@@ -5,13 +5,14 @@ import { Field, Modal, SegmentedControl } from "../../../components/ui";
 import { shopMoney } from "../../shop/shopApi";
 import { errorCode, staffShopError } from "./staffShopApi";
 import type { PayMethod, ShopStaffOrder } from "./staffShopOrdersApi";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 type Base = { open: boolean; onClose: () => void; pending: boolean; error: unknown };
 
 function Footer({ onClose, pending, label, disabled, form }: { onClose: () => void; pending: boolean; label: string; disabled?: boolean; form: string }) {
   return <div className="flex flex-wrap justify-end gap-2">
     <button type="button" className="desk-button min-h-11" onClick={onClose} disabled={pending}>{t`Close`}</button>
-    <button type="submit" form={form} className="desk-button-primary min-h-11" disabled={pending || disabled}>{pending ? t`Working…` : label}</button>
+    <button type="submit" form={form} className="desk-button-primary min-h-11" disabled={pending || disabled}>{pending ? <><BoxArt size={16} mono />{t`Working…`}</> : label}</button>
   </div>;
 }
 
@@ -30,7 +31,7 @@ export function CollectDialog({ open, onClose, pending, error, onSubmit, onMoveP
       {errorCode(error) === "pickup_interrupted" && onMovePickup ? <div className="grid gap-2 rounded-xl border border-line p-3">
         <p className="text-sm text-muted">{t`Confirm the alternate arrangement with the buyer first. Payment, items and hold times stay the same.`}</p>
         <button type="button" className="desk-button min-h-11 justify-self-start" disabled={movePending || pending} onClick={onMovePickup}>
-          {movePending ? t`Moving pickup…` : t`Move pickup to the makerspace`}</button>
+          {movePending ? <><BoxArt size={16} mono />{t`Moving pickup…`}</> : t`Move pickup to the makerspace`}</button>
         {moveError ? <p role="alert" className="text-sm text-danger">{staffShopError(moveError)}</p> : null}
       </div> : null}
     </form>

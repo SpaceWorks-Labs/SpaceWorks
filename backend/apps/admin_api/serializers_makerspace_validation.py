@@ -10,6 +10,7 @@ from apps.integrations.smtp_validation import validate_smtp_settings
 from apps.integrations.webhook_validation import validate_webhook_url
 from apps.makerspaces import domain_verification, limits
 from apps.makerspaces.capabilities import prune_features, validate_capabilities
+from apps.makerspaces.capability_eligibility import unavailable_features
 from apps.makerspaces.platform import available_modules
 from apps.makerspaces.theme_validation import validate_theme_config
 from apps.makerspaces.validators import (
@@ -166,6 +167,15 @@ class MakerspaceValidationMixin:
             )
         if self.context.get("restore_feature_configuration"):
             dormant_defaults = effective_features
+        elif "enabled_features" in attrs:
+            # Module audit 0.12.0: a retired switch, or one whose app or module this deployment
+            # does not ship, cannot be turned on here (stored keys are left alone).
+            stored = set((self.instance.enabled_features or []) if self.instance else [])
+            dead = unavailable_features(set(attrs["enabled_features"]) - stored)
+            if dead:
+                raise serializers.ValidationError({"enabled_features": [
+                    gettext("{keys} cannot be turned on: it is retired or not shipped by this deployment.").format(
+                        keys=", ".join(dead))]})
         try:
             _, enabled_features = validate_capabilities(
                 effective_modules,

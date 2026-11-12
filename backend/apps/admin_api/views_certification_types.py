@@ -17,6 +17,7 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.views import APIView
+from apps.machines.retired import RetiredCertificationView
 
 from apps.accounts import rbac
 from apps.admin_api.permissions import IsActiveStaff
@@ -56,7 +57,7 @@ def _resolved_type(user, pk):
     return row
 
 
-class CertificationTypeListCreateView(APIView):
+class CertificationTypeListCreateView(RetiredCertificationView, APIView):
     permission_classes = [IsActiveStaff]
 
     @extend_schema(
@@ -130,7 +131,7 @@ class CertificationTypeListCreateView(APIView):
         )
 
 
-class CertificationTypeDetailView(APIView):
+class CertificationTypeDetailView(RetiredCertificationView, APIView):
     permission_classes = [IsActiveStaff]
 
     @extend_schema(

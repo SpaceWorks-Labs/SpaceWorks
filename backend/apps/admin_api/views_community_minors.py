@@ -31,6 +31,7 @@ from apps.makerspaces.serializers_community import (
     GuardianTermsSerializer, MinorProfileSerializer, MinorRecordInputSerializer, minors_queryset,
     staff_minor_payload, user_name,
 )
+from django.utils.translation import gettext
 
 TAG = "Admin community"
 MANAGE = rbac.Action.MANAGE_MAKERSPACE
@@ -59,7 +60,7 @@ def _person(space, user_id=None, email=None):
         account_kind="member", is_active=True, retired_at__isnull=True, merged_into__isnull=True), space)
     user = users.filter(pk=user_id).first() if user_id else users.filter(email__iexact=email).first()
     if user is None:
-        raise NotFound("No account matches that person.")
+        raise NotFound(gettext("No account matches that person."))
     return user
 
 

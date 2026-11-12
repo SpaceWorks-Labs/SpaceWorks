@@ -16,6 +16,7 @@ from apps.accounts.services_staff_invitations import issue
 from apps.accounts.staff_invitation_delivery import deliver
 from apps.admin_api.bulk_decisions import ERRORS, MAX_IDS, BulkFailed
 from apps.admin_api.views_staff_roles import TAGS, StaffRoleBase, _no_store
+from django.utils.translation import gettext
 
 
 class StaffInviteItemSerializer(serializers.Serializer):
@@ -33,7 +34,7 @@ class StaffInviteBulkSerializer(serializers.Serializer):
     def validate_invites(self, value):
         emails = [row["email"].strip().lower() for row in value]
         if len(emails) != len(set(emails)):
-            raise serializers.ValidationError("Addresses must be unique within one call.")
+            raise serializers.ValidationError(gettext("Addresses must be unique within one call."))
         return value
 
 

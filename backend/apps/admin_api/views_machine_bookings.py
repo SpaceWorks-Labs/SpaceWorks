@@ -20,6 +20,7 @@ from apps.hardware_requests.exceptions import ErrorSerializer
 from apps.makerspaces.guards import require_feature, require_module
 from apps.makerspaces.models import Makerspace
 from apps.makerspaces.servability import servable_queryset
+from django.utils.translation import gettext
 
 FEATURE = "machines.time_booking"
 
@@ -44,7 +45,7 @@ def _bound(request, key):
         return None
     value = parse_datetime(raw)
     if value is None:
-        raise ValidationError({key: "Use an ISO 8601 date and time."})
+        raise ValidationError({key: gettext("Use an ISO 8601 date and time.")})
     return value
 
 

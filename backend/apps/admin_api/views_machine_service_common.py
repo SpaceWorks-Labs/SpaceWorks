@@ -37,13 +37,14 @@ SERVICE_FILTERS = [
 
 
 def _base_queryset():
-    return MachineServiceRequest.objects.select_related(
+    from apps.machines.event_use import with_event  # decision 342: no query per row for the event link
+    return with_event(MachineServiceRequest.objects.select_related(
         "makerspace",
         "bucket__machine__machine_type",
         "queue__machine_type",
         "assigned_machine__machine_type",
         "requester",
-    ).prefetch_related("files", "consumptions")
+    )).prefetch_related("files", "consumptions")
 
 
 def _visible_makerspace(actor, makerspace_id, action=rbac.Action.MANAGE_MACHINES):

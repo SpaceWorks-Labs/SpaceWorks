@@ -1,6 +1,6 @@
 /*
- * /control/ (django-unfold) on the Space Works brand: the app's fonts, the true-black dark
- * set (decision 225) and status badges. Colours are the brand tokens from
+ * /control/ (django-unfold) on the Space Works brand: the app's fonts, the solid-black dark
+ * family (decision 316) and status badges. Colours are the brand tokens from
  * frontend/src/index.css and docs/brand/README.md; config/unfold.py maps the same values onto
  * Unfold's base/primary ramps. Fonts are the free Gilroy weight and Outfit (OFL), see
  * ./fonts/LICENSES. No shadows, gradients or glass (brand rules).
@@ -41,7 +41,7 @@ html.dark {
   --sw-focus: 223 255 143;
   --sw-danger: 252 165 165;
   --sw-on-danger: 20 44 42;
-  --sw-neutral: 26 62 57;
+  --sw-neutral: 28 28 28;
   --sw-on-neutral: 255 244 232;
   color-scheme: dark;
 }
@@ -69,7 +69,7 @@ html body .sw-figure {
   font-variant-numeric: tabular-nums;
 }
 
-/* True black page in dark mode; raised surfaces stay the teal-lit ink from the ramp. */
+/* True black page in dark mode; raised surfaces are the neutral greys from the ramp (decision 316). */
 html.dark body {
   background-color: rgb(0 0 0);
 }
@@ -162,3 +162,21 @@ html body a {
 @media (prefers-reduced-motion: reduce) {
   .sw-group-map a { transition: none; }
 }
+
+/* Capability matrix (Makerspace change form): areas, search and state filter. Flat, no shadows. */
+.capability-toolbar { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; margin-bottom: 1rem; }
+.capability-search-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.capability-search { flex: 1 1 16rem; min-height: 2.75rem; padding: 0 0.75rem; border: 1px solid rgb(var(--sw-teal)); border-radius: 0.5rem; background: transparent; color: inherit; }
+.capability-filters { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.capability-filters button { min-height: 2.75rem; padding: 0 1rem; border: 1px solid rgb(var(--sw-teal) / 0.4); border-radius: 999px; background: transparent; color: inherit; font-weight: 600; cursor: pointer; }
+.capability-filters button[aria-pressed="true"] { border-color: rgb(var(--sw-teal)); background: rgb(var(--sw-success)); color: rgb(var(--sw-ink)); }
+.capability-search:focus-visible, .capability-filters button:focus-visible, .capability-area > summary:focus-visible { outline: 2px solid rgb(var(--sw-focus)); outline-offset: 2px; }
+.capability-area { margin-bottom: 0.75rem; border: 1px solid rgb(var(--sw-teal) / 0.3); border-radius: 0.5rem; padding: 0.5rem 1rem; }
+.capability-area > summary { min-height: 2.75rem; display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; cursor: pointer; }
+.capability-area-note { flex-basis: 100%; font-size: 0.875rem; opacity: 0.75; }
+.capability-count { padding: 0 0.5rem; border-radius: 999px; background: rgb(var(--sw-neutral)); color: rgb(var(--sw-on-neutral)); font-size: 0.75rem; }
+.capability-group { margin: 0.5rem 0; padding: 0.5rem 0 0; border: 0; border-top: 1px solid rgb(var(--sw-teal) / 0.2); }
+.capability-group label, .capability-area > label { display: flex; align-items: flex-start; gap: 0.5rem; min-height: 2.25rem; }
+.capability-feature { margin-left: 1.5rem; }
+.capability-module { font-weight: 600; }
+.capability-matrix [hidden] { display: none; }

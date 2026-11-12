@@ -80,7 +80,7 @@ class MembershipPlanListCreateView(APIView):
                 if row.sac_code:
                     audit.record(request.user, "membership_plan.sac_changed", makerspace=makerspace, target=row,
                                  meta={"plan_id": row.pk, "cleared": False})
-                sync_plan_features(makerspace)
+                sync_plan_features(makerspace, actor=request.user)
         except IntegrityError as exc:
             raise ValidationError({"name": gettext("A plan with this name or slug already exists.")}) from exc
         return Response(MembershipPlanSerializer(row).data, status=status.HTTP_201_CREATED)
@@ -117,7 +117,7 @@ class MembershipPlanDetailView(APIView):
                                  meta={"plan_id": row.pk, "cleared": not row.sac_code})
                 audit.record(request.user, "membership_plan.updated", makerspace=makerspace,
                              target=row, meta={"plan_id": row.pk, "fields": sorted(serializer.validated_data)})
-                sync_plan_features(makerspace)
+                sync_plan_features(makerspace, actor=request.user)
                 if {"amount", "renewal_amount"} & set(serializer.validated_data):
                     # Lane L24: a lowered plan price opens refund cases for paid terms not yet started.
                     from apps.payments.price_drop.triggers import after_plan_price

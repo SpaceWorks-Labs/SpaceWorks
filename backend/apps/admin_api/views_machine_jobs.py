@@ -36,6 +36,9 @@ class JobQuoteRequestSerializer(serializers.Serializer):
                                         min_value=Decimal("0"))
     consumable_pool_id = serializers.IntegerField(required=False, allow_null=True, min_value=1)
     note = serializers.CharField(required=False, allow_blank=True, max_length=2000, default="")
+    # Decision 341: staff estimates for the type's profile consumables, priced into the quote.
+    consumable_estimates = serializers.ListField(child=serializers.DictField(), required=False, max_length=32,
+                                                 default=list)
 
 
 class ReorderSerializer(serializers.Serializer):
@@ -84,7 +87,8 @@ class SendQuoteView(_JobAction):
             pool = get_object_or_404(MachineConsumablePool.objects.filter(makerspace_id=row.makerspace_id),
                                      pk=data["consumable_pool_id"])
         return _response(review.send_quote(row, request.user, estimated_minutes=data["estimated_minutes"],
-                                           quantity=data.get("quantity"), pool=pool, note=data["note"]))
+                                           quantity=data.get("quantity"), pool=pool, note=data["note"],
+                                           consumable_estimates=data.get("consumable_estimates")))
 
 
 class QueueNowView(_JobAction):

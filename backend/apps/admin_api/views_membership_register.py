@@ -24,7 +24,7 @@ _ROW = inline_serializer("MemberRegisterRow", {
     "member_number": serializers.CharField(), "name": serializers.CharField(), "email": serializers.CharField(),
     "plan": serializers.CharField(), "standing": serializers.CharField(),
     "term_ends_at": serializers.DateTimeField(allow_null=True), "source": serializers.CharField(),
-    "joined_at": serializers.DateTimeField()})
+    "joined_at": serializers.DateTimeField()}, many=True)
 
 
 class MemberRegisterView(APIView):
@@ -40,7 +40,7 @@ class MemberRegisterView(APIView):
                                OpenApiParameter("q", str, required=False, description="Name, email or member number."),
                                OpenApiParameter("plan", int, required=False), OpenApiParameter("title", int, required=False),
                                OpenApiParameter("unit", int, required=False)],
-                   responses={200: _ROW(many=True), **ERRORS})
+                   responses={200: _ROW, **ERRORS})
     def get(self, request, makerspace_id):
         from apps.admin_api.member_register_filters import apply_member_filters, register_params
         from apps.makerspaces.models import MakerspaceMembership

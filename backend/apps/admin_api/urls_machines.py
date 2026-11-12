@@ -20,6 +20,8 @@ from apps.admin_api.views_machine_operators import (
     MachineOperatorDetailView,
     MachineOperatorsView,
 )
+from apps.admin_api.views_machine_access import MachineAccessRevokeView, MachineAccessView, MachineOpenAccessView
+from apps.admin_api.views_machine_access_members import MachineAccessCandidatesView
 from apps.admin_api.views_machine_publicity import MachinePublicityView
 from apps.admin_api.views_machine_type_pricing import (
     MachineTypePricingDetailView,
@@ -42,6 +44,11 @@ from apps.admin_api.views_machines_actions import (
 from .views_machine_usage_candidates import MachineUsageCandidatesView
 
 urlpatterns = [
+    path("makerspaces/<int:makerspace_id>/machine-access", MachineAccessView.as_view(), name="admin-machine-access"),
+    path("makerspaces/<int:makerspace_id>/machine-access/candidates", MachineAccessCandidatesView.as_view(),
+         name="admin-machine-access-candidates"),
+    path("machine-access/<int:pk>/revoke", MachineAccessRevokeView.as_view(), name="admin-machine-access-revoke"),
+    path("machines/<int:pk>/open-access", MachineOpenAccessView.as_view(), name="admin-machine-open-access"),
     path("machines/<int:pk>/usage-candidates", MachineUsageCandidatesView.as_view(), name="admin-machine-usage-candidates"),
     path(
         'makerspace/<int:makerspace_id>/machines',

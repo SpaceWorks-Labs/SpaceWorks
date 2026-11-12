@@ -9,6 +9,7 @@ The generic makerspace PATCH still refuses `enabled_modules`: this audited servi
 the only module writer.
 """
 
+from django.urls import reverse
 from django.utils.translation import gettext
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiResponse, extend_schema
@@ -73,6 +74,50 @@ def _makerspace(actor, makerspace_id):
     )
 
 
+def module_lock_reason(row):
+    """Why a switch cannot be flipped by this actor, as a stable code the console words itself.
+
+    `core` (always on), `not_shipped` (the deployment removed the owning app), `limit` (a
+    managed fair-use limit makes install superadmin-only) or None. Derived from fields already
+    on the row, so it never disagrees with the install route's own refusals.
+    """
+    if row["core"]:
+        return "core"
+    if not row["available"]:
+        return "not_shipped"
+    if not row["installed"] and row.get("install_requires_superadmin"):
+        return "limit"
+    return None
+
+
+def feature_locks():
+    """Decision 329 (c): feature switches this deployment cannot turn on, keyed by feature, as `not_shipped`.
+
+    A feature whose own app (`FeatureDefinition.app_label`, e.g. `machines.maintenance` -> `maintenance`)
+    or a module it needs is not shipped. Retired switches are hidden from the screen, so they are left out.
+    """
+    from apps.makerspaces.capabilities import FEATURES
+    from apps.makerspaces.capability_definitions import RETIRED_FEATURES
+    from apps.makerspaces.capability_eligibility import unavailable_features
+
+    return {key: "not_shipped" for key in unavailable_features(FEATURES) if key not in RETIRED_FEATURES}
+
+
+def feature_requirements():
+    """The canonical direct prerequisites of every switchable feature (arch review 7).
+
+    `modules` is the parent module plus `requires_modules`; `features` is `requires_features`. The
+    console plans transitive enabling and dependent removal from this, so it never offers a switch
+    the capability validator (`capability_validation.validate_capabilities`) would then refuse.
+    """
+    from apps.makerspaces.capability_definitions import FEATURE_DEFINITIONS, RETIRED_FEATURES
+    from apps.makerspaces.capability_validation import feature_required_modules
+
+    return {definition.key: {"modules": list(feature_required_modules(definition.key)),
+                             "features": list(definition.requires_features)}
+            for definition in FEATURE_DEFINITIONS if definition.key not in RETIRED_FEATURES}
+
+
 def _groups(actor, makerspace):
     groups = grouped_module_status(makerspace)
     for group in groups:
@@ -80,6 +125,7 @@ def _groups(actor, makerspace):
             row["install_requires_superadmin"] = (
                 not row["installed"] and not may_install(actor, makerspace, row["key"]))
             row["limits"] = limit_gated(makerspace, row["key"]) if not row["installed"] else []
+            row["lock_reason"] = module_lock_reason(row)
     return groups
 
 
@@ -99,8 +145,13 @@ class ModuleGroupListView(APIView):
         return Response(
             {
                 "groups": _groups(request.user, makerspace),
+                "feature_locks": feature_locks(),
+                "feature_requirements": feature_requirements(),
                 # TOMBSTONED_APPS is a deployment decision: the superadmin's alone.
                 "deployment": deployment_app_status() if is_platform_superadmin(request.user) else None,
+                # The real /control/ URL (reverse on the admin site), never composed by the client.
+                "capability_purge_url": reverse("admin:makerspaces_makerspace_capability_purge", args=[makerspace.pk])
+                if is_platform_superadmin(request.user) else None,
                 "profiles": [
                     {"key": key, "description": description}
                     for key, description in sorted(PROFILES.items())

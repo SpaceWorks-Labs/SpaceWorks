@@ -97,6 +97,10 @@ class NotificationRecipientRulesView(APIView):
             return self._error(f"The {feature} module is not installed.")
         if event not in notification_catalog.FEATURE_EVENTS.get(feature, ()):
             return self._error(f"Unknown event '{event}' for feature '{feature}'.")
+        from apps.integrations.recipients_staff_only import refusal
+        staff_only = refusal(feature, event, serializer.validated_data["rules"])
+        if staff_only:
+            return self._error(staff_only)
 
         # A mutable holder so `keep_row` below sees the reach `revalidate` resolved under
         # the lock, not the one captured at closure-creation time.

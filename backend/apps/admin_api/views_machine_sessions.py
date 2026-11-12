@@ -8,6 +8,7 @@ check-in: starting for a member runs the member's own checks.
 """
 
 from django.utils.translation import gettext
+from django.db import transaction
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
@@ -20,7 +21,7 @@ from apps.accounts import rbac
 from apps.admin_api.list_options import StaffListPagination
 from apps.admin_api.permissions import IsActiveStaff
 from apps.hardware_requests.exceptions import ErrorSerializer
-from apps.machines import access, sessions_service as service
+from apps.machines import access, event_use, sessions_service as service
 from apps.machines import sessions_state as state
 from apps.machines.models import Machine, MachineSession
 from apps.machines.serializers_sessions import (
@@ -58,8 +59,8 @@ def _space(actor, makerspace_id):
 
 def _scoped(actor, space):
     machines = access.scope_machines_for_actor(actor, Machine.objects.filter(makerspace=space))
-    return MachineSession.objects.filter(makerspace=space, machine__in=machines).select_related(
-        "makerspace", "machine", "machine_type", "member").prefetch_related("amendments__actor", "amendments__member")
+    return event_use.with_event(MachineSession.objects.filter(makerspace=space, machine__in=machines).select_related(
+        "makerspace", "machine", "machine_type", "member")).prefetch_related("amendments__actor", "amendments__member")
 
 
 def _session(actor, pk):
@@ -144,7 +145,9 @@ class MachineSessionListView(APIView):
         if not access.can_manage_machine(request.user, machine):
             raise PermissionDenied(gettext("This machine is outside your management scope."))
         member = _member(space, payload.validated_data["member_id"])
-        row = service.start(machine, member, actor=request.user, source=MachineSession.Source.STAFF)
+        with transaction.atomic():
+            row = service.start(machine, member, actor=request.user, source=MachineSession.Source.STAFF)
+            event_use.manage(request.user, row, payload.validated_data["event_id"])  # decision 342
         return Response(render(request, _scoped(request.user, space).get(pk=row.pk)), status=status.HTTP_201_CREATED)
 
 

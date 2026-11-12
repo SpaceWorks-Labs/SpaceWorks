@@ -21,6 +21,7 @@ from apps.admin_api.views_roles import ERRORS
 from apps.makerspaces import member_register_bulk as bulk
 from apps.makerspaces import membership_admission_changes as changes
 from apps.makerspaces.models import MembershipRequest
+from django.utils.translation import gettext
 
 TAGS = ["Admin memberships"]
 
@@ -36,7 +37,7 @@ class RegisterBulkInputSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         if ("membership_ids" in attrs) == ("filter" in attrs):
-            raise serializers.ValidationError("Send either membership_ids or filter.")
+            raise serializers.ValidationError(gettext("Send either membership_ids or filter."))
         return attrs
 
 

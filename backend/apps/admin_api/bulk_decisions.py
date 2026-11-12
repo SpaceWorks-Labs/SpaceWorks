@@ -16,6 +16,7 @@ from rest_framework.views import APIView
 
 from apps.admin_api.permissions import IsActiveStaff
 from apps.hardware_requests.exceptions import ErrorSerializer
+from django.utils.translation import gettext
 
 MAX_IDS = 50
 ERRORS = {code: OpenApiResponse(ErrorSerializer) for code in (400, 401, 403, 404, 409)}
@@ -37,7 +38,7 @@ class BulkIds(serializers.Serializer):
 
     def validate_ids(self, value):
         if len(value) != len(set(value)):
-            raise serializers.ValidationError("Ids must be unique.")
+            raise serializers.ValidationError(gettext("Ids must be unique."))
         return value
 
 
@@ -59,7 +60,7 @@ class _BulkView(APIView):
         payload.is_valid(raise_exception=True)
         ids, reason = payload.validated_data["ids"], payload.validated_data["reason"]
         if decision in self.needs_reason and not reason.strip():
-            raise serializers.ValidationError({"reason": "A reason is required for this decision."})
+            raise serializers.ValidationError({"reason": gettext("A reason is required for this decision.")})
         with transaction.atomic():
             for pk in ids:
                 try:
@@ -79,7 +80,7 @@ class RequestBulkDecideView(_BulkView):
                    request=BulkIds, responses={200: BulkResultSerializer, **ERRORS})
     def post(self, request, decision):
         if decision not in ("accept", "reject"):
-            raise serializers.ValidationError({"decision": "Use accept or reject."})
+            raise serializers.ValidationError({"decision": gettext("Use accept or reject.")})
         return super().post(request, decision)
 
     def decide(self, actor, pk, decision, reason):
@@ -101,7 +102,7 @@ class BookingBulkDecideView(_BulkView):
                    request=BulkIds, responses={200: BulkResultSerializer, **ERRORS})
     def post(self, request, decision):
         if decision not in ("approve", "reject"):
-            raise serializers.ValidationError({"decision": "Use approve or reject."})
+            raise serializers.ValidationError({"decision": gettext("Use approve or reject.")})
         return super().post(request, decision)
 
     def decide(self, actor, pk, decision, reason):
@@ -121,7 +122,7 @@ class RegistrationBulkDecideView(_BulkView):
                    request=BulkIds, responses={200: BulkResultSerializer, **ERRORS})
     def post(self, request, decision):
         if decision not in ("approve", "reject"):
-            raise serializers.ValidationError({"decision": "Use approve or reject."})
+            raise serializers.ValidationError({"decision": gettext("Use approve or reject.")})
         return super().post(request, decision)
 
     def decide(self, actor, pk, decision, reason):
@@ -143,7 +144,7 @@ class RefundCaseBulkDecideView(_BulkView):
                    request=BulkIds, responses={200: BulkResultSerializer, **ERRORS})
     def post(self, request, makerspace_id, decision):
         if decision not in ("approve", "decline"):
-            raise serializers.ValidationError({"decision": "Use approve or decline."})
+            raise serializers.ValidationError({"decision": gettext("Use approve or decline.")})
         self.makerspace_id = makerspace_id
         return super().post(request, decision)
 

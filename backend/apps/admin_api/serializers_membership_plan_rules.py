@@ -35,7 +35,7 @@ def _gate(makerspace, attrs, fields, key, instance):
                      if name in attrs and attrs[name] != getattr(instance, name, default))
     if changed:
         raise PermissionDenied({"code": "feature_disabled", "feature": f"membership.{key}",
-                                "detail": gettext('Turn on membership.{key} to use: {value}.').format(key=key, value=', '.join(changed))})
+                                "detail": gettext("Turn on membership.%(key)s to use: %(value)s.") % {"key": key, "value": ", ".join(changed)}})
 
 
 def validate_plan_rules(attrs, instance, makerspace):

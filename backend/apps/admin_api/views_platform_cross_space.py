@@ -17,6 +17,7 @@ from apps.hardware_requests.exceptions import ErrorSerializer
 from apps.makerspaces.servability import servable_queryset
 from apps.operations import platform_cross_space as cross
 from apps.operations.platform_scope import _platform_context_for_view
+from django.utils.translation import gettext
 
 ERRORS = {code: OpenApiResponse(ErrorSerializer) for code in (401, 403, 404, 429)}
 NO_STORE = {"Cache-Control": "private, no-store"}
@@ -138,7 +139,7 @@ class PlatformSearchView(_PlatformView):
     def get(self, request):
         term = (request.query_params.get("q") or "").strip()
         if len(term) < 3 or len(term) > 100:
-            raise serializers.ValidationError({"q": "Use 3 to 100 characters."})
+            raise serializers.ValidationError({"q": gettext("Use 3 to 100 characters.")})
         hits = cross.platform_search(term)
         audit.record(request.user, "platform.searched", target_type="platform_search",
                      meta={"hits": len(hits), "kinds": sorted({hit["kind"] for hit in hits})})

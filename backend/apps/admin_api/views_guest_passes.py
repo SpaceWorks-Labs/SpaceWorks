@@ -25,6 +25,7 @@ from apps.makerspaces.models import DayPassProduct, GuestPass
 from apps.makerspaces.serializers_guest_passes import (
     DeskSaleSerializer, PurchaseResultSerializer, RevokeInputSerializer, StaffIssueSerializer, StaffPassSerializer,
 )
+from django.utils.translation import gettext
 
 TAG = "Admin guest passes"
 
@@ -45,7 +46,7 @@ def _resolve_user(data, space, key_prefix="holder"):
     else:
         user = users.filter(email__iexact=data[f"{key_prefix}_email"]).first()
     if user is None:
-        raise NotFound("No account matches that person.")
+        raise NotFound(gettext("No account matches that person."))
     return user
 
 

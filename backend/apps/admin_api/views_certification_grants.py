@@ -10,6 +10,7 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.views import APIView
+from apps.machines.retired import RetiredCertificationView
 
 from apps.accounts import rbac
 from apps.admin_api.permissions import IsActiveStaff
@@ -35,7 +36,7 @@ def _scoped_grants(user):
         makerspace_field="certification_type__makerspace_id",
     )
 
-class CertificationGrantListCreateView(APIView):
+class CertificationGrantListCreateView(RetiredCertificationView, APIView):
     permission_classes = [IsActiveStaff]
 
     @extend_schema(
@@ -89,7 +90,7 @@ class CertificationGrantListCreateView(APIView):
         )
 
 
-class CertificationGrantRevokeView(APIView):
+class CertificationGrantRevokeView(RetiredCertificationView, APIView):
     permission_classes = [IsActiveStaff]
 
     @extend_schema(
@@ -145,7 +146,7 @@ class CertificationGrantRevokeView(APIView):
         return Response(CertificationGrantSerializer(grant).data)
 
 
-class CertificationGrantRenewView(APIView):
+class CertificationGrantRenewView(RetiredCertificationView, APIView):
     permission_classes = [IsActiveStaff]
 
     @extend_schema(tags=["Admin machines"], summary="Renew training with a new grant",

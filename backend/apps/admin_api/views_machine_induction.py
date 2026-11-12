@@ -11,6 +11,7 @@ from rest_framework import status
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from apps.machines.retired import RetiredCertificationView
 
 from apps.accounts import rbac
 from apps.admin_api.permissions import IsActiveStaff
@@ -53,7 +54,7 @@ def _overview(actor, event):
     return {"links": links, "attendees": attendees, "can_grant": bool(links)}
 
 
-class EventInductionView(APIView):
+class EventInductionView(RetiredCertificationView, APIView):
     permission_classes = [IsActiveStaff]
 
     @extend_schema(tags=TAGS, summary="Induction links and checked-in attendees for an event", request=None,
@@ -82,7 +83,7 @@ class EventInductionView(APIView):
         return Response(InductionLinkSerializer(link).data, status=status.HTTP_201_CREATED)
 
 
-class EventInductionUnlinkView(APIView):
+class EventInductionUnlinkView(RetiredCertificationView, APIView):
     permission_classes = [IsActiveStaff]
 
     @extend_schema(tags=TAGS, summary="Remove an induction link (grants already made stay)", request=None,
@@ -94,7 +95,7 @@ class EventInductionUnlinkView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class EventInductionGrantView(APIView):
+class EventInductionGrantView(RetiredCertificationView, APIView):
     permission_classes = [IsActiveStaff]
 
     @extend_schema(tags=TAGS, summary="Grant the event's certifications to chosen attendees",
@@ -111,7 +112,7 @@ class EventInductionGrantView(APIView):
         return Response({"results": results})
 
 
-class GuestCertificationRevokeView(APIView):
+class GuestCertificationRevokeView(RetiredCertificationView, APIView):
     permission_classes = [IsActiveStaff]
 
     @extend_schema(tags=TAGS, summary="Revoke a guest certification", request=GuestGrantRevokeSerializer,

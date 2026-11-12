@@ -11,6 +11,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from apps.machines.retired import RetiredCertificationView
 
 from apps.accounts import rbac
 from apps.admin_api.permissions import IsActiveStaff
@@ -32,7 +33,7 @@ class UpcomingInductionSerializer(serializers.Serializer):
     machine_type_id = serializers.IntegerField()
 
 
-class UpcomingInductionsView(APIView):
+class UpcomingInductionsView(RetiredCertificationView, APIView):
     permission_classes = [IsActiveStaff]
 
     @extend_schema(tags=["Admin machine induction"], summary="Upcoming induction events per machine type",

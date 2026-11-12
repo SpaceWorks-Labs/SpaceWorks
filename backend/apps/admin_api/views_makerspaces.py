@@ -20,6 +20,7 @@ from apps.admin_api.views_makerspace_images import (
     MakerspaceLogoImageView,
 )
 from apps.audit import services as audit
+from apps.makerspaces.capability_audit import record_features_changed
 from apps.makerspaces.domain_audit import record_domain_change
 from apps.makerspaces.models import Makerspace
 from apps.makerspaces.origin_scope import origin_scoped_makerspace_id
@@ -219,13 +220,8 @@ class MakerspaceDetailView(generics.RetrieveUpdateAPIView):
             if previous_domain != instance.frontend_domain:
                 record_domain_change(self.request.user, instance, previous_domain)
             if previous_features != instance.enabled_features:
-                audit.record(
-                    self.request.user,
-                    "makerspace.features_changed",
-                    makerspace=instance,
-                    target=instance,
-                    meta={"before": previous_features, "after": instance.enabled_features},
-                )
+                record_features_changed(self.request.user, instance, previous_features,
+                                        instance.enabled_features, via="console")
             current_geofence = {
                 "enabled": instance.geofence_enabled,
                 "configured": instance.geofence_effective,

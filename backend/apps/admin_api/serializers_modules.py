@@ -15,6 +15,10 @@ class ModuleRowSerializer(serializers.Serializer):
     workflows = serializers.ListField(child=serializers.CharField())
     install_requires_superadmin = serializers.BooleanField()
     limits = serializers.ListField(child=serializers.CharField())
+    lock_reason = serializers.ChoiceField(
+        choices=["core", "not_shipped", "limit"], allow_null=True,
+        help_text="Why this actor cannot switch it: core (always on), not_shipped (deployment removed "
+                  "the app) or limit (managed fair-use limit; only the platform administrator may switch it on).")
 
 
 class ModuleGroupSerializer(serializers.Serializer):
@@ -45,10 +49,24 @@ class ModuleProfileSerializer(serializers.Serializer):
     description = serializers.CharField()
 
 
+class FeatureRequirementSerializer(serializers.Serializer):
+    modules = serializers.ListField(child=serializers.CharField(), help_text="Parent module plus every required module.")
+    features = serializers.ListField(child=serializers.CharField(), help_text="Directly required features (resolve transitively).")
+
+
 class ModuleGroupListSerializer(serializers.Serializer):
     groups = ModuleGroupSerializer(many=True)
     deployment = DeploymentStatusSerializer(allow_null=True, help_text="Superadmin only; otherwise null.")
     profiles = ModuleProfileSerializer(many=True)
+    capability_purge_url = serializers.CharField(allow_null=True, required=False, help_text="Superadmin only: /control/ capability-purge URL for this space; otherwise null.")
+    feature_locks = serializers.DictField(
+        child=serializers.ChoiceField(choices=["not_shipped"]), required=False,
+        help_text="Feature key -> lock reason for feature switches this deployment cannot turn on "
+                  "(its own app or a module it needs is not shipped). Absent keys are switchable.")
+    feature_requirements = serializers.DictField(
+        child=FeatureRequirementSerializer(), required=False,
+        help_text="Feature key -> its direct prerequisites from the capability registry, so a client can "
+                  "switch prerequisites on first and switch dependents off with it.")
 
 
 class ModuleInstallResultSerializer(serializers.Serializer):

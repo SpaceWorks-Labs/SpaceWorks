@@ -13,6 +13,7 @@ from apps.admin_api.recipient_rule_merge import SHARED_KINDS, owned_links
 from apps.integrations import notification_catalog, recipients as notification_recipients
 from apps.integrations.notification_enums import NotificationFeature
 from apps.integrations.models_recipients import NotificationRecipientKind
+from apps.integrations.recipients_staff_only import selectable_events
 from apps.machines.models import Machine, MachineType
 from apps.makerspaces.models import MakerspaceRole
 
@@ -92,7 +93,7 @@ def _features(makerspace, delegated):
     return [
         {
             "key": feature,
-            "events": list(notification_catalog.FEATURE_EVENTS.get(feature, ())),
+            "events": list(selectable_events(feature, notification_catalog.FEATURE_EVENTS.get(feature, ()))),
         }
         for feature in offered
         if notification_recipients.category_available(makerspace, feature)

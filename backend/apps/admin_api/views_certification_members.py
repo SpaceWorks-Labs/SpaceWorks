@@ -4,6 +4,7 @@ from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import serializers
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.views import APIView
+from apps.machines.retired import RetiredCertificationView
 
 from apps.accounts.staff_identity import person_q
 from apps.accounts import rbac
@@ -31,7 +32,7 @@ class CertificationMemberPageSerializer(serializers.Serializer):
     results = CertificationMemberSerializer(many=True)
 
 
-class CertificationMembersView(APIView):
+class CertificationMembersView(RetiredCertificationView, APIView):
     permission_classes = [IsActiveStaff]
 
     @extend_schema(tags=["Admin machines"], summary="List active members eligible for training grants",

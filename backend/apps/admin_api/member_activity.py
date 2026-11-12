@@ -123,17 +123,17 @@ def safety(actor, space, user):
 
 def people(actor, space, user):
     from apps.makerspaces.models import GuestPass, VolunteerHourEntry
-    from apps.machines.models import CertificationGrant
+    from apps.machines.models import MachineAccessGrant
 
     passes = GuestPass.objects.filter(makerspace=space).filter(Q(sponsor=user) | Q(holder=user))
     hours = VolunteerHourEntry.objects.filter(makerspace=space, member=user)
-    certs = CertificationGrant.objects.filter(membership__user=user, membership__makerspace=space, revoked_at__isnull=True)
+    access = MachineAccessGrant.objects.filter(member=user, makerspace=space, revoked_at__isnull=True)  # decision 319
     rows = None
     if rbac.can(actor, A.MANAGE_MEMBERS, space.pk):
         rows = [_row(p, f"Guest pass ({p.kind})", p.status, p.valid_from, "members", section="guests", pass_id=p.pk)
                 for p in passes.order_by("-pk")[:ROWS]]
     return _block("people", passes.count() + hours.count(), rows, guest_passes=passes.count(),
-                  volunteer_entries=hours.count(), certifications=certs.count())
+                  volunteer_entries=hours.count(), machine_access=access.count())
 
 
 AREAS = (lending, bookings, machines, events, shop, money, safety, people)

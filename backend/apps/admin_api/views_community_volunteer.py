@@ -23,6 +23,7 @@ from apps.makerspaces.serializers_community import (
     VoidInputSerializer, VolunteerCreditSerializer, VolunteerDecisionSerializer, VolunteerEntrySerializer,
     VolunteerImportResultSerializer, VolunteerLogInputSerializer,
 )
+from django.utils.translation import gettext
 
 TAG = "Admin community"
 FEATURE = "volunteer_credit"
@@ -63,7 +64,7 @@ class VolunteerHoursListView(APIView):
         values = dict(data.validated_data)
         member = User.objects.filter(pk=values.pop("member_id", None)).first()
         if member is None:
-            raise NotFound("No account matches that member.")
+            raise NotFound(gettext("No account matches that member."))
         entry = volunteer_hours.log_hours(request.user, space, member, by_staff=True, **values)
         return Response(VolunteerEntrySerializer(entry).data, status=status.HTTP_201_CREATED)
 

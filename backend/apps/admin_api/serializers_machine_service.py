@@ -5,7 +5,9 @@ from decimal import Decimal
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
+from apps.machines.event_use import event_summary
 from apps.machines.models import MachineServiceRequest
+from apps.machines.serializers_sessions import MachineEventSummarySerializer
 from apps.machines import job_risk
 from apps.machines.service_queue_eta_serializers import ServiceRequestEtaSerializer, eta_for
 from apps.payments.models import Payment
@@ -79,6 +81,7 @@ class MachineServiceRequestSerializer(serializers.ModelSerializer):
     reserved_grams = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
     actual_consumed_grams = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
     payment = serializers.SerializerMethodField()
+    event = serializers.SerializerMethodField(help_text="The event this job is logged for (decision 342), or null.")
     run_machine_model = serializers.CharField(read_only=True)
     files = ServiceFileSerializer(many=True, read_only=True)
     consumptions = ServiceConsumptionSerializer(many=True, read_only=True)
@@ -96,9 +99,13 @@ class MachineServiceRequestSerializer(serializers.ModelSerializer):
             "actual_minutes", "fail_percent_complete", "accepted_at", "started_at",
             "completed_at", "failed_at", "collected_at", "cancelled_at", "created_at", "updated_at",
             "capability_payload", "metering_unit", "planned_quantity", "reserved_quantity", "actual_consumed_quantity", "planned_grams", "reserved_grams", "actual_consumed_grams", "payment", "run_machine_model", "files", "consumptions", "eta",
-            "at_risk_reasons", *JOB_FIELDS,
+            "at_risk_reasons", "event", *JOB_FIELDS,
         )
         read_only_fields = fields
+
+    @extend_schema_field(MachineEventSummarySerializer(allow_null=True))
+    def get_event(self, obj):
+        return event_summary(obj)
 
     @extend_schema_field(ServiceRequestEtaSerializer(allow_null=True))
     def get_eta(self, obj):
@@ -214,6 +221,9 @@ class ServiceCompleteSerializer(serializers.Serializer):
     actual_grams = serializers.DecimalField(required=False, max_digits=12, decimal_places=2, min_value=Decimal("0"))
     actual_quantity = serializers.DecimalField(required=False, max_digits=12, decimal_places=2, min_value=Decimal("0"))
     consumptions = ServiceConsumptionInputSerializer(many=True, required=False, default=list)
+    # Decision 341: actual use of the type's profile consumables, by key.
+    profile_consumptions = serializers.ListField(child=serializers.DictField(), required=False, max_length=32,
+                                                 default=list)
 
 
 class ServiceFailSerializer(ServiceCompleteSerializer):

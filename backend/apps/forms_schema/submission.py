@@ -3,6 +3,7 @@
 The result is an in-process value, never a client authority flag. Domain services
 recheck current subject/schema/date fences and bind P's persisted derivation IDs.
 """
+from django.utils.translation import gettext
 from copy import deepcopy
 from dataclasses import dataclass, field
 from django.core.exceptions import ValidationError as SchemaError
@@ -144,13 +145,13 @@ def validate_submission(*, schema, payload, subject=None, context=None, file_res
                 or not isinstance(form["form_id"], str)):
             error("invalid_form_input", {"form": ["Use the matching form descriptor."]})
     if "form" in payload and payload["form"] != {"schema_version": 2, "form_id": schema["form_id"], "revision": schema["revision"]}:
-        raise FormContextConflict("form_revision_changed", "Review the current form revision.", form={
+        raise FormContextConflict("form_revision_changed", gettext("Review the current form revision."), form={
             "schema_version": 2, "form_id": schema["form_id"], "revision": schema["revision"]})
     event_context = schema.get("event_context")
     if (event_context and "event_date_revision" in payload
             and (type(payload["event_date_revision"]) is not int
                  or payload["event_date_revision"] != event_context["event_date_revision"])):
-        raise FormContextConflict("event_date_changed", "Review the revised event date.",
+        raise FormContextConflict("event_date_changed", gettext("Review the revised event date."),
                                   event_date_revision=event_context["event_date_revision"])
     raw, sources = payload.get("answers"), payload.get("derivations", {})
     if raw is None:
@@ -214,7 +215,7 @@ def validate_submission(*, schema, payload, subject=None, context=None, file_res
             if (payload.get("event_date_revision", context["event_date_revision"]) != context["event_date_revision"]
                     or derivation["reviewed_event_date_revision"] != context["event_date_revision"]
                     or derivation["reviewed_as_of_date"] != context["as_of_date"]):
-                raise FormContextConflict("event_date_changed", "Review age at the revised event start.",
+                raise FormContextConflict("event_date_changed", gettext("Review age at the revised event start."),
                     event_date_revision=context["event_date_revision"], as_of_date=context["as_of_date"])
     explicit_dobs = {row["value"] for row in answers if row["type"] == "date_of_birth"}
     inline_dobs = {item["source"]["date_of_birth"] for item in derivations.values()

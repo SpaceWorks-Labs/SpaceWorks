@@ -8,7 +8,7 @@ from apps.accounts.account_obligations import lock_obligation_owner
 
 from apps.makerspaces import limits
 from apps.machines import role_scope
-from apps.machines.certifications import require_certification_for_member
+from apps.machines.access_grants import require_type_access
 from apps.machines.models import Machine, MachineServiceRequest, ServiceBucket, ServiceQueue, get_or_create_default_bucket
 from apps.machines.service_consumption import debit_consumptions
 from apps.machines.service_errors import ServiceConsumptionInvalid, ServiceInvalidTransition, ServiceMachineUnavailable
@@ -52,13 +52,11 @@ def submit(bucket_or_machine, requester, *, requester_name, contact_email, conta
         makerspace = target.makerspace
         machine_type = target.machine_type if isinstance(target, ServiceQueue) else target.machine_type
         _validate_capability_payload(machine_type, capability_payload or {}, makerspace)
-        # Certification gating. Only for a member-attributed submission: an anonymous or
+        # Machine access gating (decision 319). Only for a member-attributed submission: an anonymous or
         # staff-entered request is somebody asking staff to run the machine, which is not
         # the member operating it, so there is nothing to have been trained for.
-        require_certification_for_member(
-            makerspace, member, machine_type, purpose="service", actor=actor,
-            override_reason=certification_override_reason,
-        )
+        if member is not None:  # decision 319: a machine access grant, never a certification
+            require_type_access(member, makerspace, machine_type)
         owner = lock_obligation_owner(member if member is not None else requester)
         if member is not None:
             member = owner
@@ -142,7 +140,7 @@ def reject(service_request, actor, *, reason, code=""):
         return locked
 
 
-def complete(service_request, actor, *, actual_minutes, consumptions, actual_grams=None, actual_quantity=None, initiator=None, pickup_location=""):
+def complete(service_request, actor, *, actual_minutes, consumptions, actual_grams=None, actual_quantity=None, initiator=None, pickup_location="", profile_consumptions=None, enforce_required=True):
     with transaction.atomic():
         _assert_request_write_allowed(service_request)
         locked = _locked_request(service_request)
@@ -151,6 +149,7 @@ def complete(service_request, actor, *, actual_minutes, consumptions, actual_gra
         _lock_assigned_machine(locked)
         locked.actual_minutes = _minutes(actual_minutes, "actual_minutes")
         debit_consumptions(locked, actor, consumptions, outcome="completed")
+        _record_profile(locked, actor, profile_consumptions, enforce_required=enforce_required)
         if locked.run_consumable_pool_id:
             from apps.machines.service_consumable_pools import reconcile_request
             reconcile_request(locked, actor, actual_grams=locked.planned_grams if actual_grams is None else actual_grams,
@@ -173,7 +172,16 @@ def complete(service_request, actor, *, actual_minutes, consumptions, actual_gra
         return locked
 
 
-def fail(service_request, actor, *, reason, percent_complete, actual_minutes, consumptions, actual_grams=None, actual_quantity=None, code="", fault=""):
+def _record_profile(locked, actor, entries, *, enforce_required):
+    """Decision 341: the type's profile consumables, recorded by staff; required ones gate completion."""
+    from apps.machines import consumable_usage
+    if entries:
+        consumable_usage.record_actuals(locked, actor, entries, source="staff")
+    if enforce_required:
+        consumable_usage.require_required(locked)
+
+
+def fail(service_request, actor, *, reason, percent_complete, actual_minutes, consumptions, actual_grams=None, actual_quantity=None, code="", fault="", profile_consumptions=None):
     with transaction.atomic():
         _assert_request_write_allowed(service_request)
         if not str(reason or "").strip():
@@ -184,6 +192,7 @@ def fail(service_request, actor, *, reason, percent_complete, actual_minutes, co
         _lock_assigned_machine(locked)
         locked.actual_minutes, locked.fail_percent_complete, locked.reason, locked.failed_at = _minutes(actual_minutes, "actual_minutes"), _percent(percent_complete), str(reason).strip(), timezone.now()
         debit_consumptions(locked, actor, consumptions, outcome="failed")
+        _record_profile(locked, actor, profile_consumptions, enforce_required=False)
         if locked.run_consumable_pool_id:
             from apps.machines.service_consumable_pools import reconcile_request
             if locked.reserved_quantity is not None and locked.metering_unit != "weight":

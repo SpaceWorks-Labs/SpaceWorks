@@ -19,6 +19,7 @@ A machine out of service for repair (`status == "maintenance"`, set by repairs'
 it are listed to staff (`bookings_in_repair`), as a blocking room outage does.
 """
 
+from django.utils.translation import gettext
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.exceptions import APIException
@@ -59,10 +60,10 @@ def check(machine, person, *, purpose, at=None):
         return None
     person_id = getattr(person, "pk", person)
     if bookings.exclude(member_id=person_id).exists():
-        raise MachineBookingRefused("machine_booked", "Someone else has booked this machine for now.")
+        raise MachineBookingRefused("machine_booked", gettext("Someone else has booked this machine for now."))
     if purpose == "session" and requires_booking(machine.machine_type):
         if person_id is None or not bookings.filter(member_id=person_id).exists():
-            raise MachineBookingRefused("booking_required", "Book this machine before using it.")
+            raise MachineBookingRefused("booking_required", gettext("Book this machine before using it."))
     return None
 
 

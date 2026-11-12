@@ -67,6 +67,7 @@ class MachineAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
         'is_public',
         "is_active",
         "image_key",
+        "open_to_all_members",
         "created_by",
         "created_at",
         "updated_at",
@@ -237,3 +238,7 @@ class ServiceRequestConsumptionAdmin(_ReadOnlyMachineChildAdmin):
 
 # Per-machine and per-machine-type scope (decision 282), read-only (0.12.0).
 from apps.machines import admin_scope  # noqa: E402,F401
+
+
+# Machine access grants (decision 319) and the retired certification history, read-only (0.12.0).
+from apps.machines import admin_access  # noqa: E402,F401

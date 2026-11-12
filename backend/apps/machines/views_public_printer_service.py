@@ -21,21 +21,18 @@ from apps.machines.permissions import IsActiveRequester
 
 
 def _require_printer_module(makerspace):
-    """The public printer surface belongs to `printing`, which is separately optional.
+    """The public printer surface belongs to `machine_service`.
 
-    This gated on `machine_service` instead, so the RECOMMENDED profile -- which ships
-    `machine_service` ON and `printing` OFF -- exposed the entire public printer API for a
-    module the operator had explicitly left off. `printing` already declares
-    `requires_modules=("machine_service",)`, so the dependency runs the other way and
-    checking `printing` alone is both necessary and sufficient. An edition that hides
-    `printing` makes every one of these routes answer 404 first.
+    The 3D print queue was a separate `printing` module until decision 340b folded it into
+    machine service, which takes requests for every machine type. An edition that hides
+    `machine_service` makes every one of these routes answer 404 first.
     """
     from apps.makerspaces.editions import require_public_surface
 
-    require_public_surface("printing")
-    if not module_enabled(makerspace, "printing"):
+    require_public_surface("machine_service")
+    if not module_enabled(makerspace, "machine_service"):
         from apps.makerspaces.guards import module_off
-        raise module_off("printing")
+        raise module_off("machine_service")
 
 
 class PublicPrinterQueuesView(APIView):

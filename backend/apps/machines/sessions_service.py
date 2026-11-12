@@ -9,6 +9,7 @@ by the member or by staff is final at once; an auto-stopped (flagged) or unattri
 one is final only when staff confirm it, after any correction.
 """
 
+from django.utils.translation import gettext
 from decimal import Decimal
 
 from django.db import IntegrityError, transaction
@@ -64,7 +65,7 @@ def start(machine, member, *, actor, source, digest=None, now=None):
                     quote_snapshot=rate.to_snapshot() if rate is not None else {},
                     quote_digest=rate.digest if rate is not None else "")
         except IntegrityError:
-            raise SessionRefused("machine_in_use", "Someone is using this machine right now.")
+            raise SessionRefused("machine_in_use", gettext("Someone is using this machine right now."))
         audit.record(actor, "machine_session.started", makerspace=session.makerspace, target=session, meta={
             "session_id": session.pk, "machine_id": session.machine_id, "source": source, "billable": session.billable,
             "member_id": getattr(member, "pk", None)})
@@ -87,18 +88,19 @@ def _finalize(session, actor):
     return billing.raise_charge(session, minutes=minutes, member=member, actor=actor)
 
 
-def stop(session, *, actor, reason, at=None, minutes=None):
-    """Close a live session once. Auto-stop reasons flag it for staff review."""
+def stop(session, *, actor, reason, at=None, minutes=None, flag=False):
+    """Close a live session once. Auto-stop reasons (or ``flag``, e.g. adapter minutes that disagree with the
+    wall clock, decision 336h) flag it for staff review, so its charge waits for a staff confirmation."""
     _machine, Session, _amendment, _usage = _models()
     with transaction.atomic():
         _fence(session.makerspace_id)
         session = _locked_session(session)
         if session.ended_at is not None:
-            raise SessionRefused("session_closed", "This session has already stopped.")
+            raise SessionRefused("session_closed", gettext("This session has already stopped."))
         end = max(at or timezone.now(), session.started_at)
         elapsed = round((end - session.started_at).total_seconds() / 60)
         session.ended_at, session.stop_reason, session.stopped_by = end, reason, actor
-        session.flagged = reason in Session.AUTO_STOP_REASONS
+        session.flagged = flag or reason in Session.AUTO_STOP_REASONS
         session.duration_minutes = max(int(minutes if minutes is not None else elapsed), 0)
         session.save(update_fields=["ended_at", "stop_reason", "stopped_by", "flagged", "duration_minutes"])
         if session.flagged:
@@ -118,10 +120,10 @@ def stop(session, *, actor, reason, at=None, minutes=None):
 def _reviewable(session):
     session = _locked_session(session)
     if session.ended_at is None:
-        raise SessionRefused("session_live", "Stop the session first.")
+        raise SessionRefused("session_live", gettext("Stop the session first."))
     if not state.needs_review(session):
-        raise SessionRefused("session_final", "This session is already final; its charge follows the usual "
-                             "payment path.")
+        raise SessionRefused("session_final", gettext("This session is already final; its charge follows the usual "
+                             "payment path."))
     return session
 
 
@@ -146,7 +148,7 @@ def assign(session, actor, *, member, reason):
         _fence(session.makerspace_id)
         session = _reviewable(session)
         if session.member_id is not None:
-            raise SessionRefused("session_attributed", "This session already belongs to a member.")
+            raise SessionRefused("session_attributed", gettext("This session already belongs to a member."))
         Amendment.objects.create(makerspace=session.makerspace, session=session, kind="assign", member=member,
                                  reason=reason, actor=actor)
         audit.record(actor, "machine_session.assigned", makerspace=session.makerspace, target=session, meta={
@@ -161,7 +163,7 @@ def confirm(session, actor):
         _fence(session.makerspace_id)
         session = _reviewable(session)
         if state.effective_member_id(session) is None:
-            raise SessionRefused("session_unattributed", "Assign this session to a member first.")
+            raise SessionRefused("session_unattributed", gettext("Assign this session to a member first."))
         minutes = state.effective_minutes(session)
         Amendment.objects.create(makerspace=session.makerspace, session=session, kind="confirm", minutes=minutes,
                                  actor=actor)

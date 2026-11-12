@@ -6,6 +6,7 @@
   (`override_length`), and is audited as an override.
 """
 
+from django.utils.translation import gettext
 from rest_framework import status
 from rest_framework.exceptions import APIException
 
@@ -28,8 +29,8 @@ def require_acceptable(row, *, planned_grams=None, override_length=False):
     machine_type = machine_type_of(row)
     policy = job_policy.policy_for(row.makerspace, machine_type)
     if policy.max_job_minutes and row.estimated_minutes > policy.max_job_minutes and not override_length:
-        raise JobRuleRefused("job_too_long", "This job is longer than this machine type allows. Confirm the "
-                             "override to accept it.", max_job_minutes=policy.max_job_minutes)
+        raise JobRuleRefused("job_too_long", gettext("This job is longer than this machine type allows. Confirm the "
+                             "override to accept it."), max_job_minutes=policy.max_job_minutes)
     from apps.makerspaces.platform import feature_enabled
     if not feature_enabled(row.makerspace, job_policy.JOB_QUOTES) or not job_policy.charges_tracked(row.makerspace):
         return
@@ -40,8 +41,8 @@ def require_acceptable(row, *, planned_grams=None, override_length=False):
     except Exception:
         total = 0
     if job_policy.quote_required(row.makerspace, machine_type, total):
-        raise JobRuleRefused("quote_required", "This machine type needs a quote the member approves before "
-                             "the job joins the queue. Send a quote instead.")
+        raise JobRuleRefused("quote_required", gettext("This machine type needs a quote the member approves before "
+                             "the job joins the queue. Send a quote instead."))
 
 
 def require_open_job_limit(makerspace, member, machine_type):
@@ -58,5 +59,5 @@ def require_open_job_limit(makerspace, member, machine_type):
         Q(queue__machine_type=machine_type) | Q(bucket__machine__machine_type=machine_type),
         makerspace=makerspace, member=member, status__in=open_states).count()
     if count >= policy.max_open_jobs:
-        raise JobRuleRefused("job_limit_reached", "You already have the most open jobs allowed for this machine "
-                             "type.", max_open_jobs=policy.max_open_jobs)
+        raise JobRuleRefused("job_limit_reached", gettext("You already have the most open jobs allowed for this machine "
+                             "type."), max_open_jobs=policy.max_open_jobs)

@@ -9,7 +9,6 @@ shared ETA and counts from one request-scoped snapshot.
 from rest_framework.exceptions import NotFound
 
 from apps.machines.models import MachineServiceRequest
-from apps.machines.printer_capabilities import is_printer_type
 from apps.machines.public_printer_service import _StatusProjection, status_context
 from apps.makerspaces.servability import servable_queryset
 
@@ -29,11 +28,9 @@ def public_service_status(public_token):
 
     machine_type = _machine_type(row)
     # The token names a job in ONE makerspace: that space's module and edition gates
-    # apply (edition-hidden and module off both answer 404), and built-in printer jobs also
-    # need `printing`, exactly like the printer-specific status route.
+    # apply (edition-hidden and module off both answer 404). Printer jobs need nothing more
+    # since the `printing` module folded into machine service (340b).
     require_module_for_servable(row.makerspace, "machine_service")
-    if is_printer_type(machine_type):
-        require_module_for_servable(row.makerspace, "printing")
     projection = _StatusProjection(row, printer=False)
     projection.machine_type_name = machine_type.name
     return projection, status_context([row])

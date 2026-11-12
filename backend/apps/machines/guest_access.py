@@ -7,8 +7,9 @@ The pass's frozen `machines` entitlement is one of:
   (`supervised.may_use_supervised`). A supervisee's use is recorded by the instructor, so a
   self-service session or a job request is refused (`guest_pass_supervised_only`), and a
   supervisee who tries to start their own session is told so (`guest_pass_supervised_session`).
-* `after_induction_cert` -- once a certification for the machine's type was granted from an
-  induction event (`induction.holds_certification`), else `guest_pass_certification_required`.
+* `after_induction_cert` -- (name kept for stored passes; it now means "after access was granted")
+  once the guest holds a machine access grant for the machine or its type (decision 319), else
+  `guest_pass_machine_access_required`. An "open to all members" machine does not admit a guest.
 
 Members never reach this module: the callers branch on `ActiveMemberPresence.guest_pass`.
 """
@@ -32,7 +33,7 @@ class GuestMachineRefused(APIException):
 
 def require_guest_machine(guest_pass, user, makerspace, *, machine=None, machine_type=None, surface="session", at=None):
     """Raise unless `guest_pass` allows `user` this machine use. `surface` is `session` or `job`."""
-    from apps.machines.induction import holds_certification
+    from apps.machines.access_grants import can_use, can_use_type
     from apps.machines.supervised import may_use_supervised
 
     mode = pass_entitlements(guest_pass).machines
@@ -47,9 +48,13 @@ def require_guest_machine(guest_pass, user, makerspace, *, machine=None, machine
             "guest_pass_supervised_only",
             gettext("A guest may use machines only in an instructor's supervised session."))
     if mode == "after_induction_cert":
-        if machine_type is None or not holds_certification(user, machine_type, makerspace, moment):
+        if machine is not None:
+            allowed, _reason = can_use(user, machine, now=moment, include_open=False)
+        else:
+            allowed, _reason = can_use_type(user, makerspace, machine_type, now=moment, include_open=False)
+        if not allowed:
             raise GuestMachineRefused(
-                "guest_pass_certification_required",
-                gettext("A guest needs a certification from an induction event for this machine first."))
+                "guest_pass_machine_access_required",
+                gettext("A guest needs machine access from a space manager for this machine first."))
         return
     raise GuestMachineRefused("guest_pass_no_machines", gettext("Your guest pass does not include machine use."))

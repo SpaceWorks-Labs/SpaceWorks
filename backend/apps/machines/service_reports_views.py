@@ -54,7 +54,6 @@ class MakerspaceMachineServiceReportView(APIView):
         # manager, superadmin) resolves to an empty filter and sees the whole lab.
         machine_scope = role_scope.manage_scope_for(request.user, makerspace_id)
         if request.query_params.get("machine_type") == "3d_printer":
-            require_module(makerspace_id, "printing")
             result = build_printer_service_report(
                 makerspace_id, date_range=_date_range(request), machine_scope=machine_scope
             )

@@ -88,4 +88,9 @@ def run_session_sweep(*, now=None):
             except Exception:
                 counts["skipped"] += 1
                 logger.exception("machine_session_sweep_failed", extra={"session_id": row.pk})
+    try:  # decision 319: tell members their machine access is about to end (once per grant)
+        from apps.machines.notifications_machine_access import notify_expiring
+        counts["access_expiring_notices"] = notify_expiring(now)
+    except Exception:
+        logger.exception("machine_access_expiry_notice_failed")
     return counts

@@ -137,6 +137,7 @@ class MachineSerializer(serializers.ModelSerializer):
             'warranty_status',
             'is_public',
             'is_active',
+            'open_to_all_members',
             'usage_hours',
             'can_operate',
             'can_edit',
@@ -154,6 +155,7 @@ class MachineSerializer(serializers.ModelSerializer):
             'status',
             'is_public',
             'is_active',
+            'open_to_all_members',
             'created_at',
             'updated_at',
         ]

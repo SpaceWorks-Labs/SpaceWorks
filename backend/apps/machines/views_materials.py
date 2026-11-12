@@ -139,7 +139,7 @@ class PublicTypeIntakeView(APIView):
             machine_type=machine_type, is_active=True, is_public=True).exists()
         from .printer_capabilities import is_printer_type
         from apps.makerspaces.platform import module_enabled
-        if not published and is_printer_type(machine_type) and module_enabled(space, "printing"):
+        if not published and is_printer_type(machine_type) and module_enabled(space, "machine_service"):
             from .public_printer_service import public_queues
             published = public_queues(space).exists()
         if not published:

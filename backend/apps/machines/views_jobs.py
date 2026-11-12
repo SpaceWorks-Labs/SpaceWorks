@@ -9,7 +9,7 @@ from rest_framework.views import APIView
 
 from apps.apiclients.throttling import ClientTierRateThrottle, MemberPrincipalRateThrottle
 from apps.hardware_requests.exceptions import ErrorSerializer
-from apps.machines import job_intake, job_policy
+from apps.machines import event_use, job_intake, job_policy
 from apps.machines.job_files import stage_job_file
 from apps.machines.models import MachineServiceRequest
 from apps.machines.serializers_jobs import (
@@ -46,6 +46,7 @@ def _space(slug):
 
 
 def _type_row(space, queue):
+    from apps.machines.consumable_usage import member_definitions
     from apps.maker_formats.registry import REGISTRY
     from apps.machines.printer_capabilities import is_printer_type
     policy = job_policy.policy_for(space, queue.machine_type)
@@ -58,7 +59,8 @@ def _type_row(space, queue):
             and job_policy.charges_tracked(space) else "off",
             "prepay": job_policy.prepay(space, queue.machine_type),
             "runs_unattended": job_policy.runs_unattended(space, queue.machine_type, policy),
-            "max_open_jobs": policy.max_open_jobs}
+            "max_open_jobs": policy.max_open_jobs,
+            "consumables": list(member_definitions(space, queue.machine_type))}
 
 
 class PublicJobTypesView(APIView):
@@ -111,15 +113,15 @@ class PublicJobSubmitView(APIView):
 
 
 def _member_rows(user):
-    return servable_queryset(MachineServiceRequest.objects.select_related(
-        "makerspace", "queue__machine_type", "bucket__machine__machine_type").filter(member_id=user.pk),
+    return servable_queryset(event_use.with_event(MachineServiceRequest.objects.select_related(
+        "makerspace", "queue__machine_type", "bucket__machine__machine_type")).filter(member_id=user.pk),
         relation="makerspace")
 
 
 def _render(rows, user, many=False):
     from apps.machines.service_queue_eta import queue_snapshot_for
     rows = list(rows) if many else [rows]
-    context = {"queue_snapshot": queue_snapshot_for(rows), "user": user, "service_on": {}}
+    context = {"queue_snapshot": queue_snapshot_for(rows), "user": user, "service_on": {}, "detail": not many}
     data = MemberJobSerializer(rows, many=True, context=context).data
     return data if many else data[0]
 

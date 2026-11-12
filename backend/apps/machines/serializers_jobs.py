@@ -8,7 +8,10 @@ Never another member's data, a staff note, or a storage key.
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
+from apps.machines.event_use import event_summary
 from apps.machines.models import MachineServiceRequest
+from apps.machines.serializers_consumable_profiles import MemberReportableConsumableSerializer
+from apps.machines.serializers_sessions import MachineEventSummarySerializer
 from apps.machines.service_queue_eta_serializers import ServiceRequestEtaSerializer, counts_for, eta_for
 
 Status = MachineServiceRequest.Status
@@ -38,6 +41,12 @@ class JobTypeSerializer(serializers.Serializer):
     prepay = serializers.BooleanField()
     runs_unattended = serializers.BooleanField()
     max_open_jobs = serializers.IntegerField(allow_null=True)
+    # Decision 341: the consumables this type asks the member to estimate (units and choices).
+    consumables = serializers.SerializerMethodField()
+
+    def get_consumables(self, row) -> list[dict]:
+        from apps.machines.serializers_consumable_profiles import MemberJobConsumableSerializer
+        return MemberJobConsumableSerializer(row.get("consumables", []), many=True).data
 
 
 class JobSubmitSerializer(serializers.Serializer):
@@ -60,6 +69,11 @@ class JobSubmitSerializer(serializers.Serializer):
                                                         decimal_places=2, min_value=0, default=None)
     preferred_settings = serializers.JSONField(required=False, default=None)
     acknowledgements = serializers.DictField(child=serializers.BooleanField())
+    # Decision 341: `[{key, quantity, attributes}]` for the type's member-estimated consumables.
+    consumable_estimates = serializers.ListField(child=serializers.DictField(), required=False, max_length=32,
+                                                 default=list)
+    event_id = serializers.IntegerField(min_value=1, required=False, allow_null=True, default=None,
+                                        help_text="Optional: an event I may act for in this makerspace (decision 342).")
 
 
 class JobUploadSerializer(serializers.Serializer):
@@ -112,6 +126,21 @@ class MemberJobSerializer(serializers.Serializer):
     copies = serializers.IntegerField()
     needed_by = serializers.DateField(allow_null=True)
     created_at = serializers.DateTimeField()
+    event = serializers.SerializerMethodField(help_text="The event this job is logged for (decision 342), or null.")
+    # Decision 341: what the member may report on this job, each with what is already recorded (empty when
+    # the job is not accepted, running or done).
+    report_consumables = serializers.SerializerMethodField()
+
+    @extend_schema_field(MemberReportableConsumableSerializer(many=True))
+    def get_report_consumables(self, row):
+        from apps.machines.consumable_usage import member_reportable
+        if not self.context.get("detail"):
+            return []  # the list stays one query per page; the job page carries them
+        return MemberReportableConsumableSerializer(member_reportable(row), many=True).data
+
+    @extend_schema_field(MachineEventSummarySerializer(allow_null=True))
+    def get_event(self, row):
+        return event_summary(row)
 
     def get_label(self, row) -> str:
         if row.status == Status.QUOTED and row.quote_approved_at:

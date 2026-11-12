@@ -6,6 +6,7 @@ space. A claim session (a kiosk walk-in claim) never starts or stops a machine.
 """
 
 from django.utils.translation import gettext
+from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
@@ -18,6 +19,7 @@ from rest_framework.views import APIView
 from apps.accounts.account_kind_guards import require_member_account
 from apps.apiclients.throttling import MemberPrincipalRateThrottle
 from apps.hardware_requests.exceptions import ErrorSerializer
+from apps.machines import event_use
 from apps.machines import sessions_billing as billing
 from apps.machines import sessions_service as service
 from apps.machines import sessions_state as state
@@ -32,7 +34,8 @@ ERRORS = {
     400: OpenApiResponse(ErrorSerializer, description="Invalid input."),
     401: OpenApiResponse(description="Sign in first."),
     403: OpenApiResponse(ErrorSerializer, description="member_restricted, membership_required, "
-                                                       "waiver_acceptance_required or certification_required."),
+                                                       "waiver_acceptance_required, no_machine_access or "
+                                                       "machine_access_expired."),
     404: OpenApiResponse(description="No such machine or session, or sessions are off in this space."),
     409: OpenApiResponse(ErrorSerializer, description="presence_required, machine_unavailable, machine_locked_out, "
                                                        "machine_booked, booking_required, machine_in_use, "
@@ -99,7 +102,8 @@ class MemberSessionPreviewView(_MemberView):
         rate = billing.start_quote(machine, user) if active else None
         problem = refusal(machine, user)
         live = MachineSession.objects.filter(machine=machine, member=user, ended_at__isnull=True).first()
-        data = {"machine_id": machine.pk, "machine_name": machine.name, "machine_type_name": machine.machine_type.name,
+        data = {"machine_id": machine.pk, "machine_name": machine.name, "machine_type_id": machine.machine_type_id,
+                "machine_type_name": machine.machine_type.name,
                 "machine_status": machine.status, "billing": bool(rate is not None and rate.total > 0),
                 "rate": rate_payload(rate.to_snapshot()) if rate is not None else None,
                 "digest": rate.digest if rate is not None else "",
@@ -123,8 +127,10 @@ class MemberSessionStartView(_MemberView):
         machine = _machine(user, machine_id)
         payload = SessionStartSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
-        row = service.start(machine, user, actor=user, source=MachineSession.Source.MEMBER_QR,
-                            digest=payload.validated_data["digest"] or None)
+        with transaction.atomic():
+            row = service.start(machine, user, actor=user, source=MachineSession.Source.MEMBER_QR,
+                                digest=payload.validated_data["digest"] or None)
+            event_use.attach(row, payload.validated_data["event_id"], actor=user)
         return Response(_render(_owned(user, row.pk)), status=status.HTTP_201_CREATED)
 
 
@@ -150,8 +156,8 @@ class MemberSessionListView(_MemberView):
     def get(self, request):
         from apps.makerspaces.servability import servable_queryset
         user = _member(request)
-        rows = servable_queryset(MachineSession.objects.select_related(
-            "makerspace", "machine", "machine_type").prefetch_related("amendments").filter(member=user),
+        rows = servable_queryset(event_use.with_event(MachineSession.objects.select_related(
+            "makerspace", "machine", "machine_type")).prefetch_related("amendments").filter(member=user),
             relation="makerspace").filter(makerspace__enabled_features__contains=[state.FEATURE])
         if (space := request.query_params.get("makerspace")) and str(space).isdigit():
             rows = rows.filter(makerspace_id=int(space))

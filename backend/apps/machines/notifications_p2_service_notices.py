@@ -106,9 +106,6 @@ def eligible(envelope):
     space = row.makerspace
     if not module_enabled(space, "machine_service") or not module_enabled(space, "machines"):
         return False
-    from .printer_capabilities import is_printer_type
-    if is_printer_type(_machine_type(row)) and not module_enabled(space, "printing"):
-        return False
     if envelope.event == "next":
         if envelope.revision != milestone_revision(row, "next", owner.pk) or not is_accepted_head(row):
             return False

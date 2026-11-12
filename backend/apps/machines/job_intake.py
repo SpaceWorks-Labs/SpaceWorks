@@ -14,7 +14,7 @@ from django.utils.translation import gettext
 from django.db import transaction
 from rest_framework.exceptions import ValidationError
 
-from apps.machines import job_policy
+from apps.machines import event_use, job_policy
 from apps.machines.models import ServiceQueue
 
 ACKNOWLEDGEMENTS = ("pickup_policy", "failure_policy", "own_content")
@@ -73,11 +73,14 @@ def submit_job(makerspace, member, data):
             capability_payload=payload,
             certification_override_reason="",
         )
+        event_use.attach(row, data.get("event_id"), actor=member)  # decision 342: optional, strict when given
         row.copies, row.needed_by = data.get("copies") or 1, data.get("needed_by")
         row.own_material, row.material_note = bool(data.get("own_material")), data.get("material_note", "")[:200]
         row.member_estimate_minutes = data.get("member_estimate_minutes")
         row.save(update_fields=["copies", "needed_by", "own_material", "material_note", "member_estimate_minutes",
                                 "updated_at"])
+        from apps.machines.consumable_usage import record_estimates
+        record_estimates(row, member, data.get("consumable_estimates") or [], source="member")
         for file_id in file_ids:
             attach_job_file(row, file_id=file_id, actor=member)
         if not row.files.exclude(kind="screenshot").exists():

@@ -46,9 +46,6 @@ def eligible(envelope):
         return False
     if not module_enabled(envelope.makerspace, "machine_service") or not module_enabled(envelope.makerspace, "machines"):
         return False
-    from .printer_capabilities import is_printer_type
-    if is_printer_type(machine_type(row)) and not module_enabled(envelope.makerspace, "printing"):
-        return False
     from . import access
     sender = row.requester if envelope.event == "submitted" else (
         row.accepted_by if envelope.event == "reprinted" else row.handled_by)

@@ -129,6 +129,8 @@ class Machine(models.Model):
     image_key = models.CharField(max_length=300, blank=True, default="")
     is_public = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
+    # Decision 319: when on, every active member may use this machine with no grant.
+    open_to_all_members = models.BooleanField(default=False)
     service_file_policy = models.JSONField(
         default=default_service_file_policy,
         validators=[validate_service_file_policy],

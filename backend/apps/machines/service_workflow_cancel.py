@@ -63,18 +63,18 @@ class CancelRefused(PermissionDenied):
 def _assert_authority(locked, actor, by_owner):
     if by_owner:
         if locked.member_id is None or locked.member_id != getattr(actor, "pk", None):
-            raise CancelRefused("Only the request owner can cancel this job.")
+            raise CancelRefused(gettext("Only the request owner can cancel this job."))
         if not (actor.is_active and actor.access_status == "active"):
-            raise CancelRefused("Only an active account can cancel this job.")
+            raise CancelRefused(gettext("Only an active account can cancel this job."))
         if locked.status == Status.IN_PROGRESS:
-            raise CancelRefused("This job is already running; ask the staff to stop it.")
+            raise CancelRefused(gettext("This job is already running; ask the staff to stop it."))
         return
     if not rbac.can(actor, rbac.Action.MANAGE_MACHINES, locked.makerspace_id):
-        raise CancelRefused("Machine management permission is required.")
+        raise CancelRefused(gettext("Machine management permission is required."))
     # The view resolved the row through the actor's machine partition before the lock;
     # re-check it here so a scope narrowed in that window refuses the cancel.
     if not role_scope.covers_service_request(actor, locked):
-        raise CancelRefused("This job is outside your machine scope.")
+        raise CancelRefused(gettext("This job is outside your machine scope."))
 
 
 def cancel(service_request, actor, *, reason="", by_owner=False, consumed_quantity=None):

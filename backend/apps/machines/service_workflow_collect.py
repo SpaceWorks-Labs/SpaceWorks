@@ -61,7 +61,7 @@ def _check_handover(locked, pickup_code):
         payment = job_charges.prepaid_payment(locked) if locked.prepay else job_charges.payment_for(locked)
         if payment is not None and payment.status == payment.Status.PENDING:
             from apps.machines.job_rules import JobRuleRefused
-            raise JobRuleRefused("payment_due", "This job's charge must be settled before pickup.",
+            raise JobRuleRefused("payment_due", gettext("This job's charge must be settled before pickup."),
                                  payment_id=payment.pk)
     return bool(pickup_code)
 

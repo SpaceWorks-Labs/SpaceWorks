@@ -80,7 +80,7 @@ def build_printer_service_report(makerspace_id, *, limit=None, date_range=None, 
     """
     if machine_scope is None:
         machine_scope = _actor_machine_scope(actor, makerspace_id)
-    ids = scoped_ids(makerspace_id, "printing")
+    ids = scoped_ids(makerspace_id, "machine_service")
     aggregate = makerspace_id is None
     terminal = Q(status__in=COMPLETED) | Q(status=MachineServiceRequest.Status.FAILED)
     printer_type = resolve_global_printer_type()

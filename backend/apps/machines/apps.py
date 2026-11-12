@@ -16,5 +16,7 @@ class MachinesConfig(AppConfig):
         register_stock()
         from .notifications_job_flow import register as register_job_flow
         register_job_flow()
+        from .notifications_machine_access import register as register_machine_access
+        register_machine_access()
         from .notifications_sessions import register as register_sessions
         register_sessions()

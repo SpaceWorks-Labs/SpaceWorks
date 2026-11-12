@@ -16,6 +16,7 @@ from apps.openapi_errors import errors
 from . import supervised
 from .serializers_workshop import _name
 from .views_supervised import TAGS, _Base, _session, supervisee_pool
+from django.utils.translation import gettext
 
 MIN_QUERY = 2
 MAX_RESULTS = 20
@@ -43,7 +44,7 @@ class SupervisedPeoplePickerView(_Base):
             raise NotFound()
         query = (request.query_params.get("q") or "").strip()
         if len(query) < MIN_QUERY:
-            raise ValidationError({"q": "Type at least two characters."})
+            raise ValidationError({"q": gettext("Type at least two characters.")})
         # One pool with the join check (`supervisee_pool`), so Events off adds no registrants (218).
         pool = supervisee_pool(session)
         match = (Q(display_name__icontains=query) | Q(first_name__icontains=query) | Q(last_name__icontains=query))

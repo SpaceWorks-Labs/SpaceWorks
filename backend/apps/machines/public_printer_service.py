@@ -200,13 +200,14 @@ def public_status(public_token):
     if kernel is None:
         raise NotFound()
     # The token names a job in ONE makerspace, so the module and edition gates are that
-    # space's: a space that uninstalled `printing` stops publishing job status, exactly
-    # like every other printer surface (module off and edition-hidden both answer 404).
+    # space's: a space that switched off `machine_service` (which the retired `printing`
+    # module folded into, 340b) stops publishing job status, exactly like every other
+    # printer surface (module off and edition-hidden both answer 404).
     from apps.makerspaces.editions import require_public_surface
     from apps.makerspaces.platform import module_enabled
 
-    require_public_surface("printing")
-    if not module_enabled(kernel.makerspace, "printing"):
+    require_public_surface("machine_service")
+    if not module_enabled(kernel.makerspace, "machine_service"):
         from apps.makerspaces.guards import module_off
-        raise module_off("printing")
+        raise module_off("machine_service")
     return _StatusProjection(kernel), status_context([kernel])

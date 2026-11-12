@@ -13,6 +13,7 @@ from rest_framework import serializers
 from apps.accounts.pii_presentation import PiiMaskingSerializerMixin
 from apps.machines import sessions_billing as billing
 from apps.machines import sessions_state as state
+from apps.machines.event_use import event_summary
 from apps.machines.models import MachineSession, MachineSessionAmendment
 
 
@@ -39,7 +40,13 @@ def rate_payload(snapshot):
             "minimum": terms["minimum"], "discount_name": ((snapshot or {}).get("discount") or {}).get("name", "")}
 
 
+class MachineEventSummarySerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    title = serializers.CharField()
+
+
 class MemberSessionSerializer(serializers.ModelSerializer):
+    event = serializers.SerializerMethodField(help_text="The event this use is logged for (decision 342), or null.")
     machine_name = serializers.CharField(source="machine.name", read_only=True)
     machine_type_name = serializers.CharField(source="machine_type.name", read_only=True)
     status = serializers.SerializerMethodField()
@@ -53,8 +60,12 @@ class MemberSessionSerializer(serializers.ModelSerializer):
         model = MachineSession
         fields = ["id", "makerspace_id", "machine_id", "machine_name", "machine_type_name", "source", "status",
                   "started_at", "ended_at", "minutes", "stop_reason", "flagged", "charge_state", "rate", "amount",
-                  "payment"]
+                  "payment", "event"]
         read_only_fields = fields
+
+    @extend_schema_field(MachineEventSummarySerializer(allow_null=True))
+    def get_event(self, obj):
+        return event_summary(obj)
 
     def _payment(self, obj):
         return (self.context.get("payments") or {}).get(obj.pk)
@@ -139,6 +150,7 @@ class SessionRefusalSerializer(serializers.Serializer):
 class SessionPreviewSerializer(serializers.Serializer):
     machine_id = serializers.IntegerField()
     machine_name = serializers.CharField()
+    machine_type_id = serializers.IntegerField(help_text="For the type's training notes (decision 343).")
     machine_type_name = serializers.CharField()
     machine_status = serializers.CharField()
     billing = serializers.BooleanField(help_text="Whether a session here is charged.")
@@ -154,11 +166,15 @@ class SessionPreviewSerializer(serializers.Serializer):
 
 class SessionStartSerializer(serializers.Serializer):
     digest = serializers.CharField(max_length=64, required=False, allow_blank=True, default="")
+    event_id = serializers.IntegerField(min_value=1, required=False, allow_null=True, default=None,
+                                        help_text="Optional: an event I may act for in this makerspace (decision 342).")
 
 
 class StaffSessionStartSerializer(serializers.Serializer):
     machine_id = serializers.IntegerField(min_value=1)
     member_id = serializers.IntegerField(min_value=1)
+    event_id = serializers.IntegerField(min_value=1, required=False, allow_null=True, default=None,
+                                        help_text="Optional: an event the member may act for (decision 342).")
 
 
 class SessionAmendSerializer(serializers.Serializer):

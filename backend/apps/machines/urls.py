@@ -2,6 +2,7 @@ from django.urls import path
 
 from apps.machines.views_public import PublicMachineListView
 from apps.machines.views_member_certifications import MemberCertificationsView
+from apps.machines.views_member_machine_access import MemberMachineAccessView
 from apps.machines.views_public_service import PublicMachineServiceSubmitView
 from apps.machines.views_public_printer_service import (
     PublicPrinterPoolsView, PublicPrinterQueuesView, PublicPrinterRequestView,
@@ -38,6 +39,7 @@ urlpatterns = [
     path("public/<slug:makerspace_slug>/machines/details", PublicMachineDetailListView.as_view(), name="public-machine-details"),
     path("public/<slug:makerspace_slug>/machines/<int:pk>", PublicMachineDetailView.as_view(), name="public-machine-detail"),
     path("member/makerspaces/<int:makerspace_id>/machines", MemberMachineListView.as_view(), name="member-machines"),
+    path("member/makerspaces/<int:makerspace_id>/machine-access", MemberMachineAccessView.as_view(), name="member-machine-access"),
     path("member/makerspaces/<int:makerspace_id>/certifications", MemberCertificationsView.as_view(), name="member-certifications"),
     path(
         'public/<slug:makerspace_slug>/machines',
@@ -72,4 +74,49 @@ urlpatterns = [
     path("member/supervised-sessions/<int:pk>/uses", supervised.SupervisedUseStartView.as_view(), name="member-supervised-use-start"),
     path("member/supervised-uses/<int:pk>/end", supervised.SupervisedUseEndView.as_view(), name="member-supervised-use-end"),
     path("member/supervised-sessions/<int:pk>/close", supervised.SupervisedSessionCloseView.as_view(), name="member-supervised-session-close"),
+]
+
+# Decisions 341/343: per-type consumable profiles, the machine-type template catalogue, a job's consumables.
+from . import views_consumable_profiles as profile_views  # noqa: E402
+from .views_consumable_stock import TypeConsumableStockOptionsView  # noqa: E402
+from .views_job_consumables import MemberJobConsumablesView, StaffJobConsumablesView  # noqa: E402
+
+urlpatterns += [
+    path("admin/makerspaces/<int:makerspace_id>/machine-types/<int:type_id>/consumables",
+         profile_views.TypeConsumablesView.as_view(), name="machine-type-consumables"),
+    path("admin/makerspaces/<int:makerspace_id>/machine-types/<int:type_id>/consumables/<int:pk>",
+         profile_views.TypeConsumableDetailView.as_view(), name="machine-type-consumable-detail"),
+    path("admin/makerspaces/<int:makerspace_id>/machine-types/<int:type_id>/consumable-stock",
+         TypeConsumableStockOptionsView.as_view(), name="machine-type-consumable-stock"),
+    path("admin/makerspaces/<int:makerspace_id>/machine-type-templates",
+         profile_views.TemplateListView.as_view(), name="machine-type-templates"),
+    path("admin/makerspaces/<int:makerspace_id>/machine-type-templates/<slug:key>",
+         profile_views.TemplateDetailView.as_view(), name="machine-type-template-detail"),
+    path("admin/makerspaces/<int:makerspace_id>/machine-type-templates/<slug:key>/apply",
+         profile_views.TemplateApplyView.as_view(), name="machine-type-template-apply"),
+    path("admin/makerspaces/<int:makerspace_id>/machine-jobs/<int:pk>/consumables",
+         StaffJobConsumablesView.as_view(), name="admin-machine-job-consumables"),
+    path("member/machine-jobs/<int:pk>/consumables", MemberJobConsumablesView.as_view(),
+         name="member-machine-job-consumables"),
+]
+
+# Decision 343 follow-up: per-type booking defaults, training notes and documents.
+from . import views_type_setup as type_setup_views  # noqa: E402
+from .views_member_type_guide import MemberTypeDocumentUrlView, MemberTypeGuideView  # noqa: E402
+
+urlpatterns += [
+    path("admin/makerspaces/<int:makerspace_id>/machine-types/<int:type_id>/setup",
+         type_setup_views.TypeSetupView.as_view(), name="machine-type-setup"),
+    path("admin/makerspaces/<int:makerspace_id>/machine-types/<int:type_id>/setup/apply-booking-defaults",
+         type_setup_views.TypeBookingDefaultsApplyView.as_view(), name="machine-type-booking-defaults-apply"),
+    path("admin/makerspaces/<int:makerspace_id>/machine-types/<int:type_id>/documents",
+         type_setup_views.TypeDocumentsView.as_view(), name="machine-type-documents"),
+    path("admin/makerspaces/<int:makerspace_id>/machine-types/<int:type_id>/documents/presign",
+         type_setup_views.TypeDocumentPresignView.as_view(), name="machine-type-document-presign"),
+    path("admin/makerspaces/<int:makerspace_id>/machine-types/<int:type_id>/documents/<int:pk>",
+         type_setup_views.TypeDocumentDetailView.as_view(), name="machine-type-document-detail"),
+    path("member/makerspaces/<int:makerspace_id>/machine-types/<int:type_id>/guide",
+         MemberTypeGuideView.as_view(), name="member-machine-type-guide"),
+    path("member/machine-type-documents/<int:pk>/url", MemberTypeDocumentUrlView.as_view(),
+         name="member-machine-type-document-url"),
 ]

@@ -121,6 +121,11 @@ def create_staged_queue_file(queue, *, actor, filename, content_type, kind=Servi
 
 
 def presigned_upload(object_key, content_type, max_bytes):
+    """Sign an upload to the STAGING key in both modes (Hard Rule): the final key is never client-writable.
+
+    A POST presign used to sign the final key, so within its TTL the client could POST again and replace an object
+    that had already been validated and attached (M7). ``finalize_upload`` promotes staging exactly once.
+    """
     try:
         if settings.STORAGE_PRESIGN_METHOD == "put":
             url = _public_client().generate_presigned_url(
@@ -131,7 +136,7 @@ def presigned_upload(object_key, content_type, max_bytes):
             )
             return {"url": url, "method": "PUT", "headers": {"Content-Type": content_type}}
         return _public_client().generate_presigned_post(
-            Bucket=settings.AWS_STORAGE_BUCKET_NAME, Key=object_key,
+            Bucket=settings.AWS_STORAGE_BUCKET_NAME, Key=staging_key(object_key),
             Fields={"Content-Type": content_type},
             Conditions=[{"Content-Type": content_type}, ["content-length-range", 1, max_bytes]],
             ExpiresIn=settings.EVIDENCE_URL_TTL_SECONDS,
@@ -140,9 +145,9 @@ def presigned_upload(object_key, content_type, max_bytes):
         raise StorageUnavailable from exc
 
 
-def object_size(object_key):
+def _head(object_key):
     try:
-        response = _client().head_object(Bucket=settings.AWS_STORAGE_BUCKET_NAME, Key=object_key)
+        return _client().head_object(Bucket=settings.AWS_STORAGE_BUCKET_NAME, Key=object_key)
     except ClientError as exc:
         status = exc.response.get("ResponseMetadata", {}).get("HTTPStatusCode")
         code = exc.response.get("Error", {}).get("Code")
@@ -151,7 +156,11 @@ def object_size(object_key):
         raise StorageUnavailable from exc
     except BotoCoreError as exc:
         raise StorageUnavailable from exc
-    return int(response["ContentLength"])
+
+
+def object_size(object_key):
+    response = _head(object_key)
+    return None if response is None else int(response["ContentLength"])
 
 
 def delete_object(object_key):
@@ -163,27 +172,62 @@ def delete_object(object_key):
         logger.exception("Failed to delete machine service object %s.", object_key)
 
 
+def purge_object(object_key):
+    """Delete every version of one key and CONFIRM it, or raise ``StorageUnavailable``.
+
+    For retention and purge paths, which may mark a row purged only after the bytes are really gone (L-A5);
+    ``delete_object`` stays best-effort for compensation paths that must not mask the original error.
+    """
+    try:
+        delete_all_versions(_client(), bucket=settings.AWS_STORAGE_BUCKET_NAME, key=object_key)
+    except Exception as exc:  # noqa: BLE001 - every storage failure is the same retryable outcome
+        raise StorageUnavailable from exc
+
+
+def purge_upload(object_key):
+    """Both keys of an upload (final and staging), confirmed; raises so the caller leaves the row for a retry."""
+    purge_object(object_key)
+    purge_object(staging_key(object_key))
+
+
 def cleanup_upload(object_key):
     delete_object(object_key)
     delete_object(staging_key(object_key))
 
 
+def _pinned_source(source, head):
+    """CopySource pinned to the exact staged object that was measured: its version, else its ETag."""
+    copy_source = {"Bucket": settings.AWS_STORAGE_BUCKET_NAME, "Key": source}
+    extra = {}
+    if head.get("VersionId") and head["VersionId"] != "null":
+        copy_source["VersionId"] = head["VersionId"]
+    elif head.get("ETag"):
+        extra["CopySourceIfMatch"] = head["ETag"]
+    return copy_source, extra
+
+
 def finalize_upload(object_key, max_bytes):
-    if settings.STORAGE_PRESIGN_METHOD != "put":
-        return object_size(object_key)
+    """Promote the staged upload to the final key exactly once, pinned to the object that was measured.
+
+    Every presign targets staging (both modes), so the final key is written only here. A final object that already
+    exists was promoted earlier (or written by a pre-fix POST presign) and wins: staging is discarded, so a
+    still-valid presign can never replace an accepted object. Callers validate the FINAL key afterwards.
+    """
     final_size = object_size(object_key)
     if final_size is not None:
         delete_object(staging_key(object_key))
         return final_size
     source = staging_key(object_key)
-    size = object_size(source)
-    if size is None or not 1 <= size <= max_bytes:
+    head = _head(source)
+    if head is None:
+        return None
+    size = int(head["ContentLength"])
+    if not 1 <= size <= max_bytes:
         return size
+    copy_source, extra = _pinned_source(source, head)
     try:
         _client().copy_object(
-            Bucket=settings.AWS_STORAGE_BUCKET_NAME,
-            CopySource={"Bucket": settings.AWS_STORAGE_BUCKET_NAME, "Key": source},
-            Key=object_key,
+            Bucket=settings.AWS_STORAGE_BUCKET_NAME, CopySource=copy_source, Key=object_key, **extra,
         )
     except (BotoCoreError, ClientError) as exc:
         raise StorageUnavailable from exc
@@ -227,6 +271,20 @@ def presigned_get_url(object_key):
         return _public_client().generate_presigned_url(
             "get_object", Params={"Bucket": settings.AWS_STORAGE_BUCKET_NAME, "Key": object_key},
             ExpiresIn=settings.EVIDENCE_URL_TTL_SECONDS,
+        )
+    except (BotoCoreError, ClientError) as exc:
+        raise StorageUnavailable from exc
+
+
+def presigned_download_url(object_key, content_type):
+    """A signed GET that always downloads with a fixed, server-chosen type: stored bytes never render as a page on
+    the storage origin, whatever was uploaded. ``<img>``/``<video>`` tags still display it."""
+    try:
+        return _public_client().generate_presigned_url(
+            "get_object", Params={
+                "Bucket": settings.AWS_STORAGE_BUCKET_NAME, "Key": object_key,
+                "ResponseContentDisposition": "attachment", "ResponseContentType": content_type,
+            }, ExpiresIn=settings.EVIDENCE_URL_TTL_SECONDS,
         )
     except (BotoCoreError, ClientError) as exc:
         raise StorageUnavailable from exc

@@ -78,13 +78,13 @@ def request_changes(service_request, actor, *, code, message):
 
 def _require_intake_gates(row, member):
     """Decision 230 (d): a resubmit re-runs the intake gates (job_requests, guest/minors rule, type open,
-    certification), because the member's standing may have changed since the job was admitted."""
-    from apps.machines.certifications import require_certification_for_member
+    machine access), because the member's standing may have changed since the job was admitted."""
+    from apps.machines.access_grants import require_type_access
     from apps.machines.job_intake import require_member_job_gate
     machine_type = row.queue.machine_type if row.queue_id else row.bucket.machine.machine_type
     makerspace = row.makerspace
     require_member_job_gate(makerspace, member, machine_type)
-    require_certification_for_member(makerspace, member, machine_type, purpose="service", actor=member)
+    require_type_access(member, makerspace, machine_type)
 
 
 def resubmit(service_request, member, *, note="", file_ids=()):
@@ -109,13 +109,15 @@ def resubmit(service_request, member, *, note="", file_ids=()):
 
 def quote_preview(row, *, minutes, quantity=None, pool=None, machine=None):
     from apps.payments.pricing import quote
+    from apps.machines.consumable_usage import ESTIMATE, priced_items
     machine_type = row.queue.machine_type if row.queue_id else row.bucket.machine.machine_type
     return quote(row.makerspace, "machines", None, row.member or row.requester, params={
         "machine": machine, "machine_type": machine_type, "pool": pool, "minutes": minutes,
-        "quantity": quantity or 0})
+        "quantity": quantity or 0, "consumables": priced_items(row, ESTIMATE)})
 
 
-def send_quote(service_request, actor, *, estimated_minutes, quantity=None, pool=None, machine=None, note=""):
+def send_quote(service_request, actor, *, estimated_minutes, quantity=None, pool=None, machine=None, note="",
+               consumable_estimates=None):
     with transaction.atomic():
         locked = _open(service_request)
         _require_edge(locked, Status.QUOTED)
@@ -125,6 +127,9 @@ def send_quote(service_request, actor, *, estimated_minutes, quantity=None, pool
             raise ServiceInvalidTransition("Machine charges are switched off here, so jobs are free; accept it "
                                            "instead of quoting.")
         _lock_scope(locked)
+        if consumable_estimates:
+            from apps.machines.consumable_usage import record_estimates
+            record_estimates(locked, actor, consumable_estimates, source="staff")
         priced = quote_preview(locked, minutes=estimated_minutes, quantity=quantity, pool=pool, machine=machine)
         if priced.total <= 0:
             raise ServiceInvalidTransition("This job is free; accept it instead of quoting.")

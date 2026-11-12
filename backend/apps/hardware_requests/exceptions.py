@@ -232,6 +232,11 @@ _EXCEPTION_MAP = {
 }
 
 
+#: The domain errors the handler below maps to a typed response (they are not APIExceptions); a batch
+#: that runs several rows needs them to name the failing id instead of surfacing the first one bare.
+WORKFLOW_ERRORS = tuple(_EXCEPTION_MAP)
+
+
 def workflow_exception_handler(exc, context):
     response = exception_handler(exc, context)
     if getattr(exc, "makerspace_id", None) and getattr(exc, "code", "").endswith("_quota_reached"):

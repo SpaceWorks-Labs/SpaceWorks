@@ -19,6 +19,8 @@ keywords: platform dashboard, problems, checks, usage, limits, scheduler, analyt
 
 The platform dashboard also has **Platform overview** and **Platform insights** views. In **Platform overview**, choose the period and open a space from a domain table. The Reports link is available where that space has Reports enabled.
 
+**Platform insights** shows counts only, never names, messages or credentials, for a window of 1 to 30 days (30 by default): account and space growth, staff two-step sign-in adoption, organization and outbox health, and three wider groups. **Activity** counts events held, registrations, check-ins, feedback responses and broadcasts sent, with the audience labels of the latest broadcasts. **Security** counts unverified accounts, accounts with a passkey, accounts per sign-in method, sensitive audit actions in the window, and API clients (active, revoked, rotating a secret, unused in the window). **Storage** shows total bytes used, the number of spaces and the five largest.
+
 Open **Spaces** for **Health**, **Onboarding** and **Announcements**. The Health cards have **Details**, **Open console** and **Manage** controls. See [Space health, service pauses and closure](help:superadmin/space-lifecycle) for suspension, read-only mode, ownership and archive schedules.
 
 **Web telemetry** under platform Analytics controls the central public site. Each space has its own

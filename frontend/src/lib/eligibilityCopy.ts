@@ -20,7 +20,7 @@ export function refusalCode(error: unknown): string | undefined {
   return Array.isArray(code) && typeof code[0] === "string" ? code[0] : undefined;
 }
 
-function certificationNames(error: StructuredApiError, field = "certifications"): string {
+function listedNames(error: StructuredApiError, field: string): string {
   const names = error.body[field];
   if (!Array.isArray(names)) return "";
   return names.filter((name): name is string => typeof name === "string" && name.trim() !== "").join(", ");
@@ -45,16 +45,14 @@ export function eligibilityMessage(error: unknown): string | null {
     case "borrower_restricted":
     case "member_restricted":
       return t`Your account is restricted at this space. Talk to space staff to resolve it.`;
-    // Machine certification (machines/certifications.py) — bookings, sessions, service work.
-    case "certification_required": {
-      const names = certificationNames(error);
-      return names
-        ? t`You need machine training or certification first (${names}). Ask space staff how to qualify, then try again.`
-        : t`You need machine training or certification first. Ask space staff how to qualify, then try again.`;
-    }
+    // Machine access (decision 319): a space manager's grant, never a certification.
+    case "no_machine_access":
+      return t`A space manager has not given you access to this machine yet. Ask space staff to give you access, then try again.`;
+    case "machine_access_expired":
+      return t`Your access to this machine has ended. Ask space staff to renew it, then try again.`;
     // Event-only lending (decision 221b): request intake, self-checkout and direct handout refuse it.
     case "event_only_product": {
-      const names = certificationNames(error, "products");
+      const names = listedNames(error, "products");
       return names
         ? t`These items are lent only through an event: ${names}. Remove them, or ask the event organizers to request them for you.`
         : t`This item is lent only through an event. Ask the event organizers to request it for you.`;

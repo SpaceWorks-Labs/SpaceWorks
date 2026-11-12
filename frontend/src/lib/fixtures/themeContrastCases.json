@@ -1,0 +1,3638 @@
+[
+ {
+  "theme": {},
+  "light": {
+   "fill": [
+    0,
+    110,
+    99
+   ],
+   "foreground": [
+    255,
+    244,
+    232
+   ],
+   "hover": [
+    2,
+    103,
+    93
+   ],
+   "active": [
+    4,
+    97,
+    88
+   ],
+   "soft": [
+    224,
+    238,
+    236
+   ],
+   "ink": [
+    0,
+    110,
+    99
+   ],
+   "pairs": [
+    [
+     "on-brand on brand",
+     5.675787,
+     4.5
+    ],
+    [
+     "on-brand on brand-hover",
+     6.242862,
+     4.5
+    ],
+    [
+     "on-brand on brand-active",
+     6.777944,
+     4.5
+    ],
+    [
+     "brand-ink on bg",
+     5.675787,
+     4.5
+    ],
+    [
+     "brand-ink on surface",
+     5.275733,
+     4.5
+    ],
+    [
+     "brand-ink on panel",
+     6.157378,
+     4.5
+    ],
+    [
+     "brand-ink on hover",
+     4.987994,
+     4.5
+    ],
+    [
+     "brand-ink on brand-soft",
+     5.163547,
+     4.5
+    ],
+    [
+     "brand-ink on accent-soft",
+     5.163547,
+     4.5
+    ],
+    [
+     "brand-ink on emphasis-soft",
+     5.470816,
+     4.5
+    ],
+    [
+     "brand-ink on success-soft",
+     6.065899,
+     4.5
+    ],
+    [
+     "brand-ink on warn-soft",
+     5.894335,
+     4.5
+    ],
+    [
+     "brand-ink on info-soft",
+     5.838613,
+     4.5
+    ],
+    [
+     "ink on brand-soft",
+     12.371695,
+     4.5
+    ],
+    [
+     "muted on brand-soft",
+     4.88485,
+     4.5
+    ],
+    [
+     "accent-ink on brand-soft",
+     5.163547,
+     4.5
+    ],
+    [
+     "success-ink on brand-soft",
+     4.82286,
+     4.5
+    ],
+    [
+     "warn-ink on brand-soft",
+     4.850891,
+     4.5
+    ],
+    [
+     "info-ink on brand-soft",
+     4.816206,
+     4.5
+    ],
+    [
+     "danger on brand-soft",
+     5.425748,
+     4.5
+    ],
+    [
+     "brand boundary on bg",
+     5.675787,
+     3
+    ],
+    [
+     "brand boundary on surface",
+     5.275733,
+     3
+    ],
+    [
+     "brand boundary on panel",
+     6.157378,
+     3
+    ]
+   ]
+  },
+  "dark": {
+   "fill": [
+    0,
+    110,
+    99
+   ],
+   "foreground": [
+    255,
+    244,
+    232
+   ],
+   "hover": [
+    2,
+    103,
+    93
+   ],
+   "active": [
+    4,
+    97,
+    88
+   ],
+   "soft": [
+    18,
+    29,
+    28
+   ],
+   "ink": [
+    128,
+    177,
+    166
+   ],
+   "pairs": [
+    [
+     "on-brand on brand",
+     5.675787,
+     4.5
+    ],
+    [
+     "on-brand on brand-hover",
+     6.242862,
+     4.5
+    ],
+    [
+     "on-brand on brand-active",
+     6.777944,
+     4.5
+    ],
+    [
+     "brand-ink on bg",
+     8.75733,
+     4.5
+    ],
+    [
+     "brand-ink on surface",
+     8.207965,
+     4.5
+    ],
+    [
+     "brand-ink on panel",
+     7.682487,
+     4.5
+    ],
+    [
+     "brand-ink on hover",
+     7.10681,
+     4.5
+    ],
+    [
+     "brand-ink on brand-soft",
+     7.188547,
+     4.5
+    ],
+    [
+     "brand-ink on accent-soft",
+     7.188547,
+     4.5
+    ],
+    [
+     "brand-ink on emphasis-soft",
+     7.130526,
+     4.5
+    ],
+    [
+     "brand-ink on success-soft",
+     6.705189,
+     4.5
+    ],
+    [
+     "brand-ink on warn-soft",
+     6.804487,
+     4.5
+    ],
+    [
+     "brand-ink on info-soft",
+     6.872283,
+     4.5
+    ],
+    [
+     "ink on brand-soft",
+     15.889819,
+     4.5
+    ],
+    [
+     "muted on brand-soft",
+     7.59366,
+     4.5
+    ],
+    [
+     "accent-ink on brand-soft",
+     7.188547,
+     4.5
+    ],
+    [
+     "success-ink on brand-soft",
+     15.571188,
+     4.5
+    ],
+    [
+     "warn-ink on brand-soft",
+     13.106593,
+     4.5
+    ],
+    [
+     "info-ink on brand-soft",
+     12.165077,
+     4.5
+    ],
+    [
+     "danger on brand-soft",
+     9.082384,
+     4.5
+    ],
+    [
+     "brand boundary on bg",
+     8.75733,
+     3
+    ],
+    [
+     "brand boundary on surface",
+     8.207965,
+     3
+    ],
+    [
+     "brand boundary on panel",
+     7.682487,
+     3
+    ]
+   ]
+  }
+ },
+ {
+  "theme": {
+   "primary_color": "#006e63"
+  },
+  "light": {
+   "fill": [
+    0,
+    110,
+    99
+   ],
+   "foreground": [
+    255,
+    244,
+    232
+   ],
+   "hover": [
+    2,
+    103,
+    93
+   ],
+   "active": [
+    4,
+    97,
+    88
+   ],
+   "soft": [
+    224,
+    238,
+    236
+   ],
+   "ink": [
+    0,
+    110,
+    99
+   ],
+   "pairs": [
+    [
+     "on-brand on brand",
+     5.675787,
+     4.5
+    ],
+    [
+     "on-brand on brand-hover",
+     6.242862,
+     4.5
+    ],
+    [
+     "on-brand on brand-active",
+     6.777944,
+     4.5
+    ],
+    [
+     "brand-ink on bg",
+     5.675787,
+     4.5
+    ],
+    [
+     "brand-ink on surface",
+     5.275733,
+     4.5
+    ],
+    [
+     "brand-ink on panel",
+     6.157378,
+     4.5
+    ],
+    [
+     "brand-ink on hover",
+     4.987994,
+     4.5
+    ],
+    [
+     "brand-ink on brand-soft",
+     5.163547,
+     4.5
+    ],
+    [
+     "brand-ink on accent-soft",
+     5.163547,
+     4.5
+    ],
+    [
+     "brand-ink on emphasis-soft",
+     5.470816,
+     4.5
+    ],
+    [
+     "brand-ink on success-soft",
+     6.065899,
+     4.5
+    ],
+    [
+     "brand-ink on warn-soft",
+     5.894335,
+     4.5
+    ],
+    [
+     "brand-ink on info-soft",
+     5.838613,
+     4.5
+    ],
+    [
+     "ink on brand-soft",
+     12.371695,
+     4.5
+    ],
+    [
+     "muted on brand-soft",
+     4.88485,
+     4.5
+    ],
+    [
+     "accent-ink on brand-soft",
+     5.163547,
+     4.5
+    ],
+    [
+     "success-ink on brand-soft",
+     4.82286,
+     4.5
+    ],
+    [
+     "warn-ink on brand-soft",
+     4.850891,
+     4.5
+    ],
+    [
+     "info-ink on brand-soft",
+     4.816206,
+     4.5
+    ],
+    [
+     "danger on brand-soft",
+     5.425748,
+     4.5
+    ],
+    [
+     "brand boundary on bg",
+     5.675787,
+     3
+    ],
+    [
+     "brand boundary on surface",
+     5.275733,
+     3
+    ],
+    [
+     "brand boundary on panel",
+     6.157378,
+     3
+    ]
+   ]
+  },
+  "dark": {
+   "fill": [
+    0,
+    110,
+    99
+   ],
+   "foreground": [
+    255,
+    244,
+    232
+   ],
+   "hover": [
+    2,
+    103,
+    93
+   ],
+   "active": [
+    4,
+    97,
+    88
+   ],
+   "soft": [
+    18,
+    31,
+    29
+   ],
+   "ink": [
+    74,
+    149,
+    138
+   ],
+   "pairs": [
+    [
+     "on-brand on brand",
+     5.675787,
+     4.5
+    ],
+    [
+     "on-brand on brand-hover",
+     6.242862,
+     4.5
+    ],
+    [
+     "on-brand on brand-active",
+     6.777944,
+     4.5
+    ],
+    [
+     "brand-ink on bg",
+     5.957143,
+     4.5
+    ],
+    [
+     "brand-ink on surface",
+     5.58344,
+     4.5
+    ],
+    [
+     "brand-ink on panel",
+     5.225985,
+     4.5
+    ],
+    [
+     "brand-ink on hover",
+     4.834383,
+     4.5
+    ],
+    [
+     "brand-ink on brand-soft",
+     4.806257,
+     4.5
+    ],
+    [
+     "brand-ink on accent-soft",
+     4.889984,
+     4.5
+    ],
+    [
+     "brand-ink on emphasis-soft",
+     4.850516,
+     4.5
+    ],
+    [
+     "brand-ink on success-soft",
+     4.561182,
+     4.5
+    ],
+    [
+     "brand-ink on warn-soft",
+     4.628729,
+     4.5
+    ],
+    [
+     "brand-ink on info-soft",
+     4.674846,
+     4.5
+    ],
+    [
+     "ink on brand-soft",
+     15.61775,
+     4.5
+    ],
+    [
+     "muted on brand-soft",
+     7.46364,
+     4.5
+    ],
+    [
+     "accent-ink on brand-soft",
+     7.065463,
+     4.5
+    ],
+    [
+     "success-ink on brand-soft",
+     15.304574,
+     4.5
+    ],
+    [
+     "warn-ink on brand-soft",
+     12.882178,
+     4.5
+    ],
+    [
+     "info-ink on brand-soft",
+     11.956783,
+     4.5
+    ],
+    [
+     "danger on brand-soft",
+     8.926873,
+     4.5
+    ],
+    [
+     "brand boundary on bg",
+     5.957143,
+     3
+    ],
+    [
+     "brand boundary on surface",
+     5.58344,
+     3
+    ],
+    [
+     "brand boundary on panel",
+     5.225985,
+     3
+    ]
+   ]
+  }
+ },
+ {
+  "theme": {
+   "primary_color": "#777"
+  },
+  "light": {
+   "fill": [
+    119,
+    119,
+    119
+   ],
+   "foreground": [
+    0,
+    0,
+    0
+   ],
+   "hover": [
+    133,
+    132,
+    130
+   ],
+   "active": [
+    146,
+    144,
+    142
+   ],
+   "soft": [
+    239,
+    239,
+    239
+   ],
+   "ink": [
+    100,
+    105,
+    104
+   ],
+   "pairs": [
+    [
+     "on-brand on brand",
+     4.6895,
+     4.5
+    ],
+    [
+     "on-brand on brand-hover",
+     5.620156,
+     4.5
+    ],
+    [
+     "on-brand on brand-active",
+     6.602101,
+     4.5
+    ],
+    [
+     "brand-ink on bg",
+     5.145004,
+     4.5
+    ],
+    [
+     "brand-ink on surface",
+     4.782361,
+     4.5
+    ],
+    [
+     "brand-ink on panel",
+     5.581558,
+     4.5
+    ],
+    [
+     "brand-ink on hover",
+     4.521531,
+     4.5
+    ],
+    [
+     "brand-ink on brand-soft",
+     4.854133,
+     4.5
+    ],
+    [
+     "brand-ink on accent-soft",
+     4.680668,
+     4.5
+    ],
+    [
+     "brand-ink on emphasis-soft",
+     4.959202,
+     4.5
+    ],
+    [
+     "brand-ink on success-soft",
+     5.498634,
+     4.5
+    ],
+    [
+     "brand-ink on warn-soft",
+     5.343114,
+     4.5
+    ],
+    [
+     "brand-ink on info-soft",
+     5.292603,
+     4.5
+    ],
+    [
+     "ink on brand-soft",
+     12.83019,
+     4.5
+    ],
+    [
+     "muted on brand-soft",
+     5.065883,
+     4.5
+    ],
+    [
+     "accent-ink on brand-soft",
+     5.354909,
+     4.5
+    ],
+    [
+     "success-ink on brand-soft",
+     5.001596,
+     4.5
+    ],
+    [
+     "warn-ink on brand-soft",
+     5.030665,
+     4.5
+    ],
+    [
+     "info-ink on brand-soft",
+     4.994695,
+     4.5
+    ],
+    [
+     "danger on brand-soft",
+     5.626827,
+     4.5
+    ],
+    [
+     "brand boundary on bg",
+     5.145004,
+     3
+    ],
+    [
+     "brand boundary on surface",
+     4.782361,
+     3
+    ],
+    [
+     "brand boundary on panel",
+     5.581558,
+     3
+    ]
+   ]
+  },
+  "dark": {
+   "fill": [
+    119,
+    119,
+    119
+   ],
+   "foreground": [
+    0,
+    0,
+    0
+   ],
+   "hover": [
+    133,
+    132,
+    130
+   ],
+   "active": [
+    146,
+    144,
+    142
+   ],
+   "soft": [
+    32,
+    32,
+    32
+   ],
+   "ink": [
+    138,
+    137,
+    135
+   ],
+   "pairs": [
+    [
+     "on-brand on brand",
+     4.6895,
+     4.5
+    ],
+    [
+     "on-brand on brand-hover",
+     5.620156,
+     4.5
+    ],
+    [
+     "on-brand on brand-active",
+     6.602101,
+     4.5
+    ],
+    [
+     "brand-ink on bg",
+     6.008773,
+     4.5
+    ],
+    [
+     "brand-ink on surface",
+     5.63183,
+     4.5
+    ],
+    [
+     "brand-ink on panel",
+     5.271278,
+     4.5
+    ],
+    [
+     "brand-ink on hover",
+     4.876281,
+     4.5
+    ],
+    [
+     "brand-ink on brand-soft",
+     4.662022,
+     4.5
+    ],
+    [
+     "brand-ink on accent-soft",
+     4.932365,
+     4.5
+    ],
+    [
+     "brand-ink on emphasis-soft",
+     4.892554,
+     4.5
+    ],
+    [
+     "brand-ink on success-soft",
+     4.600713,
+     4.5
+    ],
+    [
+     "brand-ink on warn-soft",
+     4.668845,
+     4.5
+    ],
+    [
+     "brand-ink on info-soft",
+     4.715363,
+     4.5
+    ],
+    [
+     "ink on brand-soft",
+     15.0189,
+     4.5
+    ],
+    [
+     "muted on brand-soft",
+     7.177452,
+     4.5
+    ],
+    [
+     "accent-ink on brand-soft",
+     6.794543,
+     4.5
+    ],
+    [
+     "success-ink on brand-soft",
+     14.717732,
+     4.5
+    ],
+    [
+     "warn-ink on brand-soft",
+     12.388222,
+     4.5
+    ],
+    [
+     "info-ink on brand-soft",
+     11.49831,
+     4.5
+    ],
+    [
+     "danger on brand-soft",
+     8.584579,
+     4.5
+    ],
+    [
+     "brand boundary on bg",
+     6.008773,
+     3
+    ],
+    [
+     "brand boundary on surface",
+     5.63183,
+     3
+    ],
+    [
+     "brand boundary on panel",
+     5.271278,
+     3
+    ]
+   ]
+  }
+ },
+ {
+  "theme": {
+   "primary_color": "#000"
+  },
+  "light": {
+   "fill": [
+    0,
+    0,
+    0
+   ],
+   "foreground": [
+    255,
+    244,
+    232
+   ],
+   "hover": [
+    26,
+    24,
+    23
+   ],
+   "active": [
+    51,
+    49,
+    46
+   ],
+   "soft": [
+    229,
+    229,
+    229
+   ],
+   "ink": [
+    0,
+    0,
+    0
+   ],
+   "pairs": [
+    [
+     "on-brand on brand",
+     19.357512,
+     4.5
+    ],
+    [
+     "on-brand on brand-hover",
+     16.308639,
+     4.5
+    ],
+    [
+     "on-brand on brand-active",
+     11.952491,
+     4.5
+    ],
+    [
+     "brand-ink on bg",
+     19.357512,
+     4.5
+    ],
+    [
+     "brand-ink on surface",
+     17.993111,
+     4.5
+    ],
+    [
+     "brand-ink on panel",
+     21.0,
+     4.5
+    ],
+    [
+     "brand-ink on hover",
+     17.011765,
+     4.5
+    ],
+    [
+     "brand-ink on brand-soft",
+     16.670756,
+     4.5
+    ],
+    [
+     "brand-ink on accent-soft",
+     17.610499,
+     4.5
+    ],
+    [
+     "brand-ink on emphasis-soft",
+     18.658453,
+     4.5
+    ],
+    [
+     "brand-ink on success-soft",
+     20.688007,
+     4.5
+    ],
+    [
+     "brand-ink on warn-soft",
+     20.102881,
+     4.5
+    ],
+    [
+     "brand-ink on info-soft",
+     19.912839,
+     4.5
+    ],
+    [
+     "ink on brand-soft",
+     11.711508,
+     4.5
+    ],
+    [
+     "muted on brand-soft",
+     4.624182,
+     4.5
+    ],
+    [
+     "accent-ink on brand-soft",
+     4.888007,
+     4.5
+    ],
+    [
+     "success-ink on brand-soft",
+     4.5655,
+     4.5
+    ],
+    [
+     "warn-ink on brand-soft",
+     4.592034,
+     4.5
+    ],
+    [
+     "info-ink on brand-soft",
+     4.559201,
+     4.5
+    ],
+    [
+     "danger on brand-soft",
+     5.136216,
+     4.5
+    ],
+    [
+     "brand boundary on bg",
+     19.357512,
+     3
+    ],
+    [
+     "brand boundary on surface",
+     17.993111,
+     3
+    ],
+    [
+     "brand boundary on panel",
+     21.0,
+     3
+    ]
+   ]
+  },
+  "dark": {
+   "fill": [
+    0,
+    0,
+    0
+   ],
+   "foreground": [
+    255,
+    244,
+    232
+   ],
+   "hover": [
+    26,
+    24,
+    23
+   ],
+   "active": [
+    51,
+    49,
+    46
+   ],
+   "soft": [
+    18,
+    18,
+    18
+   ],
+   "ink": [
+    143,
+    137,
+    130
+   ],
+   "pairs": [
+    [
+     "on-brand on brand",
+     19.357512,
+     4.5
+    ],
+    [
+     "on-brand on brand-hover",
+     16.308639,
+     4.5
+    ],
+    [
+     "on-brand on brand-active",
+     11.952491,
+     4.5
+    ],
+    [
+     "brand-ink on bg",
+     6.068533,
+     4.5
+    ],
+    [
+     "brand-ink on surface",
+     5.687842,
+     4.5
+    ],
+    [
+     "brand-ink on panel",
+     5.323703,
+     4.5
+    ],
+    [
+     "brand-ink on hover",
+     4.924778,
+     4.5
+    ],
+    [
+     "brand-ink on brand-soft",
+     5.413612,
+     4.5
+    ],
+    [
+     "brand-ink on accent-soft",
+     4.98142,
+     4.5
+    ],
+    [
+     "brand-ink on emphasis-soft",
+     4.941213,
+     4.5
+    ],
+    [
+     "brand-ink on success-soft",
+     4.646469,
+     4.5
+    ],
+    [
+     "brand-ink on warn-soft",
+     4.715279,
+     4.5
+    ],
+    [
+     "brand-ink on info-soft",
+     4.762259,
+     4.5
+    ],
+    [
+     "ink on brand-soft",
+     17.268435,
+     4.5
+    ],
+    [
+     "muted on brand-soft",
+     8.252493,
+     4.5
+    ],
+    [
+     "accent-ink on brand-soft",
+     7.812232,
+     4.5
+    ],
+    [
+     "success-ink on brand-soft",
+     16.922159,
+     4.5
+    ],
+    [
+     "warn-ink on brand-soft",
+     14.243733,
+     4.5
+    ],
+    [
+     "info-ink on brand-soft",
+     13.22053,
+     4.5
+    ],
+    [
+     "danger on brand-soft",
+     9.87038,
+     4.5
+    ],
+    [
+     "brand boundary on bg",
+     6.068533,
+     3
+    ],
+    [
+     "brand boundary on surface",
+     5.687842,
+     3
+    ],
+    [
+     "brand boundary on panel",
+     5.323703,
+     3
+    ]
+   ]
+  }
+ },
+ {
+  "theme": {
+   "primary_color": "#fff"
+  },
+  "light": {
+   "fill": [
+    255,
+    255,
+    255
+   ],
+   "foreground": [
+    20,
+    44,
+    42
+   ],
+   "hover": [
+    232,
+    234,
+    234
+   ],
+   "active": [
+    208,
+    213,
+    212
+   ],
+   "soft": [
+    255,
+    255,
+    255
+   ],
+   "ink": [
+    91,
+    107,
+    106
+   ],
+   "pairs": [
+    [
+     "on-brand on brand",
+     14.752881,
+     4.5
+    ],
+    [
+     "on-brand on brand-hover",
+     12.21566,
+     4.5
+    ],
+    [
+     "on-brand on brand-active",
+     9.940893,
+     4.5
+    ],
+    [
+     "brand-ink on bg",
+     5.153718,
+     4.5
+    ],
+    [
+     "brand-ink on surface",
+     4.790461,
+     4.5
+    ],
+    [
+     "brand-ink on panel",
+     5.591011,
+     4.5
+    ],
+    [
+     "brand-ink on hover",
+     4.529189,
+     4.5
+    ],
+    [
+     "brand-ink on brand-soft",
+     5.591011,
+     4.5
+    ],
+    [
+     "brand-ink on accent-soft",
+     4.688595,
+     4.5
+    ],
+    [
+     "brand-ink on emphasis-soft",
+     4.967601,
+     4.5
+    ],
+    [
+     "brand-ink on success-soft",
+     5.507947,
+     4.5
+    ],
+    [
+     "brand-ink on warn-soft",
+     5.352164,
+     4.5
+    ],
+    [
+     "brand-ink on info-soft",
+     5.301567,
+     4.5
+    ],
+    [
+     "ink on brand-soft",
+     14.752881,
+     4.5
+    ],
+    [
+     "muted on brand-soft",
+     5.82504,
+     4.5
+    ],
+    [
+     "accent-ink on brand-soft",
+     6.157378,
+     4.5
+    ],
+    [
+     "success-ink on brand-soft",
+     5.751119,
+     4.5
+    ],
+    [
+     "warn-ink on brand-soft",
+     5.784544,
+     4.5
+    ],
+    [
+     "info-ink on brand-soft",
+     5.743184,
+     4.5
+    ],
+    [
+     "danger on brand-soft",
+     6.470045,
+     4.5
+    ],
+    [
+     "brand boundary on bg",
+     5.153718,
+     3
+    ],
+    [
+     "brand boundary on surface",
+     4.790461,
+     3
+    ],
+    [
+     "brand boundary on panel",
+     5.591011,
+     3
+    ]
+   ]
+  },
+  "dark": {
+   "fill": [
+    255,
+    255,
+    255
+   ],
+   "foreground": [
+    20,
+    44,
+    42
+   ],
+   "hover": [
+    232,
+    234,
+    234
+   ],
+   "active": [
+    208,
+    213,
+    212
+   ],
+   "soft": [
+    48,
+    48,
+    48
+   ],
+   "ink": [
+    255,
+    255,
+    255
+   ],
+   "pairs": [
+    [
+     "on-brand on brand",
+     14.752881,
+     4.5
+    ],
+    [
+     "on-brand on brand-hover",
+     12.21566,
+     4.5
+    ],
+    [
+     "on-brand on brand-active",
+     9.940893,
+     4.5
+    ],
+    [
+     "brand-ink on bg",
+     21.0,
+     4.5
+    ],
+    [
+     "brand-ink on surface",
+     19.682628,
+     4.5
+    ],
+    [
+     "brand-ink on panel",
+     18.422536,
+     4.5
+    ],
+    [
+     "brand-ink on hover",
+     17.042067,
+     4.5
+    ],
+    [
+     "brand-ink on brand-soft",
+     13.198112,
+     4.5
+    ],
+    [
+     "brand-ink on accent-soft",
+     17.238073,
+     4.5
+    ],
+    [
+     "brand-ink on emphasis-soft",
+     17.098939,
+     4.5
+    ],
+    [
+     "brand-ink on success-soft",
+     16.078985,
+     4.5
+    ],
+    [
+     "brand-ink on warn-soft",
+     16.317101,
+     4.5
+    ],
+    [
+     "brand-ink on info-soft",
+     16.479673,
+     4.5
+    ],
+    [
+     "ink on brand-soft",
+     12.165839,
+     4.5
+    ],
+    [
+     "muted on brand-soft",
+     5.81399,
+     4.5
+    ],
+    [
+     "accent-ink on brand-soft",
+     5.50382,
+     4.5
+    ],
+    [
+     "success-ink on brand-soft",
+     11.921883,
+     4.5
+    ],
+    [
+     "warn-ink on brand-soft",
+     10.034897,
+     4.5
+    ],
+    [
+     "info-ink on brand-soft",
+     9.314037,
+     4.5
+    ],
+    [
+     "danger on brand-soft",
+     6.953812,
+     4.5
+    ],
+    [
+     "brand boundary on bg",
+     21.0,
+     3
+    ],
+    [
+     "brand boundary on surface",
+     19.682628,
+     3
+    ],
+    [
+     "brand boundary on panel",
+     18.422536,
+     3
+    ]
+   ]
+  }
+ },
+ {
+  "theme": {
+   "primary_color": "#ff7447"
+  },
+  "light": {
+   "fill": [
+    255,
+    116,
+    71
+   ],
+   "foreground": [
+    20,
+    44,
+    42
+   ],
+   "hover": [
+    255,
+    129,
+    87
+   ],
+   "active": [
+    255,
+    142,
+    103
+   ],
+   "soft": [
+    255,
+    238,
+    233
+   ],
+   "ink": [
+    154,
+    85,
+    59
+   ],
+   "pairs": [
+    [
+     "on-brand on brand",
+     5.508545,
+     4.5
+    ],
+    [
+     "on-brand on brand-hover",
+     5.992288,
+     4.5
+    ],
+    [
+     "on-brand on brand-active",
+     6.5454,
+     4.5
+    ],
+    [
+     "brand-ink on bg",
+     5.180573,
+     4.5
+    ],
+    [
+     "brand-ink on surface",
+     4.815424,
+     4.5
+    ],
+    [
+     "brand-ink on panel",
+     5.620145,
+     4.5
+    ],
+    [
+     "brand-ink on hover",
+     4.55279,
+     4.5
+    ],
+    [
+     "brand-ink on brand-soft",
+     4.993487,
+     4.5
+    ],
+    [
+     "brand-ink on accent-soft",
+     4.713027,
+     4.5
+    ],
+    [
+     "brand-ink on emphasis-soft",
+     4.993487,
+     4.5
+    ],
+    [
+     "brand-ink on success-soft",
+     5.536648,
+     4.5
+    ],
+    [
+     "brand-ink on warn-soft",
+     5.380053,
+     4.5
+    ],
+    [
+     "brand-ink on info-soft",
+     5.329193,
+     4.5
+    ],
+    [
+     "ink on brand-soft",
+     13.107902,
+     4.5
+    ],
+    [
+     "muted on brand-soft",
+     5.175535,
+     4.5
+    ],
+    [
+     "accent-ink on brand-soft",
+     5.470816,
+     4.5
+    ],
+    [
+     "success-ink on brand-soft",
+     5.109856,
+     4.5
+    ],
+    [
+     "warn-ink on brand-soft",
+     5.139554,
+     4.5
+    ],
+    [
+     "info-ink on brand-soft",
+     5.102806,
+     4.5
+    ],
+    [
+     "danger on brand-soft",
+     5.74862,
+     4.5
+    ],
+    [
+     "brand boundary on bg",
+     5.180573,
+     3
+    ],
+    [
+     "brand boundary on surface",
+     4.815424,
+     3
+    ],
+    [
+     "brand boundary on panel",
+     5.620145,
+     3
+    ]
+   ]
+  },
+  "dark": {
+   "fill": [
+    255,
+    116,
+    71
+   ],
+   "foreground": [
+    20,
+    44,
+    42
+   ],
+   "hover": [
+    255,
+    129,
+    87
+   ],
+   "active": [
+    255,
+    142,
+    103
+   ],
+   "soft": [
+    48,
+    32,
+    26
+   ],
+   "ink": [
+    255,
+    116,
+    71
+   ],
+   "pairs": [
+    [
+     "on-brand on brand",
+     5.508545,
+     4.5
+    ],
+    [
+     "on-brand on brand-hover",
+     5.992288,
+     4.5
+    ],
+    [
+     "on-brand on brand-active",
+     6.5454,
+     4.5
+    ],
+    [
+     "brand-ink on bg",
+     7.841143,
+     4.5
+    ],
+    [
+     "brand-ink on surface",
+     7.349252,
+     4.5
+    ],
+    [
+     "brand-ink on panel",
+     6.878749,
+     4.5
+    ],
+    [
+     "brand-ink on hover",
+     6.363299,
+     4.5
+    ],
+    [
+     "brand-ink on brand-soft",
+     5.82034,
+     4.5
+    ],
+    [
+     "brand-ink on accent-soft",
+     6.436485,
+     4.5
+    ],
+    [
+     "brand-ink on emphasis-soft",
+     6.384534,
+     4.5
+    ],
+    [
+     "brand-ink on success-soft",
+     6.003696,
+     4.5
+    ],
+    [
+     "brand-ink on warn-soft",
+     6.092606,
+     4.5
+    ],
+    [
+     "brand-ink on info-soft",
+     6.153308,
+     4.5
+    ],
+    [
+     "ink on brand-soft",
+     14.368735,
+     4.5
+    ],
+    [
+     "muted on brand-soft",
+     6.866742,
+     4.5
+    ],
+    [
+     "accent-ink on brand-soft",
+     6.500409,
+     4.5
+    ],
+    [
+     "success-ink on brand-soft",
+     14.080606,
+     4.5
+    ],
+    [
+     "warn-ink on brand-soft",
+     11.851939,
+     4.5
+    ],
+    [
+     "info-ink on brand-soft",
+     11.000551,
+     4.5
+    ],
+    [
+     "danger on brand-soft",
+     8.212955,
+     4.5
+    ],
+    [
+     "brand boundary on bg",
+     7.841143,
+     3
+    ],
+    [
+     "brand boundary on surface",
+     7.349252,
+     3
+    ],
+    [
+     "brand boundary on panel",
+     6.878749,
+     3
+    ]
+   ]
+  }
+ },
+ {
+  "theme": {
+   "primary_color": "#dfff8f"
+  },
+  "light": {
+   "fill": [
+    223,
+    255,
+    143
+   ],
+   "foreground": [
+    20,
+    44,
+    42
+   ],
+   "hover": [
+    203,
+    234,
+    133
+   ],
+   "active": [
+    182,
+    213,
+    123
+   ],
+   "soft": [
+    251,
+    255,
+    242
+   ],
+   "ink": [
+    83,
+    109,
+    73
+   ],
+   "pairs": [
+    [
+     "on-brand on brand",
+     13.234198,
+     4.5
+    ],
+    [
+     "on-brand on brand-hover",
+     10.992386,
+     4.5
+    ],
+    [
+     "on-brand on brand-active",
+     8.987124,
+     4.5
+    ],
+    [
+     "brand-ink on bg",
+     5.301302,
+     4.5
+    ],
+    [
+     "brand-ink on surface",
+     4.927644,
+     4.5
+    ],
+    [
+     "brand-ink on panel",
+     5.751119,
+     4.5
+    ],
+    [
+     "brand-ink on hover",
+     4.658889,
+     4.5
+    ],
+    [
+     "brand-ink on brand-soft",
+     5.665675,
+     4.5
+    ],
+    [
+     "brand-ink on accent-soft",
+     4.82286,
+     4.5
+    ],
+    [
+     "brand-ink on emphasis-soft",
+     5.109856,
+     4.5
+    ],
+    [
+     "brand-ink on success-soft",
+     5.665675,
+     4.5
+    ],
+    [
+     "brand-ink on warn-soft",
+     5.505431,
+     4.5
+    ],
+    [
+     "brand-ink on info-soft",
+     5.453386,
+     4.5
+    ],
+    [
+     "ink on brand-soft",
+     14.5337,
+     4.5
+    ],
+    [
+     "muted on brand-soft",
+     5.738498,
+     4.5
+    ],
+    [
+     "accent-ink on brand-soft",
+     6.065899,
+     4.5
+    ],
+    [
+     "success-ink on brand-soft",
+     5.665675,
+     4.5
+    ],
+    [
+     "warn-ink on brand-soft",
+     5.698604,
+     4.5
+    ],
+    [
+     "info-ink on brand-soft",
+     5.657859,
+     4.5
+    ],
+    [
+     "danger on brand-soft",
+     6.37392,
+     4.5
+    ],
+    [
+     "brand boundary on bg",
+     5.301302,
+     3
+    ],
+    [
+     "brand boundary on surface",
+     4.927644,
+     3
+    ],
+    [
+     "brand boundary on panel",
+     5.751119,
+     3
+    ]
+   ]
+  },
+  "dark": {
+   "fill": [
+    223,
+    255,
+    143
+   ],
+   "foreground": [
+    20,
+    44,
+    42
+   ],
+   "hover": [
+    203,
+    234,
+    133
+   ],
+   "active": [
+    182,
+    213,
+    123
+   ],
+   "soft": [
+    44,
+    48,
+    35
+   ],
+   "ink": [
+    223,
+    255,
+    143
+   ],
+   "pairs": [
+    [
+     "on-brand on brand",
+     13.234198,
+     4.5
+    ],
+    [
+     "on-brand on brand-hover",
+     10.992386,
+     4.5
+    ],
+    [
+     "on-brand on brand-active",
+     8.987124,
+     4.5
+    ],
+    [
+     "brand-ink on bg",
+     18.838229,
+     4.5
+    ],
+    [
+     "brand-ink on surface",
+     17.656469,
+     4.5
+    ],
+    [
+     "brand-ink on panel",
+     16.526093,
+     4.5
+    ],
+    [
+     "brand-ink on hover",
+     15.287731,
+     4.5
+    ],
+    [
+     "brand-ink on brand-soft",
+     12.121279,
+     4.5
+    ],
+    [
+     "brand-ink on accent-soft",
+     15.46356,
+     4.5
+    ],
+    [
+     "brand-ink on emphasis-soft",
+     15.338749,
+     4.5
+    ],
+    [
+     "brand-ink on success-soft",
+     14.423791,
+     4.5
+    ],
+    [
+     "brand-ink on warn-soft",
+     14.637394,
+     4.5
+    ],
+    [
+     "brand-ink on info-soft",
+     14.783232,
+     4.5
+    ],
+    [
+     "ink on brand-soft",
+     12.455407,
+     4.5
+    ],
+    [
+     "muted on brand-soft",
+     5.952373,
+     4.5
+    ],
+    [
+     "accent-ink on brand-soft",
+     5.63482,
+     4.5
+    ],
+    [
+     "success-ink on brand-soft",
+     12.205644,
+     4.5
+    ],
+    [
+     "warn-ink on brand-soft",
+     10.273745,
+     4.5
+    ],
+    [
+     "info-ink on brand-soft",
+     9.535727,
+     4.5
+    ],
+    [
+     "danger on brand-soft",
+     7.119325,
+     4.5
+    ],
+    [
+     "brand boundary on bg",
+     18.838229,
+     3
+    ],
+    [
+     "brand boundary on surface",
+     17.656469,
+     3
+    ],
+    [
+     "brand boundary on panel",
+     16.526093,
+     3
+    ]
+   ]
+  }
+ },
+ {
+  "theme": {
+   "primary_color": "#3b4cca",
+   "accent_color": "#3b4cca"
+  },
+  "light": {
+   "fill": [
+    59,
+    76,
+    202
+   ],
+   "foreground": [
+    255,
+    244,
+    232
+   ],
+   "hover": [
+    55,
+    73,
+    186
+   ],
+   "active": [
+    51,
+    70,
+    170
+   ],
+   "soft": [
+    231,
+    234,
+    249
+   ],
+   "ink": [
+    59,
+    76,
+    202
+   ],
+   "pairs": [
+    [
+     "on-brand on brand",
+     6.300061,
+     4.5
+    ],
+    [
+     "on-brand on brand-hover",
+     6.853438,
+     4.5
+    ],
+    [
+     "on-brand on brand-active",
+     7.452991,
+     4.5
+    ],
+    [
+     "brand-ink on bg",
+     6.300061,
+     4.5
+    ],
+    [
+     "brand-ink on surface",
+     5.856005,
+     4.5
+    ],
+    [
+     "brand-ink on panel",
+     6.834622,
+     4.5
+    ],
+    [
+     "brand-ink on hover",
+     5.536618,
+     4.5
+    ],
+    [
+     "brand-ink on brand-soft",
+     5.706851,
+     4.5
+    ],
+    [
+     "brand-ink on accent-soft",
+     5.731481,
+     4.5
+    ],
+    [
+     "brand-ink on emphasis-soft",
+     6.072546,
+     4.5
+    ],
+    [
+     "brand-ink on success-soft",
+     6.733081,
+     4.5
+    ],
+    [
+     "brand-ink on warn-soft",
+     6.542647,
+     4.5
+    ],
+    [
+     "brand-ink on info-soft",
+     6.480796,
+     4.5
+    ],
+    [
+     "ink on brand-soft",
+     12.318531,
+     4.5
+    ],
+    [
+     "muted on brand-soft",
+     4.863859,
+     4.5
+    ],
+    [
+     "accent-ink on brand-soft",
+     5.141359,
+     4.5
+    ],
+    [
+     "success-ink on brand-soft",
+     4.802136,
+     4.5
+    ],
+    [
+     "warn-ink on brand-soft",
+     4.830045,
+     4.5
+    ],
+    [
+     "info-ink on brand-soft",
+     4.79551,
+     4.5
+    ],
+    [
+     "danger on brand-soft",
+     5.402433,
+     4.5
+    ],
+    [
+     "brand boundary on bg",
+     6.300061,
+     3
+    ],
+    [
+     "brand boundary on surface",
+     5.856005,
+     3
+    ],
+    [
+     "brand boundary on panel",
+     6.834622,
+     3
+    ]
+   ]
+  },
+  "dark": {
+   "fill": [
+    59,
+    76,
+    202
+   ],
+   "foreground": [
+    255,
+    244,
+    232
+   ],
+   "hover": [
+    55,
+    73,
+    186
+   ],
+   "active": [
+    51,
+    70,
+    170
+   ],
+   "soft": [
+    25,
+    27,
+    42
+   ],
+   "ink": [
+    122,
+    130,
+    212
+   ],
+   "pairs": [
+    [
+     "on-brand on brand",
+     6.300061,
+     4.5
+    ],
+    [
+     "on-brand on brand-hover",
+     6.853438,
+     4.5
+    ],
+    [
+     "on-brand on brand-active",
+     7.452991,
+     4.5
+    ],
+    [
+     "brand-ink on bg",
+     5.971261,
+     4.5
+    ],
+    [
+     "brand-ink on surface",
+     5.596672,
+     4.5
+    ],
+    [
+     "brand-ink on panel",
+     5.23837,
+     4.5
+    ],
+    [
+     "brand-ink on hover",
+     4.845839,
+     4.5
+    ],
+    [
+     "brand-ink on brand-soft",
+     4.848608,
+     4.5
+    ],
+    [
+     "brand-ink on accent-soft",
+     4.901573,
+     4.5
+    ],
+    [
+     "brand-ink on emphasis-soft",
+     4.862011,
+     4.5
+    ],
+    [
+     "brand-ink on success-soft",
+     4.571991,
+     4.5
+    ],
+    [
+     "brand-ink on warn-soft",
+     4.639698,
+     4.5
+    ],
+    [
+     "brand-ink on info-soft",
+     4.685925,
+     4.5
+    ],
+    [
+     "ink on brand-soft",
+     15.718119,
+     4.5
+    ],
+    [
+     "muted on brand-soft",
+     7.511606,
+     4.5
+    ],
+    [
+     "accent-ink on brand-soft",
+     7.11087,
+     4.5
+    ],
+    [
+     "success-ink on brand-soft",
+     15.402931,
+     4.5
+    ],
+    [
+     "warn-ink on brand-soft",
+     12.964967,
+     4.5
+    ],
+    [
+     "info-ink on brand-soft",
+     12.033625,
+     4.5
+    ],
+    [
+     "danger on brand-soft",
+     8.984242,
+     4.5
+    ],
+    [
+     "brand boundary on bg",
+     5.971261,
+     3
+    ],
+    [
+     "brand boundary on surface",
+     5.596672,
+     3
+    ],
+    [
+     "brand boundary on panel",
+     5.23837,
+     3
+    ]
+   ]
+  }
+ },
+ {
+  "theme": {
+   "primary_color": "#7b2d6e",
+   "accent_color": "#c9a0dc"
+  },
+  "light": {
+   "fill": [
+    123,
+    45,
+    110
+   ],
+   "foreground": [
+    255,
+    244,
+    232
+   ],
+   "hover": [
+    113,
+    45,
+    103
+   ],
+   "active": [
+    102,
+    45,
+    96
+   ],
+   "soft": [
+    239,
+    230,
+    238
+   ],
+   "ink": [
+    107,
+    100,
+    127
+   ],
+   "pairs": [
+    [
+     "on-brand on brand",
+     7.924628,
+     4.5
+    ],
+    [
+     "on-brand on brand-hover",
+     8.514968,
+     4.5
+    ],
+    [
+     "on-brand on brand-active",
+     9.177586,
+     4.5
+    ],
+    [
+     "brand-ink on bg",
+     5.15583,
+     4.5
+    ],
+    [
+     "brand-ink on surface",
+     4.792425,
+     4.5
+    ],
+    [
+     "brand-ink on panel",
+     5.593303,
+     4.5
+    ],
+    [
+     "brand-ink on hover",
+     4.531046,
+     4.5
+    ],
+    [
+     "brand-ink on brand-soft",
+     4.587436,
+     4.5
+    ],
+    [
+     "brand-ink on accent-soft",
+     4.690517,
+     4.5
+    ],
+    [
+     "brand-ink on emphasis-soft",
+     4.969637,
+     4.5
+    ],
+    [
+     "brand-ink on success-soft",
+     5.510205,
+     4.5
+    ],
+    [
+     "brand-ink on warn-soft",
+     5.354358,
+     4.5
+    ],
+    [
+     "brand-ink on info-soft",
+     5.30374,
+     4.5
+    ],
+    [
+     "ink on brand-soft",
+     12.099807,
+     4.5
+    ],
+    [
+     "muted on brand-soft",
+     4.777498,
+     4.5
+    ],
+    [
+     "accent-ink on brand-soft",
+     5.05007,
+     4.5
+    ],
+    [
+     "success-ink on brand-soft",
+     4.71687,
+     4.5
+    ],
+    [
+     "warn-ink on brand-soft",
+     4.744284,
+     4.5
+    ],
+    [
+     "info-ink on brand-soft",
+     4.710363,
+     4.5
+    ],
+    [
+     "danger on brand-soft",
+     5.306509,
+     4.5
+    ],
+    [
+     "brand boundary on bg",
+     5.15583,
+     3
+    ],
+    [
+     "brand boundary on surface",
+     4.792425,
+     3
+    ],
+    [
+     "brand boundary on panel",
+     5.593303,
+     3
+    ]
+   ]
+  },
+  "dark": {
+   "fill": [
+    123,
+    45,
+    110
+   ],
+   "foreground": [
+    255,
+    244,
+    232
+   ],
+   "hover": [
+    113,
+    45,
+    103
+   ],
+   "active": [
+    102,
+    45,
+    96
+   ],
+   "soft": [
+    32,
+    23,
+    31
+   ],
+   "ink": [
+    201,
+    160,
+    220
+   ],
+   "pairs": [
+    [
+     "on-brand on brand",
+     7.924628,
+     4.5
+    ],
+    [
+     "on-brand on brand-hover",
+     8.514968,
+     4.5
+    ],
+    [
+     "on-brand on brand-active",
+     9.177586,
+     4.5
+    ],
+    [
+     "brand-ink on bg",
+     9.545285,
+     4.5
+    ],
+    [
+     "brand-ink on surface",
+     8.94649,
+     4.5
+    ],
+    [
+     "brand-ink on panel",
+     8.373731,
+     4.5
+    ],
+    [
+     "brand-ink on hover",
+     7.746257,
+     4.5
+    ],
+    [
+     "brand-ink on brand-soft",
+     7.929562,
+     4.5
+    ],
+    [
+     "brand-ink on accent-soft",
+     7.835348,
+     4.5
+    ],
+    [
+     "brand-ink on emphasis-soft",
+     7.772107,
+     4.5
+    ],
+    [
+     "brand-ink on success-soft",
+     7.3085,
+     4.5
+    ],
+    [
+     "brand-ink on warn-soft",
+     7.416732,
+     4.5
+    ],
+    [
+     "brand-ink on info-soft",
+     7.490628,
+     4.5
+    ],
+    [
+     "ink on brand-soft",
+     16.08088,
+     4.5
+    ],
+    [
+     "muted on brand-soft",
+     7.684967,
+     4.5
+    ],
+    [
+     "accent-ink on brand-soft",
+     7.274983,
+     4.5
+    ],
+    [
+     "success-ink on brand-soft",
+     15.758418,
+     4.5
+    ],
+    [
+     "warn-ink on brand-soft",
+     13.264188,
+     4.5
+    ],
+    [
+     "info-ink on brand-soft",
+     12.311351,
+     4.5
+    ],
+    [
+     "danger on brand-soft",
+     9.191591,
+     4.5
+    ],
+    [
+     "brand boundary on bg",
+     9.545285,
+     3
+    ],
+    [
+     "brand boundary on surface",
+     8.94649,
+     3
+    ],
+    [
+     "brand boundary on panel",
+     8.373731,
+     3
+    ]
+   ]
+  }
+ },
+ {
+  "theme": {
+   "accent_color": "#b5cdff"
+  },
+  "light": {
+   "fill": [
+    0,
+    110,
+    99
+   ],
+   "foreground": [
+    255,
+    244,
+    232
+   ],
+   "hover": [
+    2,
+    103,
+    93
+   ],
+   "active": [
+    4,
+    97,
+    88
+   ],
+   "soft": [
+    224,
+    238,
+    236
+   ],
+   "ink": [
+    83,
+    107,
+    125
+   ],
+   "pairs": [
+    [
+     "on-brand on brand",
+     5.675787,
+     4.5
+    ],
+    [
+     "on-brand on brand-hover",
+     6.242862,
+     4.5
+    ],
+    [
+     "on-brand on brand-active",
+     6.777944,
+     4.5
+    ],
+    [
+     "brand-ink on bg",
+     5.138692,
+     4.5
+    ],
+    [
+     "brand-ink on surface",
+     4.776495,
+     4.5
+    ],
+    [
+     "brand-ink on panel",
+     5.574711,
+     4.5
+    ],
+    [
+     "brand-ink on hover",
+     4.515984,
+     4.5
+    ],
+    [
+     "brand-ink on brand-soft",
+     4.674925,
+     4.5
+    ],
+    [
+     "brand-ink on accent-soft",
+     4.674925,
+     4.5
+    ],
+    [
+     "brand-ink on emphasis-soft",
+     4.953118,
+     4.5
+    ],
+    [
+     "brand-ink on success-soft",
+     5.491888,
+     4.5
+    ],
+    [
+     "brand-ink on warn-soft",
+     5.336559,
+     4.5
+    ],
+    [
+     "brand-ink on info-soft",
+     5.28611,
+     4.5
+    ],
+    [
+     "ink on brand-soft",
+     12.371695,
+     4.5
+    ],
+    [
+     "muted on brand-soft",
+     4.88485,
+     4.5
+    ],
+    [
+     "accent-ink on brand-soft",
+     5.163547,
+     4.5
+    ],
+    [
+     "success-ink on brand-soft",
+     4.82286,
+     4.5
+    ],
+    [
+     "warn-ink on brand-soft",
+     4.850891,
+     4.5
+    ],
+    [
+     "info-ink on brand-soft",
+     4.816206,
+     4.5
+    ],
+    [
+     "danger on brand-soft",
+     5.425748,
+     4.5
+    ],
+    [
+     "brand boundary on bg",
+     5.138692,
+     3
+    ],
+    [
+     "brand boundary on surface",
+     4.776495,
+     3
+    ],
+    [
+     "brand boundary on panel",
+     5.574711,
+     3
+    ]
+   ]
+  },
+  "dark": {
+   "fill": [
+    0,
+    110,
+    99
+   ],
+   "foreground": [
+    255,
+    244,
+    232
+   ],
+   "hover": [
+    2,
+    103,
+    93
+   ],
+   "active": [
+    4,
+    97,
+    88
+   ],
+   "soft": [
+    18,
+    31,
+    29
+   ],
+   "ink": [
+    181,
+    205,
+    255
+   ],
+   "pairs": [
+    [
+     "on-brand on brand",
+     5.675787,
+     4.5
+    ],
+    [
+     "on-brand on brand-hover",
+     6.242862,
+     4.5
+    ],
+    [
+     "on-brand on brand-active",
+     6.777944,
+     4.5
+    ],
+    [
+     "brand-ink on bg",
+     13.14128,
+     4.5
+    ],
+    [
+     "brand-ink on surface",
+     12.316901,
+     4.5
+    ],
+    [
+     "brand-ink on panel",
+     11.528367,
+     4.5
+    ],
+    [
+     "brand-ink on hover",
+     10.664503,
+     4.5
+    ],
+    [
+     "brand-ink on brand-soft",
+     10.602459,
+     4.5
+    ],
+    [
+     "brand-ink on accent-soft",
+     10.787159,
+     4.5
+    ],
+    [
+     "brand-ink on emphasis-soft",
+     10.700092,
+     4.5
+    ],
+    [
+     "brand-ink on success-soft",
+     10.061831,
+     4.5
+    ],
+    [
+     "brand-ink on warn-soft",
+     10.210838,
+     4.5
+    ],
+    [
+     "brand-ink on info-soft",
+     10.312572,
+     4.5
+    ],
+    [
+     "ink on brand-soft",
+     15.61775,
+     4.5
+    ],
+    [
+     "muted on brand-soft",
+     7.46364,
+     4.5
+    ],
+    [
+     "accent-ink on brand-soft",
+     7.065463,
+     4.5
+    ],
+    [
+     "success-ink on brand-soft",
+     15.304574,
+     4.5
+    ],
+    [
+     "warn-ink on brand-soft",
+     12.882178,
+     4.5
+    ],
+    [
+     "info-ink on brand-soft",
+     11.956783,
+     4.5
+    ],
+    [
+     "danger on brand-soft",
+     8.926873,
+     4.5
+    ],
+    [
+     "brand boundary on bg",
+     13.14128,
+     3
+    ],
+    [
+     "brand boundary on surface",
+     12.316901,
+     3
+    ],
+    [
+     "brand boundary on panel",
+     11.528367,
+     3
+    ]
+   ]
+  }
+ },
+ {
+  "theme": {
+   "primary_color": "#142c2a"
+  },
+  "light": {
+   "fill": [
+    20,
+    44,
+    42
+   ],
+   "foreground": [
+    255,
+    244,
+    232
+   ],
+   "hover": [
+    44,
+    64,
+    61
+   ],
+   "active": [
+    67,
+    84,
+    80
+   ],
+   "soft": [
+    227,
+    230,
+    229
+   ],
+   "ink": [
+    20,
+    44,
+    42
+   ],
+   "pairs": [
+    [
+     "on-brand on brand",
+     13.599004,
+     4.5
+    ],
+    [
+     "on-brand on brand-hover",
+     10.146312,
+     4.5
+    ],
+    [
+     "on-brand on brand-active",
+     7.380968,
+     4.5
+    ],
+    [
+     "brand-ink on bg",
+     13.599004,
+     4.5
+    ],
+    [
+     "brand-ink on surface",
+     12.640487,
+     4.5
+    ],
+    [
+     "brand-ink on panel",
+     14.752881,
+     4.5
+    ],
+    [
+     "brand-ink on hover",
+     11.951073,
+     4.5
+    ],
+    [
+     "brand-ink on brand-soft",
+     11.743527,
+     4.5
+    ],
+    [
+     "brand-ink on accent-soft",
+     12.371695,
+     4.5
+    ],
+    [
+     "brand-ink on emphasis-soft",
+     13.107902,
+     4.5
+    ],
+    [
+     "brand-ink on success-soft",
+     14.5337,
+     4.5
+    ],
+    [
+     "brand-ink on warn-soft",
+     14.122639,
+     4.5
+    ],
+    [
+     "brand-ink on info-soft",
+     13.98913,
+     4.5
+    ],
+    [
+     "ink on brand-soft",
+     11.743527,
+     4.5
+    ],
+    [
+     "muted on brand-soft",
+     4.636824,
+     4.5
+    ],
+    [
+     "accent-ink on brand-soft",
+     4.90137,
+     4.5
+    ],
+    [
+     "success-ink on brand-soft",
+     4.577982,
+     4.5
+    ],
+    [
+     "warn-ink on brand-soft",
+     4.604589,
+     4.5
+    ],
+    [
+     "info-ink on brand-soft",
+     4.571666,
+     4.5
+    ],
+    [
+     "danger on brand-soft",
+     5.150258,
+     4.5
+    ],
+    [
+     "brand boundary on bg",
+     13.599004,
+     3
+    ],
+    [
+     "brand boundary on surface",
+     12.640487,
+     3
+    ],
+    [
+     "brand boundary on panel",
+     14.752881,
+     3
+    ]
+   ]
+  },
+  "dark": {
+   "fill": [
+    20,
+    44,
+    42
+   ],
+   "foreground": [
+    255,
+    244,
+    232
+   ],
+   "hover": [
+    44,
+    64,
+    61
+   ],
+   "active": [
+    67,
+    84,
+    80
+   ],
+   "soft": [
+    20,
+    23,
+    23
+   ],
+   "ink": [
+    130,
+    138,
+    131
+   ],
+   "pairs": [
+    [
+     "on-brand on brand",
+     13.599004,
+     4.5
+    ],
+    [
+     "on-brand on brand-hover",
+     10.146312,
+     4.5
+    ],
+    [
+     "on-brand on brand-active",
+     7.380968,
+     4.5
+    ],
+    [
+     "brand-ink on bg",
+     5.912296,
+     4.5
+    ],
+    [
+     "brand-ink on surface",
+     5.541405,
+     4.5
+    ],
+    [
+     "brand-ink on panel",
+     5.186642,
+     4.5
+    ],
+    [
+     "brand-ink on hover",
+     4.797987,
+     4.5
+    ],
+    [
+     "brand-ink on brand-soft",
+     5.076347,
+     4.5
+    ],
+    [
+     "brand-ink on accent-soft",
+     4.85317,
+     4.5
+    ],
+    [
+     "brand-ink on emphasis-soft",
+     4.813999,
+     4.5
+    ],
+    [
+     "brand-ink on success-soft",
+     4.526843,
+     4.5
+    ],
+    [
+     "brand-ink on warn-soft",
+     4.593882,
+     4.5
+    ],
+    [
+     "brand-ink on info-soft",
+     4.639652,
+     4.5
+    ],
+    [
+     "ink on brand-soft",
+     16.620523,
+     4.5
+    ],
+    [
+     "muted on brand-soft",
+     7.942859,
+     4.5
+    ],
+    [
+     "accent-ink on brand-soft",
+     7.519117,
+     4.5
+    ],
+    [
+     "success-ink on brand-soft",
+     16.287239,
+     4.5
+    ],
+    [
+     "warn-ink on brand-soft",
+     13.709308,
+     4.5
+    ],
+    [
+     "info-ink on brand-soft",
+     12.724495,
+     4.5
+    ],
+    [
+     "danger on brand-soft",
+     9.500043,
+     4.5
+    ],
+    [
+     "brand boundary on bg",
+     5.912296,
+     3
+    ],
+    [
+     "brand boundary on surface",
+     5.541405,
+     3
+    ],
+    [
+     "brand boundary on panel",
+     5.186642,
+     3
+    ]
+   ]
+  }
+ },
+ {
+  "theme": {
+   "primary_color": "#004400"
+  },
+  "light": {
+   "fill": [
+    0,
+    68,
+    0
+   ],
+   "foreground": [
+    255,
+    244,
+    232
+   ],
+   "hover": [
+    26,
+    86,
+    23
+   ],
+   "active": [
+    51,
+    103,
+    46
+   ],
+   "soft": [
+    224,
+    233,
+    224
+   ],
+   "ink": [
+    0,
+    68,
+    0
+   ],
+   "pairs": [
+    [
+     "on-brand on brand",
+     10.596121,
+     4.5
+    ],
+    [
+     "on-brand on brand-hover",
+     8.108164,
+     4.5
+    ],
+    [
+     "on-brand on brand-active",
+     6.203711,
+     4.5
+    ],
+    [
+     "brand-ink on bg",
+     10.596121,
+     4.5
+    ],
+    [
+     "brand-ink on surface",
+     9.849261,
+     4.5
+    ],
+    [
+     "brand-ink on panel",
+     11.495204,
+     4.5
+    ],
+    [
+     "brand-ink on hover",
+     9.312081,
+     4.5
+    ],
+    [
+     "brand-ink on brand-soft",
+     9.251662,
+     4.5
+    ],
+    [
+     "brand-ink on accent-soft",
+     9.639822,
+     4.5
+    ],
+    [
+     "brand-ink on emphasis-soft",
+     10.213463,
+     4.5
+    ],
+    [
+     "brand-ink on success-soft",
+     11.324422,
+     4.5
+    ],
+    [
+     "brand-ink on warn-soft",
+     11.004129,
+     4.5
+    ],
+    [
+     "brand-ink on info-soft",
+     10.900102,
+     4.5
+    ],
+    [
+     "ink on brand-soft",
+     11.873532,
+     4.5
+    ],
+    [
+     "muted on brand-soft",
+     4.688155,
+     4.5
+    ],
+    [
+     "accent-ink on brand-soft",
+     4.95563,
+     4.5
+    ],
+    [
+     "success-ink on brand-soft",
+     4.628661,
+     4.5
+    ],
+    [
+     "warn-ink on brand-soft",
+     4.655563,
+     4.5
+    ],
+    [
+     "info-ink on brand-soft",
+     4.622275,
+     4.5
+    ],
+    [
+     "danger on brand-soft",
+     5.207273,
+     4.5
+    ],
+    [
+     "brand boundary on bg",
+     10.596121,
+     3
+    ],
+    [
+     "brand boundary on surface",
+     9.849261,
+     3
+    ],
+    [
+     "brand boundary on panel",
+     11.495204,
+     3
+    ]
+   ]
+  },
+  "dark": {
+   "fill": [
+    0,
+    68,
+    0
+   ],
+   "foreground": [
+    255,
+    244,
+    232
+   ],
+   "hover": [
+    26,
+    86,
+    23
+   ],
+   "active": [
+    51,
+    103,
+    46
+   ],
+   "soft": [
+    18,
+    26,
+    18
+   ],
+   "ink": [
+    112,
+    145,
+    102
+   ],
+   "pairs": [
+    [
+     "on-brand on brand",
+     10.596121,
+     4.5
+    ],
+    [
+     "on-brand on brand-hover",
+     8.108164,
+     4.5
+    ],
+    [
+     "on-brand on brand-active",
+     6.203711,
+     4.5
+    ],
+    [
+     "brand-ink on bg",
+     5.93097,
+     4.5
+    ],
+    [
+     "brand-ink on surface",
+     5.558909,
+     4.5
+    ],
+    [
+     "brand-ink on panel",
+     5.203025,
+     4.5
+    ],
+    [
+     "brand-ink on hover",
+     4.813143,
+     4.5
+    ],
+    [
+     "brand-ink on brand-soft",
+     5.016842,
+     4.5
+    ],
+    [
+     "brand-ink on accent-soft",
+     4.8685,
+     4.5
+    ],
+    [
+     "brand-ink on emphasis-soft",
+     4.829205,
+     4.5
+    ],
+    [
+     "brand-ink on success-soft",
+     4.541142,
+     4.5
+    ],
+    [
+     "brand-ink on warn-soft",
+     4.608392,
+     4.5
+    ],
+    [
+     "brand-ink on info-soft",
+     4.654307,
+     4.5
+    ],
+    [
+     "ink on brand-soft",
+     16.373978,
+     4.5
+    ],
+    [
+     "muted on brand-soft",
+     7.825037,
+     4.5
+    ],
+    [
+     "accent-ink on brand-soft",
+     7.40758,
+     4.5
+    ],
+    [
+     "success-ink on brand-soft",
+     16.045638,
+     4.5
+    ],
+    [
+     "warn-ink on brand-soft",
+     13.505947,
+     4.5
+    ],
+    [
+     "info-ink on brand-soft",
+     12.535744,
+     4.5
+    ],
+    [
+     "danger on brand-soft",
+     9.359122,
+     4.5
+    ],
+    [
+     "brand boundary on bg",
+     5.93097,
+     3
+    ],
+    [
+     "brand boundary on surface",
+     5.558909,
+     3
+    ],
+    [
+     "brand boundary on panel",
+     5.203025,
+     3
+    ]
+   ]
+  }
+ }
+]

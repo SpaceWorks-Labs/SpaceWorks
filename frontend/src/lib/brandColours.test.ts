@@ -35,10 +35,10 @@ describe("tenant colours", () => {
     expect(palette.hover).toEqual([26, 86, 23]);
     expect(palette.active).toEqual([51, 103, 46]);
     expect(palette.foreground).toEqual([255, 244, 232]);
-    expect(deriveBrandPalette({ primary_color: "#004400" }, "dark").ink).toEqual([128, 156, 116]);
+    expect(deriveBrandPalette({ primary_color: "#004400" }, "dark").ink).toEqual([112, 145, 102]);
     const theme = { primary_color: "#f3c3dd", accent_color: "#5a1633" };
     expect(deriveBrandPalette(theme, "light").ink).toEqual([90, 22, 51]);
-    expect(deriveBrandPalette(theme, "dark").ink).toEqual([182, 146, 152]);
+    expect(deriveBrandPalette(theme, "dark").ink).toEqual([174, 135, 143]);
   });
   it.each(["#777", "#e91e63"])("accepts %s with a black label", (primary_color) => {
     expectAccessible({ primary_color });
@@ -57,7 +57,7 @@ describe("tenant colours", () => {
     ]);
   });
   it("derives opaque soft fills that protect every fixed ink", () => {
-    expect(deriveBrandPalette({ primary_color: "#fff" }, "dark").soft).toEqual([46, 59, 57]);
+    expect(deriveBrandPalette({ primary_color: "#fff" }, "dark").soft).toEqual([48, 48, 48]);
     expect(deriveBrandPalette({ primary_color: "#000" }, "light").soft).toEqual([229, 229, 229]);
     modes.forEach((mode) => {
       const palette = deriveBrandPalette({ primary_color: "#fff" }, mode);
@@ -73,7 +73,8 @@ describe("tenant colours", () => {
   it("keeps defaults identical to the rendered CSS, including all contrast constants", () => {
     const css = readFileSync("src/index.css", "utf8");
     modes.forEach((mode) => {
-      const block = css.split(mode === "light" ? ":root {" : ":root.dark {")[1].split("}")[0];
+      // Find the token blocks by their content, not by being the first :root rule (other layers also declare :root).
+      const block = css.slice(mode === "light" ? css.indexOf("--color-bg:") : css.indexOf(":root.dark {")).split("}")[0];
       const token = (name: string) => block.match(new RegExp(`--color-${name}: ([0-9 ]+);`))![1].split(" ").map(Number);
       const palette = deriveBrandPalette({}, mode);
       expect(palette.fill).toEqual(PRODUCT_FILL[mode]);

@@ -47,3 +47,12 @@ In **Settings → Public stats**, choose whether to publish the page, its sectio
 Use settings grants to let Inventory, Event, Machine and Booking Managers change their own area's choices in their normal settings screen. Individual **Lock for managers** controls keep a choice with you. You can override a delegated lock; managers see it as read-only. Community member and check-in figures and the overall page remain under Space Manager control. Module-off areas stay hidden and retain their choices.
 
 Hiding a widget hides it from both the public page and TV board, including duplicate headline values. It does not erase source history. Existing public-item visibility, borrower-name opt-in and small-number suppression still apply. SpaceWorks opens in light mode by default; a visitor's explicit saved theme is retained.
+
+## Here now, machines and the events calendar
+
+Your public page can show who is here now, which machines are in use or free, and a month calendar of your public events. Each section appears only while its module (Presence, Machines, Events) is on. People are named only if their profile is open to the web (for visitors who are not signed in) and they have not hidden their presence; everyone else is counted. Guests and anyone under the age of majority are always counted, never named.
+
+## Display screens
+
+Turn on **Display screens** under your space's features, open `/display` on a TV or kiosk browser, then go to **Settings**, **Display screens** and enter the code the screen shows. Choose the panels and how many seconds each stays up. **Unpair** stops a screen at once. A screen never shows more than a visitor who is not signed in would see.
+

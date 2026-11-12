@@ -30,9 +30,9 @@ export function guestRefusalMessage(code: string | undefined): string | null {
     case "guest_pass_on_site_only": return t`On a guest pass, items stay on site and are due back before your pass ends.`;
     case "guest_pass_deposit_required": return t`Borrowing on a guest pass needs a deposit, and this item has none set. Ask staff.`;
     case "guest_pass_no_machines": return t`Guest passes here don't include machine use.`;
-    case "guest_pass_supervised_only": return t`On a guest pass you can use machines only in a supervised session with a certified instructor.`;
+    case "guest_pass_supervised_only": return t`On a guest pass you can use machines only in a supervised session led by an instructor.`;
     case "guest_pass_supervised_session": return t`Join an instructor's supervised session for this machine first.`;
-    case "guest_pass_certification_required": return t`On a guest pass you need a certification from an induction event before using this machine.`;
+    case "guest_pass_machine_access_required": return t`On a guest pass a space manager must give you access to this machine before you use it.`;
     case "account_not_in_space": return t`This person isn't a member, walk-in or guest-pass holder here. Issue a guest pass or add them as a walk-in first.`;
     // Minors and guardian consent (makerspaces/minors_guard.py).
     case "minor_not_admitted": return t`This space doesn't admit people under the age of majority.`;

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { currencyExponent, decimalToMinor, formatMinorMoney, formatMoney, formatPrice, minorToDecimal } from "./money";
+import { currencyExponent, decimalToMinor, formatMinorMoney, formatMoney, formatPrice, milliToMoney, minorToDecimal, moneyToMilli, percentOfMoney } from "./money";
 
 describe("money display", () => {
   it("formats an amount in its currency, case-insensitively", () => {
@@ -61,5 +61,28 @@ describe("decimal entry in minor units", () => {
     expect(minorToDecimal(-5, "EUR")).toBe("-0.05");
     expect(minorToDecimal(1200, "JPY")).toBe("1200");
     expect(minorToDecimal(null, "EUR")).toBe("");
+  });
+});
+
+describe("decimal-safe percentages", () => {
+  it("reads an amount as exact thousandths and writes it back", () => {
+    expect(moneyToMilli("12.5")).toBe(12500n);
+    expect(moneyToMilli("0.005")).toBe(5n);
+    expect(moneyToMilli("1.2345")).toBeNull();
+    expect(moneyToMilli("abc")).toBeNull();
+    expect(milliToMoney(12500n)).toBe("12.500");
+  });
+
+  it("takes a percentage rounded half-up at the currency's own minor unit", () => {
+    expect(percentOfMoney("20000", "30.00", "inr")).toBe("6000.00");
+    expect(percentOfMoney("0.29", "10", "usd")).toBe("0.03");
+    expect(percentOfMoney("1234.55", "10", "jpy")).toBe("123");
+    expect(percentOfMoney("1234.567", "10", "kwd")).toBe("123.457");
+    expect(percentOfMoney("x", "10", "usd")).toBeNull();
+  });
+
+  it("does not drift where a float would (0.1 + 0.2 style sums)", () => {
+    expect(percentOfMoney("0.30", "10", "usd")).toBe("0.03");
+    expect(percentOfMoney("1.15", "10", "usd")).toBe("0.12");
   });
 });

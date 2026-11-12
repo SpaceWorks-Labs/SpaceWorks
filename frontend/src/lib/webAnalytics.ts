@@ -1,5 +1,6 @@
 import { matchRoutes } from "react-router-dom";
 import { bookingAnalyticsRoutes } from "./bookingAnalyticsRoutes";
+import { analyticsPublicRoutes0120 } from "./analyticsRoutes0120";
 
 type AnalyticsConfig = { scriptUrl: string; collectUrl: string; domain: string };
 declare global { interface Window { __WEB_ANALYTICS__?: AnalyticsConfig; plausible?: unknown } }
@@ -10,6 +11,9 @@ export const analyticsPublicRoutes = [
   "/events", "/events/:id", "/machines", "/stats",
   "/m/:slug/items/:itemId", "/m/:slug/events", "/m/:slug/events/:id",
   "/m/:slug/machines", "/m/:slug/stats", ...bookingAnalyticsRoutes,
+  // 0.12.0 public pages (decision 326). Personal profiles (`/:handle`) stay out: that template would
+  // match every unknown one-segment path and defeat fail-closed. TV/display/kiosk routes stay out.
+  ...analyticsPublicRoutes0120,
 ].map(path => ({ path }));
 
 export function analyticsTemplate(url: URL): string | null {

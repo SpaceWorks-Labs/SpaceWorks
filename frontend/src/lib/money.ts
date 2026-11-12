@@ -89,6 +89,32 @@ export function decimalToMinor(text: string, currency: string): number | null {
   return signed >= BigInt(Number.MIN_SAFE_INTEGER) && signed <= BigInt(Number.MAX_SAFE_INTEGER) ? Number(signed) : null;
 }
 
+/** A typed non-negative decimal amount as thousandths (the server's column scale), exact, or null when it is not an amount. */
+export function moneyToMilli(text: string): bigint | null {
+  const match = /^(\d+)(?:\.(\d{0,3}))?$/.exec(text.trim());
+  return match ? BigInt(match[1]) * 1000n + BigInt((match[2] ?? "").padEnd(3, "0") || "0") : null;
+}
+
+/** Thousandths back to plain decimal text ("12.500"), for display through `formatMoney`; exact. */
+export function milliToMoney(milli: bigint): string {
+  return `${milli / 1000n}.${(milli % 1000n).toString().padStart(3, "0")}`;
+}
+
+/**
+ * `percent`% of an amount, rounded half-up to the currency's own minor unit (JPY 0, INR 2, KWD 3), as plain
+ * decimal text; null when either input is not a valid number. BigInt maths, never a float.
+ */
+export function percentOfMoney(amount: string, percent: string, currency: string): string | null {
+  const gross = moneyToMilli(amount), rate = /^(\d+)(?:\.(\d{0,4}))?$/.exec(percent.trim());
+  if (gross === null || !rate) return null;
+  const scaledRate = BigInt(rate[1]) * 10000n + BigInt((rate[2] ?? "").padEnd(4, "0") || "0"); // percent in 1/10000ths
+  const exponent = currencyExponent(currency), step = 10n ** BigInt(3 - exponent); // thousandths per minor unit
+  const denominator = 1000000n * step, units = (2n * gross * scaledRate + denominator) / (2n * denominator);
+  if (exponent === 0) return units.toString();
+  const factor = 10n ** BigInt(exponent);
+  return `${units / factor}.${(units % factor).toString().padStart(exponent, "0")}`;
+}
+
 /** Translated wording for a payment, settlement or payout method code (shared by finance, payouts and the ledger). */
 export function paymentMethodLabel(method: string): string {
   switch (method) {

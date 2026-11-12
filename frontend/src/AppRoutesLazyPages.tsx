@@ -8,6 +8,7 @@ export const ConsolePasswordResetPage = lazy(() => import("./features/auth/Conso
 export const AccountRestorePage = lazy(() => import("./features/auth/AccountRestorePage").then((m) => ({ default: m.AccountRestorePage })));
 export const EventCheckInStationPage = lazy(() => import("./features/events/EventCheckInStationPage").then((m) => ({ default: m.EventCheckInStationPage })));
 export const KioskStationPage = lazy(() => import("./features/kiosk/KioskStationPage").then((m) => ({ default: m.KioskStationPage })));
+export const SpaceDisplayPage = lazy(() => import("./features/spaceDisplay/SpaceDisplayPage").then((m) => ({ default: m.SpaceDisplayPage })));
 export const PublicStatsPage = lazy(() => import("./features/stats/PublicStatsPage").then((m) => ({ default: m.PublicStatsPage })));
 export const PublicStatsTvPage = lazy(() => import("./features/stats/PublicStatsTvPage").then((m) => ({ default: m.PublicStatsTvPage })));
 export const PublicHandlePage = lazy(() => import("./features/publicPages/PublicHandlePage").then((m) => ({ default: m.PublicHandlePage })));
@@ -49,6 +50,8 @@ export const SpeakerClaimPage = lazy(() => import("./features/events/SpeakerClai
 export const EventDiscoverPage = lazy(() => import("./features/events/EventDiscoverPage").then((m) => ({ default: m.EventDiscoverPage })));
 export const PublicSelfCheckoutPage = lazy(() => import("./features/inventory/PublicSelfCheckoutPage").then((m) => ({ default: m.PublicSelfCheckoutPage })));
 export const ArchivedPayments = lazy(() => import("./features/members/ArchivedPayments").then((m) => ({ default: m.ArchivedPayments })));
+export const MemberProfilePage = lazy(() => import("./features/profile/MemberProfilePage").then((m) => ({ default: m.MemberProfilePage })));
+export const ProfileByAccountPage = lazy(() => import("./features/profile/ProfileByAccountPage").then((m) => ({ default: m.ProfileByAccountPage })));
 export const MemberAccountPage = lazy(() => import("./features/members/MemberAccountPage").then((m) => ({ default: m.MemberAccountPage })));
 // `/print` is an alias now: tracking links open the status page, new requests the uniform job form (#140).
 export const PublicPrintRequestPage = lazy(() => import("./features/machine-jobs/PrintRequestAlias").then((m) => ({ default: m.PrintRequestAlias })));
@@ -61,3 +64,6 @@ export const PersonalApiAccessPage = lazy(() => import("./features/members/apiAc
 export const DocsPage = lazy(() => import("./features/docs/DocsPage").then((m) => ({ default: m.DocsPage })));
 // Parity A13: /privacy and /terms (and a space's own, under /m/:slug/ on the central origin).
 export const LegalPage = lazy(() => import("./features/legal/LegalPage").then((m) => ({ default: m.LegalPage })));
+// The staff console and superadmin shells are visited by staff only; keeping them out of the entry chunk holds it under 500 kB.
+export const StaffApp = lazy(() => import("./features/staff/StaffApp").then((m) => ({ default: m.StaffApp })));
+export const SuperadminPage = lazy(() => import("./features/staff/PlatformApps").then((m) => ({ default: m.SuperadminPage })));

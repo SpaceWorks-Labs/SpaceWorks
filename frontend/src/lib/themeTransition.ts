@@ -42,6 +42,8 @@ export function transitionTheme(theme: ThemePreference, element?: HTMLElement | 
   if (typeof doc.startViewTransition !== "function") { fade(theme); return; }
 
   const root = document.documentElement;
+  // A route transition in flight names the content region; the theme reveal needs one whole-page snapshot.
+  root.removeAttribute("data-sw-vt");
   const { x, y } = originOf(element);
   const radius = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y)) + FEATHER;
   const feathered = supportsFeather();

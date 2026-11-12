@@ -5,7 +5,7 @@ export type BrandTokens = { fillText: RGB; surfaces: RGB[]; defaultFill: RGB };
 export type ContrastPair = { mode: string; pair: string; ratio: number; minimum: number };
 export const BRAND_SURFACES: Record<"light" | "dark", RGB[]> = {
   light: [[255, 244, 232], [246, 236, 224], [255, 255, 255], [239, 230, 219]],
-  dark: [[0, 0, 0], [10, 21, 19], [18, 32, 30], [28, 49, 45]],
+  dark: [[0, 0, 0], [11, 11, 11], [20, 20, 20], [28, 28, 28]],
 };
 export const PRODUCT_FILL: Record<"light" | "dark", RGB> = {
   light: [0, 110, 99],
@@ -13,7 +13,7 @@ export const PRODUCT_FILL: Record<"light" | "dark", RGB> = {
 };
 export const BODY_TEXT: Record<"light" | "dark", RGB[]> = {
   light: [[20, 44, 42], [91, 104, 99]],
-  dark: [[255, 244, 232], [179, 180, 170]],
+  dark: [[255, 244, 232], [172, 172, 172]],
 };
 export const FIXED_INKS: Record<"light" | "dark", RGB[]> = {
   light: [[0, 110, 99], [83, 109, 73], [105, 104, 52], [81, 105, 123], [185, 28, 28]],
@@ -21,7 +21,7 @@ export const FIXED_INKS: Record<"light" | "dark", RGB[]> = {
 };
 export const FIXED_SOFTS: Record<"light" | "dark", RGB[]> = {
   light: [[224, 238, 236], [255, 238, 233], [251, 255, 242], [255, 250, 233], [246, 249, 255]],
-  dark: [[15, 44, 41], [35, 38, 33], [32, 48, 38], [35, 45, 33], [29, 44, 46]],
+  dark: [[18, 29, 28], [34, 26, 23], [32, 34, 27], [34, 32, 23], [30, 31, 34]],
 };
 const INK: RGB = [20, 44, 42], CREAM: RGB = [255, 244, 232];
 const BLACK: RGB = [0, 0, 0], WHITE: RGB = [255, 255, 255];

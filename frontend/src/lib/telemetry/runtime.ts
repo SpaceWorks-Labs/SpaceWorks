@@ -1,3 +1,4 @@
+import * as sdk from "../webAnalytics"; // already in the entry chunk (main.tsx), so a dynamic import would not split it
 import { browserIdentity } from "./sessionFence";
 import { TelemetryController } from "./controller";
 import { installTelemetryBoundary } from "./boundary";
@@ -26,7 +27,6 @@ export async function updateWebTelemetry(binding: string, config: WebTelemetryCo
   if (!path) { controller.stop(); return; }
   currentNavigation = url.href; queued = null;
   const configured = legacy ? [{ purpose: "analytics" as const, load: async () => {
-    const sdk = await import("../webAnalytics");
     return { purpose: "analytics" as const, async start(signal: AbortSignal, admitted: () => boolean) { if (!signal.aborted && admitted()) sdk.pageView(url); }, pageView() { sdk.pageView(new URL(window.location.href)); }, stop() { sdk.removeAnalytics(); } };
   } }] : providerFactories(config, consent, path);
   const factories = configured.map(factory => ({ ...factory, load: async () => {

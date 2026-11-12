@@ -1,0 +1,65 @@
+import { t } from "@lingui/core/macro";
+import type { FeatureDefinition } from "./types";
+
+// Slice 3 of 5 of `capabilities.FEATURE_DEFINITIONS`, in registry order; backend drift guards parse every file in this folder, so keep one literal per line.
+export const FEATURE_DEFINITIONS_3: readonly FeatureDefinition[] = [
+  // Parity O-B2: the join funnel and the member register.
+  { key: "membership.ask_changes", parent_module: "membership", label: t`Ask applicants for changes` },
+  { key: "membership.join_photo", parent_module: "membership", label: t`Photo on the join form` },
+  { key: "membership.join_contact_fields", parent_module: "membership", label: t`Phone and state on the join form` },
+  { key: "membership.register_bulk", parent_module: "membership", label: t`Bulk actions on the member register` },
+  { key: "billing.tax", parent_module: null, label: t`Tax on charges` },
+  { key: "billing.maker_checker", parent_module: null, label: t`Two-person check for offline income` },
+  { key: "billing.offline_claims", parent_module: null, label: t`UPI QR and “I’ve paid” claims` },
+  { key: "billing.pay_links", parent_module: null, label: t`Pay links for people without an account` },
+  { key: "billing.disputes", parent_module: null, label: t`Payment disputes` },
+  { key: "billing.capture_flags", parent_module: null, label: t`Unexpected online payments` },
+  // Parity O-B3: per-FY receipt numbers without tax, a plan's own SAC code, and the collection sheet.
+  { key: "billing.fy_receipts", parent_module: null, label: t`Receipt numbers per financial year` },
+  { key: "billing.plan_sac", parent_module: null, label: t`SAC code per membership plan` },
+  { key: "billing.collection_sheet", parent_module: null, label: t`Collection sheet` },
+  { key: "finance.ledger", parent_module: null, label: t`Finance ledger` },
+  { key: "charges.pricing", parent_module: null, label: t`Price lists` },
+  { key: "charges.discounts", parent_module: null, label: t`Member discounts` },
+  { key: "loans.fee_waivers", parent_module: "request_workflow", label: t`Waive loan fees` },
+  // L12 (#76, #94, #140-#142): machines and loans depth.
+  { key: "inventory.consumables", parent_module: null, label: t`Consumables` },
+  { key: "inventory.vendors", parent_module: null, label: t`Vendors` },
+  { key: "inventory.expected_back", parent_module: "public_inventory", label: t`Expected-back dates` },
+  { key: "loans.reservations", parent_module: "request_workflow", label: t`Loan reservations` },
+  { key: "loans.pickup_windows", parent_module: "request_workflow", label: t`Pickup windows` },
+  { key: "loans.waitlist", parent_module: "request_workflow", label: t`Loan waitlist` },
+  { key: "loans.withdrawals", parent_module: "request_workflow", label: t`Withdraw requests` },
+  { key: "machines.job_requests", parent_module: "machine_service", label: t`Machine job requests` },
+  { key: "machines.job_quotes", parent_module: "machine_service", label: t`Job quotes` },
+  { key: "machines.batch_start", parent_module: "machine_service", label: t`Batch start` },
+  { key: "machines.pay_before_pickup", parent_module: "machine_service", label: t`Pay before pickup` },
+  { key: "machines.time_booking", parent_module: "machines", label: t`Machine time booking` },
+  { key: "mobile.watch_actions", parent_module: "mobile", label: t`Watch-friendly push actions` },
+  // L23 (#158): metered machine sessions.
+  { key: "machines.sessions", parent_module: "machines", label: t`Machine sessions` },
+  // Decision 312: the Device Adapter API and its child switches.
+  { key: "machines.integrations", parent_module: "machines", label: t`Machine integrations (foundation)` },
+  { key: "machines.integrations.access", parent_module: "machines", label: t`Adapter access control` },
+  { key: "machines.integrations.usage_billing", parent_module: "machines", label: t`Adapter usage logging` },
+  { key: "machines.integrations.video", parent_module: "machines", label: t`Adapter camera watch` },
+  { key: "machines.integrations.kiosk", parent_module: "machines", label: t`Adapter kiosk checkout` },
+  { key: "machines.integrations.recording", parent_module: "machines", label: t`Adapter camera recording` },
+  { key: "machines.integrations.audio", parent_module: "machines", label: t`Adapter audio` },
+  { key: "machines.integrations.talk", parent_module: "machines", label: t`Adapter two-way talk` },
+  { key: "machines.integrations.audio_recording", parent_module: "machines", label: t`Adapter audio recording` },
+  { key: "machines.integrations.artifacts", parent_module: "machines", label: t`Adapter timelapses and previews` },
+  { key: "machines.integrations.detections", parent_module: "machines", label: t`Adapter detection alerts` },
+  { key: "machines.integrations.telemetry_history", parent_module: "machines", label: t`Adapter telemetry history` },
+  { key: "machines.integrations.diagnostics", parent_module: "machines", label: t`Adapter diagnostics` },
+  { key: "machines.integrations.offline_cache", parent_module: "machines", label: t`Adapter offline access cache` },
+  // L16 (#128 C-3/C-9): repairs, issue reporting and maintenance under each parent.
+  { key: "machines.repairs", parent_module: "machines", label: t`Machine repairs & technicians` },
+  { key: "machines.issue_reporting", parent_module: "machines", label: t`Machine issue reporting` },
+  { key: "inventory.maintenance", parent_module: null, label: t`Inventory maintenance` },
+  { key: "inventory.repairs", parent_module: null, label: t`Inventory repairs & technicians` },
+  { key: "inventory.issue_reporting", parent_module: null, label: t`Inventory issue reporting` },
+  { key: "bookings.room_maintenance", parent_module: "bookings", label: t`Room maintenance` },
+  { key: "bookings.room_repairs", parent_module: "bookings", label: t`Room repairs` },
+  { key: "bookings.issue_reporting", parent_module: "bookings", label: t`Room issue reporting` },
+];

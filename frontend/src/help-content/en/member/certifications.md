@@ -5,6 +5,7 @@ order: 84
 keywords: certification, training, induction, expired, revoked, machine access
 features: machines.certifications
 ---
+<!-- Retired (decision 319): machine access replaced certifications. This article is hidden because its switch is retired; see My machine access. -->
 Some spaces ask you to be trained before you use a machine type, book a room linked to it or send it a job.
 
 ## Check your training

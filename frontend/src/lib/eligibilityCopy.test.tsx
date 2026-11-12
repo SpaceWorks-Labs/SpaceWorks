@@ -42,11 +42,12 @@ describe("eligibility copy", () => {
     expect(eligibilityMessage(refusal(403, { code, detail: "Raw server text." }))).toMatch(expected);
   });
 
-  it("names the missing certifications when the server lists them", () => {
-    expect(eligibilityMessage(refusal(403, { code: "certification_required", certifications: ["Laser induction", "Fire safety"] })))
-      .toBe("You need machine training or certification first (Laser induction, Fire safety). Ask space staff how to qualify, then try again.");
-    expect(eligibilityMessage(refusal(403, { code: "certification_required" })))
-      .toBe("You need machine training or certification first. Ask space staff how to qualify, then try again.");
+  it("explains machine access refusals in words, with no training wording (decision 319)", () => {
+    expect(eligibilityMessage(refusal(403, { code: "no_machine_access" })))
+      .toBe("A space manager has not given you access to this machine yet. Ask space staff to give you access, then try again.");
+    expect(eligibilityMessage(refusal(403, { code: "machine_access_expired" })))
+      .toBe("Your access to this machine has ended. Ask space staff to renew it, then try again.");
+    expect(eligibilityMessage(refusal(403, { code: "certification_required" }))).toBeNull();
   });
 
   it("leaves unrelated errors to the surface's own fallback", () => {

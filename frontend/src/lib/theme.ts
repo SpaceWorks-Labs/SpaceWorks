@@ -9,11 +9,28 @@ const PREFERENCES: readonly ThemePreference[] = ["light", "dark", "system"];
 const DARK_QUERY = "(prefers-color-scheme: dark)";
 let sessionChoice: ThemePreference | undefined;
 
-/** The stored choice. Light stays the default: nothing follows the device until someone picks "system". */
+const tenantClaims = new Map<symbol, ThemePreference>();
+
+/** The space's default look (theme_config.mode). Used only while the visitor has made no choice of their own. */
+export function tenantDefaultTheme(): ThemePreference | undefined {
+  return [...tenantClaims.values()].pop();
+}
+
+/** A public/member/display page claims its space's default look while mounted; call the result to release it. */
+export function claimTenantDefaultTheme(mode: unknown): () => void {
+  if (!PREFERENCES.includes(mode as ThemePreference)) return () => undefined;
+  const key = Symbol("tenant-default-theme");
+  const hadChoice = Boolean(sessionChoice || readStorage(THEME_KEY));
+  tenantClaims.set(key, mode as ThemePreference);
+  if (!hadChoice) { applyTheme(); announce(); }
+  return () => { tenantClaims.delete(key); if (!(sessionChoice || readStorage(THEME_KEY))) { applyTheme(); announce(); } };
+}
+
+/** The stored choice. Light stays the default (or the space's default look): nothing follows the device until a space or the visitor picks "system". */
 export function themePreference(): ThemePreference {
   if (sessionChoice) return sessionChoice;
   const stored = readStorage(THEME_KEY);
-  return PREFERENCES.includes(stored as ThemePreference) ? stored as ThemePreference : "light";
+  return PREFERENCES.includes(stored as ThemePreference) ? stored as ThemePreference : tenantDefaultTheme() ?? "light";
 }
 
 function systemTheme(): Theme {

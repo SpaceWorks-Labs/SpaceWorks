@@ -20,6 +20,6 @@ enrollment**: the old token stops working and a new one is shown once.
 
 The list shows how many devices are **Online**, **Offline** and **Revoked**, with each one's **Last seen** time.
 
-Machines that report their own sessions and jobs are switched on by the platform administrator for your space.
+Machines that report their own sessions and jobs are switched on by the platform administrator for your space. Printing support in this release is the foundation: enrolled printers and label printers can collect work and report back, and vendor adapters are built separately against the Device Adapter API, so a printer brand is supported only once an adapter for it exists.
 
 > **Who can do this:** the Space Manager, or anyone given the devices action. Machine Managers don't hold it by default.

@@ -5,6 +5,7 @@ order: 40
 keywords: certification, training, induction, grant, renew, revoke, expiry, reminders, override
 features: machines.certifications
 ---
+<!-- Retired (decision 319): machine access replaced certifications. This article is hidden because its switch is retired; see Machine access. -->
 ## Create a certification
 
 1. Open the machine type, then **Certifications**, and press **New certification type**.

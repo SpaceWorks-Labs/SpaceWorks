@@ -10,13 +10,17 @@ One Space Works account works at every space you join on this site.
 
 1. Open your member area (`/member`) and choose **Sign in to your account**.
 2. Switch to **Create account**.
-3. Fill in your name, email and a password. A phone number is optional.
+3. Fill in your name, email, a **username** and a password. A phone number is optional. The username is pre-filled with a suggestion and tells you as you type whether it is taken or reserved.
 4. Press **Create account**, then open the email we send and verify your address.
 5. Sign in. If you are asked to **Verify your email**, type the code from the email and press **Verify email**.
 
 Some spaces also offer Google, Apple or GitHub buttons. If self sign-up is closed, the screen asks you to ask a staff member to add you.
 
 ![Screenshot: the member sign-in screen with Sign in and Create account](screenshot:member-sign-in)
+
+## Your username
+
+Every account has a username. It is your profile address, 3 to 30 letters, numbers, dots, underscores or hyphens. If you sign in with Google, GitHub or Apple, you are given one and asked "Your username is X, change it?". If your account was made before usernames were required, you see **Choose your username** the next time you sign in, with a suggestion ready; accept it or type another and continue. You can change it once every 30 days.
 
 ## Forgot your password
 
@@ -29,9 +33,10 @@ The new password needs at least 8 characters. If the space has no email set up, 
 
 ## Your account page
 
-Open **Account** in your member area. Depending on what the space offers you will see **Profile**, **Security**, **Membership**, **History**, **Privacy**, **Your data** and **Delete account**.
+Open **Account** in your member area. Depending on what the space offers you will see **Profile**, **Appearance**, **Security**, **Membership**, **History**, **Privacy**, **Your data** and **Delete account**.
 
-- **Profile**: your display name and contact phone. These never change the email you sign in with.
+- **Profile**: your display name, contact phone and your public profile. These never change the email you sign in with. See [Your profile](help:member/public-profile).
+- **Appearance**: choose **Light**, **Dark** or **System**. System follows your device's light or dark setting and changes when it does. The choice is saved on this device and browser only; the sun and moon button in the header still flips between light and dark, which turns System into a fixed choice.
 - **Security**: two-step sign-in and your signed-in sessions. Use **Revoke session** on a device you no longer use.
 
 ## Delete your account, or bring it back

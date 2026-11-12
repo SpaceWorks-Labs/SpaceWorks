@@ -9,7 +9,7 @@ const CODES = [
   "sponsor_presence_required", "sponsor_limit", "charges_off", "product_unavailable", "day_pass_sold_out", "pass_not_live",
   "no_waiver_published", "guest_pass_no_borrow", "guest_pass_on_site_only", "guest_pass_required", "guest_pass_deposit_required",
   "account_not_in_space", "guest_pass_no_machines", "guest_pass_supervised_only", "guest_pass_supervised_session",
-  "guest_pass_certification_required", "minor_not_admitted", "minor_below_minimum_age", "guardian_terms_missing",
+  "guest_pass_machine_access_required", "minor_not_admitted", "minor_below_minimum_age", "guardian_terms_missing",
   "guardian_consent_required", "guardian_consent_expired", "guardian_presence_required", "minor_borrowing_not_allowed",
   "minor_machines_not_allowed",
 ];

@@ -1,14 +1,14 @@
 import { t } from "@lingui/core/macro";
-import type { ModulesEnum } from "../generated/api";
+import type { ModuleKey } from "./retiredModules";
 
 // Module and workflow keys as people read them, in the active language. The words follow the
 // backend registry (apps/makerspaces/module_registry_catalog.py and siblings), which is the
-// single source of truth for the keys; typing the map by the generated ModulesEnum makes a
+// single source of truth for the keys; typing the map by the live keys (generated ModulesEnum) makes a
 // newly registered module a type error here until it has a name. Functions, not constants,
 // so a language switch relabels.
-const MODULE_NAMES = (): Record<ModulesEnum, string> => ({
+const MODULE_NAMES = (): Record<ModuleKey, string> => ({
   public_inventory: t`Public inventory`, request_workflow: t`Request workflow`, staff_admin: t`Staff admin`,
-  guest_handover: t`Guest handover`, scanner: t`Scanner`, printing: t`Printing`, telegram: t`Telegram`,
+  guest_handover: t`Guest handover`, scanner: t`Scanner`, telegram: t`Telegram`,
   evidence_uploads: t`Evidence uploads`, qr_management: t`QR management`, bulk_import: t`Bulk import`,
   containers: t`Containers`, stock_transfers: t`Stock transfers`, stocktake: t`Stocktake`, reports: t`Reports`,
   qr_print_batches: t`QR print batches`, asset_units: t`Asset units`, machines: t`Machines`,
@@ -42,8 +42,8 @@ export function moduleLabel(key: string): string {
 }
 
 /** Every module key this build knows (the generated ModulesEnum), for pickers. */
-export function moduleKeys(): ModulesEnum[] {
-  return Object.keys(MODULE_NAMES()) as ModulesEnum[];
+export function moduleKeys(): ModuleKey[] {
+  return Object.keys(MODULE_NAMES()) as ModuleKey[];
 }
 
 /** Several module keys as one readable, comma-separated list. */

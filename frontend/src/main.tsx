@@ -20,6 +20,8 @@ import { installLocaleFetch } from "./lib/localeFetch";
 import { TenantProvider } from "./lib/tenant";
 import { SessionBoundary } from "./lib/SessionBoundary";
 import { initializeTheme } from "./lib/theme";
+import { RouteTransitionGate, ScrollManager } from "./lib/motion";
+import { runSplash } from "./lib/splash";
 import { pruneExpiredOfflineStates } from "./features/staff/eventCheckInOfflineStore";
 import { listQueues } from "./features/kiosk/offlineQueueStore";
 import { replayQueue } from "./features/kiosk/kioskReplayClient";
@@ -41,6 +43,8 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
     <QueryClientProvider client={queryClient}>
       <TenantProvider>
         <BrowserRouter>
+          <RouteTransitionGate />
+          <ScrollManager />
           <SessionBoundary>
           <WebTelemetry />
           <PwaRegistration />
@@ -53,3 +57,5 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
     </I18nRoot>
   </React.StrictMode>,
 );
+
+void runSplash();

@@ -7,29 +7,31 @@ import { Navigate, Route, Routes, useLocation, useParams, useSearchParams } from
 import { FamilyHome, RouteFallback } from "./features/public/FamilyHome";
 import { PublicDeskKioskPage } from "./features/kiosk/PublicDeskKioskPage";
 import { ScannerPage } from "./features/kiosk/ScannerPage";
-import { SuperadminPage } from "./features/staff/PlatformApps";
-import { StaffApp } from "./features/staff/StaffApp";
 import { useTenant } from "./lib/tenant";
 import { NotFoundPage } from "./features/NotFoundPage";
 import { PausedTenantGate, publicTenantSlug } from "./features/platformNotices/PausedTenantGate";
 import {
   PublicOrganizationPage, OrganizationInvitationRedeemPage, ResetPasswordPage, ConsolePasswordResetPage,
   AccountRestorePage, EventCheckInStationPage, KioskStationPage, PublicStatsPage, PublicStatsTvPage,
-  PublicHandlePage, PublicEventCodePage, PayLinkPage, PresenceNowPage, PublicWebsiteDetailPage, HostingRequestPage,
+  PublicHandlePage, PublicEventCodePage, PayLinkPage, PresenceNowPage, SpaceDisplayPage, PublicWebsiteDetailPage, HostingRequestPage,
   HostingInvitePage, HostingRequestStatusPage, PublicShopPage, PublicShopProductPage, ShopOrderStatusPage,
   MemberShopOrdersPage, MfaAccountPage, NotMePage, StaffInvitationAcceptPage, BookingStaffInvitePage, EventStaffInvitePage,
   ProgrammeRoutes, CardRoutes, MemberEventAddonRoutes, DonationRoutes, HelpPage, DocsPage,
   TechnicianOptInPage, MyMachineJobsPage, AttendanceReplyPage, CrewSignupPage, ApplicationReviewsPage,
   MachineJobPage, UseMachinePage, MySessionsPage, SupervisedSessionsPage, OAuthConsentPage, PersonalApiAccessPage,
   SpeakerClaimPage, EventDiscoverPage, PublicSelfCheckoutPage, ArchivedPayments, MemberAccountPage, PublicPrintRequestPage, PublicMachineServiceStatusPage, JobRequestPage, UnsubscribePage, LegalPage,
+  MemberProfilePage, ProfileByAccountPage, StaffApp, SuperadminPage,
 } from "./AppRoutesLazyPages";
-// Every public surface below is its own chunk. The makerspace overview and staff shell stay eager
-// because they are the two pages almost every visit lands on; everything else loads when its
+// Every public surface below is its own chunk. The makerspace overview stays eager
+// because almost every visit lands on it; everything else loads when its
 // route is first visited, so a lending-only install never downloads events, bookings or
-// machines code. The staff panels inside StaffApp are already lazy (StaffTabContent.tsx).
+// machines code. StaffApp and SuperadminPage are lazy too (keeps the entry chunk under 500 kB); the staff
+// panels inside are lazy again (StaffTabContent.tsx).
 const MemberBorrowingHistoryPage = lazy(() => import("./features/members/MemberBorrowingHistoryPage").then(m => ({ default: m.MemberBorrowingHistoryPage })));
 const PublicInventoryRoute = lazy(() => import("./features/inventory/PublicInventoryRoute").then(m => ({ default: m.PublicInventoryRoute })));
 const AboutPage = lazy(() => import("./features/AboutPage").then((m) => ({ default: m.AboutPage })));
+const FeaturesPage = lazy(() => import("./features/hub/FeaturesPage").then((m) => ({ default: m.FeaturesPage })));
+const FeatureModulePage = lazy(() => import("./features/hub/featuresPage/FeatureModulePage").then((m) => ({ default: m.FeatureModulePage })));
 const SpacesPage = lazy(() => import("./features/discover/spaces/SpacesPage").then((m) => ({ default: m.SpacesPage })));
 const PublicOrganizationDirectory = lazy(() => import("./features/organizations/PublicOrganizationDirectory").then((m) => ({ default: m.PublicOrganizationDirectory })));
 const PublicBookingResourcePage = lazy(() => import("./features/bookings/PublicBookingResourcePage").then((m) => ({ default: m.PublicBookingResourcePage })));
@@ -105,6 +107,9 @@ export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landi
     routes = <Routes><Route path="/pay/:token" element={<PayLinkPage />} /></Routes>;
   } else if (location.pathname.startsWith("/organization-invitations/redeem/")) {
     routes = <Routes><Route path="/organization-invitations/redeem/:token" element={<OrganizationInvitationRedeemPage />} /></Routes>;
+  } else if (location.pathname === "/display") {
+    // Decision 307: the paired TV screen. Before every tenant route: it has no tenant until staff claim it.
+    routes = <Routes><Route path="/display" element={<SpaceDisplayPage />} /></Routes>;
   } else if (location.pathname === "/discover/bookings") {
     routes = <Routes><Route path="/discover/bookings" element={<BookingDiscoverPage />} /></Routes>;
   } else if (location.pathname === "/discover") {
@@ -147,6 +152,8 @@ export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landi
       <Route path="/member" element={<MemberArea />} />
       <Route path="/member/loans/history" element={<MemberBorrowingHistoryPage />} />
       <Route path="/member/account" element={<MemberAccountPage />} />
+      <Route path="/member/profile" element={<MemberProfilePage />} />
+      <Route path="/profiles/by-account/:accountId" element={<ProfileByAccountPage />} />
       <Route path="/member/events/:registrationId/ticket" element={<MemberEventTicketPage />} />
       <Route path="/member/events/history" element={<MemberEventHistoryPage />} />
       <Route path="/member/events/:eventId/attendance" element={<AttendanceReplyPage />} />
@@ -171,6 +178,8 @@ export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landi
       <Route path="/stats/tv" element={<PublicStatsTvPage />} />
       <Route path="/now" element={<PresenceNowPage />} />
       <Route path="/about" element={<AboutPage />} />
+      <Route path="/features" element={<FeaturesPage />} />
+      <Route path="/features/:module" element={<FeatureModulePage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/admin/*" element={<StaffApp />} />
       <Route path="/guest-admin/*" element={<StaffApp guestOnly />} />
@@ -188,6 +197,8 @@ export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landi
     routes = <Routes>
       <Route path="/" element={landing} />
       <Route path="/about" element={<AboutPage />} />
+      <Route path="/features" element={<FeaturesPage />} />
+      <Route path="/features/:module" element={<FeatureModulePage />} />
       <Route path="/spaces" element={<SpacesPage />} />
       <Route path="/organizations" element={<PublicOrganizationDirectory />} />
       <Route path="/o/:organizationSlug" element={<PublicOrganizationPage />} />
@@ -228,6 +239,8 @@ export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landi
       <Route path="/m/:slug/member/speaker-claim" element={<SpeakerClaimPage />} />
       <Route path="/member" element={<MemberArea />} />
       <Route path="/member/account" element={<MemberAccountPage />} />
+      <Route path="/member/profile" element={<MemberProfilePage />} />
+      <Route path="/profiles/by-account/:accountId" element={<ProfileByAccountPage />} />
       <Route path="/member/events/:registrationId/ticket" element={<MemberEventTicketPage />} />
       <Route path="/m/:slug/member/orders" element={<MemberOrdersPage />} />
       <Route path="/m/:slug/member/orders/:orderId" element={<MemberOrdersPage />} />

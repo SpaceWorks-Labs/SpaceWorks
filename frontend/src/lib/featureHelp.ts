@@ -51,6 +51,8 @@ export function featureHelp(key: string): string | undefined {
     case "inventory.contact_self_checkout": return t`Without Member accounts, borrowers check tools out with name, phone and an emailed code.`;
     case "payments.enabled": return t`Master switch for all online payments.`;
     case "mobile.push": return t`Native push notifications.`;
+    case "presence.public_display": return t`Pair TV or kiosk screens that show who is here, events and machines.`;
+    case "display.anthias_push": return t`Register Anthias players and keep each display screen's page on them in step.`;
     case "presence.geofence": return t`Required location check for self check-in.`;
     case "notifications.delegated_recipients": return t`Machine managers choose who gets maintenance alerts for their own machines.`;
     case "notifications.member_inbox": return t`Members get an inbox of messages about their loans, bookings and events.`;
@@ -71,9 +73,10 @@ export function featureHelp(key: string): string | undefined {
     case "events.volunteering": return t`Post volunteer shifts and record verified hours.`;
     case "events.project_gallery": return t`A public gallery of selected event projects, with the teams' consent.`;
     case "events.pairwise_judging": return t`Judges compare two projects at a time and pick the better one.`;
-    case "machines.certification_reminders": return t`Remind members before a machine certification runs out.`;
+    case "machines.certification_reminders": return t`Retired: machine access replaced certifications, so this switch does nothing.`;
     case "maintenance.reminders": return t`Notify scoped maintainers before and after maintenance is due.`;
-    case "machines.certifications": return t`Members need an unexpired certification per machine type to book a linked space or request work.`;
+    case "machines.certifications": return t`Retired: a space manager now gives machine access, so this switch does nothing.`;
+    case "machines.induction_events": return t`Retired: induction events were replaced by machine access, so this switch does nothing.`;
     case "inventory.kiosk": return t`Self-service scanner stations, opened with a station PIN.`;
     case "bookings.passes": return t`Printable passes for people with a booking.`;
     case "bookings.clone": return t`Copy a room or resource with its rules to set up similar ones quickly.`;
@@ -155,6 +158,20 @@ export function featureHelp(key: string): string | undefined {
     case "machines.time_booking": return t`Book a machine's time through bookings.`;
     case "mobile.watch_actions": return t`Quick action buttons on phone and watch notifications.`;
     case "machines.sessions": return t`Metered machine sessions: a checked-in, certified member scans the machine's QR, sees the rate, starts and stops.`;
+    case "machines.integrations": return t`Connect printers, power bridges, door controllers, shelf pointers and kiosks through the device adapter API.`;
+    case "machines.integrations.access": return t`A device adapter decides who may use a machine or open a door, using the normal session rules.`;
+    case "machines.integrations.usage_billing": return t`A device adapter records what a machine measured as immutable usage records.`;
+    case "machines.integrations.video": return t`Staff open a short, audited camera watch on a machine. Nothing is recorded unless recording is on.`;
+    case "machines.integrations.kiosk": return t`A kiosk device signs a member in and runs self-checkout and return with the normal photo evidence rules.`;
+    case "machines.integrations.recording": return t`A camera watch can be recorded on request; recordings are deleted after a week and audited.`;
+    case "machines.integrations.audio": return t`Staff can listen to a device audio track during a camera watch. Listening only; nothing is recorded.`;
+    case "machines.integrations.talk": return t`Staff can speak to a device (a door intercom) with push-to-talk. Every press is audited.`;
+    case "machines.integrations.audio_recording": return t`Audio of a watch can be recorded after staff acknowledge the audio notice; it is deleted after three days.`;
+    case "machines.integrations.artifacts": return t`Devices upload timelapses, job thumbnails and failure snapshots; they are private and expire.`;
+    case "machines.integrations.detections": return t`Devices report detections such as failure, smoke or fire; staff and the job owner are notified.`;
+    case "machines.integrations.telemetry_history": return t`Temperatures, power and sensor readings are kept as charts and thinned out over time.`;
+    case "machines.integrations.diagnostics": return t`See adapter health and firmware, and request a log bundle.`;
+    case "machines.integrations.offline_cache": return t`Doors and machines decide access offline from a short-lived signed list of card digests.`;
     case "machines.repairs": return t`Track machine repairs: the repairs queue, technicians, parts and quotes.`;
     case "machines.issue_reporting": return t`Members report a problem from their own machine job.`;
     case "inventory.maintenance": return t`Maintenance schedules and logs on inventory items and units, and their work orders.`;
@@ -235,7 +252,6 @@ export function featureHelp(key: string): string | undefined {
     case "membership.volunteer_credit": return t`Approved volunteer hours become a discount or free days on the next membership term.`;
     case "membership.join_funnel": return t`The 'Join' call to action pre-filled from an event ticket or a guest pass, an opt-in follow-up notice after an event to attendees who are not members.`;
     case "bookings.organization_bookings": return t`Staff book a space for an organization's partner event: made for the organization's contact member, recorded against the organization.`;
-    case "machines.induction_events": return t`Mark an event as a machine induction, so attendees can be certified afterwards.`;
     case "machines.supervised_sessions": return t`A certified instructor opens a supervised session on one machine, optionally for an event.`;
     case "safety.incidents": return t`A register of safety incidents and near misses, with follow-up actions.`;
     case "membership.card_numbering": return t`Print numbers like TNK-2026-0042 on member cards from a pattern per space or per title, published with the card design.`;
@@ -243,10 +259,19 @@ export function featureHelp(key: string): string | undefined {
     case "membership.card_desk_print": return t`Print a member or staff card face from the desk at A6, 4x6, 3x4 or CR80, portrait or landscape.`;
     case "membership.staff_cards": return t`An ID card for every staff member showing their roles and machine scope, with a check page that shows name, Staff and roles only.`;
     case "membership.staff_cards_auto_issue": return t`Issue a staff card as soon as a staff role is granted.`;
+    case "cards.photo_cutout": return t`Cut the holder out of a card photo with your eraser service. The original photo is kept, and members agree before their photo is sent to the service.`;
     case "events.refund_cancels_tickets": return t`When approving a refund on a ticket order, staff can also cancel its tickets so the places free up and the waitlist moves.`;
     case "events.staff_claims": return t`Staff file an expense claim for themselves, a speaker or a volunteer, paid from the event's reimbursement pool.`;
     case "email.sender_identity": return t`Email from this space shows its own sender name, and replies go to the address you choose.`;
     case "legal.space_pages": return t`Write this space's own privacy policy and terms of use instead of showing the platform's.`;
+    case "events.team_moderation": return t`Team leaders hand over leadership and remove members; organisers rename teams, move members and delete a team with a five-minute undo.`;
+    case "events.crew_kinds": return t`Tag each crew member as organiser, volunteer, mentor or judge, shown on the crew list, the public crew section and the crew badge.`;
+    case "events.scores_export": return t`Download an event's judging scores as a spreadsheet, without comments or email addresses.`;
+    case "events.series_invites": return t`Allow chosen emails to register for every occurrence of an invite-only series, including ones added later.`;
+    case "events.pay_window": return t`A paid place that staff approve or promote from the waitlist is held for 24 hours, then offered to the next person if unpaid.`;
+    case "events.event_saved_views": return t`Save and share filters on one event's guest list, with ready-made presets that show counts.`;
+    case "events.discovery_filters": return t`Visitors narrow public event discovery by tag or organiser, and search also finds tags and organiser names.`;
+    case "events.space_insights": return t`Top events over six months and the share of returning attendees; small groups are hidden.`;
     default: return undefined;
   }
 }

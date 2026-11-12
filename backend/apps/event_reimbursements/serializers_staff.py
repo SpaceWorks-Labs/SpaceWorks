@@ -1,7 +1,9 @@
 """Documented staff-console read fields added by the decision 296 review (see ``staff_projection``)."""
+from drf_spectacular.utils import extend_schema_serializer
 from rest_framework import serializers as s
 
 
+@extend_schema_serializer(component_name="ReimbursementTier")
 class Tier(s.Serializer):
     key = s.CharField()
     label = s.CharField()

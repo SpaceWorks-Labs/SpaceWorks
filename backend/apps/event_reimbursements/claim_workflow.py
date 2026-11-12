@@ -51,6 +51,8 @@ def save_draft(*, event_id, actor, data, request=None):
         require(participating(award.request), "participation_not_accepted")
         require(data["expected_version"] == (claim.version if claim else 0), "stale_version")
         if claim is None:
+            from apps.managed_hosting.extra_quotas import check_extra_quota
+            check_extra_quota(ctx.event.makerspace, "reimbursement_claims_monthly")  # decision 328a: only a NEW claim
             claim = ReimbursementClaim(award=award, event=ctx.event, member=ctx.actor, effective_due_at=claim_due(award, programme))
         require(claim.state in ("draft", "open", "returned_for_info"), "claim_not_editable")
         due = claim.info_due_at if claim.state == "returned_for_info" else claim.effective_due_at

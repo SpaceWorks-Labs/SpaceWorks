@@ -1,7 +1,9 @@
-const RESERVED = new Set(('about admin api assets bookings checkout config.js control discover docs embed e events '
-  + 'event-check-in favicon.ico fonts guest-admin health healthz index.html install inventory items kiosk m machines media '
-  + 'member member-sw.js mfa now o organization-invitations print privacy redoc reset-password robots.txt scanner '
-  + 'schema setup share sitemap.xml staff staff-invitations static stats superadmin sw.js terms').split(' '));
+const RESERVED = new Set(('.well-known about account admin api assets bookings boot.js browser-alerts-sw.js checkout config.js control '
+  + 'discover display docs e embed event-check-in events favicon.ico features fonts guest-admin health '
+  + 'healthz help hosting index.html install inventory items kiosk m machine-jobs machine-service machines '
+  + 'media member member-sw.js mfa now o oauth organization-invitations organizations pay print privacy redoc '
+  + 'reset-password robots.txt scanner schema security setup share shop sitemap.xml spaces staff '
+  + 'staff-invitations static stats superadmin sw.js technician-opt-in terms verify').split(' '));
 const UUID = '[0-9a-fA-F-]{36}';
 
 export function safePath(pathname) {

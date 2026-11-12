@@ -52,7 +52,7 @@ flowchart LR
    - Staff come from `staff_notifications.staff_user_ids_for_feature`. That is the space's explicit recipient picks
      for the family and event (`NotificationRecipient`). Without picks, it is the active staff whose role holds the
      family's action, narrowed by machine scope when the event has one.
-   - Machine-service job notices (`printing` family, decision 343) are selectable for STAFF only, per event and machine
+   - Machine-service job notices (`printing` family) are selectable for STAFF only, per event and machine
      type (`RecipientMachineTypeScope`): `submitted`, `accepted`, `rejected`, `started`, `completed`, `failed`,
      `cancelled`, `collected`, `reprinted`, `changes_requested`, `resubmitted`, `quoted`, `quote_approved`,
      `quote_declined`, `quote_expired`, `requeued`, `uncollected`, `no_show_flagged`, `session_auto_stopped`
@@ -122,9 +122,9 @@ setup. A channel that is not set up is skipped, not failed.
 | `adapter_session_ending` | devices | member | one per session (a derived event row) | sent 5 minutes before `max_session_minutes` |
 | `adapter_job_review` | devices | staff | one per job (a `job.review_needed` row) | a finished or failed adapter job report is waiting for review; the member hears `printing.completed` / `failed` when staff apply it |
 | `offline`, `recovered` | devices | staff | the state edge | device liveness |
-| `granted`, `revoked`, `expiring` | certifications | member | the grant's revision; `expiry_notice_sent_at` | machine access (decision 319); the expiry sweep takes one tenant boundary per grant |
-| `profile_opened` | members | member | `open_notice_pending` + revision | one-time notice (decision 303d) |
-| `platform_limit.warning`, `platform_limit.reached` | (direct inbox) | Space Managers, superadmins | per space, key, level, month and person; a marker row per crossing | decision 328a: 80 % and 100 % |
+| `granted`, `revoked`, `expiring` | certifications | member | the grant's revision; `expiry_notice_sent_at` | machine access; the expiry sweep takes one tenant boundary per grant |
+| `profile_opened` | members | member | `open_notice_pending` + revision | one-time notice |
+| `platform_limit.warning`, `platform_limit.reached` | (direct inbox) | Space Managers, superadmins | per space, key, level, month and person; a marker row per crossing | 80 % and 100 % |
 | `incident_reported` | maintenance | staff | the incident row | a safety incident or near miss reported to the register |
 | `hours_bank_low` | bookings | booking staff | a level marker | an organisation's hours bank |
 | `guardian_consent_requested` | members | guardian | the consent row's revision | personal only |

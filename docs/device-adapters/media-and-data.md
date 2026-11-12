@@ -1,7 +1,7 @@
-# Media and data capabilities (decision 321)
+# Media and data capabilities
 
 Everything here is **API only**. SpaceWorks core stores, serves and notifies; it never decides what to do about
-a detection, a temperature or an offline decision (decision 320). Rules and automation live in the adapter.
+a detection, a temperature or an offline decision. Rules and automation live in the adapter.
 Every capability has a child switch under `machines.integrations` (all off by default; the routes answer `404`
 while off), a JSON Schema in [`schemas/`](schemas/), OpenAPI entries, conformance coverage
 (`tests/adapter_conformance`, `run_media`) and tests in `backend/tests/parity_0120/adapter_media/`.

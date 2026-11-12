@@ -387,6 +387,16 @@
   `CONTROL_PLANE_ALLOW_CIDRS` allowlist; `CONTROL_PLANE_TUNNEL_PORT` publishes a `127.0.0.1`-only Caddy HTTPS
   listener for `ssh -L` (TLS layer, Docker Engine 28+). Setup asks; `scripts/apply-settings.sh` applies a
   change without changing the release. Rules under **Container / deployment invariants**.
+- **2026-10-16 — brokerless tenant-import runs.** Persisted requester/identity requests run from the scheduler; dedicated lifetime advisory locks, attempt fencing and race-safe journal adoption protect interrupted or overlapping executions; the same sweep recovers broker-backed runs that lost their lock.
+- **2026-10-16 — resumable tenant-archive uploads.** The console sends audited 8 MiB chunks to an
+  `uploading` job, resumes from the server's offset after interruption, and completes idempotently
+  into asynchronous staging. Idle expiry slides by 24 hours; cleanup rechecks expiry under lock.
+  Requires the nginx `/api/` 10m limit from `c422fb1a`. Rules: "Import staging is asynchronous".
+- **2026-10-16 — asynchronous tenant-import staging.** The import upload now only writes the archive to
+  the ops work dir and returns 202 with a `pending` job. A Celery task (or, without a broker, the
+  scheduled sweep) checks the digest, decrypts, validates, and seals a rows-only sidecar for the
+  identity-decision endpoints. Sync Gunicorn workers no longer time out decrypting large archives in a
+  request. Rules: "Import staging is asynchronous" in `docs/INVARIANTS.md`.
 - **2026-10-15 — approved brand kit + functionality restore (`feature/design-revamp`).** The app adopts the
   SpaceWorks-Design brand kit: Gilroy 400–700 for all text and headings (Outfit and the free 300/800
   weights retired), Unbounded accent, and the kit's Figma logo masters, favicon, app icons and OG image
@@ -403,16 +413,6 @@
 
 - **2026-10-15 — standard containers and local tests.** The all-in-one image is no longer built or published; the single-box shape is removed with refusal and switch steps for existing installs. Own-nginx HTTPS setup generates proxy configuration and prints certificate/install steps; API-only setup offers HTTPS only and points to the external website. CI runs no tests: use `./scripts/dev.sh test` and `./scripts/dev.sh e2e` locally; Actions builds/releases backend/frontend images, promotes rolling tags and optionally deploys, with `pip-audit` retained on PRs.
 
-- **2026-10-16 — brokerless tenant-import runs.** Persisted requester/identity requests run from the scheduler; dedicated lifetime advisory locks, attempt fencing and race-safe journal adoption protect interrupted or overlapping executions; the same sweep recovers broker-backed runs that lost their lock.
-- **2026-10-16 — resumable tenant-archive uploads.** The console sends audited 8 MiB chunks to an
-  `uploading` job, resumes from the server's offset after interruption, and completes idempotently
-  into asynchronous staging. Idle expiry slides by 24 hours; cleanup rechecks expiry under lock.
-  Requires the nginx `/api/` 10m limit from `c422fb1a`. Rules: "Import staging is asynchronous".
-- **2026-10-16 — asynchronous tenant-import staging.** The import upload now only writes the archive to
-  the ops work dir and returns 202 with a `pending` job. A Celery task (or, without a broker, the
-  scheduled sweep) checks the digest, decrypts, validates, and seals a rows-only sidecar for the
-  identity-decision endpoints. Sync Gunicorn workers no longer time out decrypting large archives in a
-  request. Rules: "Import staging is asynchronous" in `docs/INVARIANTS.md`.
 - **2026-10-09 — forward plan phase 11: abandoned evidence-upload cleanup.** A durable, Postgres-guarded
   `EvidencePhoto.consumption_state` (legacy rows and imports are permanently ineligible) proves which
   presign rows no workflow ever consumed; a default-off deployment switch plus tenant opt-in lets a

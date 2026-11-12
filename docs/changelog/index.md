@@ -32,6 +32,10 @@ The first published release after 0.9.3. It also carries everything prepared for
 - **Analytics.** Grafana beside Metabase, each reading only curated, read-only per-space data.
 - **Backups and recovery.** Verified offsite copies, restore drills and one-space restore points. See [Offsite backups](../how-to/offsite-backups.md).
 - **Platform administration.** Reversible space controls, a platform overview and audit views, an optional control-plane route and SSH-tunnel listener.
+- **Machines.** Machine service covers every machine type (the Printing module is folded into it), with per-type consumable profiles, an "Add a machine type" setup, machine use logged with an event and a shelf pointer for staff. See [Machine consumables](../how-to/machine-consumables.md) and [Use a shelf pointer](../how-to/shelf-pointer.md).
+- **Display screens and Anthias.** Choose the panels each screen shows and run them on an Anthias player. See [Anthias](../how-to/anthias.md).
+- **Card Studio.** Rulers, print-ready PDF, more barcodes, version compare and a background-eraser opt-out. See [Design cards and certificates](../how-to/design-cards-and-certificates.md).
+- **Security and resilience.** Every finding of the 0.12.0 security reviews is fixed, rate limits cover every route, and Redis is pinned and survives an outage. See [Redis](../architecture/redis.md) and [Sign-in methods](../guide/sign-in-methods.md).
 - **Language and help.** A language switcher and role-specific help.
 
 **Upgrading notes**

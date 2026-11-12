@@ -88,7 +88,7 @@ failed PIN and card-QR attempts per 15 minutes; when it runs out, PIN and card-Q
 for a correct PIN. NFC is not budgeted. Reasons: `access.response.json` (`unknown_credential pin_required too_many_attempts
 member_restricted membership_required waiver_acceptance_required presence_required no_machine_access machine_access_expired
 machine_unavailable machine_in_use session_already_live booking_required booked_by_other maintenance_lockout
-area_not_clear filter_alert internal_error_fail_closed ...`). The decision is the existing session rules (machine; a space manager's machine-access grant, decision 319 -- certifications no longer matter) or
+area_not_clear filter_alert internal_error_fail_closed ...`). The decision is the existing session rules (machine; a space manager's machine-access grant; certifications no longer matter) or
 active, unrestricted membership (door/space). A denial never changes a running session; any unexpected error is a
 denial (`internal_error_fail_closed`). Every decision is an append-only log row and an audit row.
 
@@ -163,7 +163,7 @@ presign enforces); a deployment that lowers the cap refuses a larger declared si
 `POST media/{watch}/snapshot` (`media.frame.json`), `POST media/{watch}/recording` (`media.recording.json`; needs
 `machines.integrations.recording` and a watch opened with `record: true`). Viewer routes are under `member/adapter-watch/`.
 
-## Media and data (decision 321)
+## Media and data
 
 Audio, two-way talk, artifacts, detections, telemetry history, diagnostics, the offline access cache, remote config and
 signed time are specified in [media-and-data.md](media-and-data.md).

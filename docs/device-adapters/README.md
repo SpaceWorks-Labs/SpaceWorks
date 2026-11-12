@@ -63,7 +63,7 @@ registry (`adapters/registry.py`) lists them. The adapter declares what it imple
 ## Media and data capabilities
 
 See [media-and-data.md](media-and-data.md): audio, talk, artifacts, detections, telemetry history, diagnostics,
-offline access cache, remote config and time sync (decision 321).
+offline access cache, remote config and time sync.
 
 ## JSON Schemas
 

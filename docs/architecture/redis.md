@@ -44,7 +44,7 @@ bounded by that key's own expiry, which is why every key has one (below).
 | Touchpoint | Code | Keys | Expiry |
 |---|---|---|---|
 | Broker | `config/settings_delivery.py`, `config/settings.py`, `config/settings_redis.py` | Celery's own queues | none (never evicted: see sizing) |
-| Baseline throttles (decision 336c) | `config/throttles.py` | `throttle_deployment_*_{device,user,client,ip}:<window>` | one window |
+| Baseline throttles | `config/throttles.py` | `throttle_deployment_*_{device,user,client,ip}:<window>` | one window |
 | Scoped throttles | `apps/*/throttles*.py`, views | `throttle_<scope>_<ident>`; emails, phones and usernames are HMAC fingerprints | the rate window |
 | Sign-in failure, risk and IP guard counters | `accounts/ip_guard*.py`, `login_risk_signals.py` | `sec:*` with HMAC-salted IP and account keys | the guard window |
 | Login-method and member-account switches | `accounts/login_methods.py`, `member_identity.py` | one last-known-good key each | none on purpose: one key, read only when the database read fails |

@@ -80,7 +80,7 @@ Machine use is **given by the space manager** (a Machine Manager can do it insid
 - **Where to find it:** Machines, under Machine access (the whole space), the Machine access tab on a machine type or machine, a member's own page, and the member register (select members, then give machine access). Members see their own list under Profile & card, My machine access.
 - **Upgrade:** every member who qualified through a certification keeps access as a grant (with the same end date), machines that were never gated become open to all members, and live guest certifications become grants. Nothing is deleted.
 
-### Retired with machine certifications (decision 319)
+### Retired with machine certifications
 
 Retired as a feature, not only as a gate. The records are kept, read-only, in data export, account export and /control/; no screen, switch or message offers them.
 

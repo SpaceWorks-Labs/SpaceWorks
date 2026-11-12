@@ -131,6 +131,7 @@ Any of the three Redis URLs may carry a password (`redis://:PASSWORD@host:6379/0
 | `CRON_SECRET` | `''` | Enables `POST /api/v1/internal/cron/return-reminders`; 404 while unset. |
 | `LIVE_MAX_STREAM_SECONDS` | `3600` | Longest a single live-update stream stays open before the browser reconnects. |
 | `LIVE_REDIS_URL` | `''` | Defaults to the Celery broker; empty or unparseable makes `/api/v1/live/` answer 503 and the console polls. |
+| `REDIS_KEY_PREFIX` | empty | Prefix for every cache, rate-limit and lock key. Set a different value for each deployment that shares one outside Redis so their keys never collide; leave empty for a bundled Redis. Changing it starts the cache cold. |
 | `SPACEWORKS_SCHEDULER_CONTROL_PLANE_DISABLEMENT` | empty (read outside `settings.py`) | `external` scheduler only: how the external scheduler is switched off during restore. It or the host gate command must be set. |
 | `SPACEWORKS_SCHEDULER_HOST_GATE_COMMAND` | empty (read outside `settings.py`) | `external` scheduler only: host command that fences the external scheduler during restore. |
 | `SPACEWORKS_SCHEDULER_MODE` | empty (read outside `settings.py`) | `image` (the bundled Celery beat) or `external`. The host orchestration bootstrap refuses an empty or unknown value; the production Compose file sets `image`. |
@@ -142,7 +143,7 @@ Any of the three Redis URLs may carry a password (`redis://:PASSWORD@host:6379/0
 |---|---|---|
 | `METRICS_TOKEN` | `''` | Bearer token for `GET /api/v1/metrics/`; 404 while unset. |
 | `GRAFANA_ALLOW_PRIVATE_HOSTS` | `False` | Lets a space's Grafana connection (test, rendered dashboards) use a private or local address, for example Grafana on the same compose network. The platform connection may always; leave off when you host other makerspaces ([Grafana setup](grafana-setup.md)). |
-| `ANTHIAS_ALLOW_PRIVATE_HOSTS` | `True` on self-host, `False` when `SPACEWORKS_DEPLOYMENT_MODE=managed` | Lets a space's Anthias player be on a private network address (decision 336g). Loopback, link-local, cloud metadata and the deployment's own service networks are refused regardless ([Anthias](how-to/anthias.md)). |
+| `ANTHIAS_ALLOW_PRIVATE_HOSTS` | `True` on self-host, `False` when `SPACEWORKS_DEPLOYMENT_MODE=managed` | Lets a space's Anthias player be on a private network address. Loopback, link-local, cloud metadata and the deployment's own service networks are refused regardless ([Anthias](how-to/anthias.md)). |
 | `OUTBOUND_BLOCKED_NETWORKS` | `''` | Comma-separated CIDRs that tenant-configured outbound calls (Anthias players) may never reach, in addition to the always-refused ranges and the container's own directly connected networks. List any internal network the server can route to that is not a player's LAN. |
 | `SENTRY_DSN` | `''` | Opt-in error tracking; the SDK is imported only when set; PII is never sent. |
 | `SENTRY_ENVIRONMENT` | `'production' if not DEBUG else 'development'` | Environment label attached to Sentry events. |
@@ -512,6 +513,7 @@ for production, `docker-compose.cloud.yml` and the managed/free files for cloud 
 | `MINIO_CONSOLE_BIND` | `127.0.0.1` | Address of the storage web console listener. |
 | `MINIO_CONSOLE_PORT` | `9001` | Host port of the storage web console. |
 | `SILO_IMAGE_TAG` | `RELEASE.2026-09-16T00-00-00Z` | Tag of the bundled storage image. |
+| `CADDY_CERTS_DIR` | `./deploy/certs` | Host directory mounted read-only at `/etc/caddy/certs` in the hosting-platform proxy (`docker/compose.saas.yml`) for certificates you supply yourself. |
 | `REDIS_IMAGE_TAG` | `7.4.11-alpine` | Tag of the bundled Redis image. Pin a patch release; see [Redis](architecture/redis.md). |
 | `REDIS_MAXMEMORY` | `512mb` | Memory cap of the bundled Redis. Its policy is `volatile-lru`: cache keys (all with a TTL) are evicted under pressure, the Celery queues never are. |
 | `MAKERSPACE_BACKEND_IMAGE` | `ghcr.io/spaceworks-labs/spaceworks-backend` | Backend image name (derived from `SPACEWORKS_REPOSITORY` by the installer). The managed and free cloud files require an immutable digest instead. |

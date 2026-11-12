@@ -92,7 +92,7 @@ flowchart TB
 - **Read-only spaces.** A read-only space still runs sweeps that only deliver, expire, retain or settle (the
   `READ_ONLY_OPERATIONS` list in `space_controls/write_policy.py`) and skips sweeps that create records. A paused
   space runs neither. The adapter safety sweep (idle auto-off, maximum session length) is on that list on purpose: it
-  only powers a machine off or ends a session, so it also runs in a read-only space (decision 337b).
+  only powers a machine off or ends a session, so it also runs in a read-only space.
 
 ## Every task
 
@@ -182,7 +182,7 @@ How to read the columns:
 
 | Task | Schedule | Cloud | Switch | Gate | Limits | Purpose |
 |---|---|---|---|---|---|---|
-| `tasks.adapter_media_sweep_task` | cron(minute=*/10) | 10 min | platform | per tenant | - | Telemetry downsampling and artifact retention (decision 321). |
+| `tasks.adapter_media_sweep_task` | cron(minute=*/10) | 10 min | platform | per tenant | - | Telemetry downsampling and artifact retention. |
 | `tasks.adapter_safety_sweep_task` | cron(minute=*) | 1 min | `devices + machines.integrations` | per tenant | - | Idle auto-off and session-ending notices, from the binding safety config (server-side). |
 | `tasks.adapter_webhook_sweep_task` | cron(minute=*) | 1 min | `devices + machines.integrations` | per tenant | time-limited | Retry due pushes and prune the delivery log. |
 | `tasks.deliver_adapter_webhook_task` | on demand | - | - | row: AdapterWebhookDelivery | time-limited | One push attempt (retries are driven by the sweep with backoff). |
@@ -295,7 +295,7 @@ How to read the columns:
 |---|---|---|---|---|---|---|
 | `tasks.cleanup_public_page_assets_task` | cron(minute=10) | 60 min | platform | per tenant | - | Typed tenant cleanup uses per-tenant fanout and repeats the write fence under owner locks; organization cleanup is global. |
 | `tasks.refresh_github_contributions_task` | cron(hour=4, minute=15) | 1440 min | `membership` | per tenant | - | Refresh the cached GitHub contribution counts on maker profiles. |
-| `tasks.verify_github_ownership_task` | on demand (GitHub sign-in linked, profile GitHub username saved; deduped 60 s) | - | platform | exempt (one account's own profile, writes cache only) | 30 s soft / 45 s hard | Check that the profile's GitHub username belongs to the linked GitHub sign-in (decision 338), then refresh its calendar. |
+| `tasks.verify_github_ownership_task` | on demand (GitHub sign-in linked, profile GitHub username saved; deduped 60 s) | - | platform | exempt (one account's own profile, writes cache only) | 30 s soft / 45 s hard | Check that the profile's GitHub username belongs to the linked GitHub sign-in, then refresh its calendar. |
 | `tasks_membership.run_membership_renewals_task` | cron(minute=30) | 60 min | `membership` | per tenant | - | Each term expiry and renewal charge, each space's guest-pass sweep and each space's join follow-up sweep use the skip-and-count tenant boundary. |
 | `tasks_station.purge_expired_operator_leases_task` | cron(hour=3, minute=25) | 1440 min | platform | per tenant | - | Each tenant's expired kiosk leases use the skip-and-count tenant boundary. |
 

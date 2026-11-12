@@ -157,7 +157,7 @@ Under **Cards and tickets**, **Card design**, the event's badge opens in the bad
 
 ## Certificates on Card Studio
 
-Event certificates are drawn by the same engine as member cards, badges and tickets (decision 315), so the designer, the
+Event certificates are drawn by the same engine as member cards, badges and tickets, so the designer, the
 templates and the printed result behave the same way. Nothing about issuing changed: bulk generation, signatory approval,
 publication controls, print custody and the public verification page work exactly as before, on the same routes.
 

@@ -13,8 +13,7 @@ carries the design rule each change introduced.
 
 ## Unreleased
 
-- Per-machine-type consumable profiles and a generic "Add a machine type" setup (decisions 341/343): units, required flags, estimate and record sources, per-unit prices through the machine charge seam, stock links with the existing low-stock alerts, data templates for common machines, adapter `job.report` `profile_consumptions`, and a `machine-consumables` report. Migrations `machines.0041`/`0042` add the tables and seed profiles from existing consumables without changing any price; `machines.0043` adds per-type booking defaults (applied to new bookable spaces, and on request to existing ones), training notes and private documents shown to members ([guide](docs/how-to/machine-consumables.md)).
-- Machine use can be logged with an event (decision 342): an optional "This is for an event" on machine sessions and service requests, set or cleared by the area manager, an event page section, two reports, a Metabase view and an organiser's cost-to-event approval record. No switch. See [Log machine use for an event](docs/how-to/machine-use-for-events.md).
+Nothing yet.
 
 ## 0.12.0
 
@@ -26,6 +25,38 @@ its changes ship in 0.12.0 and its section is kept as history. Notes: [release](
   service requests for every machine type and the 3D print queue is one of them. `makerspaces.0154` keeps Machine
   service on wherever printing was on; a stored, restored or posted `printing` key reads as `machine_service`; the
   `print` limit, printer reports and print notifications moved with it ([upgrade](docs/upgrade-to-0.12.0.md)).
+- **Machine consumable profiles and "Add a machine type"** — per-machine-type consumables with units, required flags,
+  estimate and record sources, per-unit prices through the machine charge seam, stock links with the existing low-stock
+  alerts, data templates for common machines, adapter `job.report` `profile_consumptions` and a `machine-consumables`
+  report. `machines.0041`/`0042` add the tables and seed profiles from existing consumables without changing any price;
+  `machines.0043` adds per-type booking defaults, training notes and private documents ([guide](docs/how-to/machine-consumables.md)).
+- **Machine use logged with an event** — an optional "This is for an event" on machine sessions and service requests (no
+  switch), set or cleared by the area manager, an event page section, two reports, a Metabase view and an organiser's
+  cost-to-event approval record ([guide](docs/how-to/machine-use-for-events.md)).
+- **Shelf pointer and adapter hardware guide** — "Show on shelf", guided stocktake and shelf checks for staff, and a
+  Raspberry Pi or ESP32 adapter guide over the Device Adapter API ([how-to](docs/how-to/shelf-pointer.md)).
+- **Anthias and display panels** — screens without a pairing code (secret in an `Authorization` header; the old path
+  route is deprecated and redacted from logs), a Space Manager's choice of panels, order and layout including inventory
+  highlights and a sponsors wall, and optional push of the pages to an Anthias server ([guide](docs/how-to/anthias.md)).
+- **Card Studio** — rulers, print-ready PDF with bleed and crop marks, seven barcode types, side-by-side version
+  compare, per-member background-eraser notice and opt-out, 8 MB card photos re-encoded without location data.
+- **Reports hub, module screens and colours** — reports grouped by module and role, grouped module and feature switch
+  screens with reasons, and per-space colour settings with contrast checks.
+- **Limits** — every module that creates something countable has its own limits, off by default, with a platform
+  default, per-space override, a warning at 80% and refusal of new items only at 100%.
+- **Look and feel** — one box-opening loading animation, page and side bar motion that respects reduced motion, and one
+  solid black dark theme.
+- **Front page changes** — the "Find a space near you" section is removed (the Spaces link and `/spaces` stay); native
+  Android and iOS apps are shown as released and download from GitHub Releases only; each module has a `/features/<module>` page.
+- **Security review fixes** — every finding of the independent reviews fixed: profile and directory privacy, minors,
+  pinned outbound transport, display secrets out of logs, adapter recording deletion, staging-key presigns, per-space
+  machine access grants, PIN budgets, `card_qr` needs the member PIN, append-only adapter logs (`devices.0013`),
+  deployment-wide rate limits (`THROTTLE_DEPLOYMENT_*`). See the [security summary](docs/security-summary-0.12.0.md).
+- **Redis** — Redis stays the default (bundled or external; "no Redis" cron mode remains an opt-in). The bundled image is pinned (`REDIS_IMAGE_TAG`), has
+  append-only persistence on a new `redis_data` volume (empty after upgrade) and a memory cap; the API survives a Redis
+  outage and single-use security checks fail closed. See [Redis](docs/architecture/redis.md).
+- **Sign-in methods guide** — all methods, switches and lockout guards in one page; last-credential removal is refused
+  ([guide](docs/guide/sign-in-methods.md)).
 - **Front page and Features page** — a scrolling product page at the front page (switch `HUB_LANDING_ENABLED`,
   installer question, `apply-settings.sh --landing on|off`) and a `/features` page built from the app's own
   catalogue, linking the main, Android and iOS repositories ([guide](docs/how-to/front-page-and-features.md)).

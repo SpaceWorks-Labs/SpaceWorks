@@ -11,6 +11,7 @@ import { useBulkIssueStaffCards, useIssueStaffCard, useStaffCards, staffCardJobs
 import { BulkIssueSummary } from "./BulkIssueSummary";
 import { useStaffCardActions } from "./StaffCardActions";
 import type { BulkIssueResult, StaffCardFilter, StaffCardHolder } from "./types";
+import { BoxArt } from "../../../../components/BoxSpinner";
 
 export function StaffCardsList({ makerspaceId, deskPrint }: { makerspaceId: number; deskPrint: boolean }) {
   const [q, setQ] = useState("");
@@ -48,10 +49,13 @@ export function StaffCardsList({ makerspaceId, deskPrint }: { makerspaceId: numb
       actions={<>
         <button type="button" className="desk-button min-h-11" disabled={!issuable.length || bulk.isPending}
           onClick={() => bulk.mutate(issuable, { onSuccess: (result) => { setSummary(result); setSelected([]); } })}>
-          {bulk.isPending ? t`Issuing…` : t`Issue to ${issuable.length} selected`}</button>
+          {bulk.isPending ? <><BoxArt size={16} mono />{t`Issuing…`}</> : t`Issue to ${issuable.length} selected`}</button>
         <button type="button" className="desk-button-ghost min-h-11" disabled={!liveIds.length || job.isPending}
           onClick={() => job.mutate({ kind: "bulk_sheet", card_ids: liveIds }, { onSuccess: () => toast(t`Print sheet queued. Find it under Print jobs.`, { tone: "success" }) })}>
           {t`Print sheet of ${liveIds.length} selected`}</button>
+        {deskPrint ? <button type="button" className="desk-button-ghost min-h-11" disabled={!liveIds.length}
+          onClick={() => row.printSelected(chosen.filter((holder) => holder.card?.status === "valid"))}>
+          {t`Print ${liveIds.length} selected at desk`}</button> : null}
       </>}>
       <SegmentedControl label={t`Card state`} value={filter} onChange={(value) => { setFilter(value as StaffCardFilter); setPage(1); setSelected([]); }}
         options={[{ value: "all", label: t`All staff` }, { value: "none", label: t`No card` }, { value: "live", label: t`Has a card` }]} />

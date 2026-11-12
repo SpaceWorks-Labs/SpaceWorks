@@ -6,6 +6,7 @@ import { t } from "@lingui/core/macro";
 // table, column picker and chart axis routes them through `reportFieldLabel`. Built per
 // language and cached, so a language switch relabels. An unknown key falls back to its words.
 const FIELD_LABELS = (): Record<string, string> => ({
+  approved_to_event: t`Approved to the event`, charge_amount: t`Charge amount`, charge_status: t`Charge status`, consumable_entries: t`Consumable entries`, cost_decision: t`Cost decision`, event_title: t`Event`, machine_minutes: t`Machine minutes`,
   abandoned_webhook_count: t`Abandoned webhook count`, accepted: t`Accepted`, accepted_count: t`Accepted count`,
   accepted_only_count: t`Accepted only count`, accepted_units: t`Accepted units`, action: t`Action`,
   action_label: t`Action label`, actions: t`Actions`, activations: t`Activations`,
@@ -165,6 +166,9 @@ const FIELD_LABELS = (): Record<string, string> => ({
   visits: t`Visits`, waiting_count: t`Waiting count`, waitlisted: t`Waitlisted`, warning_rows: t`Warning rows`,
   watches: t`Watches`, webhook: t`Signed webhook`, week: t`Week`, weekday: t`Weekday`, whatsapp: t`WhatsApp`,
   window_hoursactive_app_sessions: t`Window hoursactive app sessions`,
+  reserved_units: t`Reserved units`, outstanding_units: t`Outstanding units`, utilisation: t`Utilisation`,
+  charge_currency: t`Charge currency`, charge_pending_amount: t`Charges pending`, charge_paid_amount: t`Charges paid`,
+  charge_waived_amount: t`Charges waived`, settlement_count: t`Settlements`,
 });
 
 let cache: { locale: string; labels: Record<string, string> } | null = null;

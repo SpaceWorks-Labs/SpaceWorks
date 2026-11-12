@@ -6,12 +6,14 @@ import { useQuery } from "@tanstack/react-query";
 
 import { CardDesigner } from "../../../../components/card-designer/CardDesigner";
 import { NumberingPanel } from "../../../../components/card-designer/NumberingPanel";
-import { ErrorBlock, Skeleton } from "../../../../components/ui";
+import { ErrorBlock } from "../../../../components/ui";
 import { listPlans } from "../../membershipPlansApi";
 import { lifecycleApi, lifecycleKeys } from "../../membershipLifecycleApi";
 import { useCreateCardOverride, useMemberCardDesigns } from "./apiCards";
 import { ArchivedDesigns, RemoveDesignButton } from "./DesignArchive";
 import { TitleCards } from "./TitleCards";
+import { LogoLoader } from "../../../../components/LogoLoader";
+import { BoxArt } from "../../../../components/BoxSpinner";
 
 export function DesignTab({ makerspaceId, numberingOn = false }: { makerspaceId: number; numberingOn?: boolean }) {
   const designs = useMemberCardDesigns(makerspaceId);
@@ -20,7 +22,7 @@ export function DesignTab({ makerspaceId, numberingOn = false }: { makerspaceId:
   const create = useCreateCardOverride(makerspaceId);
   const [chosen, setChosen] = useState<number | null>(null);
   const [target, setTarget] = useState("");
-  if (designs.isLoading) return <Skeleton className="h-64 w-full" />;
+  if (designs.isLoading) return <LogoLoader size={48} className="min-h-64 py-3" />;
   if (designs.isError || !designs.data) return <ErrorBlock error={designs.error} resource={t`card designs`} onRetry={() => void designs.refetch()} />;
   const rows = designs.data;
   const current = rows.find((row) => row.id === chosen) ?? rows.find((row) => !row.plan_id && !row.title_id) ?? rows[0];
@@ -51,7 +53,7 @@ export function DesignTab({ makerspaceId, numberingOn = false }: { makerspaceId:
           create.mutate(kind === "plan" ? { plan_id: Number(id) } : { title_id: Number(id) }, {
             onSuccess: (row) => { setChosen(row.id); setTarget(""); },
           });
-        }}>{create.isPending ? t`Adding…` : t`Add`}</button>
+        }}>{create.isPending ? <><BoxArt size={16} mono />{t`Adding…`}</> : t`Add`}</button>
       </div> : null}
       {canEdit && current && (current.plan_id || current.title_id) ? <RemoveDesignButton key={current.id}
         makerspaceId={makerspaceId} design={current} onRemoved={() => setChosen(null)} /> : null}
@@ -63,6 +65,6 @@ export function DesignTab({ makerspaceId, numberingOn = false }: { makerspaceId:
       onAdd={(titleId) => create.mutate({ title_id: titleId }, { onSuccess: (row) => setChosen(row.id) })} />
     {/* Numbering belongs to the space default or one title; a plan override uses the space's scheme. */}
     {numberingOn && current && !current.plan_id ? <NumberingPanel key={current.id} makerspaceId={makerspaceId} titleId={current.title_id} canEdit={canEdit} /> : null}
-    {current ? <CardDesigner key={current.id} designId={current.id} canEdit={canEdit} title={t`${current.target_label} card design`} /> : null}
+    {current ? <CardDesigner key={current.id} designId={current.id} makerspaceId={makerspaceId} canEdit={canEdit} title={t`${current.target_label} card design`} /> : null}
   </div>;
 }

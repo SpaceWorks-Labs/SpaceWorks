@@ -30,7 +30,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(useOrganizations, { partial: true }).mockReturnValue({
     data: { count: 1, next: null, previous: null, results: [
-      { id: 7, name: "Existing Network", slug: "existing-network", is_active: true, governance_actions: [], granted_actions: [] },
+      { id: 7, name: "Existing Network", slug: "existing-network", is_active: true, review_status: "approved", governance_actions: [], granted_actions: [] },
     ] }, isLoading: false, error: null,
   });
 });

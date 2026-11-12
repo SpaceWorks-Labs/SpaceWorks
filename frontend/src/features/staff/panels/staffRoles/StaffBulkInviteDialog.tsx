@@ -5,6 +5,7 @@ import { ErrorText, Field, Modal } from "../../../../components/ui";
 import { StructuredApiError, staffRequest } from "../../../../lib/api";
 import { StaffRoleFields, validRoleSet, type RoleDraft } from "./StaffRoleEditor";
 import { needsMachineScope, staffRoleErrorText, type StaffRolesPolicy } from "./staffRolesApi";
+import { BoxArt } from "../../../../components/BoxSpinner";
 
 const LIMIT = 50;
 type Row = { email: string; role: string };
@@ -88,7 +89,7 @@ export function StaffBulkInviteDialog({ space, policy, onClose, onDone }: {
       <div className="flex flex-wrap justify-end gap-2">
         <button type="button" className="desk-button" disabled={invite.isPending} onClick={onClose}>{t`Cancel`}</button>
         <button className="desk-button-primary" disabled={invite.isPending || !ready}>
-          {invite.isPending ? t`Sending…` : t`Send ${rows.length} invitations`}</button>
+          {invite.isPending ? <><BoxArt size={16} mono />{t`Sending…`}</> : t`Send ${rows.length} invitations`}</button>
       </div>
     </form>
   </Modal>;

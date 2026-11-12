@@ -4,6 +4,7 @@ import { t } from "@lingui/core/macro";
 import { useState } from "react";
 
 import { SegmentedControl } from "../../../../components/ui";
+import { BulkPhotoUploadButton } from "../../../cardEraser/BulkPhotoUploadButton";
 import { StaffCardDesign } from "./StaffCardDesign";
 import { StaffCardJobs } from "./StaffCardJobs";
 import { StaffCardsList } from "./StaffCardsList";
@@ -17,7 +18,8 @@ export function StaffCardsTab({ makerspaceId, deskPrint }: { makerspaceId: numbe
     <SegmentedControl label={t`Staff cards section`} value={view} onChange={(value) => setView(value as View)}
       options={[{ value: "cards", label: t`Staff` }, { value: "numbering", label: t`Numbering` },
         { value: "design", label: t`Design` }, { value: "jobs", label: t`Print jobs` }]} />
-    {view === "cards" ? <StaffCardsList makerspaceId={makerspaceId} deskPrint={deskPrint} /> : null}
+    {view === "cards" ? <><div><BulkPhotoUploadButton makerspaceId={makerspaceId} kind="staff_card" /></div>
+      <StaffCardsList makerspaceId={makerspaceId} deskPrint={deskPrint} /></> : null}
     {view === "numbering" ? <StaffNumbering makerspaceId={makerspaceId} /> : null}
     {view === "design" ? <StaffCardDesign makerspaceId={makerspaceId} /> : null}
     {view === "jobs" ? <StaffCardJobs makerspaceId={makerspaceId} /> : null}

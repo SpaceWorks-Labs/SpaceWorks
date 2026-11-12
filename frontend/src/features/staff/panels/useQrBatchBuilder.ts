@@ -36,12 +36,13 @@ export function useQrBatchBuilder({ makerspace }: { makerspace: Makerspace }) {
     if (autoSelected.current || latestBatchId === undefined) return;
     autoSelected.current = true;
     if (!batchId) setBatchId(String(latestBatchId), true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- first load only: batchId and setBatchId are read, not tracked, so choosing 'All batches' does not bounce back into a batch
   }, [latestBatchId]); // first load only: setBatchId and batchId are deliberately read, not tracked
   const activeBatchId = Number(batchId) || 0;
   const selectedProductId = Number(productId) || 0;
   const batch = useStaffGet<BatchDetail>(["qr-batch", activeBatchId], `/admin/qr-print-batches/${activeBatchId}`, Boolean(activeBatchId));
 
-  const productOptions = products.data?.results?.filter((product) => !product.is_archived) ?? [];
+  const productOptions = useMemo(() => products.data?.results?.filter((product) => !product.is_archived) ?? [], [products.data]);
   const selectedProduct = useMemo(
     () => productOptions.find((product) => product.id === selectedProductId),
     [selectedProductId, productOptions],

@@ -6,6 +6,8 @@ import { staffRequest } from "../../../../lib/api";
 import { useDebouncedValue } from "../../../../lib/useDebouncedValue";
 import { StaffRoleFields, validRoleSet, type RoleDraft } from "./StaffRoleEditor";
 import { grantStaffRole, staffRoleErrorText, type GrantResult, type StaffRolesPolicy } from "./staffRolesApi";
+import { BoxArt } from "../../../../components/BoxSpinner";
+import { BoxSpinner } from "../../../../components/BoxSpinner";
 
 type MemberOption = { id: number; user: { id: number; username: string; display_name: string } };
 type Person = { id: number; name: string };
@@ -45,7 +47,7 @@ export function StaffRoleGrantDialog({ space, policy, onClose, onDone }: {
           <Field label={t`Find a member`} hint={t`Type at least two letters of a name or username. Staff roles are added to their own account.`}>
             <input className="desk-input w-full" type="search" value={query} onChange={e => { setQuery(e.target.value); setPerson(null); }} />
           </Field>
-          {members.isFetching ? <p role="status" className="text-sm text-muted">{t`Searching…`}</p> : null}
+          {members.isFetching ? <BoxSpinner label={t`Searching…`} /> : null}
           {members.isError ? <ErrorText message={staffRoleErrorText(members.error)} /> : null}
           {search.length >= 2 && members.isSuccess && !options.length ? <p role="status" className="text-sm text-muted">{t`No active members match.`}</p> : null}
           {options.length ? <fieldset className="grid gap-2"><legend className="text-sm font-semibold text-ink">{t`Member`}</legend>
@@ -65,7 +67,7 @@ export function StaffRoleGrantDialog({ space, policy, onClose, onDone }: {
       <div className="flex flex-wrap justify-end gap-2">
         <button type="button" className="desk-button" disabled={grant.isPending} onClick={onClose}>{t`Cancel`}</button>
         <button className="desk-button-primary" disabled={grant.isPending || !ready}>
-          {grant.isPending ? t`Saving…` : byEmail ? t`Send invitation` : t`Grant roles`}
+          {grant.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : byEmail ? t`Send invitation` : t`Grant roles`}
         </button>
       </div>
     </form>

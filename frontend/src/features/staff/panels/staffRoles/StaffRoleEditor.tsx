@@ -6,6 +6,7 @@ import { RoleSetPicker } from "../RoleSetPicker";
 import { MachineScopePicker } from "./MachineScopePicker";
 import { StaffUnitScopeField } from "../../units/StaffUnitScopeField";
 import { changeStaffRole, needsMachineScope, staffRoleErrorText, type StaffRoleRow, type StaffRolesPolicy } from "./staffRolesApi";
+import { BoxArt } from "../../../../components/BoxSpinner";
 
 export type RoleDraft = { roles: string[]; machine_type_ids: number[]; machine_ids: number[] };
 
@@ -51,7 +52,7 @@ export function StaffRoleEditor({ space, policy, row, onClose, onSaved }: {
       {save.error ? <ErrorText message={staffRoleErrorText(save.error)} /> : null}
       <div className="flex flex-wrap justify-end gap-2">
         <button type="button" className="desk-button" disabled={save.isPending} onClick={onClose}>{t`Cancel`}</button>
-        <button className="desk-button-primary" disabled={save.isPending || !valid}>{save.isPending ? t`Saving…` : t`Save roles`}</button>
+        <button className="desk-button-primary" disabled={save.isPending || !valid}>{save.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Save roles`}</button>
       </div>
     </form>
     {/* Parity O-F1: a unit limit is saved on its own and shows only while `membership.unit_scoped_staff` is on. */}

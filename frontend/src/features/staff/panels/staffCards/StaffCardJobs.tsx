@@ -5,7 +5,9 @@ import { useState } from "react";
 
 import { ErrorBlock, Field, SegmentedControl } from "../../../../components/ui";
 import { CardJobList, useStartCardJob, type CardJobKind } from "../../../cards/cardJobs";
+import { SheetPreviewDialog } from "../../../cards/SheetPreviewDialog";
 import { staffCardJobsPath } from "./api";
+import { BoxArt } from "../../../../components/BoxSpinner";
 
 type Paper = "a4" | "letter" | "per_card";
 
@@ -16,6 +18,7 @@ export function StaffCardJobs({ makerspaceId }: { makerspaceId: number }) {
   const [paper, setPaper] = useState<Paper>("a4");
   const [order, setOrder] = useState<"duplex" | "fronts_then_backs">("duplex");
   const [cropMarks, setCropMarks] = useState(true);
+  const [previewing, setPreviewing] = useState(false);
   const sheet = kind === "bulk_sheet";
 
   return <div className="grid max-w-3xl gap-4">
@@ -38,10 +41,16 @@ export function StaffCardJobs({ makerspaceId }: { makerspaceId: number }) {
       </div> : null}
       <p className="text-xs text-muted">{t`Covers every live staff card. Tick people in the register first to print only those.`}</p>
       {start.error ? <ErrorBlock error={start.error} /> : null}
-      <button type="button" className="desk-button-primary min-h-11 w-fit" disabled={start.isPending}
-        onClick={() => start.mutate({ kind, ...(sheet ? { paper, order, crop_marks: cropMarks } : {}) })}>
-        {start.isPending ? t`Starting…` : t`Start job`}</button>
+      <div className="flex flex-wrap gap-2">
+        {sheet && paper !== "per_card" ? <button type="button" className="desk-button min-h-11" onClick={() => setPreviewing(true)}>
+          {t`Preview the first sheet`}</button> : null}
+        <button type="button" className="desk-button-primary min-h-11 w-fit" disabled={start.isPending}
+          onClick={() => start.mutate({ kind, ...(sheet ? { paper, order, crop_marks: cropMarks } : {}) })}>
+          {start.isPending ? <><BoxArt size={16} mono />{t`Starting…`}</> : t`Start job`}</button>
+      </div>
     </section>
+    <SheetPreviewDialog open={previewing} onClose={() => setPreviewing(false)} filter={{}} jobsPath={path}
+      previewPath={`${path}/preview`} title={t`Print sheet: all live staff cards`} />
     <CardJobList listPath={path} />
   </div>;
 }

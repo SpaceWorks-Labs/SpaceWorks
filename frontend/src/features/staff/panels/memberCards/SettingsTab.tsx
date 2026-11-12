@@ -1,10 +1,11 @@
 // Member-card settings: issuing, email, the public check page, and the design approval levels.
 // Each switch saves on its own; the server checks the settings authority per key.
 import { t } from "@lingui/core/macro";
-import { ErrorBlock, Skeleton } from "../../../../components/ui";
+import { ErrorBlock } from "../../../../components/ui";
 import { useMemberCardSettings, useSaveMemberCardSettings } from "./apiCards";
 import { ApprovalLevels } from "./ApprovalLevels";
 import type { MemberCardSettings } from "./types";
+import { LogoLoader } from "../../../../components/LogoLoader";
 
 type Key = "auto_issue" | "email_on_issue" | "public_verify" | "verify_show_plan";
 
@@ -21,7 +22,7 @@ const ROWS: { key: Key; label: string; help: string }[] = [
 export function SettingsTab({ makerspaceId }: { makerspaceId: number }) {
   const settings = useMemberCardSettings(makerspaceId);
   const save = useSaveMemberCardSettings(makerspaceId);
-  if (settings.isLoading) return <Skeleton className="h-48 w-full" />;
+  if (settings.isLoading) return <LogoLoader size={48} className="min-h-48 py-3" />;
   if (settings.isError || !settings.data) return <ErrorBlock error={settings.error} resource={t`card settings`} onRetry={() => void settings.refetch()} />;
   const values: MemberCardSettings = settings.data;
   return <div className="grid max-w-2xl gap-3">

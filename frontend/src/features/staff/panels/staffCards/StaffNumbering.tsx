@@ -5,15 +5,17 @@ import { useEffect, useState } from "react";
 
 import { NumberPatternFields } from "../../../../components/card-designer/NumberPatternFields";
 import { STAFF_TOKENS, patternProblem } from "../../../../components/card-designer/numberPattern";
-import { Callout, ErrorBlock, Skeleton } from "../../../../components/ui";
+import { Callout, ErrorBlock } from "../../../../components/ui";
 import { useSaveStaffCardSettings, useStaffCardSettings } from "./api";
+import { LogoLoader } from "../../../../components/LogoLoader";
+import { BoxArt } from "../../../../components/BoxSpinner";
 
 export function StaffNumbering({ makerspaceId }: { makerspaceId: number }) {
   const settings = useStaffCardSettings(makerspaceId);
   const save = useSaveStaffCardSettings(makerspaceId);
   const [draft, setDraft] = useState({ prefix: "", pattern: "" });
   useEffect(() => { if (settings.data) setDraft({ prefix: settings.data.prefix, pattern: settings.data.pattern }); }, [settings.data]);
-  if (settings.isLoading) return <Skeleton className="h-40 w-full" />;
+  if (settings.isLoading) return <LogoLoader size={48} className="min-h-40 py-3" />;
   if (settings.isError || !settings.data) return <ErrorBlock error={settings.error} resource={t`staff card numbering`} onRetry={() => void settings.refetch()} />;
   const saved = settings.data;
   const changed = draft.prefix !== saved.prefix || draft.pattern !== saved.pattern;
@@ -26,7 +28,7 @@ export function StaffNumbering({ makerspaceId }: { makerspaceId: number }) {
       <p className="text-xs text-muted">{t`Now issuing: ${saved.preview.join(", ")}. Cards already issued keep their number.`}</p>
       {save.error ? <ErrorBlock error={save.error} /> : null}
       <button type="button" className="desk-button-primary min-h-11 w-fit" disabled={!changed || invalid || save.isPending}
-        onClick={() => save.mutate(draft)}>{save.isPending ? t`Saving…` : t`Save numbering`}</button>
+        onClick={() => save.mutate(draft)}>{save.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Save numbering`}</button>
     </section>
     <Callout size="inline" tone={saved.auto_issue ? "success" : "warn"}
       lead={saved.auto_issue ? t`Cards are issued automatically when a staff role is granted.` : t`Cards are issued by hand. Switch on automatic issue under Features.`} />

@@ -4,6 +4,7 @@ import { StructuredApiError } from "../../../../lib/api";
 import { useOrganizations } from "../../organizationsApi";
 import type { MakerspaceForm } from "./types";
 import { spaceNoun } from "../../../../lib/spaceNoun";
+import { LogoLoader } from "../../../../components/LogoLoader";
 
 export function organizationFieldErrors(error: unknown) {
   const body: Record<string, unknown> = error instanceof StructuredApiError ? error.body : {};
@@ -49,7 +50,7 @@ function OrganizationResults({ search, page, id, selected, errorId, onSelect }: 
   const organizations = useOrganizations({ page, search, active: true });
   const [expanded, setExpanded] = useState(false);
   return <div className="grid gap-2">
-    {organizations.isLoading ? <p role="status" className="text-sm text-muted">{t`Loading organizations…`}</p> : null}
+    {organizations.isLoading ? <LogoLoader label={t`Loading organizations…`} size={48} className="min-h-16 py-3" /> : null}
     {organizations.error ? <div role="alert" className="text-sm text-danger">{organizations.error.message} <button type="button" className="desk-button" onClick={() => organizations.refetch()}>{t`Retry`}</button></div> : null}
     {organizations.data?.results.length === 0 && page === 1 ? <p role="status" className="text-sm text-muted">{t`No active organizations found.`}</p> : null}
     {organizations.data?.results.map(organization => <label key={organization.id} htmlFor={`${id}-${organization.id}`} className="flex min-h-11 min-w-0 items-center gap-3 break-words text-sm text-ink">

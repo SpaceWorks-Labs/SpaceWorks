@@ -5,6 +5,7 @@ import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 
 import { staffRequest, StructuredApiError } from "../../../../lib/api";
+import { BoxArt } from "../../../../components/BoxSpinner";
 
 export function PresenceCheckIn({ makerspaceId, payload }: { makerspaceId: number; payload: string }) {
   const [minutes, setMinutes] = useState(120);
@@ -22,7 +23,7 @@ export function PresenceCheckIn({ makerspaceId, payload }: { makerspaceId: numbe
       </select>
     </label>
     <button type="button" className="desk-button min-h-11" disabled={!payload || checkIn.isPending}
-      onClick={() => checkIn.mutate()}>{checkIn.isPending ? t`Checking in…` : t`Check in at the space`}</button>
+      onClick={() => checkIn.mutate()}>{checkIn.isPending ? <><BoxArt size={16} mono />{t`Checking in…`}</> : t`Check in at the space`}</button>
     {error ? <p role="alert" className="basis-full text-sm text-danger">{error}</p> : null}
   </div>;
 }

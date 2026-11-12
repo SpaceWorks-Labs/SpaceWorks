@@ -4,8 +4,9 @@
 import { plural, t } from "@lingui/core/macro";
 import { useQuery } from "@tanstack/react-query";
 
-import { Badge, ErrorBlock, Skeleton } from "../../../../components/ui";
+import { Badge, ErrorBlock } from "../../../../components/ui";
 import { staffRequest } from "../../../../lib/api";
+import { LogoLoader } from "../../../../components/LogoLoader";
 
 export type TitleCardRow = { title_id: number; title: string; design_id: number | null;
   status: "inherits" | "draft" | "published" | "changes"; number_pattern: string; live_cards: number };
@@ -20,7 +21,7 @@ export function TitleCards({ makerspaceId, canEdit, onOpen, onAdd, adding }: {
 }) {
   const rows = useQuery({ queryKey: ["title-cards", makerspaceId],
     queryFn: () => staffRequest<TitleCardRow[]>(`/admin/makerspaces/${makerspaceId}/card-designs/titles`) });
-  if (rows.isLoading) return <Skeleton className="h-24 w-full" />;
+  if (rows.isLoading) return <LogoLoader size={48} className="min-h-24 py-3" />;
   if (rows.isError) return <ErrorBlock error={rows.error} resource={t`role cards`} onRetry={() => void rows.refetch()} />;
   if (!rows.data?.length) return null;
   const statuses = STATUS();

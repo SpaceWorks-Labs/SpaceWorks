@@ -41,7 +41,7 @@ export function useStockTransfer({
   // EDIT_INVENTORY holders can run INTRA-makerspace relocations; only a superadmin gets the
   // source/destination makerspace selectors (cross-makerspace moves are superadmin-only).
   const canCreate = isSuperadmin || canEditInventory;
-  const spaceOptions = makerspaces.length ? makerspaces : [makerspace];
+  const spaceOptions = useMemo(() => (makerspaces.length ? makerspaces : [makerspace]), [makerspaces, makerspace]);
   const [sourceMakerspaceId, setSourceMakerspaceId] = useState(makerspace.id);
   const [destinationMakerspaceId, setDestinationMakerspaceId] = useState(makerspace.id);
   const [sourceContainerId, setSourceContainerId] = useState("");

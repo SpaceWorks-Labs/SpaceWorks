@@ -8,7 +8,7 @@ import { moduleLabel, moduleList } from "../../../../lib/moduleLabels";
 import { spaceNoun, spaceNounTitle } from "../../../../lib/spaceNoun";
 
 export const defaultCreationProfile = { timezone: "UTC", country: "", default_currency: "usd", opening_hours: {} };
-const modules = ["events", "bookings", "machines", "membership", "printing", "payments", "reports", "notifications"] as const;
+const modules = ["events", "bookings", "machines", "machine_service", "membership", "payments", "reports", "notifications"] as const;
 
 const PROFILE_LABELS = (): Record<string, string> => ({ timezone: t`Timezone`, country: t`Country code`, default_currency: t`Currency` });
 

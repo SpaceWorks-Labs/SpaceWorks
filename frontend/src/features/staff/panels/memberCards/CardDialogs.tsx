@@ -1,6 +1,7 @@
 import { t } from "@lingui/core/macro";
 import { Field, Modal } from "../../../../components/ui";
 import { REISSUE_REASONS, type MemberCard, type ReissueReason } from "./types";
+import { BoxArt } from "../../../../components/BoxSpinner";
 
 export function ReissueCardDialog({
   card,
@@ -29,7 +30,7 @@ export function ReissueCardDialog({
           <button className="desk-button" type="button" disabled={pending} onClick={onClose}>
             {t`Cancel`}</button>
           <button className="desk-button-primary" type="button" disabled={pending} onClick={onSubmit}>
-            {pending ? t`Reissuing…` : t`Reissue`}
+            {pending ? <><BoxArt size={16} mono />{t`Reissuing…`}</> : t`Reissue`}
           </button>
         </div>
       }
@@ -89,7 +90,7 @@ export function RevokeCardDialog({
           <button className="desk-button" type="button" disabled={pending} onClick={onClose}>
             {t`Cancel`}</button>
           <button className="desk-button-danger" type="button" disabled={pending || !ready} onClick={onSubmit}>
-            {pending ? t`Revoking…` : t`Revoke card`}
+            {pending ? <><BoxArt size={16} mono />{t`Revoking…`}</> : t`Revoke card`}
           </button>
         </div>
       }
@@ -117,7 +118,7 @@ export function PhotoRequestDialog({ card, reason, pending, error, onReasonChang
       footer={<div className="desk-actions flex flex-wrap justify-end gap-2">
         <button className="desk-button" type="button" disabled={pending} onClick={onClose}>{t`Cancel`}</button>
         <button className="desk-button-primary" type="button" disabled={pending} onClick={onSubmit}>
-          {pending ? t`Sending…` : t`Ask for a new photo`}</button>
+          {pending ? <><BoxArt size={16} mono />{t`Sending…`}</> : t`Ask for a new photo`}</button>
       </div>}>
       <p className="text-sm text-muted">{card?.printed_name} {t` is asked to upload a new photo, with one reminder a week later. The card stays valid meanwhile.`}</p>
       <Field label={t`What is wrong with the current one? (optional)`} className="mt-3">

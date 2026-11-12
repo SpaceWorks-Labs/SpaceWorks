@@ -3,6 +3,7 @@ import { ShieldCheck } from "lucide-react";
 import { ErrorText, ListRow, Modal, StatusPill } from "../../../../components/ui";
 import { MachineScopeChips } from "./MachineScopePicker";
 import { needsMachineScope, roleNames, type StaffRoleRow, type StaffRolesPolicy } from "./staffRolesApi";
+import { BoxArt } from "../../../../components/BoxSpinner";
 
 export function StaffRoleRows({ rows, policy, pending, onEdit, onRevoke, onRestore, onResetMfa }: {
   rows: StaffRoleRow[]; policy?: StaffRolesPolicy; pending: boolean;
@@ -46,7 +47,7 @@ export function StaffRevokeDialog({ row, reason, onReason, pending, error, onClo
       {error ? <ErrorText message={error} /> : null}
       <div className="flex flex-wrap justify-end gap-2">
         <button type="button" className="desk-button" disabled={pending} onClick={onClose}>{t`Cancel`}</button>
-        <button className="desk-button-danger" disabled={pending}>{pending ? t`Revoking…` : t`Revoke`}</button>
+        <button className="desk-button-danger" disabled={pending}>{pending ? <><BoxArt size={16} mono />{t`Revoking…`}</> : t`Revoke`}</button>
       </div>
     </form>
   </Modal>;

@@ -11,6 +11,7 @@ import { useStartCardJob, type CardJobKind } from "../../../cards/cardJobs";
 import { lifecycleApi, lifecycleKeys } from "../../membershipLifecycleApi";
 import { listPlans } from "../../membershipPlansApi";
 import { memberCardJobsPath } from "./apiCards";
+import { BoxArt } from "../../../../components/BoxSpinner";
 
 const CHIPS = (): [string, string][] => [["", t`Any standing`], ["active", t`Active`], ["expiring", t`Ending soon`],
   ["grace", t`In grace`], ["lapsed", t`Lapsed`], ["upcoming", t`Starts later`]];
@@ -44,7 +45,7 @@ export function BulkFromFilter({ makerspaceId }: { makerspaceId: number }) {
         {KINDS().map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></Field>
       <button type="button" className="desk-button-primary min-h-11" disabled={start.isPending}
         onClick={() => start.mutate({ kind, filter }, { onSuccess: () => toast(t`Job queued. Its progress shows above the table.`, { tone: "success" }) })}>
-        {start.isPending ? t`Starting…` : t`Make cards for this filter`}</button>
+        {start.isPending ? <><BoxArt size={16} mono />{t`Starting…`}</> : t`Make cards for this filter`}</button>
     </div>
     {start.error ? <ErrorBlock error={start.error} /> : null}
   </section>;

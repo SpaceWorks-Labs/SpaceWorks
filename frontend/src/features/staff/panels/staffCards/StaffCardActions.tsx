@@ -1,6 +1,6 @@
 // The per-card actions of the staff list: download, reissue, revoke (with a reason) and desk print.
 // Revoke asks for a reason from a short list (the server keeps it with the card, up to 32 characters).
-import { t } from "@lingui/core/macro";
+import { plural, t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -12,6 +12,7 @@ import { useDeskPrintQueue } from "../../../cards/deskPrint/useDeskPrintQueue";
 import { downloadPdf } from "../memberCards/api";
 import { useReissueStaffCard, useRevokeStaffCard, staffCardKeys } from "./api";
 import type { StaffCardHolder } from "./types";
+import { BoxArt } from "../../../../components/BoxSpinner";
 
 const REASONS = (): { value: string; label: string }[] => [
   { value: "left", label: t`Left the team` }, { value: "lost", label: t`Lost` }, { value: "stolen", label: t`Stolen` },
@@ -26,7 +27,7 @@ function RevokeDialog({ holder, pending, error, onClose, onSubmit }: {
     footer={<div className="desk-actions flex flex-wrap justify-end gap-2">
       <button type="button" className="desk-button" disabled={pending} onClick={onClose}>{t`Cancel`}</button>
       <button type="button" className="desk-button-danger" disabled={pending} onClick={() => onSubmit(reason)}>
-        {pending ? t`Revoking…` : t`Revoke card`}</button>
+        {pending ? <><BoxArt size={16} mono />{t`Revoking…`}</> : t`Revoke card`}</button>
     </div>}>
     <p className="text-sm text-muted">{t`${holder?.card?.number ?? ""} for ${holder?.name ?? ""} stops working at once and its check page shows it as revoked.`}</p>
     <Field label={t`Why is it revoked?`} className="mt-3">
@@ -76,5 +77,9 @@ export function useStaffCardActions(makerspaceId: number, deskPrint: boolean) {
     <DeskPrintDialog target={printing} queue={queue} onClose={() => setPrinting(null)}
       onPrinted={() => void client.invalidateQueries({ queryKey: staffCardKeys.all(makerspaceId) })} />
   </>;
-  return { actions, dialogs, reissue: doReissue, reissuing: reissue.isPending };
+  const printSelected = (holders: StaffCardHolder[]) => setPrinting({
+    id: `staff-batch:${holders.map((holder) => holder.card?.id).join(",")}`,
+    label: plural(holders.length, { one: "# staff card", other: "# staff cards" }),
+    facePaths: holders.map((holder) => `/admin/staff-cards/${holder.card?.id}/print-face`) });
+  return { actions, dialogs, printSelected, reissue: doReissue, reissuing: reissue.isPending };
 }

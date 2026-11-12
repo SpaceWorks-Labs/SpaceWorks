@@ -5,9 +5,10 @@
 import { t } from "@lingui/core/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { ErrorBlock, Skeleton } from "../../../../components/ui";
+import { ErrorBlock } from "../../../../components/ui";
 import { staffRequest } from "../../../../lib/api";
 import { ApprovalLevelSelect, type ApprovalValue } from "../../../cards/ApprovalLevelSelect";
+import { LogoLoader } from "../../../../components/LogoLoader";
 
 type Group = "membership" | "event";
 type Levels = {
@@ -35,7 +36,7 @@ export function useApprovalLevels(makerspaceId: number) {
 
 export function ApprovalLevels({ makerspaceId }: { makerspaceId: number }) {
   const { query, save } = useApprovalLevels(makerspaceId);
-  if (query.isLoading) return <Skeleton className="h-32 w-full" />;
+  if (query.isLoading) return <LogoLoader size={48} className="min-h-32 py-3" />;
   if (query.isError || !query.data) return <ErrorBlock error={query.error} resource={t`approval levels`} onRetry={() => void query.refetch()} />;
   const groups = query.data.groups.filter((row) => row.available);
   const spaceValue = (group: Group) => {

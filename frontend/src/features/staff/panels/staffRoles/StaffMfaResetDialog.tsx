@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { ErrorText, Field, Modal } from "../../../../components/ui";
 import { resetStaffMfa, staffRoleErrorText, type StaffRoleRow } from "./staffRolesApi";
+import { BoxArt } from "../../../../components/BoxSpinner";
 
 /** Clears the person's authenticator, passkeys and recovery codes and ends their sessions. The reason is audited. */
 export function StaffMfaResetDialog({ space, row, onClose, onDone }: {
@@ -22,7 +23,7 @@ export function StaffMfaResetDialog({ space, row, onClose, onDone }: {
       {reset.error ? <ErrorText message={staffRoleErrorText(reset.error)} /> : null}
       <div className="flex flex-wrap justify-end gap-2">
         <button type="button" className="desk-button" disabled={reset.isPending} onClick={onClose}>{t`Cancel`}</button>
-        <button className="desk-button-danger" disabled={reset.isPending || !valid}>{reset.isPending ? t`Resetting…` : t`Reset authenticator`}</button>
+        <button className="desk-button-danger" disabled={reset.isPending || !valid}>{reset.isPending ? <><BoxArt size={16} mono />{t`Resetting…`}</> : t`Reset authenticator`}</button>
       </div>
     </form>
   </Modal>;

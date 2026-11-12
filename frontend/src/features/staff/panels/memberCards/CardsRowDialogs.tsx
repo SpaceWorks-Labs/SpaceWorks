@@ -1,6 +1,6 @@
 // The per-card dialogs of the Cards tab (reissue, revoke with a required note, photo
 // request) and the row-menu actions that need no dialog (downloads, email).
-import { t } from "@lingui/core/macro";
+import { plural, t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -72,6 +72,10 @@ export function useCardRowActions(makerspaceId: number, emailAvailable: boolean,
 
   return {
     rowActions, dialogs,
+    /** "Print selected at desk": one card per page for the ticked cards, through the same face fetch (so prints are counted). */
+    printSelected: (cards: MemberCard[]) => setPrinting({ id: `member-batch:${cards.map((card) => card.id).join(",")}`,
+      label: plural(cards.length, { one: "# member card", other: "# member cards" }),
+      facePaths: cards.map((card) => `/admin/member-cards/${card.id}/print-face`) }),
     onReissue: (card: MemberCard) => { setReissueReason("lost"); setReissueTarget(card); },
     onRevoke: (card: MemberCard) => { setRevokeNote(""); setRevokeTarget(card); },
   };

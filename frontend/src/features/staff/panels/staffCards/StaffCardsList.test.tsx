@@ -53,3 +53,19 @@ describe("staff ID card register", () => {
       { method: "POST", body: JSON.stringify({ membership_ids: [1, 2] }) });
   });
 });
+
+describe("desk print for selected staff cards", () => {
+  it("is offered only when desk printing is on and opens one batch for the ticked live cards", async () => {
+    staffRequest.mockResolvedValue(page([holder(1, "Asha Menon", { card: card({ id: 31 }) }), holder(2, "Ravi Nair", { card: card({ id: 32 }) })]));
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const off = render(<QueryClientProvider client={client}><StaffCardsList makerspaceId={4} deskPrint={false} /></QueryClientProvider>);
+    await screen.findByText("Asha Menon");
+    expect(screen.queryByRole("button", { name: /selected at desk/ })).not.toBeInTheDocument();
+    off.unmount();
+    render(<QueryClientProvider client={client}><StaffCardsList makerspaceId={4} deskPrint /></QueryClientProvider>);
+    await screen.findByText("Asha Menon");
+    screen.getAllByRole("checkbox").slice(1).forEach((box) => fireEvent.click(box));
+    fireEvent.click(screen.getByRole("button", { name: "Print 2 selected at desk" }));
+    expect(await screen.findByText("Print at the desk")).toBeVisible();
+  });
+});

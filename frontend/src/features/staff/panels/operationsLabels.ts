@@ -30,6 +30,7 @@ export function deviceKindLabel(kind: string): string {
     case "printer": return t`Printer`;
     case "label_printer": return t`Label printer`;
     case "generic": return t`Other device`;
+    case "adapter": return t`Device adapter`;
     default: return humanize(kind);
   }
 }

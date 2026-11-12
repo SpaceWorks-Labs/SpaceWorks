@@ -33,7 +33,7 @@ def queued(monkeypatch):
 def as_digest(tenant, owner, envelope, due):
     from apps.notifications.models_preferences import NotificationPreference
 
-    tenant.enabled_features.append("notifications.digests")
+    tenant.enabled_features = sorted(set(tenant.enabled_features) | {"notifications.digests"})
     tenant.save(update_fields=["enabled_features"])
     NotificationPreference.objects.create(makerspace=tenant, user=owner, category="bookings", channels=["email"])
     envelope.timing_policy, envelope.available_at = "digest", due
@@ -207,7 +207,7 @@ def test_digest_switch_off_suppresses_due_or_assembled_envelopes(monkeypatch, as
         summary = summaries.get()
         ensure_deliveries(summary)
         assert summary.deliveries.get(channel="email").state == "retrying"
-    tenant.enabled_features.remove("notifications.digests")
+    tenant.enabled_features = [key for key in tenant.enabled_features if key != "notifications.digests"]
     tenant.save(update_fields=["enabled_features"])
 
     deliver_envelope(summary.pk if assembled else envelope.pk)

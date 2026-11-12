@@ -5,6 +5,7 @@ conflict on the workshop list (nothing is cancelled). The event equipment desk w
 its loans use is under repair or short, reading the inventory owner's counters only.
 """
 import pytest
+from django.db.models import F
 
 from apps.bookings.models import Booking
 from apps.events.models import Event
@@ -44,7 +45,9 @@ def test_desk_has_no_warnings_when_stock_is_healthy():
 
 def test_desk_warns_when_units_are_under_repair_without_changing_stock():
     data, _event, _other, url = _desk_setup("vc-desk-repair")
-    InventoryProduct.objects.filter(pk=data.product.pk).update(needs_fix_quantity=2)
+    # The sum of every bucket must stay within the total, so units sent for repair leave the available bucket.
+    InventoryProduct.objects.filter(pk=data.product.pk).update(
+        needs_fix_quantity=2, available_quantity=F("available_quantity") - 2)
     before = InventoryProduct.objects.values("available_quantity", "reserved_quantity").get(pk=data.product.pk)
     assert {(row["product_id"], row["code"], row["count"]) for row in _warnings(data, url)} == {
         (data.product.pk, "units_under_repair", 2)}

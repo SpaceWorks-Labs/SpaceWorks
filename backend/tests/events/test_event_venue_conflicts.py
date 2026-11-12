@@ -72,9 +72,11 @@ def test_warn_outage_is_a_warning_and_a_cancelled_event_has_no_conflicts():
 def test_event_outside_recorded_hours_is_a_space_closed_warning_never_a_refusal():
     maker, _staff, _member, event, _room, _booking, _decision, client = linked("vc-hours")
     assert link_state(client, maker, event)["conflicts"] == []  # no hours recorded: always open
-    far = (timezone.now() + timedelta(days=40)).date().isoformat()
+    # An empty weekly schedule means open every day (local_time._day_intervals), so a closure needs every
+    # weekday spelled out: the space opens for one hour a day and the event window spills outside it.
+    from apps.makerspaces.local_time import WEEKDAYS
     maker.timezone = "UTC"
-    maker.opening_hours = {"weekly": {}, "exceptions": {far: [{"start": "09:00", "end": "10:00"}]}}
+    maker.opening_hours = {"weekly": {day: [{"start": "09:00", "end": "09:30"}] for day in WEEKDAYS}, "exceptions": {}}
     maker.save(update_fields=["timezone", "opening_hours"])
     rows = link_state(client, maker, event)["conflicts"]
     assert rows and {(row["code"], row["severity"]) for row in rows} == {("space_closed", "warning")}

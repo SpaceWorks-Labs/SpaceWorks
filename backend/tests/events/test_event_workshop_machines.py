@@ -195,7 +195,7 @@ def test_workshop_machine_link_is_classified_portable_and_tenant_scoped():
     from apps.tenant_rls.policies import build_plans
     from apps.tenant_rls.scope_registry import predicates
     label = "events.EventMachineBookingLink"
-    assert EXPORTED_MODEL_FIELDS[label].split() == ["id", "makerspace", "event", "booking", "created_at"]
+    assert EXPORTED_MODEL_FIELDS[label].split() == ["id", "makerspace", "event", "booking", "created_at", "unlinked_at"]
     assert label in PROJECTED_MODEL_LABELS
     scope = predicates()[label]
     assert scope.any_paths == ("makerspace",) and not scope.includes({"makerspace": 2}, 1)

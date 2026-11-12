@@ -72,6 +72,10 @@ def test_restore_preserves_unlimited_and_self_host_behavior(monkeypatch, setting
     reserve(w)
     if mode == "self_host":
         settings.PLATFORM_DOMAIN_SUFFIX = ""
+        # Decision 281 addendum: a limit the superadmin SET binds own spaces too; a self-host is
+        # dormant because it has none set.
+        w.tenant.resource_limit_overrides = {}
+        w.tenant.save(update_fields=["resource_limit_overrides"])
     else:
         w.tenant.resource_limit_overrides = {"bookings": None}
         w.tenant.save(update_fields=["resource_limit_overrides"])

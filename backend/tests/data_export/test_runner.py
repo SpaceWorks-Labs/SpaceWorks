@@ -85,7 +85,7 @@ def test_two_tenant_export_excludes_foreign_rows_values_and_unrelated_users():
     }
     assert unrelated.username not in flattened
     assert requester.username not in flattened
-    assert set(users[0]) == {"id", "username"}
+    assert set(users[0]) == {"id", "username", "preferred_locale"}
 
 
 def test_keyset_paging_returns_every_row_exactly_once():

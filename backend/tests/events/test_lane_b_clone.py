@@ -27,7 +27,7 @@ QUESTIONS = [{"id": "comment", "label": "Your feedback", "type": "paragraph", "o
 @pytest.mark.parametrize("role", ["space_manager", "event_manager"])
 def test_clone_copies_configuration_fresh_tokens_assets_and_declared_children_only(monkeypatch, role):
     space, manager, grantee, source, grant = grant_fixture("edit_details")
-    membership = MakerspaceMembership.objects.get(user=manager, makerspace=space)
+    membership = MakerspaceMembership.staff_tracks.get(user=manager, makerspace=space)
     membership.role = role
     membership.assigned_role = space.roles.get(slug=role)
     membership.save(update_fields=["role", "assigned_role"])

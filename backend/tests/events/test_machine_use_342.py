@@ -169,6 +169,9 @@ def test_cost_approval_needs_event_finance_and_event_authority():
     session = new_session(w)
     services.manage(w.staff, session, w.event.pk)
     link = MachineEventLink.objects.get()
+    # Event charge tracking is on by default now (money owed is recorded without any payments module), so the
+    # "off" state this test checks is reached by switching it off explicitly.
+    features(w.space, remove={"charges.events"})
     with pytest.raises(ValidationError) as caught:
         machine_use_costs.decide(w.staff, w.event, link.pk, "approved")
     assert caught.value.detail["code"] == "event_finance_off"

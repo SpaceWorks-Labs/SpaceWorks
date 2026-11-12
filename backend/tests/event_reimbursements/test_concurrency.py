@@ -62,7 +62,7 @@ def test_accept_and_cap_edit_have_one_winner_and_accepted_cap_is_immutable(world
         close_old_connections()
         try:
             actor = User.objects.get(pk=world.manager.pk if edit else world.owner.pk)
-            req = session_request(actor, surface="staff_api" if edit else "member")
+            req = session_request(actor, surface="member")
             if edit:
                 reauthentication.verify(req, password=PASSWORD)
             barrier.wait(timeout=15)

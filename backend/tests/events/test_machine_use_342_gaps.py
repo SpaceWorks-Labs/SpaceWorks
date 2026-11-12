@@ -118,7 +118,7 @@ def test_staff_without_machine_authority_is_held_to_the_members_events():
     from tests.fixed_roles.helpers import staff_account
     maker, staff, member, event, _kinds, times = booking_world("mb-staff-plain")
     booking = book(times[0], member, event)
-    plain = staff_account("plain-" + maker.slug, maker)  # a role with no machine authority
+    plain = staff_account(maker, "plain-" + maker.slug, "inventory_manager")  # a role with no machine authority
     with pytest.raises(ValidationError) as caught:
         event_use.staff_attach(plain, booking, event.pk)  # a draft event the member is not part of
     assert caught.value.detail["code"] == "event_not_eligible"

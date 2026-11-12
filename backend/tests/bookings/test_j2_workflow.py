@@ -180,6 +180,9 @@ def test_booking_quota_is_dormant_self_host_and_enforced_managed(monkeypatch, se
     )
     first_space = space(tenant)
     second_space = space(tenant, name='Studio')
+    # Decision 281 addendum: with no limit set nothing is enforced (dormant, the counter is never
+    # asked); a limit the superadmin SET on a space binds it, own or hosted.
+    free_space = space(makerspace('booking-j2-quota-free'))
     monkeypatch.setattr(limits, 'is_self_host', lambda: True)
     booking_counter = limits._COUNTERS['bookings']
     monkeypatch.setitem(
@@ -187,7 +190,7 @@ def test_booking_quota_is_dormant_self_host_and_enforced_managed(monkeypatch, se
         'bookings',
         lambda _tenant: (_ for _ in ()).throw(AssertionError('counted')),
     )
-    assert book(first_space).status == Booking.Status.CONFIRMED
+    assert book(free_space).status == Booking.Status.CONFIRMED
 
     monkeypatch.setattr(limits, 'is_self_host', lambda: False)
     monkeypatch.setitem(limits._COUNTERS, 'bookings', booking_counter)
@@ -197,6 +200,8 @@ def test_booking_quota_is_dormant_self_host_and_enforced_managed(monkeypatch, se
         'notify_booking_status',
         lambda booking, event: calls.append((booking.pk, event)),
     )
+    assert book(first_space).status == Booking.Status.CONFIRMED
+    calls.clear()
     before_audits = AuditLog.objects.filter(action='booking.created').count()
     with pytest.raises(ValidationError) as caught:
         book(second_space)

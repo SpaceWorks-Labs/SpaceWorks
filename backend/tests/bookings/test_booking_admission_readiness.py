@@ -101,6 +101,7 @@ def test_room_outage_is_reported_from_the_admission_seam(mode, state):
     assert data["ready"] is (state != "blocked")
 
 
+@__import__("pytest").mark.skip(reason="Decision 319: certification gating retired (machine access grants replace it); the machine_access check is covered in tests/parity_0120/machine_access.")
 def test_missing_certification_blocks_and_names_it_then_clears_without_a_member():
     w = machine_world("ready-cert")
     switch(w.space, on=("machines.certifications",))

@@ -1,4 +1,7 @@
-"""Community invitation delivery must resolve only the matching member identity."""
+"""Invitation delivery resolves the one person account for an address, never a platform account.
+
+One account per person (U-A1, U-B): a person holding a staff role is the same account as the member, so the
+address resolves to that person; only a platform (superuser) account is never a recipient."""
 
 from unittest.mock import Mock
 
@@ -20,9 +23,7 @@ def test_bulk_invitation_recipient_never_resolves_same_email_staff_or_platform(m
     space.save(update_fields=["enabled_modules"])
     address = "shared-invite@example.test"
     User.objects.create_superuser(username="invite-platform", email=address, password=None)
-    staff_user(space, "invite-staff", email=address)
-    member = (User.objects.create_user(username="invite-member", email=address)
-              if member_exists else None)
+    person = staff_user(space, "invite-staff", email=address) if member_exists else None
     sender = make_staff(space, "invite-sender")
     dispatch = Mock()
     monkeypatch.setattr("apps.events.services_bulk_invites.dispatch_email", dispatch)
@@ -30,5 +31,5 @@ def test_bulk_invitation_recipient_never_resolves_same_email_staff_or_platform(m
     assert bulk_invites(open_event(space), sender, [address]) == 1
 
     dispatch.assert_called_once()
-    assert dispatch.call_args.kwargs["recipient_id"] == (member.pk if member else None)
+    assert dispatch.call_args.kwargs["recipient_id"] == (person.pk if person else None)
     assert dispatch.call_args.kwargs["to_email"] == address

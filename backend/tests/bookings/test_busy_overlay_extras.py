@@ -24,7 +24,7 @@ def maintenance_uids(space, user):
 
 def test_combined_feed_carries_maintenance_only_for_machine_scope_and_the_capability():
     space, manager, machine, _ = make_machine_setup("busy-p31")
-    switch(space, on=("machines.maintenance",))
+    switch(space, on=("machines.maintenance", "maintenance.calendar_feed"))  # decision 221(g)
     row = MaintenanceSchedule.objects.create(machine=machine, description="Clean optics", interval_days=30,
                                              next_due=timezone.localdate())
     member = make_member("busy-p31-member", space, membership_role="custom", role="requester")

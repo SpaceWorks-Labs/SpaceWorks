@@ -70,7 +70,7 @@ def test_record_payment_only_organization_delegate_has_no_finance_access(world, 
     OrganizationMembership.objects.create(organization=organization, user=actor, granted_actions=["record_payment"])
     assert rbac.can(actor, rbac.Action.RECORD_PAYMENT, world.space.pk)
     assert not rbac.can(actor, rbac.Action.VIEW_FINANCE, world.space.pk)
-    req = session_request(actor, surface="delegated")
+    req = session_request(actor, surface="member")
     with pytest.raises(PayoutError) as exc:
         payee_workflow.reveal(request=req, obligation_id=obligation.pk,
             data=cmd(obligation.version, purpose="verify_routing", reason_code="other"))

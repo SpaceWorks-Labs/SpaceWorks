@@ -88,6 +88,7 @@ def create_mapped_rows(makerspace, actor):
         requester_name="PII Service Name",
         contact_email="pii-service@example.test",
         contact_phone="PII-SERVICE-PHONE",
+        collected_by_name="PII Collector Name",
         title="PII service request",
     )
     usage = MachineUsageEntry.objects.create(

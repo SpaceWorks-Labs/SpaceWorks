@@ -7,7 +7,7 @@ from rest_framework.test import APIClient
 from apps.accounts.models import User
 from apps.audit.models import AuditLog
 from apps.events.models import Event
-from apps.makerspaces.models import Makerspace, MakerspaceMembership, MakerspaceRole
+from apps.makerspaces.models import Makerspace
 from apps.makerspaces.settings_authority_writes import set_grants
 from tests.events.collab_helpers import client_for, make_staff
 from tests.events.ticketing_helpers import event_space
@@ -17,12 +17,10 @@ pytestmark = pytest.mark.django_db(transaction=True)
 
 @transaction.atomic
 def event_manager(space, name="evm"):
-    user = User.objects.create_user(username=f"{name}-{space.slug}", email=f"{name}-{space.slug}@example.test",
-                                    access_status="active", account_kind="staff", staff_makerspace=space)
-    MakerspaceMembership.objects.create(user=user, makerspace=space, role=MakerspaceMembership.Role.EVENT_MANAGER,
-                                        assigned_role=MakerspaceRole.objects.get(makerspace=space, slug="event_manager"),
-                                        status="active")
-    return user
+    """One account per person (U-A1/U-B): a person holding a staff-track Event Manager row."""
+    from tests.accounts.account_factories import make_staff as staff_with_role
+    return staff_with_role(space, username=f"{name}-{space.slug}", role_slug="event_manager",
+                           email=f"{name}-{space.slug}@example.test", access_status="active")
 
 
 def reports_space(slug):

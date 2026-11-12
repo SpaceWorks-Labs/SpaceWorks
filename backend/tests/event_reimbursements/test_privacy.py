@@ -39,7 +39,7 @@ def test_reviewer_detail_is_metadata_only_and_finance_has_private_lines(world, m
     reviewer = User.objects.create_user(username="receipt-reviewer", account_kind="member")
     create_manual_grant(makerspace=world.space, event=world.event, user=reviewer,
         permissions=["review_reimbursements"], granted_by=world.manager)
-    req = session_request(reviewer, surface="delegated")
+    req = session_request(reviewer, surface="member")
     req.method = "GET"
     response = call(ClaimDetailView, req, pk=world.event.pk, claim_id=claim.pk)
     assert response.status_code == 200
@@ -70,7 +70,7 @@ def test_reviewer_finance_decision_does_not_move_money(world, monkeypatch):
     create_manual_grant(makerspace=world.space, event=world.event, user=reviewer,
         permissions=["review_reimbursements"], granted_by=world.manager)
     value = decision_data(world, claim, line_id, 10000)
-    session = session_request(reviewer, surface="delegated")
+    session = session_request(reviewer, surface="member")
     req = APIRequestFactory().post("/", value, format="json", HTTP_ORIGIN="http://localhost:5000",
         HTTP_IDEMPOTENCY_KEY=str(value["operation_id"]))
     req.user, req.auth = reviewer, session.auth

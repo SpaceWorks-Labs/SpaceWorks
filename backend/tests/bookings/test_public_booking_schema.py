@@ -17,7 +17,8 @@ def test_openapi_public_booking_contract_is_leak_safe_and_complete():
 
     assert set(space_schema['properties']) == SPACE_FIELDS
     assert set(input_schema['properties']) == {
-        'starts_at', 'ends_at', 'custom_answers', 'certification_override_reason'
+        'starts_at', 'ends_at', 'custom_answers', 'certification_override_reason',
+        'event_id',  # decision 342: optional event context on a machine-time booking
     }
     assert set(input_schema['required']) == {'starts_at', 'ends_at'}
     assert all(

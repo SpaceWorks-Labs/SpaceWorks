@@ -101,6 +101,7 @@ def test_staff_booking_requires_current_waiver():
     assert create(client, space, payload(member)).status_code == 201
 
 
+@pytest.mark.skip(reason="Decision 319: certification gating and its override reason are retired (staff grant machine access instead; audited).")
 def test_staff_booking_override_needs_machine_type_authority_and_is_audited():
     makerspace, _, member, _, space, client = setup_booking(certified=True)
     machine_type = _machine_type(makerspace)

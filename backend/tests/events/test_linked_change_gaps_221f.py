@@ -27,8 +27,17 @@ def move(event, staff):
                                      ends_at=event.ends_at + timedelta(hours=1))
 
 
+def grants_on(maker):
+    """Per-room staff grants are an opt-in capability of the space (`bookings.staff_grants`)."""
+    maker.enabled_features = sorted(set(maker.enabled_features) | {"bookings.staff_grants"})
+    maker.save(update_fields=["enabled_features"])
+
+
 def test_restoring_a_cancelled_linked_booking_tells_the_event_organizers():
     maker, staff, member, event, _room, booking, _decision, _client = linked("g221-restore")
+    # Undoing a cancellation is a staff reservation tool, an opt-in capability of the space.
+    maker.enabled_features = sorted(set(maker.enabled_features) | {"bookings.staff_tools"})
+    maker.save(update_fields=["enabled_features"])
     from apps.bookings import services_transitions
     with enabled_encryption():
         services_transitions.cancel_booking(booking, actor=staff)
@@ -43,6 +52,7 @@ def test_restoring_a_cancelled_linked_booking_tells_the_event_organizers():
 
 def test_a_room_grant_holder_who_is_not_staff_hears_the_event_moved():
     maker, staff, member, event, room, booking, _decision, _client = linked("g221-grant")
+    grants_on(maker)
     holder, _ = _member(maker, "g221-grant-holder")
     BookingSpaceStaffGrant.objects.create(makerspace=maker, space=room, user=holder, granted_by=staff,
                                           permissions=["manage_reservations"])
@@ -61,6 +71,7 @@ def test_a_revoked_grant_is_no_longer_eligible_at_send():
 
     from apps.events.linked_change_recipients import grant_eligible
     maker, staff, _member_row, event, room, _booking, _decision, _client = linked("g221-revoked")
+    grants_on(maker)
     holder, _ = _member(maker, "g221-revoked-holder")
     grant = BookingSpaceStaffGrant.objects.create(makerspace=maker, space=room, user=holder, granted_by=staff,
                                                   permissions=["manage_reservations"])

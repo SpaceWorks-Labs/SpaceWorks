@@ -69,14 +69,16 @@ def test_confirmed_event_booking_blocks_the_room_and_admission_refuses_a_conflic
     assert Booking.objects.count() == before
 
 
-def test_a_pending_event_booking_holds_nothing_but_is_listed():
+def test_a_pending_event_booking_holds_its_slot_as_tentative():
+    """Decision 223 (m): a linked pending booking is shown busy (tentative) and blocks others, yet the room
+    is not confirmed: a new booking created now would still wait for approval."""
     maker, _staff, _member, event, room, original, _decision, client = linked("hall-pending")
     assert original.status == Booking.Status.PENDING
     data = availability(client, room, event.starts_at, event.ends_at).data
-    assert data["busy"] == []
-    assert [row["booking_id"] for row in data["pending"]] == [original.pk]
-    assert data["pending"][0]["label"]["title"] == "Workshop"
-    assert data["requested"]["conflict"] is False and data["requested"]["holds_room_on_create"] is False
+    assert [(row["booking_id"], row["tentative"]) for row in data["busy"]] == [(original.pk, True)]
+    assert data["busy"][0]["label"]["title"] == "Workshop"
+    assert data["pending"] == []
+    assert data["requested"]["conflict"] is True and data["requested"]["holds_room_on_create"] is False
 
 
 def test_the_calendar_names_the_event_only_to_a_viewer_who_may_see_it():

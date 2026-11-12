@@ -15,9 +15,9 @@ from apps.makerspaces.models import Makerspace
 pytestmark = pytest.mark.django_db(transaction=True)
 
 
-def decision():
-    maker = Makerspace.objects.create(name="Creator deletion", slug="creator-delete-decision")
-    actor = User.objects.create_user(username="creator-delete-person", password="not-a-real-secret")
+def decision(label="decision"):
+    maker = Makerspace.objects.create(name="Creator deletion", slug=f"creator-delete-{label}")
+    actor = User.objects.create_user(username=f"creator-delete-{label}", password="not-a-real-secret")
     start = timezone.now() + timedelta(days=2)
     event = Event.objects.create(makerspace=maker, title="Workshop", starts_at=start,
                                  ends_at=start + timedelta(hours=1))

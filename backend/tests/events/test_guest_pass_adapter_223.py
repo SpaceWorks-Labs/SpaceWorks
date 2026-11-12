@@ -69,10 +69,10 @@ def test_draft_events_issue_nothing():
 
 def test_staff_check_in_issues_the_pass_after_commit():
     from apps.events.services_checkin import mark_attended
-    from tests.events.checkin_helpers import make_member
+    from tests.events.checkin_helpers import make_staff
     makerspace = _events_space("ga-checkin")
     event = make_event(makerspace, starts_at=timezone.now() - timedelta(minutes=10))
-    staff = make_member("ga-checkin-staff", makerspace)
+    staff = make_staff(makerspace, "ga-checkin-staff")
     registration = register(event, user("ga-checkin-guest"))
     mark_attended(registration, actor=staff)
     assert GuestPass.objects.filter(makerspace=makerspace, holder_id=registration.member_id, kind="event").exists()
@@ -81,7 +81,7 @@ def test_staff_check_in_issues_the_pass_after_commit():
 def test_planning_equipment_for_a_pass_holder_needs_no_presence_session():
     from apps.events.equipment_window import plan_for_participants
     from tests.events.test_event_equipment_desk import _enable
-    from tests.events.checkin_helpers import make_member
+    from tests.events.checkin_helpers import make_staff
     from tests.return_helpers import make_product
     import uuid
     makerspace = _events_space("ga-plan")
@@ -90,7 +90,7 @@ def test_planning_equipment_for_a_pass_holder_needs_no_presence_session():
     guest = user("ga-plan-guest")
     registration = register(event, guest)
     product = make_product(makerspace, "Soldering iron")
-    manager_account = make_member("ga-plan-manager", makerspace)
+    manager_account = make_staff(makerspace, "ga-plan-manager")
     result = plan_for_participants(
         manager_account, event, operation_id=uuid.uuid4(), requested_for="Workshop kit",
         lines=[{"product_id": product.pk, "quantity": 1}],

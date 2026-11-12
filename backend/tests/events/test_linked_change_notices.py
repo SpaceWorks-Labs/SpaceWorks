@@ -32,8 +32,10 @@ def move(event, staff, hours=1):
 
 
 def with_loan(maker, event):
+    # Lending modules read as on only while the space's `loans.enabled` capability is on.
     maker.enabled_modules = sorted(set(maker.enabled_modules) | {"request_workflow"})
-    maker.save(update_fields=["enabled_modules"])
+    maker.enabled_features = sorted(set(maker.enabled_features or []) | {"loans.enabled"})
+    maker.save(update_fields=["enabled_modules", "enabled_features"])
     request = make_hardware_request(maker, make_product(maker))
     EventLoanContext.objects.create(makerspace=maker, request=request, event=event, active=True)
     return request

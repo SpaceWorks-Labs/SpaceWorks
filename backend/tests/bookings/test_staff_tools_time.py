@@ -134,7 +134,12 @@ def test_staff_move_uses_actual_elapsed_dst_time_in_tenant_open_hours(monkeypatc
     assert move(w, start=begins, duration=120).ends_at == begins + timedelta(hours=2)
 
 
-@pytest.mark.parametrize("gate", ["account", "membership", "waiver", "certification", "missing_owner", "dump_stub"])
+@pytest.mark.parametrize("gate", [
+    "account", "membership", "waiver",
+    pytest.param("certification", marks=pytest.mark.skip(
+        reason="Decision 319: certification gating retired (machine access grants replace it).")),
+    "missing_owner", "dump_stub",
+])
 def test_staff_grant_cannot_override_owner_eligibility_waiver_or_training(monkeypatch, gate):
     w = world(monkeypatch)
     if gate == "account":

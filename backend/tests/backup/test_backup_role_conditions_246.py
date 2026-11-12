@@ -41,6 +41,12 @@ def routes(lab):
     ]
 
 
+def _audited():
+    # `rls.capability_used` is the tenant-RLS boundary's sampled infrastructure row (first use per
+    # process per route); it records that a capability was bound, not that a role did anything.
+    return AuditLog.objects.exclude(action="rls.capability_used").count()
+
+
 def call(client, verb, url, body):
     return getattr(client, verb)(url, body, format="json") if body is not None else getattr(client, verb)(url)
 
@@ -49,11 +55,11 @@ def call(client, verb, url, body):
 def test_no_built_in_role_reaches_a_backup_or_restore_route(slug):
     lab = space(f"bk-{slug}".replace("_", "-"))
     client = api(staff_account(lab, f"bk-actor-{slug}", slug))
-    before = AuditLog.objects.count()
+    before = _audited()
     for verb, url, body in routes(lab):
         assert call(client, verb, url, body).status_code in REFUSED, (slug, verb, url)
     assert not BackupArchive.objects.exists() and not RestoreOperation.objects.exists()
-    assert AuditLog.objects.count() == before
+    assert _audited() == before
 
 
 def test_anonymous_is_refused_on_every_backup_route():

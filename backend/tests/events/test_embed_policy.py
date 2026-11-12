@@ -77,17 +77,11 @@ def test_card_follows_the_public_gate_and_never_carries_the_join_link():
 
 
 def test_event_manager_needs_the_events_settings_grant_to_change_the_policy():
-    from apps.accounts.models import User
-    from apps.makerspaces.models import MakerspaceMembership, MakerspaceRole
     from apps.makerspaces.settings_authority_writes import set_grants
+    from tests.accounts.account_factories import make_staff as staff_with_role
     space, staff, _event = fixture()
-    from django.db import transaction
-    with transaction.atomic():
-        manager = User.objects.create_user(username="evm-embed", email="evm-embed@example.test",
-                                           access_status="active", account_kind="staff", staff_makerspace=space)
-        role = MakerspaceRole.objects.get(makerspace=space, slug="event_manager")
-        MakerspaceMembership.objects.create(user=manager, makerspace=space, role=MakerspaceMembership.Role.EVENT_MANAGER,
-                                            assigned_role=role, status="active")
+    manager = staff_with_role(space, username="evm-embed", role_slug="event_manager",
+                              email="evm-embed@example.test", access_status="active")
     body = {"enabled": True, "allowed_origins": [ORIGIN]}
     assert client_for(manager).get(policy_url(space)).status_code == 200
     refused = client_for(manager).put(policy_url(space), body, format="json")

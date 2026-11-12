@@ -50,8 +50,12 @@ def test_unversioned_backup_pauses_and_checks_background_writers(monkeypatch, se
             events.append(("resume", queue))
             return [{"worker": {"ok": "started"}}]
 
-    monkeypatch.setattr(quiescence.current_app, "control", Control())
-    monkeypatch.setattr(quiescence.current_app.conf, "task_default_queue", "celery")
+    # Swap the whole proxy: patching attributes on celery's live Settings object cannot be undone
+    # cleanly (delattr on teardown raises when the key was never in its own dict).
+    monkeypatch.setattr(
+        quiescence, "current_app",
+        type("App", (), {"control": Control(), "conf": type("Conf", (), {"task_default_queue": "celery"})()})(),
+    )
 
     paused = quiescence.pause_worker_consumers()
     quiescence.assert_workers_drained()

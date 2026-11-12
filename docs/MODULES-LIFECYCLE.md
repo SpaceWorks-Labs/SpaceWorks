@@ -16,7 +16,7 @@ separate switch.
 | Edition | Hidden module keys | Public home |
 |---|---|---|
 | `makerspace` (default) | none | makerspace overview, with separate Inventory and other enabled-area links |
-| `events` | `public_inventory request_workflow scanner asset_units containers bulk_import stock_transfers qr_print_batches guest_handover stocktake machines machine_service printing bookings` | makerspace overview with enabled event links |
+| `events` | `public_inventory request_workflow scanner asset_units containers bulk_import stock_transfers qr_print_batches guest_handover stocktake machines machine_service bookings` | makerspace overview with enabled event links |
 | `bookings` | the same set with `bookings` visible and `events` hidden | makerspace overview with enabled booking links |
 | `organization` | none — a labelling edition: one makerspace row is presented as "the organization" (`branding.display_name`) | organization-labelled overview, with separate Inventory and other enabled-area links |
 
@@ -44,7 +44,7 @@ modules.
 | `bookings` | 12 | Bookable rooms and resources: bookings, notifications, email, member accounts, payments, reports (core hidden by the `bookings` edition) |
 
 **Installing without a profile** gives you **7 modules**: the six core ones plus
-`member_accounts`. Member accounts are default-on since owner decisions #80/#91, because a space without
+`member_accounts`. Member accounts are default-on because a space without
 them takes account-less requests and self-checkout from anyone with a confirmed email -- that must be a
 deliberate untick. Mobile apps are opt-in; installing `mobile` or `membership` also installs
 `member_accounts`.
@@ -73,7 +73,7 @@ docker compose run --rm --no-deps backend --role management python manage.py pur
 A module absent from `--list` either owns no data of its own or cannot be purged separately, and the
 command tells you which. [`machines`](MODULES.md#machines) is the notable second case.
 
-Maintenance, To-Buy and warranty data are purged per **capability**, not per module (#97, #128 C-8):
+Maintenance, To-Buy and warranty data are purged per **capability**, not per module:
 in `/control/`, a makerspace's **Purge capability data** page previews the rows each switched-off
 capability holds and deletes one parent's data at a time after a recent re-authentication and the key
 typed back. The switch must already be off. Each purge is audited in the space's own log.

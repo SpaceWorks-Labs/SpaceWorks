@@ -61,6 +61,7 @@ complete lists are in `frontend/package.json` and `backend/requirements.txt`. Th
 | --- | --- | --- |
 | pillow-heif (decodes HEIC and HEIF uploads) | Backend image | BSD-3-Clause; its wheels bundle libheif and libde265 (LGPL-3.0) and x265 (GPL-2.0-or-later). Licence texts ship inside the installed package. |
 | pypdfium2 (rasterises ID cards) | Backend | Apache-2.0 or BSD-3-Clause, bundling PDFium (BSD-3-Clause) |
+| pystrich (card barcodes: Code 39, EAN-13/UPC-A, PDF417, Data Matrix, Aztec) | Backend | Apache-2.0, pure Python |
 | onnxruntime and the u2netp model (card photo background removal) | Backend | MIT and Apache-2.0. An operator fetches the model with `manage.py fetch_card_photo_model`. |
 | Fonts for cards beyond the bundled ones | Fetched on demand from the Google Fonts catalogue | Each family keeps its own licence (SIL OFL 1.1, Apache-2.0 or the Ubuntu Font Licence) |
 | webauthn (py_webauthn), pyOpenSSL, pyasn1, tldextract and others | Backend, for passkeys | BSD, Apache-2.0, MIT and MPL-2.0 (the bundled Public Suffix List snapshot, data only) |

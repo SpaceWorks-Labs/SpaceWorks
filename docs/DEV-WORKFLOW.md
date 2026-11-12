@@ -202,6 +202,12 @@ Every test is part of the repository and is committed. None is ever deleted to m
 The layout stays under `backend/tests/` rather than inside each app because the shared `conftest.py` fixtures
 and the path-pinned guard tests depend on it.
 
+Cross-cutting suites also live there by purpose rather than by app (`limits_0120/`, `completeness/`,
+`parity_0120/`, `open_items_0120/`, `modules/`, `legacy_worktree_imports/`, …). Some small apps are covered
+only by those suites and have no folder of their own yet (for example `boxes`, `card_designs`,
+`id_programmes`, `managed_hosting`, `printing`, `space_controls`, `storage_capabilities`): a new test for one
+of them starts its `backend/tests/<app>/` package.
+
 A test that cannot pass in this release because its feature is not in this release is **skip-marked with a
 reason that names the missing feature**, never removed:
 
@@ -245,9 +251,12 @@ wipes that database when wanted. Seed identifiers are loaded by
 Unit-level accessibility checks use `frontend/src/test/axe.ts` (jsdom cannot compute
 colour contrast; `e2e/a11y.spec.ts` covers that in Chromium).
 
-Tests run locally only, before pushing (`.githooks/pre-push`; `./scripts/dev.sh hooks` enables it):
+Run tests locally before pushing (`.githooks/pre-push`; `./scripts/dev.sh hooks` enables it):
 `./scripts/dev.sh affected` for everyday changes, and `./scripts/dev.sh test`, `npm test` and
-`./scripts/dev.sh e2e` as the full regression before a release. GitHub Actions only runs basic
+`./scripts/dev.sh e2e` as the full regression before a release. GitHub Actions also runs the committed
+suites (decision 244): `.github/workflows/tests.yml` runs the backend suite in six shards through the same
+isolated `scripts/dev.sh test` runner, and the whole vitest suite, on PRs into `main`/`dev`, pushes to `dev`
+and by hand (Playwright e2e stays local: it needs the dev stack). Otherwise GitHub Actions runs basic
 checks: it builds/publishes backend/frontend images, creates the GitHub Release, promotes rolling
 tags and optionally deploys through the self-hosted runner; `security-audit.yml` runs `pip-audit`
 when the requirements change and weekly.
@@ -255,8 +264,8 @@ when the requirements change and weekly.
 ## CI checks (`.github/workflows/checks.yml`)
 
 The **Checks** workflow runs on every PR into `main` or `dev`, on pushes to `dev`, and by hand. It runs
-**checks only** (owner decision #108): the pytest and vitest suites stay local and gitignored, so a green
-Checks run is not a test run. Its four jobs are the required status checks on `main`, plus `version-bump` (below, PRs into `main` only); keep their names:
+**checks only** (owner decision #108), so a green Checks run is not a test run; the committed suites run
+in the separate **Tests** workflow (`tests.yml`, decision 244). Its four jobs are the required status checks on `main`, plus `version-bump` (below, PRs into `main` only); keep their names:
 
 - **`version-bump`** — pull requests into `main` only: `scripts/ci/check_version_bump.py` requires `VERSION` to be strictly higher than `main`'s, 
   the settings/OpenAPI/README version strings to match, `docs/release-<VERSION>.md` to exist and no `v<VERSION>` tag to exist yet. 
@@ -264,7 +273,7 @@ Checks run is not a test run. Its four jobs are the required status checks on `m
   see `docs/project/release-process.md`.
 - **`frontend`** — `npm ci`, then `npx tsc -b` and `npm run lint` side by side (ESLint,
   `frontend/eslint.config.js`: the recommended JS and typescript-eslint rules plus the rules of
-  hooks; `exhaustive-deps` only warns, and the gitignored test suites are not linted), then
+  hooks; `exhaustive-deps` only warns, and the test suites are not linted), then
   `npm run build:bundle` (Vite + the PWA verify script; `npm run build` would type-check again).
 - **`backend`** — Python 3.12 from `.github/actions/backend-python` (a virtualenv cached by the
   `requirements.txt` hash), `scripts/ci/lint_backend.sh` (ruff, errors only: syntax, undefined names,

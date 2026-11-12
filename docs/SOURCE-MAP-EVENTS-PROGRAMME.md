@@ -108,3 +108,7 @@ Tests live in `backend/tests/events/programme/`, `tests/maker_formats/`,
 migration/tombstone suites, and frontend beside-code files. These local tests can be ignored
 by git; preserve them explicitly at owner handoff. The [acceptance table](events/acceptance.md)
 links concrete files/routes and marks unexecuted evidence. No runtime test pass is claimed here.
+
+## Machine use logged with an event (decision 342)
+
+`events/models_machine_use.py` (link and cost approval), `events/machine_use_eligibility.py` (who may pick which event), `events/machine_use_services.py` (requester, adapter and manager writes, audited), `events/machine_use_costs.py` (organiser approval, a record only), `events/machine_use_summary.py` (event rows and totals), `events/views_machine_use.py` and `views_machine_use_event.py` (routes), `machines/event_use.py` (the tombstone-safe seam), `operations/reports_machine_event.py` (two reports) and the `machine_event_links` analytics view. Frontend: `features/machine-event-use/`.

@@ -154,7 +154,7 @@ audit, retention, encryption and route-registry adapters. Names are relative to 
 
 `module_registry_p2_presence.py`, `origin_scope_routes_p2_bookings.py`,
 `origin_scope_routes_p2_events.py`, `profile_activity_p2.py`, `profile_activity_public.py`,
-`profile_activity_sources.py`, `profile_contract_urls.py`, `profile_contract_views.py`,
+`profile_activity_sources.py`, `profile_contract_urls.py`, `account_profile_children_views.py`,
 `profile_github.py`, `profile_github_fetch.py`, `profile_github_tasks.py`, `profile_github_urls.py`,
 `profile_github_views.py`, `profile_history_public.py`, `profile_history_speaking.py`,
 `profile_history_views.py`, `profile_projects.py`, `public_profile_access.py`, `public_profile_cache.py`,

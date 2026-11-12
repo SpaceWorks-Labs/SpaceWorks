@@ -683,6 +683,17 @@ admitted. The first API hostname and apex are operator-configured infrastructure
 counter (`add_storage`/`free_storage`) charged at finalize; `recompute_storage` management command is the
 authoritative reconciler. Email daily cap via `integrations.DailyEmailCounter`.
 
+**Limits by module and platform defaults (decision 328a, 0.12.0).** Resolution is one order in all three resolvers
+(`limits_core.resource_limit`, `space_quotas.quota_limit`, `platform_limits.platform_limit`): space override, hosted
+plan, `PlatformLimitDefault` (`managed_hosting/limit_defaults.py`, superadmin-set, audited), then unlimited; nothing
+is stored by default. `makerspaces/limit_modules.py` gives every key one home module and every module either keys or
+a reasoned exemption (guard: `tests/limits_0120/test_module_coverage.py`), so a new module or key cannot ship
+unlimited by accident. A new key needs: `limits_core` set, `extra_quotas.SPECS`, a counter in
+`extra_quota_counters*`, `limit_registry` ENFORCEMENT + AREA_OF, `limit_modules.KEY_MODULE`, `limits_role.AREAS`,
+and the frontend `limitCopy`. A limit refuses only the START of something new (typed 409) and never touches
+existing data, reading, exporting, settlement, refunds or returns. `SpaceLimitThreshold` is derived marker state:
+`limit_thresholds.sweep_space` notifies once per 80/100 crossing (inbox event keys are per month) and resets under 80.
+
 **One domain per makerspace.** `Makerspace.frontend_domain` (case-insensitively unique) is the single
 frontend-registry field (the old per-type `TenantFrontend` model is deleted). Two origin helpers in
 `platform.py`: `makerspace_staff_origins` (ONLY the exact `https://<frontend_domain>`, feeds refresh/
@@ -1061,6 +1072,25 @@ workers by default with `--max-requests 1000`, so a per-process cache multiplies
 then resets its counters as workers recycle. The operations migration creates the cache table; no
 separate operator step is required.
 
+**A Redis outage degrades the cache; it never fails the request and never makes a limit unlimited
+(decision 339).** The Redis cache backend is `config.redis_cache.ResilientRedisCache`: a call that fails
+with a Redis error is answered from a bounded per-process fallback and Redis is skipped for 5 seconds, so
+throttles keep counting per process (at most rate x workers) and sign-in keeps working. Never configure
+Django's plain `RedisCache`: every DRF route reads the cache, so a Redis outage would answer 500 to every
+request, login included. A **single-use** claim (signed-request nonce, one-time link, possession proof) must
+use `config.redis_cache.claim_once`, which raises `SharedCacheUnavailable` instead of claiming in one process,
+and the caller refuses with a retryable 503/429. Every cache key expires, except the four single
+last-known-good/heartbeat keys `tests/test_redis_cron_mode_0120.py` allows; no secret, email, phone or raw
+username goes into a key. Inventory and per-use rules: `docs/architecture/redis.md`.
+
+**Every DRF route has a rate ceiling (decision 336c).** `DEFAULT_THROTTLE_CLASSES` names the three
+`config/throttles.py` baselines (`THROTTLE_DEPLOYMENT_ANON`/`_USER`/`_DEVICE`), counted per signed
+device, per account, or per API client / client IP — exactly one per request, fixed-window counters
+in the same shared cache, never a DB read on the hot path. A view that declares `throttle_classes`
+(or `get_throttles`) replaces the baseline, so a new public route must still carry its own tighter
+scope; only signature-verified provider webhooks and the free-tier tick opt out with
+`throttle_classes = []`. Never key a baseline on `user.pk` alone: a `DevicePrincipal` has no `pk`.
+
 **Object storage.** Two buckets per env: a private evidence/docs bucket and a separate **public-read**
 image bucket (`PUBLIC_IMAGE_BUCKET`, served via `PUBLIC_IMAGE_BASE_URL`, kept distinct from the signing
 host). New file types use the **prefix model** (single shared bucket, isolated by
@@ -1343,12 +1373,23 @@ removed, while nonempty role sections are refused. Membership and per-person aut
 in a pack. Tenant imports reduce member memberships to Member; staff retain built-in roles and
 remapped additional roles/type links under D11 (see the account-kinds section above).
 
-**`apps/makerspaces/module_registry.py` is the single source of truth for module keys.** All 37
+**`apps/makerspaces/module_registry.py` is the single source of truth for module keys.** All 36
 `ModuleDefinition`s live there (`key`, `label`, `description`, `app_label`, `enforcement`, `group`,
 `requires_modules`, `default_enabled`, `is_core`, `frontend_exposed`, `frontend_workflows`), and the
 lists that used to be hand-kept in parallel now **derive** from it: `models.DEFAULT_ENABLED_MODULES`,
 `platform.MODULE_WORKFLOWS`, `capabilities.FEATURE_MODULES`, and the former hardcoded
 `printing → machine_service` branch (now `requires_modules` data). Add a module **only** in the registry.
+**A retired key is read, never registered** (decision 340b): `makerspaces/module_aliases.RETIRED_MODULE_ALIASES`
+maps `printing → machine_service`, and every reader canonicalizes through it — `_canonical_modules`,
+`prune_features`, `module_enabled`, `available_modules`, `require_module_for_servable`, `module_off`,
+`module_available`, `public_surface_available`, `module_install` (install maps; **uninstall of a retired key
+is refused**, because mapping it would switch off the whole live module), the `/control/` matrix, setup
+`area_status`/`without`, hosting plans and the creation-setup serializer. So a stored row, an older backup or
+tenant dump, a plan or an API client that still says `printing` keeps its meaning, while no screen, setup
+area, profile, edition, purge plan, report coverage row, limit or `/features` page offers it.
+`makerspaces/0154` strips the stored key once (machine service on where printing was; reversible from its
+audit row). The frontend mirror is `frontend/src/lib/retiredModules.ts` (`ModuleKey` = generated enum minus
+retired keys); `/features/printing` redirects to `/features/machine-service`.
 Two rules the registry must not break: it **never imports `makerspaces.models`** (models imports it, so
 the reverse edge is a cycle), and `default_enabled_module_keys()` returns a **fresh list** because it
 backs a JSONField default. `frontend_exposed=False` marks an internal master switch and drops the key
@@ -1365,8 +1406,8 @@ unregistered, if the derived lists change, or if a migration-referenced callable
 deployment is host tooling, not a module.
 `member_accounts`, `mobile` and `payments` once carried it too and are now opt-in for new
 makerspaces (existing rows kept them through `0057`). Everything else is off in the registry default. Guided setup explicitly installs the chosen
-areas and always-on services. Legacy CLI profiles remain available (`minimal` 6 / `workshop` 13 / `lending` 16 /
-`recommended` 19 / `cloud` 24 / `events` 12 / `bookings` 12 / `everything` = `full` 37 — pinned by
+areas and always-on services. Legacy CLI profiles remain available (`minimal` 6 / `workshop` 11 / `lending` 16 /
+`recommended` 19 / `cloud` 23 / `events` 12 / `bookings` 12 / `everything` = `full` 36 — pinned by
 `tests/modules/test_combo_profiles.py`).
 `ModuleDefinition.default_enabled` defaults to **False** and core must not set it (core is on by
 definition; two sources for one fact is the drift the registry exists to remove). `member_accounts`
@@ -1709,6 +1750,18 @@ non-default module unreachable for a makerspace that didn't already have it (`no
 but un-enableable), and under opt-in defaults it would have hidden nearly the whole registry. Core is
 **labelled, not disabled**, and unrecognised stored keys stay selectable so an untouched save can't drop
 them.
+
+**Every switch says who, at which level, and from what to what (module audit 0.12.0).** Module changes
+audit `makerspace.capabilities_changed`, feature changes `makerspace.features_changed` (always through
+`makerspaces/capability_audit.record_features_changed`, including the switches the membership editors flip
+themselves), and both carry `scope` (always `space`), `authority` (`platform` superadmin, `space` staff or
+`system`) and `via`; features also carry `turned_on`/`turned_off`. The deployment level (`TOMBSTONED_APPS`,
+`SPACEWORKS_EDITION`, `HUB_LANDING_ENABLED`) is environment read at start-up, shown read-only, and has no
+runtime writer to audit. The staff settings PATCH refuses (400) to turn ON a retired switch or one whose app
+or module the deployment does not ship (`capability_eligibility.unavailable_features`); keys already stored
+are never rewritten, and the restore/setup/pack paths (`restore_feature_configuration`) are exempt. Native
+push registration is the `mobile.push` switch's surface (typed 404 when off); unregistering stays open.
+`tests/modules/test_module_audit_0120_*.py` pin all of this over the live registries.
 
 **The `membership` module gates the community feature, not RBAC (A7).** `MakerspaceMembership` is core
 RBAC state, so gating it wholesale would lock a makerspace out of its own staff administration.
@@ -2267,6 +2320,17 @@ every unauthenticated login attempt, and a read path that writes is a write per 
   a usable enabled credential. Staff/platform are password-only, regardless of the member password
   switch; social identities never count as their alternative credentials. Reads fail open with
   last-known-good switch values; writes fail closed when validation cannot prove member survival.
+- **One "way in" answer for every lockout guard (decision 339b).** `credential_inventory.ways_in`
+  counts a usable password (switch on, or the person holds a staff role), a linked provider still
+  available, a verified phone while phone sign-in is on AND SMS is configured, and a passkey while
+  passkeys are on. The switch validator (candidates: people holding a provider, a verified phone or a
+  passkey; password-only members stay governed by the password switch alone), provider unlink, phone
+  unlink (409 `last_credential`; walk-ins exempt, staff reissue claim codes) and passkey removal
+  (403 `last_credential`) all use it. Emailed password reset is not counted.
+- **An OIDC provider's slug and issuer are fixed once anyone has linked it**
+  (`oidc_provider_guards`, shared by the `/control/` form and the console PATCH): a `sub` is unique
+  only per issuer, so re-pointing would sign a stranger at the new server into an existing account.
+  Disabling or blanking a linked provider runs the switch validator with that provider removed.
 - **Setup applies `SETUP_MFA_ENABLED` and `SETUP_SOCIAL_PROVIDERS` only on first row creation**,
   independently of whether the makerspace already exists. Reruns preserve later operator choices.
   `set_login_methods --mfa on|off --providers google,apple,github` (empty/`none` = none)
@@ -2299,35 +2363,98 @@ other session can finish it. The link is `resolve_social_identity(explicit_user=
 elsewhere → 409 `identity_conflict`, second subject → 409 `provider_already_linked`. Staff/platform
 accounts, device grants and sessionless tokens are refused before any attempt exists.
 
-**Maker profiles hang off `MakerspaceMembership`, and are deliberately NOT PII-encrypted (phase 12).**
-`User` is platform-global and scoped encryption is per-makerspace, which is why `accounts.User` is
-outside the PII registry — so a profile attached to the user could be scoped to nothing. Per-membership
-is also the truer model: what someone publishes to one space is not theirs to publish in another.
-`ScopedPiiModelMixin` is omitted on purpose (`separability.E001` only fires for models that take it, and
-its own hint names dropping the mixin as the right answer): every field is content the member wrote and
-asked to have shown, so encrypting it buys nothing and drags in the envelope/dual-read machinery.
-- **Visibility is opt-in and defaults off**, and no profile row is the same answer as an invisible one.
-  Directory rows carry display name, headline and avatar and **nothing else** — everyone who did not opt
-  in becomes part of `hidden_count`, so a space can show its size without naming anyone. One 404 covers
-  "no such member", "not a member here" and "has not published".
-- **`member` is a fifth public-image kind and needed all four registrations plus the collision check.**
-  `build_object_key`, `lifecycle._collect_public_image_keys`, `recompute_storage._public_image_keys`,
-  `module_purge_plans["membership"].public_image_keys` and `public_image_key_in_use` (new `profile_id` /
-  `project_id` exclusions). All but the first fail **open**. Profiles are reached through
-  `membership__makerspace`, since the row carries no makerspace column.
-- **Profiles go with a `membership` purge; the membership itself still does not** (plan A7 unchanged).
-- **Link URLs are restricted to http/https**, because they render as an `href` on a page other members
-  read — a stored `javascript:` URL is stored XSS and escaping the text does nothing for an href.
-  The separate public `links` field requires HTTPS without credentials. Every member-writable list
-  is length-capped.
-- **GitHub is never fetched on a read path.** `refresh_github_contributions` (command + Celery) does it;
-  a failure keeps the last known count and still stamps `github_synced_at` so a throttled API backs off.
-  Unset `GITHUB_API_TOKEN` = dormant, count stays `None`, section omitted. Changing the handle clears the
-  cached count outright, or one account's total shows under another account's name. **The write-back
-  is filtered on the handle that was FETCHED, not just the pk**: a member can change their handle
-  while the HTTP call is in flight, and an unconditional `.update()` then lands the old account's
-  total under the new name. A count under the wrong name is a false claim about a person, not stale
-  data, so the raced write is dropped rather than applied.
+**The member profile is ONE global account-level `AccountProfile` (decisions 302-305), deliberately NOT PII-encrypted.**
+It is a `OneToOne` to `accounts.User` (`apps/makerspaces/models_account_profile.py`), addressed by the account's public
+handle like a username. The old per-membership `MemberProfile` / `MemberProject` / `ProfileTimelineEntry` rows stay in
+place and READ-ONLY for one more release (nothing is deleted in this release); migration `0153` merged them.
+- **Why it is still not encrypted.** Scoped PII encryption is per makerspace and `User` is platform-global, which is
+  why `accounts.User` is outside the PII registry: a field on the user can be scoped to nothing. Every column is content
+  the member typed in order to have it shown, and email/phone stay on `User`. `ScopedPiiModelMixin` is omitted on
+  purpose (`separability.E001` only fires for models that take it).
+- **Open by default, in two separate layers.** `is_visible` and every section toggle (`SECTION_TOGGLES`) default True:
+  any signed-in user, in any space, reads the profile with no consent. The open web (logged out, search, share cards)
+  is the separate `public_visible` + `public_consented_at`, default OFF, and false-to-true needs a fresh
+  `publication_consent=true`. Never shown whatever the toggles say: attendance at private / invite-only / unlisted
+  events, unpublished or withdrawn results, anything from a space where the person is not an ACTIVE member, spaces
+  the superadmin hid or archived, and **any** part of a restricted/suspended/inactive account (its whole profile is
+  hidden). Hidden, missing and unreadable are ONE 404.
+- **Minors are never platform-wide (336a, SECURITY-REVIEW H4).** Anyone an uncleared `MinorProfile` in any space
+  still marks as under age (`account_profile_minors`, which deliberately ignores the space's minors switch) is
+  readable only by themselves and by people who share an ACTIVE space with them; the open web additionally needs a
+  CURRENT guardian consent in every space that recorded them (`_apply_open_web` refuses the switch without it, and
+  `can_read` re-checks it on every logged-out read). Minors are never on the sitemap, never get a share card and are
+  never named as a voucher.
+- **What a reader sees depends on who they are (336b, M13).** The owner sees everything. A signed-in reader who
+  shares an active space with the person also sees role titles and vouches; everyone else (other members of the
+  platform and the open web) sees spaces only when the space is public (public site on and the `membership` module
+  on) or shared, never role titles, never vouches, and organisations only with `public_profile_enabled`. The
+  member-directory detail (`profile_directory.visible_profile`) is built from that member-audience payload and only
+  re-shaped into the legacy response: no owner state, every section switch and the per-project flag apply (H1).
+- **Existing profiles (303d).** The merge treats a profile as explicitly hidden only when a `member.profile_updated`
+  audit row with `visibility_changed` true shows a hidden latest value; everyone else becomes open and gets one
+  translated notice (`profile_opened`, sent by `notifications_profile_open` from the hourly membership sweep).
+  `sections_changed` is now recorded on every write, so the rule stays decidable. Every profile row created later
+  (sign-up, backfill, lazy read) is queued for the same notice (H5). The merge never widens a publication (H2,
+  335c): when any legacy row was visible, content comes ONLY from the visible rows; every legacy consent (attended
+  events, activity graph, projects, certifications, the activity families) carries over only as a "yes" from a
+  contributing row; and the open web stays on only when EVERY contributing row had consented, otherwise it is off
+  and `public_reconfirm_pending` asks the member once (the notice and a profile-settings banner) to confirm again.
+  An account merge likewise keeps the STRICTER value of every switch.
+- **Handle (decisions 305c, 308).** One `PublicHandle` per account resolving through `user` (its legacy `profile`
+  pointer is optional and `SET_NULL`, so a legacy purge never deletes the account's handle). **Everyone needs one.**
+  Email sign-up only grammar-checks the chosen handle and stores it on the verification challenge; it is CLAIMED when
+  the email is confirmed (`claim_requested_handle`, the best suggestion if it was taken meanwhile), because claiming
+  at sign-up made "taken" mean "this address is new" (M14). Social and walk-in upgrade claim at creation. Login and
+  public handle stay separable (336d, M15): a username that signs in with a password (`username_is_login`) is never
+  suggested or claimed automatically -- such accounts choose at the gate -- while passwordless accounts keep the
+  username-first default; anyone may still CHOOSE their username. Every account without a handle hits the typed
+  `handle_required` gate (`handle_gate.assert_handle_chosen`, 403, in `SpaceWorksJWTAuthentication` only, so HMAC
+  clients and kiosk/station tokens are structurally unaffected). The gate never blocks verification, sign-out,
+  password/MFA/passkey/re-auth or account deletion (`ALLOWED_URL_NAMES`), and never applies during the person's own
+  30-day release wait, during which they may take their own released name back (M16). Suggestion order: username
+  (unless it is a login, never a `member_<hex>` placeholder), display-name slug, slug plus digits; never a reserved or
+  taken name. `GET /handles/check` answers only available / taken / invalid -- a reserved word answers "taken" (336d).
+  Reserved names include brand and operational words besides routes (L-P1). An abandoned sign-up frees its handle,
+  and a purged account's handle is retired into the ordinary 30-day reservation, never freed at once (L-P2).
+  Rename/redirect rules are unchanged; an automatic claim leaves one free change.
+- **Stored references keep a legacy identity token (decision 305).** Page team members, event website revisions,
+  event photo selections and certificate print sources name a `MemberProfile` row, and published revisions are
+  immutable, so they are NOT re-pointed. The row is only a token for "this person in this space"
+  (`account_profile.ensure_legacy_pointers`, created with the profile and on demand): visibility is ALWAYS the
+  account profile's (`public_profile_access.profile_is_public` / `account_is_open_web`: visible + open-web consent +
+  listable + a handle, plus an active servable membership), and the photo is the account avatar mirrored onto the
+  token (`mirror_avatar`, which also moves `updated_at`, the photo-source revision). Handles, crew listings and
+  API-client targets resolve through the USER, never through `PublicHandle.profile`.
+- **Aggregation (304c).** Spaces/organizations, attended events and verified achievements are computed live across
+  the person's spaces (`account_profile_spaces`, `account_profile_activity`, `profile_achievements`); published
+  results from any space follow the latest publication pointer; attendance, roles and speaking only from
+  `listed_space_ids(user)` and only for public, listed, live events. Derived organization membership (293) is
+  display-only here.
+- **Account-level data, never tenant data.** The four models are in `data_export.OMITTED_MODELS` and are NOT in
+  `PROJECTED_MODEL_LABELS`: no space export or tenant dump carries them (a space only ever sees the directory
+  projection: name, headline, avatar, from `profile_directory`). `AccountProfile.user` is an excluded user edge and
+  a `UNIQUE_RESOLVE` merge row; `account_profile_account_merge` combines two profiles before the registry walk;
+  `account_profile_purge` deletes the rows and images with the account. The person's OWN subject-access export
+  still carries them, as an `account_profile/` section built from the requester alone
+  (`data_export.subject_account_profile`, M17, 336f).
+- **Images (`member` and `account` public-image kinds).** Keys are minted `member/<space_id>/...` (home space or legacy
+  path space, which is charged); an account with NO active membership mints `account/<user_id>/...` instead, which is
+  charged to no space, never collected by a space purge or `recompute_storage`, only attachable by that user, skipped
+  by the per-space purge journal (`account_purge_scrub._profiles`) and deleted by `account_profile_purge` [auto, 243]; `public_image_key_in_use` knows the account holders (`account_profile_id` /
+  `account_project_id`); migrated keys are SHARED with the legacy rows, so the membership purge collectors
+  (`module_purge_collectors_membership`, `storage_key_collectors`) drop any key an account row still holds
+  (`account_profile_purge.without_account_held`). The two image fields are `COORDINATION_ONLY` object rules.
+- **The old per-space routes are deprecated aliases** (`profile_legacy_aliases`): same implementation, old guard
+  (active membership + `membership` module), old response shape from `profile_services.read_profile`. The
+  activity graph and GitHub calendar are account-level now (`profile_activity_public`, `profile_github`): sources run
+  once per listed space through `SpaceScope`; the speaking/machine/booking/loan families stay opt-in (default off).
+- **Link URLs are https only** (a stored `javascript:` URL is stored XSS); every member-writable list is capped
+  (timeline 100, achievements 30, projects 20, links 10, skills 30).
+- **GitHub is never fetched on a read path.** `refresh_github_contributions` (command + Celery) does it; a failure
+  keeps the last known count and still stamps `github_synced_at`; the write-back is filtered on the handle that was
+  FETCHED. Unset `GITHUB_API_TOKEN` = dormant. (Still on the legacy row this release.)
+- **Profile writes are audited WITHOUT their content** (see the audit paragraph below): fields touched, visibility
+  transition, `sections_changed`, project counts, never the bio, entries or an object key.
 
 **Staff event registration is the SAME service, with exactly one relaxation (phase 13).**
 `services_registration.register(..., staff_registration=True)` relaxes only the `is_public` check —
@@ -2368,7 +2495,7 @@ key. The audit log is append-only, so anything written there is permanently unde
 and an object key logged there outlives the image and every row that could name it.
 
 **Public handles are separate publication consent (2026-10-17).** One `PublicHandle` per account
-selects one membership profile. Normalize lowercase; use 3–30 ASCII letters/digits/dots/underscores/
+names the account (and, on legacy rows, one membership profile). Normalize lowercase; use 3–30 ASCII letters/digits/dots/underscores/
 hyphens, beginning and ending alphanumeric. Reserved top-level segments include `now`; keep
 `public_profile_reserved` and crawler exclusions aligned with the route inventory. Namespace writes
 lock the account and names; DB constraints enforce case-insensitive uniqueness and grammar.
@@ -2376,7 +2503,9 @@ lock the account and names; DB constraints enforce case-insensitive uniqueness a
 - Rename/repoint only after 30 days. Retired names remain reserved for 30 days; release also prevents
   another claim during that window and clears publication consent. A retired URL redirects only to
   a currently eligible public claim; otherwise every public surface gives the same 404.
-- `is_visible` is the member-directory opt-in. `public_visible` plus `public_consented_at` is the
+- (Superseded by decisions 303-305: `is_visible` now defaults ON and is the signed-in visibility switch of the global
+  `AccountProfile`; the activity-graph/events/speaking/projects/machine/booking/loan consents below describe the
+  legacy per-space graph only.) `public_visible` plus `public_consented_at` is the
   independent public opt-in; false→true requires fresh `publication_consent=true`. Public visibility,
   graph, events, speaking, projects, machine activity, bookings and loans all default off. Existing
   directory consent grants none of them. Account/membership standing, Membership module, tenant
@@ -2921,6 +3050,20 @@ HMAC discipline. Endpoint URLs pass `webhook_validation.validate_webhook_url` (h
 loopback ranges) at save time and are re-resolved and pinned at send time; a delivery error never stores
 the URL. Both secrets are `ALWAYS_OMITTED` from export and DERIVED-omitted from tenant migration. The
 superadmin "Re-queue failed deliveries" admin action is the dead-letter path and audits each row.
+
+**Tenant-configured outbound calls share one pinned, bounded transport (SECFIX-A, 0.12.0).** Device adapter
+webhook pushes, the image adapter (and any `mask_url` its provider returns) and Anthias players resolve through
+`apps/outbound_policy.resolve` exactly once, every DNS answer is checked against ONE blocked-address policy
+(loopback, link-local incl. 169.254.169.254, 100.100.100.200, the AWS IPv6 metadata range, multicast, reserved,
+site-local and IPv6 forms embedding them; non-global incl. CGNAT only when the caller allows private), and
+`apps/outbound_http.send` dials that exact address with the original Host header and TLS name, follows no
+redirect, ignores proxy environment variables, reads at most a caller-set byte cap and stops the whole exchange
+at one deadline (a watchdog closes the socket, so a dripping peer cannot hold a worker). Anthias alone may reach
+private LAN addresses (`ANTHIAS_ALLOW_PRIVATE_HOSTS`, default on for self-host and off for managed), never the
+deployment's own service networks (`presence/anthias_networks.py`). A new client for a tenant-configured URL
+uses this pair; it does not call `requests`/`httpx` on the name. What the remote did is never shown to tenant
+staff in detail (adapter delivery log: delivered or failed; Anthias Test: `failed`), so these surfaces are not
+port scanners.
 
 **Editions (forward plan phase 4, 2026-09-03).** `SPACEWORKS_EDITION` is a
 **deployment**-level setting (`apps/makerspaces/editions.py`), never per makerspace, exactly like
@@ -3653,7 +3796,7 @@ RBAC action `view_analytics`. The view list and its version are in [analytics-vi
   `public_site_enabled` is off, **or when no section is left to show** — so a space whose modules
   and editions hide every chosen section still has no page, exactly as before #170.
 - **Every section follows its module and its edition surface** (`public_surface_available`):
-  events → `events`; machines → `machines`; printing → `machine_service` + `printing`; lending
+  events → `events`; machines → `machines`; printing → `machine_service` (340b); lending
   → `public_inventory` + `public_inventory_enabled`; community → each of `membership`,
   `bookings`, `presence` gates its own count, and the section hides when all three are off. Off
   hides; data is kept.
@@ -4150,7 +4293,7 @@ the public "never expose QR" rule are the ones every QR has. Do not regress:
   the only writer of `MachineSession` for every source (`member_qr`, `staff`, `device`).
 - **Who may start** (`machines/sessions_rules.py`, typed codes, in this order): `member_restricted`
   (403), `membership_required` / `waiver_acceptance_required` (403), `presence_required` (409, the
-  presence guard; it lapses only when presence is off or tombstoned), `certification_required`
+  presence guard; it lapses only when presence is off or tombstoned), `certification_required` (RETIRED, decision 319: now `no_machine_access` / `machine_access_expired` from `access_grants.can_use`)
   (403: every active certification of the type flagged for service OR booking, under
   `machines.certifications`), `machine_unavailable` (inactive, maintenance or offline),
   `machine_locked_out` (L12 lockout), `machine_booked` / `booking_required` (L12 `booking_gate`
@@ -4819,8 +4962,72 @@ not module keys** (one app can own several keys — `printing`/`machines`/`machi
   `Machine.status`, a request, consumption or money. Both new models are omitted from exports and
   tenant dumps (a moved device re-enrolls and is re-bound).
 
+**Device Adapter media and data (decision 321).** Spec: `docs/device-adapters/media-and-data.md`. Eight child switches under `machines.integrations` (`.audio .talk .audio_recording .artifacts .detections .telemetry_history .diagnostics .offline_cache`), all default off and `404` when off. Never regress: audio is receive-only by default, talk is staff-only push-to-talk with an audit row per press, audio recording needs the notice acknowledged and keeps 3 days; every artifact is a PRIVATE staging-promoted object with a per-kind size cap and retention, the `adapter_artifacts` limit (default none), owner-readable only for their own job (never audio or log bundles), deleted at expiry and on space purge; a detection NEVER makes core pause, power off or cancel (it notifies); the offline access cache holds NFC digests only, is HMAC-signed with the per-device key, expires in minutes and uses the single `access_grants.can_use` function; offline decisions reconcile into the append-only access log idempotently; remote config refuses secret-like keys; telemetry history is bounded by the rollup sweep (raw 24 h, 1 min 7 d, 15 min 90 d). All new models are omitted from exports and tenant dumps.
+
+**Device Adapter API v1 (decisions 310-312, 0.12.0).** Contract and routes: `docs/device-adapters/`.
+
+- **An adapter is a Device of kind `adapter`**, never a user and never an audit actor (`actor=None`, the device id in
+  metadata). Routes are `/api/v1/device/adapter/v1/...` in the SAME default-deny registry (`route_registry_adapter.py`,
+  `devices.E001`) with an EMPTY module tuple: the view answers 404 unless `machines.integrations` (now
+  `frontend_exposed`) is on, and each capability's child switch (`.access`, `.usage_billing`, `.video`) is checked the
+  same way. Staff routes (`/api/v1/admin/adapters...`, `adapter-bindings...`) need `MANAGE_DEVICES` plus the actor's
+  machine scope for a machine target; an id outside the actor's tenant is 404.
+- **An adapter reaches only its OWN enabled bindings, and only the capabilities each binding serves** (`binding_for`
+  404s anything else). Event types must belong to a declared capability; payloads are validated with the very schema
+  dicts exported to `docs/device-adapters/schemas/` (a test pins them), and unknown fields are refused.
+- **Access decisions are made by the existing rules and fail CLOSED.** `access.authorize` / `session.start` call
+  `machines.sessions_rules.refusal` (machine) or active-membership (door/space), map codes to the published reasons,
+  and treat any unexpected error as `internal_error_fail_closed`. A denial never touches a live session. Every decision
+  is an append-only `AdapterAccessLog` row plus an audit row. A session an adapter starts is a normal `MachineSession`
+  (source `device`) through `sessions_service.start/stop`, so certification, check-in, booking, lockout, the frozen rate,
+  the monthly session limit and the charge-tracking ledger are the same ones members obey; only a session THIS adapter
+  started can be stopped by it (`device_job_ref`).
+- **NFC and PIN credentials are digests only** (`AdapterCredential`: HMAC-SHA256 keyed by `SECRET_KEY` and scoped to the
+  tenant, and to the user for a PIN). The secret is never stored, logged, audited or echoed. A PIN needs the member
+  number on the card; 5 wrong PINs lock the credential for 15 minutes. One live credential per kind and member.
+- **Poses are staff-only and device-bound.** `AdapterPose` is never on a public or member surface, never in a command
+  log or the adapter's binding list, never in an export or tenant dump (omitted; re-calibrate on the target), and never
+  echoed into audit metadata. Locate targets are tenant-checked (a storage location must exist on a product; items and
+  boxes by id); a cross-tenant target is 404. Public inventory still never exposes a location, box or QR (above).
+- **Controls and commands are audited with the staff actor and never echo params**; delivery is lease/ack, at-least-once,
+  bounded attempts, a ten-minute TTL, and a command is delivered only to the key version it was queued for. An
+  expired command is closed before lapsed leases are requeued (never re-leased), a lease is capped at the command's
+  TTL, and an ack after the lease lapsed, after the TTL or under a rotated key is refused and audited
+  (`devices.adapter_command_ack_refused`). A command
+  whose capability's child switch went off after it was queued is never leased (it fails `capability_switched_off`,
+  `services_adapter_commands._undeliverable`), so switching `.access` off also stops a door `unlock` already queued.
+- **Every signed adapter route gates on `adapter_device` before any lookup** (switch 404, then revoked/rotated 403),
+  including `jobs/{id}/progress` and `jobs/{id}/report`. OpenAPI request bodies are the validator's own schema dicts
+  (`devices/openapi_adapter.py`); every typed `AdapterError` code must appear in `docs/device-adapters/` (a test scans).
+- **Camera watch is opt-in, short and audited.** Staff only, five minutes, concurrent watches and monthly snapshots are
+  limit keys (`adapter_watch_streams`, `adapter_snapshots`, default none); `adapter_bridges` limits enrolled adapters.
+  Snapshot frames live only in the cache (one minute). An opt-in watch RECORDING is stored: `video/webm` or `video/mp4`
+  only, a 512 MB cap bound into the signed upload, on the staging key of `adapter-recordings/<space>/<watch>` (never
+  promoted; no route serves it back), kept `RECORDING_DAYS` (7). Retention deletes every version of BOTH keys and stamps
+  `recording_purged_at` only after storage confirmed it (`services_adapter_recording.purge_recordings`, retried by the
+  next sweep on failure); the devices module purge collects both keys of every recording and artifact
+  (`devices_private_keys`). Never mark a row purged over a delete that was not confirmed.
+- **All ten adapter models are omitted from data_export and tenant dumps** (`classification_adapter.py`,
+  `catalog_adapter.py`); every User FK has a decision (`merge_registry_rows_accounts`); purge deletes them first
+  (`module_purge_collectors_devices.delete_adapter_rows`).
+
+## Machine access (decision 319) -- the Space Manager grants machine use; certifications gate nothing
+
+- **One function decides.** `apps/machines/access_grants.py::can_use(member, machine) -> (allowed, reason)` (and `can_use_type` for callers that hold only a machine type) is the only place that decides "may this member use this machine". Reasons are `no_machine_access` and `machine_access_expired`. Sessions (`sessions_rules.require_can_start`, which the adapter `access.authorize` and kiosk use through `refusal`), job requests (`service_workflow_actions.submit`, `service_workflow_review` resubmit), machine bookings (`bookings.services_bookings._require_certification`, now a machine-access check, also used by event machine links), and guest machine modes (`guest_access`, `include_open=False`) all call it. Do not add a second check, and never reintroduce a certification, training or induction refusal.
+- **Authority is the existing machine authority.** The Space Manager and superadmin may grant anything; a Machine Manager only inside their machine scope (`access.is_machine_admin` for a machine, `access.can_create_machine`, the TYPE link, for a type-wide grant). No new RBAC action. Cross-tenant ids are a 404. Every grant, renewal, revoke and open-to-all change writes an audit row (`machine_access.*`, `machine.open_access_changed`).
+- **A grant is never deleted.** `MachineAccessGrant` (member, one machine OR one machine type by a DB check constraint, granted_by, expires_at, note, revoked_at/revoked_by); revocation sets the revoked fields, a renewal updates the live row. `Machine.open_to_all_members` (default off) needs no grant and never admits a guest-pass holder.
+- **A grant belongs to ONE makerspace (decision 336k).** Built-in machine types have `makerspace` NULL and are shared by every space, so the live-grant unique constraints are `(makerspace, member, machine)` and `(makerspace, member, machine_type)`, and every lookup (`grant_access` renewal, `can_use`, the member list, migration `0040`'s `_ensure`) filters on the space. Space B never renews, re-notes or reveals space A's grant for the same person. A type lookup that must admit built-ins uses `Q(makerspace=space) | Q(makerspace__isnull=True)` — `makerspace__in=[space, None]` silently drops the NULL. A grant outside the caller's machine scope answers revoke with 404, and bulk grant looks up only the space's active members, so neither confirms that a row or an account exists. The expiry notice sweep runs only for live spaces with `machines` on, under `fanout_tenant_write`, and claims each row before sending.
+- **Supervision stays a separate machine setting**; a supervised participant needs no grant while inside the session.
+- **Certifications are history.** The models and rows stay (export, /control/ read-only, migration `0040` converts qualifying members, ungated machines and live guest certifications into grants, idempotently). The switches `machines.certifications`, `machines.certification_reminders` and `machines.induction_events` are in `RETIRED_FEATURES` (always off, hidden from settings); every certification and induction route answers 410 `certifications_retired` (`machines/retired.py`). Event certificates (Card Studio) are a different feature and are untouched.
+- **The certification reports are retired history (decision 329).** `certification-holders` and `certification-coverage` are titled "(retired)", listed (catalogue, schedules list) only for a space with certification records (`operations/report_retired.py`), and refused for any NEW schedule; an existing schedule keeps running and the manual export keeps working. The command palette no longer offers them.
+- **Wallet passes with `*.wallet_passes` off (decision 329).** No new pass is issued (request and a queued issue job both refuse); an existing pass receives only its ending (voided, revoked or expired) through the push, the refresh sweep and the PassKit web service (`wallet/service.update_allowed`; the web service answers 304 for any other change), so a revoked card never looks valid.
+
 ## Machine scoping — `MANAGE_MACHINES` is per person by type, and fails CLOSED
 
+- **Device adapters honour machine scope too (security review M5, decision 336(i)).** `devices/adapter_access.py`
+  narrows adapter-level staff reads (access decisions, usage, events, commands, the adapter summary) to bindings
+  the actor can manage; config push, config history and the push webhook need EVERY machine binding of the adapter
+  in scope (`scoped_adapter(..., whole=True)`); a machine type's adapter safety profile needs type authority.
 - **0.12.0 supersedes the type-only wording below: reach is types UNION machines.**
   `MembershipMachineScope(membership, machine)` (machines migration 0038) sits beside the type table and
   `role_scope_resolution.link_reach` returns both as the `(type ids, machine ids)` pair every consumer already
@@ -5284,7 +5491,7 @@ Load-bearing details that carried over unchanged:
     table; Django applies field defaults in Python rather than DDL, so the INSERT omits newer
     columns and Postgres rejects the NOT NULL. Rewind the full graph forward in `finally`.
 
-- **Certification gating (forward plan phase 5, 2026-09-04) is one function and fails CLOSED.**
+- **RETIRED by decision 319 (see "Machine access" above; `machines/certifications.py` no longer has `require_certification`) -- Certification gating (forward plan phase 5, 2026-09-04) was one function and failed CLOSED.**
   `machines/certifications.py::require_certification` is the only place that decides "is this member
   trained"; `service_workflow_actions.submit` and `services_bookings.create_booking` call it and let it
   raise. It is a no-op while the `machines.certifications` feature is off or the `machines` module is
@@ -5357,6 +5564,40 @@ Load-bearing details that carried over unchanged:
     NO KEY UPDATE (`of=("self",)` wherever relations are joined) for the same reason: a row updated twice in
     one transaction re-runs its FK checks at COMMIT, taking KEY SHARE on its queue/machine. After a row lock that may have waited, re-read (`refresh_from_db`) before
     trusting joined relations: Postgres re-checks only the locked row, not its joined rows.
+
+### Machine consumable profiles and type templates (decisions 341/343)
+
+- A profile row (`machines.MachineTypeConsumable`) is per SPACE and type, built-in types included. Editing it uses
+  the per-type settings rule (`access.can_create_machine`): the Space Manager, or a Machine Manager whose scope covers
+  the WHOLE type. Adding a type (template or blank) stays Space-Manager-only. Templates: the built-in catalogue is the
+  data file `machines/data/machine_type_templates.json`; space copies are `MachineTypeTemplate` rows; one service
+  (`template_apply.apply_template`) writes only the type and its profile, never another step's settings.
+- `ServiceRequestConsumableUsage` is append-only (ORM guards). ONE actual per job and consumable (DB constraint);
+  an identical repeat is a no-op, a different one is refused. A used row is switched off, never deleted, and its
+  unit is frozen. Snapshots (key, name, unit, kind, unit price) mean a later edit never rewrites a job.
+- Recording an actual draws stock in the same transaction: a pool only through `service_metering._apply` (ledger,
+  tracked cost, low-stock To-Buy), an inventory item only through `inventory.availability.consume_available`. The
+  job's reserved pool is never drawn twice. A shortfall never refuses the record (the use already happened): the
+  pool is drawn to zero and `machine_service.consumable_stock_short` is audited.
+- Money only through the existing machine-service seam: profile prices become `consumable` quote lines in
+  `payments/pricing/build_machines.py` (estimates when quoting, actual snapshots when charging); the charge is raised
+  by `job_charges` under `charge_tracking_enabled`. A failed job charged "material used only" keeps `material` kind
+  lines. Profile lines are not registry components: no space default, no override target, no automatic discount.
+- Per-type setup (`MachineTypeSetup`, `MachineTypeDocument`, per space): booking defaults seed a NEW bookable space of
+  the type in `bookings.services_spaces.create_space` (an explicit approval mode wins) and reach existing spaces only
+  through `bookings.services_rules.update_booking_rules`, which re-checks booking authority. Type documents use the
+  machine private-upload path (`machines/{space}/...` keys) and are charged with `limits.add_storage` on attach and
+  freed on remove; they are in the object-ownership, storage-key and recompute registries. Members read notes and
+  member-visible documents only with an active membership. Per-type notifications are NOT stored here: they are
+  recipient rules narrowed by `RecipientMachineTypeScope`. The `printing` (machine-service) family is selectable for
+  STAFF only (`integrations/recipients_staff_only.py`): its rules name roles or people, its events are the staff-leg
+  list there, and `requester_selected` always answers yes for it, so a staff pick never silences the job owner; a
+  notice no rule covers keeps the default action-based audience.
+- Event machine use (decision 342) counts a job's profile actuals as consumables, except an actual that restates the
+  reserved pool the legacy ledger already measured (`consumable_usage.event_consumables`).
+- A required consumable gates `complete()` (not `fail()`); an adapter report missing one fails application and the
+  job goes to staff review. Adapter `profile_consumptions` are recorded BEFORE the report applies, with the device as
+  provenance (`device_ref`), never the audit actor.
 
 ## Account-owned activity history (owner #209, 2026-11-07)
 
@@ -5453,6 +5694,23 @@ never enter shared account navigation, and pickup fulfilment remains the existin
   flips only false rows without an audit-recorded write to that setting. Resource overrides win.
 
 ## Events program invariants (four phases, `f16896f`..`dab0354`)
+
+### Machine use logged with an event (decision 342)
+
+- **Event-owned, no switch.** `events.MachineEventLink` (one per session or per service request, DB-checked) lives in
+  the events app like `EventLoanContext`; machines reach it only through `machines/event_use.py`, which refuses a named
+  event when events are off and ignores one on the adapter path. Eligibility is ONE function,
+  `events/machine_use_eligibility.eligible_events` (participant, team member, approved crew, event authority; this
+  space only; cancelled/completed never). A manager may link any open event of the space.
+- **Manager writes are audited and locked by money.** Set/change/clear needs `events/machine_use_services.may_manage`
+  (Space Manager or Machine Manager in machine scope) and audits `machine_event.*` with before/after event ids. A link
+  with an approved cost cannot change until the approval is withdrawn.
+- **The cost approval is a record, never a money path.** `MachineEventCostApproval` is append-only; it copies the
+  charge's amount and never touches the `Payment`. The per-event budget is a measuring figure and reimbursement pools
+  pay out, so nothing can absorb a member's charge; settlement stays the ordinary ledger (`ManualSettlement`).
+- **Members see only their own link** (serializers read `event_link` of their own session/request); event staff need
+  `manage_registrations`, cost decisions need `edit_details` and tracked event charges.
+
 
 ### Public event surface (release 2 L1): who can find, offline pages, join links, embeds
 
@@ -8543,6 +8801,14 @@ from the server console and show broken images to everyone else, so `setup.sh` w
 from the answered web address. The compose default is kept (not made `:?` required) so existing
 deployments don't hard-break on upgrade.
 
+**The bundled Redis is pinned, persistent and never evicts the broker (decision 339).** `redis` runs
+`redis:${REDIS_IMAGE_TAG:-7.4.11-alpine}` with AOF (`--appendonly yes --appendfsync everysec`) on the
+`redis_data` volume and `--maxmemory-policy volatile-lru` under `REDIS_MAXMEMORY`: cache keys all carry a TTL
+and are evictable, the Celery queues carry none and are not. Never switch it to an `allkeys-*` policy while the
+broker shares the instance, and never publish its port. `config/settings_redis.py` sets the broker's 6-hour
+visibility timeout (with `acks_late`, Celery's 1-hour default re-runs a long backup on a second worker) and
+verifies `rediss://` certificates unless the URL says otherwise.
+
 **`.dockerignore` patterns are root-anchored.** A bare `__pycache__`/`*.pyc` does not match nested
 directories — every `apps/*/__pycache__` was shipping inside the image. Nested patterns need `**/`.
 
@@ -8982,7 +9248,15 @@ reconciliation may release it. Full never consults free accounting caps or free 
 - **Card files stay private.** Uploaded artwork (`CardDesignAsset`), photos and job results go through
   the staging → final presign; final keys are never client-writable. Bulk results are kept 7 days
   (Q-I1) then purged; a result link is the requester's only (superadmin needs `require_pii_access`).
-  Photo clean-up runs on this server (u2netp via onnxruntime) and deletes the original only when the
+  **Decision 314(c), the eraser adapter and bulk photo upload:** `cards.photo_cutout` off = 404 on every cut-out route
+  and no UI; the provider contract (`card_designs/image_adapter/`, v1, HMAC-signed) is the ONLY outbound path for a
+  photo, a space-level provider must be public https, secrets are write-only and encrypted, and no provider address or
+  secret is ever audited. A cut-out (`CardPhotoCutout`) is a derived private object under `card-cutouts/`, valid only
+  while `source_key` equals the card's current photo, never replaces the original, and is released by `post_delete`
+  (so a card, account or tenant purge removes the object). `photo_cutout_jobs_monthly` refuses only a NEW job. A bulk
+  batch needs the staff confirmation that the holders agreed, re-checks the creator's authority at every apply chunk,
+  attaches only through `replace_photo_bytes` / `attach_bytes`, keeps its files 7 days at most, and never travels in a
+  dump. Photo clean-up runs on this server (u2netp via onnxruntime) and deletes the original only when the
   holder accepts the result (Q-I3).
 - **Fonts never load from Google in the browser.** The catalogue manifest lists the Google Fonts
   families; the server fetches a family into private storage (`CARD_FONT_DOWNLOADS_ENABLED`) and the
@@ -9339,3 +9613,76 @@ Per-space limits (`resource_limit_overrides`, set only by the superadmin, defaul
 ## Unit scope reaches money and reports (parity O-B3 over O-B1)
 
 A staff member narrowed by `StaffUnitScope` (`makerspaces/member_unit_scope.py`) is narrowed in money too, through ONE helper, `payments/unit_payer_scope.py`: `reconcile_payments` (so single records, waives, maker-checker proposals and every collection-sheet row) answers "Payment not found." for a charge whose member is outside the scope or has no member at all, and `list_payments` hides those charges. The maker-checker confirm/reject step and the settlement-confirmations list are unit-narrowed the same way: a scoped actor confirming or rejecting a proposal on an out-of-scope charge gets "Payment not found.", and the list omits those rows. Cash in hand shows a scoped actor only their own receipts on in-scope charges; a scoped actor may record a cash hand-over only for themselves. The renewal forecast, approval times, collected revenue by plan and the unit/level leagues take the same narrowing (`manage_members` / `view_finance` as the action). The leagues are counts only -- never a name or an amount. Per-unit payment instructions reach only the charge's OWN member (`payments/unit_instructions.py`, resolved with `viewer=`); pay links, donations and staff views keep the space-wide text, and a unit's own instructions replace the space's UPI QR.
+
+## Card engine: one document, one renderer, certificates included (decisions 314, 315, 317)
+
+Spec: `handover/reports/CARD-STUDIO-SPEC-0.12.0.md` (kept current; section 12 is the certificate part). Read this section
+before touching `apps/card_designs/` layout, rendering, templates or fonts, or `apps/events/certificates/` rendering.
+
+- **One engine.** Member cards, staff cards, event badges, tickets and event certificates are the same version 3 document
+  (`card_designs/layout.py`, `layout_layers.py`, `layout_studio.py`, `layout_certificate.py`) drawn by the same
+  `draw_side` (`rendering.py`). A new layer kind or property is added there once, never in a second renderer. The
+  document is closed (unknown keys are refused), sparse (a default is omitted so an old document normalises to the same
+  layers) and carries no URL, no bytes and no person's data: images are owned asset ids, photos/logos/QR are typed slots.
+- **Render parity is mandatory.** Every property is drawn identically for the PDF, the PNG, print sheets, wallet images
+  and the verify-page image, and the designer preview must match the print. Golden fixtures
+  (`card_designs/fixtures/*.json`, written by `scripts/export_studio_fixtures.py`, guarded by
+  `tests/parity_0120/card_engine/test_fixtures.py` and `tests/parity_0120/cert_engine/`) are checked by the TS twin
+  (`frontend/src/components/card-designer/`). Change a renderer, regenerate the fixtures in the same commit; never edit a
+  fixture by hand.
+- **Fonts are an allow-list.** Faces come from `fonts.STUDIO_FONTS` (Gilroy Light/ExtraBold, Outfit, Unbounded, Bebas Neue,
+  Pacifico, DM Serif Display, plus the catalogue fetched server-side). Each vendored face ships its licence beside it;
+  Gilroy's two free weights are drawn as vector outlines because ReportLab cannot embed CFF and the EULA forbids converting
+  the file. The renderer never downloads a font at render time and falls back to the bundled Noto chain for missing
+  glyphs; a card or certificate never fails because of text it can clip, except a certificate on the v2 metrics (below).
+- **The cut-out resolver is the only way a photo layer picks its bytes** (`rendering_photo.photo_source`): `original`,
+  `cutout` (falls back to the original while no cut-out exists) or `auto` (the cut-out only when the holder chose it). A
+  cut-out is a private derived image linked to its original and purged with it; it is never public. A replaced photo's
+  stale cut-out is purged on commit (`cutout_staleness.purge_if_stale`), and the monthly cut-out quota counts the append-only
+  `card.photo_cutout_requested` audit rows, never live rows (a re-run or discard must not refund a job). The TS twin is
+  `photoVariant.pickPhoto`; "Preview as" fetches a holder's cut-out whenever one is ready, whatever they chose.
+- **Barcodes have ONE encoder** (decision 345(c), `barcode_symbols.py`: Code 128 via ReportLab so existing cards keep
+  their bars, the rest via `pystrich`). Print, sheets, the holder face SVG and the designer (`POST card-designs/{pk}/barcode`)
+  all draw `encode()` through `rects()`; the TS twin `barcodes.barcodeRects` only lays out the server's encoding and is
+  fixture-checked. EAN-13/UPC-A take digits only and an unfit payload prints nothing (never a wrong code).
+- **The eraser notice and opt-out** (decision 345(b), `eraser_notice.py`): every cut-out request stores
+  `notice_version`; an owner's opt-out is its own row (`CardPhotoEraserOptOut`, one per holder card, deleted on opt-in)
+  that travels in tenant dumps and is in the member's own data export (`CardHolderExtras` stays omitted). It makes
+  `cutouts.request` refuse for EVERYONE (staff, bulk, holder) with `eraser_opted_out` and deletes the cut-out. The
+  public privacy page appends the notice while the eraser can run. Member-card photos are presigned at 8 MB (the
+  re-encoder's limit) and re-encoded on finalize (EXIF and GPS stripped, orientation applied).
+- **Icons are keys, never paths** (decision 344). An `icon` layer stores a key of the vendored library
+  `card_designs/studio_icons.json` (absolute `M L C Z` paths in a 24 mm box, each string filled even-odd); the frontend
+  ships a byte-identical copy (`studioIcons.json`, guarded by `studio2Logic.test.ts`). Add an icon to both files in one
+  commit. Polygon shapes (`triangle`, `diamond`, `hexagon`, `star`) come from `studio_geometry.polygon_points` and its
+  twin `studioMath.polygonPoints`.
+- **Print-ready output never re-lays out the card** (`print_export.py`). The trim is the ordinary `draw_side`; the bleed
+  (0-5 mm) mirrors the outer edge strips and corners; crop marks sit outside the bleed; TrimBox/BleedBox are set. Card
+  downloads take `bleed_mm`/`crop_marks`; designer proofs keep the PREVIEW mark.
+- **The artwork library deletes only what nothing references** (`asset_library.py`): an asset id found in any draft,
+  published document, saved revision or template of the space blocks the delete; a delete frees its storage and is
+  audited. CSV merge (`csv_merge.py`) prints only the PUBLISHED design, never fills sensitive tags, and its cards carry
+  no QR payloads (they have no record).
+- **Certificates.** `kind: "certificate"` documents take the certificate layers (`signature`, `signature_row`, `seal`,
+  `certificate_id`, plus `verify_qr`) and the certificate tags, and refuse the person-bound card kinds (photo, desk and
+  check-in QR, barcode, perforation). A certificate is one page, A4/Letter/A5 either way up or a custom 100-420 mm size.
+  The verification QR (20 mm minimum) and the certificate number cannot be hidden.
+- **Signatories keep their consent rule inside the renderer too.** A signature layer is bound to a signatory SLOT, never to
+  bytes; the image, name and title come from the frozen issuance snapshot and print only when that signatory approved the
+  design revision. Otherwise the layer draws a placeholder rule and nothing else. Approvals, publication, bulk batches,
+  verification and print custody keep their code paths; `signatories.printed_slots` reads v2 `signature` layers and v3
+  `signature` / `signature_row` layers alike.
+- **Stored certificates are never rewritten.** `EventCertificateTemplateRevision.parameters` and
+  `EventAttendanceCertificate.layout_snapshot` keep their form; `parameters["version"]` is 2 (the closed legacy layout) or 3
+  (a Studio document). A v2 snapshot renders through the shared engine only when `certificate_compile.compile_v2` is used
+  (`source: {"kind": "certificate_v2"}` selects the v2 text metrics, so line breaks, baselines and overflow errors are
+  identical) AND issuance pinned `renderer: "shared"` into that snapshot (switch `CERTIFICATE_SHARED_RENDERER`, default
+  OFF). The renderer is frozen per certificate so a retried render reproduces the original bytes. A v1 design with a
+  page-sized legacy background image is not compilable and stays on the old renderer.
+- **Templates.** Built-in looks live in code (`default_templates/`, cards and `certificates.py`), each in a light and a dark
+  theme, all in the brand palette (orange is never text; teal text turns Citron on ink) and passing the 4.5:1 check. A
+  space's saved templates are `CardTemplate` rows (limit key `card_templates`, default none). Templates belong to the space,
+  not to a module: a space purge removes them through the makerspace cascade, and a module purge deliberately leaves them.
+- **Output hygiene.** Certificate PDFs embed their fonts (or draw outlines), use sRGB, carry title/author/subject/creator,
+  contain no JavaScript, encryption or external reference, and are byte-stable for one snapshot (`invariant=1`). Full PDF/A
+  conformance is not claimed.

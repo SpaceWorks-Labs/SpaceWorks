@@ -513,6 +513,12 @@ place request state transitions happen, `apps/inventory/availability.py` is the 
 counts change, `apps/makerspaces/module_registry.py` is the single source of truth for module keys, and
 `apps/accounts/rbac.py` is the Auth & RBAC module every scoped query must go through.
 
+Four more facts from the 0.12.0 programme: the registry holds **36 module keys**, and the retired key `printing`
+is an alias of `machine_service` (printing folded into machines, decision 340b). Every outbound HTTP call goes
+through the one shared transport `apps/outbound_http.py` under the allow/deny rules in
+`apps/outbound_policy.py` - never call `requests`/`urllib` directly. Frontend motion comes from the motion
+tokens and `frontend/src/lib/motion` (route transitions, scroll restoration), not ad hoc CSS durations.
+
 **Adding or changing a module key means editing `docs/MODULES.md` in the same commit** — it is the
 user-facing page the README links every module name into (what the module is, what it adds, what
 happens without it, what a purge deletes), and it is hand-written prose over the registry's facts, so
@@ -586,6 +592,7 @@ because none are quoted here — this index is a router, not a summary.
 | **Member cards, ID programmes and event cards** (and its **Google Sheets import source** subsection) | `apps/card_designs/`, `apps/id_programmes/`, `events/id_cards*.py`, member cards, card designs and approval, the public card check, door scans, wallet passes, card fonts and photos; member and ID-programme imports from a public Google Sheet |
 | **Internationalisation** | the locale registry, `config/locale_*.py`, the locale middleware order, `preferred_locale`/`default_locale`, who renders in which language, email-template defaults vs edited rows, the two literal guards and catalogues, the Lingui runtime, `src/lib/format.ts` |
 | **Container / deployment invariants** | `Dockerfile`, the compose files, Celery beat, MinIO/CORS, browser-facing storage URLs, production compose defaults, the opt-in `/control/` proxy route and SSH-tunnel listener (`CONTROL_PLANE_*`, `scripts/apply-settings.sh`) |
+| **Card engine: one document, one renderer, certificates included** | `apps/card_designs/` layout, rendering, templates and fonts, the certificate layers and the v2 compat renderer (`certificate_compile.py`, `rendering_certificate.py`, `events/certificates/shared_render.py`), `CERTIFICATE_SHARED_RENDERER`, the golden fixtures and the TS twin |
 
 Two rules are repeated here because they bite outside their own area: **a new model must be classified in
 `apps/data_export` and have its `accounts.User` FKs decided, or the drift guards refuse the build**, and

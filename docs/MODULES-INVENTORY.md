@@ -33,7 +33,7 @@ twelve modules under it are optional. The retired `procurement` key is kept belo
 - **Who may submit is set by `membership`, not by this module.** Being core, this module is present in every
   makerspace and therefore must work with `membership` uninstalled: members only when `membership` is on,
   any signed-in account when it is off — while `member_accounts` is installed. Without `member_accounts`
-  a borrower asks with no account: name, phone and an email confirmed by a one-time code (#80).
+  a borrower asks with no account: name, phone and an email confirmed by a one-time code.
   See the `membership` module below, and **Who may submit a borrow request** in `docs/INVARIANTS.md`.
 - **Accept and reject are one request at a time.** There is no bulk accept or bulk reject anywhere —
   `/control/` serves a per-request review page, and Telegram alerts carry no buttons.
@@ -66,7 +66,7 @@ twelve modules under it are optional. The retired `procurement` key is kept belo
   whole makerspace is purged. The *object bytes* are a separate question: an optional per-makerspace
   retention policy deletes the stored image once its window passes, keeping the immutable row, the
   remarks, the QR scans and the audit trail. An expired photo then reads as a truthful expired state
-  (410) rather than a broken link, so the accountability record survives the picture.
+ (410) rather than a broken link, so the accountability record survives the picture.
   Separately, a default-off abandoned-upload cleanup (deployment switch plus per-space opt-in) may
   delete an old upload slot that no workflow ever consumed; it never touches attached evidence or rows
   recorded before the feature, and it leaves a permanent receipt that keeps re-deleting a late upload.
@@ -158,7 +158,7 @@ twelve modules under it are optional. The retired `procurement` key is kept belo
 
 ### procurement
 
-**Retired module key (#97, #128 C-9).** The To-Buy list is switched per parent: `inventory.tobuy`
+**Retired module key.** The To-Buy list is switched per parent: `inventory.tobuy`
 for inventory items, `machines.tobuy` for machine consumables. See
 [the per-parent switches](MODULES.md#maintenance-to-buy-warranty-and-repairs-switches-under-each-parent).
 

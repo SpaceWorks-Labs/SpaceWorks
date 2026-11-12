@@ -198,6 +198,13 @@ Continuation of [SOURCE-MAP.md](SOURCE-MAP.md).
   separately from encrypted mapped model attributes, preserving strict PII reads.
 - Production release deployment - see [deployment source map](SOURCE-MAP-PLATFORM.md).
 - `backend/apps/backup/` - see [recovery source map](SOURCE-MAP-RECOVERY.md) for ownership and entry points.
+- `backend/apps/devices/` Device Adapter API v1 (0.12.0, decisions 310-312; see [device-adapters](device-adapters/README.md)):
+  `adapters/` (pure-Python capability registry, schemas, hello contract), `models_adapter*.py`, `adapter_access.py`
+  (the 404 gate and scoping), `services_adapter_{core,hello,status,commands,access,sessions,locate,credentials,watch,admin}.py`,
+  `adapter_event_handlers.py`, `views_adapter*.py` / `urls_adapter*.py` (signed and staff routes),
+  `openapi_adapter.py` (OpenAPI bodies of the signed routes, built from the validator's schema dicts),
+  `openapi_adapter_staff.py` (typed answers of the staff and viewer routes that return service dicts) and
+  `route_registry_adapter.py`.
 - `backend/apps/devices/` — device identity (phase 7a, separable, module `devices`). `models_identity.py`
   (Device, DeviceEnrollment, DeviceRequestNonce) and `models_events.py` (append-only DeviceEvent, DB
   trigger in `0001`); `protocol.py` owns the v1 canonical bytes and published vectors;
@@ -225,7 +232,7 @@ Continuation of [SOURCE-MAP.md](SOURCE-MAP.md).
   `services_integration_status.py` (heartbeat snapshot), `services_integration_reports.py` (queue pull
   and job reports onto the printer adapter), `services_integration_bindings.py` (staff bindings and the
   status list), `views_integrations.py` + `urls_r2.py` + `route_registry_r2.py`. Contract:
-  [device-printer-protocol.md](device-printer-protocol.md#machine-integrations-release-2-integration-schema-1-foundation-only).
+  [device-printer-protocol.md](device-printer-protocol.md#machine-integrations-integration-schema-1-foundation-only).
 - `backend/apps/data_export/` — Space-Manager data export (Phase 4). Per-fidelity (`REDACTED`/`PORTABLE`)
   disposition registry over models, fields, datasets, traversals and the global-user reference closure, with
   **drift guards that refuse an unclassified model or field**. `classification.py` and `references.py`

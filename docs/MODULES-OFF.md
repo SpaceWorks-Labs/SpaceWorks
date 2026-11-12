@@ -1,6 +1,6 @@
 # When a module or feature is off
 
-This reference covers all 37 module keys and 219 feature keys. The staff console lists 218 of the feature keys: `machines.integrations` is deliberately not exposed in the browser (it has no console screen while the printer-agent integration is deferred) and is switched in the platform control plane only. Use [Modules](MODULES.md) to choose what to install and [module lifecycle](MODULES-LIFECYCLE.md) for uninstall, purge and deployment removal.
+This reference covers all 36 module keys and 264 feature keys (counted from the backend registry; the frontend catalogue has the same 264). Three of the feature keys are retired in 0.12.0 and are hidden from the settings screens. The Features page (`/features`) is generated from the live catalogue. `machines.integrations` is exposed in the staff console from 0.12.0 (the Device adapters screen) and carries child switches for access, usage billing, video, recording, audio, talk, audio recording, artifacts, detections, telemetry history, diagnostics, offline cache and kiosk, all off by default. Use [Modules](MODULES.md) to choose what to install and [module lifecycle](MODULES-LIFECYCLE.md) for uninstall, purge and deployment removal.
 
 A switch keeps its stored settings and history. Re-enabling restores access only where parent modules, other required features, permissions, account state and current record eligibility also allow it. Old deadlines and expired credentials still apply. Shared screens remain available when another enabled area uses them.
 
@@ -19,7 +19,6 @@ The six core modules cannot be uninstalled. For optional modules, uninstall keep
 | `staff_admin` | Core module. Uninstall is refused. | Its safety and accountability workflows stay installed. |
 | `guest_handover` | The front-desk handover surface is unavailable. Authorized staff can still use the full staff console for the handover workflows their roles allow. | Data is retained. Reinstall restores eligible workflows. [Module and purge details](MODULES.md#guest_handover). |
 | `scanner` | Core module. Uninstall is refused. | Its safety and accountability workflows stay installed. |
-| `printing` | 3D printers can still be registered as machines and use the ordinary service queue when it is enabled. The public print-specific form, legacy print tracker and filament-pool selection are unavailable. Stored jobs keep their normal staff and member history rules. | Data is retained. Reinstall restores eligible workflows. [Module and purge details](MODULES.md#printing). |
 | `telegram` | no Telegram alerts. Request decisions are unaffected; they are made in the staff console or `/control/` either way. | Data is retained. Reinstall restores eligible workflows. [Module and purge details](MODULES.md#telegram). |
 | `evidence_uploads` | Core module. Uninstall is refused. | Its safety and accountability workflows stay installed. |
 | `qr_management` | Core module. Uninstall is refused. | Its safety and accountability workflows stay installed. |
@@ -31,7 +30,7 @@ The six core modules cannot be uninstalled. For optional modules, uninstall keep
 | `qr_print_batches` | QR codes still exist and still print one at a time from `qr_management`; what you lose is generating and re-downloading a whole sheet at once, and sending batches to an enrolled label printer. | Data is retained. Reinstall restores eligible workflows. [Module and purge details](MODULES.md#qr_print_batches). |
 | `asset_units` | New individual-unit generation and per-unit QR labels are unavailable; new tracking uses quantities. Stored units, custody history and authorized existing-unit servicing/returns remain available under core inventory scope, state and audit checks. These retained operations create no units/QR identities and do not change product tracking mode. Inventory availability remains responsible for quantity accounting. | Data is retained. Reinstall restores eligible new-unit workflows. [Module and purge details](MODULES.md#asset_units). |
 | `machines` | the whole machine side of the product disappears: no registry, no service queue (which needs machines to point at), no machine maintenance schedules, no per-machine consumables. Item and room maintenance keep their own switches. A pure tool library runs exactly like this — see the `lending` profile. | Data is retained. Reinstall restores eligible workflows. [Module and purge details](MODULES.md#machines). |
-| `machine_service` | Machine-job submission and the staff service queue are unavailable. Machine registration, usage and metered sessions follow their own controls. Printing cannot stay installed without Machine service. | Data is retained. Reinstall restores eligible workflows. [Module and purge details](MODULES.md#machine_service). |
+| `machine_service` | Machine-job submission and the staff service queue are unavailable. Machine registration, usage and metered sessions follow their own controls. The 3D print queue is part of this module (the retired `printing` key reads as `machine_service`), so the public print form, print tracker and filament-pool choice go with it. | Data is retained. Reinstall restores eligible workflows. [Module and purge details](MODULES.md#machine_service). |
 | `events` | the space runs no events in-app: no public listing, no registrations, no check-in, no feedback or certificates, no calendar feeds, and no attended-event history on member profiles. `charges.events`, `payments.events` and every `events.*` feature become inert. Purging events also deletes event categories, invitations, promo codes and ticket templates; ledger history remains. | Data is retained. Reinstall restores eligible workflows. [Module and purge details](MODULES.md#events). |
 | `event_reimbursements` | Travel-support application, award and claim surfaces are unavailable. Events and ticketing keep their own switches. Existing obligations and payout evidence remain in the core ledger. | Data is retained. Reinstall restores eligible workflows. [Module and purge details](MODULES.md#event_reimbursements). |
 | `bookings` | nothing in the system reserves a resource for a time slot; `charges.bookings` and `payments.bookings` become inert. | Data is retained. Reinstall restores eligible workflows. [Module and purge details](MODULES.md#bookings). |
@@ -68,6 +67,9 @@ The Settings feature list groups these switches by area. Turning off a parent ma
 | `billing.pay_links` | No links; old links answer 404, the charges stay | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
 | `billing.reminders` | No automatic payment reminders; debt and receipts stay visible | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
 | `billing.tax` | New charges carry no tax and documents use the single receipt series, with no tax invoices or GST returns; tax settings and issued tax documents are kept | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
+| `billing.fy_receipts` | Receipts use the single running series; numbers already issued never change | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
+| `billing.plan_sac` | Every plan uses the space-wide SAC code; plan codes are kept | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
+| `billing.collection_sheet` | No collection sheet; payments are recorded one at a time | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
 ### bookings
 
 | Switch | When it is off | Retained data and re-enable |
@@ -97,6 +99,11 @@ The Settings feature list groups these switches by area. Turning off a parent ma
 | Switch | When it is off | Retained data and re-enable |
 | --- | --- | --- |
 | `calendar.combined_feed` | No combined link | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
+### cards
+
+| Switch | When it is off | Retained data and re-enable |
+| --- | --- | --- |
+| `cards.photo_cutout` | No background removal; finished cutouts stay on their cards | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
 ### charges
 
 | Switch | When it is off | Retained data and re-enable |
@@ -112,6 +119,16 @@ The Settings feature list groups these switches by area. Turning off a parent ma
 | `charges.price_drop_refunds` | No preview and no cases; a sold ticket's price stays frozen; cases already opened stay in the refund queue. The prepaid-job cases (cancelled before it starts, cheaper than its quote) do not depend on this switch | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
 | `charges.pricing` | Only the basic price fields apply (deposit, late fee, room/event/plan prices, the machine-type price); the pricing screens and APIs are gone; rate cards and item prices are kept | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
 | `charges.shop` | New online orders and till sales refuse with 409 charges_off. Public product, variant and Pages-card prices are null and the storefront hides prices and the basket. Price quote routes return 404 charges_off. Browsing, existing order handling and the authorized staff catalogue and ledger remain available. | Stored prices and orders stay. With Track charges also on, new sales and public pricing resume. No separate capability purge. |
+### display
+
+| Switch | When it is off | Retained data and re-enable |
+| --- | --- | --- |
+| `display.anthias_push` | Anthias players are no longer kept in step and the player API answers 404 | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
+### email
+
+| Switch | When it is off | Retained data and re-enable |
+| --- | --- | --- |
+| `email.sender_identity` | Email uses the platform sender name with no Reply-To; the settings are kept | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
 ### events
 
 | Switch | When it is off | Retained data and re-enable |
@@ -175,6 +192,15 @@ The Settings feature list groups these switches by area. Turning off a parent ma
 | `events.volunteering` | Volunteer actions refuse; retained hours/history remain | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
 | `events.wallet_passes` | No wallet buttons on event cards | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
 | `events.website` | Enhanced routes and images disappear; core event details remain | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
+| `events.series_invites` | Invites are per event; series lists are kept | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
+| `events.pay_window` | Approved paid places wait until paid or cancelled | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
+| `events.event_saved_views` | No saved views on a guest list; saved views are kept | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
+| `events.scores_export` | No scores export | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
+| `events.badge_designer` | Badges use the default layout; saved designs are kept | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
+| `events.badge_desk_print` | Badges are printed from the event's card tools only | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
+| `events.role_badges` | Everyone gets the attendee badge | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
+| `events.discovery_filters` | Discovery offers date filters only | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
+| `events.space_insights` | No event insights panel | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
 ### finance
 
 | Switch | When it is off | Retained data and re-enable |
@@ -201,6 +227,11 @@ The Settings feature list groups these switches by area. Turning off a parent ma
 | `inventory.tobuy` | **To-Buy** omits inventory rows and refuses their row routes and creates with 404 `capability_disabled`. Inventory low-stock, repair and shop reorder flows stop creating inventory To-Buy drafts. The machine stream can still keep the shared screen and reports available. | Retained inventory To-Buy rows and receipts become available to authorized staff. A separate purge targets the inventory stream and its receipts. Separate capability purge deletes Inventory (hardware) To-Buy rows and their receipts. Machine-consumable rows stay. |
 | `inventory.vendors` | Supplier stays free text; vendors kept | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
 | `inventory.warranty` | Inventory asset warranty controls are hidden. Asset warranty routes and associated documents return 404 `capability_disabled`. The shared Warranty screen can stay available for machines. | Asset warranty records and documents become available to authorized staff. A separate purge targets inventory warranties and their documents. Separate capability purge deletes Warranty records and documents on inventory assets. Machine warranties stay. |
+### legal
+
+| Switch | When it is off | Retained data and re-enable |
+| --- | --- | --- |
+| `legal.space_pages` | The platform's privacy and terms pages are shown; the space's text is kept | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
 ### loans
 
 | Switch | When it is off | Retained data and re-enable |
@@ -219,8 +250,8 @@ The Settings feature list groups these switches by area. Turning off a parent ma
 | Switch | When it is off | Retained data and re-enable |
 | --- | --- | --- |
 | `machines.batch_start` | One job per machine run | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
-| `machines.certification_reminders` | Member expiry and expiring notices and the type-scoped staff summary stop at scheduling and delivery. Certification grants and training gates keep their own switches. The lead-time setting stays editable. | Grants, reminder lead times and delivery history stay. Re-enable lets currently eligible reminders run. No separate capability purge. |
-| `machines.certifications` | Training is tracked out of band; nothing gates a request or booking | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
+| `machines.certification_reminders` | Retired: certifications no longer exist, so there are no expiry reminders. Machine access grants send their own notice a week before they end | Retired in 0.12.0: the switch always reads off, is hidden from the settings screens and cannot be turned on. Existing records stay. |
+| `machines.certifications` | Retired: certification gating is replaced by machine access grants (see [Give members machine access](how-to/machine-access.md)). The old routes answer 410 | Retired in 0.12.0: the switch always reads off, is hidden from the settings screens and cannot be turned on. Existing records stay. |
 | `machines.integrations` | Every integration route answers 404; bindings and snapshots are kept | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
 | `machines.issue_reporting` | The member machine-job page hides **Report a problem**. A valid report for that machine area is refused with 404 `capability_disabled`. The staff issue area stays visible where Machine repairs is on, and staff retain the repair workflow there. Existing issue records are kept. | Members can report problems from eligible machine jobs. Retained issues remain subject to staff scope. No separate capability purge. |
 | `machines.job_quotes` | No type asks for a quote | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
@@ -231,13 +262,26 @@ The Settings feature list groups these switches by area. Turning off a parent ma
 | `machines.public_detail` | Machine cards drop their public-detail links and the public machine-detail API returns 404 `feature_disabled`. The public machine list still follows its ordinary controls. The staff drawer hides public disclosure controls, while the general machine API retains the saved disclosure field. | Public detail pages use the retained public field choices for eligible published machines. No separate capability purge. |
 | `machines.repairs` | Staff cannot open a new machine repair or progress the repair-specific work steps. The technician repair queue excludes this area. If machine issue reporting stays on, staff can still see reports and triage without opening a repair. Ordinary machine upkeep and service-state controls can continue under maintenance. Issue-linked general work orders also require the repair switch. | Repair actions return where machine maintenance is also on and the actor has the required scope. A separate machine repair purge clears machine issues, repair work and related records while retaining the technician directory and other areas. Separate capability purge deletes Machine issues and repair jobs. Includes area-owned reports, history, photos, technician sends and parts. The technician directory stays. |
 | `machines.sessions` | Every session route answers 404 and no sweep runs; the manual-hours usage log is unchanged; sessions are kept | Settings and history stay. Re-enable restores eligible use under the current prerequisites. Separate capability purge deletes Machine sessions and their staff corrections. Charges they raised stay in the ledger, and the machine-usage entries they wrote stay with the machine. |
-| `machines.induction_events` | The induction marking and attendee-grant routes answer 404; certifications are granted one member at a time as before. Guest certifications stop unlocking machines, so a guest pass in the after-induction mode allows no machine use. Needs the Events module | Induction links, guest certifications and the certifications already granted stay. Re-enable restores the grant list. Separate capability purge deletes induction links and guest certifications; member certification grants stay. |
+| `machines.induction_events` | Retired: induction events and their grant routes answer 410. A guest pass that unlocks machines needs the guest to hold a machine access grant | Retired in 0.12.0: the switch always reads off, is hidden from the settings screens and cannot be turned on. Existing records stay. |
 | `machines.supervised_sessions` | Every supervised-session route answers 404 and a supervisee can no longer use a machine under supervision; machine sessions and the maintenance lockout are unchanged. With Events off a session cannot be bound to an event and its picker offers no event registrants | Supervised sessions, supervisees and recorded uses stay. Re-enable restores eligible use under the current prerequisites. Separate capability purge deletes supervised sessions, supervisees and uses. |
 | `safety.incidents` | The register has no surface: reporting and triage answer 404 and no other module records an incident | Incidents and their follow-up actions stay. Re-enable restores the register with its area-narrowed reach. Separate capability purge deletes incidents and actions; linked repairs, loans and events stay. |
 | `machines.structured_intake` | Machine-job intake omits the stored schema, the staff schema API returns 404 `feature_disabled`, and the shared public intake response returns an empty `intake_schema`. Sending a nonempty intake payload to an otherwise available job form fails validation. Materials and ordinary job requests follow their own controls. | Eligible jobs use the retained schema and its current version and field rules. No separate capability purge. |
 | `machines.time_booking` | Nothing is enforced; machine resources are kept | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
 | `machines.tobuy` | **To-Buy** omits machine-consumable rows and refuses their row routes and creates with 404 `capability_disabled`. Machine low-stock and repair flows stop creating machine To-Buy drafts. The inventory stream can still keep the shared screen and reports available. | Retained machine To-Buy rows and receipts become available to authorized staff. A separate purge targets the machine stream and its receipts. Separate capability purge deletes Machine-consumable (printing) To-Buy rows and their receipts. Inventory rows stay. |
 | `machines.warranty` | Machine warranty controls are hidden. The machine warranty routes and associated documents return 404 `capability_disabled`. The shared Warranty screen can stay available for inventory assets. | Machine warranty records and documents become available to authorized staff. A separate purge targets machine warranties and their documents. Separate capability purge deletes Warranty records and documents on machines. Asset warranties stay. |
+| `machines.integrations.access` | The adapter access call answers 404; doors and machines fall back to staff control | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
+| `machines.integrations.usage_billing` | No new adapter usage records; existing records stay | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
+| `machines.integrations.video` | No camera watch; watch history stays | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
+| `machines.integrations.kiosk` | The adapter kiosk refuses; the web kiosk and staff handover are unaffected | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
+| `machines.integrations.recording` | Watches cannot be recorded; existing recordings keep their retention | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
+| `machines.integrations.audio` | Watches carry no audio | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
+| `machines.integrations.talk` | No push-to-talk | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
+| `machines.integrations.audio_recording` | Audio is never recorded; existing audio keeps its retention | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
+| `machines.integrations.artifacts` | Uploads are refused; stored artifacts keep their retention | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
+| `machines.integrations.detections` | Detection reports are refused and nobody is notified | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
+| `machines.integrations.telemetry_history` | Only the latest status is kept; stored history stays readable to staff until its retention ends | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
+| `machines.integrations.diagnostics` | No diagnostics screen or log-bundle requests | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
+| `machines.integrations.offline_cache` | No offline list is issued; an offline device refuses access | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
 ### maintenance
 
 | Switch | When it is off | Retained data and re-enable |
@@ -280,6 +324,17 @@ The Settings feature list groups these switches by area. Turning off a parent ma
 | `membership.volunteer_credit` | No volunteer log, queue, import or credits; approved hours no longer convert and no credit reduces a membership charge | Hour entries and credits stay; charges a credit already reduced keep their reduction. Separate capability purge deletes volunteer hour entries and credits. |
 | `membership.join_funnel` | No Join call to action after an event or on a guest pass, no post-event join notice, and the join-funnel report has no rows. The notice also needs the Events module | The follow-up setting is kept. Re-enable restores eligible notices for attendances inside the 14-day window. No separate capability purge. |
 | `membership.wallet_passes` | No wallet buttons; issued passes stop updating | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
+| `membership.ask_changes` | Join requests are approved or declined only | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
+| `membership.join_photo` | The join form asks for no photo; stored photos stay | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
+| `membership.join_contact_fields` | The join form asks for neither; stored answers stay | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
+| `membership.register_bulk` | Register changes are made one member at a time | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
+| `membership.units` | Units are hidden and plans are offered to everyone; unit rows are kept | Settings and history stay. Re-enable restores eligible use under the current prerequisites. Separate capability purge deletes member units, their assignments and staff unit scopes; members, plans and payments stay. |
+| `membership.unit_scoped_staff` | Staff unit scopes can no longer be set or changed; existing scopes are kept | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
+| `membership.card_numbering` | New cards get no scheme number; numbers already printed stay | Settings and history stay. Re-enable restores eligible use under the current prerequisites. Separate capability purge deletes the numbering schemes and counters; numbers already printed on cards stay. |
+| `membership.title_card_reissue` | A title change leaves the card as it is | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
+| `membership.card_desk_print` | No desk printing; members still download their own card | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
+| `membership.staff_cards` | No staff cards are issued or shown and their check pages answer 404; cards are kept | Settings and history stay. Re-enable restores eligible use under the current prerequisites. Separate capability purge deletes staff ID cards, their public check links, number scheme and design; staff roles stay. |
+| `membership.staff_cards_auto_issue` | Staff cards are issued by hand | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
 ### mobile
 
 | Switch | When it is off | Retained data and re-enable |
@@ -325,6 +380,7 @@ The Settings feature list groups these switches by area. Turning off a parent ma
 | Switch | When it is off | Retained data and re-enable |
 | --- | --- | --- |
 | `presence.geofence` | Self check-in refuses when disabled/unconfigured; authorized staff check-in remains available. Coordinates are not stored | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
+| `presence.public_display` | Paired screens get the same 404 as an unknown screen and show their pairing code; pairings are kept | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
 ### public_site
 
 | Switch | When it is off | Retained data and re-enable |

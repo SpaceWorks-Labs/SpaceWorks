@@ -57,8 +57,10 @@ pivots platform-usage into a per-space table with totals on the platform dashboa
 
 Tenant branding lives in `frontend/src/lib/brandColours.ts` (WCAG maths, both-mode
 foreground/interaction/ink/tint derivation) and `useTenantBranding.ts` (page-scoped
-variables). `features/staff/MakerspaceThemeSettings.tsx` owns the live contrast preview
-and audited settings PATCH. `src/styles/components.css` owns the shared component
+variables). `features/staff/MakerspaceThemeSettings.tsx` is the per-space colour screen
+(audience-grouped surfaces from `lib/colourSurfaces.ts`, presets, picker/hex/eyedropper, light + solid-black
+previews in `features/staff/colours/`, `lib/colourFix.ts` fix suggestions) and the audited settings PATCH.
+`lib/fixtures/themeContrastCases.json` is the TS/Python contrast parity fixture. `src/styles/components.css` owns the shared component
 layer and opaque secondary tint utilities; `src/index.css` owns product tokens, fonts
 and base styles. `lib/theme.ts` owns browser theme preference;
 `components/SupportContact.tsx` renders safe tenant support links.

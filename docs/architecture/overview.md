@@ -8,56 +8,55 @@ summary: The parts of a Space Works deployment and how they talk to each other.
 
 Space Works is a set of thin clients over one API server. The API is built from deep modules (see [modules](modules.md)). Notifications flow **outward** to chat, email and messaging channels; nothing in chat can change the state of a request.
 
+Three views, from the inside out. First, what runs in your deployment:
+
 ```mermaid
-flowchart TB
+flowchart LR
   subgraph Clients
-    SPA["React web app<br/>public site, member area, staff console"]
+    SPA["React web app"]
     Mobile["Mobile and kiosk clients"]
-    Ext["External systems<br/>API clients, personal tokens, OAuth apps"]
+    Ext["External systems<br/>API clients, tokens, OAuth apps"]
   end
-
   subgraph Server["Your deployment"]
-    API["Django REST API<br/>Gunicorn"]
+    API["Django REST API"]
     Worker["Celery workers"]
-    Beat["Celery beat scheduler"]
+    Beat["Celery beat"]
     DB[("PostgreSQL")]
-    Redis[("Redis<br/>cache and job broker")]
-    Store[("S3-compatible object storage<br/>evidence photos, images, archives")]
+    Redis[("Redis")]
+    Store[("Object storage")]
   end
-
-  subgraph Out["Outbound services"]
-    Chat["Telegram, Slack, Discord, Mattermost"]
-    Mail["Email provider"]
-    Msg["SMS and WhatsApp providers"]
-    Hooks["Signed webhooks"]
-    Pay["Payment rails<br/>Stripe, Razorpay"]
-    Wallet["Apple and Google Wallet"]
-  end
-
-  subgraph Analytics["Optional analytics"]
-    BI["Metabase or Grafana"]
-  end
-
   SPA -->|"HTTPS JSON"| API
   Mobile --> API
   Ext -->|"signed or bearer requests"| API
+  SPA -->|"direct upload, presigned URL"| Store
   API --> DB
   API --> Redis
   API -->|"presigned upload and read"| Store
-  SPA -->|"direct upload with presigned URL"| Store
-  Redis --> Worker
   Beat --> Redis
+  Redis --> Worker
   Worker --> DB
   Worker --> Store
-  Worker --> Chat
-  Worker --> Mail
-  Worker --> Msg
-  Worker --> Hooks
-  API --> Pay
+```
+
+Second, what leaves your deployment. Only the workers send messages; the API talks to payment rails and wallets directly:
+
+```mermaid
+flowchart LR
+  Worker["Celery workers"] --> Chat["Telegram, Slack, Discord, Mattermost"]
+  Worker --> Mail["Email provider"]
+  Worker --> Msg["SMS and WhatsApp providers"]
+  Worker --> Hooks["Signed webhooks"]
+  API["Django REST API"] --> Pay["Payment rails<br/>Stripe, Razorpay"]
   Pay -->|"webhooks"| API
-  API --> Wallet
-  BI -->|"read-only login, curated views"| DB
-  BI -.->|"embedded dashboards"| SPA
+  API --> Wallet["Apple and Google Wallet"]
+```
+
+Third, the optional analytics tools, which read curated views and never write:
+
+```mermaid
+flowchart LR
+  BI["Metabase or Grafana"] -->|"read-only login, curated views"| DB[("PostgreSQL")]
+  BI -.->|"embedded dashboards"| SPA["React web app"]
 ```
 
 ## The parts

@@ -21,7 +21,7 @@ interconnections (event/booking loan context, equipment kits, the event–bookin
 linked finance and loan-context reports) — see the [0.12.0 notes](release-0.12.0.md). Counted from the
 code on 2026-11-08 unless noted:
 
-- **Modules and features.** 37 module keys in 12 console areas (6 core); 209 feature keys, of which the
+- **Modules and features.** 36 module keys in 12 console areas (6 core); 209 feature keys, of which the
   staff console shows 208 (`machines.integrations` is control-plane only).
 - **Roles.** Ten built-in roles: Space Manager, Inventory Manager, Machine Manager, Event Manager,
   Booking Manager, Handover, Technician, Shop Manager, Fundraising and Member.

@@ -17,8 +17,22 @@
   the remaining grams — and only while it is active with stock left. With the `machines.certifications`
   feature switched on, a makerspace defines certification types per machine type and issues grants to
   memberships; an uncertified member is refused when booking a linked space or requesting work, and an
-  override needs machine-type authority plus a recorded, audited reason. The `certification-coverage`
-  report shows trained members per type.
+  override needs machine-type authority plus a recorded, audited reason. Certifications are retired
+  (decision 319): the `certification-coverage` and `certification-holders` reports are now
+  "Certification coverage (retired)" and "Certification history (retired)" (decision 329), listed only
+  for a space that has certification records, never offered for a new schedule (an existing schedule
+  keeps running) and still exportable. `machine-access-grants` is the live report.
+- **Consumable profiles and machine-type templates** (decisions 341/343) — each machine type has, per
+  space, a list of what it uses up: a key, unit (g, kg, mm, m, ml, l, cm², m², cm³, sheet, piece, min, h,
+  use, 1,000 stitches), kind (material, tool wear, time, per job, other), offered materials, colours,
+  thicknesses and sizes, whether a job needs it, who estimates it (member, staff, the job file) and who
+  records the actual (staff, member, adapter), an optional price per unit and a stock link (a consumable
+  pool in matching units, or an inventory item for whole units). "Add a machine type" is one generic
+  setup prefilled from a template; built-in templates are a data file and a space can save its own
+  copies. A job's estimates and actuals are append-only; an actual is recorded once and draws its stock
+  then. Removing a consumable that jobs used switches it off instead. Profiles, usage and space
+  templates travel in exports and tenant moves; they go with the makerspace. See
+  [Machine consumables](how-to/machine-consumables.md).
 - **Booking limit** — machine time bookings are not available. The machine-type `requires_booking`
   flag is stored and validated but **not yet enforced**, including on the built-in laser/CNC types
   where it is true. It does not block service requests or job starts. Space bookings remain separate.
@@ -32,38 +46,38 @@
 
 ### machine_service
 
-Required by `printing`.
-
-- **What it is** — the service/job queue: a member asks for work on a machine, staff run it.
-- **What it adds** — the `machine_service_requests` workflow: request intake, the staff queue, file
-  uploads, consumption ledgers and the usage entries a finished job produces.
+- **What it is** — the service/job queue for every machine type: 3D printers, lasers, CNC, cutters and
+  anything else a space runs jobs on. A member asks for work on a machine, staff run it.
+- **What it adds** — the `machine_service_requests` and `printing_requests` workflows: request intake,
+  the staff queue, file uploads, consumption ledgers and the usage entries a finished job produces. The
+  3D print queue is one machine type here: the print form and print tracker, filament-pool choice, the
+  printer service report, print limits (`print`) and print notifications all belong to this module.
 - **Without it** — machines are a registry you look at, not a queue you work. Jobs are arranged in person
-  or by message; nothing records who ran what, on which machine, using how much material. `printing`
-  cannot be installed while this is off.
+  or by message; nothing records who ran what, on which machine, using how much material. The public
+  print form and print tracker are gone too.
 - **Data** — purgeable: service requests, queues, uploads, consumption ledgers and the usage entries they
   produced, including recorded costs for those consumption sources. Consumable pools and
   independent manual pool usage/costs stay — they belong to `machines`.
 
-### printing
+### printing (retired in 0.12.0)
 
-**Requires `machine_service`** (installing `printing` pulls it in).
-
-- **What it is** — 3D printing as a machine type on top of the service queue.
-- **What it adds** — the `printing_requests` workflow: print-specific intake, print files, and the
-  printer-facing view of the queue.
-- **Without it** — 3D printers can still be registered as machines and their jobs run through the
-  ordinary service queue; what you lose is the print-specific handling around them.
-- **Data** — `purge_module_data` reports it stores no data of its own to purge separately; print jobs are
-  service requests and go with `machine_service`.
+`printing` is no longer a module (decision 340b). It was the 3D print queue on top of
+`machine_service`, which already takes service requests for every machine type, so it is part of
+[`machine_service`](#machine_service) now. Upgrading keeps machine service on for every space that had
+printing on (migration `makerspaces/0154_retire_printing_module`, audited as
+`makerspace.module_retired`). A stored `printing` switch, an older backup or tenant dump, a hosting plan
+or an API client that still says `printing` is read as `machine_service`; installing `printing`
+installs machine service, and uninstalling `printing` is refused because it would switch off the whole
+module. Print jobs were always service requests and go with `machine_service`.
 
 ### maintenance
 
-**Retired module key (#97, #128 C-9): now the `machines.maintenance` capability** under `machines`.
+**Retired module key: now the `machines.maintenance` capability** under `machines`.
 See [the per-parent switches](MODULES.md#maintenance-to-buy-warranty-and-repairs-switches-under-each-parent).
 
 - **What it is** — preventive maintenance schedules and immutable logs of completed maintenance,
-  including reactive repairs. Work orders (L12) carry status, assignee and priority; reported
-  issues and repair jobs live under `machines.repairs` (L16).
+  including reactive repairs. Work orders carry status, assignee and priority; reported
+  issues and repair jobs live under `machines.repairs`.
 - **What it adds** — the `maintenance` workflow, the maintenance section of the dashboard, and log
   documents. Completing a schedule sets its next due date to the recorded completion date plus its
   interval; a late completion starts a fresh interval. Backdated logs use their recorded date.
@@ -77,12 +91,12 @@ See [the per-parent switches](MODULES.md#maintenance-to-buy-warranty-and-repairs
 
 ### events
 
-The 2026-10-18 programme adds five **off-by-default Events features**, not another
+The Events area has five **off-by-default Events features**, not another
 module: hackathons, mentoring, mentor rounds, volunteering and project gallery.
 They are ordinary per-space switches, off for a new space, that a Space Manager may turn
-on; release 2's final flow audit records the runtime evidence. [Switches, disable/purge/storage semantics](MODULES.md#events),
+on. [Switches, disable/purge/storage semantics](MODULES.md#events),
 [role runbooks](events/README.md) and [remaining work](events/integration-status.md)
-describe this checkpoint without changing the existing ordinary-event guarantees below.
+describe these features without changing the existing ordinary-event guarantees below.
 
 **Independent of `membership`.** Installing events does not install membership. Existing events
 keep the `members` audience, requiring active membership and its waiver. With
@@ -172,13 +186,13 @@ Required by the members-only events path. Bookings can run without this module.
   directory, no member cards, no plans. Waivers stay (they are liability evidence, so publishing,
   accepting and witnessing one is core). Separate tenant staff creation, initial-password onboarding
   and admin-issued reset remain available; email invitations additionally need Email + `staff.invitations`. `payments.membership` and `charges.membership` become inert.
-- **Requires `member_accounts` (owner decision #91).** A space without member accounts has accounts for staff
+- **Requires `member_accounts`.** A space without member accounts has accounts for staff
   only, so it has no members to admit. Installing membership pulls member accounts in; `makerspaces/0108`
   turned member accounts on, with an audit entry, for spaces that already had membership without them.
 - **It decides who may submit a borrow request.** With this module on, submitting requires an active member
   of the makerspace. With it off, any signed-in member account may submit — a request is only a proposal that
   staff must accept, and waiver acceptance cannot be recorded without a membership row anyway. Both need
-  `member_accounts`; a space without it takes account-less requests confirmed by an email code (#80).
+  `member_accounts`; a space without it takes account-less requests confirmed by an email code.
 - **Member ID cards live here.** A card is a revocable QR credential over one membership (`MemberCard`),
   issued, reissued, revoked and printed by staff holding `manage_member_cards` (Space Managers by default)
   and resolvable at a scanner only by `scan_member_cards` — never through the inventory scanner, so an
@@ -186,13 +200,13 @@ Required by the members-only events path. Bookings can run without this module.
   private object stored only with the member's recorded consent, and revoking a card deletes the photo
   and blanks the name immediately while the redacted row, the revoked QR, the scans and the audit entries
   stay; a fresh card can then be issued. Revoking the membership revokes its card too. Cards print as one CR80 card or an A4/Letter sheet; nothing rendered is stored.
-- **Release-2 lifecycle (lane L4), 14 switches, all off by default.** Plan types — rolling, financial
+- **Lifecycle (since 0.12.0), 14 switches, all off by default.** Plan types — rolling, financial
   year (ends at the space's financial year end; April by default, set by the Space Manager as a finance
   setting), fixed end date and lifetime — with separate new and renewal prices and per-plan overrides of
   the joining fee, rejoin rule (never / once / each join / after a lapse of N days), payment timing, join
   mode and form (`membership.plan_rules`); public plan cards and per-plan pages (`membership.public_plans`);
   the renewal desk (`membership.renewal_desk`); CSV/Excel import into pending memberships that are linked
-  only when the person accepts with that verified email (`membership.import`, #128 C-13); multi-use invite
+  only when the person accepts with that verified email (`membership.import`); multi-use invite
   links and bulk decisions (`membership.admission_tools`); member numbers (`membership.member_numbers`),
   record fields (`membership.records`), display-only titles (`membership.titles`), the consent ledger
   (`membership.consent`), per-space erasure requests (`membership.erasure`), the history timeline
@@ -200,7 +214,7 @@ Required by the members-only events path. Bookings can run without this module.
   (`membership.insights`) and the monthly staff summary (`membership.monthly_summary`). Whatever the
   switches, each term freezes its price, joining fee, currency and type, every standing change is written
   to the append-only term history, and community admissions get a gapless member number. An approved
-  membership refund ends the term it paid for unless staff tick "keep membership" (X21).
+  membership refund ends the term it paid for unless staff tick "keep membership".
 - **Data** — purgeable: join requests, member profiles with their projects and imagery, and member cards
   with their photos (their QR codes are revoked, never deleted). Memberships, waivers and acceptance
   evidence **stay** — they are core RBAC and liability state.
@@ -209,7 +223,7 @@ Required by the members-only events path. Bookings can run without this module.
 
 ### member_accounts
 
-Default-on, and required by `mobile` and `membership` (#91). Without it (owner decisions #80/#91) the
+Default-on, and required by `mobile` and `membership`. Without it the
 space's accounts are for staff only: everyone -- signed in or not -- borrows by request or self-checkout
 with name, phone and an email confirmed by a one-time code. Member, staff and platform are separate immutable account kinds; this
 key never converts a member into staff. Native staff use password/MFA/attestation with fixed

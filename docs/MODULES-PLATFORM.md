@@ -172,7 +172,7 @@ completeness, effective schedule windows and retained-byte accounting before tra
 
 ### backup (retired)
 
-**Retired in P1b (owner decision #111 Q2).** There is no `backup` module key any more; `backup/0032`
+**Retired in P1b.** There is no `backup` module key any more; `backup/0032`
 strips it from every makerspace's `enabled_modules`. Backup is a platform duty: the superadmin is
 always on, every archive is encrypted to the platform key, and the superadmin backs up and restores.
 
@@ -217,7 +217,8 @@ Opt-in, no dependencies; installed only by the `full`/`everything` profiles.
   skips the space, including offline alerts and routine authentication-artifact cleanup. Tombstoning the devices
   app removes its routes with 404.
 - **Data** — `purge_module_data devices` deletes printer consumption claims, jobs, commands and
-  bindings, then replay nonces, enrollments, device events and identities. Machine workflows and the
+  bindings, Device Adapter API rows, then replay nonces, enrollments, device events and identities, and
+  last the per-machine-type integration bindings (`MachineTypeIntegration`). Machine workflows and the
   payment ledger survive. Purging a machine adapter nulls live printer links and retains history;
   missing targets cannot deliver or finish. Tenant moves retain applied reports and source snapshots,
   disable bindings and automatic application, cancel commands, clear delivery credentials and turn
@@ -226,7 +227,7 @@ Opt-in, no dependencies; installed only by the `full`/`everything` profiles.
 - **Monitoring** - both scheduler topologies check offline state once a minute. Offline/recovery
   history appears in module operational health. Device alerts have their own notification feature;
   every channel is opt-in and initially off. The Devices console exposes identity/status/enrollment
-  to device managers. Printer jobs and label delivery controls arrive with their adapter lanes.
+  to device managers. Printer jobs and label delivery controls arrive with their adapters.
 
 ---
 

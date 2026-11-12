@@ -537,6 +537,13 @@ dashboard rows: `makerspaces/member_activity_machine_service.py`. Frontend:
 row helpers in `features/staff/panels/machine/ServiceEtaLine.tsx`.
 Local materials use `models_materials.py`, `material_catalogue.py` and
 `views_materials.py`; custom intake uses `intake.py` and `views_intake.py`.
+Per-type consumable profiles and type templates (decisions 341/343): vocabulary `consumable_profiles.py`, models
+`models_consumable_profiles.py`, editing `consumable_profile_services.py`, job usage `consumable_usage.py` (stock
+draws in `consumable_stock.py`), templates `template_spec.py` + `data/machine_type_templates.json` +
+`template_apply.py`, API `views_consumable_profiles.py`, `views_consumable_stock.py`, `views_job_consumables.py`;
+pricing lines `payments/pricing/build_machines.consumable_lines`; report `operations/reports_machine_consumables.py`.
+Per-type setup: `models_type_setup.py`, `type_setup.py` (booking defaults, read by `bookings/services_spaces.py`),
+`type_documents.py`, `views_type_setup.py`, `views_member_type_guide.py`.
 Maintenance usage calculations live in `maintenance/meters.py` and `meter_jobs.py`,
 with separate F1 occurrences in `reminders_meters.py`. Hashed staff ICS credentials
 and live scope checks use `models_feed.py`, `calendar_feed.py` and `views_feed.py`.
@@ -1157,6 +1164,26 @@ and entity authority live in `admin_api/list_options.py` and `staff_list_scope.p
 Saved-view audit targets travel as inert source provenance in
 `tenant_migration/audit_references_targets.py`, including after a preference is deleted.
 Booking/event `views_admin_spaces.py` / `views_admin_events.py` barrels re-export the corresponding `*_list/detail.py` handlers.
+
+## Global member profile (decisions 302-308)
+
+`apps/makerspaces/models_account_profile.py` holds `AccountProfile` and its children; `account_profile.py` (create/write/audit),
+`account_profile_read.py` (per-audience payload), `account_profile_access.py` (who may read; one 404),
+`account_profile_spaces.py` / `account_profile_activity.py` / `profile_achievements.py` (cross-space aggregation),
+`account_profile_views.py` + `account_profile_children_views.py` + `profile_image_views.py` (owner API),
+`profile_legacy_aliases.py` (deprecated per-space routes), `profile_activity_public.py` + `profile_github*.py` (graph and
+GitHub, account-level), `handle_gate.py` / `handle_views.py` (username required + availability), `account_profile_merge.py`
+(migration 0153), `account_profile_account_merge.py` and `account_profile_purge.py` (account merge/purge),
+`notifications_profile_open.py` (one-time notice). Classification: `data_export/classification_account_profile.py`.
+Contract for clients: `handover/reports/PROFILE-CONTRACT-0.12.0.md`.
+
+## Outbound calls to tenant-configured destinations
+
+`apps/outbound_policy.py` (resolve once, one blocked-address policy, pinned `Target`) and `apps/outbound_http.py`
+(the bounded, pinned, no-redirect, no-proxy transport with one deadline) are the single source of truth for any
+server-side call to a URL a space configured: device adapter webhooks (`devices/services_adapter_webhook.py`),
+the image adapter (`card_designs/image_adapter/client.py`, `url_policy.py`) and Anthias players
+(`presence/anthias_client.py`, with `presence/anthias_networks.py` naming the deployment's own networks).
 
 ## Community and notification delivery
 

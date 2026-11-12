@@ -124,8 +124,8 @@ def test_each_matrix_cell_only_dispatches_its_channel(monkeypatch, selected):
     result = notify.notify_lifecycle(
         space, feature="printing", event="submitted", build=payload, sync=True
     )
-    if selected == NotificationChannel.WHATSAPP:
-        # This personal-only channel needs an explicit recipient envelope. Adding
+    if selected in (NotificationChannel.WHATSAPP, NotificationChannel.SMS):
+        # These personal-only channels needs an explicit recipient envelope. Adding
         # it to the enum must never turn the legacy staff body into a room send.
         assert emails == [] and channels == [] and inbox == []
         assert result.delivered_counts == {}

@@ -107,7 +107,7 @@ def test_sentry_configured_has_both_integrations_and_no_default_pii():
     script = """
 import json, sys, types
 sdk = types.ModuleType('sentry_sdk')
-sdk.init = lambda **values: print(json.dumps({**values, 'integrations': [type(v).__name__ for v in values['integrations']]}))
+sdk.init = lambda **values: print(json.dumps({**values, 'integrations': [type(v).__name__ for v in values['integrations']]}, default=lambda hook: hook.__name__))
 sys.modules['sentry_sdk'] = sdk
 for name in ('Celery', 'Django'):
     module = types.ModuleType('sentry_sdk.integrations.' + name.lower())
@@ -120,4 +120,6 @@ import config.settings
     values = json.loads(result.stdout.strip().splitlines()[-1])
     assert values["integrations"] == ["DjangoIntegration", "CeleryIntegration"]
     assert values["send_default_pii"] is False
+    # The privacy scrubbers (config.sentry_privacy) are wired for events and for transactions.
+    assert values["before_send"] == "before_send" and values["before_send_transaction"] == "before_send_transaction"
     assert values["traces_sample_rate"] == 0.0

@@ -1,9 +1,11 @@
 from unittest.mock import patch
 
 import pytest
+from django.utils import timezone
 
 from apps.integrations.email import makerspace_mail_connection
 from apps.integrations.models import PlatformEmailSettings
+from apps.integrations.space_smtp_gate import mark_verified
 from apps.makerspaces.models import Makerspace
 
 pytestmark = pytest.mark.django_db
@@ -20,6 +22,9 @@ def public_smtp_dns(monkeypatch):
 def _connection_kwargs(space):
     # Assert the flags email.py passes to get_connection (independent of the test
     # mail backend, which doesn't expose use_ssl/use_tls).
+    if space.smtp_host:
+        # Parity E-B8: an own SMTP account is used only after its test message was accepted.
+        mark_verified(space, timezone.now())
     with patch("apps.integrations.email.get_connection") as get_connection:
         makerspace_mail_connection(space)
     return get_connection.call_args.kwargs

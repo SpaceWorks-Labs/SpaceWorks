@@ -151,8 +151,8 @@ def test_an_unnarrowed_rule_matches_every_subject():
     printer = make_machine(space, "printer")
     role = make_role(space, "machine-team", [Action.MANAGE_MACHINES])
     member = make_member("rulescope-open-member", space, role)
-    member.makerspace_memberships.get(makerspace=space).machine_type_scopes.create(machine_type=laser.machine_type)
-    member.makerspace_memberships.get(makerspace=space).machine_type_scopes.create(machine_type=printer.machine_type)
+    MakerspaceMembership.staff_tracks.get(user=member, makerspace=space).machine_type_scopes.create(machine_type=laser.machine_type)
+    MakerspaceMembership.staff_tracks.get(user=member, makerspace=space).machine_type_scopes.create(machine_type=printer.machine_type)
     select_role(space, role)
 
     assert emails(space, laser) == [member.email]
@@ -165,8 +165,8 @@ def test_a_narrowed_rule_only_matches_what_it_names():
     printer = make_machine(space, "printer")
     role = make_role(space, "machine-team", [Action.MANAGE_MACHINES])
     member = make_member("rulescope-narrow-member", space, role)
-    member.makerspace_memberships.get(makerspace=space).machine_type_scopes.create(machine_type=laser.machine_type)
-    member.makerspace_memberships.get(makerspace=space).machine_type_scopes.create(machine_type=printer.machine_type)
+    MakerspaceMembership.staff_tracks.get(user=member, makerspace=space).machine_type_scopes.create(machine_type=laser.machine_type)
+    MakerspaceMembership.staff_tracks.get(user=member, makerspace=space).machine_type_scopes.create(machine_type=printer.machine_type)
     rule = select_role(space, role)
     rule.machine_scopes.create(machine=laser)
 
@@ -219,7 +219,7 @@ def test_a_rule_naming_a_machine_outside_the_roles_scope_yields_nobody():
     printer = make_machine(space, "printer")
     role = make_role(space, "laser-team", [Action.MANAGE_MACHINES])
     member = make_member("rolescope-floor-member", space, role)
-    member.makerspace_memberships.get(makerspace=space).machine_type_scopes.create(machine_type=laser.machine_type)
+    MakerspaceMembership.staff_tracks.get(user=member, makerspace=space).machine_type_scopes.create(machine_type=laser.machine_type)
     rule = select_role(space, role)
     # The operator narrowed the rule to the printer, which this role cannot reach.
     rule.machine_scopes.create(machine=printer)
@@ -234,7 +234,7 @@ def test_the_role_floor_applies_even_with_no_rule_narrowing():
     printer = make_machine(space, "printer")
     role = make_role(space, "laser-team", [Action.MANAGE_MACHINES])
     member = make_member("rolescope-floor-open-member", space, role)
-    member.makerspace_memberships.get(makerspace=space).machine_type_scopes.create(machine_type=laser.machine_type)
+    MakerspaceMembership.staff_tracks.get(user=member, makerspace=space).machine_type_scopes.create(machine_type=laser.machine_type)
     select_role(space, role)
 
     assert emails(space, laser) == [member.email]
@@ -269,7 +269,7 @@ def test_a_legacy_membership_with_no_assigned_role_is_not_stripped():
     # A null assigned_role resolves through the frozen legacy fallback, which is not a
     # role row and has nothing to link — scoping it would silently strip the membership.
     with pytest.raises(IntegrityError), transaction.atomic():
-        MakerspaceMembership.objects.filter(pk=membership.pk).update(assigned_role=None)
+        MakerspaceMembership.staff_tracks.filter(pk=membership.pk).update(assigned_role=None)
         select_role(space, role)
 
         # The rule names the role, and this membership no longer holds it, so it is not

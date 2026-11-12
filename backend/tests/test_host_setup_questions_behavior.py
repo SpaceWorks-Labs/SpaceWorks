@@ -11,6 +11,20 @@ ROOT = Path(__file__).resolve().parents[2]
 BASH = shutil.which("bash")
 pytestmark = pytest.mark.skipif(not BASH, reason="requires bash")
 
+# The installer forwards these deployment settings from the caller's environment into .env
+# (scripts/installer/environment-continuity.sh). A test runner that sets CELERY_BROKER_URL,
+# EMAIL_BACKEND, a maintenance database URL and the like must not change what a fresh install writes.
+_FORWARDED_PREFIXES = (
+    "ACCOUNT_", "EVENT_REGISTRATION_", "SPACEWORKS_", "DATABASE_", "MANAGED_POSTGRES", "CLOUD_", "CRON_INTERVAL_",
+    "CELERY_", "CACHE_URL", "LIVE_REDIS_URL", "CONN_", "DISABLE_SERVER_SIDE_CURSORS", "STORAGE_", "AWS_SESSION_TOKEN",
+    "EMAIL_", "DEFAULT_FROM_EMAIL", "FREE_", "TRUST", "TRUSTED_EDGE_",
+)
+
+
+def host_environment(**extra):
+    environment = {key: value for key, value in os.environ.items() if not key.startswith(_FORWARDED_PREFIXES)}
+    return {**environment, **extra}
+
 
 def defaults():
     # model, website, HTTPS, storage, outside-services gate, control plane, loopback, organization,
@@ -26,7 +40,7 @@ def question_tail():
 FULL = "n"
 
 
-def questionnaire(tmp_path, answers, write=False, runner_supported=True, quick=False):
+def questionnaire(tmp_path, answers, write=False, runner_supported=True, quick=False, extra_env=None):
     scripts = tmp_path / "scripts"
     scripts.mkdir(exist_ok=True)
     shutil.copytree(ROOT / "scripts/installer", scripts / "installer", dirs_exist_ok=True, ignore=shutil.ignore_patterns("__pycache__"))
@@ -50,7 +64,7 @@ save_setup_answers "$PWD/.spaceworks-answers"
         script += "source scripts/setup-write-environment.sh\nwrite_setup_environment\n"
     return subprocess.run(
         [BASH, "-c", script], cwd=tmp_path, input="\n".join(([] if quick else [FULL]) + answers) + "\n",
-        env=os.environ.copy(), text=True, capture_output=True, timeout=30,
+        env=host_environment(**(extra_env or {})), text=True, capture_output=True, timeout=30,
     )
 
 
@@ -306,7 +320,7 @@ def test_plain_http_rejects_lan_and_reasks_for_loopback(tmp_path, host):
 
 def test_writer_refuses_resumed_plain_http_lan_answers_before_creating_env(tmp_path):
     result = subprocess.run([BASH, "-c", 'die() { echo "$*" >&2; exit 1; }; source "$WRITER"; ANSWERS_CONFIRMED=yes; HTTPS_MODE=1; WEBHOST=192.168.1.50; write_setup_environment'],
-                            cwd=tmp_path, env={**os.environ, "WRITER": (ROOT / "scripts/setup-write-environment.sh").as_posix()},
+                            cwd=tmp_path, env=host_environment(WRITER=(ROOT / "scripts/setup-write-environment.sh").as_posix()),
                             text=True, capture_output=True, timeout=10)
     assert result.returncode != 0 and "LAN addresses require HTTPS" in result.stderr
     assert not (tmp_path / ".env").exists()

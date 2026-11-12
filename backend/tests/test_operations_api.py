@@ -499,9 +499,9 @@ def test_guest_admin_cannot_view_hardware_reports():
         f"/api/v1/admin/makerspace/{makerspace.id}/reports/damaged-missing/export"
     )
 
-    # The Area A+B stock summary is an inventory report (VIEW_INVENTORY), which the
-    # built-in Handover role holds; audit-gated reports stay closed to it.
-    assert analytics.status_code == 200
+    # Decision 224(d): a counter-only (handout-only) role gets no inventory-wide report or
+    # export, even though the Handover role holds VIEW_INVENTORY for item lookup.
+    assert analytics.status_code == 403
     assert export.status_code == 403
     overdue = client.get(f"/api/v1/admin/makerspace/{makerspace.id}/analytics/overdue-loans")
     assert overdue.status_code == 403

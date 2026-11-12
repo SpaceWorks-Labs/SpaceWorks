@@ -36,7 +36,7 @@ def manager(space):
         f"service-file-manager-{uuid4().hex[:8]}", space,
         MakerspaceMembership.Role.MACHINE_MANAGER,
     )
-    membership = user.makerspace_memberships.get(makerspace=space)
+    membership = MakerspaceMembership.staff_tracks.get(user=user, makerspace=space)
     MembershipMachineTypeScope.objects.bulk_create([
         MembershipMachineTypeScope(membership=membership, machine_type=kind)
         for kind in MachineType.objects.filter(makerspace=space)

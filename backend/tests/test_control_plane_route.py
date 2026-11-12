@@ -177,7 +177,8 @@ def test_host_bundle_installs_every_selected_overlay_and_bind_mount(tmp_path):
         required.add(path.relative_to(ROOT).as_posix())
         for config in compose(path.relative_to(ROOT))["services"].values():
             for volume in config.get("volumes", []):
-                if isinstance(volume, str) and volume.startswith("./"):
+                # ./storage-config is written per install by the setup questions, not shipped in the bundle.
+                if isinstance(volume, str) and volume.startswith("./") and not volume.startswith("./storage-config"):
                     required.add(volume.split(":", 1)[0][2:])
     for relative in required:
         assert (target / relative).read_bytes() == (ROOT / relative).read_bytes(), relative

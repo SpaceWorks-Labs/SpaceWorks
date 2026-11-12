@@ -203,9 +203,9 @@ def test_scoped_authority_matrix_and_dead_coordinates():
 def test_null_primary_legacy_role_cannot_grant_email_template_access():
     makerspace = space("type-unrestricted-actors")
     legacy = staff_account(makerspace, username="type-legacy-machine", role_slug="machine_manager")
-    membership = MakerspaceMembership.objects.get(user=legacy, makerspace=makerspace)
+    membership = MakerspaceMembership.staff_tracks.get(user=legacy, makerspace=makerspace)
     with pytest.raises(IntegrityError), transaction.atomic():
-        MakerspaceMembership.objects.filter(pk=membership.pk).update(assigned_role=None)
+        MakerspaceMembership.staff_tracks.filter(pk=membership.pk).update(assigned_role=None)
         assert client_for(legacy).get(list_url(makerspace)).status_code == 404
         with connection.cursor() as cursor:
             cursor.execute("SET CONSTRAINTS ALL IMMEDIATE")

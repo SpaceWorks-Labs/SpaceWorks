@@ -81,8 +81,8 @@ def _attempt_second_row(case, mode):
     elif case == "staff":
         # Staff accounts are retired: a second staff row is a staff role granted to an existing community member.
         second = make_user(f"limits-second-staff-{mode}")
-        MakerspaceMembership.objects.create(makerspace=makerspace, user=second,
-                                            track=MakerspaceMembership.Track.COMMUNITY)
+        from tests.accounts.account_factories import make_membership
+        make_membership(second, makerspace)  # needs the seeded built-in Member role (DB constraint)
         response = client.post(
             f"/api/v1/admin/makerspaces/{makerspace.pk}/staff-roles/",
             {"user_id": second.pk, "roles": ["inventory_manager"]},

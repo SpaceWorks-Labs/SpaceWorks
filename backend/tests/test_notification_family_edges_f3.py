@@ -236,6 +236,7 @@ def test_low_stock_emits_once_per_existing_restock_edge(monkeypatch, django_capt
     assert events.count(("stock", "procurement_received")) == 1
 
 
+@pytest.mark.skip(reason="machine certifications were retired in 0.12.0 (the admin grant/type routes answer 410); the premise no longer exists")
 def test_certification_http_edges_emit_granted_and_revoked(monkeypatch, django_capture_on_commit_callbacks):
     space, _staff, _member_user, _payment = family_world("f3-cert-edge")
     machine_type = _machine_type(space)

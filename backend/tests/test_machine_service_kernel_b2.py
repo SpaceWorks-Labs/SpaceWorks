@@ -25,7 +25,7 @@ from apps.machines.service_errors import ServiceMachineUnavailable
 from apps.machines.service_queue_position import queue_positions_for
 from apps.machines.service_workflow import accept, collect, start, submit
 from apps.operations.report_registry import report_definition
-from tests.return_helpers import make_space, make_user
+from tests.return_helpers import make_member, make_space, make_user
 
 
 pytestmark = pytest.mark.django_db
@@ -119,7 +119,7 @@ def test_payment_hook_reprint_provenance_and_registry_seam():
     space = make_space("kernel-payment")
     kind = MachineType.objects.create(makerspace=space, slug="kernel-payment-type", name="Paid", capability_config={"metering_unit": "minutes", "requires_booking": False})
     target = machine(space, suffix="payment", type_row=kind)
-    actor = make_user("kernel-payment-actor")
+    actor = make_member("kernel-payment-actor", space)
     request = submit(target, make_user("kernel-payment-requester"), actor=actor, requester_name="R", contact_email="r@test", contact_phone="1", title="Paid job")
     accept(request, actor)
     start(request, actor, role_scope.EXEMPT, machine_id=target.id)

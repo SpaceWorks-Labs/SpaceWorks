@@ -8,10 +8,12 @@ retryable FAILED row -- never raise into the workflow that sent it -- and the pl
 
 import pytest
 from django.test import override_settings
+from django.utils import timezone
 
 from apps.integrations.dispatch import dispatch_email
 from apps.integrations.email import platform_email_configured
 from apps.integrations.models import EmailLog, PlatformEmailSettings
+from apps.integrations.space_smtp_gate import mark_verified
 from apps.makerspaces.models import Makerspace
 from tests.return_helpers import make_space
 
@@ -32,6 +34,8 @@ def test_an_undecryptable_makerspace_smtp_password_fails_the_row_not_the_caller(
         smtp_host="smtp.example.org", smtp_port=587, smtp_password=GARBAGE
     )
     space.refresh_from_db()
+    # Parity E-B8: an own SMTP account is used only after its test message was accepted.
+    mark_verified(space, timezone.now())
 
     log = dispatch_email(
         to_email="member@example.com", subject="Reminder", text_body="Due back",

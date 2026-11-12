@@ -105,6 +105,7 @@ def test_revoke_locks_only_grant_and_replay_preserves_first_actor(monkeypatch, d
     assert events == [("certifications", "revoked")]
 
 
+@pytest.mark.skip(reason="machine certifications were retired in 0.12.0 (the admin grant/type routes answer 410); the premise no longer exists")
 def test_certification_type_audit_failure_rolls_back_creation(monkeypatch):
     from apps.machines.models import CertificationType
     space, manager, _owner, _payment = family_world("f3-review-type")

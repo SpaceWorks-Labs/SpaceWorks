@@ -75,8 +75,10 @@ print_proxy_nginx_steps
 
 def test_release_image_verification_pulls_only_backend_and_frontend(host):
     root, environment = host
-    # The shared host fixture's docker stub does not log; record pulls here.
-    write_script(root / "bin/docker", 'printf "%s\\n" "$*" >> "$TEST_DOCKER_LOG"\nexit 0\n')
+    # The shared host fixture's docker stub does not log; record pulls here. The verifier also asks the
+    # daemon for its platform and smoke-runs the backend installer; neither is a pull.
+    write_script(root / "bin/docker", 'case "$1" in\n  version) echo linux/amd64 ;;\n'
+                 '  pull) printf "%s\\n" "$*" >> "$TEST_DOCKER_LOG" ;;\nesac\nexit 0\n')
     result = subprocess.run([BASH, (ROOT / "scripts/verify-release-images.sh").as_posix(), "fixture-tag"],
                             cwd=root, env={**environment, "GHCR_OWNER": "spaceworks-labs",
                                            "TEST_DOCKER_LOG": (root / "docker.log").as_posix()},

@@ -14,8 +14,8 @@ AREAS = ["inventory", "machines", "events", "bookings", "membership", "payments"
 
 def default_area_answers():
     # Everything shortcut; Inventory + its policies/charges/access; Machines + its reminder policy;
-    # the other six areas; organization, notifications, MFA.
-    return [""] * 31
+    # the other six areas; organization and notifications.
+    return [""] * 30
 
 
 def run_questionnaire(directory, area_answers=None, prefix=None, cancel=False, edition="makerspace", payments=False):
@@ -29,7 +29,8 @@ def run_questionnaire(directory, area_answers=None, prefix=None, cancel=False, e
         source = source.replace("[[ -d /run/systemd/system ]]", "true")
         (scripts / name).write_text(source, encoding="utf-8", newline="\n")
     # "n" answers "Use quick setup?" so the full questionnaire runs.
-    answers = ["n"] + (prefix or ["", "", "", "", "", "", "", "Test Organization", "", ""]) + (area_answers if area_answers is not None else default_area_answers())
+    # The prefix ends at the member two-step question; sign-in options and the product page follow it.
+    answers = ["n"] + (prefix or ["", "", "", "", "", "", "", "Test Organization", "", ""]) + ["", ""] + (area_answers if area_answers is not None else default_area_answers())
     answers += ["", "owner@example.org", "private-password"]
     if payments:
         answers += ["", ""]

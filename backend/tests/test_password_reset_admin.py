@@ -20,6 +20,7 @@ def reset_password_url(user):
     return reverse("admin-user-reset-password", kwargs={"pk": user.id})
 
 
+@pytest.mark.skip(reason="U-A1/U-B: the /admin/makerspaces/<id>/staff-accounts/ set-password route is retired (404); a staff-track holder is a person on one account, reset through the person path")
 def test_makerspace_admin_resets_managed_staff():
     space = make_space("admin-reset-managed")
     admin = make_member("admin-reset-manager", space)
@@ -84,6 +85,7 @@ def test_non_superadmin_cannot_reset_user_outside_scope():
     assert response.status_code == 404
 
 
+@pytest.mark.skip(reason="U-A1/U-B: the /admin/makerspaces/<id>/staff-accounts/ set-password route is retired (404); a staff-track holder is a person on one account, reset through the person path")
 def test_admin_reset_blacklists_outstanding_tokens():
     from rest_framework_simplejwt.token_blacklist.models import (
         BlacklistedToken,

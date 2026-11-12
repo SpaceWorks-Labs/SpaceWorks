@@ -149,9 +149,9 @@ def test_null_primary_legacy_printing_role_is_refused():
     type_for(space, "direct-first")
     type_for(space, "direct-second")
     actor = scoped_manager(space, "proc-type-direct-print-actor")
-    membership = MakerspaceMembership.objects.get(user=actor, makerspace=space)
+    membership = MakerspaceMembership.staff_tracks.get(user=actor, makerspace=space)
     with pytest.raises(IntegrityError), transaction.atomic():
-        MakerspaceMembership.objects.filter(pk=membership.pk).update(assigned_role=None, role="print_manager")
+        MakerspaceMembership.staff_tracks.filter(pk=membership.pk).update(assigned_role=None, role="print_manager")
         assert authenticated_client(actor).get(option_url(space)).status_code == 404
         with connection.cursor() as cursor:
             cursor.execute("SET CONSTRAINTS ALL IMMEDIATE")

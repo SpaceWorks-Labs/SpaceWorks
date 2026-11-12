@@ -25,16 +25,8 @@ def _default_role(makerspace, legacy_role):
 
 def test_machine_manager_implies_printing_for_actions_scopes_and_permission():
     makerspace = make_space("b5-machine-scope")
-    actor = make_member(
-        "b5-machine-scope-user", makerspace,
-        membership_role=MakerspaceMembership.Role.MACHINE_MANAGER,
-        role=User.Role.REQUESTER,
-    )
-    membership = MakerspaceMembership.objects.get(user=actor, makerspace=makerspace)
-    membership.assigned_role = _default_role(
-        makerspace, MakerspaceMembership.Role.MACHINE_MANAGER
-    )
-    membership.save(update_fields=["assigned_role"])
+    # U-A1: a staff role is a staff-track row on the person's one account.
+    actor = staff_account(makerspace, username="b5-machine-scope-user", role_slug="machine_manager")
 
     assert rbac.actions_satisfying(rbac.Action.MANAGE_PRINTING) == frozenset({
         rbac.Action.MANAGE_PRINTING, rbac.Action.MANAGE_MACHINES,
@@ -64,12 +56,12 @@ def test_retirement_migration_moves_legacy_labels_without_reviving_invalid_autho
     already = staff_account(makerspace, username="b5-migrated-default", role_slug="machine_manager")
     legacy = staff_account(makerspace, username="b5-migrated-unassigned", role_slug="machine_manager")
     handover = staff_account(makerspace, username="b5-handover", role_slug="handover")
-    already_machine = MakerspaceMembership.objects.get(user=already, makerspace=makerspace)
-    unassigned = MakerspaceMembership.objects.get(user=legacy, makerspace=makerspace)
-    handover_membership = MakerspaceMembership.objects.get(user=handover, makerspace=makerspace)
+    already_machine = MakerspaceMembership.staff_tracks.get(user=already, makerspace=makerspace)
+    unassigned = MakerspaceMembership.staff_tracks.get(user=legacy, makerspace=makerspace)
+    handover_membership = MakerspaceMembership.staff_tracks.get(user=handover, makerspace=makerspace)
     migration = import_module("apps.makerspaces.migrations.0046_retire_print_manager")
     with pytest.raises(IntegrityError), transaction.atomic():
-        MakerspaceMembership.objects.filter(pk=unassigned.pk).update(assigned_role=None, role="print_manager")
+        MakerspaceMembership.staff_tracks.filter(pk=unassigned.pk).update(assigned_role=None, role="print_manager")
         migration.migrate_print_manager_memberships(django_apps, None)
         migration.migrate_print_manager_memberships(django_apps, None)
         already_machine.refresh_from_db()
@@ -89,9 +81,9 @@ def test_retirement_migration_moves_legacy_labels_without_reviving_invalid_autho
 def test_invalid_legacy_print_manager_is_denied_and_historical_mutes_are_retargeted():
     makerspace = make_space("b5-legacy-and-mutes")
     legacy = staff_account(makerspace, username="b5-legacy-printer", role_slug="machine_manager")
-    membership = MakerspaceMembership.objects.get(user=legacy, makerspace=makerspace)
+    membership = MakerspaceMembership.staff_tracks.get(user=legacy, makerspace=makerspace)
     with pytest.raises(IntegrityError), transaction.atomic():
-        MakerspaceMembership.objects.filter(pk=membership.pk).update(assigned_role=None, role="print_manager")
+        MakerspaceMembership.staff_tracks.filter(pk=membership.pk).update(assigned_role=None, role="print_manager")
         assert not rbac.can(legacy, rbac.Action.MANAGE_PRINTING, makerspace.id)
         with connection.cursor() as cursor:
             cursor.execute("SET CONSTRAINTS ALL IMMEDIATE")

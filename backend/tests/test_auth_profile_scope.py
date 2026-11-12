@@ -99,16 +99,11 @@ def test_makerspace_staff_keeps_own_profile_membership():
     hidden.save(update_fields=["frontend_domain", "frontend_domain_status"])
     user = make_user(
         "profile-hidden-manager",
-        account_kind="staff", staff_makerspace=hidden,
-        role=User.Role.SPACE_MANAGER,
         access_status=User.AccessStatus.ACTIVE,
     )
-    MakerspaceMembership.objects.create(
-        user=user,
-        makerspace=hidden,
-        role=MakerspaceMembership.Role.SPACE_MANAGER,
-        assigned_role=hidden.roles.get(slug="space_manager"),
-    )
+    # U-A1: one account per person; the staff role is a staff-track membership row.
+    from tests.accounts.account_factories import grant_staff_role
+    grant_staff_role(user, hidden, role_slug="space_manager")
     request = APIRequestFactory().get("/api/v1/auth/me", HTTP_ORIGIN="https://hidden.example")
 
     payload = user_payload(user, request=request)

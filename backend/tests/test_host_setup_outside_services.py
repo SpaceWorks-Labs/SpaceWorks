@@ -59,7 +59,7 @@ def test_external_database_overlay_gives_one_shot_jobs_the_owner_login():
 
 def layers(root, env_text, layer="none"):
     (root / ".env").write_text(env_text, newline="\n")
-    script = 'ROOT="$PWD"; source scripts/compose-deployment.sh; COMPOSE_FILES=(); append_deployment_layers "$1" "$ROOT"; ' \
+    script = 'ROOT="$PWD"; source scripts/compose-deployment.sh; COMPOSE_FILES=(); append_deployment_layers "$1" "$ROOT" || exit $?; ' \
              'printf "%s\\n" "$DEPLOYMENT_SUFFIX" "${COMPOSE_FILES[@]}"'
     return subprocess.run([BASH, "-c", script, "x", layer], cwd=root, text=True, capture_output=True, timeout=30,
                           env={**os.environ, "SPACEWORKS_STATIC_ENV_FILE": str(root / ".env")})

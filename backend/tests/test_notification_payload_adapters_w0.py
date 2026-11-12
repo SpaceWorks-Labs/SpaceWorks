@@ -37,7 +37,9 @@ def test_hardware_adapter_identifies_request_and_charge():
     assert envelope.source_id == str(row.pk) and envelope.context["request_id"] == row.pk
     hardware.notify_loan_charge(row, "deposit_raised", payment)
     charge = NotificationEnvelope.objects.get(source_kind="hardware.charge", recipient=manager)
-    assert charge.context == {"request_id": row.pk, "payment_id": payment.pk}
+    # The adapters now also carry dotted identity keys (makerspace.name, request.id).
+    assert {key: charge.context[key] for key in ("request_id", "payment_id")} == {
+        "request_id": row.pk, "payment_id": payment.pk}
     assert charge.source_id == str(payment.pk)
 
 
@@ -108,7 +110,7 @@ def test_printing_adapter_identifies_kernel_request():
     printing.notify_printer_service_status(request, "accepted")
     envelope = NotificationEnvelope.objects.get(source_kind="machines.service", recipient=owner)
     assert envelope.source_id == str(request.pk)
-    assert envelope.context == {"machine_service_request_id": request.pk}
+    assert envelope.context["machine_service_request_id"] == request.pk
 
 
 def test_structured_ids_refuse_contact_credentials_and_invalid_identifiers():

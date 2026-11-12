@@ -66,7 +66,8 @@ def test_area_actions_are_real_and_pinned_to_the_console_twin():
         "handover": {"assign_box", "issue_request", "issue_direct_loan", "return_request", "upload_evidence"},
         "machines": {"manage_machines", "manage_printing"},
         "events": {"manage_events"}, "bookings": {"manage_bookings"}, "shop": {"manage_shop"},
-        "finance": {"view_finance"}, "people": {"manage_members"}, "platform": {"manage_makerspace"},
+        "finance": {"view_finance"}, "donations": {"manage_donations"},  # decision 252
+        "people": {"manage_members"}, "platform": {"manage_makerspace"},
     }
     assert set(areas.AREA_ACTIONS) == set(areas.AREAS) - {areas.REPAIRS}
     used = {a for acts in areas.AREA_ACTIONS.values() for a in acts} | set(areas.TECHNICIAN_ACTIONS)
@@ -88,8 +89,9 @@ def _seen(actor, **params):
 
 def _org_reader(space, username, actions):
     organization = Organization.objects.create(name=f"{username} org", slug=f"{username}-org")
+    # One OWNER organization per space is DB-enforced (uniq_owner_per_makerspace); readers use MANAGER links.
     OrganizationMakerspace.objects.create(organization=organization, makerspace=space,
-                                          relationship=OrganizationMakerspace.Relationship.OWNER)
+                                          relationship=OrganizationMakerspace.Relationship.MANAGER)
     reader = user(username)
     OrganizationMembership.objects.create(organization=organization, user=reader, granted_actions=list(actions))
     return reader
@@ -129,7 +131,9 @@ def test_combined_roles_add_their_areas_and_machine_repairs_follow_the_subject()
     reader = staff_account(space, "area-combo-reader", "inventory_manager", "event_manager", "machine_manager")
     # The machines area is also narrowed per machine type (area_scope_machines): a Machine
     # Manager with no type links, reading a machine row that names no machine, sees nothing of it.
-    assert _seen(reader) == LENDING_ROWS | {"event.created", "maintenance.subject_logged"}
+    # A machine-subject repair row that names no machine (`meta.machine_id`) fails closed to the Space
+    # Manager (`area_scope_machines.repair_machines_q`): subject type alone never opens it.
+    assert _seen(reader) == LENDING_ROWS | {"event.created"}
     # No subject metadata: only the Space Manager reads it.
     assert "maintenance.subject_schedule_updated" not in _seen(reader)
 

@@ -6,9 +6,10 @@ Problem reports are triaged under EDIT_INVENTORY, so the Inventory Manager needs
 """
 import pytest
 
+from apps.accounts.models import User
 from apps.makerspaces.models import MakerspaceMembership
 from tests.handout_roles import make_handout_member
-from tests.return_helpers import authenticated_client, make_member, make_product, make_space
+from tests.return_helpers import authenticated_client, make_member, make_product, make_space, make_user
 from tests.test_problem_report_triage import _returned_report
 
 pytestmark = pytest.mark.django_db
@@ -30,8 +31,11 @@ def test_inventory_manager_lists_open_reports_without_the_accountability_page():
     assert response.status_code == 200
     assert [row["id"] for row in response.data["results"]] == [report.id]
     assert response.data["truncated"] is False
-    # 224(a) unchanged: the people page itself stays closed to the Inventory Manager.
-    assert client.get(f"/api/v1/admin/makerspace/{makerspace.id}/accountability").status_code == 403
+    # Decision 248 / IN8: the Inventory Manager reads the accountability page read-only, with the people
+    # page's restrictions and problem reports left out (problem reports have this list instead).
+    page = client.get(f"/api/v1/admin/makerspace/{makerspace.id}/accountability")
+    assert page.status_code == 200
+    assert page.data["restrictions"] == [] and page.data["problem_reports"] == []
 
 
 def test_resolved_reports_and_other_spaces_are_not_listed():
@@ -41,7 +45,7 @@ def test_resolved_reports_and_other_spaces_are_not_listed():
     product = make_product(makerspace, total_quantity=1, available_quantity=1, damaged_quantity=0)
     other_product = make_product(other, total_quantity=1, available_quantity=1, damaged_quantity=0)
     open_report, _ = _returned_report(makerspace, product)
-    resolved, _ = _returned_report(makerspace, product)
+    resolved, _ = _returned_report(makerspace, product, make_user("problem-list-scope-resolved-requester", access_status=User.AccessStatus.ACTIVE))
     resolved.resolved_at = resolved.created_at
     resolved.save(update_fields=["resolved_at"])
     _returned_report(other, other_product)

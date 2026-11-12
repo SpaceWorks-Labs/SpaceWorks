@@ -39,7 +39,8 @@ def test_space_manager_gets_dashboard_with_all_count_keys():
     assert all(
         isinstance(value, int)
         for key, value in response.data.items()
-        if key not in {"scope_mode", "outstanding_by_currency", "widgets", "queue_tiles", "next_up_events"}
+        if key not in {"scope_mode", "outstanding_by_currency", "widgets", "queue_tiles", "next_up_events",
+                       "attention", "failed_areas"}
     )
     assert isinstance(response.data["outstanding_by_currency"], dict)
     assert isinstance(response.data["next_up_events"], list)

@@ -33,11 +33,12 @@ def test_disabled_analytics_still_emits_a_script_baseline(tmp_path):
     assert "connect-src" not in policy
 
 
-@pytest.mark.parametrize("settings", [{}, {"TURNSTILE_SITE_KEY": "0x4AAAAAAA"}, {
+@pytest.mark.parametrize("env_settings", [{}, {"TURNSTILE_SITE_KEY": "0x4AAAAAAA"}, {
     "WEB_ANALYTICS_SCRIPT_URL": "https://plausible.example/js/script.manual.js",
     "WEB_ANALYTICS_COLLECT_URL": "https://plausible.example/api/event", "WEB_ANALYTICS_DOMAIN": "app.example"}])
-def test_no_mode_allows_inline_or_eval_script(tmp_path, settings):
-    text = headers(tmp_path, **settings)
+def test_no_mode_allows_inline_or_eval_script(tmp_path, env_settings):
+    # Not named `settings`: that is pytest-django's fixture and the autouse conftest would receive this dict.
+    text = headers(tmp_path, **env_settings)
     assert "'unsafe-inline'" not in text and "'unsafe-eval'" not in text
     assert "object-src 'none'; base-uri 'self'" in text
 

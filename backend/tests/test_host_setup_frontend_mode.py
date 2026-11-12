@@ -50,11 +50,11 @@ def test_api_only_with_a_website_elsewhere_uses_its_origin(tmp_path):
 
 @pytest.mark.parametrize("preset,stored", [("api-only", "no"), ("full", "yes")])
 def test_frontend_preset_answers_the_question(tmp_path, monkeypatch, preset, stored):
-    monkeypatch.setenv("SPACEWORKS_FRONTEND", preset)
+    # host_environment() strips SPACEWORKS_* from the caller's env, so the preset is passed explicitly.
     # The same answers as without a preset, minus the frontend answer itself.
     full = defaults()
     answers = API_ONLY_NO_SITE[:1] + API_ONLY_NO_SITE[2:] + question_tail() if preset == "api-only" else full[:1] + full[2:]
-    result = questionnaire(tmp_path, answers, write=True)
+    result = questionnaire(tmp_path, answers, write=True, extra_env={"SPACEWORKS_FRONTEND": preset})
     assert result.returncode == 0, result.stderr
     assert "(preset by --frontend)" in result.stdout
     assert "Frontend [" not in result.stdout
@@ -62,8 +62,7 @@ def test_frontend_preset_answers_the_question(tmp_path, monkeypatch, preset, sto
 
 
 def test_unknown_frontend_preset_is_refused_before_any_answer(tmp_path, monkeypatch):
-    monkeypatch.setenv("SPACEWORKS_FRONTEND", "website")
-    result = questionnaire(tmp_path, defaults(), write=True)
+    result = questionnaire(tmp_path, defaults(), write=True, extra_env={"SPACEWORKS_FRONTEND": "website"})
     assert "Use --frontend full or --frontend api-only" in result.stderr
     assert not (tmp_path / ".spaceworks-answers").exists()
     assert not (tmp_path / ".env").exists()

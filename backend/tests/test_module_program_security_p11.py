@@ -33,7 +33,7 @@ from apps.makerspaces.models import (
     Makerspace,
     MakerspaceMembership,
     MakerspaceRole,
-    MemberProfile,
+    AccountProfile,
 )
 from apps.makerspaces.walk_in_services import create_walk_in_member
 from tests.device_helpers import make_native_app_registration
@@ -182,7 +182,7 @@ def test_a_member_cannot_edit_another_members_project():
     mine = member_of(space, "mine")
     theirs = member_of(space, "theirs")
     their_profile = profile_services.profile_for(theirs)
-    profile_services.save_projects(their_profile, [{"title": "Theirs"}])
+    profile_services.save_profile(theirs, {"projects": [{"title": "Theirs"}]})
     their_project = their_profile.projects.get()
 
     response = authed(mine.user).put(
@@ -229,9 +229,10 @@ def test_a_revoked_member_disappears_from_the_directory():
     subject = member_of(space, "subject")
     viewer = member_of(space, "viewer")
     profile_services.save_profile(subject, {"is_visible": True})
-    assert authed(viewer.user).get(
+    # The default profile is visible (decision 303), so the viewer is listed too.
+    assert subject.pk in [row["membership_id"] for row in authed(viewer.user).get(
         f"/api/v1/member/makerspaces/{space.pk}/directory"
-    ).data["members"]
+    ).data["members"]]
 
     subject.status = "revoked"
     subject.save(update_fields=["status"])
@@ -239,7 +240,7 @@ def test_a_revoked_member_disappears_from_the_directory():
     listing = authed(viewer.user).get(
         f"/api/v1/member/makerspaces/{space.pk}/directory"
     ).data
-    assert listing["members"] == []
+    assert subject.pk not in [row["membership_id"] for row in listing["members"]]
     # And not merely hidden from the list — the detail route closes too.
     assert authed(viewer.user).get(
         f"/api/v1/member/makerspaces/{space.pk}/directory/{subject.pk}"
@@ -328,7 +329,7 @@ def test_uninstalling_membership_closes_the_profile_surfaces_but_keeps_the_data(
     assert client.get(f"/api/v1/member/makerspaces/{space.pk}/profile").status_code == 404
     assert client.get(f"/api/v1/member/makerspaces/{space.pk}/directory").status_code == 404
     # Uninstall hides; only a purge destroys.
-    assert MemberProfile.objects.get(membership=membership).bio == "Kept"
+    assert AccountProfile.objects.get(user=membership.user).bio == "Kept"
 
 
 # --- fixes from the Codex Stage-4 review -------------------------------------------
@@ -390,7 +391,7 @@ def test_a_malformed_project_id_does_not_delete_the_avatar():
     space = make_space("image-malformed")
     membership = member_of(space, "owner")
     profile = profile_services.profile_for(membership)
-    MemberProfile.objects.filter(pk=profile.pk).update(
+    AccountProfile.objects.filter(pk=profile.pk).update(
         avatar_key=build_object_key("member", space.pk, ".png")
     )
 
@@ -438,14 +439,14 @@ def test_profile_mutations_are_audited_without_copying_the_content():
     membership = member_of(space, "author")
     authed(membership.user).put(
         f"/api/v1/member/makerspaces/{space.pk}/profile",
-        {"is_visible": True, "bio": "a private sentence"},
+        {"is_visible": False, "bio": "a private sentence"},
         format="json",
     )
 
     entry = AuditLog.objects.filter(action="member.profile_updated").latest("id")
     assert entry.makerspace_id == space.pk
     assert entry.meta["visibility_changed"] is True
-    assert entry.meta["is_visible"] is True
+    assert entry.meta["is_visible"] is False
     # The log is append-only, so the bio must NOT be copied into it.
     assert "a private sentence" not in str(entry.meta)
 
@@ -736,7 +737,7 @@ def test_a_github_count_is_never_written_under_a_changed_handle(monkeypatch):
     def fetch_and_meanwhile_rename(login):
         assert login == "original"
         # The member edits their handle while the HTTP call is in flight.
-        MemberProfile.objects.filter(pk=profile.pk).update(
+        AccountProfile.objects.filter(pk=profile.pk).update(
             github_username="renamed", github_contributions=None
         )
         return 4321
@@ -820,7 +821,7 @@ def test_the_presign_cap_does_not_block_clearing_an_image(monkeypatch):
     space = make_space("presign-cap-clear")
     membership = member_of(space, "uploader")
     profile = profile_services.profile_for(membership)
-    MemberProfile.objects.filter(pk=profile.pk).update(
+    AccountProfile.objects.filter(pk=profile.pk).update(
         avatar_key=build_object_key("member", space.pk, ".png")
     )
     # Clearing frees the quota and deletes the object, so both storage calls are stubbed

@@ -6,6 +6,7 @@ from django.utils import timezone
 from django.urls import reverse
 from rest_framework.test import APIClient
 
+from apps.accounts.models import User
 from apps.inventory import availability, notify_me
 from apps.inventory.models import InventoryProduct
 from apps.inventory.models_watch import InventoryWatch
@@ -19,7 +20,7 @@ def world(slug):
     space = make_space(slug)
     space.enabled_features = sorted(set(space.enabled_features) | {"inventory.notify_when_back"})
     space.save(update_fields=["enabled_features"])
-    member = make_member(slug + "-member", space)
+    member = make_member(slug + "-member", space, "member", role=User.Role.REQUESTER)
     product = InventoryProduct.objects.create(makerspace=space, name="Drill", borrowing_terms="Return clean.")
     return space, member, product
 

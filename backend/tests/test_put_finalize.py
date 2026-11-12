@@ -1,4 +1,5 @@
 import threading
+from types import SimpleNamespace
 from unittest.mock import Mock
 
 import pytest
@@ -54,6 +55,9 @@ def test_post_presign_targets_staging_and_replay_cannot_replace_final(
     photo = _photo()
 
     class FakePublicClient:
+        # presign_upload refuses r2.dev hosts, so it reads the signing endpoint first.
+        meta = SimpleNamespace(endpoint_url="http://minio:9000")
+
         def generate_presigned_post(self, *, Bucket, Key, Fields, Conditions, ExpiresIn):
             assert Bucket == settings.AWS_STORAGE_BUCKET_NAME
             assert Key == evidence_storage.staging_key(photo.object_key)
@@ -243,6 +247,8 @@ def test_evidence_presigned_upload_put_mode_signs_staging_key(monkeypatch, setti
     settings.STORAGE_PRESIGN_METHOD = "put"
 
     class FakePublicClient:
+        meta = SimpleNamespace(endpoint_url="http://minio:9000")
+
         def generate_presigned_url(self, operation, Params, ExpiresIn):
             assert operation == "put_object"
             assert Params == {

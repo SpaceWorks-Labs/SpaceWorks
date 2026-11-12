@@ -154,7 +154,14 @@ def test_no_entry_permits_a_personal_or_free_text_key():
     # Owner decision #111 Q12: the superadmin's stated reason for opening a PII window
     # is written FOR the space's managers to read in their audit log. It is the one
     # reviewed free-text leaf; nothing else may join it.
-    reviewed = {("platform.pii_access_opened", "reason")}
+    reviewed = {("platform.pii_access_opened", "reason"),
+                # Reviewed 0.12.0: `reason` here is a closed vocabulary code (card reissue/revoke reasons, quota or
+                # exhaustion codes, the hosting-type source), never typed text.
+                ("member_card.auto_issue_skipped", "reason"), ("member_card.reissued", "reason"),
+                ("staff_card.auto_issue_skipped", "reason"), ("staff_card.reissued", "reason"),
+                ("staff_card.revoked", "reason"), ("managed_hosting.hosting_type_changed", "reason"),
+                # A display player's own label (not a person's name) and its host address.
+                ("presence.anthias_player_added", "name"), ("presence.anthias_player_removed", "name")}
     leaking = [
         (action, path)
         for action, entry in PRESENTATION_CATALOG.items()

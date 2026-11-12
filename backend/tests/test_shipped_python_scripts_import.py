@@ -19,6 +19,7 @@ import Django modules at module scope, and doing that inside the test session wo
 across tests.
 """
 
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -39,8 +40,18 @@ from pathlib import Path
 sys.path.insert(0, str(Path(sys.argv[1]).parent))
 
 spec = importlib.util.spec_from_file_location("shipped_script_under_test", sys.argv[1])
-spec.loader.exec_module(importlib.util.module_from_spec(spec))
+try:
+    spec.loader.exec_module(importlib.util.module_from_spec(spec))
+except SystemExit as stop:
+    # A script that reads its first argument at module scope refuses the script path it is handed
+    # here; reaching that refusal proves every import above it (Django setup included) ran.
+    if str(stop.code) != sys.argv[2]:
+        raise
 """
+
+# Scripts the host pipes into the backend container, where backend/ is the working directory.
+# Module scope of external-db-dump.py ends by validating its dump-name argument.
+_CONTAINER_SCRIPT_REFUSALS = {"external-db-dump.py": "Invalid dump name."}
 
 
 def _shipped_python_scripts():
@@ -84,7 +95,9 @@ def test_probe_capsule_members_are_shipped_scripts():
 def test_shipped_python_script_module_scope_executes(script, tmp_path):
     script = _as_shipped(script, tmp_path)
     completed = subprocess.run(
-        [sys.executable, "-c", _EXEC_MODULE_SCOPE, str(script)],
+        [sys.executable, "-c", _EXEC_MODULE_SCOPE, str(script), _CONTAINER_SCRIPT_REFUSALS.get(script.name, "")],
+        env={**os.environ, "PYTHONPATH": os.pathsep.join(
+            [str(ROOT / "backend"), *filter(None, [os.environ.get("PYTHONPATH")])])},
         capture_output=True,
         text=True,
         timeout=60,

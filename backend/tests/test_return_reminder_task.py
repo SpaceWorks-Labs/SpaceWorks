@@ -1,6 +1,9 @@
+import pytest
+
 from apps.hardware_requests.tasks import send_return_reminders_task
 
 
+@pytest.mark.django_db  # the task gate reads the source-gate and cloud-runtime state before it runs
 def test_send_return_reminders_task_runs_service_in_eager_mode(monkeypatch):
     result = {"sent": 3, "skipped": 1}
 

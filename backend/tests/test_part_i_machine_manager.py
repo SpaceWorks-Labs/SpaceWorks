@@ -20,7 +20,7 @@ pytestmark = pytest.mark.django_db
 
 
 def _membership(user, makerspace):
-    return MakerspaceMembership.objects.get(user=user, makerspace=makerspace)
+    return MakerspaceMembership.staff_tracks.get(user=user, makerspace=makerspace)
 
 
 def test_machine_manager_role_implies_manage_printing():
@@ -52,6 +52,7 @@ def test_machine_manager_role_implies_manage_printing():
         assert not rbac.can(machine_manager, action, makerspace.id), action
 
 
+@pytest.mark.skip(reason="U-A1/U-B: the /admin/makerspaces/<id>/staff-accounts/ routes are retired (404); staff roles are staff-track memberships on the person's one account")
 def test_space_manager_can_create_separate_machine_manager_in_own_makerspace():
     makerspace = make_space("mm-assign")
     manager = make_member("mm-assign-admin", makerspace)
@@ -66,6 +67,7 @@ def test_space_manager_can_create_separate_machine_manager_in_own_makerspace():
     assert account.role == User.Role.REQUESTER
 
 
+@pytest.mark.skip(reason="U-A1/U-B: the /admin/makerspaces/<id>/staff-accounts/ routes are retired (404); staff roles are staff-track memberships on the person's one account")
 def test_space_manager_cannot_create_space_manager():
     makerspace = make_space("mm-no-escalate")
     manager = make_member("mm-no-escalate-admin", makerspace)
@@ -76,6 +78,7 @@ def test_space_manager_cannot_create_space_manager():
     assert not User.objects.filter(username="would-be-peer.mm-no-escalate").exists()
 
 
+@pytest.mark.skip(reason="U-A1/U-B: the /admin/makerspaces/<id>/staff-accounts/ routes are retired (404); staff roles are staff-track memberships on the person's one account")
 def test_space_manager_cannot_overwrite_existing_space_manager_membership():
     makerspace = make_space("mm-no-overwrite")
     manager = make_member("mm-no-overwrite-admin", makerspace)
@@ -87,6 +90,7 @@ def test_space_manager_cannot_overwrite_existing_space_manager_membership():
     assert _membership(peer, makerspace).role == MakerspaceMembership.Role.SPACE_MANAGER
 
 
+@pytest.mark.skip(reason="U-A1/U-B: the /admin/makerspaces/<id>/staff-accounts/ routes are retired (404); staff roles are staff-track memberships on the person's one account")
 def test_superadmin_can_change_manager_roles_through_lifecycle_only():
     makerspace = make_space("mm-super-overwrite")
     root = make_user("mm-super-overwrite-admin", role=User.Role.SUPERADMIN, access_status="active")
@@ -115,9 +119,10 @@ def test_space_manager_can_revoke_delegable_membership():
     )
 
     assert response.status_code == 204
-    assert MakerspaceMembership.objects.get(pk=membership_id).status == "revoked"
+    assert MakerspaceMembership.staff_tracks.get(pk=membership_id).status == "revoked"
     target.refresh_from_db()
-    assert not target.is_active
+    # U-A1: revoking a staff role removes the row only; the person's one account stays active.
+    assert target.is_active
     # The account itself is not deleted.
     assert User.objects.filter(pk=target.id).exists()
 
@@ -133,7 +138,7 @@ def test_space_manager_cannot_revoke_space_manager_membership():
     )
 
     assert response.status_code == 403
-    assert MakerspaceMembership.objects.filter(pk=membership_id).exists()
+    assert MakerspaceMembership.staff_tracks.filter(pk=membership_id).exists()
 
 
 def test_space_manager_cannot_revoke_cross_tenant_membership():
@@ -154,7 +159,7 @@ def test_space_manager_cannot_revoke_cross_tenant_membership():
 
     # Out-of-scope existence is hidden as 404, not 403.
     assert response.status_code == 404
-    assert MakerspaceMembership.objects.filter(pk=membership_id).exists()
+    assert MakerspaceMembership.staff_tracks.filter(pk=membership_id).exists()
 
 
 def test_superadmin_can_revoke_space_manager_membership():
@@ -172,7 +177,7 @@ def test_superadmin_can_revoke_space_manager_membership():
     )
 
     assert response.status_code == 400
-    assert MakerspaceMembership.objects.filter(pk=membership_id).exists()
+    assert MakerspaceMembership.staff_tracks.filter(pk=membership_id).exists()
 
 
 def test_machine_manager_sees_own_makerspace_in_switcher_with_modules():

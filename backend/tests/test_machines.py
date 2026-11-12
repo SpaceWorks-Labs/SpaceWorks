@@ -29,6 +29,7 @@ from apps.operations.models import InventoryAdjustment
 from apps.warranty.models import Warranty
 from tests.return_helpers import authenticated_client, make_member, make_space, make_user
 from tests.handout_roles import grant_handout, make_handout_member
+from tests.accounts.account_factories import make_membership
 from tests.fixed_roles.helpers import assign_builtin_roles
 
 pytestmark = pytest.mark.django_db
@@ -37,6 +38,7 @@ pytestmark = pytest.mark.django_db
 def test_operator_candidates_return_only_active_members_with_minimal_fields():
     makerspace = enable_machines(make_space('machines-candidates'))
     manager = make_member('machines-candidates-manager', makerspace)
+    make_membership(manager, makerspace)  # U-A1: staff are members first; candidates are community rows
     active = make_handout_member('machines-candidates-active', makerspace)
     active.first_name = 'Active'
     active.last_name = 'Member'
@@ -1021,6 +1023,7 @@ def test_remove_operator_rejected_on_retired_machine():
         membership_role=MakerspaceMembership.Role.INVENTORY_MANAGER,
         role=User.Role.SPACE_MANAGER,
     )
+    make_membership(operator, makerspace)  # U-A1: an operator is a member first
     machine = make_machine(makerspace)
     client = authenticated_client(manager)
     assert assign_operator(client, machine, operator, "operate").status_code == 201

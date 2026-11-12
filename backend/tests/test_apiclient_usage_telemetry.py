@@ -206,6 +206,8 @@ def test_telemetry_write_adds_no_request_query(monkeypatch, django_assert_num_qu
     from django.test.utils import CaptureQueriesContext
     from django.db import connection
 
+    # Warm per-process caches first so the baseline and the measured request compare like with like.
+    assert client.get(path, **_signed_headers(api_client, secret, path)).status_code == 200
     with CaptureQueriesContext(connection) as baseline:
         assert client.get(path, **_signed_headers(api_client, secret, path)).status_code == 200
     monkeypatch.setattr(telemetry, "record_signed_client_observation", real_recorder)

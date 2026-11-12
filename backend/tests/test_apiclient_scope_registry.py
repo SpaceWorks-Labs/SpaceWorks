@@ -187,14 +187,14 @@ def test_legacy_cutover_is_explicit_and_new_entries_default_to_excluded():
         ('admin-event-booking-link', ('GET','HEAD','POST')), ('admin-event-booking-replacement', ('POST',)), ('admin-event-create-with-room', ('POST',)),
         ('admin-event-registration-queue', ('GET','HEAD')), ('admin-event-room-choices', ('GET','HEAD')), ('admin-event-venue', ('GET','HEAD')),
         ('admin-event-workshop-machine-link', ('DELETE',)), ('admin-event-workshop-machine-replacement', ('POST',)), ('admin-event-workshop-machines', ('GET','HEAD','POST')),
-        ('admin-makerspace-telemetry', ('GET','HEAD')), ('admin-platform-firebase-web-settings', ('GET','HEAD','PATCH')), ('admin-platform-telemetry', ('GET','HEAD','PATCH')),
+        ('admin-makerspace-telemetry', ('GET','HEAD','PATCH')), ('admin-platform-firebase-web-settings', ('GET','HEAD','PATCH')), ('admin-platform-telemetry', ('GET','HEAD','PATCH')),
         ('admin-request-booking-context', ('GET','HEAD','PUT','DELETE')), ('admin-request-event-context', ('GET','HEAD','PUT','DELETE')),
         ('auth-browser-state', ('GET','HEAD')), ('hardware_requests:contextual-request-self', ('POST',)),
         ('hardware_requests:equipment-kit-public-detail', ('GET','HEAD')), ('hardware_requests:equipment-kit-public-list', ('GET','HEAD')),
         ('notifications:browser-firebase-challenge', ('POST','DELETE')), ('notifications:browser-firebase-config', ('GET','HEAD')), ('notifications:browser-firebase-confirm', ('POST',)),
         ('notifications:browser-firebase-global-may-resume', ('POST',)), ('notifications:browser-firebase-may-resume', ('POST',)),
         ('public-day-passes', ('GET','HEAD')), ('public-machines-now', ('GET','HEAD')), ('public-member-units', ('GET','HEAD')),
-        ('public-organization-directory', ('GET','HEAD')), ('public-presence-here-now', ('GET','HEAD')),
+        ('public-organization-directory', ('GET','HEAD')), ('public-presence-here-now', ('GET','HEAD')), ('public-presence-now-config', ('GET','HEAD')),
         # Events programme: only its public routes sit behind the protected prefix.
         *((name, methods) for name, methods, _target in PROGRAMME_ROUTES
           if name.startswith("events-programme-public-")),

@@ -30,8 +30,10 @@ def test_standalone_installer_is_posix_sh_wrapped_in_main():
     text = STANDALONE.read_text()
     assert text.startswith("#!/bin/sh\n") and text.rstrip().endswith('main "$@"')
     assert len(text.splitlines()) < 300
-    for bashism in ("[[", "local ", "${!", "<<<", "mapfile", "declare ", "function "):
+    for bashism in ("[[", "${!", "<<<", "mapfile"):
         assert bashism not in text, bashism
+    # Keywords are only bashisms as commands; "local volumes" appears in the help prose.
+    assert not re.search(r"(?m)^\s*(local|declare|function)\s", text)
     assert subprocess.run([SH, "-n", str(STANDALONE)]).returncode == 0
     # Helpers arrive in the verified bundle: this file never fetches or sources unverified code.
     assert "release-fetch" not in text and "raw.githubusercontent" not in text

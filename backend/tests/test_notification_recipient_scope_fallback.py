@@ -3,6 +3,7 @@ import pytest
 
 from apps.accounts.rbac import Action
 from apps.integrations.models_recipients import NotificationRecipient, NotificationRecipientKind
+from apps.makerspaces.models import MakerspaceMembership
 from tests.test_notification_recipient_scope import make_space, make_machine, make_role, make_member, emails
 
 pytestmark = pytest.mark.django_db
@@ -25,9 +26,9 @@ def test_the_fallback_excludes_a_maintainer_whose_LINKS_do_not_cover_the_machine
     laser_role = make_role(space, "laser-team", [Action.MANAGE_MACHINES])
     printer_role = make_role(space, "printer-team", [Action.MANAGE_MACHINES])
     laser_member = make_member("rulescope-fallback-laser", space, laser_role)
-    laser_member.makerspace_memberships.get(makerspace=space).machine_type_scopes.create(machine_type=laser.machine_type)
+    MakerspaceMembership.staff_tracks.get(user=laser_member, makerspace=space).machine_type_scopes.create(machine_type=laser.machine_type)
     printer_member = make_member("rulescope-fallback-printer", space, printer_role)
-    printer_member.makerspace_memberships.get(makerspace=space).machine_type_scopes.create(machine_type=printer.machine_type)
+    MakerspaceMembership.staff_tracks.get(user=printer_member, makerspace=space).machine_type_scopes.create(machine_type=printer.machine_type)
 
     # No rows at all: pure action-based fallback, now narrowed by each role's links.
     assert emails(space, printer) == [printer_member.email]
@@ -64,7 +65,7 @@ def test_a_broad_rule_scoped_elsewhere_does_not_shadow_a_narrow_covering_rule():
     printer = make_machine(space, "printer")
     role = make_role(space, "laser-team", [Action.MANAGE_MACHINES])
     member = make_member("rulescope-shadow-member", space, role)
-    member.makerspace_memberships.get(makerspace=space).machine_type_scopes.create(machine_type=laser.machine_type)
+    MakerspaceMembership.staff_tracks.get(user=member, makerspace=space).machine_type_scopes.create(machine_type=laser.machine_type)
 
     printer_members_rule = NotificationRecipient.objects.create(
         makerspace=space,

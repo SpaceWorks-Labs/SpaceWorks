@@ -24,7 +24,7 @@ def make_machine(space, name="Service machine"):
     # Machine Managers receive explicit type reach; staff identity alone grants none.
     MembershipMachineTypeScope.objects.bulk_create([
         MembershipMachineTypeScope(membership=membership, machine_type=kind)
-        for membership in MakerspaceMembership.objects.filter(
+        for membership in MakerspaceMembership.staff_tracks.filter(
             makerspace=space, assigned_role__slug="machine_manager",
         )
     ])

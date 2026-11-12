@@ -14,7 +14,7 @@ pytestmark = pytest.mark.skipif(not BASH, reason="requires bash")
 @pytest.mark.parametrize("failure", ["", "linux/arm64", "linux/amd64"])
 def test_every_package_platform_is_checked_and_any_missing_image_fails(failure):
     result = subprocess.run([BASH, "-c", '''
-docker() { printf 'PULL %s\n' "$*"; [[ "$*" != *"${FAIL_PLATFORM:-no-failure}"* ]]; }
+docker() { [[ "$1" != version ]] || { echo linux/amd64; return 0; }; printf 'PULL %s\n' "$*"; [[ "$*" != *"${FAIL_PLATFORM:-no-failure}"* ]]; }
 set -- 0.5.0-main.2.bbbbbbbbbbbb
 source "$VERIFIER"
 '''], env={**os.environ, "GHCR_OWNER": "example", "FAIL_PLATFORM": failure,

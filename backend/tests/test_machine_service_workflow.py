@@ -23,7 +23,7 @@ from apps.machines.service_errors import (
     ServiceMachineUnavailable,
 )
 from apps.machines.service_workflow import accept, collect, complete, fail, reject, start, submit
-from tests.return_helpers import make_product, make_space, make_user
+from tests.return_helpers import make_member, make_product, make_space, make_user
 
 
 pytestmark = pytest.mark.django_db
@@ -56,7 +56,8 @@ def in_progress(space, *, actor=None, target=None):
 
 
 def test_allowed_edges_are_audited_and_notified_after_commit(monkeypatch):
-    space, actor = make_space("service-workflow-edges"), make_user("service-manager")
+    space = make_space("service-workflow-edges")
+    actor = make_member("service-manager", space)
     from apps.integrations.models_contract import NotificationEnvelope
     from apps.integrations.notification_outbox import emit
     from apps.integrations.notification_providers import ProviderResult
@@ -125,7 +126,8 @@ def test_reject_and_fail_edges_record_required_data():
     (MachineServiceRequest.Status.COLLECTED, lambda row, actor: start(row, actor, role_scope.EXEMPT, machine_id=row.bucket.machine_id)),
 ])
 def test_forbidden_edges_raise_typed_error(status, operation):
-    space, actor = make_space(f"service-bad-{status}"), make_user(f"service-manager-{status}")
+    space = make_space(f"service-bad-{status}")
+    actor = make_member(f"service-manager-{status}", space)
     row = request(space, actor=actor)
     if status in {MachineServiceRequest.Status.ACCEPTED, MachineServiceRequest.Status.IN_PROGRESS,
                   MachineServiceRequest.Status.COMPLETED, MachineServiceRequest.Status.COLLECTED}:
@@ -187,10 +189,15 @@ def test_submit_enforces_managed_open_and_daily_caps():
 
 @override_settings(PLATFORM_DOMAIN_SUFFIX="")
 def test_submit_caps_are_dormant_on_self_host():
+    # Decision 281 addendum: a space with NO limit set is unlimited on self-host, but a limit
+    # the superadmin explicitly SET applies even there.
     space = make_space("service-cap-self-host")
+    assert request(space).status == MachineServiceRequest.Status.PENDING
     space.resource_limit_overrides = {"machine_service_open": 0, "machine_service_submit": 0}
     space.save(update_fields=["resource_limit_overrides"])
-    assert request(space).status == MachineServiceRequest.Status.PENDING
+    with pytest.raises(Exception) as caught:
+        request(space)
+    assert "limit" in str(caught.value)
 
 
 def test_count_consumption_debits_inventory_once_and_rejects_fractional(monkeypatch):

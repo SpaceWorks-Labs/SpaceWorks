@@ -687,8 +687,11 @@ def test_archived_makerspace_is_excluded_from_api_scopes(monkeypatch, settings):
     )
     archived_space.enabled_modules = ["public_inventory", "request_workflow", "reports"]
     visible_space.enabled_modules = ["public_inventory", "request_workflow", "reports"]
-    archived_space.save(update_fields=["enabled_modules"])
-    visible_space.save(update_fields=["enabled_modules"])
+    # Inventory-only modules answer off unless the Inventory master switch (loans.enabled) is on.
+    archived_space.enabled_features = sorted({*archived_space.enabled_features, "loans.enabled"})
+    visible_space.enabled_features = sorted({*visible_space.enabled_features, "loans.enabled"})
+    archived_space.save(update_fields=["enabled_modules", "enabled_features"])
+    visible_space.save(update_fields=["enabled_modules", "enabled_features"])
 
     archived_requester = make_user("lifecycle-scope-archived-requester")
     visible_requester = make_user("lifecycle-scope-visible-requester")

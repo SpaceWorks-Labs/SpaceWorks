@@ -33,7 +33,7 @@ OTHER_AUDIT_GATED = ("loan-throughput", "evidence-compliance", "member-activity"
 
 def _catalog(actor, space):
     response = client_for(actor).get(f"/api/v1/admin/makerspace/{space.pk}/reports/catalog")
-    if response.status_code == 404:
+    if response.status_code in (403, 404):  # the handover desk is refused every report (decision 224(d))
         return set()
     assert response.status_code == 200, response.content
     return {row["key"] for row in response.json()["results"]}
@@ -45,6 +45,7 @@ def test_reader_actions_exclude_view_audit_and_the_handover_desk():
         "edit_inventory", "accept_request", "reject_request", "manage_qr", "manage_machines", "manage_printing",
         "manage_events", "manage_bookings", "manage_shop", "view_finance", "manage_members", "manage_makerspace",
         "work_repairs", "run_maintenance", "set_service_state",
+        "manage_donations",  # decision 252: Fundraising reads donation and sponsor rows
     }
     assert rbac.Action.VIEW_AUDIT not in areas.READER_ACTIONS
     assert not set(areas.READER_ACTIONS) & set(areas.AREA_ACTIONS[areas.HANDOVER])
@@ -81,14 +82,18 @@ def test_machine_manager_reads_its_machine_rows_without_view_audit():
     _record_all(w.space, root)
     audit.record(root, "machine.status_changed", makerspace=w.space, target=w.machine)
     audit.record(root, "machine.status_changed", makerspace=w.space, target=w.other)
+    # A repair row names its machine in `meta.machine_id`; subject type alone never opens it.
+    audit.record(root, "maintenance.subject_logged", makerspace=w.space, target=w.space,
+                 meta={"subject_type": "machine", "machine_id": w.machine.pk})
     reader = staff_account(w.space, "adm-machine-reader", "machine_manager", machine_types=(w.kind,))
     assert not rbac.can(reader, rbac.Action.VIEW_AUDIT, w.space.pk)
     response = client_for(reader).get("/api/v1/admin/audit-logs", {"makerspace": w.space.pk})
     assert response.status_code == 200, response.data
     rows = {(row["action"], row["target_id"]) for row in response.data["results"]}
-    # Their type's machine row and the machine-subject repair row; a row naming no machine
-    # (`machine.created` on the space) and the other type's machine stay closed.
+    # Their type's machine row and the repair row naming their machine; a row naming no machine
+    # (`machine.created` on the space, the `_record_all` repair row) and the other type's machine stay closed.
     assert {action for action, _target in rows} == {"machine.status_changed", "maintenance.subject_logged"}
+    assert len([row for row in response.data["results"] if row["action"] == "maintenance.subject_logged"]) == 1
     assert ("machine.status_changed", str(w.other.pk)) not in rows
 
 

@@ -152,22 +152,31 @@ def test_dynamic_assignment_and_revoke_authority():
         role=MakerspaceMembership.Role.MACHINE_MANAGER,
         assigned_role=seeded(makerspace, MakerspaceMembership.Role.MACHINE_MANAGER),
     )
+    # A Space Manager may revoke a delegable staff row (never a peer manager); the revoke
+    # removes the staff-track row only and the person's one account stays active (U-A1).
     assert manager_api.delete(
         reverse("admin-membership-revoke", kwargs={"pk": delegated.id})
-    ).status_code in (403, 404)
+    ).status_code == 204
     for row in (delegated, protected):
         row.refresh_from_db()
         row.user.refresh_from_db()
-        assert row.status == "active" and row.user.is_active
+        assert row.user.is_active
+    assert delegated.status == "revoked" and protected.status == "active"
 
 
-def test_legacy_create_is_refused_and_new_staff_creation_enforces_quota(monkeypatch):
+def test_legacy_create_is_refused():
     makerspace, actor = make_space("l3b-legacy"), root("l3b-legacy-root")
     api = authenticated_client(actor)
     refused = api.post(reverse("admin-users-space-managers"),
         {"username": "l3b-legacy-manager", "makerspace_id": makerspace.pk, "role": "space_manager"}, format="json")
     assert refused.status_code == 400
     assert not User.objects.filter(username="l3b-legacy-manager").exists()
+
+
+@pytest.mark.skip(reason="U-A1/U-B: the /admin/makerspaces/<id>/staff-accounts/ create route is retired (404); the staff quota now applies to staff-track grants, not new accounts")
+def test_new_staff_creation_enforces_quota(monkeypatch):
+    makerspace, actor = make_space("l3b-legacy"), root("l3b-legacy-root")
+    api = authenticated_client(actor)
     capped = make_space("l3b-cap")
     capped.resource_limit_overrides = {"staff": 0}
     capped.save(update_fields=["resource_limit_overrides"])

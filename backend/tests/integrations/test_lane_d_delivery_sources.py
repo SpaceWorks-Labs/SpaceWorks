@@ -49,6 +49,8 @@ def test_quiet_release_rechecks_cancelled_campaign(monkeypatch):
 
 def test_digest_retains_source_references_and_rebuilds_on_retry(monkeypatch):
     space, actor, user, event, registration = fixture(monkeypatch)
+    space.enabled_features = sorted(set(space.enabled_features) | {"notifications.digests"})  # capability, off by default
+    space.save(update_fields=["enabled_features"])
     now = timezone.now(); due = now + timedelta(hours=1)
     live = {1, 2}
     def prepare(log):

@@ -125,14 +125,14 @@ def test_legacy_print_manager_cannot_reach_zero_machine_type(type_lab):
     )
     actor, membership = _role_actor(space, "type-list-direct-manager")
     with rejected_account_rows():
-        MakerspaceMembership.objects.filter(pk=membership.pk).update(
+        MakerspaceMembership.staff_tracks.filter(pk=membership.pk).update(
             assigned_role=None, role="print_manager",
         )
         client = APIClient()
         client.force_authenticate(actor)
         response = client.get(reverse("admin-machine-types", args=[space.pk]))
         assert response.status_code == 403
-        assert not actor.makerspace_memberships.filter(assigned_role__isnull=False).exists()
+        assert not MakerspaceMembership.staff_tracks.filter(user=actor, assigned_role__isnull=False).exists()
 
 
 def test_per_machine_operator_reaches_type_without_create_authority(type_lab):

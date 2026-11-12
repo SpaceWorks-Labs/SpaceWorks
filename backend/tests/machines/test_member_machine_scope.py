@@ -126,7 +126,7 @@ def test_a_null_role_fk_membership_fails_closed_and_is_rejected():
     machine = make_machine(space, printer_type)
     user, membership = make_scoped_manager("legacy-machine-mgr", space)
     with rejected_account_rows():
-        MakerspaceMembership.objects.filter(pk=membership.pk).update(assigned_role=None)
+        MakerspaceMembership.staff_tracks.filter(pk=membership.pk).update(assigned_role=None)
         assert role_scope.manage_scope_for(user, space.pk) == role_scope.NOTHING
         assert access.is_machine_admin(user, machine) is False
         assert access.can_create_machine(user, space.pk, printer_type) is False
@@ -174,7 +174,7 @@ def test_legacy_print_manager_role_cannot_restore_type_manager_authority():
     printer = make_machine(space, printers)
     printer_mgr, membership = make_scoped_manager("tiers-printmgr", space)
     with rejected_account_rows():
-        MakerspaceMembership.objects.filter(pk=membership.pk).update(
+        MakerspaceMembership.staff_tracks.filter(pk=membership.pk).update(
             assigned_role=None, role="print_manager",
         )
         assert access.is_machine_admin(printer_mgr, printer) is False

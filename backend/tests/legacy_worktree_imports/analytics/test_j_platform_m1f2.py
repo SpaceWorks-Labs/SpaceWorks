@@ -44,12 +44,10 @@ def grant(user, fingerprint="a"):
 
 @pytest.mark.parametrize("grain", ["day", "week", "month"])
 def test_services_only_disclose_hidden_platform_daily_total_and_visible_own_counts(grain):
+    # Decision 110: no hidden spaces exist any more (superadmin always on); a former
+    # "hidden" space is an ordinary visible one, so its rows are reported per space.
     visible, hidden = make_space("j-visible"), make_space("j-hidden")
-    hidden.superadmin_access_enabled = False
-    hidden.save(update_fields=["superadmin_access_enabled"])
     actor = admin()
-    # Platform accounts hold no memberships; local authority in the hidden space
-    # belongs to a separate tenant staff account and never relaxes platform visibility.
     make_member("j-hidden-local-staff", hidden)
     assert not MakerspaceMembership.objects.filter(user=actor).exists()
     email(visible, "platform")
@@ -62,10 +60,7 @@ def test_services_only_disclose_hidden_platform_daily_total_and_visible_own_coun
     ctx = _platform_context_for_view(SimpleNamespace(user=actor))
     data = reports.report_data("platform-services", platform_context=ctx, grain=grain)
     rows = data["typed_rows"]
-    hidden_rows = [r for r in rows if r["bucket"] == "hidden_makerspaces"]
-    assert {(r["service"], r["count"]) for r in hidden_rows} == {("email", 2), ("sms", 1)}
-    assert all(r["makerspace_id"] is None and r["status"] is None and r["provider_source"] is None and r["currency"] is None for r in hidden_rows)
-    assert not any(r["makerspace_id"] == hidden.pk for r in rows)
+    assert not any(r["bucket"] == "hidden_makerspaces" for r in rows)
     assert any(r["makerspace_id"] == visible.pk and r["provider_source"] == "own" and r["count"] == 1 for r in rows)
     assert_report_disclosure_safe(data)
 
@@ -108,25 +103,20 @@ def test_platform_routes_refuse_normal_staff_and_tenant_org_export_schedule_path
 
 def test_platform_picker_hard_blocks_hidden_tenants_and_is_paginated():
     visible, hidden = make_space("j-picker-visible"), make_space("j-picker-hidden")
-    hidden.superadmin_access_enabled = False
-    hidden.save(update_fields=["superadmin_access_enabled"])
     actor = admin()
     client = authenticated_client(actor)
     response = client.get("/api/v1/admin/platform/analytics/makerspaces")
     assert response.status_code == 200
-    assert {r["id"] for r in response.data["results"]} == {visible.pk}
+    assert {r["id"] for r in response.data["results"]} >= {visible.pk, hidden.pk}
     # Platform principals have no local memberships; the separate tenant staff
     # account is the only local authority path into a hidden space.
     make_member("j-hidden-local-manager", hidden)
     response = client.get("/api/v1/admin/platform/analytics/makerspaces?report_key=machine-usage")
-    assert hidden.pk not in {r["id"] for r in response.data["results"]}
     assert {"count", "next", "previous", "results"} == set(response.data)
 
 
 def test_usage_hides_business_growth_adoption_and_deduplicates_grants_across_spaces_and_null():
     a, b, hidden, archived = [make_space(f"j-usage-{name}") for name in ("a", "b", "hidden", "archived")]
-    hidden.superadmin_access_enabled = False
-    hidden.save(update_fields=["superadmin_access_enabled"])
     archived.archived_at = timezone.now()
     archived.save(update_fields=["archived_at"])
     for space in (a, b, hidden):
@@ -142,9 +132,11 @@ def test_usage_hides_business_growth_adoption_and_deduplicates_grants_across_spa
     DeviceActivityDay.objects.create(grant=hidden_grant, makerspace=hidden, local_day=timezone.localdate(), platform="android")
     data = reports.report_data("platform-usage", platform_context=_platform_context_for_view(SimpleNamespace(user=actor)), limit=500)
     rows = data["typed_rows"]
-    assert rows and all(r["makerspace_id"] not in {hidden.pk, archived.pk} for r in rows)
+    assert rows and all(r["makerspace_id"] != archived.pk for r in rows)
     sessions = [r for r in rows if r["metric"] == "active_app_sessions"]
-    assert sum(float(r["value"]) for r in sessions) == 1
+    # Decision 110: no hidden-space bucket, so the "hidden" space is an ordinary visible one and its own
+    # grant counts. The a/b/NULL rows of the first grant still dedupe to one session-day.
+    assert sum(float(r["value"]) for r in sessions) == 2
     assert all("makerspace_id" in r for r in rows)
     assert_report_disclosure_safe(data)
 
@@ -159,10 +151,9 @@ def test_platform_window_and_invalid_grain_at_http_boundary():
     assert client.get("/api/v1/admin/platform/analytics/platform-services?grain=quarter").status_code == 400
 
 
+@pytest.mark.skip(reason="decision 110: hidden-makerspace bucket (superadmin off switch) removed; backup coverage is reported per space, covered by the live analytics suite")
 def test_backup_run_coverage_is_counted_once_without_hidden_outcome_leakage():
     visible, hidden = make_space("j-backup-visible"), make_space("j-backup-hidden")
-    hidden.superadmin_access_enabled = False
-    hidden.save(update_fields=["superadmin_access_enabled"])
     actor = admin()
     run = BackupRun.objects.create(status="failed", cohort_at=timezone.now(), flag_snapshot={})
     BackupRunCoverage.objects.create(run=run, makerspace=visible, makerspace_id_snapshot=visible.pk, path="global", state="covered")

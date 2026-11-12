@@ -168,7 +168,9 @@ def test_drop_in_routes_over_http(settings):
     space, event, users, _, _, _, _ = setup_help(settings)
     attendee(event, users[1])
     url = reverse("events-programme-member-help-collection", kwargs={"makerspace_id": space.pk, "pk": event.pk})
-    response = client_for(users[1]).post(url, drop_in(), format="json")
+    body = drop_in()
+    # The programme API requires Idempotency-Key to equal operation_id.
+    response = client_for(users[1]).post(url, body, format="json", HTTP_IDEMPOTENCY_KEY=str(body["operation_id"]))
     assert response.status_code == 201, response.content
     assert response.json()["origin"] == "attendee"
     listed = client_for(users[1]).get(url).json()["results"]
@@ -176,7 +178,11 @@ def test_drop_in_routes_over_http(settings):
     assert client_for(users[0]).get(url).json()["results"] == []  # another member sees nothing of it
     slots = reverse("events-programme-member-office-hours-list", kwargs={"makerspace_id": space.pk, "pk": event.pk})
     assert client_for(users[1]).get(slots).status_code == 200
-    assert client_for(users[0]).get(slots).status_code == 403  # not registered, no team
+    # users[0] leads the setup team, so the team path admits them; the drop-in refusal is for a
+    # person with neither a registration nor a team.
+    from tests.events.ticketing_helpers import account
+    assert client_for(users[0]).get(slots).status_code == 200
+    assert client_for(account(f"outsider-{uuid4().hex[:10]}")).get(slots).status_code == 403
 
 
 def test_switch_off_refuses_drop_ins(settings):

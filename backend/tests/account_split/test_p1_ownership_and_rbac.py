@@ -13,7 +13,12 @@ from .p1_helpers import raw_membership, sql, staff
 pytestmark = pytest.mark.django_db(transaction=True)
 
 
-@pytest.fixture(params=["staff", "platform"])
+@pytest.fixture(params=[
+    # Decision 63 reverses the member/staff account split: a person holding a staff role IS a
+    # member-kind account, so "a staff account is not a member" no longer holds. Platform stays.
+    pytest.param("staff", marks=pytest.mark.skip(reason="decision 63: one account per person; staff roles live on a person")),
+    "platform",
+])
 def nonmember(request):
     if request.param == "platform": return User.objects.create_superuser("operator")
     space = Makerspace.objects.create(name="Staff", slug="staff")
@@ -98,27 +103,33 @@ def test_object_and_sql_readers_refuse_uncommitted_corruption(corruption):
     with transaction.atomic():
         if corruption in {"member_staff_role", "platform_membership"}:
             target = member if corruption == "member_staff_role" else root
-            raw_membership(membership, user_id=target.pk)
-            membership = MakerspaceMembership.objects.get(user=target)
+            # Decision 63: a person may hold a staff-track row, so the invalid member shape is a
+            # COMMUNITY row carrying a staff role; a platform account holds no rows at all.
+            raw_membership(membership, user_id=target.pk, **({"track": "community"} if target is member else {}))
+            membership = MakerspaceMembership.all_tracks.get(user=target)
         elif corruption == "null_primary":
             sql("UPDATE makerspaces_makerspacemembership SET assigned_role_id=NULL,role='space_manager' WHERE id=%s", [membership.pk])
         elif corruption == "foreign_primary":
             sql("UPDATE makerspaces_makerspacemembership SET assigned_role_id=%s WHERE id=%s", [b.roles.get(slug="handover").pk, membership.pk])
         elif corruption == "foreign_tenant":
-            sql("UPDATE makerspaces_makerspacemembership SET makerspace_id=%s,assigned_role_id=%s WHERE id=%s",
-                [b.pk, b.roles.get(slug="handover").pk, membership.pk])
+            # Decision 63: a staff row in another space is valid, so moving the row AND its role
+            # together is no corruption; the foreign shape is a row whose role stays in the old tenant.
+            sql("UPDATE makerspaces_makerspacemembership SET makerspace_id=%s WHERE id=%s", [b.pk, membership.pk])
         elif corruption == "invalid_status":
             sql("UPDATE makerspaces_makerspacemembership SET status='invalid' WHERE id=%s", [membership.pk])
         elif corruption == "second_membership":
-            raw_membership(membership, makerspace_id=b.pk, assigned_role_id=b.roles.get(slug="handover").pk)
+            # Decision 63: a second staff row in another space is valid for a person; the invalid
+            # second row is one holding the Member role on the staff track.
+            raw_membership(membership, makerspace_id=b.pk, assigned_role_id=b.roles.get(slug="member").pk)
+            membership = MakerspaceMembership.all_tracks.get(user=user, makerspace=b)
         else:
             role = a.roles.get(slug="member" if corruption == "member_additional" else "space_manager")
             sql("INSERT INTO makerspaces_membershipadditionalrole (membership_id,role_id,assigned_at) VALUES (%s,%s,CURRENT_TIMESTAMP)",
                 [membership.pk, role.pk])
-        membership = MakerspaceMembership.objects.select_related("user", "assigned_role").get(pk=membership.pk)
+        membership = MakerspaceMembership.all_tracks.select_related("user", "assigned_role").get(pk=membership.pk)
         assert membership_roles(membership) == []
         assert rbac.actions_for_membership(membership) == set()
-        queryset = MakerspaceMembership.objects.filter(pk=membership.pk)
+        queryset = MakerspaceMembership.all_tracks.filter(pk=membership.pk)
         assert not queryset.filter(direct_role_filter([rbac.Action.VIEW_INVENTORY])).exists()
         assert not queryset.filter(role_slug_filter("handover")).exists()
         assert not queryset.annotate(grants=additional_role_exists(actions=[rbac.Action.MANAGE_MAKERSPACE])).filter(grants=True).exists()
@@ -134,7 +145,7 @@ def test_valid_combined_roles_and_member_delegation_survive():
             roles=[a.roles.get(slug="inventory_manager"), a.roles.get(slug="handover")], actor=user, reason="test")
     membership.refresh_from_db()
     assert rbac.Action.VIEW_INVENTORY in rbac.actions_for_membership(membership)
-    assert MakerspaceMembership.objects.filter(pk=membership.pk).filter(direct_role_filter([rbac.Action.VIEW_INVENTORY])).exists()
+    assert MakerspaceMembership.staff_tracks.filter(pk=membership.pk).filter(direct_role_filter([rbac.Action.VIEW_INVENTORY])).exists()
     member = User.objects.create_user("member")
     membership = MakerspaceMembership.objects.create(user=member, makerspace=a, role="custom", assigned_role=a.roles.get(slug="member"))
     assert [role.slug for role in membership_roles(membership)] == ["member"]

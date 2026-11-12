@@ -48,7 +48,8 @@ def test_put_replaces_and_clears_with_audit(lab):
     assert response.data["machine_type_ids"] == [types[1].pk]
     audit = AuditLog.objects.get(action="staff.machine_scope_changed", makerspace=space)
     assert audit.meta == {"membership_id": membership.pk, "user_id": actor.pk,
-                          "before": [types[0].pk], "after": [types[1].pk]}
+                          "before": [types[0].pk], "after": [types[1].pk],
+                          "machine_ids_before": [], "machine_ids_after": []}
     assert client.put(url, {"machine_type_ids": []}, format="json").data["machine_type_ids"] == []
     assert not membership.machine_type_scopes.exists()
 
@@ -74,7 +75,7 @@ def test_inapplicable_memberships_report_false_and_put_conflicts(lab, role):
     space, boss, actor, membership, _, url = lab
     if role is None:
         with rejected_account_rows():
-            MakerspaceMembership.objects.filter(pk=membership.pk).update(assigned_role=None, role="machine_manager")
+            MakerspaceMembership.staff_tracks.filter(pk=membership.pk).update(assigned_role=None, role="machine_manager")
             client = authenticated_client(boss)
             response = client.get(url)
             assert response.status_code == 200
@@ -85,6 +86,12 @@ def test_inapplicable_memberships_report_false_and_put_conflicts(lab, role):
         member = make_user("member-scope-community", access_status="active")
         membership = assign_builtin_roles(member, space, "member")
         url = reverse("admin-membership-machine-scope", args=[space.pk, membership.pk])
+        # Machine scopes hang off staff-track rows only (decision 63, one account per
+        # person): a community Member row is not addressable, so it is 404, not 409.
+        client = authenticated_client(boss)
+        assert client.get(url).status_code == 404
+        assert client.put(url, {"machine_type_ids": []}, format="json").status_code == 404
+        return
     else:
         assign_builtin_roles(actor, space, role)
     client = authenticated_client(boss)

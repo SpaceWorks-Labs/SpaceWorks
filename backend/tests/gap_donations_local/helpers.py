@@ -1,6 +1,5 @@
 """Shared fixtures for the RP-3 donations report tests (local only, never committed)."""
 
-from apps.makerspaces.models import MakerspaceRole
 from apps.payments.models import DonationCampaign
 from tests.accounts.account_factories import make_staff
 from tests.l18_local.helpers import charge_for, client, gift, settle_offline, setup, staff, switch
@@ -18,14 +17,18 @@ def report_space(slug, *features):
 
 
 def finance_staff(slug, space):
-    """A custom role holding only view_finance (finance staff, #100)."""
-    MakerspaceRole.objects.get_or_create(makerspace=space, slug="finance-view",
-                                         defaults={"name": "Finance viewer", "granted_actions": ["view_finance"]})
-    return make_staff(space, username=f"{slug}-finance", role_slug="finance-view", email=f"{slug}-fin@e.com")
+    """Finance staff for donations: the Fundraising role (decision 242(m)).
+
+    Custom roles are gone (decision 282), so a view_finance-only role cannot be made; the donations
+    reports admit `manage_donations` as an alternate action, which Fundraising holds."""
+    return make_staff(space, username=f"{slug}-finance", role_slug="fundraising", email=f"{slug}-fin@e.com")
 
 
 def campaign(space, name="New laser", slug="laser", goal="1000.00", **extra):
-    return DonationCampaign.objects.create(makerspace=space, name=name, slug=slug, currency="inr",
+    # A campaign takes the space's currency, as the staff route saves it (`views_staff`); gifts do too,
+    # and only same-currency money counts against the goal.
+    from apps.payments.donations.services import space_currency
+    return DonationCampaign.objects.create(makerspace=space, name=name, slug=slug, currency=space_currency(space),
                                            goal_amount=goal, **extra)
 
 

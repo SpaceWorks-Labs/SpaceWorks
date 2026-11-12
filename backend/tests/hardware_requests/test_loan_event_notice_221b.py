@@ -19,7 +19,10 @@ def test_an_event_linked_loan_notice_names_the_event():
     _enable(space)
     event = _event(space)
     _link(space, loan, event)
-    assert loan_event(loan) == {"id": event.pk, "title": event.title}
+    found = loan_event(loan)  # decision 221b/f: id and title plus the schedule and desk link the notice carries
+    assert (found["id"], found["title"]) == (event.pk, event.title)
+    assert found["desk_link"] == f"/admin/events/{event.pk}"
+    assert found["starts_at"] and found["ends_at"]
     notify_renewed(loan, by_staff=False)
     rows = renewed_rows()
     assert rows and all(event.title in row.message_body for row in rows)

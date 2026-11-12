@@ -60,6 +60,7 @@ def test_a_501c3_receipt_needs_no_pan_and_freezes_the_profile(django_capture_on_
     assert pdf.status_code == 200 and pdf["Content-Type"] == "application/pdf"
 
 
+@pytest.mark.django_db(transaction=True)
 def test_india_80g_still_asks_for_pan_and_address():
     space, manager, donor = setup("np-in")
     profile(space, schemes=(("in_80g", "AAATS1234F20240"), ("in_12a", "12A-99")))
@@ -123,7 +124,7 @@ def test_the_profile_is_never_delegated():
     assert not DonationSettings.objects.filter(makerspace=space, is_nonprofit=True).exists()
 
 
-def test_supporters_are_named_only_when_they_opt_in():
+def test_supporters_are_named_only_when_they_opt_in(django_capture_on_commit_callbacks):
     from decimal import Decimal
 
     from apps.payments.models import DonationCampaign
@@ -132,11 +133,13 @@ def test_supporters_are_named_only_when_they_opt_in():
     campaign = DonationCampaign.objects.create(makerspace=space, name="Laser", slug="laser", currency="inr",
                                                goal_amount=Decimal("1000"))
     named, _ = gift(space, donor, amount="100", campaign=campaign.pk, recognize_publicly=True)
-    settle_offline(manager, charge_for(named))
+    with django_capture_on_commit_callbacks(execute=True):
+        settle_offline(manager, charge_for(named))
     from tests.payments.account_helpers import make_payer
     quiet = make_payer("np-wall-quiet", space)
     anonymous, _ = gift(space, quiet, amount="100", campaign=campaign.pk)
-    settle_offline(manager, charge_for(anonymous), reference="DESK-2")
+    with django_capture_on_commit_callbacks(execute=True):
+        settle_offline(manager, charge_for(anonymous), reference="DESK-2")
     card = APIClient().get(page_url(space)).json()["campaigns"][0]
     assert card["supporter_count"] == 2 and card["supporters"] == [named.donor_name]
     assert anonymous.donor_name not in card["supporters"]

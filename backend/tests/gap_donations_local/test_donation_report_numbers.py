@@ -26,6 +26,8 @@ def _pledge(space, donor, **extra):
     return DonationPledge.objects.get(pk=response.json()["id"])
 
 
+# A gift becomes PAID in an on_commit hook, so a test that settles one needs real commits.
+@pytest.mark.django_db(transaction=True)
 def test_campaign_progress_counts_paid_money_against_the_goal():
     space, manager, donor = report_space("rp3-camp", "finance.recurring_donations")
     laser = campaign(space)
@@ -57,6 +59,8 @@ def test_a_campaign_with_no_gifts_still_shows_and_its_window_sets_the_status():
     assert rows["Past"]["status"] == "ended" and rows["Off"]["status"] == "inactive"
 
 
+# A gift becomes PAID in an on_commit hook, so a test that settles one needs real commits.
+@pytest.mark.django_db(transaction=True)
 def test_campaign_progress_date_range_counts_money_received_inside_it():
     space, manager, donor = report_space("rp3-camp-range")
     laser = campaign(space)
@@ -68,6 +72,8 @@ def test_campaign_progress_date_range_counts_money_received_inside_it():
     assert row["raised_amount"] == Decimal("60.00") and row["gift_count"] == 1
 
 
+# A gift becomes PAID in an on_commit hook, so a test that settles one needs real commits.
+@pytest.mark.django_db(transaction=True)
 def test_pledges_split_active_missed_paused_and_cancelled():
     space, manager, donor = report_space("rp3-pledges", "finance.recurring_donations")
     today = timezone.localdate()

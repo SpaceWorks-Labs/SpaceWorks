@@ -252,7 +252,7 @@ def test_handover_management_partition_assigned_scope_matrix_and_exemptions():
     two_types = _actor(
         space, "phase6a-matrix-two", types[0], direct_collect=False
     )
-    two_membership = two_types.makerspace_memberships.get(makerspace=space)
+    two_membership = MakerspaceMembership.staff_tracks.get(user=two_types, makerspace=space)
     MembershipMachineTypeScope.objects.create(membership=two_membership, machine_type=types[1])
     expected = {
         no_links: set(),
@@ -280,6 +280,6 @@ def test_handover_management_partition_assigned_scope_matrix_and_exemptions():
         assert {row["id"] for row in response.data} == all_ids
 
     with rejected_account_rows():
-        MakerspaceMembership.objects.filter(pk=legacy_membership.pk).update(assigned_role=None)
+        MakerspaceMembership.staff_tracks.filter(pk=legacy_membership.pk).update(assigned_role=None)
         assert not rbac.can(legacy, Action.MANAGE_MACHINES, space.pk)
         assert authenticated_client(legacy).get(_list_url(space)).status_code == 404

@@ -80,10 +80,14 @@ def test_applications_read_scope_is_registered_for_counts_only():
 
 
 def test_every_l21a_route_has_an_explicit_native_decision():
-    from apps.accounts.programme_route_catalog_l21a import L21A_ROUTES
+    # Decision 173 (L21b): the crew desk and the per-event review workspace are native for an event grant; only the
+    # cross-event "my application reviews" list stays web-only. NATIVE_DECISIONS on the composed catalogue now also
+    # carries the later lanes' routes, so the L21a slice is compared on its own.
+    from apps.accounts.programme_route_catalog_l21a import L21A_ROUTES, NATIVE_DECISIONS as L21A_DECISIONS
     names = {name for name, methods, target in L21A_ROUTES}
-    assert names <= set(BY_NAME) and set(NATIVE_DECISIONS) == names
-    assert {"events-programme-admin-crew", "events-programme-admin-application-stage-my-reviews"} <= NATIVE_WEB_ONLY
+    assert names <= set(BY_NAME) and set(L21A_DECISIONS) == names and names <= set(NATIVE_DECISIONS)
+    assert {"events-programme-admin-my-application-reviews"} <= NATIVE_WEB_ONLY
+    assert "events-programme-admin-crew" not in NATIVE_WEB_ONLY
     assert "events-programme-member-attendance" not in NATIVE_WEB_ONLY
 
 
@@ -91,5 +95,6 @@ def test_crew_desk_is_web_only_for_native_selection():
     from apps.makerspaces.origin_scope_programme import programme_route_targets
     space = _space(("events.crew",))
     event = open_event(space)
-    assert programme_route_targets("events-programme-admin-crew", {"pk": event.pk})[3] is False
+    assert programme_route_targets("events-programme-admin-crew", {"pk": event.pk})[3] is True
+    assert programme_route_targets("events-programme-admin-my-application-reviews", {})[3] is False
     assert programme_route_targets("events-programme-admin-checkin-lists", {"pk": event.pk})[3] is True

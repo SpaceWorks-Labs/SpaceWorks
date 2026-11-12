@@ -27,7 +27,7 @@ def _verified(user):
 def test_event_manager_held_as_additional_role_reaches_every_event():
     space = event_space("union-events")
     first, second = open_event(space), open_event(space)
-    manager = _verified(account("union-event-manager", account_kind="staff", staff_makerspace=space))
+    manager = _verified(account("union-event-manager"))
     assign_builtin_roles(manager, space, "inventory_manager", "event_manager")
     grantee = _verified(account("union-event-grantee"))
     create_manual_grant(makerspace=space, event=first, user=grantee,
@@ -52,7 +52,7 @@ def test_booking_manager_held_as_additional_role_reaches_every_space():
     space.save(update_fields=["enabled_modules", "enabled_features"])
     room = BookableSpace.objects.create(makerspace=space, name="Room")
     bench = BookableSpace.objects.create(makerspace=space, name="Bench")
-    manager = _verified(account("union-booking-manager", account_kind="staff", staff_makerspace=space))
+    manager = _verified(account("union-booking-manager"))
     assign_builtin_roles(manager, space, "handover", "booking_manager")
     grantee = _verified(account("union-booking-grantee"))
     BookingSpaceStaffGrant.objects.create(makerspace=space, space=room, user=grantee,
@@ -73,7 +73,7 @@ def test_booking_manager_held_as_additional_role_reaches_every_space():
 def test_resource_grant_lock_covers_additional_roles():
     space = event_space("union-locks")
     event = open_event(space)
-    manager = _verified(account("union-lock-manager", account_kind="staff", staff_makerspace=space))
+    manager = _verified(account("union-lock-manager"))
     membership = assign_builtin_roles(manager, space, "machine_manager", "event_manager")
     expected = {membership.assigned_role_id, *membership.additional_roles.values_list("role_id", flat=True)}
     assert len(expected) == 2
@@ -114,26 +114,26 @@ def test_member_machine_scope_write_requires_recent_reauthentication(settings):
 
 
 def test_space_manager_appoints_any_role_set_except_space_manager():
-    from apps.makerspaces.models import MakerspaceRole
-    from rest_framework.test import APIClient
-    from tests.accounts.reauth_helpers import force_recent_authenticate
+    # `staff-accounts/` was replaced by `staff-roles/` (decision 63: one account per person, a staff
+    # role is granted to an existing community member). Same rule through the grant service.
+    from apps.accounts import staff_account_services as service
+    from apps.accounts.staff_account_policy import StaffRoleRefused
+    from apps.makerspaces.models import MakerspaceMembership
+    from tests.accounts.account_factories import make_membership
     from tests.return_helpers import make_space, make_user
 
     space = make_space("union-appoint")
     manager = make_user("union-appoint-sm", access_status="active", account_kind="staff", staff_makerspace=space)
     assign_builtin_roles(manager, space, "space_manager")
-    client = APIClient()
-    force_recent_authenticate(client, manager)
-    url = f"/api/v1/admin/makerspaces/{space.pk}/staff-accounts/"
-    ids = {role.slug: role.pk for role in MakerspaceRole.objects.filter(makerspace=space)}
-    response = client.post(url, {
-        "display_name": "Appointee", "username": "union-appointee",
-        "roles": ["event_manager", "booking_manager", "handover"],
-    }, format="json")
-    assert response.status_code == 201, response.data
-    assert set(response.data["account"]["roles"]) == {"event_manager", "booking_manager", "handover"}
-    refused = client.post(url, {
-        "display_name": "Denied manager", "username": "union-appointee-sm",
-        "roles": ["space_manager"],
-    }, format="json")
-    assert refused.status_code == 403
+    appointee = make_user("union-appointee", access_status="active")
+    make_membership(appointee, space)
+    row = service.grant(manager, space.pk, user_id=appointee.pk,
+                        roles=["event_manager", "booking_manager", "handover"])
+    slugs = {row.assigned_role.slug, *row.additional_roles.values_list("role__slug", flat=True)}
+    assert slugs == {"event_manager", "booking_manager", "handover"}
+    assert MakerspaceMembership.staff_tracks.filter(user=appointee, makerspace=space).exists()
+    denied = make_user("union-appointee-sm", access_status="active")
+    make_membership(denied, space)
+    with pytest.raises(StaffRoleRefused) as refused:
+        service.grant(manager, space.pk, user_id=denied.pk, roles=["space_manager"])
+    assert refused.value.status_code == 403

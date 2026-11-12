@@ -252,7 +252,7 @@ def test_service_requests_filter_by_machine_type_id_not_slug(scoped_lab):
     _service_request(space, local_machine)
     manager = _manager(space, "collision-manager", machine_type=global_type)
     MembershipMachineTypeScope.objects.create(
-        membership=manager.makerspace_memberships.get(), machine_type=local_type
+        membership=MakerspaceMembership.staff_tracks.get(user=manager), machine_type=local_type
     )
 
     url = reverse("admin-machine-service-request-list-create", args=[space.pk])

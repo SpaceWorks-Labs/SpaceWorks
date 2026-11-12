@@ -45,6 +45,10 @@ def disable_axes_by_default(settings, request):
 
 def _reset_axes_state(request):
     cache.clear()
+    # The cron-mode channel-usage buffer is per-process: counts recorded against one test's (rolled
+    # back) space would otherwise be written by a later test and fail its deferred FK check at teardown.
+    from apps.accounts import channel_usage
+    channel_usage._local.clear()
 
     try:
         from axes.handlers.proxy import AxesProxyHandler

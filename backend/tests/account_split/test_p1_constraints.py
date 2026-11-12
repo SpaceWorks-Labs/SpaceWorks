@@ -44,7 +44,9 @@ def test_context_checks_reject_raw_inserts(spaces, values):
 
 
 @pytest.mark.parametrize("mutation", [
-    "UPDATE accounts_user SET account_kind = 'member', staff_makerspace_id = NULL WHERE id = %s",
+    # Decision 63 (one account per person): the staff -> member retarget premise is retired, so the
+    # raw kind change now probed is the reverse one (person -> shell), which only a unification run may do.
+    "UPDATE accounts_user SET account_kind = 'staff' WHERE id = %s",
     "UPDATE accounts_user SET staff_makerspace_id = %s WHERE id = %s",
     "UPDATE accounts_user SET staff_makerspace_id = NULL, retired_at = CURRENT_TIMESTAMP, is_active = false WHERE id = %s",
     "DELETE FROM accounts_user WHERE id = %s",
@@ -57,14 +59,21 @@ def test_raw_context_retargeting_and_staff_hard_delete_are_refused(spaces, mutat
 
 
 def test_staff_creation_is_deferred_and_requires_complete_membership(spaces):
-    with pytest.raises(IntegrityError), transaction.atomic():
+    # Decision 63: no new "staff" accounts; a person becomes staff by holding a staff-track
+    # membership, whose built-in staff role is validated by a deferred constraint trigger.
+    with pytest.raises(ValueError):
         User.objects.create_user("orphan", account_kind="staff", staff_makerspace=spaces[0])
+    person = User.objects.create_user("complete")
+    with pytest.raises(IntegrityError), transaction.atomic():
+        MakerspaceMembership.staff_tracks.create(
+            user=person, makerspace=spaces[0], role="custom", track="staff",
+            assigned_role=spaces[0].roles.get(slug="member"))
+        flush_constraints()
     with transaction.atomic():
-        user = User.objects.create_user("complete", account_kind="staff", staff_makerspace=spaces[0])
-        assert not user.makerspace_memberships.exists()
-        MakerspaceMembership.objects.create(user=user, makerspace=spaces[0], role="handover",
-                                           assigned_role=spaces[0].roles.get(slug="handover"))
-    assert user.makerspace_memberships.count() == 1
+        MakerspaceMembership.staff_tracks.create(
+            user=person, makerspace=spaces[0], role="handover", track="staff",
+            assigned_role=spaces[0].roles.get(slug="handover"))
+    assert MakerspaceMembership.staff_tracks.filter(user=person).count() == 1
 
 
 @pytest.mark.parametrize("kind,slug", [("member", "space_manager"), ("member", "handover"),
@@ -72,8 +81,11 @@ def test_staff_creation_is_deferred_and_requires_complete_membership(spaces):
 def test_member_and_platform_raw_membership_insert_refused(spaces, kind, slug):
     user = User.objects.create_superuser("root") if kind == "platform" else User.objects.create_user("member")
     _, template = staff(spaces[0], role="handover")
+    # Decision 63: a person may hold staff roles on a staff-track row, so for a member-kind account
+    # the refused shape is a COMMUNITY row carrying a staff role. A platform account holds no rows.
+    track = {"track": "community"} if kind == "member" else {}
     with pytest.raises(IntegrityError), transaction.atomic():
-        raw_membership(template, user_id=user.pk, assigned_role_id=spaces[0].roles.get(slug=slug).pk)
+        raw_membership(template, user_id=user.pk, assigned_role_id=spaces[0].roles.get(slug=slug).pk, **track)
         flush_constraints()
 
 
@@ -93,9 +105,10 @@ def test_staff_membership_updates_refused(spaces, field, value):
 
 def test_staff_second_membership_and_delete_refused(spaces):
     user, membership = staff(spaces[0])
+    # Decision 63/286: accounts are global, so a person may hold a staff row in another space;
+    # a second staff-track row in the SAME space is what stays refused (unique per track).
     with pytest.raises(IntegrityError), transaction.atomic():
-        raw_membership(membership, user_id=user.pk, makerspace_id=spaces[1].pk,
-                       assigned_role_id=spaces[1].roles.get(slug="handover").pk)
+        raw_membership(membership, user_id=user.pk, assigned_role_id=spaces[0].roles.get(slug="handover").pk)
     with pytest.raises(IntegrityError), transaction.atomic():
         sql("DELETE FROM makerspaces_makerspacemembership WHERE id=%s", [membership.pk])
 
@@ -146,40 +159,53 @@ def test_additional_role_delete_revalidates_old_user(spaces):
 
 def test_both_sides_of_membership_user_reassignment_are_validated(spaces):
     first, membership = staff(spaces[0])
+    # NEW side: a staff row handed to a platform account is invalid.
+    platform = User.objects.create_superuser("platform-root")
     with pytest.raises(IntegrityError), transaction.atomic():
-        replacement = User.objects.create_user("replacement", account_kind="staff", staff_makerspace=spaces[0])
-        sql("UPDATE makerspaces_makerspacemembership SET user_id=%s WHERE id=%s", [replacement.pk, membership.pk])
-        # NEW is valid; OLD is now an orphan, which must still be rejected.
-    member = User.objects.create_user("community")
-    member_membership = MakerspaceMembership.objects.create(user=member, makerspace=spaces[1], role="custom",
-                                                           assigned_role=spaces[1].roles.get(slug="member"))
+        sql("UPDATE makerspaces_makerspacemembership SET user_id=%s WHERE id=%s", [platform.pk, membership.pk])
+    # OLD side: the user losing the row is re-validated too (decision 63: a person left with no
+    # rows is valid, so the old user is given a second, already corrupted row to be caught).
+    other = User.objects.create_user("other-person")
+    second = MakerspaceMembership.staff_tracks.create(
+        user=first, makerspace=spaces[1], role="handover", track="staff",
+        assigned_role=spaces[1].roles.get(slug="handover"))
     with pytest.raises(IntegrityError), transaction.atomic():
-        sql("UPDATE makerspaces_makerspacemembership SET user_id=%s WHERE id=%s", [first.pk, member_membership.pk])
+        sql("ALTER TABLE makerspaces_makerspacemembership DISABLE TRIGGER accounts_membership_valid")
+        sql("UPDATE makerspaces_makerspacemembership SET status='invalid' WHERE id=%s", [second.pk])
+        sql("ALTER TABLE makerspaces_makerspacemembership ENABLE TRIGGER accounts_membership_valid")
+        sql("UPDATE makerspaces_makerspacemembership SET user_id=%s WHERE id=%s", [other.pk, membership.pk])
 
 
 @pytest.mark.parametrize("guc", ["", "wrong", "correct"])
 def test_exact_tenant_retirement_and_one_way_shell(spaces, guc):
+    # Decision 63: purging a tenant deletes its staff-track rows (exact-tenant GUC only); the
+    # person account itself is never retired or retargeted by it.
     user, membership = staff(spaces[0])
     setting = "" if not guc else str(spaces[guc == "wrong"].pk)
     def retire():
         sql("SELECT set_config('app.account_retirement_makerspace_id',%s,true)", [setting])
         sql("DELETE FROM makerspaces_makerspacemembership WHERE id=%s", [membership.pk])
-        sql("UPDATE accounts_user SET staff_makerspace_id=NULL,retired_at=CURRENT_TIMESTAMP,is_active=false WHERE id=%s", [user.pk])
     if guc != "correct":
         with pytest.raises(IntegrityError), transaction.atomic(): retire()
         return
     with transaction.atomic(): retire()
     user.refresh_from_db()
-    assert user.retired_at and user.staff_makerspace_id is None and not user.is_active
+    assert user.is_active and user.retired_at is None and user.account_kind == "member"
+    assert not MakerspaceMembership.staff_tracks.filter(user=user).exists()
     for statement in (
         "UPDATE accounts_user SET retired_at=NULL,staff_makerspace_id=%s WHERE id=%s",
         "UPDATE accounts_user SET staff_makerspace_id=%s WHERE id=%s",
     ):
         with pytest.raises(IntegrityError), transaction.atomic(): sql(statement, [spaces[0].pk, user.pk])
+    with pytest.raises(IntegrityError), transaction.atomic():
+        sql("UPDATE accounts_user SET retired_at=CURRENT_TIMESTAMP,is_active=false WHERE id=%s", [user.pk])
 
 
 def test_retirement_guc_does_not_allow_deleting_live_staff_membership(spaces):
+    # Only the EXACT tenant's purge authority may delete a staff-track row; another tenant's
+    # purge GUC and a unification-run GUC do not (the correct-tenant case is covered above).
     _, membership = staff(spaces[0])
     with pytest.raises(IntegrityError), transaction.atomic():
-        sql("SELECT set_config('app.account_retirement_makerspace_id',%s,true)", [str(spaces[0].pk)])
+        sql("SELECT set_config('app.account_retirement_makerspace_id',%s,true)", [str(spaces[1].pk)])
+        sql("SELECT set_config('app.account_unification_run_id',%s,true)", ["1"])
         sql("DELETE FROM makerspaces_makerspacemembership WHERE id=%s", [membership.pk])

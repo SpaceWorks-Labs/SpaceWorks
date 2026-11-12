@@ -107,7 +107,7 @@ def test_a_covering_technician_completes_a_machine_schedule():
     other = MaintenanceSchedule.objects.create(machine=w.other, description="Spindle", interval_days=30,
                                                next_due=timezone.localdate())
     assert tech.post(f"/api/v1/admin/maintenance/schedules/{other.pk}/run", {"summary": "x"},
-                     format="json").status_code == 403
+                     format="json").status_code == 404  # decision 230(d): outside their machine types it does not exist
 
 
 def test_a_covering_technician_never_edits_a_machine_schedule():

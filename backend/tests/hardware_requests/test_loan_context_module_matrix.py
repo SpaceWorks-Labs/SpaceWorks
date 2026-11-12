@@ -6,10 +6,14 @@ disappear exactly when one of their own switches is off; settlement stays reacha
 ledger is core. Return stays reachable while the request workflow is on. Nothing here weakens a disable guard:
 the switches are flipped the way the module tests do, on the space row.
 """
+from contextlib import contextmanager
 from uuid import uuid4
 
 import pytest
+from cryptography.fernet import Fernet
+from django.test import override_settings
 from django.urls import reverse
+from django.utils import timezone
 from rest_framework.exceptions import APIException
 
 from apps.bookings.models_loan_context import BookingLoanContext
@@ -21,7 +25,6 @@ from apps.hardware_requests.models import HardwareRequest
 from apps.operations.reports_loan_context import build_loan_purpose_summary
 from apps.operations.reports_loan_context_details import build_booking_equipment, build_event_equipment
 from apps.payments.models import Payment
-from tests.encryption.conftest import enabled_encryption
 from tests.events.collab_helpers import client_for, make_member
 from tests.events.ticketing_helpers import account
 from tests.operations.test_loan_context_reports import setup_reports
@@ -39,6 +42,37 @@ SCENARIOS = [
     ("request_workflow_off", ("request_workflow",), ()),
     ("everything_off", ("events", "bookings", "request_workflow"), ("loans.enabled",)),
 ]
+
+
+_KEYS = {}
+
+
+@pytest.fixture(autouse=True)
+def stable_encryption_keys():
+    """One master/search key pair for the WHOLE test.
+
+    `tests.encryption.conftest.enabled_encryption` mints fresh keys on every entry. Contextual creation
+    mints the tenant's DEK on its first call (even one that is then refused), wrapped under that master key;
+    a later `enabled_encryption()` entry carries a different master key and cannot unwrap it, so the second
+    post of a scenario answers 503 `pii_unavailable`. A scenario posts several times, so the keys are fixed.
+    """
+    _KEYS.update(master=Fernet.generate_key().decode(), search=Fernet.generate_key().decode())
+    yield
+    _KEYS.clear()
+
+
+@contextmanager
+def _encrypted():
+    with override_settings(PII_ENCRYPTION_ENABLED=True, PII_ENCRYPTION_DUAL_READ=True,
+                           PII_MASTER_KEY=_KEYS["master"], PII_KEY_BROKER="local",
+                           PII_SEARCH_HASH_KEY=_KEYS["search"]):
+        from apps.encryption.blind_index import search_key_fingerprint
+        from apps.encryption.models import SearchKeyGeneration
+
+        SearchKeyGeneration.objects.get_or_create(generation=1, defaults={
+            "key_fingerprint": search_key_fingerprint(), "status": SearchKeyGeneration.Status.ACTIVE,
+            "activated_at": timezone.now()})
+        yield
 
 
 @pytest.fixture(autouse=True)
@@ -65,7 +99,7 @@ def _post(actor, space, product, **target):
     url = reverse("hardware_requests:contextual-request-staff", args=[space.pk])
     body = {"operation_id": str(uuid4()), "items": [{"product_id": product.pk, "quantity": 1}],
             "requested_for": "matrix", **target}
-    with enabled_encryption():
+    with _encrypted():
         return client_for(actor).post(url, body, format="json")
 
 
@@ -85,12 +119,15 @@ def _world(slug):
 
 def _expected(modules, features):
     workflow_on = "request_workflow" not in modules and "loans.enabled" not in features
+    # With the lending capability off the request_workflow space is not live, so the subject drill-downs
+    # refuse (ReportNotFound) and the summary has no rows.
+    loans_on = "loans.enabled" not in features
     return {
         "event_create": workflow_on and "events" not in modules,
         "booking_create": workflow_on and "bookings" not in modules,
-        "event_drill": "request_workflow" not in modules and "events" not in modules,
-        "booking_drill": "request_workflow" not in modules and "bookings" not in modules,
-        "summary_rows": "request_workflow" not in modules,
+        "event_drill": "request_workflow" not in modules and "events" not in modules and loans_on,
+        "booking_drill": "request_workflow" not in modules and "bookings" not in modules and loans_on,
+        "summary_rows": "request_workflow" not in modules and loans_on,
         "dimensions": "events" not in modules and "bookings" not in modules,
     }
 
@@ -128,15 +165,16 @@ def test_contextual_lending_matrix(scenario, modules, features):
     _assert_surfaces(space, actor, product, event, booking, registration, _expected(modules, features))
 
     # Disabling a context is not deleting or settling a loan: every link and request survives.
-    assert EventLoanContext.objects.filter(makerspace=space).count() == event_links
-    assert BookingLoanContext.objects.filter(makerspace=space).count() == booking_links
+    # (>=: a switch that is still on may legitimately have just linked one more loan.)
+    assert EventLoanContext.objects.filter(makerspace=space).count() >= event_links
+    assert BookingLoanContext.objects.filter(makerspace=space).count() >= booking_links
     assert HardwareRequest.objects.filter(pk__in=[row.pk for row in requests]).count() == 4
 
     # Settlement is the core ledger: reachable whatever the optional modules do.
     borrower = requests[1].requester
     charge = Payment.objects.create(
         makerspace=space, member=borrower, created_by=borrower, subject_type=Payment.SubjectType.LOAN_RENTAL,
-        subject_id=requests[1].pk, amount="12.00", currency="INR", status=Payment.Status.PENDING)
+        subject_id=requests[1].pk, amount="12.00", currency="inr", status=Payment.Status.PENDING)
     reply = client_for(actor).post(
         f"/api/v1/admin/makerspace/{space.pk}/payments/{charge.pk}/mark-offline", settlement_payload(), format="json")
     assert reply.status_code == 200, reply.content

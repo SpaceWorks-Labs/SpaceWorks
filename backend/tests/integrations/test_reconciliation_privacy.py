@@ -13,10 +13,11 @@ pytestmark = pytest.mark.django_db
 def test_scrub_uses_account_ids_when_member_and_staff_share_contact():
     tenant = space()
     member = account(phone_e164="+14155550123")
-    # A valid staff principal (exactly one fixed-tenant membership) sharing contacts.
+    # Decision 63 (one account per person): the staff principal is a different person with their own e-mail and
+    # phone (a shared contact is now refused by the unique constraints); scrubbing is still by account id.
     from tests.fixed_roles.helpers import staff_account
-    staff = staff_account(tenant, "staff", "space_manager", email=member.email,
-        phone_e164=member.phone_e164)
+    staff = staff_account(tenant, "staff", "space_manager", email="staff-other@example.test",
+        phone_e164="+14155550198")
     own, other = delivery(tenant, member), delivery(tenant, staff, number=2)
     for row in [own, other]:
         envelope = row.envelope

@@ -3,6 +3,7 @@ from datetime import timedelta
 from uuid import uuid4
 
 import pytest
+from django.db import connection, transaction
 from django.urls import reverse
 from django.utils import timezone
 from rest_framework.test import APIClient
@@ -56,7 +57,11 @@ def test_cancelled_and_missing_bookings_block_too():
     with enabled_encryption():
         services_bookings.cancel_booking(booking, actor=staff)
     assert publish_check(event)["venue"]["reason"] == "cancelled"
-    EventBookingDecision.objects.filter(pk=decision.pk).update(booking=None)  # the booking row is gone
+    # The booking row is gone: the guard trigger only permits this detach under the purge GUCs.
+    with transaction.atomic(), connection.cursor() as cursor:
+        for key, value in (("id", decision.pk), ("maker", maker.pk), ("action", "detach")):
+            cursor.execute("SELECT set_config(%s, %s, true)", [f"app.booking_decision_purge_{key}", str(value)])
+        EventBookingDecision.objects.filter(pk=decision.pk).update(booking=None)
     assert publish_check(event)["venue"] == {"state": "blocked", "reason": "missing", "booking_id": None}
     with enabled_encryption(), pytest.raises(VenueBlocked):
         services.publish(event, actor=staff)

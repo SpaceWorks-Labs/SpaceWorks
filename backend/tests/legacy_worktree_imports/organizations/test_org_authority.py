@@ -90,13 +90,12 @@ def test_organization_member_and_staff_account_keep_separate_authority():
     organization = make_organization("local-and-org")
     link(organization, makerspace, OrganizationMakerspace.Relationship.MANAGER)
     grant(organization, user, [rbac.Action.EDIT_INVENTORY])
-    from tests.accounts.account_factories import make_staff
+    from tests.accounts.account_factories import grant_staff_role
 
-    staff = make_staff(makerspace, username="local-and-org-staff", email=user.email,
-                       role_slug="event_manager")
-    assert rbac.effective_actions(user, makerspace.id) == {rbac.Action.EDIT_INVENTORY}
-    assert rbac.effective_actions(staff, makerspace.id) == {rbac.Action.MANAGE_EVENTS}
-    assert not user.makerspace_memberships.exists()
+    # Decision 63 (one account per person): the staff-track row lands on the same person.
+    grant_staff_role(user, makerspace, role_slug="event_manager")
+    assert rbac.effective_actions(user, makerspace.id) >= {
+        rbac.Action.EDIT_INVENTORY, rbac.Action.MANAGE_EVENTS}
 
 
 def test_archived_linked_space_excludes_org_authority():
@@ -113,6 +112,7 @@ def test_archived_linked_space_excludes_org_authority():
     assert rbac.makerspaces_for_action(user, rbac.Action.EDIT_INVENTORY) == set()
 
 
+@pytest.mark.skip(reason="decision 110 (superadmin always on; hard-hidden makerspaces and Makerspace.superadmin_access_enabled removed)")
 def test_superadmin_hidden_space_does_not_recover_authority_from_org_grant():
     superadmin = make_user(
         "hidden-org-superadmin",
@@ -213,6 +213,7 @@ def test_admin_form_rejects_actions_rbac_would_silently_drop():
     assert form.cleaned_data["granted_actions"] == ["edit_inventory", "manage_printing"]
 
 
+@pytest.mark.skip(reason="decision 110 (superadmin always on; hard-hidden makerspaces and Makerspace.superadmin_access_enabled removed)")
 def test_org_grant_never_reaches_a_hard_hidden_makerspace():
     """The proxy route around the hide invariant.
 

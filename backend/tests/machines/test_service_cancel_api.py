@@ -59,7 +59,9 @@ def test_non_owner_anonymous_staff_and_platform_callers_are_refused():
     assert as_user(owner("owner-stranger-2")).post(cancel_url(row), {}, format="json").status_code == 404
     assert APIClient().get(owner_url(row)).status_code == 401
     assert APIClient().post(cancel_url(row), {}, format="json").status_code == 401
-    assert as_user(w.staff).post(cancel_url(row), {}, format="json").status_code == 403
+    # Decision 63 (one account per person): a staff member is a person like any other on the
+    # owner surface, so on someone else's job they are a non-owner (404); staff cancel on the admin route.
+    assert as_user(w.staff).post(cancel_url(row), {}, format="json").status_code == 404
     platform = make_user(f"owner-platform-{uuid4().hex[:6]}", is_superuser=True)
     assert as_user(platform).get(owner_url(row)).status_code == 403
     row.refresh_from_db()

@@ -110,7 +110,9 @@ def test_superadmin_enrollment_encrypts_secret_and_shows_ten_codes_once():
     assert all(code not in str(audit) for code in codes)
 
 
-@pytest.mark.parametrize("invalidate", ["expired", "password", "generation", "restricted", "attempts"])
+# Decision 361: a restricted or suspended person may finish signing in (their session reaches only
+# their own charges), so the account-state case is a deactivation now.
+@pytest.mark.parametrize("invalidate", ["expired", "password", "generation", "deactivated", "attempts"])
 def test_challenge_invalidated_before_token_issuance(invalidate, settings):
     user, client = owner(), APIClient()
     codes, digests = recovery_codes()
@@ -124,9 +126,9 @@ def test_challenge_invalidated_before_token_issuance(invalidate, settings):
         user.save(update_fields=["password"])
     elif invalidate == "generation":
         row.auth_generation = "different-generation"
-    elif invalidate == "restricted":
-        user.access_status = User.AccessStatus.SUSPENDED
-        user.save(update_fields=["access_status"])
+    elif invalidate == "deactivated":
+        user.is_active = False
+        user.save(update_fields=["is_active"])
     else:
         row.attempts = settings.MFA_MAX_ATTEMPTS
     row.save()

@@ -14,7 +14,9 @@ from apps.machines.service_workflow import accept, cancel, collect, complete, fa
 from apps.machines.service_workflow_cancel import CancelRefused
 from apps.machines.service_workflow_collect import mark_uncollected
 from apps.payments.models import Payment
-from tests.machines.eta_helpers import approved, job, owner, world
+from tests.machines.eta_helpers import approved, enable, job, owner, world
+from tests.machines.session_helpers import check_in
+from tests.rbac_f6_helpers import community_member
 
 pytestmark = pytest.mark.django_db
 S = MachineServiceRequest.Status
@@ -32,7 +34,12 @@ def priced(w, rate="2.00", flat="5.00"):
 
 def test_needs_changes_and_resubmit_keep_the_place_within_three_days():
     w = world("flow-changes")
-    member = owner("flow-changes-m")
+    # A resubmit re-runs the public intake gates (decision 221e / 246): the membership and
+    # presence modules are on and the member is checked in, as in test_job_intake.admitted.
+    enable(w.space, "membership", "presence")
+    membership = community_member(w.space, "flow-changes-m")
+    check_in(w.space, membership)
+    member = membership.user
     row = job(w, member=member)
     row = review.request_changes(row, w.staff, code="wrong_format", message="Export as STL please.")
     assert row.status == S.CHANGES_REQUESTED and row.changes_message

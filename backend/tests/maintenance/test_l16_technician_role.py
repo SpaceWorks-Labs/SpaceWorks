@@ -19,7 +19,7 @@ TECH = {"work_repairs", "run_maintenance", "set_service_state"}
 def test_new_spaces_get_eight_builtins_with_the_technician_as_a_combinable_staff_role():
     space = make_space("l16-roles-new")
     slugs = set(MakerspaceRole.objects.filter(makerspace=space).values_list("slug", flat=True))
-    assert slugs == set(BUILTIN_ROLE_SLUGS) and "technician" in slugs and len(slugs) == 8
+    assert slugs == set(BUILTIN_ROLE_SLUGS) and "technician" in slugs and len(slugs) == 10  # + shop_manager (L22 #137), fundraising (decision 242m)
     role = MakerspaceRole.objects.get(makerspace=space, slug="technician")
     assert set(role.granted_actions) == TECH and role.is_default and role.is_protected
     assert role.legacy_role == "technician" and ROLE_BY_SLUG["technician"].combinable

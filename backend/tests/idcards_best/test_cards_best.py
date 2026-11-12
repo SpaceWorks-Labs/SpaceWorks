@@ -117,7 +117,7 @@ def test_templates_list_has_both_themes_and_reset_takes_a_theme():
     design, _ = resolution.get_or_create(space, "member_cards", actor=sm)
     api = client(sm)
     rows = api.get(f"/api/v1/admin/card-designs/{design.pk}/templates").json()
-    assert len(rows) == 12 and {row["theme"] for row in rows} == {"light", "dark"}
+    assert len(rows) == 2 * len(LABELS) and {row["theme"] for row in rows} == {"light", "dark"}
     reset = api.post(f"/api/v1/admin/card-designs/{design.pk}/reset", {"template": "minimal", "theme": "dark"},
                      format="json")
     assert reset.status_code == 200 and reset.json()["document"]["front"]["background"]["colour"] == "#142C2A"

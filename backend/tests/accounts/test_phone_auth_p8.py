@@ -135,11 +135,10 @@ def test_login_start_response_is_identical_for_known_and_unknown_numbers(sms_on)
     assert [msg["to"] for msg in sms_on] == [NUMBER]
 
 
-def test_login_start_does_not_reveal_a_suspended_account(sms_on):
+def test_login_start_does_not_reveal_a_deactivated_account(sms_on):
+    # Decision 361: a suspended person may sign in now; a deactivated account still gets nothing.
     user = verified_member()
-    User.objects.filter(pk=user.pk).update(
-        access_status=User.AccessStatus.SUSPENDED
-    )
+    User.objects.filter(pk=user.pk).update(is_active=False)
     response = APIClient().post(LOGIN_START, {"phone": NUMBER}, format="json")
     assert response.status_code == 200
     assert sms_on == []  # no text, and no distinguishable response
@@ -225,12 +224,13 @@ def test_a_link_code_cannot_be_redeemed_at_the_login_endpoint(sms_on):
     ).status_code == 400
 
 
-def test_suspension_between_request_and_confirm_denies_the_session(sms_on):
+def test_deactivation_between_request_and_confirm_denies_the_session(sms_on):
+    # Decision 361: a restriction no longer ends sign-in; a deactivation still does.
     user = verified_member()
     client = APIClient()
     client.post(LOGIN_START, {"phone": NUMBER}, format="json")
     code = code_from(sms_on)
-    User.objects.filter(pk=user.pk).update(access_status=User.AccessStatus.RESTRICTED)
+    User.objects.filter(pk=user.pk).update(is_active=False)
     assert client.post(
         LOGIN_CONFIRM, {"phone": NUMBER, "code": code}, format="json"
     ).status_code == 400

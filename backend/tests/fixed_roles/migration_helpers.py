@@ -2,7 +2,7 @@
 from datetime import timedelta
 
 import pytest
-from django.db import connection, migrations
+from django.db import connection
 from django.db.migrations.executor import MigrationExecutor
 from django.db.models import Q
 from django.utils import timezone
@@ -20,22 +20,52 @@ PRE_TARGETS = [
 DATA_TARGET = [("makerspaces", "0092_fixed_roles_data")]
 
 
+_TEMPLATE_BUILT = set()  # template databases built (migrated forward) in this pytest process
+
+
 @pytest.fixture
-def old_database(transactional_db, monkeypatch):
-    executor = MigrationExecutor(connection)
-    leaves = executor.loader.graph.leaf_nodes()
-    # Production rollback correctly refuses to reverse the data migration. Test
-    # setup starts with an empty transactional database, so skip ONLY its reverse
-    # data operation while letting MigrationExecutor reverse the actual schema.
-    operation = executor.loader.disk_migrations[("makerspaces", "0092_fixed_roles_data")].operations[0]
-    monkeypatch.setattr(operation, "reverse_code", migrations.RunPython.noop)
+def old_database(transactional_db):
+    """A pre-fixed-roles database, built FORWARD in a scratch database.
+
+    The old fixture reversed the test database to ``PRE_TARGETS``. Since decision 63 the account
+    unification (accounts 0050) is irreversible, so that rollback raised mid-way and the forward
+    restore then spun. An upgrade is what these tests exercise, and a real upgrade starts from a
+    database that was only ever migrated forward: migrate a template database to ``PRE_TARGETS``
+    once per pytest process, clone it per test, point the default connection at the clone for
+    the test, then drop the clone. The shared test database is never migrated backwards.
+    """
+    from django.contrib.contenttypes.models import ContentType
+
+    main = connection.settings_dict["NAME"]
+    template, scratch = f"{main}_prefr_tpl"[:63], f"{main}_prefr"[:63]
+
+    def use(name):
+        connection.close()
+        connection.settings_dict["NAME"] = name
+
+    def admin(statement):
+        use(main)
+        with connection.cursor() as cursor:
+            cursor.execute(statement)
+
+    if template not in _TEMPLATE_BUILT:
+        admin(f'DROP DATABASE IF EXISTS "{template}" WITH (FORCE)')
+        admin(f'CREATE DATABASE "{template}"')
+        use(template)
+        try:
+            MigrationExecutor(connection).migrate(PRE_TARGETS)
+        finally:
+            use(main)
+        _TEMPLATE_BUILT.add(template)
+    admin(f'DROP DATABASE IF EXISTS "{scratch}" WITH (FORCE)')
+    admin(f'CREATE DATABASE "{scratch}" TEMPLATE "{template}"')
+    use(scratch)
+    ContentType.objects.clear_cache()
     try:
-        executor.migrate(PRE_TARGETS)
-        yield executor.loader.project_state(PRE_TARGETS).apps
+        yield MigrationExecutor(connection).loader.project_state(PRE_TARGETS).apps
     finally:
-        # A refusal fixture must remove its blocker before restoring all leaves.
-        restore = MigrationExecutor(connection)
-        restore.migrate(leaves)
+        ContentType.objects.clear_cache()
+        admin(f'DROP DATABASE IF EXISTS "{scratch}" WITH (FORCE)')
 
 
 def upgrade():

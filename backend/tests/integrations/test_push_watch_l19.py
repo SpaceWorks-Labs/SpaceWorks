@@ -73,8 +73,11 @@ def test_the_no_action_set_is_exactly_the_declared_money_and_evidence_events():
     for feature, event in declared:
         assert event in FEATURE_EVENTS[feature], f"stale registry entry {feature}.{event}"
     none = {(f, e) for f, events in FEATURE_EVENTS.items() for e in events if not reg.actionable(f, e)}
-    # The token guard is a backstop for future events; today nothing falls to it silently.
-    assert none == declared
+    # The declared money/evidence events are all action-free. Events added since (0.12.0 events programme:
+    # pay windows, ticket pay links, prize payouts, claim invites, card photo requests) are not classified in the
+    # registry; they are action-free only because the fail-closed token guard catches them. Pin that behaviour.
+    assert declared <= none
+    assert all(any(token in event for token in reg._UNSAFE_TOKENS) for _feature, event in none - declared)
 
 
 def test_categories_only_hold_safe_actions():

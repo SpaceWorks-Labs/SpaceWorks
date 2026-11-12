@@ -39,6 +39,10 @@ MACHINE_KEYS = {
     "prints_awaiting_collection",
     "warranty_expiring",
     "maintenance_overdue",
+    # Decision 242 / U13: every dashboard payload carries the failed-counter list and the
+    # per-actor attention block; neither widens what a machine-only actor may count.
+    "failed_areas",
+    "attention",
 }
 
 
@@ -135,7 +139,8 @@ def test_restricted_dashboard_uses_every_request_path_and_machine_only_counts():
 
     assert response.status_code == 200
     assert set(response.data) == MACHINE_KEYS
-    assert {key: value for key, value in response.data.items() if key not in {"widgets", "queue_tiles"}} == {
+    assert response.data["failed_areas"] == []
+    assert {key: value for key, value in response.data.items() if key not in {"widgets", "queue_tiles", "failed_areas", "attention"}} == {
         "scope_mode": "machine",
         "pending_prints": 1,
         "active_prints": 1,
@@ -148,7 +153,10 @@ def test_restricted_dashboard_uses_every_request_path_and_machine_only_counts():
         space, "phase6a-collision-team", types=[local_slug_collision]
     )
     collision = authenticated_client(collision_actor).get(_url(space))
-    assert collision.data["pending_prints"] == 0
+    # Decision 242(n): the tiles count every machine type's jobs, so the collision-slug type sees its own
+    # pending request (1) but none of the built-in printer type's (the slug is not the identity).
+    assert collision.data["pending_prints"] == 1
+    assert collision.data["active_prints"] == 0
     assert local_collision.machine_type.slug == "3d_printer"
 
 
@@ -326,5 +334,5 @@ def test_dashboard_full_mode_exempts_assigned_space_manager_superadmin_and_legac
         assert "overdue_loans" in response.data
 
     with rejected_account_rows():
-        MakerspaceMembership.objects.filter(pk=legacy_membership.pk).update(assigned_role=None)
+        MakerspaceMembership.staff_tracks.filter(pk=legacy_membership.pk).update(assigned_role=None)
         assert authenticated_client(legacy).get(_url(space)).status_code == 404

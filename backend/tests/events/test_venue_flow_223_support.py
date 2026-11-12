@@ -17,7 +17,7 @@ from apps.bookings.models import Booking
 from apps.bookings.models_included_hours import IncludedHoursUsage
 from apps.events import equipment_window
 from apps.evidence.storage import EvidenceValidationResult
-from apps.events.models import Event
+from apps.events.models import Event, EventRegistration
 from apps.hardware_requests.loan_charges_common import fee_exempt
 from apps.operations.reports_consumable_context import _planned
 from apps.payments.models import MakerspacePaymentSettings, Payment
@@ -141,22 +141,26 @@ def test_bulk_planning_reports_a_presence_or_membership_refusal_per_row(monkeypa
     maker, staff, _member, event, _room, _booking, _decision, _client = linked("g5-" + code)
     monkeypatch.setattr(equipment_window, "window_rows", lambda *a, **k: ([], {}, {}))
     monkeypatch.setattr(equipment_window, "_totals", lambda *a, **k: [])
+    monkeypatch.setattr(equipment_window, "ensure_event_pass", lambda *a, **k: None)
+    # plan_for_participants only plans registrations that belong to this event (else a per-row not_found).
+    first, second = (EventRegistration.objects.create(
+        event=event, name=f"Guest {n}", email=f"guest{n}-{code}@example.test", phone="1") for n in (1, 2))
     seen = []
 
     def fake_create_pending(**kwargs):
         seen.append(kwargs["event_registration_id"])
-        if kwargs["event_registration_id"] == 1:
+        if kwargs["event_registration_id"] == first.pk:
             raise refusal
         return "request", SimpleNamespace(pk=77, status="pending"), False
 
     monkeypatch.setattr("apps.hardware_requests.contextual_equipment_service.create_pending", fake_create_pending)
     lines = [{"product_id": 5, "quantity": 1}]
-    people = [{"registration_id": 1, "lines": None}, {"registration_id": 2, "lines": None}]
+    people = [{"registration_id": first.pk, "lines": None}, {"registration_id": second.pk, "lines": None}]
     with enabled_encryption():
         result = equipment_window.plan_for_participants(
             staff, event, operation_id=uuid4(), requested_for=None, lines=lines, participants=people, dry_run=False)
-    assert seen == [1, 2]  # the second participant is still planned
-    assert result["results"][0] == {"registration_id": 1, "outcome": "error", "code": code}
+    assert seen == [first.pk, second.pk]  # the second participant is still planned
+    assert result["results"][0] == {"registration_id": first.pk, "outcome": "error", "code": code}
     assert result["results"][1]["outcome"] == "created"
 
 

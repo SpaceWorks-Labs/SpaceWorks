@@ -25,9 +25,15 @@ def _off(settings):
 
 
 def _boxes(space, count):
-    have = Box.objects.filter(makerspace=space).count()
-    for n in range(have, count):
-        Box.objects.create(makerspace=space, label=f"b{n}")
+    # Labels are unique per makerspace (uniq_box_label_per_makerspace) and tests delete
+    # b0..bN rows, so the next label is the first unused one, not the current row count.
+    used = set(Box.objects.filter(makerspace=space).values_list("label", flat=True))
+    have, n = len(used), 0
+    while have < count:
+        if f"b{n}" not in used:
+            Box.objects.create(makerspace=space, label=f"b{n}")
+            have += 1
+        n += 1
 
 
 def _root(name="th-root"):

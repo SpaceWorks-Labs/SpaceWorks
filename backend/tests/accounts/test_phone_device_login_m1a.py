@@ -182,7 +182,9 @@ def test_start_platform_mismatch_is_uniform_but_sends_nothing(settings, sms_on):
     assert len(sms_on) == 1
 
 
-@pytest.mark.parametrize("change", ["delete", "inactive", "restricted", "generation"])
+# Decision 361: a restricted person may hold a member grant, so the account-state case is a
+# pending deletion (still an active account, but one that may not sign in).
+@pytest.mark.parametrize("change", ["delete", "inactive", "deletion_requested", "generation"])
 def test_account_changes_during_attestation_cannot_create_a_grant(
     settings, monkeypatch, sms_on, change,
 ):
@@ -203,7 +205,7 @@ def test_account_changes_during_attestation_cannot_create_a_grant(
         changes = {
             "delete": {"is_active": False, "deletion_requested_at": timezone.now()},
             "inactive": {"is_active": False},
-            "restricted": {"access_status": "restricted"},
+            "deletion_requested": {"deletion_requested_at": timezone.now()},
             "generation": {"credential_generation": user.credential_generation + 1},
         }
         User.objects.filter(pk=user.pk).update(**changes[change])

@@ -24,7 +24,7 @@ def test_face_returns_the_published_document_values_and_inline_qr():
     response = client(user).get(f"/api/v1/member/cards/member_card/{card.pk}/face")
     assert response.status_code == 200, response.content
     body = response.json()
-    assert body["document"]["version"] == 2 and body["document"]["front"]["layers"]
+    assert body["document"]["version"] == 3 and body["document"]["front"]["layers"]
     assert body["values"]["number"] and body["values"]["name"]
     assert body["desk_qr"].startswith("data:image/svg+xml") and body["verify_qr"].startswith("data:image/svg+xml")
     assert response["Cache-Control"] == "private, no-store"

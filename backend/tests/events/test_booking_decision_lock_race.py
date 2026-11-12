@@ -44,8 +44,14 @@ def test_maker_lock_conflict_unwinds_entire_decision_without_partial_write():
             close_old_connections()
 
     with enabled_encryption(), ThreadPoolExecutor(max_workers=1) as executor:
+        # First use of a tenant key locks the makerspace row to create it; mint it before this test holds that
+        # row, so the writer reaches the no-wait boundary lock instead of queueing behind key creation.
+        from apps.encryption.services import get_or_create_active_dek
+        get_or_create_active_dek(maker.pk)
         with transaction.atomic():
-            Makerspace.objects.select_for_update().get(pk=maker.pk)
+            # NO KEY UPDATE: still conflicts with the writer's FOR UPDATE NOWAIT, but not with the FK key-shares
+            # that fence and audit rows take on this makerspace while the writer prepares.
+            Makerspace.objects.select_for_update(no_key=True).get(pk=maker.pk)
             future = executor.submit(writer)
             assert future.result(timeout=10) == "lock_busy"
         assert not EventBookingDecision.objects.filter(makerspace=maker, operation_id=operation).exists()

@@ -38,9 +38,11 @@ def test_duty_reports_and_dashboard_are_accessible(slug, report):
     assert catalog.status_code == 200
     keys = {row["key"] for row in catalog.data["results"]}
     assert report in keys
-    audit_reports = {definition.key for definition in REPORT_DEFINITIONS
-                     if definition.required_action == rbac.Action.VIEW_AUDIT}
-    assert keys.isdisjoint(audit_reports)
+    # Decision 219(e-1): audit-keyed reports are listed to an area reader through an alternate area
+    # action (narrowed to their own area), never through VIEW_AUDIT, which the actor does not hold.
+    for definition in REPORT_DEFINITIONS:
+        if definition.key in keys and definition.required_action == rbac.Action.VIEW_AUDIT:
+            assert definition.alternate_actions, definition.key
     assert client.get(reverse("analytics-most-lent", args=[space.pk])).status_code == 404
     assert not rbac.can(actor, rbac.Action.VIEW_AUDIT, space.pk)
 

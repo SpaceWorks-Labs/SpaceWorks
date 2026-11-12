@@ -44,7 +44,8 @@ def quiet_storage_and_stripe(monkeypatch):
 def loan_space(slug, *, feature_on=True, **overrides):
     makerspace = make_space(slug)
     staff = make_member(f"{slug}-staff", makerspace)
-    makerspace.enabled_features = ["payments.enabled", "charges.enabled"] + (
+    # Decision 254: `loans.enabled` is the Inventory master; with it off the request workflow module answers 404.
+    makerspace.enabled_features = ["loans.enabled", "payments.enabled", "charges.enabled"] + (
         ["payments.loans", "charges.loans"] if feature_on else []
     )
     makerspace.save(update_fields=["enabled_features", "updated_at"])

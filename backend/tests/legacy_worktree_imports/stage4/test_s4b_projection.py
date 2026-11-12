@@ -20,6 +20,7 @@ from tests.backup import test_compound_archive_e3 as e3
 pytestmark = pytest.mark.django_db(transaction=True)
 
 
+@pytest.mark.skip(reason="decision 110(b): per-space sovereign/custody archives (e3._sovereign, recipients) removed; staff persons are no longer retired as shells (decision 63)")
 def test_deployment_backup_projects_staff_in_three_sovereign_tenants(
     allow_projection_databases, installed_producer_capability, monkeypatch, settings,
 ):
@@ -81,7 +82,10 @@ def test_three_purges_in_one_outer_transaction_finish_each_tenants_guards(settin
     assert not Makerspace.objects.filter(pk__in=[space.pk for space in spaces]).exists()
     for account in accounts:
         account.refresh_from_db()
-        assert account.retired_at is not None and account.staff_makerspace_id is None
+        # Decision 63 (one account per person): purge deletes the staff-track row only; the
+        # person account is never retired or retargeted.
+        assert account.retired_at is None and account.staff_makerspace_id is None
+        assert not MakerspaceMembership.staff_tracks.filter(user=account).exists()
 
 
 def test_exact_tenant_guard_is_not_widened_to_another_staff_membership():
@@ -95,4 +99,4 @@ def test_exact_tenant_guard_is_not_widened_to_another_staff_membership():
         membership.delete()
         with connection.cursor() as cursor:
             cursor.execute("SET CONSTRAINTS ALL IMMEDIATE")
-    assert MakerspaceMembership.objects.filter(pk=membership_id).exists()
+    assert MakerspaceMembership.all_tracks.filter(pk=membership_id).exists()  # .objects is community-only

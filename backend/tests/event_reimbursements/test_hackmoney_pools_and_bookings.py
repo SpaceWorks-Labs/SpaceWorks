@@ -11,12 +11,12 @@ import pytest
 from apps.event_reimbursements import award_workflow, direct_booking, pools
 from apps.event_reimbursements.budget_models import BudgetReservation, ReimbursementBudgetPool
 from apps.event_reimbursements.models import GrantAward, GrantRequest
-from apps.payments.event_payouts.validation import PayoutValidationError
+from apps.payments.event_payouts.errors import PayoutError
 from apps.payments.models_ledger_entries import LedgerEntry
 from .conftest import cmd
 from .helpers import requested
 
-pytestmark = pytest.mark.django_db
+pytestmark = pytest.mark.django_db(transaction=True)
 
 
 def crew_on(world):
@@ -43,9 +43,9 @@ def test_finance_adds_one_funded_crew_pool(world):
     pool = crew_pool(world)
     assert (pool.audience, pool.total_minor, pool.currency) == ("crew", 50000, "INR")
     assert world.pool.audience == "participants"
-    with pytest.raises(PayoutValidationError) as twice:
+    with pytest.raises(PayoutError) as twice:
         pools.create_crew_pool(request=world.finance, event_id=world.event.pk, data=cmd(0, initial_total_minor=1))
-    assert twice.value.code == "crew_pool_exists"
+    assert twice.value.detail["code"] == "crew_pool_exists"
 
 
 def test_the_crew_pool_needs_crew_claims(world):
@@ -136,13 +136,13 @@ def test_a_booking_cannot_replace_an_accepted_award(world):
     award = accepted(world)
     grant = award.request
     grant.refresh_from_db(); world.pool.refresh_from_db()
-    with pytest.raises(PayoutValidationError) as refused:
+    with pytest.raises(PayoutError) as refused:
         book(world, grant, world.pool)
-    assert refused.value.code == "accepted_award_immutable"
+    assert refused.value.detail["code"] == "accepted_award_immutable"
 
 
 def test_a_booking_must_fit_the_pool(world):
     grant = requested(world)
     world.pool.refresh_from_db()
-    with pytest.raises(PayoutValidationError):
+    with pytest.raises(PayoutError):
         book(world, grant, world.pool, amount=world.pool.total_minor + 1)

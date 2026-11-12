@@ -29,10 +29,13 @@ def assign_builtin_roles(user, makerspace, *slugs, machine_types=()):
         replace_membership_roles(
             membership=membership, roles=roles, actor=_fixture_platform(), reason="test fixture",
         )
-        MembershipMachineTypeScope.objects.bulk_create([
-            MembershipMachineTypeScope(membership=membership, machine_type=kind)
-            for kind in machine_types
-        ], ignore_conflicts=True)
+        # Machine-type scope belongs to staff rows only (DB guard: a community-track
+        # membership cannot hold one), so the Member role carries none.
+        if track == "staff":
+            MembershipMachineTypeScope.objects.bulk_create([
+                MembershipMachineTypeScope(membership=membership, machine_type=kind)
+                for kind in machine_types
+            ], ignore_conflicts=True)
     return membership
 
 

@@ -12,6 +12,7 @@ from apps.inventory.models_equipment_proposals import (
 )
 from tests.bookings.admin_api_helpers import grant
 from tests.encryption.conftest import enabled_encryption
+from tests.payments.membership_rows import community_membership
 from tests.test_request_workflow import authenticated_client, make_member, make_product, make_space
 
 pytestmark = pytest.mark.django_db(transaction=True)
@@ -61,7 +62,6 @@ def test_matching_public_kit_list_and_detail_are_scoped_to_published_tenant():
         maker.public_inventory_enabled = True
         maker.save(update_fields=["public_site_enabled", "public_inventory_enabled"])
     actor = make_member("member-kit-actor", own)
-    from tests.payments.membership_rows import community_membership
     community_membership(own, actor)  # the public kit list needs an active membership
     product = make_product(own, name="tool", is_public=True)
     kit = EquipmentKitTemplate.objects.create(makerspace=own, name="kit", published_for_contexts=True)
@@ -88,6 +88,7 @@ def test_public_kit_route_remains_slug_scoped_with_another_origin(detail):
         maker.public_inventory_enabled = True
         maker.save(update_fields=["frontend_domain", "frontend_domain_status", "public_site_enabled", "public_inventory_enabled"])
     actor = make_member("member-origin-actor-" + str(detail), own)
+    community_membership(own, actor)  # decision 63: the member routes need an active community membership
     product = make_product(own, name="tool", is_public=True)
     kit = EquipmentKitTemplate.objects.create(makerspace=own, name="kit", published_for_contexts=True)
     EquipmentKitVersion.objects.create(template=kit, version=1, name="kit", lines=[
@@ -151,6 +152,7 @@ def test_contextual_self_uses_member_scope_and_replays_across_origins():
         maker.enabled_features = list(set(maker.enabled_features or []) | {"loans.enabled"})
         maker.save(update_fields=["frontend_domain", "frontend_domain_status", "public_site_enabled", "public_inventory_enabled", "enabled_modules", "enabled_features"])
     actor = make_member("context-member-actor", own)
+    community_membership(own, actor)  # decision 63: staff accounts need a community row to borrow
     product = make_product(own, name="tool", is_public=True)
     client = authenticated_client(actor)
     path = f"/api/v1/public/{own.slug}/requests/contextual"
@@ -175,6 +177,7 @@ def test_contextual_staff_requires_matching_origin_and_same_tenant_registration(
     actor = make_member("context-staff-actor", own)
     grant(actor, other)
     borrower = make_member("context-staff-borrower", own)
+    community_membership(own, borrower)  # the borrower must be an active community member
     product = make_product(own, name="tool", is_public=True)
     start = timezone.now() + timedelta(days=2)
     event = Event.objects.create(makerspace=own, title="event", starts_at=start, ends_at=start + timedelta(hours=1))

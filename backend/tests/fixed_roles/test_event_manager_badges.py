@@ -12,7 +12,7 @@ from apps.accounts import rbac
 from apps.audit.models import AuditLog
 from apps.events.models import EventRegistration
 from tests.events.checkin_helpers import client_for
-from tests.events.staff_grant_helpers import grant_fixture
+from tests.events.staff_grant_helpers import grant_fixture, set_grant_permissions
 from tests.events.ticketing_helpers import account, event_space, open_event
 from tests.fixed_roles.helpers import assign_builtin_roles
 from tests.return_helpers import make_user
@@ -88,8 +88,8 @@ def test_event_manager_without_audit_prints_custom_answers(rendered):
 
 def test_manage_registrations_grant_holder_prints_custom_answers(rendered):
     space, manager, user, event, grant = grant_fixture("check_in")
-    grant.permissions = ["check_in", "manage_registrations"]
-    grant.save(update_fields=["permissions"])
+    # Authority is read from the live manual entitlement, not the grant's display column.
+    set_grant_permissions(grant, ["check_in", "manage_registrations"])
     _badge_event(event)
     attended = _registration(event, "grant-badge-guest", status=EventRegistration.Status.ATTENDED)
     assert not rbac.can(user, rbac.Action.VIEW_AUDIT, space.pk)

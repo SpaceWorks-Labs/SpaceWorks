@@ -165,4 +165,6 @@ def test_only_the_two_presign_views_create_unconsumed_rows():
         for path in APPS.rglob("*.py")
         if "migrations" not in path.parts and _creates_unconsumed(path)
     )
-    assert hits == ["evidence/views.py", "hardware_requests/self_checkout_views.py"]
+    # The self-checkout presign service moved out of self_checkout_views.py into
+    # self_checkout_contact.py (the view only calls it); still exactly two creators.
+    assert hits == ["evidence/views.py", "hardware_requests/self_checkout_contact.py"]

@@ -144,7 +144,9 @@ def test_api_list_save_publish_and_export_import():
     preview = api.post(f"/api/v1/admin/card-designs/{design_id}/preview",
                        {"document": build("classic", "member_cards"), "format": "png"}, format="json")
     assert preview.status_code == 200 and preview["Content-Type"] == "image/png"
-    assert len(api.get(f"/api/v1/admin/card-designs/{design_id}/templates").json()) == 12
+    from apps.card_designs.default_templates import LABELS, THEMES
+    # decision 314: the Card Studio gallery grew; the count is every built-in template in every theme
+    assert len(api.get(f"/api/v1/admin/card-designs/{design_id}/templates").json()) == len(LABELS) * len(THEMES)
 
 
 def test_api_plan_override_and_outsiders_get_404():

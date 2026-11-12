@@ -139,4 +139,4 @@ def test_valid_member_can_stage_a_legacy_printer_upload(monkeypatch):
     path, payload = post_paths(w)[3]
     response = authenticated_client(membership.user).post(path, payload, format="json")
     assert response.status_code == 201, response.content
-    assert ServiceRequestFile.objects.filter(pk=response.json()["file_id"], owner_user=membership.user).exists()
+    assert ServiceRequestFile.objects.filter(pk=response.json()["file_id"], owner_user_id=membership.user.pk).exists()

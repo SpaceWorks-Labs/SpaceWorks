@@ -19,9 +19,13 @@ def _on(slug):
 
 def test_with_the_capability_on_a_signed_in_owner_sees_types_and_anonymous_does_not():
     w = _on("jrc-on")
+    # Intake needs the membership and presence modules as well as the capability (decision 221e).
+    enable(w.space, "membership", "presence")
     url = f"/api/v1/public/{w.space.slug}/machine-jobs/types"
     assert authenticated_client(owner("jrc-on-owner")).get(url).status_code == 200
-    assert APIClient().get(url).status_code in (401, 403)
+    # Decision 221(e) gates intake on the modules and capability, not on identity: the types catalogue is a
+    # public read (`PublicJobTypesView` is AllowAny); staging files and submitting still need a signed-in member.
+    assert APIClient().get(url).status_code == 200
 
 
 @pytest.mark.parametrize("body", [

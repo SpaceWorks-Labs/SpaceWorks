@@ -153,9 +153,9 @@ def test_delete_only_without_approved_cards():
 def test_delete_refuses_a_programme_whose_design_was_published():
     from apps.card_designs.models import CardDesign
     space, _org, sm, programme = _programme("ip-delete-design")
-    CardDesign.objects.create(makerspace=space, domain=CardDesign.Domain.ID_PROGRAMME if hasattr(
-        CardDesign.Domain, "ID_PROGRAMME") else list(CardDesign.Domain)[0], programme=programme,
-        document={}, published_revision=1, published_at=timezone.now())
+    # A programme already owns one design (uniq_card_design_programme); publish that one.
+    CardDesign.objects.update_or_create(programme=programme, defaults=dict(
+        domain=CardDesign.Domain.ID_PROGRAMME, makerspace=space, document={}, published_document={}, published_revision=1, published_at=timezone.now()))
     # Deleting would cascade the published design away (219(h)); archive instead.
     with pytest.raises(services.ArchiveInstead):
         services.delete(sm, programme)

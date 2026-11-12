@@ -13,7 +13,7 @@ AREA_ROLES = ("inventory_manager", "machine_manager", "event_manager", "booking_
               "handover", "technician")
 
 
-def test_fundraising_runs_the_donations_area():
+def test_fundraising_runs_the_donations_area(django_capture_on_commit_callbacks):
     space, manager, donor = setup("fr-run", "finance.recurring_donations")
     fundraiser = staff("fr-run", space, "fundraising")
     donation, _ = gift(space, donor, amount="300", recognize_publicly=True)
@@ -23,7 +23,8 @@ def test_fundraising_runs_the_donations_area():
     created = client(fundraiser).post(admin(space, "/campaigns"), {"name": "Roof", "slug": "roof"}, format="json")
     assert created.status_code == 201, created.content
     # The gift's owner settles it: subject authority is manage_donations (no record_payment grant).
-    settle_offline(fundraiser, charge_for(donation))
+    with django_capture_on_commit_callbacks(execute=True):
+        settle_offline(fundraiser, charge_for(donation))
     donation.refresh_from_db()
     assert donation.status == Donation.Status.PAID
     donors = client(fundraiser).get(admin(space, "/donors")).json()

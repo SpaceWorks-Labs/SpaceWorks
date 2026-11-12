@@ -88,6 +88,7 @@ def _attended_event(space, user):
     return event
 
 
+@pytest.mark.skip(reason="decision 319 addendum / 329: the induction HTTP surface is retired and answers 410 certifications_retired to every call (apps/machines/retired.py)")
 def test_induction_overview_hides_attendees_of_events_the_reader_has_no_link_on():
     space, laser, lathe, _machine, laser_mgr, lathe_mgr = _machines_world("scope0120-ind")
     attendee, _ = _member(space, "scope0120-ind-attendee")
@@ -166,8 +167,9 @@ def test_audit_schedule_is_managed_and_received_only_within_the_creators_reach()
                                             next_run_at=timezone.now() + timedelta(days=1))
     assert recipient_reaches(stock, lending, REPORT_REGISTRY["most-lent"])
     # The Inventory Manager's own schedule stays theirs, and the Space Manager can manage it.
+    # A schedule must name a recipient to be updated through the API (a recipient-less row is refused 400).
     own = ReportSchedule.objects.create(makerspace=space, created_by=stock, report_key="most-lent",
-                                        next_run_at=timezone.now() + timedelta(days=1))
+                                        recipient_roles=["inventory_manager"], next_run_at=timezone.now() + timedelta(days=1))
     assert authenticated_client(head).patch(reverse("report-schedule-detail", args=[own.pk]),
                                             {"is_active": False}, format="json").status_code == 200
 
@@ -221,7 +223,12 @@ def test_report_catalog_lists_each_role_only_its_own_areas_reports():
     area_keys = {"member-activity", "membership-growth", "member-retention", "community-engagement", "join-funnel",
                  "fablab-health", "printer-service", "certification-coverage"}
     assert not area_keys & listed(stock)
-    assert {"fablab-health", "certification-coverage"} <= listed(machines)
+    assert "fablab-health" in listed(machines)
+    # Decision 329(b): certification-coverage is retired history, listed only for a space that has
+    # certification records.
+    assert "certification-coverage" not in listed(machines)
+    _certification(space, _machine_type(space, "Laser"))
+    assert "certification-coverage" in listed(machines)
     assert not {"member-activity", "membership-growth", "join-funnel"} & listed(machines)
     assert {"member-activity", "membership-growth", "fablab-health"} <= listed(head)
     # Direct requests are refused with 403 as well as hidden from the list.
@@ -230,7 +237,13 @@ def test_report_catalog_lists_each_role_only_its_own_areas_reports():
             f"/api/v1/admin/makerspace/{space.pk}/analytics/{key}").status_code == 403
         assert authenticated_client(stock).get(
             f"/api/v1/admin/makerspace/{space.pk}/reports/{key}/export").status_code == 403
-    assert authenticated_client(stock).get(f"/api/v1/admin/makerspace/{space.pk}/accountability").status_code == 403
+    # Decision 248 / IN8 supersedes 224(a) for the accountability page: the Inventory Manager reads the
+    # overdue and repeat-damage rows read-only, while restrictions and problem reports stay manage_members'.
+    stock_view = authenticated_client(stock).get(f"/api/v1/admin/makerspace/{space.pk}/accountability")
+    assert stock_view.status_code == 200, stock_view.content
+    assert stock_view.json()["restrictions"] == [] and stock_view.json()["problem_reports"] == []
+    # Neither manage_members nor view_inventory: the scoped resolver refuses without revealing the page (404).
+    assert authenticated_client(machines).get(f"/api/v1/admin/makerspace/{space.pk}/accountability").status_code == 404
     assert authenticated_client(head).get(f"/api/v1/admin/makerspace/{space.pk}/accountability").status_code == 200
 
 
@@ -248,6 +261,7 @@ def test_scheduled_fablab_health_reaches_only_holders_of_the_machines_action():
 
 # Decision 224(b): an induction link also needs authority on the event ------------------------
 
+@pytest.mark.skip(reason="decision 319 addendum / 329: the induction HTTP surface is retired and answers 410 certifications_retired to every call (apps/machines/retired.py)")
 def test_induction_link_needs_event_authority_as_well_as_machine_authority():
     space, laser, _lathe, _machine, laser_mgr, _ = _machines_world("scope224-ind")
     event = make_event(space)

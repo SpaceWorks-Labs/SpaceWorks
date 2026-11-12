@@ -20,6 +20,7 @@ def reset_password_url(user):
     return reverse("admin-user-reset-password", kwargs={"pk": user.id})
 
 
+@pytest.mark.skip(reason="U-A1/U-B: the /admin/makerspaces/<id>/staff-accounts/ set-password route is retired (404); a staff-track holder is a person on one account, reset through the person path")
 def test_makerspace_admin_resets_managed_staff():
     space = make_space("admin-reset-managed")
     admin = make_member("admin-reset-manager", space)
@@ -55,6 +56,7 @@ def test_cannot_reset_superadmin_target():
     assert response.status_code == 404
 
 
+@pytest.mark.skip(reason="decision 110 (superadmin always on; hidden-tenant reset refusal and Makerspace.superadmin_access_enabled removed)")
 def test_platform_cannot_reset_hidden_tenant_staff_even_for_recovery():
     hidden_space = make_space("admin-reset-hidden")
     hidden_space.superadmin_access_enabled = False
@@ -70,6 +72,7 @@ def test_platform_cannot_reset_hidden_tenant_staff_even_for_recovery():
     assert target.must_change_password is False
 
 
+@pytest.mark.skip(reason="decision 110 (superadmin always on; hidden-tenant reset refusal and Makerspace.superadmin_access_enabled removed)")
 def test_an_enabled_tenant_staff_account_does_not_grant_access_to_the_hidden_account():
     hidden_space = make_space("admin-reset-mixed-hidden")
     hidden_space.superadmin_access_enabled = False
@@ -87,6 +90,7 @@ def test_an_enabled_tenant_staff_account_does_not_grant_access_to_the_hidden_acc
     assert target.password == old_password
 
 
+@pytest.mark.skip(reason="decision 110 (superadmin always on; hidden-tenant reset refusal and Makerspace.superadmin_access_enabled removed)")
 def test_superadmin_cannot_reset_hidden_non_space_manager():
     hidden_space = make_space("admin-reset-hidden-inventory")
     make_member("admin-reset-hidden-inventory-manager", hidden_space)
@@ -140,6 +144,7 @@ def test_non_superadmin_cannot_reset_user_outside_scope():
     assert response.status_code == 404
 
 
+@pytest.mark.skip(reason="U-A1/U-B: the /admin/makerspaces/<id>/staff-accounts/ set-password route is retired (404); a staff-track holder is a person on one account, reset through the person path")
 def test_admin_reset_blacklists_outstanding_tokens():
     from rest_framework_simplejwt.token_blacklist.models import (
         BlacklistedToken,

@@ -43,8 +43,11 @@ def test_decision_follows_manage_machines_for_every_built_in_role(slug, decision
     else:
         assert response.status_code in (403, 404)
         assert request.status == MachineServiceRequest.Status.PENDING
+        # Submitting the job audits `machine_service.submitted` (the member's own act);
+        # the refused decision must add nothing beyond it.
         assert not AuditLog.objects.filter(makerspace=w.space, action__startswith="machine_service",
-                                           target_id=str(request.pk)).exists()
+                                           target_id=str(request.pk)).exclude(
+            action="machine_service.submitted").exists()
 
 
 def test_a_decided_job_cannot_be_accepted_or_rejected_again():

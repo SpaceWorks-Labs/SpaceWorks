@@ -117,7 +117,7 @@ def test_public_crew_per_event_block_still_needs_its_switch():
 
 def test_public_series_carries_id_and_passes_switch():
     from apps.events.serializers_public import PublicEventSerializer
-    space, _, _ = world("series-id", "events.series_passes")
+    space, _, _ = world("series-id", "events.ticket_types", "events.orders", "events.series_passes")  # series passes require orders, which require ticket types
     event = SimpleNamespace(series_id=5, series=SimpleNamespace(public_token="token", title="Build nights"), makerspace=space)
     data = PublicEventSerializer().get_series(event)
     assert data == {"public_token": "token", "title": "Build nights", "id": 5, "passes_enabled": True}

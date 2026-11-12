@@ -36,7 +36,7 @@ def _setup(slug, *, credentials=True):
         credential_service.save(None, row, {**public_fields(apple_material()), **public_fields(google_material())},
                                 scope="platform")
     holder = user(f"{slug}-guest")
-    return makerspace, manager, holder, guest_pass_issue.issue_staff_pass(manager, makerspace, holder)
+    return makerspace, manager, holder, guest_pass_issue.issue_staff_pass(manager, makerspace, holder)[0]
 
 
 def _url(makerspace, guest_pass, platform):
@@ -132,9 +132,11 @@ def test_off_without_credentials_or_capabilities():
     credential_service.save(None, row_creds, public_fields(google_material()), scope="platform")
     assert guest.platforms_for(row) == ["google"]
     features_off(makerspace, "wallet_passes")
+    row.makerspace.refresh_from_db()  # the pass holds its own cached makerspace instance
     assert guest.platforms_for(row) == []
     features_on(makerspace, "wallet_passes")
     features_off(makerspace, "guest_passes")
+    row.makerspace.refresh_from_db()
     assert authenticated_client(holder).post(_url(makerspace, row, "google")).status_code == 404
 
 

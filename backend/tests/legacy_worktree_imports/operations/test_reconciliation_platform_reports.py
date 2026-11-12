@@ -24,10 +24,7 @@ def context():
 
 def test_platform_reports_canonical_addressed_counts_and_anonymous_hidden_usage(monkeypatch):
     visible = report_space("recon-r-visible")
-    hidden = report_space("recon-r-hidden", hidden=True)
     delivery(visible, state="sent")
-    delivery(hidden, state="read", provider_source="platform")
-    delivery(hidden, state="failed", provider_source="own")
     SmsSendLog.objects.create(makerspace=visible, provider_source="platform", status="sent")
     # Push migration is P's independent contract; isolate SMS/WA metering here.
     monkeypatch.setattr("apps.operations.reports_platform_services.push_querysets", lambda ids: ())
@@ -35,10 +32,8 @@ def test_platform_reports_canonical_addressed_counts_and_anonymous_hidden_usage(
     sms = [r for r in rows if r["service"] == "sms"]
     assert {r.get("purpose") for r in sms if r.get("makerspace_id") == visible.pk} == {"otp", "notifications"}
     assert sum(r["count"] for r in sms if r.get("makerspace_id") == visible.pk) == 2
-    anonymous = [r for r in sms if r["bucket"] == "hidden_makerspaces"]
-    assert len(anonymous) == 1 and anonymous[0]["count"] == 1
-    assert set(anonymous[0]) == {"service", "day", "bucket", "count"}
-    assert not any(r.get("makerspace_id") == hidden.pk for r in rows)
+    # Decision 110: the hidden-makerspace anonymous bucket is gone (superadmin always on).
+    assert not any(r.get("bucket") == "hidden_makerspaces" for r in rows)
     assert "PRIVATE" not in str(rows)
 
 

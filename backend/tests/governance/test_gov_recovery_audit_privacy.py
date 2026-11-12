@@ -8,8 +8,7 @@ from apps.accounts.services_password_reset_drain import (
     claim_pending_envelopes, finalize_delivery, prepare_delivery,
 )
 from apps.audit.models import AuditLog
-from apps.makerspaces.models import Makerspace
-from tests.accounts.account_factories import make_staff
+from apps.accounts.models import User
 
 pytestmark = pytest.mark.django_db
 
@@ -18,10 +17,11 @@ def test_staff_recovery_and_revocation_audits_are_tenant_scoped(monkeypatch, set
     settings.PLATFORM_STAFF_ORIGINS = ["http://localhost:5000"]
     monkeypatch.setattr("apps.integrations.email.platform_email_configured", lambda: True)
     monkeypatch.setattr("apps.accounts.services_password_reset_drain.platform_email_configured", lambda: True)
-    space = Makerspace.objects.create(name="Recovery audit", slug="gov-recovery-audit")
-    staff = make_staff(space, username="gov-reset-actor", email="reset-actor@example.test",
+    # Decisions 63/66: there is no staff recovery context; recovery is the platform account's
+    # (or a person's), and its audits carry no tenant scope.
+    staff = User.objects.create_superuser(username="gov-reset-actor", email="reset-actor@example.test",
         password="Governance starting password 178!")
-    kwargs = {"context": "staff", "makerspace": space.slug, "origin": "http://localhost:5000"}
+    kwargs = {"context": "platform", "origin": "http://localhost:5000"}
     request_password_reset(staff.email, **kwargs)
     claim = claim_pending_envelopes(owner="audit-privacy")[0]
     attempt = prepare_delivery(claim)
@@ -33,5 +33,4 @@ def test_staff_recovery_and_revocation_audits_are_tenant_scoped(monkeypatch, set
         "user.password_reset_via_email", "account.credentials_revoked"}
     events = AuditLog.objects.filter(action__in=actions)
     assert set(events.values_list("action", flat=True)) == actions
-    assert events.count() == 5
-    assert set(events.values_list("makerspace_id", flat=True)) == {space.pk}
+    assert set(events.values_list("makerspace_id", flat=True)) == {None}

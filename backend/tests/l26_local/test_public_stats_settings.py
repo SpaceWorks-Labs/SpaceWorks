@@ -243,7 +243,7 @@ def test_visibility_mutation_replaces_cached_public_projection():
 
     space, sm = world("stats-cache-visibility")
     for index in range(3):
-        InventoryProduct.objects.create(makerspace=space, name=f"Public {index}", slug=f"stats-cache-{index}", is_public=True)
+        InventoryProduct.objects.create(makerspace=space, name=f"Public {index}", is_public=True)
     assert client_for(sm).put(path(space), {**BODY, "sections": ["lending"], "headline": ["lending.library"]}, format="json").status_code == 200
     endpoint = f"/api/v1/public/{space.slug}/stats/"
     assert APIClient().get(endpoint).data["hardware"]["library"]["library_size"] == 3

@@ -79,7 +79,7 @@ def test_android_document_publishes_all_distribution_fingerprints_and_no_ineligi
     response = get(ANDROID)
     assert response.status_code == 200 and response["Content-Type"] == "application/json"
     assert response.json() == [{
-        "relation": ["delegate_permission/common.handle_all_urls"],
+        "relation": ["delegate_permission/common.handle_all_urls", "delegate_permission/common.get_login_creds"],
         "target": {"namespace": "android_app", "package_name": APP,
                    "sha256_cert_fingerprints": [":".join(["AB"] * 32), ":".join(["CD"] * 32)]},
     }]

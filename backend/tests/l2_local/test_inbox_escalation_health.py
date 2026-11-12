@@ -82,6 +82,9 @@ def test_a_read_notice_never_escalates():
 
 def test_five_failures_in_a_row_switch_a_room_off_and_tell_staff(django_capture_on_commit_callbacks):
     space, _staff = space_with_staff("dead-room")
+    # #183B: a room whose channel module is off is left alone, so the telegram module is installed here.
+    space.enabled_modules = sorted(set(space.enabled_modules) | {"telegram"})
+    space.save(update_fields=["enabled_modules"])
     room = NotificationDestination.objects.create(makerspace=space, channel="telegram", label="Old room",
                                                   telegram_chat_id="-9")
     for status in ("failed",) * 4:

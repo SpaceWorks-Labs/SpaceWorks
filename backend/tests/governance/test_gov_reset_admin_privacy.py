@@ -10,26 +10,28 @@ from django.utils import timezone
 from apps.accounts.models import PasswordResetEnvelope, User
 from apps.makerspaces.models import Makerspace
 from tests.accounts.account_factories import make_staff
+from tests.accounts.ua1_helpers import merged_shell
 
 pytestmark = pytest.mark.django_db
 
 
 @pytest.fixture
 def envelopes():
-    archived = Makerspace.objects.create(name="Private", slug="gov-private")
+    # Decisions 63/66: the hidden row is now an inert shell (a merged account kept for history);
+    # live people, with or without a staff row, and the platform account stay visible.
     visible = Makerspace.objects.create(name="Visible", slug="gov-visible")
     root = User.objects.create_superuser(username="gov-envelope-operator")
     users = [
-        make_staff(archived, username="private-envelope", email="private@example.test"),
+        User.objects.create_user("private-envelope", email="private@example.test"),
         make_staff(visible, username="visible-envelope", email="visible@example.test"),
         User.objects.create_user(username="member-envelope", email="member@example.test"),
         root,
     ]
     rows = [PasswordResetEnvelope.objects.create(user=user,
-        context=user.account_kind, makerspace_id=user.staff_makerspace_id,
+        context=user.account_kind, makerspace_id=None,
         email_normalized=user.email, email_fingerprint=str(user.pk).zfill(64),
         digest="d" * 64, requested_at=timezone.now()) for user in users]
-    Makerspace.objects.filter(pk=archived.pk).update(archived_at=timezone.now())
+    merged_shell(users[0], users[1])
     return root, rows
 
 

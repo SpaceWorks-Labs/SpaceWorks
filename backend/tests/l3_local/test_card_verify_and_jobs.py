@@ -32,7 +32,9 @@ def test_valid_card_check_headers_and_minimal_body():
     response = _check(tokens.live("member_card", card).token)
     assert response.status_code == 200, response.content
     body = response.json()
-    assert body["status"] == "valid" and body["valid"] is True and body["holder"] is None
+    assert body["status"] == "valid" and body["valid"] is True
+    # decision 290: a new card starts with the holder's name on the check page (the holder may hide it); no photo
+    assert body["holder"] == {"name": body["holder"]["name"], "photo_url": None} and body["holder"]["name"]
     assert body["issuer"]["kind"] == "space" and "blood_group" not in str(body)
     assert response["X-Robots-Tag"] == "noindex, nofollow, noarchive"
     assert response["Cache-Control"] == "no-store" and response["Referrer-Policy"] == "no-referrer"

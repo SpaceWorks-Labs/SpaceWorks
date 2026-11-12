@@ -58,7 +58,8 @@ def test_member_withdraw_needs_the_switch_and_ownership():
     other = make_member("state-withdraw-other", space, membership_role="custom", role=User.Role.REQUESTER)
     request = submit(space, member, product)
     path = f"/api/v1/member/makerspaces/{space.pk}/requests/{request.pk}/withdraw"
-    assert authenticated_client(member).post(path, {}, format="json").status_code == 400  # switch off
+    off = authenticated_client(member).post(path, {}, format="json")
+    assert off.status_code == 404 and off.data["feature"] == "loans.withdrawals"  # switch off: typed SurfaceOff (#95, #183B)
     space.enabled_features = sorted(set(space.enabled_features) | {"loans.withdrawals"})
     space.save(update_fields=["enabled_features"])
     assert authenticated_client(other).post(path, {}, format="json").status_code == 404

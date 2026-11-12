@@ -61,7 +61,9 @@ def test_stage_advanced_email_is_sent_only_with_the_per_event_switch(monkeypatch
     assert notices_r2_l21a.stage_advanced_notice(event, application, stage) is None and not sent
     EventParticipationSettings.objects.create(makerspace=space, event=event, stage_advanced_email=True)
     assert notices_r2_l21a.stage_advanced_notice(event, application, stage) == "env"
-    assert "Interview" in sent[0]["text"] and "score" not in sent[0]["text"].lower()
+    # The notice now hands _send a lazy `copy` callable returning (subject, body) so the text is rendered per recipient locale.
+    text = " ".join(sent[0]["copy"]())
+    assert "Interview" in text and "score" not in text.lower()
 
 
 def test_applications_read_is_off_without_the_switches(monkeypatch):

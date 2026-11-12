@@ -4,14 +4,14 @@ from types import SimpleNamespace
 from uuid import uuid4
 import pytest
 from cryptography.fernet import Fernet
-from django.db import transaction
 from django.utils import timezone
 from apps.accounts.models import User
 from apps.events.models import Event, EventRegistration
 from apps.events.hackathons.admission_models import HackathonConfig, HackathonApplication
 from apps.events.programme.form_models import EventFormRevision
 from apps.events.staged_forms.definition_models import EventStageForm
-from apps.makerspaces.models import Makerspace, MakerspaceMembership
+from apps.makerspaces.models import Makerspace
+from tests.accounts.account_factories import grant_staff_role
 
 
 @pytest.fixture(params=("ordinary", "hackathon"))
@@ -29,10 +29,9 @@ def stage_env(request, settings):
     space.save(update_fields=["enabled_features"])
     owner = User.objects.create_user(username="owner-" + uuid4().hex[:10], account_kind="member")
     role = space.roles.get(slug="space_manager")
-    # A staff principal and its one membership commit together (deferred account trigger).
-    with transaction.atomic():
-        manager = User.objects.create_user(username="staff-" + uuid4().hex[:10], account_kind="staff", staff_makerspace=space)
-        MakerspaceMembership.objects.create(makerspace=space, user=manager, role=role.legacy_role, assigned_role=role, status="active")
+    # One account per person (decision 63): a plain person plus a staff-track row.
+    manager = User.objects.create_user(username="staff-" + uuid4().hex[:10], account_kind="member")
+    grant_staff_role(manager, space)
     event = Event.objects.create(makerspace=space, title=request.param, status="published", is_public=True,
         starts_at=now + timedelta(days=5), ends_at=now + timedelta(days=6), registration_audience="accounts")
     if request.param == "hackathon":

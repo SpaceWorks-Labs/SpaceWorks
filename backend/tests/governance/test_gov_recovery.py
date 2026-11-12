@@ -16,7 +16,7 @@ from apps.accounts.services_password_reset_drain import (
 )
 from apps.accounts.tokens import SpaceWorksRefreshToken
 from apps.makerspaces.models import Makerspace
-from tests.accounts.account_factories import make_staff
+from tests.accounts.account_factories import grant_staff_role, make_staff
 from tests.tenant_migration.source_gate_helpers import close_gate
 
 pytestmark = pytest.mark.django_db
@@ -35,20 +35,21 @@ def configuration(settings, monkeypatch):
 
 
 def accounts():
+    """One account per person (decision 63; uniq_person_email): ``staff`` is a person holding
+    staff-track rows in two spaces, ``member`` another person, ``platform`` the superadmin."""
     space = Makerspace.objects.create(name="Recovery A", slug="gov-recovery-a")
     other = Makerspace.objects.create(name="Recovery B", slug="gov-recovery-b")
-    email = "shared-gov@example.test"
-    staff = make_staff(space, username="gov-worker", email=email, password=PASSWORD)
-    make_staff(other, username="gov-other-worker", email=email, password=PASSWORD)
-    member = User.objects.create_user("gov-member", email=email, password=PASSWORD)
-    platform = User.objects.create_superuser("gov-platform", email=email, password=PASSWORD)
+    staff = make_staff(space, username="gov-worker", email="gov-worker@example.test", password=PASSWORD)
+    grant_staff_role(staff, other)
+    member = User.objects.create_user("gov-member", email="gov-member@example.test", password=PASSWORD)
+    platform = User.objects.create_superuser("gov-platform", email="gov-platform@example.test", password=PASSWORD)
     return space, staff, member, platform
 
 
-def issue(user, *, context="staff", space=None, origin=ORIGIN):
+def issue(user, *, context="platform", origin=ORIGIN):
+    """Recovery has only the person (member) and platform contexts; the release-1 staff
+    context and its makerspace slug are gone (decisions 63/66)."""
     kwargs = {"context": context, "origin": origin}
-    if context == "staff":
-        kwargs["makerspace"] = space.slug
     envelope = request_password_reset(user.username, **kwargs)
     assert envelope is not None
     claim = claim_pending_envelopes()[0]
@@ -58,18 +59,21 @@ def issue(user, *, context="staff", space=None, origin=ORIGIN):
     return attempt.code, kwargs
 
 
-@pytest.mark.parametrize("kind", ["staff", "platform"])
+@pytest.mark.parametrize("kind", [
+    pytest.param("staff", marks=pytest.mark.skip(reason="Decisions 63/66: one account per person - there is no staff recovery context; a staff person recovers through the person (member) flow")),
+    "platform",
+])
 def test_context_reset_revokes_sessions_and_keeps_same_email_accounts_independent(kind):
     space, staff, member, platform = accounts()
-    target = staff if kind == "staff" else platform
+    target = platform
     refresh = SpaceWorksRefreshToken.for_user(target)
-    code, kwargs = issue(target, context=kind, space=space)
+    code, kwargs = issue(target, context=kind)
     assert confirm_password_reset(target.username, code, NEW_PASSWORD, **kwargs).pk == target.pk
     target.refresh_from_db()
     assert target.check_password(NEW_PASSWORD) and not target.must_change_password
     assert target.credential_generation == 1
     assert BlacklistedToken.objects.filter(token__jti=refresh["jti"]).exists()
-    for other in (member, platform if kind == "staff" else staff):
+    for other in (member, staff):
         other.refresh_from_db()
         assert other.check_password(PASSWORD)
     with pytest.raises(serializers.ValidationError):
@@ -77,11 +81,9 @@ def test_context_reset_revokes_sessions_and_keeps_same_email_accounts_independen
 
 
 @pytest.mark.parametrize("context,slug,identifier,origin", [
-    ("staff", "gov-recovery-a", "unknown", ORIGIN),
-    ("staff", "gov-recovery-b", "gov-worker", ORIGIN),
-    ("staff", "gov-recovery-a", "gov-platform", ORIGIN),
-    ("staff", "gov-recovery-a", "gov-worker", "https://evil.test"),
+    ("platform", None, "unknown", ORIGIN),
     ("platform", None, "gov-worker", ORIGIN),
+    ("platform", None, "gov-worker@example.test", ORIGIN),
     ("platform", None, "gov-platform", "https://evil.test"),
 ])
 def test_invalid_namespace_or_origin_has_same_acknowledgement_without_envelope(context, slug, identifier, origin):
@@ -95,29 +97,48 @@ def test_invalid_namespace_or_origin_has_same_acknowledgement_without_envelope(c
     assert not PasswordResetEnvelope.objects.exists()
 
 
+def test_staff_context_is_refused_at_the_serializer_with_no_envelope():
+    """Decisions 63/66: the release-1 staff recovery context no longer exists."""
+    accounts()
+    response = APIClient().post("/api/v1/auth/forgot-password",
+        {"context": "staff", "makerspace": "gov-recovery-a", "email": "gov-worker@example.test"},
+        format="json", HTTP_ORIGIN=ORIGIN)
+    assert response.status_code == 400 and "context" in response.data
+    assert not PasswordResetEnvelope.objects.exists()
+
+
 @pytest.mark.parametrize("phase", ["request", "worker"])
 def test_platform_email_is_required_at_both_boundaries(monkeypatch, phase):
-    space, staff, _, _ = accounts()
+    _, _, _, platform = accounts()
     if phase == "request":
         monkeypatch.setattr("apps.integrations.email.platform_email_configured", lambda: False)
-        assert request_password_reset(staff.email, context="staff", makerspace=space.slug, origin=ORIGIN) is None
+        assert request_password_reset(platform.email, context="platform", origin=ORIGIN) is None
         assert not PasswordResetEnvelope.objects.exists()
     else:
-        request_password_reset(staff.email, context="staff", makerspace=space.slug, origin=ORIGIN)
+        request_password_reset(platform.email, context="platform", origin=ORIGIN)
         monkeypatch.setattr("apps.accounts.services_password_reset_drain.platform_email_configured", lambda: False)
         assert prepare_delivery(claim_pending_envelopes()[0]) == "undeliverable"
 
 
-@pytest.mark.parametrize("change", ["restricted", "suspended", "inactive", "revoked", "archived", "migrating"])
+_TENANT_GONE = "Decisions 63/66: recovery is account-level (person or platform); tenant membership, archive and migration gates no longer apply to it"
+
+
+@pytest.mark.parametrize("change", [
+    "restricted", "suspended", "inactive",
+    pytest.param("revoked", marks=pytest.mark.skip(reason=_TENANT_GONE)),
+    pytest.param("archived", marks=pytest.mark.skip(reason=_TENANT_GONE)),
+    pytest.param("migrating", marks=pytest.mark.skip(reason=_TENANT_GONE)),
+])
 @pytest.mark.parametrize("phase", ["request", "worker", "confirm"])
 def test_live_boundaries_recheck_account_and_tenant(change, phase):
-    space, staff, _, platform = accounts()
-    kwargs = {"context": "staff", "makerspace": space.slug, "origin": ORIGIN}
+    space, _, _, staff = accounts()  # the platform account: the only recoverable non-person context
+    platform = staff
+    kwargs = {"context": "platform", "origin": ORIGIN}
     if phase == "worker":
         request_password_reset(staff.email, **kwargs)
         claim = claim_pending_envelopes()[0]
     elif phase == "confirm":
-        code, _ = issue(staff, space=space)
+        code, _ = issue(staff)
     if change in {"restricted", "suspended"}:
         User.objects.filter(pk=staff.pk).update(access_status=change)
     elif change == "inactive":
@@ -141,10 +162,10 @@ def test_live_boundaries_recheck_account_and_tenant(change, phase):
 
 
 def test_context_tenant_attempt_budget_expiry_and_generation_fences():
-    space, staff, _, _ = accounts()
-    code, kwargs = issue(staff, space=space)
-    for wrong in ({"context": "platform", "origin": ORIGIN},
-                  {**kwargs, "makerspace": "gov-recovery-b"}):
+    _, _, _, staff = accounts()
+    code, kwargs = issue(staff)
+    for wrong in ({"context": "member", "origin": ORIGIN},
+                  {**kwargs, "origin": "https://evil.test"}):
         with pytest.raises(serializers.ValidationError):
             confirm_password_reset(staff.username, code, NEW_PASSWORD, **wrong)
     for _ in range(5):
@@ -165,6 +186,7 @@ def test_context_tenant_attempt_budget_expiry_and_generation_fences():
         confirm_password_reset(staff.username, code, NEW_PASSWORD, **kwargs)
 
 
+@pytest.mark.skip(reason="Decisions 63/66: no staff recovery context - recovery mail is sent from the person/platform flows and the platform reset page only (password_reset_context.reset_destination)")
 def test_trusted_verified_tenant_mail_has_otp_and_page_without_bearer(monkeypatch):
     space, staff, _, _ = accounts()
     space.frontend_domain = "verified.example.test"
@@ -182,6 +204,7 @@ def test_trusted_verified_tenant_mail_has_otp_and_page_without_bearer(monkeypatc
     assert args[1] not in details["reset_url"] and "token=" not in details["reset_url"]
 
 
+@pytest.mark.skip(reason="Decisions 63/66: staff login (context=staff + makerspace slug) and staff recovery are retired; the person login MFA path is covered by the login-security tests")
 def test_reset_preserves_enrolment_and_invalidates_pre_reset_mfa(settings):
     from cryptography.fernet import Fernet
     from apps.accounts import mfa_challenges
@@ -218,6 +241,7 @@ def test_retired_staff_cannot_request_recovery():
     assert not PasswordResetEnvelope.objects.exists()
 
 
+@pytest.mark.skip(reason="Decisions 63/66: staff recovery envelopes no longer exist (an inert shell's envelope is history); the staff_makerspace credential path now concerns shells only")
 def test_staff_recovery_envelope_is_registered_for_sealed_tenant_slice():
     from apps.backup.main_projection_registry import table_rules, sovereign_q, RowDisposition
     from apps.backup.staff_shells import STAFF_CREDENTIAL_PATHS

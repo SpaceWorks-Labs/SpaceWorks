@@ -81,7 +81,11 @@ def test_a_revoked_card_cannot_be_revoked_again_and_a_fresh_card_can_follow():
     card = services.issue_card(boss, membership)
     url = f"/api/v1/admin/member-cards/{card.pk}/revoke"
     assert client(boss).post(url, {"note": "Lost"}, format="json").status_code == 200
-    assert client(boss).post(url, {"note": "Lost"}, format="json").status_code in (400, 403, 404, 409)
+    # revoke is idempotent (a retried request is a no-op, never a second revocation): 200, one audit row
+    assert client(boss).post(url, {"note": "Other"}, format="json").status_code == 200
+    assert AuditLog.objects.filter(makerspace=space, action="member_card.revoked").count() == 1
+    card.refresh_from_db()
+    assert card.revoked_at is not None
     assert services.issue_card(boss, membership).pk != card.pk
 
 
@@ -104,7 +108,7 @@ def test_a_non_active_membership_cannot_be_issued_a_card_and_the_module_off_hide
     space = card_space("mcr-off")
     boss = client(manager(space))
     _user, membership = member(space)
-    type(membership).objects.filter(pk=membership.pk).update(status="suspended")
+    type(membership).objects.filter(pk=membership.pk).update(status="revoked")  # the DB only allows active|revoked (0033 trigger)
     refused = boss.post(f"{_base(space)}/{membership.pk}/issue", {}, format="json")
     assert refused.status_code in (400, 403, 409)
     assert not MemberCard.objects.exists()

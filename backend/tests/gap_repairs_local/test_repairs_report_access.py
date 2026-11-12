@@ -50,7 +50,14 @@ def test_registry_guards_still_hold_with_the_family():
     from apps.operations.report_definitions_audit import AUDIT_READER_ACTIONS
     audit_keys = {"audit-trail", "audit-activity", "audit-top-actors", "audit-activity-hours"}
     assert all(REPORT_REGISTRY[key].alternate_actions == AUDIT_READER_ACTIONS for key in audit_keys)
-    assert all(not d.alternate_actions for d in REPORT_DEFINITIONS if d.key not in {*KEYS, *audit_keys})
+    # Later decisions added deliberate alternates: donations reports admit `manage_donations`
+    # (242(m)), the incidents register admits every area, prizes-owed admits `view_finance`
+    # and maintenance-activity admits `run_maintenance`. Anything else keeps exactly one action.
+    from apps.operations.report_definitions_donations import DONATION_REPORT_KEYS
+    deliberate = {*KEYS, *audit_keys, *DONATION_REPORT_KEYS, "incidents-register", "prizes-owed",
+                  "maintenance-activity"}
+    assert all(not d.alternate_actions for d in REPORT_DEFINITIONS
+               if d.key not in deliberate and not d.key.startswith("audit-"))
 
 
 def test_the_catalog_shows_the_family_to_technicians_and_area_managers_only():
@@ -62,8 +69,10 @@ def test_the_catalog_shows_the_family_to_technicians_and_area_managers_only():
         assert set(entries) == set(KEYS), name
         assert all(entry["available"] for entry in entries.values()), name
         assert not any(entry["schedulable"] for entry in entries.values())
-    for slug in ("handover", "event_manager"):
-        assert catalog_keys(role(w, slug), w) == {}, slug
+    assert catalog_keys(role(w, "event_manager"), w) == {}
+    # Decision 224 (role-screen audit B2): the Handover desk gets no report catalogue at all.
+    desk = client(role(w, "handover")).get(f"/api/v1/admin/makerspace/{w.space.pk}/reports/catalog")
+    assert desk.status_code in {403, 404}
 
 
 def test_people_without_repairs_authority_cannot_run_the_reports():
@@ -109,7 +118,8 @@ def test_switching_the_areas_off_makes_the_family_unavailable_and_keeps_the_data
     switch(w.space, off=REPAIRS_SWITCHES)
     entries = catalog_keys(w.manager, w)
     assert entries["repairs-work-orders"]["available"]  # maintenance still runs work orders
-    assert not any(entries[key]["available"] for key in KEYS if key != "repairs-work-orders")
+    # A report whose source is off may be listed as unavailable or left out of the catalogue.
+    assert not any(entries[key]["available"] for key in KEYS if key != "repairs-work-orders" and key in entries)
     assert analytics(w.manager, w, "repairs-time-by-area").status_code == 404
     assert analytics(w.manager, w, "repairs-work-orders").status_code == 200
     switch(w.space, off=MAINTENANCE_SWITCHES)

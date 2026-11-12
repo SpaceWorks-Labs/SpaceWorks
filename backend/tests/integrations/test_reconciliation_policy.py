@@ -49,6 +49,7 @@ def test_partial_own_sender_never_falls_back_to_platform(monkeypatch):
 def test_platform_requires_explicit_tenant_opt_in(monkeypatch):
     config = sms_config(space())
     config.set_credentials({})
+    config.use_platform_sender = False  # 0053: the model default is now True for new rows, so opt OUT explicitly
     monkeypatch.setattr("apps.integrations.messaging.resolver.resolve_sender", lambda *args: "platform")
     assert sms_sender(config) is None
     config.use_platform_sender = True
@@ -129,10 +130,11 @@ def test_shared_contact_staff_account_does_not_inherit_member_tie():
     from apps.integrations.messaging.ties import has_tenant_tie
     tenant = space()
     user = account(phone_e164="+14155550123", phone_verified_at=timezone.now())
-    # A valid staff principal (exactly one fixed-tenant membership) sharing contacts.
+    # Decision 63 (one account per person): a second account can no longer share the member's phone/email, so
+    # the staff principal is a different person with their own contacts. Their staff track gives no member tie.
     from tests.fixed_roles.helpers import staff_account
     staff = staff_account(tenant, "recon-staff", "space_manager",
-        phone_e164=user.phone_e164, phone_verified_at=user.phone_verified_at)
+        phone_e164="+14155550199", phone_verified_at=user.phone_verified_at)
     MakerspaceMembership.objects.create(makerspace=tenant, user=user, role="custom",
         assigned_role=tenant.roles.get(slug="member"))
     assert has_tenant_tie(user, tenant)

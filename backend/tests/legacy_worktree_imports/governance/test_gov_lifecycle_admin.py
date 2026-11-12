@@ -26,7 +26,7 @@ def fixtures():
     from apps.accounts.models import User
     actor = platform()
     space = Makerspace.objects.create(name="Hidden governance", slug="hidden-governance",
-        superadmin_access_enabled=False, location="SECRET-LOCATION", frontend_domain="secret.example.test")
+        location="SECRET-LOCATION", frontend_domain="secret.example.test")
     requester = User.objects.create_user(username="known-requester", email="PRIVATE-CONTACT@example.test",
                                          first_name="PRIVATE-FIRST-NAME")
     pending = MakerspaceArchiveRequest.objects.create(makerspace=space, requested_by=requester,
@@ -34,6 +34,7 @@ def fixtures():
     return actor, space, pending
 
 
+@pytest.mark.skip(reason="decision 110 (superadmin always on; hidden-space/slim-list premise and Makerspace.superadmin_access_enabled removed)")
 def test_slim_list_and_pending_review_disclose_governance_only():
     actor, space, pending = fixtures()
     client = Client()
@@ -61,6 +62,7 @@ def test_slim_list_and_pending_review_disclose_governance_only():
         assert "Total pending" not in content
 
 
+@pytest.mark.skip(reason="decision 110 (superadmin always on; hidden-space/slim-list premise and Makerspace.superadmin_access_enabled removed)")
 @pytest.mark.parametrize("query", [{"q": "SECRET-LOCATION"}, {"q": "secret.example.test"},
                                    {"public_inventory_enabled__exact": "1"}])
 def test_hidden_rows_do_not_match_private_search_or_filters(query):
@@ -71,10 +73,10 @@ def test_hidden_rows_do_not_match_private_search_or_filters(query):
     assert space.name in client.get(list_url(), {"q": space.slug}).content.decode()
 
 
+@pytest.mark.skip(reason="decision 110 (superadmin always on; hidden-space/slim-list premise and Makerspace.superadmin_access_enabled removed)")
 def test_crafted_private_ordering_cannot_order_hidden_rows():
     actor, first, pending = fixtures()
-    second = Makerspace.objects.create(name="A hidden second", slug="hidden-second",
-        superadmin_access_enabled=False, location="ZZZ")
+    second = Makerspace.objects.create(name="A hidden second", slug="hidden-second", location="ZZZ")
     client = Client()
     force_recent_control_login(client, actor)
     # List column four is location; requesting it cannot change name ordering.
@@ -141,7 +143,6 @@ def test_recent_platform_operator_can_review_hidden_request_from_slim_list(appro
     pending.refresh_from_db()
     assert pending.status == ("approved" if approve else "declined")
     assert (space.archived_at is not None) == approve
-    assert space.superadmin_access_enabled is False
 
 
 def test_recent_platform_operator_can_archive_unarchive_and_purge_hidden_row(monkeypatch):
@@ -162,8 +163,7 @@ def test_recent_platform_operator_can_archive_unarchive_and_purge_hidden_row(mon
         assert response.status_code == 302
         if action != "purge_makerspaces":
             space.refresh_from_db()
-            assert space.superadmin_access_enabled is False
             assert (space.archived_at is not None) == (action == "archive_makerspaces")
     assert not Makerspace.objects.filter(pk=space.pk).exists()
     completed = AuditLog.objects.get(action="makerspace.purged")
-    assert completed.meta["superadmin_access_enabled"] is False
+    assert "superadmin_access_enabled" not in completed.meta

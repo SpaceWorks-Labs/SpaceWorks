@@ -49,7 +49,7 @@ def test_revoked_current_authority_cannot_review(replay_env, change):
     env = replay_env
     row = failed_issue(env)
     if change == "membership":
-        MakerspaceMembership.objects.filter(user=env.user).update(status="revoked")
+        MakerspaceMembership.all_tracks.filter(user=env.user).update(status="revoked")
     else:
         if change in ("suspended", "restricted"):
             env.user.access_status = change

@@ -177,7 +177,7 @@ def test_reviewed_issue_and_return_commit_with_replay_results(replay_env):
 def test_chained_direct_return_resolves_created_container_loan(replay_env, monkeypatch):
     env = replay_env
     borrower = make_member(env.space)
-    monkeypatch.setattr("apps.hardware_requests.direct_loan_workflow.require_active_member_presence", lambda *args: SimpleNamespace(membership=None), raising=False)
+    monkeypatch.setattr("apps.presence.guest_guard.require_active_member_presence", lambda *args: SimpleNamespace(membership=None, guest_pass=None))
     handout = envelope(env, "direct_handout", {"borrower_id": borrower.pk, "container_id": env.box.pk})
     returned = envelope(env, "direct_return", {"notes": "Empty vessel returned", "resolutions": []},
                         aggregate_id=handout["aggregate_id"], sequence=2, predecessor_client_id=handout["client_command_id"])
@@ -250,7 +250,7 @@ def test_current_presence_and_inventory_refusals_are_typed(replay_env, monkeypat
                                            "items": [{"product_id": env.product.pk, "quantity": 1}]})
     assert prepare(env, data).status_code == 200
     assert execute(env, data).data["code"] == "presence_expired"
-    monkeypatch.setattr("apps.hardware_requests.direct_loan_workflow.require_active_member_presence", lambda *args: SimpleNamespace(membership=None), raising=False)
+    monkeypatch.setattr("apps.presence.guest_guard.require_active_member_presence", lambda *args: SimpleNamespace(membership=None, guest_pass=None))
     from apps.inventory import availability
     env.product.refresh_from_db()
     availability.issue_available(env.product, env.product.available_quantity)

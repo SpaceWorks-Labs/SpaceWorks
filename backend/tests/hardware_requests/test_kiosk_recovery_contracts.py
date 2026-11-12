@@ -27,7 +27,7 @@ def test_work_package_advertises_actual_configured_replay_limit(replay_env, sett
 def test_revoked_stored_qr_cannot_return_direct_loan_or_commit_return_effects(replay_env, monkeypatch):
     env = replay_env
     borrower = make_member(env.space)
-    monkeypatch.setattr("apps.hardware_requests.direct_loan_workflow.require_active_member_presence", lambda *args: SimpleNamespace(membership=None), raising=False)
+    monkeypatch.setattr("apps.presence.guest_guard.require_active_member_presence", lambda *args: SimpleNamespace(membership=None, guest_pass=None))
     qr = QrCode.objects.create(makerspace=env.space, target_type=QrCode.TargetType.PRODUCT, target_id=env.product.pk)
     handout = envelope(env, "direct_handout", {"borrower_id": borrower.pk, "qr_payloads": [qr.payload]})
     assert prepare(env, handout).status_code == 200
@@ -52,7 +52,7 @@ def test_revoked_stored_qr_cannot_return_direct_loan_or_commit_return_effects(re
 def test_chained_failed_return_derives_subject_and_links_explicit_fresh_return(replay_env, monkeypatch):
     env = replay_env
     borrower = make_member(env.space)
-    monkeypatch.setattr("apps.hardware_requests.direct_loan_workflow.require_active_member_presence", lambda *args: SimpleNamespace(membership=None), raising=False)
+    monkeypatch.setattr("apps.presence.guest_guard.require_active_member_presence", lambda *args: SimpleNamespace(membership=None, guest_pass=None))
     handout = envelope(env, "direct_handout", {"borrower_id": borrower.pk, "container_id": env.box.pk})
     assert prepare(env, handout).status_code == 200
     issued = execute(env, handout)
@@ -77,7 +77,7 @@ def test_failed_direct_handout_without_identity_cannot_link_arbitrary_success(re
     assert prepare(env, handout).status_code == 200
     assert execute(env, handout).data["code"] == "presence_expired"
     failed = ReplayCommand.objects.get(client_command_id=handout["client_command_id"])
-    monkeypatch.setattr("apps.hardware_requests.direct_loan_workflow.require_active_member_presence", lambda *args: SimpleNamespace(membership=None), raising=False)
+    monkeypatch.setattr("apps.presence.guest_guard.require_active_member_presence", lambda *args: SimpleNamespace(membership=None, guest_pass=None))
     correction = envelope(env, "direct_handout", handout["payload"])
     assert prepare(env, correction).status_code == execute(env, correction).status_code == 200
     replacement = ReplayCommand.objects.get(client_command_id=correction["client_command_id"])

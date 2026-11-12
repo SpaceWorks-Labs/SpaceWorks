@@ -210,8 +210,7 @@ def test_visibility_masks_legacy_values_metrics_and_headlines_server_side():
     makerspace = space("stats-granular-projection", sections="lending,events,community",
                        public_stats_headline="lending.library,events.held")
     for index in range(3):
-        InventoryProduct.objects.create(makerspace=makerspace, name=f"Visible {index}",
-                                        slug=f"visible-{index}", is_public=True)
+        InventoryProduct.objects.create(makerspace=makerspace, name=f"Visible {index}", is_public=True)
     before = build_public_stats(makerspace)
     assert next(row for row in before["metrics"] if row["key"] == "lending.library")["value"] == 3
     makerspace.public_stats_config = {"visibility": {"lending.library": False, "events.upcoming_list": False,
@@ -259,7 +258,7 @@ def test_cache_key_changes_with_visibility_even_before_commit_invalidation():
 
 def test_catalogue_feature_off_hides_lending_but_workflow_off_keeps_public_product_counts():
     makerspace = space("stats-deep-source", sections="lending")
-    InventoryProduct.objects.create(makerspace=makerspace, name="Public inventory", slug="stats-deep-public", is_public=True)
+    InventoryProduct.objects.create(makerspace=makerspace, name="Public inventory", is_public=True)
     makerspace.enabled_modules.remove("request_workflow")
     makerspace.save(update_fields=["enabled_modules"])
     stats = build_public_stats(makerspace)

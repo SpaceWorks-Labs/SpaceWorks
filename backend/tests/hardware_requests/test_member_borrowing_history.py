@@ -172,7 +172,10 @@ def test_missing_space_and_disabled_lending_are_not_found(own_history):
     w.space.enabled_features = []
     w.space.save(update_fields=["enabled_features"])
     response = w.client.get(w.url)
-    assert response.status_code == 404 and response.data["feature"] == "loans.enabled"
+    assert response.status_code == 404
+    # Decision 254: Inventory is an area switch; with `loans.enabled` off the inventory-only
+    # request_workflow module answers first, so the typed 404 names the module.
+    assert response.data["code"] == "module_disabled" and response.data["module"] == "request_workflow"
 
 
 def test_disabled_workflow_module_is_not_bypassed(own_history, monkeypatch):

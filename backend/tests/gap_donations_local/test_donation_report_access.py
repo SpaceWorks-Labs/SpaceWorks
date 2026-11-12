@@ -26,7 +26,9 @@ def test_every_donations_report_is_registered_finance_only_and_tenant_local():
         assert not definition.deployment_aggregate and not definition.platform_only
         assert key in EXCLUDED_ORGANIZATION_REPORT_KEYS and key not in STRATEGIES
         validate_chart_spec(definition.chart_spec, definition.fields)
-        assert not any(marker in field for field in definition.fields for marker in SECRETS), key
+        # `donor_count` is an aggregate count of distinct givers, never a donor's identity.
+        assert not any(marker in field for field in definition.fields if field != "donor_count"
+                       for marker in SECRETS), key
     assert REPORT_REGISTRY["donations-campaign-progress"].required_feature == "finance.donations"
     assert REPORT_REGISTRY["donations-pledges"].required_feature == "finance.recurring_donations"
     assert REPORT_REGISTRY["donations-sponsor-perks"].required_feature == "finance.sponsors"
@@ -47,10 +49,12 @@ def test_area_managers_never_see_donations_reports(role):
 def test_space_manager_and_finance_staff_read_and_export_every_donations_report():
     space, manager, donor = report_space("rp3-allow", *ALL)
     finance = finance_staff("rp3-allow", space)
-    for user in (manager, finance):
+    # The Fundraising role (decision 242(m)) reaches the three donations reports through
+    # `manage_donations`; the ledger area `finance-donations` stays `view_finance` (Space Manager) only.
+    for user, wanted in ((manager, KEYS), (finance, KEYS[:3])):
         keys = {row["key"] for row in client(user).get(f"/api/v1/admin/makerspace/{space.pk}/reports/catalog").json()["results"]}
-        assert set(KEYS) <= keys
-        for key in KEYS:
+        assert set(wanted) <= keys
+        for key in wanted:
             assert analytics(user, space, key).status_code == 200, key
             response, _body = export_csv(user, space, key)
             assert response.status_code == 200, key
@@ -74,6 +78,8 @@ def test_each_report_follows_its_own_switch(key, feature):
     assert analytics(manager, space, key).status_code == 200
 
 
+# The gift is settled and the PAN encrypted through on_commit hooks, so this needs real commits.
+@pytest.mark.django_db(transaction=True)
 def test_no_pan_donor_or_sponsor_contact_ever_reaches_an_export():
     space, manager, donor = report_space("rp3-private", *ALL)
     tax_ready(space)

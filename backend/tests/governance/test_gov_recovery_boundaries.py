@@ -68,9 +68,17 @@ def test_account_disappearing_between_lookup_and_lock_is_unavailable(monkeypatch
 @pytest.mark.parametrize("kind", ["staff", "platform"])
 def test_username_only_account_confirmation_has_generic_failure(kind):
     if kind == "staff":
+        # Decisions 63/66: no staff recovery context exists; the serializer refuses it
+        # (still without an envelope) and a username can never confirm a person's reset.
         space = Makerspace.objects.create(name="Username only", slug="gov-username-only")
         user = make_staff(space, username="gov-no-email-staff")
         payload = {"context": kind, "makerspace": space.slug}
+        payload.update(email=user.username, code="123456", new_password="Governance password 819!")
+        response = APIClient().post(reverse("auth-reset-password"), payload, format="json",
+            HTTP_ORIGIN="http://localhost:5000")
+        assert response.status_code == 400 and "context" in response.data
+        assert not PasswordResetEnvelope.objects.exists()
+        return
     else:
         user = User.objects.create_superuser(username="gov-no-email-platform")
         payload = {"context": kind}

@@ -114,21 +114,22 @@ def test_revoke_refuses_legacy_reattach_and_requires_explicit_reactivation(lab):
     kind = MachineType.objects.create(makerspace=space, slug="lifecycle-laser", name="Laser")
     assign_builtin_roles(membership.user, space, "machine_manager", "event_manager", machine_types=[kind])
     client = authenticated_client(actor)
-    revoked = client.post(reverse("admin-membership-revoke-m2", kwargs={"pk": membership.pk}),
-                          {"reason": "Staff lifecycle"}, format="json")
-    assert revoked.status_code == 200, revoked.data
+    # Decision 63 (one account per person): a staff row is revoked through the staff-roles
+    # lifecycle, which ends staff authority only. The person's account is NOT deactivated, and
+    # the community revoke endpoint refuses a staff row outright.
+    from apps.accounts import staff_account_lifecycle as lifecycle
+
+    lifecycle.revoke(actor, space.pk, membership.pk, reason="Staff lifecycle")
     membership.refresh_from_db(); membership.user.refresh_from_db()
-    assert membership.status == "revoked" and not membership.user.is_active
+    assert membership.status == "revoked" and membership.user.is_active
     response = client.post(reverse("admin-membership-list-create", kwargs={"makerspace_id": space.pk}),
         {"username": membership.user.username, "role_ids": [roles["machine_manager"].pk]}, format="json")
     assert response.status_code == 400
     membership.refresh_from_db()
     assert membership.status == "revoked"
-    restored = client.post(f"/api/v1/admin/makerspaces/{space.pk}/staff-accounts/{membership.user_id}/reactivate/",
-                           {}, format="json")
-    assert restored.status_code == 200, restored.data
-    membership.user.refresh_from_db()
-    assert membership.user.is_active and not membership.user.has_usable_password()
+    lifecycle.restore(actor, space.pk, membership.pk)
+    membership.refresh_from_db()
+    assert membership.status == "active"
 
 
 def test_assignment_rolls_back_when_audit_cannot_be_written(lab, url, monkeypatch):

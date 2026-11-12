@@ -22,10 +22,14 @@ def test_handoff_raises_the_issue_reported_staff_notice_once(monkeypatch):
     assert len(calls) == 1
 
 
-def test_request_reviewer_may_hand_off_but_sees_no_repair_detail():
+def test_request_reviewer_may_hand_off_but_sees_no_repair_detail(monkeypatch):
     w = world("c221-reviewer")
-    from tests.rbac_f6_helpers import custom_actor  # a custom role holding accept_request only
-    reviewer = custom_actor(w.space, ["accept_request"], name="c221-reviewer")
+    # The role catalogue is fixed (no custom roles; tests/fixed_roles/test_role_catalog.py), so no role holds
+    # accept_request without edit_inventory. The reviewer is an item manager the item-manager test answers
+    # "no" for: the handoff is admitted on accept_request alone and the detail is withheld.
+    from apps.maintenance.repairs import loan_handoff
+    reviewer = w.im
+    monkeypatch.setattr(loan_handoff, "is_manager", lambda actor, space: False)
     request, line, _ = damaged_return(w)
     response = hand_off(reviewer, w, request, line)
     assert response.status_code == 201, response.content

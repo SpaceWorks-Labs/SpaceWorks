@@ -322,7 +322,7 @@ def test_booking_a_machines_time_runs_the_minors_rule():
 @pytest.mark.django_db(transaction=True)
 @pytest.mark.parametrize("mode,code", [("none", "guest_pass_no_machines"),
                                        ("supervised", "guest_pass_supervised_only"),
-                                       ("after_induction_cert", "guest_pass_certification_required")])
+                                       ("after_induction_cert", "guest_pass_machine_access_required")])
 def test_booking_a_machines_time_runs_the_guest_machine_mode(mode, code):
     from apps.bookings.admission import _require_machine_person
     from apps.bookings.models import BookableSpace

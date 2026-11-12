@@ -187,7 +187,7 @@ def test_revoked_role_blocks_the_next_command_before_lease_expiry():
     qr = QrCode.objects.create(makerspace=space, target_type=QrCode.TargetType.PRODUCT,
                                target_id=make_product(space).pk)
     assert command(client, token, headers, "resolve_qr", {"payload": qr.payload}).status_code == 200
-    MakerspaceMembership.objects.filter(user=staff, makerspace=space).update(
+    MakerspaceMembership.all_tracks.filter(user=staff, makerspace=space).update(
         status="revoked",
     )
     assert command(client, token, headers, "resolve_qr", {"payload": qr.payload}).status_code == 403

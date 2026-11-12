@@ -32,7 +32,10 @@ def test_templates_route_is_404_while_off_and_listed_while_on(monkeypatch):
 def test_new_designs_need_the_switch_but_classic_never_does(monkeypatch):
     space, actor, _member, event, _registration = fixture(monkeypatch)
     off(space, "events.broadcast_templates")
-    assert composer(event, actor).design == "classic"
+    classic = composer(event, actor)
+    assert classic.design == "classic"
+    # Parity E-B7 (uniq_event_broadcast_open_draft): one open composer draft per author and event, so close the first.
+    type(classic).objects.filter(pk=classic.pk).update(status="cancelled")
     with pytest.raises(ValidationError):
         composer(event, actor, "letter")
     on(space, "events.broadcast_templates")

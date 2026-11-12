@@ -111,10 +111,12 @@ def test_a_role_storing_manage_printing_keeps_the_inbox(lab):
     # The console flag must agree, or the tab and the API disagree.
     def flag(actor):
         response = authenticated_client(actor).get("/api/v1/auth/me")
+        # A staff row corrupted to a null role is not a valid staff context (it is dropped
+        # from the payload), so there is no entry to flag at all.
         row = next(
-            m for m in response.data["makerspaces"] if m["id"] == lab["space"].pk
+            (m for m in response.data["makerspaces"] if m["id"] == lab["space"].pk), None
         )
-        return row["is_machine_only"]
+        return bool(row and row["is_machine_only"])
 
     assert flag(stored) is False
     assert flag(implied) is True
@@ -139,7 +141,7 @@ def test_exempt_actors_keep_the_inbox(lab):
         assert response.status_code == 200, f"{actor.username} was refused"
 
     with rejected_account_rows():
-        MakerspaceMembership.objects.filter(pk=legacy_membership.pk).update(assigned_role=None)
+        MakerspaceMembership.staff_tracks.filter(pk=legacy_membership.pk).update(assigned_role=None)
         assert authenticated_client(legacy).get(reverse("notifications:notifications-unread-count", args=[space.pk])).status_code == 404
 
 
@@ -162,13 +164,15 @@ def test_auth_me_reports_is_machine_only_so_the_console_need_not_guess(lab):
     def flag(actor):
         response = authenticated_client(actor).get("/api/v1/auth/me")
         assert response.status_code == 200
+        # A staff row corrupted to a null role is not a valid staff context (it is dropped
+        # from the payload), so there is no entry to flag at all.
         row = next(
-            m for m in response.data["makerspaces"] if m["id"] == lab["space"].pk
+            (m for m in response.data["makerspaces"] if m["id"] == lab["space"].pk), None
         )
-        return row["is_machine_only"]
+        return bool(row and row["is_machine_only"])
 
     assert flag(maintainer) is True
     assert flag(mixed) is False
     with rejected_account_rows():
-        MakerspaceMembership.objects.filter(pk=legacy_membership.pk).update(assigned_role=None)
+        MakerspaceMembership.staff_tracks.filter(pk=legacy_membership.pk).update(assigned_role=None)
         assert flag(legacy) is False

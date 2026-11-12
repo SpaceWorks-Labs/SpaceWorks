@@ -69,11 +69,11 @@ def _client(world, who):
     return APIClient() if who == "anonymous" else authenticated_client(world.people[who])
 
 
-# Dashboard: served to the area managers, a queue view to Handover, refused elsewhere --------
+# Dashboard: served to the area managers (decision 242(i): Shop Manager and Technician get their area's tiles), a queue view to Handover, refused elsewhere --------
 
 @pytest.mark.parametrize("who,expected", [
     ("space_manager", 200), ("inventory_manager", 200), ("event_manager", 200), ("booking_manager", 200),
-    ("machine_manager_laser", 200), ("handover", 200), ("technician", 403), ("shop_manager", 403),
+    ("machine_manager_laser", 200), ("handover", 200), ("technician", 200), ("shop_manager", 200),
     ("foreign_manager", 404), ("anonymous", 401),
 ])
 def test_dashboard_admission_per_role(world, who, expected):

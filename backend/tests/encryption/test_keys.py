@@ -55,6 +55,9 @@ def test_disabled_mode_does_not_need_or_create_key_rows(makerspace):
     assert not MakerspaceEncryptionKey.objects.filter(makerspace=makerspace).exists()
 
 
+# The autouse global-fence re-seed in tests/conftest.py only runs for tests carrying the marker; without it a
+# preceding transactional test's flush leaves no fence row and key retirement fails closed.
+@pytest.mark.django_db
 def test_rotation_preserves_old_version_and_disable_fails_closed(makerspace, encryption_settings):
     first = get_or_create_active_dek(makerspace.id)
     second = rotate_dek(makerspace.id)

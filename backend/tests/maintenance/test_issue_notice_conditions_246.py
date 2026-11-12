@@ -65,5 +65,9 @@ def test_the_queued_notice_is_stale_when_the_area_is_off_or_the_issue_is_closed(
     fresh = IssueReport.objects.get(pk=issue.pk)
     envelope.revision = notify.version(fresh, "issue_reported")
     assert notify.eligible(envelope)
-    switch(w.space, off=("inventory.issue_reporting",))
-    assert not notify.eligible(envelope)
+    switch(w.space, off=("inventory.issue_reporting", "inventory.repairs"))  # area_on: reporting OR repairs keeps it live
+    # `envelope.makerspace` was cached on the instance by the earlier `eligible` calls and holds the old
+    # switch list; a worker reads the envelope fresh, so do the same after changing the switches.
+    stale = NotificationEnvelope.objects.get(pk=envelope.pk)
+    stale.revision = envelope.revision
+    assert not notify.eligible(stale)

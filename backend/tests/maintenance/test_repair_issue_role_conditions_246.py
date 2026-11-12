@@ -26,6 +26,15 @@ def _opened(w, subject_type="inventory_product", subject=None):
                           title="Broken handle")
 
 
+def _reported(w):
+    """A member-style report awaiting triage: `open_issue` is the staff path and starts triaged (services_issues
+    docstring), so the triage/reject gates are exercised on an issue moved back to `reported`."""
+    issue = _opened(w)
+    IssueReport.objects.filter(pk=issue.pk).update(state="reported", work_order=None)
+    issue.refresh_from_db()
+    return issue
+
+
 def _manager(slug):
     return "edit_inventory" in ROLE_BY_SLUG[slug].granted_actions
 
@@ -33,7 +42,7 @@ def _manager(slug):
 @pytest.mark.parametrize("slug", SLUGS)
 def test_triage_follows_the_inventory_area_manager_action(slug):
     w = world(f"ri-tri-{slug}".replace("_", "-"))
-    issue = _opened(w)
+    issue = _reported(w)
     actor = staff_account(w.space, f"ri-tri-actor-{slug}", slug)
     response = authenticated_client(actor).post(f"/api/v1/admin/issues/{issue.pk}/triage", {"priority": "high"},
                                                 format="json")
@@ -51,7 +60,7 @@ def test_triage_follows_the_inventory_area_manager_action(slug):
 @pytest.mark.parametrize("slug", SLUGS)
 def test_reject_follows_the_inventory_area_manager_action(slug):
     w = world(f"ri-rej-{slug}".replace("_", "-"))
-    issue = _opened(w)
+    issue = _reported(w)
     actor = staff_account(w.space, f"ri-rej-actor-{slug}", slug)
     response = authenticated_client(actor).post(f"/api/v1/admin/issues/{issue.pk}/reject",
                                                 {"reason": "Not a fault"}, format="json")
@@ -62,7 +71,7 @@ def test_reject_follows_the_inventory_area_manager_action(slug):
 
 def test_a_decided_issue_cannot_be_triaged_or_rejected_again():
     w = world("ri-replay")
-    issue = _opened(w)
+    issue = _reported(w)
     boss = authenticated_client(w.manager)
     assert boss.post(f"/api/v1/admin/issues/{issue.pk}/triage", {}, format="json").status_code == 200
     assert boss.post(f"/api/v1/admin/issues/{issue.pk}/triage", {}, format="json").status_code in (400, 409)
@@ -75,7 +84,7 @@ def test_a_decided_issue_cannot_be_triaged_or_rejected_again():
 @pytest.mark.parametrize("body", [{}, {"reason": ""}, {"reason": "   "}])
 def test_reject_needs_a_reason_and_leaves_the_issue_open(body):
     w = world("ri-reason")
-    issue = _opened(w)
+    issue = _reported(w)
     assert authenticated_client(w.manager).post(f"/api/v1/admin/issues/{issue.pk}/reject", body,
                                                 format="json").status_code == 400
     issue.refresh_from_db()
@@ -106,7 +115,7 @@ def test_a_payout_is_refused_for_an_unapproved_quote_and_for_non_managers_and_wr
 
 def test_another_spaces_manager_and_anonymous_cannot_read_or_move_the_issue():
     w, other = world("ri-iso-a"), world("ri-iso-b")
-    issue = _opened(w)
+    issue = _reported(w)
     outsider = authenticated_client(other.manager)
     assert outsider.get(f"/api/v1/admin/issues/{issue.pk}").status_code in (403, 404)
     assert outsider.post(f"/api/v1/admin/issues/{issue.pk}/triage", {}, format="json").status_code in (403, 404)

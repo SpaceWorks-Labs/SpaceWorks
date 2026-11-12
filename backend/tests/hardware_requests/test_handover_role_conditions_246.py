@@ -153,7 +153,9 @@ def test_direct_handout_needs_items_evidence_and_a_real_borrower(override):
     if body.get("evidence_id") is None:
         body.pop("evidence_id")
     response = authenticated_client(boss).post(direct_url(space), body, format="json")
-    assert response.status_code in (400, 404, 409)
+    # An unknown borrower is a uniform 403 (decision 223: `_borrower_for_makerspace` does not reveal whether
+    # the account exists, it only says that nobody here may be handed items under that id).
+    assert response.status_code in ((400, 404, 409, 403) if "borrower_id" in override else (400, 404, 409))
     product.refresh_from_db()
     assert product.issued_quantity == 0 and not PublicToolLoan.objects.exists()
 

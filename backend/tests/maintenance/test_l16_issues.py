@@ -50,6 +50,7 @@ def test_reporting_is_off_when_its_switch_is_off_and_data_is_kept():
     assert IssueReport.objects.filter(makerspace=w.space).count() == 1
 
 
+@pytest.mark.django_db(transaction=True)  # decision 221(f): the reporter's direct mail is sent on_commit
 def test_triage_with_repairs_on_opens_the_work_order_and_notify_only_does_not():
     w = world("l16-triage")
     request, borrower = loan(w)

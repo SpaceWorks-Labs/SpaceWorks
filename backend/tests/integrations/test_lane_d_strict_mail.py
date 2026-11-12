@@ -31,6 +31,8 @@ def test_source_mail_sends_and_rebuilds_with_strict_encrypted_reads(monkeypatch,
             log = EmailLog.objects.get(source_kind=kind)
             expected = f"You're invited to {event.title}"
         else:
+            space.enabled_features = sorted(set(space.enabled_features) | {"notifications.digests"})  # capability, off by default
+            space.save(update_fields=["enabled_features"])
             due = timezone.now() + timedelta(hours=1)
             monkeypatch.setattr("apps.integrations.digests.digest_due", lambda *args: due)
             dispatch_email(makerspace=space, to_email=user.email, recipient_id=user.pk, feature="events",

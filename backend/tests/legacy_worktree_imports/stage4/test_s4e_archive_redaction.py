@@ -21,6 +21,7 @@ def confirmation_for(space):
     )
 
 
+@pytest.mark.skip(reason="decision 110: hidden spaces (superadmin_access_enabled) removed; no money-count redaction remains")
 def test_hidden_space_archive_confirmation_omits_pending_charge_counts():
     space = Makerspace.objects.create(name="Hidden money", slug="hidden-money", superadmin_access_enabled=False)
     response = confirmation_for(space)
@@ -36,5 +37,5 @@ def test_visible_space_archive_confirmation_keeps_pending_charge_counts():
     response = confirmation_for(space)
     assert response.status_code == 200
     row = response.context_data["makerspaces"][0]
-    assert row["hidden"] is False
+    assert "hidden" not in row  # decision 110: no hidden-space flag any more
     assert {"owned_pending", "routed_pending", "total_pending"} <= set(row)

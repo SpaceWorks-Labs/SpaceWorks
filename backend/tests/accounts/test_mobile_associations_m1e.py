@@ -62,7 +62,8 @@ def test_only_approved_global_production_registrations_are_published():
     registration(makerspace=make_space("association-tenant"))
     android = get(ANDROID).json()
     assert len(android) == 1
-    assert android[0]["relation"] == ["delegate_permission/common.handle_all_urls"]
+    assert android[0]["relation"] == ["delegate_permission/common.handle_all_urls",
+                                      "delegate_permission/common.get_login_creds"]
     target = android[0]["target"]
     assert target["package_name"] == APP
     assert len(target["sha256_cert_fingerprints"]) == 2

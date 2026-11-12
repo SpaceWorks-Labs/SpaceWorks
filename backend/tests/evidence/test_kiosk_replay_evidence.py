@@ -85,7 +85,7 @@ def test_failed_qr_photo_is_readable_and_cleanup_keeps_it(replay_env, monkeypatc
     from tests.events.checkin_helpers import make_member
     env = replay_env
     member = make_member(env.space)
-    monkeypatch.setattr("apps.hardware_requests.direct_loan_workflow.require_active_member_presence", lambda *args: SimpleNamespace(membership=None))
+    monkeypatch.setattr("apps.presence.guest_guard.require_active_member_presence", lambda *args: SimpleNamespace(membership=None, guest_pass=None))
     data = envelope(env, "direct_handout", {"borrower_id": member.pk, "qr_payloads": ["revoked-or-foreign"]})
     assert prepare(env, data).status_code == 200
     response = execute(env, data)

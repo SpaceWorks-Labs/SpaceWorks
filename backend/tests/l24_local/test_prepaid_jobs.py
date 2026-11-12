@@ -170,11 +170,13 @@ def test_machine_override_and_rate_card_saves_reach_prepaid_jobs():
 
 def test_a_job_cancelled_case_is_decided_by_the_jobs_machine_manager():
     from apps.payments.services_refund_decisions import decline_case
-    from tests.return_helpers import make_print_manager
+    from tests.machines.certification_helpers import _manager
     w = prepaid_world("l24-job-mm", on=False)
     row, payment, member = paid_job(w, "l24-job-mm-m")
     cancel(row, member, by_owner=True)
     case = RefundCase.objects.get(payment=payment)
-    manager = make_print_manager("l24-job-mm-manager", w.space)
+    # MANAGE_MACHINES is scoped per role (INVARIANTS: Machine scoping): an unlinked manager reaches nothing, so the
+    # jobs manager is linked to the job's machine type.
+    manager, _ = _manager(w.space, "l24-job-mm-manager", w.kind)
     assert decline_case(case, actor=manager, note="Material already cut").status == "declined"
     assert not Refund.objects.exists()

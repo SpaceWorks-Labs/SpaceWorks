@@ -80,8 +80,8 @@ def test_expansion_follows_both_parent_histories_and_preserves_helpers():
     # destructive 0043 retirement stays deliberately absent until reconciliation.
     # 0045 keeps addressed SMS/WhatsApp generations when the optional inbox module is removed.
     # 0046 opens the gate only on a fresh install (no prior deployment data).
-    # 0047/0048 (cloud email providers, events programme certificate media) follow on staging.
-    assert loader.graph.leaf_nodes("integrations") == [("integrations", "0048_notification_media_certificate_subject")]
+    # 0047/0048 (cloud email providers, events programme certificate media) follow on staging; 0049-0055 are the later 0.12.0 migrations (current leaf).
+    assert loader.graph.leaf_nodes("integrations") == [("integrations", "0055_platform_legal_pages")]
     assert ("integrations", "0042_notification_history_conversion") in loader.graph.forwards_plan(
         ("integrations", "0044_restore_receipt_received_at"))
     assert not any(app == "integrations" and name.startswith("0043") for app, name in loader.graph.nodes)

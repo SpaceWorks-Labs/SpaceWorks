@@ -131,6 +131,9 @@ def test_django_migration_state_has_no_addon_model_drift(monkeypatch):
     from apps.makerspaces.models import Makerspace, default_enabled_modules
     # tests/conftest.py swaps this default for an all-modules lambda; compare the real model.
     monkeypatch.setattr(Makerspace._meta.get_field("enabled_modules"), "default", default_enabled_modules)
+    # The same conftest swap applies to enabled_features (capabilities default).
+    from apps.makerspaces.capabilities import default_enabled_features
+    monkeypatch.setattr(Makerspace._meta.get_field("enabled_features"), "default", default_enabled_features)
     from django.db.migrations.autodetector import MigrationAutodetector
     from django.db.migrations.loader import MigrationLoader
     from django.db.migrations.state import ProjectState

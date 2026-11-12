@@ -48,7 +48,11 @@ export function useRenameCard(makerspaceId: number) {
  *  `consent` is required by the caller before this runs: the finalize PUT is what records
  *  the member's agreement to storing their photo, so it cannot be sent speculatively.
  */
+/** Decision 345: the server's card-photo ceiling (it re-encodes up to 8 MB), checked here so the member hears it first. */
+export const MEMBER_PHOTO_MAX_BYTES = 8 * 1024 * 1024;
+
 export async function uploadCardPhoto(makerspaceId: number, file: File) {
+  if (file.size > MEMBER_PHOTO_MAX_BYTES) throw new Error(t`This photo is larger than 8 MB. Choose a smaller one or crop it first.`);
   const presigned = await memberRequest<PhotoPresign>(`${cardPath(makerspaceId)}/photo`, {
     method: "POST",
     body: JSON.stringify({ content_type: file.type || "application/octet-stream" }),

@@ -8,6 +8,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ErrorText } from "../../../components/ui";
 import { memberRequest } from "../../../lib/api";
 import { cardPath, myCardsKey, type MyCard } from "./api";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 type CleanupJob = { id: number; state: "queued" | "running" | "succeeded" | "failed" | "cancelled"; error_code?: string };
 const POLL_MS = 1500;
@@ -48,7 +49,7 @@ export function PhotoCleanup({ card }: { card: MyCard }) {
   return <div className="grid gap-2">
     <p className="text-sm text-ink">{t`Tidy the background: our server puts you on a plain white background. Nothing changes until you choose.`}</p>
     {!candidate ? <button type="button" className="desk-button-ghost min-h-11 w-fit" disabled={start.isPending}
-      onClick={() => start.mutate()}>{start.isPending ? t`Cleaning up…` : t`Clean up the background`}</button> : null}
+      onClick={() => start.mutate()}>{start.isPending ? <><BoxArt size={16} mono />{t`Cleaning up…`}</> : t`Clean up the background`}</button> : null}
     {candidate ? <div className="grid gap-2">
       <img src={candidate.url} alt={t`Your photo with a cleaned background`} className="h-40 w-auto max-w-full rounded-control border border-line bg-white object-contain" />
       <div className="flex flex-wrap gap-2">

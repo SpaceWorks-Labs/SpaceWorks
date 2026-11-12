@@ -7,6 +7,7 @@ import { staffRequest } from "../../lib/api";
 import { DESTINATIONS_KEY } from "../staff/notificationDestinations/channels";
 import type { NotificationDestination } from "../staff/notificationDestinationTypes";
 import { useEndpoints, useTestChannel, type Channel } from "./channelsApi";
+import { BoxArt } from "../../components/BoxSpinner";
 
 /**
  * Send a test through the saved settings: to one of this space's rooms, or to the Space
@@ -35,7 +36,7 @@ export function ChannelTestSend({ makerspaceId, channel }: { makerspaceId: numbe
       {options.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}</select></Field>
     <div><button type="button" className="desk-button" disabled={test.isPending}
       onClick={() => test.mutate({ channel: channel.channel, ...(kind === "sms" ? {} : kind === "room" ? { room_id: Number(id) } : { endpoint_id: Number(id) }) })}>
-      {test.isPending ? t`Sending…` : t`Send test`}</button></div>
+      {test.isPending ? <><BoxArt size={16} mono />{t`Sending…`}</> : t`Send test`}</button></div>
     {test.data ? <p role="status" className={`text-sm ${test.data.accepted ? "text-muted" : "text-danger"}`}>
       {test.data.accepted ? t`Test accepted by the provider.` : t`Test failed: ${test.data.sanitized_error || test.data.error_code || "unknown error"}.`}</p> : null}
     {test.error ? <p role="alert" className="text-sm text-danger">{test.error.message}</p> : null}

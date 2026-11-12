@@ -6,7 +6,8 @@ import { useQueryClient } from "@tanstack/react-query";
 
 import { PhotoPicker } from "../../../components/photo-crop/PhotoPicker";
 import { ErrorText } from "../../../components/ui";
-import { myCardsKey, uploadCardPhoto, type MyCard } from "./api";
+import { CutoutPanel } from "../../cardEraser/CutoutPanel";
+import { cardPath, myCardsKey, uploadCardPhoto, type MyCard } from "./api";
 import { PhotoCleanup } from "./PhotoCleanup";
 
 export function CardPhotoSection({ card }: { card: MyCard }) {
@@ -37,5 +38,7 @@ export function CardPhotoSection({ card }: { card: MyCard }) {
     <p role="status" aria-live="polite" className="text-sm text-success-ink">{state.done ? t`Photo saved.` : ""}</p>
     {state.error ? <ErrorText message={state.error} /> : null}
     <PhotoCleanup card={card} />
+    <CutoutPanel target={{ scope: "member", cardPath: cardPath(card) }} photoSet={card.photo_set}
+      onChanged={() => { void client.invalidateQueries({ queryKey: ["member", "card-image"] }); void client.invalidateQueries({ queryKey: ["member", "card-face"] }); }} />
   </fieldset>;
 }

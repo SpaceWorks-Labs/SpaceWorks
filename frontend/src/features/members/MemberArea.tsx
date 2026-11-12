@@ -24,7 +24,7 @@ import { InvitationRequestForm } from "./InvitationRequestForm";
 import { JoinMembershipCta } from "./JoinMembershipCta";
 import { PresencePanel } from "../presence/PresencePanel";
 import { usePresenceCurrent } from "../presence/api";
-import { MemberCertifications } from "./MemberCertifications";
+import { MemberMachineAccess } from "../machine-access/MemberMachineAccess";
 import { MemberActivityPanel, type MemberActivity } from "./MemberActivity";
 import { MemberDues, MemberHistory, MemberIncludedHours, MemberNotices, MemberTerm } from "./MemberDashboardSections";
 import { MemberAllowances } from "./MemberAllowances";
@@ -57,6 +57,7 @@ import { MemberPhoneVerification } from "./MemberPhoneVerification";
 import { MemberCommunityArea } from "../community/member/MemberCommunityArea";
 import { JOIN_ANCHOR } from "../community/member/JoinButton";
 import { membershipRoleLabel, membershipStatusLabel } from "./membershipLabels";
+import { LogoLoader } from "../../components/LogoLoader";
 
 type Membership = { makerspace: { slug: string; name: string }; membership_status: string; role: string; waiver_acceptance_required: boolean; can_refer: boolean; can_verify: boolean; verified_at: string | null; referrals_enabled: boolean };
 type Memberships = { memberships: Membership[]; requests: (Partial<AdmissionRequest> & { makerspace: { id?: number; slug: string; name: string }; state: string; kind: string })[] };
@@ -111,10 +112,10 @@ export function MemberArea() {
     && (!membership || membership.membership_status === "active");
   const messaging = usePreferences(makerspaceId, true, messagingEnabled);
   const messagingAllowed = messagingEnabled && messaging.isSuccess;
-  const accountSections = ["profile", "card", "certifications", "community", "invitations", "channels", "phone"].filter(key => key === "channels"
+  const accountSections = ["profile", "card", "machine-access", "community", "invitations", "channels", "phone"].filter(key => key === "channels"
     ? messagingAllowed
     : key === "phone" ? messagingAllowed || membership?.membership_status === "active"
-    : key === "certifications"
+    : key === "machine-access"
     ? membership?.membership_status === "active" && Boolean(bootstrap.data?.modules.includes("machines"))
     : key === "invitations" ? Boolean(memberAccess && resolvedSlug && makerspaceId >= 0)
       : membershipModuleOn && membership?.membership_status === "active");
@@ -199,9 +200,9 @@ export function MemberArea() {
     {activeTab === "account" && profile.data ? <Link className="desk-button-brand inline-flex" to="/mfa">{t`Manage two-step sign-in`}</Link> : null}
     {archivedPayments.data?.length ? <section className="desk-panel p-5"><h2 className="title-panel">{t`Payments from closed makerspaces`}</h2><p className="mt-1 text-sm text-muted">{t`Receipts and outstanding charges remain available after a makerspace closes.`}</p><Link className="desk-button-brand mt-4 inline-flex" to="/member/archived">{t`View archived payments`}</Link></section> : null}
     {archivedUnknown ? <section className="desk-panel p-5"><h2 className="title-panel">{t`Closed makerspace?`}</h2><p className="mt-1 text-sm text-muted">{t`If a makerspace you belonged to has closed, its receipts and any outstanding charges are still reachable. You may need to sign in there.`}</p><Link className="desk-button-brand mt-4 inline-flex" to="/member/archived">{t`View archived payments`}</Link></section> : null}
-    {bootstrap.isLoading ? <section className="desk-panel p-5 text-sm text-muted">{t`Loading makerspace joining options…`}</section> : null}
+    {bootstrap.isLoading ? <LogoLoader label={t`Loading makerspace joining options…`} size={48} className="min-h-16 py-3" /> : null}
     {bootstrap.isError ? <section className="desk-panel p-5"><p className="text-sm text-danger" role="alert">{message(bootstrap.error)}</p></section> : null}
-    {activeTab === "overview" && policy && canApply && !requested && memberships.isLoading ? <section className="desk-panel p-5 text-sm text-muted">{t`Checking your sign-in status…`}</section> : null}
+    {activeTab === "overview" && policy && canApply && !requested && memberships.isLoading ? <LogoLoader label={t`Checking your sign-in status…`} size={48} className="min-h-16 py-3" /> : null}
     {/* Decision 223: guest passes, day passes, Bring a guest, guardian consent and volunteering. */}
     {activeTab === "overview" && memberAccess && makerspaceId >= 0 ? <MemberCommunityArea makerspaceId={makerspaceId} memberBase={slug ? `/m/${slug}/member` : "/member"} features={bootstrap.data?.features ?? []} activeMember={membership?.membership_status === "active"} /> : null}
     {activeTab === "overview" ? <span id={JOIN_ANCHOR} className="block scroll-mt-24" aria-hidden="true" /> : null}
@@ -222,7 +223,7 @@ export function MemberArea() {
       {presencePanel}
       {/* Notices first: they are the reason to open a dashboard at all. */}
       {(activeTab === "overview" || activeTab === "inbox" && section === "notices") && memberActivity ? <MemberNotices notices={memberActivity.notices} /> : null}
-      {activeTab === "account" && section === "certifications" && membership?.membership_status === "active" && (bootstrap.data?.modules ?? []).includes("machines") ? <MemberCertifications key={makerspaceId} makerspaceId={makerspaceId} /> : null}
+      {activeTab === "account" && section === "machine-access" && membership?.membership_status === "active" && (bootstrap.data?.modules ?? []).includes("machines") ? <MemberMachineAccess key={makerspaceId} makerspaceId={makerspaceId} /> : null}
       {activeTab === "inbox" && membership.membership_status === "active" && bootstrap.data?.modules.includes("notifications") ? <MemberNotifications makerspaceId={makerspaceId} features={bootstrap.data.features ?? []} /> : null}
       {(["overview", "events", "bookings"].includes(activeTab) && section !== "partners" && !ownBookings || activeTab === "loans" && section !== "history") && memberActivity ? <MemberActivityPanel modules={bootstrap.data?.modules ?? []} features={bootstrap.data?.features ?? []} section={activeTab === "overview" ? "overview" : activeTab as "loans" | "bookings" | "events"} activity={memberActivity} eventPeriod={section === "past" ? "past" : "going"} makerspaceId={makerspaceId} makerspaceSlug={resolvedSlug} makerspaceName={spaceName} /> : null}
       {activeTab === "overview" && memberActivity ? <><MemberTerm term={memberActivity.membership_term} /><MemberIncludedHours rows={memberActivity.included_hours} /><MemberAllowances makerspaceId={makerspaceId} /></> : null}
@@ -231,12 +232,12 @@ export function MemberArea() {
       {activeTab === "loans" && section === "history" && memberActivity ? <MemberHistory loans={memberActivity.loan_history} requests={memberActivity.request_history}
         withdraw={bootstrap.data?.features?.includes("loans.withdrawals") ? { makerspaceId, makerspaceSlug: resolvedSlug } : undefined} /> : null}
       {activeTab === "events" && bootstrap.data?.modules.includes("events") && membership?.membership_status === "active" ? <div hidden={section !== "partners"}><PartnerEvents makerspaceId={makerspaceId} slug={resolvedSlug} onAvailable={setHasPartnerEvents} visible={section === "partners"} /></div> : null}
-      {activeTab === "account" && membership.membership_status === "active" && makerspaceId >= 0 && membershipModuleOn ? <>{section === "profile" ? <MemberProfilePanel makerspaceId={makerspaceId} /> : section === "card" ? <MemberCardPanel makerspaceId={makerspaceId} spaceName={membership.makerspace.name} /> : section === "community" ? <MemberDirectory makerspaceId={makerspaceId} /> : null}</> : null}</> : null}
+      {activeTab === "account" && membership.membership_status === "active" && makerspaceId >= 0 && membershipModuleOn ? <>{section === "profile" ? <MemberProfilePanel /> : section === "card" ? <MemberCardPanel makerspaceId={makerspaceId} spaceName={membership.makerspace.name} /> : section === "community" ? <MemberDirectory makerspaceId={makerspaceId} /> : null}</> : null}</> : null}
     {activeTab === "overview" && memberAccess && makerspaceId >= 0 ? <MemberUsagePanel key={makerspaceId} makerspaceId={makerspaceId} /> : null}
     {activeTab === "overview" && membership?.membership_status === "active" && makerspaceId >= 0 && bootstrap.data?.features?.includes("safety.incidents") ? <MemberIncidentReports key={makerspaceId} makerspaceId={makerspaceId} /> : null}
     {activeTab === "loans" && section !== "history" && memberAccess && makerspaceId >= 0 && bootstrap.data?.features?.includes("loans.waitlist") ? <MemberWaitlist key={makerspaceId} makerspaceId={makerspaceId} makerspaceSlug={resolvedSlug} /> : null}
     {activeTab === "account" && section === "channels" && messagingAllowed ? <MyNotificationSettings key={makerspaceId} makerspaceId={makerspaceId} member /> : null}
-    {activeTab === "account" && messagingEnabled && messaging.isLoading ? <p role="status">{t`Checking notification access…`}</p> : null}
+    {activeTab === "account" && messagingEnabled && messaging.isLoading ? <LogoLoader label={t`Checking notification access…`} size={48} className="min-h-16 py-3" /> : null}
     {activeTab === "account" && messagingEnabled && messaging.error ? <div role="alert"><p>{message(messaging.error)}</p><button className="desk-button" onClick={() => void messaging.refetch()}>{t`Retry notification access`}</button></div> : null}
     {activeTab === "account" && section === "phone" && (messagingAllowed || membership?.membership_status === "active") ? <MemberPhoneVerification /> : null}
     {activeTab === "overview" && memberships.data ? <MakerspaceDiscovery currentSlug={resolvedSlug} memberships={memberships.data.memberships} requests={memberships.data.requests} /> : null}
@@ -275,8 +276,8 @@ export function MemberArea() {
     {unauthenticated ? <button type="button" className="desk-button-brand" onClick={() => setShowSignIn(true)}>{t`Sign in to your account`}</button> : null}
     {["loans", "events", "inbox"].includes(activeTab) && !memberships.isLoading && membership?.membership_status !== "active" ? <p className="text-sm text-muted">{t`An active membership is required to view your activity.`}</p> : null}
     {activeTab === "inbox" && section === "notices" && memberActivity && !memberActivity.notices?.length ? <EmptyState message={t`No notices need your attention.`} /> : null}
-    {["loans", "bookings", "events", "inbox"].includes(activeTab) && activity.isLoading ? <p role="status" className="text-sm text-muted">{t`Loading your activity...`}</p> : null}
-    {activeTab === "payments" && payments.isLoading ? <p role="status" className="text-sm text-muted">{t`Loading payments...`}</p> : null}
+    {["loans", "bookings", "events", "inbox"].includes(activeTab) && activity.isLoading ? <LogoLoader label={t`Loading your activity...`} size={48} className="min-h-16 py-3" /> : null}
+    {activeTab === "payments" && payments.isLoading ? <LogoLoader label={t`Loading payments...`} size={48} className="min-h-16 py-3" /> : null}
     {activeTab === "payments" && !unauthenticated && payments.isSuccess && !paymentRows?.length ? <EmptyState message={t`Nothing to pay. You are all settled.`} /> : null}
     {activeTab === "payments" && payments.error ? <p role="alert" className="text-sm text-danger">{message(payments.error)}</p> : null}
     <SupportContact branding={bootstrap.data?.branding} />

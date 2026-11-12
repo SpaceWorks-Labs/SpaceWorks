@@ -7,6 +7,7 @@ import { Field, StatusPill } from "../../components/ui";
 import { StructuredApiError, memberRequest } from "../../lib/api";
 import { MembershipTimeline } from "../staff/membershipLifecycle/MembershipTimeline";
 import type { ConsentRow, TimelineEntry } from "../staff/membershipLifecycleApi";
+import { LogoLoader } from "../../components/LogoLoader";
 
 type Ledger = { purposes: { key: string; label: string; description: string }[]; notice_version: string; consents: ConsentRow[] };
 type Erasure = { id: number; status: string; member_note: string; decision_note: string; created_at: string; decided_at: string | null };
@@ -26,7 +27,7 @@ const errorText = (error: unknown) => (error instanceof StructuredApiError ? err
 export function MemberHistory({ makerspaceId }: { makerspaceId: number }) {
   const history = useQuery({ queryKey: ["member", "account", makerspaceId, "history"],
     queryFn: () => memberRequest<TimelineEntry[]>(`${base(makerspaceId)}/membership-history`) });
-  if (history.isLoading) return <p className="text-sm text-muted">{t`Loading your history…`}</p>;
+  if (history.isLoading) return <LogoLoader label={t`Loading your history…`} size={48} className="min-h-16 py-3" />;
   if (history.isError) return <p role="alert" className="text-sm text-danger">{errorText(history.error)}</p>;
   return <MembershipTimeline entries={history.data ?? []} />;
 }

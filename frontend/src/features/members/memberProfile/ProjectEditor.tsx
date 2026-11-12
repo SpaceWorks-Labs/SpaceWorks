@@ -6,14 +6,12 @@ import { profileToneForIdentity, tagsToText, textToTags } from "./helpers";
 import { type ProjectDraft } from "./types";
 
 export function ProjectEditor({
-  makerspaceId,
   project,
   imageUrl,
   onChange,
   onRemove,
   onImageChanged,
 }: {
-  makerspaceId: number;
   project: ProjectDraft;
   imageUrl: string | null;
   onChange: (next: ProjectDraft) => void;
@@ -68,14 +66,14 @@ export function ProjectEditor({
           checked={Boolean(project.public_visible)}
           onChange={(event) => onChange({ ...project, public_visible: event.target.checked })}
         />
-        {t`Show on my public profile page`}</label>
+        {t`Show this project on my profile`}</label>
       {/* An image can only be attached to a project that exists server-side — a new one
           has no id to attach it to, so it appears after the first save. */}
       {project.id ? (
         <div className="mt-3">
           <ImageUploader
             request={memberRequest}
-            endpoint={`/member/makerspaces/${makerspaceId}/profile/image`}
+            endpoint="/member/profile/image"
             currentUrl={imageUrl}
             label={t`Project image`}
             extraBody={{ project_id: project.id }}

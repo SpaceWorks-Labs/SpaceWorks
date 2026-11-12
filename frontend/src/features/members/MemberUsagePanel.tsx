@@ -2,6 +2,7 @@ import { t } from "@lingui/core/macro";
 import { StructuredApiError } from "../../lib/api";
 import { AnalyticsData } from "../staff/panels/AnalyticsData";
 import { useMemberUsage, type MemberUsageSeries } from "./memberUsageApi";
+import { LogoLoader } from "../../components/LogoLoader";
 
 export function MemberUsagePanel({ makerspaceId }: { makerspaceId: number }) {
   const query = useMemberUsage(makerspaceId);
@@ -9,7 +10,7 @@ export function MemberUsagePanel({ makerspaceId }: { makerspaceId: number }) {
   const data = query.data;
   return <section aria-label={t`My usage`} className="desk-panel min-w-0 p-5">
     <h2 className="title-panel">{t`My usage`}</h2>
-    {query.isLoading ? <p role="status">{t`Loading your usage…`}</p> : query.isError ? <div role="alert"><p>{t`Couldn't load your usage.`}</p><button type="button" className="desk-button" onClick={() => void query.refetch()}>{t`Retry`}</button></div> : data ? <div className="mt-4 grid min-w-0 gap-6">
+    {query.isLoading ? <LogoLoader label={t`Loading your usage…`} size={48} className="min-h-16 py-3" /> : query.isError ? <div role="alert"><p>{t`Couldn't load your usage.`}</p><button type="button" className="desk-button" onClick={() => void query.refetch()}>{t`Retry`}</button></div> : data ? <div className="mt-4 grid min-w-0 gap-6">
       {data.usage_available && data.loans ? <Usage title={t`Loans`} series={data.loans.monthly}
         summary={t`${data.loans.count} loans, ${data.loans.returned_count} returned, ${data.loans.currently_out} currently out.`} /> : null}
       {data.usage_available && data.machines ? <>

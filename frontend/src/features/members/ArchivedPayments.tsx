@@ -9,6 +9,7 @@ import { MemberAuthPanel } from "./MemberAuthPanel";
 import { MemberPaymentRows, type MemberPayment } from "./MemberPayments";
 import { MemberCheckoutReturn } from "./MemberCheckoutReturn";
 import { memberPaymentErrorText } from "./memberPaymentErrors";
+import { LogoLoader } from "../../components/LogoLoader";
 
 const MAKERSPACE_TONES = ["border-accent", "border-brand", "border-success", "border-warn"] as const;
 
@@ -55,7 +56,7 @@ function ArchivedMakerspacePayments({ summary }: { summary: ArchivedPaymentSumma
         <StatusPill label={t`${summary.pending_count} pending / ${summary.total_count} total`} tone={summary.pending_count ? "warn" : "neutral"} />
       </div>
       {payments.isLoading ? (
-        <p className="mt-4 text-sm text-muted">{t`Loading payment history…`}</p>
+        <LogoLoader label={t`Loading payment history…`} size={48} className="min-h-16 py-3" />
       ) : null}
       {payments.isError ? (
         <p className="mt-4 text-sm text-danger" role="alert">

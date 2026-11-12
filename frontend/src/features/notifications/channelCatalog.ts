@@ -94,7 +94,7 @@ export function categoryLabel(key: string): string {
   const labels: Record<string, string> = {
     hardware_requests: t`Hardware requests`, printing: t`Printing`, events: t`Events`, bookings: t`Bookings`,
     maintenance: t`Maintenance`, members: t`Members`, api_access: t`API access`, devices: t`Devices`,
-    payments: t`Payments`, stock: t`Stock and procurement`, certifications: t`Certifications`, presence: t`Presence`,
+    payments: t`Payments`, stock: t`Stock and procurement`, certifications: t`Machine access`, presence: t`Presence`,
   };
   return labels[key] ?? key.replace(/_/g, " ");
 }

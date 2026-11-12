@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ConfirmDialog, ErrorText, ListRow, StatusPill } from "../../components/ui";
 import { submitPublicRequest } from "../inventory/api";
 import { formatWhen, waitlistApi, waitlistKeys, type WaitlistEntry } from "../inventory/waitlistApi";
+import { BoxArt } from "../../components/BoxSpinner";
 
 /** My waitlist places: position while waiting, the hold deadline once offered, and Leave. */
 export function MemberWaitlist({ makerspaceId, makerspaceSlug }: { makerspaceId: number; makerspaceSlug: string }) {
@@ -54,7 +55,7 @@ function ClaimOffer({ entry, makerspaceSlug, onDone }: { entry: WaitlistEntry; m
   return <form className="grid gap-2" onSubmit={event => { event.preventDefault(); if (purpose.trim()) claim.mutate(); }}>
     <label className="block text-sm font-semibold text-ink">{t`What do you need it for?`}<textarea className="desk-input mt-1 min-h-20 w-full" required value={purpose} onChange={event => setPurpose(event.target.value)} /></label>
     <div className="flex flex-wrap gap-2">
-      <button type="submit" className="desk-button-brand" disabled={!purpose.trim() || claim.isPending}>{claim.isPending ? t`Sending…` : t`Send request`}</button>
+      <button type="submit" className="desk-button-brand" disabled={!purpose.trim() || claim.isPending}>{claim.isPending ? <><BoxArt size={16} mono />{t`Sending…`}</> : t`Send request`}</button>
       <button type="button" className="desk-button-ghost" onClick={() => setOpen(false)}>{t`Cancel`}</button>
     </div>
     {claim.error ? <p role="alert" className="text-sm text-danger">{claim.error.message}</p> : null}

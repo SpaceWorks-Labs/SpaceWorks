@@ -3,9 +3,9 @@ import { DashboardLayout } from "../../components/layouts";
 import { MakerspaceBrand } from "../../components/MakerspaceBrand";
 import { useQuery } from "@tanstack/react-query";
 import { getAccessToken, memberRequest } from "../../lib/api";
-import { MemberCertifications } from "./MemberCertifications";
 import { MemberActivityPanel, type MemberActivity } from "./MemberActivity";
 import { PresencePanel } from "../presence/PresencePanel";
+import { LogoLoader } from "../../components/LogoLoader";
 
 // UI discovery only. Authorization and session validity remain server-enforced.
 export function hasClaimSession() {
@@ -27,8 +27,7 @@ export function MemberClaimSession({ slug, makerspaceId, modules, geofenceEnable
     </section>
     {waiver.data?.has_waiver ? <section className="desk-panel p-5"><h2 className="title-panel">{t`Current waiver (`}{waiver.data.version})</h2><p className="mt-2 max-w-prose whitespace-pre-wrap break-words text-sm text-muted">{waiver.data.body}</p><p className="mt-3 text-sm text-muted">{t`Ask staff to record witnessed acceptance before borrowing.`}</p></section> : null}
     <PresencePanel enabled={modules.includes("presence")} claim member slug={slug} spaceName={name} selfCheckIn={geofenceEnabled} />
-    {activity.isLoading ? <p className="text-sm text-muted">{t`Loading your activity…`}</p> : null}
-    {modules.includes("machines") ? <MemberCertifications makerspaceId={makerspaceId} /> : null}
+    {activity.isLoading ? <LogoLoader label={t`Loading your activity…`} size={48} className="min-h-16 py-3" /> : null}
     {activity.data ? <MemberActivityPanel modules={modules} activity={activity.data} makerspaceId={makerspaceId} makerspaceSlug={slug} makerspaceName={name} /> : null}
     {error ? <p role="alert" className="text-sm text-danger">{error.message}</p> : null}
   </div> }]} />;

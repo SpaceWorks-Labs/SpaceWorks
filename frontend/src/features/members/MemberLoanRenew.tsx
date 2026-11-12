@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { memberRequest } from "../../lib/api";
 import { eligibilityMessage } from "../../lib/eligibilityCopy";
+import { BoxArt } from "../../components/BoxSpinner";
 
 export function MemberLoanRenew({ makerspaceId, makerspaceSlug, requestId }: {
   makerspaceId: number; makerspaceSlug: string; requestId: number;
@@ -21,7 +22,7 @@ export function MemberLoanRenew({ makerspaceId, makerspaceSlug, requestId }: {
   });
   return <div className="mt-1">
     <button type="button" className="desk-button" disabled={renew.isPending || renew.isSuccess} onClick={() => renew.mutate()}>
-      {renew.isPending ? t`Renewing...` : renew.isSuccess ? t`Loan renewed` : t`Renew loan`}
+      {renew.isPending ? <><BoxArt size={16} mono />{t`Renewing...`}</> : renew.isSuccess ? t`Loan renewed` : t`Renew loan`}
     </button>
     {renew.error ? <p role="alert" className="text-sm text-danger">{eligibilityMessage(renew.error) ?? renew.error.message}</p> : null}
   </div>;

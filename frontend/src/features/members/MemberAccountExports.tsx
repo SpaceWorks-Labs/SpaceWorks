@@ -4,6 +4,7 @@ import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { accountKey, exportDownload, ownExports, requestExport } from "./memberAccountApi";
+import { LogoLoader } from "../../components/LogoLoader";
 
 const exportStatusLabel = (status: string) => {
   switch (status) {
@@ -27,7 +28,7 @@ export function MemberAccountExports({ makerspaceId }: { makerspaceId: number })
   return <div className="grid min-w-0 gap-3">
     <p className="text-sm text-muted">{t`Download your profile, membership, history and payment records held by this makerspace as JSON in a ZIP. Export requests are limited to one per day. Files expire automatically.`}</p>
     <button type="button" className="desk-button-brand w-full sm:w-auto" disabled={create.isPending} onClick={() => create.mutate()}>{t`Request data export`}</button>
-    {rows.isLoading ? <p role="status" className="text-sm text-muted">{t`Loading exports…`}</p> : null}
+    {rows.isLoading ? <LogoLoader label={t`Loading exports…`} size={48} className="min-h-16 py-3" /> : null}
     {rows.error || create.error || download.error ? <p role="alert" className="text-sm text-danger">{(rows.error || create.error || download.error)?.message}</p> : null}
     {rows.data?.results.map((job) => <div key={job.id} className="border-t border-line pt-3"><p className="flex flex-wrap items-center gap-2 break-words text-sm text-ink">{t`Requested ${formatDateTime(job.created_at)}`}<StatusPill tone={exportStatusTone(job.status)} label={exportStatusLabel(job.status)} /></p>
       {job.status === "failed" ? <p role="alert" className="text-sm text-danger">{job.failure_detail}</p> : null}

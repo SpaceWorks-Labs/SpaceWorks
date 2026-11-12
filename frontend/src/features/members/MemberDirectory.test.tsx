@@ -13,14 +13,16 @@ describe("MemberDirectory", () => {
     expect(memberRequest).toHaveBeenCalledWith("/member/makerspaces/3/directory");
     expect(screen.getByText("1 more member has not published a profile.")).toBeVisible();
   });
-  it("shows a detail error after opening a published member", async () => {
+  // Superseded by decision 305: the directory shows name, headline and avatar only; there is no row detail drawer.
+  it.skip("shows a detail error after opening a published member", async () => {
     vi.mocked(memberRequest).mockImplementation((path) => path.endsWith("/2") ? Promise.reject(new Error("Profile no longer published")) : Promise.resolve({ members: [{ membership_id: 2, display_name: "Maker", headline: "Robots", avatar_url: null }], hidden_count: 0 }) as ReturnType<typeof memberRequest>);
     show(); fireEvent.click(await screen.findByRole("button", { name: /Maker/ }));
     expect(await screen.findByRole("alert")).toHaveTextContent("Profile no longer published");
     expect(memberRequest).toHaveBeenCalledWith("/member/makerspaces/3/directory/2");
   });
   it("shows a list error", async () => { vi.mocked(memberRequest).mockRejectedValue(new Error("Directory unavailable")); show(); expect(await screen.findByRole("alert")).toHaveTextContent("Directory unavailable"); });
-  it("gives nested identity cards a neutral profile base instead of stacking tints", async () => {
+  // Superseded by decision 305: the directory shows name, headline and avatar only; there is no row detail drawer.
+  it.skip("gives nested identity cards a neutral profile base instead of stacking tints", async () => {
     vi.mocked(memberRequest).mockImplementation(async (path) => path.endsWith("/2")
       ? { institution: "Neutral profile", bio: "Maker bio", interests: [], languages: [], education: [], achievements: [], projects: [{ id: 2, title: "Mint project", description: "Project details", links: [], image_url: null }] }
       : { members: [{ membership_id: 2, display_name: "Maker", headline: "Robots", avatar_url: null }], hidden_count: 0 });
@@ -31,6 +33,13 @@ describe("MemberDirectory", () => {
     expect(profile).not.toHaveClass("bg-brand/10");
     expect(profile?.parentElement).not.toHaveClass("bg-brand/15");
     expect(screen.getByText("Mint project").closest("article")).toHaveClass("bg-success-soft");
+  });
+  it("shows only a name, a headline and an avatar, with no per-member detail request", async () => {
+    vi.mocked(memberRequest).mockResolvedValue({ members: [{ membership_id: 2, display_name: "Ada", headline: "Robots", avatar_url: null }], hidden_count: 0 });
+    show(); await screen.findByText("Ada");
+    expect(screen.getByText("Robots")).toBeVisible();
+    expect(screen.queryByRole("button", { name: /Ada/ })).toBeNull();
+    expect(memberRequest).toHaveBeenCalledTimes(1);
   });
   it("filters only the fetched published profiles without another request", async () => {
     vi.mocked(memberRequest).mockResolvedValue({ members: [{ membership_id: 2, display_name: "Ada", headline: "Robots", avatar_url: null }, { membership_id: 3, display_name: "Sam", headline: "Woodwork", avatar_url: null }], hidden_count: 0 });

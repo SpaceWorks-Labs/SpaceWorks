@@ -1,3 +1,4 @@
+import { LogoLoader } from "../../components/LogoLoader";
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { ErrorBlock, StatusPill } from "../../components/ui";
@@ -8,7 +9,7 @@ export function SmsConsent({ makerspaceId, member = true }: { makerspaceId: numb
   const settings = useSmsConsent(makerspaceId, true, member);
   const save = useSaveSmsConsent(makerspaceId, member);
   const [verify, setVerify] = useState(false);
-  if (settings.isLoading) return <p role="status">{t`Loading SMS consent…`}</p>;
+  if (settings.isLoading) return <LogoLoader label={t`Loading SMS consent…`} size={48} className="min-h-16 py-3" />;
   if (settings.error || !settings.data) return <ErrorBlock error={settings.error ?? new Error(t`Couldn't load SMS consent.`)}
     onRetry={() => void settings.refetch()} />;
   const sms = settings.data.sms;

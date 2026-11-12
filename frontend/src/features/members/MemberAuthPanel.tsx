@@ -1,7 +1,7 @@
 import { t } from "@lingui/core/macro";
 import { MfaFlow } from "../auth/MfaFlow";
 import { isMfaChallenge, type MfaChallenge } from "../auth/mfaApi";
-import { useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { AuthLayout } from "../../components/layouts";
 import { SegmentedControl } from "../../components/ui";
 import { AuthStepCard } from "../auth/AuthStepCard";
@@ -22,6 +22,9 @@ import { usePasskeySignIn } from "../auth/passkeys/usePasskeySignIn";
 import { tokenHeaders, useTurnstileGate } from "../../components/auth/useTurnstileGate";
 import { authErrorCode, authErrorMessage } from "../../lib/api/authErrorCopy";
 import { LegalLinks } from "../legal/LegalLinks";
+import { UsernameField, usernameUsable } from "../profile/username/UsernameField";
+import type { UsernameStatus } from "../profile/username/usernameApi";
+import { BoxArt } from "../../components/BoxSpinner";
 
 export function MemberAuthPanel({
   onAuthenticated,
@@ -29,6 +32,7 @@ export function MemberAuthPanel({
   tenantBrand,
   embedded = false,
   eyebrow,
+  loginTitle,
   context,
   footer,
 }: {
@@ -39,6 +43,8 @@ export function MemberAuthPanel({
   embedded?: boolean;
   /** Page variant only: a line naming why sign-in is being asked for (e.g. an invitation). */
   eyebrow?: string;
+  /** Heading for the sign-in mode where "Member sign in" would be wrong (the staff console). */
+  loginTitle?: string;
   /** Shown above the form, e.g. the reason for signing in or an error from the host page. */
   context?: ReactNode;
   /** Shown after the form, e.g. a way to back out of the host flow. */
@@ -49,6 +55,10 @@ export function MemberAuthPanel({
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  // Decision 308: every new account chooses a username at sign-up.
+  const [username, setUsername] = useState("");
+  const [usernameStatus, setUsernameStatus] = useState<UsernameStatus>("idle");
+  const onUsernameStatus = useCallback((next: UsernameStatus) => setUsernameStatus(next), []);
   const [password, setPassword] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
@@ -82,7 +92,7 @@ export function MemberAuthPanel({
         await publicV1Request("/auth/member-sign-up", {
           method: "POST",
           headers: tokenHeaders(captchaToken),
-          body: JSON.stringify({ display_name: displayName, email, phone, password, website: "" }),
+          body: JSON.stringify({ display_name: displayName, handle: username.trim().toLowerCase(), email, phone, password, website: "" }),
         });
         captcha.reset();
         setMode("login");
@@ -150,7 +160,7 @@ export function MemberAuthPanel({
       {error ? <p className="text-sm text-danger" role="alert">{error}</p> : null}
     <button type="submit" disabled={pending} hidden aria-hidden="true" tabIndex={-1} />
     </form>} />;
-  const title = mode === "login" ? "Member sign in" : "Create a member account";
+  const title = mode === "login" ? loginTitle ?? "Member sign in" : "Create a member account";
   const modeSwitch = selfServeAccounts ? { label: t`Account access`, value: mode,
     options: [{ value: "login", label: t`Sign in` }, { value: "signup", label: t`Create account` }],
     onChange: (next: string) => { setMode(next as "login" | "signup"); setError(""); captcha.reset(); } } : undefined;
@@ -174,14 +184,15 @@ export function MemberAuthPanel({
           value={password} onChange={(event) => setPassword(event.target.value)} required />
         {mode === "signup" ? <PasswordStrength password={password} /> : null}
       </> : null}
+      {mode === "signup" ? <UsernameField id="member-username" value={username} onChange={setUsername} onStatus={onUsernameStatus} seed={{ displayName, email }} /> : null}
       {mode === "signup" ? <label className="grid gap-2 text-sm font-semibold" htmlFor="member-phone">{t`Phone (optional)`}<input id="member-phone" className="desk-input w-full" autoComplete="tel" value={phone} onChange={(event) => setPhone(event.target.value)} />
       </label> : null}
       {notice ? <p role="status" className="text-sm text-success-ink">{notice}</p> : null}
       {captcha.slot}
       {error ? <p className="text-sm text-danger" role="alert">{error}{errorCode === "password_breached" ? <> <a className="font-semibold underline" href="#member-password"
         onClick={(event) => { event.preventDefault(); document.getElementById("member-password")?.focus(); }}>{t`Choose another password`}</a></> : null}</p> : null}
-      {passwordLogin || mode === "signup" ? <button className="desk-button-brand w-full" type="submit" disabled={pending}>
-        {pending ? t`Please wait…` : mode === "login" ? t`Sign in` : t`Create account`}
+      {passwordLogin || mode === "signup" ? <button className="desk-button-brand w-full" type="submit" disabled={pending || mode === "signup" && !usernameUsable(usernameStatus)}>
+        {pending ? <><BoxArt size={16} mono />{t`Please wait…`}</> : mode === "login" ? t`Sign in` : t`Create account`}
       </button> : null}
     <button type="submit" disabled={pending} hidden aria-hidden="true" tabIndex={-1} />
     </form>;

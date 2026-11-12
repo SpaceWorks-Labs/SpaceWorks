@@ -6,6 +6,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { clearAccessToken } from "../../lib/api";
 import { accountKey, ownSessions, revokeSession, type AccountSession } from "./memberAccountApi";
+import { LogoLoader } from "../../components/LogoLoader";
 
 export function MemberAccountSessions({ makerspaceId, onSignedOut }: { makerspaceId: number; onSignedOut: () => void }) {
   const [page, setPage] = useState(1);
@@ -17,7 +18,7 @@ export function MemberAccountSessions({ makerspaceId, onSignedOut }: { makerspac
   } });
   // A sub-part of the account page's Security settings section, so its heading sits one level below it.
   return <section aria-labelledby="account-sessions-heading" className="grid min-w-0 gap-3"><h3 id="account-sessions-heading" className="title-section">{t`Sessions and devices`}</h3>
-    {rows.isLoading ? <p role="status" className="text-sm text-muted">{t`Loading sessions…`}</p> : null}
+    {rows.isLoading ? <LogoLoader label={t`Loading sessions…`} size={48} className="min-h-16 py-3" /> : null}
     {rows.error || revoke.error ? <p role="alert" className="text-sm text-danger">{(rows.error || revoke.error)?.message}</p> : null}
     {rows.data?.results.length === 0 ? <EmptyState message={t`No other devices are signed in.`} /> : null}
     <div className="grid gap-3">{rows.data?.results.map(session => <ListRow key={session.id} title={session.kind === "device" ? t`Native device` : t`Browser session`}

@@ -6,6 +6,7 @@ import { memberRequest } from "../../lib/api";
 import { reauthenticateMemberSocial } from "../auth/reauthenticationSocial";
 import { reauthenticationKey, type ReauthenticationResult } from "../auth/reauthenticationApi";
 import { deletionKey } from "./accountDeletionApi";
+import { BoxArt } from "../../components/BoxSpinner";
 
 const post = <T,>(path: string, body: object = {}) => memberRequest<T>(`/auth/reauth${path}`, { method: "POST", body: JSON.stringify(body) });
 
@@ -50,7 +51,7 @@ export function AccountDeletionReauthentication({ methods, onVerified }: { metho
     {!socialMethod || factor ? <form className="grid gap-3" onSubmit={event => { event.preventDefault(); verify.mutate(); }}>
       {passwordNeeded ? <Field label={t`Current password`}><input className="desk-input" type="password" autoComplete="current-password" required value={password} onChange={event => setPassword(event.target.value)} /></Field> : null}
       {method === "password" || method === "totp" || phoneToken || factor ? <Field label={method === "password" ? t`Authenticator code (if enabled)` : t`Verification code`}><input className="desk-input" inputMode="numeric" autoComplete="one-time-code" maxLength={6} pattern="[0-9]{6}" required={method !== "password"} value={code} onChange={event => setCode(event.target.value)} /></Field> : null}
-      <button className="desk-button-primary" disabled={pending || (method === "phone" && !phoneToken)}>{pending ? t`Verifying…` : t`Verify identity for deletion`}</button>
+      <button className="desk-button-primary" disabled={pending || (method === "phone" && !phoneToken)}>{pending ? <><BoxArt size={16} mono />{t`Verifying…`}</> : t`Verify identity for deletion`}</button>
     </form> : null}
     {error ? <p role="alert" className="text-sm text-danger">{error.message}</p> : null}
   </div>;

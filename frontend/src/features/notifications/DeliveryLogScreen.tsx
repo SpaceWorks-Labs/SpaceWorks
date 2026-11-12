@@ -3,11 +3,13 @@ import { useInRouterContext, useSearchParams } from "react-router-dom";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ListLayout } from "../../components/layouts";
-import { ErrorBlock, ListRow, Modal, RelativeTime, SegmentedControl, Skeleton, StatusPill } from "../../components/ui";
+import { ErrorBlock, ListRow, Modal, RelativeTime, SegmentedControl, StatusPill } from "../../components/ui";
 import { toast } from "../../components/ui/toastStore";
 import { staffRequest } from "../../lib/api";
 import type { Page } from "./PersonalInbox";
 import { SuppressionAdmin } from "./SuppressionAdmin";
+import { LogoLoader } from "../../components/LogoLoader";
+import { BoxArt } from "../../components/BoxSpinner";
 
 type Delivery = {
   id: number; kind: "email" | "channel"; channel: string; feature: string; event: string;
@@ -17,7 +19,7 @@ type Delivery = {
 type Destination = { id: number; label: string; channel: string; is_active: boolean };
 type TestResult = { kind: string; id: number; status: string };
 const FAMILIES = (): Record<string, string> => ({ hardware_requests: t`Hardware`, printing: t`Printing`, events: t`Events`, bookings: t`Bookings`,
-  maintenance: t`Maintenance`, members: t`Members`, payments: t`Payments`, stock: t`Stock`, certifications: t`Certifications`, devices: t`Devices`, api_access: t`API access` });
+  maintenance: t`Maintenance`, members: t`Members`, payments: t`Payments`, stock: t`Stock`, certifications: t`Machine access`, devices: t`Devices`, api_access: t`API access` });
 const CHANNELS = ["email", "telegram", "slack", "mattermost", "discord", "webhook", "native_push"];
 const STATUSES = ["sent", "failed", "pending", "sending", "skipped"];
 const statusLabel = (status: string) => {
@@ -76,7 +78,7 @@ function DeliveryLogContent({ makerspaceId, search, dialogs }: { makerspaceId: n
   const target = <label className="grid gap-2 text-sm font-semibold">{t`Test target`}<select className="desk-input" value={testDestination} onChange={event => setTestDestination(event.target.value)}>
     <option value="">{t`Email to my account`}</option>{destinations.data?.filter(row => row.is_active).map(row => <option key={row.id} value={row.id}>{row.label} ({words(row.channel)})</option>)}
   </select></label>;
-  const destinationState = <>{destinations.isLoading ? <Skeleton className="h-11 w-48" /> : null}
+  const destinationState = <>{destinations.isLoading ? <LogoLoader size={48} className="min-h-11 py-3 max-w-48" /> : null}
     {destinations.error ? <ErrorBlock error={new Error(t`Couldn't load delivery destinations. Try again.`)} onRetry={() => { void destinations.refetch(); }} /> : null}</>;
   return <ListLayout header={{ title: t`Delivery log`, subtitle: t`Every email and alert this space sent, and whether it arrived.`,
       primary: suppressed ? { label: t`Suppress an address`, onClick: () => setSuppressOpen(true) } : {
@@ -124,7 +126,7 @@ function DeliveryLogContent({ makerspaceId, search, dialogs }: { makerspaceId: n
       <form className="grid gap-4" onSubmit={event => { event.preventDefault(); test.mutate(); }}>
         {target}{destinationState}{test.error ? <ErrorBlock error={test.error} /> : null}
         <div className="flex flex-wrap justify-end gap-3"><button className="desk-button" type="button" disabled={test.isPending} onClick={() => setTestOpen(false)}>{t`Cancel`}</button>
-          <button className="desk-button-primary" disabled={test.isPending}>{test.isPending ? t`Sending…` : t`Send test`}</button></div>
+          <button className="desk-button-primary" disabled={test.isPending}>{test.isPending ? <><BoxArt size={16} mono />{t`Sending…`}</> : t`Send test`}</button></div>
       </form>
     </Modal></>} />;
 }

@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ConfirmDialog } from "../../components/ui";
 import { memberRequest, memberRequestBlob } from "../../lib/api";
 import { OwnerScoped, type FeedScope } from "./calendarFeeds/ownerScope";
+import { BoxArt } from "../../components/BoxSpinner";
 
 type FeedState = {
   enabled: boolean;
@@ -72,7 +73,7 @@ function EventCalendarCard({ makerspaceId, makerspaceSlug, scope }: Props & { sc
     <p className="font-semibold text-ink">{t`My event calendar`}</p>
     <div className="mt-2 flex flex-wrap gap-2">
       <button className="desk-button" type="button" disabled={download.isPending} onClick={() => download.mutate()}>
-        {download.isPending ? t`Preparing…` : t`Download calendar`}
+        {download.isPending ? <><BoxArt size={16} mono />{t`Preparing…`}</> : t`Download calendar`}
       </button>
       <button className="desk-button" type="button" disabled={issue.isPending || feed.isLoading} onClick={() => setAsking("issue")}>
         {feed.data?.enabled ? t`Rotate subscription link` : t`Create subscription link`}

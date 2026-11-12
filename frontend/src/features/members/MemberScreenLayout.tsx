@@ -9,7 +9,7 @@ import type { MemberTab } from "./MemberPortalTabs";
 // Translated at render time; the nav label of each tab comes from memberTabLabel.
 const titles = (): Record<MemberTab, string> => ({ overview: t`Your makerspace access`, loans: t`Loans`, bookings: t`Bookings`, events: t`Events`,
   payments: t`Payments`, inbox: t`Inbox`, account: t`Profile & card` });
-const accountSections = () => [["profile", t`Profile`], ["card", t`Card`], ["certifications", t`Certifications`], ["community", t`Community`],
+const accountSections = () => [["profile", t`Profile`], ["card", t`Card`], ["machine-access", t`My machine access`], ["community", t`Community`],
   ["invitations", t`Invite a friend`], ["channels", t`Channels`], ["phone", t`Verify phone`]];
 
 /** Presentation only: the portal keeps every permission check and query in MemberArea. */

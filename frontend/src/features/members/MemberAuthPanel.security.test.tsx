@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -78,14 +79,16 @@ describe("MemberAuthPanel login security", () => {
 
   it("links a breached password back to the password field", async () => {
     config({});
-    render(<MemberAuthPanel onAuthenticated={vi.fn()} />);
+    render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><MemberAuthPanel onAuthenticated={vi.fn()} /></QueryClientProvider>);
     await waitFor(() => expect(publicV1Request).toHaveBeenCalledWith("/config"));
     publicV1Request.mockImplementation((path: string) => path === "/auth/member-sign-up"
-      ? Promise.reject(apiError(400, { code: "password_breached", detail: "raw" })) : Promise.resolve({}));
+      ? Promise.reject(apiError(400, { code: "password_breached", detail: "raw" }))
+      : Promise.resolve(path.startsWith("/handles/check") ? (path.includes("handle=") ? { available: true, reason: "", suggestion: null } : { available: null, reason: "", suggestion: "ada" }) : {}));
     fireEvent.click(screen.getByRole("radio", { name: "Create account" }));
     fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Ada" } });
     fireEvent.change(screen.getByLabelText("Email"), { target: { value: "ada@example.test" } });
     fireEvent.change(screen.getByLabelText("Password"), { target: { value: "password1" } });
+    await waitFor(() => expect(screen.getByRole("button", { name: "Create account" })).toBeEnabled());
     fireEvent.click(screen.getByRole("button", { name: "Create account" }));
     const alert = await screen.findByRole("alert");
     expect(alert).toHaveTextContent(/known data breach/);

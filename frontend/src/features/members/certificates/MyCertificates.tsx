@@ -1,3 +1,4 @@
+import { LogoLoader } from "../../../components/LogoLoader";
 import { formatLocale } from "../../../lib/format";
 import { t } from "@lingui/core/macro";
 import { Award, BadgeCheck, Download, FileText, Image as ImageIcon, Share2 } from "lucide-react";
@@ -48,7 +49,7 @@ function CertificateCard({ row, makerspaceId }: { row: HolderCertificate; makers
 /** Every certificate the member holds from this space, with downloads, sharing and name visibility. */
 export function MyCertificates({ makerspaceId }: { makerspaceId: number }) {
   const query = useMyCertificates(makerspaceId);
-  if (query.isLoading) return <p role="status" className="text-sm text-muted">{t`Loading your certificates…`}</p>;
+  if (query.isLoading) return <LogoLoader label={t`Loading your certificates…`} />;
   if (query.isError) return <p role="alert" className="text-sm text-danger">{t`Your certificates could not be loaded. `}<button type="button" className="desk-button-ghost" onClick={() => { void query.refetch(); }}>{t`Try again`}</button></p>;
   if (!query.data?.length) return <EmptyState message={t`No certificates yet. They appear here once organisers issue them.`} />;
   return <ul className="grid gap-3" aria-label={t`My certificates`}>{query.data.map((row) => <CertificateCard key={row.id} row={row} makerspaceId={makerspaceId} />)}</ul>;

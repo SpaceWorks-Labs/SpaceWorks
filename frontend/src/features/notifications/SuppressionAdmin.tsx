@@ -6,6 +6,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { staffRequest } from "../../lib/api";
 import type { Page } from "./PersonalInbox";
+import { BoxArt } from "../../components/BoxSpinner";
 type Suppression = { id: number; address_hash: string; reason: string; created_at: string };
 
 export function SuppressionAdmin({ makerspaceId, embedded = false, dialogOpen, onDialogClose }: { makerspaceId: number; embedded?: boolean; dialogOpen?: boolean; onDialogClose?: () => void }) {
@@ -28,7 +29,7 @@ export function SuppressionAdmin({ makerspaceId, embedded = false, dialogOpen, o
     <form className="my-3 flex flex-wrap items-end gap-3" onSubmit={(event) => { event.preventDefault(); add.mutate(); }}>
       <label className="grid gap-1 text-sm">{t`Email address`}<input className="desk-input" type="email" maxLength={254} required value={address} onChange={(e) => setAddress(e.target.value)} /></label>
       <label className="grid gap-1 text-sm">{t`Reason`}<select className="desk-input" value={reason} onChange={(e) => setReason(e.target.value)}><option value="bounce">{t`Hard bounce`}</option><option value="complaint">{t`Spam complaint`}</option></select></label>
-      <button className="desk-button-primary" disabled={add.isPending}>{add.isPending ? t`Suppressing…` : t`Suppress email`}</button>
+      <button className="desk-button-primary" disabled={add.isPending}>{add.isPending ? <><BoxArt size={16} mono />{t`Suppressing…`}</> : t`Suppress email`}</button>
       {add.error ? <ErrorBlock error={add.error} /> : null}
     </form>
   </>);

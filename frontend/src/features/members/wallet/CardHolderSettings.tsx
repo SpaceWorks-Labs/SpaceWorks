@@ -8,6 +8,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { ErrorText } from "../../../components/ui";
 import { useCardSettings, useRotateCheckLink, useSaveCardSettings, type CardSettings, type MyCard } from "./api";
 import { CardPhotoSection } from "./CardPhotoSection";
+import { LogoLoader } from "../../../components/LogoLoader";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 const BLOOD_GROUPS = ["", "A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 
@@ -19,7 +21,7 @@ export function CardHolderSettings({ card }: { card: MyCard }) {
   const [draft, setDraft] = useState<CardSettings | null>(null);
   useEffect(() => { if (settings.data) setDraft(settings.data); }, [settings.data]);
   if (settings.error) return <ErrorText message={settings.error.message} />;
-  if (!draft) return <p className="text-sm text-muted">{t`Loading…`}</p>;
+  if (!draft) return <LogoLoader label={t`Loading…`} size={48} className="min-h-16 py-3" />;
   const set = <K extends keyof CardSettings>(key: K, value: CardSettings[K]) => setDraft({ ...draft, [key]: value });
   const toggle = (key: "verify_show_name" | "verify_show_photo" | "extras_opted_in", text: string) =>
     <label className="flex min-h-11 items-center gap-2 text-sm text-ink">
@@ -55,7 +57,7 @@ export function CardHolderSettings({ card }: { card: MyCard }) {
         const { public_check_on: _ignored, ...patch } = draft;
         save.mutate(patch, { onSuccess: () => { void client.invalidateQueries({ queryKey: ["member", "card-image"] });
           void client.invalidateQueries({ queryKey: ["member", "card-face"] }); } });
-      }}>{save.isPending ? t`Saving…` : t`Save`}</button>
+      }}>{save.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Save`}</button>
       {save.isSuccess ? <span role="status" className="text-sm text-success-ink">{t`Saved.`}</span> : null}
     </div>
     {save.error ? <ErrorText message={save.error.message} /> : null}

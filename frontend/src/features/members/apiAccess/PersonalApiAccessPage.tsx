@@ -13,6 +13,7 @@ import {
   accessTokensKey, connectedAppsKey, createAccessToken, disconnectApp, getPersonScopes, listAccessTokens,
   listConnectedApps, personScopesKey, revokeAccessToken,
 } from "./personalApiAccessApi";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 export function PersonalApiAccessPage() {
   const queryClient = useQueryClient();
@@ -70,7 +71,7 @@ export function PersonalApiAccessPage() {
             <input type="number" min={1} max={365} className="desk-input w-32" value={days}
               onChange={(event) => setDays(Math.min(365, Math.max(1, Number(event.target.value) || 90)))} /></Field>
           <button className="desk-button-primary" disabled={!name.trim() || !scopes.length || (needsSpace && !space) || create.isPending}
-            onClick={() => create.mutate()}>{create.isPending ? t`Creating…` : t`Create token`}</button>
+            onClick={() => create.mutate()}>{create.isPending ? <><BoxArt size={16} mono />{t`Creating…`}</> : t`Create token`}</button>
           {create.error ? <ErrorText message={create.error.message} /> : null}
           {secret ? <ApiClientSecretReveal secret={secret} onDismiss={() => setSecret(null)} /> : null}
         </div> },

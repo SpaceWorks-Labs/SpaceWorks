@@ -10,6 +10,8 @@ import { JoinFormExtras } from "./joinFields/JoinFormExtras";
 import { EMPTY_EXTRAS, NO_EXTRAS, asksForAnything, serverExtrasErrors, validateExtras, type JoinExtrasErrors } from "./joinFields/joinFieldsModel";
 import { joinFieldsInput } from "./joinFields/uploadJoinPhoto";
 import { resubmitAdmission, type AdmissionRequest } from "./membershipAdmissionApi";
+import { LogoLoader } from "../../components/LogoLoader";
+import { BoxArt } from "../../components/BoxSpinner";
 
 // A resubmission may leave a field blank to keep what was sent the first time; the server decides.
 const MAYBE_ON_FILE = { phone: true, state: true, photo: true };
@@ -52,7 +54,7 @@ export function ApplicationChanges({ makerspaceId, request }: { makerspaceId: nu
       body={request.changes_note ? t`“${request.changes_note}”` : t`Review your answers and send them back.`}
       action={!editing && loaded ? { label: t`Edit my application`, onClick: () => setEditing(true) } : undefined} />
     <p className="text-sm text-muted">{t`You can edit and send your application back once, before it expires.`}</p>
-    {!loaded ? <p className="text-sm text-muted" role="status">{t`Loading your application…`}</p> : null}
+    {!loaded ? <LogoLoader label={t`Loading your application…`} size={48} className="min-h-16 py-3" /> : null}
     {editing ? <form className="grid gap-4" aria-label={t`Edit your application`} onSubmit={(event) => { event.preventDefault(); submit(); }}>
       {schema ? <CustomFormFields schema={schema} answers={answers} onChange={setAnswers} disabled={send.isPending}
         errors={{ ...errors, ...customAnswerErrors(body?.application_answers) }} /> : null}
@@ -60,7 +62,7 @@ export function ApplicationChanges({ makerspaceId, request }: { makerspaceId: nu
         disabled={send.isPending} onFile={MAYBE_ON_FILE} errors={{ ...serverExtrasErrors(body), ...extrasErrors }} /> : null}
       {!schema && !asksForAnything(modes) ? <p className="text-sm text-muted">{t`There are no questions to change. Send it back when you are ready.`}</p> : null}
       <div className="flex flex-wrap gap-3 [&>button]:flex-1 sm:[&>button]:flex-none">
-        <button className="desk-button-brand" type="submit" disabled={send.isPending}>{send.isPending ? t`Sending…` : t`Send my application back`}</button>
+        <button className="desk-button-brand" type="submit" disabled={send.isPending}>{send.isPending ? <><BoxArt size={16} mono />{t`Sending…`}</> : t`Send my application back`}</button>
         <button className="desk-button" type="button" disabled={send.isPending} onClick={() => setEditing(false)}>{t`Not now`}</button>
       </div>
       {send.error ? <p role="alert" className="text-sm text-danger">{send.error.message}</p> : null}

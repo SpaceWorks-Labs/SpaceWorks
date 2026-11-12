@@ -5,6 +5,7 @@ import { EmptyState, ListRow, Pagination, StatusPill, RelativeTime } from "../..
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { memberRequest } from "../../lib/api";
+import { LogoLoader } from "../../components/LogoLoader";
 
 type Certification = { id: number; name: string; machine_type_name: string; type_active: boolean; is_live: boolean; granted_at: string; expires_at: string | null; revoked_at: string | null };
 type Page = { count: number; next: string | null; previous: string | null; results: Certification[] };
@@ -13,7 +14,7 @@ export function MemberCertifications({ makerspaceId }: { makerspaceId: number })
   const query = useQuery({ queryKey: ["member", makerspaceId, "certifications", page], queryFn: () => memberRequest<Page>(`/member/makerspaces/${makerspaceId}/certifications?page=${page}`) });
   return <section className="desk-panel p-5" aria-label={t`Your certifications`}>
     <h2 className="title-panel">{t`Your certifications`}</h2>
-    {query.isLoading ? <p role="status">{t`Loading certifications…`}</p> : null}
+    {query.isLoading ? <LogoLoader label={t`Loading certifications…`} size={48} className="min-h-16 py-3" /> : null}
     {query.error instanceof Error ? <p role="alert" className="text-danger">{query.error.message}</p> : null}
     {query.isSuccess && !query.data.count ? <EmptyState message={t`No training records yet. Ask staff about a machine induction.`} /> : null}
     <ul className="mt-3 grid gap-3">{query.data?.results.map(row => <li key={row.id}><ListRow title={row.name}

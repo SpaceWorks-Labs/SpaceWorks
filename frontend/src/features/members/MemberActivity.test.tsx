@@ -10,7 +10,7 @@ vi.mock("../../lib/api", () => ({ memberRequest: vi.fn(), staffRequest: vi.fn(),
 vi.mock("./MemberCalendarActions", () => ({ MemberCalendarActions: () => <p>Calendar controls</p> }));
 vi.mock("./MemberEventFeedback", () => ({ MemberEventFeedback: () => <p>Feedback controls</p> }));
 
-const modules = ["membership", "request_workflow", "machines", "machine_service", "printing", "bookings", "events", "presence"];
+const modules = ["membership", "request_workflow", "machines", "machine_service", "bookings", "events", "presence"];
 const activity: MemberActivity = {
   active_hardware_loans: [{ request_id: 12, can_renew: true, label: "Drill", checked_out_at: "2026-10-01", due_at: "2026-10-12", overdue: false }],
   machine_service_requests: [{ machine_type: "3d_printer", title: "Print job", status: "queued", queue_position: 2 }],

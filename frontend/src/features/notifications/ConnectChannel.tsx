@@ -5,6 +5,7 @@ import { Field } from "../../components/ui";
 import { formatTime } from "../../lib/format";
 import { channelLabel } from "./channelCatalog";
 import { CONSENT_VERSION, useStartChallenge, useVerifyChallenge, type Challenge, type ChannelKey } from "./channelsApi";
+import { BoxArt } from "../../components/BoxSpinner";
 
 const PHONE = /^\+[1-9][0-9]{6,14}$/;
 
@@ -42,7 +43,7 @@ export function ConnectChannel({ makerspaceId, channel, member = false, onDone }
     {start.error ? <p role="alert" className="text-sm text-danger">{start.error.message}</p> : null}
     <div className="flex flex-wrap gap-2">
       <button className="desk-button" type="submit" disabled={!consent || (whatsapp && !phoneValid) || start.isPending}>
-        {start.isPending ? t`Starting…` : whatsapp ? t`Send me a code` : t`Connect ${label}`}</button>
+        {start.isPending ? <><BoxArt size={16} mono />{t`Starting…`}</> : whatsapp ? t`Send me a code` : t`Connect ${label}`}</button>
       <button className="desk-button" type="button" onClick={onDone}>{t`Cancel`}</button>
     </div>
   </form>;
@@ -61,7 +62,7 @@ export function ConnectChannel({ makerspaceId, channel, member = false, onDone }
       : t`Not connected yet. Finish in ${label}, then confirm again. (${verify.error.message})`}</p> : null}
     <div className="flex flex-wrap gap-2">
       <button className="desk-button" type="button" disabled={verify.isPending || (whatsapp && !code.trim())} onClick={finish}>
-        {verify.isPending ? t`Checking…` : whatsapp ? t`Verify code` : t`I've connected`}</button>
+        {verify.isPending ? <><BoxArt size={16} mono />{t`Checking…`}</> : whatsapp ? t`Verify code` : t`I've connected`}</button>
       <button className="desk-button" type="button" onClick={onDone}>{t`Cancel`}</button>
     </div>
   </div>;

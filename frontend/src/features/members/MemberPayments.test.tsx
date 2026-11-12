@@ -18,7 +18,7 @@ const base: MemberPayment = {
   refunded_amount: 4,
   refunds: [],
   created_at: "2026-10-01T10:00:00Z",
-  offline_collection: { upi: null, instructions: "", claim: null, claimable: false },
+  offline_collection: { upi: null, instructions: "", instructions_unit: null, claim: null, claimable: false },
 };
 
 describe("MemberPaymentRows", () => {
@@ -64,8 +64,8 @@ describe("MemberPaymentRows", () => {
       <MemberPaymentRows
         onCheckout={vi.fn()}
         payments={[
-          { ...base, id: 8, status: "pending", subject_label: "Claimed", offline_collection: { upi: null, instructions: "", claimable: false, claim: { ...claim, status: "submitted" } } },
-          { ...base, id: 9, status: "pending", subject_label: "Rejected claim", offline_collection: { upi: null, instructions: "", claimable: true, claim: { ...claim, status: "rejected" } } },
+          { ...base, id: 8, status: "pending", subject_label: "Claimed", offline_collection: { upi: null, instructions: "", instructions_unit: null, claimable: false, claim: { ...claim, status: "submitted" } } },
+          { ...base, id: 9, status: "pending", subject_label: "Rejected claim", offline_collection: { upi: null, instructions: "", instructions_unit: null, claimable: true, claim: { ...claim, status: "rejected" } } },
         ]}
       />,
     );

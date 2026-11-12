@@ -4,6 +4,7 @@ import { useMutation } from "@tanstack/react-query";
 
 import { Field } from "../../components/ui";
 import { StructuredApiError, tenantPublicRequest } from "../../lib/api";
+import { BoxArt } from "../../components/BoxSpinner";
 
 type Ack = { detail: string };
 
@@ -70,7 +71,7 @@ export function InvitationRequestForm({ slug }: { slug: string }) {
             </label>
           </div>
           <button className="desk-button-brand w-full sm:w-fit" type="submit" disabled={!canSubmit}>
-            {submit.isPending ? t`Sending…` : t`Send request`}
+            {submit.isPending ? <><BoxArt size={16} mono />{t`Sending…`}</> : t`Send request`}
           </button>
           {submit.error ? (
             <p className="text-sm text-danger" role="alert">{invitationErrorText(submit.error)}</p>

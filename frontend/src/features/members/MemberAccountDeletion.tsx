@@ -6,6 +6,8 @@ import { StructuredApiError } from "../../lib/api/errors";
 import { AccountDeletionReauthentication } from "./AccountDeletionReauthentication";
 import { AccountDeletionBlockers } from "./AccountDeletionBlockers";
 import { useDeleteAccount, useDeletionPreview, type DeletionBlocker, type DeletionResult } from "./accountDeletionApi";
+import { LogoLoader } from "../../components/LogoLoader";
+import { BoxArt } from "../../components/BoxSpinner";
 
 export function AccountDeletionReceipt({ result }: { result: DeletionResult }) {
   return <section aria-labelledby="deletion-result-heading" className="grid gap-3">
@@ -31,7 +33,7 @@ export function MemberAccountDeletion({ slug, onDeleted }: { slug: string; onDel
     </details>
     <p className="text-sm text-muted">{t`If you used Apple, we will attempt to revoke its authorization. If no token is available or revocation fails, remove Space Works under Sign in with Apple in your Apple Account settings.`}</p>
     <a className="text-brand-ink underline" href="https://account.apple.com/account/manage">{t`Manage Sign in with Apple`}</a>
-    {preview.isLoading ? <p role="status">{t`Checking account obligations…`}</p> : null}
+    {preview.isLoading ? <LogoLoader label={t`Checking account obligations…`} size={48} className="min-h-16 py-3" /> : null}
     {preview.error ? <div><p role="alert" className="text-danger">{preview.error.message}</p><button type="button" className="desk-button" onClick={() => void preview.refetch()}>{t`Retry deletion check`}</button></div> : null}
     {blockers.length ? <><p role="status">{t`Resolve these items before deleting your account.`}</p><AccountDeletionBlockers blockers={blockers} slug={slug} /></> : null}
     {ready && preview.data ? <>
@@ -39,7 +41,7 @@ export function MemberAccountDeletion({ slug, onDeleted }: { slug: string; onDel
       {needsReauth ? <AccountDeletionReauthentication methods={preview.data.reauth.methods} onVerified={() => { void preview.refetch(); }} /> : <p role="status">{t`Your recent sign-in is confirmed.`}</p>}
       <form className="grid gap-3" onSubmit={event => { event.preventDefault(); if (confirmation === "DELETE" && !needsReauth) deletion.mutate(); }}>
         <Field label={t`Type DELETE to confirm`} hint={t`This affects your whole account and all makerspace memberships.`}><input className="desk-input" value={confirmation} autoComplete="off" spellCheck={false} onChange={event => setConfirmation(event.target.value)} /></Field>
-        <button className="desk-button-danger" disabled={confirmation !== "DELETE" || needsReauth || deletion.isPending}>{deletion.isPending ? t`Deleting account…` : t`Delete account permanently`}</button>
+        <button className="desk-button-danger" disabled={confirmation !== "DELETE" || needsReauth || deletion.isPending}>{deletion.isPending ? <><BoxArt size={16} mono />{t`Deleting account…`}</> : t`Delete account permanently`}</button>
       </form>
     </> : null}
     {deletion.error ? <p role="alert" className="text-danger">{deletion.error.message}</p> : null}

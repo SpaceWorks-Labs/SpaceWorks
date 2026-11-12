@@ -4,6 +4,8 @@ import { useState } from "react";
 import { CustomFormFields } from "../forms/CustomFormFields";
 import { validateCustomAnswers, type CustomAnswers, type CustomFormSchema } from "../forms/customFormTypes";
 import type { JoinMode } from "./membershipAdmissionApi";
+import { LogoLoader } from "../../components/LogoLoader";
+import { BoxArt } from "../../components/BoxSpinner";
 
 
 export type ClaimableInvitation = {
@@ -63,7 +65,7 @@ export function MemberReferrals({
         <input id="member-referral-email" className="desk-input flex-1" type="email" required value={email}
           onChange={(event) => setEmail(event.target.value)} placeholder="friend@example.com" />
         <button className="desk-button-brand" disabled={isReferring} type="submit">
-          {isReferring ? t`Sending…` : t`Send referral`}
+          {isReferring ? <><BoxArt size={16} mono />{t`Sending…`}</> : t`Send referral`}
         </button>
       </form>
       {referralSuccess ? <p className="mt-3 text-sm text-success-ink" role="status">{referralSuccess}</p> : null}
@@ -73,7 +75,7 @@ export function MemberReferrals({
     <section className="desk-panel p-5">
       <h2 className="title-panel">{t`Pending invitations`}</h2>
       {emailVerified === false ? <p className="mt-2 text-sm text-muted">{t`Verify your email to discover and claim invitations.`}</p> : null}
-      {invitationsLoading ? <p className="mt-2 text-sm text-muted">{t`Checking pending invitations…`}</p> : null}
+      {invitationsLoading ? <LogoLoader label={t`Checking pending invitations…`} size={48} className="min-h-16 py-3" /> : null}
       {invitationError ? <p className="mt-2 text-sm text-danger" role="alert">{invitationError.message}</p> : null}
       {emailVerified !== false && !invitationsLoading && invitations.length === 0 ? <EmptyState message={t`No pending invitations for this makerspace.`} /> : null}
       {emailVerified !== false && invitations.length ? <ul className="mt-3 space-y-3">
@@ -102,7 +104,7 @@ function InvitationApplication({ invitation, schema, admissionMode, pending, onC
       if (schema?.length) onClaim(invitation.id, answers); else onClaim(invitation.id);
     }}>
       <CustomFormFields schema={schema} answers={answers} onChange={setAnswers} errors={errors} disabled={pending} />
-      <button type="submit" className="desk-button-brand w-full sm:w-fit" disabled={pending}>{pending ? t`Claiming…` : t`Claim invitation`}</button>
+      <button type="submit" className="desk-button-brand w-full sm:w-fit" disabled={pending}>{pending ? <><BoxArt size={16} mono />{t`Claiming…`}</> : t`Claim invitation`}</button>
     </form>}
   </li>;
 }

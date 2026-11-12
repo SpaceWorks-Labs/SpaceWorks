@@ -3,6 +3,7 @@ import { t } from "@lingui/core/macro";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { staffRequest } from "../../lib/api";
+import { BoxArt } from "../../components/BoxSpinner";
 
 export function MemberEventCancel({ makerspaceId, makerspaceSlug, registrationId, status, canCancel = true, cutoffAt }: {
   makerspaceId: number; makerspaceSlug: string; registrationId: number; status: string;
@@ -26,7 +27,7 @@ export function MemberEventCancel({ makerspaceId, makerspaceSlug, registrationId
   return <div className="mt-1">
     {cutoffAt ? <p className="text-xs text-muted"><time dateTime={cutoffAt}>{t`Cancel before ${formatDateTime(cutoffAt)}.`}</time></p> : null}
     <button className="desk-button-danger" type="button" disabled={cancel.isPending || cancel.isSuccess} onClick={() => cancel.mutate()}>
-      {cancel.isPending ? t`Cancelling...` : cancel.isSuccess ? t`Registration cancelled` : t`Cancel registration`}
+      {cancel.isPending ? <><BoxArt size={16} mono />{t`Cancelling...`}</> : cancel.isSuccess ? t`Registration cancelled` : t`Cancel registration`}
     </button>
     {cancel.error ? <p className="mt-1 text-sm text-danger" role="alert">{cancel.error.message}</p> : null}
   </div>;

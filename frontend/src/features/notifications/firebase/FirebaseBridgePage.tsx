@@ -1,9 +1,11 @@
+import { LogoLoader } from "../../../components/LogoLoader";
 import { registerOwnFirebaseWorker } from "./firebaseRegistration";
 import { t } from "@lingui/core/macro";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { memberRequest } from "../../../lib/api";
 import { beginFirebaseBridge, disableFirebaseForSpace } from "./firebaseBridge";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 type PublicConfig = { api_key: string; auth_domain: string; project_id: string; app_id: string; messaging_sender_id: string; vapid_public_key: string };
 /** Top-level page controlled only by /firebase-alerts/ worker; no nonce or FID enters the URL. */
@@ -42,11 +44,11 @@ export function FirebaseBridgePage() {
     finally { setBusy(false); }
   }
   if (!id) return <p role="alert">{t`Choose a makerspace before enabling notifications.`}</p>;
-  if (config.isPending) return <p role="status">{t`Loading notification settings…`}</p>;
+  if (config.isPending) return <LogoLoader label={t`Loading notification settings…`} />;
   if (config.error || !config.data?.configured) return <p role="alert">{t`Browser notifications are unavailable for this space.`}</p>;
   return <main className="desk-panel grid gap-3 p-5"><h1>{t`Browser notifications`}</h1>
     <p>{t`Allow notifications to receive a generic notice when your inbox changes.`}</p>
-    <button type="button" disabled={busy} onClick={() => void enable()}>{busy ? t`Working…` : t`Enable notifications`}</button>
+    <button type="button" disabled={busy} onClick={() => void enable()}>{busy ? <><BoxArt size={16} mono />{t`Working…`}</> : t`Enable notifications`}</button>
     <button type="button" disabled={busy} onClick={() => void disable()}>{t`Disable notifications for this space`}</button>
     {message ? <p role="status">{message}</p> : null}<a href="/member">{t`Return to your account`}</a>
   </main>;

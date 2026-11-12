@@ -12,6 +12,11 @@ describe("member sign-in", () => {
     expect(await screen.findByRole("heading", { level: 1, name: "Member sign in" })).toBeInTheDocument();
     expect(screen.getByRole("main")).toBeInTheDocument();
   });
+  it("says what it is signing in to when a host names it (the staff console)", async () => {
+    render(<MemberAuthPanel eyebrow="Staff console" loginTitle="Sign in to the staff console" onAuthenticated={vi.fn()} />);
+    expect(await screen.findByRole("heading", { level: 1, name: "Sign in to the staff console" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Member sign in" })).not.toBeInTheDocument();
+  });
   it("drops the page chrome when embedded in another page", async () => {
     render(<main><h1>Workshop</h1><MemberAuthPanel embedded context={<p>Sign in to submit a booking.</p>} onAuthenticated={vi.fn()} /></main>);
     const region = await screen.findByRole("region", { name: "Member sign in" });

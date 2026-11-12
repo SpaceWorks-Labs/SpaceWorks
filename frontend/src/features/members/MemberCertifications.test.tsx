@@ -1,3 +1,4 @@
+// Decision 319 (addendum): machine certifications / inductions are retired; the screen is unmounted. Cases kept, skipped.
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
@@ -10,7 +11,7 @@ function show() {
   render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><MemberCertifications makerspaceId={3} /></QueryClientProvider>);
 }
 
-describe("own certification history", () => {
+describe.skip("own certification history", () => {
   it("renders expiry and renewal guidance using server validity", async () => {
     vi.mocked(memberRequest).mockResolvedValue({ count: 1, next: null, previous: null, results: [{ id: 1, name: "Laser safety", machine_type_name: "Laser", type_active: true, is_live: false, granted_at: "2020-01-01T00:00:00Z", expires_at: "2021-01-01T00:00:00Z", revoked_at: null }] });
     show();

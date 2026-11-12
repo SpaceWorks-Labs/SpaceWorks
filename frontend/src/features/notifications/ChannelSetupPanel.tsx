@@ -6,6 +6,7 @@ import { channelSpecs, type ChannelSpec } from "./channelCatalog";
 import { useChannels, type Channel } from "./channelsApi";
 import { ChannelSetupForm } from "./ChannelSetupForm";
 import { ChannelTestSend } from "./ChannelTestSend";
+import { LogoLoader } from "../../components/LogoLoader";
 
 function summary(spec: ChannelSpec, row?: Channel): { label: string; tone: Tone } {
   // No settings row means today's behaviour: email sends and existing rooms post.
@@ -24,7 +25,7 @@ function summary(spec: ChannelSpec, row?: Channel): { label: string; tone: Tone 
 export function ChannelSetupPanel({ makerspaceId, enabledModules }: { makerspaceId: number; enabledModules: readonly string[] }) {
   const channels = useChannels(makerspaceId);
   const [open, setOpen] = useState<string | null>(null);
-  if (channels.isLoading) return <p className="py-4 text-sm text-muted">{t`Loading channels…`}</p>;
+  if (channels.isLoading) return <LogoLoader label={t`Loading channels…`} size={48} className="min-h-16 py-3" />;
   if (channels.error) return <ErrorBlock error={new Error(t`Couldn't load channel settings (${channels.error.message}).`)}
     onRetry={() => { void channels.refetch(); }} />;
   const rows = new Map((channels.data?.results ?? []).map(row => [row.channel, row]));

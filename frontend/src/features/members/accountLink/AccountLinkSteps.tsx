@@ -3,6 +3,7 @@ import { useId } from "react";
 import { Field } from "../../../components/ui";
 import type { MergeMethod } from "./accountLinkApi";
 import { Fingerprint } from "lucide-react";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 const METHODS: { value: MergeMethod; label: string; hint: string }[] = [
   { value: "credentials", label: t`Its password and authenticator`, hint: t`Sign in to the other account here, once.` },
@@ -55,7 +56,7 @@ export function ProveStep({ method, identifier, fields, onChange, onResend, rese
       <p className="text-sm text-muted">{t`No authenticator code? Enter the password above, then use a passkey saved for the other account.`}</p>
       <div><button type="button" className="desk-button min-h-11 gap-2" disabled={!fields.password || passkey.pending}
         aria-busy={passkey.pending || undefined} onClick={passkey.onUse}>
-        <Fingerprint aria-hidden="true" size={20} />{passkey.pending ? t`Waiting for your device…` : t`Use its passkey instead`}</button></div>
+        <Fingerprint aria-hidden="true" size={20} />{passkey.pending ? <><BoxArt size={16} mono />{t`Waiting for your device…`}</> : t`Use its passkey instead`}</button></div>
     </div> : null}
   </div>;
   return <div className="grid gap-4">
@@ -70,7 +71,7 @@ export function ProveStep({ method, identifier, fields, onChange, onResend, rese
     </Field>
     <div className="flex flex-wrap items-center gap-3">
       <button type="button" className="desk-button min-h-11" disabled={resending} aria-busy={resending || undefined} onClick={onResend}>
-        {resending ? t`Sending…` : t`Send new codes`}</button>
+        {resending ? <><BoxArt size={16} mono />{t`Sending…`}</> : t`Send new codes`}</button>
       {resent ? <p role="status" className="text-sm text-muted">{t`New codes sent. Earlier codes no longer work.`}</p> : null}
     </div>
   </div>;

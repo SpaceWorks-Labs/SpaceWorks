@@ -3,6 +3,7 @@ import { SettingsActions, SettingsRow } from "../../components/ui";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { accountKey, editProfile, ownProfile, type AccountProfile } from "./memberAccountApi";
+import { LogoLoader } from "../../components/LogoLoader";
 
 function ProfileForm({ makerspaceId, profile }: { makerspaceId: number; profile: AccountProfile }) {
   const [draft, setDraft] = useState(profile);
@@ -23,7 +24,7 @@ export function MemberAccountProfile({ makerspaceId }: { makerspaceId: number })
   const profile = useQuery({ queryKey: [...accountKey(makerspaceId), "profile"], queryFn: () => ownProfile(makerspaceId), retry: false });
   // Rendered inside the account page's Profile settings section, which owns the card and the heading.
   return <div className="grid min-w-0 gap-3">
-    {profile.isLoading ? <p role="status" className="text-sm text-muted">{t`Loading profile…`}</p> : null}
+    {profile.isLoading ? <LogoLoader label={t`Loading profile…`} size={48} className="min-h-16 py-3" /> : null}
     {profile.error ? <p role="alert" className="text-sm text-danger">{profile.error.message}</p> : null}
     {profile.data ? <ProfileForm key={JSON.stringify(profile.data)} makerspaceId={makerspaceId} profile={profile.data} /> : null}
   </div>;

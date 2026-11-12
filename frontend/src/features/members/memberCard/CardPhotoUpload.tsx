@@ -4,7 +4,8 @@ import { useId, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { PhotoCropDialog } from "../../../components/photo-crop/PhotoCropDialog";
-import { memberCardKey, uploadCardPhoto, useDeleteCardPhoto } from "./api";
+import { MEMBER_PHOTO_MAX_BYTES, memberCardKey, uploadCardPhoto, useDeleteCardPhoto } from "./api";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 // The Classic member card's photo frame (18 x 22 mm); My cards uses the live design's frame.
 const PHOTO_ASPECT = 18 / 22;
@@ -79,9 +80,19 @@ export function CardPhotoUpload({
         type="file"
         accept="image/jpeg,image/png,image/webp"
         disabled={status === "uploading"}
-        onChange={(event) => { setFile(event.target.files?.[0] ?? null); setCropped(false); }}
+        onChange={(event) => {
+          const chosen = event.target.files?.[0] ?? null;
+          setCropped(false);
+          if (chosen && chosen.size > MEMBER_PHOTO_MAX_BYTES) {
+            setFile(null); setStatus("error"); setError(t`This photo is larger than 8 MB. Choose a smaller one.`);
+            return;
+          }
+          setFile(chosen); setStatus("idle"); setError("");
+        }}
+        aria-describedby={`${inputId}-hint`}
         className="mt-1 block w-full min-w-0 text-sm text-muted file:mr-3 file:min-h-11 file:rounded-md file:border-0 file:bg-accent file:px-3 file:py-2 file:text-sm file:font-semibold file:text-on-accent"
       />
+      <p id={`${inputId}-hint`} className="mt-1 text-xs text-muted">{t`PNG, JPEG or WebP, up to 8 MB.`}</p>
 
       {file ? (
         <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted">
@@ -122,7 +133,7 @@ export function CardPhotoUpload({
             disabled={remove.isPending}
             onClick={() => remove.mutate()}
           >
-            {remove.isPending ? t`Removing…` : t`Remove photo`}
+            {remove.isPending ? <><BoxArt size={16} mono />{t`Removing…`}</> : t`Remove photo`}
           </button>
         ) : null}
       </div>

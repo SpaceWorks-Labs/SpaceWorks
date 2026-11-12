@@ -5,6 +5,7 @@ import { personalRecipientKey } from "./personalQueryKeys";
 import { channelLabel } from "./channelCatalog";
 import { familyLabel } from "./notificationFamilies";
 import { notificationEventLabel } from "./notificationEventLabels";
+import { LogoLoader } from "../../components/LogoLoader";
 
 type Cell = { daily_digest?: boolean; feature: string; channel: string; enabled: boolean; available: boolean; mandatory_events: string[] };
 type Preferences = { cells: Cell[] };
@@ -25,7 +26,7 @@ export function PreferenceCentre({ makerspaceId, digests = false }: { makerspace
   return <section className="desk-panel p-5">
     <h2 className="title-panel">{t`Communication preferences`}</h2>
     <p className="mt-2 text-sm text-muted">{t`Choose optional messages for each family and personal channel. Safety and account recovery emails always remain enabled. Makerspace channel switches still apply.`}</p>
-    {preferences.isLoading ? <p className="mt-3 text-sm text-muted">{t`Loading preferences...`}</p> : null}
+    {preferences.isLoading ? <LogoLoader label={t`Loading preferences...`} size={48} className="min-h-16 py-3" /> : null}
     {error ? <p className="mt-3 text-sm text-danger" role="alert">{error.message}</p> : null}
     {/* Each card stacks its title over its switches at every width: a side-by-side
         label/control row inside a half-width card squeezed both to a sliver on tablets. */}

@@ -5,7 +5,8 @@ import { useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import type { CardDocument, SideName } from "../../../components/card-designer/cardTypes";
-import { backgroundStyle, CardLayerView, type LiveImages } from "../../../components/card-designer/CardLayerView";
+import { CardLayerView, type LiveImages } from "../../../components/card-designer/CardLayerView";
+import { SideBackground } from "../../../components/card-designer/SideBackground";
 import { merge } from "../../../components/card-designer/dataFields";
 import { WatermarkView } from "../../../components/card-designer/WatermarkView";
 import { loadCardFontWith } from "../../../components/card-designer/fontLoader";
@@ -53,13 +54,14 @@ export function CardFaceSvg({ face, side, label }: { face: CardFace; side: SideN
   const page = face.document[side];
   const width = page.page_width_mm * PX, height = page.page_height_mm * PX;
   const mono = face.document.mono;
-  const background = mono ? { kind: "colour" as const, colour: "#FFFFFF" } : page.background;
+  const background = page.background;
   const backgroundUrl = background.kind === "image" ? face.assets[background.asset_id] ?? null : null;
   const watermark = face.document.watermark;
   return <svg viewBox={`0 0 ${width} ${height}`} className="h-full w-full" role={label ? "img" : undefined}
     aria-label={label} aria-hidden={label ? undefined : true}>
     <foreignObject x="0" y="0" width={width} height={height}>
-      <div className="relative h-full w-full overflow-hidden" style={backgroundStyle(background, backgroundUrl)}>
+      <div className="relative h-full w-full overflow-hidden">
+        <SideBackground side={page} mono={mono} imageUrl={backgroundUrl} px={PX} />
         <WatermarkView watermark={watermark} widthMm={page.page_width_mm} heightMm={page.page_height_mm} px={PX} mono={mono}
           designId={0} imageUrl={watermark?.kind === "image" && watermark.asset_id ? face.assets[watermark.asset_id] ?? null : null} />
         {page.layers.map((layer) => layer.hidden ? null : <div key={layer.id} className="absolute"

@@ -9,6 +9,8 @@ import { OfflineCardSave } from "./memberCard/OfflineCardSave";
 import { ScanQrView } from "./memberCard/ScanQrView";
 import { forgetOfflineCard } from "./memberCard/offlineCard";
 import { useCardPreview, useMyMemberCard, useRenameCard } from "./memberCard/api";
+import { LogoLoader } from "../../components/LogoLoader";
+import { BoxArt } from "../../components/BoxSpinner";
 
 /** The member's own ID card: the printed name they control, their photo, and a
  *  watermarked preview of what the front desk will print. */
@@ -32,7 +34,7 @@ export function MemberCardPanel({ makerspaceId, spaceName: givenSpaceName, compa
   }, [card.error]);
 
   if (card.isLoading) {
-    return <section className="desk-panel p-5 text-sm text-muted">{t`Loading your card…`}</section>;
+    return <LogoLoader label={t`Loading your card…`} size={48} className="min-h-16 py-3" />;
   }
   if (notIssued) {
     return (
@@ -93,7 +95,7 @@ export function MemberCardPanel({ makerspaceId, spaceName: givenSpaceName, compa
             rename.mutate(printedName.trim(), { onSuccess: () => setDirty(false) })
           }
         >
-          {rename.isPending ? t`Saving…` : t`Save name`}
+          {rename.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Save name`}
         </button>
         <button
           className="desk-button-ghost"
@@ -101,7 +103,7 @@ export function MemberCardPanel({ makerspaceId, spaceName: givenSpaceName, compa
           disabled={preview.isPending}
           onClick={() => preview.mutate()}
         >
-          {preview.isPending ? t`Preparing…` : t`Preview card (PDF)`}
+          {preview.isPending ? <><BoxArt size={16} mono />{t`Preparing…`}</> : t`Preview card (PDF)`}
         </button>
       </div>
       {rename.error ? (

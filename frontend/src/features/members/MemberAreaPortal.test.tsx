@@ -15,7 +15,7 @@ vi.mock("./MemberCardPanel", () => ({ MemberCardPanel: () => null }));
 vi.mock("./MemberDirectory", () => ({ MemberDirectory: () => null }));
 vi.mock("./PartnerEvents", () => ({ PartnerEvents: () => null }));
 vi.mock("../bookings/MyBookings", () => ({ MyBookings: ({ slug }: { slug: string }) => <h2>Booking controls for {slug}</h2> }));
-vi.mock("./MemberCertifications", () => ({ MemberCertifications: () => <h2>My certifications</h2> }));
+vi.mock("../machine-access/MemberMachineAccess", () => ({ MemberMachineAccess: () => <h2>My machine access page</h2> }));
 vi.mock("../notifications/MemberNotifications", () => ({ MemberNotifications: ({ features }: { features: string[] }) => <>
   {features.includes("notifications.member_inbox") ? <h2>Personal inbox</h2> : null}
   {features.includes("notifications.member_preferences") ? <h2>Notification preferences</h2> : null}
@@ -119,10 +119,10 @@ it("hides cached activity when refreshed membership authorization is refused", a
 it.each(["membership.self_service", "membership.self_export"])("keeps %s and other account controls reachable through the Account tab", async (feature) => {
   setup([...modules, "machines", "member_accounts"], true, [feature]); show("overview");
   expect(await within(await screen.findByRole("navigation", { name: "Member portal" })).findByRole("link", { name: "Account" })).toHaveAttribute("href", "/m/lab/member/account-portal");
-  expect(screen.queryByText("My certifications")).toBeNull();
+  expect(screen.queryByText("My machine access page")).toBeNull();
   fireEvent.click(within(screen.getByRole("navigation", { name: "Member portal" })).getByRole("link", { name: "Account" }));
-  fireEvent.click(await screen.findByRole("link", { name: "Certifications" }));
-  expect(await screen.findByText("My certifications")).toBeVisible();
+  fireEvent.click(await screen.findByRole("link", { name: "My machine access" }));
+  expect(await screen.findByText("My machine access page")).toBeVisible();
   fireEvent.click(screen.getByRole("link", { name: "Invite a friend" }));
   expect(await screen.findByRole("heading", { name: "Refer someone" })).toBeVisible();
   const link = screen.getByRole("link", { name: "Manage your account" });
@@ -150,14 +150,14 @@ it.each([
 it("hides cached account controls when their modules turn off", async () => {
   setup([...modules, "machines", "member_accounts"], true, ["membership.self_service"]);
   const view = show("account-portal");
-  fireEvent.click(await screen.findByRole("link", { name: "Certifications" }));
-  expect(await screen.findByText("My certifications")).toBeVisible();
+  fireEvent.click(await screen.findByRole("link", { name: "My machine access" }));
+  expect(await screen.findByText("My machine access page")).toBeVisible();
   fireEvent.click(screen.getByRole("link", { name: "Invite a friend" }));
   expect(await screen.findByRole("heading", { name: "Refer someone" })).toBeVisible();
   act(() => view.client.setQueryData(["member", "lab", "bootstrap"], {
     makerspace: { id: 7, slug: "lab", name: "Lab", membership_policy: "invite_only" }, modules: [], features: ["membership.self_service"],
   }));
-  await waitFor(() => expect(screen.queryByText("My certifications")).toBeNull());
+  await waitFor(() => expect(screen.queryByText("My machine access page")).toBeNull());
   expect(screen.queryByText("Profile controls")).toBeNull();
   expect(screen.queryByRole("heading", { name: "Refer someone" })).toBeNull();
   expect(screen.queryByRole("link", { name: "Manage your account" })).toBeNull();
@@ -196,7 +196,7 @@ it("places booking management only in Bookings and removes it when bookings turn
 it("keeps membership-only account sections absent for an account-only borrower", async () => {
   setup([], false); show("account-portal?section=card");
   expect(await screen.findByRole("link", { name: "Invitations" })).toHaveAttribute("aria-current", "page");
-  for (const name of ["Profile", "Card", "Certifications", "Community", "Invite a friend"]) expect(screen.queryByRole("link", { name })).toBeNull();
+  for (const name of ["Profile", "Card", "My machine access", "Community", "Invite a friend"]) expect(screen.queryByRole("link", { name })).toBeNull();
   expect(screen.queryByText("Profile controls")).toBeNull();
   expect(screen.queryByRole("link", { name: "Manage your account" })).toBeNull();
 });

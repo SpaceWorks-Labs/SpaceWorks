@@ -9,6 +9,7 @@ import type { InviteCheck, JoinExtras, PublicPlan } from "./joinPlansApi";
 import { JoinFormExtras } from "./joinFields/JoinFormExtras";
 import { EMPTY_EXTRAS, NO_EXTRAS, serverExtrasErrors, validateExtras, type JoinExtrasErrors } from "./joinFields/joinFieldsModel";
 import { joinFieldsInput } from "./joinFields/uploadJoinPhoto";
+import { BoxArt } from "../../components/BoxSpinner";
 
 export function AdmissionJoin({ settings, signedIn, pending, error, onJoin, onSignIn, plans = [], invite = null, inviteCode = "", showPrice = true, unitSlot = null, makerspaceId }: {
   settings: PublicAdmission;
@@ -92,7 +93,7 @@ export function AdmissionJoin({ settings, signedIn, pending, error, onJoin, onSi
       <JoinFormExtras modes={modes} value={extras} onChange={(next) => { setExtras(next); setExtrasErrors({}); }} disabled={busy}
         errors={{ ...serverExtrasErrors(error instanceof StructuredApiError ? error.body : null), ...extrasErrors }} />
       {uploadError ? <p role="alert" className="text-sm text-danger">{uploadError}</p> : null}
-      <button className="desk-button-brand w-full sm:w-fit" disabled={busy} type="submit">{uploading ? t`Uploading your photo…` : pending ? t`Sending…` : label}</button>
+      <button className="desk-button-brand w-full sm:w-fit" disabled={busy} type="submit">{uploading ? <><BoxArt size={16} mono />{t`Uploading your photo…`}</> : pending ? t`Sending…` : label}</button>
     </form> : !blocked ? <button className="desk-button-brand mt-4 w-full sm:w-fit" onClick={onSignIn} type="button">{t`Sign in to join`}</button> : null}
     {error ? <p role="alert" className="mt-3 text-sm text-danger">{error instanceof Error ? error.message : t`Unable to submit your application.`}</p> : null}
   </section>;

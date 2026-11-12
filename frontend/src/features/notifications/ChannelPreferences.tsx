@@ -3,6 +3,7 @@ import { useState } from "react";
 
 import { categoryLabel, channelLabel, CONNECTABLE } from "./channelCatalog";
 import { useSavePreferences, type ChannelKey, type Selection } from "./channelsApi";
+import { BoxArt } from "../../components/BoxSpinner";
 
 /**
  * Per category, which channels this person receives on (several may be chosen) and whether
@@ -57,7 +58,7 @@ export function ChannelPreferences({ makerspaceId, preferences, connected, membe
     {save.error ? <p role="alert" className="text-sm text-danger">{save.error.message}</p> : null}
     {save.isSuccess && !dirty ? <p role="status" className="text-sm text-muted">{t`Saved.`}</p> : null}
     <div className="flex flex-wrap gap-2">
-      <button className="desk-button" type="submit" disabled={!dirty || save.isPending}>{save.isPending ? t`Saving…` : t`Save choices`}</button>
+      <button className="desk-button" type="submit" disabled={!dirty || save.isPending}>{save.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Save choices`}</button>
       {dirty ? <button className="desk-button" type="button" onClick={() => setDraft(preferences)}>{t`Discard`}</button> : null}
     </div>
   </form>;

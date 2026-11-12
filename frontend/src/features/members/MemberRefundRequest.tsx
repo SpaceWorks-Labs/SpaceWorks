@@ -6,6 +6,7 @@ import { Field, Modal, StatusPill } from "../../components/ui";
 import type { MemberRefundCase } from "../../generated/api";
 import { StructuredApiError, memberRequest } from "../../lib/api";
 import { formatMoney } from "../../lib/money";
+import { BoxArt } from "../../components/BoxSpinner";
 
 type Payment = { id: number; refund_case?: MemberRefundCase | null; refund_requestable?: boolean };
 
@@ -70,7 +71,7 @@ export function MemberRefundControl({ makerspaceId, payment }: { makerspaceId: n
       footer={<div className="flex flex-wrap justify-end gap-2">
         <button className="desk-button" type="button" onClick={() => setAsking(false)} disabled={request.isPending}>{t`Cancel`}</button>
         <button className="desk-button-brand" type="button" disabled={request.isPending || !reason.trim()}
-          onClick={() => request.mutate()}>{request.isPending ? t`Sending…` : t`Send request`}</button>
+          onClick={() => request.mutate()}>{request.isPending ? <><BoxArt size={16} mono />{t`Sending…`}</> : t`Send request`}</button>
       </div>}>
       <div className="grid gap-3">
         <p className="text-sm text-muted">{t`Staff review every request. Nothing is refunded until they approve it, and you will see their answer here.`}</p>

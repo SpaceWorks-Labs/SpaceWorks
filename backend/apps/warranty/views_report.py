@@ -5,7 +5,6 @@ from math import ceil
 from django.db.models import Count, Q
 from django.db.models.functions import Lower
 from django.shortcuts import get_object_or_404
-from django.utils import timezone
 from drf_spectacular.utils import OpenApiParameter, OpenApiTypes, extend_schema
 from rest_framework.exceptions import NotFound, PermissionDenied
 from rest_framework.response import Response
@@ -21,6 +20,7 @@ from apps.warranty.serializers import (
 )
 from apps.admin_api.views_inventory import InventoryPagination
 from apps.inventory.models import InventoryAsset
+from apps.makerspaces.local_time import local_now
 from apps.makerspaces.platform import module_enabled
 from apps.makerspaces.folded_capabilities import (
     INVENTORY_WARRANTY, MACHINES_WARRANTY, WARRANTY_KEYS, capability_on, require_any_capability,
@@ -90,7 +90,7 @@ class MakerspaceWarrantyReportView(APIView):
         query = WarrantyReportQuerySerializer(data=request.query_params)
         query.is_valid(raise_exception=True)
         filters = query.validated_data
-        today = timezone.localdate()
+        today = local_now(makerspace).date()  # decision 230(d): the space's own day
 
         asset_qs = _asset_hosts(request.user, makerspace, today, filters)
         machine_qs = _machine_hosts(request.user, makerspace, today, filters)

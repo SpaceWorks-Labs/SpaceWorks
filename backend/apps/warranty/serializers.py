@@ -1,6 +1,6 @@
-from django.utils import timezone
 from rest_framework import serializers
 
+from apps.makerspaces.local_time import local_now
 from apps.warranty.models import Warranty, WarrantyDocument
 from apps.warranty.status import STATUS_CHOICES, warranty_status
 
@@ -86,7 +86,11 @@ class WarrantySerializer(serializers.ModelSerializer):
         return obj.machine.name if obj.machine_id else None
 
     def get_status(self, obj) -> str:
-        return warranty_status(obj, timezone.localdate())
+        # Decision 230(d): the space's own day, not the server's UTC day; one lookup per space per response.
+        days = self.context.setdefault("_space_local_today", {})
+        if obj.makerspace_id not in days:
+            days[obj.makerspace_id] = local_now(obj.makerspace).date()
+        return warranty_status(obj, days[obj.makerspace_id])
 
 
 class WarrantyUpsertSerializer(serializers.Serializer):

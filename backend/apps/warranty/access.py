@@ -65,7 +65,7 @@ def resolve_document(user, doc_pk):
 def action_and_module_for_warranty(warranty):
     if warranty.asset_id:
         return rbac.Action.EDIT_INVENTORY, "staff_admin"
-    return rbac.Action.MANAGE_PRINTING, "printing"
+    return rbac.Action.MANAGE_PRINTING, "machine_service"
 
 
 def enforce(user, warranty):

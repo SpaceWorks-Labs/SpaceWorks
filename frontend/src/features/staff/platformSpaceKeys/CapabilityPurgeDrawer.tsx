@@ -1,10 +1,11 @@
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
-import { DetailDrawer, ErrorText, ListRow, Skeleton, StatusPill } from "../../../components/ui";
+import { DetailDrawer, ErrorText, ListRow, StatusPill } from "../../../components/ui";
 import { toast } from "../../../components/ui/toastStore";
 import type { HealthCard } from "../platformSpaces/spacesApi";
 import { useCapabilityPlans, usePurgeCapability, type CapabilityPlan } from "./spaceKeysApi";
 import { TypedConfirmDialog } from "./TypedConfirmDialog";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 const total = (plan: CapabilityPlan) => Object.values(plan.counts).reduce((sum, count) => sum + count, 0);
 // What a purge preview counts (backend makerspaces/capability_purge_plans*.py), as people read it.
@@ -31,7 +32,7 @@ export function CapabilityPurgeDrawer({ card, onClose }: { card: HealthCard; onC
   return <DetailDrawer open title={t`Feature data of ${card.name}`} onClose={onClose}>
     <div className="grid gap-4">
       <p className="text-sm text-muted">{t`Switching a feature off keeps its data, and switching it back on restores everything. Purging deletes that data for good. It is recorded in this space's audit log, which its managers can read.`}</p>
-      {plans.isLoading ? <Skeleton className="h-40 w-full" /> : plans.isError || !plans.data
+      {plans.isLoading ? <LogoLoader size={48} className="min-h-40 py-3" /> : plans.isError || !plans.data
         ? <ErrorText resource={t`capability data`} onRetry={() => { void plans.refetch(); }} />
         : <div className="grid gap-2">{plans.data.map(plan => <ListRow key={plan.key} title={plan.key}
           meta={<>{plan.summary}<br />{counts(plan) || t`Nothing stored.`}</>}

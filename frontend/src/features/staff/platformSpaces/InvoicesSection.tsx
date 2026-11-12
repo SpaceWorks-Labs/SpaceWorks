@@ -1,10 +1,11 @@
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
-import { EmptyState, ErrorText, Field, ListRow, Pagination, Skeleton } from "../../../components/ui";
+import { EmptyState, ErrorText, Field, ListRow, Pagination } from "../../../components/ui";
 import { InvoiceStatus } from "./InvoiceStatus";
 import { CreateInvoiceDialog, RecordPaymentDialog, VoidInvoiceDialog } from "./InvoiceDialogs";
 import { formatMoney, useInvoices, type HostingInvoice } from "./plansApi";
 import { PAGE_SIZE } from "./spacesApi";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 /** Hosting invoices across every space: raise one, record an offline payment, or void it. */
 export function InvoicesSection() {
@@ -22,7 +23,7 @@ export function InvoicesSection() {
       </Field>
       <button type="button" className="desk-button-primary" onClick={() => setDialog({ kind: "create" })}>{t`New invoice`}</button>
     </div>
-    {list.isLoading ? <Skeleton className="h-24 w-full" />
+    {list.isLoading ? <LogoLoader size={48} className="min-h-24 py-3" />
       : list.isError ? <ErrorText resource={t`invoices`} onRetry={() => { void list.refetch(); }} />
       : !rows.length ? <EmptyState message={t`No invoices with this status.`} />
       : <div className="grid gap-3">{rows.map(invoice => <ListRow key={invoice.id} title={`${invoice.number} · ${invoice.makerspace_name}`}

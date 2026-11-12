@@ -20,5 +20,6 @@ export function useQuickCreate(kind: string, open: () => void) {
     if (!requested) return;
     open();
     setParams(current => { const next = new URLSearchParams(current); next.delete("create"); return next; }, { replace: true });
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- open and setParams are read once when ?create= appears; re-running on their identity would reopen the form this effect just consumed
   }, [requested]);
 }

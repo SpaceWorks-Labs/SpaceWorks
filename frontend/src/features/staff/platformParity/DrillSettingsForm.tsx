@@ -4,6 +4,7 @@ import { Field } from "../../../components/ui";
 import { toast } from "../../../components/ui/toastStore";
 import { actionErrorText } from "../platformSpaces/ActionDialog";
 import { useSaveDrillSettings, type DrillSettings } from "./restoreDrillsApi";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 /** Interval and archive-ready notice. Mount it with a `key` of the saved values so a save resets the draft. */
 export function DrillSettingsForm({ saved }: { saved: DrillSettings }) {
@@ -30,7 +31,7 @@ export function DrillSettingsForm({ saved }: { saved: DrillSettings }) {
       {t`Email the superadmins when a requested archive is ready`}</label>
     {save.error ? <p role="alert" className="text-sm text-danger">{actionErrorText(save.error)}</p> : null}
     <button type="submit" className="desk-button-primary w-full sm:w-fit" disabled={!daysValid || !dirty || save.isPending}>
-      {save.isPending ? t`Saving…` : t`Save settings`}
+      {save.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Save settings`}
     </button>
   </form>;
 }

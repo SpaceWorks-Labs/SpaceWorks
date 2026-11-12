@@ -1,9 +1,10 @@
 import { plural, t } from "@lingui/core/macro";
 import { useState, type FormEvent } from "react";
-import { EmptyState, ErrorText, Field, ListRow, Skeleton, StatusPill, type Tone } from "../../../components/ui";
+import { EmptyState, ErrorText, Field, ListRow, StatusPill, type Tone } from "../../../components/ui";
 import { toast } from "../../../components/ui/toastStore";
 import { ActionDialog, type ReasonSpec } from "../platformSpaces/ActionDialog";
 import { useAccountAction, useAccountLookup, type AccountAction, type PlatformAccount } from "./accountsApi";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 const getReason = (): ReasonSpec => ({ label: t`Reason`, min: 3, max: 300 });
 const accessCopy = (status: string): [string, Tone] => status === "active" ? [t`Access: active`, "success"]
@@ -72,7 +73,7 @@ export function AccountsSection() {
       <button type="submit" className="desk-button-primary" disabled={!input.trim() || lookup.isFetching}>{t`Find account`}</button>
     </form>
     {!username ? null
-      : lookup.isLoading ? <Skeleton className="h-20 w-full" />
+      : lookup.isLoading ? <LogoLoader size={48} className="min-h-20 py-3" />
       : lookup.isError ? <ErrorText resource={t`the account`} onRetry={() => { void lookup.refetch(); }} />
       : !found ? <EmptyState message={t`No account is called "${username}".`} />
       : <AccountCard account={found} onAction={action => setActing({ account: found, action })} />}

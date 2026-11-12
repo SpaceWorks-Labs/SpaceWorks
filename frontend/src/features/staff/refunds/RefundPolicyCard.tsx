@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Card, Field, StatusPill } from "../../../components/ui";
 import { formatMoney } from "../paymentsApi";
 import { caseErrorMessage, formatWindow, type PolicyBody, type RefundPolicy } from "./refundsApi";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 const HOURS = 60;
 // A space with no policy yet starts from a common shape. Nothing is saved until Save.
@@ -77,7 +78,7 @@ export function RefundPolicyCard({ title, policy, canEdit, saving, removing, sav
         </>}
         {input("fee", `Cancellation fee kept (${policy.currency.toUpperCase()})`, "decimal")}
         <div className="flex flex-wrap gap-2">
-          <button className="desk-button-brand" type="submit" disabled={saving}>{saving ? t`Saving…` : t`Save policy`}</button>
+          <button className="desk-button-brand" type="submit" disabled={saving}>{saving ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Save policy`}</button>
           <button className="desk-button" type="button" onClick={() => { setEditing(false); onCancel?.(); }}>{t`Cancel`}</button>
         </div>
       </form> : <PolicySummary policy={policy} />}

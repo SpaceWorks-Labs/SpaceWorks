@@ -4,14 +4,16 @@ import { ArrowLeft } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { Link, Navigate, useLocation } from "react-router-dom";
 import { SettingsLayout } from "../../../components/layouts";
-import { EmptyState, ErrorText, Field, Pagination, ProgressBar, Skeleton, StatusPill } from "../../../components/ui";
+import { EmptyState, ErrorText, Field, Pagination, ProgressBar, StatusPill } from "../../../components/ui";
 import { consoleSessionHref } from "../../../lib/api/sessionContext";
 import { useDebouncedValue } from "../../../lib/useDebouncedValue";
 import { BulkLimitsApply } from "./BulkLimitsApply";
 import { HostingSwitchSection } from "./HostingSwitchSection";
+import { LimitDefaultsSection } from "./LimitDefaultsSection";
 import { RequestRatesSection } from "./RequestRatesSection";
 import { SpaceLimitsSection } from "./SpaceLimitsSection";
 import { getSpaceHealth, healthKey, listSpaceHealth, PAGE_SIZE, percentLevel, type HealthCard } from "./spacesApi";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 /** `/admin/platform-limits/<id>` is one space's limits page; the inbox notice's `/admin/platform/spaces/<id>/limits` lands there too. */
 export const spaceLimitsHref = (id: number) => consoleSessionHref(`/admin/platform-limits/${id}`, "platform");
@@ -55,7 +57,7 @@ function SpacesLimitsList() {
     <Field label={t`Search spaces`}><input className="desk-input" type="search" value={search} placeholder={t`Name, slug or code`}
       onChange={event => { setSearch(event.target.value); setPage(1); }} /></Field>
     {rows.length ? <BulkLimitsApply spaces={rows} /> : null}
-    {list.isLoading ? <Skeleton className="h-40 w-full" />
+    {list.isLoading ? <LogoLoader size={48} className="min-h-40 py-3" />
       : list.isError ? <ErrorText resource={t`spaces`} onRetry={() => { void list.refetch(); }} />
       : !rows.length ? <EmptyState message={term ? t`No spaces match this search.` : t`No spaces yet.`} />
       : <ul className="grid" aria-label={t`Spaces and their limits`}>{rows.map(card => <SpaceLimitsRow key={card.id} card={card} />)}</ul>}
@@ -85,6 +87,7 @@ export function PlatformLimitsPage() {
   return <SettingsLayout header={{ title: t`Limits & hosting`, subtitle: t`What each space may use, how often anyone may repeat an action, and whether this install hosts other makerspaces.` }}
     state={{ status: "ready" }} sections={[
       { id: "space-limits", title: t`Space limits`, description: t`Every limit starts as no limit. Open a space to set its limits, or choose several spaces to change the same limits at once.`, rows: <SpacesLimitsList /> },
+      { id: "limit-defaults", title: t`Platform default limits`, description: t`The limit every space gets for a key unless it has its own. Every key starts as Unlimited. A space's own limit, or its hosted plan, wins over the default. At 80% staff see a warning; at 100% only new items are refused.`, rows: <LimitDefaultsSection /> },
       { id: "hosting-switch", title: t`Hosting other makerspaces`, description: t`Off by default. Switch it on only if this install will run makerspaces for other groups.`, rows: <HostingSwitchSection /> },
       { id: "request-rates", title: t`Request limits`, description: t`How often one person or address may repeat an action, for every space on this install. The server settings are the standard; a change here must stay within ten times either way.`, rows: <RequestRatesSection /> },
     ]} />;

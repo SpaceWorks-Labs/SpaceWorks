@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Field } from "../../../components/ui";
 import { useDebouncedValue } from "../../../lib/useDebouncedValue";
 import { healthKey, listSpaceHealth } from "./spacesApi";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 export type PickedSpaces = Record<number, string>;
 
@@ -25,7 +26,7 @@ export function SpacePicker({ value, onChange }: { value: PickedSpaces; onChange
       <input className="desk-input" type="search" value={search} onChange={event => setSearch(event.target.value)} />
     </Field>
     <div className="grid max-h-56 gap-1 overflow-y-auto">
-      {spaces.isLoading ? <p role="status" className="text-sm text-muted">{t`Loading spaces…`}</p> : null}
+      {spaces.isLoading ? <LogoLoader label={t`Loading spaces…`} size={48} className="min-h-16 py-3" /> : null}
       {spaces.isError ? <p role="alert" className="text-sm text-danger">{t`Couldn't load spaces.`}</p> : null}
       {(spaces.data?.results ?? []).map(space => <label key={space.id} className="flex min-h-11 items-center gap-3 text-sm text-ink">
         <input type="checkbox" checked={Boolean(value[space.id])} onChange={() => toggle(space.id, space.name)} />{space.name}

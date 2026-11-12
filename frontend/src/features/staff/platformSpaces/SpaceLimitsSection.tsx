@@ -1,21 +1,32 @@
 import { t } from "@lingui/core/macro";
 import { useMemo, useState } from "react";
-import { ErrorText, Skeleton } from "../../../components/ui";
+import { EmptyState, ErrorText, Field } from "../../../components/ui";
+import { limitLabel } from "./limitCopy";
 import { toast } from "../../../components/ui/toastStore";
 import { actionErrorText } from "./ActionDialog";
 import { draftValue, LimitRowView } from "./LimitRowView";
-import { buildOverrides, groupLimits, toInput, unifyLimits, validInput } from "./limitsModel";
+import { buildOverrides, groupLimits, toInput, unifyLimits, validInput, type UnifiedLimit } from "./limitsModel";
 import { useSaveSpaceLimits, useSpaceLimits, type SpaceLimits } from "./limitsApi";
+import { LogoLoader } from "../../../components/LogoLoader";
+import { BoxArt } from "../../../components/BoxSpinner";
+
+/** Case-insensitive match on the limit's plain-language name or its key (the search box of both limit screens). */
+export const matchesSearch = (row: Pick<UnifiedLimit, "key" | "label">, search: string) => {
+  const needle = search.trim().toLowerCase();
+  return !needle || limitLabel(row.key, row.label).toLowerCase().includes(needle) || row.key.includes(needle);
+};
 
 /**
- * Every limit of one space, grouped by area (decisions 281, 284): usage bar, the value (blank = no
+ * Every limit of one space, grouped by module (decisions 281, 284, 328a) (decisions 281, 284): usage bar, the value (blank = no
  * limit, the default), Reset to none, and one Save that sends the complete override map (the server
  * asks for a recent sign-in first). Rows are rendered from the payload, never from a frontend key list.
  */
 export function SpaceLimitsEditor({ id, data, headingLevel = 4 }: { id: number; data: SpaceLimits; headingLevel?: 3 | 4 }) {
   const save = useSaveSpaceLimits(id);
   const rows = useMemo(() => unifyLimits(data), [data]);
-  const groups = useMemo(() => groupLimits(rows, data.areas), [rows, data.areas]);
+  const [search, setSearch] = useState("");
+  const shown = useMemo(() => rows.filter(row => matchesSearch(row, search)), [rows, search]);
+  const groups = useMemo(() => groupLimits(shown, data.groups ?? data.areas), [shown, data.groups, data.areas]);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [domain, setDomain] = useState(data.custom_domain);
   const Heading = headingLevel === 3 ? "h3" : "h4";
@@ -27,6 +38,9 @@ export function SpaceLimitsEditor({ id, data, headingLevel = 4 }: { id: number; 
     onSuccess: () => { setDrafts({}); toast(t`Limits saved.`); },
   });
   return <div className="grid gap-5">
+    <Field label={t`Search limits`}><input className="desk-input" type="search" value={search} placeholder={t`Name of a limit`}
+      onChange={event => setSearch(event.target.value)} /></Field>
+    {search.trim() && !groups.length ? <EmptyState message={t`No limits match this search.`} /> : null}
     {groups.map(group => <section key={group.key} aria-labelledby={`limits-${id}-${group.key}`} className="grid gap-1">
       <Heading id={`limits-${id}-${group.key}`} className="title-section">{group.label}</Heading>
       <ul className="grid">{group.rows.map(row => <LimitRowView key={row.key} row={row} value={draftValue(row, drafts)}
@@ -40,7 +54,7 @@ export function SpaceLimitsEditor({ id, data, headingLevel = 4 }: { id: number; 
     {save.error ? <p role="alert" className="text-sm text-danger">{actionErrorText(save.error)}</p> : null}
     <div className="flex flex-wrap gap-2">
       <button type="button" className="desk-button-primary min-h-11" disabled={invalid || !dirty || save.isPending} onClick={submit}>
-        {save.isPending ? t`Saving…` : t`Save limits`}</button>
+        {save.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Save limits`}</button>
       {anySet ? <button type="button" className="desk-button-ghost min-h-11" disabled={save.isPending}
         onClick={() => setDrafts(Object.fromEntries(rows.filter(row => row.editable).map(row => [row.key, ""])))}>{t`Reset every limit to none`}</button> : null}
       {dirty ? <button type="button" className="desk-button-ghost min-h-11" disabled={save.isPending}
@@ -52,7 +66,7 @@ export function SpaceLimitsEditor({ id, data, headingLevel = 4 }: { id: number; 
 /** Per-space limits with usage, in the space's detail drawer and on its limits page. A load error says so, with a retry (LM-4). */
 export function SpaceLimitsSection({ makerspaceId, headingLevel = 3 }: { makerspaceId: number; headingLevel?: 2 | 3 }) {
   const limits = useSpaceLimits(makerspaceId);
-  if (limits.isLoading) return <Skeleton className="h-24 w-full" />;
+  if (limits.isLoading) return <LogoLoader size={48} className="min-h-24 py-3" />;
   if (limits.isError || !limits.data || !Array.isArray(limits.data.rows)) {
     return <ErrorText resource={t`limits`} onRetry={() => { void limits.refetch(); }} />;
   }

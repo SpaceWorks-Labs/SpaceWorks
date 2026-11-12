@@ -4,6 +4,8 @@ import { useState } from "react";
 
 import { Modal, SegmentedControl } from "../../../components/ui";
 import { useRoomOutageImpact, useServiceState, type IssueDetail, type ServiceStateResult } from "./repairsApi";
+import { LogoLoader } from "../../../components/LogoLoader";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 function iso(value: string) {
   const date = value ? new Date(value) : null;
@@ -13,7 +15,7 @@ function iso(value: string) {
 /** Before saving: the bookings and linked events the outage would meet (read-only; nothing is cancelled). */
 export function OutageImpact({ makerspaceId, roomId, back }: { makerspaceId: number; roomId: number; back: string }) {
   const impact = useRoomOutageImpact(makerspaceId, roomId, iso(back));
-  if (impact.isPending) return <p className="text-sm text-muted" role="status">{t`Checking bookings and events in this time…`}</p>;
+  if (impact.isPending) return <LogoLoader label={t`Checking bookings and events in this time…`} size={48} className="min-h-16 py-3" />;
   if (impact.isError) return null;
   const { booking_count: count, events, other_event_bookings: other } = impact.data;
   return <section className="grid gap-1 rounded-md border border-line p-2 text-sm" aria-label={t`Outage impact`}>
@@ -70,7 +72,7 @@ export function ServiceStateDialog({ issue, makerspaceId, onClose }: { issue: Is
       {change.error ? <p role="alert" className="text-sm text-danger">{change.error.message}</p> : null}
       <div className="flex flex-wrap justify-end gap-2 border-t border-line pt-3">
         <button type="button" className="desk-button-ghost" onClick={onClose}>{t`Cancel`}</button>
-        <button type="submit" className="desk-button-primary" disabled={change.isPending}>{change.isPending ? t`Saving…` : t`Save`}</button>
+        <button type="submit" className="desk-button-primary" disabled={change.isPending}>{change.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Save`}</button>
       </div>
     </form>}
   </Modal>;

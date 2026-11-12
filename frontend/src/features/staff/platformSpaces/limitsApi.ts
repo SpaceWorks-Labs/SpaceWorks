@@ -4,24 +4,28 @@ import { staffRequest } from "../../../lib/api";
 // Hand-written until the OpenAPI snapshot is regenerated (decision 234).
 const P = "/admin/platform";
 export type HostingSwitch = { enabled: boolean; forced_by_environment: boolean };
-export type LimitSource = "own" | "override" | "plan" | "unlimited";
+export type LimitSource = "own" | "override" | "plan" | "default" | "unlimited";
 export type LimitRow = {
   key: string; label: string; unit: "bytes" | "count"; effective: number | null;
   source: LimitSource; override: number | null; has_override: boolean; used: number | null;
   /** A built-in value shown as "Suggested: N" next to an empty field; never enforced (#236). */
   suggested?: number | null;
+  /** Decision 328a: the module group (heading of the module switch screens), its owning module and the platform default. */
+  group?: string; module?: string; platform_default?: number | null;
 };
 export type HostingType = "own" | "hosted";
 export type LimitLevel = "ok" | "warning" | "limit";
 /** Decisions 281/284: the monthly platform-credential and space-quota rows (`limit` null = no limit, the default). */
 export type UsageLimitRow = {
   key: string; label: string; unit: "count" | "amount" | "bytes" | "per_minute" | (string & {}); limit: number | null; used: number | null;
-  percent: number | null; level?: LimitLevel; area?: string;
+  percent: number | null; level?: LimitLevel; area?: string; group?: string; module?: string; platform_default?: number | null;
 };
 export type LimitArea = { key: string; label: string };
 export type SpaceLimits = { custom_domain: boolean; rows: (LimitRow & { area?: string })[]; hosting_type?: HostingType; hosting_active?: boolean; hosted?: boolean;
   /** Console groups in order, translated by the server. */
-  areas?: LimitArea[]; platform_rows?: UsageLimitRow[]; quota_rows?: UsageLimitRow[] };
+  areas?: LimitArea[];
+  /** Module groups in the module switch screens' order (decision 328a); preferred over `areas`. */
+  groups?: LimitArea[]; platform_rows?: UsageLimitRow[]; quota_rows?: UsageLimitRow[] };
 export type BulkLimitsBody = { makerspace_ids: number[]; set: Record<string, number | null>; clear: string[] };
 export type SpaceHostingType = { hosting_type: HostingType; hosting_active: boolean; hosted: boolean };
 export type RequestRate = { scope: string; default: string; rate: string; overridden: boolean; min_rate: string; max_rate: string; env_key: string };

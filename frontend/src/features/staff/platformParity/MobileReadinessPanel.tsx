@@ -1,7 +1,8 @@
 import { t } from "@lingui/core/macro";
 import { useQuery } from "@tanstack/react-query";
-import { ErrorText, Skeleton, StatusPill } from "../../../components/ui";
+import { ErrorText, StatusPill } from "../../../components/ui";
 import { staffRequest } from "../../../lib/api";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 type Check = { ready: boolean; hint: string };
 type Registration = { hint: string; production: boolean; login_ready: boolean; login: Record<string, Check>; optional: Record<string, Check> };
@@ -19,7 +20,7 @@ function Pill({ ok, label }: { ok: boolean; label: string }) {
 export function MobileReadinessPanel() {
   const query = useQuery({ queryKey: ["platform-mobile-readiness"],
     queryFn: () => staffRequest<MobileReadiness>("/admin/platform/mobile-readiness", {}, "platform") });
-  if (query.isLoading) return <Skeleton className="h-24 w-full" />;
+  if (query.isLoading) return <LogoLoader size={48} className="min-h-24 py-3" />;
   if (query.isError || !query.data) return <ErrorText resource={t`mobile readiness`} onRetry={() => { void query.refetch(); }} />;
   return <section className="grid gap-3" aria-label={t`Mobile readiness`}>
     <h3 className="title-section">{t`Readiness`}</h3>

@@ -4,6 +4,7 @@ import { Field } from "../../../components/ui";
 import { actionErrorText } from "../platformSpaces/ActionDialog";
 import { fieldError } from "./parityRequest";
 import { useTestProvider, type ProviderKey } from "./providersApi";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 /** "Send test" (SMS: one text to a number you type) or "Check credentials" (push, WhatsApp). */
 export function ProviderTestAction({ provider, kind }: { provider: ProviderKey; kind: "send" | "check" }) {
@@ -27,7 +28,7 @@ export function ProviderTestAction({ provider, kind }: { provider: ProviderKey; 
       {failed ? <p role="alert" className="text-sm text-danger">{failed}</p> : null}
     </div>
     <button type="submit" className="desk-button w-full sm:w-fit" disabled={test.isPending || (kind === "send" && !to.trim())}>
-      {test.isPending ? t`Testing…` : kind === "send" ? t`Send test` : t`Check credentials`}
+      {test.isPending ? <><BoxArt size={16} mono />{t`Testing…`}</> : kind === "send" ? t`Send test` : t`Check credentials`}
     </button>
   </form>;
 }

@@ -1,10 +1,11 @@
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
-import { CollapsibleSection, EmptyState, ErrorText, ListRow, Pagination, RelativeTime, Skeleton, StatusPill } from "../../../components/ui";
+import { CollapsibleSection, EmptyState, ErrorText, ListRow, Pagination, RelativeTime, StatusPill } from "../../../components/ui";
 import { MobileReadinessPanel } from "./MobileReadinessPanel";
 import { NativeAppForm } from "./NativeAppForm";
 import { useNativeApps } from "./nativeAppsApi";
 import { PAGE_SIZE } from "./parityRequest";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 const TONES = { pending: "neutral", approved: "success", revoked: "danger" } as const;
 
@@ -18,7 +19,7 @@ export function MobileAppsSection() {
   return <div className="grid gap-4">
     <p className="text-sm text-muted">{t`Only one approved app per platform and environment serves the whole deployment. Revoking an app ends every device sign-in it issued; the record stays for the audit trail.`}</p>
     <CollapsibleSection title={t`Register an app`} open={adding} onToggle={() => setAdding(!adding)}><NativeAppForm /></CollapsibleSection>
-    {list.isLoading ? <Skeleton className="h-24 w-full" />
+    {list.isLoading ? <LogoLoader size={48} className="min-h-24 py-3" />
       : list.isError ? <ErrorText resource={t`mobile apps`} onRetry={() => { void list.refetch(); }} />
       : !rows.length ? <EmptyState message={t`No mobile app is registered yet.`} />
       : <div className="grid gap-3">{rows.map(row => <div key={row.id} className="grid gap-2">

@@ -15,6 +15,8 @@ export type UnifiedLimit = {
   /** The value stored for this space (what the input edits); undefined = none stored. */
   stored: number | undefined;
   source?: LimitSource; suggested?: number | null;
+  /** The platform-wide default for this key (decision 328a), null = none. */
+  platformDefault?: number | null;
   /** False for a plan's own monthly allowance, which only the plan sets. */
   editable: boolean;
 };
@@ -48,16 +50,17 @@ export function unifyLimits(data: SpaceLimits): UnifiedLimit[] {
     if (seen.has(row.key)) continue;
     seen.add(row.key);
     const percent = row.percent ?? percentOf(row.used, row.limit);
-    out.push({ key: row.key, label: row.label, area: row.area || "other", unit: row.unit, limit: row.limit, used: row.used,
-      percent, level: row.level ?? levelOf(percent), stored: row.limit === null ? undefined : row.limit, editable: true });
+    out.push({ key: row.key, label: row.label, area: row.group || row.area || "other", unit: row.unit, limit: row.limit, used: row.used,
+      percent, level: row.level ?? levelOf(percent), stored: row.limit === null ? undefined : row.limit, editable: true,
+      platformDefault: row.platform_default });
   }
   for (const row of data.rows ?? []) {
     if (seen.has(row.key)) continue;
     seen.add(row.key);
     const percent = percentOf(row.used, row.effective);
-    out.push({ key: row.key, label: row.label, area: row.area || "other", unit: row.unit, limit: row.effective, used: row.used,
+    out.push({ key: row.key, label: row.label, area: row.group || row.area || "other", unit: row.unit, limit: row.effective, used: row.used,
       percent, level: levelOf(percent), stored: row.has_override ? row.override ?? -1 : undefined, source: row.source,
-      suggested: row.suggested, editable: !(row.key.endsWith("_monthly") && row.source === "plan" && !row.has_override) });
+      suggested: row.suggested, platformDefault: row.platform_default, editable: !(row.key.endsWith("_monthly") && row.source === "plan" && !row.has_override) });
   }
   return out;
 }

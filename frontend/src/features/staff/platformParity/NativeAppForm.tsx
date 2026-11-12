@@ -5,6 +5,7 @@ import { toast } from "../../../components/ui/toastStore";
 import { actionErrorText } from "../platformSpaces/ActionDialog";
 import { useSaveNativeApp, type NativeApp, type NativeAppBody } from "./nativeAppsApi";
 import { fieldError } from "./parityRequest";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 const EMPTY: NativeAppBody = { makerspace: null, app_id: "", platform: "android", environment: "production", verifier_config_key: "",
   signing_identities: [], min_supported_version: null, status: "pending" };
@@ -58,7 +59,7 @@ export function NativeAppForm({ row, onDone }: { row?: NativeApp; onDone?: () =>
     {general ? <p role="alert" className="text-sm text-danger">{general}</p> : null}
     <div className="flex flex-wrap gap-2">
       <button type="submit" className="desk-button-primary w-full sm:w-fit" disabled={!valid || save.isPending}>
-        {save.isPending ? t`Saving…` : row ? t`Save app` : t`Register app`}</button>
+        {save.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : row ? t`Save app` : t`Register app`}</button>
       {row ? <button type="button" className="desk-button w-full sm:w-fit" disabled={save.isPending} onClick={onDone}>{t`Cancel`}</button> : null}
     </div>
   </form>;

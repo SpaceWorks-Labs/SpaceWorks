@@ -3,6 +3,7 @@ import { useState } from "react";
 
 import { Modal } from "../../../components/ui";
 import { uploadIssuePhoto } from "./repairsApi";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 export type StepField = {
   name: string; label: string; kind: "text" | "textarea" | "number" | "date" | "datetime" | "select" | "photos" | "checkbox";
@@ -55,7 +56,7 @@ export function StepDialog({ title, submitLabel, fields, makerspaceId, pending, 
       {error ? <p role="alert" className="text-sm text-danger">{error}</p> : null}
       <div className="flex flex-wrap justify-end gap-2 border-t border-line pt-3">
         <button type="button" className="desk-button-ghost" onClick={onClose}>{t`Cancel`}</button>
-        <button type="submit" className="desk-button-primary" disabled={missing || pending || !!uploading}>{pending ? t`Saving…` : submitLabel}</button>
+        <button type="submit" className="desk-button-primary" disabled={missing || pending || !!uploading}>{pending ? <><BoxArt size={16} mono />{t`Saving…`}</> : submitLabel}</button>
       </div>
     </form>
   </Modal>;

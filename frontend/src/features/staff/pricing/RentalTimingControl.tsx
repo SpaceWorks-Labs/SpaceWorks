@@ -1,3 +1,4 @@
+import { LogoLoader } from "../../../components/LogoLoader";
 import { t } from "@lingui/core/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -19,7 +20,7 @@ export function RentalTimingControl({ makerspaceId }: { makerspaceId: number }) 
       void client.invalidateQueries({ queryKey: pricingKeys.card(makerspaceId, "loans") });
     },
   });
-  if (timing.isLoading) return <p role="status" className="text-sm text-muted">{t`Loading rental timing…`}</p>;
+  if (timing.isLoading) return <LogoLoader label={t`Loading rental timing…`} size={48} className="min-h-16 py-3" />;
   if (timing.error) return <p role="alert" className="text-sm text-danger">{pricingError(timing.error)}</p>;
   if (!timing.data) return null;
   const { editable, locked } = timing.data;

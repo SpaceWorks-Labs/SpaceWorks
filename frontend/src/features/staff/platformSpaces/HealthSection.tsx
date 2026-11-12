@@ -1,7 +1,7 @@
 import { t } from "@lingui/core/macro";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { EmptyState, ErrorText, Field, Pagination, Skeleton } from "../../../components/ui";
+import { EmptyState, ErrorText, Field, Pagination } from "../../../components/ui";
 import { useDebouncedValue } from "../../../lib/useDebouncedValue";
 import type { DialogKind } from "./cardActions";
 import { HealthCardView } from "./HealthCardView";
@@ -16,6 +16,7 @@ import { healthKey, listSpaceHealth, PAGE_SIZE, STATE_LABELS, type HealthCard, t
 import { TransferOwnershipDialog } from "./TransferOwnershipDialog";
 import { BulkPlanAssign } from "./BulkPlanAssign";
 import { BulkLimitsApply } from "./BulkLimitsApply";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 function SpaceDialog({ card, kind, onClose }: { card: HealthCard; kind: DialogKind; onClose: () => void }) {
   if (kind === "transfer") return <TransferOwnershipDialog card={card} onClose={onClose} />;
@@ -56,7 +57,7 @@ export function HealthSection({ managedPlans }: { managedPlans: boolean }) {
       {/* Decision 284: limits apply to every space, own or hosted, so the bulk editor is never gated on plans. */}
       <BulkLimitsApply spaces={rows} />
     </div> : null}
-    {list.isLoading ? <Skeleton className="h-40 w-full" />
+    {list.isLoading ? <LogoLoader size={48} className="min-h-40 py-3" />
       : list.isError ? <ErrorText resource={t`space health`} onRetry={() => { void list.refetch(); }} />
       : !rows.length ? <EmptyState message={term || state ? t`No spaces match these filters.` : t`No spaces yet.`} />
       : <div className="grid gap-4 xl:grid-cols-2">{rows.map(card => <HealthCardView key={card.id} card={card} managedPlans={managedPlans}

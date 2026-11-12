@@ -1,7 +1,8 @@
 import { t } from "@lingui/core/macro";
 import { useQuery } from "@tanstack/react-query";
-import { EmptyState, ErrorText, ListRow, RelativeTime, Skeleton, StatusPill } from "../../../components/ui";
+import { EmptyState, ErrorText, ListRow, RelativeTime, StatusPill } from "../../../components/ui";
 import { staffRequest } from "../../../lib/api";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 // Open item C13. Hand-typed until the integrator regenerates the OpenAPI client
 // (admin_api/views_platform_defaults.py). Superadmin only, platform session.
@@ -16,7 +17,7 @@ const getAdmins = () => staffRequest<{ admins: PlatformAdmin[] }>("/admin/platfo
 /** What a new space starts with, and how many spaces use each feature today. Read-only by design. */
 export function ModuleDefaultsSection() {
   const query = useQuery({ queryKey: ["platform-module-defaults"], queryFn: getDefaults });
-  if (query.isLoading) return <Skeleton className="h-40 w-full" />;
+  if (query.isLoading) return <LogoLoader size={48} className="min-h-40 py-3" />;
   if (query.isError) return <ErrorText resource={t`the feature defaults`} onRetry={() => { void query.refetch(); }} />;
   const data = query.data;
   if (!data?.modules.length) return <EmptyState message={t`No features to show.`} />;
@@ -37,7 +38,7 @@ export function ModuleDefaultsSection() {
 /** Every platform admin account: name, status, two-step sign-in and last sign-in; no contact details. */
 export function PlatformAdminsSection() {
   const query = useQuery({ queryKey: ["platform-admins"], queryFn: getAdmins });
-  if (query.isLoading) return <Skeleton className="h-24 w-full" />;
+  if (query.isLoading) return <LogoLoader size={48} className="min-h-24 py-3" />;
   if (query.isError) return <ErrorText resource={t`the platform admins`} onRetry={() => { void query.refetch(); }} />;
   const admins = query.data?.admins ?? [];
   if (!admins.length) return <EmptyState message={t`No platform admins found.`} />;

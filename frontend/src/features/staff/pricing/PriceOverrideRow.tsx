@@ -4,6 +4,7 @@ import { useId, useState } from "react";
 import { SegmentedControl } from "../../../components/ui";
 import type { PriceOverrideComponent, PriceOverrideWrite } from "./priceOverrideApi";
 import { sourceWords, UNIT_WORDS } from "./priceOverrideApi";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 type Mode = PriceOverrideComponent["mode"];
 
@@ -60,7 +61,7 @@ export function PriceOverrideRow({ row, currency, editable, pending, onSave }: {
     <p id={`${id}-effective`} className="text-sm tabular-nums text-muted">{effectiveText(row, currency)}</p>
     {editable && dirty ? <div className="flex flex-wrap gap-2">
       <button className="desk-button-primary" type="button" disabled={pending || !amountOk || !capOk} onClick={save}>
-        {pending ? t`Saving…` : t`Save ${row.label.toLowerCase()}`}
+        {pending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Save ${row.label.toLowerCase()}`}
       </button>
       <button className="desk-button-ghost" type="button" disabled={pending}
         onClick={() => { setMode(row.mode); setAmount(row.amount ?? ""); setCap(row.cap ?? ""); }}>{t`Discard`}</button>

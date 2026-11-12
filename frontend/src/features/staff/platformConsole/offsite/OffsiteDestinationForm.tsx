@@ -5,6 +5,7 @@ import { toast } from "../../../../components/ui/toastStore";
 import { actionErrorText } from "../../platformSpaces/ActionDialog";
 import { fieldError } from "../../platformParity/parityRequest";
 import { useSaveDestination, type Addressing, type Destination, type DestinationBody } from "./offsiteApi";
+import { BoxArt } from "../../../../components/BoxSpinner";
 
 const blank = { name: "", endpoint_url: "", bucket: "", region: "", prefix: "", addressing_style: "auto" as Addressing,
   retention_days: "90", enabled: true, access_key_id: "", secret_access_key: "" };
@@ -71,7 +72,7 @@ export function OffsiteDestinationForm({ destination, onDone }: { destination?: 
     </div>
     {other ? <p role="alert" className="text-sm text-danger">{other}</p> : null}
     <button type="submit" className="desk-button-primary w-full sm:w-fit" disabled={!valid || save.isPending}>
-      {save.isPending ? t`Saving…` : destination ? t`Save destination` : t`Add destination`}
+      {save.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : destination ? t`Save destination` : t`Add destination`}
     </button>
   </form>;
 }

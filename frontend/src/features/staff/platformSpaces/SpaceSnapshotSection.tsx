@@ -1,10 +1,11 @@
 import { t } from "@lingui/core/macro";
 import { useQuery } from "@tanstack/react-query";
-import { ErrorText, KeyValueCard, Skeleton } from "../../../components/ui";
+import { ErrorText, KeyValueCard } from "../../../components/ui";
 import { openSpaceTab } from "../platformConsole/openSpaceTab";
 import { crossSpaceKeys, getSnapshot, metricLabel } from "../platformConsole/crossSpaceApi";
 import { usageAmount } from "../platformMonitoringApi";
 import { limitLabel } from "./limitCopy";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 /**
  * Decision 242(l) / U8: a read-only count snapshot of one space (no rows, no impersonation). Usage is
@@ -13,7 +14,7 @@ import { limitLabel } from "./limitCopy";
  */
 export function SpaceSnapshotSection({ makerspaceId }: { makerspaceId: number }) {
   const snapshot = useQuery({ queryKey: crossSpaceKeys.snapshot(makerspaceId), queryFn: () => getSnapshot(makerspaceId) });
-  if (snapshot.isLoading) return <div role="status" aria-label={t`Loading this space's snapshot`}><Skeleton className="h-24 w-full" /></div>;
+  if (snapshot.isLoading) return <LogoLoader label={t`Loading this space's snapshot`} size={48} className="min-h-24 py-3" />;
   if (snapshot.isError || !snapshot.data) return <ErrorText resource={t`this space's snapshot`} onRetry={() => { void snapshot.refetch(); }} />;
   const data = snapshot.data;
   const counts = Object.entries(data.counts).filter(([, value]) => value > 0);

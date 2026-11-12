@@ -2,6 +2,7 @@ import { plural, t } from "@lingui/core/macro";
 import { Modal } from "../../../components/ui";
 import { formatMoney } from "../paymentsApi";
 import { componentLabel, type PricingImpact } from "./pricingApi";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 /** What a rate-card change reprices, shown before anything is saved. Custom and free items never move. */
 export function PricingImpactDialog({ impact, areaLabel, pending, error, onConfirm, onClose }: {
@@ -12,7 +13,7 @@ export function PricingImpactDialog({ impact, areaLabel, pending, error, onConfi
   return <Modal open onClose={onClose} title={t`Save ${areaLabel.toLowerCase()} prices?`} footer={<div className="flex flex-wrap justify-end gap-3">
     <button type="button" className="desk-button" onClick={onClose} disabled={pending}>{t`Keep editing`}</button>
     <button type="button" className="desk-button-primary" onClick={onConfirm} disabled={pending}>
-      {pending ? t`Saving…` : t`Save prices`}</button>
+      {pending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Save prices`}</button>
   </div>}>
     <div className="grid gap-3 text-sm">
       <p className="text-muted">{plural(impact.items_checked, { one: "We checked # item. Items with their own price, or set to free, keep it.", other: "We checked # items. Items with their own price, or set to free, keep it." })}</p>

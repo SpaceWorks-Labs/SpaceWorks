@@ -7,6 +7,7 @@ import { limitHint } from "./limitCopy";
 import { BYTE_LIMIT_KEYS, LIMIT_KEYS, limitLabels, useSavePlan, type HostingPlan, type LimitKey, type PlanBody } from "./plansApi";
 import { currencyExponent, minorToDecimal } from "../../../lib/money";
 import { moduleKeys, moduleLabel, moduleList } from "../../../lib/moduleLabels";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 const MIB = 1024 * 1024;
 type Draft = { key: string; name: string; description: string; is_active: boolean; trial_days: string; price: string; currency: string;
@@ -68,7 +69,7 @@ export function PlanForm({ plan, onDone }: { plan?: HostingPlan; onDone: () => v
       <input type="checkbox" checked={draft.is_active} onChange={event => set("is_active", event.target.checked)} />{t`Available for new spaces (untick to retire the plan; spaces already on it keep it)`}</label>
     {save.error ? <p role="alert" className="text-sm text-danger">{actionErrorText(save.error)}</p> : null}
     <div className="flex flex-wrap gap-2">
-      <button type="submit" className="desk-button-primary" disabled={!valid || save.isPending}>{save.isPending ? t`Saving…` : plan ? t`Save plan` : t`Create plan`}</button>
+      <button type="submit" className="desk-button-primary" disabled={!valid || save.isPending}>{save.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : plan ? t`Save plan` : t`Create plan`}</button>
       <button type="button" className="desk-button" onClick={onDone}>{t`Cancel`}</button>
     </div>
   </form>;

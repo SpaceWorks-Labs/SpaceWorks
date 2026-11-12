@@ -20,7 +20,7 @@ export const platformSettingsGroups = (): readonly SettingsGroup[] => [
   { key: "shop", label: t`Shop`, items: [] },
   { key: "money", label: t`Money`, items: ["stripe"] },
   { key: "messaging", label: t`Messaging & notifications`, items: ["email", "providers", "chat-templates", "tab:platform-inbox"] },
-  { key: "integrations", label: t`Integrations & analytics`, items: ["mobile-apps", "wallet", "tab:platform-analytics"] },
+  { key: "integrations", label: t`Integrations & analytics`, items: ["mobile-apps", "wallet", "eraser", "tab:platform-analytics"] },
   { key: "limits", label: t`Limits & hosting`, items: ["tab:platform-limits", "tab:hosting-plans", "tab:hosting-invoices", "deployment"] },
   { key: "data", label: t`Data & recovery`, items: ["tab:platform-data"] },
   { key: "security", label: t`Security & audit`, items: ["tab:platform-security", "legal"] },

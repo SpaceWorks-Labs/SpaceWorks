@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Modal } from "../../../components/ui";
 import { CHANNEL_LABELS, type Channel, type Technician } from "../technicians/techniciansApi";
 import { useIssueStep, type IssueDetail } from "./repairsApi";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 /**
  * Pick the technicians to send this issue to (#98); the area's defaults come pre-ticked.
@@ -36,7 +37,7 @@ export function DispatchDialog({ issue, technicians, onClose }: { issue: IssueDe
       <div className="flex flex-wrap justify-end gap-2 border-t border-line pt-3">
         <button type="button" className="desk-button-ghost" onClick={onClose}>{t`Cancel`}</button>
         <button type="submit" className="desk-button-primary" disabled={!picked.length || step.isPending}>
-          {step.isPending ? t`Sending…` : (picked.length ? plural(picked.length, { one: "Send to # technician", other: "Send to # technicians" }) : t`Send to technicians`)}</button>
+          {step.isPending ? <><BoxArt size={16} mono />{t`Sending…`}</> : (picked.length ? plural(picked.length, { one: "Send to # technician", other: "Send to # technicians" }) : t`Send to technicians`)}</button>
       </div>
     </form>
   </Modal>;

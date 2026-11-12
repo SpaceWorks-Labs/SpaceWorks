@@ -2,11 +2,16 @@ import { useQuery } from "@tanstack/react-query";
 import { staffRequest } from "../../lib/api";
 import { periodParams, type AnalyticsPeriod, type ReportChartSpec } from "./panels/analyticsApi";
 
-import type { AnalyticsMakerspacePage, PlatformAnalyticsReport } from "../../generated/api";
+import type { AnalyticsMakerspacePage, PlatformAnalyticsReport, ReportCatalog } from "../../generated/api";
 export type { AnalyticsMakerspace, AnalyticsMakerspacePage, PlatformAnalyticsReport } from "../../generated/api";
 export function usePlatformAnalytics(key: "platform-services" | "platform-usage", period: AnalyticsPeriod) {
   return useQuery({ queryKey: ["platform-analytics", key, period], retry: false,
     queryFn: () => staffRequest<PlatformAnalyticsReport>(`/admin/platform/analytics/${key}?${periodParams(period)}`) });
+}
+/** Every report that rolls up across makerspaces, each carrying its module group (the same grouping as the module switches). */
+export function usePlatformReportCatalog() {
+  return useQuery({ queryKey: ["platform-report-catalog"], retry: false,
+    queryFn: () => staffRequest<ReportCatalog>("/admin/reports/catalog") });
 }
 export function useAnalyticsMakerspaces(page: number, reportKey: string) {
   return useQuery({ queryKey: ["platform-analytics-makerspaces", page, reportKey], retry: false,

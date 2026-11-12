@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Modal } from "../../../components/ui";
 import { useOpenIssue, type SubjectType } from "./repairsApi";
 import { useSubjectOptions } from "./subjectsApi";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 const KINDS: { value: SubjectType; label: string }[] = [
   { value: "machine", label: t`Machine` }, { value: "inventory_product", label: t`Inventory item` },
@@ -41,7 +42,7 @@ export function OpenIssueDialog({ makerspaceId, onClose, onOpened }: {
       {open.error ? <p role="alert" className="text-sm text-danger">{open.error.message}</p> : null}
       <div className="flex flex-wrap justify-end gap-2 border-t border-line pt-3">
         <button type="button" className="desk-button-ghost" onClick={onClose}>{t`Cancel`}</button>
-        <button type="submit" className="desk-button-primary" disabled={!ready || open.isPending}>{open.isPending ? t`Opening…` : t`Open repair job`}</button>
+        <button type="submit" className="desk-button-primary" disabled={!ready || open.isPending}>{open.isPending ? <><BoxArt size={16} mono />{t`Opening…`}</> : t`Open repair job`}</button>
       </div>
     </form>
   </Modal>;

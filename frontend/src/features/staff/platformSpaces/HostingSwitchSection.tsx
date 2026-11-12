@@ -1,8 +1,9 @@
 import { t } from "@lingui/core/macro";
-import { ErrorText, Skeleton, StatusPill } from "../../../components/ui";
+import { ErrorText, StatusPill } from "../../../components/ui";
 import { toast } from "../../../components/ui/toastStore";
 import { actionErrorText } from "./ActionDialog";
 import { useHostingSwitch, useSetHostingSwitch } from "./limitsApi";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 export const HOSTING_DOCS_URL = "https://github.com/SpaceWorks-Labs/SpaceWorks/blob/main/docs/self-hosting.md#plans-and-hosting-other-makerspaces-optional";
 
@@ -10,7 +11,7 @@ export const HOSTING_DOCS_URL = "https://github.com/SpaceWorks-Labs/SpaceWorks/b
 export function HostingSwitchSection() {
   const state = useHostingSwitch();
   const save = useSetHostingSwitch();
-  if (state.isLoading) return <Skeleton className="h-16 w-full" />;
+  if (state.isLoading) return <LogoLoader size={48} className="min-h-16 py-3" />;
   if (state.isError || !state.data) return <ErrorText resource={t`the hosting switch`} onRetry={() => { void state.refetch(); }} />;
   const { enabled, forced_by_environment: forced } = state.data;
   return <div className="grid gap-3">

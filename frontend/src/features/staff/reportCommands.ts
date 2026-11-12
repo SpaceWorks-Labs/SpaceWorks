@@ -10,7 +10,7 @@ const REPORTS = (): { key: string; label: string; actions: string[] }[] => [
   { key: "incidents-register", label: t`Incidents register`, actions: ["manage_makerspace", "manage_machines", "edit_inventory",
     "manage_events", "manage_bookings", "work_repairs", "run_maintenance"] },
   { key: "machine-jobs", label: t`Machine jobs register`, actions: ["manage_machines"] },
-  { key: "certification-holders", label: t`Certification holders`, actions: ["manage_machines"] },
+  // Decision 329: `certification-holders` is retired history (listed only where records exist), not promoted here.
   { key: "roster-export", label: t`Member roster`, actions: ["manage_members"] },
   { key: "guest-passes-export", label: t`Guest passes`, actions: ["manage_members"] },
   { key: "volunteer-hours-export", label: t`Volunteer hours`, actions: ["manage_members"] },

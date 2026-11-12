@@ -1,16 +1,17 @@
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
-import { ErrorText, KeyValueCard, RelativeTime, SegmentedControl, Skeleton } from "../../../components/ui";
+import { ErrorText, KeyValueCard, RelativeTime, SegmentedControl } from "../../../components/ui";
 import { ProviderForm } from "./ProviderForm";
 import { ProviderTestAction } from "./ProviderTestAction";
 import { useProviderSettings } from "./providersApi";
 import { PROVIDERS, type ProviderSpec } from "./providerSpecs";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 /** One provider's settings card: last change, the form, and its test when it has one. */
 export function Provider({ spec }: { spec: ProviderSpec }) {
   const settings = useProviderSettings(spec.key);
   const data = settings.data;
-  if (settings.isLoading) return <Skeleton className="h-64 w-full" />;
+  if (settings.isLoading) return <LogoLoader size={48} className="min-h-64 py-3" />;
   if (settings.isError || !data) return <ErrorText resource={`${spec.title} settings`} onRetry={() => { void settings.refetch(); }} />;
   const info = Object.entries(data.info);
   return <div className="grid gap-4">

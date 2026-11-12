@@ -5,6 +5,7 @@ import { Field } from "../../../components/ui";
 import { StructuredApiError, staffRequest } from "../../../lib/api";
 import { usePlans } from "./plansApi";
 import { healthKey, type HealthCard } from "./spacesApi";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 const LIMIT = 50;
 
@@ -53,7 +54,7 @@ export function BulkPlanAssign({ cards }: { cards: HealthCard[] }) {
         </Field>
       </div>
       <button type="button" className="desk-button-primary min-h-11 w-fit" disabled={!selected.length || !planId || !validTrial || assign.isPending}
-        onClick={() => assign.mutate()}>{assign.isPending ? t`Saving…` : t`Assign to ${selected.length} spaces`}</button>
+        onClick={() => assign.mutate()}>{assign.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Assign to ${selected.length} spaces`}</button>
       {assign.isSuccess ? <p role="status" className="text-sm text-muted">{t`Plan assigned to ${assign.data.assigned} spaces.`}</p> : null}
       {failed ? <p role="alert" className="text-sm text-danger">{failed}</p> : null}
     </fieldset> : null}

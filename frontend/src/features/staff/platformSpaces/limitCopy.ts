@@ -41,6 +41,19 @@ const LIMIT_NAMES = (): Record<string, string> => ({
   storage_evidence_bytes: t`Storage for evidence photos`, storage_public_images_bytes: t`Storage for public images`,
   webhook_endpoints: t`Outbound webhook endpoints`,
   staff_cards_issued_monthly: t`Staff ID cards issued this month`,
+  photo_cutout_jobs_monthly: t`Card photo background removals this month`,
+  card_templates: t`Saved card and certificate templates`,
+  paired_displays: t`Paired display screens`,
+  adapter_bridges: t`Enrolled device adapters`,
+  adapter_watch_streams: t`Camera watch sessions open at once`,
+  adapter_snapshots: t`Camera snapshots requested this month`,
+  adapter_artifacts: t`Adapter timelapses, previews and bundles kept`,
+  // 0.12.0 (decision 328a): the module-by-module sweep.
+  hardware_requests_monthly: t`Hardware requests this month`, stock_transfers_monthly: t`Stock transfers this month`,
+  stocktake_sessions_monthly: t`Stocktake sessions this month`, shelf_checks_monthly: t`Shelf checks this month`, reimbursement_claims_monthly: t`Reimbursement claims this month`,
+  public_page_assets: t`Images on the public page`, scheduled_reports: t`Scheduled reports`,
+  adapter_media_bytes: t`Storage for adapter media`, adapter_telemetry_points: t`Device telemetry samples kept`,
+  anthias_players: t`Anthias display players`,
 });
 
 /** A limit or usage resource key as people read it; the server's label, then the key, only for an unknown one. */
@@ -64,6 +77,8 @@ export function limitHint(key: string) {
     case "api_clients": return t`Apps and integrations connected to this space. At the limit, no new ones can be added.`;
     case "webhook_endpoints": return t`Addresses this space sends signed webhooks to. At the limit, no new endpoints can be added.`;
     case "staff_cards_issued_monthly": return t`Staff ID cards issued per month. At the limit, more wait until next month.`;
+    case "photo_cutout_jobs_monthly": return t`Card photo background removals per month. At the limit, new ones wait until next month; existing cut-outs keep working.`;
+    case "card_templates": return t`Saved card and certificate templates. At the limit, no more can be saved, duplicated or imported; the built-in looks stay available.`;
     case "guest_passes": return t`Guest and day passes issued per day. At the limit, more passes wait until tomorrow.`;
     case "data_exports": return t`Data exports running at once. At the limit, a new export waits for one to finish.`;
     case "print": return t`Print requests per month. At the limit, new requests wait for next month.`;
@@ -87,15 +102,23 @@ export function limitHint(key: string) {
     case "storage_evidence_bytes": case "storage_public_images_bytes": return t`Space used by these files. At the limit, new uploads of this kind are refused.`;
     case "event_registrations_monthly": case "shop_orders_monthly": case "report_exports_monthly": case "machine_jobs_monthly": case "machine_sessions_monthly":
       return t`Counted this month. At the limit, new ones wait for next month.`;
+    case "hardware_requests_monthly": case "stock_transfers_monthly": case "stocktake_sessions_monthly": case "shelf_checks_monthly": case "reimbursement_claims_monthly":
+      return t`Counted this month. At the limit, new ones wait for next month; existing ones carry on.`;
+    case "public_page_assets": return t`Images uploaded for the public space page. At the limit, no more can be uploaded; published pages are unchanged.`;
+    case "scheduled_reports": return t`Reports that are scheduled to send. At the limit, no new schedule can be created.`;
+    case "adapter_media_bytes": return t`Space used by timelapses, previews and bundles from device adapters. At the limit, new uploads are refused; old ones expire as usual.`;
+    case "adapter_telemetry_points": return t`Device readings kept for history charts. At the limit, new readings are not stored; stored ones stay until they expire.`;
+    case "anthias_players": return t`Anthias display players registered for the space screens. At the limit, no new player can be added.`;
     default: return t`At the limit, new ones are refused until usage drops or the limit is raised.`;
   }
 }
 
-export function limitSource(source: "own" | "override" | "plan" | "unlimited") {
+export function limitSource(source: "own" | "override" | "plan" | "default" | "unlimited") {
   switch (source) {
     case "own": return t`own space`;
     case "override": return t`set for this space`;
     case "plan": return t`from the plan`;
+    case "default": return t`platform default`;
     case "unlimited": return t`no limit`;
   }
 }

@@ -6,6 +6,8 @@ import { actionErrorText } from "./ActionDialog";
 import { limitLabel } from "./limitCopy";
 import { fromInput, groupLimits, unifyLimits, validInput } from "./limitsModel";
 import { useBulkSpaceLimits, useSpaceLimits } from "./limitsApi";
+import { LogoLoader } from "../../../components/LogoLoader";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 const LIMIT = 50;
 type Space = { id: number; name: string };
@@ -61,7 +63,7 @@ export function BulkLimitsApply({ spaces }: { spaces: Space[] }) {
       <div className="grid gap-2">
         <p className="text-sm font-semibold text-ink">{t`Limits to change`}</p>
         <p className="text-xs text-muted">{t`Leave a value empty to reset that limit to none. Storage is in MB; money in whole currency units, per currency.`}</p>
-        {catalogue.isLoading ? <p role="status" className="text-sm text-muted">{t`Loading limits…`}</p> : null}
+        {catalogue.isLoading ? <LogoLoader label={t`Loading limits…`} size={48} className="min-h-16 py-3" /> : null}
         {changes.map((change, index) => <div key={index} className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_10rem_auto] sm:items-end">
           <Field label={t`Limit ${index + 1}`}><select className="desk-input w-full" value={change.key} onChange={event => edit(index, { key: event.target.value })}>
             <option value="">{t`Choose a limit`}</option>
@@ -76,7 +78,7 @@ export function BulkLimitsApply({ spaces }: { spaces: Space[] }) {
         <button type="button" className="desk-button-ghost min-h-11 w-fit" onClick={() => setChanges(current => [...current, { key: "", value: "" }])}>{t`Add another limit`}</button>
       </div>
       <button type="button" className="desk-button-primary min-h-11 w-fit" disabled={!selected.length || !valid || apply.isPending} onClick={submit}>
-        {apply.isPending ? t`Saving…` : plural(selected.length, { one: "Apply to # space", other: "Apply to # spaces" })}</button>
+        {apply.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : plural(selected.length, { one: "Apply to # space", other: "Apply to # spaces" })}</button>
       {apply.isSuccess ? <p role="status" className="text-sm text-muted">{plural(apply.data.updated, { one: "Limits changed on # space.", other: "Limits changed on # spaces." })}</p> : null}
       {failed ? <p role="alert" className="text-sm text-danger">{failed}</p> : null}
     </fieldset> : null}

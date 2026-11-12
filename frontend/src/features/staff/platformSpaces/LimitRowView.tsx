@@ -57,6 +57,7 @@ export function LimitRowView({ row, value, onChange, disabled }: {
             placeholder={t`No limit`} value={value} disabled={disabled} onChange={event => onChange(event.target.value)} />
           {unit ? <span className="text-xs text-muted">{unit}</span> : null}
         </div>
+        {!value.trim() && row.platformDefault != null ? <span className="text-xs text-muted">{t`Platform default: ${limitAmount(row, row.platformDefault)}`}</span> : null}
         {!value.trim() && suggested ? <span className="text-xs text-muted">{suggested}</span> : null}
       </div>
       {value.trim() ? <button type="button" className="desk-button-ghost min-h-11" disabled={disabled}

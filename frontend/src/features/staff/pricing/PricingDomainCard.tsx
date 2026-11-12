@@ -1,3 +1,4 @@
+import { LogoLoader } from "../../../components/LogoLoader";
 import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -34,7 +35,7 @@ export function PricingDomainCard({ makerspaceId, domain }: { makerspaceId: numb
   });
   const drop = usePriceDropCheck(makerspaceId);
 
-  if (card.isLoading) return <p role="status" className="text-sm text-muted">{t`Loading prices…`}</p>;
+  if (card.isLoading) return <LogoLoader label={t`Loading prices…`} size={48} className="min-h-16 py-3" />;
   if (card.error) return <p role="alert" className="text-sm text-danger">{pricingError(card.error)}</p>;
   if (!card.data || !draft) return null;
   const data = card.data;

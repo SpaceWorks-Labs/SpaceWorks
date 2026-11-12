@@ -6,6 +6,7 @@ import { toast } from "../../../components/ui/toastStore";
 import { staffRequest, StructuredApiError } from "../../../lib/api";
 import type { Makerspace } from "../panels/shared";
 import { healthKey, post } from "./spacesApi";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 type SpaceDomain = Pick<Makerspace, "id" | "frontend_domain" | "frontend_domain_status" | "platform_hosting" | "is_platform_subdomain">;
 
@@ -52,7 +53,7 @@ export function SubdomainProvisionSection({ makerspaceId }: { makerspaceId: numb
           value={label} onChange={event => setLabel(event.target.value)} />
       </label>
       <button type="submit" className="desk-button-primary" disabled={!label.trim() || provision.isPending}>
-        {provision.isPending ? t`Provisioning…` : t`Provision subdomain`}
+        {provision.isPending ? <><BoxArt size={16} mono />{t`Provisioning…`}</> : t`Provision subdomain`}
       </button>
     </form>
     {replacesCustom ? <p className="text-sm text-warn-ink">{t`This replaces the custom domain ${domain ?? ""}.`}</p> : null}

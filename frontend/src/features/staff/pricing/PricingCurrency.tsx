@@ -5,6 +5,7 @@ import { Coins } from "lucide-react";
 
 import { Field } from "../../../components/ui";
 import { isNotFound, pricingApi, pricingError, pricingKeys } from "./pricingApi";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 /** The currency new charges are raised in. A finance setting: the Space Manager edits it; a 404 hides it. */
 export function PricingCurrency({ makerspaceId, canEdit }: { makerspaceId: number; canEdit: boolean }) {
@@ -35,7 +36,7 @@ export function PricingCurrency({ makerspaceId, canEdit }: { makerspaceId: numbe
         onBlur={() => setLeft(true)} onChange={event => { setValue(event.target.value.toUpperCase()); save.reset(); }} />
     </Field>
     {canEdit ? <button type="submit" className="desk-button" disabled={!valid || !dirty || save.isPending}>
-      {save.isPending ? t`Saving…` : t`Save currency`}</button>
+      {save.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Save currency`}</button>
       : <p className="mb-3 text-xs text-muted">{t`Only the Space Manager changes the currency.`}</p>}
     {save.isSuccess ? <p role="status" className="mb-3 text-xs text-muted">{t`Currency saved.`}</p> : null}
     {save.error ? <p role="alert" className="w-full text-sm text-danger">{pricingError(save.error)}</p> : null}

@@ -5,6 +5,7 @@ import { toast } from "../../../components/ui/toastStore";
 import { actionErrorText } from "../platformSpaces/ActionDialog";
 import { fieldError } from "./parityRequest";
 import { useCreateOidcProvider, type OidcProviderBody } from "./ssoApi";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 const EMPTY: OidcProviderBody = { slug: "", display_name: "", issuer: "", jwks_url: "", client_id: "", is_enabled: true, allow_auto_link: true };
 const FIELDS = ["slug", "display_name", "issuer", "jwks_url", "client_id"] as const;
@@ -50,7 +51,7 @@ export function SsoProviderForm() {
       {t`Link a first sign-in to an existing account when both emails are verified`}</label>
     {general ? <p role="alert" className="text-sm text-danger">{general}</p> : null}
     <button type="submit" className="desk-button-primary w-full sm:w-fit" disabled={!valid || create.isPending}>
-      {create.isPending ? t`Adding…` : t`Add provider`}
+      {create.isPending ? <><BoxArt size={16} mono />{t`Adding…`}</> : t`Add provider`}
     </button>
   </form>;
 }

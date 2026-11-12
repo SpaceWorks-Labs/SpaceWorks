@@ -1,8 +1,9 @@
 import { plural, t } from "@lingui/core/macro";
 import { useState } from "react";
-import { EmptyState, ErrorText, ListRow, Skeleton, StatusPill } from "../../../components/ui";
+import { EmptyState, ErrorText, ListRow, StatusPill } from "../../../components/ui";
 import { PlanForm } from "./PlanForm";
 import { formatMoney, usePlans, type HostingPlan } from "./plansApi";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 function summary(plan: HostingPlan) {
   const amount = formatMoney(plan.price_minor, plan.currency);
@@ -19,7 +20,7 @@ export function PlansSection() {
   if (editing) return <PlanForm plan={editing === "new" ? undefined : editing} onDone={() => setEditing(null)} />;
   return <div className="grid gap-4">
     <button type="button" className="desk-button-primary w-full sm:w-fit" onClick={() => setEditing("new")}>{t`New plan`}</button>
-    {plans.isLoading ? <Skeleton className="h-24 w-full" />
+    {plans.isLoading ? <LogoLoader size={48} className="min-h-24 py-3" />
       : plans.isError ? <ErrorText resource={t`hosting plans`} onRetry={() => { void plans.refetch(); }} />
       : !plans.data?.length ? <EmptyState message={t`No plans yet. A plan bundles a price with limits such as members, storage and emails. Without a plan or a limit set by you, a space is unlimited.`} />
       : <div className="grid gap-3">{plans.data.map(plan => <ListRow key={plan.id} title={plan.name} meta={summary(plan)}

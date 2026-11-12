@@ -1,6 +1,6 @@
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
-import { CollapsibleSection, EmptyState, ErrorText, ListRow, Pagination, RelativeTime, Skeleton, StatusPill } from "../../../../components/ui";
+import { CollapsibleSection, EmptyState, ErrorText, ListRow, Pagination, RelativeTime, StatusPill } from "../../../../components/ui";
 import { toast } from "../../../../components/ui/toastStore";
 import { actionErrorText } from "../../platformSpaces/ActionDialog";
 import { PAGE_SIZE } from "../../platformParity/parityRequest";
@@ -8,6 +8,8 @@ import { TypedConfirmDialog } from "../../platformSpaceKeys/TypedConfirmDialog";
 import { OffsiteDestinationForm } from "./OffsiteDestinationForm";
 import { OffsiteUploads } from "./OffsiteUploads";
 import { useDestinations, useProbeDestination, usePushNow, useRetireDestination, type Destination } from "./offsiteApi";
+import { LogoLoader } from "../../../../components/LogoLoader";
+import { BoxArt } from "../../../../components/BoxSpinner";
 
 function RetireDialog({ destination, onClose }: { destination: Destination; onClose: () => void }) {
   const retire = useRetireDestination();
@@ -34,7 +36,7 @@ function DestinationRow({ destination, onRetire }: { destination: Destination; o
     <div className="flex flex-wrap gap-2">
       <button type="button" className="desk-button" aria-expanded={panel === "uploads"} onClick={() => setPanel(panel === "uploads" ? null : "uploads")}>{t`Copies`}</button>
       {retired ? null : <>
-        <button type="button" className="desk-button" disabled={probe.isPending} onClick={test}>{probe.isPending ? t`Testing…` : t`Test`}</button>
+        <button type="button" className="desk-button" disabled={probe.isPending} onClick={test}>{probe.isPending ? <><BoxArt size={16} mono />{t`Testing…`}</> : t`Test`}</button>
         <button type="button" className="desk-button" aria-expanded={panel === "edit"} onClick={() => setPanel(panel === "edit" ? null : "edit")}>{t`Edit`}</button>
         <button type="button" className="desk-button-danger-outline" onClick={onRetire}>{t`Retire…`}<span className="sr-only"> {destination.name}</span></button>
       </>}
@@ -57,13 +59,13 @@ export function OffsiteDestinationsSection() {
     <p className="text-sm text-muted">{t`Backups are already encrypted to the platform key; each destination keeps a second copy off this server. Keys are stored encrypted and never shown again.`}</p>
     <div className="flex flex-wrap items-center gap-2">
       <button type="button" className="desk-button" disabled={push.isPending || !rows.some(row => row.enabled && !row.retired_at)}
-        onClick={() => push.mutate(undefined, { onSuccess: () => toast(t`Offsite push started.`) })}>{push.isPending ? t`Starting…` : t`Push now`}</button>
+        onClick={() => push.mutate(undefined, { onSuccess: () => toast(t`Offsite push started.`) })}>{push.isPending ? <><BoxArt size={16} mono />{t`Starting…`}</> : t`Push now`}</button>
       {push.error ? <span role="alert" className="text-sm text-danger">{actionErrorText(push.error)}</span> : null}
     </div>
     <CollapsibleSection title={t`New destination`} open={adding} onToggle={() => setAdding(!adding)}>
       <OffsiteDestinationForm key={String(adding)} onDone={() => setAdding(false)} />
     </CollapsibleSection>
-    {list.isLoading ? <Skeleton className="h-24 w-full" />
+    {list.isLoading ? <LogoLoader size={48} className="min-h-24 py-3" />
       : list.isError ? <ErrorText resource={t`offsite destinations`} onRetry={() => { void list.refetch(); }} />
       : !rows.length ? <EmptyState message={t`No offsite destination yet. Add one so a lost server does not take its backups with it.`} />
       : <div className="grid gap-3">{rows.map(row => <DestinationRow key={row.id} destination={row} onRetire={() => setRetiring(row)} />)}</div>}

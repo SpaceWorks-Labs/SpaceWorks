@@ -7,6 +7,7 @@ import { fieldError } from "./parityRequest";
 import { ProviderSecretInput } from "./ProviderSecretInput";
 import { useSaveProvider, type ProviderSettings } from "./providersApi";
 import type { ProviderSpec } from "./providerSpecs";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 type Draft = Record<string, string | boolean>;
 
@@ -53,7 +54,7 @@ export function ProviderForm({ spec, saved }: { spec: ProviderSpec; saved: Provi
     {fieldError(save.error, "non_field_errors") ? <p role="alert" className="text-sm text-danger">{fieldError(save.error, "non_field_errors")}</p> : null}
     {general ? <p role="alert" className="text-sm text-danger">{general}</p> : null}
     <button type="submit" className="desk-button-primary w-full sm:w-fit" disabled={!dirty || save.isPending}>
-      {save.isPending ? t`Saving…` : t`Save`}
+      {save.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Save`}
     </button>
   </form>;
 }

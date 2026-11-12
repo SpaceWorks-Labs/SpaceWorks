@@ -1,10 +1,11 @@
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
-import { EmptyState, ErrorText, ListRow, Pagination, RelativeTime, Skeleton, StatusPill, type Tone } from "../../../../components/ui";
+import { EmptyState, ErrorText, ListRow, Pagination, RelativeTime, StatusPill, type Tone } from "../../../../components/ui";
 import { toast } from "../../../../components/ui/toastStore";
 import { ActionDialog } from "../../platformSpaces/ActionDialog";
 import { PAGE_SIZE } from "../../platformParity/parityRequest";
 import { useRehydrate, useUploads, type Destination, type Upload } from "./offsiteApi";
+import { LogoLoader } from "../../../../components/LogoLoader";
 
 const STATES: Record<string, [string, Tone]> = {
   pending: ["Pending", "neutral"], uploading: ["Uploading", "info"], bytes_verified: ["Verified copy", "success"],
@@ -26,7 +27,7 @@ export function OffsiteUploads({ destination }: { destination: Destination }) {
   const [restoring, setRestoring] = useState<Upload | null>(null);
   const list = useUploads(destination.id, page);
   const rows = list.data?.results ?? [];
-  if (list.isLoading) return <Skeleton className="h-20 w-full" />;
+  if (list.isLoading) return <LogoLoader size={48} className="min-h-20 py-3" />;
   if (list.isError) return <ErrorText resource={t`offsite uploads`} onRetry={() => { void list.refetch(); }} />;
   return <div className="grid gap-3">
     {!rows.length ? <EmptyState message={t`Nothing has been copied here yet. New backups are pushed on the schedule, or press Push now.`} />

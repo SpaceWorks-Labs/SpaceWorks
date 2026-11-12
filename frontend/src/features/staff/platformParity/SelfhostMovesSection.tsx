@@ -1,11 +1,12 @@
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
-import { EmptyState, ErrorText, Field, ListRow, Pagination, RelativeTime, Skeleton, StatusPill, type Tone } from "../../../components/ui";
+import { EmptyState, ErrorText, Field, ListRow, Pagination, RelativeTime, StatusPill, type Tone } from "../../../components/ui";
 import { toast } from "../../../components/ui/toastStore";
 import { actionErrorText } from "../platformSpaces/ActionDialog";
 import { PAGE_SIZE } from "./parityRequest";
 import { SelfhostMoveDialog } from "./SelfhostMoveDialog";
 import { moveStatusLabels, useMoveDownload, useSelfhostMoves, type MoveAction, type MoveStatus, type SelfhostMove } from "./selfhostMovesApi";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 const TONES: Record<MoveStatus, Tone> = {
   requested: "info", approved: "accent", exporting: "warn", exported: "success", rejected: "neutral", failed: "danger", cancelled: "neutral",
@@ -56,7 +57,7 @@ export function SelfhostMovesSection() {
         {(Object.entries(moveStatusLabels()) as [MoveStatus, string][]).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
       </select>
     </Field>
-    {list.isLoading ? <Skeleton className="h-24 w-full" />
+    {list.isLoading ? <LogoLoader size={48} className="min-h-24 py-3" />
       : list.isError ? <ErrorText resource={t`move requests`} onRetry={() => { void list.refetch(); }} />
       : !rows.length ? <EmptyState message={status ? t`No move requests with this status.` : t`No space has asked to move yet.`} />
       : <div className="grid gap-3">{rows.map(move => <ListRow key={move.id} title={move.makerspace_name} meta={<Meta move={move} />}

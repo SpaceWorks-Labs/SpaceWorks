@@ -1,9 +1,10 @@
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { DataTable, EmptyState, ErrorText, Skeleton } from "../../../components/ui";
+import { DataTable, EmptyState, ErrorText } from "../../../components/ui";
 import { openSpaceTab } from "./openSpaceTab";
 import { crossSpaceKeys, getQueues, QUEUE_COLUMNS, sumKeys, type QueueRow } from "./crossSpaceApi";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 function Count({ value, urgent }: { value: number; urgent?: boolean }) {
   if (!value) return <span className="tabular-nums text-muted">0</span>;
@@ -17,7 +18,7 @@ function Count({ value, urgent }: { value: number; urgent?: boolean }) {
 export function PlatformQueuesTable() {
   const queues = useQuery({ queryKey: crossSpaceKeys.queues, queryFn: getQueues, refetchInterval: 120_000 });
   const [busyOnly, setBusyOnly] = useState(true);
-  if (queues.isLoading) return <div role="status" aria-label={t`Loading queues by space`}><Skeleton className="h-32 w-full" /></div>;
+  if (queues.isLoading) return <LogoLoader label={t`Loading queues by space`} size={48} className="min-h-32 py-3" />;
   if (queues.isError) return <ErrorText resource={t`queues by space`} onRetry={() => { void queues.refetch(); }} />;
   const all = [...queues.data?.spaces ?? []].sort((a, b) => b.total - a.total || a.name.localeCompare(b.name));
   const rows = busyOnly ? all.filter(row => row.total > 0) : all;

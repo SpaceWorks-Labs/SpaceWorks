@@ -1,11 +1,12 @@
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
-import { CollapsibleSection, EmptyState, ErrorText, ListRow, Pagination, RelativeTime, Skeleton, StatusPill, type Tone } from "../../../components/ui";
+import { CollapsibleSection, EmptyState, ErrorText, ListRow, Pagination, RelativeTime, StatusPill, type Tone } from "../../../components/ui";
 import { toast } from "../../../components/ui/toastStore";
 import { ActionDialog } from "./ActionDialog";
 import { AnnouncementForm } from "./AnnouncementForm";
 import { severityLabels, useAnnouncements, useCancelAnnouncement, type Announcement } from "./announcementsApi";
 import { PAGE_SIZE } from "./spacesApi";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 const STATUS: Record<Announcement["status"], [string, Tone]> = {
   scheduled: ["Scheduled", "info"], live: ["Live", "success"], ended: ["Ended", "neutral"], cancelled: ["Cancelled", "neutral"],
@@ -32,7 +33,7 @@ export function AnnouncementsSection() {
   const rows = list.data?.results ?? [];
   return <div className="grid gap-4">
     <CollapsibleSection title={t`New announcement`} open={composing} onToggle={() => setComposing(!composing)}><AnnouncementForm /></CollapsibleSection>
-    {list.isLoading ? <Skeleton className="h-24 w-full" />
+    {list.isLoading ? <LogoLoader size={48} className="min-h-24 py-3" />
       : list.isError ? <ErrorText resource={t`announcements`} onRetry={() => { void list.refetch(); }} />
       : !rows.length ? <EmptyState message={t`No announcements yet.`} />
       : <div className="grid gap-3">{rows.map(row => <ListRow key={row.id} title={row.title}

@@ -1,8 +1,9 @@
 import { t } from "@lingui/core/macro";
 import { useState, type ReactNode } from "react";
-import { EmptyState, ErrorText, Field, Pagination, Skeleton, type Tone } from "../../../components/ui";
+import { EmptyState, ErrorText, Field, Pagination, type Tone } from "../../../components/ui";
 import { PAGE_SIZE } from "./parityRequest";
 import { useQueue, type QueueKind } from "./requestsApi";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 export const QUEUE_TONES: Record<string, Tone> = {
   pending: "info", approved: "success", declined: "neutral", rejected: "neutral", withdrawn: "neutral",
@@ -30,7 +31,7 @@ export function QueueList<T extends { id: number }>({ kind, title, resource, sta
         <option value="">{t`Every status`}</option>
       </select>
     </Field>
-    {list.isLoading ? <Skeleton className="h-24 w-full" />
+    {list.isLoading ? <LogoLoader size={48} className="min-h-24 py-3" />
       : list.isError ? <ErrorText resource={resource} onRetry={() => { void list.refetch(); }} />
       : !rows.length ? <EmptyState message={status === "pending" ? t`Nothing is waiting.` : t`Nothing here.`} />
       : <div className="grid gap-3">{rows.map(row => <div key={row.id}>{renderRow(row)}</div>)}</div>}

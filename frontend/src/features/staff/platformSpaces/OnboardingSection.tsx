@@ -1,10 +1,11 @@
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
-import { EmptyState, ErrorText, Field, ListRow, Pagination, RelativeTime, Skeleton, StatusPill } from "../../../components/ui";
+import { EmptyState, ErrorText, Field, ListRow, Pagination, RelativeTime, StatusPill } from "../../../components/ui";
 import { HostingRequestDrawer } from "./HostingRequestDrawer";
 import { hostingStatusLabels, isSelfHost, requestedKind, useHostingRequests, type HostingRequestState } from "./onboardingApi";
 import { spaceNounTitle, type SpaceKind } from "../../../lib/spaceNoun";
 import { PAGE_SIZE } from "./spacesApi";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 export const SELF_HOST_NOTE = "Onboarding requests appear once this install hosts other makerspaces (set the platform domain).";
 
@@ -34,7 +35,7 @@ export function OnboardingSection() {
         </select>
       </Field>
     </div>
-    {list.isLoading ? <Skeleton className="h-24 w-full" />
+    {list.isLoading ? <LogoLoader size={48} className="min-h-24 py-3" />
       : list.isError ? <ErrorText resource={t`hosting requests`} onRetry={() => { void list.refetch(); }} />
       : !rows.length ? <EmptyState message={t`No hosting requests with this status.`} />
       : <div className="grid gap-3">{rows.map(row => <ListRow key={row.id} title={row.space_name} onClick={() => setOpenId(row.id)}

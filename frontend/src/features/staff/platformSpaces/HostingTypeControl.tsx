@@ -1,8 +1,8 @@
 import { t } from "@lingui/core/macro";
-import { Skeleton } from "../../../components/ui";
 import { toast } from "../../../components/ui/toastStore";
 import { actionErrorText } from "./ActionDialog";
 import { useSetSpaceHostingType, useSpaceHostingType, type HostingType } from "./limitsApi";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 export const hostingTypeLabels = (): Record<HostingType, string> => ({ own: t`Own space`, hosted: t`Hosted space` });
 const help = (): Record<HostingType, string> => ({
@@ -14,7 +14,7 @@ const help = (): Record<HostingType, string> => ({
 export function HostingTypeControl({ makerspaceId }: { makerspaceId: number }) {
   const state = useSpaceHostingType(makerspaceId);
   const save = useSetSpaceHostingType(makerspaceId);
-  if (state.isLoading) return <Skeleton className="h-16 w-full" />;
+  if (state.isLoading) return <LogoLoader size={48} className="min-h-16 py-3" />;
   if (state.isError || !state.data) return null; // not reachable here: the drawer simply omits it
   const { hosting_type: current, hosting_active: active } = state.data;
   const disabled = !active || save.isPending;

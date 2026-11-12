@@ -1,6 +1,6 @@
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
-import { Callout, DetailDrawer, ErrorText, KeyValueCard, RelativeTime, Skeleton } from "../../../components/ui";
+import { Callout, DetailDrawer, ErrorText, KeyValueCard, RelativeTime } from "../../../components/ui";
 import { toast } from "../../../components/ui/toastStore";
 import type { HealthCard } from "../platformSpaces/spacesApi";
 import { keyActions } from "./keyCopy";
@@ -8,6 +8,7 @@ import { KeyJobsList } from "./KeyJobsList";
 import { useRotateKey, useSpaceKeys, type KeyAction } from "./spaceKeysApi";
 import { StaleArchivesList } from "./StaleArchivesList";
 import { TypedConfirmDialog } from "./TypedConfirmDialog";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 /** One space's encryption keys: versions, rotations with live progress, and its archives on a retired backup key (#190). */
 export function SpaceKeysDrawer({ card, onClose }: { card: HealthCard; onClose: () => void }) {
@@ -17,7 +18,7 @@ export function SpaceKeysDrawer({ card, onClose }: { card: HealthCard; onClose: 
   const data = keys.data;
   const chosen = keyActions().find(row => row.action === action);
   return <DetailDrawer open title={t`Keys of ${card.name}`} onClose={onClose}>
-    {keys.isLoading ? <Skeleton className="h-40 w-full" /> : keys.isError || !data
+    {keys.isLoading ? <LogoLoader size={48} className="min-h-40 py-3" /> : keys.isError || !data
       ? <ErrorText resource={t`this space's keys`} onRetry={() => { void keys.refetch(); }} /> : <div className="grid gap-6">
       {data.rls_mode !== "enforce" ? <Callout size="inline" tone="warn" lead={`Row-level security is ${data.rls_mode}.`}
         body={t`The database does not yet stop a cross-space read on this deployment.`} /> : null}

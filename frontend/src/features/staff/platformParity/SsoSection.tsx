@@ -1,11 +1,13 @@
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
-import { CollapsibleSection, EmptyState, ErrorText, ListRow, Pagination, RelativeTime, Skeleton, StatusPill } from "../../../components/ui";
+import { CollapsibleSection, EmptyState, ErrorText, ListRow, Pagination, RelativeTime, StatusPill } from "../../../components/ui";
 import { toast } from "../../../components/ui/toastStore";
 import { ActionDialog } from "../platformSpaces/ActionDialog";
 import { PAGE_SIZE } from "./parityRequest";
 import { SsoProviderForm } from "./SsoProviderForm";
 import { useOidcProviders, useUpdateOidcProvider, type OidcProvider } from "./ssoApi";
+import { LogoLoader } from "../../../components/LogoLoader";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 function ToggleDialog({ provider, onClose }: { provider: OidcProvider; onClose: () => void }) {
   const update = useUpdateOidcProvider(provider.id);
@@ -31,7 +33,7 @@ export function SsoSection() {
     <p className="text-sm text-muted">
       {t`Providers cannot be deleted, because people's linked sign-ins depend on them. Turn one off instead.`}</p>
     <CollapsibleSection title={t`New provider`} open={adding} onToggle={() => setAdding(!adding)}><SsoProviderForm /></CollapsibleSection>
-    {list.isLoading ? <Skeleton className="h-24 w-full" />
+    {list.isLoading ? <LogoLoader size={48} className="min-h-24 py-3" />
       : list.isError ? <ErrorText resource={t`sign-on providers`} onRetry={() => { void list.refetch(); }} />
       : !rows.length ? <EmptyState message={t`No single sign-on providers yet.`} />
       : <div className="grid gap-3">{rows.map(provider => <ListRow key={provider.id} title={provider.display_name}
@@ -42,7 +44,7 @@ export function SsoSection() {
           <StatusPill label={provider.is_enabled ? t`On` : t`Off`} tone={provider.is_enabled ? "success" : "neutral"} />
           <button type="button" className={provider.is_enabled ? "desk-button-danger-outline" : "desk-button"}
             aria-label={provider.is_enabled ? t`Turn off ${provider.display_name}` : t`Turn on ${provider.display_name}`}
-            onClick={() => setToggling(provider)}>{provider.is_enabled ? t`Turn off…` : t`Turn on…`}</button>
+            onClick={() => setToggling(provider)}>{provider.is_enabled ? <><BoxArt size={16} mono />{t`Turn off…`}</> : t`Turn on…`}</button>
         </div>} />)}</div>}
     <Pagination page={page} totalPages={Math.max(1, Math.ceil((list.data?.count ?? 0) / PAGE_SIZE))} onChange={setPage}
       count={list.data?.count} pageSize={PAGE_SIZE} disabled={list.isFetching} />

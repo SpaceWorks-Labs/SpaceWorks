@@ -7,13 +7,14 @@ import { RefundMembershipPolicies } from "./RefundMembershipPolicies";
 import {
   listRefundPolicies, refundPolicyKey, removeRefundPolicy, saveRefundPolicy, type PolicyBody, type RefundPolicy,
 } from "./refundsApi";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 const AREA_TITLES: Record<RefundPolicy["area"], string> = { events: t`Events`, bookings: t`Bookings`, membership: t`Memberships` };
 
 /** Read-only for anyone without manage_makerspace; the API enforces it either way. */
 export function RefundPolicyPanel({ makerspaceId, canEdit }: { makerspaceId: number; canEdit: boolean }) {
   const policies = useQuery({ queryKey: refundPolicyKey(makerspaceId), queryFn: () => listRefundPolicies(makerspaceId) });
-  if (policies.isLoading) return <p className="text-sm text-muted" role="status">{t`Loading refund policy…`}</p>;
+  if (policies.isLoading) return <LogoLoader label={t`Loading refund policy…`} size={48} className="min-h-16 py-3" />;
   if (policies.error || !policies.data) return <Callout size="inline" tone="danger" lead="Couldn't load the refund policy."
     body={t`Try again in a moment.`} />;
   const defaults = policies.data.filter((row) => row.plan === null);

@@ -5,6 +5,7 @@ import { toast } from "../../../components/ui/toastStore";
 import { actionErrorText } from "../platformSpaces/ActionDialog";
 import { useSaveChatTemplate, type ChatTemplate, type ChatTemplateBody, type ChatTemplateSurface } from "./chatTemplatesApi";
 import { fieldError } from "./parityRequest";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 const EMPTY: ChatTemplateBody = { feature: "", event: "", text_body: "", is_active: true };
 const FIELDS = ["feature", "event", "text_body"] as const;
@@ -44,7 +45,7 @@ export function ChatTemplateForm({ spaceId, surface = "platform", row, onDone }:
     {general ? <p role="alert" className="text-sm text-danger">{general}</p> : null}
     <div className="flex flex-wrap gap-2">
       <button type="submit" className="desk-button-primary w-full sm:w-fit" disabled={!valid || save.isPending}>
-        {save.isPending ? t`Saving…` : row ? t`Save template` : t`Add template`}
+        {save.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : row ? t`Save template` : t`Add template`}
       </button>
       {row ? <button type="button" className="desk-button w-full sm:w-fit" disabled={save.isPending} onClick={onDone}>{t`Cancel`}</button> : null}
     </div>

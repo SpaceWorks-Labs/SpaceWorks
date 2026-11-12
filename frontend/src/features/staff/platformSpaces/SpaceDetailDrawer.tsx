@@ -1,6 +1,6 @@
 import { t } from "@lingui/core/macro";
 import { useQuery } from "@tanstack/react-query";
-import { DetailDrawer, ErrorText, KeyValueCard, ListRow, RelativeTime, Skeleton, StatusPill } from "../../../components/ui";
+import { DetailDrawer, ErrorText, KeyValueCard, ListRow, RelativeTime, StatusPill } from "../../../components/ui";
 import { consoleSessionHref } from "../../../lib/api/sessionContext";
 import { persistSelectedMakerspace } from "../staffTabs";
 import { HostingTypeControl } from "./HostingTypeControl";
@@ -9,6 +9,7 @@ import { SpaceLimitsSection } from "./SpaceLimitsSection";
 import { SubdomainProvisionSection } from "./SubdomainProvisionSection";
 import { SpaceSnapshotSection } from "./SpaceSnapshotSection";
 import { moduleList } from "../../../lib/moduleLabels";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 // A function, not a module constant: `t` must run after the locale is active.
 const STATUS = () => ({ ok: [t`OK`, "success"], warn: [t`Warning`, "warn"], error: [t`Error`, "danger"] }) as const;
@@ -18,7 +19,7 @@ export function SpaceDetailDrawer({ card, onClose }: { card: HealthCard; onClose
   const detail = useQuery({ queryKey: [...healthKey, "detail", card.id], queryFn: () => getSpaceHealth(card.id) });
   const data = detail.data;
   return <DetailDrawer open title={card.name} onClose={onClose}>
-    {detail.isLoading ? <Skeleton className="h-40 w-full" /> : detail.isError ? <ErrorText resource={t`this space's health`} onRetry={() => { void detail.refetch(); }} /> : data ? <div className="grid gap-6">
+    {detail.isLoading ? <LogoLoader size={48} className="min-h-40 py-3" /> : detail.isError ? <ErrorText resource={t`this space's health`} onRetry={() => { void detail.refetch(); }} /> : data ? <div className="grid gap-6">
       <KeyValueCard title={t`Space`} items={[
         { label: t`Web address`, value: `/m/${data.slug}` },
         { label: t`Created`, value: <RelativeTime date={data.created_at} exact /> },

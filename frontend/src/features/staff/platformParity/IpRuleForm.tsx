@@ -5,6 +5,7 @@ import { toast } from "../../../components/ui/toastStore";
 import { actionErrorText } from "../platformSpaces/ActionDialog";
 import { useCreateIpRule, type IpRule } from "./ipAccessApi";
 import { fieldError, isoOrNull } from "./parityRequest";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 const EMPTY = { cidr: "", action: "deny" as IpRule["action"], note: "", expires: "" };
 
@@ -43,7 +44,7 @@ export function IpRuleForm() {
     </div>
     {create.error && !cidrError ? <p role="alert" className="text-sm text-danger">{actionErrorText(create.error)}</p> : null}
     <button type="submit" className="desk-button-primary w-full sm:w-fit" disabled={!valid || create.isPending}>
-      {create.isPending ? t`Adding…` : t`Add rule`}
+      {create.isPending ? <><BoxArt size={16} mono />{t`Adding…`}</> : t`Add rule`}
     </button>
   </form>;
 }

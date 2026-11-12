@@ -1,12 +1,13 @@
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
-import { CollapsibleSection, EmptyState, ErrorText, ListRow, Pagination, RelativeTime, Skeleton, StatusPill } from "../../../components/ui";
+import { CollapsibleSection, EmptyState, ErrorText, ListRow, Pagination, RelativeTime, StatusPill } from "../../../components/ui";
 import { toast } from "../../../components/ui/toastStore";
 import { ActionDialog } from "../platformSpaces/ActionDialog";
 import { ChatTemplateForm } from "./ChatTemplateForm";
 import { useChatTemplates, useDeleteChatTemplate, type ChatTemplate, type ChatTemplateSurface } from "./chatTemplatesApi";
 import { PAGE_SIZE } from "./parityRequest";
 import { SingleSpaceSelect, type PickedSpace } from "./SingleSpaceSelect";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 type Scope = { spaceId: number; surface: ChatTemplateSurface };
 
@@ -27,7 +28,7 @@ export function ChatTemplateList({ space, surface = "platform" }: { space: Picke
   const rows = list.data?.results ?? [];
   return <div className="grid gap-3">
     <CollapsibleSection title={t`New template`} open={adding} onToggle={() => setAdding(!adding)}><ChatTemplateForm spaceId={space.id} surface={surface} /></CollapsibleSection>
-    {list.isLoading ? <Skeleton className="h-24 w-full" />
+    {list.isLoading ? <LogoLoader size={48} className="min-h-24 py-3" />
       : list.isError ? <ErrorText resource={t`chat templates`} onRetry={() => { void list.refetch(); }} />
       : !rows.length ? <EmptyState message={`${space.name} uses the built-in text for every event.`} />
       : <div className="grid gap-3">{rows.map(row => <div key={row.id} className="grid gap-2">

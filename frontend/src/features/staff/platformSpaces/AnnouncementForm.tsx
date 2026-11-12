@@ -5,6 +5,7 @@ import { toast } from "../../../components/ui/toastStore";
 import { actionErrorText } from "./ActionDialog";
 import { severityLabels, useCreateAnnouncement, type AnnouncementBody, type AnnouncementSeverity } from "./announcementsApi";
 import { SpacePicker, type PickedSpaces } from "./SpacePicker";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 const EMPTY = { title: "", body: "", severity: "info" as AnnouncementSeverity, audience: "all_spaces" as AnnouncementBody["audience"],
   starts: "", ends: "", email: false, members: false };
@@ -60,7 +61,7 @@ export function AnnouncementForm() {
       <input type="checkbox" checked={form.members} onChange={event => set("members", event.target.checked)} />{t`Show it to members too`}</label>
     {create.error ? <p role="alert" className="text-sm text-danger">{actionErrorText(create.error)}</p> : null}
     <button type="submit" className="desk-button-primary w-full sm:w-fit" disabled={!valid || create.isPending}>
-      {create.isPending ? t`Publishing…` : t`Publish announcement`}
+      {create.isPending ? <><BoxArt size={16} mono />{t`Publishing…`}</> : t`Publish announcement`}
     </button>
   </form>;
 }

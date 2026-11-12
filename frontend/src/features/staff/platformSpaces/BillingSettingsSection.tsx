@@ -1,9 +1,11 @@
 import { t } from "@lingui/core/macro";
 import { useState, type FormEvent } from "react";
-import { ErrorText, Field, Skeleton, StatusPill } from "../../../components/ui";
+import { ErrorText, Field, StatusPill } from "../../../components/ui";
 import { toast } from "../../../components/ui/toastStore";
 import { actionErrorText } from "./ActionDialog";
 import { useBillingSettings, useSaveBillingSettings, type BillingSettings } from "./plansApi";
+import { LogoLoader } from "../../../components/LogoLoader";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 const SECRETS = [
   ["stripe_secret_key", "Stripe secret key", "stripe"], ["stripe_webhook_secret", "Stripe webhook secret", "stripe"],
@@ -48,13 +50,13 @@ function BillingForm({ data }: { data: BillingSettings }) {
         onChange={event => setSecrets(current => ({ ...current, [key]: event.target.value }))} />
     </Field>)}
     {save.error ? <p role="alert" className="text-sm text-danger">{actionErrorText(save.error)}</p> : null}
-    <button type="submit" className="desk-button-primary w-full sm:w-fit" disabled={!valid || save.isPending}>{save.isPending ? t`Saving…` : t`Save billing settings`}</button>
+    <button type="submit" className="desk-button-primary w-full sm:w-fit" disabled={!valid || save.isPending}>{save.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Save billing settings`}</button>
   </form>;
 }
 
 export function BillingSettingsSection() {
   const settings = useBillingSettings();
-  if (settings.isLoading) return <Skeleton className="h-24 w-full" />;
+  if (settings.isLoading) return <LogoLoader size={48} className="min-h-24 py-3" />;
   if (settings.isError || !settings.data) return <ErrorText resource={t`billing settings`} onRetry={() => { void settings.refetch(); }} />;
   return <BillingForm key={settings.data.updated_at} data={settings.data} />;
 }

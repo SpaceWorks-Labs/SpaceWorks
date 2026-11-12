@@ -2,7 +2,7 @@ import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { ConfirmDialog, EmptyState, OverflowMenu, RelativeTime, Skeleton, StatusPill } from "../../../components/ui";
+import { ConfirmDialog, EmptyState, OverflowMenu, RelativeTime, StatusPill } from "../../../components/ui";
 import type { ReportCatalogItem } from "./operationsReportsConfig";
 import { emptyScheduleForm, ReportScheduleForm, scheduleToForm } from "./ReportScheduleForm";
 import {
@@ -19,6 +19,7 @@ import {
   type ReportScheduleInput,
 } from "./reportSchedulesApi";
 import { Panel } from "./shared";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 const when = (value: string | null) => (value ? <RelativeTime date={value} /> : "never");
 
@@ -71,7 +72,7 @@ export function ReportSchedules({ makerspaceId, reports }: { makerspaceId: numbe
     <Panel title={t`Scheduled reports`}>
       <p className="mb-3 text-sm text-muted">
         {t`Generate an export on a cadence and deliver it to a chat destination, by email, or both. Files expire after the retention window.`}</p>
-      {schedules.isLoading ? <Skeleton className="h-24 w-full" /> : null}
+      {schedules.isLoading ? <LogoLoader size={48} className="min-h-24 py-3" /> : null}
       {schedules.isError ? <p className="text-sm text-danger" role="alert">{scheduleErrorText(schedules.error, "Could not load schedules.")}</p> : null}
       {schedules.data?.length === 0 ? <EmptyState message={t`No schedules yet. Create your first scheduled report.`} /> : null}
       {schedules.data?.map((schedule) => (

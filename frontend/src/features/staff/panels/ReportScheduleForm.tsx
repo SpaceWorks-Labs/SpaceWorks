@@ -11,6 +11,7 @@ import {
   type ReportSchedule,
   type ReportScheduleInput,
 } from "./reportSchedulesApi";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 export type ScheduleFormValues = {
   report_key: string;
@@ -205,7 +206,7 @@ export function ReportScheduleForm({
       <Field label={t`Threshold currency`} hint={t`Choose one currency for a money report with several currencies.`}><input className="desk-input" maxLength={3} value={form.currency ?? ""} onChange={(event) => set("currency", event.target.value.toLowerCase())} /></Field>
       <div className="flex flex-wrap items-center gap-2 sm:col-span-3">
         <button className="desk-button-primary" type="submit" disabled={pending || !reports.length}>
-          {pending ? t`Saving…` : editing ? t`Save schedule` : t`Create schedule`}
+          {pending ? <><BoxArt size={16} mono />{t`Saving…`}</> : editing ? t`Save schedule` : t`Create schedule`}
         </button>
         {onCancel ? <button className="desk-button" type="button" onClick={onCancel}>{t`Cancel`}</button> : null}
       </div>

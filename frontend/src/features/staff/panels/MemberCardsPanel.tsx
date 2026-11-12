@@ -1,9 +1,11 @@
 import { plural, t } from "@lingui/core/macro";
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { ListLayout } from "../../../components/layouts";
 import { ErrorBlock, SegmentedControl } from "../../../components/ui";
 import { featureEnabled } from "../../../lib/features";
+import { PhotoBatchDialog } from "../../cardEraser/PhotoBatchDialog";
 import { CardJobList, JOB_LABELS, useStartCardJob, type CardJobKind } from "../../cards/cardJobs";
 import { SheetPreviewDialog } from "../../cards/SheetPreviewDialog";
 import { ProgrammesTab } from "../../organizations/idProgrammes/ProgrammesTab";
@@ -32,6 +34,8 @@ export function MemberCardsPanel({ makerspaceId, enabledFeatures = [] }: { maker
   const memberships = useCardMemberships(makerspaceId);
   const [issueNames, setIssueNames] = useState<Record<number, string>>({});
   const [previewing, setPreviewing] = useState(false);
+  const [uploadingPhotos, setUploadingPhotos] = useState(false);
+  const queryClient = useQueryClient();
   const cards = useMemberCards(makerspaceId, status);
   const activeCards = useMemberCards(makerspaceId, "active");
   const settings = useMemberCardSettings(makerspaceId);
@@ -77,6 +81,9 @@ export function MemberCardsPanel({ makerspaceId, enabledFeatures = [] }: { maker
       primary: { label: selected.length ? plural(selected.length, { one: "Print sheet (# selected)", other: "Print sheet (# selected)" }) : t`Print all active`,
         onClick: () => printSheet.mutate(selected), pending: printSheet.isPending, pendingLabel: t`Preparing…` },
       secondary: { label: t`All cards`, menu: [bulk("bulk_sheet"), bulk("zip"),
+        { label: t`Upload many photos…`, onClick: () => setUploadingPhotos(true) },
+        ...(deskPrintOn && selected.length ? [{ label: t`Print selected at desk`,
+          onClick: () => row.printSelected(rows.filter((card) => selected.includes(card.id))) }] : []),
         ...(settings.data?.email_available ? [bulk("email")] : [])] } }}
       tabs={tabs.tabs} activeTab={tabs.active} stats={[{ label: t`Active cards on this page`, value: activeCards.data?.results.length ?? 0 },
         { label: t`Members without a card`, value: withoutCard, href: tabs.href("issue") }]}
@@ -96,6 +103,8 @@ export function MemberCardsPanel({ makerspaceId, enabledFeatures = [] }: { maker
           : tabs.active === "bulk" ? <div className="grid gap-3"><BulkFromFilter makerspaceId={makerspaceId} /><CardJobList listPath={jobsPath} /></div>
           : <IssueRoster makerspaceId={makerspaceId} cardedMembershipIds={cardedMembershipIds} memberships={memberships} names={issueNames} setNames={setIssueNames} /> }}
       detail={<>{printError ? <ErrorBlock error={printError} /> : null}{row.dialogs}
+        <PhotoBatchDialog open={uploadingPhotos} makerspaceId={makerspaceId} kind="member_card" onClose={() => setUploadingPhotos(false)}
+          onDone={() => void queryClient.invalidateQueries({ queryKey: ["member-cards", makerspaceId] })} />
         <SheetPreviewDialog open={previewing} onClose={() => setPreviewing(false)} filter={scope} jobsPath={jobsPath}
           previewPath={`${jobsPath}/preview`} title={selected.length ? t`Print sheet: ${selected.length} selected cards` : t`Print sheet: all active cards`} /></>} />
   </div>;

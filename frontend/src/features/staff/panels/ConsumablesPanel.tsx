@@ -19,6 +19,7 @@ import {
   CONSUMABLES_PAGE_SIZE, SOURCE_LABELS, SOURCE_TONES, consumableKeys, consumablesPath, logConsumableUse, unitLabel,
   type ConsumablePage, type ConsumableRow, type ConsumableStatus,
 } from "./consumablesApi";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 const STATUSES: { key: ConsumableStatus; label: string }[] = [
   { key: "all", label: t`All` }, { key: "low", label: t`Running low` }, { key: "ok", label: t`Stocked` },
@@ -102,7 +103,7 @@ function LogUseDialog({ row, makerspaceId, auditHref, canReviewAudit, onClose, l
       <ErrorText message={use.error?.message} />
       <div className="flex flex-wrap justify-end gap-2">
         <button type="button" className="desk-button-ghost" onClick={onClose}>{t`Cancel`}</button>
-        <button type="submit" className="desk-button-primary" disabled={!valid || use.isPending || linkedLocked || ordinaryUnknown}>{use.isPending ? t`Saving…` : t`Log use`}</button>
+        <button type="submit" className="desk-button-primary" disabled={!valid || use.isPending || linkedLocked || ordinaryUnknown}>{use.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Log use`}</button>
       </div>
     </form>
     {ordinaryUnknown && !use.isPending ? <div className="mt-4 grid gap-2 text-sm" role="status"><p className="text-ink">{t`The result may be unknown. Review the authorized audit history before recording another use.`}</p>

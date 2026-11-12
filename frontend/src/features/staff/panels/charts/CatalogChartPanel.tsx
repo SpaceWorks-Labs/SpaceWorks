@@ -11,6 +11,7 @@ import type { ReportChartSpec } from "../analyticsApi";
 import { funnelInput, reportAlternative, wireChartSpec } from "./wireChartSpec";
 import { rankedTimeSeries } from "./rankedTimeSeries";
 import { ReportTable } from "../OperationsReportTable";
+import { LogoLoader } from "../../../../components/LogoLoader";
 
 function Chart({ spec, ...props }: ChartProps & { spec: ChartSpec }) {
   switch (spec.kind) {
@@ -62,7 +63,7 @@ export function CatalogChartPanel({ spec: inputSpec, hint, rows, title, loading 
     const input = funnelInput(wireChartSpec(inputSpec, hint, rows), rows);
     spec = input.spec; data = rankedTimeSeries(inputSpec, toChartData(spec, input.rows));
   } catch { invalid = true; }
-  if (loading) return <div role="status" className="p-4 text-muted">{t`Loading chart…`}</div>;
+  if (loading) return <LogoLoader label={t`Loading chart…`} size={48} className="min-h-16 py-3" />;
   if (invalid && !error) return <p role="alert" className="text-danger">{t`This report has an invalid chart specification.`}</p>;
   const panels = [...new Set(data?.series.map((series) => series.panelKey))];
   return <DataState loading={false} error={error} onRetry={onRetry} empty={!data?.series.length}>

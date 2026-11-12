@@ -2,7 +2,7 @@ import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { Badge, Skeleton } from "../../../components/ui";
+import { Badge } from "../../../components/ui";
 import {
   collectionResults,
   createMachineType,
@@ -18,6 +18,8 @@ import {
 import { CapabilityPresetListEditor } from "./machine/CapabilityPresetListEditor";
 import { usePriceDropCheck } from "../priceDrop/usePriceDropCheck";
 import { useStaffChargesOn } from "../useStaffChargesOn";
+import { LogoLoader } from "../../../components/LogoLoader";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 const meteringUnits: Array<{ value: MeteringUnit; label: string }> = [
   { value: "weight", label: t`Weight (grams)` },
@@ -109,8 +111,8 @@ function PricingEditor({ makerspaceId, machineType, currency, canConfigure, draf
     <label className="eyebrow grid gap-1">{t`Flat fee (${currency})`}<input className="desk-input" type="number" min="0" step="any" value={shownFlatFee} onChange={(event) => setFlatFee(event.target.value)} />
     </label>
     <label className="eyebrow flex items-center gap-2"><input type="checkbox" checked={shownEnabled} onChange={(event) => setPaymentEnabled(event.target.checked)} /> {t` Enable payment`}</label>
-    <button className="desk-button-primary" type="button" onClick={() => { void save(); }} disabled={mutation.isPending || drop.checking}>{mutation.isPending ? t`Saving...` : t`Save pricing`}</button>
-    {pricing.isLoading ? <p className="text-xs text-muted md:col-span-4">{t`Loading pricing...`}</p> : null}
+    <button className="desk-button-primary" type="button" onClick={() => { void save(); }} disabled={mutation.isPending || drop.checking}>{mutation.isPending ? <><BoxArt size={16} mono />{t`Saving...`}</> : t`Save pricing`}</button>
+    {pricing.isLoading ? <LogoLoader label={t`Loading pricing...`} size={48} className="min-h-16 py-3" /> : null}
     {pricing.error instanceof Error ? <p className="text-xs text-danger md:col-span-4">{pricing.error.message}</p> : null}
     {mutation.isSuccess ? <p className="text-xs text-success-ink md:col-span-4">{t`Pricing saved.`}</p> : null}
     {mutation.error instanceof Error ? <p className="text-xs text-danger md:col-span-4">{mutation.error.message}</p> : null}
@@ -135,7 +137,7 @@ function CustomTypeRow({ makerspaceId, machineType, canConfigure, currency, draf
       <label className="eyebrow grid gap-1">{t`Name`}<input className="desk-input" value={name} disabled={!canConfigure} onChange={(event) => setName(event.target.value)} required /></label>
       <label className="eyebrow grid gap-1">{t`Icon`}<input className="desk-input" value={icon} disabled={!canConfigure} onChange={(event) => setIcon(event.target.value)} placeholder={t`Optional icon`} /></label>
       <label className="eyebrow grid gap-1">{t`Metering unit`}<select className="desk-input" value={config.metering_unit} disabled={!canConfigure} onChange={(event) => setConfig({ ...config, metering_unit: event.target.value as MeteringUnit })}>{meteringUnits.map((unit) => <option key={unit.value} value={unit.value}>{unit.label}</option>)}</select></label>
-      {canConfigure ? <button className="desk-button-primary" type="submit" disabled={rename.isPending || !name.trim()}>{rename.isPending ? t`Saving...` : t`Save type`}</button> : null}
+      {canConfigure ? <button className="desk-button-primary" type="submit" disabled={rename.isPending || !name.trim()}>{rename.isPending ? <><BoxArt size={16} mono />{t`Saving...`}</> : t`Save type`}</button> : null}
       <label className="eyebrow flex items-center gap-2 md:col-span-4"><input type="checkbox" checked={config.requires_booking} disabled={!canConfigure} onChange={(event) => setConfig({ ...config, requires_booking: event.target.checked })} /> {t` Requires booking (not yet enforced)`}</label>
       <div className="md:col-span-4"><CapabilityPresetEditors config={config} disabled={!canConfigure} onChange={setConfig} /></div>
       <p className="text-xs text-muted md:col-span-4">{t`Slug: ${machineType.slug} (fixed)`}</p>
@@ -178,11 +180,11 @@ export function MachineTypesPanel({ makerspaceId, canConfigureMachineTypes, visi
         <label className="eyebrow grid gap-1">{t`Icon`}<input className="desk-input" value={icon} onChange={(event) => setIcon(event.target.value)} placeholder={t`Optional icon`} /></label>
         <label className="eyebrow grid gap-1">{t`Metering unit`}<select className="desk-input" value={config.metering_unit} onChange={(event) => setConfig({ ...config, metering_unit: event.target.value as MeteringUnit })}>{meteringUnits.map((unit) => <option key={unit.value} value={unit.value}>{unit.label}</option>)}</select></label>
         <label className="eyebrow flex items-center gap-2"><input type="checkbox" checked={config.requires_booking} onChange={(event) => setConfig({ ...config, requires_booking: event.target.checked })} /> {t` Requires booking (not yet enforced)`}</label>
-        <button className="desk-button-primary" type="submit" disabled={create.isPending || !slug.trim() || !name.trim()}>{create.isPending ? t`Creating...` : t`Create type`}</button>
+        <button className="desk-button-primary" type="submit" disabled={create.isPending || !slug.trim() || !name.trim()}>{create.isPending ? <><BoxArt size={16} mono />{t`Creating...`}</> : t`Create type`}</button>
         <div className="md:col-span-4"><CapabilityPresetEditors config={config} onChange={setConfig} /></div>
         {create.error instanceof Error ? <p className="text-sm text-danger md:col-span-4">{create.error.message}</p> : null}
       </form> : <p className="text-sm text-muted">{t`You have read-only access to machine types and pricing.`}</p>}
-      {machineTypes.isLoading ? <Skeleton className="h-20 w-full" /> : null}
+      {machineTypes.isLoading ? <LogoLoader size={48} className="min-h-20 py-3" /> : null}
       {machineTypes.error instanceof Error ? <p className="text-sm text-danger">{machineTypes.error.message}</p> : null}
       {types.length ? <div className="overflow-hidden rounded-xl border border-line">{types.map((machineType) => machineType.is_builtin || machineType.makerspace === null ? <div key={machineType.id} className="grid gap-2 border-t border-line p-3 first:border-t-0"><div className="flex flex-wrap items-center justify-between gap-2"><span><strong className="block text-sm text-ink">{machineType.name}</strong><span className="text-xs text-muted">{machineType.icon || t`No icon`} · {machineType.slug} · {configFor(machineType).metering_unit} · {configFor(machineType).requires_booking ? t`booking flag on (not yet enforced)` : t`booking flag off`}</span></span><Badge tone="neutral">{t`Built-in · structural config read-only`}</Badge></div><PricingEditor makerspaceId={makerspaceId} machineType={machineType} currency={currency} canConfigure={canConfigureMachineTypes} draft={priceFor(machineType.id)} onDraftChange={value => changePrice(machineType.id, value)} /></div> : <CustomTypeRow key={machineType.id} makerspaceId={makerspaceId} machineType={machineType} canConfigure={canConfigureMachineTypes} currency={currency} draft={typeDrafts[machineType.id] ?? { name: machineType.name, icon: machineType.icon, config: configFor(machineType) }} onDraftChange={value => setTypeDrafts(current => ({ ...current, [machineType.id]: value }))} pricingDraft={priceFor(machineType.id)} onPricingChange={value => changePrice(machineType.id, value)} />)}</div> : null}
     </div>

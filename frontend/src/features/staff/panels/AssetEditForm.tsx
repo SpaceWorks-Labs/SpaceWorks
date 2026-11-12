@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 
 import { staffRequest } from "../../../lib/api";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 type AssetEditRow = {
   id: number;
@@ -97,7 +98,7 @@ export function AssetEditForm({
       <div className="desk-actions flex flex-wrap justify-end gap-2">
         <button className="desk-button-ghost" type="button" disabled={save.isPending} onClick={onCancel}>{t`Cancel`}</button>
         <button className="desk-button-primary" type="submit" disabled={save.isPending || !assetTag.trim()}>
-          {save.isPending ? t`Saving…` : t`Save`}
+          {save.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Save`}
         </button>
       </div>
     </form>

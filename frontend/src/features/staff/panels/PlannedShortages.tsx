@@ -4,6 +4,7 @@ import { RouteLink } from "../../../components/ui/RouteLink";
 import { formatDateTime } from "../../../lib/format";
 import { staffTabPath } from "../staffTabs";
 import { useStaffGet } from "./shared";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 export type PlannedShortage = {
   subject_kind: "event" | "booking"; subject_id: number; subject_title: string; starts_at: string;
@@ -25,7 +26,7 @@ export function PlannedShortages({ makerspaceId, slug, enabledModules }: {
       <h2 id="planned-shortages-title" className="title-panel">{t`Needed for upcoming activities`}</h2>
       <p className="text-sm text-muted">{t`Events and bookings in the next 30 days that plan to use more than is in stock.`}</p>
     </div>
-    {shortages.isPending ? <p role="status" className="text-sm text-muted">{t`Checking upcoming activities…`}</p> : null}
+    {shortages.isPending ? <LogoLoader label={t`Checking upcoming activities…`} size={48} className="min-h-16 py-3" /> : null}
     {shortages.isError ? <p role="alert" className="text-sm text-danger">{t`Upcoming activity needs could not be loaded. Try again later.`}</p> : null}
     {shortages.data && !shortages.data.length ? <p className="text-sm text-muted">{t`Nothing planned is short. Upcoming events and bookings have enough stock.`}</p> : null}
     {shortages.data?.length ? <ul className="grid gap-2 text-sm">

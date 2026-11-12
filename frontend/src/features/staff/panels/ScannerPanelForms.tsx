@@ -1,5 +1,6 @@
 import { t } from "@lingui/core/macro";
 import type { Makerspace, Product } from "./shared";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 export function ScannerRebindForm({
   makerspaceLabel,
@@ -66,7 +67,7 @@ export function ScannerRebindForm({
       />
       <div className="flex flex-wrap gap-2">
         <button className="desk-button-primary" type="submit" disabled={!selectedProductId || pending}>
-          {pending ? t`Saving…` : t`Save`}
+          {pending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Save`}
         </button>
         <button className="desk-button-ghost" type="button" onClick={onCancel}>{t`Cancel`}</button>
       </div>
@@ -154,7 +155,7 @@ export function ScannerMoveAssetForm({
       />
       <div className="flex flex-wrap gap-2">
         <button className="desk-button-primary" type="submit" disabled={!destMakerspaceId || pending}>
-          {pending ? t`Moving…` : t`Move`}
+          {pending ? <><BoxArt size={16} mono />{t`Moving…`}</> : t`Move`}
         </button>
         <button className="desk-button-ghost" type="button" onClick={onCancel}>{t`Cancel`}</button>
       </div>

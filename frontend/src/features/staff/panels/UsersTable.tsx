@@ -5,6 +5,8 @@ import { EmptyState, ErrorText, ListRow, Modal, OverflowMenu, StatusPill } from 
 import type { StaffMembershipRow, StaffRole } from "./rolesApi";
 import { RoleSetPicker } from "./RoleSetPicker";
 import { membershipRoleLabel } from "../../members/membershipLabels";
+import { LogoLoader } from "../../../components/LogoLoader";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 export function UsersTable({ rows, makerspaceNames, loading, assignableRoles, onRestrict, onRestore, onResetPassword, onRevoke, onChangeRole, onMachineTypes }: {
   rows: StaffMembershipRow[];
@@ -36,7 +38,7 @@ export function UsersTable({ rows, makerspaceNames, loading, assignableRoles, on
       .catch((error) => setAssignError(error instanceof Error ? error.message : t`Unable to change role`))
       .finally(() => setAssignPending(false));
   };
-  if (loading) return <p className="text-sm text-muted">{t`Loading staff...`}</p>;
+  if (loading) return <LogoLoader label={t`Loading staff...`} size={48} className="min-h-16 py-3" />;
   if (!rows.length) return <EmptyState title={t`No staff`} description={t`No memberships match this filter.`} />;
   return (
     <>
@@ -71,7 +73,7 @@ function ChangeRoleModal({ target, roleIds, roles, pending, error, onClose, onCh
 }) {
   return <Modal open={Boolean(target)} onClose={onClose} title={target ? t`Change roles for ${target.user.username}` : t`Change roles`}
     footer={<div className="desk-actions flex flex-wrap justify-end gap-2"><button className="desk-button-ghost" type="button" disabled={pending} onClick={onClose}>{t`Cancel`}</button>
-      <button className="desk-button-primary" type="button" disabled={!roleIds.length || pending || roleIds.some((id) => !roles.some((role) => role.id === id))} onClick={onSubmit}>{pending ? t`Saving...` : t`Save roles`}</button></div>}>
+      <button className="desk-button-primary" type="button" disabled={!roleIds.length || pending || roleIds.some((id) => !roles.some((role) => role.id === id))} onClick={onSubmit}>{pending ? <><BoxArt size={16} mono />{t`Saving...`}</> : t`Save roles`}</button></div>}>
     <div className="grid gap-3"><RoleSetPicker roles={roles} value={roleIds} onChange={onChange} disabled={pending} />{error ? <ErrorText message={error} /> : null}</div>
   </Modal>;
 }

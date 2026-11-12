@@ -6,6 +6,7 @@ import { ListLayout } from "../../../components/layouts";
 import { ErrorText, Field, ListRow, Modal, OverflowMenu, StatusPill } from "../../../components/ui";
 import { inventoryQueryState } from "./inventoryPresentation";
 import { draftFromVendor, emptyVendorDraft, vendorKeys, vendorsApi, type Vendor, type VendorDraft } from "./vendorsApi";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 type Editing = { vendor: Vendor | null } | null;
 
@@ -67,7 +68,7 @@ function VendorDialog({ makerspaceId, vendor, onClose, onSaved }: { makerspaceId
       <div className="sm:col-span-2"><ErrorText message={save.error?.message} /></div>
       <div className="flex flex-wrap justify-end gap-2 sm:col-span-2">
         <button type="button" className="desk-button-ghost" onClick={onClose}>{t`Cancel`}</button>
-        <button type="submit" className="desk-button-primary" disabled={!draft.name.trim() || save.isPending}>{save.isPending ? t`Saving…` : vendor ? t`Save vendor` : t`Add vendor`}</button>
+        <button type="submit" className="desk-button-primary" disabled={!draft.name.trim() || save.isPending}>{save.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : vendor ? t`Save vendor` : t`Add vendor`}</button>
       </div>
     </form>
   </Modal>;

@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import QrScanner from "../../../components/ui/QrScanner";
 import { Field, StatusPill } from "../../../components/ui";
 import { staffRequest } from "../../../lib/api";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 export function BoxCodeField({ value, onChange, makerspaceId, pending }: { value: string; onChange: (code: string) => void; makerspaceId: number; pending: boolean }) {
   const [containers, setContainers] = useState<ContainerOption[]>([]);
@@ -84,7 +85,7 @@ export function FormFooter({ formId, pending, submitLabel, tone = "default", onC
   return (
     <div className="desk-actions flex flex-wrap justify-end gap-2">
       <button className="desk-button-ghost" type="button" disabled={pending} onClick={onCancel}>{t`Cancel`}</button>
-      <button className={tone === "danger" ? "desk-button-danger" : "desk-button-success"} type="submit" form={formId} disabled={pending}>{pending ? t`Working…` : submitLabel}</button>
+      <button className={tone === "danger" ? "desk-button-danger" : "desk-button-success"} type="submit" form={formId} disabled={pending}>{pending ? <><BoxArt size={16} mono />{t`Working…`}</> : submitLabel}</button>
     </div>
   );
 }

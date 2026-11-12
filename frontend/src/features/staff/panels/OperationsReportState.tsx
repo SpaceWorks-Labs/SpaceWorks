@@ -2,7 +2,8 @@ import { formatLocale } from "../../../lib/format";
 import { t } from "@lingui/core/macro";
 import type React from "react";
 
-import { EmptyState, Skeleton, SkeletonRows, StatCard } from "../../../components/ui";
+import { EmptyState, StatCard } from "../../../components/ui";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 export type ReportCell = string | number | boolean | null;
 export type TypedReportRow = Record<string, ReportCell | undefined>;
@@ -49,20 +50,7 @@ export function DataState(props: { loading: boolean; error: unknown; empty: bool
 }
 
 function ReportSkeleton() {
-  return (
-    <div className="mt-4 grid gap-3" aria-hidden="true">
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {Array.from({ length: 4 }, (_, index) => (
-          <div key={index} className="rounded-md border border-line bg-surface p-3">
-            <Skeleton className="h-7 w-20" /><Skeleton className="mt-2 h-3 w-24" />
-          </div>
-        ))}
-      </div>
-      <div className="overflow-x-auto rounded-md border border-line">
-        <table className="w-full divide-y divide-line text-left text-sm"><tbody className="divide-y divide-line bg-bg"><SkeletonRows rows={4} cols={4} /></tbody></table>
-      </div>
-    </div>
-  );
+  return <LogoLoader className="min-h-64 py-10" />;
 }
 
 export function StatCards({ stats }: { stats: [string, number | undefined][] }) {

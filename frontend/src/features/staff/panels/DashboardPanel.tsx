@@ -45,7 +45,7 @@ export function DashboardPanel({ makerspace, canManageMakerspace, allowedTabs, a
     // Decision 242 counters: shown only when the server sent them (a missing field is not a 0).
     && (!NEW_242_TILES.has(tile.key) || (dashboard.data !== undefined && tile.key in dashboard.data))
     && (!allowedTabs || allowedTabs.includes(dashboardDestination(tile.key).tab))
-    && (!tile.key.includes("prints") || makerspace.enabled_modules === undefined || makerspace.enabled_modules.includes("printing"))
+    && (!tile.key.includes("prints") || makerspace.enabled_modules === undefined || makerspace.enabled_modules.includes("machine_service"))
     // The problem-report list (needsfix → Problem reports) is served only with the reports module.
     && (tile.key !== "open_problem_reports" || makerspace.enabled_modules === undefined || makerspace.enabled_modules.includes("reports"))
     && (tile.key !== "maintenance_overdue" || makerspace.enabled_features === undefined || capabilityOn(makerspace, "machines.maintenance"))

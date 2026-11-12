@@ -7,6 +7,7 @@ import { staffRequest } from "../../../lib/api";
 import { formatLocale } from "../../../lib/format";
 import { devicesApi } from "../devicesApi";
 import { labelPrintStatusLabel } from "./operationsLabels";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 export type LabelCommand = {
   id: string; command_id: string; command_status: string; device_id: string; batch_id: number | null;
@@ -46,7 +47,7 @@ export function QrLabelPrinterSend({ makerspaceId, batchId, hasItems }: { makers
       <Field label={t`Label printer`}><select className="desk-input w-full" value={chosen} onChange={event => setDevice(event.target.value)}>
         {active.map(row => <option key={row.id} value={row.id}>{row.name}</option>)}</select></Field>
       <button type="button" className="desk-button" disabled={!chosen || !hasItems || send.isPending} onClick={() => send.mutate()}>
-        {send.isPending ? t`Sending…` : rows.length ? t`Print again` : t`Send to printer`}</button>
+        {send.isPending ? <><BoxArt size={16} mono />{t`Sending…`}</> : rows.length ? t`Print again` : t`Send to printer`}</button>
     </div> : null}
     {printers.error ? <p className="text-sm text-muted">{t`You can't see this space's devices, so no label printer can be chosen.`}</p> : null}
     <ErrorText message={send.error?.message ?? commands.error?.message} />

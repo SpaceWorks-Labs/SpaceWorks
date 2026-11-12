@@ -5,6 +5,7 @@ import { useMutation } from "@tanstack/react-query";
 import { ErrorText, Field, Modal } from "../../../components/ui";
 import { staffRequest } from "../../../lib/api";
 import type { ToBuyItem } from "./ProcurementPanelRows";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 /**
  * Credits a received to-buy item back to the machine consumable that raised it, once. Used
@@ -26,7 +27,7 @@ export function RefillConsumableDialog({ item, onClose, onDone }: { item: ToBuyI
       <ErrorText message={refill.error?.message} />
       <div className="flex flex-wrap justify-end gap-2">
         <button type="button" className="desk-button-ghost" onClick={onClose}>{t`Cancel`}</button>
-        <button type="submit" className="desk-button-primary" disabled={!ready || refill.isPending}>{refill.isPending ? t`Saving…` : t`Refill`}</button>
+        <button type="submit" className="desk-button-primary" disabled={!ready || refill.isPending}>{refill.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Refill`}</button>
       </div>
     </form>
   </Modal>;

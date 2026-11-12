@@ -9,6 +9,7 @@ import { EvidenceUpload } from "./EvidenceUpload";
 import { QuantityStepper } from "../QuantityStepper";
 import { BoxCodeField, ShelfLine, submitForm } from "./QueuesModalShared";
 import type { AssignIssueValues, FormModalProps } from "./QueuesModalTypes";
+import { ShowOnShelf } from "../shelf/ShowOnShelf";
 import { KitChecklistCapture, useKitChecklist } from "../../inventory/KitChecklist";
 
 type ScannedAsset = { payload: string; label: string };
@@ -78,7 +79,7 @@ export function AssignIssueModal({ row, open, pending, error, onClose, onSubmit,
           <textarea className="desk-input min-h-20 w-full resize-y" value={remark} disabled={pending} onChange={(event) => setRemark(event.target.value)} />
         </label>
         {requiredScans > 0 ? <AssetScanList scanned={scanned} requiredScans={requiredScans} pending={pending} onScan={() => setShowScanner(true)} onRemove={(payload) => setScanned((items) => items.filter((item) => item.payload !== payload))} /> : null}
-        <IssueItems row={row} pending={pending} rejects={rejects} setBroken={setBroken} setDisposition={setDisposition} />
+        <IssueItems makerspaceId={makerspaceId} row={row} pending={pending} rejects={rejects} setBroken={setBroken} setDisposition={setDisposition} />
         {showScanner ? <QrScanner onScan={handleScan} onClose={() => setShowScanner(false)} /> : null}
         <ErrorText message={validationError || error} />
         <KitChecklistCapture checklist={kits} />
@@ -109,14 +110,15 @@ function AssetScanList({ scanned, requiredScans, pending, onScan, onRemove }: { 
   );
 }
 
-function IssueItems({ row, pending, rejects, setBroken, setDisposition }: { row: FormModalProps<AssignIssueValues>["row"]; pending: boolean; rejects: Record<number, { broken: number; disposition: "needs_fix" | "remove" }>; setBroken: (itemId: number, broken: number) => void; setDisposition: (itemId: number, disposition: "needs_fix" | "remove") => void }) {
+function IssueItems({ makerspaceId, row, pending, rejects, setBroken, setDisposition }: { makerspaceId: number; row: FormModalProps<AssignIssueValues>["row"]; pending: boolean; rejects: Record<number, { broken: number; disposition: "needs_fix" | "remove" }>; setBroken: (itemId: number, broken: number) => void; setDisposition: (itemId: number, disposition: "needs_fix" | "remove") => void }) {
   return (
     <div className="@container grid gap-2">
       <p className="text-sm font-medium text-ink">{t`Items - reject any broken units`}</p>
-      {row?.items.map((item) => item.requires_asset_qr ? <div key={item.id} className="rounded-md border border-line p-2"><p className="text-sm font-medium text-ink">{item.product_name} <span className="text-muted">x{item.accepted_quantity}</span></p><ShelfLine location={item.storage_location} /><p className="mt-1 text-xs text-muted">{t`Individually tracked - issued by asset QR scan above.`}</p></div> : (
+      {row?.items.map((item) => item.requires_asset_qr ? <div key={item.id} className="rounded-md border border-line p-2"><p className="text-sm font-medium text-ink">{item.product_name} <span className="text-muted">x{item.accepted_quantity}</span></p><ShelfLine location={item.storage_location} /><ShowOnShelf makerspaceId={makerspaceId} targetType="item" targetId={item.product_id} /><p className="mt-1 text-xs text-muted">{t`Individually tracked - issued by asset QR scan above.`}</p></div> : (
         <div key={item.id} className="rounded-md border border-line p-2">
           <p className="text-sm font-medium text-ink">{item.product_name} <span className="text-muted">x{item.accepted_quantity}</span></p>
           <ShelfLine location={item.storage_location} />
+          <ShowOnShelf makerspaceId={makerspaceId} targetType="item" targetId={item.product_id} />
           <div className="mt-2 grid gap-2 @md:grid-cols-[auto_minmax(0,1fr)] @md:items-end">
             <label className="eyebrow grid min-w-0 gap-1"><span>{t`Reject as broken`}</span><QuantityStepper label="broken" max={item.accepted_quantity} value={rejects[item.id]?.broken ?? 0} disabled={pending} onValueChange={(value) => setBroken(item.id, Number(value))} /></label>
             {(rejects[item.id]?.broken ?? 0) > 0 ? <label className="eyebrow grid gap-1"><span>{t`Send broken units to`}</span><select className="desk-input" value={rejects[item.id]?.disposition ?? "needs_fix"} disabled={pending} onChange={(event) => setDisposition(item.id, event.target.value as "needs_fix" | "remove")}><option value="needs_fix">{t`Repair shelf`}</option><option value="remove">{t`Remove from inventory`}</option></select></label> : null}

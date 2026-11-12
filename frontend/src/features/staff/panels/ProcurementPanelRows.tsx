@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { Badge, ConfirmDialog, ErrorText, Field, ListRow, OverflowMenu, RelativeTime, SettingsActions, StatusPill } from "../../../components/ui";
 import { RouteLink } from "../../../components/ui/RouteLink";
 import { ProcurementReceipts, type ToBuyReceipt } from "./ProcurementReceipts";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 export type Kind = "hardware" | "printing";
 export type ToBuyStatus = "requested" | "approved" | "ordered" | "received" | "cancelled";
@@ -98,7 +99,7 @@ export function ProcurementRow({ item, makerspaceSlug, updatePending, deletePend
     <ListRow title={`${item.name} ×${item.quantity}`} onClick={() => setOpen(true)} identity={{ kind: "icon", icon: "Circle", tone: "accent" }}
       meta={<>{item.vendor_name || t`No vendor yet`} {t` · Est. ${item.estimated_unit_cost ?? "—"} each · `}{item.purchaser_username || t`Unassigned purchaser`} · {receiptCount === 1 ? t`1 receipt` : `${receiptCount} receipts`}{item.source_pool ? <Badge tone="warn">{t`Auto · low stock`}</Badge> : null}</>}
       right={<div className="flex flex-wrap items-center gap-3"><StatusPill label={labelStatus(item.status)} tone={item.status === "received" ? "success" : "neutral"} />
-        {next ? <button className="desk-button-ghost" disabled={updatePending} onClick={advance}>{updatePending ? t`Saving…` : nextLabel}</button> : item.status === "received" && !item.moved_to_inventory_at ? <button className="desk-button-ghost" onClick={onMove}>{item.source_consumable ? t`Refill consumable` : t`Move to inventory`}</button> : null}
+        {next ? <button className="desk-button-ghost" disabled={updatePending} onClick={advance}>{updatePending ? <><BoxArt size={16} mono />{t`Saving…`}</> : nextLabel}</button> : item.status === "received" && !item.moved_to_inventory_at ? <button className="desk-button-ghost" onClick={onMove}>{item.source_consumable ? t`Refill consumable` : t`Move to inventory`}</button> : null}
         <OverflowMenu label={t`Actions for ${item.name}`} actions={[{ label: t`Edit`, onClick: () => setOpen(true) },
           ...(onMarkBought && next ? [{ label: t`Mark bought`, onClick: onMarkBought }] : []),
           ...(cancellable ? [{ label: t`Cancel request`, disabled: updatePending, onClick: () => onSave({ ...draftFromItem(item), status: "cancelled" as const }),

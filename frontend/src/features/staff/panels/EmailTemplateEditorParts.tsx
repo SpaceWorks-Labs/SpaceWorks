@@ -1,6 +1,7 @@
 import { t } from "@lingui/core/macro";
-import { ErrorBlock, Skeleton } from "../../../components/ui";
+import { ErrorBlock } from "../../../components/ui";
 import type { TemplateDetail, Preview } from "./EmailTemplateEditor";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 export function TemplateHeader({ detail, active, typeOverride, onActive }: { detail: TemplateDetail; active: boolean; typeOverride: boolean; onActive: (active: boolean) => void }) {
   return <div className="flex flex-wrap items-start justify-between gap-3">
@@ -49,7 +50,7 @@ function ReferenceBlock({ title, value, tall = false }: { title: string; value: 
 }
 
 export function PreviewPane({ preview, loading, error, onRetry }: { preview?: Preview; loading: boolean; error: Error | null; onRetry?: () => void }) {
-  if (loading && !preview) return <Skeleton className="h-96 w-full" />;
+  if (loading && !preview) return <LogoLoader size={48} className="min-h-96 py-3" />;
   if (error) return <ErrorBlock error={new Error(t`Couldn't load the preview. Try again.`)} onRetry={onRetry} />;
   return (
     <div className="grid gap-3 rounded-md border border-line bg-bg p-4">

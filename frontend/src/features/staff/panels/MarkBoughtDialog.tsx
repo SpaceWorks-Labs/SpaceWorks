@@ -7,6 +7,7 @@ import { StructuredApiError, staffRequest } from "../../../lib/api";
 import { METHODS, uploadReceipt, words } from "../../finance/financeApi";
 import type { ToBuyItem } from "./ProcurementPanelRows";
 import { vendorKeys, vendorsApi } from "./vendorsApi";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 /** Says what went wrong in words a buyer can act on; a 409 carries a machine code from the ledger. */
 export function markBoughtError(error: unknown) {
@@ -67,7 +68,7 @@ export function MarkBoughtDialog({ item, makerspaceId, vendorsEnabled, onClose, 
       {vendors.error ? <p role="alert" className="text-sm text-danger">{t`Couldn't load vendors. Type the supplier name instead.`}</p> : null}
       <div className="flex flex-wrap justify-end gap-2">
         <button type="button" className="desk-button-ghost" onClick={onClose}>{t`Cancel`}</button>
-        <button type="submit" className="desk-button-primary" disabled={!ready || save.isPending}>{save.isPending ? t`Saving…` : t`Mark bought`}</button>
+        <button type="submit" className="desk-button-primary" disabled={!ready || save.isPending}>{save.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Mark bought`}</button>
       </div>
     </form>
   </Modal>;

@@ -36,6 +36,7 @@ import { AcceptRequestModal } from "./QueuesAcceptModal";
 import { DamageChargeDialog, needsDamageCharges } from "../loanCharges/DamageChargeStep";
 import { RequestCancelDialog } from "./RequestCancelDialog";
 import { BulkDecisionBar } from "../bulk/BulkDecisionBar";
+import { BoxSpinner } from "../../../components/BoxSpinner";
 
 export type RequestItem = {
   id: number;
@@ -208,7 +209,7 @@ export function Queues({ makerspace, guestOnly, canViewAudit = false, recovery, 
     if (next && (next === "all" ? visible.length > 1 : visible.includes(next as RequestTab))) { event.preventDefault(); list.update({ queue: next, history: "false", request: "", requestView: "overview" }); }
   }}>
     <ListLayout header={{ title: t`Requests`, subtitle: t`Borrow requests from members, from review to return.`,
-      meta: queues.finding ? <span role="status">{t`Finding request #${list.values.id || list.values.request}…`}</span> : undefined,
+      meta: queues.finding ? <BoxSpinner label={t`Finding request #${list.values.id || list.values.request}…`} /> : undefined,
       primary: tab === "accepted" && selected.count === 1 && selected.results[0] ? primary(selected.results[0]) : undefined }}
       callout={callout}
       tabs={[...visible, ...(visible.length > 1 ? ["all" as const] : [])].map(key => ({ key, label: requestTabLabels[key], href: requestTabHref(location.pathname, location.search, key),

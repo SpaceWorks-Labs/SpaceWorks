@@ -7,6 +7,7 @@ import { StructuredApiError } from "../../../lib/api/errors";
 import { useDebouncedValue } from "../../../lib/useDebouncedValue";
 import { rows, type ListResponse, type Rebound, type ResolveTarget } from "./ScannerPanelTypes";
 import { type Makerspace, type Product, useStaffGet } from "./shared";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 type Unit = { id: number; asset_tag: string; qr_code_id: number | null };
 type Conflict = { code?: string; detail?: string; target?: ResolveTarget };
@@ -84,7 +85,7 @@ export function ScannerUnknownCode({ makerspace, value, canCreate, onLinked, onC
         <input className="desk-input" type="number" min={1} value={quantity} onChange={(event) => setQuantity(event.target.value)} /></label>
       <p className="text-xs text-muted">{t`The scanned code is linked when the item is saved.`}</p>
       <div className="desk-actions flex flex-wrap gap-2">
-        <button className="desk-button" type="submit" disabled={link.isPending || !name.trim()}>{link.isPending ? t`Saving…` : t`Save item and link code`}</button>
+        <button className="desk-button" type="submit" disabled={link.isPending || !name.trim()}>{link.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Save item and link code`}</button>
         <button className="desk-button-ghost" type="button" onClick={() => setMode("choose")}>{t`Back`}</button>
       </div>
     </form> : null}
@@ -107,7 +108,7 @@ export function ScannerUnknownCode({ makerspace, value, canCreate, onLinked, onC
       {confirming && choice ? <p role="status">{t`Link this code to ${choice}? Existing links are never replaced.`}</p> : null}
       <div className="desk-actions flex flex-wrap gap-2">
         {confirming && choice
-          ? <button className="desk-button" type="button" disabled={link.isPending} onClick={() => link.mutate(linkBody())}>{link.isPending ? t`Linking…` : t`Confirm link`}</button>
+          ? <button className="desk-button" type="button" disabled={link.isPending} onClick={() => link.mutate(linkBody())}>{link.isPending ? <><BoxArt size={16} mono />{t`Linking…`}</> : t`Confirm link`}</button>
           : <button className="desk-button" type="button" disabled={!choice} onClick={() => setConfirming(true)}>{t`Link code`}</button>}
         <button className="desk-button-ghost" type="button" onClick={() => { setMode("choose"); setConfirming(false); }}>{t`Back`}</button>
       </div>

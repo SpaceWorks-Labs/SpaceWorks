@@ -6,6 +6,7 @@ import { Callout, ErrorText, ListRow, Pagination } from "../../../components/ui"
 import type { CalloutProps } from "../../../components/ui";
 import { DetailLayout } from "../../../components/layouts";
 import { inventoryQueryState } from "./inventoryPresentation";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 type Suggestion = { id: number; name: string; available_quantity: number; reorder_point: number; reorder_quantity: number; supplier: string; sku: string };
 
@@ -33,7 +34,7 @@ export function useReorderSuggestions({ makerspaceId, canProcure }: { makerspace
       main={<div className="grid gap-3">{suggestions.data?.results.map(row => <ListRow key={row.id} title={row.name}
         meta={`${row.available_quantity} available · reorder at ${row.reorder_point}${row.supplier ? ` · ${row.supplier}` : ""}`}
         right={canProcure ? <button className="desk-button-ghost" disabled={create.isPending || row.reorder_quantity < 1} onClick={() => create.mutate(row.id)}>
-          {create.isPending ? t`Drafting…` : t`Draft order for ${row.reorder_quantity}`}</button> : null} />)}
+          {create.isPending ? <><BoxArt size={16} mono />{t`Drafting…`}</> : t`Draft order for ${row.reorder_quantity}`}</button> : null} />)}
         <p role="status" className="text-sm text-muted">{message}</p><ErrorText message={create.error?.message} />
         <Pagination page={page} totalPages={Math.max(1, Math.ceil(count / 24))} count={count} pageSize={24} onChange={setPage} />
       </div>} /> : null;

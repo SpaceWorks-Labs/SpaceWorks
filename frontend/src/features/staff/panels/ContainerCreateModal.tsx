@@ -5,6 +5,7 @@ import { ErrorText, Field, Modal } from "../../../components/ui";
 import { staffRequest } from "../../../lib/api";
 import { invalidateContainerViews, invalidateQrViews } from "../queryInvalidation";
 import type { Container } from "./ContainersPanel";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 /** POST /admin/qr/boxes creates the box and its QR label in one step (apps/boxes CreateBoxQrView). */
 export function ContainerCreateModal({ makerspaceId, open, onClose, onCreated }: { makerspaceId: number; open: boolean; onClose: () => void; onCreated: (container: Container) => void }) {
@@ -26,7 +27,7 @@ export function ContainerCreateModal({ makerspaceId, open, onClose, onCreated }:
   const close = () => { if (!create.isPending) { reset(); onClose(); } };
   return <Modal open={open} onClose={close} title={t`New container`} footer={<div className="desk-actions flex flex-wrap justify-end gap-2">
     <button className="desk-button-ghost" type="button" disabled={create.isPending} onClick={close}>{t`Cancel`}</button>
-    <button className="desk-button-primary" type="submit" form="container-create" disabled={create.isPending || !label.trim()}>{create.isPending ? t`Creating…` : t`Create container`}</button>
+    <button className="desk-button-primary" type="submit" form="container-create" disabled={create.isPending || !label.trim()}>{create.isPending ? <><BoxArt size={16} mono />{t`Creating…`}</> : t`Create container`}</button>
   </div>}>
     <form id="container-create" className="grid gap-4" onSubmit={event => { event.preventDefault(); if (label.trim()) create.mutate(); }}>
       <p className="text-sm text-muted">{t`A QR label is created with it. Print it from QR labels.`}</p>

@@ -6,6 +6,7 @@ import { Field, ListRow, RelativeTime } from "../../../components/ui";
 import { staffRequest } from "../../../lib/api";
 import type { Makerspace } from "./shared";
 import { OUTCOME_OPTIONS, type ProblemReport, type TriageOutcome } from "./AccountabilityTypes";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 export function ProblemReportCard({ row, makerspace, onTriaged }: { row: ProblemReport; makerspace: Makerspace; onTriaged: () => void }) {
   const [outcome, setOutcome] = useState<TriageOutcome>("no_issue");
@@ -63,7 +64,7 @@ export function ProblemReportCard({ row, makerspace, onTriaged }: { row: Problem
       <div className="flex flex-wrap items-center justify-between gap-3">
         {triage.error ? <p className="text-sm text-danger">{(triage.error as Error).message}</p> : <span />}
         <button className="desk-button-primary" type="button" disabled={triage.isPending || (actionable && resolutions.length === 0)} onClick={() => triage.mutate()}>
-          {triage.isPending ? t`Saving…` : t`Save triage`}
+          {triage.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Save triage`}
         </button>
       </div>
     </div>

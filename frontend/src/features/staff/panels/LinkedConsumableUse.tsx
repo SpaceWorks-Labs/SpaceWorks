@@ -5,6 +5,7 @@ import { PendingIntake } from "../../inventory/contextualIntake";
 import { consumableKeys } from "./consumablesApi";
 import { submitLinkedUse, fetchLinkedUseSources, type LinkedUseBody, type UseSource } from "./linkedConsumableApi";
 import { PagePager } from "../../../components/ui";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 function sourceLabel(source: UseSource, position: number) {
   const planned = source.planned_quantity; const used = source.used_quantity;
@@ -53,7 +54,7 @@ export function LinkedConsumableUse({ tenant, product, scope, owner, admitted, a
   }
   if (denied) return <p role="status">{t`Linked use is unavailable for your access.`}</p>;
   return <section className="grid gap-2 border-t border-line pt-4" data-replay-block><h3 className="text-sm font-semibold text-ink">{t`Record use against a plan`}</h3>
-    {sources.isPending ? <p className="text-sm text-muted" role="status">{t`Loading plans…`}</p> : sources.isError ? <p className="text-sm text-danger" role="alert">{t`Plans are unavailable.`}</p> : <>
+    {sources.isPending ? <LogoLoader label={t`Loading plans…`} size={48} className="min-h-16 py-3" /> : sources.isError ? <p className="text-sm text-danger" role="alert">{t`Plans are unavailable.`}</p> : <>
       {!sources.data.results.length ? <p className="text-sm text-muted">{t`No open plans or requests use this item.`}</p> : null}
       {sources.data.results.map((source, index) => <button key={`${source.kind}:${source.id}`} type="button" className="desk-button justify-start text-left" disabled={busy || uncertain} aria-pressed={selection?.kind === source.kind && selection.id === source.id} onClick={() => setSelection(source)}>{sourceLabel(source, index + 1)}</button>)}
       <PagePager page={page} setPage={setPage} next={sources.data.next} disabled={busy || uncertain} />

@@ -1,7 +1,7 @@
 import { t } from "@lingui/core/macro";
 import { ReportAreaSections } from "./ReportAreaSections";
 import { ReportSelectionProvider } from "./OperationsReportSelection";
-import { useEffect, useState } from "react";
+import { useMemo, useEffect, useState } from "react";
 
 import { OperationsReportExports, useOperationsReportExport } from "./OperationsReportExports";
 import { SegmentedControl } from "../../../components/ui";
@@ -12,6 +12,9 @@ import { reportFormats } from "./operationsReportsConfig";
 import { type Makerspace, useStaffGet } from "./shared";
 import { type ReportCatalog, type ReportKey } from "./operationsReportsConfig";
 import { ServerReportViews } from "./ServerReportViews";
+import { ReportHubFilters } from "./ReportHubFilters";
+import { filterReports } from "./reportGroups";
+import { usePinnedReports } from "./usePinnedReports";
 import type { ReportViewState } from "./reportViewsApi";
 import { PAYMENT_STATUSES, PAYMENT_SUBJECTS } from "../paymentsApi";
 
@@ -33,17 +36,21 @@ export function OperationsReports({
   const [rangePreset, setRangePreset] = useState("custom");
   const [schedulesOpen, setSchedulesOpen] = useState(false);
   const [exportsOpen, setExportsOpen] = useState(false);
-  const [allMakerspaces, setAllMakerspaces] = useState(false);
+  const [allMakerspaces, setAllMakerspaces] = useState(() => isSuperadmin && new URLSearchParams(window.location.search).get("scope") === "all");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [grain, setGrain] = useState("day");
   const [selectedReport, setSelectedReport] = useState<ReportKey>(() => new URLSearchParams(window.location.search).get("report") || "summary");
   const [columns, setColumns] = useState<string[]>([]);
+  const [query, setQuery] = useState("");
+  // `?group=<module group>` is how the "Reports" link inside a module area lands on that module's reports.
+  const [group, setGroup] = useState(() => new URLSearchParams(window.location.search).get("group") ?? "");
   const [months, setMonths] = useState("");
   const [paymentStatus, setPaymentStatus] = useState("");
   const [paymentSubject, setPaymentSubject] = useState("");
   const aggregate = isSuperadmin && allMakerspaces;
   const scopeKey = aggregate ? "all" : makerspace.id;
+  const { pinned, toggle: togglePin } = usePinnedReports(scopeKey);
   const analyticsBase = aggregate ? "/admin/analytics" : `/admin/makerspace/${makerspace.id}/analytics`;
   const reportsBase = aggregate ? "/admin/reports" : `/admin/makerspace/${makerspace.id}/reports`;
   const dateQuery = [startDate ? `start=${encodeURIComponent(startDate)}` : "", endDate ? `end=${encodeURIComponent(endDate)}` : ""].filter(Boolean).join("&");
@@ -55,12 +62,16 @@ export function OperationsReports({
     reportsEnabled,
   );
   // Off-source reports are hidden, not disabled (#183B); the server already drops them.
-  const catalogEntries = reportsEnabled && !catalog.isError ? (catalog.data?.results ?? []).filter(item => item.available !== false) : [];
+  const catalogEntries = useMemo(
+    () => (reportsEnabled && !catalog.isError ? (catalog.data?.results ?? []).filter(item => item.available !== false) : []),
+    [reportsEnabled, catalog.isError, catalog.data],
+  );
   useEffect(() => {
     if (!selectedReport || !catalog.data || catalogEntries.some((item) => item.key === selectedReport && item.available !== false)) return;
     const firstAvailable = catalogEntries.find((item) => item.available !== false);
     if (firstAvailable) setSelectedReport(firstAvailable.key);
   }, [catalog.data, catalogEntries, selectedReport]);
+  const shownReports = useMemo(() => filterReports(catalogEntries, query, group), [catalogEntries, query, group]);
   const hardwareEnabled = canViewAudit && reportsEnabled;
 
 
@@ -103,18 +114,20 @@ export function OperationsReports({
       state={{ status: catalog.isLoading ? "loading" : catalog.isError ? "error" : "ready",
         error: t`Couldn't load reports. Try again.`, onRetry: () => void catalog.refetch() }}
       isEmpty={reportsEnabled && catalog.isSuccess && !catalogEntries.length}
-      empty={{ message: t`No reports available yet. Enable the reporting modules to get started.` }}
+      empty={{ message: t`No report is available to your role here. Reports appear when your role holds the action a report needs and its module is on.` }}
       actions={{ primary: { label: t`Export`, pending: exportReport.isPending, pendingLabel: t`Exporting…`,
         disabled: !canExport, disabledReason: !canExport ? t`Choose an available exportable report.` : undefined, onClick: () => exportSelected(formats[0] ?? "csv") },
         secondary: !aggregate && reportsEnabled ? { label: t`Schedule…`, onClick: () => setSchedulesOpen(true) } : undefined,
         overflow: [...(canExport ? formats.map(format => ({ label: t`Export ${format.toUpperCase()}`, onClick: () => exportSelected(format) })) : []),
           ...(availableExports.length ? [{ label: t`Export any report`, confirms: true, onClick: () => setExportsOpen(true) }] : [])] }}
-      aside={<OperationsReportNavigation reports={catalogEntries} selected={selectedReport} onSelect={selectReport} />}
+      aside={<OperationsReportNavigation reports={shownReports} selected={selectedReport} onSelect={selectReport} pinned={pinned} onTogglePin={togglePin} />}
       main={<ReportSelectionProvider selected={selectedReport} columns={columns} grain={effectiveGrain} catalog={catalogEntries}
         hardware={hardwareEnabled} finance={canViewFinance || isSuperadmin} machines={canManageMachines}>
       <div className="space-y-6">
       <section aria-label={t`Report configuration`} className="rounded-xl border border-line bg-panel p-5">
-        <OperationsReportPicker reports={catalogEntries} selected={selectedReport} onSelect={selectReport} />
+        <ReportHubFilters reports={catalogEntries} visibleCount={shownReports.length} reportsEnabled={reportsEnabled} loading={catalog.isLoading || catalog.isError}
+          query={query} group={group} onQuery={setQuery} onGroup={setGroup} />
+        <OperationsReportPicker reports={shownReports} selected={selectedReport} onSelect={selectReport} pinned={pinned} />
         <div className="mb-5"><SegmentedControl label={t`Date range`} value={rangePreset} onChange={setPreset}
           options={[{ value: "7", label: t`7 days` }, { value: "30", label: t`30 days` }, { value: "90", label: t`Quarter` }, { value: "custom", label: t`Custom` }]} /></div>
 
@@ -167,7 +180,7 @@ export function OperationsReports({
         {!reportsEnabled ? <p className="mt-3 text-sm text-muted">{t`Module disabled`}</p> : null}
       </section>
 
-      {reportsEnabled ? <ReportAreaSections reports={catalogEntries} selected={selectedReport} onSelect={selectReport}
+      {reportsEnabled ? <ReportAreaSections reports={shownReports} selected={selectedReport} onSelect={selectReport} pinned={pinned} onTogglePin={togglePin}
         base={analyticsBase} period={{ start: startDate, end: endDate, grain: effectiveGrain }} makerspaceId={aggregate ? undefined : makerspace.id}
         filters={{ ...(selectedReport === "member-retention" && months ? { months } : {}),
           ...(selectedReport === "payment-reconciliation" ? { status: paymentStatus, subject_type: paymentSubject } : {}) }} /> : null}

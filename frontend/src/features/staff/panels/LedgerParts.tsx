@@ -1,6 +1,5 @@
 import { formatLocale } from "../../../lib/format";
 import { t } from "@lingui/core/macro";
-import { Skeleton, SkeletonRows } from "../../../components/ui";
 
 export type LedgerSource = "request" | "self_checkout" | "direct_handout";
 export type LedgerSourceFilter = "" | "reviewed" | "self_checkout" | "direct";
@@ -37,29 +36,6 @@ export const sourceLabels: Record<LedgerSource, string> = {
   self_checkout: t`Self-checkout`,
   direct_handout: t`Direct`,
 };
-
-export function LedgerSkeleton({ aggregate }: { aggregate: boolean }) {
-  return (
-    <div className="overflow-x-auto rounded-md border border-line">
-      <table className="min-w-[760px] divide-y divide-line text-left text-sm" aria-hidden="true">
-        <thead className="eyebrow bg-bg">
-          <tr>
-            {["Item", "Holder", "Qty", "Out since", "Due", "Source", aggregate ? "Makerspace" : ""]
-              .filter(Boolean)
-              .map((label) => (
-                <th scope="col" key={label} className="whitespace-nowrap px-3 py-2">
-                  <Skeleton className="h-3 w-20" />
-                </th>
-              ))}
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-line bg-surface">
-          <SkeletonRows rows={4} cols={aggregate ? 7 : 6} />
-        </tbody>
-      </table>
-    </div>
-  );
-}
 
 export function UnitLines({ row }: { row: LedgerRow }) {
   if (row.units.length) {

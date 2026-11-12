@@ -11,6 +11,7 @@ import type { DataTableColumn } from "../../../components/ui";
 import { staffRequest } from "../../../lib/api";
 import { categoryResults, type Category, type CategoryListResponse, type Makerspace, useStaffGet } from "./shared";
 import { invalidatePublicInventory } from "../queryInvalidation";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 type CategoryForm = {
   name: string;
@@ -165,7 +166,7 @@ export function Categories({ makerspace }: { makerspace: Makerspace }) {
               disabled={!editForm.name.trim() || update.isPending}
               onClick={() => update.mutate(category)}
             >
-              {update.isPending ? t`Saving…` : t`Save`}
+              {update.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Save`}
             </button>
             <button className="desk-button-ghost" type="button" onClick={() => setEditingId(null)}>
               {t`Cancel`}</button>
@@ -187,7 +188,7 @@ export function Categories({ makerspace }: { makerspace: Makerspace }) {
           <Field label={t`Order`}><input className="desk-input" type="number" value={form.display_order} onChange={(event) => setForm((current) => ({ ...current, display_order: event.target.value }))} /></Field>
           <Field label={t`Icon`}><input className="desk-input" value={form.icon} onChange={(event) => setForm((current) => ({ ...current, icon: event.target.value }))} /></Field>
           <button className="desk-button-primary" type="button" disabled={!form.name.trim() || create.isPending} onClick={() => create.mutate()}>
-            {create.isPending ? t`Adding…` : t`Add category`}
+            {create.isPending ? <><BoxArt size={16} mono />{t`Adding…`}</> : t`Add category`}
           </button>
         </div>
       {create.error ? <p role="alert" className="text-sm text-danger">{create.error.message}</p> : null}</Modal>

@@ -11,6 +11,7 @@ import {
   type Machine,
   type MachinePublicPreview,
 } from '../machinesApi';
+import { LogoLoader } from '../../../components/LogoLoader';
 
 const previewLabel = (key: string) => ({
   name: t`Name`, machine_type: t`Machine type`, icon: t`Icon`, image_url: t`Image`, status: t`Status`, usage_hours: t`Usage hours`,
@@ -80,7 +81,7 @@ export function MachinePublicSettings({ machine, makerspaceId }: {
       ) : null}
       <div className={'mt-4 rounded-xl border border-line bg-surface p-3'}>
         <h4 className="title-section mb-3">{t`What's shown publicly`}</h4>
-        {preview.isLoading ? <p className={'text-sm text-muted'}>{t`Loading preview...`}</p> : null}
+        {preview.isLoading ? <LogoLoader label={t`Loading preview...`} size={48} className="min-h-16 py-3" /> : null}
         {preview.error instanceof Error ? (
           <p className={'text-sm text-danger'}>{preview.error.message}</p>
         ) : null}

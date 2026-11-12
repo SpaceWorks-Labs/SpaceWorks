@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { Field, StatusBadge, StatCard, DataTable, EmptyState, ErrorBlock, ListRow, Modal, OverflowMenu, RelativeTime, Skeleton } from "../../../components/ui";
+import { Field, StatusBadge, StatCard, DataTable, EmptyState, ErrorBlock, ListRow, Modal, OverflowMenu, RelativeTime } from "../../../components/ui";
 import { staffRequest } from "../../../lib/api";
 import { QrImage } from "./QrImage";
 import { AssetEditForm } from "./AssetEditForm";
@@ -23,6 +23,7 @@ import {
   type ItemForm,
   type QrHistoryResponse,
 } from "./InventoryPanelShared";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 export function ItemModal({ title, open, onClose, pending, onSubmit, ...fields }: {
   title: string; open: boolean; onClose: () => void; form: ItemForm; setForm: (updater: (current: ItemForm) => ItemForm) => void; categories: Category[];
@@ -59,7 +60,7 @@ export function QrHistory({ title, queryKey, path, defaultOpen = false }: { titl
         <h3 className="title-section">{title}</h3>
         <button className="desk-button-ghost" type="button" onClick={() => setOpen((value) => !value)}>{open ? t`Hide` : t`History`}</button>
       </div>
-      {open && history.isLoading ? <Skeleton className="h-32" /> : null}
+      {open && history.isLoading ? <LogoLoader size={48} className="min-h-32 py-3" /> : null}
       {open && history.error ? <ErrorBlock error={history.error} resource={t`history`} onRetry={() => { void history.refetch(); }} /> : null}
       {open && !history.isLoading && !rows.length ? <EmptyState message={t`No QR scans recorded. Future scans will appear here.`} /> : null}
       {open && rows.length ? <div className="grid gap-3">{rows.map(scan => <ListRow key={scan.id} title={scanContextLabel(scan.context)} meta={<RelativeTime date={scan.created_at} exact />} right={scan.actor ? <span className="text-sm text-muted">{t`User ${scan.actor}`}</span> : null} />)}</div> : null}
@@ -98,7 +99,7 @@ export function IndividualAssets({ productId, makerspaceId, refreshInventory }: 
   const rows = assets.data?.results ?? [];
   const selected = rows.find(asset => asset.id === editingAssetId);
   return <section className="mt-6 grid gap-4"><h3 className="title-section">{t`Individual assets`}</h3>
-    {assets.isLoading ? <Skeleton className="h-40" /> : assets.error ? <ErrorBlock error={assets.error} resource={t`assets`} onRetry={() => { void assets.refetch(); }} /> : <DataTable data={rows} getRowId={asset => asset.id} emptyTitle={t`No asset records yet`} columns={[
+    {assets.isLoading ? <LogoLoader size={48} className="min-h-40 py-3" /> : assets.error ? <ErrorBlock error={assets.error} resource={t`assets`} onRetry={() => { void assets.refetch(); }} /> : <DataTable data={rows} getRowId={asset => asset.id} emptyTitle={t`No asset records yet`} columns={[
       { key: "asset_tag", header: t`Asset`, render: asset => <div className="min-w-0 [overflow-wrap:anywhere]"><strong>{asset.asset_tag}</strong><p className="text-xs text-muted">{asset.serial_number}</p></div> },
       { key: "box_label", header: t`Container` },
       { key: "status", header: t`Status`, render: asset => <StatusBadge status={asset.status} label={assetStatusLabel(asset.status)} /> },

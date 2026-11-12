@@ -7,6 +7,8 @@ import { QrImage } from "./QrImage";
 import { QrLabelPrinterSend } from "./QrLabelPrinterSend";
 import { useQrBatchBuilder } from "./useQrBatchBuilder";
 import type { Makerspace } from "./shared";
+import { LogoLoader } from "../../../components/LogoLoader";
+import { BoxArt } from "../../../components/BoxSpinner";
 export function QrTools({ makerspace }: { makerspace: Makerspace }) {
  const {
    batchId, setBatchId, batchModalOpen, setBatchModalOpen, batchTitle,
@@ -54,7 +56,7 @@ export function QrTools({ makerspace }: { makerspace: Makerspace }) {
                 <Field label={t`Unit count`}><input className="desk-input" inputMode="numeric" value={assetCount} onChange={(event) => setAssetCount(event.target.value)} /></Field>
                 <Field label={t`Label prefix`}><input className="desk-input" value={assetPrefix} onChange={(event) => setAssetPrefix(event.target.value)} /></Field>
                 <button className="desk-button" type="button" disabled={!canGenerateAssets || generateAssets.isPending} onClick={() => generateAssets.mutate()}>
-                  {generateAssets.isPending ? t`Generating…` : t`Generate missing/new unit QRs`}
+                  {generateAssets.isPending ? <><BoxArt size={16} mono />{t`Generating…`}</> : t`Generate missing/new unit QRs`}
                 </button>
               </div> : null}
               {labelMode === "reprint" ? <div className="grid gap-2 border-t border-line pt-3 sm:grid-cols-[minmax(0,1fr)_auto]">
@@ -67,17 +69,17 @@ export function QrTools({ makerspace }: { makerspace: Makerspace }) {
                   ))}
                 </select></Field>
                 <button className="desk-button" type="button" disabled={!canReprintAsset || reprintAsset.isPending} onClick={() => reprintAsset.mutate()}>
-                  {reprintAsset.isPending ? t`Adding…` : t`Reprint unit QR`}
+                  {reprintAsset.isPending ? <><BoxArt size={16} mono />{t`Adding…`}</> : t`Reprint unit QR`}
                 </button>
               </div> : null}
-              {assets.isLoading ? <p className="text-sm text-muted">{t`Loading units…`}</p> : null}
+              {assets.isLoading ? <LogoLoader label={t`Loading units…`} size={48} className="min-h-16 py-3" /> : null}
               {assets.isError ? <ErrorText message={assets.error.message} /> : null}
               {!assets.isLoading && selectedProduct && !assetOptions.length ? <p className="text-sm text-muted">{t`No individual units yet.`}</p> : null}
             </div>
           ) : null}
           {labelMode === "item" ? (
             <button className="desk-button mt-2" type="button" disabled={!canAddItemQr || addProduct.isPending} onClick={() => addProduct.mutate()}>
-              {addProduct.isPending ? t`Adding…` : t`Add/reprint item QR`}
+              {addProduct.isPending ? <><BoxArt size={16} mono />{t`Adding…`}</> : t`Add/reprint item QR`}
             </button>
           ) : null}
           {addProduct.isError ? <ErrorText message={addProduct.error.message} /> : null}
@@ -93,7 +95,7 @@ export function QrTools({ makerspace }: { makerspace: Makerspace }) {
             </div>
 
           </div>
-          {batch.isLoading ? <p className="mt-3 text-sm text-muted">{t`Loading batch…`}</p> : null}
+          {batch.isLoading ? <LogoLoader label={t`Loading batch…`} size={48} className="min-h-16 py-3" /> : null}
           {batch.isError ? <ErrorText message={batch.error.message} /> : null}
           {!batch.isLoading && !batchItems.length ? <EmptyState message={t`This batch is empty. Add an item or units to start.`} /> : null}
           {/* Fill by label size, not breakpoint: two labels across a phone, more on wide screens, never one giant QR. */}
@@ -122,7 +124,7 @@ function ModalActions(props: { pending: boolean; disabled: boolean; submitLabel:
     <div className="flex flex-wrap justify-end gap-2">
       <button className="desk-button-ghost" type="button" disabled={props.pending} onClick={props.onCancel}>{t`Cancel`}</button>
       <button className="desk-button-primary" type="button" disabled={props.pending || props.disabled} onClick={props.onSubmit}>
-        {props.pending ? t`Saving…` : props.submitLabel}
+        {props.pending ? <><BoxArt size={16} mono />{t`Saving…`}</> : props.submitLabel}
       </button>
     </div>
   );

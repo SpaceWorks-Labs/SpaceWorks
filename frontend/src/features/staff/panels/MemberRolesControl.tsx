@@ -7,6 +7,7 @@ import { RoleSetPicker } from "./RoleSetPicker";
 import { MemberMachineTypes } from "./MemberMachineTypes";
 import { refreshMembershipAuthority, type MembershipRoles } from "./roleSets";
 import type { StaffRole } from "./rolesApi";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 /** A member's current roles, an editor for the whole set, and the per-person machine types for a Machine Manager. */
 export function MemberRolesControl({ msId, membershipId, membership, roles, onAuthRefresh }: {
@@ -47,7 +48,7 @@ export function MemberRolesControl({ msId, membershipId, membership, roles, onAu
         {save.error ? <ErrorText message={save.error.message} /> : null}
         <div className="desk-actions flex flex-wrap justify-end gap-2">
           {draft !== null ? <button className="desk-button-ghost" type="button" disabled={save.isPending} onClick={() => { setDraft(null); save.reset(); }}>{t`Discard`}</button> : null}
-          <button className="desk-button-primary" type="button" disabled={save.isPending || !ids.length || draft === null || ids.some((id) => !roles.some((role) => role.id === id))} onClick={() => save.mutate()}>{save.isPending ? t`Saving…` : t`Save roles`}</button>
+          <button className="desk-button-primary" type="button" disabled={save.isPending || !ids.length || draft === null || ids.some((id) => !roles.some((role) => role.id === id))} onClick={() => save.mutate()}>{save.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Save roles`}</button>
         </div>
       </div>
     </CollapsibleSection>

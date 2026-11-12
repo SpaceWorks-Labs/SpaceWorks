@@ -10,6 +10,7 @@ import type { AccountabilityResponse, Offender } from "./AccountabilityTypes";
 import { ProblemReportCard } from "./ProblemReportCard";
 import { ListLayout } from "../../../components/layouts";
 import { opsQueryState, opsStatusLabel, useOpsTabs } from "../opsPresentation";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 export function AccountabilityPanel({ makerspace, isSuperadmin, inventoryView = false }: { makerspace: Makerspace; isSuperadmin: boolean;
   /** IN8 (decision 248): the Inventory Manager's read-only view: overdue and repeat damage, no restrictions or problem reports. */
@@ -127,7 +128,7 @@ export function AccountabilityPanel({ makerspace, isSuperadmin, inventoryView = 
             {/* Submit no-ops on a blank reason, so leaving it enabled renders a dead button that
                 reports nothing. Disabling states the requirement instead of failing silently. */}
             <button className="desk-button-danger" type="submit" form={restrictionFormId} disabled={!restrictionReason.trim() || restrict.isPending}>
-              {restrict.isPending ? t`Restricting…` : "Restrict " + (restrictionTarget?.username ?? "requester")}
+              {restrict.isPending ? <><BoxArt size={16} mono />{t`Restricting…`}</> : "Restrict " + (restrictionTarget?.username ?? "requester")}
             </button>
           </div>
         )}

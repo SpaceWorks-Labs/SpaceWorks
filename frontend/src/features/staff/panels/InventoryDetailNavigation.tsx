@@ -1,7 +1,8 @@
 import type { ReactNode } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
+import { useTransitionNavigate } from "../../../lib/motion";
 export function InventoryDetailNavigation({ children }: { children: ReactNode }) {
- const location = useLocation(), navigate = useNavigate();
+ const location = useLocation(), navigate = useTransitionNavigate();
  return <div onClickCapture={event => {
    if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
    const anchor = (event.target as Element).closest("a");

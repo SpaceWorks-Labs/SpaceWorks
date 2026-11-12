@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 
 import { StatusPill } from "../../../components/ui";
 import { staffRequest } from "../../../lib/api";
+import { LogoLoader } from "../../../components/LogoLoader";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 type Coverage = {
   attempt: number;
@@ -95,10 +97,10 @@ export function AuditVerificationStatus({
           disabled={!makerspaceId || start.isPending || (accepted !== null && !run?.terminal)}
           onClick={() => start.mutate()}
         >
-          {start.isPending ? t`Starting verification…` : t`Verify these entries`}
+          {start.isPending ? <><BoxArt size={16} mono />{t`Starting verification…`}</> : t`Verify these entries`}
         </button>
         {!makerspaceId ? <span className="text-muted">{t`Choose one makerspace to verify.`}</span> : null}
-        {accepted && !run ? <span className="text-muted">{t`Loading verification status…`}</span> : null}
+        {accepted && !run ? <LogoLoader label={t`Loading verification status…`} size={48} className="min-h-16 py-3" /> : null}
         {run ? <StatusPill label={verificationVerdict(run)} tone={verificationVerdict(run).includes("problems") ? "danger" : verificationVerdict(run) === "All entries fully verified." ? "success" : "warn"} /> : null}
       </div>
       {start.error ? <p className="mt-2 text-danger">{start.error.message}</p> : null}

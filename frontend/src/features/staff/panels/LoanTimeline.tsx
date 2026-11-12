@@ -1,3 +1,4 @@
+import { LogoLoader } from "../../../components/LogoLoader";
 import { formatLocale } from "../../../lib/format";
 import { plural, t } from "@lingui/core/macro";
 import { useState } from "react";
@@ -66,7 +67,7 @@ export function ChainOfCustodyBlock({ productId }: { productId: number }) {
 }
 
 function QueryState({ loading, error, retry, empty, emptyLabel }: { loading: boolean; error?: Error | null; retry: () => void; empty: boolean; emptyLabel: string }) {
-  if (loading) return <p role="status" className="text-sm text-muted">{t`Loading…`}</p>;
+  if (loading) return <LogoLoader label={t`Loading…`} size={48} className="min-h-16 py-3" />;
   if (error) return <ErrorBlock error={error} resource={t`loan history`} onRetry={retry} />;
   if (empty) return <EmptyState message={emptyLabel} />;
   return null;

@@ -8,6 +8,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { staffRequest } from "../../../lib/api";
 import { Pagination } from "../../../components/ui/Pagination";
 import { usePaginatedQuery } from "../../../lib/usePaginatedQuery";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 type Policy = { blind_default: boolean; variance_threshold: number | null };
 type Schedule = { id: number; name: string; next_due: string; interval_days: number; blind: boolean; is_active: boolean };
@@ -35,7 +36,7 @@ export function StocktakeDiscipline({ makerspaceId }: { makerspaceId: number }) 
         <SettingsRow label={t`Next count`}><Field label={t`Count name`}><input required className="desk-input" value={name} onChange={event => setName(event.target.value)} /></Field></SettingsRow>
         <SettingsRow label={t`Repeat interval`}><Field label={t`Every days`}><input required type="number" min={1} className="desk-input" value={days} onChange={event => setDays(Number(event.target.value))} /></Field></SettingsRow>
         <SettingsRow label={t`Start date`}><Field label={t`First count due`}><input required type="date" className="desk-input" value={due} onChange={event => setDue(event.target.value)} /></Field></SettingsRow>
-        <button className="desk-button" disabled={create.isPending}>{create.isPending ? t`Scheduling…` : t`Schedule count`}</button>
+        <button className="desk-button" disabled={create.isPending}>{create.isPending ? <><BoxArt size={16} mono />{t`Scheduling…`}</> : t`Schedule count`}</button>
         {create.error ? <ErrorBlock error={create.error} /> : null}
       </form>
       {schedules.results.map(row => <ListRow key={row.id} title={row.name} meta={<>{t`Due `}<RelativeTime date={row.next_due} /> {t` · Every ${row.interval_days} days`}</>}

@@ -8,6 +8,7 @@ import { DetailLayout } from "../../../components/layouts";
 import { OverflowMenu, RelativeTime, SettingsActions, StatusPill } from "../../../components/ui";
 import { staffRequest } from "../../../lib/api";
 import { WarrantySection } from "../WarrantySection";
+import { ShowOnShelf } from "../shelf/ShowOnShelf";
 import { invalidateContainerViews } from "../queryInvalidation";
 import { useStaffGet } from "./shared";
 import { assetStatusLabel } from "./InventoryPanelShared";
@@ -15,6 +16,7 @@ import { QrImage } from "./QrImage";
 import { KitDefinitionEditor } from "../../inventory/KitChecklist";
 import { inventoryQueryState } from "./inventoryPresentation";
 import type { Container } from "./ContainersPanel";
+import { LogoLoader } from "../../../components/LogoLoader";
 type Contents = {
   products: { id: number; name: string; available_quantity: number; tracking_mode: string }[];
   assets: { id: number; asset_tag: string; product: string; status: string }[];
@@ -53,6 +55,7 @@ export function ContainerDetail({ container, makerspaceId, canEditInventory, kit
     state={query ? inventoryQueryState(query, panel === "history" ? "scan history" : "container contents") : { status: "ready" }}
     tabs={["contents", "history", "details"].map(key => ({ key, label: key[0].toUpperCase() + key.slice(1), href: href(key) }))} activeTab={panel}
     main={<div className="grid gap-4">
+      <ShowOnShelf makerspaceId={makerspaceId} targetType="box" targetId={container.id} />
       {panel === "details" ? (
         <div className="mt-3 grid gap-2 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto_auto] md:items-end">
           <label className="eyebrow grid min-w-0 gap-1"><span>{t`Label`}</span><input className="desk-input min-w-0" value={label} onChange={(event) => setLabel(event.target.value)} /></label>
@@ -66,7 +69,7 @@ export function ContainerDetail({ container, makerspaceId, canEditInventory, kit
       {panel === "details" && (label !== container.label || location !== (container.location ?? "") || isActive !== (container.is_active ?? true) || JSON.stringify(components) !== JSON.stringify(container.kit_components ?? [])) ? <SettingsActions pending={save.isPending} disabled={!label.trim()} onSave={() => save.mutate()} onDiscard={() => { setLabel(container.label); setLocation(container.location ?? ""); setIsActive(container.is_active ?? true); setComponents(container.kit_components ?? []); }} /> : null}
       {panel === "contents" ? (
         <div className="mt-3 grid gap-2 rounded-md border border-line bg-bg p-2">
-          {contents.isLoading ? <p className="text-xs text-muted">{t`Loading…`}</p> : null}
+          {contents.isLoading ? <LogoLoader label={t`Loading…`} size={48} className="min-h-16 py-3" /> : null}
           <h4 className="title-section">{t`Products`}</h4>
           {contents.error instanceof Error ? <p className="text-xs text-danger">{contents.error.message}</p> : null}
           {!contents.isLoading && !contents.error && contents.data?.products.length ? contents.data.products.map((product) => (
@@ -84,7 +87,7 @@ export function ContainerDetail({ container, makerspaceId, canEditInventory, kit
 
       {panel === "history" ? (
         <div className="mt-3 rounded-md border border-line bg-bg p-2">
-          {history.isLoading ? <p className="text-xs text-muted">{t`Loading…`}</p> : null}
+          {history.isLoading ? <LogoLoader label={t`Loading…`} size={48} className="min-h-16 py-3" /> : null}
           {history.error instanceof Error ? <p className="text-xs text-danger">{history.error.message}</p> : null}
           {!history.isLoading && !history.error && history.data?.scans.length ? history.data.scans.map((scan) => (
             <p key={scan.id} className="tabular-nums text-xs text-muted"><RelativeTime date={scan.created_at} exact /> · {scan.context || t`Scan`} · {scan.source === "box_scan" ? t`reviewed handover` : t`QR scan`}</p>

@@ -6,6 +6,7 @@ import { ErrorText, Field, Modal } from "../../../components/ui";
 import { staffRequest } from "../../../lib/api";
 import type { HardwareRequest } from "./Queues";
 import { invalidateRequestQueues } from "./QueuesInvalidation";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 /** Staff cancel a pending or accepted request; the workflow releases any reservation it held. */
 export function RequestCancelDialog({ row, makerspaceId, onClose }: { row: HardwareRequest; makerspaceId: number; onClose: () => void }) {
@@ -28,7 +29,7 @@ export function RequestCancelDialog({ row, makerspaceId, onClose }: { row: Hardw
       <ErrorText message={cancel.error?.message} />
       <div className="flex flex-wrap justify-end gap-2">
         <button type="button" className="desk-button-ghost" disabled={cancel.isPending} onClick={onClose}>{t`Keep request`}</button>
-        <button type="submit" className="desk-button-danger" disabled={cancel.isPending}>{cancel.isPending ? t`Cancelling…` : t`Cancel request`}</button>
+        <button type="submit" className="desk-button-danger" disabled={cancel.isPending}>{cancel.isPending ? <><BoxArt size={16} mono />{t`Cancelling…`}</> : t`Cancel request`}</button>
       </div>
     </form>
   </Modal>;

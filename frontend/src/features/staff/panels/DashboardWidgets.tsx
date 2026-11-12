@@ -1,13 +1,14 @@
 import { t } from "@lingui/core/macro";
 import { consoleSessionHref } from "../../../lib/api/sessionContext";
 import type { ReactNode } from "react";
-import { ListRow, RelativeTime, Skeleton, ErrorBlock, type Action } from "../../../components/ui";
+import { ListRow, RelativeTime, ErrorBlock, type Action } from "../../../components/ui";
 import type { DashboardLayoutProps } from "../../../components/layouts/DashboardLayout";
 import { usePaginatedQuery, type Paginated } from "../../../lib/usePaginatedQuery";
 import { staffTabPath } from "../staffTabs";
 import { useStaffGet, type Makerspace } from "./shared";
 import type { HardwareRequest } from "./Queues";
 import { RouteLink } from "../../../components/ui/RouteLink";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 /** Mirrors `UNRECOGNIZED_LABEL` in backend/apps/audit/presentation_catalog.py. */
 const UNRECOGNIZED_AUDIT_LABEL = "Unrecognized audit action";
@@ -30,7 +31,7 @@ export function DashboardActivity({ makerspace, guestOnly, singleTenantLocked, c
     title: t`Recent activity`, action: all, isEmpty: activity.isSuccess && !readable.length,
     empty: { message: t`No activity yet. New handovers and updates will appear here.` },
     content: activity.error ? <ErrorBlock error={activity.error} resource={t`recent activity`} onRetry={() => { void activity.refetch(); }} />
-      : <div role="status" aria-label={t`Loading recent activity`}><Skeleton className="h-24 w-full" /></div>,
+      : <LogoLoader label={t`Loading recent activity`} size={48} className="min-h-24 py-3" />,
   }]);
   return children({ title: t`Recent activity`, seeAll: all,
     items: readable.slice(0, 8).map(row => ({ key: String(row.id), actor: row.actor_display || "Space Works",
@@ -56,7 +57,7 @@ export function DashboardDueBack({ makerspace, guestOnly, singleTenantLocked, ch
     right={<RelativeTime date={row.return_due_at!} />} />)}</div>;
   if (loans.isLoading || loans.error) return children([{ title: t`Due back`, empty: { message: t`No loans due in the next 3 days.` },
     content: loans.error ? <ErrorBlock error={loans.error} resource={t`due loans`} onRetry={() => { void loans.refetch(); }} />
-      : <div role="status" aria-label={t`Loading due loans`}><Skeleton className="h-24 w-full" /></div> }]);
+      : <LogoLoader label={t`Loading due loans`} size={48} className="min-h-24 py-3" /> }]);
   return children([
     ...(overdue.length ? [{ title: t`Overdue`, action: { label: t`See all →`, href }, content: rows(overdue), empty: { message: t`No overdue loans.` } }] : []),
     { title: t`Due within 3 days`, action: { label: t`See all →`, href }, content: rows(soon), isEmpty: !soon.length,

@@ -4,9 +4,12 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { staffRequest } from "../../../lib/api";
 import { stocktakeConditionLabel } from "../lifecycleLabels";
-import { DataTable, EmptyState, ErrorBlock, ScanWorkbench, Skeleton, StatRow, StatusPill } from "../../../components/ui";
+import { DataTable, EmptyState, ErrorBlock, ScanWorkbench, StatRow, StatusPill } from "../../../components/ui";
 import { type Makerspace, useStaffGet } from "./shared";
 import { QuantityStepper } from "../QuantityStepper";
+import { LogoLoader } from "../../../components/LogoLoader";
+import { BoxArt } from "../../../components/BoxSpinner";
+import { StocktakeShelfGuide } from "../shelf/StocktakeShelfGuide";
 
 type StocktakeRow = { id: number; status: string; notes: string; container: number | null };
 type StocktakeLine = {
@@ -21,7 +24,7 @@ type StocktakeLine = {
   notes: string;
 };
 type StocktakeDetail = StocktakeRow & { blind?: boolean; lines: StocktakeLine[] };
-type ProductOption = { id: number; name: string; tracking_mode: string };
+type ProductOption = { id: number; name: string; tracking_mode: string; storage_location?: string };
 type ContainerOption = { id: number; label: string; location?: string };
 type AssetOption = { id: number; asset_tag: string; serial_number: string; status: string };
 type StocktakeScanResult = {
@@ -110,7 +113,8 @@ export function CountSection({ makerspace, stocktakeId, readOnly = false }: { ma
 
   return (
     <div className="mt-3 rounded-md border border-line bg-bg p-3">
-      {detail.isLoading ? <Skeleton className="h-32" /> : detail.error ? <ErrorBlock error={detail.error} resource={t`the count`} onRetry={() => { void detail.refetch(); }} /> : null}
+      {detail.isLoading ? <LogoLoader size={48} className="min-h-32 py-3" /> : detail.error ? <ErrorBlock error={detail.error} resource={t`the count`} onRetry={() => { void detail.refetch(); }} /> : null}
+      {editable && makerspace.enabled_features?.includes("machines.integrations") ? <StocktakeShelfGuide makerspaceId={makerspace.id} products={products.data?.results ?? []} counted={new Set(lines.map(line => line.product).filter((id): id is number => id !== null))} /> : null}
       {editable ? <ScanWorkbench searchLabel="QR payload" onFind={handleScan} onScan={handleScan}
         controls={<div className="@container grid gap-3">
       {/* Sized by the workbench column, not the viewport: beside the camera at xl the column is half width. */}
@@ -171,7 +175,7 @@ export function CountSection({ makerspace, stocktakeId, readOnly = false }: { ma
         <input className="desk-input" value={notes} onChange={(event) => setNotes(event.target.value)} />
       </label>
       <div className="desk-actions mt-2 flex flex-wrap gap-2">
-        <button className="desk-button-primary w-full @md:w-auto" disabled={!canSave || record.isPending || readOnly} onClick={() => record.mutate()}>{record.isPending ? t`Saving…` : t`Record count`}</button>
+        <button className="desk-button-primary w-full @md:w-auto" disabled={!canSave || record.isPending || readOnly} onClick={() => record.mutate()}>{record.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Record count`}</button>
       </div>
         </div>} /> : null}
       {scanNote ? <p className={`mt-2 text-sm ${scanNote.startsWith("Scanned ") ? "text-muted" : "text-danger"}`}>{scanNote}</p> : null}

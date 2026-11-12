@@ -25,7 +25,7 @@ const ITEM_LABELS = (): Record<string, string> => ({
   true_low_stock: t`Low stock`, in_repair: t`Items in repair`, stocktakes_awaiting_approval: t`Stocktakes to approve`,
   machines_down: t`Machines down`, jobs_to_review: t`Jobs to review`, jobs_in_progress: t`Jobs in progress`,
   jobs_awaiting_collection: t`Jobs ready to collect`, maintenance_overdue: t`Maintenance overdue`,
-  certifications_expiring: t`Certifications ending within 30 days`, my_open_repairs: t`My open repairs`,
+  machine_access_expiring: t`Machine access ending within 30 days`, my_open_repairs: t`My open repairs`,
   my_work_orders: t`My work orders`, pending_event_registrations: t`Registrations to approve`,
   waitlisted_registrations: t`People on a waitlist`, events_today: t`Events today`, pending_bookings: t`Bookings to approve`,
   bookings_today: t`Bookings today`, open_booking_issues: t`Booking problems`, room_outages_week: t`Rooms out of use this week`,

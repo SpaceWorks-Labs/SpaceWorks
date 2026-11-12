@@ -1,12 +1,13 @@
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
 
-import { EmptyState, ErrorBlock, ListRow, Pagination, RelativeTime, Skeleton } from "../../../components/ui";
+import { EmptyState, ErrorBlock, ListRow, Pagination, RelativeTime } from "../../../components/ui";
 import { RouteLink } from "../../../components/ui/RouteLink";
 import { useCrossLink } from "../crossLinks/staffHref";
 import { AttributionLine } from "./InventoryPanelParts";
 import type { LendingHistoryResponse } from "./InventoryPanelShared";
 import { useStaffGet } from "./shared";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 const PAGE_SIZE = 10;
 
@@ -23,7 +24,7 @@ export function LendingHistory({ productId }: { productId: number }) {
   const recent = history.data?.recent ?? [];
   const count = history.data?.count ?? recent.length;
   return <section className="grid gap-4"><h3 className="title-section">{t`Loan history`}</h3>
-    {history.isLoading ? <Skeleton className="h-40" /> : history.error ? <ErrorBlock error={history.error} resource={t`loan history`} onRetry={() => { void history.refetch(); }} /> : !recent.length ? <EmptyState message={t`No loan history yet. Handovers will appear here.`} /> : null}
+    {history.isLoading ? <LogoLoader size={48} className="min-h-40 py-3" /> : history.error ? <ErrorBlock error={history.error} resource={t`loan history`} onRetry={() => { void history.refetch(); }} /> : !recent.length ? <EmptyState message={t`No loan history yet. Handovers will appear here.`} /> : null}
     {last && page === 1 ? <p className="text-sm">{t`Last borrower: ${last.username} · `}<RelativeTime date={last.issued_at} exact /><AttributionLine acceptedBy={last.accepted_by} issuedBy={last.issued_by} /></p> : null}
     {recent.map(entry => {
       const borrower = link("ledger", { q: entry.username });

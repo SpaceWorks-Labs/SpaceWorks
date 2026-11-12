@@ -1,10 +1,12 @@
 import { t } from "@lingui/core/macro";
 import { useId, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Callout, ErrorText, Modal, Skeleton } from "../../../components/ui";
+import { Callout, ErrorText, Modal } from "../../../components/ui";
 import { StructuredApiError } from "../../../lib/api";
 import { getMemberMachineScope, setMemberMachineScope, type MemberMachineScope } from "./rolesApi";
 import { refreshMembershipAuthority } from "./roleSets";
+import { LogoLoader } from "../../../components/LogoLoader";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 const card = "flex min-h-11 cursor-pointer items-start gap-3 rounded-xl border border-line bg-panel p-3 has-checked:border-accent has-checked:bg-accent-soft has-focus-visible:ring-2 has-focus-visible:ring-focus has-disabled:cursor-not-allowed has-disabled:opacity-60";
 const box = "mt-0.5 h-5 w-5 shrink-0 accent-accent";
@@ -23,7 +25,7 @@ export function MemberMachineTypes({ msId, membershipId, onAuthRefresh, onClose 
   return <Modal open onClose={onClose} title={t`Machine types`}>
     <div className="grid gap-4">
       <p className="text-sm text-muted">{t`A type covers all its machines, including machines added to it later. No selected types means no machines.`}</p>
-      {scope.isPending ? <div role="status" aria-label={t`Loading machine types`}><Skeleton className="h-24 w-full" /></div> : null}
+      {scope.isPending ? <LogoLoader label={t`Loading machine types`} size={48} className="min-h-24 py-3" /> : null}
       {scope.error ? <ErrorText message={scope.error.message} /> : null}
       {scope.data ? <MachineTypeForm key={membershipId} msId={msId} scope={scope.data} onAuthRefresh={onAuthRefresh} onClose={onClose} /> : null}
     </div>
@@ -92,7 +94,7 @@ function MachineTypeForm({ msId, scope, onAuthRefresh, onClose }: {
     {save.error ? <ErrorText message={conflict ? t`Machine type assignment is no longer applicable. Assign Machine Manager first. ${save.error.message}` : save.error.message} /> : null}
     <div className="desk-actions flex flex-wrap justify-end gap-2">
       <button type="button" className="desk-button-ghost" disabled={save.isPending} onClick={onClose}>{t`Close`}</button>
-      <button type="submit" className="desk-button-primary" disabled={save.isPending || conflict}>{save.isPending ? t`Saving…` : t`Save machine types`}</button>
+      <button type="submit" className="desk-button-primary" disabled={save.isPending || conflict}>{save.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Save machine types`}</button>
     </div>
   </form>;
 }

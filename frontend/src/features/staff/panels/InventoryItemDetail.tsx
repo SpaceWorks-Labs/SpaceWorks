@@ -16,6 +16,7 @@ import { formFromProduct, type AdjustmentForm, type AdminProduct, type ItemForm 
 import type { Category, Makerspace } from "./shared";
 import { capabilityOn } from "../../../lib/features";
 import { ItemWaitlist } from "./ItemWaitlist";
+import { ShowOnShelf } from "../shelf/ShowOnShelf";
 export function InventoryItemDetail({ product, makerspace, canViewAudit, kitEnabled, form, setForm, categories, onClose, pending, error, onSave, onArchive,
   adjustForm, setAdjustForm, adjustPending, adjustError, onAdjust, invalidate }: {
   product: AdminProduct; makerspace: Makerspace; canViewAudit: boolean; kitEnabled: boolean; form: ItemForm; setForm: Dispatch<SetStateAction<ItemForm>>;
@@ -35,6 +36,7 @@ export function InventoryItemDetail({ product, makerspace, canViewAudit, kitEnab
     actions={product.is_public ? { secondary: { label: t`View public page ↗`, href: `/m/${makerspace.slug}/items/${product.id}`, external: true } } : undefined}
     tabs={allowed.map(key => ({ key, label: ({ details: t`Details`, stock: t`Stock`, qr: t`QR & assets`, history: t`History`, custody: t`Custody`, related: t`Related` } as Record<string, string>)[key], href: href(key) }))} activeTab={active}
     main={<>
+      {active === "details" ? <ShowOnShelf makerspaceId={makerspace.id} targetType="item" targetId={product.id} /> : null}
       {active === "details" ? <><InventoryItemFields form={form} setForm={setForm} categories={categories} error={error} makerspace={makerspace}>
         {kitEnabled ? <KitDefinitionEditor value={form.kit_components ?? []} onChange={value => setForm(current => ({ ...current, kit_components: value }))} /> : null}
         <ImageUploader endpoint={`/admin/inventory/${product.id}/image`} currentUrl={product.image_url} label={t`Item photo`} onChanged={invalidate} />

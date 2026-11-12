@@ -12,7 +12,6 @@ import hashlib
 from datetime import timedelta
 
 from django.core import signing
-from django.core.cache import cache
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
@@ -29,6 +28,7 @@ from apps.accounts.reauthentication_permissions import RecentReauthenticationMix
 from apps.admin_api.permissions import IsActiveSuperAdmin
 from apps.audit import services as audit
 from apps.openapi_errors import errors
+from config.redis_cache import SharedCacheUnavailable, claim_once
 
 from . import selfhost_move as moves
 from .gate_runtime import assert_write_allowed
@@ -148,7 +148,9 @@ class SelfHostMoveDownloadView(APIView):
     @extend_schema(tags=TAGS, summary="Download a move export through its one-use link", auth=[],
                    responses={(200, "application/octet-stream"): OpenApiResponse(
                        OpenApiTypes.BINARY, description="The age-encrypted move archive."),
-                       404: OpenApiResponse(description="Invalid, used or expired link.")})
+                       404: OpenApiResponse(description="Invalid, used or expired link."),
+                       503: OpenApiResponse(description="shared_cache_unavailable: the one-use check could not "
+                                                        "be made; retry after Retry-After seconds.")})
     def get(self, request, pk, token):
         from apps.accounts.models import User
 
@@ -161,7 +163,12 @@ class SelfHostMoveDownloadView(APIView):
         if (move is None or actor is None or claims.get("m") != str(pk) or not move.artifact_path
                 or claims.get("d") != move.artifact_sha256 or move.status != SelfHostMoveRequest.Status.EXPORTED):
             return Response({"detail": gettext("The download link is invalid or expired.")}, status=404)
-        if not cache.add(f"{SALT}:{hashlib.sha256(token.encode()).hexdigest()}", 1, LINK_SECONDS):
+        try:  # single-use: never claimed in one worker only while Redis is down (decision 339)
+            fresh = claim_once(f"{SALT}:{hashlib.sha256(token.encode()).hexdigest()}", LINK_SECONDS)
+        except SharedCacheUnavailable:
+            return Response({"detail": gettext("Downloads are briefly unavailable. Retry shortly."),
+                             "code": "shared_cache_unavailable"}, status=503, headers={"Retry-After": "5"})
+        if not fresh:
             return Response({"detail": gettext("This download link was already used.")}, status=404)
         try:
             handle = open(move.artifact_path, "rb")

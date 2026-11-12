@@ -33,6 +33,7 @@ EXPLICIT_AUTHORITY_FIELDS = {
     ("machines.MakerspaceMachineTypePolicy", "reminder_lead_days"): "Portable maintenance disclosure timing; recipients require live target machine authority.",
     ("machines.MakerspaceMachineTypePolicy", "grace_days"): "Portable overdue disclosure timing; grants no access or automatic lockout bypass.",
     ("maintenance.MaintenanceSchedule", "anchor"): "Portable recurrence preference; completion still requires target actor authority.",
+    ("makerspaces.Makerspace", "kind"): "Closed-enum space kind (makerspace or organisation) read for wording and defaults; a preserved setting that grants no target authority.",
     ("makerspaces.Makerspace", "lifecycle_state"): (
         "Scheduled-work visibility is target-owned; Lane D resets lifecycle state."
     ),

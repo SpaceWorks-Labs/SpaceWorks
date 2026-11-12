@@ -129,9 +129,9 @@ AUTHORITY_ENTRIES = (
     ),
     *_same(
         "machines.Machine",
-        "is_public is_active",
+        "is_public is_active open_to_all_members",
         D.PRESERVE,
-        "Tenant machine visibility and lifecycle choices travel.",
+        "Tenant machine visibility, lifecycle and open-to-all-members choices travel.",
     ),
     *_same(
         "machines.Machine",

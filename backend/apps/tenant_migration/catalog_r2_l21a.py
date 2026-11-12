@@ -22,7 +22,7 @@ FIELD_NAMES = {
     "events.EventAttendanceReply": "id makerspace event registration asked_at answer note replied_at effect "
                                    "reminded_at",
     "events.EventCrewMember": "id makerspace event member origin crew_role state answers dietary show_publicly "
-                              "registration decided_by decided_at version created_at",
+                              "registration decided_by decided_at version created_at kind position staff_hidden",
     "events.EventCheckInList": "id makerspace event name kind after_entry addon per_person archived_at position "
                                "created_by created_at",
     "events.EventCheckInListScan": "id makerspace checkin_list registration operation_id actor scanned_at undone_at "

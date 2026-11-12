@@ -5,6 +5,9 @@ def gate_tasks(internal, exemptions, resolvers):
     resolvers.update({
         # One bounded chunk of one card job; the job row names its space.
         "apps.card_designs.tasks.process_card_job": ("card_designs.CardJob", 0, "makerspace_id"),
+        # D314c: one background-removal attempt, and one chunk of a bulk photo batch; each row names its space.
+        "apps.card_designs.tasks.process_photo_cutout": ("card_designs.CardPhotoCutout", 0, "makerspace_id"),
+        "apps.card_designs.tasks.process_photo_batch": ("card_designs.CardPhotoBatch", 0, "makerspace_id"),
     })
     exemptions.update({
         "apps.card_designs.tasks.fetch_card_font_task": (

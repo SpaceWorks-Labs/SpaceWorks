@@ -50,7 +50,7 @@ def request_move(actor, makerspace, note=""):
             audit.record(actor, "selfhost_move.requested", makerspace=makerspace, target=move,
                          meta={"status": move.status})
     except IntegrityError:
-        raise MoveConflict("move_request_exists", "This space already has an open move request.") from None
+        raise MoveConflict("move_request_exists", gettext("This space already has an open move request.")) from None
     from .selfhost_move_notifications import notify_requested, notify_status
     notify_requested(move)
     notify_status(move)
@@ -61,7 +61,7 @@ def _locked(move, *expected):
     locked = SelfHostMoveRequest.objects.select_for_update().select_related("makerspace").get(pk=move.pk)
     if locked.status not in expected:
         code = "move_not_approved" if Status.APPROVED in expected else "move_request_closed"
-        raise MoveConflict(code, f"This move request is {locked.get_status_display().lower()}.")
+        raise MoveConflict(code, gettext("This move request is %(status)s.") % {"status": locked.get_status_display().lower()})
     return locked
 
 
@@ -92,7 +92,7 @@ def canonical_one_shot_recipient(raw):
         raise ValidationError({"recipient": gettext("Paste the target server's age public key (age1...).")},
                               code="recipient_key_invalid") from None
     if not settings.BACKUP_AGE_RECIPIENT:
-        raise MoveConflict("platform_key_missing", "BACKUP_AGE_RECIPIENT must be configured before a move export.")
+        raise MoveConflict("platform_key_missing", gettext("BACKUP_AGE_RECIPIENT must be configured before a move export."))
     if value == str(settings.BACKUP_AGE_RECIPIENT).strip().lower():
         raise ValidationError({"recipient": gettext("Use the target server's own key, not the platform key.")},
                               code="recipient_key_invalid")
@@ -113,7 +113,7 @@ def start_export(actor, move, recipient):
                          meta={"status": locked.status, "recipient_fingerprint": fingerprint})
             transaction.on_commit(lambda: _dispatch(locked.pk, value, actor.pk))
     except IntegrityError:
-        raise MoveConflict("move_request_exists", "This space already has another open move request.") from None
+        raise MoveConflict("move_request_exists", gettext("This space already has another open move request.")) from None
     return locked
 
 

@@ -27,7 +27,11 @@ def _snapshot(model, *edges):
     return {edge: AuditReference(S, model) for edge in edges}
 
 
+_ACCESS = ("machine_access.granted", "machine_access.renewed", "machine_access.revoked")
 EDGES = {
+    **_remap("machines.Machine", *((a, "machine_id") for a in _ACCESS)),
+    **_remap("machines.MachineType", *((a, "machine_type_id") for a in _ACCESS)),
+    **_snapshot("accounts.User", *((a, "member_id") for a in _ACCESS)),
     **_remap("events.Event", *((a, "event_id") for a in _INDUCTION), ("certification.guest_granted", "source_event_id"),
              ("certification.granted", "source_event_id"), ("certification.renewed", "source_event_id"),
              ("machine_session.supervised_opened", "event_id"), ("incident.reported", "event_id")),

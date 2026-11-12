@@ -1,4 +1,4 @@
-"""Release-2 lane source-gate declarations, composed in lane order (L2, L11, L12, L23, S-C, L3, S-B, L8, L6, L18, L21a, L22, platform overview, superadmin, parity follow-ups).
+"""Release-2 lane source-gate declarations, composed in lane order (L2, L11, L12, L23, S-C, L3, S-B, L8, L6, L18, L21a, L22, platform overview, superadmin, parity follow-ups, NCA audit).
 
 Split out of `gate_policy_tasks.py` when it crossed the 300-line ceiling; each lane keeps
 its own `gate_policy_r2_<lane>.py` and this function applies them to the shared tables.
@@ -21,6 +21,7 @@ def gate_tasks(exemptions, internal, fanout, resolvers=None):
     from .gate_policy_r2_platform_overview import gate_tasks as platform_overview_tasks
     from .gate_policy_r2_superadmin import gate_tasks as superadmin_tasks
     from .gate_policy_r2_parity import gate_tasks as parity_tasks
+    from .gate_policy_r2_nca import gate_tasks as nca_tasks
 
     l2_tasks(internal, fanout)
     l11_tasks(exemptions)
@@ -37,3 +38,4 @@ def gate_tasks(exemptions, internal, fanout, resolvers=None):
     platform_overview_tasks(exemptions)
     superadmin_tasks(exemptions)
     parity_tasks(resolvers if resolvers is not None else {})
+    nca_tasks(exemptions, internal, fanout, resolvers if resolvers is not None else {})

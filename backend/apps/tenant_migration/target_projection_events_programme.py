@@ -16,6 +16,8 @@ RESET_VALUES = {
     ('events.HackathonTeam', 'seeking_members'): False,
     ('events.HackathonTeam', 'public_profile_refs'): [],
     ('events.HackathonTeam', 'roster_reopened_until'): None,
+    ('events.HackathonTeam', 'deleted_at'): None,
+    ('events.HackathonTeam', 'deleted_snapshot'): {},
     ('events.HackathonFinderProfile', 'opted_in'): False,
     ('events.ApplicationDecision', 'active_draft'): False,
     ('events.HackathonApplication', 'optional_consents'): {},

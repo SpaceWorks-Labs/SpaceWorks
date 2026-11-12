@@ -12,6 +12,9 @@ FANOUT = {
     "apps.events.join_followup.send_join_followups": (
         "Post-event join notices to non-member attendees, one tenant at a time (rides the hourly membership sweep)."
     ),
+    "apps.makerspaces.notifications_profile_open.send_open_notices": (
+        "One-time open-profile notices, one tenant at a time (rides the hourly membership sweep)."
+    ),
     "apps.events.venue_fee_retry.retry_unraised_venue_fees": ("Venue-fee retries for published events, one tenant at a time (batch 5, A12)."),
     "apps.machines.job_sweeps._each": "Machine job quote, pickup and prepay steps, one tenant at a time.",
 }

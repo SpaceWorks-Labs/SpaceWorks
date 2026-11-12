@@ -66,6 +66,7 @@ AUTO_CREATED_FIELD_NAMES = {
     'auth.Group_permissions': frozenset('group id permission'.split()),
     'accounts.User_groups': frozenset('group id user'.split()),
     'accounts.User_user_permissions': frozenset('id permission user'.split()),
+    'presence.DisplayScreen_players': frozenset('anthiasplayer displayscreen id'.split()),
 }
 
 THIRD_PARTY_FIELD_NAMES = {
@@ -95,6 +96,8 @@ FIRST_PARTY_FIELD_NAMES["makerspaces.MemberProject"] |= frozenset(PROJECT_FIELDS
 
 from .catalog_p2_presence import FIELD_NAMES as PRESENCE_FIELDS
 FIRST_PARTY_FIELD_NAMES.update(PRESENCE_FIELDS)
+from .catalog_p2_presence import OMITTED_FIELD_NAMES as PRESENCE_OMITTED_FIELDS  # noqa: E402
+FIRST_PARTY_FIELD_NAMES.update(PRESENCE_OMITTED_FIELDS)
 
 UNMANAGED_FIELD_NAMES = {}
 
@@ -188,6 +191,8 @@ for _label, _names in S0_EXTRA.items():
     FIRST_PARTY_FIELD_NAMES[_label] |= _names
 from .catalog_r2_l10 import FIELD_NAMES as R2_L10_FIELDS  # noqa: E402
 FIRST_PARTY_FIELD_NAMES.update(R2_L10_FIELDS)
+from .catalog_adapter import FIELD_NAMES as ADAPTER_FIELDS  # noqa: E402
+FIRST_PARTY_FIELD_NAMES.update(ADAPTER_FIELDS)
 from .catalog_r2_l11 import FIELD_NAMES as R2_L11_FIELDS, EXTRA_FIELDS as R2_L11_EXTRA  # noqa: E402
 FIRST_PARTY_FIELD_NAMES.update(R2_L11_FIELDS)
 for _label, _names in R2_L11_EXTRA.items():
@@ -258,9 +263,15 @@ from .catalog_r3_org_units import FIELD_NAMES as R3_ORG_UNIT_FIELD_NAMES
 FIRST_PARTY_FIELD_NAMES.update(R3_ORG_UNIT_FIELD_NAMES)
 from .catalog_r3_org_b4 import FIELD_NAMES as R3_ORG_B4_FIELD_NAMES
 FIRST_PARTY_FIELD_NAMES.update(R3_ORG_B4_FIELD_NAMES)
+from .catalog_studio import FIELD_NAMES as STUDIO_FIELD_NAMES
+FIRST_PARTY_FIELD_NAMES.update(STUDIO_FIELD_NAMES)
 from .catalog_l3b import FIELD_NAMES as L3B_FIELD_NAMES
 FIRST_PARTY_FIELD_NAMES.update(L3B_FIELD_NAMES)
 FIRST_PARTY_FIELD_NAMES["makerspaces.Makerspace"] |= {"loan_context_generations"}
 
 from .catalog_booking_decision import FIELD_NAMES as BOOKING_DECISION_FIELDS
 FIRST_PARTY_FIELD_NAMES.update(BOOKING_DECISION_FIELDS)
+from .catalog_account_profile import FIELD_NAMES as ACCOUNT_PROFILE_FIELDS, EXTRA_FIELDS as ACCOUNT_PROFILE_EXTRA  # noqa: E402
+FIRST_PARTY_FIELD_NAMES.update(ACCOUNT_PROFILE_FIELDS)
+for _label, _names in ACCOUNT_PROFILE_EXTRA.items():
+    FIRST_PARTY_FIELD_NAMES[_label] |= _names

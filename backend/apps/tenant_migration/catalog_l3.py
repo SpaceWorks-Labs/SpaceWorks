@@ -26,6 +26,20 @@ FIELD_NAMES = {
     "card_designs.CardJob": "id makerspace kind scope scope_id requested_by params targets idempotency_key total done "
                             "failed attempts state error_code parts result_key result_size result_content_type "
                             "result_expires_at lease_until created_at started_at finished_at",
+    "card_designs.MakerspaceImageAdapter": "id makerspace provider_url secret secret_fingerprint last_test_at "
+                                           "last_test_ok last_test_error updated_at use_platform_provider",
+    "card_designs.PlatformImageAdapter": "id provider_url secret secret_fingerprint last_test_at last_test_ok "
+                                         "last_test_error updated_at",
+    "card_designs.CardPhotoCutout": "id makerspace member_card programme_card event_card staff_card state error_code "
+                                    "attempts source_key cutout_key content_type size_bytes width height use_cutout "
+                                    "provider_scope requested_by by_holder notice_version consent_at created_at updated_at finished_at",
+    # Decision 345(b): a member's background-eraser opt-out is a privacy choice and travels with the space.
+    "card_designs.CardPhotoEraserOptOut": "id makerspace member_card programme_card event_card staff_card opted_out_at "
+                                          "notice_version",
+    "card_designs.CardPhotoBatch": "id makerspace kind event_id created_by state remove_backgrounds holders_consented "
+                                   "file_count applied_count skipped_count failed_count created_at applied_at expires_at",
+    "card_designs.CardPhotoBatchItem": "id batch position filename file_key size_bytes match_kind candidates holder_id "
+                                       "has_photo decision state error_code",
     "card_designs.CardFont": "id family weight state font_key sha256 size_bytes error requested_at fetched_at",
     "card_designs.CardVerifyToken": "id makerspace member_card programme_card event_card staff_card token created_at retired_at "
                                     "retired_reason",
@@ -64,7 +78,8 @@ FIELD_NAMES = {label: frozenset(names.split()) for label, names in FIELD_NAMES.i
 MEMBER_CARD_FIELDS = ("revoked_note last_emailed_at verify_show_name verify_show_photo verify_consent_at "
                       "verify_consent_version email_format number_text")
 EXTRA_FIELDS = {"makerspaces.MemberCard": frozenset(MEMBER_CARD_FIELDS.split())}
-_OMITTED = {"card_designs.CardJob", "card_designs.CardFont", "card_designs.CardVerifyToken",
+_OMITTED = {"card_designs.CardPhotoCutout", "card_designs.CardPhotoBatch", "card_designs.CardPhotoBatchItem",
+            "card_designs.MakerspaceImageAdapter", "card_designs.PlatformImageAdapter", "card_designs.CardJob", "card_designs.CardFont", "card_designs.CardVerifyToken",
             "card_designs.CardHolderExtras", "card_designs.WalletPass", "card_designs.WalletDeviceRegistration",
             "card_designs.MakerspaceWalletCredentials", "card_designs.PlatformWalletCredentials"}
 PROJECTED_LABELS = frozenset(label for label in FIELD_NAMES if label not in _OMITTED)

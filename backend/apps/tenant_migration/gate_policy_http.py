@@ -19,6 +19,10 @@ HTTP_EXEMPTIONS = {
     ),
     **{name: "Signed provider ingress durably records deployment events; status writes gate their resolved tenant; STOP protection must survive frozen tenants."
        for name in PROVIDER_INGRESS_ROUTES},
+    "space-display-register": (
+        "A wall display announces itself before any space has claimed it: the row has no makerspace and a pairing "
+        "code, so there is no tenant to gate; the claiming staff request is gated by its makerspace."
+    ),
     "auth-account-restore-email": "Global identity recovery never reinstates tenant authority.",
     "auth-account-restore-phone": "Global identity recovery never reinstates tenant authority.",
     "auth-account-restore-social-start": "Global provider recovery intent has no tenant mutation.",

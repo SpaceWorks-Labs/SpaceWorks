@@ -12,5 +12,6 @@ PROJECTED_LABELS = frozenset(FIELD_NAMES)
 
 def unique_rules(remap, policy):
     follow = "Unique per space or per remapped membership; follows the imported parent."
+    # The two card-number constraints include the makerspace now, so only the per-membership one is a risk.
     return {("card_designs.StaffCard", name): policy(remap, follow) for name in (
-        "uniq_staff_card_number", "uniq_live_staff_card_per_membership", "uniq_staff_card_number_text")}
+        "uniq_live_staff_card_per_membership",)}

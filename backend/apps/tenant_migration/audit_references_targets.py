@@ -50,6 +50,7 @@ def audit_target_dispositions(models=MODELS):
             'events.EventTicketType',
             'machines.ConsumableCostRecord',
             'machines.MachineMaterial',
+            'machines.MachineTypeTemplate',
             'notifications.MemberNotificationPreference',
             'notifications.NotificationPreference',
             'operations.SavedView',
@@ -57,6 +58,9 @@ def audit_target_dispositions(models=MODELS):
             'presence.PresencePreference',
             'presence.PresenceSession',
             'presence.PresenceSettings',
+            'presence.DisplayScreen',
+            'presence.AnthiasPlayer',
+            'presence.SpaceNowConfig',
         }:
             # Preferences can be deleted; unpromoted artwork reservations do not
             # travel. Their immutable audit history still survives projection.

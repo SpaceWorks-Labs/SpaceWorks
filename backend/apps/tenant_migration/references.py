@@ -72,6 +72,12 @@ OMITTED_TARGET_RELATIONS = {
         "accounts.MemberClaimCode",
         "omitted_target_model",
     ),
+    # Account-level profile projects are omitted from a dump (account-owned), so a presence session keeps its row
+    # and the project link is nulled with provenance.
+    ("presence.PresenceSession", "account_project"): NullWithProvenance(
+        "makerspaces.AccountProject",
+        "omitted_target_model",
+    ),
     # Release 2 L5: a claim keeps its row; the bearer pay link it came through is dropped.
     ("payments.PaymentClaim", "pay_link"): NullWithProvenance(
         "payments.PaymentPayLink",

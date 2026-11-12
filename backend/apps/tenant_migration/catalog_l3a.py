@@ -10,6 +10,7 @@ _FIELDS = {
     "machines.EventInductionLink": "id makerspace event certification_type created_by created_at",
     "machines.GuestCertificationGrant": ("id makerspace certification_type user source_event granted_by granted_at "
                                          "expires_at revoked_at revoked_by notes"),
+    "machines.MachineAccessGrant": "id makerspace member machine machine_type granted_by granted_at expires_at note source revoked_at revoked_by expiry_notice_sent_at",
     "machines.SupervisedSession": "id makerspace machine instructor event note opened_at closed_at closed_by",
     "machines.SupervisedParticipant": "id session user added_by added_at removed_at",
     "machines.SupervisedUse": "id session user instructor started_at ended_at note",
@@ -24,6 +25,7 @@ PROJECTED_LABELS = frozenset(FIELD_NAMES)
 _PRESERVED = {
     "machines.EventInductionLink": "created_at",
     "machines.GuestCertificationGrant": "granted_at expires_at revoked_at notes",
+    "machines.MachineAccessGrant": "granted_at expires_at note source revoked_at expiry_notice_sent_at",
     "machines.SupervisedSession": "note opened_at closed_at",
     "machines.SupervisedParticipant": "added_at removed_at",
     "machines.SupervisedUse": "started_at ended_at note",

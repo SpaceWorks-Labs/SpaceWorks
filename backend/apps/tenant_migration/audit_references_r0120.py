@@ -23,4 +23,21 @@ EDGES = {
     # E-B1: badge designs.
     ("card_design.badge_converted", "design_id"): AuditReference(R, "card_designs.CardDesign"),
     ("card_design.role_variant_created", "design_id"): AuditReference(R, "card_designs.CardDesign"),
+    # E-B1/E-B2/E-B3 and the 0.12.0 hosting / notification lanes: ids the drift guard found in audit meta.
+    ("card_design.org_default_created", "design_id"): AuditReference(R, "card_designs.CardDesign"),
+    ("card_design.org_default_created", "organization_id"): AuditReference(S, "organizations.Organization"),
+    ("card_number_scheme.published", "design_id"): AuditReference(R, "card_designs.CardDesign"),
+    ("card_number_scheme.published", "scheme_id"): AuditReference(R, "card_designs.CardNumberScheme"),
+    ("card_number_scheme.published", "title_id"): AuditReference(R, "makerspaces.MembershipTitle"),
+    ("card_number_scheme.updated", "scheme_id"): AuditReference(R, "card_designs.CardNumberScheme"),
+    ("card_number_scheme.updated", "title_id"): AuditReference(R, "makerspaces.MembershipTitle"),
+    ("card_verification.staff_viewed", "card_id"): AuditReference(R, "makerspaces.MemberCard"),
+    ("event.crew.reordered", "event_id"): AuditReference(R, "events.Event"),
+    ("event.crew.updated", "crew_id"): AuditReference(R, "events.EventCrewMember"),
+    ("event.crew.updated", "event_id"): AuditReference(R, "events.Event"),
+    ("event.submission_reinstated", "event_id"): AuditReference(R, "events.Event"),
+    ("event.submission_reinstated", "stage_id"): AuditReference(R, "events.SubmissionStage"),
+    ("makerspace.created", "hosting_request_id"): AuditReference(S, "hosting_requests.HostingRequest"),
+    ("member_card.auto_issue_skipped", "membership_id"): AuditReference(R, "makerspaces.MakerspaceMembership"),
+    ("notification_destination.secret_rotated", "destination_id"): AuditReference(R, "integrations.NotificationDestination"),
 }

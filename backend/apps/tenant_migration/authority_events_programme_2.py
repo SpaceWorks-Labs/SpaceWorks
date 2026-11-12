@@ -77,6 +77,8 @@ FIELDS = {
     ('events.HackathonTeam', 'public_profile_refs'): 'Authored definition or historical workflow evidence; preserved behind reset operational gates and live target authority.',
     ('events.HackathonTeam', 'roster_hash'): 'Authored definition or historical workflow evidence; preserved behind reset operational gates and live target authority.',
     ('events.HackathonTeam', 'roster_reopened_until'): 'Authored definition or historical workflow evidence; preserved behind reset operational gates and live target authority.',
+    ('events.HackathonTeam', 'deleted_at'): 'Authored definition or historical workflow evidence; preserved behind reset operational gates and live target authority.',
+    ('events.HackathonTeam', 'deleted_snapshot'): 'Authored definition or historical workflow evidence; preserved behind reset operational gates and live target authority.',
     ('events.HackathonTeam', 'seeking_members'): 'Programme authority/disclosure input; imported live grants, selections and publication are reset and runtime policy rechecks the target.',
     ('events.HackathonTeam', 'skills'): 'Authored definition or historical workflow evidence; preserved behind reset operational gates and live target authority.',
     ('events.HackathonTeam', 'state'): 'Programme authority/disclosure input; imported live grants, selections and publication are reset and runtime policy rechecks the target.',

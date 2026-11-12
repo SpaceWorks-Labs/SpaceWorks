@@ -46,7 +46,7 @@ FIELD_NAMES = {
     'events.ApplicationReviewConflict': frozenset('id reason_code created_at event reviewer application cohort'.split()),
     'events.ApplicationDecisionBatch': frozenset('id state version created_at committed_at event actor'.split()),
     'events.ApplicationDecision': frozenset('id outcome reason_code expected_subject_version sent_revision active_draft review_override_code sent_at batch application cohort'.split()),
-    'events.HackathonTeam': frozenset('id public_id name normalized_name state version zone table seeking_members finder_intro skills public_profile_refs roster_hash locked_at eligibility_issue roster_reopened_until created_at event leader'.split()),
+    'events.HackathonTeam': frozenset('id public_id name normalized_name state version zone table seeking_members finder_intro skills public_profile_refs roster_hash locked_at eligibility_issue roster_reopened_until deleted_at deleted_snapshot created_at event leader'.split()),
     'events.HackathonTeamMember': frozenset('id state joined_at left_at event team application member creator'.split()),
     'events.HackathonTeamInvite': frozenset('id token_digest email_digest expires_at revoked_at redeemed_at created_at team redeemed_by created_by'.split()),
     'events.HackathonFinderProfile': frozenset('id version opted_in intro skills event member'.split()),

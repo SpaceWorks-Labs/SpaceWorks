@@ -144,8 +144,12 @@ from .catalog_r3_org_units import PROJECTED_LABELS as R3_ORG_UNIT_PROJECTED
 PROJECTED_MODEL_LABELS |= R3_ORG_UNIT_PROJECTED
 from .catalog_r3_org_b4 import PROJECTED_LABELS as R3_ORG_B4_PROJECTED
 PROJECTED_MODEL_LABELS |= R3_ORG_B4_PROJECTED
+from .catalog_studio import PROJECTED_LABELS as STUDIO_PROJECTED
+PROJECTED_MODEL_LABELS |= STUDIO_PROJECTED
 from .catalog_l3b import PROJECTED_LABELS as L3B_PROJECTED
 PROJECTED_MODEL_LABELS |= L3B_PROJECTED
+from .catalog_adapter import PROJECTED_LABELS as ADAPTER_PROJECTED
+PROJECTED_MODEL_LABELS |= ADAPTER_PROJECTED
 
 PRESERVE_LIVE_MODEL_LABELS = frozenset({"machines.MachineOperator"})
 
@@ -221,6 +225,10 @@ AUTO_CREATED_TABLE_RULES = {
     "accounts.User_user_permissions": TableRule(
         ModelDisposition.EMPTY,
         "Imported users receive no source-global direct permissions.",
+    ),
+    "presence.DisplayScreen_players": TableRule(
+        ModelDisposition.EMPTY,
+        "Links a source display to its Anthias players; both models are omitted, the target pairs its own.",
     ),
 }
 

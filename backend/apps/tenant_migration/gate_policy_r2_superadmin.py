@@ -35,6 +35,10 @@ TASKS = {
     "apps.managed_hosting.tasks.sweep_managed_hosting_task": (
         "Managed-hosting trials and billing: platform rows; read-only is a space-control lifecycle step."
     ),
+    "apps.managed_hosting.tasks.sweep_limit_thresholds_task": (
+        "Limit warnings (decision 328a): inbox rows and threshold markers are written only inside tenant_write, so a "
+        "gated space is skipped; nothing in a space's own data is changed."
+    ),
 }
 
 

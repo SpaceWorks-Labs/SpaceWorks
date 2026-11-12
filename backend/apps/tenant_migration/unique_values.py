@@ -86,8 +86,12 @@ from .catalog_r3_org_units import unique_rules as _r3_org_units_unique_rules  # 
 DEPLOYMENT_GLOBAL_UNIQUE_RULES.update(_r3_org_units_unique_rules(REMAP, _policy))
 from .catalog_r3_org_b4 import unique_rules as _r3_org_b4_unique_rules  # noqa: E402
 DEPLOYMENT_GLOBAL_UNIQUE_RULES.update(_r3_org_b4_unique_rules(REMAP, _policy))
+from .catalog_studio import unique_rules as _studio_unique_rules  # noqa: E402
+DEPLOYMENT_GLOBAL_UNIQUE_RULES.update(_studio_unique_rules(REMAP, _policy))
 from .catalog_l3b import unique_rules as _l3b_unique_rules  # noqa: E402
 DEPLOYMENT_GLOBAL_UNIQUE_RULES.update(_l3b_unique_rules(REMAP, _policy))
+from .catalog_t3_unique import unique_rules as _t3_unique_rules  # noqa: E402
+DEPLOYMENT_GLOBAL_UNIQUE_RULES.update(_t3_unique_rules(REMAP, _policy))
 
 
 from .unique_values_booking_decision import RULES as BOOKING_DECISION_UNIQUE_RULES
@@ -109,3 +113,6 @@ USER_IDENTITY_UNIQUE_RULES = {
     "uniq_member_telegram_id": "Member-only identity; source proofs never travel.",
     "uniq_platform_email": "Platform principals remain inert provenance, never tenant authority.",
 }
+# Decision 343 follow-up: machine-type documents.
+from .unique_values_machine_type_setup import RULES as MACHINE_TYPE_SETUP_UNIQUE_RULES  # noqa: E402
+DEPLOYMENT_GLOBAL_UNIQUE_RULES.update(MACHINE_TYPE_SETUP_UNIQUE_RULES)

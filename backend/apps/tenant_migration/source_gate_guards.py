@@ -110,6 +110,11 @@ def validate_webhook_coverage(apps_dir=APPS_DIR):
             HTTP_EXEMPTIONS["stripe-connect-webhook"],
         "apps.integrations.views.TelegramWebhookView.post":
             HTTP_EXEMPTIONS["telegram-webhook"],
+        # Staff management of a device adapter's push endpoint (not an inbound webhook): the service takes
+        # `devices.services_locks.lock_tenant`, which calls `assert_write_allowed` for the device's tenant.
+        **{f"apps.devices.views_adapter_push.{target}": (
+            "Staff adapter push-endpoint config: the service gates its tenant through lock_tenant -> assert_write_allowed.")
+            for target in ("AdapterWebhookView.put", "AdapterWebhookView.delete", "AdapterWebhookRotateView.post")},
     }
     stale = set(exemptions) - actual
     if stale:

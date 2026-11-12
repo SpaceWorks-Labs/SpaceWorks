@@ -55,6 +55,7 @@ JSON_FIELDS = frozenset({
     ('events.HackathonSubmission', 'reuse_declaration'),
     ('events.HackathonSubmission', 'tech_tags'),
     ('events.HackathonSubmission', 'track_ids'),
+    ('events.HackathonTeam', 'deleted_snapshot'),
     ('events.HackathonTeam', 'public_profile_refs'),
     ('events.HackathonTeam', 'skills'),
     ('events.HackathonTrack', 'criteria'),

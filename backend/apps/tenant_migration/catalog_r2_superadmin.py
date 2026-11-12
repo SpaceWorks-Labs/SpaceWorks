@@ -28,6 +28,8 @@ FIELD_NAMES = {
         "id hosting_enabled auto_enforce_enabled grace_days provider stripe_secret_key stripe_webhook_secret razorpay_key_id "
         "razorpay_key_secret razorpay_webhook_secret updated_by updated_at".split()),
     "managed_hosting.PlatformThrottleRate": frozenset("id scope rate updated_by updated_at".split()),
+    "managed_hosting.PlatformLimitDefault": frozenset("id key value updated_by updated_at".split()),
+    "managed_hosting.SpaceLimitThreshold": frozenset("id makerspace key level notified_at".split()),
     "managed_hosting.SpaceHostingType": frozenset("id makerspace hosting_type updated_by updated_at".split()),
 }
 EXTRA_FIELDS = {

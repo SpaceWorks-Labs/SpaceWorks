@@ -1,4 +1,4 @@
-from django.utils.translation import gettext
+from django.utils.translation import gettext, gettext_lazy
 from django.conf import settings
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
@@ -22,8 +22,8 @@ from .views_common import AUTH_ERRORS, CONFLICT, FIELD_ERRORS, NOT_FOUND, protoc
 from .views_import import _job
 
 ARCHIVE_WARNING = (
-    "Migration does not delete the source tenant. Cutover archives it through the "
-    "two-key receipt flow, and archives are outside the purge guarantee."
+    gettext_lazy("Migration does not delete the source tenant. Cutover archives it through the "
+    "two-key receipt flow, and archives are outside the purge guarantee.")
 )
 
 

@@ -77,7 +77,12 @@ def prepare_import_handle(row, reservations=None):
         return False
     if PublicHandleRedirect.objects.filter(**{f"{owner_key[0]}_id": owner_key[1]}, expires_at__gt=timezone.now()).exists():
         return False
-    if owner_key[0] == "user" and not MemberProfile.objects.filter(pk=row["profile_id"], membership__user_id=owner_key[1]).exists():
+    # Decision 305: a handle belongs to the ACCOUNT and its legacy `profile` pointer is optional, so a
+    # row with no profile is a valid account-level claim. A row that DOES name a legacy profile must
+    # still name one of this user's own (a mismatched pointer would attach another person's profile).
+    profile_id = row.get("profile_id")
+    if owner_key[0] == "user" and profile_id is not None and not MemberProfile.objects.filter(
+            pk=profile_id, membership__user_id=owner_key[1]).exists():
         return False
     row["handle"] = handle
     handles.add(handle)

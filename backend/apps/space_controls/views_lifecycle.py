@@ -58,7 +58,7 @@ class UnarchiveView(_ControlView):
 
         space = Makerspace.objects.get(pk=pk)
         if not is_archived(space):
-            raise SpaceControlConflict("space_not_archived", "This space is not archived.")
+            raise SpaceControlConflict("space_not_archived", gettext("This space is not archived."))
         with transaction.atomic(), control_context():
             try:
                 lifecycle.unarchive(space, actor)
@@ -85,7 +85,7 @@ class PurgeView(_ControlView):
         if data["confirm_slug"] != space.slug:
             raise ValidationError({"confirm_slug": gettext("Type the space's slug exactly to confirm."), "code": "slug_mismatch"})
         if not is_archived(space):
-            raise SpaceControlConflict("space_not_archived", "Only an archived space can be purged.")
+            raise SpaceControlConflict("space_not_archived", gettext("Only an archived space can be purged."))
         try:
             with control_context():
                 lifecycle.purge(space, actor)

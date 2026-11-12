@@ -87,7 +87,7 @@ def transfer_ownership(actor, makerspace_id, *, email, previous_membership_id=No
     with transaction.atomic(), control_context():
         space = Makerspace.objects.get(pk=makerspace_id)
         if not is_servable(space):
-            raise SpaceControlConflict("space_not_active", "Ownership can be transferred only in an active space.")
+            raise SpaceControlConflict("space_not_active", gettext("Ownership can be transferred only in an active space."))
         previous = _previous(space, previous_membership_id)
         person = User.objects.filter(person_q(), email__iexact=email).first()
         if person is not None and previous is not None and person.pk == previous.user_id:
@@ -96,8 +96,8 @@ def transfer_ownership(actor, makerspace_id, *, email, previous_membership_id=No
             if not onboarding_available(space):
                 raise SpaceControlConflict(
                     "invitation_unavailable",
-                    "This person has no account in the space and email invitations are off here. Turn on "
-                    "the Email module, or ask them to join the space first.")
+                    gettext("This person has no account in the space and email invitations are off here. Turn on "
+                    "the Email module, or ask them to join the space first."))
             invitation = issue(actor, space.pk, email=email, roles=[SPACE_MANAGER])
             audit.record(actor, "space_control.ownership_invited", makerspace=space, target=space,
                          meta={"invitation_id": invitation[0].pk})

@@ -59,6 +59,13 @@ READ_ONLY_OPERATIONS = SETTLEMENT_OPERATIONS | frozenset({
     "notification_contract_outbox", "notification_escalation", "notification_legacy_inbound",
     "notification_media_cleanup", "notification_retention", "presence_expiry",
     "public_page_asset_cleanup", "rebuild_refund_cases", "report_rollup", "subject_export_recovery",
+    # Device adapters (NCA audit 0.12.0): push delivery and byte/telemetry retention create nothing new, and the
+    # safety pass only powers an idle machine off or ends an over-cap session, which protects people (decision 332b).
+    "devices.adapter_webhook", "devices.adapter_retention", "devices.adapter_safety",
+    # A card photo batch stalled past its expiry is closed and its temporary photos deleted (retention).
+    "card_photo_batch_expiry",
+    # The machine-access "ends within a week" reminder delivers a notice about an existing grant.
+    "machine_access_expiry",
 })
 
 

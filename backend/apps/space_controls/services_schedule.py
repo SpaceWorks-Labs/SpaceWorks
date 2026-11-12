@@ -53,7 +53,7 @@ def schedule(actor, makerspace_id, *, archive_on=None, purge_grace_days=90, note
         space = locked_space(makerspace_id)
         state = locked_state(space)
         if state.has_schedule:
-            raise SpaceControlConflict("schedule_exists", "This space already has a schedule. Cancel it first.")
+            raise SpaceControlConflict("schedule_exists", gettext("This space already has a schedule. Cancel it first."))
         if is_archived(space):
             if archive_on is not None:
                 raise ValidationError({"archive_on": gettext("This space is already archived; only its purge can be scheduled.")})
@@ -63,7 +63,7 @@ def schedule(actor, makerspace_id, *, archive_on=None, purge_grace_days=90, note
                 raise ValidationError({"archive_on": gettext("Choose a future date and time for the archive.")})
             state.archive_on, state.purge_due_at = archive_on, None
         else:
-            raise SpaceControlConflict("space_not_active", "This space is being imported and cannot be scheduled.")
+            raise SpaceControlConflict("space_not_active", gettext("This space is being imported and cannot be scheduled."))
         state.purge_grace_days, state.schedule_note = purge_grace_days, note
         state.scheduled_by, state.scheduled_at, state.reminders_sent = actor, now, []
         state.save()
@@ -83,7 +83,7 @@ def cancel(actor, makerspace_id):
         space = locked_space(makerspace_id)
         state = locked_state(space)
         if not state.has_schedule:
-            raise SpaceControlConflict("no_schedule", "This space has no scheduled archive or purge.")
+            raise SpaceControlConflict("no_schedule", gettext("This space has no scheduled archive or purge."))
         _clear(state)
         audit.record(actor, "space_control.schedule_cancelled", makerspace=space, target=space, meta={})
         from .schedule_mail import schedule_cancelled_mail

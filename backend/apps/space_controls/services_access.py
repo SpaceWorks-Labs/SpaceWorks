@@ -50,7 +50,7 @@ def suspend(actor, makerspace_id, reason):
         space = locked_space(makerspace_id)
         # Explicit state: the superadmin's admission makes a paused space "servable" to them.
         if space.lifecycle_state != Makerspace.LifecycleState.ACTIVE or not is_servable(space):
-            raise SpaceControlConflict("space_not_active", "Only an active space can be paused.")
+            raise SpaceControlConflict("space_not_active", gettext("Only an active space can be paused."))
         state = locked_state(space)
         space.lifecycle_state = Makerspace.LifecycleState.SUSPENDED
         space.save(update_fields=["lifecycle_state", "updated_at"])
@@ -67,7 +67,7 @@ def unsuspend(actor, makerspace_id):
     with transaction.atomic(), control_context():
         space = locked_space(makerspace_id)
         if space.lifecycle_state != Makerspace.LifecycleState.SUSPENDED:
-            raise SpaceControlConflict("space_not_suspended", "This space is not paused.")
+            raise SpaceControlConflict("space_not_suspended", gettext("This space is not paused."))
         state = locked_state(space)
         _clear_suspension(space, state)
         audit.record(actor, "space_control.unsuspended", makerspace=space, target=space,
@@ -94,12 +94,12 @@ def set_read_only(actor, makerspace_id, reason, *, source=SOURCE.MANUAL):
     with transaction.atomic(), control_context():
         space = locked_space(makerspace_id)
         if not (is_servable(space) or space.lifecycle_state == Makerspace.LifecycleState.SUSPENDED):
-            raise SpaceControlConflict("space_not_active", "Only an active or paused space can be made read-only.")
+            raise SpaceControlConflict("space_not_active", gettext("Only an active or paused space can be made read-only."))
         state = locked_state(space)
         if state.read_only_at is not None:
             if source != SOURCE.MANUAL:
                 return None
-            raise SpaceControlConflict("space_already_read_only", "This space is already read-only.")
+            raise SpaceControlConflict("space_already_read_only", gettext("This space is already read-only."))
         state.read_only_at, state.read_only_reason = timezone.now(), reason
         state.read_only_source, state.read_only_by = source, actor
         state.save(update_fields=["read_only_at", "read_only_reason", "read_only_source", "read_only_by",
@@ -121,7 +121,7 @@ def lift_read_only(actor, makerspace_id, *, source=None):
         if state.read_only_at is None or (source is not None and state.read_only_source != source):
             if source is not None:
                 return None
-            raise SpaceControlConflict("space_not_read_only", "This space is not read-only.")
+            raise SpaceControlConflict("space_not_read_only", gettext("This space is not read-only."))
         previous = state.read_only_source
         state.read_only_at, state.read_only_reason, state.read_only_source, state.read_only_by = None, "", "", None
         state.save(update_fields=["read_only_at", "read_only_reason", "read_only_source", "read_only_by",

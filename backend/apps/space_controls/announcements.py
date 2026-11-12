@@ -72,7 +72,7 @@ def cancel(actor, announcement_id):
     with transaction.atomic():
         row = A.objects.select_for_update().get(pk=announcement_id)
         if row.cancelled_at is not None:
-            raise SpaceControlConflict("announcement_cancelled", "This announcement is already cancelled.")
+            raise SpaceControlConflict("announcement_cancelled", gettext("This announcement is already cancelled."))
         row.cancelled_at, row.cancelled_by = timezone.now(), actor
         row.save(update_fields=["cancelled_at", "cancelled_by"])
         audit.record(actor, "space_control.announcement_cancelled", makerspace=None, target=row, meta={})

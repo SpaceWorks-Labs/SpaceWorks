@@ -117,7 +117,7 @@ test_suite() {
     -e POSTGRES_USER=makerspace -e POSTGRES_PASSWORD=makerspace \
     -e POSTGRES_DB=makerspace_manager postgres:16 >/dev/null
   docker run -d --network "$RUN" --network-alias redis \
-    --label "spaceworks.test=$RUN" redis:7-alpine >/dev/null
+    --label "spaceworks.test=$RUN" redis:7.4.11-alpine >/dev/null
   docker run -d --network "$RUN" --network-alias minio \
     --label "spaceworks.test=$RUN" -e MINIO_ROOT_USER=minioadmin \
     -e MINIO_ROOT_PASSWORD=minioadmin pgsty/silo:RELEASE.2026-09-16T00-00-00Z server /data >/dev/null

@@ -66,6 +66,9 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     setupFiles: ["./src/test/setup.ts"],
+    // The full suite (1,200 files) runs many jsdom workers at once; under that load a few async UI tests
+    // passed alone but crossed the 5 s default. 15 s keeps real hangs failing without false reds.
+    testTimeout: 15_000,
     // Tests of checkout and OAuth redirects call window.location.assign; jsdom reports that single message as
     // "not implemented". The redirect target is asserted where it matters, and every other log still prints.
     onConsoleLog: (log) => (log.includes("Not implemented: navigation to another Document") ? false : undefined),

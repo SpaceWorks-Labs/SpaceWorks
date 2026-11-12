@@ -56,7 +56,9 @@ def test_staff_sharing_phone_is_never_a_consented_member_or_a_revoked_members_al
     space = report_space("recon-r-consent-kind")
     user = member(space, "recon-r-kind-member")
     staff = make_member("recon-r-kind-staff", space)
-    verified_phone(staff, user.phone_e164)
+    # Decision 63: person phones are unique, so staff cannot share the member's number any
+    # more; a staff consent row on its own verified number must still never count.
+    verified_phone(staff, "+14155552672")
     config = ChannelConfiguration.objects.create(makerspace=space, channel="sms", provider="twilio", sender_key="sender")
     consent(space, staff, config)
     assert consented_members(space, "sms") == 0

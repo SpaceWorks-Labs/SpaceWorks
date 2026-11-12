@@ -1,6 +1,7 @@
 from datetime import timedelta
 
 import pytest
+from apps.makerspaces.models import MakerspaceMembership
 from django.db import transaction
 from django.utils import timezone
 
@@ -88,7 +89,7 @@ def test_withdrawn_verifier_authority_and_source_revision_block_retry(lane):
     record(lane.manager, "membership.verified", makerspace=lane.space, target=lane.membership)
     send_member_verified(lane.membership)
     envelope = NotificationEnvelope.objects.get(recipient=lane.owner)
-    lane.manager.makerspace_memberships.update(status="revoked")
+    MakerspaceMembership.all_tracks.filter(user=lane.manager).update(status="revoked")
     assert resolve(envelope) == []
 
 

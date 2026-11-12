@@ -75,10 +75,11 @@ def test_d6_conjunction_preview_download_saved_view_and_cross_tenant(monkeypatch
     grant = create_manual_grant(makerspace=space, event=event, user=grantee,
                                          granted_by=manager, permissions=["manage_registrations"])
     state = {"report_key": "event-registrations", "filters": filters(event)}
+    # Decision 248 / EB1: a live per-event grant opens that event's reports without tenant VIEW_AUDIT;
+    # a person with no grant is still refused.
+    stranger = account("report-stranger")
     with pytest.raises(PermissionDenied):
-        authorize_view(grantee, space, state)
-    # Delegated helpers stay members; organization authority supplies tenant VIEW_AUDIT.
-    grant_organization_action(space, grantee, Action.VIEW_AUDIT)
+        authorize_view(stranger, space, state)
     assert reports.report_data("event-registrations", space.pk, actor=grantee, report_filters=filters(event))["typed_rows"]
     assert authorize_view(grantee, space, state).key == "event-registrations"
     foreign = open_event(event_space("foreign-report"))

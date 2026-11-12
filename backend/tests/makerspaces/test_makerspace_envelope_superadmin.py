@@ -31,7 +31,7 @@ def staff_membership(space, username):
         membership_role=MakerspaceMembership.Role.INVENTORY_MANAGER,
         role=User.Role.REQUESTER,
     )
-    return MakerspaceMembership.objects.get(makerspace=space, user__username=username)
+    return MakerspaceMembership.all_tracks.get(makerspace=space, user__username=username)
 
 
 def revoke(actor, membership):
@@ -48,8 +48,10 @@ def test_legacy_delete_deactivates_staff_and_preserves_membership_history():
     membership.refresh_from_db()
     membership.user.refresh_from_db()
     assert membership.status == "revoked"
-    assert not membership.user.is_active
-    assert AuditLog.objects.filter(action="staff_account.deactivated", makerspace=space).exists()
+    # 0.12.0 account split (decision 63, one account per person): revoking a staff row ends the staff
+    # access only; the person's account stays active (disabling it is the superadmin's separate action).
+    assert membership.user.is_active
+    assert AuditLog.objects.filter(action="staff_role.revoked", makerspace=space).exists()
 
 
 @pytest.mark.parametrize(
@@ -72,7 +74,7 @@ def test_superadmin_cannot_revoke_inside_an_unservable_space(state):
     response = revoke(superadmin(), membership)
 
     assert response.status_code == 404
-    assert MakerspaceMembership.objects.filter(pk=membership.pk).exists()
+    assert MakerspaceMembership.all_tracks.filter(pk=membership.pk).exists()
     assert not AuditLog.objects.filter(action="staff.membership_revoked").exists()
 
 
@@ -82,5 +84,5 @@ def test_space_manager_cannot_revoke_inside_their_own_archived_space():
     membership = staff_membership(space, "envelope-sm-archived-staff")
     Makerspace.objects.filter(pk=space.pk).update(archived_at=timezone.now())
 
-    assert revoke(manager, membership).status_code == 401
-    assert MakerspaceMembership.objects.filter(pk=membership.pk).exists()
+    assert revoke(manager, membership).status_code == 404  # 0.12.0: sessions are tenant-free (no 401); the archived space is hidden
+    assert MakerspaceMembership.all_tracks.filter(pk=membership.pk).exists()

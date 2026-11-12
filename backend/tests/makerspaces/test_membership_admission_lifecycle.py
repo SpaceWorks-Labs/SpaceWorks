@@ -107,7 +107,7 @@ def test_membership_off_keeps_core_walk_in_and_staff_invitation_behaviour():
     from rest_framework.exceptions import ValidationError
     from apps.accounts.staff_accounts import create_staff_account
 
-    with pytest.raises(ValidationError, match="separate staff account"):
+    with pytest.raises(ValidationError, match="staff roles screen"):
         membership_services.invite_membership(actor, space, invited.email, staff_role)
     assert not MakerspaceMembership.objects.filter(user=invited, makerspace=space).exists()
     invited.refresh_from_db()
@@ -219,12 +219,14 @@ def test_outbound_notice_failure_never_rolls_back_awaiting_payment(monkeypatch):
 
 def test_configured_core_creation_keeps_the_existing_space_manager_protection():
     from apps.admin_api.services_staff import attach_staff_membership
-    from rest_framework.exceptions import ValidationError
     from tests.makerspaces.test_membership_j1 import manager
     space, original, _, _, _ = _setup("open")
     actor = manager(space, "another-admission-manager")
-    with pytest.raises(ValidationError):
-        attach_staff_membership(actor=actor, makerspace=space, username=original.username,
-                                role=member_role(space))
-    original_membership = MakerspaceMembership.objects.get(user=original, makerspace=space)
+    # Decision 63 (one account per person): the Space Manager's authority is a STAFF-track row, so a
+    # community Member attach for the same person lands on a separate community row and can never
+    # overwrite it; the protection is now structural rather than a refusal.
+    membership, _ = attach_staff_membership(actor=actor, makerspace=space, username=original.username,
+                                            role=member_role(space))
+    assert membership.track == MakerspaceMembership.Track.COMMUNITY
+    original_membership = MakerspaceMembership.staff_tracks.get(user=original, makerspace=space)
     assert original_membership.assigned_role.slug == "space_manager"

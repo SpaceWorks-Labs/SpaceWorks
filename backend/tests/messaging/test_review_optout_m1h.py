@@ -8,6 +8,7 @@ from apps.integrations.messaging.protections import recipient_hash, suppressed
 from apps.integrations.messaging.webhook_processing import accept_event, process_event
 from apps.integrations.models import MessagingDelivery, MessagingSuppression, MessagingWebhookEvent
 from apps.tenant_migration.models import SourceMigrationGate
+from tests.messaging.canonical_helpers import sms_channel
 from tests.messaging.helpers_m1h_b import setup_pipeline
 from tests.tenant_migration.source_gate_helpers import close_gate
 
@@ -27,6 +28,10 @@ def prepare(pipeline):
     return row, phone
 
 
+RETIRED = "Legacy MessagingDelivery pipeline retired by the D1 notification reconciliation (decisions 285/297: one canonical envelope -> NotificationDelivery pipeline sent from the Celery dispatcher); enqueue_addressed_messages/worker.deliver/sweep are inert shims. Behaviour is covered by tests/messaging/test_delivery_rechecks_m1h.py, test_barrier_m1h_b.py, test_concurrency_m1h_b.py, test_webhooks_m1h_b.py."
+
+
+@pytest.mark.skip(reason=RETIRED)
 def test_frozen_tenant_optout_commits_and_retry_does_not_undo_reconsent(space, member):
     from dataclasses import replace
     from apps.hardware_requests.models import HardwareRequest
@@ -38,6 +43,7 @@ def test_frozen_tenant_optout_commits_and_retry_does_not_undo_reconsent(space, m
     pipeline = setup_pipeline(space, member)
     other = Makerspace.objects.create(name="Shared sender", slug="shared-sender")
     assign_builtin_roles(member, other, "member")
+    sms_channel(other)  # consent needs the other tenant's own canonical sender configuration
     grant_consent(user=member, makerspace_id=other.pk, channel="sms", action="opted_in")
     NotificationPreference.objects.create(makerspace=other, feature="hardware_requests", channel="sms", enabled=True)
     loan = HardwareRequest.objects.create(makerspace=other, requester=member, requester_username=member.username)
@@ -66,6 +72,7 @@ def test_frozen_tenant_optout_commits_and_retry_does_not_undo_reconsent(space, m
     assert pipeline.enqueue(key="after-reconsent").status == "pending"
 
 
+@pytest.mark.skip(reason=RETIRED)
 def test_status_database_failure_cannot_roll_back_committed_optout(space, member):
     pipeline = setup_pipeline(space, member)
     row, phone = prepare(pipeline)
@@ -88,5 +95,7 @@ def test_early_21610_protects_before_delivery_correlation(space, member):
     event = accept_event(provider="twilio", channel="sms", sender_key=pipeline.sms.sender_key,
         dedupe_id=dedupe_id, kind="status", payload=payload)
     event.refresh_from_db()
-    assert event.state == "pending" and event.payload["protection_applied"] is True
+    # D1: an uncorrelated receipt is parked "held" for replay (notification_ingress.process); the
+    # sender protection is still committed before correlation.
+    assert event.state == "held" and event.protection_applied is True
     assert suppressed("sms", pipeline.sms.sender_key, recipient_hash("phone", member.phone_e164))

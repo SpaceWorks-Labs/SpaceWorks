@@ -151,6 +151,7 @@ def test_adoption_is_lossless_but_forces_all_four_member_authority_defaults():
         "before": [],
         "after": ["member"],
         "removed_machine_type_ids": [],
+        "removed_machine_ids": [],
     }
     assert waiver.body not in str(audit.meta)
     assert imported.revocation_reason not in str(audit.meta)

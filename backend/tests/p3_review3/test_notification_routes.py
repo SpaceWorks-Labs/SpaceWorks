@@ -39,10 +39,16 @@ def routes(lane, request, settings, monkeypatch):
     return Bag(home=home, prefix=prefix, external=external, owner=lane.owner)
 
 
+def _rendered(body):
+    """Fan-out hands staff bodies over lazily (rendered in the recipient locale); call them."""
+    return body() if callable(body) else body
+
+
 def assert_links(routes, bodies):
     for index, (name, body, tail) in enumerate(bodies):
         assert body["link"] == f"{routes.prefix}/{tail}", name
-        envelope = Bag(makerspace=routes.home, recipient_id=routes.owner.pk, feature="events",
+        envelope = Bag(makerspace=routes.home, makerspace_id=routes.home.pk, audience="staff", scope={},
+                       recipient_id=routes.owner.pk, feature="events",
                        event="updated", dedup_key=f"review3:routes:{index}")
         result = send_builtin(Bag(channel="in_app", envelope=envelope), body)
         assert result.accepted, name
@@ -76,7 +82,7 @@ def test_every_staff_destination_and_owner_content_has_a_local_route(routes, mon
         ("API owner", api_content(row, "requester"), "member"),
         ("membership owner", member_body(row, "verified", "requester"), "member"),
         ("application owner", request_body(row, "declined", "requester"), "member"),
-        ("invited owner", request_body(row, "invitation", "requester"), "member"),
+        ("invited owner", request_body(row, "invitation", "requester"), "member/account-portal?section=invitations"),
         ("term owner", term_body(term, "renewal_due"), "member"),
         ("vouch owner", vouch_content(row, "requester"), "member"),
         ("broadcast owner", broadcasts.render(None), "member"),
@@ -129,8 +135,8 @@ def test_device_report_and_failed_email_staff_notices(routes, monkeypatch):
                                     event="updated", attempts=1, status="failed"))
     report = reports.content(Bag(schedule=Bag(makerspace=routes.home, report_key=next(iter(reports.REPORT_REGISTRY)))))
     assert len(calls) == 2
-    assert_links(routes, [("device", calls[0]["staff_body"], "admin/devices"),
-                          ("failed mail", calls[1]["staff_body"], "admin/email-log"),
+    assert_links(routes, [("device", _rendered(calls[0]["staff_body"]), "admin/devices"),
+                          ("failed mail", _rendered(calls[1]["staff_body"]), "admin/email-log"),
                           ("report", report, "admin/reports")])
 
 

@@ -146,7 +146,8 @@ def test_a_plan_on_community_approval_needs_the_module():
         {"role_id": member_role.pk, "plan_id": plan.pk}, format="json",
     )
 
-    assert response.status_code == 400
+    # A module-off surface answers as absent (404), like the other gated approvals in this file.
+    assert response.status_code == 404
     assert not MakerspaceMembership.objects.filter(makerspace=makerspace, user=invitee).exists()
 
 

@@ -164,7 +164,8 @@ def test_the_dashboard_does_not_exist_without_the_membership_module():
 
     response = _client(user).get(_url(space))
 
-    assert response.status_code == 400
+    # Decisions 183B/221e: a module that is off answers the typed 404 (SurfaceOff), not a 400.
+    assert response.status_code == 404
 
 
 def _active_loan(space, user, label, *, due_in):

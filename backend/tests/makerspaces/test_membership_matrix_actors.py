@@ -105,8 +105,7 @@ def test_approving_a_free_join_request_welcomes_the_member(monkeypatch, settings
     assert not Payment.objects.filter(makerspace=makerspace).exists()
 
 
-def test_approving_into_a_priced_plan_opens_a_term_but_charges_nothing_yet():
-    # The renewal charge near the term's end is the only charge per term (decision D3).
+def test_approving_into_a_priced_plan_opens_a_term_and_charges_its_start():
     makerspace = space("actors-approve-plan", enabled_features=_features(TRACKING))
     boss = manager(makerspace, "actors-approve-plan-manager")
     joiner = user("actors-approve-plan-joiner")
@@ -119,7 +118,12 @@ def test_approving_into_a_priced_plan_opens_a_term_but_charges_nothing_yet():
 
     term = MembershipTerm.objects.get(membership__user=joiner)
     assert term.status == MembershipTerm.Status.ACTIVE
-    assert not Payment.objects.filter(makerspace=makerspace).exists()
+    # Decision #165 (2026-11-06, item 1): a staff-opened term charges once under
+    # `membership_term_start`; the RENEWAL charge near the term's end is a separate, later one.
+    charge = Payment.objects.get(makerspace=makerspace)
+    assert (charge.subject_type, charge.subject_id, charge.amount) == (
+        Payment.SubjectType.MEMBERSHIP_TERM_START, term.pk, Decimal("10.00"),
+    )
 
 
 def test_dues_and_a_plan_together_raise_two_independent_charges():
@@ -143,6 +147,8 @@ def test_dues_and_a_plan_together_raise_two_independent_charges():
     assert subjects == [
         (Payment.SubjectType.MAKERSPACE_MEMBERSHIP, Decimal("25.00")),
         (Payment.SubjectType.MEMBERSHIP_TERM, Decimal("10.00")),
+        # Decision #165 item 1: the staff-opened term's own start charge, raised at approval.
+        (Payment.SubjectType.MEMBERSHIP_TERM_START, Decimal("10.00")),
     ]
     # Idempotent: a second sweep raises nothing more.
     assert run_membership_renewals()["charged"] == 0

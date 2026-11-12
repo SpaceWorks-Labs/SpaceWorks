@@ -29,10 +29,15 @@ def queued_notice(lane, kind, mode):
     if kind == "lifecycle":
         envelope = owner_envelope(row, "registration_approved", entry, new_intent())
     else:
+        # The source check requires the stamped offset to be one of the space's configured leads
+        # (default is a day ahead, which also skips fresh sign-ups), so configure a one-hour lead.
+        lane.space.event_reminder_lead_hours = [1]
+        lane.space.save(update_fields=["event_reminder_lead_hours"])
         envelope = emit(makerspace=lane.space, recipient=lane.owner, feature="events", stream="events",
             event="reminder", audience="requester", dedup_key=f"review3:reminder:{entry.pk}",
             source_kind="events.reminder", source_id=str(entry.pk), subject=entry,
-            context={"event_id": row.pk, "registration_id": entry.pk, "starts_at": row.starts_at.isoformat()},
+            context={"event_id": row.pk, "registration_id": entry.pk, "starts_at": row.starts_at.isoformat(),
+                     "offset_seconds": -3600},
             rendered={"subject": "Reminder", "text": "Event starts soon"})
     assert envelope is not None and envelope.makerspace_id == lane.space.pk
     assert source_eligible(envelope)

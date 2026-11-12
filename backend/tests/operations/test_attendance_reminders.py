@@ -41,7 +41,7 @@ def attendance(request, monkeypatch, settings):
     member.refresh_from_db()
     start = now + timedelta(hours=23)
     if domain == "events":
-        row = register(make_event(space, starts_at=start), member)
+        row = settled(register(make_event(space, starts_at=start), member), now)
     else:
         room = BookableSpace.objects.create(makerspace=space, name="Meeting room")
         row = Booking.objects.create(space=room, member=member, name="Member",
@@ -49,6 +49,14 @@ def attendance(request, monkeypatch, settings):
                                      starts_at=start, ends_at=start + timedelta(hours=1),
                                      status=Booking.Status.CONFIRMED)
     return space, member, row, source, now, domain
+
+
+def settled(registration, now=None):
+    # Day-ahead reminders skip sign-ups made in the last 12 hours (apps/events/reminders.py
+    # fresh_signup, L1 seam); age the registration so the reminder is due.
+    EventRegistration.objects.filter(pk=registration.pk).update(
+        created_at=(now or timezone.now()) - timedelta(hours=13))
+    return registration
 
 
 def _schedules(space):
@@ -75,7 +83,7 @@ def test_batch_discovery_does_not_starve_the_next_member(attendance):
     another = make_member(space, "another")
     type(another).objects.filter(pk=another.pk).update(email_verified_at=timezone.now())
     if domain == "events":
-        register(row.event, another)
+        settled(register(row.event, another))
     else:
         Booking.objects.create(space=row.space, member=another, name="Another", email=another.email,
                                phone="123", starts_at=row.starts_at, ends_at=row.ends_at,

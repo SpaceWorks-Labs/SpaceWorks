@@ -16,7 +16,7 @@ pytestmark = pytest.mark.django_db
 
 def test_directory_search_matches_public_identity_and_detail_404_is_uniform():
     home, other = make_space("directory-search"), make_space("directory-foreign")
-    viewer = member(home, "viewer")
+    viewer = member(home, "viewer", display_name="Quinn")
     subject = member(home, "author", display_name="Ada")
     foreign = member(other, "foreign")
     profile_services.save_profile(subject, {"is_visible": True, "headline": "Robotics", "institution": "Lab"})

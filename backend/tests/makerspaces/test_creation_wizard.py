@@ -39,7 +39,7 @@ def test_creation_profile_modules_and_first_staff_are_audited_and_delivery_follo
     assert StaffInvitation.objects.get(makerspace=row).created_by == root
     assert response.data["creation_invitation"]["delivery_status"] == "unavailable"
     assert AuditLog.objects.filter(actor=root, makerspace=row, action="makerspace.created").exists()
-    assert AuditLog.objects.filter(actor=root, makerspace=row, action="staff.invitation_created").exists()
+    assert AuditLog.objects.filter(actor=root, makerspace=row, action="staff_invitation.sent").exists()
     deliver.assert_called_once()
 
 

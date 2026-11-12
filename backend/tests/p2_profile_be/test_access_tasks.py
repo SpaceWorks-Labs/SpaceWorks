@@ -93,7 +93,8 @@ def test_new_route_is_classified_and_target_resolves_through_frozen_predicate(pu
     request.resolver_match = resolve(path)
     assert request.resolver_match.view_name == "public-profile-github"
     entry = lookup("public-profile-github", "GET")
-    assert entry.scopes == PUBLIC_READ_SCOPES and entry.target_mode == TARGET_TENANT_TOKEN
+    # GAP-API (#193/#196): the pages area scope narrows public:read, so it is admitted too.
+    assert entry.scopes == PUBLIC_READ_SCOPES | {"public:pages:read"} and entry.target_mode == TARGET_TENANT_TOKEN
     assert resolve_target(request, entry) == (published.membership.makerspace, True)
     assert isinstance(policy_for("public-profile-github", "GET"), AnonymousRead)
     assert isinstance(policy_for("public-profile-github", "OPTIONS"), AnonymousRead)

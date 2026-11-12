@@ -207,10 +207,10 @@ def test_settings_side_routes_hide_an_unservable_makerspace(state, route):
     client = authenticated_client(manager)
 
     assert client.get(route(lab)).status_code == 404
-    # API-settings mutations revalidate the browser account before object lookup:
-    # an unavailable staff tenant invalidates that context even with a recent proof.
-    expected = 401 if route is api_settings else 404
-    assert client.patch(route(lab), {"default_loan_days": 3}, format="json").status_code == expected
+    # 0.12.0 account split (decision 63): a session binds to the account kind only and never names a
+    # makerspace (`staff_identity.context_label`), so an unservable tenant no longer invalidates the
+    # browser context with a 401; the recent-proof check passes and the route hides the tenant with 404.
+    assert client.patch(route(lab), {"default_loan_days": 3}, format="json").status_code == 404
     assert Makerspace.objects.get(pk=lab.pk).default_loan_days != 3
 
 

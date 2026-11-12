@@ -41,7 +41,8 @@ def test_every_converted_staff_notice_keeps_open_action_and_external_canonical_u
         local = body["link"]
         prefix = "" if status == "verified" and domain else "/m/local-notices"
         assert local.startswith(prefix + "/")
-        envelope = SimpleNamespace(makerspace=home, recipient_id=user.pk, feature="events", event="updated", dedup_key=f"link:{index}")
+        envelope = SimpleNamespace(makerspace=home, makerspace_id=home.pk, recipient_id=user.pk, feature="events", event="updated",
+                               audience="staff", scope={}, dedup_key=f"link:{index}")
         result = send_builtin(SimpleNamespace(channel="in_app", envelope=envelope), body)
         assert result.accepted
         inbox = NotificationInboxRow.objects.get(pk=int(result.provider_id.split(":")[1]))

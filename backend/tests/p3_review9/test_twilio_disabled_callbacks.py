@@ -14,9 +14,15 @@ DISABLED = ["enabled", "personal_enabled", "notifications"]
 
 def disable(wa, switch):
     if switch == "notifications":
-        wa.space.enabled_modules = [key for key in wa.space.enabled_modules if key != "notifications"]
+        # Migration 0045 (owner decision D1/V12, 2026-10-18): removing the optional `notifications` inbox
+        # module no longer rotates SMS/WhatsApp; removing the channel's OWN module does. So the retiring
+        # uninstall under test is the channel module (`whatsapp`), installed first so removal is a real change.
+        channel = wa.config.channel
+        wa.space.enabled_modules = sorted(set(wa.space.enabled_modules) | {channel})
         wa.space.save(update_fields=["enabled_modules"])
-        # Migration 0036 retires the installation on uninstall, unlike send switches.
+        wa.space.enabled_modules = [key for key in wa.space.enabled_modules if key != channel]
+        wa.space.save(update_fields=["enabled_modules"])
+        # The trigger retires the installation on uninstall, unlike send switches.
         # Leave the fixture's generation stale: these callbacks were already in flight.
         current = ChannelConfiguration.objects.get(pk=wa.config.pk)
         assert current.generation == wa.config.generation + 1
@@ -35,7 +41,7 @@ def test_disabled_delivery_still_revokes_consent(twilio_wa, switch, word):
     generation = wa.config.generation
     path = callback_path(wa.config, "inbound")
     disable(wa, switch)
-    expected_status = 404 if switch == "notifications" else 200
+    expected_status = 403 if switch == "notifications" else 200
     assert wa.post(params={"Body": word}).status_code == expected_status
     wa.endpoint.refresh_from_db()
     assert wa.endpoint.revoked_at and wa.endpoint.verification_state == "revoked"
@@ -56,7 +62,7 @@ def test_disabled_delivery_still_records_in_flight_status(twilio_wa, switch, sta
     wa = twilio_wa
     original_state = wa.delivery.state
     disable(wa, switch)
-    expected_status = 404 if switch == "notifications" else 200
+    expected_status = 403 if switch == "notifications" else 200
     expected_state = original_state if switch == "notifications" else state
     assert wa.post("status", {"MessageStatus": status}).status_code == expected_status
     wa.delivery.refresh_from_db()
@@ -73,7 +79,9 @@ def test_disabling_delivery_still_blocks_new_consent_proofs(twilio_wa, switch):
     challenge, _ = start(wa.user, wa.config, "v1", phone_number=DESTINATION)
     code = json.loads(wa.http.calls[-1][1]["ContentVariables"][0])["1"]
     disable(wa, switch)
-    assert wa.post(params={"Body": code}).status_code == (404 if switch == "notifications" else 403)
+    # Uninstall retires the generation (403, like any stale URL); a send switch still acknowledges the signed
+    # callback into the journal (200) but the proof is never applied, which the assertions below pin.
+    assert wa.post(params={"Body": code}).status_code == (403 if switch == "notifications" else 200)
     challenge.refresh_from_db()
     wa.endpoint.refresh_from_db()
     assert challenge.consumed_at is None and challenge.endpoint_id is None
@@ -103,7 +111,7 @@ def test_disabled_callbacks_keep_signature_and_installation_binding(twilio_wa, k
         other.save()
         path = callback_path(other, kind, wa.delivery.pk if kind == "status" else None)
     response = wa.post(kind, params, path=path, signed=invalid != "signature")
-    assert response.status_code == (404 if invalid == "generation" else 200 if invalid == "tenant" and kind == "inbound" else 403)
+    assert response.status_code == (200 if invalid == "tenant" else 403)  # tenant: signed for its own installation, journalled, correlation fails closed
     wa.endpoint.refresh_from_db()
     wa.delivery.refresh_from_db()
     assert wa.endpoint.revoked_at is None and wa.delivery.state == "retrying"
@@ -125,6 +133,6 @@ def test_rotation_between_authentication_and_lock_rejects_callback(twilio_wa, mo
         return event
 
     monkeypatch.setattr(TwilioWhatsAppProvider, "verify_callback", rotate)
-    assert wa.post(params={"Body": "STOP"}).status_code == 403
+    assert wa.post(params={"Body": "STOP"}).status_code == 200  # journalled, but the rotated generation applies nothing
     wa.endpoint.refresh_from_db()
     assert wa.endpoint.revoked_at is None

@@ -2,6 +2,7 @@
 from decimal import Decimal
 
 import pytest
+from django.db import transaction
 from django.utils import timezone
 from rest_framework.test import APIClient
 
@@ -10,6 +11,7 @@ from apps.makerspaces import volunteer_credit, volunteer_hours
 from apps.makerspaces.community_policy import CommunityError
 from apps.makerspaces.membership_plan_services import create_term
 from apps.makerspaces.membership_term_charges import raise_term_start
+from apps.makerspaces.models_membership_rules import PlanType
 from apps.makerspaces.models import (
     CommunityPolicy, MakerspaceMembership, VolunteerCredit, VolunteerHourEntry,
 )
@@ -104,7 +106,8 @@ def test_free_days_apply_as_a_prorated_reduction():
     makerspace, actor, member, plan, membership = _world(per=60, kind="free_days", days=5, amount=Decimal("0"))
     volunteer_hours.log_hours(actor, makerspace, member, minutes=60, worked_on=_today(), by_staff=True)
     term = create_term(actor, membership, plan)
-    net, used = volunteer_credit.reduce_charge(makerspace, member, Decimal("30.00"), "usd", term_days=30)
+    with transaction.atomic():  # reduce_charge locks credits (select_for_update): callers hold a transaction
+        net, used = volunteer_credit.reduce_charge(makerspace, member, Decimal("30.00"), "usd", term_days=30)
     assert net == Decimal("25.00") and len(used) == 1  # 5 of 30 days of a 30.00 term = 5.00
     assert term.pk
 
@@ -113,18 +116,21 @@ def test_the_charge_is_unchanged_when_the_capability_is_off_or_the_currency_diff
     makerspace, actor, member, plan, membership = _world(per=60)
     volunteer_hours.log_hours(actor, makerspace, member, minutes=60, worked_on=_today(), by_staff=True)
     VolunteerCredit.objects.update(currency="eur")
-    net, used = volunteer_credit.reduce_charge(makerspace, member, Decimal("20.00"), "usd", term_days=30)
+    with transaction.atomic():
+        net, used = volunteer_credit.reduce_charge(makerspace, member, Decimal("20.00"), "usd", term_days=30)
     assert (net, used) == (Decimal("20.00"), [])
     features_off(makerspace, "volunteer_credit")
     VolunteerCredit.objects.update(currency="")
-    assert volunteer_credit.reduce_charge(makerspace, member, Decimal("20.00"), "usd", term_days=30) == (Decimal("20.00"), [])
+    with transaction.atomic():
+        assert volunteer_credit.reduce_charge(makerspace, member, Decimal("20.00"), "usd", term_days=30) == (Decimal("20.00"), [])
 
 
 def test_a_renewal_keeps_a_minimum_charge_and_an_unused_credit_can_be_voided():
     makerspace, actor, member, _plan, _m = _world(per=60, amount=Decimal("50.00"))
     volunteer_hours.log_hours(actor, makerspace, member, minutes=60, worked_on=_today(), by_staff=True)
-    net, used = volunteer_credit.reduce_charge(makerspace, member, Decimal("20.00"), "usd", term_days=30,
-                                               floor=Decimal("0.01"))
+    with transaction.atomic():
+        net, used = volunteer_credit.reduce_charge(makerspace, member, Decimal("20.00"), "usd", term_days=30,
+                                                   floor=Decimal("0.01"))
     assert net == Decimal("0.01") and used[0][1] == Decimal("19.99")
     credit = VolunteerCredit.objects.filter(status="available").first()
     voided = volunteer_credit.void_credit(actor, credit, "mistake")
@@ -157,8 +163,9 @@ def test_a_fully_covered_renewal_records_a_marker_not_a_floor_debt():
     from apps.makerspaces.membership_renewal_charges import raise_renewal
     from apps.makerspaces.models import MembershipTerm
     makerspace, actor, member, plan, membership = _world(per=60, amount=Decimal("50.00"))
-    plan.renews, plan.is_active, plan.renewal_price = True, True, Decimal("20.00")
-    plan.save(update_fields=["renews", "is_active", "renewal_price"])
+    # `renews` is derived from the plan type and `renewal_price` from `renewal_amount` (models_membership_plans).
+    plan.plan_type, plan.is_active, plan.renewal_amount = PlanType.ROLLING, True, Decimal("20.00")
+    plan.save(update_fields=["plan_type", "is_active", "renewal_amount"])
     volunteer_hours.log_hours(actor, makerspace, member, minutes=60, worked_on=_today(), by_staff=True)
     term = create_term(actor, membership, plan)
     before = Payment.objects.filter(subject_type="membership_term", subject_id=term.pk).count()

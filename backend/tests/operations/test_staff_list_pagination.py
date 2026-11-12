@@ -8,7 +8,7 @@ from apps.audit import services as audit
 from apps.bookings.models import BookableSpace, Booking
 from apps.events.models import Event
 from apps.hardware_requests.models import HardwareRequest
-from apps.makerspaces.models import MembershipRequest
+from apps.makerspaces.models import MakerspaceMembership, MembershipRequest
 from apps.payments.models import Payment
 from tests.module_helpers import disable_module
 from tests.return_helpers import authenticated_client, make_member, make_product, make_space
@@ -44,7 +44,7 @@ def test_payment_list_is_bounded_and_orders_before_paging():
     actor = make_member("payment-pages-manager", space)
     for index in range(26):
         borrower = make_member(f"payment-pages-borrower-{index}", space)
-        membership = borrower.makerspace_memberships.get(makerspace=space)
+        membership = MakerspaceMembership.all_tracks.get(user=borrower, makerspace=space)  # make_member builds a staff-track row (decision 63); .objects is community-only
         Payment.objects.create(makerspace=space, subject_type="makerspace_membership", subject_id=membership.pk, member=borrower, created_by=actor, amount=Decimal(index + 1), currency="usd")
     client = authenticated_client(actor)
     url = f"/api/v1/admin/makerspace/{space.pk}/payments"
@@ -144,7 +144,7 @@ def test_bookable_spaces_and_booking_id_filter_work_beyond_page_one():
     assert client.get(f"/api/v1/admin/spaces/{foreign_room.pk}/bookings/").status_code == 404
     assert client.get(path, {"booking_id": "9" * 100}).status_code == 400
     disable_module(space, "bookings")
-    assert client.get(path).status_code == 400
+    assert client.get(path).status_code == 404  # typed SurfaceOff: an off module has no surface (#95, #183B)
 
 
 def test_event_list_filters_sorts_and_paginates_within_its_tenant():
@@ -164,7 +164,7 @@ def test_event_list_filters_sorts_and_paginates_within_its_tenant():
     assert [row["id"] for row in first.data["results"] + second.data["results"]] == [row.pk for row in reversed(events)]
     assert client.get(path, {"status": "typo"}).status_code == 400
     disable_module(space, "events")
-    assert client.get(path).status_code == 400
+    assert client.get(path).status_code == 404  # typed SurfaceOff (#95, #183B)
 
 
 def test_audit_ordering_remains_stable_and_tenant_scoped_across_pages():

@@ -6,6 +6,7 @@ from apps.audit.models import AuditLog
 from apps.data_export.classification import OMITTED_MODELS
 from apps.makerspaces.models import Makerspace, MakerspaceRole, SpacePackProfile
 from apps.makerspaces.module_registry import core_module_keys
+from apps.makerspaces.role_catalog import ROLE_CATALOG
 from apps.makerspaces.space_pack_export import export_pack
 from apps.makerspaces.space_pack_format import seal
 from apps.tenant_migration.tenant_dump_model_catalog import FIRST_PARTY_MODEL_RULES, PROJECTED_MODEL_LABELS
@@ -74,7 +75,7 @@ def test_custom_role_import_enforces_non_escalation_and_protected_roles(protecte
     assert response.data["code"] == "pack_roles_removed"
     config["roles"] = []
     assert client(actor).post(url, {"pack": seal(config)}, format="json").status_code == 200
-    assert MakerspaceRole.objects.filter(makerspace=row).count() == 8
+    assert MakerspaceRole.objects.filter(makerspace=row).count() == len(ROLE_CATALOG)  # the built-in catalogue grew (Technician, Shop Manager, ...); the import adds no role
 
 
 def test_unknown_version_and_checksum_refusals_do_not_write():

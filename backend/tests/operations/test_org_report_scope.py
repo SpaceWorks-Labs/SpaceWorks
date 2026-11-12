@@ -70,10 +70,15 @@ def resolved_ids(actor, organization, definition=DEFAULT_REPORT):
 
 def test_organization_grantable_vocabulary_excludes_only_tenant_local_authority():
     # MANAGE_MACHINES (machine scoping) and MANAGE_DEVICES (physical device keys) are
-    # both granted inside one makerspace only.
+    # both granted inside one makerspace only; so are repair work (L16), the shop's
+    # till and stock (L22) and donor money (decision 242(m)).
+    A = rbac.Action
     assert rbac.ORGANIZATION_GRANTABLE_ACTIONS == (
         rbac.ROLE_GRANTABLE_ACTIONS
-        - {rbac.Action.MANAGE_MACHINES, rbac.Action.MANAGE_DEVICES}
+        - {A.MANAGE_MACHINES, A.MANAGE_DEVICES}
+        - {A.WORK_REPAIRS, A.RUN_MAINTENANCE, A.SET_SERVICE_STATE}
+        - {A.MANAGE_SHOP, A.SELL_SHOP, A.VIEW_SHOP}
+        - {A.MANAGE_DONATIONS}
     )
 
 

@@ -167,8 +167,8 @@ def test_final_graph_has_parent_constraint_and_both_histories():
                    ("accounts", "0041_reconcile_native_account_context"),
                    ("integrations", "0041_notification_cutover_expansion")]:
         assert parent in plan
-    # L2 added notifications/0011 on top; the reconciliation leaf must stay in its history.
-    assert loader.graph.leaf_nodes("notifications") == [("notifications", "0011_inbox_snooze_browser_alerts")]
+    # L2 added notifications/0011 and 0012 on top; the reconciliation leaf must stay in its history.
+    assert loader.graph.leaf_nodes("notifications") == [("notifications", "0012_browser_firebase_registration")]
     assert leaf in loader.graph.forwards_plan(("notifications", "0011_inbox_snooze_browser_alerts"))
     final = loader.project_state([leaf]).apps.get_model("notifications", "MemberPushDelivery")
     assert not final._meta.get_field("envelope_delivery").null

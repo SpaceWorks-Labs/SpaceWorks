@@ -8,7 +8,9 @@ required features are all on, and any one missing prerequisite switches it off.
 import pytest
 
 from apps.makerspaces.capabilities import FEATURES
+from apps.makerspaces.capability_definitions import RETIRED_FEATURES
 from apps.makerspaces.capability_eligibility import LOAN_FEATURES
+from apps.makerspaces.loan_visibility import INVENTORY_ONLY_MODULES
 from apps.makerspaces.module_registry import BY_KEY, MODULE_KEYS, core_module_keys, with_dependencies
 from apps.makerspaces.platform import feature_enabled, module_enabled
 from tests.return_helpers import make_space
@@ -33,7 +35,10 @@ def _prerequisites(key, seen=None):
     modules = {m for m in (definition.parent_module, *definition.requires_modules) if m}
     features = set(definition.requires_features)
     if key in LOAN_FEATURES and key != "loans.enabled":
-        features.add("loans.enabled")
+        # The Inventory master and its own parent module (decision 254).
+        master_modules, master_features = _prerequisites("loans.enabled")
+        modules |= master_modules
+        features |= master_features | {"loans.enabled"}
     for feature in definition.requires_features:
         sub_modules, sub_features = _prerequisites(feature)
         modules |= sub_modules
@@ -44,9 +49,11 @@ def _prerequisites(key, seen=None):
 @pytest.mark.parametrize("key", OPTIONAL_MODULES)
 def test_module_is_on_only_while_stored_on_and_off_after_removal(key):
     space = make_space(f"reg-mod-{key}".replace("_", "-")[:50])
-    _set(space, with_dependencies([key]), [])
+    # Inventory-only modules answer off while the Inventory master is off (decision 254).
+    master = ["loans.enabled"] if key in INVENTORY_ONLY_MODULES else []
+    _set(space, with_dependencies([key, "staff_admin"]) if master else with_dependencies([key]), master)
     assert module_enabled(space, key)
-    _set(space, set(space.enabled_modules) - {key}, [])
+    _set(space, set(space.enabled_modules) - {key}, master)
     assert not module_enabled(space, key)
 
 
@@ -71,6 +78,10 @@ def test_capability_is_on_only_with_every_prerequisite_on(key):
     definition = FEATURES[key]
     if definition.app_label is not None:
         pytest.skip("owning app may be tombstoned in this deployment profile")
+    if key in RETIRED_FEATURES:
+        # Decisions 319/218: a retired capability always reads off, whatever is stored.
+        assert not feature_enabled(space, key)
+        return
     assert feature_enabled(space, key), f"{key} should be on with all prerequisites"
     _set(space, with_dependencies(modules), features)
     assert not feature_enabled(space, key), "a stored-off key must read off"

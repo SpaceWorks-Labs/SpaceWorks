@@ -3,6 +3,7 @@
 import pytest
 
 from apps.audit.models import AuditLog
+from apps.makerspaces.models import MakerspaceMembership
 from apps.makerspaces.module_install import install_module
 from apps.operations.models import SavedView
 from tests.module_helpers import disable_module
@@ -58,7 +59,7 @@ def test_shared_report_view_reauthorizes_reader_and_owner_and_refuses_peer_write
     assert peer_client.get(url(space, pk)).status_code == 200
     assert peer_client.patch(url(space, pk), {"name": "Take over"}, format="json").status_code == 403
     assert peer_client.delete(url(space, pk)).status_code == 403
-    owner.makerspace_memberships.filter(makerspace=space).update(status="revoked")
+    MakerspaceMembership.all_tracks.filter(user=owner, makerspace=space).update(status="revoked")  # staff-track row (decision 63)
     assert peer_client.get(url(space, pk)).status_code == 403
     assert peer_client.get(url(space)).data["results"] == []
 

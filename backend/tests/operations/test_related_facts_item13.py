@@ -168,7 +168,7 @@ def test_each_booking_section_has_its_own_authority():
     _booking_grant(w, lathe_mgr, "edit_details")
     with pytest.raises(NotFound):  # booking visible, but no section reachable: the view does not exist
         booking_facts(lathe_mgr, w.space.pk, w.booking.pk)
-    with pytest.raises(PermissionDenied):  # machine reach alone never grants the booking
+    with pytest.raises(NotFound):  # machine reach alone never grants the booking (refusal reads as not found, open item B2)
         booking_facts(staff_for_actions(w.space, f"{w.space.slug}-bare", (Action.MANAGE_MACHINES,),
                                         machine_types=[w.laser])[0], w.space.pk, w.booking.pk)
 

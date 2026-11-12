@@ -70,7 +70,7 @@ def test_role_without_inventory_and_foreign_space_are_refused():
 
 def test_inventory_manager_without_event_authority_sees_no_event_rows():
     space, actor, product, event, booking = setup_activity("c25-inventory")
-    inventory = make_member("c25-inventory-manager", space,
+    inventory = make_member("c25-inventory-staff", space,
         membership_role=MakerspaceMembership.Role.INVENTORY_MANAGER, role=User.Role.REQUESTER)
     response = _get(inventory, space)
     assert response.status_code == 200

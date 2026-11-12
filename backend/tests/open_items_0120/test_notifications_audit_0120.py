@@ -187,7 +187,8 @@ TRANSLATED_BUILDERS = (
     "hardware_requests/pickup_reminders.py", "machines/notifications_job_flow.py",
     "machines/notifications_sessions.py", "machines/notifications_p2_certifications.py",
     "makerspaces/member_dashboard_service.py", "makerspaces/notifications_guardian.py",
-    "makerspaces/notifications_p2_members.py", "presence/notifications.py",
+    "makerspaces/notifications_p2_members.py", "makerspaces/notifications_p2_members_bodies.py",
+    "presence/notifications.py",
 )
 _COPY_KEYS = {"text", "title", "subject", "body", "summary"}
 

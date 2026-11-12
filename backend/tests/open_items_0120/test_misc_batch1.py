@@ -76,7 +76,9 @@ def test_a46_only_the_known_guarded_fk_may_be_set_null_on_exact_row_tables():
         for field in model._meta.concrete_fields:
             if field.is_relation and field.remote_field.on_delete is models.SET_NULL and field.null:
                 found.append((model._meta.db_table, field.name))
-    assert found == [("events_eventbookingdecision", "booking")]
+    # `creator` is a user FK on the retained decision (nulled when the author's account is erased, see
+    # accounts/booking_decision_deletion.py); only `booking` needs the restore-time guarded detach.
+    assert found == [("events_eventbookingdecision", "booking"), ("events_eventbookingdecision", "creator")]
 
 
 def test_b12_the_waiver_gate_can_outlive_guest_passes():
@@ -98,11 +100,12 @@ def test_b12_the_waiver_gate_can_outlive_guest_passes():
 def test_c26_staff_read_of_a_members_included_hours_is_scoped():
     w = world("oi-c26")
     boss = staff_account(w.space, "oi-c26-boss", "space_manager")
-    member = make_member("oi-c26-member", w.space)
+    from tests.l3_local.helpers import member as community_member  # decision 63: a member is a community account
+    member = community_member(w.space, "oi-c26-member")[0]
     url = f"/api/v1/admin/makerspace/{w.space.pk}/members/{member.pk}/included-hours"
     data = authenticated_client(boss).get(url).json()
     assert data["member_id"] == member.pk and isinstance(data["pools"], list)
-    stranger = make_member("oi-c26-stranger", w.space)
+    stranger = community_member(w.space, "oi-c26-stranger")[0]
     assert authenticated_client(stranger).get(url).status_code in (403, 404)
     other = world("oi-c26-other")
     assert authenticated_client(boss).get(

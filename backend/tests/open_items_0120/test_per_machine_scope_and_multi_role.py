@@ -78,8 +78,10 @@ def test_cross_space_machine_is_refused_and_inert():
     # A corrupt link written around the service still confers no authority.
     MembershipMachineScope.objects.create(membership=_row(target, w.space), machine=other_world.machine)
     assert other_world.machine.pk not in _reach(target, w.space)
+    from tests.l3_local.helpers import member as community_member  # grant needs a community member (decision 63)
+    newcomer = community_member(w.space, "pm-cross-new")[0]
     with pytest.raises(ValidationError):
-        service.grant(superadmin, w.space.pk, user_id=target.pk, roles=["machine_manager"],
+        service.grant(superadmin, w.space.pk, user_id=newcomer.pk, roles=["machine_manager"],
                       machine_ids=[other_world.machine.pk])
 
 

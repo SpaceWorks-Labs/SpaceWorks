@@ -6,21 +6,21 @@ from apps.hardware_requests.models import HardwareRequest
 from apps.integrations.messaging.consent import grant_consent
 from apps.integrations.messaging.dispatch import enqueue_addressed_messages
 from apps.integrations.messaging.resolver import resolve_sender
-from apps.integrations.messaging.settings_service import sync_platform_sms, sync_platform_whatsapp
-from apps.integrations.models import NotificationPreference, PlatformSmsSettings, PlatformWhatsAppSettings, WhatsAppTemplateBinding
+from apps.integrations.models import NotificationPreference, WhatsAppTemplateBinding
 from apps.integrations.notify import LifecyclePayload
 from apps.notifications.inbox import InboxDelivery
+from tests.messaging.canonical_helpers import (
+    platform_sms, platform_whatsapp, sms_channel, verified_endpoint, whatsapp_channel,
+)
 
 
 def setup_pipeline(space, member):
-    sms = PlatformSmsSettings(account_sid="AC" + "a" * 32, from_number="+14155550001",
-        notifications_from_number="+14155550002", notifications_enabled=True)
-    sms.set_auth_token("twilio-secret")
-    sync_platform_sms(sms)
-    wa = PlatformWhatsAppSettings(is_enabled=True, phone_number_id="123", business_account_id="456")
-    wa.set_secret("access_token", "meta-access")
-    wa.set_secret("app_secret", "meta-secret")
-    sync_platform_whatsapp(wa)
+    # Consent binds to the canonical ChannelConfiguration sender (D1, parity E-B8); build it
+    # through the audited configure() writer rather than writing sender rows by hand.
+    platform_sms()
+    platform_whatsapp()
+    sms_channel(space)
+    verified_endpoint(member, whatsapp_channel(space))
     for channel in ("sms", "whatsapp"):
         NotificationPreference.objects.update_or_create(makerspace=space, feature="hardware_requests", channel=channel,
                                                       defaults={"enabled": True})

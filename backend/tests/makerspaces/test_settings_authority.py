@@ -157,7 +157,7 @@ def test_grant_and_lock_endpoints_are_space_manager_only_and_validate(space):
         assert sm.put(grants_url(space), {"module": "events", "grantee_ids": ids}, format="json").status_code == 400
     assert sm.put(locks_url(space), {"setting_key": "security.passkeys_allowed", "locked": True},
                   format="json").status_code == 400
-    assert sm.put(grants_url(space), {"module": "shop", "grantee_ids": []}, format="json").status_code == 400
+    assert sm.put(grants_url(space), {"module": "payments", "grantee_ids": []}, format="json").status_code == 400  # finance is never delegable (#101); shop is delegable since L22 (#137)
     other = make_space("authority-other")
     assert sm.get(grants_url(other)).status_code == 404
 
@@ -171,7 +171,7 @@ def test_effective_lists_only_the_callers_modules(space):
     assert keys["events.website"]["editable"] is False and keys["events.website"]["code"] == "setting_not_delegated"
     manager, = people(space, ("eff-sm", "space_manager"))
     full = authenticated_client(manager).get(effective_url(space)).data["modules"]
-    assert {row["module"] for row in full} == {"events", "bookings", "machines", "inventory"}
+    assert {row["module"] for row in full} == {"events", "bookings", "machines", "inventory", "shop"}  # L22 (#137): the shop joined the managed modules
     assert all(key["editable"] for row in full for key in row["keys"])
     member = User.objects.create_user("eff-member")
     assert authenticated_client(member).get(effective_url(space)).status_code in {403, 404}

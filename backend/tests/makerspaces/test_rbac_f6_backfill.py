@@ -45,12 +45,18 @@ def test_backfill_is_additive_idempotent_and_covers_custom_admin_roles(old_datab
 def test_space_manager_actions_require_a_valid_primary_and_null_legacy_is_refused():
     space = make_space("f6-defaults")
     ensure_default_roles(space)
-    assert MakerspaceRole.objects.filter(makerspace=space, is_protected=True).count() == 7
+    # Every built-in of the fixed catalogue (ROLE_CATALOG, ten roles in 0.12.0) is seeded protected;
+    # the old literal 7 predates the later built-ins.
+    from apps.makerspaces.role_catalog import ROLE_CATALOG
+    assert set(MakerspaceRole.objects.filter(makerspace=space, is_protected=True).values_list("slug", flat=True)) == {
+        role.slug for role in ROLE_CATALOG}
     assert NEW <= set(MakerspaceRole.objects.get(makerspace=space, slug="space_manager").granted_actions)
     actor = make_member("f6-legacy", space)
-    membership = actor.makerspace_memberships.get(makerspace=space)
+    # make_member gives a Space Manager, i.e. a staff-track row (decision 63); the default and reverse
+    # managers are community-only, so read and corrupt the staff row through staff_tracks.
+    membership = MakerspaceMembership.staff_tracks.get(user=actor, makerspace=space)
     with pytest.raises(IntegrityError), transaction.atomic():
-        MakerspaceMembership.objects.filter(pk=membership.pk).update(assigned_role=None)
+        MakerspaceMembership.staff_tracks.filter(pk=membership.pk).update(assigned_role=None)
         membership.refresh_from_db()
         assert rbac.actions_for_membership(membership) == set()
         with connection.cursor() as cursor:

@@ -168,12 +168,14 @@ def _connect(makerspace, *people):
     role = MakerspaceRole.objects.get(makerspace=makerspace, slug="member")
     for person in people:
         MakerspaceMembership.objects.create(makerspace=makerspace, user=person, assigned_role=role,
-                                            role="custom", status="pending")
+                                            role="custom", status="active")
 
 
 def test_minor_record_route_does_not_resolve_unconnected_accounts():
     makerspace, staff, _child = _setup("minors-oracle")
     stranger = user("minors-oracle-stranger")
+    stranger.display_name = "Oracle Stranger"
+    stranger.save(update_fields=["display_name"])
     client = APIClient()
     client.force_authenticate(staff)
     refused = client.post(f"/api/v1/admin/makerspaces/{makerspace.pk}/minors", {

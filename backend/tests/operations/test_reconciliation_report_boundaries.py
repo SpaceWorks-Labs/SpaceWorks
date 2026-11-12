@@ -38,10 +38,14 @@ def test_identity_widget_requires_both_domain_and_audit_authority(monkeypatch):
     space.enabled_modules += ["machines"]
     space.save(update_fields=["enabled_modules"])
     actor = make_member("recon-r-identity-reader", space)
-    allowed = {rbac.Action.MANAGE_MACHINES}
+    # Decision 242(h): the area action alone opens named rows for its own area, and
+    # view_audit alone (no domain action) still does not.
+    allowed = {rbac.Action.VIEW_AUDIT}
     monkeypatch.setattr(dashboard_widgets.rbac, "can", lambda user, action, tenant: action in allowed)
     assert "machine-usage-members" not in {w.key for w in dashboard_widgets.visible_widgets(actor, space)}
-    allowed.add(rbac.Action.VIEW_AUDIT)
+    allowed.add(rbac.Action.MANAGE_MACHINES)
+    assert "machine-usage-members" in {w.key for w in dashboard_widgets.visible_widgets(actor, space)}
+    allowed.discard(rbac.Action.VIEW_AUDIT)
     assert "machine-usage-members" in {w.key for w in dashboard_widgets.visible_widgets(actor, space)}
     assert not REPORT_REGISTRY["machine-usage-members"].deployment_aggregate
 

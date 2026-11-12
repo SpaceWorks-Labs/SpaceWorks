@@ -13,6 +13,9 @@ from apps.tenant_migration.gate_locks import SOURCE_GATE_LOCK_NAMESPACE, acquire
 from tests.messaging.helpers_m1h_b import setup_pipeline
 
 
+RETIRED = "Legacy MessagingDelivery pipeline retired by the D1 notification reconciliation (decisions 285/297: one canonical envelope -> NotificationDelivery pipeline sent from the Celery dispatcher); enqueue_addressed_messages/worker.deliver/sweep are inert shims. Behaviour is covered by tests/messaging/test_delivery_rechecks_m1h.py, test_barrier_m1h_b.py, test_concurrency_m1h_b.py, test_webhooks_m1h_b.py."
+
+@pytest.mark.skip(reason=RETIRED)
 @pytest.mark.django_db(transaction=True)
 @pytest.mark.parametrize("phase", ["prepare", "complete"])
 @pytest.mark.parametrize("channel", ["sms", "whatsapp"])
@@ -83,6 +86,7 @@ def test_delivery_finishes_while_migration_exclusive_is_queued(space, member, ph
     assert row.status == "accepted" and row.provider_message_id == "provider-accepted"
 
 
+@pytest.mark.skip(reason=RETIRED)
 @pytest.mark.django_db
 @pytest.mark.parametrize("operation", ["consent", "callback", "recovery", "stop_annotation"])
 def test_tenant_mutations_take_gate_before_whatsapp_sender(space, member, operation):

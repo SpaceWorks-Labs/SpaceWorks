@@ -26,4 +26,5 @@ def test_machines_only_public_list_works_without_catalogue_or_membership():
     space.save(update_fields=["public_inventory_enabled"])
     result = client().get(catalogue_url)
     assert result.status_code == 404  # #183B gap 12: off is a typed 404
-    assert "loans.enabled" in str(result.data)
+    # Decision 254: the Inventory switch is off, so the catalogue module itself answers off.
+    assert result.data["code"] == "module_disabled" and result.data["module"] == "public_inventory"

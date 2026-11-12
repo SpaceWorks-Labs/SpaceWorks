@@ -41,8 +41,8 @@ def test_every_quota_key_defaults_to_none(switch_off):
 
 def test_event_quota_nth_allowed_and_next_refused_with_typed_409(switch_off):
     from apps.makerspaces.limits import check_quota
-    from tests.events.orders_helpers import ticketed_event
-    space = make_space("sq-events")
+    from tests.events.orders_helpers import l6_space, ticketed_event
+    space = l6_space("sq-events")  # the events module + ticket_types feature that creating a ticket needs
     _limit(space, events_monthly=1)
     check_quota(space, "events", adding=1)  # the first one fits
     ticketed_event(space)

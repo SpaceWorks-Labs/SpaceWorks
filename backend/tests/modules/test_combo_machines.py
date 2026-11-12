@@ -60,7 +60,9 @@ def test_receiving_a_printer_is_charged_to_the_machine_quota(monkeypatch):
 
 @pytest.mark.parametrize(
     ("feature", "module"),
-    [("machines.certifications", "machines"), ("notifications.delegated_recipients", "machines")],
+    # Decision 319 retired `machines.certifications` (it always reads off); `machines.supervised_sessions`
+    # is the live machines-parented capability that carries the prune-on-uninstall contract now.
+    [("machines.supervised_sessions", "machines"), ("notifications.delegated_recipients", "machines")],
 )
 def test_a_feature_is_pruned_with_its_module_and_stays_off_on_reinstall(feature, module):
     space = make_space(f"combo-prune-{feature.replace('.', '-')}")

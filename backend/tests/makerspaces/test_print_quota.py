@@ -64,13 +64,21 @@ def test_managed_print_cap_refuses_a_second_request_without_an_audit(settings):
 
 
 def test_self_host_print_submissions_ignore_managed_caps(settings):
+    # Decisions 281 + addendum: a self-host space with NO limit set is unlimited, but a limit the
+    # superadmin SET on a space applies to own and hosted spaces alike.
     settings.PLATFORM_DOMAIN_SUFFIX = ""
     space, requester, queue = setup_prints("print-quota-self")
+    space.resource_limit_overrides = {}
+    space.save(update_fields=["resource_limit_overrides"])
 
     responses = [submit_print(space, requester, queue) for _ in range(2)]
 
     assert [response.status_code for response in responses] == [201, 201]
     assert MachineServiceRequest.objects.filter(makerspace=space).count() == 2
+
+    space.resource_limit_overrides = {"print": 2}
+    space.save(update_fields=["resource_limit_overrides"])
+    assert submit_print(space, requester, queue).status_code == 400
 
 
 def test_tenant_type_slug_collision_does_not_spend_the_print_allowance(settings):

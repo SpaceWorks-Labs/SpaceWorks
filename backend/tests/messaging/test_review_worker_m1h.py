@@ -9,7 +9,8 @@ from apps.integrations.messaging.transport import SendResult
 from apps.integrations.models import MessagingDelivery, MessagingRecipientCorrelation
 from tests.messaging.helpers_m1h_b import setup_pipeline
 
-pytestmark = pytest.mark.django_db
+RETIRED = "Legacy MessagingDelivery pipeline retired by the D1 notification reconciliation (decisions 285/297: one canonical envelope -> NotificationDelivery pipeline sent from the Celery dispatcher); enqueue_addressed_messages/worker.deliver/sweep are inert shims. Behaviour is covered by tests/messaging/test_delivery_rechecks_m1h.py, test_barrier_m1h_b.py, test_concurrency_m1h_b.py, test_webhooks_m1h_b.py."
+pytestmark = [pytest.mark.django_db, pytest.mark.skip(reason=RETIRED)]
 
 
 @pytest.fixture

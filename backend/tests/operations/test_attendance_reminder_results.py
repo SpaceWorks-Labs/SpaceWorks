@@ -6,7 +6,7 @@ from apps.integrations.models import EmailLog, NotificationPreference
 from apps.integrations.models_contract import NotificationEnvelope
 from apps.operations.models import ReminderSchedule
 from apps.operations.reminder_sweeper import run_reminder_sweep
-from tests.operations.test_attendance_reminders import attendance
+from tests.operations.test_attendance_reminders import attendance, settled
 
 pytestmark = pytest.mark.django_db(transaction=True)
 
@@ -88,7 +88,7 @@ def test_future_second_step_cannot_starve_later_members_first_step(attendance, m
     another = make_member(space, 'next-reminder-member')
     type(another).objects.filter(pk=another.pk).update(email_verified_at=now)
     if domain == 'events':
-        register(row.event, another)
+        settled(register(row.event, another), now)
     else:
         # BK-D sends booking mail only to the owner's verified account address.
         type(another).objects.filter(pk=another.pk).update(email_verified_at=now)

@@ -29,10 +29,11 @@ def test_event_booking_and_certificate_emitters_use_route_mode(routes, monkeypat
     monkeypatch.setattr(event_reminders, "events_context", lambda *_args, **_kwargs: {})
     monkeypatch.setattr(event_reminders, "render", lambda *_: message)
     monkeypatch.setattr(event_reminders, "emit", lambda **kwargs: calls.append(kwargs))
-    event_reminders.dispatch_event_reminder(home, Bag(pk=2, subject="4:starts"), None, timezone.now(), ZoneInfo("UTC"))
+    event_reminders.dispatch_event_reminder(home, Bag(pk=2, subject="4:starts", offset_seconds=-3600), None, timezone.now(), ZoneInfo("UTC"))
     assert len(calls) == 1
     events.certificate_envelope(Bag(pk=3, revision=1, registration=row), "certificate_ready")
-    broadcast_channels.emit_channels(Bag(pk=4, makerspace=home, event_id=1), routes.owner)
+    # A legacy (schema 1) campaign: delivery_revision reads render_schema_version (the model default).
+    broadcast_channels.emit_channels(Bag(pk=4, makerspace=home, event_id=1, render_schema_version=1), routes.owner)
     assert len(calls) == 3
     assert_links(routes, [("event reminder", calls[0]["rendered"], "member/events/4/ticket"),
                           ("certificate", calls[1]["rendered"], "member"),
@@ -47,7 +48,6 @@ def test_booking_reminder_and_campaign_routes(routes, monkeypatch):
     monkeypatch.setattr("apps.integrations.notification_outbox.emit", lambda **kwargs: calls.append(kwargs) or Bag())
     monkeypatch.setattr("apps.bookings.notification_owner_mailbox.notify_owner", lambda _: None)
     monkeypatch.setattr(reminders, "context_for", lambda _: {})
-    monkeypatch.setattr(reminders, "render", lambda *_: message)
     row = Bag(pk=4, calendar_sequence=1, space=Bag(makerspace=routes.home),
               starts_at=timezone.now(), ends_at=timezone.now())
     assert reminders.emit_reminder(row, Bag(pk=5, offset_seconds=-3600), routes.owner)
@@ -80,7 +80,7 @@ def test_equipment_owner_emitters_use_local_routes(routes, lane, monkeypatch):
     monkeypatch.setattr(loans, "hardware_context", lambda *_args, **_kwargs: {"request": Bag()})
     loans.deliver(routes.home, loan, Bag(kind="overdue", offset_seconds=0), Bag(body="Return it"), ZoneInfo("UTC"))
     machine_type = Bag(pk=2)
-    job = Bag(pk=6, makerspace=routes.home, status="completed", updated_at=timezone.now(),
+    job = Bag(pk=6, makerspace=routes.home, status="accepted", updated_at=timezone.now(),
         member=routes.owner, requester=routes.owner, member_id=routes.owner.pk, requester_id=routes.owner.pk,
         queue_id=2, queue=Bag(machine_type=machine_type), bucket_id=None, assigned_machine_id=None)
     monkeypatch.setattr("apps.machines.service_printing_emails._is_printer_request", lambda _: False)
@@ -88,7 +88,7 @@ def test_equipment_owner_emitters_use_local_routes(routes, lane, monkeypatch):
     # The stub job lacks the real request fields the printing projection reads.
     monkeypatch.setattr("apps.machines.service_printing_emails._projection", lambda _row: None)
     monkeypatch.setattr(service, "printing_context", lambda *_args, **_kwargs: {})
-    service.notify_service(job, "completed")
+    service.notify_service(job, "accepted")  # started/completed/cancelled owner legs are durable service_queue_notices now
     grant = Bag(pk=7, certification_type=Bag(makerspace=routes.home, name="Safety", machine_type_id=2),
         expires_at=None, granted_at=timezone.now(), revoked_at=None, membership_id=8,
         membership=Bag(user=routes.owner))

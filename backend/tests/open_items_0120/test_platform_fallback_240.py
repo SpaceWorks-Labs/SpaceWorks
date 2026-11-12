@@ -30,7 +30,7 @@ def switch_off(settings):
 def _platform_sms(settings):
     from apps.integrations.models import PlatformSmsSettings
     settings.MESSAGING_WEBHOOK_BASE_URL = "https://hooks.example.test"
-    row = PlatformSmsSettings(notifications_enabled=True, account_sid="ACplatform",
+    row = PlatformSmsSettings(pk=1, notifications_enabled=True, account_sid="ACplatform",
                               notifications_from_number="+15550100")
     row.set_auth_token("platform-token")
     row.save()
@@ -62,7 +62,7 @@ def test_whatsapp_platform_sender_resolves_with_hosting_off(settings, switch_off
     from apps.integrations.messaging.resolver import resolve_sender
     from apps.integrations.models import PlatformWhatsAppSettings
     settings.MESSAGING_WEBHOOK_BASE_URL = "https://hooks.example.test"
-    row = PlatformWhatsAppSettings(is_enabled=True, phone_number_id="111", business_account_id="222",
+    row = PlatformWhatsAppSettings(pk=1, is_enabled=True, phone_number_id="111", business_account_id="222",
                                    webhook_verify_token="verify")
     row.set_secret("access_token", "tok")
     row.set_secret("app_secret", "sec")

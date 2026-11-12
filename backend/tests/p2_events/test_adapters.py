@@ -109,7 +109,6 @@ def test_revoked_member_owner_gets_no_envelope_but_account_only_owner_does():
 
 def test_reminder_dispatch_emits_owner_envelope_bound_to_the_start_time():
     from apps.events.reminders import dispatch_event_reminder
-    from apps.makerspaces.reminder_policy import reminder_offsets
     home = space("ad-reminder")
     guest = account("ad-rem")
     row = event(home, days=0)
@@ -117,19 +116,21 @@ def test_reminder_dispatch_emits_owner_envelope_bound_to_the_start_time():
     row.ends_at = row.starts_at + timedelta(hours=1)
     row.save(update_fields=["starts_at", "ends_at"])
     reg = registration(row, guest)
-    offsets = reminder_offsets(home, "event") or [-3600]
-    schedule = SimpleNamespace(pk=991, kind="starts", offset_seconds=offsets[0], due_at=row.starts_at,
+    # A one-hour lead: a day-ahead reminder skips sign-ups made in the last 12 hours (fresh_signup).
+    schedule = SimpleNamespace(pk=991, kind="starts", offset_seconds=-3600, due_at=row.starts_at,
                                subject=f"{reg.pk}:{row.starts_at.isoformat()}")
     from unittest import mock
     with mock.patch("apps.events.reminders.reminder_offsets", return_value=[schedule.offset_seconds]):
         result = dispatch_event_reminder(home, schedule, None, timezone.now(), None)
     assert result.scheduled and result.delivered_counts
     reminder = envelopes(source_kind="events.reminder").get()
-    assert reminder.recipient_id == guest.pk and reminder.audience == "requester" and source_eligible(reminder)
-    row.starts_at += timedelta(hours=1)
-    row.ends_at += timedelta(hours=1)
-    row.save(update_fields=["starts_at", "ends_at"])
-    assert not source_eligible(reminder)
+    # source_eligible requires the stamped offset to be a configured lead of the space.
+    with mock.patch("apps.makerspaces.reminder_policy.reminder_offsets", return_value=[-3600]):
+        assert reminder.recipient_id == guest.pk and reminder.audience == "requester" and source_eligible(reminder)
+        row.starts_at += timedelta(hours=1)
+        row.ends_at += timedelta(hours=1)
+        row.save(update_fields=["starts_at", "ends_at"])
+        assert not source_eligible(reminder)
 
 
 def test_broadcast_channel_fanout_skips_email_and_rechecks_the_campaign(monkeypatch):

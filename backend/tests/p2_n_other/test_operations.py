@@ -1,6 +1,7 @@
 from datetime import timedelta
 
 import pytest
+from apps.makerspaces.models import MakerspaceMembership
 from django.utils import timezone
 
 from apps.integrations.models import EmailLog
@@ -61,7 +62,7 @@ def test_report_role_selection_rechecks_creator_and_never_sends_download_bearer(
     assert "token=" not in envelope.message_body
     assert lane.fake.calls[-1][1]["link"] == f"/m/{lane.space.slug}/admin/reports"
     assert not NotificationEnvelope.objects.filter(recipient=lane.owner).exists()
-    lane.manager.makerspace_memberships.update(status="revoked")
+    MakerspaceMembership.all_tracks.filter(user=lane.manager).update(status="revoked")
     assert resolve(envelope) == []
 
 

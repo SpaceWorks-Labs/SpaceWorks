@@ -19,9 +19,12 @@ def test_hook_inside_checkin_transaction_locks_event_before_presence_tenant(lane
         starts_at=now - timedelta(hours=1), ends_at=now + timedelta(hours=1))
     registration = EventRegistration.objects.create(event=event, member=lane.owner,
         name="Owner", email=lane.owner.email, status="registered")
+    # Credential material is prepared BEFORE domain locks (apps/events/credentials/preparation.py), so the
+    # check-in service refuses a caller-held transaction; run it at the top level and exercise the
+    # presence hook (which a real check-in runs on commit) inside its own transaction.
+    updated, _ = mark_attended_with_event(registration, actor=lane.staff, source="qr")
     with transaction.atomic():
-        updated, _ = mark_attended_with_event(registration, actor=lane.staff, source="qr")
-        # Exercise the real hook while the check-in transaction is still open.
+        # Exercise the real hook while a transaction is open.
         with CaptureQueriesContext(connection) as queries:
             session = event_attendance(updated)
         assert session is not None

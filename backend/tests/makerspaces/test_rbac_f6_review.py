@@ -63,15 +63,20 @@ def test_coordinator_can_verify_staff_without_changing_their_role():
     space = make_space("f6-staff-verification")
     actor = custom_actor(space, ["manage_members"])
     staff = custom_actor(space, ["edit_inventory"], name="inventory-staff")
-    membership = MakerspaceMembership.objects.get(makerspace=space, user=staff)
-    original_role = membership.assigned_role_id
+    # Decision 63 (one account per person): verification is a property of the COMMUNITY row, which
+    # the staff person holds beside their staff-track row; the staff role must stay untouched.
+    from tests.fixed_roles.helpers import assign_builtin_roles
+    staff_row = MakerspaceMembership.staff_tracks.get(makerspace=space, user=staff)
+    membership = assign_builtin_roles(staff, space, "member")
+    original_role = staff_row.assigned_role_id
     response = authenticated_client(actor).post(
         f"/api/v1/admin/memberships/{membership.pk}/verify", {}, format="json",
     )
     assert response.status_code == 200
     membership.refresh_from_db()
     assert membership.verified_at is not None
-    assert membership.assigned_role_id == original_role
+    staff_row.refresh_from_db()
+    assert staff_row.assigned_role_id == original_role and staff_row.verified_at is None
     assert AuditLog.objects.filter(actor=actor, action="membership.verified", target_id=str(membership.pk)).exists()
 
 
@@ -115,8 +120,8 @@ def test_superadmin_cannot_hold_a_delegated_verifier_membership():
 
 @pytest.mark.parametrize("operation", ["verify", "unverify", "refer", "verifier"])
 def test_verification_services_recheck_the_locked_module_gate(operation):
-    from rest_framework.exceptions import ValidationError
     from apps.makerspaces import membership_services
+    from apps.makerspaces.guards import SurfaceOff
     from tests.module_helpers import disable_module
 
     space = make_space(f"f6-verification-off-{operation}")
@@ -130,7 +135,7 @@ def test_verification_services_recheck_the_locked_module_gate(operation):
         "refer": lambda: membership_services.set_can_refer(actor, member, True),
         "verifier": lambda: membership_services.set_can_verify(actor, member, True),
     }
-    with pytest.raises(ValidationError):
+    with pytest.raises(SurfaceOff):  # #95/#183B: a module that is off answers a typed 404
         operations[operation]()
     member.refresh_from_db()
     assert member.verified_at is None

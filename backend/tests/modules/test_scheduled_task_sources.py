@@ -101,7 +101,8 @@ def test_gated_task_modules_never_filter_on_a_raw_json_contains():
 @pytest.mark.django_db
 def test_source_configured_reads_modules_capabilities_and_any_of():
     space = make_space("scope-source")
-    space.enabled_modules = sorted(set(space.enabled_modules) | {"machines", "machine_service"})
+    # make_space enables every module; switch shop off so the "all of" tuple has one missing part.
+    space.enabled_modules = sorted((set(space.enabled_modules) | {"machines", "machine_service"}) - {"shop"})
     space.enabled_features = sorted(set(space.enabled_features) | {"machines.job_requests"})
     space.save(update_fields=["enabled_modules", "enabled_features"])
     assert source_configured(space, "machines")
@@ -135,7 +136,8 @@ def test_job_flow_sweep_never_selects_an_off_space(monkeypatch):
     on = make_space("jobs-on")
     off = make_space("jobs-off")
     for space, live in ((on, True), (off, False)):
-        space.enabled_modules = sorted(set(space.enabled_modules) | {"machines", "machine_service"})
+        # make_space enables every module; switch shop off so the "all of" tuple has one missing part.
+        space.enabled_modules = sorted((set(space.enabled_modules) | {"machines", "machine_service"}) - {"shop"})
         features = set(space.enabled_features)
         (features.add if live else features.discard)("machines.job_requests")
         space.enabled_features = sorted(features)

@@ -22,7 +22,14 @@ def test_website_assets_are_server_converted_and_charge_only_final_bytes(world, 
     monkeypatch.setattr(website_assets, "delete_object", lambda key: values.pop(key, None))
     # A multipart body has no client-selected object key or reusable presign.
     page = SimpleNamespace(pk=42, makerspace_id=world.space.pk, makerspace=world.space)
-    copies = SimpleNamespace(created=[])
+    copies = SimpleNamespace(created=[], upload=Mock(return_value=("events/website/delegated", 7)))
+    if module == "events":
+        # Event images moved to the reserve -> storage-outside-locks -> finalize transaction
+        # (commit 223877193), so the generic helper only delegates and writes nothing itself.
+        assert website_assets.upload(BytesIO(png()), module=module, page=page, copies=copies) == ("events/website/delegated", 7)
+        copies.upload.assert_called_once()
+        assert writes == [] and values == {}
+        return
     key, size = website_assets.upload(BytesIO(png()), module=module, page=page, copies=copies)
     assert key.startswith(f"{module}/website/{world.space.pk}/42/")
     assert writes == [("staging/" + key, "application/octet-stream"), (key, "image/webp")]

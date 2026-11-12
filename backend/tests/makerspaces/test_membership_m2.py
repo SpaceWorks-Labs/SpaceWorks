@@ -41,11 +41,26 @@ def test_manager_cannot_revoke_a_peer_manager_but_superadmin_can():
     sm_role = MakerspaceRole.objects.get(makerspace=space, slug="space_manager")
     actor = make_staff(space, username="mgr-a")
     target = make_staff(space, username="mgr-b")
-    target_m = MakerspaceMembership.objects.get(makerspace=space, user=target)
+    target_m = MakerspaceMembership.staff_tracks.get(makerspace=space, user=target)
     with pytest.raises(PermissionDenied):
         membership_services.revoke_membership(actor, target_m)
     root = User.objects.create_superuser(username="root")
-    assert membership_services.revoke_membership(root, target_m).status == "revoked"
+    # Decision 63 (one account per person): a staff-track row is no longer revoked through the
+    # community membership route, not even by a superadmin; the staff-roles service owns it.
+    with pytest.raises(PermissionDenied, match="staff roles screen"):
+        membership_services.revoke_membership(root, target_m)
+    target_m.refresh_from_db()
+    assert target_m.status == "active"
+    # The peer protection itself lives on the staff-roles route now: a Space Manager cannot revoke
+    # another Space Manager there; the platform administrator can.
+    from apps.accounts import staff_account_lifecycle as lifecycle
+    from apps.accounts.staff_account_policy import SM_SUPERADMIN_ONLY, StaffRoleRefused
+    with pytest.raises(StaffRoleRefused) as refused:
+        lifecycle.revoke(actor, space.pk, target_m.pk)
+    assert refused.value.detail["code"] == SM_SUPERADMIN_ONLY and refused.value.status_code == 403
+    target_m.refresh_from_db()
+    assert target_m.status == "active"
+    assert lifecycle.revoke(root, space.pk, target_m.pk).status == "revoked"
 
 
 @pytest.mark.django_db(transaction=True)

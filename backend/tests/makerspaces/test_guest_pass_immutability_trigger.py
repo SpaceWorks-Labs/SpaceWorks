@@ -35,7 +35,8 @@ def test_frozen_columns_cannot_change_but_status_waiver_and_revoke_transitions_c
     with pytest.raises(_DB_ERRORS), transaction.atomic():
         GuestPass.objects.filter(pk=row.pk).update(entitlements={"borrow": "full_with_deposit"})
     with pytest.raises(_DB_ERRORS), transaction.atomic():
-        GuestPass.objects.filter(pk=row.pk).update(kind=GuestPass.Kind.DAY)
+        other_kind = GuestPass.Kind.EVENT if row.kind != GuestPass.Kind.EVENT else GuestPass.Kind.SPONSORED
+        GuestPass.objects.filter(pk=row.pk).update(kind=other_kind)
     revoked = guest_pass_lifecycle.revoke_pass(manager(row.makerspace, "gp-trg-revoker"), row, "left early")
     assert revoked.status == GuestPass.Status.REVOKED
 

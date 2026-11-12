@@ -103,7 +103,11 @@ def test_invitation_discovery_is_verified_email_owner_safe_and_claims_by_outcome
     }
 
     referral_invitee = user("j2-referral-invitee")
-    referral_invite = membership_services.refer_membership(actor, makerspace, referral_invitee.email)
+    # Decision 63: the manager is a staff-track person with no community row, so a referral
+    # comes from a community member the space allowed to refer.
+    referrer = user("j2-referrer")
+    membership(referrer, makerspace, can_refer=True)
+    referral_invite = membership_services.refer_membership(referrer, makerspace, referral_invitee.email)
     claimed = client_for(referral_invitee).post(
         f"/api/v1/memberships/invitations/{referral_invite.id}/claim"
     )

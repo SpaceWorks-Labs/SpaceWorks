@@ -66,7 +66,7 @@ def test_a_role_change_is_audited():
     makerspace = space("actors-role-audit")
     boss = manager(makerspace, "actors-role-audit-manager")
     staff = make_staff(makerspace, username="actors-role-audit-staff", role_slug="event_manager")
-    membership = MakerspaceMembership.objects.get(makerspace=makerspace, user=staff)
+    membership = MakerspaceMembership.staff_tracks.get(makerspace=makerspace, user=staff)
     inventory = MakerspaceRole.objects.get(makerspace=makerspace, slug="inventory_manager")
 
     membership_services.change_role(boss, membership, inventory)

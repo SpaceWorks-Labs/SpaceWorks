@@ -224,8 +224,8 @@ def test_restoring_a_cancelled_booking_does_not_count_twice(switch_off):
 
 def test_publishing_a_draft_created_this_month_adds_nothing_to_events_monthly(switch_off):
     from apps.makerspaces.limits import check_quota
-    from tests.events.orders_helpers import ticketed_event
-    lab = make_space("lim-publish")
+    from tests.events.orders_helpers import l6_space, ticketed_event
+    lab = l6_space("lim-publish")  # the events module + ticket_types feature that creating a ticket needs
     ticketed_event(lab)  # counted at creation
     _limit(lab, events_monthly=1)
     check_quota(lab, "events", adding=1, monthly_adding=0)  # publishing it again: already counted
@@ -239,7 +239,7 @@ def test_platform_wallet_counts_only_platform_signed_passes(switch_off):
     from apps.makerspaces import member_card_services as services
     from tests.l3_local.helpers import card_space, manager, member
     lab = card_space("lim-wallet")
-    card = services.issue_card(manager(lab), member(lab)[0])
+    card = services.issue_card(manager(lab), member(lab)[1])
     own = WalletPass.objects.create(makerspace=lab, member_card=card, platform="apple", serial="own1",
                                     auth_token_digest=digest(auth_token("own1")))
     platform = WalletPass.objects.create(makerspace=lab, member_card=card, platform="google", serial="plat1",
@@ -275,11 +275,14 @@ def test_superadmin_get_put_and_bulk_cover_every_new_key(switch_off):
     lab.refresh_from_db()
     assert lab.resource_limit_overrides == every
     bulk = client.post(reverse("admin-platform-space-limits-bulk"),
-                       {"makerspace_ids": [lab.pk, other.pk], "set": {key: 3 for key in EXTRA_QUOTA_LIMIT_KEYS},
+                       {"makerspace_ids": [lab.pk, other.pk], "set": {key: 3 for key in EXTRA_QUOTA_LIMIT_KEYS - {"boxes"}},
                         "clear": ["boxes"]}, format="json")
     assert bulk.status_code == 200, bulk.content
     other.refresh_from_db()
+    lab.refresh_from_db()
     assert other.resource_limit_overrides["shop_products"] == 3 and "boxes" not in other.resource_limit_overrides
+    # a key sent in both `set` and `clear` is set (clear runs first), so the test clears a key it does not set
+    assert lab.resource_limit_overrides["shop_products"] == 3 and "boxes" not in lab.resource_limit_overrides
     assert client.put(url, {"overrides": {"not_a_key": 1}}, format="json").status_code == 400
 
 

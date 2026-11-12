@@ -77,7 +77,8 @@ def test_bookings_listed_only_with_a_public_active_resource():
 
 
 def test_shop_and_inventory_follow_their_switches():
-    space = make_space("shop-sp", modules=["shop", "public_inventory"], features=["shop.online", "loans.enabled"])
+    space = make_space("shop-sp", modules=["shop", "public_inventory", "staff_admin"],  # loans.enabled is parented on staff_admin
+                       features=["shop.online", "loans.enabled"])
     offers = row("shop-sp")["offers"]
     assert "shop" in offers and "inventory" in offers
     space.public_inventory_enabled = False
@@ -93,7 +94,9 @@ def test_offers_are_ordered_and_contain_only_known_keys():
 
 
 def test_directory_query_count_is_flat_across_spaces():
-    make_space("flat-1", modules=["events", "bookings", "shop"], features=["shop.online"])
+    first = make_space("flat-1", modules=["events", "bookings", "shop"], features=["shop.online"])
+    make_event(first)  # same data shape per space, so only the number of spaces differs between the two requests
+    BookableSpace.objects.create(makerspace=first, name="Room", is_public=True)
     with CaptureQueriesContext(connection) as one:
         APIClient().get(URL)
     for number in range(2, 6):
@@ -102,4 +105,6 @@ def test_directory_query_count_is_flat_across_spaces():
         BookableSpace.objects.create(makerspace=space, name="Room", is_public=True)
     with CaptureQueriesContext(connection) as five:
         APIClient().get(URL)
-    assert len(five) == len(one)
+    # The first request also pays one-off cold-cache lookups, so five spaces may cost fewer queries than
+    # one; an N+1 would make it cost MORE, which is the regression this guards.
+    assert len(five) <= len(one)

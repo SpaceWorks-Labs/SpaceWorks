@@ -6,8 +6,8 @@ from apps.operations import platform_checks as checks
 
 
 def _space(**extra):
-    return SimpleNamespace(name="Lab", slug="lab", pk=1, enabled_modules=["email"], frontend_domain="",
-                           frontend_domain_status="", **extra)
+    fields = {"frontend_domain": "", "frontend_domain_status": "", **extra}  # overrides replace the defaults
+    return SimpleNamespace(name="Lab", slug="lab", pk=1, enabled_modules=["email"], **fields)
 
 
 def test_domain_check_points_at_branding_and_email_at_integrations():

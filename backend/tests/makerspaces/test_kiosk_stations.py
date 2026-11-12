@@ -158,7 +158,7 @@ def test_cross_tenant_admin_is_refused_and_event_stations_are_not_kiosk_stations
     assert client_for(outsider).get(detail).status_code in (403, 404)
     assert create(outsider, space).status_code in (403, 404)
     event_station = Station.objects.create(makerspace=space, kind="event_checkin", name="e")
-    staff = MakerspaceMembership.objects.filter(makerspace=space).first().user
+    staff = MakerspaceMembership.all_tracks.filter(makerspace=space).first().user
     event_detail = reverse("admin-kiosk-station-detail", kwargs={"pk": event_station.pk})
     assert client_for(staff).get(event_detail).status_code == 404
 
@@ -253,7 +253,7 @@ def test_organization_grant_is_an_authority_source_and_inactive_local_is_not():
     assert granted.status_code == 201 and granted.data["allowed_actions"] == ["view_inventory"]
 
     inactive = make_staff(space, username="inactive")
-    MakerspaceMembership.objects.filter(user=inactive, makerspace=space).update(status="revoked")
+    MakerspaceMembership.all_tracks.filter(user=inactive, makerspace=space).update(status="revoked")
     client2, _ = start(payload)
     client2.force_authenticate(inactive)
     assert client2.post(lease_url(payload), **HEADERS).status_code == 403

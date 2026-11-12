@@ -25,8 +25,11 @@ pytestmark = pytest.mark.django_db(transaction=True)
 def _space(slug="gp-space", *, charges=False, presence_required=False):
     makerspace = space(slug)
     makerspace.enabled_modules = sorted(set(makerspace.enabled_modules or []) | {"membership"})
-    features = {"charges.enabled", "charges.membership"} if charges else set()
-    makerspace.enabled_features = sorted(set(makerspace.enabled_features or []) | features)
+    features = {"charges.enabled", "charges.membership"}
+    # Money owed is tracked by default now (charges.* default on), so "charges off" must switch it off.
+    makerspace.enabled_features = sorted(
+        set(makerspace.enabled_features or []) | features if charges
+        else set(makerspace.enabled_features or []) - features)
     makerspace.save(update_fields=["enabled_modules", "enabled_features"])
     features_on(makerspace, "guest_passes", "day_passes")
     if not presence_required:
@@ -190,6 +193,8 @@ def test_revoke_frees_the_day_and_unlocks_nothing():
 
 
 def test_expire_sweep_and_conversion_marker():
+    # Decision 229(b): a closed pass (expired/revoked/converted) never changes status, so the
+    # conversion marker closes only a LIVE pass and leaves an expired one as history.
     makerspace = _space()
     guest = user("visitor")
     row, _ = guest_pass_issue.issue_staff_pass(manager(makerspace), makerspace, guest)
@@ -198,9 +203,16 @@ def test_expire_sweep_and_conversion_marker():
     assert row.status == "expired"
     membership = MakerspaceMembership.objects.create(
         makerspace=makerspace, user=guest, assigned_role=member_role(makerspace), role="custom", status="active")
-    assert guest_pass_lifecycle.mark_converted(membership) == 1
+    assert guest_pass_lifecycle.mark_converted(membership) == 0  # expired history stays
     row.refresh_from_db()
-    assert row.status == "converted" and row.converted_membership_id == membership.pk
+    assert row.status == "expired"
+    live_guest = user("visitor2")
+    live, _ = guest_pass_issue.issue_staff_pass(manager(makerspace, "m5"), makerspace, live_guest)
+    live_membership = MakerspaceMembership.objects.create(
+        makerspace=makerspace, user=live_guest, assigned_role=member_role(makerspace), role="custom", status="active")
+    assert guest_pass_lifecycle.mark_converted(live_membership) == 1
+    live.refresh_from_db()
+    assert live.status == "converted" and live.converted_membership_id == live_membership.pk
 
 
 def test_visit_summary_prompts_join_after_n_visits_and_hard_cap_refuses():
@@ -220,7 +232,8 @@ def test_visit_summary_prompts_join_after_n_visits_and_hard_cap_refuses():
 
 
 def _product(makerspace, amount="12.00", **extra):
-    return DayPassProduct.objects.create(makerspace=makerspace, name="Day", amount=Decimal(amount), currency="usd",
+    extra.setdefault("name", "Day")
+    return DayPassProduct.objects.create(makerspace=makerspace, amount=Decimal(amount), currency="usd",
                                          **extra)
 
 
@@ -268,6 +281,6 @@ def test_revoking_a_paid_day_pass_opens_a_refund_case():
     row, payment = guest_pass_day.sell_day_pass(guest, makerspace, guest, _product(makerspace))
     mark_offline(payment, staff, settlement=settlement_details())
     guest_pass_lifecycle.revoke_pass(staff, row, "wrong day")
-    assert RefundCase.objects.filter(makerspace=makerspace, payment=payment).exists()
+    assert RefundCase.objects.filter(payment__makerspace=makerspace, payment=payment).exists()
     assert AuditLog.objects.get(makerspace=makerspace, action="membership.guest_pass_revoked").meta[
         "refund_opened"] is True

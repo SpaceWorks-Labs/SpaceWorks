@@ -8,6 +8,7 @@ from django.utils import timezone
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from apps.bookings.models import BookableSpace
+from apps.makerspaces.guards import SurfaceOff
 from apps.operations import reports
 from apps.operations.report_registry import REPORT_REGISTRY, report_definition, ReportNotFound
 from apps.operations.report_subjects import SubjectFilterSerializer
@@ -116,7 +117,8 @@ def test_features_modules_and_legacy_permissions_are_independent():
         original = tenant.enabled_features[:]
         tenant.enabled_features.remove(feature); tenant.save(update_fields=["enabled_features"])
         for key in keys:
-            with pytest.raises(ValidationError):
+            # Decision 183B gap 12: an off feature is a typed 404 (SurfaceOff), not a 400.
+            with pytest.raises((ValidationError, SurfaceOff)):
                 reports.report_data(key, tenant.pk, actor=manager, report_filters=filters(resource))
         # The established tenant-wide report remains available to an auditor alone.
         assert reports.report_data("booking-utilization", tenant.pk, actor=grantee)["typed_rows"]
@@ -125,7 +127,7 @@ def test_features_modules_and_legacy_permissions_are_independent():
         original = tenant.enabled_modules[:]
         tenant.enabled_modules.remove(module); tenant.save(update_fields=["enabled_modules"])
         for key in KEYS:
-            with pytest.raises(ValidationError):
+            with pytest.raises((ValidationError, SurfaceOff)):
                 reports.report_rows(key, tenant.pk, actor=manager, report_filters=filters(resource))
         tenant.enabled_modules = original; tenant.save(update_fields=["enabled_modules"])
 

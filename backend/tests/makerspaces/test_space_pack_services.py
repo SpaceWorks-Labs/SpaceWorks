@@ -111,7 +111,7 @@ def test_no_members_money_credentials_evidence_or_history_in_export():
     row.save(update_fields=["telegram_group_chat_id", "smtp_username"])
     from apps.payments.models import Payment
     from apps.makerspaces.models import MakerspaceMembership
-    membership = MakerspaceMembership.objects.get(makerspace=row, user=actor)
+    membership = MakerspaceMembership.all_tracks.get(makerspace=row, user=actor)
     Payment.objects.create(makerspace=row, member=actor, created_by=actor,
         subject_type="makerspace_membership", subject_id=membership.pk,
         subject_label="PRIVATE-DEBT", amount="98765.43", currency="usd", provider="unclaimed")

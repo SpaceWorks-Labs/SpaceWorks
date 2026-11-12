@@ -19,7 +19,8 @@ URL = "https://hooks.example.com/spaceworks"
 
 @pytest.fixture(autouse=True)
 def offline_push(monkeypatch):
-    monkeypatch.setattr("apps.card_designs.image_adapter.url_policy.public_https", lambda url: url.startswith("https://"))
+    # The push URL check moved to the shared outbound policy (security review M1).
+    monkeypatch.setattr("apps.outbound_policy.is_public_https", lambda url, ports=None: url.startswith("https://"))
     monkeypatch.setattr("apps.devices.tasks.deliver_adapter_webhook_task.delay", lambda *a, **k: None)
 
 

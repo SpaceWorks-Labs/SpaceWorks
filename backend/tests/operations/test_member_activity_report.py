@@ -37,7 +37,8 @@ def test_member_activity_has_one_scoped_row_with_current_snapshot_metrics():
 
 def test_member_activity_metrics_use_independent_current_state_and_range_counts():
     space = make_space("member-activity-metrics")
-    manager = make_member("member-activity-manager", space)
+    # Decision 63: a manager is a staff-track row; the report counts community members only.
+    manager = make_member("member-activity-manager", space, membership_role="member", role=User.Role.REQUESTER)
     now = timezone.now()
     start, end = now - timedelta(days=2), now + timedelta(days=2)
     active = MakerspaceMembership.objects.get(user=manager, makerspace=space)

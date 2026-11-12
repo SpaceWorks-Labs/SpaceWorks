@@ -1,4 +1,7 @@
-"""Module-off detail contracts; pending actual execution."""
+"""Module-off detail contracts; pending actual execution.
+
+Decision 254: the inventory-only modules answer off while the Inventory switch (`loans.enabled`) is off, so
+every space here turns it on (`loans=True`) and the module switch alone decides the answer."""
 import pytest
 from django.urls import reverse
 from rest_framework.test import APIClient
@@ -27,9 +30,9 @@ def api(user):
 
 
 def test_qr_batch_detail_off_then_on_and_outside_scope():
-    space = family_space("qr-detail-off")
+    space = family_space("qr-detail-off", loans=True)
     actor = manager(space, "qr-detail-manager")
-    other = manager(family_space("qr-detail-other", "qr_print_batches"), "qr-detail-outsider")
+    other = manager(family_space("qr-detail-other", "qr_print_batches", loans=True), "qr-detail-outsider")
     batch = QrPrintBatch.objects.create(makerspace=space, title="Batch", created_by=actor)
     url = reverse("qr-print-batch-detail", args=[batch.pk])
     denied = api(actor).get(url)
@@ -41,11 +44,11 @@ def test_qr_batch_detail_off_then_on_and_outside_scope():
 
 
 def test_transfer_requires_enabled_visible_endpoint():
-    source = family_space("transfer-source", "stock_transfers")
-    destination = family_space("transfer-destination")
+    source = family_space("transfer-source", "stock_transfers", loans=True)
+    destination = family_space("transfer-destination", loans=True)
     source_actor = manager(source, "transfer-source-manager")
     destination_actor = manager(destination, "transfer-destination-manager")
-    outsider = manager(family_space("transfer-outsider", "stock_transfers"), "transfer-outsider-manager")
+    outsider = manager(family_space("transfer-outsider", "stock_transfers", loans=True), "transfer-outsider-manager")
     transfer = StockTransfer.objects.create(makerspace=source, source_makerspace=source,
                                             destination_makerspace=destination, reason="Move")
     url = reverse("stock-transfer-detail", args=[transfer.pk])
@@ -63,7 +66,7 @@ def test_transfer_requires_enabled_visible_endpoint():
 
 
 def test_historical_transfer_without_endpoints_preserves_superadmin_owner_gate():
-    space = family_space("historic-transfer", "stock_transfers")
+    space = family_space("historic-transfer", "stock_transfers", loans=True)
     root = User.objects.create_superuser(username="historical-transfer-root", email="root@example.test",
         display_name="Platform", role=User.Role.SUPERADMIN, is_staff=True, is_superuser=True,
         access_status=User.AccessStatus.ACTIVE)

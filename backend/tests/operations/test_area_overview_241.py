@@ -206,7 +206,8 @@ def test_repairs_group_per_area_and_the_technician_sees_only_assigned_jobs(w):
     assert _keys(_get(w.bm, w.space, "repairs").json()) == ["area:bookings"]
     assert _keys(_get(w.im, w.space, "repairs").json()) == ["area:inventory"]
     assert _keys(_get(w.tech, w.space, "repairs").json()) == []
-    svc.assign(w.manager, svc.triage(w.manager, laser_job), contact=in_house(w))
+    # open_issue starts a staff-opened repair already triaged (services_issues.open_issue), so assign directly.
+    svc.assign(w.manager, laser_job, contact=in_house(w))
     tech = _get(w.tech, w.space, "repairs").json()
     laser = _child(_area(tech, "machines"), f"machine_type:{w.kind.pk}")
     assert [item["label"] for item in _child(laser, f"machine:{w.machine.pk}")["items"]] == ["Lens cracked"]

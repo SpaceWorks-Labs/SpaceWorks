@@ -38,11 +38,14 @@ def test_gallery_covers_and_profiles_capture_from_public_bucket_but_websites_sta
     for obj in rows:
         collect_model_objects(type(obj).objects.filter(pk=obj.pk), type(obj), objects,
                               fixed_makerspace_id=lane.space.pk)
-    public = {resource.image_key, photo.object_key, row.image_key, series.image_key,
-              lane.profile.avatar_key, lane.project.image_key}
+    # Decision 305: account-level profile images (AccountProfile/AccountProject) are COORDINATION_ONLY,
+    # never archive content, so a space capture does not collect them.
+    public = {resource.image_key, photo.object_key, row.image_key, series.image_key}
     private = {event_asset.object_key, booking_asset.object_key}
     assert set(objects["public_image"]) == public
     assert set(objects["private"]) == private
+    assert lane.profile.avatar_key not in objects["public_image"]
+    assert lane.project.image_key not in objects["public_image"]
     assert all(item["makerspace_id"] == lane.space.pk for group in objects.values() for item in group.values())
 
     # No fallback between buckets: the old collector must fail on the gallery key.

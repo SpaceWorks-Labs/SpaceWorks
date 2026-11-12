@@ -15,7 +15,7 @@ from apps.inventory.public_image_storage import (
     build_object_key,
     public_image_key_in_use,
 )
-from apps.makerspaces import profile_services
+from apps.makerspaces import profile_projects, profile_services
 from apps.makerspaces.account_profile import account_profile_for
 from apps.makerspaces.models import (
     AccountProfile,
@@ -341,7 +341,7 @@ def test_a_failed_fetch_keeps_the_last_known_count(settings, monkeypatch):
     space = make_space()
     membership = member(space)
     profile = profile_services.profile_for(membership)
-    MemberProfile.objects.filter(pk=profile.pk).update(
+    AccountProfile.objects.filter(pk=profile.pk).update(
         github_username="octocat", github_contributions=987
     )
     profile.refresh_from_db()
@@ -393,7 +393,7 @@ def test_save_projects_rejects_a_foreign_id_before_writing_anything():
     profile = profile_services.profile_for(membership)
 
     with pytest.raises(ValidationError):
-        profile_services.save_projects(profile, [{"title": "New"}, {"id": 999, "title": "X"}])
+        profile_projects.save_projects(profile, [{"title": "New"}, {"id": 999, "title": "X"}])
 
 
 def test_an_account_level_key_is_seen_by_the_collision_check_and_survives_a_space_purge():

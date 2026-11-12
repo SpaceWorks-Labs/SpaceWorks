@@ -103,6 +103,10 @@ def test_email_limit_skips_with_a_reason_and_own_smtp_is_exempt(switch_off):
     assert log.status == EmailLog.Status.SKIPPED and "allowed by the platform" in log.error
     space.smtp_host = "smtp.own.test"
     space.save(update_fields=["smtp_host"])
+    assert not pl.uses_own_email(space)  # parity E-B8: an untested own SMTP is not used
+    from django.utils import timezone
+    from apps.integrations.space_smtp_gate import mark_verified
+    mark_verified(space, timezone.now())
     assert pl.uses_own_email(space)
 
 
@@ -139,6 +143,8 @@ def test_checkout_answers_typed_409_and_offline_settlement_still_works(switch_of
     from rest_framework.test import APIClient
     from apps.payments.checkout_coordination import PlatformRailLimitReached
     assert PlatformRailLimitReached.code == "platform_rail_limit_reached"
+    from apps.payments.models import PlatformStripeConnectSettings
+    PlatformStripeConnectSettings.load()  # a Connect-stamped charge needs the platform settings row to start a page
     space, _staff, payment = _connect_charge("pcl-409")
     _limit(space, platform_payments_monthly_count=0)
     with pytest.raises(PlatformRailLimitReached):

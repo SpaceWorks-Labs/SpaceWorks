@@ -37,6 +37,12 @@ def test_loan_visibility_preserves_retained_loan_policies_and_payment_capabiliti
     assert not feature_enabled(space, "loans.enabled")
     assert charge_tracking_enabled(space, "loans")
     assert feature_enabled(space, "payments.loans")
+    # Decision 254: `loans.renewals` / `loans.limits` are children of the Inventory switch and read off
+    # with it (the stored choice is kept); only the money capabilities above survive for retained loans.
+    assert not feature_enabled(space, "loans.renewals")
+    assert not feature_enabled(space, "loans.limits")
+    space.enabled_features = sorted({*space.enabled_features, "loans.enabled"})
+    space.save(update_fields=["enabled_features"])
     assert feature_enabled(space, "loans.renewals")
     assert feature_enabled(space, "loans.limits")
 

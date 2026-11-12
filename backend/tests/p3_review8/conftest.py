@@ -35,8 +35,9 @@ class ImageStore:
         data, mime = self.objects[Key]
         return {"Body": BytesIO(data), "ContentType": mime, "ContentLength": len(data)}
 
-    def put_object(self, *, Bucket, Key, Body, ContentType, IfNoneMatch):
-        assert IfNoneMatch == "*"
+    def put_object(self, *, Bucket, Key, Body, ContentType, IfNoneMatch=None):
+        # Promotion is a conditional create; the event-cover WebP copy (cover_finalize) is a plain put.
+        assert IfNoneMatch in (None, "*")
         if self.before_put:
             callback, self.before_put = self.before_put, None
             callback(Key)

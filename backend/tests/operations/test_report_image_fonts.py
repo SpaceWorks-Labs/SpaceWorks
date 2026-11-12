@@ -36,8 +36,12 @@ class ReportImageFontTests(unittest.TestCase):
             for instruction in body.replace("\\\n", " ").splitlines():
                 if not instruction.startswith("RUN "):
                     continue
-                for command in instruction[4:].split("&&"):
+                # The shared base stage installs inside one `set -eux; ... ;` shell script, so
+                # split on `;` as well as `&&` and accept a leading `then`/`do`/`else`.
+                for command in re.split(r"&&|;|\|\|", instruction[4:]):
                     tokens = shlex.split(command)
+                    while tokens and tokens[0] in {"then", "do", "else"}:
+                        tokens = tokens[1:]
                     if tokens[:2] == ["apt-get", "install"]:
                         packages.update(tokens[2:])
         self.assertIn("fonts-dejavu-core", packages, f"{filename} target {target}")

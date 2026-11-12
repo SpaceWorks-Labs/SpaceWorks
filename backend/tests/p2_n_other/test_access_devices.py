@@ -1,6 +1,7 @@
 from datetime import timedelta
 
 import pytest
+from apps.makerspaces.models import MakerspaceMembership
 from django.utils import timezone
 
 from apps.apiclients.models import ApiKeyRequest
@@ -38,7 +39,7 @@ def test_access_outcomes_separate_private_note_from_staff_summary(lane, domain, 
     staff = NotificationEnvelope.objects.get(event=event, audience="staff")
     from apps.integrations.notification_sources import render
     assert "Private resolution note" not in render(staff)["text"]
-    lane.manager.makerspace_memberships.update(status="revoked")
+    MakerspaceMembership.all_tracks.filter(user=lane.manager).update(status="revoked")
     assert resolve(envelope) == []
 
 

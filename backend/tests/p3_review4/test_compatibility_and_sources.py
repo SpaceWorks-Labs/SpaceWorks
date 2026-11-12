@@ -76,7 +76,7 @@ def test_legacy_recovery_keeps_its_source_revision(world, monkeypatch):
     envelope = persist(world.space, "bookings", "confirmed", None, key, timezone.now().isoformat())
     snapshot(envelope, LifecyclePayload("Staff summary", source=source))
     captured = []
-    monkeypatch.setattr("apps.integrations.notify._run_guarded", lambda *args: captured.append(args[3]()))
+    monkeypatch.setattr("apps.integrations.notify._run_guarded", lambda *args, **kwargs: captured.append(args[3]()))
     recover(envelope)
     assert captured[0].source == source
 
@@ -103,7 +103,11 @@ def test_event_campaign_ticket_urls_use_the_registered_via_spaces_route_mode(wor
     query = Mock()
     query.filter.return_value.select_related.return_value.order_by.return_value.first.return_value = entry
     monkeypatch.setattr(broadcasts, "registrations", lambda _: query)
-    monkeypatch.setattr(broadcasts, "render", lambda subject, body, context: context)
+    # The ticket link is built by render_recipient; the programme renderer and placeholder
+    # engine are replaced by pass-throughs so only the route mode is under test.
+    monkeypatch.setattr("apps.events.programme.broadcast_content.render_content", lambda _campaign, context: context)
+    monkeypatch.setattr("apps.events.programme.broadcast_placeholders.placeholder_context",
+                        lambda event, *, name, ticket_url: {"ticket_url": ticket_url})
     campaign = Bag(event=Bag(makerspace=world.space, title="Workshop", starts_at=timezone.now(), location="Hall"),
                    subject="Ticket", body="{{ticket_url}}")
     result = broadcasts.render_recipient(campaign, world.owner)

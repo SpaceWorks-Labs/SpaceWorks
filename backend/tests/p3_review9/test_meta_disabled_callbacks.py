@@ -21,7 +21,7 @@ def test_meta_consent_withdrawals_ignore_send_switches(meta_wa, switch, kind):
     else:
         payload = wa.payload("statuses", [{"id": delivery.provider_id, "recipient_id": "15551234567",
             "status": "failed", "errors": [{"code": 131050}]}])
-    expected_status = 404 if switch == "notifications" else 200
+    expected_status = 403 if switch == "notifications" else 200
     assert wa.post(payload).status_code == expected_status
     endpoint.refresh_from_db()
     assert endpoint.revoked_at and endpoint.verification_state == "revoked"
@@ -42,7 +42,7 @@ def test_meta_in_flight_status_ignores_send_switches(meta_wa, switch, state):
     original_state = delivery.state
     disable(wa, switch)
     response = wa.post(wa.payload("statuses", [{"id": delivery.provider_id, "status": state}]))
-    assert response.status_code == (404 if switch == "notifications" else 200)
+    assert response.status_code == (403 if switch == "notifications" else 200)
     delivery.refresh_from_db()
     assert delivery.state == (original_state if switch == "notifications" else state)
 
@@ -53,7 +53,7 @@ def test_meta_proof_stays_disabled(meta_wa, switch):
     challenge, code = wa.challenge()
     disable(wa, switch)
     response = wa.post(wa.payload("messages", [wa.message(code)]))
-    assert response.status_code == (404 if switch == "notifications" else 200)
+    assert response.status_code == (403 if switch == "notifications" else 200)
     challenge.refresh_from_db()
     assert challenge.consumed_at is None and challenge.endpoint_id is None
 
@@ -71,6 +71,6 @@ def test_meta_disabled_callbacks_keep_authentication_binding(meta_wa, invalid):
     payload = wa.payload("messages", [wa.message("STOP")],
         business="999" if invalid == "business" else "200", phone="999" if invalid == "phone" else "300")
     response = wa.post(payload, **kwargs)
-    assert response.status_code == (403 if invalid == "signature" else 404 if invalid == "generation" else 200)
+    assert response.status_code == (403 if invalid in ("signature", "generation") else 200)
     endpoint.refresh_from_db()
     assert endpoint.revoked_at is None

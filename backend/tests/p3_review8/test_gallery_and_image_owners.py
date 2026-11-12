@@ -76,9 +76,21 @@ def test_shared_image_owners_charge_once_and_keep_original_on_replay(world, imag
     response = client.put(url, {"object_key": key, **extra}, format="json")
     assert response.status_code == 200, response.data
     holder.refresh_from_db()
-    assert getattr(holder, field) == key
+    if target not in {"event", "series"}:
+        assert getattr(holder, field) == key
     image_store.objects[public_image_storage.staging_key(key)] = (b"invalid replay", "image/png")
     response = client.put(url, {"object_key": key, **extra}, format="json")
+    if target in {"event", "series"}:
+        # Event and series covers are re-encoded as metadata-free WebP under a new key (cover_finalize),
+        # so the attached key is the stripped copy and the charge is its size; the original object is
+        # gone, and replaying it is refused without touching the attached image.
+        assert response.status_code == 400, response.data
+        holder.refresh_from_db()
+        attached = getattr(holder, field)
+        assert attached.endswith(".webp") and attached != key
+        world.space.refresh_from_db()
+        assert world.space.storage_bytes_used == len(image_store.objects[attached][0])
+        return
     assert response.status_code == 200, response.data
     assert image_store.objects[key] == (payload, "image/png")
     assert image_store.writes == [key]

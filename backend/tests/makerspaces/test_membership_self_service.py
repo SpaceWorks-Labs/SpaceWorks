@@ -100,27 +100,29 @@ def test_fresh_admission_clears_previous_lifecycles_renewal_cancellation(member_
     assert AuditLog.objects.filter(action="membership.joined", target_id=str(renewed.pk)).exists()
 
 
+# Decision 63 (one account per person): a staff-track row is not a community membership, so the
+# member departure route has no row to act on and answers 404; the staff row is untouched.
 def test_staff_cannot_use_member_departure_even_with_another_active_manager(member_account):
     _, space, _, _ = member_account
     actor = make_staff(space, username="leaving-manager", password="password")
-    membership = MakerspaceMembership.objects.get(makerspace=space, user=actor)
+    membership = MakerspaceMembership.all_tracks.get(makerspace=space, user=actor)
     client = APIClient()
     client.force_authenticate(actor)
-    assert client.post(route(space, "leave"), {"reason": "Leaving"}, format="json").status_code == 403
+    assert client.post(route(space, "leave"), {"reason": "Leaving"}, format="json").status_code == 404
     membership.refresh_from_db()
     assert membership.status == "active"
     second = make_staff(space, username="remaining-manager", access_status="active")
     second.is_active = False
     second.save(update_fields=["is_active"])
-    assert client.post(route(space, "leave"), {"reason": "Leaving"}, format="json").status_code == 403
+    assert client.post(route(space, "leave"), {"reason": "Leaving"}, format="json").status_code == 404
     second.is_active = True
     second.save(update_fields=["is_active"])
-    assert client.post(route(space, "leave"), {"reason": "Leaving"}, format="json").status_code == 403
+    assert client.post(route(space, "leave"), {"reason": "Leaving"}, format="json").status_code == 404
     from apps.makerspaces.membership_self_service import leave_makerspace, cancel_renewal
-    from rest_framework.exceptions import PermissionDenied
+    from django.http import Http404
 
     for service in (leave_makerspace, cancel_renewal):
-        with pytest.raises(PermissionDenied, match="member account"):
+        with pytest.raises(Http404):
             service(actor, space.pk, "Leaving")
     membership.refresh_from_db()
     assert membership.status == "active" and membership.renewal_cancelled_at is None

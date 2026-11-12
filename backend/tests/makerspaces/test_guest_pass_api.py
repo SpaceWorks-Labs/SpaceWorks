@@ -31,8 +31,13 @@ def _member(makerspace, name):
 def test_every_staff_route_is_404_while_the_capability_is_off():
     makerspace, manager = space_with_manager("gp-api-off")
     client = authenticated_client(manager)
-    for name in ("admin-guest-passes", "admin-guest-pass-policy", "admin-day-pass-products"):
+    for name in ("admin-guest-passes", "admin-day-pass-products"):
         assert client.get(reverse(name, args=[makerspace.pk])).status_code == 404
+    # EV-25: with the presence or membership module on, the policy route stays open for the on-site
+    # waiver gate alone (views_guest_pass_settings._policy_space); it 404s only when neither is on.
+    assert client.get(reverse("admin-guest-pass-policy", args=[makerspace.pk])).status_code == 200
+    assert client.patch(reverse("admin-guest-pass-policy", args=[makerspace.pk]),
+                        {"guest_machine_mode": "supervised"}, format="json").status_code == 400
 
 
 def test_staff_issue_list_policy_and_revoke_round_trip():

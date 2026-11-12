@@ -52,6 +52,10 @@ def test_email_switch_off_skips_with_a_reason_and_own_account_is_exempt(switch_o
     assert log.status == EmailLog.Status.SKIPPED and log.error == "platform_email_disabled"
     space.smtp_host = "smtp.own.test"
     space.save(update_fields=["smtp_host"])
+    assert not pl.uses_own_email(space)  # parity E-B8: an untested own SMTP is not used
+    from django.utils import timezone
+    from apps.integrations.space_smtp_gate import mark_verified
+    mark_verified(space, timezone.now())
     assert pl.uses_own_email(space)  # own account: the switch never applies
 
 

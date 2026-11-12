@@ -37,8 +37,17 @@ def test_managed_asset_batch_past_the_cap_is_refused_whole():
 
 @override_settings(PLATFORM_DOMAIN_SUFFIX="")
 def test_self_host_ignores_the_asset_cap():
-    space, manager, product = _setup("asset-quota-self", 1)
+    # Decisions 281 + addendum: a self-host space with NO limit set is unlimited, but a limit the
+    # superadmin SET on a space applies to own and hosted spaces alike.
+    space = make_space("asset-quota-self")
+    manager = make_member("asset-quota-self-manager", space)
+    product = make_product(space, name="asset-quota-self drill")
 
     generate_assets_with_qr(manager, product, {"count": 3})
 
     assert InventoryAsset.objects.filter(makerspace=space).count() == 3
+
+    space.resource_limit_overrides = {"assets": 4}
+    space.save(update_fields=["resource_limit_overrides"])
+    with pytest.raises(ValidationError):
+        generate_assets_with_qr(manager, product, {"count": 2})

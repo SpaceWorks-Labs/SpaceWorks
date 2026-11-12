@@ -13,7 +13,7 @@ from rest_framework.exceptions import ValidationError
 from apps.makerspaces.guards import SurfaceOff
 from rest_framework.test import APIClient
 
-from tests.accounts.account_factories import make_staff
+from tests.accounts.account_factories import make_membership, make_staff
 
 from apps.accounts.models import User
 from apps.makerspaces import membership_services
@@ -187,29 +187,23 @@ def test_membership_list_create_and_role_assignment_survive_without_the_module()
     off = space("admin-off", membership_enabled=False)
     staff = manager(off, "admin-manager")
     client = client_for(staff)
+    base = f"/api/v1/admin/makerspaces/{off.pk}/staff-roles/"
+    # Decision 63 / U-A1: the staff-accounts writer is retired. A person who is already a community
+    # member is GRANTED staff roles through the staff-roles API, which is core RBAC (no module gate).
+    target = user("admin-target")
+    community = make_membership(target, off)
 
-    created = client.post(
-        f"/api/v1/admin/makerspaces/{off.pk}/staff-accounts/",
-        # Any role that grants actions makes this a *staff* invitation, which is the path
-        # under test. Machine Manager rather than the old Guest Admin: 0052 retired that
-        # seeded role, and what matters here is only that the role grants something.
-        {"display_name": "Target", "username": "admin-target", "roles": ["machine_manager"]},
-        format="json",
-    )
+    created = client.post(base, {"user_id": target.pk, "roles": ["machine_manager"]}, format="json")
     assert created.status_code in (200, 201), created.data
 
-    membership = MakerspaceMembership.objects.get(user_id=created.data["account"]["id"])
-    assert membership.user.account_kind == "staff"
-    assert membership.user.staff_makerspace_id == off.pk
+    membership = MakerspaceMembership.staff_tracks.get(makerspace=off, user=target)
     reassigned = client.patch(
-        reverse("admin-membership-role-m2", kwargs={"pk": membership.pk}),
-        {"role_id": role(off, "inventory_manager").id},
-        format="json",
+        f"{base}{membership.pk}/", {"roles": ["inventory_manager"]}, format="json",
     )
-    assert reassigned.status_code == 200
+    assert reassigned.status_code == 200, reassigned.data
 
     capabilities = client.patch(
-        reverse("admin-membership-capabilities", kwargs={"pk": membership.pk}),
+        reverse("admin-membership-capabilities", kwargs={"pk": community.pk}),
         {"can_refer": True}, format="json",
     )
     # Referral/verification delegation belongs to community membership; core role
@@ -217,11 +211,8 @@ def test_membership_list_create_and_role_assignment_survive_without_the_module()
     assert capabilities.status_code == 404
     assert capabilities.data["code"] == "module_disabled" and capabilities.data["module"] == "membership"
 
-    revoked = client.post(
-        reverse("admin-membership-revoke-m2", kwargs={"pk": membership.pk}),
-        {"reason": "done"}, format="json",
-    )
-    assert revoked.status_code == 200
+    revoked = client.post(f"{base}{membership.pk}/revoke/", {"reason": "done"}, format="json")
+    assert revoked.status_code == 200, revoked.data
 
 
 # --- invitations discriminate by intent -------------------------------------
@@ -230,7 +221,7 @@ def test_membership_list_create_and_role_assignment_survive_without_the_module()
 def test_legacy_community_invitation_cannot_assign_staff_without_the_module():
     off = space("invite-staff", membership_enabled=False)
     staff = manager(off, "invite-staff-manager")
-    with pytest.raises(ValidationError, match="separate staff account"):
+    with pytest.raises(ValidationError, match="staff roles screen"):
         membership_services.invite_membership(
             staff, off, "new-staff@example.test", role(off, "inventory_manager")
         )

@@ -1,6 +1,7 @@
 from datetime import timedelta
 
 import pytest
+from apps.makerspaces.models import MakerspaceMembership
 from django.utils import timezone
 
 from apps.integrations.notification_resolution import resolve
@@ -22,7 +23,7 @@ def test_member_broadcast_uses_live_segment_and_original_authority(lane):
     # Outbound chat bodies now carry the canonical navigation link after the message.
     assert lane.fake.calls[-1][1]["text"].startswith("Private member announcement")
     assert envelope.audience == "requester"
-    lane.manager.makerspace_memberships.update(status="revoked")
+    MakerspaceMembership.all_tracks.filter(user=lane.manager).update(status="revoked")
     assert resolve(envelope) == []
 
 
@@ -44,11 +45,14 @@ def test_vouch_is_explicit_and_disappears_when_voucher_authority_expires(lane):
     policy.save()
     row = MembershipRequest.objects.create(makerspace=lane.space, user=lane.owner,
         kind="request", state="awaiting_vouches", expires_at=timezone.now()+timedelta(days=5))
-    vouch = MembershipVouch.objects.create(makerspace=lane.space, request=row, voucher=lane.manager,
+    # Vouching is a community-track act (valid_vouches reads community memberships), so the voucher is a member,
+    # not the staff-track manager (decision 63: one account per person, staff authority lives on the staff track).
+    voucher = lane.account("p2-voucher", "member")
+    vouch = MembershipVouch.objects.create(makerspace=lane.space, request=row, voucher=voucher,
         expires_at=timezone.now()+timedelta(days=5))
     notify_vouch(vouch)
     envelope = lane.deliver("vouched")
     assert source_eligible(envelope)
-    assert lane.manager.username not in lane.fake.calls[-1][1]["text"]
-    lane.manager.makerspace_memberships.update(status="revoked")
+    assert voucher.username not in lane.fake.calls[-1][1]["text"]
+    MakerspaceMembership.all_tracks.filter(user=voucher).update(status="revoked")
     assert not source_eligible(envelope)

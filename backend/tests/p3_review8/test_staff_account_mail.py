@@ -105,21 +105,22 @@ def test_routed_email_suppresses_compatibility_copy(world, django_capture_on_com
     assert len(mailoutbox) == 1
 
 
-def test_separate_staff_account_keeps_existing_members_staff_summary(world):
-    # The same person receives staff mail on their separate staff principal.
-    owner_account, row = make_staff(world.space, "owner-staff", role="inventory_manager",
-                                    email=world.owner.email)
+def test_staff_track_row_on_the_members_own_account_keeps_staff_summary(world):
+    # Decision 63 (one account per person; person e-mail is unique): there is no separate staff
+    # principal any more. The same person's account holds the staff-track row, receives the
+    # account-stream welcome, and the existing staff still get the members summary.
+    from tests.accounts.account_factories import grant_staff_role
+    row = grant_staff_role(world.owner, world.space, role_slug="inventory_manager")
     row.activated_by, row.activated_at = world.staff, timezone.now()
     row.save(update_fields=["activated_by", "activated_at"])
     notify_member(row, "approved")
-    owner = NotificationEnvelope.objects.get(source_kind="membership.lifecycle", recipient=owner_account)
+    owner = NotificationEnvelope.objects.get(source_kind="membership.lifecycle", recipient=world.owner)
     staff = NotificationEnvelope.objects.get(source_kind="membership.lifecycle", recipient=world.staff)
     assert (owner.feature, owner.stream) == ("", "account")
     assert (staff.feature, staff.stream) == ("members", "membership")
     world.owner.refresh_from_db()
     assert world.owner.account_kind == "member"
     assert world.owner.makerspace_memberships.get(makerspace=world.space).assigned_role.slug == "member"
-    assert not NotificationEnvelope.objects.filter(source_kind="membership.lifecycle", recipient=world.owner).exists()
 
 
 def test_legacy_staff_approval_refuses_member_without_sending_welcome(world, mailoutbox):
@@ -140,7 +141,7 @@ def test_dedicated_staff_invitation_already_uses_core_account_stream(world, mail
     from apps.accounts.staff_invitation_delivery import deliver
     membership_off(world.space)
     invitation = SimpleNamespace(pk=42, makerspace=world.space, email="staff@example.test",
-        role=world.space.roles.get(slug="inventory_manager"), expires_at=timezone.now() + timedelta(days=1))
+        role=world.space.roles.get(slug="inventory_manager"), role_snapshot=["inventory_manager"], expires_at=timezone.now() + timedelta(days=1))
     result = deliver(invitation, "test-only-bearer")
     assert result["delivery_status"] == "sent" and len(mailoutbox) == 1
     log = EmailLog.objects.get(to_email=invitation.email)

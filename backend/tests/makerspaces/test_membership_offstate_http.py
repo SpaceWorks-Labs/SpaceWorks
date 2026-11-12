@@ -66,7 +66,7 @@ def test_staff_community_routes_refuse_module_off_with_400(state, route, method,
 def test_card_issue_is_gated_even_with_a_valid_member(state):
     makerspace, boss, row, *_ = state
     response = authenticated_client(boss).post(reverse("admin-member-card-issue", args=[makerspace.pk, row.pk]), {}, format="json")
-    assert response.status_code == 400 and "membership" in str(response.data)
+    assert response.status_code == 404 and "membership" in str(response.data)
 
 
 @pytest.mark.parametrize("route,method,body", [
@@ -90,7 +90,7 @@ def test_member_community_routes_refuse_module_off_with_400(state, route, method
 def test_directory_detail_is_gated_before_unknown_target_lookup(state):
     makerspace, _, row, *_ = state
     response = authenticated_client(row.user).get(reverse("member-directory-detail", args=[makerspace.pk, row.pk]))
-    assert response.status_code == 400
+    assert response.status_code == 404
 
 
 def test_publish_and_witness_waivers_remain_core_module_off(state):

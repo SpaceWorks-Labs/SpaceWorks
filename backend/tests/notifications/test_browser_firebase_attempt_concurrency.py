@@ -7,7 +7,7 @@ from uuid import uuid4
 import pytest
 from django.core.cache import caches
 from django.core.management import call_command
-from django.db import close_old_connections
+from django.db import close_old_connections, connection
 from django.test import override_settings
 from rest_framework.exceptions import Throttled, ValidationError
 
@@ -18,8 +18,11 @@ from apps.notifications.models_browser_firebase import BrowserFirebaseRegistrati
 @pytest.mark.django_db(transaction=True)
 @override_settings(CACHES={"default": {"BACKEND": "django.core.cache.backends.db.DatabaseCache",
                                       "LOCATION": "test_firebase_attempt_cache"}})
-def test_five_confirm_attempts_are_atomic_on_database_cache(monkeypatch):
+def test_five_confirm_attempts_are_atomic_on_database_cache(monkeypatch, request):
     call_command("createcachetable", "test_firebase_attempt_cache", verbosity=0)
+    # A transactional test leaves its DDL behind; an extra table in a reused test database breaks
+    # the tenant-dump "unowned table universe" guard for every later test.
+    request.addfinalizer(lambda: connection.cursor().execute("DROP TABLE IF EXISTS test_firebase_attempt_cache"))
     caches["default"].clear()
     actor, space = SimpleNamespace(pk=1), SimpleNamespace(pk=2)
     challenge = str(uuid4())

@@ -33,7 +33,9 @@ def test_report_rbac_status_codes_match_inventory_first_resolution():
     outsider = make_user("analytics-outsider", access_status=User.AccessStatus.ACTIVE)
     url = reverse("analytics-fablab-health", args=[space.id])
     assert authenticated_client(guest).get(url).status_code == 403
-    assert authenticated_client(printer).get(url).status_code == 404
+    # fablab-health is keyed to machines authority (decision 224(a): area-keyed reports, MANAGE_MACHINES),
+    # which a Machine Manager holds.
+    assert authenticated_client(printer).get(url).status_code == 200
     assert authenticated_client(outsider).get(url).status_code == 404
 
 

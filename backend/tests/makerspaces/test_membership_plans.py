@@ -10,6 +10,7 @@ from rest_framework.exceptions import ValidationError
 from apps.audit.models import AuditLog
 from apps.inventory.models import InventoryProduct
 from apps.makerspaces import membership_services
+from apps.makerspaces.guards import SurfaceOff
 from apps.makerspaces.membership_plan_services import (
     cancel_term,
     create_term,
@@ -95,7 +96,7 @@ def test_create_term_refuses_foreign_or_inactive_plans_and_off_module():
     with pytest.raises(ValidationError):
         create_term(manager, membership, inactive)
     disable_module(space, "membership")
-    with pytest.raises(ValidationError):
+    with pytest.raises(SurfaceOff):
         create_term(manager, membership, plan(space, "New"))
 
 

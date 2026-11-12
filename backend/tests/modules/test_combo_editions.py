@@ -147,7 +147,8 @@ def test_print_status_lookup_follows_the_machine_service_module_and_the_edition(
     settings.SPACEWORKS_EDITION = "makerspace"
     uninstall_module(space, "machine_service")
     response = APIClient().get(url)
-    assert response.status_code == 400
+    # Decisions 183B/221e: a switched-off module answers the typed 404 (SurfaceOff), not a 400.
+    assert response.status_code == 404
     assert "machine_service" in str(response.data)
 
 

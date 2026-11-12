@@ -3,6 +3,7 @@ from datetime import timedelta
 from uuid import uuid4
 
 import pytest
+from django.core.exceptions import ValidationError
 from django.db import DatabaseError, transaction
 from django.utils import timezone
 
@@ -39,6 +40,10 @@ def test_only_fenced_tenant_purge_can_detach_or_delete():
     row.refresh_from_db(); other_row.refresh_from_db()
     assert row.booking_id is None and other_row.booking_id is not None
     with pytest.raises(DatabaseError), transaction.atomic():
+        # The model's own delete() refuses first (ValidationError); a queryset delete skips it,
+        # so this exercises the database guard that only the fenced purge may lift.
+        EventBookingDecision.objects.filter(pk=row.pk).delete()
+    with pytest.raises(ValidationError):
         row.delete()
     with transaction.atomic():
         assert delete_booking_decisions(maker) == 1

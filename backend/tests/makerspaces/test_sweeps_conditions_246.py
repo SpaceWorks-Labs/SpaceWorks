@@ -27,7 +27,7 @@ pytestmark = pytest.mark.django_db(transaction=True)
 
 def ended_pass(slug):
     space = _space(slug)
-    row, _ = guest_pass_issue.issue_staff_pass(manager(space), space, user(f"{slug}-guest"))
+    row, _ = guest_pass_issue.issue_staff_pass(manager(space, f"{slug}-manager"), space, user(f"{slug}-guest"))
     GuestPass.objects.filter(pk=row.pk).update(
         valid_from=timezone.now() - timedelta(hours=5), valid_until=timezone.now() - timedelta(minutes=1))
     return space, row
@@ -35,7 +35,7 @@ def ended_pass(slug):
 
 def ending_pass(slug):
     space = _space(slug)
-    row, _ = guest_pass_issue.issue_staff_pass(manager(space), space, user(f"{slug}-guest"))
+    row, _ = guest_pass_issue.issue_staff_pass(manager(space, f"{slug}-manager"), space, user(f"{slug}-guest"))
     GuestPass.objects.filter(pk=row.pk).update(valid_until=timezone.now() + timedelta(minutes=30))
     return space, row
 
@@ -143,8 +143,9 @@ def test_a_covered_renewal_is_stamped_once_and_never_raised_again():
     from tests.money_modes.test_volunteer_credit import _today, _world as credit_world
 
     makerspace, actor, member, plan, membership = credit_world(per=60, amount=Decimal("50.00"))
-    plan.renews, plan.is_active, plan.renewal_price = True, True, Decimal("20.00")
-    plan.save(update_fields=["renews", "is_active", "renewal_price"])
+    # `renews` and `renewal_price` are derived now: a rolling plan renews, at `renewal_amount`.
+    plan.plan_type, plan.is_active, plan.renewal_amount = "rolling", True, Decimal("20.00")
+    plan.save(update_fields=["plan_type", "is_active", "renewal_amount"])
     volunteer_hours.log_hours(actor, makerspace, member, minutes=60, worked_on=_today(), by_staff=True)
     term = create_term(actor, membership, plan)
     first = raise_renewal(term)
@@ -166,8 +167,9 @@ def test_a_covered_renewal_is_skipped_with_the_membership_module_off():
     from tests.money_modes.test_volunteer_credit import _world as credit_world
 
     makerspace, actor, _member, plan, membership = credit_world(per=60, amount=Decimal("50.00"))
-    plan.renews, plan.is_active, plan.renewal_price = True, True, Decimal("20.00")
-    plan.save(update_fields=["renews", "is_active", "renewal_price"])
+    # `renews` and `renewal_price` are derived now: a rolling plan renews, at `renewal_amount`.
+    plan.plan_type, plan.is_active, plan.renewal_amount = "rolling", True, Decimal("20.00")
+    plan.save(update_fields=["plan_type", "is_active", "renewal_amount"])
     term = create_term(actor, membership, plan)
     Makerspace.objects.filter(pk=makerspace.pk).update(
         enabled_modules=sorted(set(makerspace.enabled_modules or []) - {"membership"}))

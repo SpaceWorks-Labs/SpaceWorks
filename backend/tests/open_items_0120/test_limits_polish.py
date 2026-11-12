@@ -18,6 +18,7 @@ from apps.managed_hosting import plans
 from apps.managed_hosting.limit_catalogue import effective_limit, registry_keys
 from apps.managed_hosting.models import HostingPlan
 from apps.managed_hosting.usage import plan_usage
+from tests.r2_superadmin_local.conftest import managed  # noqa: F401  (fixture, moved out of the root conftest)
 from tests.r2_superadmin_local.helpers import api, space as make_hosted_space, superadmin
 from tests.return_helpers import make_space
 
@@ -67,6 +68,7 @@ def test_own_space_storage_limit_is_enforced_after_backfill(switch_off):
     with pytest.raises(ValidationError) as refused:
         limits.add_storage(lab, 1)
     assert "limit" in refused.value.detail
+    lab.refresh_from_db()  # add_storage charges with an F() update; a request re-reads the row, the test must too
     with pytest.raises(ValidationError):
         check_upload_headroom(lab, 1)  # presign is refused too: no self-host early return
 

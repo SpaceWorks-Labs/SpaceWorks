@@ -107,7 +107,9 @@ def test_encrypted_accessors_and_eager_tenant_path(builder, monkeypatch):
             assert set(read_answers) == {row.pk for row in expected}
             assert json.loads(result.records[0]["answers"]) == {"answer": "Café 0"}
         domain_reads = [q for q in queries if 'FROM "bookings_' in q["sql"]]
-        assert len(domain_reads) == 1
+        # One read for the rows; build_reservations adds one batched organization-link read for the
+        # organization column (decision 218), constant in the row count, never one per booking.
+        assert len(domain_reads) == (2 if builder == build_reservations else 1)
         foreign, *_ = fixture("foreign-encrypted-booking-report")
         assert not builder(foreign.pk, **filters(resource)).records
 

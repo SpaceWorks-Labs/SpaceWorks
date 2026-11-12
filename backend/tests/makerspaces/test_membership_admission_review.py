@@ -78,7 +78,7 @@ def test_claimed_community_invitation_notifies_staff_of_received_application(mon
 def test_community_invitation_refuses_staff_roles_without_exposing_a_claim():
     makerspace, actor, applicant, _, _ = _setup("approval", application_schema=QUESTION)
     role = MakerspaceRole.objects.get(makerspace=makerspace, slug="inventory_manager")
-    with pytest.raises(ValidationError, match="separate staff account"):
+    with pytest.raises(ValidationError, match="staff roles screen"):
         membership_services.invite_membership(actor, makerspace, applicant.email, role)
     discovery = client(applicant).get("/api/v1/memberships/invitations")
     assert discovery.status_code == 200 and discovery.data["invitations"] == []

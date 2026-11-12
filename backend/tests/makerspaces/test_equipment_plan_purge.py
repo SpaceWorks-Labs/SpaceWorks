@@ -35,7 +35,7 @@ def test_module_purge_removes_plan_link_and_its_provenance_but_keeps_core_plan(d
         booking = Booking.objects.create(space=room, name="Member", email="m@example.test", starts_at=start, ends_at=start + timedelta(hours=1))
         context = BookingConsumablePlanContext.objects.create(makerspace=space, plan=plan, booking=booking)
     def reference(label, source):
-        return ExternalTenantReference.objects.create(makerspace=space, source_archive_digest="a" * 64, source_model_label="events.EventCollaborator", source_object_id=source, field_name="event", target_model_label=label, target_object_id=str(context.pk), snapshot={})
+        return ExternalTenantReference.objects.create(makerspace=space, source_archive_digest="a" * 64, source_model_label="events.EventCollaborator", source_object_id=source, field_name="event", target_model_label=label, target_object_id=str(context.pk), snapshot={"title": "Event", "starts_at": start.isoformat(), "ends_at": (start + timedelta(hours=1)).isoformat()})
     own = reference(context._meta.label, "1")
     other = reference("inventory.InventoryProduct", "2")
     purge_module(space, domain, actor)

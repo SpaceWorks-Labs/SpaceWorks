@@ -180,7 +180,9 @@ def test_success_body_outlives_due_marker_and_failure_backs_off(published, setti
     monkeypatch.setattr(service, "fetch_calendar", lambda username: None)
     setter.reset_mock()
     assert not service.refresh_calendar(claim.pk)
-    assert all(call.kwargs["timeout"] == service.FAILURE_TTL for call in setter.call_args_list)
+    # The one-off ownership proof (VERIFIED_TTL) is not calendar data; only calendar writes back off.
+    calendar_writes = [call for call in setter.call_args_list if "github-verified" not in call.args[0]]
+    assert calendar_writes and all(call.kwargs["timeout"] == service.FAILURE_TTL for call in calendar_writes)
 
 
 def test_cache_and_provider_failure_are_empty(published, settings, monkeypatch):

@@ -31,12 +31,14 @@ def lane(settings):
     def person(username, *, manager=False, guest=False, target=None):
         target = target or space
         user = User.objects.create_user(username=username, email=f"{username}@example.test",
-            account_kind="staff" if manager else "member", staff_makerspace=target if manager else None,
             display_name=f"Name {username}", access_status="active", role="space_manager" if manager else "requester")
-        if not guest:
-            slug = "space_manager" if manager else "member"
+        if manager:
+            # Decision 63: one account per person; staff authority is a staff-track membership row.
+            from tests.accounts.account_factories import grant_staff_role
+            grant_staff_role(user, target, role_slug="space_manager")
+        elif not guest:
             MakerspaceMembership.objects.create(makerspace=target, user=user,
-                assigned_role=target.roles.get(slug=slug), role="space_manager" if manager else "custom", status="active")
+                assigned_role=target.roles.get(slug="member"), role="custom", status="active")
         return user
     owner, staff, guest = person("owner"), person("staff", manager=True), person("guest", guest=True)
     membership = owner.makerspace_memberships.get(makerspace=space)

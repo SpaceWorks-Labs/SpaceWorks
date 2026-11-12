@@ -24,7 +24,7 @@ CASES = [(combo, membership) for combo in COMBOS for membership in (False, True)
 
 
 def _space(areas):
-    slug = "combo-" + "-".join(sorted(areas))
+    slug = ("combo-" + "-".join(sorted(areas)))[:50]  # Makerspace.slug / name are varchar(50)
     modules = modules_for(areas)
     return Makerspace.objects.create(name=slug, slug=slug, enabled_modules=sorted(modules),
                                      enabled_features=features_for(areas, modules))

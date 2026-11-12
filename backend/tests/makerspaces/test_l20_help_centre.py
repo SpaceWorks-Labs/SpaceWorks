@@ -57,7 +57,7 @@ def test_bootstrap_payload_carries_the_switch_both_ways():
 
 @pytest.mark.django_db
 def test_backfill_adds_the_switch_only_where_missing_and_reverses():
-    migration = importlib.import_module("apps.makerspaces.migrations.0123_help_centre_default_on")
+    migration = importlib.import_module("apps.makerspaces.migrations.0127_help_centre_default_on")
     missing, present = make_space("l20-missing"), make_space("l20-present")
     missing.enabled_features = [key for key in missing.enabled_features if key != KEY]
     missing.save(update_fields=["enabled_features"])

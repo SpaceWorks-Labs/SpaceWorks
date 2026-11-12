@@ -123,7 +123,7 @@ class MembershipRoleAssignView(RecentReauthenticationMixin, APIView):
     def patch(self, request, makerspace_id, membership_id):
         makerspace = _makerspace(request.user, makerspace_id)
         membership = get_object_or_404(
-            MakerspaceMembership.objects.filter(makerspace=makerspace), pk=membership_id
+            MakerspaceMembership.both_tracks().filter(makerspace=makerspace), pk=membership_id
         )
         serializer = MembershipRoleAssignSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -135,7 +135,8 @@ class MembershipRoleAssignView(RecentReauthenticationMixin, APIView):
             roles=roles,
         )
         membership = (
-            MakerspaceMembership.objects.select_related("user", "makerspace", "assigned_role").prefetch_related(additional_roles_prefetch())
+            MakerspaceMembership.track_manager(membership.track)
+            .select_related("user", "makerspace", "assigned_role").prefetch_related(additional_roles_prefetch())
             .get(pk=membership.pk)
         )
         context = scoped_payment_context(

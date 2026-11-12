@@ -250,13 +250,14 @@ class AdminMembershipRoleM2View(RecentReauthenticationMixin, APIView):
         responses={200: AdminMembershipSerializer, **ERRORS, 400: ROLE_SET_VALIDATION_ERROR},
     )
     def patch(self, request, pk):
-        membership = get_object_or_404(rbac.scope_by_visibility_or_action(request.user, rbac.Action.MANAGE_MEMBERS, MakerspaceMembership.objects.select_related("makerspace")), pk=pk)
+        # Role sets live on staff rows (any role) and community rows (Member only), so look in both.
+        membership = get_object_or_404(rbac.scope_by_visibility_or_action(request.user, rbac.Action.MANAGE_MEMBERS, MakerspaceMembership.both_tracks().select_related("makerspace")), pk=pk)
         require_member_in_scope(request.user, membership, rbac.Action.MANAGE_MEMBERS)  # parity O-B1
         makerspace = _makerspace(request.user, membership.makerspace_id)
         serializer = RoleSetInputSerializer(data=request.data); serializer.is_valid(raise_exception=True)
         roles = resolve_role_set(makerspace, serializer.validated_data)
         membership = membership_services.change_role(request.user, membership, roles)
-        membership = MakerspaceMembership.objects.select_related(
+        membership = MakerspaceMembership.track_manager(membership.track).select_related(
             "user", "assigned_role"
         ).prefetch_related(additional_roles_prefetch()).get(pk=membership.pk)
         return Response(

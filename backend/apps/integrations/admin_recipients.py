@@ -10,6 +10,7 @@ from apps.integrations.models_recipients import (
     RecipientMachineTypeScope,
 )
 from config.admin_access import SuperuserOnlyModelAdmin
+from django.utils.translation import gettext
 
 
 class NotificationRecipientAdminForm(forms.ModelForm):
@@ -27,13 +28,13 @@ class NotificationRecipientAdminForm(forms.ModelForm):
         # The DB check constraint already rejects a kind/target mismatch, but a
         # constraint violation surfaces as a 500 rather than a field error, so mirror it.
         if kind == NotificationRecipientKind.ROLE and role is None:
-            raise forms.ValidationError({"role": "A role recipient needs a role."})
+            raise forms.ValidationError({"role": gettext("A role recipient needs a role.")})
         if kind == NotificationRecipientKind.USER and user is None:
-            raise forms.ValidationError({"user": "A named recipient needs a user."})
+            raise forms.ValidationError({"user": gettext("A named recipient needs a user.")})
         if kind in (NotificationRecipientKind.REQUESTER, NotificationRecipientKind.MEMBERS):
             if role is not None or user is not None:
                 raise forms.ValidationError(
-                    "Requester and all-member rows carry no role or user."
+                    gettext("Requester and all-member rows carry no role or user.")
                 )
 
         if makerspace is None:
@@ -44,7 +45,7 @@ class NotificationRecipientAdminForm(forms.ModelForm):
         # a silently inert rule reads to an operator as a rule that is working.
         if role is not None and role.makerspace_id != makerspace.pk:
             raise forms.ValidationError(
-                {"role": "Role must belong to the same makerspace."}
+                {"role": gettext("Role must belong to the same makerspace.")}
             )
         # D4: a named user must hold a membership of this makerspace. Notification bodies
         # carry requester names, machine detail and booking info; addressing them to an
@@ -58,7 +59,7 @@ class NotificationRecipientAdminForm(forms.ModelForm):
             ).exists()
             if not has_membership:
                 raise forms.ValidationError(
-                    {"user": "User must hold an active membership of this makerspace."}
+                    {"user": gettext("User must hold an active membership of this makerspace.")}
                 )
         return cleaned
 

@@ -36,6 +36,8 @@ SELECTABLE_FEATURES = frozenset(
         NotificationFeature.PAYMENTS,
         NotificationFeature.STOCK,
         NotificationFeature.CERTIFICATIONS,
+        # Decision 343: which staff get machine-service job notices, per event and machine type.
+        NotificationFeature.PRINTING,
     }
 )
 
@@ -45,7 +47,8 @@ SELECTABLE_FEATURES = frozenset(
 # it is always present.
 FEATURE_MODULES = {
     NotificationFeature.HARDWARE_REQUESTS: "request_workflow",
-    NotificationFeature.PRINTING: "printing",
+    # The `printing` family is machine service's (the module folded in, decision 340b).
+    NotificationFeature.PRINTING: "machine_service",
     NotificationFeature.EVENTS: "events",
     NotificationFeature.BOOKINGS: "bookings",
     # A dotted key is a capability: maintenance is `machines.maintenance` since #97.
@@ -173,7 +176,13 @@ def requester_selected(makerspace, feature, event, scope=None) -> bool:
     delegated laser rule speak for every other team's subjects. Rows that do not cover the
     subject are ignored rather than answered, so an uncovered alert falls back to the
     caller's own requester behaviour instead of inheriting someone else's narrowing.
+
+    A staff-only family (machine service, `recipients_staff_only`) selects staff alone: its
+    requester is always "ticked", so a staff rule never silences the member's own notice.
     """
+    from .recipients_staff_only import STAFF_ONLY_FEATURES
+    if feature in STAFF_ONLY_FEATURES:
+        return True
     try:
         return any(
             row.kind == NotificationRecipientKind.REQUESTER and _rule_covers(row, scope)

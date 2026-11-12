@@ -44,6 +44,9 @@ def _db_failure():
 class TwilioMessagingWebhookView(APIView):
     authentication_classes = []
     permission_classes = [AllowAny]
+    # Signature-verified provider callback: exempt from the deployment baseline (336c), a 429
+    # would only make the provider retry and delay settlement/delivery state.
+    throttle_classes = []
     parser_classes = [FormParser]
 
     @extend_schema(tags=["Messaging webhooks"], auth=[], request={"application/x-www-form-urlencoded": OpenApiTypes.OBJECT},
@@ -85,6 +88,9 @@ class TwilioMessagingWebhookView(APIView):
 class MetaMessagingWebhookView(APIView):
     authentication_classes = []
     permission_classes = [AllowAny]
+    # Signature-verified provider callback: exempt from the deployment baseline (336c), a 429
+    # would only make the provider retry and delay settlement/delivery state.
+    throttle_classes = []
 
     @extend_schema(tags=["Messaging webhooks"], auth=[], parameters=[
         OpenApiParameter("hub.mode", str, required=True), OpenApiParameter("hub.verify_token", str, required=True),

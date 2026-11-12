@@ -16,7 +16,7 @@ LEGACY_STAFF_EMAIL_SOURCES = {
     "printing": {"machines.service"},
     "maintenance": {"machines.maintenance"},
     "stock": {"machines.procurement"},
-    "certifications": {"machines.certification", "machines.certification_summary"},
+    "certifications": {"machines.certification", "machines.certification_summary", "machines.access_grant"},
     "events": {"events.lifecycle"},
     "bookings": {"bookings.lifecycle"},
 }

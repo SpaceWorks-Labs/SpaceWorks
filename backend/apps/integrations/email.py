@@ -155,12 +155,12 @@ def email_enabled() -> bool:
 def send_password_reset_email(recipient, reset_url):
     from apps.integrations.dispatch import dispatch_email
 
-    subject = "Reset your password"
-    body = (
+    subject = gettext("Reset your password")
+    body = gettext(
         "We received a request to reset your password.\n\n"
-        f"Reset it here:\n{reset_url}\n\n"
+        "Reset it here:\n%(url)s\n\n"
         "If you did not request this, you can ignore this email."
-    )
+    ) % {"url": reset_url}
     log = dispatch_email(
         to_email=recipient,
         subject=subject,
@@ -181,16 +181,17 @@ def send_password_reset_otp(recipient, code, *, expires_in_minutes, reset_url=""
     """Deliver a recovery code without persisting it or crossing a queue."""
     from apps.integrations.dispatch import dispatch_email
 
-    subject = "Your password reset code"
-    recovery_page = (f"Reset your {account_label} password at {reset_url}\n"
-                     "Enter your username or email, the code and your new password.\n\n"
-                     if reset_url else "")
-    body = (
+    subject = gettext("Your password reset code")
+    recovery_page = (gettext(
+        "Reset your %(account)s password at %(url)s\n"
+        "Enter your username or email, the code and your new password.\n\n"
+    ) % {"account": account_label, "url": reset_url} if reset_url else "")
+    body = gettext(
         "We received a request to reset your password.\n\n"
-        f"{recovery_page}Your password reset code is: {code}\n\n"
-        f"This code expires in {expires_in_minutes} minutes and can be used once.\n\n"
+        "%(page)sYour password reset code is: %(code)s\n\n"
+        "This code expires in %(minutes)s minutes and can be used once.\n\n"
         "If you did not request this, you can ignore this email."
-    )
+    ) % {"page": recovery_page, "code": code, "minutes": expires_in_minutes}
     log = dispatch_email(
         to_email=recipient,
         subject=subject,

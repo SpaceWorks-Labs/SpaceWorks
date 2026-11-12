@@ -127,6 +127,12 @@ RELEASE_2_PERSONAL_EVENTS = frozenset({
     ("hardware_requests", "pickup_expiring"),
     # Notifications audit 0.12.0: the named guardian's consent request (owner only; never names the minor).
     ("members", "guardian_consent_requested"),
+    # Decision 303d: the one-time open-profile notice (owner only).
+    ("members", "profile_opened"),
+    # Parity O-B2: the applicant told staff asked for changes to their join request (owner only).
+    ("members", "changes_requested"), ("members", "resubmitted"),
+    # Device Adapter API: the operator told their session is about to end (owner only).
+    ("devices", "adapter_session_ending"),
     # Decision 221(f): the reporter's repair-closed notice (owner only; rooms=False, staff=False).
     *((feature, "repair_closed") for feature in ("hardware_requests", "bookings", "maintenance")),
 })

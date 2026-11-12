@@ -73,6 +73,7 @@ INBOX_ONLY_PROJECTIONS.update({
 # switch checks as every addressed message. `hours_bank_low` and `attendance_replied` are staff notices with
 # no email-registry entry and no entry here, so they have NO addressed projection by design.
 INBOX_ONLY_PROJECTIONS[("members", "guardian_consent_requested", "member")] = ("makerspace.name",)
+INBOX_ONLY_PROJECTIONS[("members", "profile_opened", "member")] = ()
 
 
 def email_event(feature, event, audience):

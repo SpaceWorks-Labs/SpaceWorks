@@ -12,6 +12,7 @@ or the audit row.
   key is already checked when it is saved.
 """
 
+from django.utils.translation import gettext
 import logging
 import re
 
@@ -44,7 +45,7 @@ def check_sms(row, to):
     if row.pk is None or not provider.is_configured():
         raise ProviderNotConfigured()
     if not provider.send(to=to, body=TEST_TEXT):
-        raise ProviderTestFailed("The SMS provider refused the test message. Check the account and sender.")
+        raise ProviderTestFailed(gettext("The SMS provider refused the test message. Check the account and sender."))
     return {"outcome": "sent"}
 
 
@@ -76,14 +77,14 @@ def check_whatsapp(row):
         raise ProviderNotConfigured()
     version = settings.WHATSAPP_META_GRAPH_VERSION
     if not re.fullmatch(r"v\d+\.\d+", version) or not row.phone_number_id.isdigit():
-        raise ProviderTestFailed("The WhatsApp settings cannot be checked; review the phone number id.")
+        raise ProviderTestFailed(gettext("The WhatsApp settings cannot be checked; review the phone number id."))
     try:
         response = requests.get(f"https://graph.facebook.com/{version}/{row.phone_number_id}",
                                 params={"fields": "id"}, headers={"Authorization": f"Bearer {token}"}, timeout=10)
     except requests.RequestException:
-        raise ProviderTestFailed("Meta could not be reached. Try again.") from None
+        raise ProviderTestFailed(gettext("Meta could not be reached. Try again.")) from None
     if response.status_code != 200:
         # The status only: Graph error bodies can echo request details.
         logger.warning("platform_whatsapp_check_failed", extra={"status": response.status_code})
-        raise ProviderTestFailed("Meta refused the access token or phone number id.")
+        raise ProviderTestFailed(gettext("Meta refused the access token or phone number id."))
     return {"outcome": "ok", "checked": ["whatsapp"]}

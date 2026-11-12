@@ -73,7 +73,7 @@ class TelegramWebhookView(APIView):
             )
         else:
             handle_start(request)
-        return Response({"detail": "Ignored."})
+        return Response({"detail": gettext("Ignored.")})
 
 
 class TelegramTestAlertView(APIView):

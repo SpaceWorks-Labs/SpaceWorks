@@ -37,6 +37,9 @@ class BounceResultSerializer(serializers.Serializer):
 class BounceWebhookView(APIView):
     authentication_classes = []
     permission_classes = [AllowAny]
+    # Signature-verified provider callback: exempt from the deployment baseline (336c), a 429
+    # would only make the provider retry and delay settlement/delivery state.
+    throttle_classes = []
 
     @extend_schema(tags=['Notifications'], auth=[], request=BounceSerializer,
                    parameters=[OpenApiParameter('X-SpaceWorks-Timestamp', str, location='header', required=True),
@@ -76,6 +79,9 @@ class ProviderBounceWebhookView(APIView):
     ``email-bounce-webhook`` record (``record_provider_event``); delivery status stays here."""
     authentication_classes = []
     permission_classes = [AllowAny]
+    # Signature-verified provider callback: exempt from the deployment baseline (336c), a 429
+    # would only make the provider retry and delay settlement/delivery state.
+    throttle_classes = []
 
     @extend_schema(tags=['Notifications'], auth=[], request={'application/json': {'type': 'object', 'additionalProperties': True}},
                    parameters=[OpenApiParameter('svix-id', str, location='header'),

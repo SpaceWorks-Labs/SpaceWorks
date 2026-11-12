@@ -124,7 +124,7 @@ class DeliveryTestView(APIView):
         serializer = DeliveryTestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         destination_id = serializer.validated_data.get("destination_id")
-        text = "SpaceWorks notification delivery test. No member data is included."
+        text = gettext("SpaceWorks notification delivery test. No member data is included.")
         with transaction.atomic():
             if destination_id:
                 destination = get_object_or_404(rbac.scope_by_action(

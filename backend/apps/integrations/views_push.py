@@ -17,6 +17,7 @@ from apps.accounts.views_device import IsDeviceAccessToken
 from apps.hardware_requests.exceptions import ErrorSerializer
 from apps.integrations.models_push import PushDevice
 from apps.integrations.serializers_push import PushDeviceRegistrationSerializer, PushDeviceSerializer
+from apps.makerspaces.guards import require_feature
 from apps.makerspaces.origin_scope import require_native_selected_makerspace
 
 
@@ -47,9 +48,13 @@ class PushDeviceListCreateView(APIView):
     throttle_scope = "push_device_registration"
 
     @extend_schema(tags=["Native push"], request=PushDeviceRegistrationSerializer, description=PUSH_PAYLOAD_V3,
-        responses={200: PushDeviceSerializer, 201: PushDeviceSerializer, **errors(400, 401, 403, 409, 429, 503)})
+        responses={200: PushDeviceSerializer, 201: PushDeviceSerializer, **errors(400, 401, 403, 404, 409, 429, 503)})
     def post(self, request):
         membership = require_native_selected_makerspace(request)
+        # Native push is the `mobile.push` switch under the `mobile` module: a space that has it
+        # off has no registration surface (typed 404). Unregistering (DELETE) stays open so a
+        # device can always clean up after the switch goes off.
+        require_feature(membership.makerspace, "mobile.push")
         serializer = PushDeviceRegistrationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data

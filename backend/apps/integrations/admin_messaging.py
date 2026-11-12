@@ -10,6 +10,7 @@ from apps.integrations.messaging.settings_service import sync_platform_whatsapp
 from apps.integrations.messaging.templates import WHATSAPP_LANGUAGES, validate_binding
 from config.admin_access import SuperuserOnlyModelAdmin
 from config.admin_audit import AuditedControlChangeMixin
+from django.utils.translation import gettext
 
 
 class PlatformWhatsAppSettingsForm(forms.ModelForm):
@@ -38,7 +39,7 @@ class PlatformWhatsAppSettingsForm(forms.ModelForm):
         key = sender_key("whatsapp", business_account_id=cleaned.get("business_account_id", ""),
                          phone_number_id=cleaned.get("phone_number_id", ""))
         if key and MakerspaceMessagingSettings.objects.filter(whatsapp_sender_key=key).exists():
-            raise forms.ValidationError("This sender is reserved by another configuration.")
+            raise forms.ValidationError(gettext("This sender is reserved by another configuration."))
         return cleaned
 
     def save(self, commit=True):
@@ -98,7 +99,7 @@ class PlatformTemplateBindingForm(forms.ModelForm):
             raise forms.ValidationError(str(exc.detail)) from exc
         platform = PlatformWhatsAppSettings.objects.filter(pk=1).first()
         if not platform or not platform.business_account_id:
-            raise forms.ValidationError("Configure the platform WhatsApp business account first.")
+            raise forms.ValidationError(gettext("Configure the platform WhatsApp business account first."))
         from apps.integrations.messaging.templates_provider import validate_provider_template, TemplateCheckUnavailable
         try:
             validate_provider_template(business_account_id=platform.business_account_id,
@@ -111,7 +112,7 @@ class PlatformTemplateBindingForm(forms.ModelForm):
         self.instance.needs_review = False
         if WhatsAppTemplateBinding.objects.filter(makerspace__isnull=True, feature=values["feature"],
             event=values["event"], audience=values["audience"]).exclude(pk=self.instance.pk).exists():
-            raise forms.ValidationError("This event and audience already has a platform binding.")
+            raise forms.ValidationError(gettext("This event and audience already has a platform binding."))
         return values
 
 

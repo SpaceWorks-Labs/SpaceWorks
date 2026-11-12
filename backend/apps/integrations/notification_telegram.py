@@ -12,6 +12,8 @@ from .notification_providers import ProviderResult, register_provider
 from .notification_telegram_callbacks import callback_event
 from .notification_telegram_transport import call, send_text
 
+BOT_USERNAME_TTL = 24 * 60 * 60
+
 logger = logging.getLogger(__name__)
 
 
@@ -49,7 +51,9 @@ class TelegramProvider:
                     if (not isinstance(username, str) or not re.fullmatch(r"[A-Za-z0-9_]{5,32}", username)
                             or bot.get("is_bot") is not True or type(bot.get("id")) is not int):
                         raise ValidationError({"channel": gettext("Telegram bot lookup failed. Check the bot token and retry.")})
-                    cache.set(key, username, timeout=None)
+                    # A day, not forever: a rotated token or generation bump leaves an orphan key
+                    # behind, so every key must expire (decision 339).
+                    cache.set(key, username, timeout=BOT_USERNAME_TTL)
                 finally:
                     cache.delete(key + ":loading")
         except ValidationError:

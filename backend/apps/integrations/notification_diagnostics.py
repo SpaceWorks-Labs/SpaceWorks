@@ -17,7 +17,7 @@ def register():
 
 
 def render(envelope):
-    return {"subject": "Space Works", "text": gettext("Space Works notification delivery test.")}
+    return {"subject": gettext("Space Works"), "text": gettext("Space Works notification delivery test.")}
 
 
 @guarded(mutation=True)

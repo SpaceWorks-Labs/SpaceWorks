@@ -106,6 +106,7 @@ EVENT_SOURCES = {
     (_MB, "join_followup"): "membership.join_funnel",
     **_many(_MB, ("erasure_approved", "erasure_rejected"), "membership.erasure"),
     (_MB, "guardian_consent_requested"): "membership.minors",
+    (_MB, "profile_opened"): "membership",
     (_MB, "programme_card_decided"): "membership.id_programmes",
     (_MB, "event_card_issued"): "events.id_cards",
     # Money: the ledger is core; the optional money features are not.
@@ -125,8 +126,8 @@ EVENT_SOURCES = {
     # Platform family: only these two have a space switch.
     (_API, "scheduled_report"): "reports",
     (_API, "email.failed"): "email",
-    **_many(_CERT, ("granted", "revoked"), "machines.certifications"),
-    **_many(_CERT, ("expiring", "expired"), "machines.certification_reminders"),
+    # Decision 319: the family now carries machine-access notices; it follows the machines module alone.
+    **_many(_CERT, ("granted", "revoked", "expiring", "expired"), "machines"),
 }
 
 # Staff alerts (`emit_notification`), by the dotted prefix of their event key. Reminder
@@ -180,9 +181,6 @@ def event_live(makerspace, feature, event):
     if source is None or makerspace is None:
         return True
     try:
-        # Expiry notices still require the certifications feature they report on.
-        if source == "machines.certification_reminders" and not source_live(makerspace, "machines.certifications"):
-            return False
         return source_live(makerspace, source)
     except Exception:
         logger.warning("notification_source_check_failed",

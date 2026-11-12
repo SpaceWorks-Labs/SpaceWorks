@@ -16,6 +16,7 @@ SOURCES = {
     "series_id": ("event_series", "events.EventSeries", "makerspace_id", None),
     "membership_request_id": ("membership_request", "makerspaces.MembershipRequest", "makerspace_id", "user_id"),
     "certification_grant_id": ("certification_grant", "machines.CertificationGrant", "certification_type__makerspace_id", "membership.user_id"),
+    "machine_access_grant_id": ("machine_access_grant", "machines.MachineAccessGrant", "makerspace_id", "member_id"),
     "term_id": ("membership_term", "makerspaces.MembershipTerm", "membership__makerspace_id", "membership.user_id"),
     "membership_id": ("membership", "makerspaces.MakerspaceMembership", "makerspace_id", "user_id"),
     "payment_id": ("payment", "payments.Payment", "makerspace_id", "member_id"),

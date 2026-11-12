@@ -13,6 +13,7 @@ Fail safe: a missing destination, a switched-off webhook cell, a module that is 
 insert never blocks the link workflow; the savepoint keeps the domain transaction intact.
 """
 
+from django.utils.translation import gettext
 import logging
 
 from django.db import transaction
@@ -64,7 +65,7 @@ def link_webhook(space, event, **ids):
         payload["occurred_at"] = timezone.now().isoformat()
         with transaction.atomic():  # a failed INSERT rolls back its savepoint, not the link
             dispatch_channel(makerspace=space, channel="webhook", feature=feature, event=event,
-                             text_body=f"Link changed: {event.replace('_', ' ')}.", payload=payload)
+                             text_body=gettext("Link changed: %(event)s.") % {"event": event.replace("_", " ")}, payload=payload)
         return True
     except Exception as exc:
         logger.warning("link_webhook_failed", extra={"makerspace_id": space.pk, "event": event,

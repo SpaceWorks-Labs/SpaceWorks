@@ -47,7 +47,7 @@ STAFF_TEXT = {
     "stock": gettext_noop("Stock item #{{ subject.id }} ({{ subject.name }}): {{ event_label }}."),
     "maintenance": gettext_noop("Maintenance schedule #{{ schedule.id }} for {{ machine.name }}: "
                    "{{ event_label }}. Due: {{ schedule.next_due }}."),
-    "certifications": gettext_noop("Certification #{{ subject.id }} ({{ subject.name }}): "
+    "certifications": gettext_noop("Machine access #{{ subject.id }} ({{ subject.name }}): "
                       "{{ event_label }}. Expiry: {{ subject.expires_at }}."),
 }
 
@@ -57,7 +57,7 @@ REQUESTER_TEXT = {
                 "{% if subject.due_date %}Due: {{ subject.due_date }}. {% endif %}"
                 "Review your payment history at {{ makerspace.name }}."),
     "membership": gettext_noop("Your membership at {{ makerspace.name }}: {{ event_label }}."),
-    "certifications": gettext_noop("Your certification {{ subject.name }} at {{ makerspace.name }}: "
+    "certifications": gettext_noop("Your access to {{ subject.name }} at {{ makerspace.name }}: "
                       "{{ event_label }}. Expiry: {{ subject.expires_at }}."),
 }
 

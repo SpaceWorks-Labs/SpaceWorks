@@ -1,4 +1,5 @@
 """One batch engine for concrete event and booking campaigns (200 accounts per task)."""
+from django.utils.translation import gettext
 from apps.operations.cloud_jobs import bounded
 
 
@@ -75,7 +76,7 @@ def broadcast_batch(kind, pk):
             # Both inserts share this transaction. No crash can create an orphan send.
             log = dispatch_email(
                 makerspace=campaign.makerspace, to_email=account.email, recipient_id=account.pk,
-                subject="Broadcast", text_body="", feature=adapter.feature, stream=adapter.feature,
+                subject=gettext("Broadcast"), text_body="", feature=adapter.feature, stream=adapter.feature,
                 event="broadcast", audience="requester", source_kind=kind, source_id=delivery.pk,
             )
             delivery.outbox = log

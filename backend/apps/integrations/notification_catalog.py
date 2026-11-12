@@ -74,7 +74,12 @@ FEATURE_EVENTS = {
                 "changes_requested", "resubmitted"),
     F.API_ACCESS: ("api_key_request_resolved", "subdomain_request_resolved", "email.failed", "scheduled_report",
                    "space_restore_completed", "space_restore_failed"),
-    F.DEVICES: ("offline", "recovered"),
+    F.DEVICES: ("offline", "recovered",
+                # Decision 312: device-adapter notices (needs attention, runout, session ending, denied).
+                "adapter_attention", "adapter_runout", "adapter_session_ending", "adapter_access_denied",
+                "adapter_detection",
+                # NCA audit 0.12.0 (decision 312c): an adapter's terminal job report waits for staff review.
+                "adapter_job_review"),
     F.PAYMENTS: ("charge_raised", "payment_due_soon", "payment_due_today", "payment_overdue",
                  "payment_received", "refund_issued", "payment_failed", "document_issued",
                  "refund_due_opened", "refund_request_received", "refund_request_approved",
@@ -150,6 +155,8 @@ FEATURE_EVENTS[F.BOOKINGS] += ("booking_loan_linked", "booking_loan_unlinked")
 FEATURE_EVENTS[F.BOOKINGS] += ("hours_bank_low",)
 # Notifications audit 0.12.0: a named guardian account is asked to sign the guardian consent (personal only).
 FEATURE_EVENTS[F.MEMBERS] += ("guardian_consent_requested",)
+# Decision 303d: the one-time "your profile is now visible" notice (personal only).
+FEATURE_EVENTS[F.MEMBERS] += ("profile_opened",)
 
 # Exact default on/off per (feature, channel). Preserves today's behavior: hardware/printing
 # email + hardware Telegram on; bookings email (Part J seam) + bookings Telegram on; Slack/

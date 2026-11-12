@@ -180,7 +180,7 @@ def test_printer_report_stays_available_with_devices_and_missing_live_entry_is_a
     from apps.operations import report_coverage as coverage
     from apps.operations.report_registry import TOMBSTONED_REPORT_KEYS
 
-    assert report_definition("printer-jobs").required_modules == ("machines", "printing", "devices")
+    assert report_definition("printer-jobs").required_modules == ("machines", "machine_service", "devices")
     assert "printer-jobs" not in TOMBSTONED_REPORT_KEYS
     monkeypatch.delitem(coverage.REPORT_REGISTRY, "printer-jobs")
     errors = coverage.check_report_module_coverage()

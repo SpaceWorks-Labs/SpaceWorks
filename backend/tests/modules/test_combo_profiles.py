@@ -16,14 +16,15 @@ from apps.makerspaces.module_registry import (
 )
 
 PUBLISHED_PROFILE_SIZES = {
-    "minimal": 6, "workshop": 12, "lending": 16, "recommended": 19, "cloud": 23,
-    "everything": 37, "full": 37, "events": 12, "bookings": 12,
+    # Decision 340b folded `printing` into machine_service: workshop, everything and full lose it.
+    "minimal": 6, "workshop": 11, "lending": 16, "recommended": 19, "cloud": 23,
+    "everything": 36, "full": 36, "events": 12, "bookings": 12,
 }
 
 
 def test_the_published_module_and_default_counts():
     # L17 (#97, C-9) retired the maintenance and procurement module keys: 38 -> 36.
-    assert len(MODULE_KEYS) == 37  # - maintenance, procurement (L17), - backup (B1), + shop (L22), + analytics (L25)
+    assert len(MODULE_KEYS) == 36  # - maintenance, procurement (L17), - backup (B1), + shop (L22), + analytics (L25), - printing (340b)
     assert "presence" in MODULE_KEYS
     assert len(core_module_keys()) == 6
     assert set(default_enabled_module_keys()) == core_module_keys() | {"member_accounts"}
@@ -42,7 +43,6 @@ def test_each_profile_has_its_published_size_and_is_dependency_closed(profile):
 
 def test_the_published_module_dependencies():
     assert module_dependencies() == {
-        "printing": ("machine_service",),
         "event_reimbursements": ("events",),
         "mobile": ("member_accounts",),
         "membership": ("member_accounts",),

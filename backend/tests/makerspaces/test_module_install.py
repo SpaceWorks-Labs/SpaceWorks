@@ -101,13 +101,49 @@ def test_install_pulls_in_required_modules_and_audits():
     # clearing the table.
     before = AuditLog.objects.filter(action="makerspace.capabilities_changed").count()
 
+    added = install_module(space, "event_reimbursements")
+
+    space.refresh_from_db()
+    assert set(added) == {"event_reimbursements", "events"}
+    assert {"event_reimbursements", "events"} <= set(space.enabled_modules)
+    after = AuditLog.objects.filter(action="makerspace.capabilities_changed").count()
+    assert after == before + 1
+
+
+def test_installing_the_retired_printing_key_installs_machine_service():
+    # Decision 340b: an old client or script asking for `printing` gets Machine service.
+    space = make_space()
+    apply_profile(space, MINIMAL)
+
     added = install_module(space, "printing")
 
     space.refresh_from_db()
-    assert set(added) == {"printing", "machine_service"}
-    assert {"printing", "machine_service"} <= set(space.enabled_modules)
-    after = AuditLog.objects.filter(action="makerspace.capabilities_changed").count()
-    assert after == before + 1
+    assert added == ["machine_service"]
+    assert "machine_service" in space.enabled_modules and "printing" not in space.enabled_modules
+    assert install_module(space, "printing") == []
+
+
+def test_uninstalling_the_retired_printing_key_is_refused_and_changes_nothing():
+    # Switching off `printing` used to leave the rest of machine service running; reading it
+    # as "uninstall machine_service" would switch off far more than was asked for.
+    space = make_space()
+    apply_profile(space, EVERYTHING)
+
+    with pytest.raises(ModuleInstallError, match="part of machine_service"):
+        uninstall_module(space, "printing")
+    space.refresh_from_db()
+    assert "machine_service" in space.enabled_modules
+
+
+def test_module_status_reads_a_stored_retired_key_as_its_live_module():
+    space = make_space()
+    apply_profile(space, MINIMAL)
+    Makerspace.objects.filter(pk=space.pk).update(enabled_modules=[*space.enabled_modules, "printing"])
+    space.refresh_from_db()
+
+    rows = {row["key"]: row for row in module_status(space)}
+    assert "printing" not in rows
+    assert rows["machine_service"]["installed"] is True
 
 
 def test_installing_twice_is_a_no_op():
@@ -207,11 +243,11 @@ def test_uninstall_is_refused_while_a_dependent_module_is_installed():
     space = make_space()
     apply_profile(space, EVERYTHING)
 
-    with pytest.raises(ModuleInstallError, match="required by printing"):
-        uninstall_module(space, "machine_service")
+    with pytest.raises(ModuleInstallError, match="required by event_reimbursements"):
+        uninstall_module(space, "events")
 
-    uninstall_module(space, "printing")
-    assert uninstall_module(space, "machine_service") == ["machine_service"]
+    uninstall_module(space, "event_reimbursements")
+    assert uninstall_module(space, "events") == ["events"]
 
 
 def test_uninstall_keeps_data_and_reinstall_restores_the_capability():
@@ -244,7 +280,8 @@ def test_module_status_reports_core_as_installed_regardless_of_stored_state():
         assert rows[key]["core"] is True
         assert rows[key]["installed"] is True
     assert rows["reports"]["installed"] is False
-    assert rows["printing"]["requires"] == ["machine_service"]
+    assert rows["event_reimbursements"]["requires"] == ["events"]
+    assert "printing" not in rows  # retired, decision 340b
 
 
 def test_list_modules_command_shows_every_module():
@@ -265,15 +302,15 @@ def test_install_and_uninstall_commands_round_trip():
     apply_profile(space, MINIMAL)
     out = StringIO()
 
-    call_command("install_module", "printing", makerspace=space.slug, stdout=out)
+    call_command("install_module", "event_reimbursements", makerspace=space.slug, stdout=out)
     space.refresh_from_db()
-    assert {"printing", "machine_service"} <= set(space.enabled_modules)
+    assert {"event_reimbursements", "events"} <= set(space.enabled_modules)
     # The operator asked for one module; the pulled-in dependency must be named.
-    assert "machine_service" in out.getvalue()
+    assert "events" in out.getvalue()
 
-    call_command("uninstall_module", "printing", makerspace=space.slug, stdout=StringIO())
+    call_command("uninstall_module", "event_reimbursements", makerspace=space.slug, stdout=StringIO())
     space.refresh_from_db()
-    assert "printing" not in space.enabled_modules
+    assert "event_reimbursements" not in space.enabled_modules
 
 
 def test_commands_reject_an_unknown_makerspace_and_an_ambiguous_default():

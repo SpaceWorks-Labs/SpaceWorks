@@ -37,7 +37,7 @@ def test_tenant_host_and_browser_origin_both_narrow_scope(published, other_space
 
 
 @pytest.mark.parametrize("kind", ["github", "events"])
-@pytest.mark.parametrize("change", ["private", "consent", "inactive", "restricted", "revoked", "archived", "module", "owner"])
+@pytest.mark.parametrize("change", ["private", "consent", "inactive", "restricted", "owner"])
 def test_same_404_for_all_frozen_predicates(published, other_user, kind, change):
     membership, user, space = published.membership, published.membership.user, published.membership.makerspace
     if change == "private":
@@ -48,22 +48,33 @@ def test_same_404_for_all_frozen_predicates(published, other_user, kind, change)
         user.is_active = False; user.save()
     elif change == "restricted":
         user.access_status = "restricted"; user.save()
-    elif change == "revoked":
-        membership.status = "revoked"; membership.save()
-    elif change == "archived":
-        space.archived_at = timezone.now(); space.save()
-    elif change == "module":
-        space.enabled_modules = []; space.save()
     else:
-        PublicHandle.objects.filter(profile=published).update(user=other_user)
+        PublicHandle.objects.filter(user=user).update(user=other_user)
     response = public_get(kind)
     assert response.status_code == 404
     assert response.data == public_get(kind, "not.a.profile").data
 
 
+@pytest.mark.parametrize("kind", ["github", "events"])
+@pytest.mark.parametrize("change", ["revoked", "archived", "module"])
+def test_space_level_changes_remove_that_spaces_data_not_the_global_profile(published, kind, change):
+    """Decision 304: the profile belongs to the person, so losing a space empties what that space
+    contributed (the calendar and events here) instead of 404ing the whole profile."""
+    membership, space = published.membership, published.membership.makerspace
+    if change == "revoked":
+        membership.status = "revoked"; membership.save()
+    elif change == "archived":
+        space.archived_at = timezone.now(); space.save()
+    else:
+        space.enabled_modules = []; space.save()
+    response = public_get(kind)
+    assert response.status_code == 200
+    assert (response.data["days"] if kind == "github" else response.data["results"]) == []
+
+
 def test_old_handle_redirect_requires_live_graph_consent(published):
     from datetime import timedelta
-    PublicHandleRedirect.objects.create(profile=published, handle="former.maker", released_at=timezone.now(),
+    PublicHandleRedirect.objects.create(user=published.user, handle="former.maker", released_at=timezone.now(),
                                         expires_at=timezone.now() + timedelta(days=30))
     response = public_get("github", "former.maker")
     assert response.status_code == 302
@@ -127,7 +138,7 @@ def test_cache_set_failure_does_not_escape_task_or_read(published, settings, mon
     from django.core.cache import cache
     from apps.makerspaces import profile_github as service
     settings.GITHUB_API_TOKEN = "token"
-    claim = PublicHandle.objects.get(profile=published)
+    claim = published
     monkeypatch.setattr(service, "fetch_calendar", lambda username: [{"date": "2026-01-01", "count": 3}])
     original_set = cache.set
     def set_cache(key, value, *args, **kwargs):

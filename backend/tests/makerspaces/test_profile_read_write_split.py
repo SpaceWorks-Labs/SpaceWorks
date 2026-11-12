@@ -8,6 +8,7 @@ from apps.makerspaces.models import (
     Makerspace,
     MakerspaceMembership,
     MakerspaceRole,
+    AccountProfile,
     MemberProfile,
 )
 
@@ -44,7 +45,8 @@ def test_profile_get_returns_defaults_without_creating_a_row():
 
     assert response.status_code == 200
     assert response.data["projects"] == []
-    assert response.data["is_visible"] is False
+    assert response.data["is_visible"] is True  # open by default (decision 303a)
+    assert not AccountProfile.objects.filter(user=membership.user).exists()
     assert not MemberProfile.objects.filter(membership=membership).exists()
 
 
@@ -56,7 +58,7 @@ def test_profile_put_still_uses_the_write_side_creation_helper():
     )
 
     assert response.status_code == 200
-    assert MemberProfile.objects.get(membership=membership).headline == "Lathe learner"
+    assert AccountProfile.objects.get(user=membership.user).headline == "Lathe learner"
 
 
 def test_profile_image_put_and_delete_still_create_and_update_the_row(monkeypatch):
@@ -78,7 +80,7 @@ def test_profile_image_put_and_delete_still_create_and_update_the_row(monkeypatc
     )
 
     assert attached.status_code == 200, attached.data
-    profile = MemberProfile.objects.get(membership=membership)
+    profile = AccountProfile.objects.get(user=membership.user)
     assert profile.avatar_key == object_key
 
     cleared = client.delete(f"{profile_url(space)}/image")

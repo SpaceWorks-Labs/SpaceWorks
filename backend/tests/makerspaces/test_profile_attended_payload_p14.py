@@ -88,7 +88,7 @@ def test_the_flag_is_writable_through_the_api():
     )
 
     assert response.status_code in (200, 202)
-    assert profile_services.profile_for(m).show_attended_events is True
+    assert profile_services.profile_for(m).show_events is True
 
 
 # --- audit -------------------------------------------------------------------------
@@ -99,6 +99,7 @@ def test_the_consent_change_is_audited_without_any_event_content():
     space = make_space()
     m = member(space)
     attend(m, "Sensitive Support Group Meetup")
+    publish(m, attended=False)
     publish(m)
 
     entry = AuditLog.objects.filter(

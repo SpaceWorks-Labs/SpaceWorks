@@ -3,7 +3,10 @@ import pytest
 from django.urls import reverse
 from rest_framework.exceptions import PermissionDenied
 
-from apps.machines.certifications import active_grant, require_certification_for_member
+try:  # decision 319 removed the gate function; the module is kept (skipped) so the cases stay documented
+    from apps.machines.certifications import active_grant, require_certification_for_member
+except ImportError:  # pragma: no cover
+    active_grant = require_certification_for_member = None
 from apps.machines.models import CertificationGrant
 from apps.makerspaces.models import MakerspaceMembership
 from tests.machines.certification_helpers import _certification, _machine_type, _manager, _member, _space
@@ -32,3 +35,8 @@ def test_grant_on_revoked_member_fails_closed_then_returns_on_reactivation_with_
     MakerspaceMembership.objects.filter(pk=row.pk).update(status="active")
     require_certification_for_member(makerspace, person, machine_type, purpose="booking")
     assert active_grant(row, kind).pk == grant.pk
+
+# Decision 319 (retired feature): kept, not deleted -- the cases document the pre-319 behaviour.
+_RETIRED = __import__("pytest").mark.skip(reason="Decision 319: certifications, trainings and inductions are retired as a gate and as a feature; replaced by tests/parity_0120/machine_access.")
+_existing = globals().get("pytestmark", [])
+pytestmark = [*(_existing if isinstance(_existing, (list, tuple)) else [_existing]), _RETIRED]

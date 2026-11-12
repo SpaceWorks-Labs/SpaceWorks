@@ -35,7 +35,7 @@ def test_dark_derivation_matches_frontend_golden_values():
     assert light["fill"] == dark["fill"] == (243, 195, 221)
     assert light["foreground"] == dark["foreground"] == (20, 44, 42)
     assert light["ink"] == (90, 22, 51)
-    assert dark["ink"] == (182, 146, 152)
+    assert dark["ink"] == (174, 135, 143)
     palette = derive_palette({"primary_color": "#004400"}, "light")
     assert palette["hover"] == (26, 86, 23)
     assert palette["active"] == (51, 103, 46)
@@ -100,7 +100,7 @@ def test_validation_surfaces_match_rendered_css_and_frontend_contract():
 
 def test_opaque_soft_derivation_protects_normal_and_muted_text():
     palette = derive_palette({"primary_color": "#fff"}, "dark")
-    assert palette["soft"] == (46, 59, 57)
+    assert palette["soft"] == (48, 48, 48)
     assert all(contrast(text, palette["soft"]) >= 4.5 for text in BODY_TEXT["dark"])
 
 

@@ -76,9 +76,10 @@ def _completed_print(space):
     return machine
 
 
-def test_printing_off_hides_printer_reports_and_on_restores_them():
-    space = _space("reports-printing-gate", without="printing")
-    assert "machine_service" in space.enabled_modules
+def test_machine_service_off_hides_printer_reports_and_on_restores_them():
+    # Decision 340b: the printer report belongs to machine_service since `printing` folded in.
+    space = _space("reports-printing-gate", without="machine_service")
+    assert "machine_service" not in space.enabled_modules
     machine = _completed_print(space)
     client = _superadmin_client("reports-printing-superadmin")
     export_url = reverse(
@@ -88,19 +89,19 @@ def test_printing_off_hides_printer_reports_and_on_restores_them():
     makerspace_url = reverse("admin-makerspace-machine-service-report", args=[space.id])
     aggregate_url = reverse("admin-machine-service-report")
 
-    assert report_definition("printer-service").required_modules == ("printing",)
+    assert report_definition("printer-service").required_modules == ("machine_service",)
     refused_definition = client.get(export_url, {"format": "csv"})
     refused_branch = client.get(makerspace_url, {"machine_type": "3d_printer"})
     aggregate_off = client.get(aggregate_url, {"machine_type": "3d_printer"})
 
     assert refused_definition.status_code == 404
-    assert "printing" in str(refused_definition.data)
+    assert "machine_service" in str(refused_definition.data)
     assert refused_branch.status_code == 404
-    assert "printing" in str(refused_branch.data)
+    assert "machine_service" in str(refused_branch.data)
     assert aggregate_off.status_code == 200, aggregate_off.data
     assert aggregate_off.data["printer_metrics"] == []
 
-    _enable(space, "printing")
+    _enable(space, "machine_service")
     enabled_definition = client.get(export_url, {"format": "csv"})
     enabled_branch = client.get(makerspace_url, {"machine_type": "3d_printer"})
     aggregate_on = client.get(aggregate_url, {"machine_type": "3d_printer"})

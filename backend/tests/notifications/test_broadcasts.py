@@ -95,14 +95,14 @@ def test_revoked_and_globally_restricted_members_never_match():
     assert not segment_members(space, {}).filter(user=member).exists()
 
 
-def test_certification_segment_uses_live_grant_not_an_expired_or_foreign_grant():
-    from tests.machines.certification_helpers import _certification, _machine_type
-    from apps.machines.models_certifications import CertificationGrant
+def test_machine_access_segment_uses_live_grant_not_an_expired_or_foreign_grant():
+    """Decision 319: the audience is members with live machine access to a type (replaces the certification segment)."""
+    from tests.machines.certification_helpers import _machine_type
+    from apps.machines.models import MachineAccessGrant
     space, manager, member = world('broadcast-cert-wp3')
-    cert = _certification(space, _machine_type(space))
-    membership = MakerspaceMembership.objects.get(makerspace=space, user=member)
-    grant = CertificationGrant.objects.create(certification_type=cert, membership=membership, granted_by=manager)
-    assert list(segment_members(space, {'certification_id': cert.pk}).values_list('user_id', flat=True)) == [member.pk]
+    kind = _machine_type(space)
+    grant = MachineAccessGrant.objects.create(makerspace=space, member=member, machine_type=kind, granted_by=manager)
+    assert list(segment_members(space, {'machine_type_id': kind.pk}).values_list('user_id', flat=True)) == [member.pk]
     grant.expires_at = timezone.now() - timedelta(seconds=1)
     grant.save(update_fields=['expires_at'])
-    assert not segment_members(space, {'certification_id': cert.pk}).exists()
+    assert not segment_members(space, {'machine_type_id': kind.pk}).exists()

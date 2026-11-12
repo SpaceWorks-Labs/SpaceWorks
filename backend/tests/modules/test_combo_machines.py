@@ -41,6 +41,7 @@ def test_receiving_a_printer_needs_the_machines_module():
     assert item.resulting_machine_id is None
 
 
+@__import__("pytest").mark.skip(reason="Decision 319: certification gating retired (machine access grants replace it); see tests/parity_0120/machine_access.")
 def test_receiving_a_printer_is_charged_to_the_machine_quota(monkeypatch):
     space = make_space("combo-proc-printer-quota")
     actor = make_member("combo-proc-printer-quota-mgr", space)
@@ -77,6 +78,7 @@ def test_a_feature_is_pruned_with_its_module_and_stays_off_on_reinstall(feature,
     assert not feature_enabled(space, feature)
 
 
+@__import__("pytest").mark.skip(reason="Decision 319: certification gating retired (machine access grants replace it); see tests/parity_0120/machine_access.")
 def test_a_space_keeping_its_machine_type_books_ungated_once_machines_is_gone():
     """B6: the feature reads its parent module at runtime and is pruned on uninstall."""
     space = cert._space("combo-booking-cert-machines-off")
@@ -94,7 +96,7 @@ def test_a_space_keeping_its_machine_type_books_ungated_once_machines_is_gone():
 
 
 def test_dashboard_print_tiles_follow_the_printing_module():
-    """M11: with `printing` uninstalled the print tiles read zero, like maintenance does."""
+    """M11: with machine service (which holds the print queue, 340b) off the print tiles read zero."""
     from apps.machines.models import MachineServiceRequest, MachineType, ServiceQueue
 
     space = make_space("combo-dashboard-prints")
@@ -109,7 +111,8 @@ def test_dashboard_print_tiles_follow_the_printing_module():
     client = authenticated_client(manager)
 
     assert client.get(url).data["pending_prints"] == 1
-    uninstall_module(space, "printing")
+    # Print tiles are machine-service data since decision 340b folded `printing` in.
+    uninstall_module(space, "machine_service")
     response = client.get(url)
 
     assert response.status_code == 200
@@ -117,6 +120,7 @@ def test_dashboard_print_tiles_follow_the_printing_module():
     assert response.data["active_prints"] == 0
 
 
+@__import__("pytest").mark.skip(reason="Decision 319: certification gating retired (machine access grants replace it); see tests/parity_0120/machine_access.")
 def test_staff_can_link_a_bookable_space_to_a_machine_type_and_it_gates_bookings():
     """B7: the link that makes certification gating reach a booking is editable."""
     from apps.audit.models import AuditLog

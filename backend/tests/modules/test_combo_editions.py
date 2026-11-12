@@ -134,8 +134,9 @@ def _print_job(space):
     )
 
 
-def test_print_status_lookup_follows_the_printing_module_and_the_edition(settings):
-    """M12: a space that uninstalled `printing` stops publishing job status."""
+def test_print_status_lookup_follows_the_machine_service_module_and_the_edition(settings):
+    """M12: a space that switched off machine service (which holds the print queue since
+    decision 340b folded `printing` in) stops publishing job status."""
     space = make_space("combo-print-status")
     job = _print_job(space)
     url = reverse("public-printer-service-status", args=[job.public_token])
@@ -144,10 +145,10 @@ def test_print_status_lookup_follows_the_printing_module_and_the_edition(setting
     settings.SPACEWORKS_EDITION = "events"
     assert APIClient().get(url).status_code == 404
     settings.SPACEWORKS_EDITION = "makerspace"
-    uninstall_module(space, "printing")
+    uninstall_module(space, "machine_service")
     response = APIClient().get(url)
     assert response.status_code == 400
-    assert "printing" in str(response.data)
+    assert "machine_service" in str(response.data)
 
 
 def test_events_edition_hides_the_item_detail_and_the_public_stats_page(settings):

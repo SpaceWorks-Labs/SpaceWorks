@@ -31,6 +31,17 @@ EXPECTED_AREA = {
     "analytics_connections": "integrations", "report_exports_monthly": "integrations", "kiosk_stations": "inventory",
     "devices": "machines", "machine_jobs_monthly": "machines", "machine_sessions_monthly": "machines",
     "storage_evidence_bytes": "storage", "storage_public_images_bytes": "storage", "webhook_endpoints": "integrations",
+    # Added by later lanes and the 0.12.0 module sweep (decision 328a), so this map stays complete.
+    "member_cards_issued_monthly": "people", "wallet_passes": "people", "member_units": "people",
+    "collection_sheet_rows_monthly": "money", "staff_cards_issued_monthly": "people", "series_invites": "events",
+    "checkin_lists": "events", "saved_views": "events", "hackathon_stages": "events",
+    "event_badge_prints_monthly": "events", "paired_displays": "people", "adapter_bridges": "machines",
+    "adapter_watch_streams": "machines", "adapter_snapshots": "machines", "adapter_artifacts": "machines",
+    "photo_cutout_jobs_monthly": "people", "card_templates": "people", "hardware_requests_monthly": "inventory",
+    "stock_transfers_monthly": "inventory", "stocktake_sessions_monthly": "inventory", "shelf_checks_monthly": "inventory",
+    "reimbursement_claims_monthly": "events", "public_page_assets": "storage", "scheduled_reports":
+    "integrations", "adapter_media_bytes": "storage", "adapter_telemetry_points": "machines", "anthias_players":
+    "people",
 }
 
 

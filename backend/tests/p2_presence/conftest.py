@@ -6,7 +6,7 @@ from django.utils import timezone
 from rest_framework.test import APIClient
 
 from apps.accounts.models import User
-from apps.makerspaces.models import Makerspace, MakerspaceMembership, MemberProfile, MemberProject, default_enabled_modules
+from apps.makerspaces.models import Makerspace, MakerspaceMembership, default_enabled_modules
 
 
 @pytest.fixture(autouse=True)
@@ -40,9 +40,13 @@ def lane(settings):
         return user
     owner, staff, guest = person("owner"), person("staff", manager=True), person("guest", guest=True)
     membership = owner.makerspace_memberships.get(makerspace=space)
-    profile = MemberProfile.objects.create(membership=membership, public_visible=True,
-                                           public_consented_at=timezone.now(), show_projects=True)
-    project = MemberProject.objects.create(profile=profile, title="Public rover", public_visible=True)
+    from apps.makerspaces.models_account_profile import AccountProfile, AccountProject
+    from apps.makerspaces.models_profiles import PublicHandle
+    # Decision 304: one global account profile; presence projects are AccountProject rows.
+    profile, _ = AccountProfile.objects.update_or_create(user=owner, defaults={
+        "public_visible": True, "public_consented_at": timezone.now(), "show_projects": True})
+    PublicHandle.objects.get_or_create(user=owner, defaults={"handle": "presence.owner", "changed_at": timezone.now()})
+    project = AccountProject.objects.create(profile=profile, title="Public rover", public_visible=True)
     def client(user=None):
         api = APIClient(HTTP_ORIGIN="http://localhost:5000")
         if user:

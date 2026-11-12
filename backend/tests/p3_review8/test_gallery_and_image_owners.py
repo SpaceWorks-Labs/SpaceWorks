@@ -9,7 +9,7 @@ from apps.bookings import storage
 from apps.bookings.models import BookableSpacePhoto
 from apps.events.models import Event, EventSeries
 from apps.inventory import public_image_storage
-from apps.makerspaces.models import MakerspaceMembership, MemberProject
+from apps.makerspaces.models import AccountProject, MakerspaceMembership
 from apps.makerspaces.profile_services import profile_for
 from .conftest import png
 
@@ -63,7 +63,7 @@ def test_shared_image_owners_charge_once_and_keep_original_on_replay(world, imag
     else:
         membership = MakerspaceMembership.objects.get(makerspace=world.space, user=world.owner)
         profile = profile_for(membership)
-        holder = profile if target == "avatar" else MemberProject.objects.create(profile=profile, title="Robot")
+        holder = profile if target == "avatar" else AccountProject.objects.create(profile=profile, title="Robot")
         url = reverse("member-profile-image", kwargs={"makerspace_id": world.space.pk})
         client, field = world.client(world.owner), "avatar_key" if target == "avatar" else "image_key"
         extra = {"project_id": holder.pk} if target == "project" else {}

@@ -177,16 +177,20 @@ def test_modules_are_opt_in_and_a_new_makerspace_gets_approved_defaults():
         definition.key for definition in module_registry.MODULES if definition.default_enabled
     } == DEFAULT_ON_KEYS
     # L17 (#97) retired `maintenance` and `procurement`: they are capabilities now.
+    # Decision 340b folded `printing` into `machine_service`.
     assert (
         set(profile_modules(EVERYTHING))
-        == (set(LEGACY_DEFAULT_ENABLED_MODULES) - {"maintenance", "procurement"}) | POST_LEGACY_KEYS
+        == (set(LEGACY_DEFAULT_ENABLED_MODULES) - {"maintenance", "procurement", "printing"}) | POST_LEGACY_KEYS
     )
 
 
 def test_derived_workflows_are_unchanged():
     # The two retired keys' workflows moved to their capabilities (platform.FEATURE_WORKFLOWS).
     from apps.makerspaces.platform import FEATURE_WORKFLOWS
-    legacy = {key: value for key, value in LEGACY_MODULE_WORKFLOWS.items() if key not in {"maintenance", "procurement"}}
+    legacy = {key: value for key, value in LEGACY_MODULE_WORKFLOWS.items()
+              if key not in {"maintenance", "procurement", "printing"}}
+    # Decision 340b: the retired `printing` module's workflow is machine service's now.
+    legacy["machine_service"] = [*legacy["machine_service"], *LEGACY_MODULE_WORKFLOWS["printing"]]
     assert MODULE_WORKFLOWS == legacy
     assert FEATURE_WORKFLOWS["machines.maintenance"] == ["maintenance"]
     assert FEATURE_WORKFLOWS["inventory.tobuy"] == FEATURE_WORKFLOWS["machines.tobuy"] == ["procurement"]
@@ -242,7 +246,7 @@ def test_registry_is_internally_consistent():
     # `member_accounts` and `mobile`, plus `backup` (makerspace archive and
     # Custody, devices, presence, both independently opt-in addressed channels and the
     # opt-in `event_reimbursements` add-on (requires `events`).
-    assert len(module_registry.MODULES) == 37  # - maintenance, procurement (L17, #97), - backup (B1, #111 Q2), + shop (L22), + analytics (L25)
+    assert len(module_registry.MODULES) == 36  # - maintenance, procurement (L17, #97), - backup (B1, #111 Q2), + shop (L22), + analytics (L25), - printing (340b)
     assert len(module_registry.BY_KEY) == len(module_registry.MODULES)
     for definition in module_registry.MODULES:
         assert definition.label and definition.description and definition.app_label
@@ -275,8 +279,23 @@ def test_events_is_independent_of_membership():
     assert module_registry.with_dependencies({"events"}) == {"events"}
 
 
-def test_printing_dependency_is_registry_data_not_a_hardcoded_branch():
-    assert module_registry.module_dependencies()["printing"] == ("machine_service",)
+def test_dependencies_are_registry_data_not_a_hardcoded_branch():
+    assert module_registry.module_dependencies()["event_reimbursements"] == ("events",)
+    assert module_registry.with_dependencies({"event_reimbursements"}) == {"event_reimbursements", "events"}
+
+
+def test_retired_printing_key_is_not_registered_and_reads_as_machine_service():
+    # Decision 340b: the 3D print queue is a machine type inside machine_service.
+    from apps.makerspaces.module_aliases import RETIRED_MODULE_ALIASES, canonical_module_key, canonical_module_keys
+    assert "printing" not in module_registry.BY_KEY
+    assert RETIRED_MODULE_ALIASES == {"printing": "machine_service"}
+    assert set(RETIRED_MODULE_ALIASES) & module_registry.MODULE_KEYS == set()
+    assert set(RETIRED_MODULE_ALIASES.values()) <= module_registry.MODULE_KEYS
+    assert canonical_module_key("printing") == "machine_service"
+    assert canonical_module_key("events") == "events"
+    assert canonical_module_keys(["printing", "machine_service", "events"]) == ["machine_service", "events"]
+    assert module_registry.module_available("printing") is module_registry.module_available("machine_service")
+    assert "printing_requests" in module_registry.module_workflows()["machine_service"]
 
 
 def test_maintenance_dependency_matches_its_machine_owned_surfaces():

@@ -52,7 +52,8 @@ def test_evidence_and_import_coverage_are_independent():
 def test_detail_tables_preserve_export_allowlists_without_count_columns(key):
     definition = REPORT_REGISTRY[key]
     assert "count" not in definition.fields
-    assert definition.version == 1
+    # booking-reservations is v2 (organization column, decision 223 (k)); the others are still v1.
+    assert definition.version == (2 if key == "booking-reservations" else 1)
     assert definition.chart_hint == "table"
     assert definition.chart_spec["values"] == []
     validate_chart_spec(definition.chart_spec, definition.fields)

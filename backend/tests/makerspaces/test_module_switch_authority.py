@@ -27,6 +27,14 @@ def test_limit_gated_install_is_superadmin_only_on_the_managed_platform(monkeypa
     uninstall_module(space, "bookings")
     monkeypatch.setattr("apps.makerspaces.limits.is_self_host", lambda: False)
     client = authenticated_client(staff_account(space, "switch-managed-sm", "space_manager"))
+    # Decision 328a: no limit is enforced until one is set (override, plan or platform default); a stored
+    # override is what makes the module limit-gated.
+    allowed = client.post(reverse("admin-module-install", args=[space.pk]), {"key": "bookings"}, format="json")
+    assert allowed.status_code == 200
+    space.refresh_from_db()
+    uninstall_module(space, "bookings")
+    space.resource_limit_overrides = {"bookings": 5}
+    space.save(update_fields=["resource_limit_overrides"])
     refused = client.post(reverse("admin-module-install", args=[space.pk]), {"key": "bookings"}, format="json")
     assert refused.status_code == 403 and refused.data["code"] == "module_install_superadmin_only"
     assert client.post(reverse("admin-module-install", args=[space.pk]), {"key": "stocktake"},

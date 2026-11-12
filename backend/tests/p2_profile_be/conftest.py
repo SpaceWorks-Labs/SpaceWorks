@@ -11,10 +11,11 @@ from rest_framework.test import APIRequestFactory
 
 from apps.accounts.models import User
 from apps.makerspaces.models import Makerspace, MakerspaceMembership
-from apps.makerspaces.models_profiles import MemberProfile, PublicHandle
+from apps.makerspaces.models_account_profile import AccountProfile
+from apps.makerspaces.models_profiles import PublicHandle
 from apps.makerspaces.profile_activity_public import daily_activity
 from apps.makerspaces.profile_github_views import PublicProfileGitHubView
-from apps.makerspaces.profile_history_views import PublicProfileEventsView
+from apps.makerspaces.public_profile_views import PublicProfileEventsView
 
 
 @pytest.fixture(autouse=True)
@@ -24,8 +25,11 @@ def no_network(monkeypatch):
     monkeypatch.setattr("urllib.request.urlopen", refuse)
 
 
+GITHUB_SUB = "4242"
+
+
 @pytest.fixture
-def published(settings):
+def published(settings, monkeypatch):
     settings.INFRA_HOSTS = ["testserver", "localhost"]
     settings.ALLOWED_HOSTS = ["testserver", "localhost", ".example.test"]
     settings.PLATFORM_STAFF_ORIGINS = ["https://platform.example.test"]
@@ -35,9 +39,16 @@ def published(settings):
     membership = MakerspaceMembership.objects.create(
         makerspace=space, user=user, role="custom", assigned_role=space.roles.get(slug="member"),
     )
-    profile = MemberProfile.objects.create(membership=membership, public_visible=True,
+    profile = AccountProfile.objects.create(user=user, public_visible=True,
         public_consented_at=timezone.now(), show_activity_graph=True, github_username="octocat")
-    PublicHandle.objects.create(user=user, profile=profile, handle="public.maker", changed_at=timezone.now())
+    # The tests below were written for the per-membership profile and read `profile.membership`; the
+    # global profile spans spaces, so the fixture keeps ONE membership reachable under that name.
+    profile.membership = membership
+    PublicHandle.objects.create(user=user, handle="public.maker", changed_at=timezone.now())
+    # Decision 338: a GitHub calendar needs a linked GitHub sign-in whose account id owns the username.
+    from apps.accounts.models_social import SocialIdentity
+    SocialIdentity.objects.create(user=user, provider="github", provider_sub=GITHUB_SUB)
+    monkeypatch.setattr("apps.makerspaces.profile_github.fetch_database_id", lambda username: int(GITHUB_SUB))
     return profile
 
 

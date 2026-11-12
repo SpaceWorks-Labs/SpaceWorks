@@ -36,8 +36,9 @@ def test_every_setup_area_switches_it_on(area):
 
 
 def test_frontend_mirror_lists_it_as_standalone():
-    source = (Path(__file__).resolve().parents[3] / "frontend/src/lib/features.ts").read_text(encoding="utf-8")
-    assert re.search(r'key: "platform\.help_centre", parent_module: null, label: "Help centre"', source)
+    folder = Path(__file__).resolve().parents[3] / "frontend/src/lib/featureDefinitions"
+    source = "\n".join(part.read_text(encoding="utf-8") for part in sorted(folder.glob("part*.ts")))
+    assert re.search(r'key: "platform\.help_centre", parent_module: null, label: t`Help centre`', source)
 
 
 def test_help_is_a_reserved_route_segment():

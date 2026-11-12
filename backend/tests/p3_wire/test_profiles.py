@@ -14,11 +14,11 @@ pytestmark = pytest.mark.django_db
 def test_public_profile_owner_flag_uses_authenticated_identity_and_is_never_cached(world, viewer):
     membership = world.owner.makerspace_memberships.get(makerspace=world.space)
     save_profile(membership, {"public_visible": True, "publication_consent": True})
-    claim = claim_handle(membership, "wire.maker")
+    claim = claim_handle(membership.user, "wire.maker")
     user = {"anonymous": None, "owner": world.owner, "other": world.other}[viewer]
     response = world.client(user, jwt=bool(user)).get(reverse("public-profile", kwargs={"handle": claim.handle}))
     assert response.status_code == 200, response.data
-    assert response.data["viewer_is_owner"] is (viewer == "owner")
+    assert response.data["audience"] == {"anonymous": "public", "owner": "owner", "other": "member"}[viewer]
     assert response["Cache-Control"] == "no-store"
 
 

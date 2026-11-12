@@ -12,14 +12,15 @@ pytestmark = pytest.mark.django_db
 
 
 @pytest.mark.parametrize("printer", [False, True])
-def test_service_delivery_requires_printing_only_for_printers(equipment, printer):
+def test_service_delivery_reaches_printer_jobs_without_a_separate_printing_switch(equipment, printer):
+    # Decision 340b: printer jobs are machine-service jobs; a stale `printing` key changes nothing.
     row = request(equipment, printer=printer)
     notify_service(row, "accepted")
     envelope = NotificationEnvelope.objects.get(source_kind="machines.service", audience="requester")
     disable_module(equipment.space, "printing")
-    assert bool(resolve(envelope)) is (not printer)
+    assert bool(resolve(envelope)) is True
     deliver_envelope(envelope.pk)
-    assert bool(equipment.fake.calls) is (not printer)
+    assert bool(equipment.fake.calls) is True
 
 
 def test_generic_service_still_requires_machine_service(equipment):

@@ -16,7 +16,10 @@ from apps.inventory.public_image_storage import (
     public_image_key_in_use,
 )
 from apps.makerspaces import profile_services
+from apps.makerspaces.account_profile import account_profile_for
 from apps.makerspaces.models import (
+    AccountProfile,
+    AccountProject,
     Makerspace,
     MakerspaceMembership,
     MakerspaceRole,
@@ -43,6 +46,11 @@ def member(makerspace, username="profile-member", display_name="Ada Lovelace"):
         assigned_role=MakerspaceRole.objects.get(makerspace=makerspace, slug="member"),
         status="active",
     )
+
+
+def legacy_profile(membership):
+    """The pre-0.12 per-membership row: still exists (read-only) and still has its own collectors."""
+    return MemberProfile.objects.get_or_create(membership=membership)[0]
 
 
 def authed(user):
@@ -127,7 +135,7 @@ def test_saving_projects_replaces_the_list_and_rejects_a_foreign_id():
         {"projects": [{"title": "First"}, {"title": "Second"}]},
         format="json",
     )
-    kept = MemberProject.objects.get(title="First")
+    kept = AccountProject.objects.get(title="First")
 
     # Sending only one back deletes the other: with a merge there is no way to express
     # removing a project at all.
@@ -136,12 +144,12 @@ def test_saving_projects_replaces_the_list_and_rejects_a_foreign_id():
         format="json",
     )
     assert response.status_code == 200
-    assert list(MemberProject.objects.values_list("title", flat=True)) == ["First renamed"]
+    assert list(AccountProject.objects.values_list("title", flat=True)) == ["First renamed"]
 
     # A foreign id is a 400, never a silent drop.
     other = member(make_space("other-space"), username="other-member")
-    foreign = MemberProject.objects.create(
-        profile=profile_services.profile_for(other), title="Theirs"
+    foreign = AccountProject.objects.create(
+        profile=account_profile_for(other.user), title="Theirs"
     )
     response = client.put(
         profile_url(space), {"projects": [{"id": foreign.pk, "title": "Stolen"}]},
@@ -156,8 +164,8 @@ def test_changing_the_github_handle_drops_the_cached_count():
     """Otherwise one account's total shows under another account's name."""
     space = make_space()
     membership = member(space)
-    profile = profile_services.profile_for(membership)
-    MemberProfile.objects.filter(pk=profile.pk).update(
+    profile = account_profile_for(membership.user)
+    AccountProfile.objects.filter(pk=profile.pk).update(
         github_username="first", github_contributions=1234
     )
 
@@ -172,7 +180,7 @@ def test_changing_the_github_handle_drops_the_cached_count():
 # --- privacy ----------------------------------------------------------------------
 
 
-def test_the_directory_lists_only_opted_in_members_and_counts_the_rest():
+def test_the_directory_lists_visible_members_and_counts_the_hidden():
     space = make_space()
     shown = member(space, username="shown", display_name="Shown Person")
     hidden = member(space, username="hidden", display_name="Hidden Person")
@@ -183,9 +191,10 @@ def test_the_directory_lists_only_opted_in_members_and_counts_the_rest():
     response = authed(viewer.user).get(directory_url(space))
     assert response.status_code == 200
     listed = response.data["members"]
-    assert [row["display_name"] for row in listed] == ["Shown Person"]
-    # The viewer and the hidden member both count; neither is named.
-    assert response.data["hidden_count"] == 2
+    # Open by default (decision 303): everyone who has not hidden their profile is listed.
+    assert [row["display_name"] for row in listed] == ["Shown Person", "Viewer"]
+    # Only the member who hid their profile counts as hidden; they are not named.
+    assert response.data["hidden_count"] == 1
 
 
 def test_a_directory_row_never_carries_contact_details():
@@ -246,8 +255,8 @@ def test_the_member_image_kind_is_allowed():
 def test_a_key_claimed_by_one_profile_cannot_be_attached_to_another():
     """Clearing the first would delete the object and blank the second."""
     space = make_space()
-    first = profile_services.profile_for(member(space, username="first"))
-    second = profile_services.profile_for(member(space, username="second"))
+    first = legacy_profile(member(space, username="first"))
+    second = legacy_profile(member(space, username="second"))
     key = build_object_key("member", space.id, ".png")
     MemberProfile.objects.filter(pk=first.pk).update(avatar_key=key)
 
@@ -258,7 +267,7 @@ def test_a_key_claimed_by_one_profile_cannot_be_attached_to_another():
 
 def test_a_project_image_key_is_seen_by_the_collision_check():
     space = make_space()
-    profile = profile_services.profile_for(member(space))
+    profile = legacy_profile(member(space))
     key = build_object_key("member", space.id, ".png")
     project = MemberProject.objects.create(profile=profile, title="P", image_key=key)
 
@@ -273,7 +282,7 @@ def test_every_collector_sees_member_imagery():
     from apps.makerspaces.module_purge_collectors import membership_public_image_keys
 
     space = make_space()
-    profile = profile_services.profile_for(member(space))
+    profile = legacy_profile(member(space))
     avatar = build_object_key("member", space.id, ".png")
     project_key = build_object_key("member", space.id, ".jpg")
     MemberProfile.objects.filter(pk=profile.pk).update(avatar_key=avatar)
@@ -289,7 +298,7 @@ def test_a_membership_purge_destroys_profiles_but_keeps_the_membership():
 
     space = make_space()
     membership = member(space)
-    profile = profile_services.profile_for(membership)
+    profile = legacy_profile(membership)
     MemberProject.objects.create(profile=profile, title="P")
 
     membership_delete(space, None)
@@ -385,3 +394,21 @@ def test_save_projects_rejects_a_foreign_id_before_writing_anything():
 
     with pytest.raises(ValidationError):
         profile_services.save_projects(profile, [{"title": "New"}, {"id": 999, "title": "X"}])
+
+
+def test_an_account_level_key_is_seen_by_the_collision_check_and_survives_a_space_purge():
+    """Decision 305: migrated keys are SHARED with the legacy row, so the space purge must not delete them."""
+    from apps.makerspaces.account_profile_purge import without_account_held
+
+    space = make_space()
+    membership = member(space)
+    account = account_profile_for(membership.user)
+    key = build_object_key("member", space.id, ".png")
+    AccountProfile.objects.filter(pk=account.pk).update(avatar_key=key)
+    project_key = build_object_key("member", space.id, ".jpg")
+    project = AccountProject.objects.create(profile=account, title="P", image_key=project_key)
+
+    assert public_image_key_in_use(space.id, key) is True
+    assert public_image_key_in_use(space.id, key, account_profile_id=account.pk) is False
+    assert public_image_key_in_use(space.id, project_key, account_project_id=project.pk) is False
+    assert without_account_held([key, project_key, "member/1/other.png"]) == ["member/1/other.png"]

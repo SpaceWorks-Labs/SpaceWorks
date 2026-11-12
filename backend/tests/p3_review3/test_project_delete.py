@@ -20,7 +20,7 @@ def test_deleting_imageless_displayed_project_invalidates_cached_title(lane, que
     else:
         lane.project.delete()
     session.refresh_from_db()
-    assert session.project_id is None
+    assert session.account_project_id is None
     assert PresenceSettings.objects.get(makerspace=lane.space).display_version != before
     assert "project_title" not in tv_payload(lane.space)[0]
 

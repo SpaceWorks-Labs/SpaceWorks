@@ -178,7 +178,6 @@ PROBES = {
     "mobile": None,
     "notifications": _notifications,
     "payments": None,
-    "printing": _printing,
     "presence": _presence,
     "qr_print_batches": _qr_print_batches,
     "reports": _reports,
@@ -235,3 +234,19 @@ def test_optional_module_primary_surface_refuses_when_only_its_key_is_absent(mod
 
 def test_probe_registry_covers_every_optional_module_key():
     assert set(PROBES) == set(OPTIONAL)
+    assert "printing" not in PROBES  # retired into machine_service (decision 340b)
+
+
+@pytest.mark.parametrize("state", ["on", "off"])
+def test_public_print_queue_is_a_machine_service_surface(state):
+    # Decision 340b: the 3D print queue (formerly the `printing` module) follows machine_service.
+    modules = CORE | {"machine_service"} if state == "on" else CORE
+    space = _space("printing-fold", state, modules)
+
+    response = _printing(space, _client(_actor("machine_service", state)))
+
+    if state == "on":
+        assert 200 <= response.status_code < 300, response.data
+    else:
+        assert response.status_code >= 400
+        assert "machine_service" in str(response.data).lower()

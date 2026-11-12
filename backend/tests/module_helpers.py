@@ -9,6 +9,7 @@ state its intent ("no membership") instead of hand-maintaining a dependency clos
 changes whenever the registry does.
 """
 
+from apps.makerspaces.module_aliases import RETIRED_MODULE_ALIASES
 from apps.makerspaces.module_install import uninstall_module
 from apps.makerspaces.module_registry_helpers import dependents_of
 
@@ -24,6 +25,12 @@ def disable_module(makerspace, key, actor=None):
         off = RETIRED_KEYS.get(key) or tuple(key.split("|"))
         makerspace.enabled_features = [k for k in makerspace.enabled_features if k not in off]
         makerspace.save(update_fields=["enabled_features"])
+        return [key]
+    if key in RETIRED_MODULE_ALIASES:
+        # Decision 340b: `printing` is part of machine_service. Disabling it only drops a
+        # stale stored key; the live module it reads as stays exactly as it was.
+        makerspace.enabled_modules = [k for k in makerspace.enabled_modules if k != key]
+        makerspace.save(update_fields=["enabled_modules"])
         return [key]
     enabled = set(makerspace.enabled_modules or [])
     if key not in enabled:

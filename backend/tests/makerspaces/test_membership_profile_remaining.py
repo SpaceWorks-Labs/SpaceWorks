@@ -8,7 +8,7 @@ from django.urls import reverse
 from apps.audit.models import AuditLog
 from apps.inventory import public_image_storage
 from apps.makerspaces import profile_images, profile_services
-from apps.makerspaces.models import MemberProfile, MemberProject
+from apps.makerspaces.models import AccountProfile, AccountProject, MemberProfile, MemberProject
 from tests.makerspaces.test_member_profiles_p12 import make_space, member, authed
 
 pytestmark = pytest.mark.django_db
@@ -39,22 +39,22 @@ def test_profile_text_length_boundary_is_enforced_over_http(field, limit):
     client = authed(row.user); url = reverse("member-profile", args=[makerspace.pk])
     assert client.put(url, {field: "x" * limit}, format="json").status_code == 200
     assert client.put(url, {field: "x" * (limit + 1)}, format="json").status_code == 400
-    assert getattr(MemberProfile.objects.get(membership=row), field) == "x" * limit
+    assert getattr(AccountProfile.objects.get(user=row.user), field) == "x" * limit
 
 
 def test_avatar_and_project_image_updates_and_clears_are_audited_without_keys(monkeypatch):
     makerspace = make_space("profile-image-audits")
     row = member(makerspace)
     profile = profile_services.profile_for(row)
-    project = MemberProject.objects.create(profile=profile, title="Project")
+    project = AccountProject.objects.create(profile=profile, title="Project")
     monkeypatch.setattr(public_image_storage, "object_size", lambda key: 123)
     monkeypatch.setattr(public_image_storage, "release_public_image_on_commit", lambda *args: None)
     avatar_key = f"member/{makerspace.pk}/avatar.jpg"
     project_key = f"member/{makerspace.pk}/project.jpg"
-    profile_images.set_avatar(profile, avatar_key)
-    profile_images.set_project_image(profile, project, project_key)
-    profile_images.set_avatar(profile, "")
-    profile_images.set_project_image(profile, project, "")
+    profile_images.set_avatar(profile, avatar_key, makerspace=makerspace)
+    profile_images.set_project_image(profile, project, project_key, makerspace=makerspace)
+    profile_images.set_avatar(profile, "", makerspace=makerspace)
+    profile_images.set_project_image(profile, project, "", makerspace=makerspace)
     entries = AuditLog.objects.filter(actor=row.user, makerspace=makerspace, action__in=["member.profile_image_updated", "member.profile_image_cleared"])
     assert entries.count() == 4
     assert {entry.meta["kind"] for entry in entries} == {"avatar", "project"}
@@ -65,7 +65,7 @@ def test_avatar_and_project_image_updates_and_clears_are_audited_without_keys(mo
 def test_github_command_skips_fresh_profiles_and_continues_after_unavailable_profile(monkeypatch):
     makerspace = make_space("github-command")
     for name in ("fresh", "fail", "update"):
-        MemberProfile.objects.create(membership=member(makerspace, name), github_username=name)
+        AccountProfile.objects.create(user=member(makerspace, name).user, github_username=name)
     from apps.makerspaces import github_contributions
     monkeypatch.setattr(github_contributions, "is_configured", lambda: True)
     monkeypatch.setattr(github_contributions, "due_for_sync", lambda profile: profile.github_username != "fresh")

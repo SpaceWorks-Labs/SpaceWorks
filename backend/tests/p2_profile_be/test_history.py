@@ -78,6 +78,7 @@ def test_attendance_correction_and_null_provenance_fallback(published, moment, o
 def test_events_and_speaking_consents_are_independent(published, moment, speaker_source):
     event = make_event(published, moment, created_by=published.membership.user)
     speaker_source.rows.append(SimpleNamespace(event=event, occurred_at=moment, role="session_speaker"))
+    enable(published, show_events=False)  # sections default ON now (decision 303a): switch this one off first
     assert public_get("events").data["results"] == []
     enable(published, show_speaking=True)
     assert public_get("events").data["results"][0]["badge"] == "SPOKE"

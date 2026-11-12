@@ -75,14 +75,14 @@ def test_working_requires_own_project(lane):
     with pytest.raises(PresenceError):
         start(lane, status="working")
     other = lane.person("other")
-    from apps.makerspaces.models import MemberProfile, MemberProject
-    profile = MemberProfile.objects.create(membership=other.makerspace_memberships.get(makerspace=lane.space))
-    foreign = MemberProject.objects.create(profile=profile, title="Private", public_visible=False)
+    from apps.makerspaces.models_account_profile import AccountProfile, AccountProject
+    profile = AccountProfile.objects.create(user=other)
+    foreign = AccountProject.objects.create(profile=profile, title="Private", public_visible=False)
     with pytest.raises(PresenceError):
         start(lane, status="working", project_id=foreign.pk)
     lane.project.public_visible = False
     lane.project.save(update_fields=["public_visible"])
-    assert start(lane, status="working", project_id=lane.project.pk).project_id == lane.project.pk
+    assert start(lane, status="working", project_id=lane.project.pk).account_project_id == lane.project.pk
 
 
 @pytest.mark.parametrize("status", ["attending_event", "invented", "guest"])

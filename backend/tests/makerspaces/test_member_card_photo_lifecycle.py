@@ -27,14 +27,32 @@ def photo_card():
     return boss, member_card_services.issue_card(boss, membership)
 
 
+def jpeg_with_exif(size=(1600, 1000)):
+    """A camera-style JPEG: EXIF with GPS and an orientation of 6 (rotate 90 degrees to display)."""
+    from io import BytesIO
+    from PIL import Image
+    image = Image.new("RGB", size, (200, 30, 30))
+    exif = Image.Exif()
+    exif[0x0112] = 6  # Orientation
+    exif[0x8825] = {2: (51.0, 30.0, 0.0), 4: (0.0, 7.0, 0.0)}  # GPSInfo
+    exif[0x010F] = "PhoneMaker"  # Make
+    out = BytesIO()
+    image.save(out, format="JPEG", exif=exif)
+    return out.getvalue()
+
+
 @pytest.fixture
 def objects(monkeypatch):
-    """Storage I/O is the only fake; the endpoint, service, row and audits are real."""
+    """Storage I/O is the only fake; the endpoint, service, row and audits are real. Values are bytes (an int stands
+    for an object of that size whose content is never read)."""
     rows = {}
-    monkeypatch.setattr(storage, "object_size", lambda key: rows.get(key))
+    size = lambda key: (len(rows[key]) if isinstance(rows[key], bytes) else rows[key]) if key in rows else None  # noqa: E731
+    monkeypatch.setattr(storage, "object_size", size)
     monkeypatch.setattr(storage, "validate_evidence_object", lambda key: None)
     monkeypatch.setattr(storage, "copy_object", lambda source, dest: rows.update({dest: rows[source]}))
     monkeypatch.setattr(storage, "delete_object", lambda key: rows.pop(key, None))
+    monkeypatch.setattr(member_card_storage, "_read_upload", lambda key: rows.get(key))
+    monkeypatch.setattr(member_card_storage, "_write_photo", lambda key, data: rows.update({key: data}))
     return rows
 
 
@@ -58,7 +76,9 @@ def test_presign_binds_mime_and_only_allows_the_staging_key(photo_card, monkeypa
         arguments = client.generate_presigned_post.call_args.kwargs
         assert arguments["Key"] == storage.staging_key(final)
         assert arguments["Fields"] == {"Content-Type": "image/jpeg"}
-        assert ["content-length-range", 1, settings.EVIDENCE_MAX_BYTES] in arguments["Conditions"]
+        # Decision 345: the card-photo ceiling (8 MB, the re-encoder's limit), so the browser is refused up front.
+        assert ["content-length-range", 1, member_card_storage.photo_max_bytes()] in arguments["Conditions"]
+        assert member_card_storage.photo_max_bytes() == min(8 * 1024 * 1024, settings.EVIDENCE_MAX_BYTES)
     else:
         assert client.generate_presigned_url.call_args.kwargs["Params"]["Key"] == storage.staging_key(final)
 
@@ -67,27 +87,29 @@ def test_finalize_requires_consent_promotes_once_and_delete_releases_quota(photo
     _, card = photo_card
     client = authenticated_client(card.membership.user)
     final = f"member-cards/{card.makerspace_id}/uploaded"
-    objects[storage.staging_key(final)] = 1200
+    upload = jpeg_with_exif()
+    objects[storage.staging_key(final)] = upload
     added, freed = [], []
     monkeypatch.setattr(member_card_storage, "add_storage", lambda ms, size: added.append(size))
     monkeypatch.setattr(member_card_storage, "free_storage", lambda ms, size: freed.append(size))
     url = reverse("member-card-photo", args=[card.makerspace_id])
     body = {"object_key": final, "content_type": "image/jpeg", "consent": False}
     assert client.put(url, body, format="json").status_code == 400
-    assert objects == {storage.staging_key(final): 1200}
+    assert objects == {storage.staging_key(final): upload}
     assert not AuditLog.objects.filter(action="member_card.photo_updated").exists()
     body["consent"] = True
     assert client.put(url, body, format="json").status_code == 200
     card.refresh_from_db()
-    assert objects == {final: 1200}
-    assert (card.photo_object_key, card.photo_size_bytes) == (final, 1200)
+    stored = objects[final]
+    assert list(objects) == [final] and stored.startswith(b"\x89PNG")  # re-encoded by the server (decision 345(a))
+    assert (card.photo_object_key, card.photo_size_bytes, card.photo_content_type) == (final, len(stored), "image/png")
     assert card.photo_consent_at and card.photo_consent_version == member_card_storage.PHOTO_CONSENT_VERSION
-    assert added == [1200]
+    assert added == [len(stored)]
     assert client.put(url, body, format="json").status_code == 400
     assert AuditLog.objects.filter(action="member_card.photo_updated", actor=card.membership.user).count() == 1
     assert client.delete(url).status_code == 200
     card.refresh_from_db()
-    assert not objects and freed == [1200]
+    assert not objects and freed == [len(stored)]
     assert (card.photo_object_key, card.photo_consent_at, card.photo_size_bytes) == ("", None, None)
     assert AuditLog.objects.filter(action="member_card.photo_removed", actor=card.membership.user).count() == 1
 
@@ -100,7 +122,7 @@ def test_photo_validation_refuses_foreign_keys_missing_uploads_and_oversize(phot
     final = f"member-cards/{card.makerspace_id}/missing"
     with pytest.raises(ValidationError, match="Upload not found"):
         member_card_storage.finalize_photo(card.membership.user, card, object_key=final, content_type="image/jpeg", consent=True)
-    objects[storage.staging_key(final)] = settings.EVIDENCE_MAX_BYTES + 1
+    objects[storage.staging_key(final)] = member_card_storage.photo_max_bytes() + 1  # 8 MB + 1 is now too large
     with pytest.raises(ValidationError, match="size limit"):
         member_card_storage.finalize_photo(card.membership.user, card, object_key=final, content_type="image/jpeg", consent=True)
     assert not objects
@@ -136,3 +158,19 @@ def test_revoking_a_photo_card_releases_storage_and_preview_is_watermarked(photo
     assert watermarks == ["PREVIEW - not valid"]
     member_card_services.revoke_card(boss, card)
     assert freed == [1234]
+
+
+def test_finalize_strips_exif_and_gps_and_applies_the_camera_orientation(photo_card, objects, monkeypatch):
+    """Decision 345(a): the stored photo is the server's re-encode, never the camera file with its metadata."""
+    from io import BytesIO
+    from PIL import Image
+    _, card = photo_card
+    monkeypatch.setattr(member_card_storage, "add_storage", lambda ms, size: None)
+    final = f"member-cards/{card.makerspace_id}/exif"
+    objects[storage.staging_key(final)] = jpeg_with_exif((1600, 1000))
+    member_card_storage.finalize_photo(card.membership.user, card, object_key=final, content_type="image/jpeg", consent=True)
+    image = Image.open(BytesIO(objects[final]))
+    assert image.format == "PNG" and not dict(image.getexif()) and "exif" not in image.info
+    assert b"PhoneMaker" not in objects[final]
+    assert image.size == (750, 1200)  # orientation 6 applied (now portrait), long edge capped at 1200 px
+    assert storage.staging_key(final) not in objects

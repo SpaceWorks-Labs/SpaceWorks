@@ -28,13 +28,31 @@ def _membership(makerspace, name, **fields):
     )
 
 
+def _png_upload():
+    from io import BytesIO
+    from PIL import Image
+    out = BytesIO()
+    Image.new("RGB", (40, 50), (10, 120, 90)).save(out, format="PNG")
+    return out.getvalue()
+
+
+class _Bucket(list):
+    """Deleted keys (a list, as before) plus the bytes finalize wrote."""
+    written: dict
+
+
 @pytest.fixture
 def fake_bucket(monkeypatch):
-    deleted = []
-    monkeypatch.setattr("apps.evidence.storage.object_size", lambda key: 1500)
+    deleted, written = _Bucket(), {}
+    upload = _png_upload()
+    monkeypatch.setattr("apps.evidence.storage.object_size", lambda key: len(upload))
     monkeypatch.setattr("apps.evidence.storage.validate_evidence_object", lambda key: None)
     monkeypatch.setattr("apps.evidence.storage.copy_object", lambda source, target: None)
     monkeypatch.setattr("apps.evidence.storage.delete_object", lambda key: deleted.append(key))
+    # Decision 345(a): finalize reads the upload, re-encodes it and writes the result.
+    monkeypatch.setattr("apps.makerspaces.member_card_storage._read_upload", lambda key: upload)
+    monkeypatch.setattr("apps.makerspaces.member_card_storage._write_photo", lambda key, data: written.update({key: data}))
+    deleted.written = written
     return deleted
 
 
@@ -63,7 +81,7 @@ def test_a_photo_needs_consent_and_is_charged_then_freed_on_revoke(fake_bucket, 
         membership.user, card, object_key=key, content_type="image/png", consent=True,
     )
     assert card.photo_object_key == key and card.photo_consent_at is not None
-    assert _storage(makerspace) == before + 1500
+    assert _storage(makerspace) == before + len(fake_bucket.written[key])  # the re-encoded photo is what is charged
 
     services.revoke_card(boss, card, reason="left")
 

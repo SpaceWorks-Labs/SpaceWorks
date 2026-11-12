@@ -93,7 +93,8 @@ def test_a_card_says_what_installing_would_also_switch_on(client, space, superad
         for module in group["modules"]
     }
     # A dependency resolved silently is a capability the operator did not choose.
-    assert modules["printing"]["pulls_in"] == ["machine_service"]
+    assert modules["event_reimbursements"]["pulls_in"] == ["events"]
+    assert "printing" not in modules  # retired into machine_service, decision 340b
     # membership requires member_accounts since e6dbb71e (#91).
     assert modules["membership"]["pulls_in"] == ["member_accounts"]
     assert modules["reports"]["pulls_in"] == []
@@ -109,7 +110,8 @@ def test_a_card_says_what_blocks_uninstalling_it(client, space, superadmin):
         for group in response.json()["groups"]
         for module in group["modules"]
     }
-    assert modules["machine_service"]["required_by"] == ["printing"]
+    assert modules["events"]["required_by"] == ["event_reimbursements"]
+    assert modules["machine_service"]["required_by"] == []
     assert modules["member_accounts"]["required_by"] == ["membership", "mobile"]
 
 
@@ -140,14 +142,29 @@ def test_installing_pulls_in_requirements_and_reports_them(client, space, supera
 
     response = auth(client, superadmin).post(
         reverse("admin-module-install", args=[space.id]),
-        {"key": "printing"},
+        {"key": "event_reimbursements"},
         format="json",
     )
 
     space.refresh_from_db()
     assert response.status_code == 200
-    assert set(response.json()["installed"]) == {"printing", "machine_service"}
-    assert {"printing", "machine_service"} <= set(space.enabled_modules)
+    assert set(response.json()["installed"]) == {"event_reimbursements", "events"}
+    assert {"event_reimbursements", "events"} <= set(space.enabled_modules)
+
+
+def test_installing_the_retired_printing_key_installs_machine_service(client, space, superadmin):
+    # Decision 340b: an API client written against the old key list keeps working.
+    apply_profile(space, MINIMAL)
+
+    response = auth(client, superadmin).post(
+        reverse("admin-module-install", args=[space.id]), {"key": "printing"}, format="json")
+
+    space.refresh_from_db()
+    assert response.status_code == 200
+    assert response.json()["installed"] == ["machine_service"]
+    assert "machine_service" in space.enabled_modules and "printing" not in space.enabled_modules
+    keys = {module["key"] for group in response.json()["groups"] for module in group["modules"]}
+    assert "printing" not in keys
 
 
 def test_uninstalling_keeps_the_key_removable_and_the_data_intact(client, space, superadmin):

@@ -26,21 +26,22 @@ pytestmark = pytest.mark.django_db
 # --- consent -----------------------------------------------------------------------
 
 
-def test_the_flag_defaults_to_off():
+def test_the_flag_defaults_to_on_since_profiles_are_open_by_default():
+    """Decision 303a superseded the opt-in: every section defaults ON at platform level."""
     space = make_space()
     m = member(space)
 
     profile = profile_services.profile_for(m)
 
-    assert profile.show_attended_events is False
+    assert profile.show_events is True
 
 
-def test_a_visible_profile_publishes_no_attendance_until_the_flag_is_set():
-    """The whole point of a second flag: publishing the profile is not publishing this."""
+def test_a_member_who_switches_the_events_section_off_publishes_no_attendance_list():
+    """Each section has its own switch: hiding this one withdraws the list, not the profile."""
     space = make_space()
     m = member(space)
     attend(m, "Laser night")
-    profile_services.save_profile(m, {"is_visible": True})
+    profile_services.save_profile(m, {"is_visible": True, "show_attended_events": False})
 
     activity = profile_services.profile_activity(m)
 
@@ -156,8 +157,11 @@ def test_another_members_attendance_never_appears():
     assert profile_services.profile_activity(mine)["recent_attended_events"] == []
 
 
-def test_attendance_in_another_space_never_appears():
+def test_attendance_aggregates_over_spaces_the_member_belongs_to_but_never_others():
+    """Decision 304c: the profile is global, so attendance from the person's own spaces appears;
+    a space they are NOT an active member of never does (303c)."""
     here, elsewhere = make_space("here"), make_space("elsewhere")
+    outsider_space = make_space("not-mine")
     mine = member(here, "mine")
     other_membership = MakerspaceMembership.objects.create(
         user=mine.user, makerspace=elsewhere,
@@ -166,6 +170,11 @@ def test_attendance_in_another_space_never_appears():
         status="active",
     )
     attend(other_membership, "Elsewhere night")
+    stranger_membership = member(outsider_space, "someone")
+    attend(stranger_membership, "Outsider night")
+    from apps.events.models import EventRegistration as Reg
+    Reg.objects.filter(event__title="Outsider night").update(member=mine.user)
     publish(mine)
 
-    assert profile_services.profile_activity(mine)["recent_attended_events"] == []
+    titles = [r["title"] for r in profile_services.profile_activity(mine)["recent_attended_events"]]
+    assert titles == ["Elsewhere night"]

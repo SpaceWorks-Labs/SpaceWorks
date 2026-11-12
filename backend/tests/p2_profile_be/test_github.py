@@ -7,7 +7,8 @@ from django.utils import timezone
 
 from apps.makerspaces import profile_github as service
 from apps.makerspaces import profile_github_fetch as provider
-from apps.makerspaces.models_profiles import MemberProfile, PublicHandle
+from apps.makerspaces.models_account_profile import AccountProfile
+from apps.makerspaces.models_profiles import PublicHandle
 
 from .conftest import enable, public_get
 
@@ -84,7 +85,7 @@ def test_cache_only_read_and_ttl_refresh(published, settings, monkeypatch):
     settings.GITHUB_API_TOKEN = "token"
     fetch = MagicMock(return_value=DAYS)
     monkeypatch.setattr(service, "fetch_calendar", fetch)
-    claim = PublicHandle.objects.get(profile=published)
+    claim = published  # the calendar is keyed by the ACCOUNT profile now (decision 304c)
     assert public_get().data == {"source": "github", "days": []}
     fetch.assert_not_called()
     assert service.refresh_calendar(claim.pk)
@@ -93,7 +94,7 @@ def test_cache_only_read_and_ttl_refresh(published, settings, monkeypatch):
     assert not service.refresh_calendar(claim.pk)
     assert fetch.call_count == 1
     # Daily refresh becomes due BEFORE the body expires, avoiding every-other-day gaps.
-    key = service.calendar_key(service.current_claim(claim.pk))
+    key = service.calendar_key(service.current_profile(claim.pk))
     cache.delete_many([f"{key}:due", f"{key}:fetch"])
     assert service.refresh_calendar(claim.pk)
     assert fetch.call_count == 2
@@ -104,21 +105,21 @@ def test_cache_only_read_and_ttl_refresh(published, settings, monkeypatch):
 @pytest.mark.parametrize("change", ["username", "handle", "profile", "withdraw", "generation", "aba"])
 def test_stale_fetch_cannot_publish_into_new_generation(published, settings, monkeypatch, change):
     settings.GITHUB_API_TOKEN = "token"
-    claim = PublicHandle.objects.get(profile=published)
-    old_key = service.calendar_key(service.current_claim(claim.pk))
+    claim = published  # the calendar is keyed by the ACCOUNT profile now (decision 304c)
+    old_key = service.calendar_key(service.current_profile(claim.pk))
     def fetch(username):
         assert username == "octocat"
         if change == "username":
-            MemberProfile.objects.filter(pk=published.pk).update(github_username="new-user")
+            AccountProfile.objects.filter(pk=published.pk).update(github_username="new-user")
         elif change == "handle":
-            PublicHandle.objects.filter(pk=claim.pk).update(handle="new.handle", changed_at=timezone.now())
+            PublicHandle.objects.filter(user=published.user).update(handle="new.handle", changed_at=timezone.now())
         elif change == "withdraw":
-            MemberProfile.objects.filter(pk=published.pk).update(public_visible=False)
+            AccountProfile.objects.filter(pk=published.pk).update(is_visible=False)
         elif change == "profile":
-            # A moved claim can never read the original profile's body.
-            claim.delete()
+            # A released handle can never read the original profile's body.
+            PublicHandle.objects.filter(user=published.user).delete()
         elif change == "generation":
-            cache.set(f"public-profile:generation:{published.pk}", "new-generation", timeout=None)
+            cache.set(f"public-profile:generation:acct:{published.user_id}", "new-generation", timeout=None)
         else:
             enable(published, github_username="new-user")
             enable(published, github_username="octocat")
@@ -132,7 +133,7 @@ def test_stale_fetch_cannot_publish_into_new_generation(published, settings, mon
 
 def test_stale_worker_cannot_overwrite_new_username_result(published, settings, monkeypatch):
     settings.GITHUB_API_TOKEN = "token"
-    claim = PublicHandle.objects.get(profile=published)
+    claim = published  # the calendar is keyed by the ACCOUNT profile now (decision 304c)
     newer = [{"date": "2026-01-01", "count": 9}]
     def fetch(username):
         if username == "octocat":
@@ -147,8 +148,8 @@ def test_stale_worker_cannot_overwrite_new_username_result(published, settings, 
 
 def test_change_after_final_check_still_writes_only_old_key(published, settings, monkeypatch):
     settings.GITHUB_API_TOKEN = "token"
-    claim = PublicHandle.objects.get(profile=published)
-    old_key = service.calendar_key(service.current_claim(claim.pk))
+    claim = published  # the calendar is keyed by the ACCOUNT profile now (decision 304c)
+    old_key = service.calendar_key(service.current_profile(claim.pk))
     newer = [{"date": "2026-01-01", "count": 9}]
     original_set = cache.set
     writes = []
@@ -167,7 +168,7 @@ def test_change_after_final_check_still_writes_only_old_key(published, settings,
 
 def test_success_body_outlives_due_marker_and_failure_backs_off(published, settings, monkeypatch):
     settings.GITHUB_API_TOKEN = "token"
-    claim = PublicHandle.objects.get(profile=published)
+    claim = published  # the calendar is keyed by the ACCOUNT profile now (decision 304c)
     setter = MagicMock(wraps=cache.set)
     monkeypatch.setattr(service.cache, "set", setter)
     monkeypatch.setattr(service, "fetch_calendar", lambda username: DAYS)
@@ -184,11 +185,11 @@ def test_success_body_outlives_due_marker_and_failure_backs_off(published, setti
 
 def test_cache_and_provider_failure_are_empty(published, settings, monkeypatch):
     settings.GITHUB_API_TOKEN = "token"
-    claim = PublicHandle.objects.get(profile=published)
+    claim = published  # the calendar is keyed by the ACCOUNT profile now (decision 304c)
     monkeypatch.setattr(service, "fetch_calendar", MagicMock(return_value=None))
     assert not service.refresh_calendar(claim.pk)
     assert public_get().data["days"] == []
-    assert cache.get(f"{service.calendar_key(service.current_claim(claim.pk))}:due")
+    assert cache.get(f"{service.calendar_key(service.current_profile(claim.pk))}:due")
     original_get = cache.get
     def get_cache(key, *args, **kwargs):
         if key.startswith("public-profile:"):
@@ -202,7 +203,7 @@ def test_cache_and_provider_failure_are_empty(published, settings, monkeypatch):
 
 def test_publication_and_consent_block_fetch_and_cached_body(published, settings, monkeypatch):
     settings.GITHUB_API_TOKEN = "token"
-    claim = PublicHandle.objects.get(profile=published)
+    claim = published  # the calendar is keyed by the ACCOUNT profile now (decision 304c)
     fetch = MagicMock(return_value=DAYS)
     monkeypatch.setattr(service, "fetch_calendar", fetch)
     assert service.refresh_calendar(claim.pk)
@@ -210,16 +211,64 @@ def test_publication_and_consent_block_fetch_and_cached_body(published, settings
     assert public_get().status_code == 404
     assert not service.refresh_calendar(claim.pk)
     enable(published, show_activity_graph=True, public_visible=False)
+    # The open web is closed, so a logged-out reader gets the 404 ...
     assert public_get().status_code == 404
+    # ... but signed-in readers still may see the calendar, so the refresh is NOT blocked by it.
+    assert service.refresh_calendar(claim.pk) and fetch.call_count == 2
+    # Hiding the whole profile blocks the fetch.
+    enable(published, public_visible=True, is_visible=False)
+    key = service.calendar_key(service.current_profile(claim.pk))
+    cache.delete_many([f"{key}:due", f"{key}:fetch"])
     assert not service.refresh_calendar(claim.pk)
-    assert fetch.call_count == 1
+    assert fetch.call_count == 2
 
 
 def test_unconfigured_skips_even_cached_calendar(published, settings, monkeypatch):
     settings.GITHUB_API_TOKEN = "token"
-    claim = PublicHandle.objects.get(profile=published)
+    claim = published  # the calendar is keyed by the ACCOUNT profile now (decision 304c)
     monkeypatch.setattr(service, "fetch_calendar", MagicMock(return_value=DAYS))
     assert service.refresh_calendar(claim.pk)
     settings.GITHUB_API_TOKEN = ""
     assert public_get().data["days"] == []
     assert not service.refresh_calendar(claim.pk)
+
+
+def test_calendar_and_badge_need_a_linked_github_sign_in_owning_the_username(published, settings, monkeypatch):
+    """Decision 338 (L-P4): an unlinked or mismatched username is a plain link; no calendar, no token spend."""
+    from apps.accounts.models_social import SocialIdentity
+    from apps.makerspaces.account_profile_read import build_payload
+    settings.GITHUB_API_TOKEN = "token"
+    fetch = MagicMock(return_value=DAYS)
+    monkeypatch.setattr(service, "fetch_calendar", fetch)
+    claim = published
+    assert build_payload(claim, "owner")["github_verified"] is False  # nothing proven yet
+    assert service.refresh_calendar(claim.pk)
+    for audience in ("owner", "public"):
+        assert build_payload(claim, audience)["github_verified"] is True
+    # Another person's GitHub account: the id does not match, so nothing is fetched or shown.
+    AccountProfile.objects.filter(pk=claim.pk).update(github_username="someone-else")
+    monkeypatch.setattr(service, "fetch_database_id", lambda username: 999)
+    fetch.reset_mock()
+    assert not service.refresh_calendar(claim.pk)
+    fetch.assert_not_called()
+    claim.refresh_from_db()
+    assert build_payload(claim, "owner")["github_verified"] is False
+    assert build_payload(claim, "public")["github_contributions"] is None
+    # No linked sign-in at all.
+    AccountProfile.objects.filter(pk=claim.pk).update(github_username="octocat")
+    SocialIdentity.objects.filter(user=claim.user).delete()
+    claim.refresh_from_db()
+    assert not service.refresh_calendar(claim.pk)
+    assert build_payload(claim, "owner")["github_verified"] is False
+    assert public_get().data["days"] == []
+
+
+def test_rename_cannot_inherit_a_verification(published, settings, monkeypatch):
+    """The verified flag is keyed by (profile, username, immutable id): a changed username starts unverified."""
+    from apps.makerspaces.account_profile_read import build_payload
+    settings.GITHUB_API_TOKEN = "token"
+    monkeypatch.setattr(service, "fetch_calendar", MagicMock(return_value=DAYS))
+    assert service.refresh_calendar(published.pk)
+    AccountProfile.objects.filter(pk=published.pk).update(github_username="renamed-login")
+    published.refresh_from_db()
+    assert build_payload(published, "owner")["github_verified"] is False

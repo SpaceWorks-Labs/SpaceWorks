@@ -15,6 +15,7 @@ from tests.member_submission import active_member_client
 
 pytestmark = pytest.mark.django_db
 
+# `printing` is a retired key (decision 340b); kept as a parameter to prove a stale key is harmless.
 MACHINE_MODULES = ("machines", "machine_service", "printing", "maintenance")
 
 
@@ -187,11 +188,10 @@ def test_machine_service_off_refuses_submission_and_on_accepts_an_active_member(
     assert MachineServiceRequest.objects.filter(makerspace=space).count() == 1
 
 
-def test_printing_off_refuses_the_public_queue_instead_of_leaking_the_surface():
-    """RECOMMENDED enables the substrate, not the separately optional printer pack."""
-    space = _space("printing-off-gate")
-    assert "machine_service" in space.enabled_modules
-    assert "printing" not in space.enabled_modules
+def test_machine_service_off_refuses_the_public_print_queue_instead_of_leaking_the_surface():
+    """Decision 340b: the print queue is a machine type inside machine service."""
+    space = _space("printing-off-gate", without="machine_service")
+    assert "machine_service" not in space.enabled_modules
     _printer_queue(space)
 
     refused = _client().get(
@@ -199,11 +199,25 @@ def test_printing_off_refuses_the_public_queue_instead_of_leaking_the_surface():
     )
 
     assert refused.status_code == 404
-    assert "printing" in str(refused.data)
+    assert "machine_service" in str(refused.data)
 
 
-def test_printing_on_exposes_the_public_printer_queue():
+def test_machine_service_on_exposes_the_public_printer_queue():
     space = _space("printing-on-gate")
+    assert "machine_service" in space.enabled_modules
+    queue = _printer_queue(space)
+
+    enabled = _client().get(
+        reverse("public-printer-service-queues", args=[space.slug])
+    )
+
+    assert enabled.status_code == 200, enabled.data
+    assert [row["id"] for row in enabled.data] == [queue.pk]
+
+
+def test_a_stored_retired_printing_key_reads_as_machine_service():
+    """A row written before the fold (an older backup) still serves the print queue."""
+    space = _space("printing-alias-gate", without="machine_service")
     _enable(space, "printing")
     queue = _printer_queue(space)
 
@@ -252,12 +266,11 @@ def test_recommended_machine_service_intake_requires_membership_module():
     assert response.data["code"] == "machine_intake_unavailable"
 
 
-def test_recommended_printer_submit_refuses_as_printing_off_before_membership_is_considered():
+def test_printer_submit_refuses_as_machine_service_off_before_membership_is_considered():
     """An OFF module must report its own gate, not an unrelated identity requirement."""
-    space = _space("recommended-printer-service")
-    assert "machine_service" in space.enabled_modules
+    space = _space("recommended-printer-service", without="machine_service")
+    assert "machine_service" not in space.enabled_modules
     assert "membership" not in space.enabled_modules
-    assert "printing" not in space.enabled_modules
     queue = _printer_queue(space)
 
     response = _client(_account("recommended-printer-service-user")).post(
@@ -267,4 +280,4 @@ def test_recommended_printer_submit_refuses_as_printing_off_before_membership_is
     )
 
     assert response.status_code == 404
-    assert "printing" in str(response.data)
+    assert "machine_service" in str(response.data)

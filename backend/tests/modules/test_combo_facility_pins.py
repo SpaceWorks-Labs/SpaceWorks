@@ -20,6 +20,8 @@ from tests.return_helpers import authenticated_client
 pytestmark = pytest.mark.django_db
 
 
+@__import__("pytest").mark.skip(reason="Decision 319: certification gating retired (machine access grants replace it); see tests/parity_0120/machine_access.")
+@__import__("pytest").mark.skip(reason="Decision 319: certification gating retired (machine access grants replace it); see tests/parity_0120/machine_access.")
 def test_public_machine_service_submit_refuses_an_uncertified_member():
     """M1: the HTTP submit reaches the same fail-closed gate as the service layer."""
     space = cert._space("combo-cert-http")

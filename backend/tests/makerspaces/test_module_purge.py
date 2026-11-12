@@ -285,8 +285,7 @@ def test_purging_machine_service_keeps_machines_module_data():
     manual = MachineUsageEntry.objects.create(
         machine=machine, hours=1, consumable_pool=pool, note="Staff run"
     )
-    # `printing` declares `requires_modules=("machine_service",)`, so it has to go first.
-    uninstall_module(makerspace, "printing")
+    # Nothing depends on machine_service since `printing` folded into it (decision 340b).
     uninstall_module(makerspace, "machine_service")
 
     counts = purge_module(makerspace, "machine_service", actor)

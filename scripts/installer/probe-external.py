@@ -17,7 +17,8 @@ import urllib.error
 import urllib.request
 
 PAYLOAD = b"Space Works installer storage check\n"
-PRIVATE_NETS = ("localhost", "127.", "10.", "192.168.", "db", "redis")
+PRIVATE_NETS = ("127.", "10.", "192.168.")
+PRIVATE_NAMES = ("localhost", "db", "redis")
 
 
 class Fail(Exception):
@@ -29,7 +30,7 @@ def env(name, default=""):
 
 
 def is_private(host):
-    return host == "::1" or host.startswith(PRIVATE_NETS) or any(host.startswith(f"172.{n}.") for n in range(16, 32))
+    return host == "::1" or host in PRIVATE_NAMES or host.startswith(PRIVATE_NETS) or any(host.startswith(f"172.{n}.") for n in range(16, 32))
 
 
 def check_database():

@@ -262,10 +262,10 @@ verify_full_host_completion "$UPDATE_SCRIPT_DIR" || die 'Required full-host runt
 storage_marker="$ROOT/.spaceworks-storage-recomputed-0.12.0"
 if [[ ! -e "$storage_marker" ]]; then
   say "Recomputing storage usage for existing spaces (one-off)."
-  if "${COMPOSE[@]}" exec -T backend python manage.py recompute_storage; then
+  if "${COMPOSE[@]}" run --rm --no-deps -T backend --role management python manage.py recompute_storage; then
     : > "$storage_marker"
   else
-    warn "Storage recompute did not finish; run 'python manage.py recompute_storage' in the backend container."
+    warn "Storage recompute did not finish; run 'python manage.py recompute_storage' with the management role."
   fi
 fi
 
@@ -273,10 +273,10 @@ fi
 handle_marker="$ROOT/.spaceworks-handles-claimed-0.12.0"
 if [[ ! -e "$handle_marker" ]]; then
   say "Giving existing accounts their username as profile handle where it is free (one-off)."
-  if "${COMPOSE[@]}" exec -T backend python manage.py claim_default_handles; then
+  if "${COMPOSE[@]}" run --rm --no-deps -T backend --role management python manage.py claim_default_handles; then
     : > "$handle_marker"
   else
-    warn "Handle backfill did not finish; run 'python manage.py claim_default_handles' in the backend container."
+    warn "Handle backfill did not finish; run 'python manage.py claim_default_handles' with the management role."
   fi
 fi
 

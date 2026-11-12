@@ -48,11 +48,14 @@ PANELS = {
         _series("Machine jobs per day", _per_day("machine_jobs", "created_at")),
         _series("Machine hours per day", _per_day("machine_usage", "started_at", "sum(duration_minutes) / 60.0")),
         _table("Machine jobs by state", _by("machine_jobs", "status")),
+        _table("Machine access grants by source", _by("machine_access_grants", "source", where="revoked_at IS NULL")),
+        _series("Adapter sessions per day", _per_day("adapter_usage", "started_at")),
     ),
     "events": (
         _stat("Upcoming events", "SELECT count(*) FROM {schema}.events WHERE starts_at > now()"),
         _series("Registrations per day", _per_day("event_registrations", "created_at")),
         _table("Registrations by state", _by("event_registrations", "status")),
+        _series("Certificates issued per day", _per_day("event_certificates", "issued_at")),
     ),
     "bookings": (
         _series("Bookings per day", _per_day("bookings", "starts_at")),
@@ -72,6 +75,7 @@ PANELS = {
         _stat("People with a membership", "SELECT count(*) FROM {schema}.members"),
         _series("New members per day", _per_day("members", "created_at")),
         _table("Membership terms by state", _by("membership_terms", "status")),
+        _table("Card jobs by state", _by("card_jobs", "state")),
     ),
 }
 

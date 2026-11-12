@@ -29,6 +29,8 @@ DOMAIN_MODULES = (
     # Catalogue version 3: release 0.12 contextual loans, included hours, guest passes, incidents.
     "lending_contexts",
     "access_safety",
+    # Release 0.12 (decision 327): machine grants, device adapters, card jobs, event certificates.
+    "release_devices_cards",
 )
 
 

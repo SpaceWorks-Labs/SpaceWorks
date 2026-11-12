@@ -71,7 +71,6 @@ OBJECT_MUTATION_PARTICIPANTS = {
         "Reached only inside run_report_schedules' skip-and-count tenant boundary, the "
         "tenant-resolved schedule delete route and the reports module purge."
     ),
-    "apps.makerspaces.profile_images._swap": "Runs inside the authenticated member profile image route.",
     "apps.tenant_migration.tenant_dump_cleanup.cleanup_refused_tenant_dump_artifacts": (
         "Deletes only private Lane D coordination artifacts after a refused run."
     ),

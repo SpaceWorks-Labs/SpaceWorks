@@ -26,7 +26,7 @@ def test_refresh_and_derived_access_are_stamped_with_exact_generation():
     assert refresh["auth_generation"] == str(state.auth_generation)
     assert access["auth_generation"] == str(state.auth_generation)
     assert refresh["surface"] == access["surface"] == "member"
-    assert refresh["kind"] == access["kind"] == "member"
+    assert refresh["kind"] == access["kind"] == "person"
     validate_auth_generation(access)
 
 

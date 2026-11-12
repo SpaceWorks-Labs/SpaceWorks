@@ -38,7 +38,7 @@ def test_password_sign_in_is_scoped_for_grant_only_accounts(settings, scope):
     }, format="json", HTTP_ORIGIN=origin)
     assert response.status_code == 200, response.data
     refresh = RefreshToken(response.cookies["refresh_token"].value)
-    assert refresh["surface"] == "delegated" and refresh["kind"] == "member"
+    assert refresh["surface"] == "member" and refresh["kind"] == "person"  # U-A1: one session surface
     assert response.data["user"]["makerspaces"] == []
     assert not rbac.effective_actions(user, space.pk)
     client = APIClient()
@@ -67,7 +67,7 @@ def test_forced_password_rotation_grant_holder_can_sign_in_and_rotate_only():
         "username": user.username, "password": "staff-grant-password-123", "surface": "delegated",
     }, format="json")
     assert signed_in.status_code == 200, signed_in.data
-    assert RefreshToken(signed_in.cookies["refresh_token"].value)["surface"] == "delegated"
+    assert RefreshToken(signed_in.cookies["refresh_token"].value)["surface"] == "member"
     assert signed_in.data["user"]["must_change_password"] is True
     client = APIClient()
     client.credentials(HTTP_AUTHORIZATION=f"Bearer {signed_in.data['access']}")

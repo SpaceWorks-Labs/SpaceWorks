@@ -62,7 +62,7 @@ def test_oidc_member_grantee_actions_require_authorized_origin(oidc_staff, scope
     assert response.status_code == 200, response.data
     assert not user.has_usable_password()
     token = RefreshToken(response.cookies["refresh_token"].value)
-    assert token["surface"] == "member" and token["kind"] == "member"
+    assert token["surface"] == "member" and token["kind"] == "person"
     assert response.data["user"]["makerspaces"] == []
     client = APIClient()
     client.credentials(HTTP_AUTHORIZATION=f"Bearer {response.data['access']}")
@@ -137,9 +137,9 @@ def test_member_oidc_mfa_challenge_retains_member_kind(oidc_staff):
     assert "access" not in response.data and "refresh_token" not in response.cookies
     challenge = MFAChallenge.objects.get(user=user)
     assert challenge.context["surface"] == "member"
-    assert challenge.context["kind"] == "member"
+    assert challenge.context["kind"] == "person"
     assert challenge.context["makerspace"] is None
     assert challenge.context["origin"] == origin
     completed = complete_enrollment(APIClient(), response, HTTP_ORIGIN=origin)
     token = RefreshToken(completed.cookies["refresh_token"].value)
-    assert token["surface"] == "member" and token["kind"] == "member"
+    assert token["surface"] == "member" and token["kind"] == "person"

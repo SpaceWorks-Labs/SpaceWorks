@@ -39,7 +39,7 @@ def test_native_staff_grants_have_web_widget_parity(settings, monkeypatch, role)
     assert web.status_code == 200, web.data
     native, login = native_client(actor, settings, monkeypatch)
     assert DeviceGrant.objects.get(pk=login["device_grant"]["id"]).authority == "staff"
-    assert AccessToken(login["access"])["surface"] == "staff_api"
+    assert AccessToken(login["access"])["surface"] == "member"  # U-A1: one session surface for a person
     response = native.get(url(space), HTTP_X_MAKERSPACE_ID=str(space.pk))
     assert response.status_code == 200, response.data
     assert keys(response.data) == keys(web.data)
@@ -48,8 +48,7 @@ def test_native_staff_grants_have_web_widget_parity(settings, monkeypatch, role)
 
 
 def test_native_org_authority_does_not_widen_locally_visible_widgets(settings, monkeypatch):
-    # Organization authority is member-only (rbac_organizations); a grant row naming a
-    # staff account confers nothing on either surface, and native sessions never read it.
+    # Organization authority is the person's (U-A1); web and native surfaces agree on what it shows.
     space, org_only = lab(), lab("dashboard-native-org-only")
     actor = staff_account(space, "dashboard-native-org", "inventory_manager", password="strong-device-password")
     org = make_organization("dashboard-native-org")
@@ -58,7 +57,8 @@ def test_native_org_authority_does_not_widen_locally_visible_widgets(settings, m
     grant(org, actor, [rbac.Action.MANAGE_EVENTS])
     web = client(actor).get(url(space))
     assert web.status_code == 200, web.data
-    assert "event-funnel" not in keys(web.data)
+    # U-A1: organization authority belongs to the person, so it widens the widgets on both surfaces.
+    assert "event-funnel" in keys(web.data)
     # Dashboard tenant discovery remains local-membership-based on both surfaces.
     assert client(actor).get(url(org_only)).status_code == 404
     native, _ = native_client(actor, settings, monkeypatch)

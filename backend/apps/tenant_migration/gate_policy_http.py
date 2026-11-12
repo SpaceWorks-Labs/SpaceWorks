@@ -113,6 +113,8 @@ HTTP_EXEMPTIONS = {
 
 
 HTTP_ANONYMOUS_EXEMPTIONS = {
+    "apps.presence.views_display.DisplayRegisterView.post": (
+        "A wall display announces itself before any space claims it: the row has no makerspace, so there is no tenant to gate."),
     "apps.operations.cloud_jobs.tick_views.FreeTickView.post": "Free-only authenticated deployment coordination, with per-chunk source gates.",
     "apps.accounts.views_device.DeviceAttestationChallengeView.post": "Global device-attestation challenge state.",
     "apps.accounts.views_device.DeviceLoginView.post": "Global user and device-session state.",

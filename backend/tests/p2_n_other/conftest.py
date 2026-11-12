@@ -39,13 +39,14 @@ def lane(monkeypatch, settings):
         Matrix.objects.create(makerspace=space, feature=feature, channel="telegram", enabled=True)
     @transaction.atomic
     def account(name, role=None):
-        user = make_user(name, access_status=User.AccessStatus.ACTIVE,
-            account_kind="staff" if role and role != "member" else "member",
-            staff_makerspace=space if role and role != "member" else None)
+        user = make_user(name, access_status=User.AccessStatus.ACTIVE)
         user.email_verified_at = timezone.now()
         user.save(update_fields=["email_verified_at"])
         if role:
-            MakerspaceMembership.objects.create(makerspace=space, user=user, status="active",
+            # One account per person (U-A1): staff roles are a staff-track row, the Member role a community row.
+            rows = MakerspaceMembership.objects if role == "member" else MakerspaceMembership.staff_tracks
+            rows.create(makerspace=space, user=user, status="active",
+                **({} if role == "member" else {"track": "staff"}),
                 role="space_manager" if role == "space_manager" else "custom",
                 assigned_role=space.roles.get(slug=role), activated_at=timezone.now())
         NotificationEndpoint.objects.create(makerspace=space, user=user, configuration=config,

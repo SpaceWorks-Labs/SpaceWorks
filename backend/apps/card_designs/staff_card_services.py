@@ -102,7 +102,7 @@ def auto_issue(membership):
 
 def reissue_locked(actor, card, *, reason):
     """Same number, new check token; the held roles are re-recorded. `reason` is audit meta only."""
-    card = StaffCard.objects.select_for_update().select_related("membership").get(pk=card.pk)
+    card = StaffCard.objects.select_for_update(of=("self",)).select_related("membership").get(pk=card.pk)
     if card.revoked_at is not None:
         raise ValidationError({"detail": gettext("A revoked card cannot be reissued; issue a new one.")})
     card.issued_at = timezone.now()

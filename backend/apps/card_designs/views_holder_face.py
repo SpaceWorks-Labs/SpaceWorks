@@ -60,13 +60,26 @@ def face(kind, card):
     values = {key: value for key, value in context.values.items()
               if context.allow_sensitive or key not in SENSITIVE}
     return {"document": document, "values": {key: "" if value is None else str(value) for key, value in values.items()},
-            "photo": data_uri(context.photo),
+            "photo": data_uri(context.photo), "photo_cutout": data_uri(context.photo_cutout),
+            "use_cutout": context.use_cutout,
             "logos": {name: data_uri(data) for name, data in (context.logos or {}).items()},
             "assets": {key: data_uri(data) for key, data in (context.assets or {}).items()},
             "desk_qr": qr_uri(context.desk_qr), "verify_qr": qr_uri(context.verify_qr),
             "checkin_qr": qr_uri(context.checkin_qr),
-            "barcodes": {source: barcode_svg_uri(barcode_payload({"source": source}, context))
-                         for source in ("number", "desk")}}
+            "barcodes": _barcodes(document, context, barcode_payload, barcode_svg_uri)}
+
+
+def _barcodes(document, context, payload, svg):
+    """Code 128 under the bare source key (as before), every other symbology the design uses under "source:symbology"."""
+    from .layout import sides
+    out = {source: svg(payload({"source": source}, context)) for source in ("number", "desk")}
+    for side in sides(document):
+        for layer in document[side]["layers"]:
+            symbology = layer.get("symbology", "code128") if layer["kind"] == "barcode" else None
+            if symbology and symbology != "code128":
+                key = f"{layer.get('source', 'number')}:{symbology}"
+                out[key] = svg(payload({"source": layer.get("source", "number")}, context), symbology)
+    return out
 
 
 class MyCardFaceView(APIView):

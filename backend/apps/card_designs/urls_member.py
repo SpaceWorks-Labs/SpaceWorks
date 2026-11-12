@@ -5,6 +5,7 @@ from .views_holder import MyCardDownloadView, MyCardEmailView, MyCardRotateLinkV
 from .views_holder_face import MyCardFaceView, MyCardFontView
 from .views_holder_photo import (MyCardJobResultView, MyCardJobView, MyCardPhotoCleanupView, MyCardPhotoDecisionView,
                                  MyCardPhotoDiscardView, MyCardPhotoView, MyCardWalletView)
+from .views_cutout import MyCardCutoutView
 from .wallet.views_guest import GuestPassWalletView
 
 _CARD = "cards/<str:kind>/<int:card_id>"
@@ -19,6 +20,7 @@ urlpatterns = [
     path(f"{_CARD}/rotate-link", MyCardRotateLinkView.as_view(), name="member-card-rotate-link"),
     path(f"{_CARD}/photo", MyCardPhotoView.as_view(), name="member-card-holder-photo"),
     path(f"{_CARD}/photo/cleanup", MyCardPhotoCleanupView.as_view(), name="member-card-photo-cleanup"),
+    path(f"{_CARD}/photo/cutout", MyCardCutoutView.as_view(), name="member-card-photo-cutout"),
     path(f"{_CARD}/photo/accept", MyCardPhotoDecisionView.as_view(), name="member-card-photo-accept"),
     path(f"{_CARD}/photo/discard", MyCardPhotoDiscardView.as_view(), name="member-card-photo-discard"),
     path(f"{_CARD}/wallet/<str:platform>", MyCardWalletView.as_view(), name="member-card-wallet"),

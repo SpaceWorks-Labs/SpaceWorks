@@ -19,8 +19,9 @@ from rest_framework.views import APIView
 
 from apps.openapi_errors import errors
 
-from ..models import WalletDeviceRegistration, WalletPass
+from ..models import WalletPass
 from .credentials import apple_for, digest
+from .devices import register_device, unregister_device
 
 TAGS = ["Wallet passes"]
 
@@ -48,24 +49,18 @@ class ApplePassRegistrationView(_Base):
     @extend_schema(tags=TAGS, summary="Register a device for pass updates", request=OpenApiTypes.OBJECT,
                    responses={201: None, 200: None, **errors(401)})
     def post(self, request, device, pass_type, serial):
-        from apps.tenant_migration.gate_runtime import assert_write_allowed
         row = _pass(request, pass_type, serial)
         if row is None:
             return Response(status=401)
-        assert_write_allowed(row.makerspace_id)
-        push = str((request.data or {}).get("pushToken", ""))[:200]
-        _registration, created = WalletDeviceRegistration.objects.update_or_create(
-            wallet_pass=row, device_digest=digest(device), defaults={"push_token": push})
+        created = register_device(row, device, (request.data or {}).get("pushToken", ""))
         return Response(status=201 if created else 200)
 
     @extend_schema(tags=TAGS, summary="Unregister a device", request=None, responses={200: None, **errors(401)})
     def delete(self, request, device, pass_type, serial):
-        from apps.tenant_migration.gate_runtime import assert_write_allowed
         row = _pass(request, pass_type, serial)
         if row is None:
             return Response(status=401)
-        assert_write_allowed(row.makerspace_id)
-        WalletDeviceRegistration.objects.filter(wallet_pass=row, device_digest=digest(device)).delete()
+        unregister_device(row, device)
         return Response(status=200)
 
 
@@ -86,7 +81,7 @@ class ApplePassSerialsView(_Base):
 
 class ApplePassLatestView(_Base):
     @extend_schema(tags=TAGS, summary="The latest version of a pass", request=None,
-                   responses={(200, "application/vnd.apple.pkpass"): OpenApiTypes.BINARY, **errors(401)})
+                   responses={(200, "application/vnd.apple.pkpass"): OpenApiTypes.BINARY, 304: None, **errors(401)})
     def get(self, request, pass_type, serial):
         from ..holders import registered
         from .apple import build_pkpass
@@ -97,8 +92,13 @@ class ApplePassLatestView(_Base):
         kind = row.holder_kind
         if kind not in registered():
             return Response(status=401)
-        response = HttpResponse(build_pkpass(row, pass_content(kind, getattr(row, kind))),
-                                content_type="application/vnd.apple.pkpass")
+        from .service import update_allowed
+        card = getattr(row, kind)
+        content = pass_content(kind, card)
+        if not update_allowed(kind, card, row, content):
+            # Decision 329: wallet switched off, so the device keeps the pass it has unless it ended.
+            return Response(status=304)
+        response = HttpResponse(build_pkpass(row, content), content_type="application/vnd.apple.pkpass")
         response["Last-Modified"] = http_date(row.last_updated_at.timestamp())
         return response
 

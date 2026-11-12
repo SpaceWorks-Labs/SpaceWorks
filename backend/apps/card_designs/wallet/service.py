@@ -77,6 +77,9 @@ def issue_from_job(job):
         return False
     kind = holder_kind(job)
     card = getattr(row, kind)
+    from ..switches import wallet_on
+    if not wallet_on(kind, card.makerspace):
+        return False  # decision 329: switched off after the request, so no new pass is built
     content = pass_content(kind, card)
     if row.platform == "apple":
         from .apple import build_pkpass
@@ -97,11 +100,24 @@ def issue_from_job(job):
     return True
 
 
+# Decision 329 (a): with the kind's wallet switch off, an existing pass still hears that it ended
+# (voided, revoked or expired), so a revoked card never looks valid; nothing else changes on it.
+ENDED = frozenset({"revoked", "expired"})
+
+
+def update_allowed(kind, card, row, content):
+    from apps.makerspaces.platform import feature_enabled
+    from ..switches import WALLET
+    return bool(row.voided_at) or content["standing"] in ENDED or feature_enabled(card.makerspace, WALLET[kind])
+
+
 def refresh(kind, card):
     """Push current content to every pass of this card; voided passes get a final update."""
     changed = 0
     for row in WalletPass.objects.filter(**{kind: card}):
         content = pass_content(kind, card)
+        if not update_allowed(kind, card, row, content):
+            continue  # switched off: no content change; the sweep sends it if the switch comes back
         try:
             if row.platform == "apple":
                 from .apple_push import notify
@@ -139,14 +155,18 @@ def enqueue_update(kind, card_id):
 def sweep_changed(*, limit=100):
     """Refresh passes whose content changed (renewals, expiry) since they were last sent."""
     from ..switches import live_holder_q
-    # A pass is refreshed only while its card kind and its wallet switch are on (#183B).
-    rows = WalletPass.objects.filter(live_holder_q(wallet=True), voided_at__isnull=True).order_by("last_updated_at")[:limit]
+    # A pass is refreshed only while its card kind is on (#183B); with the wallet switch off only an
+    # ending (revoked/expired) reaches it (decision 329).
+    rows = WalletPass.objects.filter(live_holder_q(), voided_at__isnull=True).order_by("last_updated_at")[:limit]
     refreshed = 0
     for row in rows:
         kind = row.holder_kind
         card = getattr(row, kind)
-        current = content_digest(pass_content(kind, card))
-        if row.content_digest and row.content_digest != current:
+        content = pass_content(kind, card)
+        current = content_digest(content)
+        if not update_allowed(kind, card, row, content):
+            WalletPass.objects.filter(pk=row.pk).update(last_updated_at=timezone.now())  # rotate the bounded batch
+        elif row.content_digest and row.content_digest != current:
             refreshed += refresh(kind, card)
         elif not row.content_digest:
             WalletPass.objects.filter(pk=row.pk).update(content_digest=current, last_updated_at=timezone.now())

@@ -147,6 +147,14 @@ class CardDesignPreviewView(APIView):
                          meta={"design_id": design.pk, "holder_kind": kind, "holder_id": card.pk})
         else:
             context = sample_context(space, document, long=values["long_names"])
+        if values["bleed_mm"] or values["crop_marks"]:  # decision 344(b): print-ready proof, same trim as every output
+            from .print_export import render_print_pdf, render_print_png
+            if values["format"] == "pdf":
+                return HttpResponse(render_print_pdf(document, context, bleed_mm=values["bleed_mm"],
+                                                     crop_marks=values["crop_marks"], title="Card proof"),
+                                    content_type="application/pdf")
+            return HttpResponse(render_print_png(document, context, side=values["side"], bleed_mm=values["bleed_mm"],
+                                                 dpi=values["dpi"]), content_type="image/png")
         if values["format"] == "pdf":
             return HttpResponse(render_pdf(document, context, title="Card preview"), content_type="application/pdf")
-        return HttpResponse(render_png(document, context, side=values["side"], dpi=150), content_type="image/png")
+        return HttpResponse(render_png(document, context, side=values["side"], dpi=values["dpi"]), content_type="image/png")

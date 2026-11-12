@@ -1,7 +1,9 @@
 """Request/response shapes for the staff ID card routes (O-B4 part 2). Documentation + validation only."""
+from drf_spectacular.utils import extend_schema_serializer
 from rest_framework import serializers
 
 
+@extend_schema_serializer(component_name="StaffCardRole")
 class StaffRoleSerializer(serializers.Serializer):
     slug = serializers.CharField()
     name = serializers.CharField(help_text="Translated name for a built-in role, the space's own name otherwise.")

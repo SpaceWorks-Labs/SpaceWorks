@@ -8,6 +8,7 @@
 | event ticket designs (X49) | capability `events.ticket_designs` |
 | staff ID cards, their design and number scheme | module `membership` + capability `membership.staff_cards` |
 | auto-issue a staff card when a staff role is granted | `membership.staff_cards_auto_issue` (needs the one above) |
+| background eraser (cut-outs, bulk photo upload follow-up) | `cards.photo_cutout` (D314c; default off) + the holder kind's own switch |
 | wallet passes | `membership.wallet_passes` / `events.wallet_passes` + the space's or the platform's credentials |
 
 Off means no UI, 404 from the API and no scheduled work; the data is kept.
@@ -24,6 +25,7 @@ TITLE_REISSUE = "membership.title_card_reissue"
 DESK_PRINT = "membership.card_desk_print"
 STAFF_CARDS = "membership.staff_cards"
 STAFF_CARDS_AUTO = "membership.staff_cards_auto_issue"
+PHOTO_CUTOUT = "cards.photo_cutout"
 WALLET = {"member_card": "membership.wallet_passes", "programme_card": "membership.wallet_passes",
           "event_card": "events.wallet_passes", "staff_card": "membership.wallet_passes"}
 
@@ -47,6 +49,14 @@ def role_badges_on(makerspace):
 
 def staff_cards_on(makerspace):
     return module_enabled(makerspace, "membership") and feature_enabled(makerspace, STAFF_CARDS)
+
+
+def cutout_on(makerspace, kind=None):
+    """Background eraser: the switch, plus (for one holder kind) that kind's own surface being on."""
+    if not feature_enabled(makerspace, PHOTO_CUTOUT):
+        return False
+    domain = {"member_card": "member_cards", "staff_card": "staff_cards", "event_card": "event_card"}.get(kind)
+    return kind is None or (domain is not None and domain_on(makerspace, domain))
 
 
 def domain_on(makerspace, domain):

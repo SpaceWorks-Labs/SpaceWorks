@@ -54,6 +54,9 @@ class CardFaceSerializer(serializers.Serializer):
     document = serializers.JSONField(help_text="The published, normalised design document.")
     values = serializers.DictField(child=serializers.CharField(allow_blank=True))
     photo = serializers.CharField(allow_null=True, help_text="A data: URI, or null.")
+    photo_cutout = serializers.CharField(allow_null=True, help_text="The ready cut-out (PNG with alpha) as a data: URI "
+                                         "when the design has a photo layer that asks for one, else null.")
+    use_cutout = serializers.BooleanField(help_text="The holder chose their cut-out (photo layer variant `auto`).")
     logos = serializers.DictField(child=serializers.CharField(allow_null=True))
     assets = serializers.DictField(child=serializers.CharField(allow_null=True))
     desk_qr = serializers.CharField(allow_null=True)

@@ -83,6 +83,9 @@ def cache_config(cache_url):
         return {
             "BACKEND": "config.redis_cache.ResilientRedisCache",
             "LOCATION": cache_url,
+            # Optional: several deployments can share one outside Redis without sharing cache or
+            # throttle keys. Empty (the default) keeps keys exactly as before.
+            "KEY_PREFIX": env("REDIS_KEY_PREFIX", default=""),
             "OPTIONS": {"socket_connect_timeout": 1, "socket_timeout": 2, "health_check_interval": 30},
         }
     return {

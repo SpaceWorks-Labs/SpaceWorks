@@ -45,7 +45,10 @@ def _stripe_checkout(payment, source):
         session = stripe_client.build_client(source).v1.checkout.sessions.retrieve(
             payment.stripe_checkout_session_id, **({"options": options} if options else {}))
         if _get(session, "payment_status") != "paid":
-            return PolledCapture(False)
+            # A completed session whose debit is still processing already has its intent;
+            # the poll's abandonment keeps it so a late success still matches (PAY-REVIEW).
+            intent = _get(session, "payment_intent")
+            return PolledCapture(False, intent if isinstance(intent, str) else "")
         return PolledCapture(True, _get(session, "payment_intent") or "", int(_get(session, "amount_total") or 0),
                              str(_get(session, "currency") or ""))
     if payment.stripe_payment_intent_id:

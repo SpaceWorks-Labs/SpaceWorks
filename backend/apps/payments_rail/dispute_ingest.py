@@ -15,7 +15,7 @@ from apps.payments.method_labels import stripe_label
 from apps.payments.models import Payment
 from apps.payments.online_settlement import fill_method_label
 from apps.payments.services_disputes import record_dispute_event
-from apps.payments.services_refund_webhooks import _record_once, _value
+from apps.payments.services_refund_webhooks import _record_once, _value, claim_razorpay_event
 
 
 def _locked(makerspace, **lookup):
@@ -53,7 +53,7 @@ def apply_razorpay_dispute_event(makerspace, event):
         return None
     with transaction.atomic():
         payment = _locked(makerspace, provider=Payment.Provider.RAZORPAY, external_payment_id=event.payment_id)
-        if payment is None or not _record_once(makerspace, event.event_id, Payment.Provider.RAZORPAY):
+        if payment is None or not claim_razorpay_event(makerspace, event):
             return None
         return record_dispute_event(
             payment, provider="razorpay", dispute_id=event.dispute_id, raw_status=event.dispute_status,

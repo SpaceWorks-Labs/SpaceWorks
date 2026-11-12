@@ -7,7 +7,7 @@ from rest_framework.views import APIView
 
 from apps.accounts.views_device import IsDeviceAccessToken
 from apps.hardware_requests.exceptions import ErrorSerializer
-from apps.makerspaces.origin_scope import require_native_selected_makerspace
+from apps.makerspaces.origin_scope_own_charges import require_native_charge_selection
 from apps.payments import stripe_client
 from apps.payments.availability import online_payments_enabled_for
 from apps.payments.member_scope import member_payment_queryset
@@ -42,7 +42,8 @@ class MemberMobilePaymentIntentView(APIView):
         },
     )
     def post(self, request, makerspace_id, payment_id):
-        require_native_selected_makerspace(request, makerspace_id)
+        # The selection is the path's space, by membership or (decision 354) by owning a charge here.
+        require_native_charge_selection(request, makerspace_id)
         # Same scope as the web surfaces: an event charge raised by a partner host is
         # payable from the member area the member reached it through, or the charge exists
         # with no way to settle it.

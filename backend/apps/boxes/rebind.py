@@ -30,14 +30,14 @@ def rebind_qr_target(user, qr_id, data):
             request_target_id=data.get("target_id"),
         )
     if qr_has_active_loan(qr.makerspace, qr):
-        raise Conflict("Cannot rebind a QR with an outstanding loan.")
+        raise Conflict(gettext("Cannot rebind a QR with an outstanding loan."))
 
     target_type = data["target_type"]
     target = _locked_target(user, target_type, data["target_id"])
     cross = target.makerspace_id != qr.makerspace_id
     _require_rebind_permission(user, qr, target, target_type, cross, asset_move=False)
     if _target_has_qr(qr, target, target_type):
-        raise Conflict("Target already has an active QR code.")
+        raise Conflict(gettext("Target already has an active QR code."))
 
     old_meta = {
         "old_makerspace_id": qr.makerspace_id,
@@ -52,7 +52,7 @@ def rebind_qr_target(user, qr_id, data):
         with transaction.atomic():
             qr.save(update_fields=["makerspace", "target_type", "target_id", "updated_at"])
     except IntegrityError:
-        raise Conflict("Target already has an active QR code.")
+        raise Conflict(gettext("Target already has an active QR code."))
 
     new_name = data.get("new_name", "").strip()
     if new_name:

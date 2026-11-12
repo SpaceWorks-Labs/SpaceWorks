@@ -20,6 +20,7 @@ from apps.makerspaces.servability import servable_queryset
 from config.admin_access import SuperuserOnlyModelAdmin
 from apps.encryption.admin_search import ScopedPiiAdminSearchMixin
 from django.utils.translation import gettext_lazy
+from django.utils.translation import gettext
 
 
 class QrRebindAdminForm(forms.Form):
@@ -56,9 +57,9 @@ class QrRebindAdminForm(forms.Form):
         cleaned = super().clean()
         target_type = cleaned.get("target_type")
         if target_type == QrCode.TargetType.PRODUCT and not cleaned.get("product_target"):
-            raise forms.ValidationError("Select a product target.")
+            raise forms.ValidationError(gettext("Select a product target."))
         if target_type == QrCode.TargetType.ASSET and not cleaned.get("asset_target"):
-            raise forms.ValidationError("Select an asset target.")
+            raise forms.ValidationError(gettext("Select an asset target."))
         destination_product = cleaned.get("destination_product")
         destination_makerspace = cleaned.get("destination_makerspace")
         if (
@@ -67,7 +68,7 @@ class QrRebindAdminForm(forms.Form):
             and destination_product.makerspace_id != destination_makerspace.id
         ):
             raise forms.ValidationError(
-                "Destination product must belong to the destination makerspace."
+                gettext("Destination product must belong to the destination makerspace.")
             )
         return cleaned
 

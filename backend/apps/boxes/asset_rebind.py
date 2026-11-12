@@ -67,7 +67,7 @@ def move_asset_across_makerspaces(
         .exclude(pk=asset.pk)
         .exists()
     ):
-        raise Conflict("An asset with that tag already exists in the destination makerspace.")
+        raise Conflict(gettext("An asset with that tag already exists in the destination makerspace."))
 
     asset.product = dest_product
     asset.makerspace = dest_makerspace
@@ -81,14 +81,14 @@ def move_asset_across_makerspaces(
                 "asset_tag", "updated_at",
             ])
     except IntegrityError as exc:
-        raise Conflict("An asset with that tag already exists in the destination makerspace.") from exc
+        raise Conflict(gettext("An asset with that tag already exists in the destination makerspace.")) from exc
 
     qr.makerspace = dest_makerspace
     try:
         with transaction.atomic():
             qr.save(update_fields=["makerspace", "updated_at"])
     except IntegrityError as exc:
-        raise Conflict("Target already has an active QR code.") from exc
+        raise Conflict(gettext("Target already has an active QR code.")) from exc
 
     try:
         availability.adjust_quantities(
@@ -145,21 +145,21 @@ def _require_transfer_permission(user, source_makerspace_id, dest_makerspace_id)
 
 def _guard_asset_is_movable(asset, qr):
     if asset.status != InventoryAsset.Status.AVAILABLE:
-        raise Conflict("asset is not available to move")
+        raise Conflict(gettext("asset is not available to move"))
     if qr_has_active_loan(qr.makerspace, qr):
-        raise Conflict("Cannot move an asset with an outstanding loan.")
+        raise Conflict(gettext("Cannot move an asset with an outstanding loan."))
     if HardwareRequestItemAsset.objects.filter(
         asset=asset,
         outcome=HardwareRequestItemAsset.Outcome.ISSUED,
         request_item__request__status__in=OUTSTANDING_REQUEST_STATUSES,
     ).exists():
-        raise Conflict("Cannot move an asset linked to an outstanding request.")
+        raise Conflict(gettext("Cannot move an asset linked to an outstanding request."))
     if PublicToolLoan.objects.filter(
         makerspace=qr.makerspace,
         status=PublicToolLoan.Status.CHECKED_OUT,
         asset_ids__contains=[asset.id],
     ).exists():
-        raise Conflict("Cannot move an asset with an outstanding loan.")
+        raise Conflict(gettext("Cannot move an asset with an outstanding loan."))
 
 
 def _destination_candidate_ids(product_name, dest_makerspace_id, destination_product_id):
@@ -190,7 +190,7 @@ def _resolve_destination_product(
 
     candidates = [locked_products[pk] for pk in sorted(candidate_ids) if pk in locked_products]
     if any(product.tracking_mode == TrackingMode.QUANTITY for product in candidates):
-        raise Conflict("destination has a quantity-tracked product with this name")
+        raise Conflict(gettext("destination has a quantity-tracked product with this name"))
     individual = next(
         (product for product in candidates if product.tracking_mode == TrackingMode.INDIVIDUAL),
         None,

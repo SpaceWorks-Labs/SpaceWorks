@@ -35,7 +35,9 @@ def scoped_account(space, account_id, *, present=False):
     accepts an account-only guest with presence here. Anything else is the same 404,
     so a numeric id cannot probe or project another tenant's people.
     """
-    known = Q(makerspace_memberships__makerspace=space) | Q(guest_passes__makerspace=space)  # decision 223
+    # Decision 63: a staff-track row is employment, not membership; only the community row admits.
+    known = (Q(makerspace_memberships__makerspace=space, makerspace_memberships__track="community")
+             | Q(guest_passes__makerspace=space))  # decision 223
     if present:
         known |= Q(presence_sessions__makerspace=space)
     return get_object_or_404(get_user_model().objects.filter(known, person_q()).distinct(), pk=account_id)

@@ -139,6 +139,20 @@ def clean_config(values, *, current=None):
 
 def claim(actor, space, code, values):
     """Pair the waiting screen showing `code`. Wrong codes are audited and spend the space's hourly budget."""
+    row = _claim_waiting_screen(actor, space, code, values)
+    if row is not None:
+        return row
+    # L-D2: the failure is recorded AFTER the write transaction closes. Raising inside `tenant_write` (an
+    # atomic block) would roll the audit row back with it, so a wrong code spent the budget but left no trail.
+    failures = _bump(CLAIM_FAILURE_KEY.format(space.pk), 3600)
+    audit.record(actor, "presence.display_claim_failed", makerspace=space, meta={"failures": failures})
+    raise PresenceError("invalid_pairing_code",
+                        gettext("That code is not recognised or has expired. Check the screen."),
+                        status_code=404)
+
+
+def _claim_waiting_screen(actor, space, code, values):
+    """The paired row, or None when the code is unknown or expired (the caller audits that)."""
     from apps.managed_hosting.extra_quotas import check_extra_quota
     with tenant_write(space.pk):
         require_staff(actor, space, settings=True)
@@ -152,25 +166,21 @@ def claim(actor, space, code, values):
             row = (DisplayScreen.objects.select_for_update().filter(
                 makerspace__isnull=True, pairing_code=code, revoked_at__isnull=True,
                 code_expires_at__gt=timezone.now()).first() if code else None)
-            if row is not None:
-                check_extra_quota(space, LIMIT_KEY)  # decision 284: typed 409 paired_displays_quota_reached
-                row.makerspace, row.pairing_code, row.claimed_at = space, "", timezone.now()
-                row.panels = config.get("panels") or ["here_now", "calendar", "machines"]
-                row.rotation_seconds = config.get("rotation_seconds", DEFAULT_ROTATION)
-                row.name = config.get("name", "")
-                row.announcement = config.get("announcement", "")
-                for key in SETTING_FIELDS:
-                    if key in config:
-                        setattr(row, key, config[key])
-                row.save()
-                audit.record(actor, "presence.display_claimed", makerspace=space, target=row,
-                             meta={"panels": row.panels, "rotation_seconds": row.rotation_seconds})
-                return row
-        failures = _bump(CLAIM_FAILURE_KEY.format(space.pk), 3600)
-        audit.record(actor, "presence.display_claim_failed", makerspace=space, meta={"failures": failures})
-        raise PresenceError("invalid_pairing_code",
-                            gettext("That code is not recognised or has expired. Check the screen."),
-                            status_code=404)
+            if row is None:
+                return None
+            check_extra_quota(space, LIMIT_KEY)  # decision 284: typed 409 paired_displays_quota_reached
+            row.makerspace, row.pairing_code, row.claimed_at = space, "", timezone.now()
+            row.panels = config.get("panels") or ["here_now", "calendar", "machines"]
+            row.rotation_seconds = config.get("rotation_seconds", DEFAULT_ROTATION)
+            row.name = config.get("name", "")
+            row.announcement = config.get("announcement", "")
+            for key in SETTING_FIELDS:
+                if key in config:
+                    setattr(row, key, config[key])
+            row.save()
+            audit.record(actor, "presence.display_claimed", makerspace=space, target=row,
+                         meta={"panels": row.panels, "rotation_seconds": row.rotation_seconds})
+            return row
 
 
 def _owned(space, pk):

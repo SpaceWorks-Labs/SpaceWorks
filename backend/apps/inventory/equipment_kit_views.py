@@ -54,7 +54,7 @@ def _call(function, **kwargs):
         raise ValidationError(gettext("Invalid kit.")) from exc
     except DatabaseError as exc:
         if (getattr(exc.__cause__, "sqlstate", None) or getattr(exc.__cause__, "pgcode", None)) == "55P03":
-            raise RevisionConflict("Kit is busy; retry.") from exc
+            raise RevisionConflict(gettext("Kit is busy; retry.")) from exc
         raise
 
 

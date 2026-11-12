@@ -101,10 +101,6 @@ def build_public_stats(makerspace, *, now=None) -> dict:
 
 
 def _printing_stats(makerspace):
-    if not (
-        public_surface_available("printing")
-        and module_enabled(makerspace, "machine_service")
-        and module_enabled(makerspace, "printing")
-    ):
+    if not (public_surface_available("machine_service") and module_enabled(makerspace, "machine_service")):
         return None
     return build_public_printer_stats(makerspace)

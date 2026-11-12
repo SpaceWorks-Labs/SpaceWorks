@@ -56,6 +56,7 @@ def build_object_key(kind, makerspace_id, ext):
     if kind not in {
         "event", "event-series", "items", "machine", "makerspace", "member", "printers", "shop",
         "sponsor",  # release 2 L18: sponsor logos on the sponsor wall
+        "account",  # account-level profile images of a membership-less account; id is the USER id
     }:
         raise ValueError("Invalid public image kind.")
     return f"{kind}/{makerspace_id}/{uuid.uuid4().hex}{ext}"

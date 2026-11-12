@@ -21,6 +21,7 @@ from apps.inventory.middleware_observability import (
     BAD_SIGNATURE,
     NONCE_MISSING,
     NONCE_REPLAY,
+    NONCE_STORE_UNAVAILABLE,
     NO_CREDENTIALS,
     ORIGIN_DENIED,
     SKEW,
@@ -30,6 +31,7 @@ from apps.inventory.middleware_observability import (
     WOULD_REJECT_EVENT as WOULD_REJECT_EVENT,
     log_would_reject,
     scope_failure_reason,
+    failure_reason,
     set_failure_reason,
 )
 
@@ -39,6 +41,7 @@ AMBIGUOUS_NONCE_BODY_EVENT = "api_client_nonce_ambiguous_body"
 
 
 from apps.inventory.middleware_publishable import PublishableKeyMixin
+from config.redis_cache import SharedCacheUnavailable
 
 
 class FrontendHMACMiddleware(PublishableKeyMixin):
@@ -54,6 +57,13 @@ class FrontendHMACMiddleware(PublishableKeyMixin):
             if not is_valid and not settings.API_CLIENT_AUTH_REQUIRED:
                 log_would_reject(request)
         if self._should_reject_invalid(request) and not is_valid:
+            if failure_reason(request) == NONCE_STORE_UNAVAILABLE:
+                # The signature was good; the replay guard could not be consulted. Retryable,
+                # and never accepted unproven (decision 339).
+                response = JsonResponse({"detail": gettext("Signed requests are briefly unavailable. Retry shortly."),
+                                         "code": "replay_guard_unavailable"}, status=503)
+                response["Retry-After"] = "5"
+                return response
             return JsonResponse({"detail": gettext("Invalid client signature.")}, status=401)
         return self.get_response(request)
 
@@ -175,7 +185,12 @@ class FrontendHMACMiddleware(PublishableKeyMixin):
                 set_failure_reason(request, BAD_SIGNATURE)
                 return False
             if nonce:
-                if not claim_nonce(client_id, nonce):
+                try:
+                    claimed = claim_nonce(client_id, nonce)
+                except SharedCacheUnavailable:
+                    set_failure_reason(request, NONCE_STORE_UNAVAILABLE)
+                    return False
+                if not claimed:
                     set_failure_reason(request, NONCE_REPLAY)
                     return False
             else:

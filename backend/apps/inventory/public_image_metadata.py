@@ -10,11 +10,14 @@ def public_image_key_in_use(
     makerspace_id, object_key, *, product_id=None, machine_id=None, event_id=None,
     series_id=None,
     profile_id=None, project_id=None, makerspace_field="",
+    account_profile_id=None, account_project_id=None,
 ):
     from apps.events.models import Event, EventSeries
     from apps.inventory.models import InventoryProduct
     from apps.machines.models import Machine
-    from apps.makerspaces.models import Makerspace, MemberProfile, MemberProject
+    from apps.makerspaces.models import (
+        AccountProfile, AccountProject, Makerspace, MemberProfile, MemberProject,
+    )
 
     products = InventoryProduct.objects.filter(
         makerspace_id=makerspace_id, image_key=object_key
@@ -53,6 +56,18 @@ def public_image_key_in_use(
     if project_id is not None:
         projects = projects.exclude(pk=project_id)
     if projects.exists():
+        return True
+    # Account-level profiles (decision 305) are not makerspace-scoped, but their keys carry the
+    # space id of the namespace they were uploaded into, so a key match is the whole test.
+    account_profiles = AccountProfile.objects.filter(avatar_key=object_key)
+    if account_profile_id is not None:
+        account_profiles = account_profiles.exclude(pk=account_profile_id)
+    if account_profiles.exists():
+        return True
+    account_projects = AccountProject.objects.filter(image_key=object_key)
+    if account_project_id is not None:
+        account_projects = account_projects.exclude(pk=account_project_id)
+    if account_projects.exists():
         return True
     makerspace_query = Makerspace.objects.filter(pk=makerspace_id)
     if makerspace_field == "logo_key":

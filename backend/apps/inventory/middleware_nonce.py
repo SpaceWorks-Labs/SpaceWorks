@@ -2,7 +2,8 @@ import hashlib
 import re
 
 from django.conf import settings
-from django.core.cache import cache
+
+from config.redis_cache import claim_once
 
 
 NONCE_MAX_LENGTH = 128
@@ -36,4 +37,6 @@ def claim_nonce(client_id, nonce):
     key = f"apiclient-hmac-nonce:{hashlib.sha256(pair).hexdigest()}"
     # Future timestamps can remain acceptable for two complete skew windows.
     timeout = max(1, settings.HMAC_MAX_CLOCK_SKEW_SECONDS * 2 + 1)
-    return cache.add(key, True, timeout=timeout)
+    # Single-use: on Redis this raises SharedCacheUnavailable rather than remember the nonce in
+    # one worker only, where a replay to another worker would pass (decision 339).
+    return claim_once(key, timeout, value=True)

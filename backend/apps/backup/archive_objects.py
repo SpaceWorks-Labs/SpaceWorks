@@ -115,6 +115,17 @@ NON_OBJECT_KEY_FIELDS = frozenset({
     # Login security (S0): an IP/network block key and a passkey's COSE public key bytes.
     ("accounts.IPAutoBlock", "ip_key"),
     ("accounts.WebAuthnCredential", "public_key"),
+    # Logical identity strings added in 0.12.0, none a bucket locator: a "YYYY-MM" period of the organization
+    # hours ledger, a card-number scheme label, a machine-type consumable template selector, and the shop
+    # order's client replay token.
+    ("bookings.OrganizationHoursLedger", "period_key"),
+    ("card_designs.CardNumberCounter", "scheme_key"),
+    ("machines.MachineTypeConsumable", "template_key"),
+    ("shop.ShopOrder", "idempotency_key"),
+    # Decision 312/321: an opt-in recording clip that is retention-limited and purged by a sweep. It is
+    # deliberately NOT archived (a restored pointer would dangle once the clip expires); the row keeps the key
+    # only until the purge clears it.
+    ("devices.AdapterWatch", "recording_key"),
 })
 
 

@@ -1,0 +1,24 @@
+{
+  "$id": "https://spaceworks.invalid/schemas/device-adapter/v1/job.progress.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "eta_seconds": {
+      "maximum": 31536000,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "observed_at": {
+      "maximum": 4102444800,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "progress_percent": {
+      "maximum": 100,
+      "minimum": 0,
+      "type": "integer"
+    }
+  },
+  "required": [],
+  "type": "object"
+}

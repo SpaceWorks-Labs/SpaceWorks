@@ -1,6 +1,6 @@
 # Printer delivery and measured terminal reports
 
-Phase 7b uses the [device signature protocol](device-protocol.md). A Device holds no staff role.
+Printer delivery uses the [device signature protocol](device-protocol.md). A Device holds no staff role.
 Every device request uses a fresh signed nonce, including retries of an identical report. The stable
 terminal operation UUID is a separate identity used to prevent duplicate workflow effects.
 
@@ -104,10 +104,10 @@ or apply. Free-text printer failure notes use scoped encryption; adapter audit m
 typed identifiers and outcomes. The existing workflow's reason fields retain their existing storage
 contract.
 
-## Machine integrations (release 2; integration schema 1; foundation only)
+## Machine integrations (integration schema 1; foundation only)
 
 The integration itself (an on-device agent, a vendor adapter, fleet scheduling, live controls,
-camera, shelf pointer) is **deferred** (owner decision #76). These routes are the server side a future
+camera, shelf pointer) is **deferred**. These routes are the server side a future
 agent would use. They are **off by default**: unless the makerspace has the `machines.integrations`
 capability (which needs `devices`, `machines` and `machine_service`), every route below answers
 **404** to staff and to devices. One exception: when the `devices` module itself is off, a signed device

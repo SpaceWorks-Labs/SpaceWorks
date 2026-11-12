@@ -1,0 +1,31 @@
+{
+  "$id": "https://spaceworks.invalid/schemas/device-adapter/v1/command.locate.indicate.indicate.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "color": {
+      "maxLength": 16,
+      "type": "string"
+    },
+    "duration_seconds": {
+      "maximum": 600,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "mode": {
+      "enum": [
+        "point",
+        "light",
+        "clear"
+      ],
+      "type": "string"
+    },
+    "pose": {
+      "type": "object"
+    }
+  },
+  "required": [
+    "mode"
+  ],
+  "type": "object"
+}

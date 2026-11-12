@@ -25,8 +25,8 @@ Platform SMTP, SMS, push and Stripe Connect credentials normally live encrypted 
 | `NOTIFICATION_DISCORD_REDIRECT_URI` | `''` | Same frontend OAuth return policy as Slack. |
 | `NOTIFICATION_MATTERMOST_ALLOW_PRIVATE_HOSTS` | `False` | Only boolean true allows private self-hosted Mattermost addresses. |
 | `OTP_SMS_DAILY_CAP` | `200` | Platform-wide daily cap on SMS sign-in codes. |
-| `MANAGED_OTP_EMAIL_DAILY_LIMIT` | `200` | Managed mode: platform-wide daily cap on email sign-in codes (#77). |
-| `MANAGED_OTP_SMS_DAILY_LIMIT` | `100` | Managed mode: platform-wide daily cap on SMS sign-in codes, tightening `OTP_SMS_DAILY_CAP` (#77). |
+| `MANAGED_OTP_EMAIL_DAILY_LIMIT` | `200` | Managed mode: platform-wide daily cap on email sign-in codes. |
+| `MANAGED_OTP_SMS_DAILY_LIMIT` | `100` | Managed mode: platform-wide daily cap on SMS sign-in codes, tightening `OTP_SMS_DAILY_CAP`. |
 | `PUSH_TOKEN_HMAC_KEY` | `''` | Keys the device-token digest; push registration answers 503 while unset. |
 | `STRIPE_CONNECT_REDIRECT_URI` | `''` | Return URL registered with Stripe for Connect onboarding. Blank refuses onboarding even when platform Connect credentials are set. |
 | `TELEGRAM_API_URL` | `'https://api.telegram.org'` | Telegram Bot API base URL; change only for a proxy or mirror. |
@@ -77,10 +77,13 @@ Every `THROTTLE_*` value is a DRF rate string (`<n>/<second|minute|hour|day>`). 
 | `THROTTLE_ANONYMOUS_REQUEST_IP_HOUR` | `'30/hour'` | Account-less borrow requests and code sends per IP. |
 | `THROTTLE_AUDIT_VERIFICATION` | `'6/hour'` | On-demand audit chain verification runs. |
 | `THROTTLE_BOOKING_SUBMIT` | `'10/hour'` | Member booking submissions. |
-| `THROTTLE_PAYMENT_CLAIMS` | `'5/hour'` | Member "I've paid" offline claims per account (L5). |
-| `THROTTLE_PAY_LINKS` | `'30/min'` | Public pay-link reads, claims and checkouts per IP (L5). |
-| `THROTTLE_PRICING_QUOTE` | `'60/min'` | Price previews (`POST /api/v1/pricing/quote`) per account, or per IP when signed out (L15). |
+| `THROTTLE_PAYMENT_CLAIMS` | `'5/hour'` | Member "I've paid" offline claims per account. |
+| `THROTTLE_PAY_LINKS` | `'30/min'` | Public pay-link reads, claims and checkouts per IP. |
+| `THROTTLE_PRICING_QUOTE` | `'60/min'` | Price previews (`POST /api/v1/pricing/quote`) per account, or per IP when signed out. |
 | `THROTTLE_DATA_EXPORT_CREATE` | `'3/hour'` | New tenant or personal data-export jobs. |
+| `THROTTLE_DEPLOYMENT_ANON` | `'600/min'` | Deployment-wide ceiling for signed-out requests to any route without its own rate limit, per verified API client or else per client IP. Signature-verified provider webhooks are exempt. |
+| `THROTTLE_DEPLOYMENT_DEVICE` | `'600/min'` | Deployment-wide ceiling for signed device and adapter requests to routes without their own rate limit, per device (never per IP, so machines behind one address do not share it). |
+| `THROTTLE_DEPLOYMENT_USER` | `'1200/min'` | Deployment-wide ceiling for signed-in requests to any route without its own rate limit, per account. |
 | `THROTTLE_DEVICE_ATTESTATION_CHALLENGE` | `'5/min'` | Native-app attestation challenges. |
 | `THROTTLE_DEVICE_LOGIN` | `'5/min'` | Native device sign-ins per IP. |
 | `THROTTLE_DEVICE_LOGIN_USER` | `'10/hour'` | Native device sign-ins per username. |
@@ -107,6 +110,8 @@ Every `THROTTLE_*` value is a DRF rate string (`<n>/<second|minute|hour|day>`). 
 | `THROTTLE_KIOSK_REPLAY_EXECUTE` | `'240/hour'` | Kiosk offline actions replayed. |
 | `THROTTLE_KIOSK_REPLAY_PREPARE` | `'60/hour'` | Kiosk offline-action replays prepared. |
 | `THROTTLE_KIOSK_STATION_PIN_IP` | `'30/hour'` | Kiosk station PIN attempts per IP. |
+| `THROTTLE_HANDLE_CHECK` | `'20/min'` | Username availability checks (`GET /handles/check`), per account when signed in, otherwise per IP. |
+| `THROTTLE_HANDLE_CHECK_DAILY` | `'300/day'` | Daily cap on the same username availability checks. |
 | `THROTTLE_KIOSK_STATION_PIN_TOKEN` | `'10/hour'` | Kiosk station PIN attempts per station. Kiosk PIN reveals are fixed at 5/hour and have no setting. |
 | `THROTTLE_KIOSK_STATION_SESSION` | `'120/hour'` | Kiosk station session requests. |
 | `THROTTLE_LOGIN` | `'10/min'` | Password sign-ins; the django-axes lockout applies on top. |
@@ -126,6 +131,8 @@ Every `THROTTLE_*` value is a DRF rate string (`<n>/<second|minute|hour|day>`). 
 | `THROTTLE_PHONE_OTP_REQUEST` | `'5/min'` | SMS code requests per IP. |
 | `THROTTLE_PRESENCE_START` | `'10/hour'` | Presence check-ins started. |
 | `THROTTLE_PRINT_REQUEST_SUBMIT` | `'10/min'` | Print and machine-service job submissions. |
+| `THROTTLE_PROFILE_LOOKUP` | `'30/min'` | Signed-in profile reads by account id (`/profiles/by-account/<id>/`) or by handle, per account. Signed-out handle reads use `THROTTLE_PUBLIC_READ`. |
+| `THROTTLE_PROFILE_LOOKUP_DAILY` | `'500/day'` | Daily cap on the same signed-in profile reads, per account. |
 | `THROTTLE_PUBLIC_INVITATION_REQUEST` | `'10/hour'` | Public requests for an invitation to a space. |
 | `THROTTLE_PUBLIC_READ` | `'120/min'` | Public booking and event reads, and member booking lists. |
 | `THROTTLE_PUBLIC_REQUEST_SUBMIT` | `'10/min'` | Borrow-request submissions and inventory watch changes. |
@@ -139,6 +146,12 @@ Every `THROTTLE_*` value is a DRF rate string (`<n>/<second|minute|hour|day>`). 
 | `THROTTLE_SOCIAL_LOGIN` | `'10/min'` | Social, GitHub and OIDC sign-in completions. |
 | `THROTTLE_SOCIAL_NONCE` | `'10/min'` | Social, GitHub and OIDC sign-in starts. |
 | `THROTTLE_TELEGRAM_WEBHOOK` | `'60/min'` | Telegram webhook calls. |
+| `THROTTLE_ANTHIAS_PLAYER_CALL` | `'20/min'` | Anthias player test and sync calls, per account. |
+| `THROTTLE_IMAGE_ADAPTER_TEST` | `'10/min'` | Image-adapter provider test calls, per account. |
+| `THROTTLE_DEVICE_ADAPTER` | `'300/min'` | Signed device-adapter calls, per device. |
+| `THROTTLE_DEVICE_ADAPTER_CREDENTIAL` | `'60/min'` | Adapter credential (NFC/PIN) checks, per device. |
+| `THROTTLE_ADAPTER_WATCH_START` | `'10/min'` | Opening a camera watch, per account. |
+| `THROTTLE_ADAPTER_WATCH_RELAY` | `'300/min'` | Camera watch signalling and talk relay, per account. |
 | `THROTTLE_TENANT_MIGRATION_READ` | `'120/min'` | Tenant-migration reads. |
 | `THROTTLE_TENANT_MIGRATION_WRITE` | `'30/hour'` | Tenant-migration changes. |
 | `THROTTLE_TENANT_MIGRATION_UPLOAD` | `'1200/min'` | Resumable tenant-archive chunks (up to 8 MiB per request). |
@@ -148,12 +161,12 @@ Every `THROTTLE_*` value is a DRF rate string (`<n>/<second|minute|hour|day>`). 
 | `THROTTLE_MFA_MANAGE` | `'10/hour'` | Authenticated enrollment and recovery/disable management. |
 | `THROTTLE_STAFF_INVITE` | `'20/hour'` | Scoped staff invitation list/create/revoke/resend. |
 | `THROTTLE_STAFF_INVITE_ACCEPT` | `'10/min'` | Public invitation acceptance budget. |
-| `THROTTLE_CARD_VERIFY` | `'30/min'` | Public card checks (`/api/v1/public/card-verifications/<token>`) per IP (L3). |
-| `THROTTLE_MEMBER_CARD_RESOLVE` | `'60/min'` | Staff member-card scans at the desk, per account (L3). |
-| `THROTTLE_ID_JOIN` | `'10/min'` | ID-programme join requests and invite acceptances per account (L3). |
-| `THROTTLE_ID_JOIN_UPLOAD` | `'12/hour'` | ID-programme join photo uploads per account (L3). |
+| `THROTTLE_CARD_VERIFY` | `'30/min'` | Public card checks (`/api/v1/public/card-verifications/<token>`) per IP. |
+| `THROTTLE_MEMBER_CARD_RESOLVE` | `'60/min'` | Staff member-card scans at the desk, per account. |
+| `THROTTLE_ID_JOIN` | `'10/min'` | ID-programme join requests and invite acceptances per account. |
+| `THROTTLE_ID_JOIN_UPLOAD` | `'12/hour'` | ID-programme join photo uploads per account. |
 
-## ID cards: card fonts, photo clean-up and wallet passes (L3)
+## ID cards: card fonts, photo clean-up and wallet passes
 
 The card font library is the open Google Fonts catalogue, fetched **by the server** on first use and served by this app; browsers never call Google. Wallet-pass credentials are platform-level (one Apple Pass Type ID, one Google Wallet issuer); the buttons stay hidden until set. Key and certificate values are FILE paths to secrets mounted into the container.
 
@@ -162,6 +175,7 @@ The card font library is the open Google Fonts catalogue, fetched **by the serve
 | `CARD_FONT_DOWNLOADS_ENABLED` | `True` | `False` keeps cards to the bundled faces (the "Gilroy" token as Outfit, Unbounded, Noto) on air-gapped servers. |
 | `CARD_FONT_SOURCE_URL` | `'https://fonts.googleapis.com/css2'` | CSS endpoint the server asks for static TrueType faces; point it at a mirror if you run one. |
 | `CARD_FONT_CACHE_DIR` | `''` | Local cache for fetched font files; empty uses the system temp directory. |
+| `CERTIFICATE_SHARED_RENDERER` | `False` | Event certificates: `True` lets issuance pin `renderer: "shared"` so the server-side renderer draws the same plan as the browser studio; `False` keeps the legacy renderer. |
 | `CARD_PHOTO_MODEL_PATH` | `''` | The background clean-up model (`manage.py fetch_card_photo_model`); empty uses the temp directory. |
 | `WALLET_APPLE_PASS_TYPE_ID` | `''` | Apple Pass Type ID (e.g. `pass.org.example.cards`). |
 | `WALLET_APPLE_TEAM_ID` | `''` | Apple developer team id. |
@@ -170,3 +184,24 @@ The card font library is the open Google Fonts catalogue, fetched **by the serve
 | `WALLET_APPLE_WWDR_FILE` | `''` | Path to Apple's WWDR intermediate certificate (PEM). |
 | `WALLET_GOOGLE_ISSUER_ID` | `''` | Google Wallet issuer id. |
 | `WALLET_GOOGLE_SERVICE_ACCOUNT_FILE` | `''` | Path to the Wallet API service-account JSON key. |
+
+## Device adapters
+
+Optional knobs for the device adapter API. They apply only where `machines.integrations` is on, and every default suits
+most installs.
+
+| Variable | Default | Notes |
+|---|---|---|
+| `ADAPTER_CACHE_KEY_VERSION` | `1` | Version of the Ed25519 key that signs offline access lists and signed time. The key pair is derived from `SECRET_KEY`. Raise it to rotate; adapters learn the public keys from `hello`. |
+| `ADAPTER_CACHE_KEY_ROTATED_AT` | `0` | Epoch seconds of the last rotation. For the grace period after it, the previous key is still listed as `previous`. |
+| `ADAPTER_CACHE_KEY_GRACE_DAYS` | `7` | How long the previous key stays listed after a rotation. |
+| `ADAPTER_ACCESS_CACHE_TTL_SECONDS` | `900` | Life of an offline access list (a binding can set its own, 60 to 86400 seconds). |
+| `ADAPTER_ARTIFACT_RETENTION_DAYS` | `{}` | JSON object of artifact kind to days, overriding the defaults: thumbnail and preview 90, failure snapshot and timelapse 30, log bundle 7, audio recording 3. `docker-compose.prod.yml` does not pass this one (a `{}` default cannot be written there); add it to the backend `environment:` block if you need it. |
+| `ADAPTER_TELEMETRY_RAW_HOURS` | `24` | How long raw telemetry samples are kept. |
+| `ADAPTER_TELEMETRY_MINUTE_DAYS` | `7` | How long one-minute summaries are kept. |
+| `ADAPTER_TELEMETRY_QUARTER_DAYS` | `90` | How long fifteen-minute summaries are kept. |
+| `ADAPTER_TURN_URLS` | empty | Comma-separated TURN server URLs handed to camera watch sessions. TURN is used only when this and the secret are both set. |
+| `ADAPTER_TURN_SECRET` | empty | Shared secret used to make short-lived TURN credentials. Keep it secret; empty means TURN is off. |
+
+The background eraser address and secret are not variables: they are entered in the app
+([Remove card photo backgrounds](how-to/background-eraser.md)).

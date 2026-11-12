@@ -28,7 +28,7 @@ Read by every backend process. `ALLOWED_HOSTS`, `SECRET_KEY` and the proxy postu
 |---|---|---|
 | `ADMIN_SITE_NAME` | `'Space Works'` | Site name shown in the `/control/` admin. |
 | `ACCOUNT_DELETION_RETENTION_DAYS` | `90` | Days between the account deletion request and scheduled identity purge; Stage A immediately deactivates the account. |
-| `ACCOUNT_UNIFICATION_ACK` | empty | Release-2 upgrade only: the `plan_sha256` printed by `manage.py account_unification_report` after you reviewed it. The one-account-per-person migration refuses to convert existing staff accounts until this matches; leave it empty on fresh installs and once migrated. |
+| `ACCOUNT_UNIFICATION_ACK` | empty | Upgrade to 0.12.0 only: the `plan_sha256` printed by `manage.py account_unification_report` after you reviewed it. The one-account-per-person migration refuses to convert existing staff accounts until this matches; leave it empty on fresh installs and once migrated. |
 | `ALLOWED_HOSTS` | `['localhost', '127.0.0.1']` | Django's host check; add every custom domain on self-host. |
 | `CORS_ALLOWED_ORIGINS` | `['http://localhost:5000', 'http://localhost:5173']` | Browser origins allowed to call the API. Set to your website origins in production. |
 | `CSRF_TRUSTED_ORIGINS` | `[]` | `https://` origins trusted for Django form posts such as the `/control/` login. Needed in production behind HTTPS. |
@@ -54,7 +54,7 @@ published main release. Forks configure their own repository, releases, runner a
 
 | Variable | Default | Notes |
 | --- | --- | --- |
-| `SPACEWORKS_REPOSITORY` | `SpaceWorks-Labs/SpaceWorks` | Strict GitHub `owner/repo`; installer source, release lookup and runner registration URL. Persisted in `.env`. The lower-cased owner supplies default GHCR backend/frontend image namespaces unless `MAKERSPACE_BACKEND_IMAGE` / `MAKERSPACE_FRONTEND_IMAGE` override them. An install that still saves the old `SpaceWorks-HQ/*` repository or `ghcr.io/spaceworks-hq/*` images is switched to `SpaceWorks-Labs` / `ghcr.io/spaceworks-labs` automatically by the updater, installer re-run and compose wrapper (owner decision #107); forks are untouched. |
+| `SPACEWORKS_REPOSITORY` | `SpaceWorks-Labs/SpaceWorks` | Strict GitHub `owner/repo`; installer source, release lookup and runner registration URL. Persisted in `.env`. The lower-cased owner supplies default GHCR backend/frontend image namespaces unless `MAKERSPACE_BACKEND_IMAGE` / `MAKERSPACE_FRONTEND_IMAGE` override them. An install that still saves the old `SpaceWorks-HQ/*` repository or `ghcr.io/spaceworks-hq/*` images is switched to `SpaceWorks-Labs` / `ghcr.io/spaceworks-labs` automatically by the updater, installer re-run and compose wrapper; forks are untouched. |
 
 ## TLS, cookies and proxies
 
@@ -75,7 +75,9 @@ TLS hardening is gated on `ENABLE_HTTPS`, never on `DEBUG`. Internal plain-HTTP 
 | `TRUSTED_PROXY_COUNT` | unset (`0` when `DEBUG=True`) | Proxies in front of the backend. Required in production: with `DEBUG` off the backend refuses to start until it is set, and a negative value also refuses. Use `0` for direct access. Throttles, django-axes and the automatic IP block all key on the real client IP only when this is right: too high and a client can spoof its address, too low and every client looks like the proxy. A request whose `X-Forwarded-For` chain is shorter than this is never counted towards an automatic block (logged once as `security.proxy_count_exceeds_hops`); `BEHIND_TRUSTED_PROXY=True` with `0` here is warned at startup (`accounts.W002`). |
 | `TRUST_X_FORWARDED_PROTO` | `False` | Trust the proxy's `X-Forwarded-Proto`; only behind a TLS proxy that is the sole path in. |
 
-## Managed SaaS mode
+## Hosting other makerspaces (optional)
+
+Older notes call this "managed SaaS mode"; the variable names are unchanged.
 
 The built-in fair-use defaults need `PLATFORM_DOMAIN_SUFFIX`; plans, limits and hosting requests are controlled by the superadmin switch "Hosting other makerspaces" (`MANAGED_PLANS_ENABLED`, when set, overrides it). See [self-hosting](self-hosting.md#plans-and-hosting-other-makerspaces-optional).
 
@@ -87,9 +89,9 @@ The built-in fair-use defaults need `PLATFORM_DOMAIN_SUFFIX`; plans, limits and 
 | `PLATFORM_ORIGIN_HOST` | `''` | Managed mode: host a tenant's custom domain must resolve to (by CNAME) before it is verified. Blank skips the resolution check. |
 | `PLATFORM_STAFF_ORIGINS` | `[]` | Exact platform-console origins allowed for platform API password login; tenant staff login supplies its makerspace slug and must match a verified custom origin. Member provider switches do not disable staff/platform passwords. |
 | `PLATFORM_SUBDOMAIN_AUTO_TLS` | `False` | Guided platforms enable TLS admission for registered, verified, non-archived tenant subdomains. Unknown/pending/archived domains remain denied. Compared during restore preflight without blocking a target's TLS choice. |
-| `MANAGED_PLANS_ENABLED` | *(empty)* | Optional override for **Plans and hosting other makerspaces** (decision 234). Leave it empty and the superadmin turns the feature on or off in the platform console (*Hosting other makerspaces*, off by default): plan tiers, a plan per space, per-space limits, trials, recorded hosting billing, host-your-makerspace requests and new Stripe Connect charges (platform credential fallbacks for SMS, push, WhatsApp, wallet and attestation apply on every install, decision 240). Set `True`/`False` only to force it; a set value locks the console switch. Works on any self-hosted install; the built-in fair-use defaults additionally need `PLATFORM_DOMAIN_SUFFIX`. Off = nothing visible or enforced. See [Plans and hosting other makerspaces](self-hosting.md#plans-and-hosting-other-makerspaces-optional). |
+| `MANAGED_PLANS_ENABLED` | *(empty)* | Optional override for **Plans and hosting other makerspaces**. Leave it empty and the superadmin turns the feature on or off in the platform console (*Hosting other makerspaces*, off by default): plan tiers, a plan per space, per-space limits, trials, recorded hosting billing, host-your-makerspace requests and new Stripe Connect charges (platform credential fallbacks for SMS, push, WhatsApp, wallet and attestation apply on every install). Set `True`/`False` only to force it; a set value locks the console switch. Works on any self-hosted install; the built-in fair-use defaults additionally need `PLATFORM_DOMAIN_SUFFIX`. Off = nothing visible or enforced. See [Plans and hosting other makerspaces](self-hosting.md#plans-and-hosting-other-makerspaces-optional). |
 | `MANAGED_BILLING_ONLINE_ENABLED` | `False` | Second switch, also off: lets a Space Manager pay a hosting invoice online through the platform's own Stripe/Razorpay account (keys are set encrypted in the superadmin console). Never charges without the payer opening the checkout. Meaningless unless `MANAGED_PLANS_ENABLED` is on. |
-| `PERSON_CREDENTIAL_RATE_PER_MINUTE` | `120` | Requests per minute per personal access token or OAuth app connection (#196). |
+| `PERSON_CREDENTIAL_RATE_PER_MINUTE` | `120` | Requests per minute per personal access token or OAuth app connection. |
 | `OAUTH_OIDC_RSA_PRIVATE_KEY` | empty | PEM RSA key that signs OpenID Connect ID tokens for app connections (secret-bearing; `
 ` escapes allowed). Empty = OAuth 2.0 only, no ID tokens. |
 | `OAUTH_ACCESS_TOKEN_SECONDS` | `3600` | Lifetime of an app connection's access token. |
@@ -115,7 +117,9 @@ The built-in fair-use defaults need `PLATFORM_DOMAIN_SUFFIX`; plans, limits and 
 
 ## Cache, Celery, scheduler and live updates
 
-Redis backs the cache (rate limits, nonces, verified hosts), the Celery broker and the SSE stream. Without a broker, tasks run eagerly and the live stream answers 503.
+Redis backs the cache (rate limits, nonces, verified hosts), the Celery broker and the SSE stream. Without a broker, tasks run eagerly and the live stream answers 503. What each use needs, what happens while Redis is down, sizing and security: [Redis](architecture/redis.md).
+
+Any of the three Redis URLs may carry a password (`redis://:PASSWORD@host:6379/0`, or an ACL user `redis://USER:PASSWORD@host:6379/0`) and TLS (`rediss://`). A `rediss://` broker or result URL without `ssl_cert_reqs` verifies the server certificate; add `?ssl_cert_reqs=none` only for a self-signed test server. Give each deployment its own Redis database number or instance: keys and live channels are not prefixed per deployment.
 
 | Variable | Default | Notes |
 |---|---|---|
@@ -138,6 +142,8 @@ Redis backs the cache (rate limits, nonces, verified hosts), the Celery broker a
 |---|---|---|
 | `METRICS_TOKEN` | `''` | Bearer token for `GET /api/v1/metrics/`; 404 while unset. |
 | `GRAFANA_ALLOW_PRIVATE_HOSTS` | `False` | Lets a space's Grafana connection (test, rendered dashboards) use a private or local address, for example Grafana on the same compose network. The platform connection may always; leave off when you host other makerspaces ([Grafana setup](grafana-setup.md)). |
+| `ANTHIAS_ALLOW_PRIVATE_HOSTS` | `True` on self-host, `False` when `SPACEWORKS_DEPLOYMENT_MODE=managed` | Lets a space's Anthias player be on a private network address (decision 336g). Loopback, link-local, cloud metadata and the deployment's own service networks are refused regardless ([Anthias](how-to/anthias.md)). |
+| `OUTBOUND_BLOCKED_NETWORKS` | `''` | Comma-separated CIDRs that tenant-configured outbound calls (Anthias players) may never reach, in addition to the always-refused ranges and the container's own directly connected networks. List any internal network the server can route to that is not a player's LAN. |
 | `SENTRY_DSN` | `''` | Opt-in error tracking; the SDK is imported only when set; PII is never sent. |
 | `SENTRY_ENVIRONMENT` | `'production' if not DEBUG else 'development'` | Environment label attached to Sentry events. |
 | `SENTRY_TRACES_SAMPLE_RATE` | `0.0` | Share of requests sent as performance traces (0 to 1). |
@@ -196,7 +202,7 @@ storage endpoint and expire no later than the archive retention boundary.
 
 ## Events programme and account Saved details
 
-Read by `backend/config/settings.py` at checkpoint `f1ef7736`. **Keep programme features
+Read by `backend/config/settings.py`. **Keep programme features
 and Saved details off until [integration acceptance](events/integration-status.md).**
 These are independent deployment secrets/settings, not extra module keys.
 
@@ -269,7 +275,7 @@ See `docs/api-client-protocol.md`.
 | `THROTTLE_CLIENT_PUBLIC` | `'30/min'` | Public-route budget for an API client in the `public` tier. |
 | `THROTTLE_CLIENT_STANDARD` | `'120/min'` | The same budget for the `standard` tier. |
 | `THROTTLE_CLIENT_TRUSTED` | `'600/min'` | The same budget for the `trusted` tier. |
-| `PERSON_CREDENTIAL_RATE_PER_MINUTE` | `120` | Requests per minute for one personal access token or app connection acting as its person (#196), counted apart from the person's own sessions. |
+| `PERSON_CREDENTIAL_RATE_PER_MINUTE` | `120` | Requests per minute for one personal access token or app connection acting as its person, counted apart from the person's own sessions. |
 
 ## Install-time sign-in choices
 
@@ -291,7 +297,7 @@ later changes; the command validates the full state and records an audit event i
 ## Two-step sign-in
 
 Superadmins sign in with a password and may opt in to TOTP. Every staff role in every space
-must have two-step sign-in (an authenticator app or a passkey; release 2, #62): it is a platform rule
+must have two-step sign-in (an authenticator app or a passkey): it is a platform rule
 with no setting, and newly appointed staff get three days to set it up. Members can opt in at `/mfa`.
 Secrets use the existing `API_CLIENT_ENC_KEY` encryption; recovery codes are hashed. No separate key is
 needed.
@@ -302,7 +308,7 @@ Setup chooses `mfa_enabled` at install ("Let members turn on two-step sign-in to
 with `manage.py set_login_methods --mfa on|off`. It governs MEMBER opt-in only: turning it off pauses
 member challenges, enrollment and recovery-code regeneration and keeps existing authenticators; it
 never pauses staff MFA. Disable remains available. Sessions issued while bypassing required/enrolled MFA cannot continue after re-enabling,
-even after refresh rotation. Identity-provider sign-ins skip local TOTP by owner decision and
+even after refresh rotation. Identity-provider sign-ins skip local TOTP and
 carry provider proof; credential resets/disable still revoke them. Django control sessions also
 carry source and credential version, so host recovery requires a fresh password login.
 
@@ -347,7 +353,7 @@ These values are written after the shared deployment questionnaire is confirmed.
 The wrapper selects and validates the corresponding compose layers for setup, updates, rollback and
 restore; missing selectors preserve the existing bundled stack. These rows are host/Compose-only
 and excluded from backend backup preflight; `PLATFORM_SUBDOMAIN_AUTO_TLS` is a Django setting
-documented under managed SaaS mode above.
+documented under "Hosting other makerspaces" above.
 
 | Variable | Default / meaning |
 | --- | --- |
@@ -355,7 +361,7 @@ documented under managed SaaS mode above.
 | `SPACEWORKS_RUN_FRONTEND` | `yes`; `no` disables the website and selects the API nginx edge. |
 | `SPACEWORKS_STORAGE` | `bundled`; `external` disables Silo/MinIO and bucket initialization. |
 | `SPACEWORKS_DATABASE` | `bundled`; `external` removes the bundled PostgreSQL (`docker/compose.external-db.yml`) and uses an outside server. Written by the installer's Outside services step. |
-| `SPACEWORKS_REDIS` | `bundled`; `external` removes the bundled Redis (`docker/compose.external-redis.yml`); the broker URL is `CELERY_BROKER_URL`. |
+| `SPACEWORKS_REDIS` | `bundled`; `external` removes the bundled Redis (`docker/compose.external-redis.yml`); the broker URL is `CELERY_BROKER_URL`; `none` (cron mode) removes Redis, the worker and beat (`docker/compose.no-redis.yml`) and runs scheduled jobs from a once-a-minute scheduler loop. |
 | `SPACEWORKS_DATABASE_RUNTIME_URL` | Only with `SPACEWORKS_DATABASE=external`: the narrow runtime login the database pointer starts from (the installer derives it from your owner URL with a generated password). Read once by `scripts/bundled-database-url.py`; the live pointer is authoritative afterwards. |
 | `SPACEWORKS_MAINTENANCE_DATABASE_URL` | Only with `SPACEWORKS_DATABASE=external`: the owner (direct or session) connection used by the one-shot orchestration and migrate jobs. Never given to resident services. Use the direct URL when the runtime URL goes through a pooler. |
 | `API_BIND` | API edge listener address, default `0.0.0.0`; existing proxies use `127.0.0.1`. Built-in HTTPS removes this listener and uses Caddy. |
@@ -369,12 +375,12 @@ documented under managed SaaS mode above.
 | `MINIO_API_BIND` | Address the bundled storage API port listens on, default `0.0.0.0`. The installer writes `127.0.0.1` behind an existing proxy or when Caddy serves storage over HTTPS. |
 | `MINIO_CORS_ALLOWED_ORIGINS` | Comma-separated browser origins allowed to upload to bundled storage, default `*`. The installer writes your site origins. |
 | `COMPOSE_PROFILES` | Extra Compose profiles saved by the installer, for example `clamav` when the optional scanner is chosen. The wrapper adds `tls` itself. |
-| `PLATFORM_DOMAIN` | Platform apex DNS name used by the installer SaaS Caddy configuration. |
+| `PLATFORM_DOMAIN` | Platform apex DNS name used by the installer's hosting-other-spaces Caddy configuration. |
 | `PLATFORM_FIRST_HOST` | First tenant API/site hostname; explicitly certified so API-only hosting can use a separate frontend origin. |
 | `CADDY_SAAS_CONFIG` | Defaults to existing `./deploy/Caddyfile.saas`; new guided platforms use `./deploy/Caddyfile.saas-install` for public ACME. Existing deployments keep their origin-certificate configuration. |
 | `STORAGE_DOMAIN` | Bundled HTTPS storage hostname (`files.<server/platform-domain>`). Requires DNS; an existing proxy forwards to loopback Silo port 9000. |
 | `STORAGE_CADDY_CONFIG` | Defaults to `/etc/caddy/storage-disabled.caddy`; guided bundled HTTPS storage selects `/etc/caddy/storage.caddy`. External storage has no local route. |
-| `CONTROL_PLANE_PROXY` | `false` (server-only). `true` makes the bundled proxy (Caddy or the website nginx) forward `/control/`, `/mfa/control/` and `/mfa/reauth/` to Django on the site's own host. Django reads it too (#189/#191): while it is `false`, `/control/` answers 404 to everything except the server itself and the SSH tunnel. Only `true`/`false` are valid; anything else stops the proxy from starting. Apply a change with `bash scripts/apply-settings.sh`. |
+| `CONTROL_PLANE_PROXY` | `false` (server-only). `true` makes the bundled proxy (Caddy or the website nginx) forward `/control/`, `/mfa/control/` and `/mfa/reauth/` to Django on the site's own host. Django reads it too: while it is `false`, `/control/` answers 404 to everything except the server itself and the SSH tunnel. Only `true`/`false` are valid; anything else stops the proxy from starting. Apply a change with `bash scripts/apply-settings.sh`. |
 | `CONTROL_PLANE_TUNNEL` | Set to `on` by `docker/compose.control-tunnel.yml` for Caddy and the backend; never set it by hand. Django believes the tunnel listener's `X-SpaceWorks-Control-Tunnel` stamp only while it is `on`, and only from a private peer. |
 | `CONTROL_PLANE_ALLOW_CIDRS` | Empty (any address). Space-separated IPv4/IPv6 addresses or CIDRs allowed to reach the control plane; others get 403. Only meaningful where the proxy sees the real client address — not behind your own reverse proxy. |
 | `CONTROL_PLANE_TUNNEL_PORT` | Empty (off). Automatic-HTTPS installs only: a `127.0.0.1`-only HTTPS port serving just the control plane, for `ssh -L`. Needs Docker Engine 28 or newer. |
@@ -411,7 +417,7 @@ not a Django setting. The operations reference describes their validation and ba
 Station PINs also require the independent `EVENT_STATION_PIN_PEPPER` secret documented
 there; setup creates it once and upgrades must preserve it.
 
-Space analytics (Metabase embedding, release 2) adds no environment variables. Each
+Space analytics (Metabase embedding) adds no environment variables. Each
 space's Metabase URL, embed secret and read-only database login are stored encrypted on
 its analytics connection, and the platform has its own connection row.
 
@@ -449,7 +455,7 @@ wiped independently of module state.
 Cloud integration: [hosting choices and operational contracts](deploy/cloud-overview.md). Full host defaults remain unchanged; managed/free is explicit and subject to release acceptance gates.
 Provider/cloud inputs and secret-file rules: [managed environment reference](deploy/cloud-environment.md). FREE_* caps apply only in the selected free profile.
 
-## Login security (release 2)
+## Login security
 
 These are the deployment's **platform defaults** for login security. Each space has its own
 security policy (Security settings in the staff console and `/control/`); a space may only
@@ -506,6 +512,8 @@ for production, `docker-compose.cloud.yml` and the managed/free files for cloud 
 | `MINIO_CONSOLE_BIND` | `127.0.0.1` | Address of the storage web console listener. |
 | `MINIO_CONSOLE_PORT` | `9001` | Host port of the storage web console. |
 | `SILO_IMAGE_TAG` | `RELEASE.2026-09-16T00-00-00Z` | Tag of the bundled storage image. |
+| `REDIS_IMAGE_TAG` | `7.4.11-alpine` | Tag of the bundled Redis image. Pin a patch release; see [Redis](architecture/redis.md). |
+| `REDIS_MAXMEMORY` | `512mb` | Memory cap of the bundled Redis. Its policy is `volatile-lru`: cache keys (all with a TTL) are evicted under pressure, the Celery queues never are. |
 | `MAKERSPACE_BACKEND_IMAGE` | `ghcr.io/spaceworks-labs/spaceworks-backend` | Backend image name (derived from `SPACEWORKS_REPOSITORY` by the installer). The managed and free cloud files require an immutable digest instead. |
 | `MAKERSPACE_FRONTEND_IMAGE` | `ghcr.io/spaceworks-labs/spaceworks-frontend` | Frontend image name. |
 | `MAKERSPACE_IMAGE_TAG` | `latest` | Image tag for both images; `update.sh` and `apply-settings.sh` set it to the installed release. |
@@ -552,9 +560,9 @@ The start-up scripts also accept internal path overrides (`TENANT_CONFIG_PATH`,
 control-plane routing overrides (`CONTROL_PLANE_UPSTREAM`, default `http://backend:8000`;
 `CONTROL_PLANE_PROTO`, default `$external_scheme`). Leave them unset.
 
-## Removed in release 2
+## Removed in 0.12.0
 
-These were documented and read in the last release-1 build (`v0.9.2`) and are no longer read.
+These were documented and read in the last 0.9.x build (`v0.9.2`) and are no longer read.
 Remove them from `.env`; leaving them has no effect.
 
 | Variable | Why |
@@ -565,7 +573,7 @@ Remove them from `.env`; leaving them has no effect.
 | `THROTTLE_ARCHIVE_RECIPIENT_VERIFY` | Same removal. |
 | `PRINT_URL_TTL_SECONDS` | Unused; private print files use `EVIDENCE_URL_TTL_SECONDS`. |
 
-Pre-release builds of release 2 also briefly read `MOBILE_MIN_VERSION_IOS` and
+Pre-release builds of 0.12.0 also briefly read `MOBILE_MIN_VERSION_IOS` and
 `MOBILE_MIN_VERSION_ANDROID` (use `MIN_NATIVE_APP_VERSION_IOS` / `_ANDROID`, or per-registration
 minimum versions in `/control/`) and `WHATSAPP_GRAPH_VERSION` (use `WHATSAPP_META_GRAPH_VERSION`).
 There is no staff two-step sign-in switch: it is a platform rule.

@@ -19,7 +19,7 @@ See `docs/scoped-pii-encryption.md`.
 | `PII_MASTER_KEY_PREVIOUS` | `''` |  |
 | `PII_SEARCH_HASH_KEY` | `''` |  |
 
-## Row-level security and per-space keys (release 2, lane L8)
+## Row-level security and per-space keys
 
 See `docs/INVARIANTS.md` "Row-level security backstop" and "Per-space key rotation".
 

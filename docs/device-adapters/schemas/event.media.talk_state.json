@@ -1,0 +1,26 @@
+{
+  "$id": "https://spaceworks.invalid/schemas/device-adapter/v1/event.media.talk_state.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "state": {
+      "enum": [
+        "open",
+        "closed",
+        "unavailable"
+      ],
+      "type": "string"
+    },
+    "watch_id": {
+      "format": "uuid",
+      "maxLength": 36,
+      "minLength": 36,
+      "type": "string"
+    }
+  },
+  "required": [
+    "watch_id",
+    "state"
+  ],
+  "type": "object"
+}

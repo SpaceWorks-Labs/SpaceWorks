@@ -1,0 +1,30 @@
+{
+  "$id": "https://spaceworks.invalid/schemas/device-adapter/v1/media.signal.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "candidate": {
+      "maxLength": 2000,
+      "type": "string"
+    },
+    "kind": {
+      "enum": [
+        "offer",
+        "answer",
+        "candidate",
+        "bye",
+        "ptt_on",
+        "ptt_off"
+      ],
+      "type": "string"
+    },
+    "sdp": {
+      "maxLength": 16000,
+      "type": "string"
+    }
+  },
+  "required": [
+    "kind"
+  ],
+  "type": "object"
+}

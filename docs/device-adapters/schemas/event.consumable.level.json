@@ -1,0 +1,25 @@
+{
+  "$id": "https://spaceworks.invalid/schemas/device-adapter/v1/event.consumable.level.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "material": {
+      "maxLength": 60,
+      "type": "string"
+    },
+    "remaining_percent": {
+      "maximum": 100,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "slot": {
+      "maxLength": 32,
+      "type": "string"
+    }
+  },
+  "required": [
+    "slot",
+    "remaining_percent"
+  ],
+  "type": "object"
+}

@@ -210,6 +210,9 @@ class StripeConnectCallbackView(APIView):
 class StripeConnectWebhookView(APIView):
     authentication_classes = []
     permission_classes = [AllowAny]
+    # Signature-verified provider callback: exempt from the deployment baseline (336c), a 429
+    # would only make the provider retry and delay settlement/delivery state.
+    throttle_classes = []
 
     @extend_schema(
         tags=["Payments"],
@@ -246,4 +249,4 @@ class StripeConnectWebhookView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         apply_connect_webhook_event(event)
-        return Response({"detail": "Verified."})
+        return Response({"detail": gettext("Verified.")})

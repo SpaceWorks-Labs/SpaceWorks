@@ -115,6 +115,8 @@ def test_cover_route_404s_for_member_handle(settings, stored_bytes):
                                                      assigned_role=space.roles.get(slug="member"))
     profile = MemberProfile.objects.create(membership=membership, public_visible=True, public_consented_at=timezone.now())
     PublicHandle.objects.create(user=user, profile=profile, handle="cover.maker", changed_at=timezone.now())
+    from apps.makerspaces.models import AccountProfile
+    AccountProfile.objects.update_or_create(user=user, defaults={"public_visible": True, "public_consented_at": timezone.now()})
     client = APIClient()
     assert client.get("/share/pages/cover.maker/").status_code == 200
     assert client.get("/share/pages/cover.maker/cover/").status_code == 404

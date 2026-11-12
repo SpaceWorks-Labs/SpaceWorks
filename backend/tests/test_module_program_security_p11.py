@@ -1202,10 +1202,10 @@ def test_rate_limits_use_a_shared_cache_when_one_is_configured():
     """
     from config.settings import cache_config
 
-    assert cache_config("redis://cache:6379/1") == {
-        "BACKEND": "django.core.cache.backends.redis.RedisCache",
-        "LOCATION": "redis://cache:6379/1",
-    }
+    redis = cache_config("redis://cache:6379/1")
+    # Decision 339: the shared Redis cache, wrapped so an outage degrades rather than 500s.
+    assert redis["BACKEND"] == "config.redis_cache.ResilientRedisCache"
+    assert redis["LOCATION"] == "redis://cache:6379/1"
     # No Redis must NOT mean per-process; that was the round-9 defect.
     without_redis = cache_config("")
     assert without_redis["BACKEND"] == "django.core.cache.backends.db.DatabaseCache"

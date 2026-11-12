@@ -1,7 +1,7 @@
 import pytest
 from rest_framework.test import APIClient
 from apps.accounts.models import User
-from apps.makerspaces.models import MakerspaceMembership, MemberProfile
+from apps.makerspaces.models import AccountProfile, AccountTimelineEntry, MakerspaceMembership, MemberProfile
 from apps.audit.models import AuditLog
 
 pytestmark = pytest.mark.django_db
@@ -12,6 +12,7 @@ def test_profile_patch_handle_and_timeline_crud(membership):
     base = f"/api/v1/member/makerspaces/{membership.makerspace_id}/profile"
     assert client.get(base).status_code == 200
     assert not MemberProfile.objects.filter(membership=membership).exists()
+    assert not AccountProfile.objects.filter(user=membership.user).exists()  # a read never creates the row
     response = client.patch(base, {"public_visible": True, "publication_consent": True,
         "domains": ["Robotics"], "skills": [{"name": "Python", "level": 3}],
         "links": [{"kind": "github", "url": "https://github.com/example"}]}, format="json")
@@ -37,9 +38,8 @@ def test_profile_patch_handle_and_timeline_crud(membership):
 
 
 def test_timeline_is_scoped_to_authenticated_membership(membership):
-    from apps.makerspaces.models_profiles import ProfileTimelineEntry
-    profile = MemberProfile.objects.create(membership=membership)
-    entry = ProfileTimelineEntry.objects.create(profile=profile, kind="education", title="Private", start="2025-01-01")
+    profile = AccountProfile.objects.create(user=membership.user)
+    entry = AccountTimelineEntry.objects.create(profile=profile, kind="education", title="Private", start="2025-01-01")
     other = User.objects.create_user(username="other-timeline-owner")
     MakerspaceMembership.objects.create(user=other, makerspace=membership.makerspace, assigned_role=membership.makerspace.roles.get(slug="member"), role="custom")
     client = APIClient(); client.force_authenticate(user=other)

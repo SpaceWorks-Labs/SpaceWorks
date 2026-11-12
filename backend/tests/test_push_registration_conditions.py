@@ -13,10 +13,13 @@ PAYLOAD = {"token": "a" * 64, "provider": "apns", "environment": "development"}
 
 
 def push_member(username, space):
-    return make_member(
+    user = make_member(
         username, space, membership_role="member",
         role=User.Role.REQUESTER,
     )
+    from apps.makerspaces.public_profile_handles import ensure_default_handle
+    ensure_default_handle(user)  # decision 308: device-token writes need a username
+    return user
 
 
 def test_missing_fingerprint_key_returns_503_and_creates_no_device(settings):

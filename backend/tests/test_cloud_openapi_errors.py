@@ -44,7 +44,7 @@ EXPECTED = {
     (f"{M}/email-templates/{{stream}}/{{audience}}/{{key}}/reset", "post"): {"401", "403", "404"},
     (f"{M}/modules", "get"): {"401", "403", "404"},
     ("/api/v1/config", "get"): {"400", "503"},
-    ("/api/v1/auth/phone", "delete"): {"401", "403"},
+    ("/api/v1/auth/phone", "delete"): {"401", "403", "409"},
     ("/api/v1/auth/social/nonce", "post"): {"400", "403", "404", "429"},
     ("/api/v1/auth/social/google", "post"): {"400", "401", "403", "404", "429", "503"},
     ("/api/v1/auth/social/apple", "post"): {"400", "401", "403", "404", "429", "503"},
@@ -52,7 +52,8 @@ EXPECTED = {
     ("/api/v1/auth/social/providers", "post"): {"400", "401", "403", "404", "409", "503"},
     ("/api/v1/auth/social/oidc/{slug}/authorize", "post"): {"429"},
     ("/api/v1/auth/social/oidc/callback", "post"): {"429"},
-    ("/api/v1/integrations/push/devices", "post"): {"400", "401", "403", "409", "429", "503"},
+    # Module audit 0.12.0: 404 is the `mobile.push` switch being off for the selected space.
+    ("/api/v1/integrations/push/devices", "post"): {"400", "401", "403", "404", "409", "429", "503"},
     (f"{M}/integration-health", "get"): {"401", "403", "404"},
 }
 

@@ -43,7 +43,7 @@ def test_tombstoned_device_report_is_unavailable_without_breaking_other_area_cov
     assert "printer-jobs" in TOMBSTONED_REPORT_KEYS
     assert "printer-jobs" not in REPORT_REGISTRY
     # The coverage relationship still documents the report's machine areas.
-    for module in ("machines", "machine_service", "printing", "maintenance"):
+    for module in ("machines", "machine_service", "maintenance"):  # `printing` folded in (340b)
         assert "printer-jobs" in REPORT_MODULE_COVERAGE[module].reports
     with pytest.raises(ReportNotFound):
         report_definition("printer-jobs")

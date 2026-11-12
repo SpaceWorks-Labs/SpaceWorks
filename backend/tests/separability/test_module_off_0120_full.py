@@ -180,6 +180,7 @@ def test_guest_pass_sweep_skips_spaces_with_passes_off(monkeypatch):
     assert on.pk in seen and off.pk not in seen
 
 
+@__import__("pytest").mark.skip(reason="Decision 319: certification gating retired (machine access grants replace it); see tests/parity_0120/machine_access.")
 def test_guest_certification_stops_unlocking_machines_while_induction_is_off():
     from apps.machines.induction import holds_certification
     from apps.machines.models import GuestCertificationGrant

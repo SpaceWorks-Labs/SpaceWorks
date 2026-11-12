@@ -21,6 +21,8 @@ def membership(settings):
 @pytest.fixture
 def published(membership):
     profile = save_profile(membership, {"public_visible": True, "publication_consent": True})
-    claim_handle(membership, "public.maker")
+    claim_handle(membership.user, "public.maker")
     profile.refresh_from_db()
+    # Written for the per-membership profile; the global profile keeps ONE membership reachable.
+    profile.membership = membership
     return profile

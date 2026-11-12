@@ -56,6 +56,8 @@ def public_profile(space, username="member"):
         space.enabled_modules += ["membership"]
         space.save(update_fields=["enabled_modules"])
     user = make_member(space, username=username)
+    from apps.makerspaces.models import AccountProfile
+    AccountProfile.objects.update_or_create(user=user, defaults={"public_visible": True, "public_consented_at": timezone.now()})
     return MemberProfile.objects.create(membership=MakerspaceMembership.objects.get(makerspace=space, user=user),
                                         public_visible=True, public_consented_at=timezone.now())
 
@@ -85,6 +87,8 @@ def test_unchanged_member_slot_survives_profile_going_private(event_owner, objec
     for withdrawn in (profile, other):
         withdrawn.public_visible = False
         withdrawn.save(update_fields=["public_visible"])
+        from apps.makerspaces.models import AccountProfile
+        AccountProfile.objects.filter(user=withdrawn.membership.user).update(public_visible=False)
     if path == "reschedule":
         update_event(event, actor=actor, starts_at=event.starts_at - timedelta(hours=1))
     elif path == "replace_asset":

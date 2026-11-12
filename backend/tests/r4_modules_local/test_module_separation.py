@@ -86,8 +86,9 @@ def test_purge_plans_name_real_modules_and_say_what_they_delete():
     # #183B(f): shared records have owners and require an explicit purge refusal.
     assert set(NOT_SEPARABLE) - set(core_module_keys()) == {
         "asset_units", "bulk_import", "containers", "email", "machines",
-        "member_accounts", "mobile", "payments", "printing",
+        "member_accounts", "mobile", "payments",
     }
+    assert "printing" not in NOT_SEPARABLE  # retired into machine_service, decision 340b
     for key, reason in NOT_SEPARABLE.items():
         assert reason.strip(), key
 

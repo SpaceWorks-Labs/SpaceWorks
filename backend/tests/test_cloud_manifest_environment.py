@@ -27,7 +27,8 @@ class ComposeLoader(yaml.SafeLoader):
     pass
 
 
-ComposeLoader.add_constructor("!reset", lambda loader, node: loader.construct_sequence(node))
+ComposeLoader.add_constructor("!reset", lambda loader, node: loader.construct_sequence(node)
+                              if isinstance(node, yaml.SequenceNode) else None)  # `!reset null` is a scalar
 
 
 @pytest.mark.parametrize("manifest", ["docker-compose.yml", "docker-compose.prod.yml", "docker-compose.cloud.yml"])

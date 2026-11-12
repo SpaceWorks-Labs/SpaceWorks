@@ -15,6 +15,7 @@ from apps.events.website_projection import project
 from apps.makerspaces import public_page_services as pages
 from apps.makerspaces.models import MakerspaceMembership
 from apps.makerspaces.models_profiles import MemberProfile, PublicHandle
+from apps.makerspaces.models import AccountProfile
 from apps.makerspaces.public_page_contract import empty_document
 from apps.makerspaces.public_page_projected_serializers import PROJECTED_TYPES
 from apps.makerspaces.public_page_serializers import PreviewProjection, PublicPageProjection
@@ -38,6 +39,8 @@ def test_schedule_only_delay_preserves_saved_references_after_withdrawal(event_o
         membership=MakerspaceMembership.objects.get(makerspace=space, user=user),
         public_visible=True, public_consented_at=timezone.now())
     PublicHandle.objects.create(user=user, profile=profile, handle="delay.member", changed_at=timezone.now())
+    # Decision 305: the ACCOUNT profile decides visibility; the per-space row is only a reference token.
+    AccountProfile.objects.update_or_create(user=user, defaults={"public_visible": True, "public_consented_at": timezone.now()})
     slot, team = str(uuid4()), str(uuid4())
     editorial = empty_document("event")
     editorial["sections"].append({"id": team, "type": "team", "enabled": True,
@@ -60,6 +63,7 @@ def test_schedule_only_delay_preserves_saved_references_after_withdrawal(event_o
     if withdrawal == "consent":
         profile.public_visible = False
         profile.save(update_fields=["public_visible"])
+        AccountProfile.objects.filter(user=user).update(public_visible=False)
     else:
         profile.delete()  # SET_NULL must also survive the snapshot copy.
     schedule_actor, _ = grantee(space, event, PUBLISH_SCHEDULE)

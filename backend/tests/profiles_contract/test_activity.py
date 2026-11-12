@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, UTC
 import pytest
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
-from apps.makerspaces.models import Makerspace, MemberProject
+from apps.makerspaces.models import AccountProject as MemberProject, Makerspace
 from apps.makerspaces.profile_activity_public import daily_activity
 from apps.makerspaces.profile_services import save_profile
 from apps.makerspaces import profile_activity_sources as sources
@@ -22,6 +22,8 @@ def enable(profile, **consents):
 
 def test_graph_and_independent_family_consent(published):
     MemberProject.objects.create(profile=published, title="public project", public_visible=True)
+    # Sections default ON (decision 303a), so switch the master and the family off explicitly first.
+    save_profile(published.membership, {"show_activity_graph": False, "show_projects": False})
     assert graph(published)["days"] == []
     enable(published)
     assert sum(day["count"] for day in graph(published)["days"]) == 0
@@ -37,7 +39,7 @@ def test_projects_same_day_dedup_timezone_update_and_private_exclusion(published
     before = datetime(2026, 1, 1, 20, 0, tzinfo=UTC)  # Jan 2 in Kolkata
     project = MemberProject.objects.create(profile=published, title="No title in graph", public_visible=True)
     MemberProject.objects.filter(pk=project.pk).update(created_at=before, updated_at=before + timedelta(hours=1))
-    MemberProject.objects.create(profile=published, title="Never public")
+    MemberProject.objects.create(profile=published, title="Never public", public_visible=False)
     assert graph(published, "2026-01-02")["days"][0] == {
         "date": before.astimezone(__import__('zoneinfo').ZoneInfo("Asia/Kolkata")).date(),
         "count": 1, "families": {"projects": 1},

@@ -8,7 +8,8 @@ from apps.accounts.models import User
 from apps.makerspaces.models import MakerspaceMembership
 from apps.makerspaces.models_profiles import PublicHandle, PublicHandleRedirect, MemberProfile
 from apps.makerspaces.public_profile_handles import claim_handle, release_handle, normalize_handle
-from apps.makerspaces.public_profile_access import resolve_public_profile
+from django.contrib.auth.models import AnonymousUser
+from apps.makerspaces.account_profile_access import resolve_by_handle
 from apps.makerspaces.public_profile_route_inventory import route_segments
 from apps.makerspaces.public_profile_reserved import RESERVED_SEGMENTS
 
@@ -50,11 +51,11 @@ def test_drift_guard_detects_new_root_in_empty_backend_include(tmp_path):
 
 
 def test_collision_is_case_insensitive_at_service_and_database(membership):
-    claim = claim_handle(membership, "Maker.Name")
+    claim = claim_handle(membership.user, "Maker.Name")
     user = User.objects.create_user(username="second-maker")
     other = MakerspaceMembership.objects.create(user=user, makerspace=membership.makerspace, assigned_role=membership.makerspace.roles.get(slug="member"), role="custom")
     with pytest.raises(ValidationError):
-        claim_handle(other, "MAKER.NAME")
+        claim_handle(other.user, "MAKER.NAME")
     with pytest.raises(IntegrityError), transaction.atomic():
         PublicHandle.objects.create(user=user, profile=MemberProfile.objects.create(membership=other),
                                     handle=claim.handle, changed_at=timezone.now())
@@ -63,31 +64,31 @@ def test_collision_is_case_insensitive_at_service_and_database(membership):
 def test_change_cooldown_redirect_release_and_reuse(published):
     membership = published.membership
     with pytest.raises(ValidationError):
-        claim_handle(membership, "new.maker")
+        claim_handle(membership.user, "new.maker")
     PublicHandle.objects.filter(user=membership.user).update(changed_at=timezone.now() - timedelta(days=31))
-    claim_handle(membership, "new.maker")
-    current, redirected = resolve_public_profile("public.maker")
-    assert redirected and current.handle == "new.maker"
-    release_handle(membership)
+    claim_handle(membership.user, "new.maker")
+    current, redirected = resolve_by_handle("public.maker", AnonymousUser())
+    assert redirected == "new.maker" and current.user_id == membership.user_id
+    release_handle(membership.user)
     with pytest.raises(NotFound):
-        resolve_public_profile("public.maker")
+        resolve_by_handle("public.maker", AnonymousUser())
     with pytest.raises(ValidationError):
-        claim_handle(membership, "another.maker")
+        claim_handle(membership.user, "another.maker")
     PublicHandleRedirect.objects.all().update(expires_at=timezone.now() - timedelta(seconds=1))
-    claim_handle(membership, "public.maker")
+    claim_handle(membership.user, "public.maker")
     with pytest.raises(NotFound):
-        resolve_public_profile("public.maker")  # release cleared publication consent
+        resolve_by_handle("public.maker", AnonymousUser())  # release cleared publication consent
 
 
 def test_retired_handle_is_unavailable_to_another_account(published):
     membership = published.membership
-    release_handle(membership)
+    release_handle(membership.user)
     user = User.objects.create_user(username="handle-squatter")
     other = MakerspaceMembership.objects.create(user=user, makerspace=membership.makerspace, assigned_role=membership.makerspace.roles.get(slug="member"), role="custom")
     with pytest.raises(ValidationError):
-        claim_handle(other, "PUBLIC.MAKER")
+        claim_handle(other.user, "PUBLIC.MAKER")
     PublicHandleRedirect.objects.all().update(expires_at=timezone.now() - timedelta(seconds=1))
-    assert claim_handle(other, "public.maker").user == user
+    assert claim_handle(other.user, "public.maker").user == user
 
 
 @pytest.mark.django_db(transaction=True)
@@ -104,7 +105,7 @@ def test_concurrent_first_claims_have_one_winner(membership):
             member = MakerspaceMembership.objects.select_related("user", "makerspace").get(pk=pk)
             barrier.wait(timeout=10)
             try:
-                claim_handle(member, "concurrent.name")
+                claim_handle(member.user, "concurrent.name")
                 return "claimed"
             except ValidationError:
                 return "collision"

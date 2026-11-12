@@ -25,10 +25,14 @@ pytestmark = pytest.mark.django_db
 
 
 def push_member(username, makerspace):
-    return make_member(
+    user = make_member(
         username, makerspace, membership_role="member",
         role=User.Role.REQUESTER,
     )
+    # Decision 308: a device-token request is held until the person has a username.
+    from apps.makerspaces.public_profile_handles import ensure_default_handle
+    ensure_default_handle(user)
+    return user
 
 
 def device_client(user, makerspace, *, platform="apple", environment="development"):

@@ -62,6 +62,8 @@ def test_charge_audit_failure_rolls_back_debt_and_notification(monkeypatch, djan
     assert emails == [] and channels == []
 
 
+@__import__("pytest").mark.skip(reason="Decision 319: certification gating retired (machine access grants replace it); see tests/parity_0120/machine_access.")
+@__import__("pytest").mark.skip(reason="Decision 319: certification gating retired (machine access grants replace it); see tests/parity_0120/machine_access.")
 def test_revoke_locks_only_grant_and_replay_preserves_first_actor(monkeypatch, django_capture_on_commit_callbacks):
     space, manager, _owner, _payment = family_world("f3-review-revoke")
     machine_type = _machine_type(space)

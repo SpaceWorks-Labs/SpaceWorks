@@ -1,6 +1,7 @@
 from datetime import date
 import pytest
 from django.db import transaction
+from django.utils import timezone
 from apps.accounts.models import User
 from apps.makerspaces.models import MemberProfile, MakerspaceMembership
 from apps.makerspaces.models_profiles import ProfileTimelineEntry, PublicHandle
@@ -19,7 +20,12 @@ def test_export_registration_tenant_subject_json_and_user_decisions(published):
     from apps.data_export.references import RELATIONAL_USER_FIELDS, JSON_FIELDS
     from apps.data_export.guards import validate_model_and_field_coverage, validate_user_edges, validate_semantic_references
     from apps.tenant_migration.projection_guards import validate_unique_constraint_risks
-    entry = ProfileTimelineEntry.objects.create(profile=published, title="Authored", kind="education", start=date(2025, 1, 1))
+    legacy = MemberProfile.objects.get_or_create(membership=published.membership)[0]
+    entry = ProfileTimelineEntry.objects.create(profile=legacy, title="Authored", kind="education", start=date(2025, 1, 1))
+    # Decision 305: the global profile and its children are account-level: omitted, never a tenant dataset.
+    for label in ("makerspaces.AccountProfile", "makerspaces.AccountProject",
+                  "makerspaces.AccountTimelineEntry", "makerspaces.ProfileAchievement"):
+        assert label in OMITTED_MODELS and label not in DATASET_SPECS
     assert {"makerspaces.PublicHandle", "makerspaces.ProfileTimelineEntry"} <= EXPORTED_MODEL_FIELDS.keys()
     assert "makerspaces.PublicHandleRedirect" in OMITTED_MODELS
     assert ("makerspaces.PublicHandle", "user") in RELATIONAL_USER_FIELDS
@@ -45,12 +51,23 @@ def test_import_publication_is_reset_but_authored_content_is_not():
 def test_import_keeps_only_free_handle_and_never_overwrites_target_claim(membership):
     profile = MemberProfile.objects.create(membership=membership)
     row = {"user_id": membership.user_id, "profile_id": profile.pk, "handle": "imported.maker"}
+    # A post-0.12 account owns a handle with NO legacy profile: that is a valid claim (decision 305) ...
+    with transaction.atomic():
+        assert prepare_import_handle({"user_id": membership.user_id, "profile_id": None, "handle": "account.level"})
+    # ... but a row naming someone else's legacy profile is still refused.
+    stranger = User.objects.create_user(username="import-stranger")
+    stranger_membership = MakerspaceMembership.objects.create(
+        user=stranger, makerspace=membership.makerspace,
+        assigned_role=membership.makerspace.roles.get(slug="member"), role="custom")
+    foreign = MemberProfile.objects.create(membership=stranger_membership)
+    with transaction.atomic():
+        assert not prepare_import_handle({"user_id": membership.user_id, "profile_id": foreign.pk, "handle": "mismatch.maker"})
     with transaction.atomic():
         assert prepare_import_handle(row)
         pending = {}
         assert prepare_import_handle(row, pending)
         assert not prepare_import_handle({**row, "handle": "another.free"}, pending)
-    claim_handle(membership, "target.maker")
+    claim_handle(membership.user, "target.maker")
     other_user = User.objects.create_user(username="import-other")
     other = MakerspaceMembership.objects.create(user=other_user, makerspace=membership.makerspace, assigned_role=membership.makerspace.roles.get(slug="member"), role="custom")
     other_profile = MemberProfile.objects.create(membership=other)
@@ -60,7 +77,7 @@ def test_import_keeps_only_free_handle_and_never_overwrites_target_claim(members
     with transaction.atomic():
         assert not prepare_import_handle(row)
     assert PublicHandle.objects.get(user=membership.user).handle == "target.maker"
-    release_handle(membership)
+    release_handle(membership.user)
     with transaction.atomic():
         assert not prepare_import_handle(row)
     row["handle"] = "free.maker"
@@ -95,20 +112,26 @@ def test_colliding_handle_mapping_is_removed_for_import_verification():
             mapping.lookup(PublicHandle, 991)
 
 
-def test_membership_module_purge_cascades_namespace_and_timeline(published):
-    ProfileTimelineEntry.objects.create(profile=published, title="Authored", kind="experience", start=date(2025, 1, 1))
-    published.delete()
-    assert not PublicHandle.objects.exists()
+def test_membership_module_purge_cascades_legacy_timeline_but_keeps_the_accounts_handle(published):
+    legacy = MemberProfile.objects.get_or_create(membership=published.membership)[0]
+    PublicHandle.objects.filter(user=published.user).update(profile=legacy)
+    ProfileTimelineEntry.objects.create(profile=legacy, title="Authored", kind="experience", start=date(2025, 1, 1))
+    legacy.delete()
     assert not ProfileTimelineEntry.objects.exists()
+    # Decision 305: the handle belongs to the account, so purging a legacy row only clears its pointer.
+    assert PublicHandle.objects.get(user=published.user).profile_id is None
 
 
 def test_portable_source_carries_authored_content_and_handle_but_resets_consent(published):
     import uuid
-    from apps.makerspaces.profile_services import save_profile
+    from apps.makerspaces.models import MemberProject
     from apps.tenant_migration.tenant_dump_source_projection import project_makerspace_source
-    save_profile(published.membership, {"domains": ["Robotics"], "show_projects": True,
-        "projects": [{"title": "Robot", "subtitle": "First build", "tags": ["robotics"], "public_visible": True}]})
-    ProfileTimelineEntry.objects.create(profile=published, title="Authored", kind="education", start=date(2025, 1, 1))
+    legacy = MemberProfile.objects.create(membership=published.membership, domains=["Robotics"],
+                                          show_projects=True, public_visible=True, public_consented_at=timezone.now())
+    MemberProject.objects.create(profile=legacy, title="Robot", subtitle="First build", tags=["robotics"],
+                                 public_visible=True)
+    PublicHandle.objects.filter(user=published.user).update(profile=legacy)
+    ProfileTimelineEntry.objects.create(profile=legacy, title="Authored", kind="education", start=date(2025, 1, 1))
     projection = project_makerspace_source(published.membership.makerspace_id, capture_id=uuid.uuid4())
     from apps.tenant_migration.tenant_dump_raw import sanitize_record
     raw = projection.rows["makerspaces.MemberProfile"][0]
@@ -120,3 +143,5 @@ def test_portable_source_carries_authored_content_and_handle_but_resets_consent(
     assert row["show_projects"] is False
     assert projection.rows["makerspaces.PublicHandle"][0]["handle"] == "public.maker"
     assert projection.rows["makerspaces.ProfileTimelineEntry"][0]["title"] == "Authored"
+    # The global profile never travels in a tenant dump (decision 305).
+    assert not any(label.startswith("makerspaces.Account") for label in projection.rows)

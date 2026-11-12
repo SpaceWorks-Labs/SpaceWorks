@@ -14,7 +14,7 @@ from tests.capabilities_behavior import (
     test_machine_payment_requires_machines_and_machine_service,
     test_a_payment_feature_without_the_payments_module_is_refused,
     test_effective_feature_requires_parent_and_typed_guard,
-    test_model_and_admin_validator_share_printing_rule,
+    test_model_and_admin_validator_read_the_retired_printing_key_as_machine_service,
     test_feature_dependency_and_bootstrap_projection,
     test_staff_serializer_splits_module_and_feature_capability_writes,
     test_admin_form_adds_a_missing_parent_module_even_when_ui_is_bypassed,

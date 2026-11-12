@@ -26,6 +26,7 @@ ROW = re.compile(r"^\| `([A-Z0-9_]+)` \|", re.M)
 # release 2. Rows in those sections are checked in the opposite direction instead.
 NON_BACKEND_SECTIONS = frozenset({
     "Compose host settings", "Frontend build and container settings", "Removed in release 2",
+    "Removed in 0.12.0",
 })
 # Set by manage.py / WSGI / ASGI / Celery bootstrap; the env-surface scanner discards it on purpose.
 BOOTSTRAP_ONLY = frozenset({"DJANGO_SETTINGS_MODULE"})

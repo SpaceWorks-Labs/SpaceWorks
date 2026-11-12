@@ -1,7 +1,6 @@
 from importlib import import_module
 
 import pytest
-from django.core.exceptions import ValidationError
 from django.apps import apps
 from django.db import IntegrityError, connection, transaction
 from django.db.migrations.executor import MigrationExecutor
@@ -184,16 +183,19 @@ def test_module_migration_default_workflow_and_valid_disable():
     assert serializer.is_valid(), serializer.errors
 
 
-def test_printing_module_requires_machine_service():
+def test_retired_printing_module_key_reads_as_machine_service():
+    # Decision 340b: `printing` is folded into machine_service, so a stored or posted key
+    # validates as machine service instead of failing a dependency that no longer exists.
     makerspace = make_space("printing-requires-machine-service")
     makerspace.enabled_modules = ["printing"]
 
-    with pytest.raises(ValidationError, match="Printing requires machine service"):
-        makerspace.full_clean()
+    makerspace.full_clean()
+    assert "machine_service" in makerspace.enabled_modules
+    assert "printing" not in makerspace.enabled_modules
 
     serializer = MakerspaceSerializer(
         makerspace,
-        data={"enabled_modules": ["printing"]},
+        data={"enabled_modules": ["event_reimbursements"]},
         partial=True,
     )
     assert not serializer.is_valid()

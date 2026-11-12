@@ -52,7 +52,13 @@ def test_full_profile_project_consents_content_and_object_bytes_match_source(tmp
         position=7,
     )
 
+    # Decision 305: the person's GLOBAL profile exists too, but it is account-level and never travels.
+    from apps.makerspaces.models import AccountProfile
+    AccountProfile.objects.create(user=user, headline="Global headline", avatar_key="profiles/global.png")
+
     projection = project_makerspace_source(space.pk, capture_id=uuid.uuid4())
+    assert not any(label.startswith("makerspaces.Account") for label in projection.rows)
+    assert "profiles/global.png" not in projection.excluded_object_keys
     projected_profile = projection.rows["makerspaces.MemberProfile"][0]
     projected_project = projection.rows["makerspaces.MemberProject"][0]
 

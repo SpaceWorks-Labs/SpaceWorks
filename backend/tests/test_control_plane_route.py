@@ -23,7 +23,9 @@ def compose(relative):
 
     for tag in ("!reset", "!override"):
         ComposeLoader.add_constructor(tag, lambda loader, node: loader.construct_sequence(node)
-                                     if isinstance(node, yaml.SequenceNode) else loader.construct_mapping(node))
+                                     if isinstance(node, yaml.SequenceNode)
+                                     else loader.construct_mapping(node) if isinstance(node, yaml.MappingNode)
+                                     else None)  # `!reset null` (compose.no-redis.yml) is a scalar
     return yaml.load((ROOT / relative).read_text(encoding="utf-8"), Loader=ComposeLoader)
 
 

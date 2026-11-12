@@ -129,6 +129,12 @@ def test_personal_only_chat_exclusions_are_explicit_registered_events():
         ("hardware_requests", "linked_event_changed"),
         ("hardware_requests", "pickup_expiring"),
         ("hardware_requests", "repair_closed"), ("bookings", "repair_closed"), ("maintenance", "repair_closed"),
+        # Interconnection 18: webhook-only link changes; 0.12.0 owner-only member notices.
+        ("events", "event_booking_linked"), ("events", "event_loan_linked"), ("events", "event_loan_unlinked"),
+        ("bookings", "booking_loan_linked"), ("bookings", "booking_loan_unlinked"),
+        ("members", "guardian_consent_requested"), ("members", "profile_opened"), ("members", "changes_requested"), ("members", "resubmitted"),
+        ("devices", "adapter_session_ending"),
+        ("events", "pay_window_opened"), ("events", "pay_window_expired"),
     }
     assert PERSONAL_ONLY_EVENTS <= {
         (feature, event) for feature, events in FEATURE_EVENTS.items() for event in events

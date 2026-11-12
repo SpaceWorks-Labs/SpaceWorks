@@ -48,7 +48,8 @@ def test_axes_and_drf_must_agree_on_the_proxy_chain(settings):
 
 @pytest.mark.parametrize("url,backend", [
     ("", "django.core.cache.backends.db.DatabaseCache"),
-    ("redis://cache:6379/1", "django.core.cache.backends.redis.RedisCache"),
+    # Decision 339: Redis is wrapped so an outage degrades throttles instead of failing every request.
+    ("redis://cache:6379/1", "config.redis_cache.ResilientRedisCache"),
 ])
 def test_redis_and_database_cache_selection(url, backend):
     result = import_settings(

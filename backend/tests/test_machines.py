@@ -121,7 +121,7 @@ def test_operator_candidates_respect_disabled_machines_module():
         reverse('admin-machine-operator-candidates', kwargs={'pk': machine.id})
     )
 
-    assert response.status_code == 400
+    assert response.status_code == 404  # typed module_disabled (the module gate answers 404)
 
 
 def test_machine_capability_matrix():
@@ -859,7 +859,7 @@ def test_machine_has_no_legacy_printer_bridge():
     with pytest.raises(ModuleNotFoundError):
         __import__("apps.machines.linking")
 
-def test_machines_module_gate_returns_400_when_disabled():
+def test_machines_module_gate_returns_404_when_disabled():
     makerspace = enable_machines(make_space("machines-module-gate"))
     manager = make_member("machines-module-manager", makerspace)
     makerspace.enabled_modules = [
@@ -871,7 +871,7 @@ def test_machines_module_gate_returns_400_when_disabled():
         reverse("admin-machines", kwargs={"makerspace_id": makerspace.id})
     )
 
-    assert response.status_code == 400
+    assert response.status_code == 404  # typed module_disabled (the module gate answers 404)
 
 
 def test_operator_only_list_is_scoped_to_assigned_machines():
@@ -1007,7 +1007,7 @@ def test_publicity_scope_permission_and_module_checks_are_ordered():
         format='json',
     )
 
-    assert manager_module.status_code == 400
+    assert manager_module.status_code == 404  # typed module_disabled (the module gate answers 404)
     assert operator_permission.status_code == 403
     assert foreign_scope.status_code == 404
 
@@ -1573,7 +1573,7 @@ def test_consumables_respect_disabled_machines_module_after_permission_check():
 
     response = authenticated_client(manager).get(_consumables_url(machine))
 
-    assert response.status_code == 400
+    assert response.status_code == 404  # typed module_disabled (the module gate answers 404)
 
 
 def test_consumable_candidates_are_minimal_and_filter_archived_and_individual():

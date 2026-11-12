@@ -234,7 +234,7 @@ persist_setup_answers "$PWD/answers"
 
 
 def test_origin_hosts_are_canonicalized_before_persistence(tmp_path):
-    answers = ["", "2", "https://TOOLS.EXAMPLE.ORG", "3", "api.example.org", "",
+    answers = ["", "2", "https://TOOLS.EXAMPLE.ORG", "3", "api.example.org", "", "",
                "Test Organization", "My Lab", "", ""] + question_tail()
     result = questionnaire(tmp_path, answers, write=True)
     assert result.returncode == 0, result.stderr
@@ -294,7 +294,7 @@ def test_unsupported_runner_host_skips_question_and_records_no(tmp_path):
 @pytest.mark.parametrize("host", ["192.168.1.50", "makerspace.local", "0.0.0.0"])
 def test_plain_http_rejects_lan_and_reasks_for_loopback(tmp_path, host):
     answers = defaults()
-    answers[5:6] = [host, "127.0.0.1"]
+    answers[6:7] = [host, "127.0.0.1"]  # index 6 is the web address (5 is the control-panel gate)
     result = questionnaire(tmp_path, answers, write=True)
     assert result.returncode == 0, result.stderr
     assert "LAN access requires HTTPS" in result.stdout
@@ -325,8 +325,10 @@ def test_quick_setup_defaults_to_local_http_and_asks_the_minimum(tmp_path):
     env = (tmp_path / ".env").read_text(encoding="utf-8")
     assert "SPACEWORKS_RUN_FRONTEND='yes'" in env and "SPACEWORKS_STORAGE='bundled'" in env
     assert "ENABLE_HTTPS='false'" in env
-    for skipped in ("Hosting model", "Organization name", "Admin login username", "Admin password",
-                    "Maximum active loans", "Install a GitHub Actions runner", "Reach the control panel"):
+    # "Hosting model" is not a prompt here, but the deployment summary line starts with it
+    # (the summary also prints "Maximum active loans per borrower: 0", so only the prompt form is a marker).
+    for skipped in ("Hosting model:\n", "Organization name", "Admin login username", "Admin password",
+                    "Maximum active loans per borrower [", "Install a GitHub Actions runner", "Reach the control panel"):
         assert skipped not in result.stdout
     saved = (tmp_path / ".spaceworks-answers").read_text(encoding="utf-8")
     assert r"ORG_NAME=My\ Makerspace" in saved and "ADMINUSER=admin" in saved and "GEN_PASS=1" in saved
@@ -363,7 +365,7 @@ def test_landing_question_defaults_to_yes_and_writes_true(tmp_path):
 
 def test_landing_answer_no_writes_false_and_roundtrips(tmp_path):
     answers = defaults()
-    answers[10] = "n"  # the first answer after the sign-in providers
+    answers[11] = "n"  # the first answer after the sign-in providers
     result = questionnaire(tmp_path, answers, write=True)
     assert result.returncode == 0, result.stderr
     assert "product page at /: hidden" in result.stdout

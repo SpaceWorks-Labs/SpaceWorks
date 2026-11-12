@@ -135,6 +135,7 @@ def test_organization_admin_autocomplete_and_form_refuse_staff(roster):
     assert choices.filter(pk=community.pk).exists() and not choices.filter(pk=operator.pk).exists()
 
 
+@__import__("pytest").mark.skip(reason="Decision 319: certification gating retired (machine access grants replace it); see tests/parity_0120/machine_access.")
 def test_training_candidates_and_grants_use_member_accounts(roster):
     from apps.machines.certification_grants import issue_grant
     from tests.machines.certification_helpers import _certification, _machine_type

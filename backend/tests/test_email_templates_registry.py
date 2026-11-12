@@ -52,6 +52,12 @@ def test_registry_declares_all_send_path_keys():
     from apps.integrations.email_templates_registry_r2_l4 import TEXT as R2_L4_TEXT
     expected |= {("membership", audience, key) for key in (*R2_L3_TEXT, *R2_L4_TEXT)
                  for audience in ("requester", "staff")}
+    # Device Adapter API (decisions 310-312): the adapter notices carry both a staff and a requester body.
+    expected |= {("devices", "requester", "adapter_detection"), ("devices", "requester", "adapter_session_ending"),
+                 ("devices", "staff", "adapter_access_denied"), ("devices", "staff", "adapter_attention"),
+                 ("devices", "staff", "adapter_detection"), ("devices", "staff", "adapter_runout"),
+                 # NCA audit 0.12.0: an adapter job report held for staff review.
+                 ("devices", "staff", "adapter_job_review")}
     assert len(REGISTRY) == len(expected)
     assert all_send_keys() == expected
 

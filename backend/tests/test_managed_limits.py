@@ -38,16 +38,18 @@ def create_product(makerspace, name="Quota product", **overrides):
 
 @override_settings(PLATFORM_DOMAIN_SUFFIX="")
 def test_self_host_limits_are_completely_dormant(makerspace):
-    makerspace.resource_limit_overrides = {
-        key: True if key == "custom_domain" else 0
-        for key in limits.KNOWN_LIMIT_KEYS
-    }
+    # Decision 281 addendum: only a limit the superadmin SET applies on a self-host. Nothing stored, nothing
+    # enforced -- every key unlimited, whatever the built-in suggestions say.
+    makerspace.resource_limit_overrides = {}
 
     for key in limits.KNOWN_LIMIT_KEYS:
         assert limits.resource_limit(makerspace, key) is None
         limits.check_quota(makerspace, key, adding=10_000)
 
     assert limits.custom_domain_allowed(makerspace) is True
+    # ... and the stored value wins on a self-host too.
+    makerspace.resource_limit_overrides = {"products": 3}
+    assert limits.resource_limit(makerspace, "products") == 3
 
 
 @override_settings(PLATFORM_DOMAIN_SUFFIX=".space-works.tech")
@@ -124,6 +126,8 @@ def test_barrel_self_host_patch_controls_every_split_limit_module(
     makerspace, monkeypatch
 ):
     """The historical barrel patch point must govern core, usage and reservations."""
+    # The custom-domain switch only binds a HOSTED space (decision 236), so make this one hosted.
+    monkeypatch.setattr("apps.managed_hosting.hosting_type.is_hosted", lambda space: True)
     makerspace.resource_limit_overrides = {
         "products": 0,
         "custom_domain": False,
@@ -134,7 +138,8 @@ def test_barrel_self_host_patch_controls_every_split_limit_module(
     assert limits.custom_domain_allowed(makerspace) is False
 
     monkeypatch.setattr(limits, "is_self_host", lambda: True)
-    assert limits.resource_limit(makerspace, "products") is None
+    # Decision 281 addendum: a stored override still applies on a self-host; the custom-domain switch is dormant.
+    assert limits.resource_limit(makerspace, "products") == 0
     assert limits.custom_domain_allowed(makerspace) is True
 
     monkeypatch.setattr(limits, "is_self_host", lambda: False)

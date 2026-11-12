@@ -233,6 +233,8 @@ def test_team_handles_are_one_query_and_event_cards_join_makerspace(event_owner)
         profile = MemberProfile.objects.create(membership=membership, public_visible=True,
                                                public_consented_at=timezone.now())
         PublicHandle.objects.create(user=user, profile=profile, handle=f"team.r5{index}", changed_at=timezone.now())
+        from apps.makerspaces.models import AccountProfile
+        AccountProfile.objects.update_or_create(user=user, defaults={"public_visible": True, "public_consented_at": timezone.now()})
         slot = str(uuid4())
         references.append(SimpleNamespace(slot=slot, profile=profile))
         entries.append({"id": slot, "kind": "member", "role": "Mentor", "member_slot_id": slot})

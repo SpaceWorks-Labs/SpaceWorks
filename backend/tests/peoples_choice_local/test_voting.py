@@ -1,6 +1,7 @@
 """People's choice settings and voting (#181 S3): one ballot per person, never your own team, the audience."""
 
 from datetime import timedelta
+from uuid import uuid4
 
 import pytest
 from django.db import IntegrityError, transaction
@@ -14,6 +15,7 @@ from apps.events.judging.errors import ProgrammeError
 from apps.events.judging.models_peoples_choice import PeoplesChoiceConfig, PeoplesChoiceVote
 from apps.events.models import EventRegistration
 from tests.events.pairwise_helpers import command
+from tests.events.ticketing_helpers import account
 from tests.peoples_choice_local.helpers import configure, disable, gallery_world, vote
 
 pytestmark = pytest.mark.django_db
@@ -161,10 +163,14 @@ def test_staff_ballot_list_shows_who_voted_never_the_project(world):
 
 
 def test_a_staff_only_account_cannot_vote(world):
+    # U-A1: one account per person, the role decides -- so a Space Manager is a person and may vote (for
+    # another team's project). What cannot vote is an account that is not a person (platform / inert shell).
+    from apps.accounts.models import User
     configure(world)
+    shell = account(f"shell-{uuid4().hex[:8]}", account_kind=User.AccountKind.PLATFORM)  # kind is immutable: create it so
     with pytest.raises(Exception):
-        vote(world, world.manager, world.entries[0])
-    assert not PeoplesChoiceVote.objects.filter(voter=world.manager).exists()
+        vote(world, shell, world.entries[0])
+    assert not PeoplesChoiceVote.objects.filter(voter=shell).exists()
 
 
 def test_the_vote_route_has_its_own_throttle():

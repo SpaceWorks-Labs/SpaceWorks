@@ -141,7 +141,7 @@ def test_a_prize_winner_is_paid_once_through_the_ledger_and_can_be_reversed(worl
     assert (entry.kind, entry.category, entry.amount) == ("expense", "prize", Decimal("150.00"))
     with pytest.raises(ProgrammeError) as twice:
         peoples_choice_payouts.record_payout(world.event.pk, actor=world.manager, data=command(
-            0, standing_id=winners[0]["id"], method="cash", paid_on="2026-11-05"))
+            0, standing_id=winners[0]["id"], method="cash", reference="REF-1", paid_on="2026-11-05"))
     assert twice.value.detail["code"] == "payout_exists"
     reversal = payouts.reverse_payout(world.event.pk, row["id"], actor=world.manager, data=command(0, reason="Wrong payee"))
     assert reversal["kind"] == "reversal" and reversal["peoples_choice_standing_id"] == winners[0]["id"]

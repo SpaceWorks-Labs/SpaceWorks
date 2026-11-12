@@ -39,14 +39,14 @@ def test_the_space_tax_proposal_applies_to_a_peoples_choice_payout(world):
     tax_on(world)
     winner, row = _pay(world)
     assert winner["tax_proposal"]["enabled"] is True
-    assert (row["amount"], row["tds_amount"], row["net_amount"]) == (
+    assert (Decimal(row["amount"]), Decimal(row["tds_amount"]), Decimal(row["net_amount"])) == (
         Decimal("20000.00"), Decimal("6000.00"), Decimal("14000.00"))
 
 
 def test_an_explicit_zero_records_no_tax(world):
     tax_on(world)
     _winner, row = _pay(world, tds_amount="0")
-    assert row["tds_amount"] == Decimal("0") and row["net_amount"] == Decimal("20000.00")
+    assert Decimal(row["tds_amount"]) == Decimal("0") and Decimal(row["net_amount"]) == Decimal("20000.00")
 
 
 def test_unpaid_winners_are_owed_until_paid(world):

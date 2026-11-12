@@ -976,9 +976,15 @@ def test_space_manager_can_change_features_but_not_modules():
     feature_audit = AuditLog.objects.get(
         action="makerspace.features_changed", makerspace=makerspace
     )
+    # Module audit 0.12.0: the switch audit also says who acted at which level and how.
     assert feature_audit.meta == {
         "before": [],
         "after": ["inventory.self_checkout"],
+        "turned_on": ["inventory.self_checkout"],
+        "turned_off": [],
+        "scope": "space",
+        "authority": "space",
+        "via": "console",
     }
 
     modules = client.patch(url, {"enabled_modules": ["machines"]}, format="json")

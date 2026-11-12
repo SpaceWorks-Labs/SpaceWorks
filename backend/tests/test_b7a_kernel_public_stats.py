@@ -17,12 +17,18 @@ from tests.return_helpers import make_space, make_user
 pytestmark = pytest.mark.django_db
 
 
-def test_printer_stats_require_printing_and_machine_service_modules():
+def test_printer_stats_require_the_machine_service_module():
+    # Decision 340b: the print queue is part of machine_service; there is no separate printing switch.
     makerspace = make_space("b7a-printing-disabled")
-    makerspace.enabled_modules = ["machine_service"]
+    makerspace.enabled_modules = [key for key in makerspace.enabled_modules if key not in {"machine_service", "printing"}]
     makerspace.save(update_fields=["enabled_modules"])
 
     assert build_public_stats(makerspace)["printing"] is None
+
+    makerspace.enabled_modules = [*makerspace.enabled_modules, "machine_service"]
+    makerspace.save(update_fields=["enabled_modules"])
+
+    assert build_public_stats(makerspace)["printing"] is not None
 
 
 def _request(*, makerspace, queue, requester, status, title, machine=None, pool=None, minutes=0, grams="0", completed_at=None):

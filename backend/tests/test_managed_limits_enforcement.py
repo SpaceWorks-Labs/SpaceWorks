@@ -32,7 +32,7 @@ def _active_count(makerspace, case):
     if case == "machines":
         return Machine.objects.filter(makerspace=makerspace, is_active=True).count()
     if case == "staff":
-        return MakerspaceMembership.objects.filter(
+        return MakerspaceMembership.staff_tracks.filter(
             makerspace=makerspace,
             user__is_active=True,
             user__access_status="active",
@@ -44,8 +44,11 @@ def _active_count(makerspace, case):
 
 def _attempt_second_row(case, mode):
     makerspace = make_space(f"limits-{case.replace('_', '-')}-{mode}")
-    makerspace.resource_limit_overrides = {case: 1}
-    makerspace.save(update_fields=["resource_limit_overrides"])
+    if mode == "managed":
+        # Decision 281 addendum: a limit the superadmin SET applies on any space, self-host included, so the
+        # self-host leg stores nothing (nothing stored means nothing enforced) and proves the built-in caps stay off.
+        makerspace.resource_limit_overrides = {case: 1}
+        makerspace.save(update_fields=["resource_limit_overrides"])
 
     manager = make_member(f"limits-{case}-manager-{mode}", makerspace)
     client = authenticated_client(manager)
@@ -76,14 +79,13 @@ def _attempt_second_row(case, mode):
             HTTP_HOST="testserver",
         )
     elif case == "staff":
+        # Staff accounts are retired: a second staff row is a staff role granted to an existing community member.
+        second = make_user(f"limits-second-staff-{mode}")
+        MakerspaceMembership.objects.create(makerspace=makerspace, user=second,
+                                            track=MakerspaceMembership.Track.COMMUNITY)
         response = client.post(
-            f"/api/v1/admin/makerspaces/{makerspace.pk}/staff-accounts/",
-            {
-                "username": f"limits-second-staff-{mode}",
-                "email": f"limits-second-staff-{mode}@example.com",
-                "display_name": "Quota staff",
-                "roles": ["inventory_manager"],
-            },
+            f"/api/v1/admin/makerspaces/{makerspace.pk}/staff-roles/",
+            {"user_id": second.pk, "roles": ["inventory_manager"]},
             format="json",
             HTTP_HOST="testserver",
         )
@@ -112,9 +114,9 @@ def _attempt_second_row(case, mode):
 def test_managed_row_create_paths_reject_the_second_active_row(case):
     makerspace, response = _attempt_second_row(case, "managed")
 
-    assert response.status_code == 400
-    assert "limit" in response.data
-    assert "limit" in str(response.data["limit"]).lower()
+    # Granting a staff role answers the typed 409 quota error; the row-create paths answer a 400 field error.
+    assert response.status_code == (409 if case == "staff" else 400)
+    assert "limit" in str(response.data).lower()
     assert _active_count(makerspace, case) == 1
 
 
@@ -248,9 +250,10 @@ def test_managed_storage_add_free_boundary_and_clamp_without_outer_atomic():
 @override_settings(PLATFORM_DOMAIN_SUFFIX="")
 def test_self_host_storage_accounting_is_a_noop():
     makerspace = make_space("limits-storage-self-host")
-    makerspace.resource_limit_overrides = {"storage": 1}
+    # Decision 281 addendum: a stored override would apply on a self-host too; storage accounting is a no-op when
+    # nothing is stored.
     makerspace.storage_bytes_used = 7
-    makerspace.save(update_fields=["resource_limit_overrides", "storage_bytes_used"])
+    makerspace.save(update_fields=["storage_bytes_used"])
 
     limits.add_storage(makerspace, 999)
     limits.free_storage(makerspace, 999)

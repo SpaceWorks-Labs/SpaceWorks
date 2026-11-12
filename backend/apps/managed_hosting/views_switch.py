@@ -19,6 +19,7 @@ from apps.openapi_errors import errors
 
 from .availability import hosting_enabled, hosting_switch_forced
 from .models import PlatformHostingBillingSettings
+from django.utils.translation import gettext
 
 
 class HostingSwitchSerializer(serializers.Serializer):
@@ -46,7 +47,7 @@ class HostingSwitchView(RecentReauthenticationMixin, APIView):
         body.is_valid(raise_exception=True)
         if hosting_switch_forced():
             raise serializers.ValidationError(
-                {"enabled": "This install sets MANAGED_PLANS_ENABLED, which overrides the switch."})
+                {"enabled": gettext("This install sets MANAGED_PLANS_ENABLED, which overrides the switch.")})
         with transaction.atomic():
             row = PlatformHostingBillingSettings.objects.select_for_update().get(pk=PlatformHostingBillingSettings.load().pk)
             before = row.hosting_enabled

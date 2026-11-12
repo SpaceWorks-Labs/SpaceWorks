@@ -154,6 +154,7 @@ class HostingPlanUsageRowSerializer(serializers.Serializer):
     area = serializers.CharField(required=False, help_text="Console area of the key (people, inventory, ... storage).")
     percent = serializers.FloatField(allow_null=True)
     level = serializers.CharField(help_text="`ok`, `warning` (from 80 %) or `limit` (100 %).")
+    group = serializers.CharField(required=False, help_text="Module group of the key (decision 328a).")
 
 
 class PlatformUsageRowSerializer(serializers.Serializer):
@@ -165,6 +166,7 @@ class PlatformUsageRowSerializer(serializers.Serializer):
     percent = serializers.FloatField(allow_null=True)
     level = serializers.CharField(help_text="`ok`, `warning` (from 80 %) or `limit` (100 %).")
     area = serializers.CharField(required=False, help_text="Console group of the key (people, inventory, ..., storage).")
+    group = serializers.CharField(required=False, help_text="Module group of the key (decision 328a).")
 
 
 class HostingPlanUsageSerializer(serializers.Serializer):
@@ -172,6 +174,8 @@ class HostingPlanUsageSerializer(serializers.Serializer):
     trial_ends_at = serializers.DateTimeField(allow_null=True)
     read_only_reason = serializers.CharField(allow_null=True)
     resources = HostingPlanUsageRowSerializer(many=True)
+    groups = serializers.ListField(child=serializers.DictField(), required=False,
+                                   help_text="Module groups (key, label) in the order of the module switch screens.")
     warnings = serializers.ListField(child=serializers.CharField())
     hosted = serializers.BooleanField(
         required=False, help_text="Decision 236: false for an own space (no plan, no limits, unlimited).")

@@ -36,9 +36,13 @@ def validate_limits(value):
 
 
 def validate_modules(value):
+    from apps.makerspaces.module_aliases import canonical_module_keys
     from apps.makerspaces.module_registry import BY_KEY
 
-    if not isinstance(value, list) or any(key not in BY_KEY for key in value):
+    if not isinstance(value, list) or not all(isinstance(key, str) for key in value):
+        raise ValidationError({"allowed_modules": gettext("Use known module keys.")})
+    value = canonical_module_keys(value)  # a retired key (`printing`) means its live key
+    if any(key not in BY_KEY for key in value):
         raise ValidationError({"allowed_modules": gettext("Use known module keys.")})
     return sorted(set(value))
 

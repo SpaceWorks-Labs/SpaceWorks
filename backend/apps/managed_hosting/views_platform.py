@@ -20,6 +20,7 @@ from apps.openapi_errors import errors
 from . import billing, plans, serializers as s
 from .availability import require_plans_enabled
 from .models import HostingInvoice, HostingPlan, PlatformHostingBillingSettings, SpacePlanAssignment
+from django.utils.translation import gettext
 
 TAGS = ["Managed hosting"]
 
@@ -179,7 +180,7 @@ class BulkPlanAssignSerializer(serializers.Serializer):
 
     def validate_makerspace_ids(self, value):
         if len(value) != len(set(value)):
-            raise serializers.ValidationError("Ids must be unique.")
+            raise serializers.ValidationError(gettext("Ids must be unique."))
         return value
 
 
@@ -205,7 +206,7 @@ class BulkPlanAssignView(_Platform):
         found = set(Makerspace.objects.filter(pk__in=ids).values_list("pk", flat=True))
         missing = [pk for pk in ids if pk not in found]
         if missing:
-            raise BulkFailed(missing[0], serializers.ValidationError({"makerspace_ids": "Unknown makerspace."}))
+            raise BulkFailed(missing[0], serializers.ValidationError({"makerspace_ids": gettext("Unknown makerspace.")}))
         with transaction.atomic():
             for pk in ids:
                 try:

@@ -4,7 +4,7 @@ Read-only reuses #185's mode with ``source=trial_expired``; assigning a plan aga
 only that source. Reminders are platform mail to the space's Space Managers.
 """
 
-from django.utils.translation import gettext
+from django.utils.translation import gettext, gettext_noop, ngettext
 import math
 
 from django.db import transaction
@@ -17,7 +17,7 @@ from apps.space_controls.notifications import schedule_manager_mail
 from .models import SpacePlanAssignment
 
 REMINDER_DAYS = (7, 1)
-EXPIRED_REASON = "The trial of this space has ended. Ask the platform operator to choose a plan."
+EXPIRED_REASON = gettext_noop("The trial of this space has ended. Ask the platform operator to choose a plan.")
 
 
 def remind(row, now):
@@ -26,11 +26,15 @@ def remind(row, now):
     if not keys:
         return False
     space = row.makerspace
-    plural = "day" if days_left == 1 else "days"
-    schedule_manager_mail(space.pk, subject=gettext('{name}: your trial ends in {days_left} {plural}').format(name=space.name, days_left=days_left, plural=plural),
-                          body=(f"The {row.plan.name} trial for {space.name} ends on "
-                                f"{timezone.localtime(row.trial_ends_at):%Y-%m-%d}. After that the space becomes "
-                                "read-only until a plan is chosen. Contact the platform operator to continue."),
+    name, plan, ends = space.name, row.plan.name, f"{timezone.localtime(row.trial_ends_at):%Y-%m-%d}"
+    schedule_manager_mail(space.pk,
+                          subject=lambda: ngettext("%(name)s: your trial ends in %(days)s day",
+                                                   "%(name)s: your trial ends in %(days)s days", days_left)
+                          % {"name": name, "days": days_left},
+                          body=lambda: gettext(
+                              "The %(plan)s trial for %(name)s ends on %(date)s. After that the space becomes "
+                              "read-only until a plan is chosen. Contact the platform operator to continue."
+                          ) % {"plan": plan, "name": name, "date": ends},
                           event="managed_hosting_trial_reminder")
     row.reminders_sent = [*row.reminders_sent, *keys]
     row.save(update_fields=["reminders_sent"])
@@ -50,7 +54,7 @@ def expire(row, now):
         audit.record(None, "managed_hosting.trial_expired", makerspace=locked.makerspace, target=locked.makerspace,
                      meta={"plan_id": locked.plan_id})
     try:
-        set_read_only(None, row.makerspace_id, EXPIRED_REASON, source=SpaceControlState.ReadOnlySource.TRIAL_EXPIRED)
+        set_read_only(None, row.makerspace_id, gettext(EXPIRED_REASON), source=SpaceControlState.ReadOnlySource.TRIAL_EXPIRED)
     except SpaceControlConflict:
         pass  # archived or importing: nothing to restrict
     return True

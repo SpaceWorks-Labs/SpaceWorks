@@ -63,7 +63,10 @@ def quota_limit(makerspace, key):
     if key not in overrides:
         from .enforcement import NOT_SET, plan_limit  # a hosted space's plan answers when no override is set (#261)
         planned = plan_limit(makerspace, key)
-        return None if planned is NOT_SET else planned
+        if planned is NOT_SET:  # decision 328a: then the platform default for the key, then no limit
+            from .limit_defaults import platform_default
+            return platform_default(key)
+        return planned
     value = overrides[key]
     if value is None or isinstance(value, bool) or value == -1:
         return None
@@ -108,7 +111,8 @@ def check_space_quota(makerspace, key, *, adding=1, currency=None):
 def require_payment_capacity(makerspace, amount, currency):
     """Gate the START of a new paid transaction (ticket, booking, shop order, plan purchase, donation)."""
     from .availability import plans_enabled
-    if makerspace is None or not ((makerspace.resource_limit_overrides or {}) or plans_enabled()):
+    from .limit_defaults import any_default
+    if makerspace is None or not ((makerspace.resource_limit_overrides or {}) or plans_enabled() or any_default()):
         return
     check_space_quota(makerspace, "payments_monthly_count")
     check_space_quota(makerspace, "payments_monthly_amount", adding=int(-(-amount // 1)) if amount else 0,

@@ -26,3 +26,11 @@ def sweep():
 def sweep_managed_hosting_task():
     return sweep()
 
+
+
+@shared_task(name="apps.managed_hosting.tasks.sweep_limit_thresholds_task")
+def sweep_limit_thresholds_task():
+    """Decision 328a: 80 / 100 percent limit warnings for every space; a no-op for a space with no limits."""
+    from .limit_thresholds import sweep_all
+
+    return sweep_all()

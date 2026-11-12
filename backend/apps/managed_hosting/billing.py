@@ -71,7 +71,7 @@ def record_payment(actor, invoice_id, *, method, reference, received_on, note=""
     with transaction.atomic():
         invoice = HostingInvoice.objects.select_for_update().get(pk=invoice_id)
         if invoice.status != HostingInvoice.Status.OPEN:
-            raise SpaceControlConflict("invoice_not_open", "Only an open invoice can be marked paid.")
+            raise SpaceControlConflict("invoice_not_open", gettext("Only an open invoice can be marked paid."))
         _settle(invoice, method=method, reference=reference, received_on=received_on,
                 amount_minor=invoice.amount_minor, note=note, actor=actor)
     return invoice
@@ -86,7 +86,7 @@ def void(actor, invoice_id, reason):
     with transaction.atomic():
         invoice = HostingInvoice.objects.select_for_update().get(pk=invoice_id)
         if invoice.status != HostingInvoice.Status.OPEN:
-            raise SpaceControlConflict("invoice_not_open", "Only an open invoice can be voided.")
+            raise SpaceControlConflict("invoice_not_open", gettext("Only an open invoice can be voided."))
         invoice.status, invoice.voided_at, invoice.void_reason = HostingInvoice.Status.VOID, timezone.now(), reason
         invoice.save(update_fields=["status", "voided_at", "void_reason"])
         audit.record(actor, "managed_hosting.invoice_voided", makerspace=invoice.makerspace, target=invoice, meta={})

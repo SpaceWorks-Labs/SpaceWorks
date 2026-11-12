@@ -12,6 +12,7 @@ Every function returns its "not set" answer first when ``plans_enabled()`` is fa
 the self-host and switch-off paths run exactly the code they ran before.
 """
 
+from django.utils.translation import gettext
 from datetime import UTC, datetime
 
 from rest_framework import serializers
@@ -66,8 +67,10 @@ def plan_name_for_limit(makerspace, key):
 
 
 def plan_limit_error(plan_name, label, limit):
-    message = (f"This space has reached the {label} included in its {plan_name} plan ({limit}). "
-               "Ask the platform operator to change the plan.")
+    message = gettext(
+        "This space has reached the %(label)s included in its %(plan)s plan (%(limit)s). "
+        "Ask the platform operator to change the plan."
+    ) % {"label": label, "plan": plan_name, "limit": limit}
     return serializers.ValidationError({"limit": message, "code": "plan_limit_reached"}, code="plan_limit_reached")
 
 
@@ -116,7 +119,10 @@ def disallowed_modules(makerspace, keys):
     if not plans_enabled() or not is_hosted(makerspace):
         return []
     row = _assignment(makerspace)
-    allowed = set((row.plan.allowed_modules or []) if row else [])
+    from apps.makerspaces.module_aliases import canonical_module_keys
+
+    # A plan written before a key was retired keeps meaning what it said (`printing`, 340b).
+    allowed = set(canonical_module_keys((row.plan.allowed_modules or []) if row else []))
     if not allowed:
         return []
     from apps.makerspaces.module_registry import core_module_keys

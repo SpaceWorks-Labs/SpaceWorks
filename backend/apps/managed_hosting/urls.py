@@ -12,6 +12,7 @@ from .views_hosting_type import SpaceHostingTypeView
 from .views_limits import RequestRateDetailView, RequestRatesView, SpaceLimitsView
 from .views_switch import HostingSwitchView
 from .views_limits_bulk import BulkSpaceLimitsView
+from .views_limit_defaults import PlatformLimitDefaultsView, SpaceLimitsUsageView
 from .views_space import (
     RazorpayHostingCallbackView, SpaceInvoiceCheckoutView, SpaceInvoiceListView, SpacePlanUsageView,
     StripeHostingCallbackView,
@@ -24,6 +25,7 @@ admin_urlpatterns = [
     path("platform/request-limits", RequestRatesView.as_view(), name="admin-platform-request-limits"),
     path("platform/request-limits/<str:scope>", RequestRateDetailView.as_view(),
          name="admin-platform-request-limit"),
+    path("platform/limit-defaults", PlatformLimitDefaultsView.as_view(), name="admin-platform-limit-defaults"),
     path("platform/hosting-switch", HostingSwitchView.as_view(), name="admin-platform-hosting-switch"),
     path("platform/hosting-plans", PlanListCreateView.as_view(), name="admin-platform-hosting-plans"),
     path("platform/hosting-plans/<int:pk>", PlanDetailView.as_view(), name="admin-platform-hosting-plan"),
@@ -40,6 +42,7 @@ admin_urlpatterns = [
     # #234 addendum 3(a): not switch-gated -- with hosting off it answers 200 with no rows.
     path("makerspace/<int:makerspace_id>/allowances", StaffAllowancesView.as_view(),
          name="admin-makerspace-allowances"),
+    path("makerspace/<int:makerspace_id>/limits", SpaceLimitsUsageView.as_view(), name="admin-makerspace-limits"),
     path("makerspace/<int:makerspace_id>/hosting-plan", SpacePlanUsageView.as_view(),
          name="admin-makerspace-hosting-plan"),
     path("makerspace/<int:makerspace_id>/hosting-invoices", SpaceInvoiceListView.as_view(),

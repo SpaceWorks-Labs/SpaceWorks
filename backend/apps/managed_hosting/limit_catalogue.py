@@ -10,7 +10,8 @@ from apps.makerspaces.limits_core import (
     PLATFORM_CREDENTIAL_LIMIT_KEYS, RESOURCE_LABELS, SPACE_QUOTA_LIMIT_KEYS, resource_limit,
 )
 
-BYTE_KEYS = frozenset({"storage", "upload_bytes", "storage_evidence_bytes", "storage_public_images_bytes"})
+BYTE_KEYS = frozenset({"storage", "upload_bytes", "storage_evidence_bytes", "storage_public_images_bytes",
+                       "adapter_media_bytes"})
 NEW_KEYS = SPACE_QUOTA_LIMIT_KEYS | PLATFORM_CREDENTIAL_LIMIT_KEYS | EXTRA_QUOTA_LIMIT_KEYS
 
 

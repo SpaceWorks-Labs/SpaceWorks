@@ -15,11 +15,13 @@ A = rbac.Action
 # area -> (limit keys, any of these actions opens it). A key may sit in two areas.
 AREAS = {
     "inventory": (frozenset({"products", "assets", "storage", "upload_bytes", "storage_evidence_bytes",
-                             "storage_public_images_bytes"}), (A.EDIT_INVENTORY,)),
+                             "storage_public_images_bytes", "hardware_requests_monthly", "stock_transfers_monthly",
+                             "stocktake_sessions_monthly", "shelf_checks_monthly"}), (A.EDIT_INVENTORY,)),
     "machines": (frozenset({"machines", "print", "machine_service_open", "machine_service_submit",
                             "machine_jobs_monthly", "machine_sessions_monthly"}),
                  (A.MANAGE_MACHINES, A.MANAGE_PRINTING)),
-    "events": (frozenset({"events", "events_monthly", "guest_passes", "event_registrations_monthly"}),
+    "events": (frozenset({"events", "events_monthly", "guest_passes", "event_registrations_monthly",
+                          "reimbursement_claims_monthly"}),
                (A.MANAGE_EVENTS,)),
     "bookings": (frozenset({"bookings", "bookings_monthly", "bookable_spaces"}), (A.MANAGE_BOOKINGS,)),
     "members": (frozenset({"members", "guest_passes", "member_units"}), (A.MANAGE_MEMBERS,)),
@@ -27,13 +29,14 @@ AREAS = {
     # space's storage and upload cap; the staff seat limit sits with the people who add staff.
     "shop": (frozenset({"storage", "upload_bytes", "shop_orders_monthly", "shop_products",
                         "storage_public_images_bytes"}), (A.MANAGE_SHOP,)),
-    "staff": (frozenset({"staff", "api_clients", "membership_plans", "organizations_linked", "kiosk_stations",
+    "staff": (frozenset({"staff", "api_clients", "membership_plans", "organizations_linked", "kiosk_stations", "paired_displays",
                          "api_requests_per_minute", "analytics_connections", "report_exports_monthly",
-                         "webhook_endpoints"}),
+                         "webhook_endpoints", "public_page_assets", "scheduled_reports", "anthias_players"}),
               (A.MANAGE_MAKERSPACE,)),
     # Decision 284 addendum: the resources whose own action opens a narrower area.
     "qr": (frozenset({"boxes"}), (A.MANAGE_QR,)),
-    "devices": (frozenset({"devices"}), (A.MANAGE_DEVICES,)),
+    "devices": (frozenset({"devices", "adapter_bridges", "adapter_watch_streams", "adapter_snapshots", "adapter_artifacts", "adapter_media_bytes",
+                         "adapter_telemetry_points"}), (A.MANAGE_DEVICES,)),
     "donations": (frozenset({"donation_campaigns"}), (A.MANAGE_DONATIONS,)),
 }
 AREA_NAMES = tuple(AREAS)

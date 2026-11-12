@@ -16,6 +16,7 @@ from apps.makerspaces.models import Makerspace
 from apps.openapi_errors import errors
 
 from . import throttle_rates
+from .limit_services import replace_space_overrides
 from .limits_console import limit_rows
 from .models import PlatformThrottleRate
 
@@ -28,9 +29,13 @@ class LimitRowSerializer(serializers.Serializer):
     unit = serializers.CharField()
     effective = serializers.IntegerField(allow_null=True)
     source = serializers.ChoiceField(
-        choices=["own", "override", "plan", "unlimited"],
-        help_text="`own`: an own space is never limited (#236). Otherwise override > plan > unlimited.")
+        choices=["own", "override", "plan", "default", "unlimited"],
+        help_text="Where the value comes from: the space override, a hosted space's plan, the platform `default` (decision 328a), or `unlimited`.")
     area = serializers.CharField(required=False, help_text="Console group: people, inventory, machines, events, bookings, shop, money, messaging, integrations or storage.")
+    group = serializers.CharField(required=False, help_text="Module group the row is shown under (`groups`); decision 328a.")
+    module = serializers.CharField(required=False, help_text="The module that owns this limit.")
+    platform_default = serializers.IntegerField(required=False, allow_null=True,
+                                                help_text="The platform default for this key, null = none (decision 328a).")
     override = serializers.IntegerField(allow_null=True)
     has_override = serializers.BooleanField()
     used = serializers.IntegerField(allow_null=True)
@@ -45,6 +50,9 @@ class PlatformLimitRowSerializer(serializers.Serializer):
     unit = serializers.ChoiceField(choices=["count", "amount", "bytes", "per_minute"])
     limit = serializers.IntegerField(allow_null=True, help_text="null = unlimited (the default).")
     area = serializers.CharField(required=False)
+    group = serializers.CharField(required=False)
+    module = serializers.CharField(required=False)
+    platform_default = serializers.IntegerField(required=False, allow_null=True)
     level = serializers.CharField(required=False)
     used = serializers.IntegerField(allow_null=True, help_text="This month (platform-credential path only for platform_* keys).")
     percent = serializers.FloatField(allow_null=True)
@@ -57,6 +65,7 @@ class AreaSerializer(serializers.Serializer):
 
 class SpaceLimitsSerializer(serializers.Serializer):
     areas = AreaSerializer(many=True, required=False)
+    groups = AreaSerializer(many=True, required=False, help_text="Module groups in the order of the module switch screens.")
     quota_rows = PlatformLimitRowSerializer(
         many=True, required=False,
         help_text="Quotas on ANY space, each with its console `area`: events_monthly, bookings_monthly, "
@@ -111,17 +120,7 @@ class SpaceLimitsView(RecentReauthenticationMixin, APIView):
         body = SpaceLimitsUpdateSerializer(data=request.data)
         body.is_valid(raise_exception=True)
         new = validate_resource_limit_overrides(body.validated_data["overrides"])
-        with transaction.atomic():
-            space = get_object_or_404(Makerspace.objects.select_for_update(), pk=makerspace_id)
-            old = dict(space.resource_limit_overrides or {})
-            from apps.makerspaces.limits_storage_backfill import backfill_if_newly_limited
-            backfill_if_newly_limited(space, old, new)  # #261: true storage figure before the first check
-            space.resource_limit_overrides = new
-            space.save(update_fields=["resource_limit_overrides"])
-            changed = sorted(k for k in set(old) | set(new) if old.get(k, "unset") != new.get(k, "unset"))
-            audit.record(request.user, "space_control.limits_changed", makerspace=space, target=space,
-                         meta={"changed": changed, "overrides": new})
-        return Response(limit_rows(space))
+        return Response(limit_rows(replace_space_overrides(request.user, makerspace_id, new)))
 
 
 def _rate_rows():

@@ -99,6 +99,32 @@ def kiosk_stations(space):
     return Station.objects.filter(makerspace=space, kind__in=(Station.Kind.SCANNER, Station.Kind.HANDOVER)).count()
 
 
+def paired_displays(space):
+    from apps.presence.models_display import DisplayScreen
+    return DisplayScreen.objects.filter(makerspace=space, revoked_at__isnull=True).count()
+
+
+def adapter_bridges(space):
+    from apps.devices.models import Device
+    return Device.objects.filter(makerspace=space, kind=Device.Kind.ADAPTER).exclude(status=Device.Status.REVOKED).count()
+
+
+def adapter_watch_streams(space):
+    from django.utils import timezone
+    from apps.devices.models import AdapterWatch
+    return AdapterWatch.objects.filter(makerspace=space, status="active", expires_at__gt=timezone.now()).count()
+
+
+def adapter_snapshots(space):
+    from apps.devices.models import AdapterCommand
+    return AdapterCommand.objects.filter(makerspace=space, command="snapshot", created_at__gte=month_start()).count()
+
+
+def adapter_artifacts(space):
+    from apps.devices.models import AdapterArtifact
+    return AdapterArtifact.objects.filter(makerspace=space).exclude(status="purged").count()
+
+
 def devices(space):
     from apps.devices.models import Device
     return Device.objects.filter(makerspace=space).exclude(status=Device.Status.REVOKED).count()
@@ -165,6 +191,22 @@ def event_badge_prints_monthly(space):
     return EventBadgePrint.objects.filter(makerspace=space, reported_at__gte=month_start()).count()
 
 
+def photo_cutout_jobs_monthly(space):
+    """Background-removal jobs queued this month (a re-run of one holder's photo counts again).
+
+    Counted from the append-only audit trail, never from live CardPhotoCutout rows: a re-run deletes the old row and a
+    discard deletes its row, so a row count would let re-runs slip past the quota (decision 344(a))."""
+    from apps.audit.models import AuditLog
+    return AuditLog.objects.filter(action="card.photo_cutout_requested", makerspace=space,
+                                   created_at__gte=month_start()).count()
+
+
+def card_templates(space):
+    """Card and certificate templates a space has saved or imported."""
+    from apps.card_designs.models import CardTemplate
+    return CardTemplate.objects.filter(makerspace=space).count()
+
+
 def hackathon_stages(space):
     """The busiest event's submission stages: the limit applies to one event at a time."""
     from django.db.models import Count
@@ -189,4 +231,8 @@ COUNTERS = {fn.__name__: fn for fn in (
     bookable_spaces, boxes, organizations_linked, analytics_connections, report_exports_monthly, kiosk_stations,
     devices, machine_jobs_monthly, machine_sessions_monthly, storage_evidence_bytes, storage_public_images_bytes, webhook_endpoints,
     member_units, collection_sheet_rows_monthly, series_invites, checkin_lists, saved_views, hackathon_stages,
-    event_badge_prints_monthly)}
+    event_badge_prints_monthly, paired_displays, adapter_bridges, adapter_watch_streams, adapter_snapshots, adapter_artifacts, photo_cutout_jobs_monthly, card_templates)}
+
+from .extra_quota_counters_0120 import COUNTERS_0120  # noqa: E402  (0.12.0 keys; imports month_start from here)
+
+COUNTERS.update(COUNTERS_0120)

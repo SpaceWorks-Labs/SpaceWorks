@@ -7,6 +7,7 @@ them. The provider's signed callback settles the invoice exactly once (the recei
 currency other than the invoice's is refused, never partially applied.
 """
 
+from django.utils.translation import gettext
 import hashlib
 import hmac
 import json
@@ -37,7 +38,7 @@ def start_checkout(makerspace_id, invoice_id, *, actor=None):
     with transaction.atomic():
         invoice = HostingInvoice.objects.select_for_update().get(pk=invoice_id, makerspace_id=makerspace_id)
         if invoice.status != HostingInvoice.Status.OPEN:
-            raise SpaceControlConflict("invoice_not_open", "This invoice is not open.")
+            raise SpaceControlConflict("invoice_not_open", gettext("This invoice is not open."))
     # The plan and its invoices live on the "Usage & limits" tab (TenantUsagePanel).
     back = f"{public_base_url()}/m/{invoice.makerspace.slug}/admin/usage?invoice={invoice.pk}"
     if settings_row.provider == "stripe" and settings_row.stripe_secret_key:
@@ -66,7 +67,7 @@ def _stripe_session(settings_row, invoice, back):
         )
     except Exception as exc:  # provider text may carry account details: log the type only
         logger.warning("hosting_checkout_failed", extra={"provider": "stripe", "error_class": type(exc).__name__})
-        raise ProviderUnavailable("The payment provider refused the checkout. Try again later.") from exc
+        raise ProviderUnavailable(gettext("The payment provider refused the checkout. Try again later.")) from exc
     return session["id"], session["url"]
 
 
@@ -82,7 +83,7 @@ def _razorpay_link(settings_row, invoice, back):
         body = response.json()
     except Exception as exc:
         logger.warning("hosting_checkout_failed", extra={"provider": "razorpay", "error_class": type(exc).__name__})
-        raise ProviderUnavailable("The payment provider refused the checkout. Try again later.") from exc
+        raise ProviderUnavailable(gettext("The payment provider refused the checkout. Try again later.")) from exc
     return body["id"], body["short_url"]
 
 

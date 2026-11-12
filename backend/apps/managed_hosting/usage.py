@@ -23,29 +23,39 @@ def level(percent):
 
 def _row(key, label, used, limit, unit):
     percent = round(used * 100 / limit, 1) if used is not None and limit else (100.0 if limit == 0 else None)
+    from apps.makerspaces.limit_modules import group_of
     from apps.makerspaces.limit_registry import area_of
     return {"key": key, "label": label, "used": used, "limit": limit, "unit": unit, "area": area_of(key),
-            "percent": percent, "level": level(percent)}
+            "group": group_of(key), "percent": percent, "level": level(percent)}
 
 
 def platform_resources(makerspace):
     """Platform-credential rows (every space; limit null = unlimited) with the usual warning level."""
+    from apps.makerspaces.limit_modules import group_of
+
     from .platform_limits import usage_rows
-    return [{**row, "unit": "count", "level": level(row["percent"])} for row in usage_rows(makerspace)]
+    return [{**row, "unit": "count", "group": group_of(row["key"]), "level": level(row["percent"])}
+            for row in usage_rows(makerspace)]
 
 
 def _extras(makerspace):
     """Read-only for the Space Manager: the superadmin's monthly quotas and the five platform-fallback switches."""
     from .platform_switch import platform_switches
+    from apps.makerspaces.limit_modules import group_of, groups_payload
+
     from .space_quotas import usage_rows
-    return {"space_quota_resources": usage_rows(makerspace), "platform_switches": platform_switches(makerspace)}
+    quotas = [{**row, "group": group_of(row["key"])} for row in usage_rows(makerspace)]
+    return {"space_quota_resources": quotas, "platform_switches": platform_switches(makerspace),
+            "groups": groups_payload()}
 
 
 def _override_resources(makerspace):
     """An own space has no plan, but a limit the superadmin SET on it still shows its usage."""
     from apps.makerspaces.limits_usage import _COUNTERS
     rows = []
-    set_keys = set(makerspace.resource_limit_overrides or {})
+    from .limit_defaults import all_defaults
+    # Decision 328a: a key shows once it has a limit from the space's override OR the platform default.
+    set_keys = set(makerspace.resource_limit_overrides or {}) | set(all_defaults())
     for key in (k for k in registry_keys() if k in set_keys):  # every registry key, grouped by area (#261)
         limit = effective_limit(makerspace, key)
         counter = _COUNTERS.get(key)
@@ -72,7 +82,8 @@ def plan_usage(makerspace):
                 "resources": _override_resources(makerspace), "warnings": [], "hosted": False,
                 "platform_resources": platform_resources(makerspace), **_extras(makerspace)}
     row = _assignment(makerspace)
-    plan_keys = set((row.plan.limits or {}) if row else {})
+    from .limit_defaults import all_defaults
+    plan_keys = set((row.plan.limits or {}) if row else {}) | set(all_defaults())
     keys = [key for key in registry_keys() + sorted(MONTHLY_KEYS - set(registry_keys())) if key in plan_keys]
     resources = []
     for key in keys:

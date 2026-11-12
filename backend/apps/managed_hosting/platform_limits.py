@@ -33,7 +33,10 @@ def platform_limit(makerspace, key):
     if key not in overrides:
         from .enforcement import NOT_SET, plan_limit  # plan fallback for a hosted space (#261)
         planned = plan_limit(makerspace, key)
-        return None if planned is NOT_SET else planned
+        if planned is NOT_SET:  # decision 328a: then the platform default for the key, then no limit
+            from .limit_defaults import platform_default
+            return platform_default(key)
+        return planned
     value = overrides[key]
     if value is None or isinstance(value, bool) or value == -1:
         return None

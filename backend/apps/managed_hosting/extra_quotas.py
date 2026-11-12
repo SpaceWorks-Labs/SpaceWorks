@@ -46,8 +46,27 @@ SPECS = {
     "hackathon_stages": ("count", "submission stages on one hackathon"),
     "saved_views": ("count", "saved views per person on one event list"),
     "collection_sheet_rows_monthly": ("count", "collection sheet rows this month"),
+    "paired_displays": ("count", "paired space display screens"),
+    "adapter_bridges": ("count", "enrolled device adapters (bridges)"),
+    "adapter_watch_streams": ("count", "camera watch sessions open at once"),
+    "adapter_snapshots": ("count", "camera snapshots requested this month"),
+    "adapter_artifacts": ("count", "adapter timelapses, previews and bundles kept"),
+    "photo_cutout_jobs_monthly": ("count", "card photo background-removal jobs this month"),
+    "card_templates": ("count", "saved card and certificate templates"),
+    # 0.12.0 (decision 328a)
+    "hardware_requests_monthly": ("count", "hardware requests submitted this month"),
+    "stock_transfers_monthly": ("count", "stock transfers made this month"),
+    "stocktake_sessions_monthly": ("count", "stocktake sessions started this month"),
+    "shelf_checks_monthly": ("count", "shelf checks saved this month"),
+    "reimbursement_claims_monthly": ("count", "event reimbursement claims started this month"),
+    "public_page_assets": ("count", "images on the public space page"),
+    "scheduled_reports": ("count", "active scheduled reports"),
+    "adapter_media_bytes": ("bytes", "storage used by device adapter timelapses, previews and bundles"),
+    "adapter_telemetry_points": ("count", "device telemetry samples kept"),
+    "anthias_players": ("count", "registered Anthias display players"),
 }
 assert set(SPECS) == EXTRA_QUOTA_LIMIT_KEYS
+HEAVY_COUNTERS = frozenset({"adapter_telemetry_points"})
 
 
 class ExtraQuotaReached(SpaceQuotaReached):
@@ -78,6 +97,20 @@ def check_extra_quota(makerspace, key, *, adding=1):
         raise ExtraQuotaReached(key, limit)
 
 
+def check_extra_quota_locked(makerspace, key, *, adding=1):
+    """``check_extra_quota`` for a creator that holds no other lock (L-M2): it locks the space row first,
+    so two concurrent creators are counted one after the other and cannot both pass the last free slot.
+
+    Must run inside the creating transaction. While the key is unlimited it neither locks nor counts.
+    """
+    if makerspace is None or not adding or quota_limit(makerspace, key) is None:
+        return
+    from apps.makerspaces.models import Makerspace
+
+    Makerspace.objects.select_for_update().only("pk").get(pk=makerspace.pk)
+    check_extra_quota(makerspace, key, adding=adding)
+
+
 def check_scoped_quota(makerspace, key, used, *, adding=1):
     """Like ``check_extra_quota`` for a limit that applies per scope (one event, one person and list).
 
@@ -86,6 +119,15 @@ def check_scoped_quota(makerspace, key, used, *, adding=1):
     limit = None if makerspace is None else quota_limit(makerspace, key)
     if limit is not None and used + adding > limit:
         raise ExtraQuotaReached(key, limit)
+
+
+def extra_quota_allows(makerspace, key, *, adding=1):
+    """Like ``check_extra_quota`` but answers True/False, for a seam that cannot return a 409 (telemetry ingest)."""
+    try:
+        check_extra_quota(makerspace, key, adding=adding)
+    except SpaceQuotaReached:
+        return False
+    return True
 
 
 def check_storage_class(makerspace, key, size_bytes):
@@ -111,7 +153,8 @@ def usage_rows(makerspace, keys=None, *, limited_only=False):
         if limited_only and limit is None:
             continue
         try:
-            used = extra_used(makerspace, key) if limit is not None or not limited_only else None
+            # A counter over a huge table (telemetry samples) is only read once a limit makes it matter.
+            used = extra_used(makerspace, key) if limit is not None or (not limited_only and key not in HEAVY_COUNTERS) else None
         except Exception:  # a counting failure must not break the page
             used = None
         percent = round(used * 100 / limit, 1) if limit and used is not None else (100.0 if limit == 0 else None)

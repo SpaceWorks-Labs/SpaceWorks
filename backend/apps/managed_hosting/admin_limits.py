@@ -20,6 +20,7 @@ from config.admin_records import ControlRecordAdmin
 
 from .models import PlatformHostingBillingSettings
 from .models_hosting_type import SpaceHostingType
+from .models_limit_defaults import PlatformLimitDefault
 from .models_throttle import PlatformThrottleRate
 
 
@@ -56,6 +57,15 @@ class PlatformThrottleRateAdmin(ControlRecordAdmin):
     list_display = ("scope", "rate", "updated_at")
     search_fields = ("scope",)
     ordering = ("scope",)
+
+
+@admin.register(PlatformLimitDefault)
+class PlatformLimitDefaultAdmin(ControlRecordAdmin):
+    """Read-only here: defaults are set in the web console (Platform -> Limits), which audits every change."""
+    makerspace_lookup = None
+    list_display = ("key", "value", "updated_at")
+    search_fields = ("key",)
+    ordering = ("key",)
 
 
 @admin.register(PlatformHostingBillingSettings)

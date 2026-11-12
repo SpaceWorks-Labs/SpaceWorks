@@ -1,5 +1,4 @@
 """Bulk-apply per-space limits (owner 2026-11-11): up to 50 spaces, all or nothing, superadmin + reauth."""
-from django.db import transaction
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers
 from rest_framework.response import Response
@@ -9,10 +8,11 @@ from apps.accounts.reauthentication_permissions import RecentReauthenticationMix
 from apps.admin_api.permissions import IsActiveSuperAdmin
 from apps.makerspaces.limits_core import KNOWN_LIMIT_KEYS
 
-from apps.audit import services as audit
 from apps.makerspaces.limits_validation import validate_resource_limit_overrides
-from apps.makerspaces.models import Makerspace
 from apps.openapi_errors import errors
+from django.utils.translation import gettext
+
+from .limit_services import bulk_update_space_overrides
 
 
 TAGS = ["Managed hosting"]
@@ -29,16 +29,16 @@ class BulkLimitsSerializer(serializers.Serializer):
 
     def validate_makerspace_ids(self, value):
         if len(value) != len(set(value)):
-            raise serializers.ValidationError("Ids must be unique.")
+            raise serializers.ValidationError(gettext("Ids must be unique."))
         return value
 
     def validate(self, attrs):
         attrs["set"] = validate_resource_limit_overrides(attrs["set"])
         unknown = sorted(set(attrs["clear"]) - KNOWN_LIMIT_KEYS)
         if unknown:
-            raise serializers.ValidationError({"clear": f"Unknown resource limit key: {unknown[0]}."})
+            raise serializers.ValidationError({"clear": gettext("Unknown resource limit key: %(key)s.") % {"key": unknown[0]}})
         if not attrs["set"] and not attrs["clear"]:
-            raise serializers.ValidationError("Send at least one key in `set` or `clear`.")
+            raise serializers.ValidationError(gettext("Send at least one key in `set` or `clear`."))
         return attrs
 
 
@@ -60,20 +60,8 @@ class BulkSpaceLimitsView(RecentReauthenticationMixin, APIView):
         body = BulkLimitsSerializer(data=request.data)
         body.is_valid(raise_exception=True)
         ids, to_set, to_clear = (body.validated_data[k] for k in ("makerspace_ids", "set", "clear"))
-        with transaction.atomic():
-            spaces = {s.pk: s for s in Makerspace.objects.select_for_update().filter(pk__in=ids)}
-            for pk in ids:
-                space = spaces.get(pk)
-                if space is None:
-                    raise BulkFailed(pk, serializers.ValidationError({"makerspace_ids": "Unknown makerspace."}))
-                old = dict(space.resource_limit_overrides or {})
-                new = {k: v for k, v in old.items() if k not in to_clear}
-                new.update(to_set)
-                from apps.makerspaces.limits_storage_backfill import backfill_if_newly_limited
-                backfill_if_newly_limited(space, old, new)  # #261
-                space.resource_limit_overrides = new
-                space.save(update_fields=["resource_limit_overrides"])
-                changed = sorted(k for k in set(old) | set(new) if old.get(k, "unset") != new.get(k, "unset"))
-                audit.record(request.user, "space_control.limits_changed", makerspace=space, target=space,
-                             meta={"changed": changed, "overrides": new})
+
+        def unknown(pk):
+            return BulkFailed(pk, serializers.ValidationError({"makerspace_ids": gettext("Unknown makerspace.")}))
+        bulk_update_space_overrides(request.user, ids, to_set, to_clear, on_unknown=unknown)
         return Response({"updated": len(ids), "makerspace_ids": ids})

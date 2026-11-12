@@ -157,6 +157,9 @@ class PlatformHostingBillingSettings(models.Model):
                                    on_delete=models.SET_NULL, related_name="+")
     updated_at = models.DateTimeField(auto_now=True)
 
+    class Meta:
+        verbose_name_plural = "platform hosting billing settings"
+
     SECRET_FIELDS = ("stripe_secret_key", "stripe_webhook_secret", "razorpay_key_secret", "razorpay_webhook_secret")
 
     @classmethod
@@ -180,4 +183,5 @@ class PlatformHostingBillingSettings(models.Model):
 
 
 from .models_throttle import PlatformThrottleRate  # noqa: E402,F401  (platform throttle overrides)
+from .models_limit_defaults import PlatformLimitDefault, SpaceLimitThreshold  # noqa: E402,F401  (decision 328a)
 from .models_hosting_type import SpaceHostingType  # noqa: E402,F401  (decision 236: own vs hosted)

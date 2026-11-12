@@ -37,11 +37,12 @@ class BroadcastCreateView(APIView):
                                                      Makerspace.objects.all(), field='pk'), pk=makerspace_id)
         require_broadcasts(space)
         plans = rbac.scope_notification_policy(MembershipPlan.objects.all(), makerspace_id=space.pk).order_by('name', 'pk').values('id', 'name')
-        certifications = []
+        machine_types = []
         if module_enabled(space, 'machines'):
-            from apps.machines.models_certifications import CertificationType
-            certifications = rbac.scope_notification_policy(CertificationType.objects.all(), makerspace_id=space.pk).filter(is_active=True).order_by('name', 'pk').values('id', 'name')
-        return Response(BroadcastOptionsSerializer({'plans': list(plans), 'certifications': list(certifications)}).data)
+            from django.db.models import Q
+            from apps.machines.models import MachineType
+            machine_types = MachineType.objects.filter(Q(makerspace_id=space.pk) | Q(makerspace__isnull=True)).order_by('name', 'pk').values('id', 'name')
+        return Response(BroadcastOptionsSerializer({'plans': list(plans), 'machine_types': list(machine_types)}).data)
 
     @extend_schema(tags=['Member communication'], request=BroadcastInputSerializer,
                    responses={201: BroadcastResultSerializer, **errors(400, 401, 403, 404, 423, 503)})

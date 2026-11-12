@@ -35,18 +35,19 @@ def segment_members(space, segment):
             rows = rows.annotate(has_term=Exists(terms.filter(membership_id=OuterRef('pk'), ends_at__lte=now))).filter(has_term=True, current_term=False)
         else:
             rows = rows.filter(current_term=True)
-    if segment.get('certification_id'):
+    if segment.get('machine_type_id'):  # decision 319: members who may use this machine type (a grant, not a certification)
         if not module_enabled(space, 'machines'):
-            raise ValidationError({'certification_id': gettext('Machines are disabled.')})
-        from apps.machines.models_certifications import CertificationGrant, CertificationType
-        types = rbac.scope_notification_policy(CertificationType.objects.all(), makerspace_id=space.pk)
-        if not types.filter(pk=segment['certification_id']).exists():
-            raise ValidationError({'certification_id': gettext('Unknown certification in this makerspace.')})
-        grants = rbac.scope_notification_policy(CertificationGrant.objects.all(), makerspace_id=space.pk,
-                                               field='membership__makerspace_id').filter(
-            membership_id=OuterRef('pk'), certification_type_id=segment['certification_id'], revoked_at__isnull=True,
-        ).filter(Q(expires_at__isnull=True) | Q(expires_at__gt=now))
-        rows = rows.annotate(certified=Exists(grants)).filter(certified=True)
+            raise ValidationError({'machine_type_id': gettext('Machines are disabled.')})
+        from apps.machines.models import MachineAccessGrant, MachineType
+        kinds = MachineType.objects.filter(Q(makerspace_id=space.pk) | Q(makerspace__isnull=True))
+        if not kinds.filter(pk=segment['machine_type_id']).exists():
+            raise ValidationError({'machine_type_id': gettext('Unknown machine type in this makerspace.')})
+        grants = rbac.scope_notification_policy(MachineAccessGrant.objects.all(), makerspace_id=space.pk,
+                                               field='makerspace_id').filter(
+            member_id=OuterRef('user_id'), revoked_at__isnull=True,
+        ).filter(Q(machine_type_id=segment['machine_type_id']) | Q(machine__machine_type_id=segment['machine_type_id'])
+                 ).filter(Q(expires_at__isnull=True) | Q(expires_at__gt=now))
+        rows = rows.annotate(has_access=Exists(grants)).filter(has_access=True)
     return rows.order_by('pk')
 
 

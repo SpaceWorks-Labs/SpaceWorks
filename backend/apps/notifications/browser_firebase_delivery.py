@@ -25,6 +25,7 @@ from .access import personal_space
 from .models_browser_firebase import BrowserFirebaseInstallation, BrowserFirebaseRegistration
 
 logger = logging.getLogger(__name__)
+CLAIM_SECONDS = 120  # longer than the provider timeout, so a live send is never claimed twice
 
 
 def mark_pending(inbox):
@@ -82,40 +83,64 @@ def _deliver(pk, *, context=None):
         # source simply leaves the wake-up pending for recovery (no fan-out loop here).
         with (fanout_context("browser_firebase_wakeup"), boundary_tenant_write(row.makerspace_id),
               tenant_context(row.makerspace_id, label="browser_firebase_wakeup")):
-            with transaction.atomic():
-                owner = BrowserFirebaseInstallation.objects.select_for_update().filter(
-                    fid_hmac=row.fid_hmac, user_id=row.user_id).first()
-                row.refresh_from_db()
-                row.makerspace.refresh_from_db()
-                if (not module_enabled(row.makerspace, "notifications")
-                        or not feature_enabled(row.makerspace, "notifications.web_push")):
-                    return False
-                personal_space(row.user, row.makerspace_id)
-                if not owner:
-                    return False
-                if (not row.active or row.revoked_at or row.wake_pending_seq <= row.wake_sent_seq
-                        or (row.wake_retry_at and row.wake_retry_at > timezone.now())):
-                    return False
-                # Do not lock registration over I/O: new inbox writes may increment it.
-                target_seq = row.wake_pending_seq
-                if context:
-                    context.check()
-                try:
-                    send_inbox_hint(config, row.project_id, row.get_fid(), str(owner.owner_epoch), context=context)
-                except PushProviderError as exc:
-                    registrations = BrowserFirebaseRegistration.objects.filter(pk=pk, active=True)
-                    if exc.invalid_token:
-                        registrations.update(active=False, revoked_at=timezone.now())
-                    else:
-                        registrations.update(wake_retry_at=timezone.now() + timedelta(seconds=60))
-                    return False
-                if context:
-                    context.check()
-                BrowserFirebaseRegistration.objects.filter(pk=pk, active=True).update(
-                    wake_sent_seq=target_seq, wake_retry_at=None)
-                return True
+            claim = _claim(row, pk)
+            if claim is None:
+                return False
+            epoch, target_seq = claim
+            # No row lock is held across the provider call: the claim (wake_retry_at in the future) keeps other
+            # workers off this registration, and the fence is re-checked when the result is recorded.
+            if context:
+                context.check()
+            try:
+                send_inbox_hint(config, row.project_id, row.get_fid(), epoch, context=context)
+            except PushProviderError as exc:
+                registrations = BrowserFirebaseRegistration.objects.filter(pk=pk, active=True)
+                if exc.invalid_token:
+                    registrations.update(active=False, revoked_at=timezone.now())
+                else:
+                    registrations.update(wake_retry_at=timezone.now() + timedelta(seconds=60))
+                return False
+            if context:
+                context.check()
+            return _settle(row, pk, epoch, target_seq)
     except (PermissionDenied, Http404, SourceMigrationGateClosed):
         return False
+
+
+def _claim(row, pk):
+    """-> (owner_epoch, target_seq) once this worker owns the send, else None. Short transaction, owner row locked."""
+    with transaction.atomic():
+        owner = BrowserFirebaseInstallation.objects.select_for_update().filter(
+            fid_hmac=row.fid_hmac, user_id=row.user_id).first()
+        row.refresh_from_db()
+        row.makerspace.refresh_from_db()
+        if (not module_enabled(row.makerspace, "notifications")
+                or not feature_enabled(row.makerspace, "notifications.web_push")):
+            return None
+        personal_space(row.user, row.makerspace_id)
+        if not owner:
+            return None
+        if (not row.active or row.revoked_at or row.wake_pending_seq <= row.wake_sent_seq
+                or (row.wake_retry_at and row.wake_retry_at > timezone.now())):
+            return None
+        # The lease: a worker that dies mid-send frees the registration again after CLAIM_SECONDS.
+        BrowserFirebaseRegistration.objects.filter(pk=pk).update(
+            wake_retry_at=timezone.now() + timedelta(seconds=CLAIM_SECONDS))
+        # Do not lock registration over I/O: new inbox writes may increment it.
+        return str(owner.owner_epoch), row.wake_pending_seq
+
+
+def _settle(row, pk, epoch, target_seq):
+    """Record a delivered hint, unless the installation changed hands during the send (then it stays pending)."""
+    with transaction.atomic():
+        owner = BrowserFirebaseInstallation.objects.select_for_update().filter(
+            fid_hmac=row.fid_hmac, user_id=row.user_id).first()
+        registrations = BrowserFirebaseRegistration.objects.filter(pk=pk, active=True)
+        if owner is None or str(owner.owner_epoch) != epoch:
+            registrations.update(wake_retry_at=None)
+            return False
+        registrations.update(wake_sent_seq=target_seq, wake_retry_at=None)
+        return True
 
 
 def sweep_pending(limit=100):

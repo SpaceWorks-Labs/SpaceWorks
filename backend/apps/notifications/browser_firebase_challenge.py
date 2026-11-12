@@ -11,6 +11,7 @@ from django.utils import timezone
 from rest_framework.exceptions import Throttled, ValidationError
 
 from apps.audit.services import record
+from config.redis_cache import SharedCacheUnavailable, claim_once
 from apps.integrations.push_firebase_browser import send_challenge
 from apps.makerspaces.models import Makerspace
 from apps.tenant_migration.gate_runtime import tenant_write
@@ -60,7 +61,11 @@ def confirm(*, actor, space, project, fid, challenge, nonce):
     expected = _mac("proof", challenge, nonce, actor.pk, space.pk, project, fid)
     if not hmac.compare_digest(supplied, expected):
         raise ValidationError(gettext("Challenge is invalid or expired."))
-    if not cache.add(_key("used", supplied), "1", timeout=TTL):
+    try:  # single-use even while Redis is down: never claimed in one worker only (decision 339)
+        fresh = claim_once(_key("used", supplied), TTL, value="1")
+    except SharedCacheUnavailable:
+        raise Throttled(wait=5, detail=gettext("Confirmation is briefly unavailable. Retry shortly.")) from None
+    if not fresh:
         raise ValidationError(gettext("Challenge was already used."))
     identity = _mac("fid", project, fid)
     with tenant_write(space.pk), transaction.atomic():

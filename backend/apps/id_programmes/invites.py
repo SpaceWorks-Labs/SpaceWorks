@@ -37,9 +37,13 @@ def send_invites(card_ids):
         IdProgrammeCard.objects.filter(pk=card.pk).update(invite_digest=_digest(token))
         programme = card.programme
         link = f"{base}/member/cards/accept?invite={token}&card={card.pk}"
-        body = (f"Hello {card.name},\n\n{programme.organization.name} added you to “{programme.name}”.\n"
-                f"Sign in (or create your account) with this email address and open:\n{link}\n\n"
-                "Your card appears under My cards once you accept.")
+        from config.locale_resolution import override_for
+        with override_for(makerspace=card.makerspace):  # no account yet: the space's language
+            body = gettext(
+                "Hello %(name)s,\n\n%(org)s added you to “%(programme)s”.\n"
+                "Sign in (or create your account) with this email address and open:\n%(link)s\n\n"
+                "Your card appears under My cards once you accept."
+            ) % {"name": card.name, "org": programme.organization.name, "programme": programme.name, "link": link}
         try:
             dispatch_email(to_email=card.email, subject=gettext('Your {name} card from {name2}').format(name=programme.name, name2=programme.organization.name),
                            text_body=body, makerspace=card.makerspace, stream="membership", event="programme_invite",

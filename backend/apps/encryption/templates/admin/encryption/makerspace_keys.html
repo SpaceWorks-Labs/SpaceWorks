@@ -1,42 +1,43 @@
 {% extends "admin/base_site.html" %}
+{% load i18n %}
 {% block content %}
-<p><a href="{% url 'admin:makerspaces_makerspace_change' space.pk %}">Back to {{ space.name }}</a></p>
-<p>Each action needs a recent identity check and is recorded in this space's audit log, which its managers can read. The platform key always opens this space's backups: every archive keeps its own copy of each key version.</p>
+<p><a href="{% url 'admin:makerspaces_makerspace_change' space.pk %}">{% blocktranslate trimmed with name=space.name %}Back to {{ name }}{% endblocktranslate %}</a></p>
+<p>{% translate "Each action needs a recent identity check and is recorded in this space's audit log, which its managers can read. The platform key always opens this space's backups: every archive keeps its own copy of each key version." %}</p>
 
-<h2>Data encryption key</h2>
-<p>Active version: <strong>{{ state.active_dek_version|default:"none yet" }}</strong></p>
+<h2>{% translate "Data encryption key" %}</h2>
+<p>{% translate "Active version:" %} <strong>{{ state.active_dek_version|default:"none yet" }}</strong></p>
 <table>
-  <thead><tr><th scope="col">Version</th><th scope="col">Status</th></tr></thead>
+  <thead><tr><th scope="col">{% translate "Version" %}</th><th scope="col">{% translate "Status" %}</th></tr></thead>
   <tbody>{% for key in state.dek_versions %}<tr><td>{{ key.version }}</td><td>{{ key.status }}</td></tr>{% endfor %}</tbody>
 </table>
 <form method="post">{% csrf_token %}<input type="hidden" name="action" value="rotate_dek">
-  <button type="submit">Rotate the key</button> <small>New data uses a new version at once; older records are re-encrypted in the background and the old version is retired when nothing uses it.</small>
+  <button type="submit">{% translate "Rotate the key" %}</button> <small>{% translate "New data uses a new version at once; older records are re-encrypted in the background and the old version is retired when nothing uses it." %}</small>
 </form>
 <form method="post">{% csrf_token %}<input type="hidden" name="action" value="emergency_rekey">
-  <button type="submit">Emergency re-key</button> <small>The same, started as an emergency: the space's Space Managers are told when it starts and when it finishes.</small>
+  <button type="submit">{% translate "Emergency re-key" %}</button> <small>{% translate "The same, started as an emergency: the space's Space Managers are told when it starts and when it finishes." %}</small>
 </form>
 
-<h2>Search key</h2>
-<p>Version: <strong>{{ state.search_key_version|default:"the deployment key" }}</strong></p>
+<h2>{% translate "Search key" %}</h2>
+<p>{% translate "Version:" %} <strong>{{ state.search_key_version|default:"the deployment key" }}</strong></p>
 <form method="post">{% csrf_token %}<input type="hidden" name="action" value="rotate_search_key">
-  <button type="submit">Rotate the search key</button> <small>The space is re-indexed in the background; search keeps working throughout.</small>
+  <button type="submit">{% translate "Rotate the search key" %}</button> <small>{% translate "The space is re-indexed in the background; search keeps working throughout." %}</small>
 </form>
 
-<h2>Public site browser key</h2>
-<p>{% if state.publishable_key_rotated_at %}Last rotated {{ state.publishable_key_rotated_at }}; the previous key works until {{ state.previous_publishable_key_valid_until }}.{% else %}Never rotated.{% endif %}</p>
+<h2>{% translate "Public site browser key" %}</h2>
+<p>{% if state.publishable_key_rotated_at %}{% blocktranslate trimmed with publishable_key_rotated_at=state.publishable_key_rotated_at previous_publishable_key_valid_until=state.previous_publishable_key_valid_until %}Last rotated {{ publishable_key_rotated_at }}; the previous key works until {{ previous_publishable_key_valid_until }}.{% endblocktranslate %}{% else %}{% translate "Never rotated." %}{% endif %}</p>
 <form method="post">{% csrf_token %}<input type="hidden" name="action" value="rotate_publishable_key">
-  <button type="submit">Issue a new browser key</button> <small>The previous key keeps working for the grace window, then is refused.</small>
+  <button type="submit">{% translate "Issue a new browser key" %}</button> <small>{% translate "The previous key keeps working for the grace window, then is refused." %}</small>
 </form>
 
-<h2>Recent key jobs</h2>
+<h2>{% translate "Recent key jobs" %}</h2>
 <table>
-  <thead><tr><th scope="col">Started</th><th scope="col">Kind</th><th scope="col">Status</th><th scope="col">Versions</th><th scope="col">Progress</th></tr></thead>
+  <thead><tr><th scope="col">{% translate "Started" %}</th><th scope="col">{% translate "Kind" %}</th><th scope="col">{% translate "Status" %}</th><th scope="col">{% translate "Versions" %}</th><th scope="col">{% translate "Progress" %}</th></tr></thead>
   <tbody>
   {% for job in state.jobs %}
     <tr><td>{{ job.started_at }}</td><td>{{ job.get_kind_display }}</td><td>{{ job.get_status_display }}{% if job.error_code %} ({{ job.error_code }}){% endif %}</td>
-      <td>{{ job.from_version|default:"-" }} to {{ job.to_version }}{% if job.retained_versions %}; kept: {{ job.retained_versions|join:", " }}{% endif %}</td>
-      <td>{{ job.rows_done }} done, {{ job.rows_skipped }} kept as they were</td></tr>
-  {% empty %}<tr><td colspan="5">No key jobs yet.</td></tr>{% endfor %}
+      <td>{% blocktranslate trimmed with from_version=job.from_version|default:"-" to_version=job.to_version %}{{ from_version }} to {{ to_version }}{% endblocktranslate %}{% if job.retained_versions %}{% blocktranslate trimmed with retained_versions=job.retained_versions|join:", " %}; kept: {{ retained_versions }}{% endblocktranslate %}{% endif %}</td>
+      <td>{% blocktranslate trimmed with rows_done=job.rows_done rows_skipped=job.rows_skipped %}{{ rows_done }} done, {{ rows_skipped }} kept as they were{% endblocktranslate %}</td></tr>
+  {% empty %}<tr><td colspan="5">{% translate "No key jobs yet." %}</td></tr>{% endfor %}
   </tbody>
 </table>
 {% endblock %}

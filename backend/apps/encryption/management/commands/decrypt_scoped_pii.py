@@ -20,6 +20,7 @@ from apps.encryption.readiness import assert_ready
 from apps.encryption.registry import all_fields, fields_for_label, registered_labels
 from apps.encryption.write_fence import fence_operation
 from apps.encryption.tenant_preparation import prepare_tenant_key, tenant_key_context
+from django.utils.translation import gettext
 
 _FILTERS = {
     label: fields_for_label(label)[0].makerspace_path.replace(".", "__")
@@ -170,7 +171,7 @@ class Command(BaseCommand):
             else:
                 other_value = raw
             if canonical_email(other_value) == wanted:
-                raise ValidationError({"email": "A registration already uses this email."})
+                raise ValidationError({"email": gettext("A registration already uses this email.")})
 
     def _verify_model(self, model, fields, filters, makerspace_id):
         fields = tuple(field for field in fields if not field.encryption_required)

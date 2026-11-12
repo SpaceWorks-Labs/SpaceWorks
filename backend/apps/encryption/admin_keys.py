@@ -14,6 +14,7 @@ from django.utils.html import format_html
 
 from apps.accounts.reauthentication import require_recent_reauth
 from django.utils.translation import gettext_lazy
+from django.utils.translation import gettext
 
 ACTIONS = ("rotate_dek", "emergency_rekey", "rotate_search_key", "rotate_publishable_key")
 
@@ -74,7 +75,7 @@ class MakerspaceKeysAdminMixin:
     def _apply_key_action(self, request, space, action):
         from . import publishable_keys, rotation
         if action not in ACTIONS:
-            raise ValidationError("Choose an action.")
+            raise ValidationError(gettext("Choose an action."))
         if action in {"rotate_dek", "emergency_rekey"}:
             job = rotation.start_dek_rotation(request.user, space, emergency=action == "emergency_rekey")
             return f"Key version {job.to_version} is now in use; older records are re-encrypted in the background."

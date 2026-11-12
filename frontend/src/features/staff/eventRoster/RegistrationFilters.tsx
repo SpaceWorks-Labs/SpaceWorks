@@ -7,6 +7,7 @@ import type { Paginated } from "../eventsApiTypes";
 import { opsStatusLabel } from "../opsPresentation";
 import type { StaffTicket } from "../eventTicketingApi";
 import type { RegistrationFilters } from "../eventsRegistrationApi";
+import { SearchField } from "../../../components/ui/SearchField";
 
 const STATUSES = ["pending_approval", "waitlisted", "registered", "attended", "cancelled", "rejected"] as const;
 
@@ -20,7 +21,7 @@ export function RegistrationFiltersBar({ value, onChange, tickets }: {
   const active = Boolean(value.status || value.ticket_type || value.q);
   return <div className="mb-4 grid min-w-0 gap-3 sm:grid-cols-3" role="group" aria-label={t`Filter registrations`}>
     <label className="grid min-w-0 gap-1 text-sm font-semibold">{t`Search guests`}
-      <input className="desk-input" type="search" value={value.q ?? ""} onChange={event => onChange({ ...value, q: event.target.value })} /></label>
+      <SearchField className="desk-input" value={value.q ?? ""} onChange={event => onChange({ ...value, q: event.target.value })} /></label>
     <label className="grid min-w-0 gap-1 text-sm font-semibold">{t`Status`}
       <select className="desk-input max-w-full" value={value.status ?? ""} onChange={event => onChange({ ...value, status: event.target.value })}>
         <option value="">{t`Any status`}</option>

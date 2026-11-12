@@ -5,6 +5,7 @@ import { useOrganizations } from "../../organizationsApi";
 import type { MakerspaceForm } from "./types";
 import { spaceNoun } from "../../../../lib/spaceNoun";
 import { LogoLoader } from "../../../../components/LogoLoader";
+import { SearchField } from "../../../../components/ui/SearchField";
 
 export function organizationFieldErrors(error: unknown) {
   const body: Record<string, unknown> = error instanceof StructuredApiError ? error.body : {};
@@ -27,7 +28,7 @@ export function OrganizationPicker({ form, error, onChange }: {
     {form.kind === "organization" ? <p className="text-xs text-muted">{t`The workspace becomes this organization's home: its public page at /o/ shows the workspace's events, rooms and plans.`}</p> : null}
     <label htmlFor={`${id}-search`} className="grid gap-1">
       <span className="text-sm font-semibold text-ink">{t`Search organizations`}</span>
-      <input id={`${id}-search`} type="search" className="desk-input w-full" value={search} onChange={event => setSearch(event.target.value)} aria-describedby={errors.organization_id ? `${id}-existing-error` : undefined} />
+      <SearchField id={`${id}-search`} className="desk-input w-full" value={search} onChange={event => setSearch(event.target.value)} aria-describedby={errors.organization_id ? `${id}-existing-error` : undefined} />
     </label>
     {form.organization && form.organization !== "new" ? <p className="text-sm" role="status">{t`Selected organization: ${form.organization.name}`}</p> : null}
     <OrganizationResults key={search.trim()} search={search.trim()} page={1} id={id} selected={form.organization} errorId={errors.organization_id ? `${id}-existing-error` : undefined} onSelect={organization => onChange({ ...form, organization })} />

@@ -2,6 +2,7 @@ import { formatLocale } from "../../../../lib/format";
 import { t } from "@lingui/core/macro";
 import { useId, useState, type ReactNode } from "react";
 import type { ChartData, ChartSeries } from "./chartSpec";
+import { CasedLine } from "./CasedLine";
 import { focusClass, seriesColor, seriesDash } from "./chartStyle";
 
 export type ChartProps = { title: string; data: ChartData };
@@ -36,7 +37,7 @@ export function ChartFrame({ title, data, children }: ChartProps & { children: R
 
 export function ChartLegend({ series }: { series: ChartSeries[] }) {
   return <ul aria-label={t`Series legend`} className="flex flex-wrap gap-4 text-sm">{series.map((item, index) => <li key={item.id} className="flex items-center gap-2">
-    <svg width="28" height="12" aria-hidden="true"><path d="M0 6 H28" stroke={seriesColor(item.id)} strokeWidth="3" strokeDasharray={seriesDash(item.id)} /></svg>
+    <svg width="28" height="12" aria-hidden="true"><CasedLine points="0,6 28,6" color={seriesColor(item.id)} dash={seriesDash(item.id)} /></svg>
     {index + 1}. {item.label} ({[item.currency, item.unit].filter(Boolean).join(" ")})
   </li>)}</ul>;
 }

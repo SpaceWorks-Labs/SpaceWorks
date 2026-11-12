@@ -8,6 +8,7 @@ import { useDebouncedValue } from "../../../lib/useDebouncedValue";
 import { rows, type ListResponse, type Rebound, type ResolveTarget } from "./ScannerPanelTypes";
 import { type Makerspace, type Product, useStaffGet } from "./shared";
 import { BoxArt } from "../../../components/BoxSpinner";
+import { SearchField } from "../../../components/ui/SearchField";
 
 type Unit = { id: number; asset_tag: string; qr_code_id: number | null };
 type Conflict = { code?: string; detail?: string; target?: ResolveTarget };
@@ -91,7 +92,7 @@ export function ScannerUnknownCode({ makerspace, value, canCreate, onLinked, onC
     </form> : null}
     {mode === "link" ? <div className="grid gap-2">
       <label className="grid gap-1"><span className="eyebrow">{t`Find item`}</span>
-        <input className="desk-input" type="search" value={search} onChange={(event) => { setSearch(event.target.value); setConfirming(false); }} /></label>
+        <SearchField className="desk-input" value={search} onChange={(event) => { setSearch(event.target.value); setConfirming(false); }} /></label>
       <label className="grid gap-1"><span className="eyebrow">{t`Item`}</span>
         <select className="desk-input" value={productId} disabled={products.isLoading} onChange={(event) => { setProductId(event.target.value); setUnitId(""); setConfirming(false); }}>
           <option value="">{products.isLoading ? t`Loading…` : t`Choose an item`}</option>

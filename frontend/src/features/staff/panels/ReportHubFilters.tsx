@@ -1,6 +1,7 @@
 import { t } from "@lingui/core/macro";
 import type { ReportCatalogItem } from "./operationsReportsConfig";
 import { groupChoices, hubEmptyReason } from "./reportGroups";
+import { SearchField } from "../../../components/ui/SearchField";
 
 /** Search plus one chip per module group; the chips are how the "Reports" link inside a module area lands on its group. */
 export function ReportHubFilters({ reports, visibleCount, reportsEnabled, loading = false, query, group, onQuery, onGroup }: {
@@ -11,7 +12,7 @@ export function ReportHubFilters({ reports, visibleCount, reportsEnabled, loadin
   const reason = loading ? null : hubEmptyReason({ reportsEnabled, catalogCount: reports.length, visibleCount });
   return <section aria-label={t`Find a report`} className="mb-5 grid gap-3">
     <label className="grid gap-1 text-sm">{t`Search reports`}
-      <input type="search" className="desk-input w-full" value={query} placeholder={t`Name, module or topic`}
+      <SearchField className="desk-input w-full" value={query} placeholder={t`Name, module or topic`}
         onChange={event => onQuery(event.target.value)} /></label>
     {choices.length > 1 ? <div role="group" aria-label={t`Module`} className="flex flex-wrap gap-2">
       <button type="button" aria-pressed={!group} className="desk-button min-h-11" onClick={() => onGroup("")}>{t`All modules`}</button>

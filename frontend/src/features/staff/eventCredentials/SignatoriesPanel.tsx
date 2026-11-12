@@ -4,6 +4,7 @@ import { CheckCircle2, Clock, PenLine, Trash2, Upload } from "lucide-react";
 import { eventErrorText } from "../eventUi";
 import { CERTIFICATE_KINDS } from "./designer/samples";
 import { useSignatories, useSignatoryCandidates, useUploadSignature, type Signatory, type SignatoryInput } from "./signatoryApi";
+import { SearchField } from "../../../components/ui/SearchField";
 
 function SignatoryForm({ eventId, slot, row, approvalRequired, onSave, onRemove, busy }: { eventId: number; slot: number;
   row?: Signatory; approvalRequired: boolean; onSave: (input: SignatoryInput) => void; onRemove: () => void; busy: boolean }) {
@@ -27,7 +28,7 @@ function SignatoryForm({ eventId, slot, row, approvalRequired, onSave, onRemove,
       <span className="text-sm">{t`Approving account`}{approvalRequired ? t` (required while approval is on)` : " (optional)"}</span>
       {account ? <div className="flex flex-wrap items-center gap-2"><span className="font-semibold text-ink">{account}</span>
         <button type="button" className="desk-button min-h-11" onClick={() => { setAccount(null); setDraft({ ...draft, member_id: null }); }}>{t`Change account`}</button></div>
-        : <><input className="desk-input" type="search" aria-label={t`Find the account for signatory ${slot}`} placeholder={t`Name of a member or staff`} value={term} onChange={(event) => setTerm(event.target.value)} />
+        : <><SearchField className="desk-input" aria-label={t`Find the account for signatory ${slot}`} placeholder={t`Name of a member or staff`} value={term} onChange={(event) => setTerm(event.target.value)} />
           {candidates.data?.length ? <ul className="grid gap-1" aria-label={t`Matching accounts`}>{candidates.data.map((person) => <li key={person.id}>
             <button type="button" className="desk-button min-h-11 w-full justify-start" onClick={() => { setAccount(person.name); setDraft({ ...draft, member_id: person.id }); setTerm(""); }}>{person.name}</button></li>)}</ul>
             : term.trim().length >= 2 && candidates.isSuccess ? <p className="text-sm text-muted">{t`No active account of this space matches.`}</p> : null}</>}

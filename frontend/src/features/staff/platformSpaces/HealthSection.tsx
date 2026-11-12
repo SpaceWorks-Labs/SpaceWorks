@@ -17,6 +17,7 @@ import { TransferOwnershipDialog } from "./TransferOwnershipDialog";
 import { BulkPlanAssign } from "./BulkPlanAssign";
 import { BulkLimitsApply } from "./BulkLimitsApply";
 import { LogoLoader } from "../../../components/LogoLoader";
+import { SearchField } from "../../../components/ui/SearchField";
 
 function SpaceDialog({ card, kind, onClose }: { card: HealthCard; kind: DialogKind; onClose: () => void }) {
   if (kind === "transfer") return <TransferOwnershipDialog card={card} onClose={onClose} />;
@@ -42,7 +43,7 @@ export function HealthSection({ managedPlans }: { managedPlans: boolean }) {
   return <div className="grid gap-4">
     <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_14rem]">
       <Field label={t`Search spaces`}>
-        <input className="desk-input" type="search" value={search} placeholder={t`Name, slug or code`}
+        <SearchField className="desk-input" value={search} placeholder={t`Name, slug or code`}
           onChange={event => { setSearch(event.target.value); setPage(1); }} />
       </Field>
       <Field label={t`State`}>

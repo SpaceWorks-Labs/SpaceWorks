@@ -1,6 +1,6 @@
 import { t } from "@lingui/core/macro";
 import { ChartFrame, ChartLegend, valueText, type ChartProps } from "./ChartFrame";
-import { ink, seriesColor } from "./chartStyle";
+import { edge, ink, seriesColor } from "./chartStyle";
 
 export function FunnelChart({ title, data }: ChartProps) {
   const rows = data.series.flatMap((series) => series.points.map((point) => ({ series, point })));
@@ -15,7 +15,7 @@ export function FunnelChart({ title, data }: ChartProps) {
         return <g key={`${series.id}-${index}`}>
           <text x="8" y={y + 18} fill={ink} fontSize="12">{point.label.slice(0, 22)}</text>
           {data.series.length > 1 && <text x="8" y={y + 36} fill={ink} fontSize="12">{series.label.slice(0, 22)}</text>}
-          <polygon points={`${350 - width / 2},${y} ${350 + width / 2},${y} ${350 + bottom / 2},${y + 44} ${350 - bottom / 2},${y + 44}`} fill={seriesColor(series.id)} stroke={ink} />
+          <polygon points={`${350 - width / 2},${y} ${350 + width / 2},${y} ${350 + bottom / 2},${y + 44} ${350 - bottom / 2},${y + 44}`} fill={seriesColor(series.id)} stroke={edge} />
           <text x="516" y={y + 24} fill={ink} fontSize="12">{valueText(point.value, series)}</text>
         </g>;
       })}

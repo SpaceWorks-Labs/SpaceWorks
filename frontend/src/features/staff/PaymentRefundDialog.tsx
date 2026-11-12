@@ -74,7 +74,7 @@ export function PaymentRefundDialog({
         onClick: () => document.getElementById("payment-refund-form")?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })) } }}
       work={<>
       <p className="text-sm text-muted">
-        {t`${payment.subject_label} · refunded so far ${formatMoney(payment.refunded_amount, payment.currency)} · remaining ${formatMoney(remaining.toFixed(2), payment.currency)}`}
+        {t`${payment.subject_label} · refunded so far ${formatMoney(payment.refunded_amount, payment.currency)} · remaining ${formatMoney(remaining, payment.currency)}`}
       </p>
       <form
         id="payment-refund-form"

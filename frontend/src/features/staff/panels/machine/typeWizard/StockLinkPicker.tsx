@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useConsumableStock } from "./consumablesApi";
 import type { ProfileDraft } from "./profileDraft";
 import { poolUnitFor, productUnit } from "./profileUnits";
+import { SearchField } from "../../../../../components/ui/SearchField";
 
 /** Links a profile row to a stock pool (same unit family only) or a counted product (sheet, piece, use only). Never both. */
 export function StockLinkPicker({ makerspaceId, typeId, draft, onChange }: {
@@ -22,7 +23,7 @@ export function StockLinkPicker({ makerspaceId, typeId, draft, onChange }: {
         {pools.map(pool => <option key={pool.id} value={pool.id}>{`${pool.label} (${String(pool.remaining)} ${pool.unit})`}</option>)}
       </select></label> : null}
     {productUnit(draft.unit) ? <div className="grid gap-1 text-sm">
-      <label className="grid gap-1">{t`Find a product`}<input className="desk-input" value={search} placeholder={t`Type to search`} onChange={event => setSearch(event.target.value)} /></label>
+      <label className="grid gap-1">{t`Find a product`}<SearchField className="desk-input" value={search} placeholder={t`Type to search`} onChange={event => setSearch(event.target.value)} /></label>
       <label className="grid gap-1">{t`Linked product`}
         <select className="desk-input" value={draft.product ?? ""} onChange={event => onChange({ product: event.target.value ? Number(event.target.value) : null, consumable_pool: null })}>
           <option value="">{t`Not linked`}</option>

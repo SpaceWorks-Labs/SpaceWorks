@@ -12,6 +12,7 @@ import { lifecycleApi, lifecycleKeys } from "../../membershipLifecycleApi";
 import { listPlans } from "../../membershipPlansApi";
 import { memberCardJobsPath } from "./apiCards";
 import { BoxArt } from "../../../../components/BoxSpinner";
+import { SearchField } from "../../../../components/ui/SearchField";
 
 const CHIPS = (): [string, string][] => [["", t`Any standing`], ["active", t`Active`], ["expiring", t`Ending soon`],
   ["grace", t`In grace`], ["lapsed", t`Lapsed`], ["upcoming", t`Starts later`]];
@@ -32,7 +33,7 @@ export function BulkFromFilter({ makerspaceId }: { makerspaceId: number }) {
   return <section className="grid gap-3 rounded-card border border-line bg-panel p-4" aria-label={t`Cards for a filtered list of members`}>
     <p className="text-sm text-muted">{t`Print cards for everyone a filter selects. It works like the member register's filter and only reaches members you may manage.`}</p>
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-      <Field label={t`Search`}><input className="desk-input min-h-11" value={q} onChange={(event) => setQ(event.target.value)} /></Field>
+      <Field label={t`Search`}><SearchField className="desk-input min-h-11" value={q} onChange={(event) => setQ(event.target.value)} /></Field>
       <Field label={t`Standing`}><select className="desk-input min-h-11" value={chip} onChange={(event) => setChip(event.target.value)}>
         {CHIPS().map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></Field>
       <Field label={t`Plan`}><select className="desk-input min-h-11" value={plan} onChange={(event) => setPlan(event.target.value)}>

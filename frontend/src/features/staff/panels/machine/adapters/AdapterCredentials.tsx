@@ -7,6 +7,7 @@ import { Field, RelativeTime, StatusPill } from "../../../../../components/ui";
 import { adapterErrorMessage } from "./adapterCopy";
 import { adapterKeys, adaptersApi, type Credential } from "./adaptersApi";
 import { BoxArt } from "../../../../../components/BoxSpinner";
+import { SearchField } from "../../../../../components/ui/SearchField";
 
 type Member = { id: number; user: { id: number; display_name: string; username: string } };
 
@@ -34,7 +35,7 @@ function AddCredential({ makerspaceId }: { makerspaceId: number }) {
     <Field label={t`Member`} hint={person ? undefined : t`Type at least two letters of a name or username.`}>
       {person ? <div className="flex items-center gap-2"><span className="desk-input flex-1">{person.display_name || person.username}</span>
         <button type="button" className="desk-button" onClick={() => setPerson(null)}>{t`Change`}</button></div>
-        : <input className="desk-input" type="search" value={query} onChange={event => setQuery(event.target.value)} />}
+        : <SearchField className="desk-input" value={query} onChange={event => setQuery(event.target.value)} />}
     </Field>
     {!person && (members.data?.results ?? []).length ? <ul className="grid gap-1" aria-label={t`Matching members`}>{members.data!.results.slice(0, 6).map(row => <li key={row.id}>
       <button type="button" className="desk-button w-full justify-start" onClick={() => setPerson(row.user)}>{row.user.display_name || row.user.username} <span className="text-muted">@{row.user.username}</span></button></li>)}</ul> : null}

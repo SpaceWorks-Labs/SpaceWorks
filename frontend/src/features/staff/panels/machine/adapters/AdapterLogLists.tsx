@@ -6,6 +6,7 @@ import { Field, RelativeTime, StatusPill } from "../../../../../components/ui";
 import { adapterErrorMessage } from "./adapterCopy";
 import { adapterKeys, adaptersApi, type AdapterSummary, type Page } from "./adaptersApi";
 import { LogoLoader } from "../../../../../components/LogoLoader";
+import { SearchField } from "../../../../../components/ui/SearchField";
 
 const day = (value: string, end = false) => value ? `${value}T${end ? "23:59:59" : "00:00:00"}Z` : "";
 
@@ -41,7 +42,7 @@ export function AccessLog({ makerspaceId, adapter, nameOf }: { makerspaceId: num
         <option value="">{t`Allowed and denied`}</option><option value="true">{t`Allowed`}</option><option value="false">{t`Denied`}</option></select></Field>
       <Field label={t`Credential`}><select className="desk-input" value={f.credential_type} onChange={event => set({ credential_type: event.target.value })}>
         <option value="">{t`Any`}</option><option value="card_qr">{t`Member card`}</option><option value="nfc">{t`NFC tag`}</option><option value="pin">{t`PIN`}</option></select></Field>
-      <Field label={t`Reason`}><input className="desk-input" type="search" value={f.reason} onChange={event => set({ reason: event.target.value })} /></Field>
+      <Field label={t`Reason`}><SearchField className="desk-input" value={f.reason} onChange={event => set({ reason: event.target.value })} /></Field>
     </Filters>
     {rows.isError ? <p role="alert" className="text-sm text-danger">{adapterErrorMessage(rows.error)}</p> : null}
     {rows.isLoading ? <LogoLoader label={t`Loading…`} size={48} className="min-h-16 py-3" /> : null}
@@ -64,7 +65,7 @@ export function UsageLog({ makerspaceId, adapter, nameOf }: { makerspaceId: numb
   const rows = useQuery({ queryKey: adapterKeys.usage(makerspaceId, adapter.id, query), queryFn: () => adaptersApi.usage(adapter.id, query) });
   return <div className="grid gap-4">
     <Filters adapter={adapter} binding={f.binding} setBinding={binding => set({ binding })} since={f.since} setSince={since => set({ since })} until={f.until} setUntil={until => set({ until })}>
-      <Field label={t`Outcome`}><input className="desk-input" type="search" value={f.outcome} onChange={event => set({ outcome: event.target.value })} /></Field>
+      <Field label={t`Outcome`}><SearchField className="desk-input" value={f.outcome} onChange={event => set({ outcome: event.target.value })} /></Field>
     </Filters>
     {rows.isError ? <p role="alert" className="text-sm text-danger">{adapterErrorMessage(rows.error)}</p> : null}
     {rows.isLoading ? <LogoLoader label={t`Loading…`} size={48} className="min-h-16 py-3" /> : null}

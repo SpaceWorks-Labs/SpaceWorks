@@ -8,6 +8,7 @@ import { DashboardLayout } from "../../components/layouts/DashboardLayout";
 import { consoleSessionHref } from "../../lib/api/sessionContext";
 import type { Makerspace } from "./StaffPanels";
 import { nounOf, spaceKindOf } from "../../lib/spaceNoun";
+import { SearchField } from "../../components/ui/SearchField";
 
 /**
  * Superadmin entry screen: the superadmin operates one makerspace at a time, so
@@ -46,7 +47,7 @@ export function MakerspacePicker({
       // The superadmin's platform pages (Overview, Spaces, People & access, Security, Data) need no space.
       primary: person ? undefined : { label: t`Open the platform console`, href: consoleSessionHref("/admin/platform-dashboard", "platform") },
       secondary: { label: t`Sign out`, onClick: onSignOut } }}
-    stats={[]} progress={<label className="grid gap-2 text-sm font-semibold">{mixed ? t`Find a space` : t`Find a makerspace`}<input className="desk-input" aria-label={t`Name, code or slug`} placeholder={t`Name, code or slug`} value={search} onChange={event => setSearch(event.target.value)} /></label>}
+    stats={[]} progress={<label className="grid gap-2 text-sm font-semibold">{mixed ? t`Find a space` : t`Find a makerspace`}<SearchField className="desk-input" aria-label={t`Name, code or slug`} placeholder={t`Name, code or slug`} value={search} onChange={event => setSearch(event.target.value)} /></label>}
     main={[{ title: mixed ? t`Your spaces` : t`Your makerspaces`, isEmpty: !matches.length, empty: { message: makerspaces.length ? t`No spaces match. Try another name, code or slug.` : person ? t`You don't hold a staff role in any makerspace yet.` : t`No makerspaces exist yet. Create one on the platform console's Spaces page.`, action: makerspaces.length || person ? undefined : { label: t`Create a makerspace`, href: consoleSessionHref("/admin/platform-spaces", "platform") } }, content: <div className="grid gap-3 sm:grid-cols-2">{matches.map(space => <ListRow key={space.id} title={space.name}
       identity={{ kind: "icon", icon: "Building2", tone: "accent" }}
       meta={<SpaceRowMeta space={space} />}

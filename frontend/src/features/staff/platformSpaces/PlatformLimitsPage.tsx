@@ -14,6 +14,7 @@ import { RequestRatesSection } from "./RequestRatesSection";
 import { SpaceLimitsSection } from "./SpaceLimitsSection";
 import { getSpaceHealth, healthKey, listSpaceHealth, PAGE_SIZE, percentLevel, type HealthCard } from "./spacesApi";
 import { LogoLoader } from "../../../components/LogoLoader";
+import { SearchField } from "../../../components/ui/SearchField";
 
 /** `/admin/platform-limits/<id>` is one space's limits page; the inbox notice's `/admin/platform/spaces/<id>/limits` lands there too. */
 export const spaceLimitsHref = (id: number) => consoleSessionHref(`/admin/platform-limits/${id}`, "platform");
@@ -54,7 +55,7 @@ function SpacesLimitsList() {
   const list = useQuery({ queryKey: [...healthKey, "", term, page], queryFn: () => listSpaceHealth({ search: term, page }), placeholderData: keepPreviousData });
   const rows = list.data?.results ?? [];
   return <div className="grid gap-4">
-    <Field label={t`Search spaces`}><input className="desk-input" type="search" value={search} placeholder={t`Name, slug or code`}
+    <Field label={t`Search spaces`}><SearchField className="desk-input" value={search} placeholder={t`Name, slug or code`}
       onChange={event => { setSearch(event.target.value); setPage(1); }} /></Field>
     {rows.length ? <BulkLimitsApply spaces={rows} /> : null}
     {list.isLoading ? <LogoLoader size={48} className="min-h-40 py-3" />

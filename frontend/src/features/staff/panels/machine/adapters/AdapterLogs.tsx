@@ -8,6 +8,7 @@ import { adapterKeys, adaptersApi, type AdapterCommand, type AdapterEvent, type 
 import { AccessLog, UsageLog } from "./AdapterLogLists";
 import { useTargetLabel } from "./bindingTargets";
 import { LogoLoader } from "../../../../../components/LogoLoader";
+import { SearchField } from "../../../../../components/ui/SearchField";
 
 type Kind = "commands" | "events" | "access" | "usage";
 
@@ -38,7 +39,7 @@ export function AdapterLogs({ makerspaceId, adapter }: { makerspaceId: number; a
     {lists ? null : <div className="grid gap-4 sm:grid-cols-2">
       <Field label={t`Target`}><select className="desk-input" value={binding} onChange={event => setBinding(event.target.value)}>
         <option value="">{t`All targets`}</option>{adapter.bindings.map(row => <option key={row.id} value={row.id}>{nameOf(row.id)}</option>)}</select></Field>
-      <Field label={t`Search`}><input className="desk-input" type="search" value={text} onChange={event => setText(event.target.value)} /></Field>
+      <Field label={t`Search`}><SearchField className="desk-input" value={text} onChange={event => setText(event.target.value)} /></Field>
     </div>}
     {!lists && query.isError ? <p role="alert" className="text-sm text-danger">{adapterErrorMessage(query.error)}</p> : null}
     {!lists && query.isLoading ? <LogoLoader label={t`Loading…`} size={48} className="min-h-16 py-3" /> : null}

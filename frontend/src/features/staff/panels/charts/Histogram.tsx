@@ -1,6 +1,6 @@
 import { t } from "@lingui/core/macro";
 import { ChartFrame, ChartLegend, valueText, type ChartProps } from "./ChartFrame";
-import { ink, seriesColor } from "./chartStyle";
+import { edge, ink, seriesColor } from "./chartStyle";
 
 /** Reports supply labelled, pre-aggregated bins; no client-side rebucketing of counts. */
 export function Histogram({ title, data }: ChartProps) {
@@ -16,7 +16,7 @@ export function Histogram({ title, data }: ChartProps) {
       {rows.map(({ series, point }, index) => {
         const x = 80 + index * 120;
         return <g key={`${series.id}-${index}`}>
-          <rect x={x} y={Math.min(y(0), y(point.value))} width="108" height={Math.abs(y(point.value) - y(0))} fill={seriesColor(series.id)} stroke={ink} />
+          <rect x={x} y={Math.min(y(0), y(point.value))} width="108" height={Math.abs(y(point.value) - y(0))} fill={seriesColor(series.id)} stroke={edge} />
           <text x={x + 54} y={point.value < 0 ? y(point.value) + 16 : y(point.value) - 8} textAnchor="middle" fill={ink} fontSize="12">{valueText(point.value, series)}</text>
           <text x={x + 54} y="256" textAnchor="middle" fill={ink} fontSize="12">{point.label.slice(0, 16)}</text>
           {data.series.length > 1 && <text x={x + 54} y="272" textAnchor="middle" fill={ink} fontSize="12">{series.label.slice(0, 16)}</text>}

@@ -4,7 +4,8 @@ import { periodParams, type AnalyticsPeriod, type ReportChartSpec } from "./pane
 
 import type { AnalyticsMakerspacePage, PlatformAnalyticsReport, ReportCatalog } from "../../generated/api";
 export type { AnalyticsMakerspace, AnalyticsMakerspacePage, PlatformAnalyticsReport } from "../../generated/api";
-export function usePlatformAnalytics(key: "platform-services" | "platform-usage", period: AnalyticsPeriod) {
+export type PlatformAnalyticsKey = "platform-services" | "platform-usage" | "platform-channel-usage";
+export function usePlatformAnalytics(key: PlatformAnalyticsKey, period: AnalyticsPeriod) {
   return useQuery({ queryKey: ["platform-analytics", key, period], retry: false,
     queryFn: () => staffRequest<PlatformAnalyticsReport>(`/admin/platform/analytics/${key}?${periodParams(period)}`) });
 }
@@ -19,7 +20,7 @@ export function useAnalyticsMakerspaces(page: number, reportKey: string) {
 }
 
 // Fallbacks mirror the registry for cached responses from servers predating chart metadata.
-export const PLATFORM_CHART_SPECS: Record<"platform-services" | "platform-usage", ReportChartSpec> = {
+export const PLATFORM_CHART_SPECS: Record<PlatformAnalyticsKey, ReportChartSpec> = {
   "platform-services": {
     series: ["makerspace", "service", "purpose", "provider_source", "status", "bucket"], x: { field: "day", kind: "time" },
     values: [{ field: "count", unit: "operations" }, { field: "amount", unit: "currency" }],
@@ -29,5 +30,9 @@ export const PLATFORM_CHART_SPECS: Record<"platform-services" | "platform-usage"
     series: ["makerspace", "metric", "entity_kind", "entity_id"], x: { field: "period", kind: "time" },
     values: [{ field: "value", unit: "unit" }], currency_field: "currency", partition: "unit",
     negatives: "clip", truncation: null, alt_template: "{value} {unit} for {metric}",
+  },
+  "platform-channel-usage": {
+    series: ["measure", "channel", "area"], x: { field: "period", kind: "time" }, values: [{ field: "value", unit: "count" }],
+    currency_field: null, partition: null, negatives: "clip", truncation: { top_n: 10, other_label: "Other" }, alt_template: "{value} in {period}",
   },
 };

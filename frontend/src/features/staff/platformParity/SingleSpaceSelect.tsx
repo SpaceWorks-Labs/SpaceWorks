@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Field } from "../../../components/ui";
 import { useDebouncedValue } from "../../../lib/useDebouncedValue";
 import { healthKey, listSpaceHealth } from "../platformSpaces/spacesApi";
+import { SearchField } from "../../../components/ui/SearchField";
 
 export type PickedSpace = { id: number; name: string };
 
@@ -15,7 +16,7 @@ export function SingleSpaceSelect({ value, onChange }: { value: PickedSpace | nu
   const options = spaces.data?.results ?? [];
   return <div className="grid gap-4 sm:grid-cols-2">
     <Field label={t`Find a space`}>
-      <input className="desk-input" type="search" value={search} onChange={event => setSearch(event.target.value)} />
+      <SearchField className="desk-input" value={search} onChange={event => setSearch(event.target.value)} />
     </Field>
     <Field label={t`Space`} hint={spaces.isError ? t`Couldn't load spaces.` : spaces.isLoading ? t`Loading spaces…` : undefined}>
       <select className="desk-input" value={value?.id ?? ""} onChange={event => {

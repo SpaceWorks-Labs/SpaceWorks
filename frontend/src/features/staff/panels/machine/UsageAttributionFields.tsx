@@ -2,6 +2,7 @@ import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { staffRequest } from "../../../../lib/api";
+import { SearchField } from "../../../../components/ui/SearchField";
 
 type Candidate = { user_id: number; display_name: string; username: string };
 type Page = { count: number; results: Candidate[] };
@@ -19,7 +20,7 @@ export function UsageAttributionFields({ machineId, member, startedAt, onChange 
     enabled: machineId > 0,
   });
   return <>
-    <label className="eyebrow grid gap-1">{t`Find member (optional)`}<input className="desk-input" value={search} onChange={event => setSearch(event.target.value)} placeholder={t`Search by name`} disabled={!machineId} />
+    <label className="eyebrow grid gap-1">{t`Find member (optional)`}<SearchField className="desk-input" value={search} onChange={event => setSearch(event.target.value)} placeholder={t`Search by name`} disabled={!machineId} />
     </label>
     <label className="eyebrow grid gap-1">{t`Member (optional)`}<select className="desk-input" value={member} disabled={!machineId || candidates.isLoading}
         onChange={event => onChange({ member: event.target.value })}>

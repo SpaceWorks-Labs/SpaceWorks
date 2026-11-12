@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
 import { findMembers } from "./staffShopOrdersApi";
+import { SearchField } from "../../../components/ui/SearchField";
 
 export type TillMember = { id: number; name: string };
 
@@ -19,7 +20,7 @@ export function PosMemberPicker({ makerspaceId, member, onChange }: {
     <button type="button" className="desk-button min-h-11" onClick={() => { onChange(null); setQ(""); }}>{t`Remove member`}</button>
   </div>;
   return <div className="grid gap-2">
-    <label className="grid gap-1 text-sm font-semibold text-ink">{t`Member (for member prices)`}<input className="desk-input min-h-11 font-normal" type="search" value={q} placeholder={t`Name or email`} onChange={event => setQ(event.target.value)} /></label>
+    <label className="grid gap-1 text-sm font-semibold text-ink">{t`Member (for member prices)`}<SearchField className="desk-input min-h-11 font-normal" value={q} placeholder={t`Name or email`} onChange={event => setQ(event.target.value)} /></label>
     {term.length >= 2 && query.data ? query.data.length ? <ul className="grid gap-1" aria-label={t`Matching members`}>
       {query.data.slice(0, 6).map(row => <li key={row.id}><button type="button" className="desk-button min-h-11 w-full justify-start"
         onClick={() => onChange(row)}>{row.name}</button></li>)}

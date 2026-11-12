@@ -8,6 +8,7 @@ import { actionErrorText } from "./ActionDialog";
 import { limitHint, limitLabel } from "./limitCopy";
 import { useLimitDefaults, useSaveLimitDefaults, type LimitDefaultRow, type LimitDefaults } from "./limitDefaultsApi";
 import { fromInput, groupLimits, toInput, validInput, type UnifiedLimit } from "./limitsModel";
+import { SearchField } from "../../../components/ui/SearchField";
 
 const asLimit = (row: LimitDefaultRow): UnifiedLimit => ({
   key: row.key, label: row.label, area: row.group || "other", unit: row.unit, limit: row.default, used: null, percent: null,
@@ -44,7 +45,7 @@ function DefaultsEditor({ data }: { data: LimitDefaults }) {
     Object.fromEntries(changed.map(row => [row.key, drafts[row.key].trim() === "" ? null : fromInput(row, drafts[row.key])])),
     { onSuccess: () => { setDrafts({}); toast(t`Platform defaults saved.`); } });
   return <div className="grid gap-5">
-    <Field label={t`Search limits`}><input className="desk-input" type="search" value={search} placeholder={t`Name of a limit`}
+    <Field label={t`Search limits`}><SearchField className="desk-input" value={search} placeholder={t`Name of a limit`}
       onChange={event => setSearch(event.target.value)} /></Field>
     {needle && !groups.length ? <EmptyState message={t`No limits match this search.`} /> : null}
     {groups.map(group => <section key={group.key} aria-labelledby={`limit-defaults-${group.key}`} className="grid gap-1">

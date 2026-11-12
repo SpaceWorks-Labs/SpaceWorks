@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { StructuredApiError } from "../../lib/api";
 import { expectNoA11yViolations } from "../../test/axe";
 import { PaymentRefundDialog, validateRefundAmount } from "./PaymentRefundDialog";
-import { refundErrorMessage, remainingRefundable, type PaymentRow } from "./paymentsApi";
+import { formatMoney, refundErrorMessage, remainingRefundable, type PaymentRow } from "./paymentsApi";
 
 const { staffRequest } = vi.hoisted(() => ({ staffRequest: vi.fn() }));
 
@@ -32,13 +32,13 @@ const payment: PaymentRow = {
   updated_at: "2026-07-20T10:00:00Z",
 };
 
-function renderDialog() {
+function renderDialog(row: PaymentRow = payment) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
   const invalidate = vi.spyOn(queryClient, "invalidateQueries");
   const onClose = vi.fn();
   const view = render(
     <QueryClientProvider client={queryClient}>
-      <PaymentRefundDialog makerspaceId={7} payment={payment} onClose={onClose} />
+      <PaymentRefundDialog makerspaceId={7} payment={row} onClose={onClose} />
     </QueryClientProvider>,
   );
   return { ...view, invalidate, onClose };
@@ -50,6 +50,13 @@ beforeEach(() => {
 });
 
 describe("PaymentRefundDialog", () => {
+  it("shows the remaining balance in the currency's own minor unit, not two places (PAY-REVIEW)", () => {
+    const kwd: PaymentRow = { ...payment, amount: "10.000", currency: "kwd", refunded_amount: "8.745",
+      refunds: [{ ...payment.refunds[0], amount: "8.745", currency: "kwd" }] };
+    renderDialog(kwd);
+    expect(screen.getByText(`remaining ${formatMoney("1.255", "kwd").replace(/\s/g, " ")}`, { exact: false })).toBeVisible();
+  });
+
   it("counts pending and succeeded refunds against the balance, never failed ones", () => {
     expect(remainingRefundable(payment)).toBe(70);
     expect(validateRefundAmount("70.00", 70)).toBeNull();

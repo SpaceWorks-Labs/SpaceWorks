@@ -8,6 +8,7 @@ import { useChannels } from "../notifications/channelsApi";
 import type { Makerspace } from "./panels/shared";
 import { hubEntries, searchHub, setupChecklist, type HubEntry, type HubTarget } from "./settingsHubCatalog";
 import { SettingsAuthorityCard } from "./SettingsAuthorityCard";
+import { SearchField } from "../../components/ui/SearchField";
 
 type Props = { makerspace: Makerspace; sectionIds: readonly string[]; allowedTabs: readonly string[];
   tabHref: (tab: string, view?: string) => string;
@@ -54,7 +55,7 @@ export function SettingsHub({ makerspace, sectionIds, allowedTabs, tabHref, sect
     {allowedTabs.includes("users") ? <SettingsAuthorityCard makerspaceId={makerspace.id} /> : null}
     <div role="search" className="grid min-w-0 gap-2">
       <label className="text-sm font-semibold text-ink" htmlFor="settings-hub-search">{t`Search settings`}</label>
-      <input id="settings-hub-search" type="search" className="desk-input w-full" value={query} placeholder={t`Try “WhatsApp”, “loan days” or “logo”`}
+      <SearchField id="settings-hub-search" className="desk-input w-full" value={query} placeholder={t`Try “WhatsApp”, “loan days” or “logo”`}
         onChange={event => setQuery(event.target.value)} />
     </div>
     {query.trim() ? <section aria-label={t`Search results`} className="grid min-w-0 gap-1">

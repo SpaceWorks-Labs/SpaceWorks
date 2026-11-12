@@ -51,7 +51,7 @@ it("draws collected and net as separate lines instead of a double-counted stack"
   renderAnalytics(<DashboardAnalyticsWidgets widgets={[revenue]} makerspaceId={11} reportsHref="/reports" />);
   const chart = screen.getByRole("img");
   expect(chart).toHaveAccessibleName(/time on horizontal axis/);
-  expect(chart.querySelectorAll("polyline")).toHaveLength(3);
+  expect(chart.querySelectorAll("polyline")).toHaveLength(6); // each series: edge casing + bright line
   expect(within(chart).getByText("100")).toBeInTheDocument();
   expect(within(chart).queryByText("200")).not.toBeInTheDocument();
 });

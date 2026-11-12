@@ -57,6 +57,9 @@ export function PaymentCredentialFields({ provider, settings, draft, onChange, d
         </div>;
       })}
     </div>
+    {provider === "razorpay" ? <p className="text-sm text-muted">
+      {t`Turn on automatic capture in the Razorpay Dashboard (Account & Settings › Payment capture). Payments that are only authorised are never marked paid here, and Razorpay refunds them after a few days.`}
+    </p> : null}
     <WebhookUrl label={t`Stripe webhook URL`} url={settings?.stripe_webhook_url} />
     <WebhookUrl label={t`Razorpay webhook URL`} url={settings?.razorpay_webhook_url} />
   </>;

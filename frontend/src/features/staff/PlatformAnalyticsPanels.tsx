@@ -6,6 +6,7 @@ import { analyticsRows, type AnalyticsPeriod } from "./panels/analyticsApi";
 import { DataState } from "./panels/OperationsReportState";
 import { PLATFORM_CHART_SPECS, usePlatformAnalytics, type AnalyticsMakerspace } from "./platformAnalyticsApi";
 import { PlatformAnalyticsPicker } from "./PlatformAnalyticsPicker";
+import { PlatformChannelUsage } from "./PlatformChannelUsage";
 import { PlatformSpaceComparison } from "./PlatformSpaceComparison";
 import { PlatformReportGroups } from "./PlatformReportGroups";
 import type { PlatformDashboard } from "./platformMonitoringApi";
@@ -28,6 +29,7 @@ export function PlatformAnalyticsPanels({ spaces }: { spaces?: PlatformDashboard
     <AnalyticsPeriodControls value={period} onChange={setPeriod} />
     <PlatformReport reportKey="platform-services" title={t`Platform services`} period={period} />
     <PlatformReport reportKey="platform-usage" title={t`Platform usage`} period={period} />
+    <PlatformChannelUsage period={period} spaces={spaces} />
     <PlatformSpaceComparison period={period} spaces={spaces} />
     <PlatformReportGroups />
     <PlatformAnalyticsPicker period={period} />

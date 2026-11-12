@@ -8,6 +8,7 @@ import { StaffRoleFields, validRoleSet, type RoleDraft } from "./StaffRoleEditor
 import { grantStaffRole, staffRoleErrorText, type GrantResult, type StaffRolesPolicy } from "./staffRolesApi";
 import { BoxArt } from "../../../../components/BoxSpinner";
 import { BoxSpinner } from "../../../../components/BoxSpinner";
+import { SearchField } from "../../../../components/ui/SearchField";
 
 type MemberOption = { id: number; user: { id: number; username: string; display_name: string } };
 type Person = { id: number; name: string };
@@ -45,7 +46,7 @@ export function StaffRoleGrantDialog({ space, policy, onClose, onDone }: {
           <input className="desk-input w-full" type="email" required maxLength={254} autoComplete="off" value={email} onChange={e => setEmail(e.target.value)} />
         </Field> : <>
           <Field label={t`Find a member`} hint={t`Type at least two letters of a name or username. Staff roles are added to their own account.`}>
-            <input className="desk-input w-full" type="search" value={query} onChange={e => { setQuery(e.target.value); setPerson(null); }} />
+            <SearchField className="desk-input w-full" value={query} onChange={e => { setQuery(e.target.value); setPerson(null); }} />
           </Field>
           {members.isFetching ? <BoxSpinner label={t`Searching…`} /> : null}
           {members.isError ? <ErrorText message={staffRoleErrorText(members.error)} /> : null}

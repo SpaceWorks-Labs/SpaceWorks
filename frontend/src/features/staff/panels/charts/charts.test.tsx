@@ -59,8 +59,8 @@ describe.each(components)("%s", (_, component) => {
 
 it("uses elapsed time, not row index, for multiline positions and preserves multiple series", () => {
   const { container } = render(<MultiLineChart title="Loans" data={data} />);
-  const lines = container.querySelectorAll("polyline");
-  expect(lines).toHaveLength(2);
+  const lines = container.querySelectorAll('svg[role="img"] polyline');
+  expect(lines).toHaveLength(4); // each series: an edge casing under the bright line
   const xs = lines[0].getAttribute("points")!.split(" ").map((point) => Number(point.split(",")[0]));
   expect((xs[1] - xs[0]) / (xs[2] - xs[0])).toBeCloseTo(1 / 9);
   expect(container.querySelectorAll("circle, rect").length).toBe(4);
@@ -69,9 +69,9 @@ it("uses elapsed time, not row index, for multiline positions and preserves mult
 
 it("keeps bar, pie and segment colours stable after reordering", () => {
   const { container, rerender } = render(<PieChart rows={legacyRows} />);
-  const initial = container.querySelector("circle")!.getAttribute("stroke");
+  const initial = container.querySelector("circle[stroke-width=\"26\"]")!.getAttribute("stroke");
   rerender(<PieChart rows={[...legacyRows].reverse()} />);
-  expect(container.querySelectorAll("circle")[1].getAttribute("stroke")).toBe(initial);
+  expect(container.querySelectorAll("circle[stroke-width=\"26\"]")[1].getAttribute("stroke")).toBe(initial);
   expect(initial).toBe(seriesColor("One"));
   rerender(<BarChart rows={legacyRows} />);
   const bar = container.querySelector('[style*="background-color"]')!.getAttribute("style");

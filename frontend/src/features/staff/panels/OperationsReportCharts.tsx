@@ -3,7 +3,8 @@ import { EmptyState } from "../../../components/ui/EmptyState";
 import { formatNumber, type ChartRow } from "./OperationsReportState";
 import { ChartFrame } from "./charts/ChartFrame";
 import { legacyChartData } from "./charts/legacyChartData";
-import { panel, seriesColor } from "./charts/chartStyle";
+import { CasedLine } from "./charts/CasedLine";
+import { edge, markStyle, seriesColor } from "./charts/chartStyle";
 import type { ChartData } from "./charts/chartSpec";
 export { REPORT_CHART_COLORS } from "./charts/chartStyle";
 
@@ -18,9 +19,9 @@ export function BarChart({ rows, valueLabel, title, chartData }: { rows: ChartRo
         <span className="truncate text-ink" title={row.label}>{row.label}</span>
         <div className="flex h-3 overflow-hidden rounded border border-line bg-bg" aria-hidden="true">
           {rows.some((item) => item.value < 0) ? <>
-            <div className="flex w-1/2 justify-end border-r border-ink"><div style={{ width: `${Math.max(0, -row.value) / maxValue * 100}%`, backgroundColor: seriesColor(row.label) }} /></div>
-            <div className="w-1/2"><div className="h-full" style={{ width: `${Math.max(0, row.value) / maxValue * 100}%`, backgroundColor: seriesColor(row.label) }} /></div>
-          </> : <div className="h-full rounded" style={{ width: `${row.value / maxValue * 100}%`, backgroundColor: seriesColor(row.label) }} />}
+            <div className="flex w-1/2 justify-end border-r border-ink"><div style={{ width: `${Math.max(0, -row.value) / maxValue * 100}%`, ...markStyle(row.label) }} /></div>
+            <div className="w-1/2"><div className="h-full" style={{ width: `${Math.max(0, row.value) / maxValue * 100}%`, ...markStyle(row.label) }} /></div>
+          </> : <div className="h-full rounded" style={{ width: `${row.value / maxValue * 100}%`, ...markStyle(row.label) }} />}
         </div>
         <span className="min-w-14 text-right tabular-nums text-xs text-muted">{formatNumber(row.value)} {valueLabel ?? ""}</span>
       </div>)}
@@ -40,8 +41,8 @@ export function LineChart({ rows, valueLabel, title, chartData }: { rows: ChartR
   }));
   return <ChartFrame title={title ?? (valueLabel ? t`Line chart of ${valueLabel}` : t`Line chart of values`)} data={chartData ?? legacyChartData(rows, valueLabel)}>
     <svg viewBox={`0 0 ${width} ${height}`} className="h-44 w-full" role="img" aria-label={valueLabel ? t`Line chart of ${valueLabel}; exact values in the table.` : t`Line chart of values; exact values in the table.`}>
-      <polyline fill="none" stroke={seriesColor(valueLabel ?? "values")} strokeWidth="4" points={points.map((point) => `${point.x},${point.y}`).join(" ")} />
-      {points.map((point, index) => <circle key={`${point.label}-${index}`} cx={point.x} cy={point.y} r="5" fill={panel} stroke={seriesColor(valueLabel ?? "values")} strokeWidth="3" />)}
+      <CasedLine color={seriesColor(valueLabel ?? "values")} points={points.map((point) => `${point.x},${point.y}`).join(" ")} />
+      {points.map((point, index) => <circle key={`${point.label}-${index}`} cx={point.x} cy={point.y} r="5" fill={seriesColor(valueLabel ?? "values")} stroke={edge} strokeWidth="1.5" />)}
     </svg>
   </ChartFrame>;
 }
@@ -62,8 +63,8 @@ export function StackedBarChart({ rows, valueLabel, title, chartData }: { rows: 
     <div className="space-y-3">{rows.map((row) => <div key={row.label} className="space-y-1 text-sm">
       <p>{row.label}</p>
       <div className="flex h-4 overflow-hidden rounded border border-line bg-bg" aria-hidden="true">
-        <div className="flex justify-end border-r border-ink" style={{ width: `${negative / max * 100}%` }}>{row.segments.filter((segment) => segment.value < 0).map((segment) => <span key={segment.label} style={{ width: `${-segment.value / (negative || 1) * 100}%`, backgroundColor: seriesColor(segment.label) }} />)}</div>
-        <div className="flex" style={{ width: `${positive / max * 100}%` }}>{row.segments.filter((segment) => segment.value >= 0).map((segment) => <span key={segment.label} style={{ width: `${segment.value / (positive || 1) * 100}%`, backgroundColor: seriesColor(segment.label) }} />)}</div>
+        <div className="flex justify-end border-r border-ink" style={{ width: `${negative / max * 100}%` }}>{row.segments.filter((segment) => segment.value < 0).map((segment) => <span key={segment.label} style={{ width: `${-segment.value / (negative || 1) * 100}%`, ...markStyle(segment.label) }} />)}</div>
+        <div className="flex" style={{ width: `${positive / max * 100}%` }}>{row.segments.filter((segment) => segment.value >= 0).map((segment) => <span key={segment.label} style={{ width: `${segment.value / (positive || 1) * 100}%`, ...markStyle(segment.label) }} />)}</div>
       </div>
       <ul className="flex flex-wrap gap-3 text-xs text-muted">{row.segments.map((segment) => <li key={segment.label}>{segment.label}: {formatNumber(segment.value)} {valueLabel}</li>)}</ul>
     </div>)}</div>
@@ -82,9 +83,13 @@ export function PieChart({ rows, valueLabel, title, chartData }: { rows: ChartRo
         const dash = row.value / total * circumference;
         const offset = -consumed;
         consumed += dash;
-        return <circle key={row.label} cx="80" cy="80" r="60" fill="none" stroke={seriesColor(row.label)} strokeWidth="26" strokeDasharray={`${dash} ${circumference - dash}`} strokeDashoffset={offset} />;
+        const gap = Math.min(2, dash);
+        return <g key={row.label} fill="none">
+          <circle cx="80" cy="80" r="60" stroke={edge} strokeWidth="28" strokeDasharray={`${dash} ${circumference - dash}`} strokeDashoffset={offset} />
+          <circle cx="80" cy="80" r="60" stroke={seriesColor(row.label)} strokeWidth="26" strokeDasharray={`${dash - gap} ${circumference - dash + gap}`} strokeDashoffset={offset - gap / 2} />
+        </g>;
       })}</g></svg>
-      <ul className="min-w-0 flex-1 space-y-1 text-sm">{rows.map((row) => <li key={row.label} className="flex gap-2"><span aria-hidden="true" className="h-3 w-3 border border-line" style={{ backgroundColor: seriesColor(row.label) }} />{row.label}<span className="ml-auto tabular-nums text-xs">{formatNumber(row.value)} - {(total ? row.value / total * 100 : 0).toFixed(0)}%</span></li>)}</ul>
+      <ul className="min-w-0 flex-1 space-y-1 text-sm">{rows.map((row) => <li key={row.label} className="flex gap-2"><span aria-hidden="true" className="h-3 w-3" style={markStyle(row.label)} />{row.label}<span className="ml-auto tabular-nums text-xs">{formatNumber(row.value)} - {(total ? row.value / total * 100 : 0).toFixed(0)}%</span></li>)}</ul>
     </div>}
   </ChartFrame>;
 }

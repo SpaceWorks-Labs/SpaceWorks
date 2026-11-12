@@ -5,6 +5,7 @@ import { Field } from "../../../components/ui";
 import { useDebouncedValue } from "../../../lib/useDebouncedValue";
 import { healthKey, listSpaceHealth } from "./spacesApi";
 import { LogoLoader } from "../../../components/LogoLoader";
+import { SearchField } from "../../../components/ui/SearchField";
 
 export type PickedSpaces = Record<number, string>;
 
@@ -23,7 +24,7 @@ export function SpacePicker({ value, onChange }: { value: PickedSpaces; onChange
     <legend className="px-1 text-sm font-semibold text-ink">{t`Spaces`}</legend>
     <p className="text-sm text-muted">{picked.length ? t`Selected: ${picked.map(([, name]) => name).join(", ")}` : t`No spaces selected yet.`}</p>
     <Field label={t`Find a space`}>
-      <input className="desk-input" type="search" value={search} onChange={event => setSearch(event.target.value)} />
+      <SearchField className="desk-input" value={search} onChange={event => setSearch(event.target.value)} />
     </Field>
     <div className="grid max-h-56 gap-1 overflow-y-auto">
       {spaces.isLoading ? <LogoLoader label={t`Loading spaces…`} size={48} className="min-h-16 py-3" /> : null}

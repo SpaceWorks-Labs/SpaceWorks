@@ -6,6 +6,7 @@ import { useState, type MouseEvent } from "react";
 
 import { useLayoutMedia } from "../../components/layouts/useLayoutMedia";
 import { settingsGroups, type SettingsGroup } from "./settingsSections";
+import { SearchField } from "../../components/ui/SearchField";
 
 type Props = {
   /** Section id → title, for the sections this actor and space have. */
@@ -56,7 +57,7 @@ export function SettingsSectionNav({ titles, links = {}, active, href, canLeave,
   const guard = (id: string) => (event: MouseEvent) => { if (id !== active && !canLeave()) event.preventDefault(); };
   return <nav aria-label={t`Settings pages`} className="sw-settings-nav grid min-w-0 content-start gap-4 pb-2">
     {help ? <div role="search" className="grid min-w-0 gap-1 px-1"><label className="sr-only" htmlFor="settings-nav-filter">{t`Search settings`}</label>
-      <input id="settings-nav-filter" type="search" className="desk-input w-full" value={query} placeholder={t`Search settings`}
+      <SearchField id="settings-nav-filter" className="desk-input w-full" value={query} placeholder={t`Search settings`}
         onChange={event => setQuery(event.target.value)} />
       {words.length && !groups.length ? <p role="status" className="px-2 text-sm text-muted">{t`No settings match. Try another word.`}</p> : null}
     </div> : null}

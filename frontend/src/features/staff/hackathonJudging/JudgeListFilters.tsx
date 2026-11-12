@@ -1,8 +1,8 @@
 import { t } from "@lingui/core/macro";
 import { useEffect, useState } from 'react';
-import { Search } from 'lucide-react';
 import { SegmentedControl } from '../../../components/ui';
 import type { AssignmentPage, AssignmentState } from './api';
+import { SearchField } from "../../../components/ui/SearchField";
 
 export type JudgeFilters = { state: AssignmentState | ''; q: string };
 const STATE_LABELS = (): Record<AssignmentState, string> => ({ assigned: t`To score`, scored: t`Scored`, skipped: t`Skipped`,
@@ -25,10 +25,7 @@ export function JudgeListFilters({ value, counts, onChange }: { value: JudgeFilt
     <SegmentedControl label={t`Show projects`} value={value.state} onChange={state => onChange({ ...value, state: state as JudgeFilters['state'] })}
       options={[{ value: '', label: withCount(t`All`, total) }, ...shown.map(key => ({ value: key, label: withCount(labels[key], counts?.[key]) }))]} />
     <label className="grid min-w-[min(16rem,100%)] flex-1 gap-1 text-sm font-semibold text-ink">{t`Search your projects`}
-      <span className="relative flex items-center">
-        <Search aria-hidden="true" className="pointer-events-none absolute left-3 size-4 text-muted" />
-        <input type="search" className="desk-input min-h-11 w-full pl-9" maxLength={100} value={text} onChange={e => setText(e.target.value)}
-          placeholder={t`Project title`} />
-      </span></label>
+      <SearchField className="desk-input min-h-11 w-full" maxLength={100} value={text} onChange={e => setText(e.target.value)}
+        placeholder={t`Project title`} /></label>
   </div>;
 }

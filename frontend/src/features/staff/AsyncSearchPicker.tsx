@@ -1,6 +1,7 @@
 import { t } from "@lingui/core/macro";
 import { useEffect, useId, useRef, useState } from "react";
 import { BoxSpinner } from "../../components/BoxSpinner";
+import { SearchField, searchItemStyle } from "../../components/ui/SearchField";
 
 export type PickerOption = { id: number; label: string; detail?: string };
 
@@ -43,7 +44,7 @@ export function AsyncSearchPicker({ label, helper, placeholder, selected, option
       </li>)}
     </ul> : null}
     <div className="relative">
-      <input id={`${id}-input`} className="desk-input w-full min-w-0" type="search" role="combobox" autoComplete="off"
+      <SearchField id={`${id}-input`} className="desk-input w-full min-w-0" role="combobox" loading={loading && expanded} autoComplete="off"
         aria-expanded={expanded} aria-controls={`${id}-list`} aria-autocomplete="list"
         aria-describedby={helper ? `${id}-helper` : undefined}
         aria-activedescendant={expanded && choices[active] ? `${id}-option-${choices[active].id}` : undefined}
@@ -54,14 +55,14 @@ export function AsyncSearchPicker({ label, helper, placeholder, selected, option
           if (event.key === "ArrowDown") { event.preventDefault(); setOpen(true); setActive((value) => Math.min(value + 1, Math.max(choices.length - 1, 0))); }
           else if (event.key === "ArrowUp") { event.preventDefault(); setActive((value) => Math.max(value - 1, 0)); }
           else if (event.key === "Enter" && expanded && choices[active]) { event.preventDefault(); pick(choices[active]); }
-          else if (event.key === "Escape") setOpen(false);
+          else if (event.key === "Escape" && !term) setOpen(false);
         }} />
       {expanded ? <ul id={`${id}-list`} role="listbox" aria-label={label}
-        className="absolute inset-x-0 top-full z-20 mt-1 max-h-64 overflow-y-auto rounded-xl border border-line bg-panel p-1 shadow-lg">
+        className="sw-search-pop absolute inset-x-0 top-full z-20 mt-1 max-h-64 overflow-y-auto rounded-xl border border-line bg-panel p-1 shadow-lg">
         {loading ? <li className="p-3" role="presentation"><BoxSpinner label={t`Searching…`} /></li>
-          : !choices.length ? <li className="p-3 text-sm text-muted" role="presentation">{emptyText}</li>
+          : !choices.length ? <li className="sw-search-empty p-3 text-sm text-muted" role="presentation">{emptyText}</li>
           : choices.map((row, index) => <li key={row.id} id={`${id}-option-${row.id}`} role="option" aria-selected={index === active}
-            className={`flex min-h-11 cursor-pointer flex-col justify-center rounded-lg px-3 py-2 text-sm ${index === active ? "bg-hover" : ""}`}
+            style={searchItemStyle(index)} className={`sw-search-item flex min-h-11 cursor-pointer flex-col justify-center rounded-lg px-3 py-2 text-sm ${index === active ? "bg-hover" : ""}`}
             onMouseDown={(event) => { event.preventDefault(); pick(row); }} onMouseEnter={() => setActive(index)}>
             <span className="font-semibold text-ink">{row.label}</span>
             {row.detail ? <span className="code-text text-xs text-muted">{row.detail}</span> : null}

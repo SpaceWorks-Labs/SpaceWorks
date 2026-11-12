@@ -10,6 +10,7 @@ import { commandError, usePrivateCommand, type EventScope } from "../../events/s
 import { MinorAmountInput } from "../../forms/MinorAmountInput";
 import { reimbursementAdminKey, reimbursementAdminPath, useProgramme } from "./api";
 import { BoxArt } from "../../../components/BoxSpinner";
+import { SearchField } from "../../../components/ui/SearchField";
 
 /** POST …/reimbursements/staff-claims/ (parity C17); `operation_id` and the Idempotency-Key come from the shared command hook. */
 type StaffClaimCommand = { expected_version: 0; beneficiary_registration_id?: number; category: string;
@@ -64,7 +65,7 @@ export function StaffClaimForm({ scope, onFiled }: { scope: EventScope; onFiled:
       <SegmentedControl label={t`Claim for`} value={who} onChange={value => { setWho(value as typeof who); setBeneficiary(""); }}
         options={[{ value: "self", label: t`Myself` }, { value: "other", label: t`A speaker or volunteer` }]} />
       {who === "self" ? <p className="text-sm text-muted">{t`You need your own registration on this event.`}</p> : <>
-        <Field label={t`Find the person`}><input className="desk-input" type="search" value={search} onChange={event => setSearch(event.target.value)} placeholder={t`Name or email`} /></Field>
+        <Field label={t`Find the person`}><SearchField className="desk-input" value={search} onChange={event => setSearch(event.target.value)} placeholder={t`Name or email`} /></Field>
         <Field label={t`Person`} error={registrations.isError ? t`Registrations could not be loaded for your access.` : undefined}>
           <select className="desk-input" required value={beneficiary} onChange={event => setBeneficiary(event.target.value)}>
             <option value="">{registrations.isLoading ? t`Loading…` : people.length ? t`Choose a registered person` : t`No registered person matches`}</option>

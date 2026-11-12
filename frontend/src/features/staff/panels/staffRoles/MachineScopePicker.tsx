@@ -1,6 +1,6 @@
 import { t } from "@lingui/core/macro";
-import { Search } from "lucide-react";
 import { useId, useMemo, useState } from "react";
+import { SearchField } from "../../../../components/ui/SearchField";
 
 export type ScopeType = { id: number; name: string };
 export type ScopeMachine = { id: number; name: string; machine_type_id: number };
@@ -35,10 +35,9 @@ export function MachineScopePicker({ types, machines, value, onChange, disabled 
   return <fieldset disabled={disabled} className="grid min-w-0 gap-2" aria-describedby={`${id}-rule`}>
     <legend className="text-sm font-semibold text-ink">{t`Machines they look after`}</legend>
     <p id={`${id}-rule`} className="text-xs text-muted">{t`Choose whole machine types (they include machines added later), single machines, or both. Nothing chosen means no machines.`}</p>
-    {types.length > 4 || machines.length > 8 ? <label className="relative flex items-center">
-      <Search aria-hidden="true" size={16} className="pointer-events-none absolute left-3 text-muted" />
+    {types.length > 4 || machines.length > 8 ? <label className="block">
       <span className="sr-only">{t`Search machines and types`}</span>
-      <input className="desk-input w-full pl-9" type="search" value={query} placeholder={t`Search machines and types`} onChange={event => setQuery(event.target.value)} />
+      <SearchField className="desk-input w-full" value={query} placeholder={t`Search machines and types`} onChange={event => setQuery(event.target.value)} />
     </label> : null}
     {!types.length ? <p className="text-sm text-muted">{t`This makerspace has no machine types yet.`}</p> : null}
     {types.length && !groups.length ? <p role="status" className="text-sm text-muted">{t`No machines or types match.`}</p> : null}

@@ -5,6 +5,7 @@ import { ListRow } from "../../../components/ui";
 import { useDebouncedValue } from "../../../lib/useDebouncedValue";
 import { openSpaceTab } from "./openSpaceTab";
 import { crossSpaceKeys, searchPlatform, type SearchHit } from "./crossSpaceApi";
+import { SearchField } from "../../../components/ui/SearchField";
 
 const KIND = (): Record<SearchHit["kind"], string> => ({ space: t`Space`, person: t`Person`, receipt: t`Receipt` });
 
@@ -24,7 +25,7 @@ export function PlatformSearch({ spaceNames }: { spaceNames: Record<number, stri
   const open = (spaceId: number, path: string) => openSpaceTab(spaceId, path);
   return <div className="grid gap-3">
     <label htmlFor={`${id}-q`} className="text-sm font-semibold">{t`Space name, person's username or email, or receipt number`}</label>
-    <input id={`${id}-q`} type="search" className="desk-input max-w-xl" maxLength={100} value={text} onChange={event => setText(event.target.value)}
+    <SearchField expand id={`${id}-q`} className="desk-input max-w-xl" maxLength={100} value={text} onChange={event => setText(event.target.value)}
       aria-describedby={`${id}-hint`} />
     <p id={`${id}-hint`} className="text-xs text-muted">{t`Type at least 3 characters. Results show which space a match belongs to, never its records.`}</p>
     <div role="status" aria-live="polite" className="text-sm text-muted">

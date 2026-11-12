@@ -1,8 +1,8 @@
 import { t } from "@lingui/core/macro";
 import { ChartFrame, type ChartProps } from "./ChartFrame";
-import { ink, panel } from "./chartStyle";
+import { edge, ink, panel } from "./chartStyle";
 
-const scaleFill = (fraction: number) => `color-mix(in srgb, rgb(var(--chart-info)) ${fraction * 100}%, ${panel})`;
+const scaleFill = (fraction: number) => `color-mix(in srgb, rgb(var(--chart-4)) ${fraction * 100}%, ${panel})`;
 
 /** series_fields supply the vertical axis (weekday or cohort); x supplies hour or age. */
 export function Heatmap({ title, data }: ChartProps) {
@@ -23,16 +23,16 @@ export function Heatmap({ title, data }: ChartProps) {
           const x = 162 + column * 72;
           const y = 48 + row * 48;
           return <g key={key}>
-            <rect x={x} y={y} width="68" height="44" fill={point ? scaleFill(Math.abs(point.value) / max) : panel} stroke={ink} />
+            <rect x={x} y={y} width="68" height="44" fill={point ? scaleFill(Math.abs(point.value) / max) : panel} stroke={edge} />
             <rect x={x + 4} y={y + 4} width="60" height="26" fill={panel} />
-            {point && <rect x={x + 2} y={y + 36} width={Math.abs(point.value) / max * 64} height="6" fill="rgb(var(--chart-info))" />}
+            {point && <rect x={x + 2} y={y + 36} width={Math.abs(point.value) / max * 64} height="6" fill="rgb(var(--chart-4))" stroke={edge} />}
             <text x={x + 34} y={y + 24} textAnchor="middle" fill={ink} fontSize="12">{point ? point.value : "—"}</text>
           </g>;
         })}
       </g>)}
     </svg>
     <ul aria-label={t`Magnitude scale`} className="flex flex-wrap gap-3 text-sm">{[0, 0.25, 0.5, 0.75, 1].map((fraction) => <li key={fraction} className="flex items-center gap-1">
-      <svg width="20" height="16" aria-hidden="true"><rect x="1" y="1" width="18" height="14" fill={scaleFill(fraction)} stroke={ink} /></svg>{Number((max * fraction).toFixed(2))}
+      <svg width="20" height="16" aria-hidden="true"><rect x="1" y="1" width="18" height="14" fill={scaleFill(fraction)} stroke={edge} /></svg>{Number((max * fraction).toFixed(2))}
     </li>)}</ul>
     <p className="text-sm text-muted">{t`Scale: strip length shows magnitude from 0 to ${max}. Signed cell values give the exact measurement; — means no observation.`}</p>
   </ChartFrame>;

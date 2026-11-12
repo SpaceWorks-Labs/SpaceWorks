@@ -9,6 +9,7 @@ import { buildOverrides, groupLimits, toInput, unifyLimits, validInput, type Uni
 import { useSaveSpaceLimits, useSpaceLimits, type SpaceLimits } from "./limitsApi";
 import { LogoLoader } from "../../../components/LogoLoader";
 import { BoxArt } from "../../../components/BoxSpinner";
+import { SearchField } from "../../../components/ui/SearchField";
 
 /** Case-insensitive match on the limit's plain-language name or its key (the search box of both limit screens). */
 export const matchesSearch = (row: Pick<UnifiedLimit, "key" | "label">, search: string) => {
@@ -38,7 +39,7 @@ export function SpaceLimitsEditor({ id, data, headingLevel = 4 }: { id: number; 
     onSuccess: () => { setDrafts({}); toast(t`Limits saved.`); },
   });
   return <div className="grid gap-5">
-    <Field label={t`Search limits`}><input className="desk-input" type="search" value={search} placeholder={t`Name of a limit`}
+    <Field label={t`Search limits`}><SearchField className="desk-input" value={search} placeholder={t`Name of a limit`}
       onChange={event => setSearch(event.target.value)} /></Field>
     {search.trim() && !groups.length ? <EmptyState message={t`No limits match this search.`} /> : null}
     {groups.map(group => <section key={group.key} aria-labelledby={`limits-${id}-${group.key}`} className="grid gap-1">

@@ -31,7 +31,8 @@ test("the homepage selects the only space or directory, with sign-in and hub lin
   else {
     await expect(page.getByRole("heading", { level: 1, name: "Find a makerspace near you" })).toBeVisible();
     const search = page.getByRole("searchbox", { name: "Search spaces" });
-    if (await search.count()) await search.fill(SEED.makerspaceName);
+    // Every seed run adds an "E2E Makerspace"; the slug is searchable and unique to this run.
+    if (await search.count()) await search.fill(SEED.slug);
     await expect(page.locator(`a[href="/m/${SEED.slug}"]`)).toBeVisible();
   }
   await hubLinks(page);
@@ -48,7 +49,8 @@ for (const viewport of [{ width: 1280, height: 900 }, { width: 390, height: 844 
     // /spaces remains available even when / redirects to the only makerspace.
     await page.locator('a[href="/spaces"]:visible').first().click();
     const search = page.getByRole("searchbox", { name: "Search spaces" });
-    if (await search.count()) await search.fill(SEED.makerspaceName);
+    // Every seed run adds an "E2E Makerspace"; the slug is searchable and unique to this run.
+    if (await search.count()) await search.fill(SEED.slug);
     await page.locator(`a[href="/m/${SEED.slug}"]`).click();
     await expect(page).toHaveURL(new RegExp(`/m/${SEED.slug}$`));
     await page.getByRole("link", { name: "Browse inventory", exact: true }).click();

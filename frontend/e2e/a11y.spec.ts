@@ -69,18 +69,24 @@ for (const colorScheme of ["light", "dark"] as const) {
 
     test("member joining screen, sign in and active member area", async ({ page, request }) => {
       // Presence is an opt-in module; the seed does not install it, so the Presence panel needs it on.
-      await (await StaffApi.open(request)).installModules("presence");
-      await page.goto(`/m/${SEED.slug}/member`);
-      await expect(page.getByRole("button", { name: "Sign in to join" })).toBeVisible();
-      await expectClean(page);
-      await page.getByRole("button", { name: "Sign in to join" }).click();
-      await expect(page.getByRole("heading", { name: "Member sign in" })).toBeVisible();
-      await expectClean(page);
-      await submitSignIn(page, MEMBER);
-      await expect(page.getByRole("heading", { name: "Membership", exact: true })).toBeVisible();
-      await expect(page.getByRole("heading", { name: "Presence", exact: true })).toBeVisible();
-      await expect(page.getByRole("link", { name: "Contact support" })).toBeVisible();
-      await expectClean(page);
+      const staff = await StaffApi.open(request);
+      await staff.installModules("presence");
+      try {
+        await page.goto(`/m/${SEED.slug}/member`);
+        await expect(page.getByRole("button", { name: "Sign in to join" })).toBeVisible();
+        await expectClean(page);
+        await page.getByRole("button", { name: "Sign in to join" }).click();
+        await expect(page.getByRole("heading", { name: "Member sign in" })).toBeVisible();
+        await expectClean(page);
+        await submitSignIn(page, MEMBER);
+        await expect(page.getByRole("heading", { name: "Membership", exact: true })).toBeVisible();
+        await expect(page.getByRole("heading", { name: "Presence", exact: true })).toBeVisible();
+        await expect(page.getByRole("link", { name: "Contact support" })).toBeVisible();
+        await expectClean(page);
+      } finally {
+        // Presence changes who may request hardware; leave the shared e2e space as it was found.
+        await staff.post(`/admin/makerspace/${staff.makerspaceId}/modules/uninstall`, { key: "presence" });
+      }
     });
 
     for (const [path, heading, content] of [

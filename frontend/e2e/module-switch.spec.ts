@@ -21,6 +21,9 @@ test.describe("module switch", () => {
     test(`${mod.key}: off hides the area and refuses the API, on brings it back`, async ({ page, request }) => {
       test.setTimeout(120_000);
       const staff = await StaffApi.open(request);
+      // Leave the shared e2e space as it was found: a module the seed never installed goes back off at the end.
+      const space = await staff.get<{ enabled_modules?: string[] }>(`/admin/makerspaces/${staff.makerspaceId}`);
+      const wasInstalled = (space.enabled_modules ?? [mod.key]).includes(mod.key);
       await staff.installModules(mod.key);
       const url = mod.probe(staff.makerspaceId);
       const probe = () => staff.call<{ code?: string }>(mod.write ? "PATCH" : "GET", url, mod.write, false);
@@ -44,6 +47,7 @@ test.describe("module switch", () => {
         await staffConsole(page, "dashboard");
         await expect(page.getByRole("navigation").getByRole("link", { name: mod.link, exact: true }).first()).toBeVisible();
       }
+      if (!wasInstalled) await staff.post(`/admin/makerspace/${staff.makerspaceId}/modules/uninstall`, { key: mod.key });
     });
   }
 });

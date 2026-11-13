@@ -43,5 +43,6 @@
   "vitest": {
     "configFile": "vitest.mutation.config.ts"
   },
-  "inPlace": true
+  "inPlace": true,
+  "cleanTempDir": true
 }

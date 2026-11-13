@@ -115,3 +115,26 @@ def test_scheduled_artifacts_use_the_same_allowlisted_rows(leaky_report, monkeyp
     rows = _decoded_artifact(captured[0], fmt)
     assert rows[0] == ["period", "count"]
     assert_report_disclosure_safe(rows)
+
+
+@pytest.mark.parametrize(("value", "kept"), [
+    ([3, 7], True),
+    ([], True),
+    ([3, "7"], False),
+    ([3, True], False),
+    ([{"id": 3}], False),
+    ("3,7", False),
+    ({"a": 3}, False),
+])
+def test_space_ids_is_the_only_list_meta_and_holds_integer_ids_only(value, kept):
+    """Decision 416: platform reports pass the drill-down space ids through; nothing else non-scalar passes."""
+    definition = ReportDefinition("infra-space-ids", "unused", ("count",), deployment_aggregate=False)
+    result = project_report_output(definition, ReportResult(("count",), [{"count": 1}], {
+        "space_ids": value, "source": "live", "spaces": [3, 7], "history": ["leak"],
+    }))
+    assert ("space_ids" in result.meta) is kept
+    if kept:
+        assert result.meta["space_ids"] == value
+    assert result.meta["source"] == "live"
+    assert "spaces" not in result.meta and "history" not in result.meta
+

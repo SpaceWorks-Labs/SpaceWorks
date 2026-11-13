@@ -15,6 +15,18 @@ META_FIELDS = frozenset({
     "basis", "row_cap", "arrival_counts_available",
     "context_dimensions_available",
 })
+# The one non-scalar meta key: makerspace ids a platform report may drill into (ids only, never names).
+ID_LIST_META_FIELDS = frozenset({"space_ids"})
+
+
+def _meta_value_allowed(key, value):
+    if key in ID_LIST_META_FIELDS:
+        return isinstance(value, list) and all(type(item) is int for item in value)
+    if key not in META_FIELDS:
+        return False
+    if key == "context_dimensions_available":
+        return type(value) is bool
+    return isinstance(value, (str, int, float, bool, date, datetime, Decimal, type(None)))
 
 
 def _warn(definition, unknown):
@@ -38,9 +50,7 @@ def project_report_output(definition, result):
             unknown.update(set(record) - allowed)
         _warn(definition, unknown)
         fields = tuple(field for field in result.field_order if field in allowed)
-        meta = {key: value for key, value in result.meta.items()
-                if key in META_FIELDS and isinstance(value, (str, int, float, bool, date, datetime, Decimal, type(None)))
-                and (key != "context_dimensions_available" or type(value) is bool)}
+        meta = {key: value for key, value in result.meta.items() if _meta_value_allowed(key, value)}
         _warn(definition, set(result.meta) - meta.keys())
         return ReportResult(fields, [{field: row.get(field) for field in fields} for row in result.records],
                             meta)

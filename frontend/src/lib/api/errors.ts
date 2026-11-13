@@ -44,7 +44,14 @@ export function quotaCode(body: ApiErrorBody, code?: string): string {
   return typeof value === "string" && quotaMessage(value) ? value : "";
 }
 
+// Django's get_object_or_404 names the model ("No MakerspaceMembership matches the given query."): a record
+// the person cannot see, for instance an organisation owner opening the account page of a space they have
+// not joined. The class name means nothing to them, so say it in plain words.
+export const NOT_FOUND_MESSAGE = i18n._({ id: "api.error.not_found", message: "We could not find that. It may have been removed, or it belongs to a space you have not joined." });
+const DJANGO_NOT_FOUND = /^No [A-Za-z ]+ matches the given query\.?$/;
+
 function friendlyMessage(status: number, body: ApiErrorBody, code?: string) {
+  if (status === 404 && typeof body.detail === "string" && DJANGO_NOT_FOUND.test(body.detail.trim())) return NOT_FOUND_MESSAGE;
   if (status === 423 && code === "space_read_only") return SPACE_READ_ONLY_MESSAGE;
   if (status === 423 && code === "space_suspended") return SPACE_SUSPENDED_MESSAGE;
   // DRF may wrap the code in a list when the refusal is raised as a ValidationError.

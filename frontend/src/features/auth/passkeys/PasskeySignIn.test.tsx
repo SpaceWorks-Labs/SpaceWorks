@@ -5,7 +5,7 @@ import { apiError } from "../../../lib/api/errors";
 import { finishPasskeySignIn, passkeySignInOptions } from "./passkeyApi";
 import { PasskeySignInButton } from "./PasskeySignInButton";
 import { usePasskeySignIn } from "./usePasskeySignIn";
-import { PasskeyCancelled, passkeyAutofillSupported, passkeysSupported } from "./webauthn";
+import { PasskeyCancelled, PasskeyDeviceError, passkeyAutofillSupported, passkeysSupported } from "./webauthn";
 
 vi.mock("./passkeyApi", () => ({ passkeySignInOptions: vi.fn(), finishPasskeySignIn: vi.fn() }));
 vi.mock("./webauthn", async original => ({
@@ -57,6 +57,16 @@ describe("passkey sign-in", () => {
     render(<Harness />);
     await waitFor(() => expect(screen.getByLabelText("Email")).toHaveAttribute("autocomplete", "username webauthn"));
     await waitFor(() => expect(finish).toHaveBeenCalledWith(ceremony, true));
+  });
+
+  it("stays silent when the device cannot run the waiting autofill request", async () => {
+    autofill.mockResolvedValue(true);
+    options.mockResolvedValue(ceremony);
+    finish.mockRejectedValue(new PasskeyDeviceError("Your device couldn't use a passkey just now."));
+    render(<Harness />);
+    await waitFor(() => expect(finish).toHaveBeenCalledWith(ceremony, true));
+    await act(async () => { await Promise.resolve(); });
+    expect(screen.queryByText(/couldn't use a passkey/)).not.toBeInTheDocument();
   });
 
   it("keeps the plain email field when conditional UI is missing", async () => {

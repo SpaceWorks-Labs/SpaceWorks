@@ -3,7 +3,7 @@ import { WebAuthnAbortService } from "@simplewebauthn/browser";
 import type { PasskeyLogin } from "../../../generated/api";
 import { authErrorMessage } from "../../../lib/api/authErrorCopy";
 import { finishPasskeySignIn, passkeySignInOptions } from "./passkeyApi";
-import { isPasskeyCancelled, passkeyAutofillSupported, passkeysSupported } from "./webauthn";
+import { PasskeyDeviceError, isPasskeyCancelled, passkeyAutofillSupported, passkeysSupported } from "./webauthn";
 
 /**
  * Passwordless sign-in with a passkey (S-A's discoverable-credential routes).
@@ -31,7 +31,9 @@ export function usePasskeySignIn({ enabled, onSignedIn }: { enabled: boolean; on
       });
       done.current(await finishPasskeySignIn(ceremony, conditional));
     } catch (failure) {
-      const quiet = isPasskeyCancelled(failure) || (failure instanceof DOMException && failure.name === "AbortError");
+      // The waiting autofill request is a convenience: a device that cannot run it stays silent, as documented above.
+      const quiet = isPasskeyCancelled(failure) || (failure instanceof DOMException && failure.name === "AbortError")
+        || (conditional && failure instanceof PasskeyDeviceError);
       if (!quiet) setError(authErrorMessage(failure, "That passkey didn't work. Try again."));
     } finally {
       if (!conditional) setPending(false);

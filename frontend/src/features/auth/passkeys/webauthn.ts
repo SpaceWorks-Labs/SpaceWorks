@@ -14,6 +14,11 @@ export class PasskeyCancelled extends Error {
   constructor() { super("Passkey request cancelled."); this.name = "PasskeyCancelled"; }
 }
 
+/** The device or browser could not run the ceremony (no authenticator, headless, unsupported): not the person's mistake. */
+export class PasskeyDeviceError extends Error {
+  constructor(message: string) { super(message); this.name = "PasskeyDeviceError"; }
+}
+
 export function passkeysSupported() {
   try { return browserSupportsWebAuthn(); } catch { return false; }
 }
@@ -31,7 +36,7 @@ function translate(error: unknown): Error {
   if (code === "ERROR_INVALID_DOMAIN" || code === "ERROR_INVALID_RP_ID" || name === "SecurityError") {
     return new Error(t`Passkeys can't be used on this address. Open Space Works from its usual address to use one.`);
   }
-  return new Error(t`Your device couldn't use a passkey just now. Try again, or use another way to sign in.`);
+  return new PasskeyDeviceError(t`Your device couldn't use a passkey just now. Try again, or use another way to sign in.`);
 }
 
 export async function getPasskeyAssertion(options: unknown, autofill = false) {

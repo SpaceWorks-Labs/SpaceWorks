@@ -23,6 +23,8 @@ gunicorn>=23
 prometheus-client>=0.22,<1
 pytest>=9
 pytest-django>=4.12
+# Coverage measurement (pytest --cov); dev/test tooling only, see docs/DEV-WORKFLOW.md.
+pytest-cov>=7.1,<8
 whitenoise>=6.12
 segno
 djangorestframework-simplejwt>=5.5

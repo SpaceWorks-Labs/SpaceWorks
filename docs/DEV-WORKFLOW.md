@@ -169,6 +169,11 @@ whole story:
 ./scripts/dev.sh test
 ./scripts/dev.sh test tests/backup tests/tenant_migration
 
+# Coverage. Backend: pytest-cov (branch coverage), per app, through the same isolated runner.
+./scripts/dev.sh test tests/audit --cov=apps.audit --cov-branch --cov-report=term-missing
+# Frontend: @vitest/coverage-v8 on the host; writes frontend/coverage/ (html, json-summary; gitignored).
+(cd frontend && npm run test:coverage -- --pool=forks --maxWorkers=2)
+
 # Playwright uses the running dev stack (install frontend deps and Chromium first).
 ./scripts/dev.sh e2e
 ```

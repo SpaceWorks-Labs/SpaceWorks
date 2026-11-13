@@ -331,3 +331,16 @@ def _narrow_runtime_role(request):
         return
     from tests._narrow.narrow_role import narrow_session
     yield from narrow_session(request)
+
+
+@pytest.fixture(autouse=True)
+def restore_contributions_ports():
+    """`setup_shift` installs a fake programme adapter process-wide; put the real one back afterwards.
+
+    Without this, any later test that runs a programme command (the showcase seed, for one) is
+    answered by the previous test's fake bound to that test's event.
+    """
+    from apps.events.contributions import ports
+    saved = ports._adapter
+    yield
+    ports._adapter = saved

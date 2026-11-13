@@ -2,7 +2,7 @@
 from uuid import uuid4
 import pytest
 from django.db import transaction
-from apps.encryption.preparation import prepare_tenants
+from apps.encryption.tenant_preparation import prepare_tenant_key, tenant_key_context
 from apps.hardware_requests.contextual_equipment_service import create_pending
 from apps.inventory.equipment_proposal_receipts import create_receipt, make_proposal_intent
 from apps.inventory.models_equipment_proposals import EquipmentProposalReceipt
@@ -47,7 +47,7 @@ def test_link_existing_creator_receipt_import_and_authorized_replay():
             snapshot = make_proposal_intent(makerspace_id=maker.pk, operation_id=operation,
                 original_borrower_id=actor.pk, original_creator_id=actor.pk, intent_kind="self",
                 outcome_kind="request", event_registration_id=None, booking_id=None, request_fields=fields)
-            with prepare_tenants((maker.pk,)), transaction.atomic():
+            with tenant_key_context(prepare_tenant_key(maker.pk)), transaction.atomic():
                 create_receipt(makerspace_id=maker.pk, operation_id=operation, borrower=actor,
                                creator=actor, snapshot=snapshot, request=request)
             return product.pk
@@ -89,7 +89,7 @@ def test_merged_creator_shell_import_replays_for_authorized_survivor():
             snapshot = make_proposal_intent(makerspace_id=space.pk, operation_id=operation,
                 original_borrower_id=borrower.pk, original_creator_id=shell.pk, intent_kind="self",
                 outcome_kind="request", event_registration_id=None, booking_id=None, request_fields=fields)
-            with prepare_tenants((space.pk,)), transaction.atomic():
+            with tenant_key_context(prepare_tenant_key(space.pk)), transaction.atomic():
                 create_receipt(makerspace_id=space.pk, operation_id=operation, borrower=borrower,
                                creator=shell, snapshot=snapshot, request=request)
             _merge(shell, borrower)
@@ -131,7 +131,7 @@ def test_unmapped_optional_creator_is_sticky_even_when_source_numeric_user_exist
             intent = make_proposal_intent(makerspace_id=space.pk, operation_id=operation,
                 original_borrower_id=actor.pk, original_creator_id=creator.pk, intent_kind="self",
                 outcome_kind="request", event_registration_id=None, booking_id=None, request_fields=fields)
-            with prepare_tenants((space.pk,)), transaction.atomic():
+            with tenant_key_context(prepare_tenant_key(space.pk)), transaction.atomic():
                 create_receipt(makerspace_id=space.pk, operation_id=operation, borrower=actor,
                                creator=creator, snapshot=intent, request=request)
             state["creator"] = creator

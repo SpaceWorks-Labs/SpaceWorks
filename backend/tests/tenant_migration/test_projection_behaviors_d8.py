@@ -75,8 +75,9 @@ def test_public_machine_visibility_uses_post_projection_module_and_visibility_va
     assert "machines" not in projected_space["enabled_modules"]
     assert projected_machine["is_public"] is True
     assert projected_machine["is_active"] is True
-    assert response.status_code == 400
-    assert "machines is disabled" in str(response.data["module"])
+    # Decision 183B/221e: a switched-off module answers the typed 404 (SurfaceOff), not a 400.
+    assert response.status_code == 404
+    assert response.data["code"] == "module_disabled" and response.data["module"] == "machines"
 
 
 def test_public_checkout_eligibility_uses_both_post_projection_reset_flags():
@@ -194,6 +195,10 @@ def test_profile_and_attendance_publication_use_post_projection_consents():
         show_attended_events=True,
         headline="Projected maker",
     )
+    # Decisions 303a/304d: the live consent is the per-account profile; the per-membership row
+    # above is the legacy source the projection still resets and is asserted on below.
+    from apps.makerspaces.models_account_profile import AccountProfile
+    AccountProfile.objects.create(user=user, is_visible=True, show_events=True)
     starts = timezone.now() - timedelta(days=1)
     event = Event.objects.create(
         makerspace=space,

@@ -4,6 +4,7 @@ from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
 from apps.audit import services as audit
+from apps.boxes.models import Box
 from apps.inventory import availability
 from apps.inventory.models import InventoryAsset, InventoryProduct, TrackingMode
 from apps.makerspaces.models import Makerspace
@@ -18,12 +19,13 @@ def apply_stock_transfer(actor, makerspace, data):
         check_extra_quota_locked(makerspace, "stock_transfers_monthly")  # decision 328a: refuses only a NEW transfer
         destination_makerspace_id = data.get("destination_makerspace_id") or makerspace.id
         is_cross = destination_makerspace_id != makerspace.id
-        source = _container(data.get("source_container_id"), makerspace.id)
+        source = _transfer_container(data.get("source_container_id"), makerspace.id, "source_container_id")
         # For a cross-makerspace move the destination container lives in the
         # destination makerspace; intra-makerspace keeps it in the same one.
-        destination = _container(
+        destination = _transfer_container(
             data.get("destination_container_id"),
             destination_makerspace_id if is_cross else makerspace.id,
+            "destination_container_id",
         )
         transfer = StockTransfer.objects.create(
             makerspace=makerspace,
@@ -57,6 +59,21 @@ def apply_stock_transfer(actor, makerspace, data):
         return transfer
 
 
+def _transfer_container(container_id, makerspace_id, field):
+    try:
+        return _container(container_id, makerspace_id)
+    except Box.DoesNotExist:
+        raise ValidationError({field: gettext("Select a container in the right makerspace.")}) from None
+
+
+def _line_target(queryset, field, pk, makerspace):
+    """The line's product/asset in THIS makerspace, or a typed 400 (never a 500 for a foreign or unknown id)."""
+    try:
+        return queryset.get(pk=pk, makerspace=makerspace)
+    except queryset.model.DoesNotExist:
+        raise ValidationError({field: gettext("Select an item in this makerspace.")}) from None
+
+
 def _apply_intra_makerspace_line(actor, transfer, makerspace, source, destination, line_data):
     """Relocate a product/asset between containers within one makerspace."""
     product = None
@@ -64,9 +81,9 @@ def _apply_intra_makerspace_line(actor, transfer, makerspace, source, destinatio
     split_created = False
     quantity = line_data.get("quantity") or 1
     if line_data.get("asset_id"):
-        asset = InventoryAsset.objects.select_for_update().select_related("product").get(
-            pk=line_data["asset_id"],
-            makerspace=makerspace,
+        asset = _line_target(
+            InventoryAsset.objects.select_for_update().select_related("product"),
+            "asset_id", line_data["asset_id"], makerspace,
         )
         if source and asset.box_id != source.id:
             raise ValidationError({"asset_id": gettext("Asset is not in the source container.")})
@@ -83,9 +100,8 @@ def _apply_intra_makerspace_line(actor, transfer, makerspace, source, destinatio
         asset.save(update_fields=["box", "updated_at"])
         product = asset.product
     else:
-        product = InventoryProduct.objects.select_for_update().get(
-            pk=line_data["product_id"],
-            makerspace=makerspace,
+        product = _line_target(
+            InventoryProduct.objects.select_for_update(), "product_id", line_data["product_id"], makerspace,
         )
         if source and product.box_id != source.id:
             raise ValidationError({"product_id": gettext("Product is not in the source container.")})
@@ -131,9 +147,8 @@ def _apply_cross_makerspace_line(
             {"asset_id": gettext("Individual asset units cannot be moved across makerspaces; transfer quantity stock instead.")}
         )
     quantity = line_data.get("quantity") or 1
-    src = InventoryProduct.objects.select_for_update().get(
-        pk=line_data["product_id"],
-        makerspace=source_makerspace,
+    src = _line_target(
+        InventoryProduct.objects.select_for_update(), "product_id", line_data["product_id"], source_makerspace,
     )
     if src.tracking_mode == TrackingMode.INDIVIDUAL:
         raise ValidationError(

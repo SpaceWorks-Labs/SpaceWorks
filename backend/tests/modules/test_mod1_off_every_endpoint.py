@@ -69,7 +69,7 @@ def _routes(space, box, transfer, stocktake, batch):
             ("post", f"{base}/inventory/import/preview", {"rows": []}),
             ("post", f"{base}/inventory/import/apply", {"rows": []}),
             ("post", f"{base}/inventory/import/sheet", {}),
-            ("get", f"{base}/inventory/import/jobs", None),
+            ("post", f"{base}/inventory/import/jobs", {"rows": [], "mode": "apply"}),
         ],
     }
 

@@ -184,12 +184,13 @@ def test_transfer_naming_a_foreign_product_or_destination_is_refused_without_a_5
     theirs = make_product(other, "Theirs", total_quantity=3, available_quantity=3)
     box = make_box(space)
     response = _transfer(client, space, [{"product_id": theirs.id, "quantity": 1}], destination_container_id=box.id)
-    assert 400 <= response.status_code < 500
+    assert response.status_code == 400 and "product_id" in response.data
     theirs.refresh_from_db()
     assert theirs.available_quantity == 3
     assert not StockTransfer.objects.exists()
     mine = make_product(space, "Mine")
-    assert _transfer(client, space, [{"product_id": mine.id}], destination_container_id=make_box(other).id).status_code in (400, 404)
+    foreign_box = _transfer(client, space, [{"product_id": mine.id}], destination_container_id=make_box(other).id)
+    assert foreign_box.status_code == 400 and "destination_container_id" in foreign_box.data
 
 
 # ---- stocktake state machine ----------------------------------------------------------------

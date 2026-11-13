@@ -27,7 +27,8 @@ MAX_QUERY_LENGTH = 200
 
 
 def clean_query(raw):
-    text = (raw or "").strip()
+    # PostgreSQL cannot store a NUL in a string literal: drop it rather than answer a 500.
+    text = (raw or "").replace("\x00", "").strip()
     return text[:MAX_QUERY_LENGTH]
 
 

@@ -35,8 +35,9 @@ def _payload(action, space, admin, request):
     if action == "issue":
         return {"evidence_id": make_issue_evidence(space, admin).pk, "remark": "Handed over."}
     if action == "return":
+        item = request.items.get()
         return {"evidence_id": make_return_evidence(space, admin).pk, "box_code": "B-NONE", "remark": "Back.",
-                "resolutions": []}
+                "resolutions": [{"item_id": item.pk, "returned": 1, "damaged": 0, "missing": 0}]}
     return {}
 
 

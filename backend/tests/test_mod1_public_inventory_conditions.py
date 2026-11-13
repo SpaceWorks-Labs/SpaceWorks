@@ -57,9 +57,8 @@ def test_empty_public_list_is_a_well_formed_empty_page(api_client, public_makers
 def test_hostile_search_text_never_errors_and_matches_nothing_it_should_not(api_client, public_makerspace, query):
     create_product(public_makerspace, name="Soldering Iron")
     response = api_client.get(public_inventory_url(public_makerspace), {"q": query})
-    assert response.status_code in (200, 400)
-    if response.status_code == 200:
-        assert "Soldering Iron" not in _names(response)
+    assert response.status_code == 200
+    assert "Soldering Iron" not in _names(response)
     assert InventoryProduct.objects.filter(name="Soldering Iron").exists()
 
 
@@ -119,3 +118,13 @@ def test_public_list_is_read_only_for_anonymous_callers(api_client, public_maker
     for method in ("post", "put", "patch", "delete"):
         assert getattr(api_client, method)(url, {"name": "x"}, format="json").status_code in (401, 403, 405)
     assert not InventoryProduct.objects.filter(name="x").exists()
+
+
+def test_a_nul_byte_in_the_search_text_is_dropped_not_a_500(api_client, public_makerspace):
+    # PostgreSQL cannot hold a NUL in a string literal; this used to raise ValueError -> 500.
+    create_product(public_makerspace, name="Soldering Iron")
+    response = api_client.get(public_inventory_url(public_makerspace), {"q": chr(0)})
+    assert response.status_code == 200
+    assert _names(response) == ["Soldering Iron"]  # a blank query after cleaning is the unfiltered list
+    response = api_client.get(public_inventory_url(public_makerspace), {"q": "sol" + chr(0) + "der"})
+    assert response.status_code == 200 and _names(response) == ["Soldering Iron"]

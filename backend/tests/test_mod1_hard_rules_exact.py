@@ -11,11 +11,18 @@ from apps.audit.models import AuditLog
 from apps.boxes.models import BoxScan
 from apps.evidence.models import EvidencePhoto
 from apps.hardware_requests.models import HardwareRequest, HardwareRequestItem, ReturnEvent
+from apps.inventory.models import InventoryProduct
 from tests.return_helpers import (
     authenticated_client, make_accepted_request, make_box, make_issued_request, make_issue_evidence, make_member,
     make_product, make_return_evidence, make_space, return_payload, return_url)
 
 pytestmark = pytest.mark.django_db
+
+
+def _reserve(product, quantity, total):
+    """make_accepted_request adds no reservation; mirror what the workflow's accept does."""
+    InventoryProduct.objects.filter(pk=product.pk).update(
+        available_quantity=total - quantity, reserved_quantity=quantity)
 
 
 def _snapshot(request, product, evidence):
@@ -30,6 +37,7 @@ def test_issue_without_a_box_scan_is_refused_400_and_nothing_moves(monkeypatch):
     admin = make_member("m1-hr-noscan-admin", space)
     product = make_product(space, total_quantity=5, available_quantity=5)
     request = make_accepted_request(space, product, 2)
+    _reserve(product, 2, 5)
     request.assigned_box = make_box(space)
     request.save(update_fields=["assigned_box"])
     evidence = make_issue_evidence(space, admin)
@@ -106,6 +114,7 @@ def test_issued_quantity_equals_the_accepted_quantity_never_the_requested_one(mo
     admin = make_member("m1-hr-issued-le-accepted-admin", space)
     product = make_product(space, total_quantity=10, available_quantity=10)
     request = make_accepted_request(space, product, 2)
+    _reserve(product, 2, 10)
     item = request.items.get()
     HardwareRequestItem.objects.filter(pk=item.pk).update(requested_quantity=5, accepted_quantity=2)
     box = make_box(space)
@@ -132,6 +141,7 @@ def test_attached_issue_evidence_cannot_be_edited_or_deleted_through_the_orm(mon
     admin = make_member("m1-hr-immutable-admin", space)
     product = make_product(space)
     request = make_accepted_request(space, product, 1)
+    _reserve(product, 1, product.total_quantity)
     box = make_box(space)
     request.assigned_box = box
     request.save(update_fields=["assigned_box"])

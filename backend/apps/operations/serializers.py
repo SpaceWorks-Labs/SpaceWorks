@@ -208,10 +208,10 @@ class QrPrintBatchDetailSerializer(QrPrintBatchSerializer):
 
 
 class QrPrintBatchCreateSerializer(serializers.Serializer):
-    title = serializers.CharField()
+    title = serializers.CharField(max_length=200)
 
 
 class QrPrintBatchItemCreateSerializer(serializers.Serializer):
     qr_code_id = serializers.IntegerField()
-    label_text = serializers.CharField(required=False, allow_blank=True)
+    label_text = serializers.CharField(required=False, allow_blank=True, max_length=255)
     sort_order = serializers.IntegerField(min_value=0, required=False)

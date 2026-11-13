@@ -94,6 +94,7 @@ def test_two_stocktake_applies_adjust_stock_once_and_the_loser_is_told_it_is_alr
         makerspace=space, started_by=root, status=StocktakeSession.Status.COUNTING, approval_required=False)
     services.add_stocktake_line(root, session, {"product_id": product.pk, "counted_quantity": 6, "condition": "available"})
     services.complete_stocktake(root, StocktakeSession.objects.get(pk=session.pk))
+    services.approve_stocktake(root, StocktakeSession.objects.get(pk=session.pk))
     session.refresh_from_db()
     assert session.status == StocktakeSession.Status.APPROVED
 

@@ -58,6 +58,11 @@ class ContainerListCreateView(generics.ListCreateAPIView):
         require_action(self.request.user, rbac.Action.VIEW_INVENTORY, makerspace_id)
         return _with_active_box_qr(rbac.scope_by_action(self.request.user, rbac.Action.VIEW_INVENTORY, Box.objects.filter(makerspace_id=makerspace_id))).order_by("label")
 
+    def create(self, request, *args, **kwargs):
+        # The module gate answers before payload validation: an off module never reveals field errors.
+        require_module(self.kwargs["makerspace_id"], "containers")
+        return super().create(request, *args, **kwargs)
+
     @transaction.atomic
     def perform_create(self, serializer):
         makerspace_id = self.kwargs["makerspace_id"]

@@ -17,6 +17,12 @@ on:
     branches:
       - dev
   workflow_dispatch:
+    inputs:
+      areas:
+        description: "Optional comma/space-separated areas (e.g. events bookings); empty runs the full suite. See docs/TESTING-BY-AREA.md."
+        required: false
+        default: ""
+        type: string
 
 concurrency:
   group: tests-${{ github.event.pull_request.number || github.ref }}
@@ -27,6 +33,7 @@ permissions:
 
 jobs:
   backend:
+    if: ${{ !inputs.areas }}
     name: backend tests (${{ matrix.shard }}/8)
     runs-on: ubuntu-latest
     timeout-minutes: 240
@@ -54,6 +61,7 @@ jobs:
         run: bash scripts/dev.sh test -q @.ci-shard-tests.txt
 
   backend-migrations:
+    if: ${{ !inputs.areas }}
     name: backend tests (migration rewinds ${{ matrix.slice }}/4)
     runs-on: ubuntu-latest
     timeout-minutes: 240
@@ -77,6 +85,7 @@ jobs:
         run: bash scripts/dev.sh test -q @.ci-deep-slice.txt
 
   backend-tombstone:
+    if: ${{ !inputs.areas }}
     name: backend tests (tombstone profile)
     runs-on: ubuntu-latest
     timeout-minutes: 120
@@ -91,6 +100,7 @@ jobs:
         run: bash scripts/dev.sh test -q tests/tombstone
 
   frontend:
+    if: ${{ !inputs.areas }}
     name: frontend tests
     runs-on: ubuntu-latest
     timeout-minutes: 60
@@ -119,3 +129,56 @@ jobs:
       - name: node:test suites (website serving, documentation contracts)
         working-directory: .
         run: node --test frontend/scripts/verify-website-serving.test.mjs backend/tests/docs/documentation.test.cjs
+
+  areas:
+    name: selected area tests
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.areas != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    env:
+      SELECTED_AREAS: ${{ inputs.areas }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+      - name: Run selected backend areas (including migration tests)
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t areas < <(python -c 'import os; print("\n".join(os.environ["SELECTED_AREAS"].replace(",", " ").split()))')
+          ((${#areas[@]})) || { echo "Supply at least one area" >&2; exit 2; }
+          args=()
+          for area in "${areas[@]}"; do args+=(--area "$area"); done
+          bash scripts/dev.sh test -q "${args[@]}"
+      - name: Run selected tombstone-profile areas
+        shell: bash
+        env:
+          TOMBSTONED_APPS: bookings,devices,event_reimbursements,events,maintenance,notifications,payments_rail,presence,procurement,tenant_migration,warranty
+        run: |
+          set -euo pipefail
+          mapfile -t areas < <(python -c 'import os; print("\n".join(os.environ["SELECTED_AREAS"].replace(",", " ").split()))')
+          args=()
+          for area in "${areas[@]}"; do args+=(--area "$area"); done
+          # Pytest exit 5 means this separate deployment profile has no matching cases.
+          status=0
+          bash scripts/dev.sh test -q tests/tombstone "${args[@]}" || status=$?
+          [[ "$status" == 0 || "$status" == 5 ]] || exit "$status"
+      - name: Run selected frontend areas
+        working-directory: frontend
+        run: npm run test:area -- "$SELECTED_AREAS" --maxWorkers=2
+      - name: Shared website and documentation contracts for shell/platform areas
+        shell: bash
+        run: |
+          case " ${SELECTED_AREAS//,/ } " in
+            *" frontend_shell "*|*" platform "*|*" api_contract "*)
+              node --test frontend/scripts/verify-website-serving.test.mjs backend/tests/docs/documentation.test.cjs ;;
+          esac

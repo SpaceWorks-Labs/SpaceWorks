@@ -226,6 +226,9 @@ happy path, validation errors, idempotency or concurrency where relevant, cross-
 session rules where money is involved. Run the changed and affected areas, not the whole suite, while
 working; run the full suite once before a release.
 
+For named area selectors (`./scripts/dev.sh test --area events --area bookings`), affected-area
+selection, frontend area runs and the optional CI input, see [Testing by area](TESTING-BY-AREA.md).
+
 ## Mutation testing of the core (decision 457)
 
 The release waits until no mutant survives in the core: the request workflow (`hardware_requests/*workflow*`,

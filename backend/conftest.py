@@ -9,6 +9,8 @@ from pathlib import Path
 
 import pytest
 
+from tests.areas import AREAS, areas_for_test, owners_for_app
+
 _MIGRATION_SIGNATURES = ("MigrationExecutor", "executor.migrate(", 'call_command("migrate"', "call_command('migrate'")
 _seen: dict[str, bool] = {}
 
@@ -27,8 +29,54 @@ def _drives_migrations(path: Path) -> bool:
 @pytest.hookimpl(tryfirst=True)
 def pytest_collection_modifyitems(config, items):
     for item in items:
-        if _drives_migrations(Path(str(item.fspath))):
+        path = Path(str(item.fspath))
+        if _drives_migrations(path):
             item.add_marker(pytest.mark.migration)
+        names = set(areas_for_test(path))
+        # Registry-driven matrices often name their areas only in parametrized cases.
+        params = getattr(getattr(item, "callspec", None), "params", {})
+        names.update(_parameter_areas(params.values()))
+        for name in sorted(names):
+            item.add_marker(getattr(pytest.mark, f"area_{name}"))
+
+
+def _parameter_areas(values):
+    from apps.makerspaces.capability_definitions import FEATURES
+
+    names, visited, pending = set(), set(), list(values)
+    while pending:
+        value = pending.pop()
+        if isinstance(value, str):
+            if value in AREAS:
+                names.add(value)
+            if value in FEATURES:
+                feature = FEATURES[value]
+                names.update(module for module in (feature.parent_module, *feature.requires_modules) if module)
+                if feature.app_label:
+                    names.update(owners_for_app(feature.app_label))
+                if value.split(".")[0] in AREAS:
+                    names.add(value.split(".")[0])
+                if value.startswith("loans."):
+                    names.update(("inventory", "lending"))
+                if value.startswith(("charges.", "billing.", "finance.")):
+                    names.add("payments_ledger")
+            if value.startswith("apps."):
+                names.update(owners_for_app(value.split(".")[1]))
+        elif isinstance(value, (dict, tuple, list, set, frozenset)) and id(value) not in visited:
+            visited.add(id(value))
+            pending.extend((*value.keys(), *value.values()) if isinstance(value, dict) else value)
+    return names
+
+
+def pytest_terminal_summary(terminalreporter):
+    from collections import Counter
+
+    items = terminalreporter._session.items
+    counts = Counter(name for item in items for name in {
+        marker.name[5:] for marker in item.iter_markers() if marker.name.startswith("area_")
+    })
+    terminalreporter.write_sep("-", "selected test counts by area (overlap is intentional)")
+    terminalreporter.write_line(", ".join(f"{name}={counts[name]}" for name in sorted(counts)))
 
 
 def _drop_derived_objects(connection):

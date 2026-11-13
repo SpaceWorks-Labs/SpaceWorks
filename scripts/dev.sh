@@ -3,6 +3,7 @@
 #   up [args]       Compose up -d; retire live and remove successful one-shots.
 #   down [args]     Compose down; volumes persist unless you pass -v.
 #   test [args]     Pytest in disposable Postgres/Redis/MinIO; default args: -q.
+#                   --area <name> (repeatable), --area-affected <ref> select areas.
 #   affected [backend|frontend]  Only the tests for what changed (AFFECTED_BASE).
 #   hooks           Enable the repo's git hooks (.githooks/pre-push).
 #   e2e [args]      Seed the running dev stack; Playwright against a production preview.
@@ -94,6 +95,46 @@ affected() {
       echo "No affected frontend sources." >&2
     fi
   fi
+}
+
+test_areas() {
+  local selectors=() args=() expression marker="" has_area=0
+  while (($#)); do
+    case "$1" in
+      --area|--area-affected)
+        if (($# < 2)) || [[ "$2" == -* || -z "$2" ]]; then
+          echo "$1 needs a value; list areas: python backend/tests/areas.py --list" >&2
+          return 2
+        fi
+        selectors+=("$1" "$2"); has_area=1; shift 2 ;;
+      --area=*|--area-affected=*) selectors+=("$1"); has_area=1; shift ;;
+      *) args+=("$1"); shift ;;
+    esac
+  done
+  if ((has_area == 0)); then test_suite "${args[@]}"; return; fi
+  if [[ -n "${TEST_ENTRYPOINT:-}" ]]; then
+    echo "Area selection requires pytest (unset TEST_ENTRYPOINT)." >&2; return 2
+  fi
+  expression="$(python "$HOST_ROOT/backend/tests/areas.py" "${selectors[@]}")" || return
+  if [[ "$expression" == NONE ]]; then echo "No changed areas."; return; fi
+  if [[ "$expression" == ALL ]]; then test_suite "${args[@]}"; return; fi
+  # All pytest marker aliases share one value; the last explicit filter wins.
+  set -- "${args[@]}"; args=()
+  while (($#)); do
+    case "$1" in
+      -m|--markexpr)
+        if (($# < 2)) || [[ "$2" == -* ]]; then
+          echo "$1 needs an expression" >&2; return 2
+        fi
+        marker="$2"; shift 2 ;;
+      -m=*|--markexpr=*) marker="${1#*=}"; shift ;;
+      -m?*) marker="${1#-m}"; shift ;;
+      *) args+=("$1"); shift ;;
+    esac
+  done
+  [[ -z "$marker" ]] || expression="($expression) and ($marker)"
+  echo "Selected test areas: $expression" >&2
+  test_suite "${args[@]}" -m "$expression"
 }
 
 test_suite() {
@@ -209,7 +250,7 @@ e2e_preview() {
 case "${1:-}" in
   up) shift; up "$@" ;;
   down) shift; compose down "$@" ;;
-  test) shift; test_suite "$@" ;;
+  test) shift; test_areas "$@" ;;
   affected) shift; affected "$@" ;;
   hooks) git config core.hooksPath .githooks && echo "Git hooks enabled (.githooks/pre-push)." ;;
   e2e) shift; e2e "$@" ;;

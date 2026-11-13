@@ -14,6 +14,7 @@ routes and nothing else.
 """
 
 import pytest
+import yaml
 from django.conf import settings
 from django.urls import Resolver404, resolve
 from rest_framework.test import APIClient
@@ -95,7 +96,7 @@ def test_the_openapi_schema_does_not_advertise_events():
     response = APIClient().get("/schema/?format=json")
 
     assert response.status_code == 200
-    paths = response.json()["paths"]
+    paths = yaml.safe_load(response.content)["paths"]  # the schema view answers YAML whatever ?format says
     # Core apps that name retained event rows keep these paths (finance, the related-facts card, induction
     # grants, badge designs, sponsors, shop offers, bulk decisions). Pinned exactly, so any NEW events-app
     # leak still fails; the events app's own routes (admin/events, member/public events, series) are all gone.

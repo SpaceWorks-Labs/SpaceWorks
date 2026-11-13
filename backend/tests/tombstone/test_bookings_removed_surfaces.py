@@ -13,6 +13,7 @@ the objects would stay in a world-readable bucket with nothing left able to name
 """
 
 import pytest
+import yaml
 from django.contrib import admin
 from django.urls import Resolver404, resolve
 from rest_framework.test import APIClient
@@ -92,7 +93,7 @@ def test_the_openapi_schema_does_not_advertise_bookings():
     response = APIClient().get("/schema/?format=json")
 
     assert response.status_code == 200
-    paths = response.json()["paths"]
+    paths = yaml.safe_load(response.content)["paths"]  # the schema view answers YAML whatever ?format says
     # `/admin/platform/spaces/` is the superadmin makerspace surface (a "space" there is a tenant), and
     # the two bookings paths below belong to core apps (bulk decisions, the related-facts card) that
     # name the retained booking rows. Pinned exactly, so any NEW bookings-app leak still fails.

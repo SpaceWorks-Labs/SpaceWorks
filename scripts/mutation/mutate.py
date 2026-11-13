@@ -280,6 +280,7 @@ class Engine:
             s = time.time()
             item.config.hook.pytest_runtest_protocol(item=item, nextitem=nxt)
             self.durations[item.nodeid] = time.time() - s
+            self.clean_leaks(item.config)
             if n % 50 == 0:
                 print(f"[mutation] baseline {n + 1}/{len(todo)}", flush=True)
             if n and n % 200 == 0:
@@ -293,6 +294,33 @@ class Engine:
             print(f"[mutation] baseline-failing: {nodeid}", flush=True)
         self.run_mutants()
         return True
+
+    def clean_leaks(self, config):
+        """Flush committed rows a leaky test left behind.
+
+        The whole selection runs in ONE process in file order, so a test that commits without cleaning up poisons every
+        later test that expects an empty table ("returned 6", "5 == 0"). CI never sees it because shards are small. After
+        each test, if a sentinel table holds committed rows, flush (what a transactional test's teardown does).
+        """
+        try:
+            from django.core.management import call_command
+            from django.db import connection
+            from pytest_django import plugin as pd
+
+            blocker = getattr(pd, "_blocking_manager", None) or config.stash[pd.blocking_manager_key]
+            with blocker.unblock():
+                with connection.cursor() as cursor:
+                    leaked = False
+                    for table in ("audit_auditlog", "hardware_requests_hardwarerequest", "accounts_user", "makerspaces_makerspace"):
+                        cursor.execute(f"select exists(select 1 from {table} limit 1)")
+                        leaked = leaked or cursor.fetchone()[0]
+                if leaked:
+                    call_command("flush", interactive=False, verbosity=0)
+                    self.flushes = getattr(self, "flushes", 0) + 1
+        except Exception as exc:  # noqa: BLE001 - never let hygiene break the run
+            if not getattr(self, "_leak_warned", False):
+                print(f"[mutation] leak guard unavailable: {exc!r}", flush=True)
+                self._leak_warned = True
 
     def save_map(self, mapfile, cov, files, final=False):
         """Merge the contexts recorded so far into the on-disk coverage map (also called mid-baseline)."""
@@ -421,6 +449,7 @@ class Engine:
                         timed_out = True
                     finally:
                         signal.setitimer(signal.ITIMER_REAL, 0)
+                    self.clean_leaks(item.config)
                     if timed_out or self._mut_failed:
                         m.status, m.killed_by = "killed", nodeid + (" (timeout)" if timed_out else "")
                         return

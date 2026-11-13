@@ -100,6 +100,9 @@ def test_staff_endpoints_require_manage_makerspace_in_the_target_tenant():
         for method, url, payload in calls:
             response = getattr(client, method)(url, payload, format="json")
             assert response.status_code == refusal
+            if refusal == 404:
+                # 481(1): the exact missing-space answer, code included.
+                assert response.json()["code"] == "not_found"
 
 
 def test_download_token_is_job_bound_expires_and_is_single_use(monkeypatch):

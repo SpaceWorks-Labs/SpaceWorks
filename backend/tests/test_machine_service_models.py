@@ -3,7 +3,6 @@ from importlib import import_module
 import pytest
 from django.apps import apps
 from django.db import IntegrityError, connection, transaction
-from django.db.migrations.executor import MigrationExecutor
 from django.test import override_settings
 from django.utils import timezone
 
@@ -218,32 +217,25 @@ def test_self_host_service_limits_are_dormant():
     assert limits.resource_limit(makerspace, "machine_service_submit") is None
 
 
-@pytest.mark.django_db(transaction=True)
 def test_machine_service_migrations_upgrade_from_real_heads():
-    from_target = [("machines", "0007_machine_usage_time_index"), ("makerspaces", "0039_seed_and_backfill_roles")]
-    target = [("machines", "0008_machine_service_requests"), ("makerspaces", "0040_machine_service_module")]
-    executor = MigrationExecutor(connection)
-    try:
-        executor.migrate(from_target)
-        old_apps = executor.loader.project_state(from_target).apps
-        OldMakerspace = old_apps.get_model("makerspaces", "Makerspace")
-        OldMachineType = old_apps.get_model("machines", "MachineType")
-        OldMachine = old_apps.get_model("machines", "Machine")
-        makerspace = OldMakerspace.objects.create(
-            name="Migration service", slug="migration-service", enabled_modules=["machines"]
-        )
-        machine_type = OldMachineType.objects.create(
-            makerspace_id=makerspace.id, slug="migration-service", name="Migration service"
-        )
-        OldMachine.objects.create(makerspace_id=makerspace.id, machine_type_id=machine_type.id, name="Migrated")
+    """Bounded form (decision 474): the data step runs against the live-schema registry, no schema rewind.
 
-        executor = MigrationExecutor(connection)
-        executor.migrate(target)
-        new_apps = executor.loader.project_state(target).apps
-        NewMakerspace = new_apps.get_model("makerspaces", "Makerspace")
-        assert new_apps.get_model("machines", "MachineServiceRequest").objects.count() == 0
-        assert new_apps.get_model("machines", "ServiceBucket").objects.count() == 0
-        assert "machine_service" in NewMakerspace.objects.get(pk=makerspace.id).enabled_modules
-    finally:
-        restore = MigrationExecutor(connection)
-        restore.migrate(restore.loader.graph.leaf_nodes())
+    The full rewind-and-replay across the real heads lives in
+    tests/deep_migrations/test_machine_service_upgrade_deep.py.
+    """
+    from django.db.migrations.loader import MigrationLoader
+
+    loader = MigrationLoader(connection)
+    registry = loader.project_state(loader.graph.leaf_nodes("makerspaces")).apps
+    makerspace = make_space("migration-service")
+    Makerspace.objects.filter(pk=makerspace.pk).update(enabled_modules=["machines"])
+    machine_type = MachineType.objects.create(makerspace=makerspace, slug="migration-service", name="Migration service")
+    Machine.objects.create(makerspace=makerspace, machine_type=machine_type, name="Migrated")
+
+    migration.enable_machine_service(registry, None)
+
+    assert "machine_service" in Makerspace.objects.get(pk=makerspace.pk).enabled_modules
+    assert MachineServiceRequest.objects.count() == 0 and ServiceBucket.objects.count() == 0
+    assert Machine.objects.filter(makerspace=makerspace, name="Migrated").exists()
+    migration.disable_machine_service(registry, None)
+    assert "machine_service" not in Makerspace.objects.get(pk=makerspace.pk).enabled_modules

@@ -29,7 +29,8 @@
 /* Section rhythm and type. */
 .sw-hub-section { padding-block: 72px; }
 @media (min-width: 1024px) { .sw-hub-section { padding-block: 112px; } }
-.sw-hub-band { background: rgb(var(--color-surface)); border-block: 1px solid rgb(var(--color-line)); }
+/* One continuous page (owner, decision 423): no tinted bands and no hairlines between sections; spacing separates them. */
+.sw-hub-band { background: transparent; border-block: 0; }
 .sw-hub-h2 { font-family: "Gilroy", "Outfit", ui-sans-serif, system-ui, sans-serif; font-weight: 800; font-size: 2rem; line-height: 1.1;
   letter-spacing: -0.025em; text-wrap: balance; }
 @media (min-width: 768px) { .sw-hub-h2 { font-size: 2.75rem; } }
@@ -170,7 +171,7 @@
 .sw-hub-faq p { padding-bottom: 20px; max-width: 46rem; line-height: 1.7; color: rgb(var(--color-muted)); }
 
 /* Footer. */
-.sw-hub-footer { margin-top: 72px; border-top: 1px solid rgb(var(--color-line)); background: rgb(var(--color-surface)); }
+.sw-hub-footer { margin-top: 72px; border-top: 0; background: transparent; }
 .sw-hub-footer-link { display: inline-flex; align-items: center; gap: 4px; min-height: 36px; width: fit-content; border-radius: 6px;
   color: rgb(var(--color-muted)); transition: color 120ms; }
 .sw-hub-footer-link:hover { color: rgb(var(--color-ink)); }

@@ -10,7 +10,7 @@
 .sw-features-jump a:hover { background: rgb(var(--color-hover)); border-color: rgb(var(--color-outline)); }
 .sw-features-jump a:focus-visible { outline: 2px solid rgb(var(--color-focus)); outline-offset: 2px; }
 
-.sw-features-group { display: grid; gap: 24px; padding-block: 40px; border-top: 1px solid rgb(var(--color-line)); scroll-margin-top: var(--sw-hub-bar, 89px); }
+.sw-features-group { display: grid; gap: 24px; padding-block: 40px; border-top: 0; scroll-margin-top: var(--sw-hub-bar, 89px); }
 @media (min-width: 1024px) { .sw-features-group { grid-template-columns: minmax(0, 3fr) minmax(0, 9fr); gap: 48px; padding-block: 56px; } }
 .sw-features-area-title { font-family: "Gilroy", "Outfit", sans-serif; font-weight: 800; font-size: 1.75rem; line-height: 1.15;
   letter-spacing: -0.02em; color: rgb(var(--color-ink)); }

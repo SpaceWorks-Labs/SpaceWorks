@@ -255,7 +255,7 @@ def test_requester_cannot_request_upload_url(monkeypatch):
         format="json",
     )
 
-    assert response.status_code == 403
+    assert response.status_code == 404  # 481(1): no standing in the space, so it answers as if missing
     assert EvidencePhoto.objects.count() == 0
     assert AuditLog.objects.count() == 0
 
@@ -290,7 +290,7 @@ def test_staff_user_without_membership_cannot_request_upload_url(monkeypatch):
         format="json",
     )
 
-    assert response.status_code == 403
+    assert response.status_code == 404  # 481(1): no standing in the space, so it answers as if missing
     assert EvidencePhoto.objects.count() == 0
     assert AuditLog.objects.count() == 0
 

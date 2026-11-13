@@ -140,7 +140,7 @@ def test_people_see_the_paused_page_and_only_the_superadmin_sees_the_reason(worl
 
 def test_suspend_needs_superadmin_reauth_and_a_reason(world):
     other = world.other
-    assert control(world.boss, other, "suspend", {"reason": REASON}).status_code == 403
+    assert control(world.boss, other, "suspend", {"reason": REASON}).status_code == 404  # 481(1): another space
     assert control(world.root, other, "suspend", {"reason": "short"}).status_code == 400
     from tests.stage4.helpers import bearer_client
     refused = bearer_client(world.root).post(f"/api/v1/admin/platform/spaces/{other.pk}/suspend",

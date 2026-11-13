@@ -68,7 +68,7 @@ def test_applying_the_same_sheet_twice_updates_instead_of_duplicating():
 def test_import_is_tenant_and_role_scoped():
     space, other = make_space("m1-imp-ten"), make_space("m1-imp-ten-o")
     foreign = _mgr("m1-imp-ten-fmgr", other)
-    assert foreign.post(_url(space, "apply"), {"rows": [_row()]}, format="json").status_code == 403
+    assert foreign.post(_url(space, "apply"), {"rows": [_row()]}, format="json").status_code == 404  # 481(1)
     assert APIClient().post(_url(space, "apply"), {"rows": [_row()]}, format="json").status_code == 401
     requester = authenticated_client(make_user("m1-imp-req", access_status=User.AccessStatus.ACTIVE))
     assert requester.post(_url(space, "apply"), {"rows": [_row()]}, format="json").status_code == 403

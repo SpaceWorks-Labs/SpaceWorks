@@ -74,7 +74,7 @@ def test_manager_of_another_space_is_refused():
     other = make_space("sheet-tenant-b")
     outsider = make_member("sheet-tenant-b-manager", other)
     response = post(outsider, space, workbook_bytes(("S", [["Name"], ["A"]])))
-    assert response.status_code == 403
+    assert response.status_code == 404  # 481(1): another space answers like a missing one
 
 
 def test_anonymous_is_refused():

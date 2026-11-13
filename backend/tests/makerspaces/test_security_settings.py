@@ -84,8 +84,9 @@ def test_superadmin_edits_as_platform(ctx):
 @pytest.mark.parametrize("who", ["inventory", "foreign"])
 def test_module_managers_and_other_spaces_are_refused(ctx, who):
     api = client(getattr(ctx, who))
-    assert api.get(url(ctx.space)).status_code == 403
-    assert api.patch(url(ctx.space), {"values": {KEY: STRICT}}, format="json").status_code == 403
+    refusal = 404 if who == "foreign" else 403  # 481(1): another space's staff get the missing-space answer
+    assert api.get(url(ctx.space)).status_code == refusal
+    assert api.patch(url(ctx.space), {"values": {KEY: STRICT}}, format="json").status_code == refusal
     assert stored(ctx.space) is LOOSE
 
 

@@ -32,6 +32,24 @@ pytestmark = pytest.mark.django_db
 MARKER = "zzbsecret"
 GONE = 987654321
 MAX_DISTINGUISHABLE = 0
+# The person surface (see `_person_surface`) legitimately answers a real space differently from a missing one.
+# Pinned so a new difference there is still seen: 53 on 2026-11-13 (member area 29, own notifications and
+# browser push 18, personal notification channels 6).
+MAX_PERSON_SURFACE_DIFFERENCES = 53
+
+
+def _person_surface(url):
+    """Routes that serve any signed-in PERSON their own rows in a space, member or not: the member area,
+    own notifications and personal channels (route classes member-only / shared account utility, or the
+    authenticator's member-surface paths). Account-only borrowers, donors, waitlisters and guests use them
+    without standing in the space, so a real space must answer them (an empty own list, a validation error);
+    a missing one cannot. Spaces themselves are public (the public directory), so this reveals no tenant data.
+    Staff routes are everything else, and there the answer must be identical (decision 481(1))."""
+    from django.urls import resolve
+    from apps.accounts.authentication import _member_surface_path_allowed
+    from apps.accounts.delegated_routes import MEMBER_ONLY, SHARED_ACCOUNT_UTILITY, route_class
+    return (route_class(resolve(url).url_name) in {MEMBER_ONLY, SHARED_ACCOUNT_UTILITY}
+            or _member_surface_path_allowed(url))
 
 
 def _empty_scoped_list(response):
@@ -92,7 +110,7 @@ def tenants():
 def test_another_makerspace_answers_exactly_like_one_that_does_not_exist(tenants):
     mine, theirs, manager, _owner = tenants
     client = _client(manager)
-    leaks, distinguishable = [], []
+    leaks, distinguishable, person_surface = [], [], []
     for route in space_routes():
         for verb in ("get",) + WRITES:
             real = _call(client, verb, fill(route, theirs.pk))
@@ -101,7 +119,8 @@ def test_another_makerspace_answers_exactly_like_one_that_does_not_exist(tenants
                 continue  # 5xx is the (other) sweep's concern; the retired surface answers 410 first
             real_key, ghost_key = _answer(real), _answer(ghost)
             if real_key != ghost_key:
-                distinguishable.append(f"{verb.upper()} {route}: other space {real_key}, missing space {ghost_key}")
+                found = f"{verb.upper()} {route}: other space {real_key}, missing space {ghost_key}"
+                (person_surface if _person_surface(fill(route, GONE)) else distinguishable).append(found)
             own_page = route.startswith("api/v1/member/")  # filtered to the CALLER's own rows (e.g. guest passes, guardian consent)
             if real.status_code not in (400, 401, 403, 404, 405, 429) and not own_page and not _empty_scoped_list(real):
                 leaks.append(f"{verb.upper()} {route}: other space answered {real.status_code} with data")
@@ -111,6 +130,9 @@ def test_another_makerspace_answers_exactly_like_one_that_does_not_exist(tenants
     assert len(distinguishable) <= MAX_DISTINGUISHABLE, (
         f"{len(distinguishable)} routes tell a real other space from a missing one (ceiling {MAX_DISTINGUISHABLE}):\n"
         + "\n".join(distinguishable))
+    assert len(person_surface) <= MAX_PERSON_SURFACE_DIFFERENCES, (
+        f"{len(person_surface)} person-surface differences (ceiling {MAX_PERSON_SURFACE_DIFFERENCES}):\n"
+        + "\n".join(person_surface))
     assert not leaks, f"{len(leaks)} routes leak data from another makerspace:\n" + "\n".join(leaks[:60])
 
 

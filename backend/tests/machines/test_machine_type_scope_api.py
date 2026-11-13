@@ -131,7 +131,8 @@ def test_legacy_print_manager_cannot_reach_zero_machine_type(type_lab):
         client = APIClient()
         client.force_authenticate(actor)
         response = client.get(reverse("admin-machine-types", args=[space.pk]))
-        assert response.status_code == 403
+        # The legacy row confers no standing (rbac ignores it), so the space answers as if missing (481(1)).
+        assert (response.status_code, response.json()["code"]) == (404, "not_found")
         assert not MakerspaceMembership.staff_tracks.filter(user=actor, assigned_role__isnull=False).exists()
 
 

@@ -128,7 +128,7 @@ def test_usage_custom_origin_accepts_only_own_manager_and_space(settings):
     other = make_space("unrelated-usage")
     client = authenticated_client(make_member("scoped-manager", space))
     assert client.get(usage_url(space), HTTP_HOST="testserver", HTTP_ORIGIN="https://scoped.example.com").status_code == 200
-    assert client.get(usage_url(other), HTTP_HOST="testserver", HTTP_ORIGIN="https://scoped.example.com").status_code == 403
+    assert client.get(usage_url(other), HTTP_HOST="testserver", HTTP_ORIGIN="https://scoped.example.com").status_code == 404  # 481(1)
 
 
 @pytest.mark.parametrize("url", [DASHBOARD, PROBLEMS])

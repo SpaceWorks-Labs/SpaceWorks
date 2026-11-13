@@ -101,7 +101,9 @@ def _put_scope_after_revocation(monkeypatch, case, revoke):
         },
         format="json",
     )
-    assert response.status_code == 403
+    # The grant is gone when the write is refused, so the actor has no standing left in the space and gets
+    # the missing-space answer (481(1)); nothing is written either way.
+    assert response.status_code == 404
     assert not MembershipMachineTypeScope.objects.filter(membership=case["membership"]).exists()
 
 

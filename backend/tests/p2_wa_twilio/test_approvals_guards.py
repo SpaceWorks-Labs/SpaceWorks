@@ -56,7 +56,7 @@ def test_cross_tenant_manager_cannot_refresh(wa):
     other = make_space("wa-foreign-manager")
     user = make_member("wa-foreign", other)
     path = reverse("whatsapp-twilio-template-refresh", kwargs={"makerspace_id": wa.space.pk})
-    assert client(user).post(path).status_code == 403
+    assert client(user).post(path).status_code == 404  # 481(1): another space answers like a missing one
 
 
 def test_refresh_batches_are_bounded_and_unknown_fields_refused(wa):

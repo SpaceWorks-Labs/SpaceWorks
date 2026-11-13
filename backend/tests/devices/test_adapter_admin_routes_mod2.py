@@ -179,7 +179,7 @@ def test_shelf_coverage_limits_bad_input_roles_and_switch():
     foreign = make_member("mod2-cov-foreign", make_space("mod2-cov-foreign-space"))
     stranger = APIClient()
     stranger.force_authenticate(foreign)
-    refused(stranger.post(url, {"targets": [one]}, format="json"), 403, "permission_denied")
+    refused(stranger.post(url, {"targets": [one]}, format="json"), 404, "not_found")  # 481(1): another space
     refused(APIClient().post(url, {"targets": [one]}, format="json"), 401, "not_authenticated")
     _feature_off(case)
     assert case["client"].post(url, {"targets": [one]}, format="json").status_code == 404

@@ -73,7 +73,7 @@ def test_another_makerspace_cannot_request_an_upload_here(uploader):
     other = make_space("lvl-upload-other")
     outsider = authenticated_client(make_member("lvl-upload-outsider", other))
     response = outsider.post(_url(space), {"evidence_type": "issue", "content_type": "image/png"}, format="json")
-    assert response.status_code == 403
+    assert (response.status_code, response.json()["code"]) == (404, "not_found")  # 481(1): as if missing
     presign.assert_not_called()
     assert not EvidencePhoto.objects.filter(makerspace=space).exists()
 

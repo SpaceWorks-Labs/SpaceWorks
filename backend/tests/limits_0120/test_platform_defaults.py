@@ -160,7 +160,7 @@ def test_space_manager_view_is_scoped_and_read_only():
     lab, other = hosted_space("pd-scope-a"), hosted_space("pd-scope-b")
     boss = manager(lab)
     client = api(boss)
-    assert client.get(f"/api/v1/admin/makerspace/{other.pk}/limits").status_code == 403
+    assert client.get(f"/api/v1/admin/makerspace/{other.pk}/limits").status_code == 404  # 481(1): as if missing
     assert client.post(f"/api/v1/admin/makerspace/{lab.pk}/limits", {}, format="json").status_code in (403, 405)
     assert api(member(lab)).get(f"/api/v1/admin/makerspace/{lab.pk}/limits").status_code == 403
     assert api(superadmin("pd-root5")).get(f"/api/v1/admin/makerspace/{lab.pk}/limits").status_code == 200

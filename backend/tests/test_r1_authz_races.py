@@ -66,7 +66,7 @@ def test_domain_verification_refuses_when_manager_is_revoked_after_lookup(monkey
     )
 
     space.refresh_from_db()
-    assert response.status_code == 403
+    assert response.status_code == 404  # 481(1): no standing left when refused
     assert space.frontend_domain_status == Makerspace.DomainStatus.PENDING
     assert not AuditLog.objects.filter(action="makerspace.domain_verify_attempt").exists()
 

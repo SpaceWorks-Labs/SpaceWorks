@@ -110,7 +110,7 @@ def test_tenant_origin_scopes_makerspace_routes_and_refuses_organization_routes(
     assert created.status_code == 201, created.data
     assert client.get(ms_url(makerspace), **origin).status_code == 200
     assert client.post(ms_url(makerspace, created.data["id"]), format="json", **origin).status_code == 200
-    assert client.get(ms_url(other), **origin).status_code == 403
+    assert client.get(ms_url(other), **origin).status_code == 404  # 481(1): no standing there, as if missing
 
     org_space, organization = owned_space("origin-org")
     governor = member_governor(organization, "origin-governor")

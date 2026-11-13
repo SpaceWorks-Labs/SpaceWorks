@@ -68,7 +68,7 @@ def test_manager_reads_the_last_backup_line_for_their_space_only():
     assert response.data["last_backed_up_at"] is not None
     assert response.data["last_backed_up_at"][:19] == archive.completed_at.isoformat()[:19]
     assert response.data["nightly_backups_enabled"] is True
-    assert client.get(reverse("admin-makerspace-backup-status", args=[foreign.pk])).status_code == 403
+    assert client.get(reverse("admin-makerspace-backup-status", args=[foreign.pk])).status_code == 404  # 481(1)
 
 
 def test_status_line_needs_no_module_and_reports_no_backup_yet():

@@ -93,11 +93,13 @@ def test_staff_endpoints_require_manage_makerspace_in_the_target_tenant():
         ("get", detail_url(target, job), None),
         ("post", download_url_endpoint(target, job), None),
     )
-    for actor in (underprivileged, foreign_manager):
+    # Decision 481(1): staff of the space lacking the action get 403; another space's manager gets the
+    # answer a missing space gets, so the tenant's existence is not confirmed.
+    for actor, refusal in ((underprivileged, 403), (foreign_manager, 404)):
         client = client_for(actor)
         for method, url, payload in calls:
             response = getattr(client, method)(url, payload, format="json")
-            assert response.status_code == 403
+            assert response.status_code == refusal
 
 
 def test_download_token_is_job_bound_expires_and_is_single_use(monkeypatch):

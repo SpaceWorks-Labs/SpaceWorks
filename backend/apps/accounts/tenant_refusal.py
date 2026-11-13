@@ -42,8 +42,10 @@ def has_standing(actor, makerspace_id):
 
 
 def not_found_response():
-    return Response({"detail": NotFound.default_detail, "code": NotFound.default_code},
-                    status=status.HTTP_404_NOT_FOUND)
+    response = Response({"detail": NotFound.default_detail, "code": NotFound.default_code},
+                        status=status.HTTP_404_NOT_FOUND)
+    response.framework_code = True  # DRF's own not-found, as `exception_codes.add_error_code` marks it
+    return response
 
 
 def outsider_refusal(response, context):
@@ -53,8 +55,11 @@ def outsider_refusal(response, context):
     request = (context or {}).get("request")
     # The actor DRF already authenticated, if any: reading `request.user` here would run the
     # authenticators from the error path when the refusal came before authentication.
+    # Only an account is judged: device principals and API clients authenticate per route and
+    # hold no makerspace membership to have standing through.
     actor = getattr(request, "_user", None)
-    if not getattr(actor, "is_authenticated", False) or actor.is_superuser or actor.role == User.Role.SUPERADMIN:
+    if (not isinstance(actor, User) or not actor.is_authenticated
+            or actor.is_superuser or actor.role == User.Role.SUPERADMIN):
         return response
     makerspace_id = _path_makerspace_id(request, (context or {}).get("view"))
     if makerspace_id is None or not _staff_route(request) or has_standing(actor, makerspace_id):

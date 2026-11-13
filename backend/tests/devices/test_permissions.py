@@ -55,7 +55,7 @@ def test_list_and_detail_are_tenant_scoped():
     assert client_b.get(detail).status_code == 404
     assert client_b.patch(detail, {"name": "x"}, format="json").status_code == 404
     assert client_b.post(reverse("devices:admin-device-revoke", args=[created["device"]["id"]])).status_code == 404
-    assert client_b.get(reverse("devices:admin-device-list", args=[space_a.pk])).status_code == 403
+    assert client_b.get(reverse("devices:admin-device-list", args=[space_a.pk])).status_code == 404  # 481(1)
 
 
 def test_module_off_answers_400_naming_the_module():

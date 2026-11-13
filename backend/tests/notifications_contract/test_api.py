@@ -83,7 +83,8 @@ def test_members_can_choose_multiple_channels_and_revoke_only_their_endpoint(con
 def test_cross_tenant_access_is_refused(contract):
     other = make_space("contract-cross-tenant")
     assert client(contract.user).get(base(other) + "/personal/endpoints").status_code == 403
-    assert client(contract.user).patch(base(other) + "/channels/telegram", {}, format="json").status_code == 403
+    # The personal surface may say 403; the staff channel route answers another space like a missing one (481(1)).
+    assert client(contract.user).patch(base(other) + "/channels/telegram", {}, format="json").status_code == 404
 
 
 def test_reinstall_rotates_generation_without_reactivating_consent(contract):

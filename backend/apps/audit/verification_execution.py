@@ -43,10 +43,12 @@ def _start_attempt(run_id):
         attempt = latest.attempt + 1
         from apps.accounts import rbac
         from apps.operations.cloud_jobs.authority import allowed
+        # The event-order trigger lets QUEUED/RETRYING move only to RUNNING (or time out), so a
+        # refusal is recorded as the attempt starting and then failing, never FAILED directly.
+        runs.append_event(run, State.RUNNING, attempt)
         if not allowed(run.requested_by, rbac.Action.VIEW_AUDIT, run.makerspace_id):
             runs.finish(run, State.FAILED, attempt, failure_code="requester_authority_changed")
             return None, None
-        runs.append_event(run, State.RUNNING, attempt)
     return run, attempt
 
 

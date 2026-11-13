@@ -18,7 +18,7 @@ from apps.audit.integrity_scope import local_phase
 from apps.audit.models import AuditLog, AuditVerificationRunEvent
 from apps.audit.verification_execution import RetryAttempt, execute_attempt, fail_attempt
 from tests.audit_batch_helpers import MemoryAnchorSink, activate_and_seal
-from tests.audit_explorer_helpers import space
+from tests.audit_explorer_helpers import space, superadmin
 
 pytestmark = pytest.mark.django_db
 State = AuditVerificationRunEvent.State
@@ -37,7 +37,9 @@ def _rows(makerspace, count=3):
 
 
 def _run(makerspace):
-    run, _ = runs.request_run(None, makerspace.pk, {})
+    # The attempt revalidates the requester's live VIEW_AUDIT authority (bbca9bcb6), so the
+    # run needs a real requester; a null one is correctly refused.
+    run, _ = runs.request_run(superadmin("vtask-req-" + makerspace.slug), makerspace.pk, {})
     return run
 
 
@@ -283,3 +285,16 @@ def test_rotated_scope_with_a_working_sink_is_externally_anchored(monkeypatch, s
     event = execute_attempt(_run(makerspace).pk)
     assert event.state == State.SUCCEEDED, (event.chain_status, event.anchor_status)
     assert event.anchor_status == "externally_anchored"
+
+
+
+def test_requester_losing_authority_fails_the_run_through_a_legal_event_order():
+    makerspace = space("vtask-authority")
+    _rows(makerspace)
+    run = _run(makerspace)
+    run.requested_by.is_active = False
+    run.requested_by.save(update_fields=["is_active"])
+    assert execute_attempt(run.pk) is None
+    events = list(run.events.order_by("pk").values_list("state", "attempt", "failure_code"))
+    assert events == [(State.QUEUED, 0, ""), (State.RUNNING, 1, ""),
+                      (State.FAILED, 1, "requester_authority_changed")]

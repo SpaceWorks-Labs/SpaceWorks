@@ -13,10 +13,10 @@ from rest_framework.test import APIClient
 
 from apps.machines.low_stock import maybe_flag_low_stock
 from apps.makerspaces.models import Makerspace
-from apps.makerspaces.module_registry import module_available
+from apps.makerspaces.module_registry import MODULE_KEYS
 from apps.makerspaces.platform import available_modules, bootstrap_payload
 from apps.procurement.models import ToBuyItem, ToBuyReceipt
-from apps.separability.registry import purge_plan_for, runtime_active
+from apps.separability.registry import runtime_active
 from config.unfold import UNFOLD
 
 pytestmark = pytest.mark.django_db
@@ -28,7 +28,7 @@ pytestmark = pytest.mark.django_db
 
 def test_the_app_is_registered_as_inactive():
     assert runtime_active("procurement") is False
-    assert module_available("procurement") is False
+    assert "procurement" not in MODULE_KEYS  # retired key (#97): the app's liveness is what the tombstone moves
 
 
 @pytest.mark.parametrize(
@@ -70,9 +70,8 @@ def test_the_openapi_schema_does_not_advertise_procurement():
 
 
 def test_the_bootstrap_payload_omits_the_module():
+    # Retired key (#97): no registry entry can put it in the payload.
     space = Makerspace.objects.create(name="tombstoned", slug="tombstoned")
-    space.enabled_modules = sorted(set(space.enabled_modules) | {"procurement"})
-    space.save(update_fields=["enabled_modules"])
 
     assert "procurement" not in bootstrap_payload(space)["modules"]
     assert "procurement" not in available_modules(space)
@@ -113,10 +112,12 @@ def test_the_models_still_work():
 
 def test_the_purge_plan_is_still_registered():
     """Without it, retained receipts stay in the private bucket with nothing naming them."""
-    plan = purge_plan_for("procurement")
+    from apps.makerspaces.capability_purge_plans import PLANS
 
-    assert plan is not None
-    assert plan.private_keys is not None
+    plans = [item for item in PLANS if item.key in {"machines.tobuy", "inventory.tobuy"}]
+
+    assert len(plans) == 2
+    assert all(plan.private_keys is not None for plan in plans)
 
 
 def test_the_migrations_are_still_installed():

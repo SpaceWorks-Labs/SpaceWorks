@@ -92,8 +92,14 @@ def test_the_openapi_schema_does_not_advertise_bookings():
     response = APIClient().get("/schema/?format=json")
 
     assert response.status_code == 200
-    assert b"/spaces/" not in response.content
-    assert b"/bookings/" not in response.content
+    paths = response.json()["paths"]
+    # `/admin/platform/spaces/` is the superadmin makerspace surface (a "space" there is a tenant), and
+    # the two bookings paths below belong to core apps (bulk decisions, the related-facts card) that
+    # name the retained booking rows. Pinned exactly, so any NEW bookings-app leak still fails.
+    residue = {"/api/v1/admin/bulk/bookings/{decision}", "/api/v1/admin/makerspace/{makerspace_id}/related-facts/bookings/{booking_id}"}
+    leaked = [p for p in paths if ("/spaces/" in p and "/admin/platform/spaces/" not in p)
+              or ("/bookings/" in p and p not in residue)]
+    assert leaked == []
 
 
 def test_the_module_is_not_offered_to_the_console():

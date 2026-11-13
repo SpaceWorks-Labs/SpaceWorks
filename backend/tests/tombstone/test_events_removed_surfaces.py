@@ -95,9 +95,24 @@ def test_the_openapi_schema_does_not_advertise_events():
     response = APIClient().get("/schema/?format=json")
 
     assert response.status_code == 200
-    assert b"/events/" not in response.content
-    assert b"/event-series/" not in response.content
-    assert b"/event-registrations/" not in response.content
+    paths = response.json()["paths"]
+    # Core apps that name retained event rows keep these paths (finance, the related-facts card, induction
+    # grants, badge designs, sponsors, shop offers, bulk decisions). Pinned exactly, so any NEW events-app
+    # leak still fails; the events app's own routes (admin/events, member/public events, series) are all gone.
+    residue = {
+        "/api/v1/admin/events/{id}/badge-designs", "/api/v1/admin/events/{id}/badge-designs/{role}",
+        "/api/v1/admin/makerspace/{makerspace_id}/finance/events/{event_id}",
+        "/api/v1/admin/makerspace/{makerspace_id}/finance/events/{event_id}/budget",
+        "/api/v1/admin/makerspace/{makerspace_id}/finance/events/{event_id}/linked",
+        "/api/v1/admin/makerspace/{makerspace_id}/related-facts/events/{event_id}",
+        "/api/v1/admin/makerspaces/{makerspace_id}/events/{event_id}/induction",
+        "/api/v1/admin/makerspaces/{makerspace_id}/events/{event_id}/induction/grant",
+        "/api/v1/public/{makerspace_slug}/events/{public_token}/sponsors",
+        "/api/v1/public/m/{makerspace_slug}/shop/events/{public_token}/offers/",
+        "/api/v1/admin/bulk/event-registrations/{decision}",
+    }
+    leaked = [p for p in paths if any(m in p for m in ("/events/", "/event-series/", "/event-registrations/")) and p not in residue]
+    assert leaked == []
 
 
 def test_the_series_extension_task_is_not_scheduled():

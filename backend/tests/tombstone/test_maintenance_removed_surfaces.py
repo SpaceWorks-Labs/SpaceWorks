@@ -15,9 +15,9 @@ from rest_framework.test import APIClient
 
 from apps.maintenance.models import MaintenanceLog, MaintenanceLogDocument, MaintenanceSchedule
 from apps.makerspaces.models import Makerspace
-from apps.makerspaces.module_registry import module_available
+from apps.makerspaces.module_registry import MODULE_KEYS
 from apps.makerspaces.platform import available_modules
-from apps.separability.registry import purge_plan_for, runtime_active
+from apps.separability.registry import runtime_active
 
 pytestmark = pytest.mark.django_db
 
@@ -28,7 +28,7 @@ pytestmark = pytest.mark.django_db
 
 def test_the_app_is_registered_as_inactive():
     assert runtime_active("maintenance") is False
-    assert module_available("maintenance") is False
+    assert "maintenance" not in MODULE_KEYS  # retired key (#97): the app's liveness is what the tombstone moves
 
 
 @pytest.mark.parametrize(
@@ -75,10 +75,10 @@ def test_the_openapi_schema_does_not_advertise_maintenance():
 
 
 def test_the_module_is_not_offered_to_the_console():
+    # Retired key (#97): nothing in the registry can offer it, tombstoned or not.
     space = Makerspace.objects.create(name="tombstoned-maint", slug="tombstoned-maint")
-    space.enabled_modules = sorted(set(space.enabled_modules) | {"maintenance"})
-    space.save(update_fields=["enabled_modules"])
 
+    assert "maintenance" not in MODULE_KEYS
     assert "maintenance" not in available_modules(space)
 
 
@@ -108,7 +108,9 @@ def test_schedule_rows_are_still_readable():
 
 def test_the_purge_plan_is_still_registered():
     """Log documents live in the private bucket; the plan is what names their keys."""
-    plan = purge_plan_for("maintenance")
+    from apps.makerspaces.capability_purge_plans import PLANS
+
+    plan = next((item for item in PLANS if item.key == "machines.maintenance"), None)
 
     assert plan is not None
     assert plan.private_keys is not None

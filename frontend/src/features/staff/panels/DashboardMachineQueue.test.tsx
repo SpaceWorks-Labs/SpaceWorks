@@ -24,6 +24,15 @@ it("filters print jobs by status and the global built-in type ID, excluding a te
   expect(screen.getByText("Pending")).toBeVisible();
   expect(staffRequest).toHaveBeenCalledWith("/admin/makerspaces/7/machine-service/requests?status=pending&machine_type_id=3");
 });
+it("opens the dashboard's machine-job tiles as a queue of every machine type, each job linking to its detail", async () => {
+  for (const key of ["jobs_to_review", "jobs_in_progress", "jobs_awaiting_collection"]) expect(isDashboardMachineQueue(key)).toBe(true);
+  getMachineTypes.mockResolvedValue([]);
+  staffRequest.mockResolvedValue([{ id: 41, title: "Laser coasters", status: "pending" }]);
+  mount("jobs_to_review");
+  expect(await screen.findByRole("link", { name: /Laser coasters/ })).toHaveAttribute("href", "/m/forge/admin/machines?job=41");
+  expect(staffRequest).toHaveBeenCalledWith("/admin/makerspaces/7/machine-service/requests?status=pending");
+  expect(screen.queryByText(/No built-in printer type/)).toBeNull();
+});
 it("uses the paginated, server-scoped overdue list and links to its machine's maintenance tab", async () => {
   staffRequest.mockResolvedValue({ count: 30, results: [{ id: 5, machine_id: 9, machine_name: "Laser", description: "Clean optics", next_due: "2026-10-01" }] });
   mount("maintenance_overdue");

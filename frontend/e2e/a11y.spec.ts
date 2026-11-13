@@ -8,7 +8,8 @@ import { MEMBER, submitSignIn } from "./r2";
 const TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"];
 
 async function expectClean(page: Page) {
-  await expect(page.getByRole("alert")).toHaveCount(0);
+  // The shell keeps one empty sr-only live region for announcements; only an alert with text is an error.
+  await expect(page.locator('[role="alert"]:not(:empty)')).toHaveCount(0);
   await expect(page.locator('[aria-label^="Loading"]')).toHaveCount(0);
   await expect(page.locator("p").filter({ hasText: /^Loading / })).toHaveCount(0);
   const results = await new AxeBuilder({ page }).withTags(TAGS).analyze();
@@ -21,7 +22,7 @@ for (const colorScheme of ["light", "dark"] as const) {
     test.use({ colorScheme });
 
     test("public catalogue and support footer", async ({ page }) => {
-      await page.goto(`/m/${SEED.slug}`);
+      await page.goto(`/m/${SEED.slug}/inventory`);
       await expect(page.getByText(SEED.product).first()).toBeVisible();
       await expect(page.getByRole("link", { name: "Contact support" })).toBeVisible();
       await expectClean(page);

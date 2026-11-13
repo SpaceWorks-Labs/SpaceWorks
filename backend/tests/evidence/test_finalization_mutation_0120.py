@@ -45,10 +45,11 @@ class FakeStore:
         self.objects.pop(key, None)
 
 
-def _photo(slug, key):
+def _photo(slug, key, **extra):
     space = make_space(slug)
     actor = make_member(f"{slug}-staff", space)
-    return EvidencePhoto.objects.create(makerspace=space, uploaded_by=actor, evidence_type="issue", object_key=key)
+    return EvidencePhoto.objects.create(
+        makerspace=space, uploaded_by=actor, evidence_type="issue", object_key=key, **extra)
 
 
 def test_a_staged_upload_is_promoted_once_validated_and_recorded(monkeypatch):
@@ -266,3 +267,104 @@ def test_attachment_lock_refuses_only_when_a_retention_state_exists():
     assert finalization.lock_evidence_for_attachment(photo.pk) is True
     EvidenceObjectRetentionState.objects.create(evidence=photo)
     assert finalization.lock_evidence_for_attachment(photo.pk) is False
+
+
+# ---- lock order, boundaries and presign guard (second round of mutation pins) -------------------------------------
+
+def _for_update_tables(queries):
+    return [q["sql"].split('FROM "')[1].split('"')[0] for q in queries if "FOR UPDATE" in q["sql"]]
+
+
+def _locks(func, *args, **kwargs):
+    from django.db import connection
+    from django.test.utils import CaptureQueriesContext
+
+    with CaptureQueriesContext(connection) as ctx:
+        result = func(*args, **kwargs)
+    return _for_update_tables(ctx.captured_queries), result
+
+
+def test_every_step_takes_the_evidence_row_lock_first_in_the_retention_order():
+    photo = _photo("fin-locks", "evidence/fin-locks")
+    EvidenceUploadFinalization.objects.create(evidence=photo, status=Status.PROMOTING, claim_token=uuid.uuid4())
+    token = EvidenceUploadFinalization.objects.get(evidence=photo).claim_token
+    result = storage.EvidenceValidationResult(10, "image/jpeg")
+    photo_t, state_t, retention_t = "evidence_evidencephoto", "evidence_evidenceuploadfinalization", "evidence_evidenceobjectretentionstate"
+    assert _locks(finalization._claim, photo.pk)[0] == [photo_t, state_t, retention_t]
+    assert _locks(finalization.lock_evidence_for_attachment, photo.pk)[0] == [photo_t, state_t, retention_t]
+    assert _locks(finalization.lock_evidence_for_attachment, photo.pk, photo_already_locked=True)[0] == [retention_t]
+    assert _locks(finalization._release_claim, photo.pk, token)[0] == [photo_t, state_t]
+    EvidenceUploadFinalization.objects.filter(evidence=photo).update(status=Status.PROMOTING)
+    assert _locks(finalization._complete, photo.pk, result)[0] == [photo_t, state_t]
+
+
+def test_a_promotion_exactly_at_the_stale_boundary_is_stale_and_the_floor_is_sixty_seconds(monkeypatch, settings):
+    settings.EVIDENCE_URL_TTL_SECONDS = 5
+    photo = _photo("fin-boundary", "evidence/fin-boundary")
+    staged = storage.staging_key(photo.object_key)
+    store = FakeStore(monkeypatch, {staged: 400})
+    now = timezone.now()
+    monkeypatch.setattr(finalization.timezone, "now", lambda: now)
+    EvidenceUploadFinalization.objects.create(evidence=photo, status=Status.PROMOTING, claim_token=uuid.uuid4())
+    # 60.5 s old: past the 60 s floor, so stale (a 61 s floor would still call it fresh).
+    EvidenceUploadFinalization.objects.filter(pk=photo.pk).update(updated_at=now - timedelta(seconds=60.5))
+    assert finalize_upload(photo, MAX).size == 400 and store.copies
+    # Exactly at the window: not "newer than" it, so also stale.
+    other = _photo("fin-boundary-eq", "evidence/fin-boundary-eq")
+    store2 = FakeStore(monkeypatch, {storage.staging_key(other.object_key): 300})
+    EvidenceUploadFinalization.objects.create(evidence=other, status=Status.PROMOTING, claim_token=uuid.uuid4())
+    EvidenceUploadFinalization.objects.filter(pk=other.pk).update(updated_at=now - timedelta(seconds=60))
+    assert finalize_upload(other, MAX).size == 300 and store2.copies
+
+
+def test_the_wait_gives_up_exactly_when_the_deadline_is_reached(monkeypatch):
+    photo = _photo("fin-deadline", "evidence/fin-deadline")
+    EvidenceUploadFinalization.objects.create(evidence=photo, status=Status.PROMOTING, claim_token=uuid.uuid4())
+    FakeStore(monkeypatch, {})
+    monkeypatch.setattr(finalization.time, "monotonic", lambda: 100.0)
+    monkeypatch.setattr(finalization, "FINALIZATION_WAIT_SECONDS", 0)
+
+    def must_not_wait(_seconds):
+        raise AssertionError("polled again although the deadline had been reached")
+
+    monkeypatch.setattr(finalization.time, "sleep", must_not_wait)
+    with pytest.raises(FinalizationInProgress):
+        finalize_upload(photo, MAX)
+
+
+def test_mark_consumed_updates_the_instance_it_was_given_and_accepts_a_bare_pk():
+    from django.db import transaction
+    from apps.evidence.consumption import mark_consumed
+
+    photo = _photo("fin-consume", "evidence/fin-consume", consumption_state=EvidencePhoto.ConsumptionState.UNCONSUMED)
+    with transaction.atomic():
+        assert mark_consumed(photo) is True
+        assert photo.consumption_state == EvidencePhoto.ConsumptionState.CONSUMED
+        assert mark_consumed(photo) is False
+    other = _photo("fin-consume-pk", "evidence/fin-consume-pk", consumption_state=EvidencePhoto.ConsumptionState.UNCONSUMED)
+    with transaction.atomic():
+        assert mark_consumed(other.pk) is True
+    other.refresh_from_db()
+    assert other.consumption_state == EvidencePhoto.ConsumptionState.CONSUMED
+
+
+def test_issuing_an_upload_checks_storage_headroom_before_presigning(monkeypatch):
+    from unittest.mock import Mock
+    from apps.evidence import services_upload
+
+    space = make_space("fin-headroom")
+    actor = make_member("fin-headroom-staff", space)
+    order = []
+    check = Mock(side_effect=lambda *a: order.append("check"))
+    presign = Mock(side_effect=lambda *a: order.append("presign") or {"url": "https://storage.test/u", "fields": {}})
+    monkeypatch.setattr("apps.makerspaces.limits.check_upload_headroom", check)
+    monkeypatch.setattr(services_upload, "presigned_upload", presign)
+    services_upload.issue_upload(space, actor=actor, evidence_type="issue", content_type="image/jpeg", size_bytes=1234)
+    check.assert_called_once_with(space, 1234)
+    assert order == ["check", "presign"]
+    refused = Mock(side_effect=PermissionError("storage full"))
+    monkeypatch.setattr("apps.makerspaces.limits.check_upload_headroom", refused)
+    before = EvidencePhoto.objects.count()
+    with pytest.raises(PermissionError):
+        services_upload.issue_upload(space, actor=actor, evidence_type="issue", content_type="image/jpeg", size_bytes=1)
+    assert EvidencePhoto.objects.count() == before and presign.call_count == 1

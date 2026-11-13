@@ -10,7 +10,7 @@ const TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"];
 async function expectClean(page: Page) {
   // The shell keeps one empty sr-only live region for announcements; only an alert with text is an error.
   await expect(page.locator('[role="alert"]:not(:empty)')).toHaveCount(0);
-  await expect(page.locator('[aria-label^="Loading"]')).toHaveCount(0);
+  await expect(page.locator('[aria-label^="Loading"]')).toHaveCount(0, { timeout: 45_000 });
   await expect(page.locator("p").filter({ hasText: /^Loading / })).toHaveCount(0);
   const results = await new AxeBuilder({ page }).withTags(TAGS).analyze();
   const summary = results.violations.map((v) => `${v.id}: ${v.help} (${v.nodes.length} nodes)`).join("\n");
@@ -20,6 +20,8 @@ async function expectClean(page: Page) {
 for (const colorScheme of ["light", "dark"] as const) {
   test.describe(`${colorScheme} accessibility`, () => {
     test.use({ colorScheme });
+    // Dev-stack pages can take a while to settle (dozens of widget requests); the checks wait up to 45 s.
+    test.describe.configure({ timeout: 120_000 });
 
     test("public catalogue and support footer", async ({ page }) => {
       await page.goto(`/m/${SEED.slug}/inventory`);
@@ -45,7 +47,7 @@ for (const colorScheme of ["light", "dark"] as const) {
       await expect(page.getByRole("heading", { name: SEED.eventTitle })).toBeVisible();
       await expectClean(page);
       // The list card links to the event page, where Register sits beside the sign-in requirement.
-      await page.getByRole("link", { name: "Register", exact: true }).click();
+      await page.locator("article").filter({ hasText: SEED.eventTitle }).getByRole("link", { name: "Register", exact: true }).click();
       await expect(page.getByRole("heading", { name: "Join this event" })).toBeVisible();
       await expectClean(page);
       // Registering signed out is refused with a spoken, visible reason (an alert by design), not a silent failure.

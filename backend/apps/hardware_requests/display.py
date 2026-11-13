@@ -33,9 +33,9 @@ def requester_label(request, *, fallback="Member", allow_internal_fallback=False
 
     Prefers the captured requester name, then a real email (contact email → account
     email → username), then any non-hash identifier (contact phone → username →
-    account username). ``allow_internal_fallback=True``
-    reproduces the ledger's last-resort behaviour of returning the raw value (even
-    the hash) before the fallback.
+    account username). ``allow_internal_fallback`` is accepted for the ledger's call
+    but changes nothing: the internal check-in hash is never shown (its former second
+    pass repeated the first one exactly and could not return anything new).
     """
     requester = getattr(request, "requester", None)
 
@@ -63,11 +63,6 @@ def requester_label(request, *, fallback="Member", allow_internal_fallback=False
         if label and not is_internal_checkin_username(label):
             return label
 
-    if allow_internal_fallback:
-        for value in candidates:
-            label = clean_label(value)
-            if label and not is_internal_checkin_username(label):
-                return label
     return fallback
 
 

@@ -17,7 +17,9 @@ from tests.return_helpers import make_space, make_user
 
 pytestmark = pytest.mark.django_db
 PASSWORD = "strong-device-password"
-GATE_REFUSALS = ("could not be resolved", "does not match", "delegated authority", "cannot use delegated", "query parameter")
+GATE_REFUSALS = ("could not be resolved", "does not match", "delegated authority", "cannot use delegated", "query parameter",
+                 # a1861f5ee: an unresolvable (missing) event refuses exactly like a foreign one.
+                 "A staff role in this makerspace is required.")
 
 
 def bearer(access):

@@ -56,6 +56,8 @@ export function OfflineCheckInOperator({
   const [error, setError] = useState<string | null>(null);
   const [online, setOnline] = useState(navigator.onLine);
   const [autoAttempted, setAutoAttempted] = useState(false);
+  // False until the stored state has been read once: auto-download must not mistake "not loaded yet" for "nothing stored".
+  const [loaded, setLoaded] = useState(false);
   const resolvedRef = useRef<HTMLDivElement>(null);
   const workbenchRef = useRef<HTMLDivElement>(null);
   useEffect(() => { if (resolved) resolvedRef.current?.scrollIntoView?.({ block: "nearest", behavior: "smooth" }); }, [resolved]);
@@ -64,6 +66,7 @@ export function OfflineCheckInOperator({
   const refresh = useCallback(async () => {
     await pruneExpiredOfflineStates();
     setState(await loadOfflineState(scope));
+    setLoaded(true);
   }, [scope]);
 
   const downloadNow = useCallback(async () => {
@@ -92,11 +95,11 @@ export function OfflineCheckInOperator({
     };
   }, [refresh]);
   useEffect(() => {
-    if (autoDownload && !state && !busy && !autoAttempted) {
+    if (autoDownload && loaded && !state && !busy && !autoAttempted) {
       setAutoAttempted(true);
       void downloadNow();
     }
-  }, [autoAttempted, autoDownload, busy, downloadNow, state]);
+  }, [autoAttempted, autoDownload, busy, downloadNow, loaded, state]);
 
   async function handleScan(value: string) {
     setScanning(false); setError(null);

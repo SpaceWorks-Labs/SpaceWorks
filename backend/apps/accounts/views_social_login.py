@@ -92,7 +92,9 @@ class SocialLoginView(APIView):
     @extend_schema(tags=["Social auth"], auth=[], request=SocialLoginSerializer,
         description="Social sign-in with web or attested device delivery. A person MFA is mandatory for (any staff role) gets the MFA challenge shape instead of tokens and finishes at auth/mfa/verify (#62); members sign in directly. Device delivery returns `device_trust`; an app older than the platform minimum gets 426 native_app_update_required. Native Apple audiences bind to the approved iOS app ID on the attestation challenge (or existing grant). New device grants derive staff authority from active local memberships. Superadmin device creation returns device_superadmin_not_supported (403); existing grants remain usable. Attestation outages return attestation_unavailable (503); obtain a new nonce and challenge before retrying.",
         responses={200: SOCIAL_LOGIN_RESULT, **errors(400, 401, 403, 404, 409, 429, 503), 426: OpenApiResponse(ErrorSerializer, description="native_app_update_required"), 409: OpenApiResponse(ErrorSerializer, description="Includes `social_device_restart_required` when burned pre-grant inputs must be replaced.")})
-    def post(self, request):
+    def post(self, request, **url_kwargs):
+        # `url_kwargs` is the OIDC route's `slug` (read from `self.kwargs` by `provider`); a handler that
+        # took only `request` answered 500 to every OIDC sign-in.
         serializer = SocialLoginSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data

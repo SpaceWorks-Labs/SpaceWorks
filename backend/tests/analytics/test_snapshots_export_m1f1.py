@@ -80,6 +80,11 @@ def runtime_rows():
     membership = user.makerspace_memberships.get(makerspace=space)
     record_device_activity(grant, membership)
     record_device_activity(grant)
+    # A browser-session day in the space and one with no selected space; the archive carries both.
+    from apps.accounts.models_activity import WebSessionActivityDay
+    today = timezone.localdate()
+    WebSessionActivityDay.objects.create(user=user, session_hash="a" * 32, makerspace=space, local_day=today)
+    WebSessionActivityDay.objects.create(user=user, session_hash="b" * 32, makerspace=None, local_day=today)
     device = PushDevice.objects.create(makerspace=space, user=user, device_grant=grant,
         provider="apns", environment="development", token_fingerprint="private", token_ciphertext="private-token")
     inbox = NotificationInboxRow.objects.create(makerspace=space, user=user, title="Private message",
@@ -96,6 +101,7 @@ def test_runtime_personal_projection_contains_own_activity_without_destinations(
     # Projections yield model rows so scoped PII decrypts; runtime_record is the export shape.
     rows = {label: [runtime_record(label, row) for row in query] for label, query in runtime_projections(user, space.pk)}
     assert len(rows["accounts.DeviceActivityDay"]) == 2
+    assert len(rows["accounts.WebSessionActivityDay"]) == 2
     assert len(rows["notifications.MemberPushDelivery"]) == len(rows["integrations.PushDeliveryAttempt"]) == 1
     for label, values in rows.items():
         assert all(set(value) == set(RUNTIME_FIELDS[label]) for value in values)

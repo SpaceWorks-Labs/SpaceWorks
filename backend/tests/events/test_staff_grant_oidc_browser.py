@@ -141,7 +141,7 @@ def test_member_oidc_mfa_challenge_retains_member_kind(oidc_staff):
     challenge = MFAChallenge.objects.get(user=user)
     assert challenge.context["surface"] == "member"
     assert challenge.context["kind"] == "person"
-    assert challenge.context["makerspace"] is None
+    assert "makerspace" not in challenge.context  # a member challenge carries no tenant (mfa_sessions.context)
     assert challenge.context["origin"] == origin
     code = totp(secret, int(timezone.now().timestamp() // 30))
     completed = APIClient().post("/api/v1/auth/mfa/verify", {"challenge": response.data["challenge"], "code": code},

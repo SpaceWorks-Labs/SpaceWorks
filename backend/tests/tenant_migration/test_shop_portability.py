@@ -39,8 +39,7 @@ def test_the_status_secret_is_omitted_and_minted_fresh():
     from apps.tenant_migration.omitted_fields import OMITTED_FIELD_RECONSTRUCTIONS
 
     assert ("shop.ShopOrder", "status_secret") in ALWAYS_OMITTED
-    assert ("shop.ShopOrder", "status_secret") in str(OMITTED_FIELD_RECONSTRUCTIONS) or any(
-        "status_secret" in str(key) for key in OMITTED_FIELD_RECONSTRUCTIONS)
+    assert ("shop.ShopOrder", "status_secret") in OMITTED_FIELD_RECONSTRUCTIONS
 
 
 def test_the_tenant_dump_projects_every_shop_table_with_a_dataset_predicate():

@@ -71,7 +71,17 @@ def test_catalogue_lists_only_what_the_role_may_read(slug):
     allowed = {d.key for d in TENANT_DEFINITIONS if holds(slug, d)}
     assert listed <= allowed, sorted(listed - allowed)
     if slug == "space_manager":
-        assert set(MACHINE_KEYS + PEOPLE_KEYS) <= listed
+        # Decision 224(a): every area report. Two catalogue conditions that are not about the role still
+        # apply: a retired report only for a space with its history (329(b)), and a feature-gated report
+        # only once its feature is on (join-funnel: `membership.join_funnel`, off by default).
+        from apps.makerspaces.platform import feature_enabled
+        from apps.operations.report_retired import retired_report_listed
+        expected = {key for key in MACHINE_KEYS + PEOPLE_KEYS
+                    if retired_report_listed(space, definition(key))
+                    and (not definition(key).required_feature
+                         or feature_enabled(space, definition(key).required_feature))}
+        assert expected <= listed
+        assert {"fablab-health", "printer-service", "member-activity"} <= expected
 
 
 def test_the_inventory_manager_sees_inventory_reports_but_no_machine_or_people_report():

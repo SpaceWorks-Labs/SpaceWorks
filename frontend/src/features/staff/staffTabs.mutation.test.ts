@@ -71,7 +71,7 @@ function filterCells() {
 
 const PATHS = (() => {
   const out: string[] = ["", "/", "/admin", "/admin/", "/guest-admin", "/guest-admin/", "/x", "/adminx", "/m/s/admin", "/m/s/admin/", "/m//admin", "/m/s/other",
-    "/x/m/s/admin/inventory", "/m/s/admin/inventory\nz", "/admintab//x", "/adminx//y", "/admin\nx", "/guest-admintab//x"];
+    "/x/m/s/admin/inventory", "/m/s/admin/inventory\nz", "/m/s/admin/inventory/a\nb", "/admintab//x", "/adminx//y", "/admin\nx", "/guest-admintab//x"];
   const extra = ["to-be-fixed", "direct-handout", "member-cards", "assigned-events", "organized-events", "email-log", "email-templates", "api-access",
     "backup-restore", "data-export", "tenant-migration", "qr-tools", "bulk-import", "to-buy"];
   for (const tab of TABS.concat(extra)) {

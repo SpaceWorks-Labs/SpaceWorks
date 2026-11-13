@@ -1,13 +1,15 @@
 """LOCAL render QA (never committed): renders every card template and certificate seed to
-PNG/PDF under tests/idcards_best/out/ so a human can look at them. Asserts only that
+PNG/PDF under $IDCARDS_QA_OUT (default: the system temp dir) so a human can look at them. Asserts only that
 rendering succeeds; the visual check is manual."""
 import os
+import tempfile
 from io import BytesIO
 from pathlib import Path
 
 import pytest
 
-OUT = Path(__file__).with_name("out")
+# The test tree can be read-only (the CI runner mounts it for another user), so output goes to a temp dir.
+OUT = Path(os.environ.get("IDCARDS_QA_OUT") or Path(tempfile.gettempdir()) / "spaceworks-idcards-best-out")
 NAMES = {
     "short": "Priya Raman",
     "long": "Alexandra Montgomery-Fitzgerald",

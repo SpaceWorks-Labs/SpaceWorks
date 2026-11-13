@@ -22,7 +22,11 @@ ALL_TRACKS_ALLOWLIST = ("backup/", "tenant_migration/", "data_export/", "makersp
                         # member-unit row lookups read the person's whole relation to a space, never authority.
                         "makerspaces/account_profile", "makerspaces/member_unit_assign.py",
                         "makerspaces/member_unit_scope.py", "makerspaces/profile_image",
-                        "makerspaces/public_profile_cache.py", "makerspaces/public_profile_share.py")
+                        "makerspaces/public_profile_cache.py", "makerspaces/public_profile_share.py",
+                        # Membership PRESENCE in one makerspace (decision 63: staff live on the staff track, so
+                        # both tracks count) - a payment subject, or an incident reporter/assignee. Each read is
+                        # filtered by makerspace and decides no authority.
+                        "payments/subject_validation.py", "maintenance/incidents/")
 
 
 def test_default_manager_and_reverse_relations_are_community_only():

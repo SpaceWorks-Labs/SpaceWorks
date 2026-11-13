@@ -50,7 +50,9 @@ def test_machine_intake_refuses_unavailable_membership():
     from apps.makerspaces.module_registry import core_module_keys
 
     space = Makerspace.objects.create(name="guard-membership-off", slug="guard-membership-off",
-                                      enabled_modules=sorted(core_module_keys()),
+                                      # The job-requests feature needs its domain module on (two-level
+                                      # capabilities); only membership/presence stay off.
+                                      enabled_modules=sorted({*core_module_keys(), "machine_service"}),
                                       enabled_features=[JOB_REQUESTS])  # past the job-requests switch (dec 221e)
     with pytest.raises(NotFound) as error:
         require_public_intake_available(space)

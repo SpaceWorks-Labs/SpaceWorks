@@ -120,7 +120,7 @@ def test_booking_manager_reads_own_area_rankings_without_audit_authority(monkeyp
         reports.report_data("booking-top-members", space.pk, actor=actor)
 
 
-@pytest.mark.parametrize("slug,admitted", [("booking_manager", BOOKING_KEYS[:-1]),
+@pytest.mark.parametrize("slug,admitted", [("booking_manager", BOOKING_KEYS),  # decision 242(h): own-area named rows need no view_audit
                                           ("event_manager", tuple(k for k in KEYS if k not in BOOKING_KEYS)),
                                           ("machine_manager", ())])
 def test_domain_roles_do_not_borrow_another_actions_analytics(slug, admitted):

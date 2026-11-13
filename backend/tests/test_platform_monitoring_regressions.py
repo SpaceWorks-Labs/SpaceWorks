@@ -46,7 +46,7 @@ def test_monitoring_gets_and_scheduled_checks_never_create_integration_settings(
         assert client.get(PROBLEMS).status_code == 200
         run_platform_problem_checks_task()
         assert all(not model.objects.exists() for model in models)
-        assert AuditLog.objects.count() == before
+        assert AuditLog.objects.count() == before, list(AuditLog.objects.values_list("action", "target_type", "meta"))
     finally:
         cache.delete(PROBLEM_RUN_CACHE_KEY)
 

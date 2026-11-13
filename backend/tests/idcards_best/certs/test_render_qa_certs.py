@@ -1,5 +1,5 @@
 """LOCAL render QA for the certificate parts: kind/award tags, signatures, portrait pages and
-share images, written to tests/idcards_best/out/ for a human to look at."""
+share images, written to the render-QA output dir (see test_render_qa.OUT) for a human to look at."""
 import hashlib
 from io import BytesIO
 from types import SimpleNamespace

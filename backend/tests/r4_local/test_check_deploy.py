@@ -11,7 +11,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-OUT = Path(__file__).with_name("check_deploy_output.txt")
 BACKEND = Path(__file__).resolve().parents[2]
 
 PRODUCTION = {
@@ -52,10 +51,11 @@ def _run(extra=()):
                           capture_output=True, text=True, timeout=300)
 
 
-def test_check_deploy_with_production_settings():
+def test_check_deploy_with_production_settings(tmp_path):
+    out = tmp_path / "check_deploy_output.txt"
     result = _run()
     strict = _run(("--fail-level", "WARNING"))
-    OUT.write_text(f"rc={result.returncode}\n{result.stdout}\n{result.stderr}\n"
+    out.write_text(f"rc={result.returncode}\n{result.stdout}\n{result.stderr}\n"
                    f"--- fail-level WARNING rc={strict.returncode}\n{strict.stdout}\n{strict.stderr}\n",
                    encoding="utf-8")
     assert result.returncode == 0, result.stdout + result.stderr

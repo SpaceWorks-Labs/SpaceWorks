@@ -37,6 +37,8 @@ def test_shared_window_and_twilio_choose_the_same_boundary(age, expected, monkey
     provider = TwilioWhatsAppProvider(config)
     monkeypatch.setattr(provider, "active", lambda: True)
     monkeypatch.setattr(provider, "valid_endpoint", lambda _: True)
+    # send() reads the credentials first (466ad885d); this test is about the window, so they exist.
+    monkeypatch.setattr(provider, "credentials", lambda: SimpleNamespace())
     # This test is about the 24-hour window, not live authority: stub the SimpleNamespace-incompatible gates.
     monkeypatch.setattr("apps.integrations.notification_resolution.eligible", lambda *_: True)
     monkeypatch.setattr("apps.integrations.notification_resolution.target_eligible", lambda *_: True)

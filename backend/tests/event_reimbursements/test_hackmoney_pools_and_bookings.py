@@ -12,6 +12,7 @@ from apps.event_reimbursements import award_workflow, direct_booking, pools
 from apps.event_reimbursements.budget_models import BudgetReservation, ReimbursementBudgetPool
 from apps.event_reimbursements.models import GrantAward, GrantRequest
 from apps.payments.event_payouts.errors import PayoutError
+from apps.payments.event_payouts.validation import PayoutValidationError
 from apps.payments.models_ledger_entries import LedgerEntry
 from .conftest import cmd
 from .helpers import requested
@@ -144,5 +145,7 @@ def test_a_booking_cannot_replace_an_accepted_award(world):
 def test_a_booking_must_fit_the_pool(world):
     grant = requested(world)
     world.pool.refresh_from_db()
-    with pytest.raises(PayoutError):
+    # The service raises the domain error; the HTTP layer maps budget_exhausted to a typed 409 (http.py).
+    with pytest.raises((PayoutError, PayoutValidationError)) as refused:
         book(world, grant, world.pool, amount=world.pool.total_minor + 1)
+    assert getattr(refused.value, "code", None) == "budget_exhausted" or refused.value.detail["code"] == "budget_exhausted"

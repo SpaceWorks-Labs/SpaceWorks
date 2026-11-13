@@ -21,6 +21,11 @@ Nothing yet.
 its changes ship in 0.12.0 and its section is kept as history. Notes: [release](docs/release-0.12.0.md),
 [upgrade](docs/upgrade-to-0.12.0.md), [security verification](docs/security-summary-0.12.0.md).
 
+**Images.** 0.12.0 publishes exactly two images, `spaceworks-backend` and `spaceworks-frontend` (amd64 and arm64).
+The all-in-one image is retired: `ghcr.io/spaceworks-labs/spaceworks-allinone` stays at 0.9.3 (its `latest` tag too)
+and gets no further updates. A single-box install must move to standard containers before updating —
+[switch steps](docs/update-recovery.md#moving-off-a-single-box-install); setup and update refuse the old choice.
+
 - **Printing folded into Machine service** — the separate `printing` module is retired; Machine service handles
   service requests for every machine type and the 3D print queue is one of them. `makerspaces.0154` keeps Machine
   service on wherever printing was on; a stored, restored or posted `printing` key reads as `machine_service`; the

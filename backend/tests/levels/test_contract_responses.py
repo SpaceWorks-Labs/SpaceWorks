@@ -20,6 +20,8 @@ from tests.member_submission import active_member_client
 from tests.return_helpers import authenticated_client, make_accepted_request, make_product, make_space
 
 pytestmark = pytest.mark.django_db
+_FROM = (timezone.now() + timedelta(days=1)).strftime("%Y-%m-%dT%H:%M:%SZ")
+_TO = (timezone.now() + timedelta(days=8)).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 @pytest.fixture
@@ -53,6 +55,8 @@ def _cases(world):
         ("anon", f"/api/v1/public/{slug}/machines", "/api/v1/public/{makerspace_slug}/machines"),
         ("anon", f"/api/v1/public/{slug}/equipment-kits/", "/api/v1/public/{makerspace_slug}/equipment-kits/"),
         ("anon", f"/api/v1/public/{slug}/stats/", "/api/v1/public/{makerspace_slug}/stats/"),
+        ("anon", f"/api/v1/public/{slug}/spaces/{world['room'].public_token}/availability/?starts_at={_FROM}&ends_at={_TO}",
+         "/api/v1/public/{makerspace_slug}/spaces/{public_token}/availability/"),
         ("member", "/api/v1/auth/me", "/api/v1/auth/me"),
         ("member", f"/api/v1/member/makerspaces/{i}/activity", "/api/v1/member/makerspaces/{makerspace_id}/activity"),
         ("member", f"/api/v1/member/makerspaces/{i}/machines", "/api/v1/member/makerspaces/{makerspace_id}/machines"),

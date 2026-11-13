@@ -3,7 +3,9 @@ import { plural, t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 export type RelativeTimeProps = { date: string | number | Date; now?: string | number | Date;
   /** Also print the exact date and time: audit-grade records must not hide it behind a hover title, which touch screens never show. */
-  exact?: boolean };
+  exact?: boolean;
+  /** Lower-case the first letter so it reads mid-sentence ("Due in 2 days", not "Due In 2 days"). */
+  inline?: boolean };
 export function formatRelativeTime(date: Date, now: Date): string {
   const delta = date.getTime() - now.getTime();
   if (!Number.isFinite(delta)) return t`Unknown time`;
@@ -18,7 +20,8 @@ export function formatRelativeTime(date: Date, now: Date): string {
   const hours = Math.floor(minutes / 60);
   return delta > 0 ? plural(hours, { one: "In # hour", other: "In # hours" }) : plural(hours, { one: "# hour ago", other: "# hours ago" });
 }
-export function RelativeTime({ date, now, exact = false }: RelativeTimeProps) {
+const midSentence = (text: string, inline: boolean) => inline ? text.charAt(0).toLocaleLowerCase() + text.slice(1) : text;
+export function RelativeTime({ date, now, exact = false, inline = false }: RelativeTimeProps) {
   const [clock, setClock] = useState(() => Date.now());
   useEffect(() => {
     if (now !== undefined) return;
@@ -29,5 +32,5 @@ export function RelativeTime({ date, now, exact = false }: RelativeTimeProps) {
   const parsed = new Date(date);
   if (Number.isNaN(parsed.getTime())) return <span>{t`Unknown time`}</span>;
   return <time dateTime={parsed.toISOString()} title={parsed.toLocaleString(formatLocale())}>
-    {formatRelativeTime(parsed, new Date(now ?? clock))}{exact ? <span className="text-muted"> · {parsed.toLocaleString(formatLocale())}</span> : null}</time>;
+    {midSentence(formatRelativeTime(parsed, new Date(now ?? clock)), inline)}{exact ? <span className="text-muted"> · {parsed.toLocaleString(formatLocale())}</span> : null}</time>;
 }

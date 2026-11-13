@@ -22,7 +22,9 @@ export function AnalyticsData({ title, rows, spec, hint, meta }: {
   const columns = useReportColumns();
   const allFields = [...new Set(rows.flatMap(row => Object.keys(row)))];
   const selectedFields = columns.filter(column => allFields.includes(column));
-  const fields = selectedFields.length ? selectedFields : allFields;
+  // A space-id column that reads the same on every row is noise for a one-space report; keep it when the viewer picked it.
+  const sameSpaceEverywhere = (field: string) => ["makerspace_id", "space_id"].includes(field) && new Set(rows.map(row => row[field])).size <= 1;
+  const fields = selectedFields.length ? selectedFields : allFields.filter(field => !sameSpaceEverywhere(field) || allFields.length === 1);
   const notes = ["definition", "basis", "limitations", "measurement", "coverage", "unknown_history"]
     .flatMap(key => typeof meta?.[key] === "string" ? [String(meta[key])] : []);
   if (!rows.length) return <p className="text-sm text-muted">{t`No activity in this period. Try a longer range.`}</p>;
@@ -37,7 +39,7 @@ export function AnalyticsData({ title, rows, spec, hint, meta }: {
       <thead><tr>{fields.map(field => <th scope="col" className="p-2" key={field}>{reportFieldLabel(field)}</th>)}</tr></thead>
       <tbody>{rows.map((row, index) => <tr key={index}>{fields.map((field, column) => {
         const value = row[field];
-        const text = value == null ? "—" : typeof value === "object" ? objectText(value) : String(value);
+        const text = value == null ? "—" : typeof value === "object" ? objectText(value) : field === "metric" && typeof value === "string" ? reportFieldLabel(value) : String(value);
         return column ? <td key={field} className="p-2">{text}</td> : <th key={field} scope="row" className="p-2">{text}</th>;
       })}</tr>)}</tbody>
     </table></div> : null}

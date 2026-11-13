@@ -70,7 +70,7 @@ export function DirectLoanList({
     identity={loan.due_at ? { kind: "date", date: loan.due_at } : { kind: "avatar", name: loan.target_label, seed: String(loan.id) }}
     meta={<span className="grid gap-2">
       <span className="flex flex-wrap items-center gap-2"><StatusPill label={loan.status === "checked_out" ? t`Lent` : loan.status === "returned" ? t`Returned` : requestStatusLabel(loan.status)} tone={loan.status === "returned" ? "success" : loan.status === "checked_out" ? "accent" : "neutral"} />
-        {loan.due_at ? <span>{t`Due `}<RelativeTime date={loan.due_at} /></span> : null}
+        {loan.due_at && loan.status === "checked_out" ? <span>{t`Due `}<RelativeTime inline date={loan.due_at} /></span> : null}
       </span>
       <span>{t`Handout #${loan.id} · ${loan.items.map(item => `${item.product_name} × ${item.quantity}`).join(", ")}`}{loan.container_label ? t` · In ${loan.container_label}` : ""}{loan.issued_by ? t` · by ${loan.issued_by.username}` : ""}</span>
       {loan.status !== "checked_out" && loan.return_notes ? <span className="break-words">{loan.return_notes}</span> : null}

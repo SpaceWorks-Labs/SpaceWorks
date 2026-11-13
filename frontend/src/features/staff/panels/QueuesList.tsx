@@ -8,6 +8,9 @@ import { RequestDetail } from "./RequestDetail";
 import { LoanContextPanel } from "../loanContext/LoanContextPanel";
 import type { Makerspace } from "./shared";
 
+// Only a request still holding hardware has a return deadline worth showing; a returned or closed one does not.
+const OPEN_LOAN = new Set(["issued", "partially_returned"]);
+
 /** "2 damaged · 1 missing" across the request, so problem loans stand out without opening each one. */
 function itemFlags(row: HardwareRequest) {
   const sum = (key: "damaged_quantity" | "missing_quantity" | "needs_fix_quantity") => row.items.reduce((total, item) => total + (item[key] ?? 0), 0);
@@ -64,8 +67,8 @@ export function RequestList({ makerspace, rows, canViewAudit = false, actions, p
           {row.requested_for ? <span className="mt-1 block break-words">{row.requested_for}</span> : null}
           {shelf.length ? <span className="mt-1 block break-words">{t`Shelf: ${shelf.join(", ")}`}</span> : null}
           {row.rejection_reason ? <span className="mt-1 block break-words">{t`Rejected: ${row.rejection_reason}`}</span> : null}
-          {row.status === "accepted" && row.pickup_until ? <span className="mt-1 block">{t`Collect by `}<RelativeTime date={row.pickup_until} /></span> : null}
-          {row.return_due_at ? <span className="mt-1 block">{new Date(row.return_due_at).getTime() < Date.now() ? t`Overdue · ` : t`Due `}<RelativeTime date={row.return_due_at} /></span> : null}</>}
+          {row.status === "accepted" && row.pickup_until ? <span className="mt-1 block">{t`Collect by `}<RelativeTime inline date={row.pickup_until} /></span> : null}
+          {row.return_due_at && OPEN_LOAN.has(row.status) ? <span className="mt-1 block">{new Date(row.return_due_at).getTime() < Date.now() ? t`Overdue · ` : t`Due `}<RelativeTime inline date={row.return_due_at} /></span> : null}</>}
         right={<div className="flex flex-wrap items-center gap-2"><StatusBadge status={row.status} label={requestStatusLabel(row.status)} />
           {flags ? <StatusPill tone="danger" label={flags} /> : null}
           {next ? <ActionControl primary action={{ ...next, label: row.status === "issued" || row.status === "partially_returned" ? t`Return` : next.label }} />

@@ -19,16 +19,16 @@ export function RegistrationFiltersBar({ value, onChange, tickets }: {
   value: RegistrationFilters; onChange: (next: RegistrationFilters) => void; tickets: StaffTicket[];
 }) {
   const active = Boolean(value.status || value.ticket_type || value.q);
-  return <div className="mb-4 grid min-w-0 gap-3 sm:grid-cols-3" role="group" aria-label={t`Filter registrations`}>
+  return <div className="mb-4 grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-3" role="group" aria-label={t`Filter registrations`}>
     <label className="grid min-w-0 gap-1 text-sm font-semibold">{t`Search guests`}
       <SearchField className="desk-input" value={value.q ?? ""} onChange={event => onChange({ ...value, q: event.target.value })} /></label>
     <label className="grid min-w-0 gap-1 text-sm font-semibold">{t`Status`}
-      <select className="desk-input max-w-full" value={value.status ?? ""} onChange={event => onChange({ ...value, status: event.target.value })}>
+      <select className="desk-input w-full max-w-full min-w-0" value={value.status ?? ""} onChange={event => onChange({ ...value, status: event.target.value })}>
         <option value="">{t`Any status`}</option>
         {STATUSES.map(status => <option key={status} value={status}>{opsStatusLabel(status)}</option>)}
       </select></label>
     {tickets.length ? <label className="grid min-w-0 gap-1 text-sm font-semibold">{t`Ticket`}
-      <select className="desk-input max-w-full" value={value.ticket_type ?? ""} onChange={event => onChange({ ...value, ticket_type: event.target.value })}>
+      <select className="desk-input w-full max-w-full min-w-0" value={value.ticket_type ?? ""} onChange={event => onChange({ ...value, ticket_type: event.target.value })}>
         <option value="">{t`Any ticket`}</option>
         {tickets.map(ticket => <option key={ticket.id} value={String(ticket.id)}>{ticket.name}</option>)}
       </select></label> : null}

@@ -30,6 +30,7 @@ from apps.makerspaces.module_install import apply_profile
 from apps.makerspaces.module_profiles import RECOMMENDED
 from ._seed_e2e_discovery import seed_discovery
 from apps.operations.e2e_kiosk_seed import seed_kiosk
+from apps.operations.seed_handles import claim_seeded_handles
 
 DEFAULT_PASSWORD = "e2e-pass-12345"
 SECRET_LOCATION = "E2E SECRET SHELF 42"
@@ -58,6 +59,9 @@ class Command(BaseCommand):
         password = options["password"]
         with transaction.atomic():
             seeded = self._seed(slug, token, password)
+        # Decision 308: a personal account without a username handle is blocked from every write (403
+        # `handle_required`), so a fresh seed gives each account one (see operations/seed_handles.py).
+        claim_seeded_handles()
         payload = json.dumps(seeded, indent=2)
         if options["write_json"]:
             Path(options["write_json"]).write_text(payload + "\n")

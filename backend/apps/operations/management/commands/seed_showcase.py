@@ -42,6 +42,7 @@ from ._showcase_peoples_choice import seed_peoples_choice
 from ._showcase_l22 import seed_shop
 from ._showcase_people import create_members, create_space, create_staff, member_account, restrict
 from ._showcase_requests import RequestSeeder
+from apps.operations.seed_handles import claim_seeded_handles
 
 
 class Command(BaseCommand):
@@ -76,6 +77,9 @@ class Command(BaseCommand):
         if existing is not None:
             lifecycle.purge(lifecycle.archive(existing, root), root)
         space = self._build(root, password)
+        # Decision 308: a personal account without a username handle is blocked from every write (403
+        # `handle_required`), so a fresh seed gives each account one (see operations/seed_handles.py).
+        claim_seeded_handles()
         self.stdout.write(self.style.SUCCESS(
             f"Seeded {space.name} (/{space.slug}). Superadmin: {root.username}. "
             f"Staff: {', '.join(name for name, *_ in data.STAFF)}. "

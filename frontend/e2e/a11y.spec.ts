@@ -51,9 +51,10 @@ for (const colorScheme of ["light", "dark"] as const) {
 
     test("public bookings and request form", async ({ page }) => {
       await page.goto(`/m/${SEED.slug}/bookings`);
-      await expect(page.getByRole("heading", { name: SEED.bookableSpace })).toBeVisible();
+      // Each bookable space is a card button (several spaces share the page), not a heading.
+      await expect(page.getByRole("button", { name: new RegExp(SEED.bookableSpace) })).toBeVisible();
       await expectClean(page);
-      await page.getByRole("button", { name: "Choose a time" }).click();
+      await page.getByRole("button", { name: "Choose a time" }).first().click();
       await expect(page.getByRole("button", { name: "Close booking form" })).toBeVisible();
       await expectClean(page);
     });
@@ -78,7 +79,7 @@ for (const colorScheme of ["light", "dark"] as const) {
       ["members", "Members", ""],
       ["machines", "Machines", ""],
       ["events", "Events", SEED.eventTitle],
-      ["bookings", "Bookings", SEED.bookableSpace],
+      ["bookings", "Bookings", ""],  // the Requests tab opens first; spaces sit under the Spaces tab
       ["settings", "Makerspace settings", ""],
     ]) {
       test(`staff ${path} panel`, async ({ page }) => {

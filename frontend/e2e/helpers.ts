@@ -90,8 +90,8 @@ export async function makerspaceId(request: APIRequestContext, token: string): P
 
 export async function staffLogin(page: Page, username = SEED.manager.username, password = SEED.manager.password) {
   const { staffConsole } = await import("./r2");
+  // staffConsole waits for the signed-in shell; sign-out now lives in the account menu, not as a visible button.
   await staffConsole(page, "", { username, password, email: `${username}@e2e.local` });
-  await expect(page.getByRole("button", { name: /sign out/i })).toBeVisible();
 }
 
 export async function openRequestsTab(page: Page) {

@@ -17,6 +17,7 @@ from apps.inventory.models import (
 from apps.makerspaces.models import Makerspace
 from apps.makerspaces.module_install import apply_profile
 from apps.makerspaces.module_profiles import EVERYTHING
+from apps.operations.seed_handles import claim_seeded_handles
 
 
 DEMO_SPACES = [
@@ -110,6 +111,9 @@ class Command(BaseCommand):
             machine_services_written += self._machine_service(makerspace, member)
 
         self._sync_legacy_hmac_client()
+        # Decision 308: a personal account without a username handle is blocked from every write (403
+        # `handle_required`), so a fresh seed gives each account one (see operations/seed_handles.py).
+        claim_seeded_handles()
         self.stdout.write(
             self.style.SUCCESS(
                 "Seeded demo data: "

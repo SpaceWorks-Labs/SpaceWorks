@@ -10,7 +10,7 @@
     "i18n:compile": "lingui compile --strict",
     "i18n:check": "node scripts/check-i18n-literals.mjs",
     "test": "vitest run",
-    "test:coverage": "vitest run --coverage --coverage.provider=v8 --coverage.all=false --coverage.include=src/** --coverage.exclude=src/generated/** --coverage.exclude=**/*.test.* --coverage.reporter=html --coverage.reporter=json-summary --coverage.reporter=text-summary --coverage.reportsDirectory=coverage",
+    "test:coverage": "vitest run --coverage --coverage.provider=v8 --coverage.reportOnFailure=true --coverage.include=src/** --coverage.exclude=src/generated/** --coverage.exclude=**/*.test.* --coverage.reporter=html --coverage.reporter=json-summary --coverage.reporter=text-summary --coverage.reportsDirectory=coverage",
     "test:e2e": "playwright test",
     "build": "tsc -b && npm run build:bundle",
     "build:bundle": "vite build && node scripts/verify-pwa-build.mjs && node scripts/check-chunk-sizes.mjs",

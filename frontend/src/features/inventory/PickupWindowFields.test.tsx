@@ -27,16 +27,18 @@ function setup(features: string[]) {
 }
 
 it("sends the collection window as ISO datetimes when reservations are on", async () => {
+  // Fixed once: computing local() again after the assertion could cross a minute boundary on a loaded host.
+  const from = local(24), until = local(26);
   setup(["loans.reservations"]);
-  fireEvent.change(screen.getByLabelText("From"), { target: { value: local(24) } });
-  fireEvent.change(screen.getByLabelText("Until"), { target: { value: local(26) } });
+  fireEvent.change(screen.getByLabelText("From"), { target: { value: from } });
+  fireEvent.change(screen.getByLabelText("Until"), { target: { value: until } });
   fireEvent.change(screen.getByPlaceholderText("What do you need these items for?"), { target: { value: "Shelf build" } });
   await waitFor(() => expect(screen.getByRole("button", { name: "Submit request" })).toBeEnabled());
   fireEvent.click(screen.getByRole("button", { name: "Submit request" }));
   await waitFor(() => expect(submit).toHaveBeenCalled());
   const payload = submit.mock.calls[0][1];
-  expect(payload.pickup_from).toBe(new Date(local(24)).toISOString());
-  expect(payload.pickup_until).toBe(new Date(local(26)).toISOString());
+  expect(payload.pickup_from).toBe(new Date(from).toISOString());
+  expect(payload.pickup_until).toBe(new Date(until).toISOString());
 });
 
 it("blocks a window that ends before it starts", () => {

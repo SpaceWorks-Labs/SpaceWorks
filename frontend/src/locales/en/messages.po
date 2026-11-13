@@ -1738,7 +1738,7 @@ msgstr "{0} · recorded {1} · expires {2}"
 
 #. placeholder {0}: payment.subject_label
 #. placeholder {1}: formatMoney(payment.refunded_amount, payment.currency)
-#. placeholder {2}: formatMoney(remaining.toFixed(2), payment.currency)
+#. placeholder {2}: formatMoney(remaining, payment.currency)
 msgid "{0} · refunded so far {1} · remaining {2}"
 msgstr "{0} · refunded so far {1} · remaining {2}"
 
@@ -1919,6 +1919,10 @@ msgstr "{0} a minute"
 #. placeholder {0}: summary.active_quantity
 msgid "{0} active"
 msgstr "{0} active"
+
+#. placeholder {0}: count(item.total)
+msgid "{0} active session-days"
+msgstr "{0} active session-days"
 
 #. placeholder {0}: toBuyTarget.name
 msgid "{0} added to To buy."
@@ -2570,6 +2574,11 @@ msgstr "{0} needs other areas, which will be switched on with it."
 #. placeholder {0}: feature.label
 msgid "{0} needs these too. They switch on with it."
 msgstr "{0} needs these too. They switch on with it."
+
+#. placeholder {0}: count(item.fresh)
+#. placeholder {1}: count(item.returning)
+msgid "{0} new · {1} returning"
+msgstr "{0} new · {1} returning"
 
 #. placeholder {0}: plan.pairs.length
 #. placeholder {1}: plan.applications
@@ -4592,9 +4601,6 @@ msgstr "A name or short description."
 msgid "A named member"
 msgstr "A named member"
 
-msgid "A native app for members and staff."
-msgstr "A native app for members and staff."
-
 msgid "A new bookable space for this machine type, or for one of its machines, starts with these values. Leave a value empty for no default."
 msgstr "A new bookable space for this machine type, or for one of its machines, starts with these values. Leave a value empty for no default."
 
@@ -5607,8 +5613,14 @@ msgstr "Active (untick to pause)"
 msgid "Active accounts"
 msgstr "Active accounts"
 
+msgid "Active accounts by channel"
+msgstr "Active accounts by channel"
+
 msgid "Active API clients"
 msgstr "Active API clients"
+
+msgid "Active app sessions"
+msgstr "Active app sessions"
 
 msgid "Active bookings"
 msgstr "Active bookings"
@@ -5655,6 +5667,18 @@ msgstr "Active private link ending in {hint}. The full link cannot be shown agai
 msgid "Active schedules"
 msgstr "Active schedules"
 
+msgid "Active session-days"
+msgstr "Active session-days"
+
+msgid "Active session-days per space and channel"
+msgstr "Active session-days per space and channel"
+
+msgid "Active sessions by channel"
+msgstr "Active sessions by channel"
+
+msgid "Active sessions over time"
+msgstr "Active sessions over time"
+
 msgid "Active spaces"
 msgstr "Active spaces"
 
@@ -5663,6 +5687,9 @@ msgstr "Active staff"
 
 msgid "Active subdomain: "
 msgstr "Active subdomain: "
+
+msgid "Active web sessions"
+msgstr "Active web sessions"
 
 msgid "Active: apply this discount to new charges"
 msgstr "Active: apply this discount to new charges"
@@ -7544,9 +7571,6 @@ msgstr "Android"
 msgid "Android app"
 msgstr "Android app"
 
-msgid "Android app (in development)"
-msgstr "Android app (in development)"
-
 msgid "Android app source"
 msgstr "Android app source"
 
@@ -7827,6 +7851,9 @@ msgstr "API access"
 msgid "API access & connected apps"
 msgstr "API access & connected apps"
 
+msgid "API calls"
+msgstr "API calls"
+
 msgid "API client scopes"
 msgstr "API client scopes"
 
@@ -7919,6 +7946,12 @@ msgstr "App secret"
 
 msgid "App type"
 msgstr "App type"
+
+msgid "App versions"
+msgstr "App versions"
+
+msgid "App versions in use"
+msgstr "App versions in use"
 
 msgid "Appeal decision"
 msgstr "Appeal decision"
@@ -10457,6 +10490,9 @@ msgstr "Booking linked to an event"
 msgid "Booking listing photo"
 msgstr "Booking listing photo"
 
+msgid "Booking made"
+msgstr "Booking made"
+
 msgid "Booking Manager"
 msgstr "Booking Manager"
 
@@ -11245,6 +11281,9 @@ msgstr "By role"
 
 msgid "By room"
 msgstr "By room"
+
+msgid "By space"
+msgstr "By space"
 
 msgid "By time"
 msgstr "By time"
@@ -12336,6 +12375,9 @@ msgstr "Channel"
 
 msgid "channel setup"
 msgstr "channel setup"
+
+msgid "Channel use per space"
+msgstr "Channel use per space"
 
 #. placeholder {0}: words(filters.channel)
 msgid "channel: {0}"
@@ -13838,6 +13880,9 @@ msgstr "Clear Telegram token?"
 msgid "Clear the basket"
 msgstr "Clear the basket"
 
+msgid "Clear the search box"
+msgstr "Clear the search box"
+
 msgid "Clear the search or choose another filter."
 msgstr "Clear the search or choose another filter."
 
@@ -14264,6 +14309,9 @@ msgstr "Combines"
 msgid "Comfortable"
 msgstr "Comfortable"
 
+msgid "Coming soon"
+msgstr "Coming soon"
+
 msgid "Coming up"
 msgstr "Coming up"
 
@@ -14459,6 +14507,9 @@ msgstr "Completed amount"
 
 msgid "Completed count"
 msgstr "Completed count"
+
+msgid "Completed flows and each channel's share"
+msgstr "Completed flows and each channel's share"
 
 msgid "Completed hours"
 msgstr "Completed hours"
@@ -16132,6 +16183,9 @@ msgstr "Couldn't share the link. Copy it from the address bar."
 
 msgid "Couldn't sign out everywhere. Try again."
 msgstr "Couldn't sign out everywhere. Try again."
+
+msgid "Couldn't sign out. Try again."
+msgstr "Couldn't sign out. Try again."
 
 msgid "Couldn’t upload the files. Choose them again to retry."
 msgstr "Couldn’t upload the files. Choose them again to retry."
@@ -17904,6 +17958,9 @@ msgstr "Deploy through your cloud provider."
 msgid "Deployment"
 msgstr "Deployment"
 
+msgid "Deployment (unattributed)"
+msgstr "Deployment (unattributed)"
+
 msgid "Deployment apps are set at startup. Copy this line into your environment and restart to change what is shipped for every space (this is for whoever runs your server)."
 msgstr "Deployment apps are set at startup. Copy this line into your environment and restart to change what is shipped for every space (this is for whoever runs your server)."
 
@@ -18869,6 +18926,15 @@ msgstr "Download failed ({0})"
 msgid "Download file {id}"
 msgstr "Download file {id}"
 
+msgid "Download from GitHub Releases"
+msgstr "Download from GitHub Releases"
+
+msgid "Download from GitHub Releases: the latest Android app (opens in a new tab)"
+msgstr "Download from GitHub Releases: the latest Android app (opens in a new tab)"
+
+msgid "Download from GitHub Releases: the latest iOS app (opens in a new tab)"
+msgstr "Download from GitHub Releases: the latest iOS app (opens in a new tab)"
+
 msgid "Download Grafana bundle with this password"
 msgstr "Download Grafana bundle with this password"
 
@@ -19104,6 +19170,9 @@ msgstr "Drill · BOX-0042"
 
 msgid "Drill found"
 msgstr "Drill found"
+
+msgid "Drill into a space"
+msgstr "Drill into a space"
 
 msgid "Drill queued. Its report appears below when it finishes."
 msgstr "Drill queued. Its report appears below when it finishes."
@@ -21433,8 +21502,8 @@ msgstr "Everything that's out right now."
 msgid "Everything under {0} moves with it. Members keep their unit."
 msgstr "Everything under {0} moves with it. Members keep their unit."
 
-msgid "Everything works in the browser now. Native Android and iOS apps are being built on the same API; there is no release date yet."
-msgstr "Everything works in the browser now. Native Android and iOS apps are being built on the same API; there is no release date yet."
+msgid "Everything works in the browser, and the native Android and iOS apps are released on GitHub, built on the same API."
+msgstr "Everything works in the browser, and the native Android and iOS apps are released on GitHub, built on the same API."
 
 msgid "Everything you've asked the space to make."
 msgstr "Everything you've asked the space to make."
@@ -22676,8 +22745,14 @@ msgstr "Flip upside down"
 msgid "Flip vertically"
 msgstr "Flip vertically"
 
+msgid "Flow"
+msgstr "Flow"
+
 msgid "Flow steps"
 msgstr "Flow steps"
+
+msgid "Flows completed"
+msgstr "Flows completed"
 
 msgid "Focus across"
 msgstr "Focus across"
@@ -23343,6 +23418,9 @@ msgstr "GitHub first-commit flag"
 
 msgid "GitHub OAuth App (members)"
 msgstr "GitHub OAuth App (members)"
+
+msgid "GitHub sign-in"
+msgstr "GitHub sign-in"
 
 msgid "GitHub sign-in failed."
 msgstr "GitHub sign-in failed."
@@ -24858,6 +24936,9 @@ msgstr "How people checked in"
 msgid "How people join, dues, wallet passes and the check-in area."
 msgstr "How people join, dues, wallet passes and the check-in area."
 
+msgid "How people reach the platform: the web console, the iOS and Android apps and API clients, and which features each one uses. Counts only, never people."
+msgstr "How people reach the platform: the web console, the iOS and Android apps and API clients, and which features each one uses. Counts only, never people."
+
 msgid "How prize payouts propose tax, and where winners and reimbursed people can be paid."
 msgstr "How prize payouts propose tax, and where winners and reimbursed people can be paid."
 
@@ -25456,9 +25537,6 @@ msgstr "In {days} days"
 
 msgid "In {minutes} min"
 msgstr "In {minutes} min"
-
-msgid "In development"
-msgstr "In development"
 
 msgid "In good standing"
 msgstr "In good standing"
@@ -26394,8 +26472,8 @@ msgstr "Invoices for hosted spaces and how they are paid, on the Spaces page."
 msgid "Involvement note"
 msgstr "Involvement note"
 
-msgid "iOS app (in development)"
-msgstr "iOS app (in development)"
+msgid "iOS app"
+msgstr "iOS app"
 
 msgid "iOS app source"
 msgstr "iOS app source"
@@ -26736,6 +26814,9 @@ msgstr "Item created. Add a photo so members can recognise it."
 msgid "Item details"
 msgstr "Item details"
 
+msgid "Item issued"
+msgstr "Item issued"
+
 msgid "Item label"
 msgstr "Item label"
 
@@ -26750,6 +26831,9 @@ msgstr "Item photo"
 
 msgid "Item price"
 msgstr "Item price"
+
+msgid "Item returned"
+msgstr "Item returned"
 
 msgid "Item schedule"
 msgstr "Item schedule"
@@ -27388,6 +27472,9 @@ msgstr "Key"
 
 msgid "Key file loaded. It is sent once and never shown again."
 msgstr "Key file loaded. It is sent once and never shown again."
+
+msgid "Key flows by channel"
+msgstr "Key flows by channel"
 
 msgid "Key ID"
 msgstr "Key ID"
@@ -29570,6 +29657,9 @@ msgstr "Loading volunteer hours…"
 msgid "Loading wallet credentials…"
 msgstr "Loading wallet credentials…"
 
+msgid "Loading web and app use…"
+msgstr "Loading web and app use…"
+
 msgid "Loading web telemetry settings…"
 msgstr "Loading web telemetry settings…"
 
@@ -30230,6 +30320,9 @@ msgstr "Machine issue reporting"
 
 msgid "Machine job"
 msgstr "Machine job"
+
+msgid "Machine job requested"
+msgstr "Machine job requested"
 
 msgid "Machine job requests"
 msgstr "Machine job requests"
@@ -32620,6 +32713,9 @@ msgstr "Muted {0} emails by recipient and event. Checked means muted."
 msgid "Muted until {0}"
 msgstr "Muted until {0}"
 
+msgid "My account"
+msgstr "My account"
+
 msgid "My activity"
 msgstr "My activity"
 
@@ -32692,6 +32788,9 @@ msgstr "My passes"
 
 msgid "My prizes"
 msgstr "My prizes"
+
+msgid "My requests"
+msgstr "My requests"
 
 msgid "My shifts"
 msgstr "My shifts"
@@ -33012,6 +33111,9 @@ msgstr "New {kind} in {0}"
 
 msgid "New access key ID (blank keeps it)"
 msgstr "New access key ID (blank keeps it)"
+
+msgid "New accounts"
+msgstr "New accounts"
 
 msgid "New address"
 msgstr "New address"
@@ -33454,6 +33556,9 @@ msgstr "No actions are available for this label."
 msgid "No active account of this space matches."
 msgstr "No active account of this space matches."
 
+msgid "No active accounts recorded in this period."
+msgstr "No active accounts recorded in this period."
+
 msgid "No active arrival"
 msgstr "No active arrival"
 
@@ -33554,6 +33659,9 @@ msgstr "No API access requests yet. Send a request to connect your tools."
 #. placeholder {1}: acting.row.label
 msgid "No API client is issued to {0} for \"{1}\"."
 msgstr "No API client is issued to {0} for \"{1}\"."
+
+msgid "No app builds reported. Apps send their version in the X-SpaceWorks-App-Version header."
+msgstr "No app builds reported. Apps send their version in the X-SpaceWorks-App-Version header."
 
 msgid "No application questions. Applicants submit their verified account identity."
 msgstr "No application questions. Applicants submit their verified account identity."
@@ -33699,6 +33807,9 @@ msgstr "No browser origins configured."
 msgid "No built-in printer type is available in your scope."
 msgstr "No built-in printer type is available in your scope."
 
+msgid "No calls recorded in this period."
+msgstr "No calls recorded in this period."
+
 msgid "No camera is bound to this adapter."
 msgstr "No camera is bound to this adapter."
 
@@ -33839,6 +33950,9 @@ msgstr "No combined activity in this period."
 
 msgid "No compatible machine is available right now."
 msgstr "No compatible machine is available right now."
+
+msgid "No completed flows recorded in this period."
+msgstr "No completed flows recorded in this period."
 
 msgid "No completed printer activity yet."
 msgstr "No completed printer activity yet."
@@ -35337,6 +35451,9 @@ msgstr "No service training required"
 
 msgid "No sessions match these filters. Clear filters to see them all."
 msgstr "No sessions match these filters. Clear filters to see them all."
+
+msgid "No sessions recorded in this period."
+msgstr "No sessions recorded in this period."
 
 msgid "No sessions yet. Add your first session."
 msgstr "No sessions yet. Add your first session."
@@ -36998,8 +37115,8 @@ msgstr "On a phone you see a preview and can make quick changes (colours, text, 
 msgid "On events that review registrations, people already confirmed can buy add-ons without buying another seat."
 msgstr "On events that review registrations, people already confirmed can buy add-ons without buying another seat."
 
-msgid "On every phone today. Native apps next."
-msgstr "On every phone today. Native apps next."
+msgid "On every phone, in the browser and in native apps."
+msgstr "On every phone, in the browser and in native apps."
 
 msgid "On every re-join"
 msgstr "On every re-join"
@@ -37770,6 +37887,9 @@ msgstr "Open in reports"
 msgid "Open in space"
 msgstr "Open in space"
 
+msgid "Open in the Space Works app"
+msgstr "Open in the Space Works app"
+
 msgid "Open in your member area"
 msgstr "Open in your member area"
 
@@ -37924,6 +38044,9 @@ msgstr "Open station"
 
 msgid "Open supplier link ↗"
 msgstr "Open supplier link ↗"
+
+msgid "Open the app"
+msgstr "Open the app"
 
 msgid "Open the booking in Bookings"
 msgstr "Open the booking in Bookings"
@@ -39635,6 +39758,9 @@ msgstr "Payment reminders"
 
 msgid "Payment routing is not currently requested."
 msgstr "Payment routing is not currently requested."
+
+msgid "Payment started"
+msgstr "Payment started"
 
 msgid "Payment timing"
 msgstr "Payment timing"
@@ -46171,9 +46297,6 @@ msgstr "Request export"
 msgid "api.error.request_failed"
 msgstr "Request failed ({status})"
 
-msgid "Request from inventory"
-msgstr "Request from inventory"
-
 msgid "Request funnel"
 msgstr "Request funnel"
 
@@ -47336,6 +47459,9 @@ msgstr "Returned units"
 
 msgid "Returned. Thanks!"
 msgstr "Returned. Thanks!"
+
+msgid "Returning accounts"
+msgstr "Returning accounts"
 
 msgid "Returning attendees"
 msgstr "Returning attendees"
@@ -51181,6 +51307,9 @@ msgstr "Shape"
 msgid "Share"
 msgstr "Share"
 
+msgid "Share (%)"
+msgstr "Share (%)"
+
 #. placeholder {0}: data.share_id
 #. placeholder {1}: data.country
 #. placeholder {2}: methodLabel(data.method)
@@ -51196,6 +51325,9 @@ msgstr "Share {0}{1}"
 msgid "Share application number {0} with an eligible member, who can vouch from their member area."
 msgstr "Share application number {0} with an eligible member, who can vouch from their member area."
 
+msgid "Share by channel"
+msgstr "Share by channel"
+
 msgid "Share chosen skills and a short introduction. Only a currently public member profile can be linked."
 msgstr "Share chosen skills and a short introduction. Only a currently public member profile can be linked."
 
@@ -51207,6 +51339,9 @@ msgstr "Share image"
 
 msgid "Share judges' team feedback with teams (no judge names) when this round's shortlist or results are published"
 msgstr "Share judges' team feedback with teams (no judge names) when this round's shortlist or results are published"
+
+msgid "Share of active sessions by channel"
+msgstr "Share of active sessions by channel"
 
 msgid "Share of member #"
 msgstr "Share of member #"
@@ -52084,6 +52219,9 @@ msgstr "Sign in again to manage your calendar."
 msgid "Sign in and continue"
 msgstr "Sign in and continue"
 
+msgid "Sign in on the website"
+msgstr "Sign in on the website"
+
 msgid "Sign in or create an account to be listed as a speaker."
 msgstr "Sign in or create an account to be listed as a speaker."
 
@@ -52886,12 +53024,6 @@ msgstr "Source note"
 msgid "Source on GitHub"
 msgstr "Source on GitHub"
 
-msgid "Source on GitHub: the Android app repository (opens in a new tab)"
-msgstr "Source on GitHub: the Android app repository (opens in a new tab)"
-
-msgid "Source on GitHub: the iOS app repository (opens in a new tab)"
-msgstr "Source on GitHub: the iOS app repository (opens in a new tab)"
-
 msgid "Source preview"
 msgstr "Source preview"
 
@@ -52938,6 +53070,9 @@ msgstr "Space #{0}"
 #. placeholder {0}: report.makerspace_id
 msgid "Space #{0} (deleted)"
 msgstr "Space #{0} (deleted)"
+
+msgid "Space #{id}"
+msgstr "Space #{id}"
 
 msgid "space #{space}"
 msgstr "space #{space}"
@@ -53175,8 +53310,8 @@ msgstr "Space Works on GitHub (opens in a new tab)"
 msgid "Space Works symbol"
 msgstr "Space Works symbol"
 
-msgid "Space Works works in the browser on any phone today, and members can install their member area to the home screen. Native Android and iOS apps are in development."
-msgstr "Space Works works in the browser on any phone today, and members can install their member area to the home screen. Native Android and iOS apps are in development."
+msgid "Space Works works in the browser on any phone today, and members can install their member area to the home screen. The native Android and iOS apps are released too: download them from GitHub Releases."
+msgstr "Space Works works in the browser on any phone today, and members can install their member area to the home screen. The native Android and iOS apps are released too: download them from GitHub Releases."
 
 msgid "Space Works: server, web app and docs"
 msgstr "Space Works: server, web app and docs"
@@ -56811,6 +56946,12 @@ msgstr "The most this can add up to. Empty means no cap."
 msgid "The name the bridge uses for this door."
 msgstr "The name the bridge uses for this door."
 
+msgid "The native Android app for members and staff."
+msgstr "The native Android app for members and staff."
+
+msgid "The native iPhone and iPad app for members and staff."
+msgstr "The native iPhone and iPad app for members and staff."
+
 msgid "The new server's encryption key (starts with age1)"
 msgstr "The new server's encryption key (starts with age1)"
 
@@ -58525,6 +58666,9 @@ msgstr "This link expires at {0}."
 msgid "This link expires at {expires}. When {label} says you are connected, come back and confirm."
 msgstr "This link expires at {expires}. When {label} says you are connected, come back and confirm."
 
+msgid "This link has already been used. Start the GitHub sign-in again in the app."
+msgstr "This link has already been used. Start the GitHub sign-in again in the app."
+
 msgid "This link is incomplete"
 msgstr "This link is incomplete"
 
@@ -59012,6 +59156,9 @@ msgstr "This shop is not taking orders right now."
 #. placeholder {0}: Math.ceil(challenge.expires_in / 60)
 msgid "This sign-in expires in {0} minutes. Restart sign-in if it expires."
 msgstr "This sign-in expires in {0} minutes. Restart sign-in if it expires."
+
+msgid "This sign-in finishes in the Space Works app on this phone. If the app did not open, try again, or sign in on the website instead."
+msgstr "This sign-in finishes in the Space Works app on this phone. If the app did not open, try again, or sign in on the website instead."
 
 msgid "This source switch-over cannot be undone from this screen."
 msgstr "This source switch-over cannot be undone from this screen."
@@ -59805,6 +59952,9 @@ msgstr "Top borrowers"
 msgid "Top events over six months and the share of returning attendees; small groups are hidden."
 msgstr "Top events over six months and the share of returning attendees; small groups are hidden."
 
+msgid "Top features by channel"
+msgstr "Top features by channel"
+
 msgid "Top level (no parent)"
 msgstr "Top level (no parent)"
 
@@ -60178,6 +60328,9 @@ msgstr "Turn on \"Tax-exempt donation receipts\" under Features to add tax-exemp
 #. placeholder {0}: provider.display_name
 msgid "Turn on {0}"
 msgstr "Turn on {0}"
+
+msgid "Turn on automatic capture in the Razorpay Dashboard (Account & Settings › Payment capture). Payments that are only authorised are never marked paid here, and Razorpay refunds them after a few days."
+msgstr "Turn on automatic capture in the Razorpay Dashboard (Account & Settings › Payment capture). Payments that are only authorised are never marked paid here, and Razorpay refunds them after a few days."
 
 msgid "Turn on the features you use"
 msgstr "Turn on the features you use"
@@ -63091,6 +63244,9 @@ msgstr "We’ll notify your member account when stock rises. Sign in as an activ
 msgid "We'll update this page as it moves."
 msgstr "We'll update this page as it moves."
 
+msgid "Web"
+msgstr "Web"
+
 msgid "Web address"
 msgstr "Web address"
 
@@ -63108,6 +63264,9 @@ msgstr "web address requests"
 
 msgid "Web address requests"
 msgstr "Web address requests"
+
+msgid "Web and app use"
+msgstr "Web and app use"
 
 msgid "Web API key"
 msgstr "Web API key"
@@ -63658,6 +63817,9 @@ msgstr "Where (optional)"
 msgid "Where each winner asked to be paid. Details stay masked; revealing them is recorded in the audit log with your reason."
 msgstr "Where each winner asked to be paid. Details stay masked; revealing them is recorded in the audit log with your reason."
 
+msgid "Where people connect from"
+msgstr "Where people connect from"
+
 msgid "Where should we pay you?"
 msgstr "Where should we pay you?"
 
@@ -63922,8 +64084,8 @@ msgstr "Window {0} ends (local time)"
 msgid "Window {0} starts (local time)"
 msgstr "Window {0} starts (local time)"
 
-msgid "Window hoursactive app sessions"
-msgstr "Window hoursactive app sessions"
+msgid "Window hours"
+msgstr "Window hours"
 
 msgid "Winner"
 msgstr "Winner"
@@ -64826,6 +64988,9 @@ msgstr "Your account is restricted at this space. Talk to space staff to resolve
 
 msgid "Your account is restricted, so you can't use machines right now. Talk to staff."
 msgstr "Your account is restricted, so you can't use machines right now. Talk to staff."
+
+msgid "Your account is restricted. You can still view and pay your own charges. Contact the space for help with your access."
+msgstr "Your account is restricted. You can still view and pay your own charges. Contact the space for help with your access."
 
 msgid "Your account is secured"
 msgstr "Your account is secured"

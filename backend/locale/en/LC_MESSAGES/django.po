@@ -15401,3 +15401,68 @@ msgstr ""
 
 msgid "Whole units of the key (bytes for byte keys). Delete the row for no limit."
 msgstr ""
+
+msgid "Events"
+msgstr ""
+
+msgid "Inventory"
+msgstr ""
+
+#, python-format
+msgid "Membership #%(id)s: %(what)s."
+msgstr ""
+
+#, python-format
+msgid "Membership application #%(id)s: %(what)s."
+msgstr ""
+
+msgid "Membership application update"
+msgstr ""
+
+msgid "Membership update"
+msgstr ""
+
+msgid "Passkeys are turned off on this deployment."
+msgstr ""
+
+msgid "Profile and username adoption"
+msgstr ""
+
+msgid "That code is not recognised or has expired. Check the screen."
+msgstr ""
+
+msgid "Web and app use"
+msgstr ""
+
+#, python-format
+msgid "Welcome to %(name)s"
+msgstr ""
+
+#, python-format
+msgid "You are verified at %(name)s"
+msgstr ""
+
+msgid "You have been invited to join this makerspace. Sign in to review the invitation."
+msgstr ""
+
+#, python-format
+msgid "You have been verified as a member of %(name)s."
+msgstr ""
+
+msgid "Your account is restricted. Contact the makerspace to restore access."
+msgstr ""
+
+msgid "Your account is suspended."
+msgstr ""
+
+#, python-format
+msgid "Your membership application at %(name)s: %(what)s."
+msgstr ""
+
+#, python-format
+msgid "Your membership at %(name)s is active. Welcome!"
+msgstr ""
+
+#, python-format
+msgid "Your membership at %(name)s: %(what)s."
+msgstr ""

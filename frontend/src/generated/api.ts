@@ -1724,6 +1724,8 @@ export const openApiPaths = [
   "/api/v1/auth/device/grants/{grant_id}",
   "/api/v1/auth/device/login",
   "/api/v1/auth/device/logout",
+  "/api/v1/auth/device/passkey/login",
+  "/api/v1/auth/device/passkey/options",
   "/api/v1/auth/device/refresh",
   "/api/v1/auth/device/staff-grant",
   "/api/v1/auth/devices",
@@ -1774,6 +1776,8 @@ export const openApiPaths = [
   "/api/v1/auth/social/apple",
   "/api/v1/auth/social/github/authorize",
   "/api/v1/auth/social/github/callback",
+  "/api/v1/auth/social/github/device",
+  "/api/v1/auth/social/github/device/authorize",
   "/api/v1/auth/social/github/link/authorize",
   "/api/v1/auth/social/google",
   "/api/v1/auth/social/link/callback",
@@ -2628,6 +2632,8 @@ export type AccessDecision = {
 
 export type AccessLevelEnum = "operate" | "manage" | "full";
 
+export type AccessStatus725Enum = "active" | "restricted" | "suspended";
+
 export type AccessStatus95aEnum = "active" | "restricted" | "suspended";
 
 export type AccessToken = {
@@ -2851,6 +2857,8 @@ export type AccountSessionPage = {
   "previous": string | null;
   "results": Array<AccountSession>;
 };
+
+export type AccountStatusEnum = "active" | "restricted" | "suspended";
 
 export type Achievement = {
   "id": number;
@@ -4577,6 +4585,7 @@ export type AuthUserPayload = {
   "must_change_password": boolean;
   "kind": AuthUserPayloadKindEnum;
   "is_platform": boolean;
+  "account_status": AccountStatusEnum;
   "has_staff_role": boolean;
   "has_elevated_authority": boolean;
   "has_organizations": boolean;
@@ -5701,6 +5710,7 @@ export type BookingReservationReportRow = {
   "ends_at": string;
   "status": string;
   "created_at": string;
+  "organization": string | null;
 };
 
 export type BookingResourceUtilizationReport = {
@@ -7784,6 +7794,8 @@ export type CocInput = {
 
 export type Code876Enum = "room_outage" | "machine_repair" | "machine_lockout" | "certification";
 
+export type CodeChallengeMethodEnum = "S256";
+
 export type CollaborativeEvent = {
   "participating_organizations": Array<ParticipatingOrganization>;
   "audience_label": string | null;
@@ -9609,6 +9621,24 @@ export type DeviceLoginResult = DeviceTokenResponse | MFAChallengeResponse;
 
 export type DeviceLogoutResponse = {
   "detail": string;
+};
+
+export type DevicePasskeyLogin = {
+  "platform": DevicePlatformEnum;
+  "app_id": string;
+  "environment": EnvironmentEnum;
+  "challenge": string;
+  "ceremony": string;
+  "credential": unknown;
+  "attestation": DeviceAttestationPayload;
+  "app_version"?: string;
+};
+
+export type DevicePasskeyOptions = {
+  "platform": DevicePlatformEnum;
+  "app_id": string;
+  "environment": EnvironmentEnum;
+  "challenge": string;
 };
 
 export type DevicePlatformEnum = "apple" | "android";
@@ -12901,6 +12931,32 @@ export type GitHubCalendarSourceEnum = "github";
 export type GitHubDay = {
   "date": string;
   "count": number;
+};
+
+export type GithubNativeExchange = {
+  "code": string;
+  "state": string;
+  "code_verifier": string;
+  "client_platform": NativeClientPlatformEnum;
+  "challenge"?: string;
+  "attestation"?: DeviceAttestationPayload;
+  "app_version"?: string;
+};
+
+export type GithubNativeLoginResult = SocialLoginResponse | MFAChallengeResponse;
+
+export type GithubNativeStart = {
+  "client_platform": NativeClientPlatformEnum;
+  "code_challenge": string;
+  "code_challenge_method"?: CodeChallengeMethodEnum;
+  "challenge"?: string;
+};
+
+export type GithubNativeStartResponse = {
+  "authorization_url": string;
+  "state": string;
+  "redirect_uri": string;
+  "expires_in": number;
 };
 
 export type GoogleEnum = "space" | "platform" | "deployment";
@@ -19681,6 +19737,8 @@ export type NativeApple = {
 
 export type NativeAppStatusEnum = "pending" | "approved" | "revoked";
 
+export type NativeClientPlatformEnum = "ios" | "android";
+
 export type NativeConfig = {
   "app_display_name": string;
   "app_identity": NativeAppIdentities;
@@ -21919,6 +21977,10 @@ export type PasskeyRegistered = {
   "access": string;
   "surface": string;
   "user": AuthUserPayload;
+  "refresh"?: string;
+  "device_grant"?: {
+  [key: string]: unknown;
+};
 };
 
 export type PasskeyRegisterRequest = {
@@ -21932,6 +21994,10 @@ export type PasskeyRemoved = {
   "access"?: string;
   "surface"?: string;
   "user"?: AuthUserPayload;
+  "refresh"?: string;
+  "device_grant"?: {
+  [key: string]: unknown;
+};
 };
 
 export type PasskeyVerifyRequest = {
@@ -30154,7 +30220,7 @@ export type ReportError = {
   "code"?: string;
 };
 
-export type ReportKeyEnum = "payment-cash-book" | "taken-items" | "active-loans" | "returns" | "damaged-missing" | "top-borrowers" | "recently-added" | "event-attendance" | "booking-utilization" | "member-activity" | "printer-service" | "fablab-health" | "payment-reconciliation" | "evidence-compliance" | "import-quality" | "communications-health" | "community-engagement" | "join-funnel" | "certification-coverage" | "audit-trail" | "membership-growth" | "member-retention" | "membership-revenue" | "membership-renewals" | "membership-bridge" | "membership-breakdown" | "membership-expiry-calendar" | "membership-applications-funnel" | "membership-win-back" | "member-register" | "membership-monthly-summary" | "member-card-issuance" | "payments-ledger" | "revenue-over-time" | "cash-book" | "payments-ageing" | "accounting-journal" | "refunds" | "income-spending" | "finance-inventory" | "finance-machines" | "finance-bookings" | "finance-events" | "finance-donations" | "event-finance" | "prizes-owed" | "receipts-payments" | "subscription-income" | "money-methods" | "gstr1" | "gstr3b" | "tax-summary" | "documents-register" | "finance-shop" | "shop-sales" | "shop-product-sales" | "shop-stock-value" | "donations-campaign-progress" | "donations-pledges" | "donations-sponsor-perks" | "event-registrations" | "event-feedback" | "event-orders" | "event-attendance-pdf" | "booking-resource-utilization" | "booking-resource-utilization-pdf" | "booking-reservations" | "booking-answers" | "mobile-devices" | "mobile-auth" | "booking-occupancy" | "booking-lead-time" | "booking-top-members" | "event-signups" | "event-revenue" | "event-funnel" | "event-checkin-times" | "event-feedback-scores" | "repairs-work-orders" | "repairs-technician-workload" | "repairs-time-by-area" | "repairs-parts-used" | "loan-purpose-summary" | "event-equipment" | "booking-equipment" | "event-loan-timeline" | "booking-loan-timeline" | "event-consumables" | "booking-consumables" | "inventory-valuation" | "inventory-utilisation-by-category" | "overdue-by-borrower" | "incidents-register" | "machine-jobs" | "certification-holders" | "roster-export" | "guest-passes-export" | "volunteer-hours-export" | "minors-consent-export" | "staff-roster-export" | "cash-in-hand" | "membership-revenue-by-plan" | "membership-renewal-forecast" | "membership-approval-times" | "membership-unit-league" | "membership-level-league" | "device-adapter-activity" | "machine-access-grants" | "card-studio-activity" | "event-certificates-issued" | "report-usage" | "platform-profile-adoption" | "most-lent" | "asset-usage" | "loan-throughput" | "inventory-utilisation" | "overdue-loans" | "damaged-lost" | "longest-loans" | "stock-health" | "request-funnel" | "problem-reports" | "inventory-watch-demand" | "summary" | "qr-scans" | "qr-scan-actors" | "inventory-control" | "consumable-usage" | "consumable-pools" | "procurement-performance" | "stock-transfers" | "stocktake-variance" | "machine-usage" | "machine-usage-members" | "machine-usage-heatmap" | "machine-downtime" | "maintenance-activity" | "machine-service" | "service-queue-times" | "printer-jobs" | "machine-errors" | "warranty-expiry" | "machine-sessions" | "machine-session-utilisation" | "machine-session-busiest" | "machine-session-idle" | "machine-session-flagged" | "machine-use-by-event" | "event-machine-use" | "machine-consumables" | "device-health" | "presence-activity" | "presence-top-visitors" | "presence-activity-hours" | "audit-activity" | "audit-top-actors" | "audit-activity-hours" | "organization-membership" | "module-operational-health" | "platform-services" | "platform-usage";
+export type ReportKeyEnum = "payment-cash-book" | "taken-items" | "active-loans" | "returns" | "damaged-missing" | "top-borrowers" | "recently-added" | "event-attendance" | "booking-utilization" | "member-activity" | "printer-service" | "fablab-health" | "payment-reconciliation" | "evidence-compliance" | "import-quality" | "communications-health" | "community-engagement" | "join-funnel" | "certification-coverage" | "audit-trail" | "membership-growth" | "member-retention" | "membership-revenue" | "membership-renewals" | "membership-bridge" | "membership-breakdown" | "membership-expiry-calendar" | "membership-applications-funnel" | "membership-win-back" | "member-register" | "membership-monthly-summary" | "member-card-issuance" | "payments-ledger" | "revenue-over-time" | "cash-book" | "payments-ageing" | "accounting-journal" | "refunds" | "income-spending" | "finance-inventory" | "finance-machines" | "finance-bookings" | "finance-events" | "finance-donations" | "event-finance" | "prizes-owed" | "receipts-payments" | "subscription-income" | "money-methods" | "gstr1" | "gstr3b" | "tax-summary" | "documents-register" | "finance-shop" | "shop-sales" | "shop-product-sales" | "shop-stock-value" | "donations-campaign-progress" | "donations-pledges" | "donations-sponsor-perks" | "event-registrations" | "event-feedback" | "event-orders" | "event-attendance-pdf" | "booking-resource-utilization" | "booking-resource-utilization-pdf" | "booking-reservations" | "booking-answers" | "mobile-devices" | "mobile-auth" | "booking-occupancy" | "booking-lead-time" | "booking-top-members" | "event-signups" | "event-revenue" | "event-funnel" | "event-checkin-times" | "event-feedback-scores" | "repairs-work-orders" | "repairs-technician-workload" | "repairs-time-by-area" | "repairs-parts-used" | "loan-purpose-summary" | "event-equipment" | "booking-equipment" | "event-loan-timeline" | "booking-loan-timeline" | "event-consumables" | "booking-consumables" | "inventory-valuation" | "inventory-utilisation-by-category" | "overdue-by-borrower" | "incidents-register" | "machine-jobs" | "certification-holders" | "roster-export" | "guest-passes-export" | "volunteer-hours-export" | "minors-consent-export" | "staff-roster-export" | "cash-in-hand" | "membership-revenue-by-plan" | "membership-renewal-forecast" | "membership-approval-times" | "membership-unit-league" | "membership-level-league" | "device-adapter-activity" | "machine-access-grants" | "card-studio-activity" | "event-certificates-issued" | "report-usage" | "platform-profile-adoption" | "channel-usage" | "platform-channel-usage" | "most-lent" | "asset-usage" | "loan-throughput" | "inventory-utilisation" | "overdue-loans" | "damaged-lost" | "longest-loans" | "stock-health" | "request-funnel" | "problem-reports" | "inventory-watch-demand" | "summary" | "qr-scans" | "qr-scan-actors" | "inventory-control" | "consumable-usage" | "consumable-pools" | "procurement-performance" | "stock-transfers" | "stocktake-variance" | "machine-usage" | "machine-usage-members" | "machine-usage-heatmap" | "machine-downtime" | "maintenance-activity" | "machine-service" | "service-queue-times" | "printer-jobs" | "machine-errors" | "warranty-expiry" | "machine-sessions" | "machine-session-utilisation" | "machine-session-busiest" | "machine-session-idle" | "machine-session-flagged" | "machine-use-by-event" | "event-machine-use" | "machine-consumables" | "device-health" | "presence-activity" | "presence-top-visitors" | "presence-activity-hours" | "audit-activity" | "audit-top-actors" | "audit-activity-hours" | "organization-membership" | "module-operational-health" | "platform-services" | "platform-usage";
 
 export type ReportSchedule = {
   "id": number;
@@ -33743,11 +33809,9 @@ export type StaffMemberActivity = {
   "member_id": number;
   "areas": Array<MemberActivityArea>;
   "errors": Array<string>;
-  "access_status"?: StaffMemberActivityAccessStatusEnum;
+  "access_status"?: AccessStatus725Enum;
   "is_member"?: boolean;
 };
-
-export type StaffMemberActivityAccessStatusEnum = "active" | "restricted" | "suspended";
 
 export type StaffMemberIncludedHours = {
   "member_id": number;

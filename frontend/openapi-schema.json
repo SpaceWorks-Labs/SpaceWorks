@@ -5468,6 +5468,7 @@
                                 "card-studio-activity",
                                 "cash-book",
                                 "certification-coverage",
+                                "channel-usage",
                                 "communications-health",
                                 "community-engagement",
                                 "consumable-pools",
@@ -5510,6 +5511,7 @@
                                 "payment-cash-book",
                                 "payment-reconciliation",
                                 "payments-ageing",
+                                "platform-channel-usage",
                                 "platform-profile-adoption",
                                 "platform-services",
                                 "platform-usage",
@@ -9975,7 +9977,8 @@
                     "409": {
                         "description": "Conflicts with the current state."
                     }
-                }
+                },
+                "x-request-body": "none"
             }
         },
         "/api/v1/admin/card-designs/{id}/csv-merge": {
@@ -11491,7 +11494,8 @@
                     "409": {
                         "description": "Conflicts with the current state."
                     }
-                }
+                },
+                "x-request-body": "none"
             }
         },
         "/api/v1/admin/card-templates/{id}/export": {
@@ -85604,7 +85608,8 @@
                     "404": {
                         "description": "Not found, not visible to this actor, or the module/feature this route belongs to is turned off here (typed `module_disabled` / `feature_disabled`)."
                     }
-                }
+                },
+                "x-request-body": "none"
             }
         },
         "/api/v1/admin/machine-service-report": {
@@ -96668,7 +96673,8 @@
                         },
                         "description": "Tenant is frozen or not restored."
                     }
-                }
+                },
+                "x-request-body": "none"
             }
         },
         "/api/v1/admin/makerspace/{makerspace_id}/anthias-players/{id}/test": {
@@ -96774,7 +96780,8 @@
                         },
                         "description": "Tenant is frozen or not restored."
                     }
-                }
+                },
+                "x-request-body": "none"
             }
         },
         "/api/v1/admin/makerspace/{makerspace_id}/api-client-scopes": {
@@ -119362,7 +119369,8 @@
                         },
                         "description": "Tenant is frozen or not restored."
                     }
-                }
+                },
+                "x-request-body": "none"
             }
         },
         "/api/v1/admin/makerspace/{makerspace_id}/presence-displays/{id}/players": {
@@ -124013,6 +124021,7 @@
                                 "cash-in-hand",
                                 "certification-coverage",
                                 "certification-holders",
+                                "channel-usage",
                                 "communications-health",
                                 "community-engagement",
                                 "consumable-pools",
@@ -124111,6 +124120,7 @@
                                 "payment-reconciliation",
                                 "payments-ageing",
                                 "payments-ledger",
+                                "platform-channel-usage",
                                 "platform-profile-adoption",
                                 "platform-services",
                                 "platform-usage",
@@ -151467,7 +151477,8 @@
                         },
                         "description": ""
                     }
-                }
+                },
+                "x-request-body": "none"
             }
         },
         "/api/v1/admin/makerspaces/{makerspace_id}/member-import-reviews/{imported_id}/reject": {
@@ -151568,7 +151579,8 @@
                         },
                         "description": ""
                     }
-                }
+                },
+                "x-request-body": "none"
             }
         },
         "/api/v1/admin/makerspaces/{makerspace_id}/member-register": {
@@ -152474,7 +152486,8 @@
                         },
                         "description": ""
                     }
-                }
+                },
+                "x-request-body": "none"
             }
         },
         "/api/v1/admin/makerspaces/{makerspace_id}/member-units/{id}/move": {
@@ -152695,7 +152708,8 @@
                         },
                         "description": ""
                     }
-                }
+                },
+                "x-request-body": "none"
             }
         },
         "/api/v1/admin/makerspaces/{makerspace_id}/members/{user_id}/activity": {
@@ -176071,6 +176085,7 @@
                         "schema": {
                             "type": "string",
                             "enum": [
+                                "platform-channel-usage",
                                 "platform-services",
                                 "platform-usage"
                             ]
@@ -176570,6 +176585,7 @@
                                 "cash-in-hand",
                                 "certification-coverage",
                                 "certification-holders",
+                                "channel-usage",
                                 "communications-health",
                                 "community-engagement",
                                 "consumable-pools",
@@ -176668,6 +176684,7 @@
                                 "payment-reconciliation",
                                 "payments-ageing",
                                 "payments-ledger",
+                                "platform-channel-usage",
                                 "platform-profile-adoption",
                                 "platform-services",
                                 "platform-usage",
@@ -189402,6 +189419,7 @@
                                 "card-studio-activity",
                                 "cash-book",
                                 "certification-coverage",
+                                "channel-usage",
                                 "communications-health",
                                 "community-engagement",
                                 "consumable-pools",
@@ -189444,6 +189462,7 @@
                                 "payment-cash-book",
                                 "payment-reconciliation",
                                 "payments-ageing",
+                                "platform-channel-usage",
                                 "platform-profile-adoption",
                                 "platform-services",
                                 "platform-usage",
@@ -203521,6 +203540,154 @@
                 "x-request-body": "none"
             }
         },
+        "/api/v1/auth/device/passkey/login": {
+            "post": {
+                "operationId": "api_v1_auth_device_passkey_login_create",
+                "description": "Consumes the attestation challenge and the ceremony, verifies the assertion and issues a member device grant whose session is MFA-verified by the passkey (`mfa_method=passkey`). Same platform and per-space passkey switches as the web sign-in. Challenges require an approved deployment-global registration and snapshot its signing identities. Play Integrity accepts any registered distribution signer and grants retain the matched digest. External verifiers receive only the first signing identity. Submit the returned challenge with the device login attestation payload: Android {\"type\":\"play_integrity\",\"token\":\"...\"} uses Standard requestHash = base64url(SHA-256(challenge UTF-8)), without padding. iOS {\"type\":\"app_attest\",\"key_id\":\"<base64>\",\"attestation\":\"<base64 CBOR>\"} uses a fresh key and clientDataHash = SHA-256(challenge UTF-8). Development-insecure mode accepts {\"type\":\"development\"} for development registrations only. External verifiers retain their deployment-specific payload format. Verifier outages return attestation_unavailable (503); restart with a new challenge.",
+                "summary": "Finish a native passkey sign-in (attested member grant)",
+                "tags": [
+                    "Device auth"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/DevicePasskeyLogin"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/DevicePasskeyLogin"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/DevicePasskeyLogin"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DeviceTokenResponse"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded; retry after the interval in Retry-After. `ip_blocked`: a platform deny rule or an automatic block (many accounts failing from one address) covers this client; `Retry-After` gives the seconds left when the block ends.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LoginGuardError"
+                                }
+                            }
+                        }
+                    },
+                    "426": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "native_app_update_required"
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "attestation_unavailable"
+                    }
+                },
+                "security": [
+                    {}
+                ]
+            }
+        },
+        "/api/v1/auth/device/passkey/options": {
+            "post": {
+                "operationId": "api_v1_auth_device_passkey_options_create",
+                "description": "WebAuthn request options for a discoverable passkey. The RP ID is the deployment's public web domain (PUBLIC_APP_BASE_URL, the domain apple-app-site-association `webcredentials` and assetlinks `get_login_creds` bind the app to); the expected origin is derived from the attested app (iOS `https://<rp id>`, Android `android:apk-key-hash:<cert digest>`), never from a header.",
+                "summary": "Start a native passkey sign-in",
+                "tags": [
+                    "Device auth"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/DevicePasskeyOptions"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/DevicePasskeyOptions"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/DevicePasskeyOptions"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PasskeyOptions"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded; retry after the interval in Retry-After. `ip_blocked`: a platform deny rule or an automatic block (many accounts failing from one address) covers this client; `Retry-After` gives the seconds left when the block ends.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LoginGuardError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {}
+                ]
+            }
+        },
         "/api/v1/auth/device/refresh": {
             "post": {
                 "operationId": "api_v1_auth_device_refresh_create",
@@ -206972,6 +207139,160 @@
                     },
                     "503": {
                         "description": "A required dependency is unavailable."
+                    }
+                },
+                "security": [
+                    {}
+                ]
+            }
+        },
+        "/api/v1/auth/social/github/device": {
+            "post": {
+                "operationId": "api_v1_auth_social_github_device_create",
+                "description": "Post the `code` and `state` GitHub put on the app link with the PKCE `code_verifier`. The state is single use and bound to the device and the verifier: a replayed state, another device's state or a wrong verifier is refused (401 social_invalid, or 409 social_device_restart_required once a first-grant attestation challenge is burned). Same switches, account linking and staff MFA challenge as the web GitHub flow; 426 native_app_update_required for an app older than the platform minimum.",
+                "summary": "Finish native GitHub sign-in (code + verifier exchange, device delivery)",
+                "tags": [
+                    "Social auth"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/GithubNativeExchange"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/GithubNativeExchange"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/GithubNativeExchange"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/GithubNativeLoginResult"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the module/feature this route belongs to is turned off here (typed `module_disabled` / `feature_disabled`)."
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded; retry after the interval in Retry-After. `ip_blocked`: a platform deny rule or an automatic block (many accounts failing from one address) covers this client; `Retry-After` gives the seconds left when the block ends.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LoginGuardError"
+                                }
+                            }
+                        }
+                    },
+                    "503": {
+                        "description": "A required dependency is unavailable."
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "social_device_restart_required"
+                    },
+                    "426": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "native_app_update_required"
+                    }
+                },
+                "security": [
+                    {}
+                ]
+            }
+        },
+        "/api/v1/auth/social/github/device/authorize": {
+            "post": {
+                "operationId": "api_v1_auth_social_github_device_authorize_create",
+                "description": "Returns the GitHub authorize URL with a one-time `state` bound to this device (its grant, or for a first grant the unspent attestation challenge) and to the app's S256 `code_challenge`. GitHub redirects to `redirect_uri`, an HTTPS app link on the deployment's primary web host. Refused 404 social_unavailable when GitHub sign-in is off or unconfigured.",
+                "summary": "Start native GitHub sign-in (PKCE, app-link redirect)",
+                "tags": [
+                    "Social auth"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/GithubNativeStart"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/GithubNativeStart"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/GithubNativeStart"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/GithubNativeStartResponse"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the module/feature this route belongs to is turned off here (typed `module_disabled` / `feature_disabled`)."
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded; retry after the interval in Retry-After. `ip_blocked`: a platform deny rule or an automatic block (many accounts failing from one address) covers this client; `Retry-After` gives the seconds left when the block ends.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LoginGuardError"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -292635,7 +292956,8 @@
                 },
                 "security": [
                     {}
-                ]
+                ],
+                "x-request-body": "none"
             }
         },
         "/api/v1/space-displays/state/": {
@@ -294071,6 +294393,15 @@
                 "type": "string",
                 "description": "* `operate` - Operate\n* `manage` - Manage\n* `full` - Full"
             },
+            "AccessStatus725Enum": {
+                "enum": [
+                    "active",
+                    "restricted",
+                    "suspended"
+                ],
+                "type": "string",
+                "description": "* `active` - active\n* `restricted` - restricted\n* `suspended` - suspended"
+            },
             "AccessStatus95aEnum": {
                 "enum": [
                     "active",
@@ -294893,6 +295224,15 @@
                     "previous",
                     "results"
                 ]
+            },
+            "AccountStatusEnum": {
+                "enum": [
+                    "active",
+                    "restricted",
+                    "suspended"
+                ],
+                "type": "string",
+                "description": "* `active` - active\n* `restricted` - restricted\n* `suspended` - suspended"
             },
             "AccountabilityReport": {
                 "type": "object",
@@ -302490,6 +302830,14 @@
                         "type": "boolean",
                         "description": "True for the platform superadmin account."
                     },
+                    "account_status": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/AccountStatusEnum"
+                            }
+                        ],
+                        "description": "Decision 361: restricted or suspended means this session reaches ONLY the person's own charges (list, pay, receipts, my-usage) and sign-out; every other route answers 401 account_restricted / account_suspended. Show the pay-what-you-owe screen.\n\n* `active` - active\n* `restricted` - restricted\n* `suspended` - suspended"
+                    },
                     "has_staff_role": {
                         "type": "boolean",
                         "description": "The person holds an active staff role in at least one servable makerspace."
@@ -302579,6 +302927,7 @@
                     }
                 },
                 "required": [
+                    "account_status",
                     "display_name",
                     "effective_locale",
                     "email",
@@ -307705,6 +308054,10 @@
                     "created_at": {
                         "type": "string",
                         "format": "date-time"
+                    },
+                    "organization": {
+                        "type": "string",
+                        "nullable": true
                     }
                 },
                 "required": [
@@ -307713,6 +308066,7 @@
                     "email",
                     "ends_at",
                     "name",
+                    "organization",
                     "phone",
                     "space_id",
                     "space_name",
@@ -316116,6 +316470,13 @@
                 "type": "string",
                 "description": "* `room_outage` - room_outage\n* `machine_repair` - machine_repair\n* `machine_lockout` - machine_lockout\n* `certification` - certification"
             },
+            "CodeChallengeMethodEnum": {
+                "enum": [
+                    "S256"
+                ],
+                "type": "string",
+                "description": "* `S256` - S256"
+            },
             "CollaborativeEvent": {
                 "type": "object",
                 "properties": {
@@ -323511,6 +323872,79 @@
                 },
                 "required": [
                     "detail"
+                ]
+            },
+            "DevicePasskeyLogin": {
+                "type": "object",
+                "properties": {
+                    "platform": {
+                        "$ref": "#/components/schemas/DevicePlatformEnum"
+                    },
+                    "app_id": {
+                        "type": "string",
+                        "maxLength": 255,
+                        "pattern": "^[A-Za-z0-9._-]{3,255}$"
+                    },
+                    "environment": {
+                        "$ref": "#/components/schemas/EnvironmentEnum"
+                    },
+                    "challenge": {
+                        "type": "string",
+                        "description": "An unspent attestation challenge; not consumed here.",
+                        "maxLength": 512
+                    },
+                    "ceremony": {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "From auth/device/passkey/options; valid once, for 5 minutes."
+                    },
+                    "credential": {
+                        "description": "The platform authenticator's assertion (PublicKeyCredential JSON, base64url binary fields)."
+                    },
+                    "attestation": {
+                        "$ref": "#/components/schemas/DeviceAttestationPayload"
+                    },
+                    "app_version": {
+                        "type": "string",
+                        "description": "The app's own version (x.y.z). Refused with 426 native_app_update_required when it is older than the deployment's minimum for this platform, or missing while a minimum is set.",
+                        "maxLength": 32
+                    }
+                },
+                "required": [
+                    "app_id",
+                    "attestation",
+                    "ceremony",
+                    "challenge",
+                    "credential",
+                    "environment",
+                    "platform"
+                ]
+            },
+            "DevicePasskeyOptions": {
+                "type": "object",
+                "properties": {
+                    "platform": {
+                        "$ref": "#/components/schemas/DevicePlatformEnum"
+                    },
+                    "app_id": {
+                        "type": "string",
+                        "maxLength": 255,
+                        "pattern": "^[A-Za-z0-9._-]{3,255}$"
+                    },
+                    "environment": {
+                        "$ref": "#/components/schemas/EnvironmentEnum"
+                    },
+                    "challenge": {
+                        "type": "string",
+                        "description": "An unspent attestation challenge; not consumed here.",
+                        "maxLength": 512
+                    }
+                },
+                "required": [
+                    "app_id",
+                    "challenge",
+                    "environment",
+                    "platform"
                 ]
             },
             "DevicePlatformEnum": {
@@ -339788,6 +340222,122 @@
                 "required": [
                     "authorization_url",
                     "expires_in",
+                    "state"
+                ]
+            },
+            "GithubNativeExchange": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string",
+                        "writeOnly": true,
+                        "maxLength": 512
+                    },
+                    "state": {
+                        "type": "string",
+                        "writeOnly": true,
+                        "maxLength": 512
+                    },
+                    "code_verifier": {
+                        "type": "string",
+                        "writeOnly": true,
+                        "pattern": "^[A-Za-z0-9\\-._~]{43,128}$"
+                    },
+                    "client_platform": {
+                        "$ref": "#/components/schemas/NativeClientPlatformEnum"
+                    },
+                    "challenge": {
+                        "type": "string",
+                        "writeOnly": true,
+                        "maxLength": 512
+                    },
+                    "attestation": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/DeviceAttestationPayload"
+                            }
+                        ],
+                        "writeOnly": true
+                    },
+                    "app_version": {
+                        "type": "string",
+                        "description": "The app's own version (x.y.z). Refused with 426 native_app_update_required when it is older than the deployment's minimum for this platform, or missing while a minimum is set.",
+                        "maxLength": 32
+                    }
+                },
+                "required": [
+                    "client_platform",
+                    "code",
+                    "code_verifier",
+                    "state"
+                ]
+            },
+            "GithubNativeLoginResult": {
+                "oneOf": [
+                    {
+                        "$ref": "#/components/schemas/SocialLoginResponse"
+                    },
+                    {
+                        "$ref": "#/components/schemas/MFAChallengeResponse"
+                    }
+                ]
+            },
+            "GithubNativeStart": {
+                "type": "object",
+                "properties": {
+                    "client_platform": {
+                        "$ref": "#/components/schemas/NativeClientPlatformEnum"
+                    },
+                    "code_challenge": {
+                        "type": "string",
+                        "description": "base64url(SHA-256(code_verifier)) without padding; the app keeps the verifier.",
+                        "pattern": "^[A-Za-z0-9_-]{43}$"
+                    },
+                    "code_challenge_method": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/CodeChallengeMethodEnum"
+                            }
+                        ],
+                        "default": "S256"
+                    },
+                    "challenge": {
+                        "type": "string",
+                        "writeOnly": true,
+                        "description": "An unspent attestation challenge; required for a first grant, omitted with a device bearer.",
+                        "maxLength": 512
+                    }
+                },
+                "required": [
+                    "client_platform",
+                    "code_challenge"
+                ]
+            },
+            "GithubNativeStartResponse": {
+                "type": "object",
+                "properties": {
+                    "authorization_url": {
+                        "type": "string",
+                        "format": "uri",
+                        "description": "Open in the system browser / ASWebAuthenticationSession."
+                    },
+                    "state": {
+                        "type": "string",
+                        "description": "One-time; GitHub returns it on the app link with the code."
+                    },
+                    "redirect_uri": {
+                        "type": "string",
+                        "format": "uri",
+                        "description": "The app link GitHub redirects to (claimed by the association files)."
+                    },
+                    "expires_in": {
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "authorization_url",
+                    "expires_in",
+                    "redirect_uri",
                     "state"
                 ]
             },
@@ -368680,6 +369230,14 @@
                     "enabled"
                 ]
             },
+            "NativeClientPlatformEnum": {
+                "enum": [
+                    "ios",
+                    "android"
+                ],
+                "type": "string",
+                "description": "* `ios` - iOS\n* `android` - Android"
+            },
             "NativeConfig": {
                 "type": "object",
                 "properties": {
@@ -378296,6 +378854,15 @@
                     },
                     "user": {
                         "$ref": "#/components/schemas/AuthUserPayload"
+                    },
+                    "refresh": {
+                        "type": "string",
+                        "description": "Native session only: the grant's new refresh token (a browser gets the refresh cookie instead)."
+                    },
+                    "device_grant": {
+                        "type": "object",
+                        "additionalProperties": {},
+                        "description": "Native session only: the kept device grant."
                     }
                 },
                 "required": [
@@ -378321,6 +378888,15 @@
                     },
                     "user": {
                         "$ref": "#/components/schemas/AuthUserPayload"
+                    },
+                    "refresh": {
+                        "type": "string",
+                        "description": "Native session only: the grant's new refresh token."
+                    },
+                    "device_grant": {
+                        "type": "object",
+                        "additionalProperties": {},
+                        "description": "Native session only: the kept device grant."
                     }
                 },
                 "required": [
@@ -413841,6 +414417,8 @@
                     "event-certificates-issued",
                     "report-usage",
                     "platform-profile-adoption",
+                    "channel-usage",
+                    "platform-channel-usage",
                     "most-lent",
                     "asset-usage",
                     "loan-throughput",
@@ -413892,7 +414470,7 @@
                     "platform-usage"
                 ],
                 "type": "string",
-                "description": "* `payment-cash-book` - payment-cash-book\n* `taken-items` - taken-items\n* `active-loans` - active-loans\n* `returns` - returns\n* `damaged-missing` - damaged-missing\n* `top-borrowers` - top-borrowers\n* `recently-added` - recently-added\n* `event-attendance` - event-attendance\n* `booking-utilization` - booking-utilization\n* `member-activity` - member-activity\n* `printer-service` - printer-service\n* `fablab-health` - fablab-health\n* `payment-reconciliation` - payment-reconciliation\n* `evidence-compliance` - evidence-compliance\n* `import-quality` - import-quality\n* `communications-health` - communications-health\n* `community-engagement` - community-engagement\n* `join-funnel` - join-funnel\n* `certification-coverage` - certification-coverage\n* `audit-trail` - audit-trail\n* `membership-growth` - membership-growth\n* `member-retention` - member-retention\n* `membership-revenue` - membership-revenue\n* `membership-renewals` - membership-renewals\n* `membership-bridge` - membership-bridge\n* `membership-breakdown` - membership-breakdown\n* `membership-expiry-calendar` - membership-expiry-calendar\n* `membership-applications-funnel` - membership-applications-funnel\n* `membership-win-back` - membership-win-back\n* `member-register` - member-register\n* `membership-monthly-summary` - membership-monthly-summary\n* `member-card-issuance` - member-card-issuance\n* `payments-ledger` - payments-ledger\n* `revenue-over-time` - revenue-over-time\n* `cash-book` - cash-book\n* `payments-ageing` - payments-ageing\n* `accounting-journal` - accounting-journal\n* `refunds` - refunds\n* `income-spending` - income-spending\n* `finance-inventory` - finance-inventory\n* `finance-machines` - finance-machines\n* `finance-bookings` - finance-bookings\n* `finance-events` - finance-events\n* `finance-donations` - finance-donations\n* `event-finance` - event-finance\n* `prizes-owed` - prizes-owed\n* `receipts-payments` - receipts-payments\n* `subscription-income` - subscription-income\n* `money-methods` - money-methods\n* `gstr1` - gstr1\n* `gstr3b` - gstr3b\n* `tax-summary` - tax-summary\n* `documents-register` - documents-register\n* `finance-shop` - finance-shop\n* `shop-sales` - shop-sales\n* `shop-product-sales` - shop-product-sales\n* `shop-stock-value` - shop-stock-value\n* `donations-campaign-progress` - donations-campaign-progress\n* `donations-pledges` - donations-pledges\n* `donations-sponsor-perks` - donations-sponsor-perks\n* `event-registrations` - event-registrations\n* `event-feedback` - event-feedback\n* `event-orders` - event-orders\n* `event-attendance-pdf` - event-attendance-pdf\n* `booking-resource-utilization` - booking-resource-utilization\n* `booking-resource-utilization-pdf` - booking-resource-utilization-pdf\n* `booking-reservations` - booking-reservations\n* `booking-answers` - booking-answers\n* `mobile-devices` - mobile-devices\n* `mobile-auth` - mobile-auth\n* `booking-occupancy` - booking-occupancy\n* `booking-lead-time` - booking-lead-time\n* `booking-top-members` - booking-top-members\n* `event-signups` - event-signups\n* `event-revenue` - event-revenue\n* `event-funnel` - event-funnel\n* `event-checkin-times` - event-checkin-times\n* `event-feedback-scores` - event-feedback-scores\n* `repairs-work-orders` - repairs-work-orders\n* `repairs-technician-workload` - repairs-technician-workload\n* `repairs-time-by-area` - repairs-time-by-area\n* `repairs-parts-used` - repairs-parts-used\n* `loan-purpose-summary` - loan-purpose-summary\n* `event-equipment` - event-equipment\n* `booking-equipment` - booking-equipment\n* `event-loan-timeline` - event-loan-timeline\n* `booking-loan-timeline` - booking-loan-timeline\n* `event-consumables` - event-consumables\n* `booking-consumables` - booking-consumables\n* `inventory-valuation` - inventory-valuation\n* `inventory-utilisation-by-category` - inventory-utilisation-by-category\n* `overdue-by-borrower` - overdue-by-borrower\n* `incidents-register` - incidents-register\n* `machine-jobs` - machine-jobs\n* `certification-holders` - certification-holders\n* `roster-export` - roster-export\n* `guest-passes-export` - guest-passes-export\n* `volunteer-hours-export` - volunteer-hours-export\n* `minors-consent-export` - minors-consent-export\n* `staff-roster-export` - staff-roster-export\n* `cash-in-hand` - cash-in-hand\n* `membership-revenue-by-plan` - membership-revenue-by-plan\n* `membership-renewal-forecast` - membership-renewal-forecast\n* `membership-approval-times` - membership-approval-times\n* `membership-unit-league` - membership-unit-league\n* `membership-level-league` - membership-level-league\n* `device-adapter-activity` - device-adapter-activity\n* `machine-access-grants` - machine-access-grants\n* `card-studio-activity` - card-studio-activity\n* `event-certificates-issued` - event-certificates-issued\n* `report-usage` - report-usage\n* `platform-profile-adoption` - platform-profile-adoption\n* `most-lent` - most-lent\n* `asset-usage` - asset-usage\n* `loan-throughput` - loan-throughput\n* `inventory-utilisation` - inventory-utilisation\n* `overdue-loans` - overdue-loans\n* `damaged-lost` - damaged-lost\n* `longest-loans` - longest-loans\n* `stock-health` - stock-health\n* `request-funnel` - request-funnel\n* `problem-reports` - problem-reports\n* `inventory-watch-demand` - inventory-watch-demand\n* `summary` - summary\n* `qr-scans` - qr-scans\n* `qr-scan-actors` - qr-scan-actors\n* `inventory-control` - inventory-control\n* `consumable-usage` - consumable-usage\n* `consumable-pools` - consumable-pools\n* `procurement-performance` - procurement-performance\n* `stock-transfers` - stock-transfers\n* `stocktake-variance` - stocktake-variance\n* `machine-usage` - machine-usage\n* `machine-usage-members` - machine-usage-members\n* `machine-usage-heatmap` - machine-usage-heatmap\n* `machine-downtime` - machine-downtime\n* `maintenance-activity` - maintenance-activity\n* `machine-service` - machine-service\n* `service-queue-times` - service-queue-times\n* `printer-jobs` - printer-jobs\n* `machine-errors` - machine-errors\n* `warranty-expiry` - warranty-expiry\n* `machine-sessions` - machine-sessions\n* `machine-session-utilisation` - machine-session-utilisation\n* `machine-session-busiest` - machine-session-busiest\n* `machine-session-idle` - machine-session-idle\n* `machine-session-flagged` - machine-session-flagged\n* `machine-use-by-event` - machine-use-by-event\n* `event-machine-use` - event-machine-use\n* `machine-consumables` - machine-consumables\n* `device-health` - device-health\n* `presence-activity` - presence-activity\n* `presence-top-visitors` - presence-top-visitors\n* `presence-activity-hours` - presence-activity-hours\n* `audit-activity` - audit-activity\n* `audit-top-actors` - audit-top-actors\n* `audit-activity-hours` - audit-activity-hours\n* `organization-membership` - organization-membership\n* `module-operational-health` - module-operational-health\n* `platform-services` - platform-services\n* `platform-usage` - platform-usage"
+                "description": "* `payment-cash-book` - payment-cash-book\n* `taken-items` - taken-items\n* `active-loans` - active-loans\n* `returns` - returns\n* `damaged-missing` - damaged-missing\n* `top-borrowers` - top-borrowers\n* `recently-added` - recently-added\n* `event-attendance` - event-attendance\n* `booking-utilization` - booking-utilization\n* `member-activity` - member-activity\n* `printer-service` - printer-service\n* `fablab-health` - fablab-health\n* `payment-reconciliation` - payment-reconciliation\n* `evidence-compliance` - evidence-compliance\n* `import-quality` - import-quality\n* `communications-health` - communications-health\n* `community-engagement` - community-engagement\n* `join-funnel` - join-funnel\n* `certification-coverage` - certification-coverage\n* `audit-trail` - audit-trail\n* `membership-growth` - membership-growth\n* `member-retention` - member-retention\n* `membership-revenue` - membership-revenue\n* `membership-renewals` - membership-renewals\n* `membership-bridge` - membership-bridge\n* `membership-breakdown` - membership-breakdown\n* `membership-expiry-calendar` - membership-expiry-calendar\n* `membership-applications-funnel` - membership-applications-funnel\n* `membership-win-back` - membership-win-back\n* `member-register` - member-register\n* `membership-monthly-summary` - membership-monthly-summary\n* `member-card-issuance` - member-card-issuance\n* `payments-ledger` - payments-ledger\n* `revenue-over-time` - revenue-over-time\n* `cash-book` - cash-book\n* `payments-ageing` - payments-ageing\n* `accounting-journal` - accounting-journal\n* `refunds` - refunds\n* `income-spending` - income-spending\n* `finance-inventory` - finance-inventory\n* `finance-machines` - finance-machines\n* `finance-bookings` - finance-bookings\n* `finance-events` - finance-events\n* `finance-donations` - finance-donations\n* `event-finance` - event-finance\n* `prizes-owed` - prizes-owed\n* `receipts-payments` - receipts-payments\n* `subscription-income` - subscription-income\n* `money-methods` - money-methods\n* `gstr1` - gstr1\n* `gstr3b` - gstr3b\n* `tax-summary` - tax-summary\n* `documents-register` - documents-register\n* `finance-shop` - finance-shop\n* `shop-sales` - shop-sales\n* `shop-product-sales` - shop-product-sales\n* `shop-stock-value` - shop-stock-value\n* `donations-campaign-progress` - donations-campaign-progress\n* `donations-pledges` - donations-pledges\n* `donations-sponsor-perks` - donations-sponsor-perks\n* `event-registrations` - event-registrations\n* `event-feedback` - event-feedback\n* `event-orders` - event-orders\n* `event-attendance-pdf` - event-attendance-pdf\n* `booking-resource-utilization` - booking-resource-utilization\n* `booking-resource-utilization-pdf` - booking-resource-utilization-pdf\n* `booking-reservations` - booking-reservations\n* `booking-answers` - booking-answers\n* `mobile-devices` - mobile-devices\n* `mobile-auth` - mobile-auth\n* `booking-occupancy` - booking-occupancy\n* `booking-lead-time` - booking-lead-time\n* `booking-top-members` - booking-top-members\n* `event-signups` - event-signups\n* `event-revenue` - event-revenue\n* `event-funnel` - event-funnel\n* `event-checkin-times` - event-checkin-times\n* `event-feedback-scores` - event-feedback-scores\n* `repairs-work-orders` - repairs-work-orders\n* `repairs-technician-workload` - repairs-technician-workload\n* `repairs-time-by-area` - repairs-time-by-area\n* `repairs-parts-used` - repairs-parts-used\n* `loan-purpose-summary` - loan-purpose-summary\n* `event-equipment` - event-equipment\n* `booking-equipment` - booking-equipment\n* `event-loan-timeline` - event-loan-timeline\n* `booking-loan-timeline` - booking-loan-timeline\n* `event-consumables` - event-consumables\n* `booking-consumables` - booking-consumables\n* `inventory-valuation` - inventory-valuation\n* `inventory-utilisation-by-category` - inventory-utilisation-by-category\n* `overdue-by-borrower` - overdue-by-borrower\n* `incidents-register` - incidents-register\n* `machine-jobs` - machine-jobs\n* `certification-holders` - certification-holders\n* `roster-export` - roster-export\n* `guest-passes-export` - guest-passes-export\n* `volunteer-hours-export` - volunteer-hours-export\n* `minors-consent-export` - minors-consent-export\n* `staff-roster-export` - staff-roster-export\n* `cash-in-hand` - cash-in-hand\n* `membership-revenue-by-plan` - membership-revenue-by-plan\n* `membership-renewal-forecast` - membership-renewal-forecast\n* `membership-approval-times` - membership-approval-times\n* `membership-unit-league` - membership-unit-league\n* `membership-level-league` - membership-level-league\n* `device-adapter-activity` - device-adapter-activity\n* `machine-access-grants` - machine-access-grants\n* `card-studio-activity` - card-studio-activity\n* `event-certificates-issued` - event-certificates-issued\n* `report-usage` - report-usage\n* `platform-profile-adoption` - platform-profile-adoption\n* `channel-usage` - channel-usage\n* `platform-channel-usage` - platform-channel-usage\n* `most-lent` - most-lent\n* `asset-usage` - asset-usage\n* `loan-throughput` - loan-throughput\n* `inventory-utilisation` - inventory-utilisation\n* `overdue-loans` - overdue-loans\n* `damaged-lost` - damaged-lost\n* `longest-loans` - longest-loans\n* `stock-health` - stock-health\n* `request-funnel` - request-funnel\n* `problem-reports` - problem-reports\n* `inventory-watch-demand` - inventory-watch-demand\n* `summary` - summary\n* `qr-scans` - qr-scans\n* `qr-scan-actors` - qr-scan-actors\n* `inventory-control` - inventory-control\n* `consumable-usage` - consumable-usage\n* `consumable-pools` - consumable-pools\n* `procurement-performance` - procurement-performance\n* `stock-transfers` - stock-transfers\n* `stocktake-variance` - stocktake-variance\n* `machine-usage` - machine-usage\n* `machine-usage-members` - machine-usage-members\n* `machine-usage-heatmap` - machine-usage-heatmap\n* `machine-downtime` - machine-downtime\n* `maintenance-activity` - maintenance-activity\n* `machine-service` - machine-service\n* `service-queue-times` - service-queue-times\n* `printer-jobs` - printer-jobs\n* `machine-errors` - machine-errors\n* `warranty-expiry` - warranty-expiry\n* `machine-sessions` - machine-sessions\n* `machine-session-utilisation` - machine-session-utilisation\n* `machine-session-busiest` - machine-session-busiest\n* `machine-session-idle` - machine-session-idle\n* `machine-session-flagged` - machine-session-flagged\n* `machine-use-by-event` - machine-use-by-event\n* `event-machine-use` - event-machine-use\n* `machine-consumables` - machine-consumables\n* `device-health` - device-health\n* `presence-activity` - presence-activity\n* `presence-top-visitors` - presence-top-visitors\n* `presence-activity-hours` - presence-activity-hours\n* `audit-activity` - audit-activity\n* `audit-top-actors` - audit-top-actors\n* `audit-activity-hours` - audit-activity-hours\n* `organization-membership` - organization-membership\n* `module-operational-health` - module-operational-health\n* `platform-services` - platform-services\n* `platform-usage` - platform-usage"
             },
             "ReportSchedule": {
                 "type": "object",
@@ -428290,7 +428868,7 @@
                         }
                     },
                     "access_status": {
-                        "$ref": "#/components/schemas/StaffMemberActivityAccessStatusEnum"
+                        "$ref": "#/components/schemas/AccessStatus725Enum"
                     },
                     "is_member": {
                         "type": "boolean",
@@ -428302,15 +428880,6 @@
                     "errors",
                     "member_id"
                 ]
-            },
-            "StaffMemberActivityAccessStatusEnum": {
-                "enum": [
-                    "active",
-                    "restricted",
-                    "suspended"
-                ],
-                "type": "string",
-                "description": "* `active` - active\n* `restricted` - restricted\n* `suspended` - suspended"
             },
             "StaffMemberIncludedHours": {
                 "type": "object",
@@ -443590,6 +444159,7 @@
                 "Page editor",
                 "Reports",
                 "Schedule",
+                "Space displays",
                 "Staff invitations",
                 "Staff lists",
                 "Staff roles",

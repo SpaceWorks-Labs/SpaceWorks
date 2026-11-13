@@ -158,11 +158,14 @@ test_suite() {
   [[ -z "${TOMBSTONED_APPS:-}" ]] || TEST_ENV+=(-e "TOMBSTONED_APPS=$TOMBSTONED_APPS")
   # A nonempty probe role forces RLS for the X-8 regression.
   [[ -z "${TENANT_RLS_PROBE_ROLE:-}" ]] || TEST_ENV+=(-e "TENANT_RLS_PROBE_ROLE=$TENANT_RLS_PROBE_ROLE")
-  (($#)) || set -- -q
-  docker run --rm --network "$RUN" --label "spaceworks.test=$RUN" --entrypoint pytest \
+  # TEST_ENTRYPOINT swaps pytest for another program in the same throwaway infrastructure
+  # (the mutation runner, scripts/mutation/mutate.py); its arguments are passed through verbatim.
+  local entry=pytest lead=(-p no:cacheprovider)
+  if [[ -n "${TEST_ENTRYPOINT:-}" ]]; then entry="$TEST_ENTRYPOINT"; lead=(); else (($#)) || set -- -q; fi
+  docker run --rm --network "$RUN" --label "spaceworks.test=$RUN" --entrypoint "$entry" \
     -v "$HOST_ROOT:/workspace" -w /workspace/backend \
     -v "$HOST_ROOT/scripts:/run/spaceworks-privileged-scripts" \
-    "${TEST_ENV[@]}" spaceworks-backend -p no:cacheprovider "$@"
+    "${TEST_ENV[@]}" spaceworks-backend "${lead[@]}" "$@"
 }
 
 e2e() {

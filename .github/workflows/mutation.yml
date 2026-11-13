@@ -1,0 +1,74 @@
+name: Mutation
+
+# Mutation testing of the core (decision 457). Only runs on pushes to lane/mut-* branches, so it never gates a PR.
+# Each matrix entry runs scripts/mutation/mutate.py inside the same isolated test runner as tests.yml
+# (TEST_ENTRYPOINT swaps pytest for the runner). Survivors are printed as `SURVIVOR [...]` lines and
+# uploaded as JSON. How to run it: docs/DEV-WORKFLOW.md, "Mutation testing".
+
+on:
+  push:
+    branches:
+      - "lane/mut-*"
+
+concurrency:
+  group: mutation-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: mutation ${{ matrix.name }} (${{ matrix.shard }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: workflow, shard: "1/2", files: "apps/hardware_requests/request_workflow.py apps/hardware_requests/request_lifecycle.py apps/hardware_requests/handover_workflow.py apps/hardware_requests/return_workflow.py apps/hardware_requests/renewal_workflow.py apps/hardware_requests/handover_issue_helpers.py", dirs: "tests/hardware_requests", regex: "request_workflow|handover_workflow|return_workflow|renewal_workflow|request_lifecycle|handover_issue_helpers|hardware_requests\.workflow|hardware_requests import workflow" }
+          - { name: workflow, shard: "2/2", files: "apps/hardware_requests/request_workflow.py apps/hardware_requests/request_lifecycle.py apps/hardware_requests/handover_workflow.py apps/hardware_requests/return_workflow.py apps/hardware_requests/renewal_workflow.py apps/hardware_requests/handover_issue_helpers.py", dirs: "tests/hardware_requests", regex: "request_workflow|handover_workflow|return_workflow|renewal_workflow|request_lifecycle|handover_issue_helpers|hardware_requests\.workflow|hardware_requests import workflow" }
+          - { name: availability, shard: "1/2", files: "apps/inventory/availability_assets.py apps/inventory/availability_loan_limits.py apps/inventory/availability_projections.py apps/inventory/availability_quantities.py apps/inventory/availability_requests.py apps/inventory/availability_reservations.py apps/inventory/availability_shop.py apps/inventory/availability_stock.py apps/inventory/availability_transfers.py apps/inventory/availability_window.py", dirs: "tests/inventory", regex: "inventory\.availability|inventory import availability" }
+          - { name: availability, shard: "2/2", files: "apps/inventory/availability_assets.py apps/inventory/availability_loan_limits.py apps/inventory/availability_projections.py apps/inventory/availability_quantities.py apps/inventory/availability_requests.py apps/inventory/availability_reservations.py apps/inventory/availability_shop.py apps/inventory/availability_stock.py apps/inventory/availability_transfers.py apps/inventory/availability_window.py", dirs: "tests/inventory", regex: "inventory\.availability|inventory import availability" }
+          - { name: rbac, shard: "1/2", files: "apps/accounts/rbac.py apps/accounts/rbac_actions.py apps/accounts/rbac_bookings.py apps/accounts/rbac_borrowers.py apps/accounts/rbac_catalogue.py apps/accounts/rbac_memberships.py apps/accounts/rbac_notifications.py apps/accounts/rbac_organizations.py apps/accounts/rbac_roles.py apps/accounts/rbac_superadmin.py", dirs: "tests/accounts tests/fixed_roles tests/organizations", regex: "accounts\.rbac|accounts import rbac|scope_by_makerspace" }
+          - { name: rbac, shard: "2/2", files: "apps/accounts/rbac.py apps/accounts/rbac_actions.py apps/accounts/rbac_bookings.py apps/accounts/rbac_borrowers.py apps/accounts/rbac_catalogue.py apps/accounts/rbac_memberships.py apps/accounts/rbac_notifications.py apps/accounts/rbac_organizations.py apps/accounts/rbac_roles.py apps/accounts/rbac_superadmin.py", dirs: "tests/accounts tests/fixed_roles tests/organizations", regex: "accounts\.rbac|accounts import rbac|scope_by_makerspace" }
+          - { name: money, shard: "1/2", files: "apps/payments/availability.py apps/payments/services.py apps/payments/models_settlement.py apps/payments/ledger_api.py apps/payments/ledger_entries.py apps/payments/reconciliation.py apps/payments/reconciliation_settlement.py apps/payments/settlement_supersede.py", dirs: "tests/payments", regex: "payments\.availability|payments\.services|ManualSettlement|ledger_api|ledger_entries|reconciliation|charge_tracking_enabled" }
+          - { name: money, shard: "2/2", files: "apps/payments/availability.py apps/payments/services.py apps/payments/models_settlement.py apps/payments/ledger_api.py apps/payments/ledger_entries.py apps/payments/reconciliation.py apps/payments/reconciliation_settlement.py apps/payments/settlement_supersede.py", dirs: "tests/payments", regex: "payments\.availability|payments\.services|ManualSettlement|ledger_api|ledger_entries|reconciliation|charge_tracking_enabled" }
+          - { name: evidence, shard: "1/1", files: "apps/evidence/consumption.py apps/evidence/finalization.py apps/evidence/finalization_completed.py apps/evidence/services_upload.py", dirs: "tests/evidence", regex: "apps\.evidence\.(consumption|finalization|services_upload)|mark_consumed|evidence\.consumption" }
+          - { name: gates, shard: "1/1", files: "apps/makerspaces/platform.py apps/makerspaces/capability_eligibility.py apps/makerspaces/servability.py apps/makerspaces/module_registry.py", dirs: "tests/modules", regex: "module_enabled|feature_enabled|capability_eligibility|configuration_feature_enabled|makerspaces\.servability|is_servable" }
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Mutate in the isolated test runner
+        env:
+          MUT_NAME: ${{ matrix.name }}
+          MUT_SHARD: ${{ matrix.shard }}
+          MUT_FILES: ${{ matrix.files }}
+          MUT_DIRS: ${{ matrix.dirs }}
+          MUT_REGEX: ${{ matrix.regex }}
+        run: |
+          set -euo pipefail
+          shard_tag="${MUT_SHARD//\//of}"
+          extra=()
+          # Re-run only earlier survivors when a results file is committed for this entry.
+          if [ -f "mutation-baseline/${MUT_NAME}-${shard_tag}.only.json" ]; then
+            extra+=(--only "/workspace/mutation-baseline/${MUT_NAME}-${shard_tag}.only.json")
+          fi
+          # shellcheck disable=SC2086
+          TEST_ENTRYPOINT=python bash scripts/dev.sh test /workspace/scripts/mutation/mutate.py \
+            --name "${MUT_NAME}-${shard_tag}" --shard "$MUT_SHARD" \
+            --files $MUT_FILES --test-dirs $MUT_DIRS --test-regex "$MUT_REGEX" "${extra[@]}" \
+            | tee "mutation-${MUT_NAME}-${shard_tag}.log"
+
+      - name: Survivors
+        if: always()
+        run: |
+          grep -E "^\[mutation\] (FINAL|baseline)|^SURVIVOR|baseline-failing" mutation-*.log || true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mutation-${{ matrix.name }}-${{ strategy.job-index }}
+          path: |
+            mutation-results/
+            mutation-*.log

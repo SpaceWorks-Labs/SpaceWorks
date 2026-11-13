@@ -10,7 +10,7 @@ from django.shortcuts import get_object_or_404
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import serializers
-from rest_framework.exceptions import NotFound, ValidationError
+from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -32,12 +32,13 @@ TAGS = ["Event ID cards"]
 
 
 def organiser_event(actor, pk, permission=EDIT_DETAILS):
-    from apps.card_designs.switches import event_cards_on
+    from apps.card_designs.switches import EVENT_CARDS
     from . import event_authority
-    event = get_object_or_404(Event.objects.select_related("makerspace"), pk=pk)
-    if not event_cards_on(event.makerspace):
-        raise NotFound()
-    event_authority.require(actor, event, permission)
+    from .feature_gates import require_feature
+    # Visibility, the events module and the role come first, so a foreign id never learns which switches are off
+    # (decision 183B/221e); only then does the capability answer the typed `feature_disabled` 404.
+    event = event_authority.get_event(actor, pk, permission)
+    require_feature(event, EVENT_CARDS)
     return event
 
 
@@ -190,10 +191,9 @@ class EventCardScanView(APIView):
         from apps.audit import services as audit
         from .services_checkin_cards import candidates, check_in
         from . import event_authority
-        event = get_object_or_404(Event.objects.select_related("makerspace"), pk=pk)
         # Door scanning needs only the events module and check-in authority: a member card
-        # identifies its holder whether or not this space issues event ID cards.
-        event_authority.require(request.user, event, CHECK_IN)
+        # identifies its holder whether or not this space issues event ID cards. `get_event` hides a foreign id (404).
+        event = event_authority.get_event(request.user, pk, CHECK_IN)
         rows = candidates(event, str(request.data.get("payload", ""))[:300], request.user)
         confirmable = [row for row in rows if row.status == "registered"]
         checked = None

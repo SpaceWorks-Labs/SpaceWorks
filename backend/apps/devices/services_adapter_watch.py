@@ -53,9 +53,10 @@ def request_snapshot(actor, watch_id):
 def end_watch(actor, watch_id):
     watch = _owned(actor, watch_id)
     with transaction.atomic():
-        AdapterWatch.objects.filter(pk=watch.pk, status=AdapterWatch.Status.ACTIVE).update(
+        ended = AdapterWatch.objects.filter(pk=watch.pk, status=AdapterWatch.Status.ACTIVE).update(
             status=AdapterWatch.Status.ENDED, ended_at=timezone.now())
-        audit.record(actor, "devices.adapter_watch_ended", makerspace=watch.makerspace, target=watch.binding.device,
-                     meta={"device_id": str(watch.binding.device_id), "watch_id": str(watch.pk)})
+        if ended:  # a repeated DELETE (retry, double click) ends nothing and must not audit a second time
+            audit.record(actor, "devices.adapter_watch_ended", makerspace=watch.makerspace, target=watch.binding.device,
+                         meta={"device_id": str(watch.binding.device_id), "watch_id": str(watch.pk)})
     watch.refresh_from_db()
     return watch

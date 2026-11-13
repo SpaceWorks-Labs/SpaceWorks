@@ -69,9 +69,11 @@ def disable_credential(actor, credential_id):
     authorize_staff(actor, row.makerspace_id, child=ACCESS_SWITCH)
     with transaction.atomic():
         makerspace = lock_tenant(row.makerspace_id)
-        AdapterCredential.objects.filter(pk=row.pk, disabled_at__isnull=True).update(disabled_at=timezone.now())
-        audit.record(actor, "devices.adapter_credential_removed", makerspace=makerspace, target=row.user, meta={
-            "member_id": row.user_id, "kind": row.kind, "credential_id": str(row.pk)})
+        disabled = AdapterCredential.objects.filter(pk=row.pk, disabled_at__isnull=True).update(
+            disabled_at=timezone.now())
+        if disabled:  # disabling an already-disabled credential changes nothing, so it audits nothing
+            audit.record(actor, "devices.adapter_credential_removed", makerspace=makerspace, target=row.user, meta={
+                "member_id": row.user_id, "kind": row.kind, "credential_id": str(row.pk)})
     row.refresh_from_db()
     return row
 

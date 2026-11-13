@@ -7,7 +7,6 @@ job; offline prints are never blocked and are counted when they sync, and issuin
 their own card and verification are never limited.
 """
 from django.utils import timezone
-from rest_framework.exceptions import NotFound
 
 from apps.audit import services as audit
 from apps.makerspaces.platform import feature_enabled
@@ -27,8 +26,12 @@ def desk_print_on(makerspace):
 
 
 def require_desk_print(event):
-    if not desk_print_on(event.makerspace):
-        raise NotFound()
+    from apps.card_designs.switches import EVENT_CARDS, event_cards_on
+    from apps.makerspaces.guards import feature_off
+    if not event_cards_on(event.makerspace):
+        raise feature_off(EVENT_CARDS, "This events feature is turned off.")
+    if not feature_enabled(event.makerspace, FEATURE):
+        raise feature_off(FEATURE, "This events feature is turned off.")
 
 
 def check_print_start(event, adding=1):

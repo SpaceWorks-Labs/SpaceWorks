@@ -73,9 +73,9 @@ def test_a_requester_or_signed_out_caller_cannot_drive_any_transition():
     HardwareRequest.objects.filter(pk=request.pk).update(status=S.PENDING_APPROVAL)
     requester = authenticated_client(request.requester)
     from rest_framework.test import APIClient
-    for client in (requester, APIClient()):
+    for client, expected in ((requester, 403), (APIClient(), 401)):
         for action in ACTIONS:
             response = client.post(f"/api/v1/admin/requests/{request.pk}/{action}", {"reason": "x"}, format="json")
-            assert response.status_code in (401, 403, 404), (action, response.status_code)
+            assert response.status_code == expected, (action, response.status_code)
     request.refresh_from_db()
     assert request.status == S.PENDING_APPROVAL

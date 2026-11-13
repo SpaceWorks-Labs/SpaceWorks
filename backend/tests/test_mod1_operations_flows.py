@@ -55,10 +55,10 @@ def test_container_roles_and_tenancy():
     space, other = make_space("m1-box-roles"), make_space("m1-box-roles-other")
     box = make_box(space, "Shelf")
     url = f"/api/v1/admin/containers/{box.id}"
-    assert APIClient().get(url).status_code in (401, 403)
+    assert APIClient().get(url).status_code == 401
     requester = authenticated_client(make_user("m1-box-requester", access_status=User.AccessStatus.ACTIVE))
-    assert requester.get(url).status_code in (403, 404)
-    assert requester.post(f"/api/v1/admin/makerspace/{space.id}/containers", {"label": "x"}, format="json").status_code in (403, 404)
+    assert requester.get(url).status_code == 404
+    assert requester.post(f"/api/v1/admin/makerspace/{space.id}/containers", {"label": "x"}, format="json").status_code == 403
     foreign = _manager("m1-box-foreign-mgr", other)
     assert foreign.get(url).status_code == 404  # existence is not leaked across tenants
     assert foreign.get(f"{url}/contents").status_code == 404
@@ -76,9 +76,9 @@ def test_container_move_refuses_parent_in_another_tenant_self_parent_and_cycles(
     assert client.post(f"/api/v1/admin/containers/{child.id}/move", {"parent_id": top.id}, format="json").status_code == 200
     child.refresh_from_db()
     assert child.parent_id == top.id and _audits("container.moved") == 1
-    for bad in (foreign.id, child.id, 10**9):  # other tenant, itself, nonexistent
+    for bad, expected in ((foreign.id, 404), (10**9, 404), (child.id, 400)):  # other tenant, nonexistent, itself
         response = client.post(f"/api/v1/admin/containers/{child.id}/move", {"parent_id": bad}, format="json")
-        assert response.status_code in (400, 404), bad
+        assert response.status_code == expected, (bad, response.status_code)
     cycle = client.post(f"/api/v1/admin/containers/{top.id}/move", {"parent_id": child.id}, format="json")
     assert cycle.status_code == 400  # top cannot go under its own descendant
     top.refresh_from_db(); child.refresh_from_db()
@@ -91,9 +91,7 @@ def test_container_contents_lists_products_assets_and_children_but_not_archived_
     client = _manager("m1-box-contents-mgr", space)
     box, child = make_box(space, "Cabinet"), make_box(space, "Drawer")
     child.parent = box; child.save(update_fields=["parent"])
-    kept = make_product(space, "Pliers", box=box) if "box" in [f.name for f in InventoryProduct._meta.fields] else None
-    if kept is None:
-        pytest.skip("InventoryProduct has no box field in this build")
+    make_product(space, "Pliers", box=box)
     make_product(space, "Gone", box=box, is_archived=True)
     response = client.get(f"/api/v1/admin/containers/{box.id}/contents")
     assert response.status_code == 200
@@ -262,9 +260,9 @@ def test_stocktake_is_tenant_scoped_and_role_gated():
     base = f"/api/v1/admin/stocktakes/{sid}"
     assert foreign.get(base).status_code == 404
     assert foreign.post(f"{base}/complete").status_code == 404
-    assert APIClient().post(f"{base}/complete").status_code in (401, 403)
+    assert APIClient().post(f"{base}/complete").status_code == 401
     requester = authenticated_client(make_user("m1-st-ten-req", access_status=User.AccessStatus.ACTIVE))
-    assert requester.post(f"{base}/complete").status_code in (403, 404)
+    assert requester.post(f"{base}/complete").status_code == 404
     assert StocktakeSession.objects.get(pk=sid).status == StocktakeSession.Status.COUNTING
 
 
@@ -283,7 +281,7 @@ def test_print_batch_create_validates_title_and_is_tenant_scoped_and_audited():
     foreign = _manager("m1-qrb-fmgr", other)
     assert foreign.get(f"/api/v1/admin/qr-print-batches/{created.data['id']}").status_code == 404
     assert foreign.get(f"/api/v1/admin/qr-print-batches/{created.data['id']}/download").status_code == 404
-    assert foreign.post(f"/api/v1/admin/qr-print-batches/{created.data['id']}/items", {}, format="json").status_code in (400, 404)
+    assert foreign.post(f"/api/v1/admin/qr-print-batches/{created.data['id']}/items", {}, format="json").status_code == 404
 
 
 # ---- asset units ----------------------------------------------------------------------------

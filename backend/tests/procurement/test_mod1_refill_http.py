@@ -63,12 +63,12 @@ def test_refill_is_refused_for_other_tenants_signed_out_and_when_machines_tobuy_
     ToBuyItem.objects.filter(pk=item.pk).update(status=ToBuyItem.Status.RECEIVED)
     other = _make_space("m1-refill-ten-o")
     foreign = authenticated_client(make_member("m1-refill-ten-foreign", other))
-    assert foreign.post(_url(item), {"amount": "10"}, format="json").status_code in (403, 404)
+    assert foreign.post(_url(item), {"amount": "10"}, format="json").status_code == 404
     from rest_framework.test import APIClient
-    assert APIClient().post(_url(item), {"amount": "10"}, format="json").status_code in (401, 403)
+    assert APIClient().post(_url(item), {"amount": "10"}, format="json").status_code == 401
     space.enabled_features = [f for f in space.enabled_features if f != "machines.tobuy"]
     space.save(update_fields=["enabled_features"])
     off = authenticated_client(boss).post(_url(item), {"amount": "10"}, format="json")
-    assert off.status_code in (400, 404) and off.data.get("code") != "ok"
+    assert off.status_code == 404
     row.refresh_from_db()
     assert row.remaining == Decimal("5")

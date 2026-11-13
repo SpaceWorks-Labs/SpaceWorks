@@ -68,10 +68,10 @@ def test_applying_the_same_sheet_twice_updates_instead_of_duplicating():
 def test_import_is_tenant_and_role_scoped():
     space, other = make_space("m1-imp-ten"), make_space("m1-imp-ten-o")
     foreign = _mgr("m1-imp-ten-fmgr", other)
-    assert foreign.post(_url(space, "apply"), {"rows": [_row()]}, format="json").status_code in (403, 404)
-    assert APIClient().post(_url(space, "apply"), {"rows": [_row()]}, format="json").status_code in (401, 403)
+    assert foreign.post(_url(space, "apply"), {"rows": [_row()]}, format="json").status_code == 403
+    assert APIClient().post(_url(space, "apply"), {"rows": [_row()]}, format="json").status_code == 401
     requester = authenticated_client(make_user("m1-imp-req", access_status=User.AccessStatus.ACTIVE))
-    assert requester.post(_url(space, "apply"), {"rows": [_row()]}, format="json").status_code in (403, 404)
+    assert requester.post(_url(space, "apply"), {"rows": [_row()]}, format="json").status_code == 403
     assert not InventoryProduct.objects.filter(makerspace=space).exists()
 
 
@@ -92,7 +92,7 @@ def test_adjust_quantity_boundaries_audit_and_tenancy():
     product = make_product(space, total_quantity=5, available_quantity=5)
     url = f"/api/v1/admin/inventory/{product.id}/adjust-quantity"
     probe = client.post(url, {"delta_available": -6, "reason": "too many"}, format="json")
-    assert probe.status_code in (400, 409)  # would take availability below zero
+    assert probe.status_code == 400  # would take availability below zero
     product.refresh_from_db()
     assert product.available_quantity == 5 and product.total_quantity == 5
     assert _mgr("m1-adj-fmgr", other).post(url, {"delta_available": -1, "reason": "x"}, format="json").status_code == 404
@@ -100,9 +100,9 @@ def test_adjust_quantity_boundaries_audit_and_tenancy():
     assert product.available_quantity == 5
     before = AuditLog.objects.count()
     ok = client.post(url, {"delta_available": -5, "reason": "inventory loss"}, format="json")
-    if ok.status_code == 200:
-        product.refresh_from_db()
-        assert product.available_quantity == 0 and AuditLog.objects.count() == before + 1
+    assert ok.status_code == 200
+    product.refresh_from_db()
+    assert product.available_quantity == 0 and AuditLog.objects.count() == before + 1
 
 
 def test_category_crud_is_tenant_scoped_and_slug_collisions_do_not_500():
@@ -112,7 +112,7 @@ def test_category_crud_is_tenant_scoped_and_slug_collisions_do_not_500():
     created = client.post(base, {"name": "Électronique ⚡"}, format="json")
     assert created.status_code == 201
     again = client.post(base, {"name": "Électronique ⚡"}, format="json")
-    assert again.status_code in (201, 400)  # a duplicate name is refused or uniquely slugged, never a 500
+    assert again.status_code == 400  # a duplicate name is refused, never a 500
     assert client.post(base, {"name": ""}, format="json").status_code == 400
     detail = f"/api/v1/admin/categories/{created.data['id']}"
     assert _mgr("m1-cat-fmgr", other).patch(detail, {"name": "pwn"}, format="json").status_code == 404

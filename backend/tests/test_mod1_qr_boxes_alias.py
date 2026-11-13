@@ -33,8 +33,8 @@ def test_box_creation_rejects_blank_label_foreign_parent_and_other_tenants(route
     foreign_parent = make_box(other, "Theirs")
     assert client.post(url, {"makerspace_id": space.id, "label": "x", "parent_id": foreign_parent.id},
                        format="json").status_code == 404
-    assert client.post(url, {"makerspace_id": other.id, "label": "x"}, format="json").status_code in (403, 404)
-    assert APIClient().post(url, {"makerspace_id": space.id, "label": "x"}, format="json").status_code in (401, 403)
+    assert client.post(url, {"makerspace_id": other.id, "label": "x"}, format="json").status_code == 404
+    assert APIClient().post(url, {"makerspace_id": space.id, "label": "x"}, format="json").status_code == 401
     requester = authenticated_client(make_user(f"m1-qr-req-{route}"))
-    assert requester.post(url, {"makerspace_id": space.id, "label": "x"}, format="json").status_code in (403, 404)
+    assert requester.post(url, {"makerspace_id": space.id, "label": "x"}, format="json").status_code == 404
     assert not Box.objects.filter(makerspace=space).exists() and not QrCode.objects.filter(makerspace=space).exists()

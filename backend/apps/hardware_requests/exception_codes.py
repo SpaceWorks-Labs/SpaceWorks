@@ -28,8 +28,13 @@ def _drf_code(exc):
 
 
 def add_error_code(exc, response):
-    """Add DRF's code to a `{"detail": ...}` body that has none; any other body is untouched."""
+    """Add DRF's code to a `{"detail": ...}` body that has none; any other body is untouched.
+
+    `response.framework_code` marks the addition, so a surface with its own error vocabulary
+    (the event programme views' `{code, detail, fields}`) still recognises a framework error.
+    """
     data = getattr(response, "data", None)
     if isinstance(data, dict) and "detail" in data and "code" not in data:
         data["code"] = _drf_code(exc)
+        response.framework_code = True
     return response

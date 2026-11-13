@@ -32,7 +32,9 @@ class ProgrammeView(APIView):
 
     def handle_exception(self, exc):
         response = super().handle_exception(exc)
-        if not isinstance(response.data, dict) or "code" not in response.data:
+        # A framework error's DRF code (`framework_code`) is replaced by this surface's own vocabulary.
+        framework = getattr(response, "framework_code", False)
+        if not isinstance(response.data, dict) or "code" not in response.data or framework:
             from rest_framework.exceptions import ValidationError
             fields = response.data if isinstance(exc, ValidationError) and isinstance(response.data, dict) else {}
             codes = {400: "invalid_input", 401: "authentication_required", 403: "permission_denied",

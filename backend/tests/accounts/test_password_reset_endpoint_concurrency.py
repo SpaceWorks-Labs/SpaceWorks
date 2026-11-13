@@ -56,7 +56,7 @@ def test_legacy_link_waiting_behind_otp_rechecks_the_locked_user(monkeypatch):
         status_code, body = future.result(timeout=10)
 
     assert status_code == 400
-    assert body == b'{"detail":"Invalid or expired verification code."}'
+    assert body == b'{"detail":"Invalid or expired verification code.","code":"invalid"}'
     user.refresh_from_db()
     assert user.check_password(OTP_PASSWORD)
     assert not user.check_password("Attacker-overwrite-552!")

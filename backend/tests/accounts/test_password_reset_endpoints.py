@@ -202,7 +202,7 @@ def test_all_otp_failures_are_byte_identical_and_unknown_has_no_envelope(monkeyp
     assert len(set(results)) == 1
     assert results[0][0] == 400
     assert results[0][1] == (
-        f'{{"detail":"{GENERIC_CONFIRM_ERROR}"}}'.encode()
+        f'{{"detail":"{GENERIC_CONFIRM_ERROR}","code":"invalid"}}'.encode()
     )
     assert not PasswordResetEnvelope.objects.filter(
         email_normalized=unknown_email

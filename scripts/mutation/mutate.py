@@ -61,6 +61,7 @@ class Mutant:
     kind: str
     desc: str
     stmt_line: int
+    stmt_end: int
     func_lines: tuple
     func_name: str
     edit: tuple  # (container, field, index, new_value, old_value)
@@ -91,7 +92,12 @@ class Collector:
     def add(self, node, kind, desc, edit, ctx):
         line = getattr(node, "lineno", ctx["stmt"].lineno)
         key = f"{self.rel}:{line}:{getattr(node, 'col_offset', 0)}:{kind}:{desc}"
-        self.out.append(Mutant(key, self.rel, line, kind, desc, ctx["stmt"].lineno, ctx["func_lines"], ctx["func_name"], edit))
+        stmt = ctx["stmt"]
+        # Coverage records the physical lines a multi-line statement actually executes, not its first line, so the
+        # lookup covers the statement's span (an if/while: its condition only, not its body).
+        header = getattr(stmt, "test", None) if isinstance(stmt, (ast.If, ast.While)) else None
+        end = getattr(header, "end_lineno", None) or getattr(stmt, "end_lineno", None) or stmt.lineno
+        self.out.append(Mutant(key, self.rel, line, kind, desc, stmt.lineno, end, ctx["func_lines"], ctx["func_name"], edit))
 
     def outer_function(self, fn):
         lines = (fn.lineno,) + tuple(d.lineno for d in fn.decorator_list)
@@ -363,7 +369,8 @@ class Engine:
 
     def evaluate(self, m, tree, abspath, live_cache, first):
         lines = self.line_tests.get(abspath, {})
-        tests = [t for t in lines.get(m.stmt_line, []) if t not in self.baseline_failed and t in self.by_id]
+        covering = {t for ln in range(m.stmt_line, m.stmt_end + 1) for t in lines.get(ln, [])}
+        tests = [t for t in covering if t not in self.baseline_failed and t in self.by_id]
         if not tests:
             m.status = "no_cover"
             return

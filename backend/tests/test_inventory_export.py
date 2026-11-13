@@ -151,8 +151,10 @@ def test_cross_makerspace_viewer_cannot_export_and_missing_space_is_404():
     forbidden = client.get(export_url(other_space))
     missing = client.get("/api/v1/admin/makerspace/999999/inventory/export")
 
-    assert forbidden.status_code == 403
-    assert missing.status_code == 404
+    # Decision 481(1): an outsider cannot tell another real space from a missing one.
+    assert forbidden.status_code == missing.status_code == 404
+    assert forbidden.content == missing.content
+    assert b"Hidden Drill" not in forbidden.content
 
 
 def test_guest_admin_with_only_view_inventory_cannot_export():

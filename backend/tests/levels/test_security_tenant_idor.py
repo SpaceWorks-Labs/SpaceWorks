@@ -31,7 +31,7 @@ pytestmark = pytest.mark.django_db
 
 MARKER = "zzbsecret"
 GONE = 987654321
-MAX_DISTINGUISHABLE = 140
+MAX_DISTINGUISHABLE = 0
 
 
 def _empty_scoped_list(response):
@@ -105,12 +105,12 @@ def test_another_makerspace_answers_exactly_like_one_that_does_not_exist(tenants
             own_page = route.startswith("api/v1/member/")  # filtered to the CALLER's own rows (e.g. guest passes, guardian consent)
             if real.status_code not in (400, 401, 403, 404, 405, 429) and not own_page and not _empty_scoped_list(real):
                 leaks.append(f"{verb.upper()} {route}: other space answered {real.status_code} with data")
-    # Safe, and the finding to report: staff of space A get 403 for a real other space but 404 for a missing one on
-    # these routes, because `require_module` resolves the space before RBAC runs. It reveals only that an id
-    # exists (spaces are listed publicly), never data. Ratchet: fix by authorising before the module gate.
+    # Decision 481(1): staff routes used to answer 403 for a real other space and 404 for a missing one (140 cases),
+    # because `require_module` resolved the space before RBAC ran. Standing in the space is now decided first
+    # (apps/accounts/tenant_refusal.py), so the ceiling is zero and this sweep is the regression.
     assert len(distinguishable) <= MAX_DISTINGUISHABLE, (
         f"{len(distinguishable)} routes tell a real other space from a missing one (ceiling {MAX_DISTINGUISHABLE}):\n"
-        + "\n".join(distinguishable[-30:]))
+        + "\n".join(distinguishable))
     assert not leaks, f"{len(leaks)} routes leak data from another makerspace:\n" + "\n".join(leaks[:60])
 
 

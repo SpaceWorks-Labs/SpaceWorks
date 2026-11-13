@@ -86,5 +86,5 @@ def test_username_only_account_confirmation_has_generic_failure(kind):
     response = APIClient().post(reverse("auth-reset-password"), payload, format="json",
         HTTP_ORIGIN="http://localhost:5000")
     assert response.status_code == 400
-    assert response.data == {"detail": "Invalid or expired verification code."}
+    assert response.data == {"detail": "Invalid or expired verification code.", "code": "invalid"}
     assert not PasswordResetEnvelope.objects.exists()

@@ -3,6 +3,8 @@ from rest_framework.response import Response
 from rest_framework.views import exception_handler
 from drf_spectacular.utils import extend_schema_serializer
 
+from apps.hardware_requests.exception_codes import add_error_code
+
 from apps.bookings.exceptions import BookingConflict, BookingInvalidTransition
 from apps.accounts.services_claim import ClaimCodeError, ClaimCodeIneligible
 from apps.evidence.storage import StorageUnavailable
@@ -244,7 +246,7 @@ def workflow_exception_handler(exc, context):
         from apps.managed_hosting.space_quotas import tell_managers
         tell_managers(exc)
     if response is not None:
-        return response
+        return add_error_code(exc, response)
 
     for exc_type, (status_code, code, default_detail) in _EXCEPTION_MAP.items():
         if isinstance(exc, exc_type):

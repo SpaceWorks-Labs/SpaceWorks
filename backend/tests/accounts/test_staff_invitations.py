@@ -96,7 +96,7 @@ def test_unavailable_invitation_has_one_generic_response(invitations, state):
         raw = "x" * 43
     row.save()
     response = accept(ctx, raw)
-    assert response.status_code == 400 and response.json() == {"detail": GENERIC_ERROR}
+    assert response.status_code == 400 and response.json() == {"detail": GENERIC_ERROR, "code": "invalid"}
     user.refresh_from_db()
     assert not user.has_usable_password()
 
@@ -140,7 +140,7 @@ def test_accept_failure_is_generic_and_commits_bounded_attempts(invitations):
     user, row, raw = invite(ctx)
     for _ in range(6):
         response = accept(ctx, raw, password="weak")
-        assert response.status_code == 400 and response.json() == {"detail": GENERIC_ERROR}
+        assert response.status_code == 400 and response.json() == {"detail": GENERIC_ERROR, "code": "invalid"}
     row.refresh_from_db(); user.refresh_from_db()
     assert row.failed_attempts == 5 and row.accepted_at is None
     assert not user.has_usable_password()

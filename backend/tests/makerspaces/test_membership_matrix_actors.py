@@ -220,7 +220,7 @@ def test_front_desk_staff_cannot_see_or_decide_membership():
     ]
     for response in responses:
         assert response.status_code == 403
-        assert set(response.data) == {"detail"}
+        assert set(response.data) == {"detail", "code"}
     assert MembershipRequest.objects.get(pk=join.id).state == MembershipRequest.State.REQUESTED
     assert not MakerspaceMembership.objects.filter(makerspace=makerspace, user=joiner).exists()
     assert AuditLog.objects.filter(makerspace=makerspace).count() == before_audits

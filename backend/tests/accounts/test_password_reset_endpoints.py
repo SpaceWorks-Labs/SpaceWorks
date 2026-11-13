@@ -233,7 +233,7 @@ def test_walk_in_confirmation_is_refused_with_or_without_bearer(monkeypatch, wit
     )
 
     assert response.status_code == 400
-    assert response.json() == {"detail": GENERIC_CONFIRM_ERROR}
+    assert response.json() == {"detail": GENERIC_CONFIRM_ERROR, "code": "invalid"}
     user.refresh_from_db()
     assert user.check_password(STARTING_PASSWORD)
 

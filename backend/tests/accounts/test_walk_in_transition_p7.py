@@ -233,7 +233,7 @@ def test_walk_in_email_verification_issue_and_confirm_are_generic(monkeypatch):
     )
 
     assert confirmed.status_code == 400
-    assert confirmed.data == {"detail": services_registration.GENERIC_CONFIRM_ERROR}
+    assert confirmed.data == {"detail": services_registration.GENERIC_CONFIRM_ERROR, "code": "invalid"}
     challenge.refresh_from_db()
     confirmer.refresh_from_db()
     assert challenge.consumed_at is not None

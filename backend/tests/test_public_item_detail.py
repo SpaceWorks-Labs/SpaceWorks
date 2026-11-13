@@ -61,7 +61,7 @@ def test_private_archived_cross_tenant_and_missing_have_identical_404():
 
     assert all(response.status_code == 404 for response in responses)
     assert all(response.data == responses[0].data for response in responses)
-    assert responses[0].data == {"detail": "Item not found."}
+    assert responses[0].data == {"detail": "Item not found.", "code": "not_found"}
 
 
 @pytest.mark.parametrize("suffix", ["inventory/{id}/", "inventory/", "inventory/categories/"])
@@ -97,7 +97,7 @@ def test_detail_disabled_public_site_and_missing_space_have_same_not_found(modul
     disabled = client.get(detail_url(space, product.pk))
     missing = client.get(f"/api/v1/public/does-not-exist/inventory/{product.pk}/")
     assert disabled.status_code == missing.status_code == 404
-    assert disabled.data == missing.data == {"detail": "Item not found."}
+    assert disabled.data == missing.data == {"detail": "Item not found.", "code": "not_found"}
 
 
 @pytest.mark.parametrize("lifecycle", [Makerspace.LifecycleState.IMPORTING, Makerspace.LifecycleState.ABORTED])
@@ -107,7 +107,7 @@ def test_detail_refuses_unservable_tenant(lifecycle):
     Makerspace.objects.filter(pk=space.pk).update(lifecycle_state=lifecycle)
     response = APIClient().get(detail_url(space, product.pk))
     assert response.status_code == 404
-    assert response.data == {"detail": "Item not found."}
+    assert response.data == {"detail": "Item not found.", "code": "not_found"}
 
 
 def test_detail_refuses_archived_tenant():
@@ -118,7 +118,7 @@ def test_detail_refuses_archived_tenant():
     Makerspace.objects.filter(pk=space.pk).update(archived_at=timezone.now())
     response = APIClient().get(detail_url(space, product.pk))
     assert response.status_code == 404
-    assert response.data == {"detail": "Item not found."}
+    assert response.data == {"detail": "Item not found.", "code": "not_found"}
 
 
 def test_detail_refuses_edition_hidden_inventory(settings):
@@ -127,7 +127,7 @@ def test_detail_refuses_edition_hidden_inventory(settings):
     product = make_product(space)
     response = APIClient().get(detail_url(space, product.pk))
     assert response.status_code == 404
-    assert response.data == {"detail": "Item not found."}
+    assert response.data == {"detail": "Item not found.", "code": "not_found"}
 
 
 @pytest.mark.parametrize("query", ["vaultxyz", "-vaultxyz", "quantity"])

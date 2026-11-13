@@ -135,10 +135,6 @@ def response_problems(method, path, status, payload):
     body = documented.get("content", {}).get("application/json")
     if body is None:
         return []
-    if int(status) in (401, 403, 404) and isinstance(payload, dict) and set(payload) == {"detail"}:
-        # Finding (reported, not hidden): errors raised by DRF itself (not_authenticated, permission_denied,
-        # not_found) carry only `detail`, while the shared HardwareRequestError component marks `code` required.
-        payload = {**payload, "code": "framework_error"}
     validator = Draft7Validator(_inline(body["schema"], schema["components"]["schemas"]))
     return [f"{'/'.join(map(str, e.absolute_path)) or '<root>'}: {e.message[:160]}"
             for e in sorted(validator.iter_errors(payload), key=lambda e: list(map(str, e.absolute_path)))][:6]

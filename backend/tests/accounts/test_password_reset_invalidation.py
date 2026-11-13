@@ -31,7 +31,7 @@ def confirm(user, code):
 def assert_invalidated(user, code):
     response = confirm(user, code)
     assert response.status_code == 400
-    assert response.json() == {"detail": GENERIC_CONFIRM_ERROR}
+    assert response.json() == {"detail": GENERIC_CONFIRM_ERROR, "code": "invalid"}
 
 
 def test_change_password_invalidates_an_issued_otp(monkeypatch):

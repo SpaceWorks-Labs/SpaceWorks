@@ -140,7 +140,7 @@ def test_rail_off_loan_money_is_settled_offline_only_with_a_receipt(django_captu
 
     # A replay is refused and adds no second receipt or audit row.
     again = client(admin).post(base, settlement_payload(reference="slip-78"), format="json")
-    assert again.status_code in (400, 409), again.data
+    assert again.status_code == 409 and again.data["code"] == "payment_terminal", again.data
     assert ManualSettlement.objects.filter(payment=fee).count() == 1
     assert AuditLog.objects.filter(action="payment.paid_offline", target_id=str(fee.pk)).count() == 1
 

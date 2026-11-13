@@ -107,8 +107,8 @@ def test_the_item_of_another_makerspace_is_a_404_under_this_slug():
 def test_signed_out_callers_are_refused_and_nothing_is_written():
     space, _member, product = world("mod1b-watch-anon")
     anonymous = APIClient()
-    assert anonymous.post(url(space, product), {}, format="json").status_code in (401, 403)
-    assert anonymous.delete(url(space, product)).status_code in (401, 403)
+    assert anonymous.post(url(space, product), {}, format="json").status_code == 401
+    assert anonymous.delete(url(space, product)).status_code == 401
     assert not InventoryWatch.objects.exists()
 
 
@@ -116,7 +116,7 @@ def test_an_account_without_an_active_membership_cannot_subscribe():
     space, _member, product = world("mod1b-watch-nomember")
     stranger = make_member("mod1b-watch-stranger", make_space("mod1b-watch-elsewhere"), "member", role=User.Role.REQUESTER)
     reply = client_for(stranger).post(url(space, product), {}, format="json")
-    assert reply.status_code in (403, 404), reply.data
+    assert reply.status_code == 403, reply.data
     assert not InventoryWatch.objects.exists()
 
 

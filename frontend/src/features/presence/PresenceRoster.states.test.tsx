@@ -14,7 +14,7 @@ const row = { account_id: 41, display_name: "Asha Rao", role_label: "Member", st
   started_at: new Date(Date.now() - 3_600_000).toISOString(), expires_at: new Date(Date.now() + 3_600_000).toISOString(),
   ended_at: null, end_reason: "", active: true, names_displayed: true, personal_opt_out_allowed: true };
 
-beforeEach(() => api.staffRequest.mockReset());
+beforeEach(() => { api.staffRequest.mockReset(); }); // braces: a returned mock would be run as a teardown
 
 describe("PresenceRoster states", () => {
   it("shows the empty state, and plural-correct zero count, when nobody is checked in", async () => {
@@ -34,6 +34,14 @@ describe("PresenceRoster states", () => {
     fireEvent.click((await screen.findAllByRole("button", { name: "Check out Asha Rao" }))[0]);
     expect(await screen.findByText("Presence permission is required here.")).toBeInTheDocument();
     expect(screen.getAllByText("Asha Rao").length).toBeGreaterThan(0);
+  });
+
+  it("shows the server's refusal as an alert when the roster query itself is rejected", async () => {
+    api.staffRequest.mockImplementation(() => Promise.reject(new StructuredApiError(403, { code: "presence_permission_denied", detail: "Presence permission is required here." })));
+    render(wrap(<PresenceRoster makerspaceId={5} />));
+    expect(await screen.findByText("Presence permission is required here.")).toBeInTheDocument();
+    expect(screen.getByRole("alert")).toBeInTheDocument();
+    expect(screen.queryByText("Asha Rao")).not.toBeInTheDocument();
   });
 
   it("keeps the person listed and shows an alert when check-out fails", async () => {

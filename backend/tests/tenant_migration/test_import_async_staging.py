@@ -117,11 +117,13 @@ def portable_tree(tmp_path):
             writer = csv.DictWriter(output, fieldnames=[c.name for c in dataset.columns])
             writer.writeheader()
             writer.writerow(row)
-    dataset = PORTABLE_DATASETS["makerspaces.MakerspaceRole"]
-    path = root / dataset.path
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", encoding="utf-8", newline="") as output:
-        csv.DictWriter(output, fieldnames=[c.name for c in dataset.columns]).writeheader()
+    # Header-only datasets the importer reads before any write (roles; payments for the venue-fee preflight).
+    for label in ("makerspaces.MakerspaceRole", "payments.Payment"):
+        dataset = PORTABLE_DATASETS[label]
+        path = root / dataset.path
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("w", encoding="utf-8", newline="") as output:
+            csv.DictWriter(output, fieldnames=[c.name for c in dataset.columns]).writeheader()
     # The importer reads both reference sidecars before any write (venue-fee preflight, ReferenceState).
     (root / "migration").mkdir(exist_ok=True)
     for sidecar in ("reference_provenance.jsonl", "external_references.jsonl"):
@@ -231,12 +233,20 @@ def test_eager_upload_waits_for_stale_sweep(
     dispatch.assert_called_once_with(str(job.pk), actor.pk)
     job.refresh_from_db()
     assert job.status == "awaiting_identity"
+    assert job.failure_code == ""
+    assert Path(f"{job.archive_path}.rows.age").is_file()
+    assert job.identity_decisions.count() == 0  # staging does not make the operator's identity choices
+    assert AuditLog.objects.filter(action="tenant_migration.import_created", target_id=str(job.pk)).count() == 1
+    # Once staged, even another due sweep cannot enqueue the upload again.
+    assert resume_stale_pending_import_jobs(now=now + timedelta(minutes=12)) == 0
+    dispatch.assert_called_once_with(str(job.pk), actor.pk)
 
 
 def test_non_superadmin_upload_is_forbidden_and_leaves_no_file(ops_dir):
     member = User.objects.create_user(username="async-member", access_status="active")
     response = upload(client_for(member))
     assert response.status_code == 403
+    assert response.data["code"] == "permission_denied"
     assert_no_upload(ops_dir)
 
 
@@ -244,7 +254,8 @@ def test_over_limit_upload_is_field_error_and_leaves_no_file(actor, ops_dir, mon
     monkeypatch.setattr(import_staging, "MAX_ARCHIVE_BYTES", 4)
     response = upload(client_for(actor), b"five!")
     assert response.status_code == 400
-    assert "archive" in response.data
+    assert set(response.data) == {"archive"}
+    assert response.data["archive"][0].code == "invalid"
     assert_no_upload(ops_dir)
 
 
@@ -254,26 +265,29 @@ def test_two_archive_parts_are_rejected_and_cleaned(actor, ops_dir):
         SimpleUploadedFile("second.age", b"second"),
     ])
     assert response.status_code == 400
-    assert "archive" in response.data
+    assert set(response.data) == {"archive"}
+    assert response.data["archive"][0].code == "invalid"
     assert_no_upload(ops_dir)
 
 
 def test_extra_file_field_is_rejected_and_cleaned(actor, ops_dir):
     response = upload(client_for(actor), unexpected=SimpleUploadedFile("extra.age", b"extra"))
     assert response.status_code == 400
-    assert "archive" in response.data
+    assert set(response.data) == {"archive"}
+    assert response.data["archive"][0].code == "invalid"
     assert_no_upload(ops_dir)
 
 
 def test_invalid_digest_is_rejected_after_upload_and_cleaned(actor, ops_dir):
     response = upload(client_for(actor), source_archive_digest="NOT-A-SHA256")
     assert response.status_code == 400
-    assert "source_archive_digest" in response.data
+    assert set(response.data) == {"source_archive_digest"}
+    assert response.data["source_archive_digest"][0].code == "invalid"
     assert_no_upload(ops_dir)
 
 
 def test_staging_seals_rows_and_identity_endpoints_survive_full_archive_deletion(
-    actor, pending_job, real_archive, settings,
+    actor, pending_job, real_archive, settings, monkeypatch,
 ):
     job = pending_job(real_archive.payload)
     path = Path(job.archive_path)
@@ -306,6 +320,14 @@ def test_staging_seals_rows_and_identity_endpoints_survive_full_archive_deletion
     assert PORTABLE_DATASETS["accounts.User"].path in names
     assert "keys/deks.json" not in names
     assert not any(name == "objects" or name.startswith("objects/") for name in names)
+    sealed_digest = hashlib.sha256(sidecar.read_bytes()).hexdigest()
+    digest = Mock(side_effect=AssertionError("A staged job must not reread its full archive"))
+    monkeypatch.setattr(staging, "sha256_file", digest)
+    assert staging.stage_import_job(job.pk, actor_id=actor.pk).status == "awaiting_identity"
+    digest.assert_not_called()
+    assert hashlib.sha256(sidecar.read_bytes()).hexdigest() == sealed_digest
+    assert job.identity_decisions.count() == 0
+    assert AuditLog.objects.filter(action="tenant_migration.import_created", target_id=str(job.pk)).count() == 1
     path.unlink()
     client = client_for(actor)
     url = reverse("tenant-migration-import-decisions", args=(job.pk,))

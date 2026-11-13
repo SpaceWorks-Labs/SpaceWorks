@@ -1,6 +1,7 @@
 import pytest
 from django.contrib.auth import get_user_model
 from django.db import connection, transaction
+from uuid import uuid4
 
 from apps.backup.raw_projection import raw_records
 from apps.hardware_requests.models import HardwareRequest, HardwareRequestItem
@@ -102,11 +103,19 @@ def test_sequence_normalization_covers_nonempty_and_empty_tables():
 
 
 def test_cache_postcondition_refuses_populated_runtime_data():
+    cache_key = f"cx3-tenant-dump-{uuid4().hex}"
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "INSERT INTO spaceworks_cache (cache_key, value, expires) "
+                "VALUES (%s, %s, CURRENT_TIMESTAMP + INTERVAL '1 hour')",
+                [cache_key, "source-runtime-row"],
+            )
+        with pytest.raises(TenantDumpVerificationError, match="spaceworks_cache"):
+            verify_tables_empty("default", {"spaceworks_cache"})
+    finally:
+        with connection.cursor() as cursor:
+            cursor.execute("DELETE FROM spaceworks_cache WHERE cache_key = %s", [cache_key])
     with connection.cursor() as cursor:
-        cursor.execute(
-            "INSERT INTO spaceworks_cache (cache_key, value, expires) "
-            "VALUES ('lane-d', %s, CURRENT_TIMESTAMP + INTERVAL '1 hour')",
-            ["source-runtime-row"],
-        )
-    with pytest.raises(TenantDumpVerificationError, match="spaceworks_cache"):
-        verify_tables_empty("default", {"spaceworks_cache"})
+        cursor.execute("SELECT COUNT(*) FROM spaceworks_cache WHERE cache_key = %s", [cache_key])
+        assert cursor.fetchone()[0] == 0

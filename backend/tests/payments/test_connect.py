@@ -1,4 +1,5 @@
 import hashlib
+from datetime import datetime, timezone
 from decimal import Decimal
 from urllib.parse import parse_qs, urlparse
 
@@ -7,7 +8,9 @@ from rest_framework.test import APIClient
 from unittest.mock import Mock
 
 from apps.makerspaces.models import MakerspaceMembership
+from apps.audit.models import AuditLog
 from apps.payments.models import (
+    ManualSettlement,
     MakerspacePaymentSettings,
     Payment,
     PlatformStripeConnectSettings,
@@ -519,20 +522,52 @@ def test_raw_payment_fails_closed_after_provider_switch_to_connect(
     )
     offline_url = f"/api/v1/admin/machine-service/payments/{payment.pk}/mark-offline"
     # Owning the debt grants no staff authority to settle it.
-    denied = client.post(offline_url, settlement_payload(), format="json", HTTP_HOST="localhost")
+    received_at = datetime(2026, 1, 2, 12, 30, tzinfo=timezone.utc)
+    payload = settlement_payload(method="bank_transfer", reference="RAW-DESK-42", received_at=received_at.isoformat())
+    before = Payment.objects.values().get(pk=payment.pk)
+    receipts = ManualSettlement.objects.filter(payment=payment)
+    audits = AuditLog.objects.filter(target_type="payments.payment", target_id=str(payment.pk))
+    receipt_count, audit_count = receipts.count(), audits.count()
+    assert receipt_count == 0
+    assert audits.filter(action="payment.paid_offline").count() == 0
+    denied = client.post(offline_url, payload, format="json", HTTP_HOST="localhost")
     assert denied.status_code == 404
+    assert denied.data["code"] == "not_found"
+    assert Payment.objects.values().get(pk=payment.pk) == before
+    assert receipts.count() == receipt_count
+    assert audits.count() == audit_count
     assert expiry_calls == []
     manager = make_member("raw-snapshot-provider-switch-manager", makerspace)
     client.force_authenticate(manager)
     reconciled = client.post(
         offline_url,
-        settlement_payload(),
+        payload,
         format="json",
         HTTP_HOST="localhost",
     )
 
     assert reconciled.status_code == 200
     assert reconciled.data["status"] == Payment.Status.PAID_OFFLINE
+    payment.refresh_from_db()
+    assert payment.status == Payment.Status.PAID_OFFLINE
+    assert (payment.amount, payment.currency) == (Decimal("10.00"), "usd")
+    for field in ("provider", "stripe_provider", "stripe_connected_account_id", "stripe_application_fee_amount"):
+        assert getattr(payment, field) == before[field]
+    assert payment.provider == Payment.Provider.STRIPE
+    assert payment.stripe_provider == Payment.StripeProvider.RAW
+    assert payment.stripe_connected_account_id is None
+    assert receipts.count() == 1
+    receipt = receipts.get()
+    assert (receipt.method, receipt.reference, receipt.received_at) == (
+        payload["settlement"]["method"], payload["settlement"]["reference"], received_at,
+    )
+    assert (receipt.amount, receipt.currency, receipt.recorded_by_id, receipt.amends_id) == (
+        Decimal("10.00"), "usd", manager.pk, None,
+    )
+    assert audits.filter(action="payment.paid_offline").count() == 1
+    entry = audits.get(action="payment.paid_offline")
+    assert entry.actor_id == manager.pk and entry.makerspace_id == makerspace.pk
+    assert entry.meta == {"method": payload["settlement"]["method"], "settlement_id": receipt.pk}
     assert expiry_calls == []
 
 
@@ -603,27 +638,60 @@ def test_connect_payment_keeps_snapshot_after_provider_switch_to_raw(
     assert checkout_sources[0].provider == Payment.StripeProvider.CONNECT
     assert checkout_sources[0].connected_account_id == "acct_connectswitch"
     offline_url = f"/api/v1/admin/machine-service/payments/{payment.pk}/mark-offline"
-    denied = client.post(offline_url, settlement_payload(), format="json", HTTP_HOST="localhost")
+    received_at = datetime(2026, 1, 2, 12, 30, tzinfo=timezone.utc)
+    payload = settlement_payload(method="bank_transfer", reference="CONNECT-DESK-42", received_at=received_at.isoformat())
+    before = Payment.objects.values().get(pk=payment.pk)
+    receipts = ManualSettlement.objects.filter(payment=payment)
+    audits = AuditLog.objects.filter(target_type="payments.payment", target_id=str(payment.pk))
+    receipt_count, audit_count = receipts.count(), audits.count()
+    assert receipt_count == 0
+    assert audits.filter(action="payment.paid_offline").count() == 0
+    denied = client.post(offline_url, payload, format="json", HTTP_HOST="localhost")
     assert denied.status_code == 404
+    assert denied.data["code"] == "not_found"
+    assert Payment.objects.values().get(pk=payment.pk) == before
+    assert receipts.count() == receipt_count
+    assert audits.count() == audit_count
     assert expiry_sources == []
     manager = make_member("connect-snapshot-provider-switch-manager", makerspace)
     client.force_authenticate(manager)
     reconciled = client.post(
         offline_url,
-        settlement_payload(),
+        payload,
         format="json",
         HTTP_HOST="localhost",
     )
 
     assert reconciled.status_code == 200
     assert reconciled.data["status"] == Payment.Status.PAID_OFFLINE
+    payment.refresh_from_db()
+    assert payment.status == Payment.Status.PAID_OFFLINE
+    assert (payment.amount, payment.currency) == (Decimal("10.00"), "usd")
+    for field in ("provider", "stripe_provider", "stripe_connected_account_id", "stripe_application_fee_amount"):
+        assert getattr(payment, field) == before[field]
+    assert payment.provider == Payment.Provider.STRIPE
+    assert payment.stripe_provider == Payment.StripeProvider.CONNECT
+    assert payment.stripe_connected_account_id == "acct_connectswitch"
+    assert receipts.count() == 1
+    receipt = receipts.get()
+    assert (receipt.method, receipt.reference, receipt.received_at) == (
+        payload["settlement"]["method"], payload["settlement"]["reference"], received_at,
+    )
+    assert (receipt.amount, receipt.currency, receipt.recorded_by_id, receipt.amends_id) == (
+        Decimal("10.00"), "usd", manager.pk, None,
+    )
+    assert audits.filter(action="payment.paid_offline").count() == 1
+    entry = audits.get(action="payment.paid_offline")
+    assert entry.actor_id == manager.pk and entry.makerspace_id == makerspace.pk
+    assert entry.meta == {"method": payload["settlement"]["method"], "settlement_id": receipt.pk}
     assert len(expiry_sources) == 1
     assert expiry_sources[0].provider == Payment.StripeProvider.CONNECT
     assert expiry_sources[0].connected_account_id == "acct_connectswitch"
 
 
+@pytest.mark.parametrize("rail_retired", [False, True])
 def test_connect_webhook_verifies_platform_secret_and_routes_snapshot(
-    settings, monkeypatch
+    settings, monkeypatch, rail_retired
 ):
     settings.PLATFORM_DOMAIN_SUFFIX = ".managed.test"
     platform = PlatformStripeConnectSettings.load()
@@ -632,6 +700,7 @@ def test_connect_webhook_verifies_platform_secret_and_routes_snapshot(
     platform.stripe_connect_client_id = "ca_platform"
     platform.save()
     makerspace = make_space("connect-webhook")
+    enable_online_rail(makerspace, "machines")  # decision 479: stamp Connect while the rail is on
     merchant = MakerspacePaymentSettings.objects.create(
         makerspace=makerspace,
         connect_account_id="acct_webhook",
@@ -649,6 +718,12 @@ def test_connect_webhook_verifies_platform_secret_and_routes_snapshot(
         currency="usd",
         created_by=actor,
     )
+    assert payment.provider == Payment.Provider.STRIPE
+    assert payment.stripe_provider == Payment.StripeProvider.CONNECT
+    assert payment.stripe_connected_account_id == "acct_webhook"
+    if rail_retired:
+        makerspace.enabled_modules = [key for key in makerspace.enabled_modules if key != "payments"]
+        makerspace.save(update_fields=["enabled_modules"])
     type(payment).objects.filter(pk=payment.pk).update(
         stripe_checkout_session_id="cs_connect_webhook"
     )
@@ -692,6 +767,10 @@ def test_connect_webhook_verifies_platform_secret_and_routes_snapshot(
         HTTP_HOST="localhost",
     )
     assert repeated.status_code == 200
+    from apps.audit.models import AuditLog
+    from apps.payments.models import ProcessedStripeEvent
+    assert ProcessedStripeEvent.objects.filter(stripe_event_id=event["id"], makerspace=makerspace).count() == 1
+    assert AuditLog.objects.filter(action="payment.paid_online", target_id=str(payment.pk)).count() == 1
 
 
 def test_connect_expired_webhook_confirms_checkout_session_is_closed(
@@ -704,6 +783,7 @@ def test_connect_expired_webhook_confirms_checkout_session_is_closed(
     platform.stripe_connect_client_id = "ca_platform"
     platform.save()
     makerspace = make_space("connect-expired-webhook")
+    enable_online_rail(makerspace, "machines")  # decision 479: stamp Connect while the rail is on
     merchant = MakerspacePaymentSettings.objects.create(
         makerspace=makerspace,
         connect_account_id="acct_expiredwebhook",
@@ -720,6 +800,9 @@ def test_connect_expired_webhook_confirms_checkout_session_is_closed(
         currency="usd",
         created_by=actor,
     )
+    assert payment.provider == Payment.Provider.STRIPE
+    assert payment.stripe_provider == Payment.StripeProvider.CONNECT
+    assert payment.stripe_connected_account_id == "acct_expiredwebhook"
     Payment.objects.filter(pk=payment.pk).update(
         stripe_checkout_session_id="cs_connect_expired",
         stripe_checkout_url="https://checkout.stripe.test/expired",

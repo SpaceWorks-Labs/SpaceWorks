@@ -17,6 +17,7 @@ def test_only_first_announcement_sets_retention_anchor(monkeypatch, already_anno
     locks = object()
     result = SimpleNamespace(pk=101, version=2, awards=Mock(), rounds=Mock())
     result.awards.all.return_value = []
+    result.awards.select_related.return_value = []  # prize-lineage recovery reads the awards with their prizes
     result.rounds.select_related.return_value.all.return_value = []
     earlier = SimpleNamespace(pk=1, published_at=timezone.now()) if already_announced else None
     model = Mock()
@@ -42,11 +43,14 @@ def test_only_first_announcement_sets_retention_anchor(monkeypatch, already_anno
     monkeypatch.setattr(workflow, "audit", Mock())
     monkeypatch.setattr(workflow, "notice", Mock())
     monkeypatch.setattr("apps.events.judging.options.options_for", lambda event_id: None)  # no DB in this unit test
+    recoveries = Mock()
+    monkeypatch.setattr("apps.events.judging.prize_lineage.recoveries_for_correction_locked", recoveries)
     response = workflow.publish(42, actor=actor, data={"operation_id": str(uuid4()),
         "expected_version": 2, "result_revision_id": 101})
     assert response["state"] == "published"
     assert ports.publish_retention_locked.call_count == (0 if already_announced else 1)
     assert state.current_announcement.pk == 2
+    recoveries.assert_called_once()  # a publish that moves the public pointer checks paid prizes for recovery
 
 
 def test_result_snapshot_cannot_be_modified_through_model_save():

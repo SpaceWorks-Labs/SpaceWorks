@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
-import type { Layer, Side } from "./cardTypes";
+import type { Side } from "./cardTypes";
 import { layerContrast, luminance, MINIMUM_RATIO, ratio, rgb, unreadable } from "./contrast";
 
-const side = (background: Side["background"], layers: Partial<Layer>[]): Side => ({ page_width_mm: 100, page_height_mm: 60, background, layers: layers as Layer[] } as Side);
-const text = (over: Partial<Layer> = {}): Partial<Layer> => ({ kind: "text", x_mm: 0, y_mm: 0, w_mm: 100, h_mm: 60, colour: "#000000", ...over });
+type Loose = Record<string, unknown>;
+const side = (background: unknown, layers: Loose[]): Side => ({ page_width_mm: 100, page_height_mm: 60, background, layers } as unknown as Side);
+const text = (over: Loose = {}): Loose => ({ kind: "text", x_mm: 0, y_mm: 0, w_mm: 100, h_mm: 60, colour: "#000000", ...over });
 const white = { kind: "colour", colour: "#ffffff" } as const;
 
 describe("colour maths", () => {
@@ -71,7 +72,7 @@ describe("layerContrast", () => {
     ["hidden", { hidden: true }], ["without fill", { fill: undefined }], ["a line", { shape: "line" }],
     ["outside the text", { x_mm: 200 }], ["not a shape or band", { kind: "image" }],
   ])("ignores a layer beneath that is %s", (_name, over) => {
-    const below = { kind: "shape", shape: "rect", fill: "#000000", x_mm: 0, y_mm: 0, w_mm: 100, h_mm: 60, ...over } as Partial<Layer>;
+    const below = { kind: "shape", shape: "rect", fill: "#000000", x_mm: 0, y_mm: 0, w_mm: 100, h_mm: 60, ...over } as Loose;
     expect(layerContrast(side(white, [below, text({ colour: "#000000" })]), 1)).toBeCloseTo(21, 5);
   });
   it("counts a band like a shape", () => expect(layerContrast(side(white, [{ kind: "band", fill: "#000000", x_mm: 0, y_mm: 0, w_mm: 100, h_mm: 60 },

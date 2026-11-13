@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
+import type { ModuleRow } from "../ModuleSettingsRows";
 import type { AreaModel, CardModel, FeatureModel } from "./moduleModel";
 import { dependentFeatures, inverse, offOrder, planArea, planFeature, planModule, type Step } from "./modulePlans";
 
 const feat = (key: string, over: Partial<FeatureModel> = {}): FeatureModel => ({ key, label: key.toUpperCase(), on: false, needs: null, requiresModules: [], requiresFeatures: [], ...over });
-const card = (key: string, over: Partial<CardModel> & { row?: Record<string, unknown> | null } = {}): CardModel => {
+const card = (key: string, over: Omit<Partial<CardModel>, "row"> & { row?: Partial<ModuleRow> | null } = {}): CardModel => {
   const { row, ...rest } = over;
   return { key, label: key[0].toUpperCase() + key.slice(1), description: "", areaKey: "a", features: [], on: false, lock: null,
     row: row === null ? null : { key, label: key, description: "", installed: !!rest.on, core: false, available: true, requires: [], pulls_in: [], required_by: [], workflows: [], ...row } as never, ...rest };

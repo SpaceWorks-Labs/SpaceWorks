@@ -83,7 +83,7 @@ describe("toWrite", () => {
   it("sends an empty cap as null so the cap is cleared", () => {
     const c = card({ lines: [spec("a", { has_cap: true })] });
     const draft = toDraft(c); draft.lines[0].cap = "  ";
-    expect(toWrite(c, draft).lines[0]).toMatchObject({ cap: null });
+    expect(toWrite(c, draft).lines![0]).toMatchObject({ cap: null });
   });
   it("skips draft lines the card does not know", () => {
     const c = card({ lines: [spec("a")] });

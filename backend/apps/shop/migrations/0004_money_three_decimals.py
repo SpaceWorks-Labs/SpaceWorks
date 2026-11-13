@@ -3,6 +3,22 @@ import django.core.validators
 from django.db import migrations, models
 
 
+def drop_analytics_views(apps, schema_editor):
+    """A curated analytics view blocks ALTER TYPE on the money columns it reads.
+
+    `manage.py migrate` drops the views first (analytics `pre_migrate_drop`) and rebuilds them
+    afterwards; a bare MigrationExecutor (tests, tooling) sends no pre_migrate signal, so the
+    alter, in either direction, must not depend on it. Dropping is idempotent and the views
+    are derived objects that `analytics_sync` rebuilds.
+    """
+    if schema_editor.connection.vendor != "postgresql":
+        return
+    from apps.analytics import db_ddl
+
+    with schema_editor.connection.cursor() as cursor:
+        db_ddl.drop_view_schemas(cursor)
+
+
 class Migration(migrations.Migration):
     """Money columns store thousandths (0.001) so KWD/BHD/OMR/JOD/TND keep their fils.
 
@@ -14,6 +30,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.RunPython(drop_analytics_views, drop_analytics_views),
         migrations.AlterField(
             model_name='shopvariant',
             name='price',

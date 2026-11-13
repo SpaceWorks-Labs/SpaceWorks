@@ -96,4 +96,6 @@ class Migration(migrations.Migration):
             name='variance',
             field=apps.payments.money_model.MoneyDecimalField(max_digits=13, decimal_places=3, null=True, blank=True),
         ),
+        # Reversal runs the operations backwards, so the drop must also come last to precede the first undo.
+        drop_views_operation(),
     ]

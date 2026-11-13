@@ -26,4 +26,6 @@ class Migration(migrations.Migration):
         validators=[django.core.validators.MinValueValidator(0)],
     ),
         ),
+        # Reversal runs the operations backwards, so the drop must also come last to precede the first undo.
+        drop_views_operation(),
     ]

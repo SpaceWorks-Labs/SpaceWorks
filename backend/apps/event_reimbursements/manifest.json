@@ -1887,6 +1887,30 @@
           "classification": "canonical_metadata",
           "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
         },
+        "min_application_stage": {
+          "type": "PositiveSmallIntegerField",
+          "declaration": "models.PositiveSmallIntegerField(null=True, blank=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "required_submission": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=16, default=\"none\", choices=[(v, v) for v in REQUIRED_SUBMISSION])",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "required_submission_stage": {
+          "type": "PositiveSmallIntegerField",
+          "declaration": "models.PositiveSmallIntegerField(null=True, blank=True)",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
         "permitted_venue_sources": {
           "type": "JSONField",
           "declaration": "models.JSONField(default=list)",

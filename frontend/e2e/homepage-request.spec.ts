@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { API_URL, SEED } from "./helpers";
+import { MEMBER, submitSignIn } from "./r2";
 
 type PublicSpace = { slug: string; name: string };
 async function publicState(page: Page) {
@@ -31,7 +32,7 @@ test("the homepage selects the only space or directory, with sign-in and hub lin
     await expect(page.getByRole("heading", { level: 1, name: "Find a makerspace near you" })).toBeVisible();
     const search = page.getByRole("searchbox", { name: "Search spaces" });
     if (await search.count()) await search.fill(SEED.makerspaceName);
-    await expect(page.getByRole("link", { name: SEED.makerspaceName, exact: true })).toBeVisible();
+    await expect(page.locator(`a[href="/m/${SEED.slug}"]`)).toBeVisible();
   }
   await hubLinks(page);
   await expect(page.getByRole("link", { name: "Sign in", exact: true }).first()).toBeVisible();
@@ -48,7 +49,7 @@ for (const viewport of [{ width: 1280, height: 900 }, { width: 390, height: 844 
     await page.locator('a[href="/spaces"]:visible').first().click();
     const search = page.getByRole("searchbox", { name: "Search spaces" });
     if (await search.count()) await search.fill(SEED.makerspaceName);
-    await page.getByRole("link", { name: SEED.makerspaceName, exact: true }).click();
+    await page.locator(`a[href="/m/${SEED.slug}"]`).click();
     await expect(page).toHaveURL(new RegExp(`/m/${SEED.slug}$`));
     await page.getByRole("link", { name: "Browse inventory", exact: true }).click();
     await page.getByRole("link", { name: SEED.product, exact: true }).click();
@@ -56,9 +57,7 @@ for (const viewport of [{ width: 1280, height: 900 }, { width: 390, height: 844 
     if (viewport.width < 768) await page.getByRole("button", { name: "Request", exact: true }).click();
     await page.getByRole("spinbutton", { name: "Quantity" }).fill("2");
     await page.getByRole("link", { name: "Sign in to borrow" }).click();
-    await page.getByLabel("Email", { exact: true }).fill(`${SEED.member.username}@e2e.local`);
-    await page.getByLabel("Password", { exact: true }).fill(SEED.member.password);
-    await page.getByRole("button", { name: "Sign in", exact: true }).click();
+    await submitSignIn(page, MEMBER);
     await expect(page).toHaveURL(itemUrl);
     await expect(page.getByRole("spinbutton", { name: "Quantity" })).toHaveValue("2");
     await expect(page.getByLabel("Request purpose")).toBeVisible();

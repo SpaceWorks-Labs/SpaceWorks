@@ -2,6 +2,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 
 import { SEED, openRequestsTab, staffLogin } from "./helpers";
+import { MEMBER, submitSignIn } from "./r2";
 
 // WCAG 2.1 AA in a real browser (colour contrast included, which jsdom cannot compute).
 const TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"];
@@ -28,7 +29,7 @@ for (const colorScheme of ["light", "dark"] as const) {
 
     test("staff login", async ({ page }) => {
       await page.goto(`/m/${SEED.slug}/admin`);
-      await expect(page.getByLabel("Username")).toBeVisible();
+      await expect(page.getByLabel("Email", { exact: true })).toBeVisible();
       await expectClean(page);
     });
 
@@ -63,9 +64,7 @@ for (const colorScheme of ["light", "dark"] as const) {
       await page.getByRole("button", { name: "Sign in to join" }).click();
       await expect(page.getByRole("heading", { name: "Member sign in" })).toBeVisible();
       await expectClean(page);
-      await page.getByLabel("Email", { exact: true }).fill(`${SEED.member.username}@e2e.local`);
-      await page.getByLabel("Password", { exact: true }).fill(SEED.member.password);
-      await page.getByRole("button", { name: "Sign in", exact: true }).click();
+      await submitSignIn(page, MEMBER);
       await expect(page.getByRole("heading", { name: "Membership", exact: true })).toBeVisible();
       await expect(page.getByRole("heading", { name: "Presence", exact: true })).toBeVisible();
       await expect(page.getByRole("link", { name: "Contact support" })).toBeVisible();

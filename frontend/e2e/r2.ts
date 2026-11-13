@@ -56,11 +56,16 @@ export async function blockThirdParty(page: Page) {
 // person (API: X-Device-Trust header; browser: the cookie) are not challenged again.
 const deviceTokens = new Map<string, string>();
 
+// Mail is sent by the Celery worker in the dev stack, so its log carries the console email too.
+const MAIL_CONTAINERS = [BACKEND_CONTAINER, process.env.E2E_WORKER_CONTAINER ?? "spaceworks-worker"];
+
 function backendLog(since: string): string {
-  const run = spawnSync("docker", ["logs", "--since", since, BACKEND_CONTAINER], {
-    encoding: "utf8", maxBuffer: 64 * 1024 * 1024,
-  });
-  return `${run.stdout ?? ""}\n${run.stderr ?? ""}`;
+  return MAIL_CONTAINERS.map((container) => {
+    const run = spawnSync("docker", ["logs", "--since", since, container], {
+      encoding: "utf8", maxBuffer: 64 * 1024 * 1024,
+    });
+    return [run.stdout ?? "", run.stderr ?? ""].join("\n");
+  }).join("\n");
 }
 
 function codesFor(log: string, email: string): string[] {
@@ -69,7 +74,7 @@ function codesFor(log: string, email: string): string[] {
   while (at >= 0) {
     const next = log.indexOf(`To: ${email}`, at + 1);
     const block = log.slice(at, next < 0 ? undefined : next);
-    if (/sign-in code/.test(block)) {
+    if (/sign-in code|enter this code/.test(block)) {
       const match = block.match(/^\s*(\d{6})\s*$/m);
       if (match) codes.push(match[1]);
     }
@@ -129,6 +134,23 @@ export async function apiSignIn(request: APIRequestContext, account: Account): P
   return done.access;
 }
 
+/** Fills the visible sign-in form and submits it, completing the "Check your email" step if asked. */
+export async function submitSignIn(page: Page, account: Account) {
+  const watch = watchSignInCode(account.email);
+  await page.getByLabel("Email", { exact: true }).fill(account.email);
+  await page.getByLabel("Password", { exact: true }).fill(account.password);
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  const codeStep = page.getByRole("heading", { name: "Check your email" });
+  const wait = page.waitForTimeout(3_000);
+  await Promise.race([codeStep.waitFor({ timeout: 3_000 }).catch(() => undefined), wait]);
+  if (await codeStep.isVisible()) {
+    await page.getByLabel("Emailed code").fill(await watch.code());
+    await page.getByRole("button", { name: "Verify" }).click();
+  }
+  const cookie = (await page.context().cookies()).find((row) => row.name === "sw_device");
+  if (cookie) deviceTokens.set(account.username, cookie.value);
+}
+
 /**
  * Sign in through the real panel (the staff console and the member area share MemberAuthPanel:
  * "Member sign in", Email, Password, "Sign in"), then the "Check your email" code step if the
@@ -138,7 +160,7 @@ export async function uiSignIn(page: Page, account: Account, path: string, signe
   const token = deviceTokens.get(account.username);
   if (token) await page.context().addCookies([{ name: "sw_device", value: token, url: BASE_URL }]);
   await page.goto(path);
-  const heading = page.getByRole("heading", { name: "Member sign in" });
+  const heading = page.getByRole("heading", { name: /^(Member sign in|Sign in to the staff console)$/ });
   const opener = page.getByRole("button", { name: /^Sign in to (join|your account)$/ });
   await expect(heading.or(opener).or(signedIn).first()).toBeVisible({ timeout: 15_000 });
   if (await signedIn.isVisible()) return;
@@ -167,7 +189,7 @@ export async function staffConsole(page: Page, tab = "", account = MANAGER, slug
   const path = `/m/${slug}/admin${tab ? `/${tab}` : ""}`;
   const shell = page.locator("[data-app-shell]");
   await uiSignIn(page, account, path, shell);
-  if (!page.url().endsWith(path)) await page.goto(path);
+  if (!page.url().includes(path)) await page.goto(path);
   await expect(shell).toBeVisible({ timeout: 15_000 });
 }
 

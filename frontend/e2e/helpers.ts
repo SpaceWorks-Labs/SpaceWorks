@@ -62,10 +62,9 @@ export const SEED = {
 };
 
 export async function apiLogin(request: APIRequestContext, username: string, password: string): Promise<string> {
-  const response = await request.post(`${API_URL}/api/v1/auth/login`, { data: { username, password } });
-  expect(response.ok(), `login failed: ${response.status()} ${await response.text()}`).toBeTruthy();
-  const body = (await response.json()) as { access: string };
-  return body.access;
+  // The unusual-sign-in check may ask for an emailed code; r2.ts completes that step.
+  const { apiSignIn } = await import("./r2");
+  return apiSignIn(request, { username, password, email: `${username}@e2e.local` });
 }
 
 export async function apiGet<T>(request: APIRequestContext, token: string, path: string): Promise<T> {
@@ -90,14 +89,8 @@ export async function makerspaceId(request: APIRequestContext, token: string): P
 }
 
 export async function staffLogin(page: Page, username = SEED.manager.username, password = SEED.manager.password) {
-  await page.goto(`/m/${SEED.slug}/admin`);
-  await page.getByLabel("Username").fill(username);
-  await page.getByLabel("Password").fill(password);
-  await page.getByRole("button", { name: /sign in|log in/i }).click();
-  // Login lands on the dashboard; wait for that navigation before doing anything else, or a
-  // goto() races the post-login redirect and the refresh cookie.
-  await page.waitForURL(/\/admin(\/|$)/);
-  await expect(page.getByRole("button", { name: /sign in|log in/i })).toHaveCount(0);
+  const { staffConsole } = await import("./r2");
+  await staffConsole(page, "", { username, password, email: `${username}@e2e.local` });
   await expect(page.getByRole("button", { name: /sign out/i })).toBeVisible();
 }
 

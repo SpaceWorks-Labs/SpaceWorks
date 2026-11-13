@@ -5,11 +5,11 @@ import { SEED, staffLogin } from "./helpers";
 test.describe("staff authentication", () => {
   test("a wrong password is refused with a visible error", async ({ page }) => {
     await page.goto(`/m/${SEED.slug}/admin`);
-    await page.getByLabel("Username").fill(SEED.manager.username);
-    await page.getByLabel("Password").fill("not-the-password");
-    await page.getByRole("button", { name: /sign in|log in/i }).click();
+    await page.getByLabel("Email", { exact: true }).fill(`${SEED.manager.username}@e2e.local`);
+    await page.getByLabel("Password", { exact: true }).fill("not-the-password");
+    await page.locator("form").getByRole("button", { name: "Sign in", exact: true }).click();
     await expect(page.getByRole("alert")).toBeVisible();
-    await expect(page.getByLabel("Password")).toBeVisible();
+    await expect(page.getByLabel("Password", { exact: true })).toBeVisible();
   });
 
   test("the seeded Space Manager signs in and lands on the console", async ({ page }) => {

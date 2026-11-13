@@ -16,6 +16,7 @@ import { ContextualRequest } from "./ContextualRequest";
 import { ConsumableKitPlan } from "./ConsumableKitPlan";
 import { type PendingIntake, type SelfBody, type SelfResult } from "./contextualIntake";
 import { useIntakeScope } from "./useIntakeScope";
+import { useRestoreMemberSession } from "./useRestoreMemberSession";
 import { usePendingIntakeOwner } from "./usePendingIntakeOwner";
 import { getSessionOwner, hasSessionIdentity } from "../../lib/api/sessionTokens";
 import { onSessionCleared } from "../../lib/api/sessionContext";
@@ -71,6 +72,7 @@ export function PublicRequestPanel({
   const queryClient = useQueryClient();
   const tenantMode = useOptionalTenant()?.mode ?? "central";
   const session = useIntakeScope();
+  useRestoreMemberSession(requestAccess !== "contact");
   // The identity query is intentionally unscoped by the candidate owner: while
   // auth notification precedes token replacement, its verified result may still
   // be the previous actor and must never admit a new actor-scoped request.

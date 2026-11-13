@@ -128,13 +128,15 @@ test_suite() {
   done
   docker run --rm --network "$RUN" --label "spaceworks.test=$RUN" \
     --entrypoint /bin/sh pgsty/silo:RELEASE.2026-09-16T00-00-00Z -c '
-      until mc alias set local http://minio:9000 minioadmin minioadmin; do sleep 1; done;
-      mc mb --ignore-existing local/evidence;
-      mc version enable local/evidence;
-      mc anonymous set none local/evidence;
-      mc mb --ignore-existing local/public-images;
-      mc version enable local/public-images;
-      mc anonymous set download local/public-images;
+      # The whole setup retries as one unit: on a busy runner Docker DNS can drop a lookup in the middle of it.
+      setup() {
+        mc alias set local http://minio:9000 minioadmin minioadmin &&
+        mc mb --ignore-existing local/evidence && mc version enable local/evidence &&
+        mc anonymous set none local/evidence &&
+        mc mb --ignore-existing local/public-images && mc version enable local/public-images &&
+        mc anonymous set download local/public-images
+      }
+      n=0; until setup; do n=$((n + 1)); [ "$n" -ge 30 ] && exit 1; sleep 2; done;
     '
   local key_output keys
   key_output="$(docker run --rm --label "spaceworks.test=$RUN" --entrypoint python spaceworks-backend -c \

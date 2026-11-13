@@ -243,6 +243,26 @@ def _code_index(code, out: dict):
             _code_index(c, out)
 
 
+_TEST_DB_NAMES: dict = {}
+
+
+class _DbSetup:
+    @(pytest.fixture(scope="session") if pytest else (lambda f: f))
+    def django_db_setup(self, django_db_blocker):
+        """The baseline session already built/migrated and kept the test database; here just point at it.
+
+        pytest-django's own fixture runs the whole `migrate` check (tens of seconds) for every mutant session.
+        """
+        from django.db import connections
+
+        with django_db_blocker.unblock():
+            for conn in connections.all():
+                conn.close()
+                conn.settings_dict["NAME"] = _TEST_DB_NAMES.get(conn.alias) or conn.creation._get_test_db_name()
+        yield
+
+
+
 class _Killer:
     """Per-mutant session plugin: the first failing test id, and a flush of rows leaked by non-isolated tests."""
 
@@ -257,6 +277,8 @@ class _Killer:
 
     def pytest_configure(self, config):
         self.config = config
+        # Registered here (after pytest-django loaded) so this fixture is the last, i.e. winning, `django_db_setup`.
+        config.pluginmanager.register(_DbSetup(), "mutation-db-setup")
 
     def pytest_runtest_logreport(self, report):
         if report.failed and self.failed_id is None:
@@ -315,6 +337,13 @@ class Engine:
             if n and n % 200 == 0:
                 self.save_map(mapfile, cov, files)
         cov.stop()
+        from django.db import connections
+
+        # While the baseline session lives its connections point at the (reused) test database when any test ran; with a
+        # cached map nothing ran, so derive the name. Mutant sessions skip pytest-django's migrate check and use this.
+        for conn in connections.all():
+            name = conn.settings_dict["NAME"]
+            _TEST_DB_NAMES[conn.alias] = name if (name != connections.databases[conn.alias]["NAME"] or conn.settings_dict.get("TEST", {}).get("NAME")) else conn.creation._get_test_db_name()
         self.save_map(mapfile, cov, files, final=True)
         slow = sorted(self.durations.items(), key=lambda kv: -kv[1])[:5]
         print("[mutation] slowest baseline tests: " + "; ".join(f"{k} {v:.0f}s" for k, v in slow), flush=True)
@@ -492,11 +521,11 @@ class Engine:
         import pytest as _pytest
 
         killer = _Killer(self)
-        budget = min(900, max(self.args.min_timeout, 8 * sum(min(self.durations.get(t, 1), 30) for t in ids)))
+        budget = min(900, 60 + max(self.args.min_timeout, 8 * sum(min(self.durations.get(t, 1), 30) for t in ids)))
         signal.signal(signal.SIGALRM, self._alarm)
         signal.setitimer(signal.ITIMER_REAL, budget)
         try:
-            _pytest.main(["-q", "-x", "--tb=no", "--no-header", "-p", "no:cacheprovider", "--disable-warnings", *ids], plugins=[killer])
+            _pytest.main(["-q", "-x", "--tb=" + self.args.tb, "--no-header", "-p", "no:cacheprovider", "--disable-warnings", *ids], plugins=[killer])
         except BaseException:  # noqa: BLE001 - a MutantTimeout surfaces here when pytest does not swallow it
             killer.timed_out = True
         finally:
@@ -545,6 +574,7 @@ def main():
     ap.add_argument("--min-timeout", type=float, default=20)
     ap.add_argument("--max-timeout", type=float, default=120)
     ap.add_argument("--exclude-regex", default="", help="test FILES whose path matches are not selected (too slow for a baseline)")
+    ap.add_argument("--tb", default="no", help="pytest traceback style for mutant sessions (debugging)")
     ap.add_argument("--rebuild", action="store_true", help="ignore the cached coverage map")
     ap.add_argument("--list-only", action="store_true")
     args = ap.parse_args()

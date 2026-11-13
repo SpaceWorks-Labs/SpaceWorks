@@ -3,6 +3,7 @@ from decimal import Decimal
 import apps.payments.money_model
 import django.core.validators
 from django.db import migrations, models
+from apps.analytics.migration_support import drop_views_operation
 
 
 class Migration(migrations.Migration):
@@ -16,6 +17,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        drop_views_operation(),
         migrations.AlterField(
             model_name='donationcampaign',
             name='goal_amount',

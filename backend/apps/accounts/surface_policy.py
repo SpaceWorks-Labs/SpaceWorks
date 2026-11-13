@@ -215,4 +215,8 @@ def enforce_request(user, token, request, *, grant=None, restricted_ok=False):
             require_staff_mfa(user, token, route=name)
             return
         raise PermissionDenied(gettext("A staff role in this makerspace is required."))
+    if classification in _STAFF_CLASSES:
+        # An unresolvable target (a missing event or object) refuses exactly like a resolvable
+        # one the actor does not hold, so the answer never reveals whether the id exists.
+        raise PermissionDenied(gettext("A staff role in this makerspace is required."))
     raise PermissionDenied(gettext("A delegated authority source is required."))

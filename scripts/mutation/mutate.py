@@ -243,6 +243,35 @@ def _code_index(code, out: dict):
             _code_index(c, out)
 
 
+class _Killer:
+    """Per-mutant session plugin: the first failing test id, and a flush of rows leaked by non-isolated tests."""
+
+    current_timed_out = False
+
+    def __init__(self, engine):
+        self.engine = engine
+        self.failed_id = None
+        self.timed_out = False
+        self.internal_error = False
+        self.config = None
+
+    def pytest_configure(self, config):
+        self.config = config
+
+    def pytest_runtest_logreport(self, report):
+        if report.failed and self.failed_id is None:
+            self.failed_id = report.nodeid
+
+    def pytest_internalerror(self, excrepr, excinfo):
+        if "MutantTimeout" in repr(excinfo):
+            self.timed_out = True
+        else:
+            self.internal_error = True
+
+    def pytest_runtest_logfinish(self, nodeid, location):
+        self.engine.clean_leaks(self.config)
+
+
 class Engine:
     def __init__(self, args):
         self.args = args
@@ -260,7 +289,7 @@ class Engine:
 
         items = list(session.items)
         self.items = items
-        self.by_id = {i.nodeid: i for i in items}
+        self.known = {i.nodeid for i in items}
         files = [str((BACKEND / f).resolve()) for f in self.args.files]
         mapfile = Path(self.args.out).with_name(f"map-{self.args.name.replace(chr(47), chr(95))}.json")
         cached = {}
@@ -292,7 +321,6 @@ class Engine:
         print(f"[mutation] baseline {time.time() - t0:.0f}s, {len(todo)} new tests, {len(self.baseline_failed)} failing in baseline (excluded)", flush=True)
         for nodeid in sorted(self.baseline_failed):
             print(f"[mutation] baseline-failing: {nodeid}", flush=True)
-        self.run_mutants()
         return True
 
     def clean_leaks(self, config):
@@ -395,28 +423,22 @@ class Engine:
             indent=1,
         ))
 
-    def evaluate(self, m, tree, abspath, live_cache, first):
-        self._evaluate(m, tree, abspath, live_cache, first)
+    def evaluate(self, m, tree, abspath, live_cache, first=None):
+        self._evaluate(m, tree, abspath, live_cache)
         if m.status == "killed" and "(timeout)" not in m.killed_by:
-            # A kill only counts if the killing test passes again once the mutant is removed (not a setup/ordering artefact).
-            self.mutating = True
-            try:
-                other = next(i.nodeid for i in self.items if i.nodeid != m.killed_by)
-                self.reset_state(other)
-                failed, timed_out = self.run_one(m.killed_by, other)
-            finally:
-                self.mutating = False
-            if failed or timed_out:
+            # A kill only counts if the killing test passes again once the mutant is removed (not an ordering artefact).
+            failed_id, timed_out = self.run_pytest([m.killed_by])
+            if failed_id or timed_out:
                 m.status = "unstable"
 
-    def _evaluate(self, m, tree, abspath, live_cache, first):
+    def _evaluate(self, m, tree, abspath, live_cache):
         lines = self.line_tests.get(abspath, {})
         covering = {t for ln in range(m.stmt_line, m.stmt_end + 1) for t in lines.get(ln, [])}
-        tests = [t for t in covering if t not in self.baseline_failed and t in self.by_id]
+        tests = sorted((t for t in covering if t not in self.baseline_failed and t in self.known),
+                       key=lambda t: self.durations.get(t, 0))
         if not tests:
             m.status = "no_cover"
             return
-        tests.sort(key=lambda t: self.durations.get(t, 0))
         apply_edit(m.edit, True)
         try:
             try:
@@ -450,17 +472,11 @@ class Engine:
                 return
             self.mutating = True
             try:
-                self.reset_state(tests[0])
-                for idx, nodeid in enumerate(tests):
-                    # The last item hands over to the first so the session-scoped fixtures (the database) stay up.
-                    nextid = tests[idx + 1] if idx + 1 < len(tests) else tests[0]
-                    failed, timed_out = self.run_one(nodeid, nextid if nextid != nodeid else None)
-                    if timed_out:
-                        self.reset_state()
-                    if failed or timed_out:
-                        m.status, m.killed_by = "killed", nodeid + (" (timeout)" if timed_out else "")
-                        return
-                m.status = "survived"
+                failed_id, timed_out = self.run_pytest(tests)
+                if failed_id or timed_out:
+                    m.status, m.killed_by = "killed", (failed_id or tests[0]) + (" (timeout)" if timed_out else "")
+                else:
+                    m.status = "survived"
             finally:
                 self.mutating = False
                 for f, c in originals:
@@ -468,36 +484,28 @@ class Engine:
         finally:
             apply_edit(m.edit, False)
 
-    def run_one(self, nodeid, nextid):
-        """Run one item through the full protocol; nextitem keeps pytest's setup stack consistent (None tears everything down)."""
-        item = self.by_id[nodeid]
-        nxt = self.by_id[nextid] if nextid else None
-        budget = min(self.args.max_timeout, max(self.args.min_timeout, 8 * min(self.durations.get(nodeid, 1), 30)))
-        self._mut_failed = None
+    def run_pytest(self, ids):
+        """Run `ids` in a FRESH pytest session in this same interpreter (code swaps and the warm database persist).
+
+        Re-running items inside the baseline session corrupts pytest's fixture bookkeeping; a new session per mutant does not.
+        """
+        import pytest as _pytest
+
+        killer = _Killer(self)
+        budget = min(900, max(self.args.min_timeout, 8 * sum(min(self.durations.get(t, 1), 30) for t in ids)))
         signal.signal(signal.SIGALRM, self._alarm)
         signal.setitimer(signal.ITIMER_REAL, budget)
-        timed_out = False
         try:
-            item.ihook.pytest_runtest_protocol(item=item, nextitem=nxt)
-        except MutantTimeout:
-            timed_out = True
+            _pytest.main(["-q", "-x", "--tb=no", "--no-header", "-p", "no:cacheprovider", "--disable-warnings", *ids], plugins=[killer])
+        except BaseException:  # noqa: BLE001 - a MutantTimeout surfaces here when pytest does not swallow it
+            killer.timed_out = True
         finally:
             signal.setitimer(signal.ITIMER_REAL, 0)
-        self.clean_leaks(item.config)
-        return bool(self._mut_failed), timed_out
-
-    def reset_state(self, target=None):
-        """Pop everything the next item does not need off pytest's setup stack ("previous item was not torn down properly").
-
-        With a target, the session-scoped fixtures (the database) are kept; without one, everything is torn down.
-        """
-        try:
-            self.items[0].session._setupstate.teardown_exact(self.by_id[target] if target else None)
-        except BaseException:  # noqa: BLE001
-            pass
+        return killer.failed_id, killer.timed_out or killer.internal_error
 
     @staticmethod
     def _alarm(signum, frame):
+        _Killer.current_timed_out = True
         raise MutantTimeout()
 
 
@@ -553,7 +561,10 @@ def main():
         return 0
     tests = select_tests(args)
     print(f"[mutation] {len(tests)} test files selected", flush=True)
-    return pytest.main(["-q", "-p", "no:cacheprovider", *tests], plugins=[Engine(args)])
+    engine = Engine(args)
+    rc = pytest.main(["-q", "-p", "no:cacheprovider", *tests], plugins=[engine])
+    engine.run_mutants()
+    return 0 if not any(m.status != "killed" for m in engine.results) else 1
 
 
 if __name__ == "__main__":

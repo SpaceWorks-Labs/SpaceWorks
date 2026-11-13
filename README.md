@@ -30,12 +30,28 @@ audit scope. You install only the areas you use, and your members' data stays in
 Space Works started in the **TinkerSpace Kochi** community; run it for yours, fork it, or adapt it
 to the way your workshop works.
 
-<!--
-  SCREENSHOT GALLERY PLACEHOLDER — filled in the final phase of release 2.
-  Add "## A look around" with a two-column <table> of docs/readme/screens/*.webp images, each with
-  alt text and a one-line bold caption (public inventory, staff dashboard, handover with evidence,
-  machine queue, events, bookings, member area, dark mode). No image tags until the files exist.
--->
+## A look around
+
+Seeded demo data only, shown as it looks in your browser's colour scheme.
+
+<table>
+<tr>
+<td width="50%" valign="top"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/screens/inventory-dark.webp"><img src="docs/readme/screens/inventory-light.webp" alt="The public inventory page of a makerspace: category chips, a search box, item cards with availability and a request panel." width="480"></picture><br><b>Browse a space's tools and borrow them online</b></td>
+<td width="50%" valign="top"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/screens/dashboard-dark.webp"><img src="docs/readme/screens/dashboard-light.webp" alt="The staff dashboard: a short list of what is waiting on the manager, such as unpaid payments, borrow requests and overdue loans." width="480"></picture><br><b>See what needs you today on the staff dashboard</b></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/screens/handover-dark.webp"><img src="docs/readme/screens/handover-light.webp" alt="A returned loan open in the staff console on its Evidence tab, showing the issue photo taken at handover." width="480"></picture><br><b>Every handover keeps its photo, scan and remark</b></td>
+<td width="50%" valign="top"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/screens/machines-dark.webp"><img src="docs/readme/screens/machines-light.webp" alt="The machine jobs queue listing four jobs that are waiting for review, each with a pending badge." width="480"></picture><br><b>Work through the machine job queue</b></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/screens/events-dark.webp"><img src="docs/readme/screens/events-light.webp" alt="The staff events list with dates, status badges and how many people are going to each event." width="480"></picture><br><b>Run events from first draft to check-in</b></td>
+<td width="50%" valign="top"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/screens/bookings-dark.webp"><img src="docs/readme/screens/bookings-light.webp" alt="The staff bookings page with a booking request waiting for approval and a utilisation report below it." width="480"></picture><br><b>Approve room and bench bookings</b></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/screens/member-dark.webp"><img src="docs/readme/screens/member-light.webp" alt="A member's home screen with loans, overdue items, bookings and membership status." width="480"></picture><br><b>Give members one place for loans, bookings and membership</b></td>
+<td width="50%" valign="top"><img src="docs/readme/screens/landing-dark.webp" alt="The Space Works landing page in dark mode with the headline Run the space, not spreadsheets." width="480"><br><b>Light or dark, the whole product follows your theme</b></td>
+</tr>
+</table>
 
 ## Quickstart
 

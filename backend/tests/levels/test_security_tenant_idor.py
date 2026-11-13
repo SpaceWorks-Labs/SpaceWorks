@@ -38,7 +38,12 @@ def _empty_scoped_list(response):
     """A 200 for an outsider is only acceptable when the queryset scoped to them is empty."""
     if response.status_code != 200:
         return False
-    data = response.json()
+    if not response.content.strip():
+        return True  # nothing returned
+    try:
+        data = response.json()
+    except ValueError:
+        return False
     rows = data.get("results") if isinstance(data, dict) else data
     return rows == [] or (isinstance(data, dict) and data.get("count") == 0)
 WRITES = ("post", "patch", "delete")
@@ -103,11 +108,9 @@ def test_another_makerspace_answers_exactly_like_one_that_does_not_exist(tenants
     # these routes, because `require_module` resolves the space before RBAC runs. It reveals only that an id
     # exists (spaces are listed publicly), never data. Ratchet: fix by authorising before the module gate.
     assert len(distinguishable) <= MAX_DISTINGUISHABLE, (
-        f"{len(distinguishable)} routes tell a real other space from a missing one (ceiling {MAX_DISTINGUISHABLE}):
-"
-        + "
-".join(distinguishable[-30:]))
-    assert not leaks, f"{len(leaks)} routes reveal that another makerspace exists:\n" + "\n".join(leaks[:60])
+        f"{len(distinguishable)} routes tell a real other space from a missing one (ceiling {MAX_DISTINGUISHABLE}):\n"
+        + "\n".join(distinguishable[-30:]))
+    assert not leaks, f"{len(leaks)} routes leak data from another makerspace:\n" + "\n".join(leaks[:60])
 
 
 # --- resource-level IDOR --------------------------------------------------------------------------------

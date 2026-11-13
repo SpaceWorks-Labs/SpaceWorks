@@ -52,10 +52,16 @@ class BookingAdminSerializer(PaymentSummaryMixin, serializers.ModelSerializer):
 
     @extend_schema_field(BookingDepartureSerializer(many=True))
     def get_departures(self, obj):
-        return BookingDepartureSerializer(obj.departure_events.select_related("actor"), many=True).data
+        # The staff list prefetches these (`departure_events` with actor); the single-row paths fall back to a query.
+        prefetched = getattr(obj, "_prefetched_objects_cache", {}).get("departure_events")
+        events = prefetched if prefetched is not None else obj.departure_events.select_related("actor")
+        return BookingDepartureSerializer(events, many=True).data
 
     @extend_schema_field(serializers.IntegerField(allow_null=True))
     def get_open_issue_id(self, obj):
+        prefetched = getattr(obj, "_prefetched_objects_cache", {}).get("issues")
+        if prefetched is not None:  # list view: newest first, same order as the query below
+            return next((issue.pk for issue in prefetched if issue.resolved_at is None), None)
         return obj.issues.filter(resolved_at__isnull=True).values_list("pk", flat=True).first()
 
     @extend_schema_field(serializers.DateTimeField(allow_null=True))

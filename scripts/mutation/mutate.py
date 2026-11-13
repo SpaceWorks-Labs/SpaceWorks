@@ -256,26 +256,42 @@ class Engine:
         self.items = items
         self.by_id = {i.nodeid: i for i in items}
         files = [str((BACKEND / f).resolve()) for f in self.args.files]
+        mapfile = Path(self.args.out).with_name(f"map-{self.args.name.replace(chr(47), chr(95))}.json")
+        cached = {}
+        if mapfile.exists() and not self.args.rebuild:
+            cached = json.loads(mapfile.read_text())
+            self.durations.update(cached["durations"])
+            self.baseline_failed.update(cached["failed"])
+            self.line_tests = {f: {int(ln): ids for ln, ids in lines.items()} for f, lines in cached["lines"].items()}
+            print(f"[mutation] reusing coverage map for {len(cached['durations'])} tests", flush=True)
+        todo = [i for i in items if i.nodeid not in self.durations]
         cov = coverage.Coverage(include=files, data_file=None, config_file=False)
         cov.start()
         t0 = time.time()
-        for n, item in enumerate(items):
-            nxt = items[n + 1] if n + 1 < len(items) else None
+        for n, item in enumerate(todo):
+            nxt = todo[n + 1] if n + 1 < len(todo) else None
             cov.switch_context(item.nodeid)
             s = time.time()
             item.config.hook.pytest_runtest_protocol(item=item, nextitem=nxt)
             self.durations[item.nodeid] = time.time() - s
+            if n % 50 == 0:
+                print(f"[mutation] baseline {n + 1}/{len(todo)}", flush=True)
         cov.stop()
         data = cov.get_data()
         slow = sorted(self.durations.items(), key=lambda kv: -kv[1])[:5]
         print("[mutation] slowest baseline tests: " + "; ".join(f"{k} {v:.0f}s" for k, v in slow), flush=True)
-        print(f"[mutation] baseline {time.time() - t0:.0f}s, {len(items)} tests, {len(self.baseline_failed)} failing in baseline (excluded)", flush=True)
+        print(f"[mutation] baseline {time.time() - t0:.0f}s, {len(todo)} new tests, {len(self.baseline_failed)} failing in baseline (excluded)", flush=True)
         for nodeid in sorted(self.baseline_failed):
             print(f"[mutation] baseline-failing: {nodeid}", flush=True)
         measured = set(data.measured_files())
         for f in files:
             if f in measured:
-                self.line_tests[f] = {ln: [c for c in ctxs if c] for ln, ctxs in data.contexts_by_lineno(f).items()}
+                merged = self.line_tests.setdefault(f, {})
+                for ln, ctxs in data.contexts_by_lineno(f).items():
+                    merged.setdefault(ln, [])
+                    merged[ln] = sorted(set(merged[ln]) | {c for c in ctxs if c})
+        mapfile.parent.mkdir(parents=True, exist_ok=True)
+        mapfile.write_text(json.dumps({"durations": self.durations, "failed": sorted(self.baseline_failed), "lines": self.line_tests}))
         self.run_mutants()
         return True
 
@@ -317,8 +333,8 @@ class Engine:
             tree, abspath = trees[m.file]
             self.evaluate(m, tree, abspath, live_cache, first)
             self.results.append(m)
-            if mi % 25 == 0:
-                print(f"[mutation] {mi + 1}/{len(all_mutants)} ({self.tally()})", flush=True)
+            print(f"[mutation] {mi + 1}/{len(all_mutants)} {m.status} {m.key} ({self.tally()})", flush=True)
+            if mi % 10 == 0:
                 self.dump()
         self.dump()
         print(f"[mutation] FINAL {self.tally()}", flush=True)
@@ -382,7 +398,7 @@ class Engine:
             try:
                 for nodeid in tests:
                     item = self.by_id[nodeid]
-                    budget = max(self.args.min_timeout, 8 * self.durations.get(nodeid, 1))
+                    budget = min(self.args.max_timeout, max(self.args.min_timeout, 8 * min(self.durations.get(nodeid, 1), 30)))
                     self._mut_failed = None
                     signal.signal(signal.SIGALRM, self._alarm)
                     signal.setitimer(signal.ITIMER_REAL, budget)
@@ -440,7 +456,9 @@ def main():
     ap.add_argument("--only", default="", help="JSON list of mutant keys to re-evaluate")
     ap.add_argument("--shard", default="", help="i/n")
     ap.add_argument("--out", default="")
-    ap.add_argument("--min-timeout", type=float, default=60)
+    ap.add_argument("--min-timeout", type=float, default=20)
+    ap.add_argument("--max-timeout", type=float, default=120)
+    ap.add_argument("--rebuild", action="store_true", help="ignore the cached coverage map")
     ap.add_argument("--list-only", action="store_true")
     args = ap.parse_args()
     args.out = args.out or str(BACKEND.parent / "mutation-results" / f"{args.name.replace(chr(47), chr(95))}.json")

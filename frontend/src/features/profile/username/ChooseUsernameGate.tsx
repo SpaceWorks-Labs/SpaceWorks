@@ -35,7 +35,7 @@ export function ChooseUsernameGate() {
   });
   const [review, setReview] = useState(takeUsernameReview);
   useEffect(() => { if (signedIn) setReview(takeUsernameReview()); }, [signedIn]);
-  if (!signedIn || !me.data) return null;
+  if (!signedIn || !me.data || me.error) return null;
   if (me.data.handle_required) return <Step me={me.data} blocking />;
   if (review && me.data.handle) return <Step me={me.data} blocking={false} onDone={() => { clearUsernameReview(); setReview(false); }} />;
   return null;

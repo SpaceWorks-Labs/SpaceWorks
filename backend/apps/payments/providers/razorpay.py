@@ -26,6 +26,7 @@ from apps.payments.providers.base import (
     CheckoutRequest,
     CheckoutResult,
     PaymentsUnavailable,
+    ProviderOutcomeUnknown,
     RefundRequest,
     RefundResult,
     WebhookEvent,
@@ -68,11 +69,10 @@ class RazorpayRequestError(PaymentsUnavailable):
         )
 
 
-class RazorpayUnreadableResponse(PaymentsUnavailable):
-    """A 2xx whose body is not JSON. `outcome_unknown` keeps a refund PENDING and reserved."""
+class RazorpayUnreadableResponse(ProviderOutcomeUnknown):
+    """An unusable 2xx answer. `outcome_unknown` keeps a refund PENDING and reserved."""
 
     status = 200
-    outcome_unknown = True
 
     def __init__(self):
         super().__init__("Razorpay sent an unreadable response.")
@@ -126,7 +126,10 @@ class RazorpayProvider:
             logger.warning("razorpay_unreachable", extra={"path": path})
             raise PaymentsUnavailable("Razorpay could not be reached.") from exc
         try:
-            return json.loads(raw.decode() or "{}")
+            result = json.loads(raw.decode())
+            if not isinstance(result, dict):
+                raise ValueError("Expected an object.")
+            return result
         except ValueError:
             # Razorpay answered 2xx, so it may well have acted (PAY-REVIEW 0.12.0): a refund whose
             # answer we cannot read is an UNKNOWN outcome, never a refusal that frees its balance.
@@ -228,11 +231,11 @@ class RazorpayProvider:
             idempotency_key=request.idempotency_key or None,
         )
         refund_id = result.get("id")
-        if not refund_id:
-            raise PaymentsUnavailable("Razorpay did not return a refund id.")
+        if not isinstance(refund_id, str) or not refund_id.strip():
+            raise RazorpayUnreadableResponse()
         return RefundResult(
             refund_id=refund_id,
-            status=REFUND_STATUSES.get(result.get("status") or "", "pending"),
+            status=REFUND_STATUSES.get(str(result.get("status") or ""), "pending"),
         )
 
     def verify_webhook(self, source, *, payload: bytes, headers) -> WebhookEvent:

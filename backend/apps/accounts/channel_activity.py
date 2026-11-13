@@ -13,6 +13,7 @@ from zoneinfo import ZoneInfo
 
 from django.conf import settings
 from django.core.cache import cache
+from django.db import transaction
 from django.utils import timezone
 from django.utils.crypto import salted_hmac
 
@@ -78,19 +79,25 @@ def _record_web_session_day(user, token):
     marker = str(token.get("sid") or f"legacy:{user.pk}")
     digest = salted_hmac("web-session-activity", marker).hexdigest()[:32]
     now = timezone.now()
-    key = f"web-activity:{digest}:{now:%Y%m%d%H}"
-    try:
-        if cache.get(key):
-            return
-    except Exception:  # noqa: BLE001
-        logger.warning("web_activity_cache_unavailable")
     from apps.makerspaces.models import Makerspace
     ids = _active_space_ids(user)
     zones = dict(Makerspace.objects.filter(pk__in=ids).values_list("pk", "timezone")) if ids else {}
     for space_id in ids or [None]:
         day = timezone.localdate(now, ZoneInfo(zones.get(space_id) or settings.TIME_ZONE))
+        key = f"web-activity:{digest}:{space_id}:{day.isoformat()}"
+        try:
+            if cache.get(key):
+                continue
+        except Exception:  # noqa: BLE001
+            logger.warning("web_activity_cache_unavailable")
         WebSessionActivityDay.objects.get_or_create(
             user=user, session_hash=digest, makerspace_id=space_id, local_day=day)
+        # A local midnight may fall inside a UTC hour. Cache the actual row identity,
+        # after commit so a rolled-back request cannot suppress the next observation.
+        transaction.on_commit(lambda key=key: _remember_web_day(key))
+
+
+def _remember_web_day(key):
     try:
         cache.set(key, True, 3600)
     except Exception:  # noqa: BLE001

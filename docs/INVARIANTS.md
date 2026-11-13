@@ -2062,8 +2062,9 @@ unpinned; each now has a test under `tests/payments/`:
 - **The gateway poll forgets a hosted page only when nothing can still pay it unmatched**
   (PAY-REVIEW 0.12.0). `_abandon` clears a page's ids when `_expire_checkout_best_effort` returns
   True (provider confirmed closed; Razorpay `expire_checkout` reads the link back after a refused
-  cancel) or, for a Stripe session whose debit is still processing, after storing its
-  PaymentIntent so `async_payment_succeeded` still matches. Otherwise the row is retried next sweep.
+  cancel). A Stripe debit still processing keeps both its hosted page and PaymentIntent:
+  checkout must not create a second debit that could overwrite the first settlement anchor.
+  An unconfirmed attempt is retried next sweep.
 
 **Native clients use attested device grants, never browser-token shortcuts.** Device login starts with a
 short-lived attestation challenge and creates a revocable `DeviceGrant`; access tokens carry

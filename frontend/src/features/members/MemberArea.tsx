@@ -1,4 +1,5 @@
 import { MemberHistoryLinks } from "./MemberHistoryLinks";
+import { RestrictedPayments, isRestrictedAccount } from "./RestrictedPayments";
 import { t } from "@lingui/core/macro";
 import { MemberUsagePanel } from "./MemberUsagePanel";
 import { MemberIncidentReports } from "../incidents/MemberIncidentReports";
@@ -180,6 +181,7 @@ export function MemberArea() {
   // hung off a membership, so every one of its endpoints refuses with 400 without it.
 
   if (restoring) return <CenteredCardLayout title={t`Your makerspace access`} body={t`Restoring session...`} primary={{ label: t`Back to home`, href: slug ? `/m/${slug}` : "/" }} state={{ status: "loading" }} />;
+  if (isRestrictedAccount(memberships.error)) return <RestrictedPayments makerspaceId={makerspaceId} name={spaceName} />;
   if (claimSession && bootstrap.data) return <div style={brandStyle}><MemberClaimSession slug={resolvedSlug} makerspaceId={makerspaceId} modules={bootstrap.data.modules} geofenceEnabled={bootstrap.data.makerspace.geofence_enabled} name={spaceName} logoUrl={spaceLogo} /></div>;
   if (showSignIn) return <div style={brandStyle}><MemberAuthPanel tenantBrand={bootstrap.data ? { name: spaceName, logo: spaceLogo } : undefined} makerspaceSlug={resolvedSlug} onAuthenticated={() => { const target = afterSignIn(); if (target) { window.location.assign(target); return; } setShowSignIn(false); void client.invalidateQueries({ queryKey: ["member"] }); }} /><div className="px-5 pb-5"><SupportContact branding={bootstrap.data?.branding} /></div></div>;
 

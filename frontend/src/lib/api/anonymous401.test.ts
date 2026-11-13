@@ -64,3 +64,15 @@ it("explicit logout still clears private cache even with no current access JWT",
   await logout("person");
   expect(queryClientForContext("person").getQueryData(["private"])).toBeUndefined();
 });
+
+it.each(["account_restricted", "account_suspended"])("keeps a %s session usable for its own charges", async code => {
+  setAccessToken(access, "person");
+  const fetcher = vi.fn(async (url: string) => url.endsWith("/payments")
+    ? json([{ id: 4 }]) : json({ detail: "Limited account", code }, 401));
+  vi.stubGlobal("fetch", fetcher);
+  await expect(memberRequest("/memberships/me")).rejects.toMatchObject({ status: 401, code });
+  expect(fetcher).toHaveBeenCalledTimes(1);
+  expect(getAccessToken("person")).toBe(access);
+  await expect(memberRequest("/member/makerspaces/1/payments")).resolves.toEqual([{ id: 4 }]);
+  expect(fetcher.mock.calls.some(([url]) => url.endsWith("/auth/refresh"))).toBe(false);
+});

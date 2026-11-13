@@ -13,6 +13,7 @@ from apps.payments.providers.base import (
     CheckoutRequest,
     CheckoutResult,
     PaymentsUnavailable,
+    ProviderOutcomeUnknown,
     RefundRequest,
     RefundResult,
     WebhookEvent,
@@ -94,11 +95,11 @@ class StripeProvider:
         except Exception as exc:
             raise PaymentsUnavailable("Stripe rejected the refund.") from exc
         refund_id = _value(refund, "id")
-        if not refund_id:
-            raise PaymentsUnavailable("Stripe did not return a refund id.")
+        if not isinstance(refund_id, str) or not refund_id.strip():
+            raise ProviderOutcomeUnknown("Stripe did not return a refund id.")
         return RefundResult(
             refund_id=refund_id,
-            status=REFUND_STATUSES.get(_value(refund, "status") or "", "pending"),
+            status=REFUND_STATUSES.get(str(_value(refund, "status") or ""), "pending"),
         )
 
     def verify_webhook(self, source, *, payload: bytes, headers) -> WebhookEvent:

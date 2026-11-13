@@ -124,6 +124,8 @@ def build_platform_usage(makerspace_id=None, *, platform_context=None, limit=Non
     visible_mobile = [s.pk for s in spaces if module_enabled(s, "mobile")]
     from django.db.models import Q
     activity = DeviceActivityDay.objects.filter(Q(makerspace_id__in=visible_mobile) | Q(makerspace__isnull=True))
+    if not module_available("mobile"):
+        activity = activity.none()
     if date_range:
         if date_range[0]:
             activity = activity.filter(local_day__gte=date_range[0].date())

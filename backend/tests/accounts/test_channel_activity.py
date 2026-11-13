@@ -1,6 +1,7 @@
 """Channel analytics recording: web session-days, per-channel call counts, the flush and the purge."""
 
 from types import SimpleNamespace
+from datetime import datetime, timezone as datetime_timezone
 
 import pytest
 from django.core.cache import cache
@@ -194,3 +195,19 @@ def test_successful_key_flow_posts_count_per_channel_and_failures_and_reads_do_n
     flows = {(r.channel, r.area): r.count for r in ChannelUsageDay.objects.filter(area__startswith="flow:")}
     assert flows == {("web", "flow:request_submitted"): 1, ("ios", "flow:request_submitted"): 1,
                      ("android", "flow:booking_made"): 1}
+
+
+def test_web_activity_cache_tracks_local_midnight_inside_one_utc_hour(monkeypatch, django_capture_on_commit_callbacks):
+    from apps.accounts.channel_activity import _record_web_session_day
+    space = make_space("prod-delta-local-midnight")
+    space.timezone = "Asia/Kolkata"
+    space.save(update_fields=["timezone"])
+    user = make_member("prod-delta-local-midnight-user", space)
+    before = datetime(2026, 11, 12, 18, 29, tzinfo=datetime_timezone.utc)
+    after = datetime(2026, 11, 12, 18, 31, tzinfo=datetime_timezone.utc)
+    for at in (before, after):
+        monkeypatch.setattr("apps.accounts.channel_activity.timezone.now", lambda at=at: at)
+        with django_capture_on_commit_callbacks(execute=True):
+            _record_web_session_day(user, {"sid": "same-session"})
+    assert set(WebSessionActivityDay.objects.filter(user=user).values_list("local_day", flat=True)) == {
+        before.date(), after.date().replace(day=13)}

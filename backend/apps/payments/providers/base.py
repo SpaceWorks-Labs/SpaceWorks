@@ -30,6 +30,12 @@ class PaymentsUnavailable(Exception):
     """The provider cannot be reached or is not configured. Never fatal to a domain action."""
 
 
+class ProviderOutcomeUnknown(PaymentsUnavailable):
+    """The provider may have acted; keep refund money reserved until reconciled."""
+
+    outcome_unknown = True
+
+
 class WebhookVerificationError(Exception):
     """The request did not carry a signature this provider accepts.
 

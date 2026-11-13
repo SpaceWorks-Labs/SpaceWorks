@@ -17,6 +17,7 @@ from django.utils.translation import gettext
 from rest_framework.exceptions import PermissionDenied
 
 OWN_CHARGE_ROUTES = frozenset({
+    "member-my-usage",
     "member-payment-history",
     "member-payment-checkout",
     "member-payment-mobile-intent",

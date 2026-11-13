@@ -73,6 +73,16 @@ describe("ChooseUsernameGate (decision 308)", () => {
     expect(memberRequest).not.toHaveBeenCalled();
     expect(screen.queryByRole("dialog")).toBeNull();
   });
+
+  it("removes a cached blocking dialog when the account becomes restricted", async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(<QueryClientProvider client={client}><ChooseUsernameGate /></QueryClientProvider>);
+    expect(await screen.findByRole("dialog")).toBeVisible();
+    const { StructuredApiError } = await import("../../../lib/api");
+    vi.mocked(memberRequest).mockRejectedValue(new StructuredApiError(401, { code: "account_restricted" }));
+    await client.invalidateQueries();
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+  });
 });
 
 describe("after a social sign-up", () => {

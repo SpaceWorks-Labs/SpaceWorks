@@ -50,13 +50,16 @@ export function getTenantPublishableKey(slug: string) {
 
 async function canRefreshAfterUnauthorized(path: string, response: Response) {
   if (["/auth/login", "/auth/refresh", "/auth/logout"].includes(path)) return false;
+  // A limited account still has a live session for its own charges (260/361).
+  // Refreshing this refusal would repeat it and then erase that payment session.
+  const body = await response.clone().json().catch(() => null) as { code?: string } | null;
+  if (["account_restricted", "account_suspended"].includes(body?.code ?? "")) return false;
   // Enrolment is required, not a dead session: never sign the person out for it.
   if (await requiresMfaEnrollment(response)) return false;
   const factorRoute = path.startsWith("/auth/reauth") || /^\/auth\/mfa(?:\/|$)/.test(path);
   if (!factorRoute) return true;
   // SimpleJWT rejects expired access tokens before the factor handler runs.
   // Factor failures also return 401, but refreshing cannot fix those or end the session.
-  const body = await response.clone().json().catch(() => null) as { code?: string } | null;
   return body?.code === "token_not_valid";
 }
 

@@ -16,8 +16,9 @@ const mount = () => render(<QueryClientProvider client={new QueryClient()}>
 
 describe("PlatformChannelUsage", () => {
   it("asks the platform channel-usage report and drills into one space", async () => {
-    staffRequest.mockResolvedValue({ meta: { definition: "Counts only." }, typed_rows: [
+    staffRequest.mockResolvedValueOnce({ meta: { definition: "Counts only.", space_ids: [1, 2] }, typed_rows: [
       row(1, "web", 6), row(1, "ios", 2), row(2, "android", 9), row(null, "web", 1)] });
+    staffRequest.mockResolvedValue({ typed_rows: [row(2, "android", 12)] });
     mount();
     const picker = await screen.findByLabelText("Drill into a space");
     expect(staffRequest.mock.calls[0][0]).toContain("/admin/platform/analytics/platform-channel-usage?");
@@ -25,9 +26,22 @@ describe("PlatformChannelUsage", () => {
     expect(names).toEqual(["Every space", "Forge", "Loft"]);
     fireEvent.change(picker, { target: { value: "2" } });
     expect((picker as HTMLSelectElement).value).toBe("2");
-    const shares = screen.getByRole("region", { name: "Share of active sessions by channel" });
+    const shares = await screen.findByRole("region", { name: "Share of active sessions by channel" });
     await waitFor(() => expect(shares.textContent).toContain("100%"));
     expect(shares.textContent).toContain("Android");
+    expect(shares.textContent).toContain("12 active session-days");
+    expect(staffRequest.mock.calls[1][0]).toContain("/admin/platform/analytics/makerspaces/2/analytics/channel-usage?");
+  });
+
+  it("offers a space whose shared sessions were attributed elsewhere in the platform total", async () => {
+    staffRequest.mockResolvedValueOnce({ meta: { space_ids: [1, 2] }, typed_rows: [row(1, "web", 1)] });
+    staffRequest.mockResolvedValue({ typed_rows: [row(2, "web", 1)] });
+    mount();
+    const picker = await screen.findByLabelText("Drill into a space");
+    expect(picker.querySelector('option[value="2"]')).toHaveTextContent("Loft");
+    fireEvent.change(picker, { target: { value: "2" } });
+    expect(await screen.findByText("1 active session-days")).toBeVisible();
+    await waitFor(() => expect(staffRequest).toHaveBeenCalledTimes(2));
   });
 
   it("offers no drill-down when the report has no rows", async () => {

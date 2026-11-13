@@ -60,9 +60,12 @@ class _Unreadable:
         return b"<html>gateway hiccup</html>"
 
 
-def test_unreadable_refund_answer_keeps_the_refund_pending_and_reserved(monkeypatch):
+@pytest.mark.parametrize("body", [b"<html>gateway hiccup</html>", b"", b"{}", b"null", b"[]",
+                                 b'{"status":"processed"}', b'{"id":42}', b'{"id":" "}'])
+def test_unreadable_refund_answer_keeps_the_refund_pending_and_reserved(monkeypatch, body):
     _space, staff, payment = _paid_razorpay_deposit("prv-unreadable", external_id="pay_prv_unreadable")
     monkeypatch.setattr("urllib.request.urlopen", lambda *args, **kwargs: _Unreadable())
+    monkeypatch.setattr(_Unreadable, "read", lambda self: body)
     refund = refund_payment(payment, amount="100.00", reason="", actor=staff)
     refund.refresh_from_db()
     assert refund.status == Refund.Status.PENDING and refund.external_refund_id is None
@@ -77,6 +80,41 @@ def test_an_exception_carrying_a_2xx_is_an_unknown_outcome():
 
     assert outcome_unknown(RazorpayUnreadableResponse()) is True
     assert outcome_unknown(StripeApiError("Invalid response body from API")) is True
+
+
+@pytest.mark.parametrize("body", [{}, None, [], {"status": "succeeded"}, {"id": 42}, {"id": " "}])
+def test_unusable_stripe_refund_answer_keeps_the_balance_reserved(monkeypatch, body):
+    from tests.payments.test_refunds import paid_deposit, stripe_space
+
+    space, staff = stripe_space("prod-delta-stripe-unknown", monkeypatch, [body])
+    payment = paid_deposit(space, staff)
+    refund = refund_payment(payment, amount="10.00", reason="", actor=staff)
+    refund.refresh_from_db()
+    assert refund.status == Refund.Status.PENDING and refund.external_refund_id is None
+    assert Refund.counted_total(Payment.objects.get(pk=payment.pk)) == Decimal("10.00")
+    assert AuditLog.objects.filter(action="payment.refund_requested", meta__outcome_unknown=True).exists()
+    assert not AuditLog.objects.filter(action="payment.refund_failed").exists()
+
+
+@pytest.mark.parametrize("provider", ["stripe", "razorpay"])
+@pytest.mark.parametrize("status", [["processed"], {"status": "succeeded"}, 42])
+def test_unexpected_refund_status_shape_retains_the_provider_id_and_reserved_balance(monkeypatch, provider, status):
+    result = {"id": "re_prod_delta_shape", "status": status}
+    if provider == "stripe":
+        from tests.payments.test_refunds import paid_deposit, stripe_space
+        space, staff = stripe_space("prod-delta-stripe-status", monkeypatch, [result])
+        payment = paid_deposit(space, staff)
+        amount = "10.00"
+    else:
+        _space, staff, payment = _paid_razorpay_deposit("prod-delta-rzp-status", external_id="pay_prod_delta_status")
+        monkeypatch.setattr("urllib.request.urlopen", lambda *args, **kwargs: _Unreadable())
+        monkeypatch.setattr(_Unreadable, "read", lambda self: json.dumps(result).encode())
+        amount = "100.00"
+    refund = refund_payment(payment, amount=amount, reason="", actor=staff)
+    refund.refresh_from_db()
+    assert refund.status == Refund.Status.PENDING and refund.external_refund_id == result["id"]
+    assert Refund.counted_total(Payment.objects.get(pk=payment.pk)) == Decimal(amount)
+    assert not AuditLog.objects.filter(action="payment.refund_failed").exists()
 
 
 # --- A Stripe checkout is paid only when it says "paid" ---------------------------------

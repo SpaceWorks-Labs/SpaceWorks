@@ -24,7 +24,7 @@ export function SelectedReportPreview({ report, analyticsBase, scopeKey, start, 
     ["selected-report", scopeKey, report?.key, start, end, grain, months, filters],
     `${analyticsBase}/${report?.key}?${params}`, Boolean(report && report.available !== false && report.previewable !== false && !report.summary),
   );
-  if (!report || report.summary || report.previewable === false) return null;
+  if (!report || report.available === false || report.summary || report.previewable === false) return null;
   const rows = result.data?.rows ?? [];
   const indexes = columns.length && rows[0] ? columns.map((column) => rows[0].indexOf(column)).filter((index) => index >= 0) : [];
   const visible = indexes.length ? { rows: rows.map((row) => indexes.map((index) => row[index])) } : result.data;

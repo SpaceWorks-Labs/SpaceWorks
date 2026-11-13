@@ -40,6 +40,10 @@ def assert_handle_chosen(request, user):
 
     if not is_person(user) or user.is_walk_in or getattr(user, "account_kind", "") != "member":
         return
+    from apps.accounts.restricted_admission import restricted_route_admitted
+    if restricted_route_admitted(user, request):
+        # A restricted person cannot choose a handle, but must still settle their debt.
+        return
     if getattr(request.resolver_match, "url_name", None) in ALLOWED_URL_NAMES:
         return
     from .public_profile_handles import has_handle, in_release_cooldown

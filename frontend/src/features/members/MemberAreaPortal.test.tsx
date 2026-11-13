@@ -51,6 +51,22 @@ function show(tab: string, base = "/m/lab/member") {
 }
 beforeEach(() => { vi.clearAllMocks(); });
 
+it.each(["account_restricted", "account_suspended"])("shows only own payments for %s even from Home", async code => {
+  setup([], false);
+  const { StructuredApiError } = await import("../../lib/api");
+  const previous = vi.mocked(memberRequest).getMockImplementation()!;
+  vi.mocked(memberRequest).mockImplementation((path, options) => path === "/memberships/me"
+    ? Promise.reject(new StructuredApiError(401, { detail: "Limited account", code })) : previous(path, options));
+  const view = show("overview");
+  expect(await screen.findByText("Your account is restricted. You can still view and pay your own charges. Contact the space for help with your access.")).toBeVisible();
+  expect(await screen.findByText("Loan deposit")).toBeVisible();
+  expect(screen.getByRole("button", { name: "Sign out" })).toBeVisible();
+  expect(screen.queryByRole("button", { name: "Sign in to your account" })).toBeNull();
+  expect(screen.queryByRole("navigation", { name: "Member portal" })).toBeNull();
+  expect(screen.queryByText("Profile controls")).toBeNull();
+  await expectNoA11yViolations(view.container);
+});
+
 it.each([["loans", "Drill loan"], ["bookings", "Booking controls for lab"], ["events", "My workshop"]])("reuses only the selected %s activity section", async (tab, content) => {
   // A space that lends sends `loans.enabled`; the Loans tab follows it (role-screen audit 0.12.0).
   setup(modules, true, ["loans.enabled"]); show(tab);

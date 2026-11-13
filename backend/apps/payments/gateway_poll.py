@@ -112,10 +112,9 @@ def _settle(payment_id, result):
 
 def _abandon(payment_id, *, intent_id=""):
     """Stop polling a week-old attempt. A hosted page's ids are forgotten only when nothing can
-    still take money through it unmatched (PAY-REVIEW 0.12.0): the provider confirmed it closed,
-    or -- for a Stripe session whose debit is still processing (SEPA/ACH can outlast a week) --
-    its PaymentIntent is kept on the row, so `async_payment_succeeded` still finds the charge.
-    Otherwise the row is left as it is and the next sweep tries again."""
+    still take money through it unmatched (PAY-REVIEW 0.12.0): the provider confirmed it closed.
+    A processing debit keeps BOTH its page and intent so checkout cannot create a second
+    payable attempt and replace the first debit's settlement anchor. Retry next sweep."""
     from apps.payments.checkout_expiry import forget_closed_checkout
     from apps.payments.reconciliation_rail import _expire_checkout_best_effort
 
@@ -133,12 +132,12 @@ def _abandon(payment_id, *, intent_id=""):
         else:
             closed = _expire_checkout_best_effort(payment)
             keep_intent = bool(intent_id) and payment.provider == Payment.Provider.STRIPE
-            if not closed and not keep_intent:
-                return False
-            fields = forget_closed_checkout(payment)
             if keep_intent and not payment.stripe_payment_intent_id:
                 payment.stripe_payment_intent_id = intent_id
-                fields.append("stripe_payment_intent_id")
+                payment.save(update_fields=["stripe_payment_intent_id", "updated_at"])
+            if not closed:
+                return False
+            fields = forget_closed_checkout(payment)
             payment.save(update_fields=[*fields, "updated_at"])
         audit.record(None, "payment.checkout_abandoned", makerspace=payment.makerspace, target=payment,
                      meta={"provider": payment.provider})

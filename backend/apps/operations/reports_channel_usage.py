@@ -25,6 +25,7 @@ from apps.makerspaces.platform import module_enabled
 from apps.makerspaces.servability import servable_queryset
 from apps.operations.platform_scope import platform_analytics_spaces, require_platform_context
 from apps.operations.report_fields_channels import CHANNEL_USAGE_FIELDS as FIELDS
+from apps.operations.report_channel_sources import visible_area
 from apps.operations.report_types import ReportNotFound, ReportResult
 from apps.operations.reports_common import limited
 from apps.operations.reports_j_common import area_spaces, calendar_range, rate
@@ -76,7 +77,7 @@ def collect(spaces, *, include_null, date_range, grain):
     for row in web.order_by("local_day", "makerspace_id").values("local_day", "session_hash", "user_id", "makerspace_id").iterator():
         sessions.setdefault(("web", row["local_day"], row["session_hash"]), row["makerspace_id"])
         people.setdefault(("web", _period(row["local_day"], grain), row["user_id"]), row["makerspace_id"])
-    phone = _in_range(_scoped(DeviceActivityDay.objects.all(), phone_ids, include_null), "local_day", date_range)
+    phone = _in_range(_scoped(DeviceActivityDay.objects.all(), phone_ids, include_null and module_available("mobile")), "local_day", date_range)
     for row in phone.order_by("local_day", "makerspace_id").values(
             "local_day", "platform", "grant_id", "grant__user_id", "app_version", "makerspace_id").iterator():
         channel = PHONE.get(row["platform"])
@@ -95,8 +96,12 @@ def collect(spaces, *, include_null, date_range, grain):
     for (channel, period, _grant), (space_id, version) in builds.items():
         out[(space_id, period, "app_versions", channel, version)] += 1
     calls = _in_range(_scoped(ChannelUsageDay.objects.all(), ids, include_null), "day", date_range)
+    by_id = {space.pk: space for space in spaces}
     for row in calls.values("makerspace_id", "day", "channel", "area", "count").iterator():
-        if row["channel"] in ("ios", "android") and row["makerspace_id"] is not None and row["makerspace_id"] not in phone_ids:
+        if row["channel"] in ("ios", "android") and (not module_available("mobile") or (
+                row["makerspace_id"] is not None and row["makerspace_id"] not in phone_ids)):
+            continue
+        if row["makerspace_id"] is not None and not visible_area(by_id[row["makerspace_id"]], row["area"]):
             continue
         flow = row["area"].startswith("flow:")
         out[(row["makerspace_id"], _period(row["day"], grain), "flow_completions" if flow else "api_calls",
@@ -110,7 +115,7 @@ def _first_days(ids, phone_ids, include_null, grain):
     first = {}
     for row in _scoped(WebSessionActivityDay.objects.all(), ids, include_null).values("user_id").annotate(day=Min("local_day")):
         first[("web", row["user_id"])] = _period(row["day"], grain)
-    phone = _scoped(DeviceActivityDay.objects.all(), phone_ids, include_null)
+    phone = _scoped(DeviceActivityDay.objects.all(), phone_ids, include_null and module_available("mobile"))
     for row in phone.values("platform", "grant__user_id").annotate(day=Min("local_day")):
         if row["platform"] in PHONE:
             first[(PHONE[row["platform"]], row["grant__user_id"])] = _period(row["day"], grain)
@@ -156,4 +161,5 @@ def build_platform_channel_usage(makerspace_id=None, *, platform_context=None, l
     spaces = list(servable_queryset(platform_analytics_spaces(ctx)).order_by("pk"))
     counters = collect(spaces, include_null=True, date_range=calendar_range(date_range), grain=grain)
     return ReportResult(("makerspace_id", *FIELDS), limited(rows_for(counters, with_space=True), limit),
-                        {"definition": DEFINITION, "limitations": LIMITATIONS})
+                        {"definition": DEFINITION, "limitations": LIMITATIONS,
+                         "space_ids": [space.pk for space in spaces if module_enabled(space, "reports")]})

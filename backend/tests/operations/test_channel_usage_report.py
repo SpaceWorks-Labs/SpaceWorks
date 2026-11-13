@@ -43,6 +43,8 @@ def platform_rows(**kwargs):
 
 
 def seed(space, user, *, platform="apple", version="2.1.0"):
+    space.enabled_modules = sorted(set(space.enabled_modules) | {"events", "bookings"})
+    space.save(update_fields=["enabled_modules"])
     WebSessionActivityDay.objects.create(user=user, session_hash="w" * 32, makerspace=space, local_day=TODAY)
     grant = device_grant(user, platform=platform)
     DeviceActivityDay.objects.create(grant=grant, makerspace=space, platform=platform, app_version=version, local_day=TODAY)

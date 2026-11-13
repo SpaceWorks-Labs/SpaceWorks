@@ -87,10 +87,15 @@ def test_a_processing_debit_keeps_its_intent_so_a_late_success_settles():
     with patch("apps.payments_rail.provider_poll.poll_checkout",
                return_value=PolledCapture(False, "pi_prv_sepa")), \
             patch("apps.payments.stripe_client.expire_checkout_session", return_value=False):
-        assert _poll_attempt(payment, timezone.now() + LATER)
+        assert not _poll_attempt(payment, timezone.now() + LATER)
     payment.refresh_from_db()
-    assert payment.stripe_checkout_session_id is None  # the page itself is forgotten
+    assert payment.stripe_checkout_session_id == "cs_prv-sepa"
+    assert payment.stripe_checkout_session_expired_at is None
     assert payment.stripe_payment_intent_id == "pi_prv_sepa"
+    from apps.payments.services_checkout import create_checkout_url
+    with patch("apps.payments.stripe_client.create_checkout_session") as create:
+        assert create_checkout_url(payment.pk) == "https://checkout.stripe.test/s"
+    create.assert_not_called()  # no second debit can replace this intent before its late success
 
     apply_webhook_event(space, {
         "id": "evt_prv_sepa", "type": "checkout.session.async_payment_succeeded",

@@ -7,7 +7,10 @@ from django.core.management import CommandError, call_command
 from apps.makerspaces.models import Makerspace
 from apps.tenant_migration import archive_envelope
 
-pytestmark = pytest.mark.django_db
+pytestmark = [
+    pytest.mark.django_db,
+    pytest.mark.skip(reason="decision 110 (superadmin always on; Makerspace.superadmin_access_enabled and the platform-custody gate removed)"),
+]
 
 
 def _space(slug, *, access):

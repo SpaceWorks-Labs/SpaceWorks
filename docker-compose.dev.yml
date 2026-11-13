@@ -31,6 +31,10 @@ services:
     user: "${DEV_UID:-1000}:${DEV_GID:-1000}"
     environment:
       DEBUG: "True"
+      # runserver opens a thread per request; with the production default of 60 seconds every thread
+      # kept its Postgres connection, 96 of them filled max_connections=100 during a Playwright run and
+      # every route answered 503. Close the connection at the end of each request in dev.
+      CONN_MAX_AGE: "0"
       # runserver has one serving process and no Gunicorn directory lifecycle.
       # Remove the variable entirely: even an empty value selects file storage.
       PROMETHEUS_MULTIPROC_DIR: !reset null

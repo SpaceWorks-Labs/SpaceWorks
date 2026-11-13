@@ -18,7 +18,7 @@ from apps.accounts.models import User
 from apps.audit.models import AuditLog
 from apps.makerspaces.module_install import uninstall_module
 from apps.payments.exceptions_refunds import RefundNotAllowed
-from apps.payments.models import MakerspacePaymentSettings, ManualSettlement, Payment, Refund
+from apps.payments.models import ManualSettlement, Payment, Refund
 from apps.payments.reconciliation import mark_offline
 from apps.payments.services_refunds_offline import record_offline_refund
 from tests.modules.test_offstate_money import DOMAIN_MODULES, _configured_space, _invoke_charge_caller
@@ -31,7 +31,7 @@ DOMAINS = tuple(DOMAIN_MODULES)
 
 def _owed(slug, domain):
     space = _configured_space(slug, domain, payments_on=False)  # payments module uninstalled: no rail
-    MakerspacePaymentSettings.objects.filter(makerspace=space).delete()  # and no gateway credentials either
+    # The Stripe keys saved by `_configured_space` stay: module-off alone must still leave the debt unclaimed.
     member = make_member(f"{slug}-m", space, membership_role="custom", role=User.Role.REQUESTER)
     manager = make_member(f"{slug}-sm", space)
     _subject, charge = _invoke_charge_caller(domain, space, member)

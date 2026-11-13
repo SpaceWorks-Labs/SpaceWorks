@@ -10,10 +10,14 @@ const state = vi.hoisted(() => ({ mode: "central" as "single" | "central", reque
   makerspace: { slug: "lab", name: "Lab", logo_url: "/logo.png" },
   branding: { display_name: "Community Lab", welcome_body: "Make things together." }, theme: {}, features: ["loans.enabled"], modules: ["public_inventory", "request_workflow"], edition: "makerspace",
 } }));
-vi.mock("./lib/tenant", () => ({
-  useTenant: () => ({ mode: state.mode, slug: "lab", modules: new Set(state.bootstrap.modules), bootstrap: state.bootstrap }),
+vi.mock("./lib/tenant", async () => {
+  const tenant = () => ({ mode: state.mode, slug: "lab", modules: new Set(state.bootstrap.modules), bootstrap: state.bootstrap });
+  return {
+  ...await vi.importActual<typeof import("./lib/tenant")>("./lib/tenant"),
+  useTenant: tenant, useOptionalTenant: tenant,
   useTenantPath: () => (path = "") => state.mode === "single" ? `/${path}` : `/m/lab${path ? `/${path}` : ""}`,
-}));
+  };
+});
 vi.mock("./lib/api", async () => ({ ...await vi.importActual<typeof import("./lib/api")>("./lib/api"), tenantPublicRequest: state.request }));
 vi.mock("./features/inventory/usePublicInventory", () => ({ useTenantBootstrap: () => ({ data: state.bootstrap }) }));
 vi.mock("./features/staff/StaffApp", () => ({ StaffApp: () => null }));
@@ -48,8 +52,9 @@ it.each(["central", "single"] as const)("opens a public item directly in %s rout
   expect(document.title).toBe("Public drill · Community Lab");
   expect(document.head.querySelector('link[rel="canonical"]')).toHaveAttribute("href", `${window.location.origin}${base}/items/7`);
   expect(screen.queryByText("Available")).toBeNull();
-  fireEvent.click(screen.getByRole("button", { name: "Borrow this item" }));
-  expect(screen.getByRole("link", { name: "Request from inventory" })).toHaveAttribute("href", `${base}/inventory`);
+  // The item page carries its own request form now (the old "Request from inventory" link is gone), behind the phone sheet.
+  fireEvent.click(screen.getByRole("button", { name: "Request" }));
+  expect(await screen.findByRole("spinbutton", { name: "Quantity" })).toBeVisible();
   await expectNoA11yViolations(view.container);
 });
 
@@ -59,7 +64,8 @@ it.each([[true, "Lent at events only", /Register for an event that offers it/], 
     state.request.mockResolvedValue({ id: 8, name: "Oscilloscope", description: "", event_only: true, availability: { mode: "status_only", label: "Lent at events only" } });
     show("/m/lab/items/8");
     expect(await screen.findByRole("heading", { name: "Oscilloscope" })).toBeVisible();
-    fireEvent.click(screen.getByRole("button", { name: "Borrow this item" }));
+    // An event-only item has no request form, so the phone bar reads "Item details" rather than "Request".
+    fireEvent.click(screen.getByRole("button", { name: "Item details" }));
     expect(screen.getAllByText(badge).length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText(copy).length).toBeGreaterThanOrEqual(1);
     if (!eventsOn) expect(screen.queryByText(/Register for an event/)).toBeNull();

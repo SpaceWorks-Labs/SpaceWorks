@@ -117,3 +117,95 @@ Hackathons, Mentor Desk, mentor rounds, volunteering and the project gallery are
 switches, off for a new space. See [current status](events/integration-status.md) for what has runtime
 evidence. The [Events programme guide](events/README.md) links the
 organizer, participant, mentor, volunteer and judge runbooks.
+
+## Also in the staff console
+
+- A **schedule** that puts bookings, events, shifts, machine jobs and maintenance on one calendar.
+- **Repairs and issue reports** with work orders, quotes and parts, an **incident register** for safety
+  events, a **to-buy** list and **consumables** stock.
+- **Gifts and sponsors** with a public sponsor wall, next to the shop and the finance ledger.
+- **Metabase analytics** per space (off by default), **API clients**, a full **data export**, **backups**
+  and a move-to-another-server tool.
+- A **public TV screen** (see below).
+
+## Public TV
+
+A paired screen in the workshop shows who is here now, machines in use or free, the events calendar and an
+announcement, plus optional public stats, opening hours, inventory highlights and sponsors. It needs the
+Presence module and its **Space display screens** capability (off by default). Staff open **Settings,
+Display screens**, then either enter the 6-character code the TV shows at `/display` (valid 30 minutes) or
+create a screen with an address and open that on the TV or an Anthias player. Each section appears only
+while its module is on (presence, events, machines), and the screen shows only what the public page shows a
+logged-out visitor. Steps: [display screens](how-to/display-screens.md), [Anthias](how-to/anthias.md).
+
+## How features connect
+
+```mermaid
+flowchart LR
+    accounts["member_accounts"]
+    membership["membership"]
+    mobile["mobile"]
+    presence["presence"]
+    tv["Public TV screens<br/>presence.public_display"]
+    loans["Inventory and loans<br/>request_workflow, scanner, evidence"]
+    events["events"]
+    reimb["event_reimbursements"]
+    bookings["bookings"]
+    machines["machines and machine_service"]
+    shop["shop"]
+    ledger[("Charges ledger<br/>charges.*, always recorded")]
+    rail["payments<br/>online card rail"]
+    notif["notifications"]
+    email["email"]
+    chans["chat, SMS and webhook channels"]
+
+    membership ==>|requires| accounts
+    mobile ==>|requires| accounts
+    reimb ==>|requires| events
+
+    events -.->|loans for an event| loans
+    events -.->|machine use for an event| machines
+    events -.->|venue booking and decisions| bookings
+    machines -.->|machine-time booking| bookings
+    membership -.->|included booking hours| bookings
+    shop -.->|event pickup| events
+    presence -.->|attending an event, equipment window| events
+
+    gifts["gifts and sponsors"]
+    loans --> ledger
+    machines --> ledger
+    bookings --> ledger
+    events --> ledger
+    membership --> ledger
+    shop --> ledger
+    gifts --> ledger
+    ledger -.->|optional card checkout| rail
+
+    events -.-> notif
+    notif --> email
+    notif --> chans
+
+    tv -.->|here now| presence
+    tv -.->|machines now| machines
+    tv -.->|calendar| events
+```
+
+Thick arrows are requirements; dashed arrows are optional links that exist only while both modules are on.
+The same map and a per-module table are in the [README](../README.md#how-modules-connect) and
+[MODULES.md](MODULES.md#every-module-its-gates-and-its-money). Each feature below says what it works with
+and what happens when that other module is off. When it is off, the link goes quiet and the feature keeps
+working on its own.
+
+| Feature | Works with | When the other module is off |
+| --- | --- | --- |
+| Inventory and loans | **Events**: a loan can be tied to an event and shows on the event's equipment desk. **Charges ledger**: deposits, late fees, rental, damage and lost charges. | Loans stay ordinary loans; with `charges.loans` off nothing is charged. |
+| Machines | **Events**: a job or session can be logged for an event. **Bookings**: machine-time bookings. **Charges ledger**: metered sessions and priced jobs. **Public TV**: machines in use or free. | With events off the "for which event" picker is empty; the machine work itself is unchanged. |
+| Events | **Loans**, **machines**, **bookings** (venue booking and decisions), **presence** (attending an event, equipment windows), **shop** (event pickup), **notifications**, and the **charges ledger** for tickets, venue fees, entry fees, teams and deposits. Event reimbursements need events. | Each link goes quiet; registrations and charges already recorded are kept. |
+| Bookings | **Membership**: included booking hours per membership term. **Events** and **machines** as above. **Charges ledger**. | Without membership there are no included hours; bookings are priced as usual. |
+| Membership and people | **Member accounts** (required). **Bookings** (included hours). **Charges ledger**: dues, terms, renewals, admission fees and guest passes. | The staff roster and role assignment never depend on membership. |
+| Money | One **charges ledger** for every area. The **payments** module adds card checkout on top. **Email** sends due-date reminders. | Without payments, owed money is still recorded and settled by hand; without email, reminders are skipped. |
+| Notifications | **Email**, **SMS**, **WhatsApp**, **Telegram**, **Slack**, **Mattermost**, **Discord** and **signed webhooks**, each its own module. Events send notices through the inbox. | A switched-off channel stops sending and keeps its saved credentials. Account recovery mail is exempt from the email module. |
+| Presence | **Events** (a person can be checked in as attending an event), the **public TV**. | Without events, the event title is not shown on the screen or the roster. |
+| Shop | **Events** (pick up an order at an event), the **charges ledger** (every sale is recorded). | Event pickup is its own switch (`shop.event_pickup`); without `charges.shop` the shop cannot sell. |
+| Public TV | **Presence** (here now), **events** (calendar), **machines** (machines now). | That section is left out; the others still show. |
+

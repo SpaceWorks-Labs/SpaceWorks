@@ -318,3 +318,16 @@ Run the rules locally with `python scripts/ci/check_rules.py` from anywhere in t
 tracked files only, so local test trees never affect it. The backend and contracts commands need Linux
 (`apps/backup` imports `fcntl`), so run them in a `python:3.12-slim` container or the backend image
 rather than a Windows venv, with the same dummy env the workflow sets.
+
+
+## README gallery rule (design system 12.4)
+
+*Added 14 November 2026. Mirrors product rules 12.4 in the Space Works Design System repository.*
+
+The SpaceWorks README shows its features and staff dashboards, the best single screen per area, and **every
+screenshot is a light and dark pair**: a `<picture>` with `<source media="(prefers-color-scheme: dark)">` for the
+`-dark.webp` file and the `-light.webp` file as the `<img>`, in `docs/readme/screens/`. It also carries the module
+inventory (every module, its gates, its money, what happens when it is off) and the module connection map, drawn
+only from real dependencies and links. Capture the set with `scripts/readme/capture-staff-dashboards.mjs` against
+the seeded showcase space, look at each image before choosing it, and never link an image that does not exist.
+The design system's own README follows the same rule with its best screen per component or pattern area.

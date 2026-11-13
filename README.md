@@ -156,6 +156,18 @@ Grouped the way a space actually works. The full list lives in [Features](docs/F
   and WhatsApp, routed to [rooms and recipients](docs/notification-routing.md) you choose.
 - **Reports:** analytics, CSV/XLSX exports and accessible charts with table fallbacks.
 
+### Also in the staff console
+
+- A **schedule** that puts bookings, events, shifts, machine jobs and maintenance on one calendar.
+- **Repairs and issue reports** on anything members used, with work orders, quotes and parts, plus an
+  **incident register** for safety events.
+- A **shop** with a front-desk till, online orders for pickup, stock and receipts, and **gifts and
+  sponsors** with a public sponsor wall.
+- **Finance:** payments, refunds and a ledger of everything owed, paid and waived.
+- **Metabase analytics** per space (off by default), **API clients** for your own systems, a full **data
+  export**, **backups** and a move-to-another-server tool.
+- A **public TV screen** for the workshop wall ([setup](#public-tv)).
+
 ### Run it with confidence
 
 - **Append-only audit logs** and immutable evidence records; photo bytes can expire under a per-space
@@ -208,6 +220,134 @@ Inventory (see [the per-parent switches](docs/MODULES.md#maintenance-to-buy-warr
 Uninstalling a module hides its surfaces and **keeps its data**; deleting a module's rows is a separate,
 superadmin-only step. [Choosing modules](docs/choosing-modules.md) covers setup areas, features,
 defaults and the commands; [MODULES.md](docs/MODULES.md) explains each module and what happens without it.
+
+### Every module at a glance
+
+One row per module, with what it adds, what it does with money and what happens when it is off. Money owed
+is **recorded by the always-present ledger** (the `charges.*` switches); the optional **payments** module
+only adds the online card checkout on top. What is free and what is paid is set out in
+[Free and paid](#free-and-paid), so this table only names the switch each area uses.
+
+| Module | What it adds | Money | When it is off |
+| --- | --- | --- | --- |
+| [`public_inventory`](docs/MODULES.md#public_inventory) | Public catalogue and item detail. | No charge of its own. | Cannot be switched off. |
+| [`request_workflow`](docs/MODULES.md#request_workflow) | Member borrow requests and their status. | `charges.loans` records deposits, late fees, rental, damage and lost charges (`hardware_requests/loan_charges_common.py:35`). Online rail: `payments.loans`. | Cannot be switched off. |
+| [`staff_admin`](docs/MODULES.md#staff_admin) | Staff console inventory and request administration. | No charge of its own. | Cannot be switched off. |
+| [`evidence_uploads`](docs/MODULES.md#evidence_uploads) | Issue and return photos, immutable once attached. | None. | Cannot be switched off. |
+| [`qr_management`](docs/MODULES.md#qr_management) | QR generation, revocation and printing. | None. | Cannot be switched off. |
+| [`scanner`](docs/MODULES.md#scanner) | QR scanning and container lookup. | None. | Cannot be switched off. |
+| [`guest_handover`](docs/MODULES.md#guest_handover) | Front-desk issue and return of accepted requests. | Raises no charge itself; a deposit that blocks issue is read here (`hardware_requests/loan_charges_issue.py:48`, needs `charges.loans`). | Handover endpoints answer 404; staff can still issue from the console. |
+| [`asset_units`](docs/MODULES.md#asset_units) | Individually QR-tracked units. | None. | Per-unit QR surfaces vanish; stock counts stay. |
+| [`containers`](docs/MODULES.md#containers) | Container hierarchy and moves. | None. | Container tab and kit checklists vanish. |
+| [`bulk_import`](docs/MODULES.md#bulk_import) | Spreadsheet import of inventory. | None. | Import tab vanishes. |
+| [`stock_transfers`](docs/MODULES.md#stock_transfers) | Stock moves inside and between spaces. | None. | Transfer tab vanishes. |
+| [`qr_print_batches`](docs/MODULES.md#qr_print_batches) | Batched QR label ZIPs. | None. | QR tools tab vanishes; core QR issuance stays in scanner and items. |
+| [`stocktake`](docs/MODULES.md#stocktake) | Scan-first stocktake and variance. | None. | Stocktake tab vanishes. |
+| [`machines`](docs/MODULES.md#machines) | Machine registry, operators, usage, sessions, documents. | `charges.machines` records a metered machine session when it stops (`machines/sessions_billing.py:32`). Online rail: `payments.machines`, which needs `machine_service` and `payments`. | Machine tab, public machines feed and sessions refuse. |
+| [`machine_service`](docs/MODULES.md#machine_service) | Service requests for every machine type, with a pickup queue. | `charges.machines` records a priced job when it completes (`machines/job_charges.py:46`, `machines/service_payments.py:60`). | Job requests and pickups refuse; machines and sessions stay. |
+| [`devices`](docs/MODULES.md#devices) | Printers and label printers with a signed key. | None. | Device enrolment and adapters refuse. |
+| [`events`](docs/MODULES.md#events) | Events, tickets, registration, check-in and the programme. | `charges.events` records ticket orders (`events/orders_checkout.py:63`), paid registrations (`events/service_payments.py:68`), venue fees (`events/venue_fees.py:98`), entry fees (`events/submissions/entry_fees.py:19`), paid teams (`events/hackathons/team_payments.py:22`), deposits (`events/judging/deposits.py:36`). Online rail: `payments.events`. | Event routes, public events and the machine-use picker answer 404; registrations are kept. |
+| [`event_reimbursements`](docs/MODULES.md#event_reimbursements) | Event support requests, finite budgets, awards and expense claims. | Money goes out, not in: no `Payment` is raised and no `charges.*` switch applies. | Reimbursement routes refuse; events are unaffected. |
+| [`bookings`](docs/MODULES.md#bookings) | Resource booking and public self-booking. | `charges.bookings` records a paid booking (`bookings/service_payments.py:36`, `:60`). Online rail: `payments.bookings`. | Booking routes and public booking pages answer 404. |
+| [`membership`](docs/MODULES.md#membership) | Join requests, plans, renewals, waivers, profiles, directory, cards. | `charges.membership` records dues (`makerspaces/membership_payments.py:24`), terms (`membership_term_charges.py:28`), renewals (`membership_renewal_charges.py:35`), admission fees (`membership_admission_payments.py:36`) and guest passes (`guest_pass_day.py:44`). Online rail: `payments.membership`. | Community queue, plans and cards refuse; the staff roster and role assignment stay. |
+| [`member_accounts`](docs/MODULES.md#member_accounts) | Member self sign-up and built-in password, social and phone login. | None. | The space takes account-less requests; staff sign-in is unaffected. |
+| [`presence`](docs/MODULES.md#presence) | Check-in, who is here now, and the public TV display. | None. | Check-in, the roster and every TV route refuse; history is kept. |
+| [`notifications`](docs/MODULES.md#notifications) | In-app inbox and the notification emitters. | `billing.reminders` mails payers about due charges, cash-only included. | Inbox and emitters stop; event notices skip (`events/staged_forms/notices.py:18`). |
+| [`email`](docs/MODULES.md#email) | Outbound email for this space. | None. | Space mail is recorded as skipped; account recovery mail is exempt (`integrations/dispatch_policy.py:11`). |
+| [`sms`](docs/MODULES.md#sms) | Consented SMS notices. | None. | No SMS sent; OTP is independent. |
+| [`whatsapp`](docs/MODULES.md#whatsapp) | Consented template WhatsApp notices. | None. | No WhatsApp sent. |
+| [`telegram`](docs/MODULES.md#telegram) | Outbound Telegram group alerts. | None. | No Telegram alerts; the stored token is kept. |
+| [`slack`](docs/MODULES.md#slack) | Slack webhook alerts. | None. | No Slack alerts; the webhook is kept. |
+| [`mattermost`](docs/MODULES.md#mattermost) | Mattermost webhook alerts. | None. | No Mattermost alerts. |
+| [`discord`](docs/MODULES.md#discord) | Discord webhook alerts. | None. | No Discord alerts. |
+| [`webhook`](docs/MODULES.md#webhook) | Signed JSON webhooks to your own systems. | None. | No webhooks sent. |
+| [`reports`](docs/MODULES.md#reports) | Analytics, report registry, CSV/XLSX exports. | Reads the ledger; raises nothing. | Reports tab and exports refuse. |
+| [`analytics`](docs/MODULES.md#analytics) | Read-only database login and embedded Metabase dashboards. | None. | Tab and routes answer 404; the login is kept. |
+| [`payments`](docs/MODULES.md#payments) | The online card rail (Stripe, Razorpay). | Rail only. Money owed is recorded without it (`charge_tracking_enabled`, `payments/availability.py:38`). A debt raised with no rail is `unclaimed` (`payments/services.py:80`). | No new checkout; owed money is still recorded, readable and settleable by hand. |
+| [`mobile`](docs/MODULES.md#mobile) | Attested device sessions, native push, in-app payment sheet. | The payment sheet needs the rail. | Device grants and push refuse. |
+| [`shop`](docs/MODULES.md#shop) | Per-space shop: catalogue, stock, till, online orders. | `charges.shop` records every sale (`shop/gates.py:80`, used at `shop/checkout.py:139` and `shop/services_pos.py:78`; ledger entry at `shop/orders_core.py:83`). Online rail: `payments.shop`. | Shop routes refuse; orders and stock are kept. |
+| (not a module) gifts and sponsors | Donations, pledges, sponsor charges. | `charges.donations` records gifts (`payments/donations/services.py:97`) and sponsor charges (`payments/donations/sponsors.py:118`). Online rail: `payments.donations`. | Off means the space takes no donation or sponsor money. |
+
+Every row, with its exact gates and the code that enforces them, is in [MODULES.md](docs/MODULES.md#every-module-its-gates-and-its-money).
+
+### How modules connect
+
+```mermaid
+flowchart LR
+    accounts["member_accounts"]
+    membership["membership"]
+    mobile["mobile"]
+    presence["presence"]
+    tv["Public TV screens<br/>presence.public_display"]
+    loans["Inventory and loans<br/>request_workflow, scanner, evidence"]
+    events["events"]
+    reimb["event_reimbursements"]
+    bookings["bookings"]
+    machines["machines and machine_service"]
+    shop["shop"]
+    ledger[("Charges ledger<br/>charges.*, always recorded")]
+    rail["payments<br/>online card rail"]
+    notif["notifications"]
+    email["email"]
+    chans["chat, SMS and webhook channels"]
+
+    membership ==>|requires| accounts
+    mobile ==>|requires| accounts
+    reimb ==>|requires| events
+
+    events -.->|loans for an event| loans
+    events -.->|machine use for an event| machines
+    events -.->|venue booking and decisions| bookings
+    machines -.->|machine-time booking| bookings
+    membership -.->|included booking hours| bookings
+    shop -.->|event pickup| events
+    presence -.->|attending an event, equipment window| events
+
+    gifts["gifts and sponsors"]
+    loans --> ledger
+    machines --> ledger
+    bookings --> ledger
+    events --> ledger
+    membership --> ledger
+    shop --> ledger
+    gifts --> ledger
+    ledger -.->|optional card checkout| rail
+
+    events -.-> notif
+    notif --> email
+    notif --> chans
+
+    tv -.->|here now| presence
+    tv -.->|machines now| machines
+    tv -.->|calendar| events
+```
+
+Solid thick arrows are hard requirements: a space cannot install the first module without the second.
+Dashed arrows are optional links that appear only while both modules are on, for example a loan or a
+machine job logged against an event, a room booked for an event, or a shop pickup at an event. Every
+money-taking area writes to the one **charges ledger**, and the card checkout is added on top only when
+the payments module is installed and set up. Notifications fan out to email and the chat, SMS and webhook
+channels. The public TV reads the presence, machines and events modules and shows only what each one
+already shows to a visitor. If a module in a link is off, that link simply goes quiet and nothing else
+changes. The same map is in [Features](docs/FEATURES.md#how-features-connect).
+
+### Public TV
+
+A space can put a live screen on a TV in the workshop. It shows who is here now, machines in use or free,
+the events calendar and a short announcement, and it never shows contact details.
+
+1. Switch on the **Presence** module and its **Space display screens** capability (off by default).
+2. Open **Settings, Display screens** in the staff console.
+3. Either **pair a TV**: open `/display` on the TV, read the 6-character code it shows, and enter it in the
+   console within 30 minutes; or **create a screen with an address** and open that address on the TV
+   (or paste it into an Anthias player). The address is shown once and **New address** replaces it.
+4. Choose the sections (here now, events calendar, machines, announcement, public stats, opening hours,
+   inventory highlights, sponsors), the layout (rotating, single or grid), the theme, how private names
+   are and how often it refreshes. A live preview shows it before you save.
+
+A section appears only while the module behind it is on (presence, events, machines). Full steps are in
+[Public space page and display screens](docs/how-to/display-screens.md) and
+[Anthias players](docs/how-to/anthias.md).
 
 ## Install options
 

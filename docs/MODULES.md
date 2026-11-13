@@ -115,6 +115,57 @@ preserves enablement/opt-outs and never enables platform sending. Module-list va
 uses the registry rather than scalar JSONField choices. Follow the independent
 [conversion/replay/activation checkpoints](notification-reconciliation-rollout.md).
 
+## Every module, its gates and its money
+
+One row per module key in the registry (`apps/makerspaces/module_registry_catalog.py`). **Gates** are the
+module key plus the capabilities that sit under it. **Money** names the `charges.*` switch that decides
+whether a debt is recorded, the code path that raises it, and the online-rail switch. Recording a debt
+(`charge_tracking_enabled`) needs only `charges.enabled` and the domain's `charges.<domain>`; the online
+rail (`online_payments_enabled`) additionally needs the `payments` module, `payments.enabled`,
+`payments.<domain>` and saved credentials. A debt raised without a rail is stamped `unclaimed` and claimed
+once by the first checkout that reaches a provider. How the modules connect is drawn in
+[Features](FEATURES.md#how-features-connect).
+
+| Module | What it adds | Gates | Money | When it is off |
+| --- | --- | --- | --- | --- |
+| `public_inventory` | Public catalogue and item detail. | Core. Per-item `is_public`, `show_public_count`, `public_availability_mode`; `inventory.expected_back`, `inventory.notify_when_back`. | No charge of its own. | Cannot be switched off. |
+| `request_workflow` | Member borrow requests and their status. | Core. `loans.enabled`, `loans.limits`, `loans.renewals`, `loans.reservations`, `loans.pickup_windows`, `loans.waitlist`, `loans.withdrawals`, `loans.fee_waivers`. | `charges.loans` records deposits, late fees, rental, damage and lost charges (`hardware_requests/loan_charges_common.py:35`). Online rail: `payments.loans`. | Cannot be switched off. |
+| `staff_admin` | Staff console inventory and request administration. | Core. `packs.import`. | No charge of its own. | Cannot be switched off. |
+| `evidence_uploads` | Issue and return photos, immutable once attached. | Core. | None. | Cannot be switched off. |
+| `qr_management` | QR generation, revocation and printing. | Core. | None. | Cannot be switched off. |
+| `scanner` | QR scanning and container lookup. | Core. | None. | Cannot be switched off. |
+| `guest_handover` | Front-desk issue and return of accepted requests. | Custom handover role with the handout actions. | Raises no charge itself; a deposit that blocks issue is read here (`hardware_requests/loan_charges_issue.py:48`, needs `charges.loans`). | Handover endpoints answer 404; staff can still issue from the console. |
+| `asset_units` | Individually QR-tracked units. | Opt-in. | None. | Per-unit QR surfaces vanish; stock counts stay. |
+| `containers` | Container hierarchy and moves. | Opt-in. `loans.kit_checklist`. | None. | Container tab and kit checklists vanish. |
+| `bulk_import` | Spreadsheet import of inventory. | Opt-in. | None. | Import tab vanishes. |
+| `stock_transfers` | Stock moves inside and between spaces. | Opt-in. | None. | Transfer tab vanishes. |
+| `qr_print_batches` | Batched QR label ZIPs. | Opt-in. | None. | QR tools tab vanishes; core QR issuance stays in scanner and items. |
+| `stocktake` | Scan-first stocktake and variance. | Opt-in. `stocktake.discipline`. | None. | Stocktake tab vanishes. |
+| `machines` | Machine registry, operators, usage, sessions, documents. | Opt-in. `machines.*` (certifications, supervised sessions, time booking, integrations). | `charges.machines` records a metered machine session when it stops (`machines/sessions_billing.py:32`). Online rail: `payments.machines`, which needs `machine_service` and `payments`. | Machine tab, public machines feed and sessions refuse. |
+| `machine_service` | Service requests for every machine type, with a pickup queue. | Opt-in. `machines.job_requests`, `machines.job_quotes`, `machines.batch_start`, `machines.pay_before_pickup`, `machines.structured_intake`. | `charges.machines` records a priced job when it completes (`machines/job_charges.py:46`, `machines/service_payments.py:60`). | Job requests and pickups refuse; machines and sessions stay. |
+| `devices` | Printers and label printers with a signed key. | Opt-in. | None. | Device enrolment and adapters refuse. |
+| `events` | Events, tickets, registration, check-in and the programme. | Opt-in. About 67 `events.*` switches plus `events.deposits`, `events.venue_fees`, `events.orders`. | `charges.events` records ticket orders (`events/orders_checkout.py:63`), paid registrations (`events/service_payments.py:68`), venue fees (`events/venue_fees.py:98`), entry fees (`events/submissions/entry_fees.py:19`), paid teams (`events/hackathons/team_payments.py:22`), deposits (`events/judging/deposits.py:36`). Online rail: `payments.events`. | Event routes, public events and the machine-use picker answer 404; registrations are kept. |
+| `event_reimbursements` | Event support requests, finite budgets, awards and expense claims. | Opt-in. Needs `events`. | Money goes out, not in: no `Payment` is raised and no `charges.*` switch applies. | Reimbursement routes refuse; events are unaffected. |
+| `bookings` | Resource booking and public self-booking. | Opt-in. `bookings.recurring`, `bookings.passes`, `bookings.checkin`, `bookings.organization_bookings`, `bookings.website`, `bookings.analytics`. | `charges.bookings` records a paid booking (`bookings/service_payments.py:36`, `:60`). Online rail: `payments.bookings`. | Booking routes and public booking pages answer 404. |
+| `membership` | Join requests, plans, renewals, waivers, profiles, directory, cards. | Opt-in. Needs `member_accounts`. `membership.auto_renew`, `membership.guest_passes`, `membership.minors`, `membership.vouching` and more. | `charges.membership` records dues (`makerspaces/membership_payments.py:24`), terms (`membership_term_charges.py:28`), renewals (`membership_renewal_charges.py:35`), admission fees (`membership_admission_payments.py:36`) and guest passes (`guest_pass_day.py:44`). Online rail: `payments.membership`. | Community queue, plans and cards refuse; the staff roster and role assignment stay. |
+| `member_accounts` | Member self sign-up and built-in password, social and phone login. | On by default. Staff sign-in is never gated. | None. | The space takes account-less requests; staff sign-in is unaffected. |
+| `presence` | Check-in, who is here now, and the public TV display. | Opt-in. `presence.public_display` (paired TV screens), `display.anthias_push`, `presence.geofence`. | None. | Check-in, the roster and every TV route refuse; history is kept. |
+| `notifications` | In-app inbox and the notification emitters. | Opt-in. `notifications.member_inbox`, `notifications.web_push`, `billing.reminders`. | `billing.reminders` mails payers about due charges, cash-only included. | Inbox and emitters stop; event notices skip (`events/staged_forms/notices.py:18`). |
+| `email` | Outbound email for this space. | Opt-in. `email.sender_identity`. | None. | Space mail is recorded as skipped; account recovery mail is exempt (`integrations/dispatch_policy.py:11`). |
+| `sms` | Consented SMS notices. | Opt-in. | None. | No SMS sent; OTP is independent. |
+| `whatsapp` | Consented template WhatsApp notices. | Opt-in. | None. | No WhatsApp sent. |
+| `telegram` | Outbound Telegram group alerts. | Opt-in. | None. | No Telegram alerts; the stored token is kept. |
+| `slack` | Slack webhook alerts. | Opt-in. | None. | No Slack alerts; the webhook is kept. |
+| `mattermost` | Mattermost webhook alerts. | Opt-in. | None. | No Mattermost alerts. |
+| `discord` | Discord webhook alerts. | Opt-in. | None. | No Discord alerts. |
+| `webhook` | Signed JSON webhooks to your own systems. | Opt-in. | None. | No webhooks sent. |
+| `reports` | Analytics, report registry, CSV/XLSX exports. | Opt-in. `reports.saved_views`, `reports.event_pdf`, `reports.event_exports`. | Reads the ledger; raises nothing. | Reports tab and exports refuse. |
+| `analytics` | Read-only database login and embedded Metabase dashboards. | Opt-in. | None. | Tab and routes answer 404; the login is kept. |
+| `payments` | The online card rail (Stripe, Razorpay). | Opt-in. `payments.enabled`, `payments.<domain>`, and saved credentials. `online_payments_enabled` needs all four (`payments/availability.py:21`). | Rail only. Money owed is recorded without it (`charge_tracking_enabled`, `payments/availability.py:38`). A debt raised with no rail is `unclaimed` (`payments/services.py:80`). | No new checkout; owed money is still recorded, readable and settleable by hand. |
+| `mobile` | Attested device sessions, native push, in-app payment sheet. | Opt-in. Needs `member_accounts`. `mobile.push`, `mobile.watch_actions`. | The payment sheet needs the rail. | Device grants and push refuse. |
+| `shop` | Per-space shop: catalogue, stock, till, online orders. | Opt-in. `shop.online`, `shop.guest_checkout`, `shop.holds`, `shop.tax`, `shop.event_pickup`. | `charges.shop` records every sale (`shop/gates.py:80`, used at `shop/checkout.py:139` and `shop/services_pos.py:78`; ledger entry at `shop/orders_core.py:83`). Online rail: `payments.shop`. | Shop routes refuse; orders and stock are kept. |
+| (not a module) gifts and sponsors | Donations, pledges, sponsor charges. | `finance.donations`, `finance.sponsors`, `charges.donations` (parentless). | `charges.donations` records gifts (`payments/donations/services.py:97`) and sponsor charges (`payments/donations/sponsors.py:118`). Online rail: `payments.donations`. | Off means the space takes no donation or sponsor money. |
+
 ## Index
 
 **Inventory** (always on): [public_inventory](#public_inventory) · [request_workflow](#request_workflow) ·
@@ -731,6 +782,13 @@ existing makerspaces, including archived ones, preserving other choices; reverse
 New makerspaces still opt in. Current-session exposes personal opt-out/name policy even when empty.
 Space Managers configure privacy in the module-gated settings section. The expiry category still
 lacks feature-enum/editor integration; see the presence rule in [INVARIANTS.md](INVARIANTS.md).
+
+**Space display screens (TV).** With `presence.public_display` on (off by default), Settings, Display
+screens pairs a TV by a 6-character code (valid 30 minutes) or issues an address that carries the screen's
+secret in its `#k=` fragment and is shown only when created or replaced. A screen's sections need their own
+modules: here now needs `presence`, the calendar needs `events`, machines now needs `machines`. With
+`display.anthias_push` on, SpaceWorks also keeps the matching web asset on registered Anthias players in
+step. Setup steps are in [display-screens](how-to/display-screens.md) and [anthias](how-to/anthias.md).
 
 ### member_accounts
 

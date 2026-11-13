@@ -276,24 +276,29 @@ class Engine:
             self.durations[item.nodeid] = time.time() - s
             if n % 50 == 0:
                 print(f"[mutation] baseline {n + 1}/{len(todo)}", flush=True)
+            if n and n % 200 == 0:
+                self.save_map(mapfile, cov, files)
         cov.stop()
-        data = cov.get_data()
+        self.save_map(mapfile, cov, files, final=True)
         slow = sorted(self.durations.items(), key=lambda kv: -kv[1])[:5]
         print("[mutation] slowest baseline tests: " + "; ".join(f"{k} {v:.0f}s" for k, v in slow), flush=True)
         print(f"[mutation] baseline {time.time() - t0:.0f}s, {len(todo)} new tests, {len(self.baseline_failed)} failing in baseline (excluded)", flush=True)
         for nodeid in sorted(self.baseline_failed):
             print(f"[mutation] baseline-failing: {nodeid}", flush=True)
+        self.run_mutants()
+        return True
+
+    def save_map(self, mapfile, cov, files, final=False):
+        """Merge the contexts recorded so far into the on-disk coverage map (also called mid-baseline)."""
+        data = cov.get_data()
         measured = set(data.measured_files())
         for f in files:
             if f in measured:
                 merged = self.line_tests.setdefault(f, {})
                 for ln, ctxs in data.contexts_by_lineno(f).items():
-                    merged.setdefault(ln, [])
-                    merged[ln] = sorted(set(merged[ln]) | {c for c in ctxs if c})
+                    merged[ln] = sorted(set(merged.get(ln, [])) | {c for c in ctxs if c})
         mapfile.parent.mkdir(parents=True, exist_ok=True)
         mapfile.write_text(json.dumps({"durations": self.durations, "failed": sorted(self.baseline_failed), "lines": self.line_tests}))
-        self.run_mutants()
-        return True
 
     def pytest_runtest_logreport(self, report):
         if report.failed:
@@ -437,13 +442,15 @@ def select_tests(args) -> list[str]:
     if args.test_regex:
         rx = re.compile(args.test_regex)
         for f in (root / "tests").rglob("test_*.py"):
-            if "tombstone" in f.parts:
+            if "tombstone" in f.parts or (args.exclude_regex and re.search(args.exclude_regex, str(f).replace(chr(92), chr(47)))):
                 continue
             try:
                 if rx.search(f.read_text(encoding="utf-8", errors="ignore")):
                     chosen.add(str(f.relative_to(root)).replace("\\", "/"))
             except OSError:
                 pass
+    if args.exclude_regex:
+        chosen = {c for c in chosen if not re.search(args.exclude_regex, c)}
     return sorted(chosen)
 
 
@@ -458,6 +465,7 @@ def main():
     ap.add_argument("--out", default="")
     ap.add_argument("--min-timeout", type=float, default=20)
     ap.add_argument("--max-timeout", type=float, default=120)
+    ap.add_argument("--exclude-regex", default="", help="test FILES whose path matches are not selected (too slow for a baseline)")
     ap.add_argument("--rebuild", action="store_true", help="ignore the cached coverage map")
     ap.add_argument("--list-only", action="store_true")
     args = ap.parse_args()

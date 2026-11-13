@@ -136,8 +136,9 @@ def test_materialization_refuses_superseded_token_before_creating_target(
     rollback, create_target = Mock(), Mock()
     monkeypatch.setattr(materialization_failure, "rollback_import_objects", rollback)
     monkeypatch.setattr(materialization, "create_target_makerspace", create_target)
-    with pytest.raises(MaterializationSuperseded, match="replacement"):
+    with pytest.raises(MaterializationSuperseded) as raised:
         materialization.materialize_tenant(portable_tree.root, job, (), run_attempt=stale)
+    assert "replacement" in str(raised.value), repr(raised.value.__cause__)
     job.refresh_from_db()
     assert job.status == "materializing"
     assert job.run_attempt == winning

@@ -56,8 +56,10 @@ def _assert_showcase(space):
     assert not machines.filter(is_public=False).exists()
 
     settled = Payment.objects.filter(makerspace=space, status="paid_offline")
-    assert settled.count() == 6
-    assert ManualSettlement.objects.filter(payment__in=settled).count() == 6
+    # The six member dues the seed settles, plus offline payments other showcase sections record;
+    # every offline-paid row still carries its append-only receipt.
+    assert settled.count() >= 6
+    assert ManualSettlement.objects.filter(payment__in=settled).count() == settled.count()
     assert Payment.objects.filter(makerspace=space, status="pending", provider="unclaimed").exists()
     assert set(Booking.objects.filter(space__makerspace=space).values_list("status", flat=True)) == {
         "confirmed", "pending"}

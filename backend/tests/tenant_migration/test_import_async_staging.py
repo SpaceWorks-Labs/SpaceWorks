@@ -122,6 +122,10 @@ def portable_tree(tmp_path):
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8", newline="") as output:
         csv.DictWriter(output, fieldnames=[c.name for c in dataset.columns]).writeheader()
+    # The importer reads both reference sidecars before any write (venue-fee preflight, ReferenceState).
+    (root / "migration").mkdir(exist_ok=True)
+    for sidecar in ("reference_provenance.jsonl", "external_references.jsonl"):
+        (root / "migration" / sidecar).write_text("", encoding="utf-8")
     object_path = root / "objects" / "private" / ("ab" * 32)
     object_path.parent.mkdir(parents=True)
     object_path.write_bytes(b"private object bytes excluded from the rows sidecar")

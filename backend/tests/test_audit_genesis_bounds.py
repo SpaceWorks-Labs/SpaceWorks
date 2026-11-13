@@ -14,7 +14,7 @@ from apps.audit.integrity_rows import GenesisMembershipLimitExceeded, _verify_ge
 from apps.audit.models import AuditLog, AuditVerificationRunEvent
 from apps.audit.verification_execution import execute_attempt
 from tests.audit_batch_helpers import MemoryAnchorSink, activate_and_seal
-from tests.audit_explorer_helpers import space
+from tests.audit_explorer_helpers import space, superadmin
 
 pytestmark = pytest.mark.django_db
 State = AuditVerificationRunEvent.State
@@ -100,7 +100,7 @@ def test_anchor_genesis_exhaustion_finishes_incomplete_without_retry(monkeypatch
     activate_and_seal(makerspace.pk, sink)
     _row(makerspace, "audit.later")
     monkeypatch.setattr(runs, "_enqueue", lambda run_id, countdown=0: None)
-    run, _ = runs.request_run(None, makerspace.pk, {"action": "audit.later"})
+    run, _ = runs.request_run(superadmin("genesis-req-" + makerspace.slug), makerspace.pk, {"action": "audit.later"})
     settings.AUDIT_ATTESTATION_ANCHOR_BACKEND = "http"
     monkeypatch.setattr("apps.audit.integrity_scope.configured_sink", lambda read_budget=None: sink)
     monkeypatch.setattr(runs, "MAX_EXPANDED_LEAVES", 2)
@@ -127,7 +127,7 @@ def test_anchor_genesis_at_exact_limit_remains_anchored(monkeypatch, settings):
     sink = MemoryAnchorSink()
     activate_and_seal(makerspace.pk, sink)
     monkeypatch.setattr(runs, "_enqueue", lambda run_id, countdown=0: None)
-    run, _ = runs.request_run(None, makerspace.pk, {})
+    run, _ = runs.request_run(superadmin("genesis-req-" + makerspace.slug), makerspace.pk, {})
     settings.AUDIT_ATTESTATION_ANCHOR_BACKEND = "http"
     monkeypatch.setattr("apps.audit.integrity_scope.configured_sink", lambda read_budget=None: sink)
     monkeypatch.setattr(runs, "MAX_EXPANDED_LEAVES", 2)
@@ -145,7 +145,7 @@ def test_post_admission_legacy_growth_terminates_with_the_same_bounds_outcome(mo
     activate_and_seal(makerspace.pk, sink)
     _row(makerspace, "audit.later")
     monkeypatch.setattr(runs, "_enqueue", lambda run_id, countdown=0: None)
-    run, _ = runs.request_run(None, makerspace.pk, {"action": "audit.later"})
+    run, _ = runs.request_run(superadmin("genesis-req-" + makerspace.slug), makerspace.pk, {"action": "audit.later"})
     master_key = settings.AUDIT_MAC_MASTER_KEY
     settings.AUDIT_MAC_MASTER_KEY = ""
     for _ in range(3):

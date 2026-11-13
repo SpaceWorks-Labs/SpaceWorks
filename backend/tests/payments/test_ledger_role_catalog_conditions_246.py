@@ -45,7 +45,9 @@ def test_settling_the_same_charge_twice_is_refused_and_records_one_receipt():
     first = boss.post(path, body, format="json")
     second = boss.post(path, body, format="json")
     assert first.status_code == 200
-    assert second.status_code in (400, 409)
+    assert second.status_code == 409
+    assert second.json()["code"] == "payment_terminal"
+    assert second.json()["payment_ids"] == [payment.pk]
     assert ManualSettlement.objects.filter(payment=payment).count() == 1
 
 

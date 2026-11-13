@@ -126,6 +126,8 @@ def test_a_refund_finer_than_the_charge_grid_is_refused_not_rounded(monkeypatch)
     settle_capture(payment, provider=Payment.Provider.STRIPE, capture_id="pi_f4b", event_id="evt_f4b",
                    minor=1250, currency="kwd")
     payment.refresh_from_db()
-    with pytest.raises(RefundNotAllowed):
+    with pytest.raises(RefundNotAllowed) as refused:
         refund_payment(payment, amount=Decimal("0.255"), reason="too fine", actor=staff)
+    assert refused.value.status_code == 400
+    assert refused.value.detail["code"] == "refund_amount_invalid"
     assert not FakeStripe.calls

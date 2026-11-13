@@ -1,0 +1,47 @@
+{
+  "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+  "testRunner": "vitest",
+  "plugins": [
+    "@stryker-mutator/vitest-runner"
+  ],
+  "mutate": [
+    "src/lib/featureGates.ts",
+    "src/lib/features.ts",
+    "src/features/staff/staffAccess.ts",
+    "src/features/staff/consoleAccess.ts",
+    "src/features/staff/staffBottomNav.ts",
+    "src/features/staff/paymentAccess.ts"
+  ],
+  "coverageAnalysis": "perTest",
+  "reporters": [
+    "clear-text",
+    "json",
+    "html"
+  ],
+  "jsonReporter": {
+    "fileName": "reports/mutation/mutation.json"
+  },
+  "htmlReporter": {
+    "fileName": "reports/mutation/index.html"
+  },
+  "tempDirName": ".stryker-tmp",
+  "concurrency": 2,
+  "timeoutMS": 30000,
+  "thresholds": {
+    "high": 100,
+    "low": 100,
+    "break": 100
+  },
+  "ignorePatterns": [
+    "reports",
+    ".stryker-tmp",
+    "dist",
+    "coverage",
+    "test-results",
+    "e2e"
+  ],
+  "vitest": {
+    "configFile": "vitest.mutation.config.ts"
+  },
+  "inPlace": true
+}

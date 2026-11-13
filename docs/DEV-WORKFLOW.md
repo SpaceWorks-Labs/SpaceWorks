@@ -226,6 +226,24 @@ happy path, validation errors, idempotency or concurrency where relevant, cross-
 session rules where money is involved. Run the changed and affected areas, not the whole suite, while
 working; run the full suite once before a release.
 
+## Mutation testing of the core (decision 457)
+
+The release waits until no mutant survives in the core: the request workflow (`hardware_requests/*workflow*`,
+`request_lifecycle`), inventory availability math, `accounts/rbac*`, the payments ledger and charge seams,
+evidence consumption/finalization, the module gates, and the frontend gate/permission helpers. A surviving mutant is
+a condition no test pins; it gets an exact-assertion test, or a written equivalence argument in
+`handover/reports/MUTATION-0.12.0.md`.
+
+- **Backend:** `scripts/mutation/mutate.py` runs in the isolated test runner (`TEST_ENTRYPOINT=python bash
+  scripts/dev.sh test /workspace/scripts/mutation/mutate.py --name <n> --files <paths under backend/> --test-dirs
+  <dirs> --test-regex <regex>`). It runs the selected tests once under per-test coverage, then swaps each mutant's
+  code into the live function and runs only the tests that cover that line. `--only <json>` re-runs earlier survivors,
+  `--shard i/n` splits the mutants. It is heavy: use CI, not the laptop.
+- **CI:** `.github/workflows/mutation.yml` triggers only on pushes to `lane/mut-*` branches. Push `HEAD:refs/heads/lane/mut-N`,
+  then `gh run list --branch lane/mut-N` / `gh run view <id>`; survivors print as `SURVIVOR [...]` lines and the JSON is an artifact.
+- **Frontend:** `cd frontend && npx stryker run` (config `stryker.config.json`, tests narrowed by
+  `vitest.mutation.config.ts`); the report is `frontend/reports/mutation/`.
+
 ## The `live` service (SSE)
 
 `docker-compose.yml` and `docker-compose.prod.yml` run a second backend process, `live`

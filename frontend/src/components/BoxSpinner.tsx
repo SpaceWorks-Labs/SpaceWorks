@@ -6,7 +6,7 @@ import { BOX, boxGroundColour, ensureBoxCss } from "./boxOpen/shared";
 /** The bare looping artwork (decorative, never focusable); `BoxSpinner` and the `Skeleton` placeholder wrap it. */
 export function BoxArt({ size, mono = false }: { size: number; mono?: boolean }) {
   ensureBoxCss();
-  // Re-read the host ground when its theme changes so the four mono lid panels stay separated.
+  // Re-read the host ground when its theme changes so the released mono artwork follows its host.
   useSyncExternalStore(subscribeTheme, currentTheme, () => "light");
   return <span ref={node => {
     if (!node || !mono) return;

@@ -1,24 +1,28 @@
+import { createHash } from "node:crypto";
+import * as V200 from "./v200Geometry";
+import { boxOpenCss as v200Css } from "./v200Css";
+import { boxOpenSvg as v200Svg } from "./v200Markup";
 import { describe, expect, it } from "vitest";
 import { logoMasters } from "../spaceWorksLogoPaths";
 import { FOLD_MS, HOVER_MS, boxGroundCss, boxMonoCss, boxOpenCss } from "./css";
 import {
-  FLAP_KEYS, FLAP_SLOTS, HINGES, flapArea, flapFace, flapLayer, flapTransform, hoverAngle, loopAngle, moving, openAngle,
+  FLAP_KEYS, FLAP_SLOTS, HINGES, flapArea, flapFace, flapLayer, flapTransform, foldAngle, hoverAngle, loopAngle, moving, openAngle,
   type FlapKey,
 } from "./geometry";
 import { boxOpenSvg } from "./markup";
 
 /**
  * The box's states, checked frame by frame against the generator (the pixel-level check of the same rules runs in
- * the design repo: scripts/check-box-frames.mjs, headless Edge). Shut: four visible regions, two orange and
- * two green. Rest: the static product logo. Every flap keeps its own colour; the cap and outlines appear
+ * the design repo: scripts/check-box-frames.mjs, headless Edge or --raster). Coloured shut: two orange outer regions, hidden green inner pair.
+ * Rest: the static product logo. Every flap keeps its own colour; the cap and outlines appear
  * the moment anything moves, and flaps are painted in depth order.
  */
 type Pt = [number, number];
 const fold = FOLD_MS / HOVER_MS;
 const CYCLES = {
-  once: { name: "sw-box", angle: openAngle, n: 96 },
-  loop: { name: "sw-boxl", angle: loopAngle, n: 160 },
-  hov: { name: "sw-boxh", angle: (key: FlapKey, t: number) => hoverAngle(key, t, fold), n: 132 },
+  once: { name: "sw-box412", angle: openAngle, n: 96 },
+  loop: { name: "sw-box412l", angle: loopAngle, n: 160 },
+  hov: { name: "sw-box412h", angle: (key: FlapKey, t: number) => hoverAngle(key, t, fold), n: 132 },
 } as const;
 const css = boxOpenCss();
 
@@ -87,7 +91,7 @@ function depth(poly: Pt[], deg: number, point: Pt): number {
 const colour = (key: FlapKey) => (key === "tr" || key === "bl" ? "#FF7447" : "#006E63");
 
 describe("box animation states", () => {
-  it("shut: four visible flap regions cover the rim, two orange and two green", () => {
+  it("shut: two orange outer regions cover the rim over the hidden green pair", () => {
     const shut = { tl: 180, tr: 180, bl: 180, br: 180 };
     const seen = new Map<FlapKey, number>();
     for (const point of RIM_POINTS) {
@@ -95,16 +99,16 @@ describe("box animation states", () => {
       expect(top, `hole in the shut lid at ${point}`).toBeDefined();
       seen.set(top!, (seen.get(top!) ?? 0) + 1);
     }
-    // Every flap owns a substantial region instead of being hidden under another panel.
-    expect([...seen.keys()].sort()).toEqual(["bl", "br", "tl", "tr"]);
+    // The outer pair owns two substantial regions; both green panels stay hidden.
+    expect([...seen.keys()].sort()).toEqual(["bl", "tr"]);
     for (const count of seen.values()) expect(count).toBeGreaterThan(1000);
     for (const key of FLAP_KEYS) expect(flapFace(key, 180).side).toBe("outer");
     expect([...seen.keys()].filter(key => colour(key) === "#FF7447").sort()).toEqual(["bl", "tr"]);
-    expect([...seen.keys()].filter(key => colour(key) === "#006E63").sort()).toEqual(["br", "tl"]);
+    expect([...seen.keys()].filter(key => colour(key) === "#006E63")).toEqual([]);
   });
 
-  it("both themes give each flap its own solid brand colour on both sides", () => {
-    for (const svg of boxOpenSvg().split("</svg>").slice(0, 2)) {
+  it("the coloured mark keeps fixed colours; reversed flaps are cream", () => {
+    for (const svg of boxOpenSvg().split("</svg>").slice(2, 3)) {
       for (const key of FLAP_KEYS) {
         const paths = [...svg.matchAll(new RegExp(`<path class="f f-${key}[^"]*"[^>]+>`, "g"))];
         expect(paths).toHaveLength(key === "tr" ? 2 : 1);
@@ -179,13 +183,13 @@ describe("box animation states", () => {
           expect(keyframeAt(`${cycle.name}-w`, i, cycle.n)).toBe("opacity:0");
         }
       });
-      it("is the solid shut box with four flap regions on its shut frames", () => {
+      it("is the solid shut box with only its orange outer pair visible", () => {
         const shut = mode === "once" ? 0 : mode === "loop" ? Math.round(0.9 * cycle.n) : Math.round(fold * cycle.n) + 1;
         expect(angles(shut).every(deg => deg === 180)).toBe(true);
         const at = Object.fromEntries(FLAP_KEYS.map(key => [key, cycle.angle(key, shut / cycle.n)])) as Record<FlapKey, number>;
         const seen = new Set(RIM_POINTS.map(point => topmost(at, point)));
-        expect([...seen].sort()).toEqual(["bl", "br", "tl", "tr"]);
-        for (const [point, key] of [[[67, 30], "tl"], [[91, 47], "tr"], [[44, 47], "bl"], [[67, 64], "br"]] as [Pt, FlapKey][]) {
+        expect([...seen].sort()).toEqual(["bl", "tr"]);
+        for (const [point, key] of [[[85, 36], "tr"], [[50, 58], "bl"]] as [Pt, FlapKey][]) {
           expect(topmost(at, point), `${mode} lid position ${point}`).toBe(key);
         }
         expect(keyframeAt(`${cycle.name}-p`, shut, cycle.n)).toBe("opacity:1");
@@ -196,33 +200,65 @@ describe("box animation states", () => {
   }
 
   for (const theme of ["light", "dark"] as const) for (const variant of ["theme", "g-light", "g-dark", "mono", "forced-colors"] as const) {
-    for (const [mode, cycle] of Object.entries(CYCLES)) it(`${theme} ${variant} ${mode}: four shut regions, own colours, no body holes at any sample`, () => {
-      const art = variant === "mono" || variant === "g-dark" ? "dark" : variant === "g-light" ? "light" : theme;
-      const themeSvg = boxOpenSvg().split("</svg>")[art === "light" ? 0 : 1];
-      const cap = themeSvg.slice(themeSvg.indexOf('<g class="p">'), themeSvg.indexOf('</g>'));
+    for (const [mode, cycle] of Object.entries(CYCLES)) it(`${theme} ${variant} ${mode}: no holes or wrong-family colours at any sample`, () => {
+      const monochrome = variant === "mono" || variant === "forced-colors" || variant === "g-dark" || (variant === "theme" && theme === "dark");
+      const reversed = variant === "g-dark" || ((variant === "theme" || variant === "forced-colors") && theme === "dark");
+      const svgIndex = variant === "mono" ? 0 : reversed ? 1 : monochrome ? 0 : 2;
+      const svg = boxOpenSvg().split("</svg>")[svgIndex];
+      if (monochrome) {
+        if (reversed) expect(svg).not.toMatch(/#FF7447|#006E63/i);
+        expect(svg + "</svg>").toBe(v200Svg().split("</svg>")[svgIndex] + "</svg>");
+      }
       for (let i = 0; i <= cycle.n; i++) {
-        const at = Object.fromEntries(FLAP_KEYS.map(key => [key, cycle.angle(key, i / cycle.n)])) as Record<FlapKey, number>;
-        const live = moving(Object.values(at));
-        // Both themes' body faces are always covered: dark's cut-away master gets the full-height cap
-        // on every moving frame, not just near shut. Its resting cut-outs are covered by the static flaps.
-        if (art === "dark" && live) {
-          expect(keyframeAt(`${cycle.name}-p`, i, cycle.n)).toBe("opacity:1");
-          for (const face of logoMasters.symbol.paths.slice(0, 2)) expect(cap).toContain(face.d);
+        const legacy = { once: V200.openAngle, loop: V200.loopAngle, hov: (key: FlapKey, t: number) => V200.hoverAngle(key, t, fold) }[mode as keyof typeof CYCLES];
+        const angle = monochrome ? legacy : cycle.angle;
+        const at = Object.fromEntries(FLAP_KEYS.map(key => [key, angle(key, i / cycle.n)])) as Record<FlapKey, number>;
+        const name = monochrome ? cycle.name.replace("412", "") : cycle.name;
+        if (reversed && moving(Object.values(at))) {
+          expect(keyframeAt(`${name}-p`, i, cycle.n)).toBe("opacity:1");
+          for (const face of logoMasters.symbol.paths.slice(0, 2)) expect(svg).toContain(face.d);
         }
-        for (const key of FLAP_KEYS) expect(keyframeAt(`${cycle.name}-${key}`, i, cycle.n)).toContain("fill:var(--c)");
         if (Object.values(at).every(deg => deg === 180)) {
-          const seen = new Set(RIM_POINTS.map(point => topmost(at, point)));
-          expect([...seen].sort()).toEqual(["bl", "br", "tl", "tr"]); // undefined would be a hole
+          expect(new Set(RIM_POINTS.map(point => topmost(at, point)))).toEqual(new Set(["bl", "tr"]));
         }
       }
-      if (variant === "mono") {
-        expect(boxMonoCss()).toContain("--sw-ramp-w:3.8px");
-        expect(boxMonoCss()).toContain(".sw-box.mono .f{fill:currentColor;");
-      }
+      if (variant === "mono") expect(boxMonoCss()).toContain("--alt:currentColor!important");
       if (variant === "forced-colors") expect(css).toContain("fill:CanvasText!important");
       if (variant === "g-light" || variant === "g-dark") expect(boxGroundCss()).toContain(`.sw-box.${variant}`);
     });
   }
+
+  it("opens orange A, orange B, then each green flap, and has a small single settle", () => {
+    for (const [t, movingKey] of [[0.13, "tr"], [0.32, "bl"], [0.51, "tl"], [0.70, "br"]] as const) {
+      expect(openAngle(movingKey, t)).toBeGreaterThan(0);
+      expect(openAngle(movingKey, t)).toBeLessThan(180);
+      const order = ["tr", "bl", "tl", "br"] as const;
+      const index = order.indexOf(movingKey);
+      for (const key of order.slice(index + 1)) expect(openAngle(key, t)).toBe(180);
+    }
+    for (const key of FLAP_KEYS) for (let i = 0; i <= 200; i++) {
+      expect(V200.flapTransform(key, i * 0.9)).toBe(flapTransform(key, i * 0.9));
+      expect(foldAngle(key, i / 200)).toBe(openAngle(key, 1 - i / 200));
+    }
+    const min = Math.min(...FLAP_KEYS.flatMap(key => Array.from({ length: 200 }, (_, i) => openAngle(key, i / 199))));
+    expect(min).toBeLessThan(-2);
+    expect(min).toBeGreaterThan(-4);
+    expect(boxOpenSvg().split("</svg>")[2]).not.toMatch(/class="[akr]"|class="x"/);
+  });
+
+  it("black-and-white CSS and markup match the released v2.0.0 SHA-256 snapshots, minus the sparkles (412)", () => {
+    const sha = (value: string) => createHash("sha256").update(value.replace(/\r\n/g, "\n")).digest("hex");
+    const baseline = `${v200Css()}\n${boxMonoCss()}\n${boxGroundCss()}\n`;
+    expect(sha(baseline)).toBe("1c746ec8c1892f2b7748b1de8e4dd4d8fc2f69c11c95b82751b68b71537d2a57");
+    expect(boxOpenCss().startsWith(v200Css())).toBe(true);
+    expect(boxOpenSvg().startsWith(v200Svg())).toBe(true);
+    // v2.0.0 markup (0e85ea78…) with only its sparkle stars (.k) and burst rays (.r) removed — owner, decision 412.
+    expect(v200Svg()).not.toMatch(/class="[kr]"/);
+    expect(sha(v200Svg())).toBe("2f9a0590d907b6849f46188ae5e9d7829983a8fd820294a37bd8eb499204ecf4");
+    expect(boxOpenCss()).not.toMatch(/\.sw-box\.(?:once|loop|hov) \.(?:lt|dk) \.f-.*animation:sw-box412/);
+    expect(boxMonoCss()).toContain("--c:currentColor!important;--alt:currentColor!important");
+    expect(sha(boxOpenSvg().split("</svg>")[1] + "</svg>")).toBe("3b4621988a5cb3db25e6ddb488caacd623f27ec48259a644a5232c2d01d78a34");
+  });
 
   it("draws the masters' paths for the flaps, so the resting frame is the static logo", () => {
     const svg = boxOpenSvg();

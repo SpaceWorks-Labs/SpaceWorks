@@ -35,7 +35,7 @@ export function LogoBoxOverlay({ shape, width, height, offset, surface, oneColou
     const onEnter = (event: Event) => { if ((event as PointerEvent).pointerType !== "touch") start(); };
     const onFocus = (event: Event) => { if (focusVisible(event.target)) start(); };
     const overlay = root.current;
-    const onEnd = (event: Event) => { if ((event as AnimationEvent).animationName === "sw-boxh-w") { running.current = false; setPlaying(false); } };
+    const onEnd = (event: Event) => { if (["sw-boxh-w", "sw-box412h-w"].includes((event as AnimationEvent).animationName)) { running.current = false; setPlaying(false); } };
     host.addEventListener("pointerenter", onEnter);
     host.addEventListener("focusin", onFocus);
     overlay?.addEventListener("animationend", onEnd);

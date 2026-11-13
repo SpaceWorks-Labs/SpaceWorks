@@ -37,8 +37,9 @@ if (process.env.SW_BOX_DESIGN_DIR) {
   write("box-open.css", `${boxOpenCss()}\n${boxMonoCss()}\n${boxGroundCss()}\n`);
   write("box-open-markup.html", `${boxOpenSvg()}\n`);
   write("demo.html", readFileSync(resolve(dest, "demo.html"), "utf8")
-    .replace(/<svg class="lt"[\s\S]*?<\/svg><svg class="dk"[\s\S]*?<\/svg>/g, boxOpenSvg()));
+    .replace(/<svg class="lt"[\s\S]*?<\/svg><svg class="dk"[\s\S]*?<\/svg>(?:<svg class="colour"[\s\S]*?<\/svg>)*/g, boxOpenSvg()));
   for (const file of ["boxOpen/geometry.ts", "boxOpen/css.ts", "boxOpen/markup.ts", "boxOpen/shared.ts",
+    "boxOpen/v200Geometry.ts", "boxOpen/v200Css.ts", "boxOpen/v200Markup.ts",
     "BoxSpinner.tsx", "LogoLoader.tsx", "spaceWorksLogoPaths.ts", "brand/AnimatedLogoMark.tsx",
     "brand/LogoBoxOverlay.tsx", "brand/animatedLogo.css"]) {
     mkdirSync(resolve(dest, "react", file, ".."), { recursive: true });

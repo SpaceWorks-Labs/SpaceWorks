@@ -1,7 +1,7 @@
 import { boxGroundCss, boxMonoCss, boxOpenCss } from "./css";
 import { boxOpenSvg } from "./markup";
 
-/** Both themes' artwork, built once from the brand masters; CSS shows the one for `html.dark`. */
+/** The released light/reversed SVGs plus the coloured SW-412 SVG; CSS selects the artwork family. */
 export const BOX = boxOpenSvg();
 
 /** The animation CSS lives in a <style> added once (index.html carries the one-shot part for the splash). */

@@ -16,8 +16,8 @@ type Hinge = { h1: Pt; h2: Pt; m: Pt };
 
 export const FLAP_KEYS: readonly FlapKey[] = ["tl", "tr", "bl", "br"];
 /**
- * Document (paint) order, bottom to top. The staggered closing order is tl/br, bl, then tr.
- * Four quarter panels stay visible on the lid instead of hiding the earlier pair beneath the later pair.
+ * Document (paint) order, bottom to top. Shut, the box closes like a real one: the inner pair (tl, br) lies
+ * under the outer pair (bl, then tr), so only the two orange outer panels cover the closed lid.
  * Opened, tr lies at the back, where the front flaps and a lifting tl/br must cover it, so tr is drawn twice:
  * layer 0 (bottom) while it is at most LAYER_DEG, layer 1 (top) beyond. The swap happens while tr overlaps
  * no other flap, so it never shows.
@@ -25,7 +25,7 @@ export const FLAP_KEYS: readonly FlapKey[] = ["tl", "tr", "bl", "br"];
 export const FLAP_SLOTS: readonly { key: FlapKey; layer?: 0 | 1 }[] = [
   { key: "tr", layer: 0 }, { key: "tl" }, { key: "br" }, { key: "bl" }, { key: "tr", layer: 1 },
 ];
-const LAYER_DEG = 90;
+const LAYER_DEG = 100;
 export const flapLayer = (deg: number): 0 | 1 => (deg > LAYER_DEG ? 1 : 0);
 const LIFT = 20.25;
 const rad = (deg: number) => (deg * Math.PI) / 180;
@@ -63,18 +63,18 @@ export const SHUT_K = Math.max(reachNeeded("tl", "br"), reachNeeded("tr", "bl"))
 const closedness = (deg: number) => Math.min(1, Math.max(0, (deg - 150) / 30));
 
 /**
- * Extend the hinge ends to their neighbouring hinge intersections before dividing the lid into quarters.
- * tl's back tip stays inset: extending it into the top corner clips the tr flap as it starts folding.
- * Its opposite end and the other hinges extend to keep the panels joined, including the central seam.
+ * The hinges stop short of the rim's corners, so a shut outer flap (bl, tr) would leave a strip of the inner flap
+ * under it showing along the rim, a double edge. Shut, each outer flap is widened along its hinge up to where the
+ * neighbouring inner hinge lines cross it: `[before h1, after h2]` in box units.
  */
+const OUTER: readonly FlapKey[] = ["bl", "tr"];
 function widen(key: FlapKey): readonly [number, number] {
   const { h1, h2 } = HINGES[key];
   const h = sub(h2, h1), len = Math.hypot(...h);
   const reach = (end: Pt) => {
     let best = 0;
     for (const other of FLAP_KEYS) {
-      if (other === key || (other === "tl" && key === "br") || (other === "br" && key === "tl")
-        || (other === "tr" && key === "bl") || (other === "bl" && key === "tr")) continue;
+      if (OUTER.includes(other)) continue;
       const o = HINGES[other], d = sub(o.h2, o.h1);
       if (Math.min(Math.hypot(...sub(o.h1, end)), Math.hypot(...sub(o.h2, end))) > 6) continue;
       // Parameter along h where this hinge line crosses the other one.
@@ -85,7 +85,7 @@ function widen(key: FlapKey): readonly [number, number] {
   };
   return [reach(h1), reach(h2)];
 }
-const WIDEN = Object.fromEntries(FLAP_KEYS.map(key => [key, key === "tl" ? [0, widen(key)[1]] : widen(key)])) as Record<FlapKey, readonly [number, number]>;
+const WIDEN = Object.fromEntries(FLAP_KEYS.map(key => [key, OUTER.includes(key) ? widen(key) : [0, 0]])) as Record<FlapKey, readonly [number, number]>;
 
 /** `matrix(a,b,c,d,e,f)` swinging the flap `deg` about its hinge, or "none" when it is at rest. */
 export function flapTransform(key: FlapKey, deg: number): string {
@@ -93,13 +93,9 @@ export function flapTransform(key: FlapKey, deg: number): string {
   const { h1, h2, m } = HINGES[key];
   const shut = closedness(deg), h = sub(h2, h1), len = Math.hypot(...h);
   const [before, after] = WIDEN[key].map(v => v * shut);
-  // Four quarter panels: shorten each hinge towards its own corner as the lid closes.
-  // The opposite pair uses the other half, tiling the rhombus around one shared centre.
-  const span = 1 + (before + after) / len;
-  const hp: Pt = [h[0] * span * (1 - 0.5 * shut), h[1] * span * (1 - 0.5 * shut)];
-  const slide = (key === "tr" || key === "br" ? 0.5 * shut * span : 0) - before / len;
+  const hp: Pt = [h[0] * (1 + (before + after) / len), h[1] * (1 + (before + after) / len)];
   const k = 1 + (SHUT_K - 1) * shut;
-  return affine(h, hp, m, swung(key, deg, k), h1, [h[0] * slide, h[1] * slide - 1.6 * shut]);
+  return affine(h, hp, m, swung(key, deg, k), h1, [-h[0] / len * before, -h[1] / len * before - 1.6 * shut]);
 }
 const swung = (key: FlapKey, deg: number, k = 1): Pt => {
   const { m } = HINGES[key];
@@ -133,43 +129,28 @@ export function flapArea(key: FlapKey, deg: number): number {
 
 const clamp = (value: number, lo = 0, hi = 1) => Math.min(hi, Math.max(lo, value));
 const easeInOut = (p: number) => (p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2);
-/** Both sides retain the flap's own brand colour throughout the fold (SW-389). */
+/** SW-412: each coloured flap keeps its own colour on both faces. */
 export function flapFace(key: FlapKey, deg: number): { side: "inner" | "outer"; shade: number } {
   return { side: flapArea(key, deg) <= 0 ? "outer" : "inner", shade: 0 };
 }
 
-type Schedule = { lift: number; spring: number; end: number; decay: number; cycles: number };
-/** The top flap (tr) starts first, alone, then bl (now on top); the inner pair (tl, br) follows. Back flaps wobble less than front ones. */
-const SCHEDULE: Record<FlapKey, Schedule> = {
-  tr: { lift: 0.07, spring: 0.19, end: 0.84, decay: 4.2, cycles: 0.75 },
-  bl: { lift: 0.19, spring: 0.25, end: 0.83, decay: 4.6, cycles: 1.1 },
-  tl: { lift: 0.24, spring: 0.31, end: 0.9, decay: 4.2, cycles: 0.75 },
-  br: { lift: 0.24, spring: 0.31, end: 0.88, decay: 4.6, cycles: 1.1 },
+/** Non-overlapping turns: orange tr, orange bl, green tl, green br. */
+const TURNS: Record<FlapKey, readonly [number, number]> = {
+  tr: [0.04, 0.22], bl: [0.23, 0.41], tl: [0.42, 0.60], br: [0.61, 0.79],
 };
-const LIFT_DEG = 38;
-
-/** Flap angle (degrees, 180 closed .. 0 open) at normalised time t of the one-shot opening. */
+/** A single small overshoot, damped back to zero; never a repeating wobble. */
 export function openAngle(key: FlapKey, t: number): number {
-  const s = SCHEDULE[key];
-  if (t <= s.lift) return 180;
-  if (t < s.spring) return 180 - LIFT_DEG * easeInOut((t - s.lift) / (s.spring - s.lift));
-  if (t >= s.end) return 0;
-  const p = (t - s.spring) / (s.end - s.spring);
-  const tail = Math.exp(-s.decay) * Math.cos(2 * Math.PI * s.cycles);
-  // Damped spring 0 -> 1 with overshoot; the p^6 term lands it exactly on 1 at the end.
-  const g = 1 - Math.exp(-s.decay * p) * Math.cos(2 * Math.PI * s.cycles * p) + tail * Math.pow(p, 6);
-  return (180 - LIFT_DEG) * (1 - g);
+  const [from, to] = TURNS[key];
+  if (t <= from) return 180;
+  if (t < to) return 180 * (1 - easeInOut((t - from) / (to - from)));
+  if (t >= 0.98) return 0;
+  const p = clamp((t - 0.80) / 0.18);
+  return -8 * Math.sin(Math.PI * p) * Math.pow(1 - p, 2);
 }
 
-/**
- * Folding shut, a flap at the same angle as its neighbour would pass through it (two flaps past 90 degrees on
- * adjacent edges intersect), so the fold is staggered in paint order: the inner pair (tl, br) is down before bl
- * passes upright, and bl is down before tr does. Each flap folds over half of the fold time.
- */
-const FOLD: Record<FlapKey, readonly [number, number]> = { tl: [0, 0.5], br: [0, 0.5], bl: [0.25, 0.75], tr: [0.5, 1] };
+/** Exact reverse of the opening, including settle; green closes before the orange pair. */
 export function foldAngle(key: FlapKey, p: number): number {
-  const [from, to] = FOLD[key];
-  return 180 * easeInOut(clamp((p - from) / (to - from)));
+  return openAngle(key, 1 - clamp(p));
 }
 
 /** Loader cycle: open (the one-shot), hold open, fold shut, hold shut. */

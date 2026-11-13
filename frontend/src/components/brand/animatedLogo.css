@@ -10,10 +10,5 @@
 [data-logo][data-logo-playing] .sw-logo-sym { visibility: hidden; }
 @media (prefers-reduced-motion: reduce) { .sw-logo-box { display: none; } }
 
-/* SW-389: keep the reversed geometry and cream body; regular product flaps retain the brand palette. */
-.sw-logo-colour [data-logo$="-reversed"] .sw-logo-flap-tl,
-.sw-logo-colour [data-logo$="-reversed"] .sw-logo-flap-br { fill: #006E63; }
-.sw-logo-colour [data-logo$="-reversed"] .sw-logo-flap-tr,
-.sw-logo-colour [data-logo$="-reversed"] .sw-logo-flap-bl { fill: #FF7447; }
-
+/* SW-412 correction: the reversed static master stays cream, matching its v2.0.0 animation. */
 @media (forced-colors: active) { .sw-logo-colour .sw-logo-flap { fill: CanvasText !important; } }

@@ -17,7 +17,7 @@ describe("Space Works mark placements", () => {
     expect(offenders).toEqual([]);
   }, 30_000);
   it("only the brand artwork modules read the logo masters", () => {
-    const allowed = new Set(["components/SpaceWorksLogo.tsx", "components/spaceWorksLogoPaths.ts", "components/BrandFacets.tsx", "components/boxOpen/markup.ts"]);
+    const allowed = new Set(["components/SpaceWorksLogo.tsx", "components/spaceWorksLogoPaths.ts", "components/BrandFacets.tsx", "components/boxOpen/markup.ts", "components/boxOpen/v200Markup.ts"]);
     const offenders = walk(SRC).filter(file => !allowed.has(rel(file)))
       .filter(file => /logoMasters/.test(readFileSync(file, "utf8"))).map(rel);
     expect(offenders).toEqual([]);

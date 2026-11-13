@@ -35,7 +35,7 @@ describe("AnimatedLogoMark", () => {
     const { container } = render(<SpaceWorksLogo variant="symbol" />);
     expect(container.querySelector(".sw-logo-box")).toBeNull();
   });
-  it("plays the fold-then-open cycle on pointer hover of the host link, and finishes even if the pointer leaves", () => {
+  it.each(["sw-boxh-w", "sw-box412h-w"])("%s: hover finishes even if the pointer leaves", name => {
     const { container } = link({ variant: "symbol", size: 48 });
     const anchor = container.querySelector("a")!;
     fireEvent.pointerEnter(anchor);
@@ -46,7 +46,7 @@ describe("AnimatedLogoMark", () => {
     fireEvent.pointerLeave(anchor);
     fireEvent.pointerEnter(anchor);
     expect(container.querySelector(".sw-box.hov")).toBe(box); // still running, not restarted
-    animationEnd(box!, "sw-boxh-w");
+    animationEnd(box!, name);
     expect(container.querySelector(".sw-box")).toBeNull();
     expect(container.querySelector("[data-logo]")?.hasAttribute("data-logo-playing")).toBe(false);
   });
@@ -85,13 +85,11 @@ describe("AnimatedLogoMark", () => {
     fireEvent.pointerEnter(container.querySelector("a")!);
     expect(container.querySelector(".sw-box")?.classList.contains("g-dark")).toBe(true);
   });
-  it("uses full colour for the regular reversed mark and preserves explicit mono marks", () => {
+  it("keeps the reversed mark cream and preserves explicit mono marks", () => {
     const { container, rerender } = link({ variant: "symbol", ground: "dark" });
     expect(container.querySelector(".sw-logo-colour")).not.toBeNull();
-    expect(css).toContain('.sw-logo-colour [data-logo$="-reversed"] .sw-logo-flap-tl');
-    expect(css).toContain('.sw-logo-colour [data-logo$="-reversed"] .sw-logo-flap-bl');
-    expect(css).toContain("fill: #006E63");
-    expect(css).toContain("fill: #FF7447");
+    expect(css).not.toContain("#006E63");
+    expect(css).not.toContain("#FF7447");
     rerender(<a href="/"><AnimatedLogoMark variant="symbol" ground="dark" oneColour /></a>);
     expect(container.querySelector(".sw-logo-mono")).not.toBeNull();
     expect(container.querySelector(".sw-logo-colour")).toBeNull();

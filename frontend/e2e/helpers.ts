@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
-import { expect, type APIRequestContext, type Page } from "@playwright/test";
+import { expect, type APIRequestContext, type Locator, type Page } from "@playwright/test";
 
 declare const process: { env: Record<string, string | undefined> };
 
@@ -99,4 +99,27 @@ export async function openRequestsTab(page: Page) {
   await expect(page.getByText("Pending review")).toBeVisible({ timeout: 15_000 });
 }
 
+// The Requests page shows one queue at a time: pending | accepted | active | history.
+export async function openQueue(page: Page, queue: "pending" | "accepted" | "active" | "history") {
+  await page.goto(`/m/${SEED.slug}/admin/requests?queue=${queue}`);
+  await expect(page.getByRole("heading", { name: "Requests", level: 1 })).toBeVisible({ timeout: 15_000 });
+}
+
 export const EVIDENCE_FIXTURE = fileURLToPath(new URL("./fixtures/evidence.jpg", import.meta.url));
+
+// The handover is a five-step wizard (scan container, borrower, items, photo, receipt). The
+// "Compact view" toggle shows steps 1-4 on one screen, so specs drive it there.
+export async function compactWizard(dialog: Locator) {
+  await dialog.getByRole("button", { name: "Compact view" }).click();
+}
+
+export async function scanBox(dialog: Locator, code: string) {
+  await dialog.getByLabel("Box QR payload").fill(code);
+  await dialog.getByRole("button", { name: "Check box QR" }).click();
+  await expect(dialog.getByRole("status").filter({ hasText: `Verified box: ${code}` })).toBeVisible({ timeout: 15_000 });
+}
+
+export async function uploadPhoto(dialog: Locator) {
+  await dialog.locator('input[type="file"]').setInputFiles(EVIDENCE_FIXTURE);
+  await expect(dialog.getByText(/Uploaded photo #\d+/)).toBeVisible({ timeout: 20_000 });
+}

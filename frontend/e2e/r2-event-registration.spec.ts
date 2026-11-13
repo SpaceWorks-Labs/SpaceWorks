@@ -103,7 +103,7 @@ test("L6 tickets: a free ticket is ordered through the shop, a paid seat is held
 
   await test.step("a paid seat is held with an expiry until it is paid at the desk", async () => {
     const lines = { tickets: [{ ticket_type_id: paid.id, quantity: 1 }], buyer_attends: false };
-    const quote = await member.post<{ digest: string; total: string }>(
+    const { quote } = await member.post<{ quote: { digest: string; total: string } }>(
       `/member/makerspaces/${SEED.makerspaceId}/events/${event.id}/orders/quote/`, lines);
     expect(Number(quote.total)).toBeGreaterThan(0);
     const placed = await member.post<{ order: Order; checkout_url: string }>(

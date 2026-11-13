@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 import { SEED } from "./helpers";
 import {
-  type Account, StaffApi, blockThirdParty, memberApi, memberArea, publishedEvent, rowsOf, staffConsole, unique,
+  type Account, E2E_PHONE, StaffApi, blockThirdParty, memberApi, memberArea, publishedEvent, rowsOf, staffConsole, unique,
 } from "./r2";
 
 declare const process: { env: Record<string, string | undefined> };
@@ -23,13 +23,15 @@ test.beforeEach(async ({ page }) => { await blockThirdParty(page); });
 test("L21a: a member applies, staff release an offer, the member accepts the place", async ({ page, browser, request }) => {
   const staff = await StaffApi.open(request);
   await staff.installModules("events", "membership");
-  await staff.setFeatures(["events.applications"], ["events.orders"]);
+  await staff.setFeatures(["events.applications"], ["events.orders", "events.seat_holds"]);
   const event = await publishedEvent(staff, unique("E2E Studio Residency"), { capacity: 6 }, 10);
 
   await test.step("staff open applications with a batch review", async () => {
     const config = await staff.get<Config>(`/admin/events/${event.id}/hackathon/`);
     await staff.command(`/admin/events/${event.id}/hackathon/`, config.version, {
       enabled: true, review_mode: "batch", team_mode: "solo", rsvp_days: 3,
+      // Batch review needs a rubric: a revision and anchored 1-5 criteria.
+      review_rubric: { revision: 1, criteria: [{ key: "impact", label: "Impact", anchors: { 1: "Weak", 2: "Fair", 3: "Good", 4: "Strong", 5: "Outstanding" } }] },
       application_opens_at: new Date(Date.now() - 3_600_000).toISOString(),
       application_closes_at: new Date(Date.now() + 5 * 86_400_000).toISOString(),
       coc_body: "Be kind, share tools, and clean your bench. (E2E code of conduct.)",
@@ -43,6 +45,8 @@ test("L21a: a member applies, staff release an offer, the member accepts the pla
     await page.goto(applicationPage);
     await expect(page.getByRole("heading", { name: "Apply to make something together" })).toBeVisible();
     await page.getByLabel("I agree to this code of conduct.").check();
+    // The seeded member has no phone on the account; the admission form asks for one.
+    await page.getByLabel("Contact phone").fill(E2E_PHONE);
     await page.getByRole("button", { name: "Submit application" }).click();
     await expect(page.getByRole("heading", { name: "Application progress" })).toBeVisible();
   });

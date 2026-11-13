@@ -317,7 +317,14 @@ export async function publishedEvent(staff: StaffApi, title: string, extra: Reco
     is_public: true, capacity: 20, ...extra,
   });
   await staff.post(`/admin/events/${event.id}/publish/`, {});
-  return { ...event, status: "published" };
+  // The staff row no longer carries the public token; the public listing does.
+  let publicToken = event.public_token;
+  if (!publicToken) {
+    const listed = rowsOf(await staff.get<EventRow[] | { results: EventRow[] }>(`/public/${SEED.slug}/events/`));
+    publicToken = listed.find((row) => row.title === title)?.public_token as string;
+    expect(publicToken, `public listing has "${title}"`).toBeTruthy();
+  }
+  return { ...event, public_token: publicToken, status: "published" };
 }
 
 /** The seeded member has no phone on the account; registration forms ask for one. */

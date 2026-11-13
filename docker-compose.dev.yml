@@ -55,6 +55,10 @@ services:
       # Kiosk and event check-in stations hash their PINs with this pepper; `dev.sh e2e`
       # seeds a kiosk station. A dev-only value: production must set its own secret.
       EVENT_STATION_PIN_PEPPER: ${EVENT_STATION_PIN_PEPPER:-dev-only-station-pepper-not-for-production}
+      # Event registration credentials (the RSVP / ticket QR) answer 503 without these; the installer
+      # generates real ones. Dev-only values so an RSVP works on the dev stack.
+      EVENT_REGISTRATION_CREDENTIAL_DIGEST_KEY: ${EVENT_REGISTRATION_CREDENTIAL_DIGEST_KEY:-ZGV2LW9ubHktZXZlbnQtZGlnZXN0LWtleS0zMmJ5dGU=}
+      EVENT_REGISTRATION_CREDENTIAL_KEYS: '{"1":"${EVENT_REGISTRATION_CREDENTIAL_DEV_KEY:-ZGV2LW9ubHktZXZlbnQtY2lwaGVyLWtleS0zMmJ5dGU=}"}'
     ports: !override
       - "8000:8000"
     volumes:

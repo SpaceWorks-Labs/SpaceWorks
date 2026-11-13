@@ -75,7 +75,7 @@ test("a member asks for a refund and staff approve it with an in-person refund r
   await test.step("the member sees the approved refund", async () => {
     await page.reload();
     const row = page.locator("li").filter({ hasText: charge.subject_label });
-    await expect(row.getByText("Refund approved")).toBeVisible();
+    await expect(row.getByText("Refund approved").first()).toBeVisible();
     await expect(row.getByText(/Refunded .* by cash/i)).toBeVisible();
   });
 });

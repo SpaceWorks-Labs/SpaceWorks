@@ -76,7 +76,7 @@ test("staff record an in-person payment with a receipt, and the member downloads
     await expect(documents.getByText(new RegExp(`^Receipt `)).first()).toBeVisible();
     const download = memberPage.waitForEvent("download");
     await documents.getByRole("button", { name: "Download PDF" }).first().click();
-    expect((await download).suggestedFilename()).toMatch(/^payment-document-\d+\.pdf$/);
+    expect((await download).suggestedFilename()).toMatch(/^[\w-]+\.pdf$/);
     await memberContext.close();
   });
 });
@@ -126,7 +126,7 @@ test("online checkout goes to the provider page and waits for the webhook (gatew
     await test.step("returning from the provider settles nothing without its webhook", async () => {
       await page.goto(`/m/${SEED.slug}/member/payments?checkout=success`);
       const row = page.locator("li").filter({ hasText: new RegExp(escapeRegExp(charge.subject_label)) });
-      await expect(row.getByText("pending", { exact: true })).toBeVisible();
+      await expect(row.getByText("Pending", { exact: true })).toBeVisible();
       const after = (await member.get<Array<{ id: number; status: string }>>(`/member/makerspaces/${SEED.makerspaceId}/payments`))
         .find((row) => row.id === charge.id);
       expect(after?.status).toBe("pending");

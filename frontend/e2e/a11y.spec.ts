@@ -2,7 +2,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 
 import { SEED, openRequestsTab, staffLogin } from "./helpers";
-import { MEMBER, submitSignIn } from "./r2";
+import { MEMBER, StaffApi, submitSignIn } from "./r2";
 
 // WCAG 2.1 AA in a real browser (colour contrast included, which jsdom cannot compute).
 const TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"];
@@ -44,9 +44,15 @@ for (const colorScheme of ["light", "dark"] as const) {
       await page.goto(`/m/${SEED.slug}/events`);
       await expect(page.getByRole("heading", { name: SEED.eventTitle })).toBeVisible();
       await expectClean(page);
-      await page.getByRole("button", { name: "Register", exact: true }).click();
-      await expect(page.getByRole("button", { name: "Close form" })).toBeVisible();
+      // The list card links to the event page, where Register sits beside the sign-in requirement.
+      await page.getByRole("link", { name: "Register", exact: true }).click();
+      await expect(page.getByRole("heading", { name: "Join this event" })).toBeVisible();
       await expectClean(page);
+      // Registering signed out is refused with a spoken, visible reason (an alert by design), not a silent failure.
+      await page.getByRole("button", { name: "Register", exact: true }).click();
+      await expect(page.getByRole("alert").filter({ hasText: "Sign in to register for this event." })).toBeVisible();
+      const results = await new AxeBuilder({ page }).withTags(TAGS).analyze();
+      expect(results.violations.map((v) => v.id)).toEqual([]);
     });
 
     test("public bookings and request form", async ({ page }) => {
@@ -59,7 +65,9 @@ for (const colorScheme of ["light", "dark"] as const) {
       await expectClean(page);
     });
 
-    test("member joining screen, sign in and active member area", async ({ page }) => {
+    test("member joining screen, sign in and active member area", async ({ page, request }) => {
+      // Presence is an opt-in module; the seed does not install it, so the Presence panel needs it on.
+      await (await StaffApi.open(request)).installModules("presence");
       await page.goto(`/m/${SEED.slug}/member`);
       await expect(page.getByRole("button", { name: "Sign in to join" })).toBeVisible();
       await expectClean(page);

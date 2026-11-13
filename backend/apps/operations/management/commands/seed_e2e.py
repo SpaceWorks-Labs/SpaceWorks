@@ -21,7 +21,7 @@ from django.db import transaction
 from apps.accounts.staff_identity import PERSON_KIND, PLATFORM_KIND
 from apps.accounts.models import User
 from apps.makerspaces.staff_role_grants import grant_staff_role
-from apps.boxes.models import Box
+from apps.boxes.models import Box, QrCode
 from apps.hardware_requests import request_workflow
 from apps.inventory.categories import ensure_default_categories
 from apps.inventory.models import InventoryProduct, PublicAvailabilityMode, TrackingMode
@@ -100,6 +100,8 @@ class Command(BaseCommand):
         box = Box.objects.create(
             makerspace=makerspace, code=f"e2ebox{token}", label="E2E Shelf A", location="E2E Test Bench",
         )
+        # The handover wizard resolves the container through its QR label, exactly as a real scan does.
+        QrCode.objects.create(makerspace=makerspace, payload=box.code, target_type=QrCode.TargetType.BOX, target_id=box.pk, created_by=manager)
         product = InventoryProduct.objects.create(
             makerspace=makerspace, box=box, name=PRODUCT_NAME,
             description="Seeded for the end-to-end suite.", tracking_mode=TrackingMode.QUANTITY,

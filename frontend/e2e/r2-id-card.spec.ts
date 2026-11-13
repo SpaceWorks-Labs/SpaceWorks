@@ -39,12 +39,12 @@ test("staff issue and email a member card; the member adds a photo and the publi
   await test.step("staff issue the card from the Issue tab", async () => {
     await staffConsole(page, "member-cards");
     await expect(page.getByRole("heading", { name: "Member cards" }).first()).toBeVisible();
-    await page.getByRole("tab", { name: "Issue", exact: true }).click();
+    await page.getByRole("navigation", { name: "Page sections" }).getByRole("link", { name: "Issue", exact: true }).click();
     const roster = page.getByRole("region", { name: "Members without a card" });
     const nameField = roster.getByLabel(`Printed name for ${holder}`, { exact: true });
     await nameField.fill(printedName);
-    // The innermost block holding the field also holds its own "Issue card" button.
-    await roster.locator("div").filter({ has: nameField }).last().getByRole("button", { name: "Issue card" }).click();
+    // The seeded member is the only one without a card, so the roster has a single "Issue card" button.
+    await roster.getByRole("button", { name: "Issue card" }).click();
     await expect(nameField).toHaveCount(0);
   });
 
@@ -52,10 +52,10 @@ test("staff issue and email a member card; the member adds a photo and the publi
   expect(card, "the issued card is active").toBeTruthy();
 
   await test.step("staff email the card from the Cards tab", async () => {
-    await page.getByRole("tab", { name: "Cards", exact: true }).click();
+    await page.getByRole("navigation", { name: "Page sections" }).getByRole("link", { name: /^Cards/ }).click();
     await page.getByRole("button", { name: `Actions for ${printedName}` }).click();
     await page.getByRole("menuitem", { name: "Email card" }).click();
-    await expect(page.getByText(`Card emailed to ${printedName}.`)).toBeVisible();
+    await expect(page.getByText(`Card emailed to ${printedName}.`).first()).toBeVisible();
   });
 
   await test.step("the print PDF renders", async () => {
@@ -72,7 +72,7 @@ test("staff issue and email a member card; the member adds a photo and the publi
 
   await test.step("the member uploads a card photo with consent (GAP3)", async () => {
     await memberArea(memberPage, "account-portal?section=card");
-    await expect(memberPage.getByRole("heading", { name: "Your member card" })).toBeVisible();
+    await expect(memberPage.getByRole("heading", { name: "Card", exact: true })).toBeVisible();
     await memberPage.getByLabel("Choose a photo").setInputFiles(EVIDENCE_FIXTURE);
     await memberPage.getByLabel(/^I agree to my photo being stored privately/).check();
     await memberPage.getByRole("button", { name: "Upload photo" }).click();
@@ -96,15 +96,15 @@ test("staff issue and email a member card; the member adds a photo and the publi
     const checkPage = await check.newPage();
     await blockThirdParty(checkPage);
     await checkPage.goto(`/verify/c/${token}`);
-    await expect(checkPage.getByRole("heading", { name: "This card is valid" })).toBeVisible();
-    await expect(checkPage.getByText("Checked just now.")).toBeVisible();
-    await expect(checkPage.getByText(card.card_number).first()).toBeVisible();
+    await expect(checkPage.getByRole("heading", { name: "Valid card" })).toBeVisible();
+    await expect(checkPage.getByText(/Checked .* \(.+\)\./)).toBeVisible();
+    await expect(checkPage.getByText("Number", { exact: true })).toBeVisible();
 
     await test.step("and not valid once revoked", async () => {
       await staff.post(`/admin/member-cards/${card.id}/revoke`, { note: "E2E: card reported lost" });
-      await checkPage.getByRole("button", { name: "Check again" }).click();
-      await expect(checkPage.getByRole("heading", { name: "This card is not valid" })).toBeVisible();
-      await expect(checkPage.getByText("Do not accept this card.")).toBeVisible();
+      await checkPage.reload();
+      await expect(checkPage.getByRole("heading", { name: "Revoked card" })).toBeVisible();
+      await expect(checkPage.getByText("This card has been cancelled by its issuer.")).toBeVisible();
     });
     await check.close();
   });

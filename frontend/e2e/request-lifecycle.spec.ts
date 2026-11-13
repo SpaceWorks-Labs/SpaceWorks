@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { EVIDENCE_FIXTURE, SEED, apiGet, apiLogin, makerspaceId, openRequestsTab, staffLogin } from "./helpers";
+import { SEED, apiGet, apiLogin, compactWizard, makerspaceId, openQueue, openRequestsTab, scanBox, staffLogin, uploadPhoto } from "./helpers";
 
 // The whole loan spine through the real UI, real presigned upload to object storage and the
 // real state machine: pending -> accepted -> issued (box code + photo) -> returned (photo +
@@ -16,30 +16,34 @@ test("accept, issue with box code and photo, then return with photo and remark",
   await acceptDialog.getByRole("button", { name: /^Accept/ }).click();
   await expect(acceptDialog).toBeHidden();
 
+  await openQueue(page, "accepted");
   const accepted = page.locator("article").filter({ hasText: SEED.pendingRequestFor }).first();
-  await accepted.getByRole("button", { name: "Assign + issue" }).click();
+  await accepted.getByRole("button", { name: "Start handover" }).click();
   const issueDialog = page.getByRole("dialog");
-  await issueDialog.getByRole("button", { name: "Enter code manually" }).click();
-  await issueDialog.getByLabel("Container code").fill(SEED.boxCode);
-  // Two controls carry "issue photo" in their name (the file input and the camera button).
-  await issueDialog.locator('input[type="file"]').setInputFiles(EVIDENCE_FIXTURE);
-  // The uploader finishes the presigned POST before the id is attached; wait for its done state.
-  await expect(issueDialog.getByRole("status").filter({ hasText: "Photo uploaded" })).toBeVisible({ timeout: 20_000 });
-  await issueDialog.getByRole("button", { name: "Assign + issue" }).click();
-  await expect(issueDialog).toBeHidden({ timeout: 20_000 });
+  await compactWizard(issueDialog);
+  await scanBox(issueDialog, SEED.boxCode);
+  await issueDialog.getByLabel("I checked the borrower against this request").check();
+  await uploadPhoto(issueDialog);
+  await issueDialog.getByRole("button", { name: "Confirm issue" }).click();
+  await expect(issueDialog.getByRole("heading", { name: /^Issued to/ })).toBeVisible({ timeout: 20_000 });
+  await issueDialog.getByRole("button", { name: "Done" }).click();
+  await expect(issueDialog).toBeHidden();
 
-  const active = page.locator("section").filter({ hasText: "Active loans" });
-  await expect(active.getByText(SEED.pendingRequestFor)).toBeVisible();
-  await active.getByRole("button", { name: "Return" }).first().click();
+  await openQueue(page, "active");
+  const active = page.locator("article").filter({ hasText: SEED.pendingRequestFor }).first();
+  await expect(active).toBeVisible();
+  await active.getByRole("button", { name: "Return", exact: true }).click();
   const returnDialog = page.getByRole("dialog");
-  // A return re-identifies the container too, so the box code is entered again.
-  await returnDialog.getByRole("button", { name: "Enter code manually" }).click();
-  await returnDialog.getByLabel("Container code").fill(SEED.boxCode);
-  await returnDialog.locator('input[type="file"]').setInputFiles(EVIDENCE_FIXTURE);
-  await expect(returnDialog.getByRole("status").filter({ hasText: "Photo uploaded" })).toBeVisible({ timeout: 20_000 });
-  await returnDialog.getByLabel("Remark").fill("All items back, checked by e2e.");
-  await returnDialog.getByRole("button", { name: "Submit return" }).click();
-  await expect(returnDialog).toBeHidden({ timeout: 20_000 });
+  // A return re-identifies the container too, so the box is scanned again.
+  await compactWizard(returnDialog);
+  await scanBox(returnDialog, SEED.boxCode);
+  await returnDialog.getByLabel("I checked the borrower against this request").check();
+  await uploadPhoto(returnDialog);
+  await returnDialog.getByLabel("Return remark (required)").fill("All items back, checked by e2e.");
+  await returnDialog.getByRole("button", { name: "Confirm return" }).click();
+  await expect(returnDialog.getByRole("heading", { name: "Return recorded" }).first()).toBeVisible({ timeout: 20_000 });
+  await returnDialog.getByRole("button", { name: "Done" }).click();
+  await expect(returnDialog).toBeHidden();
 
   // The API is the source of truth for the transition, not the screen.
   const token = await apiLogin(request, SEED.manager.username, SEED.manager.password);

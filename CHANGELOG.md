@@ -13,7 +13,7 @@ carries the design rule each change introduced.
 
 ## Unreleased
 
-- Tooling: `@playwright/test` 1.65.0 and `@axe-core/playwright` 4.14.0 are pinned devDependencies again, and `./scripts/dev.sh e2e` installs the matching Chromium build before it runs.
+- Tooling: `@playwright/test` 1.65.0 and `@axe-core/playwright` 4.14.0 are pinned devDependencies again, and `./scripts/dev.sh e2e` installs the matching Chromium build before it runs. The dev stack now carries dev-only event credential keys (an RSVP no longer answers 503 on it), and `seed_e2e` gives its box a QR label so the handover wizard can scan it.
 
 ## 0.12.0
 

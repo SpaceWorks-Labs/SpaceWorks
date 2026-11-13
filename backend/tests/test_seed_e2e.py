@@ -3,6 +3,7 @@ import json
 import pytest
 from django.core.management import CommandError, call_command
 
+from apps.boxes.models import QrCode
 from apps.hardware_requests.models import HardwareRequest
 from apps.accounts.models import User
 from apps.makerspaces.models import Makerspace, MakerspaceMembership
@@ -31,6 +32,8 @@ def test_seed_e2e_creates_a_fresh_makerspace_with_both_requests(settings, tmp_pa
     assert pending.status == HardwareRequest.Status.PENDING_APPROVAL
     assert probe.status == HardwareRequest.Status.ACCEPTED
     assert space.boxes.filter(code=seeded["box_code"]).exists()
+    # The handover wizard resolves the container through its QR label, so the seeded box carries one.
+    assert QrCode.objects.filter(makerspace=space, payload=seeded["box_code"], target_type=QrCode.TargetType.BOX).exists()
     # Two runs never collide: fresh slug, fresh users, fresh box code.
     out2 = tmp_path / "seed2.json"
     call_command("seed_e2e", "--write-json", str(out2), "--password", "pw-for-test")

@@ -40,8 +40,8 @@ test("a member orders online, pays at the desk, and staff hand it over", async (
   await test.step("member adds the item to the basket and places the order", async () => {
     await memberArea(page);
     await page.goto(`/m/${SEED.slug}/shop`);
-    await page.getByRole("button", { name: `Add ${product.name} to basket` }).click();
-    await page.getByRole("button", { name: /^Basket \(1\)$/ }).click();
+    await page.getByRole("button", { name: `Add to basket ${product.name}` }).click();
+    // Adding the first item opens the basket on its own.
     const basket = page.getByRole("dialog", { name: "Your basket" });
     await expect(basket.getByRole("list", { name: "Basket" })).toContainText(product.name);
     const response = page.waitForResponse((res) => res.request().method() === "POST"

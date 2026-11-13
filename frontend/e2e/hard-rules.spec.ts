@@ -1,21 +1,28 @@
 import { expect, test } from "@playwright/test";
 
-import { SEED, apiGet, apiLogin, apiPost, makerspaceId, openRequestsTab, staffLogin } from "./helpers";
+import { SEED, apiGet, apiLogin, apiPost, compactWizard, makerspaceId, openQueue, scanBox, staffLogin, uploadPhoto } from "./helpers";
 
 // The Hard Rules from CLAUDE.md, pinned where they are enforced: the API refuses, and the
 // console refuses before it even asks the API.
 test.describe("hard rules", () => {
   test("the console will not submit an issue without a container code or photo", async ({ page }) => {
     await staffLogin(page);
-    await openRequestsTab(page);
+    await openQueue(page, "accepted");
     // The seed leaves a second, already-accepted request for this probe so the lifecycle spec
     // and this one never compete for the same row.
     const row = page.locator("article").filter({ hasText: SEED.probeRequestFor }).first();
     await expect(row).toBeVisible();
-    await row.getByRole("button", { name: "Assign + issue" }).click();
+    await row.getByRole("button", { name: "Start handover" }).click();
     const dialog = page.getByRole("dialog");
-    await dialog.getByRole("button", { name: "Assign + issue" }).click();
-    await expect(dialog.getByText(/Box QR code is required\.|Upload an issue photo before issuing\./)).toBeVisible();
+    await compactWizard(dialog);
+    const confirm = dialog.getByRole("button", { name: "Confirm issue" });
+    // Nothing scanned, no borrower check, no photo: the wizard keeps the confirm button disabled.
+    await expect(confirm).toBeDisabled();
+    await scanBox(dialog, SEED.boxCode);
+    await dialog.getByLabel("I checked the borrower against this request").check();
+    await expect(confirm).toBeDisabled(); // still no issue photo
+    await uploadPhoto(dialog);
+    await expect(confirm).toBeEnabled();
     await expect(dialog).toBeVisible();
   });
 

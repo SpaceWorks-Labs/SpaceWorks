@@ -42,12 +42,26 @@ jobs:
         run: |
           set -euo pipefail
           cd backend
-          find tests -name 'test_*.py' -not -path '*/__pycache__/*' | LC_ALL=C sort \
+          find tests -name 'test_*.py' -not -path '*/__pycache__/*' -not -path 'tests/tombstone/*' | LC_ALL=C sort \
             | awk -v shard=${{ matrix.shard }} -v total=6 '(NR - 1) % total == shard - 1' > .ci-shard-tests.txt
           echo "Shard ${{ matrix.shard }}: $(wc -l < .ci-shard-tests.txt) test files"
 
       - name: Run the shard in the isolated test runner
         run: bash scripts/dev.sh test -q @.ci-shard-tests.txt
+
+  backend-tombstone:
+    name: backend tests (tombstone profile)
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      # tests/tombstone is a separate pytest process with apps actually removed (see its conftest.py), so it
+      # cannot share a shard with the all-active suite. The variable must be set before Django imports settings.
+      - name: Run the tombstone profile in the isolated test runner
+        env:
+          TOMBSTONED_APPS: bookings,devices,event_reimbursements,events,maintenance,notifications,payments_rail,presence,procurement,tenant_migration,warranty
+        run: bash scripts/dev.sh test -q tests/tombstone
 
   frontend:
     name: frontend tests

@@ -14,7 +14,7 @@ export type PublicActionCardProps = {
   state: "open" | "closed" | "done";
   doneContent?: ReactNode;
   /** onOpen runs before the sheet opens; secondary adds a second verb that opens the same sheet. */
-  mobileBar: { summary: string; label: string; onOpen?: () => void; secondary?: { label: string; onOpen: () => void } };
+  mobileBar: { summary: string; label: string; initiallyOpen?: boolean; onOpen?: () => void; secondary?: { label: string; onOpen: () => void } };
 };
 function ActionCardContent({ title, summary, form, primary, secondary, note, state, doneContent, inSheet = false }: PublicActionCardProps & { inSheet?: boolean }) {
   return <Card className="grid gap-4 shadow-overlay">
@@ -28,7 +28,7 @@ function ActionCardContent({ title, summary, form, primary, secondary, note, sta
 }
 /** One form tree: inline at tablet/desktop (beside the content when it keeps 360px, else under it), a sheet on phones. */
 export function PublicActionCard(props: PublicActionCardProps) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(props.mobileBar.initiallyOpen ?? false);
   const tablet = useLayoutMedia("(min-width: 768px)");
   if (tablet) return <aside aria-label={props.title} className="min-w-0 self-start xl:sticky xl:top-6 xl:max-h-[calc(100dvh-3rem)] xl:overflow-y-auto xl:overscroll-contain"><ActionCardContent {...props} /></aside>;
   return <>

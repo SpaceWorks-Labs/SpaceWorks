@@ -5,15 +5,18 @@ import { Link, useLocation } from "react-router-dom";
 import { AnimatedLogoMark } from "../../components/brand/AnimatedLogoMark";
 import { ThemeToggle } from "../../components/ThemeToggle";
 import { ExternalLink } from "./ExternalLink";
+import { useLandingEnabled } from "./useLandingEnabled";
+import { HubAccount } from "./HubAccount";
 import { GITHUB_URL } from "./hubLinks";
 
 type NavItem = { label: string; to: string; match: (path: string) => boolean };
 
-function navItems(): NavItem[] {
+function navItems(about: boolean): NavItem[] {
   return [
     { label: t`Home`, to: "/", match: path => path === "/" },
     { label: t`Features`, to: "/features", match: path => path.startsWith("/features") },
     { label: t`Spaces`, to: "/spaces", match: path => path.startsWith("/spaces") },
+    ...(about ? [{ label: t`About`, to: "/about", match: (path: string) => path === "/about" }] : []),
     { label: t`Docs`, to: "/docs", match: path => path === "/docs" || path.startsWith("/docs/") },
   ];
 }
@@ -27,16 +30,18 @@ export function HubHeader({ tools }: { tools?: ReactNode }) {
   const [open, setOpen] = useState(false);
   const panelId = useId();
   const root = useRef<HTMLDivElement>(null);
+  const trigger = useRef<HTMLButtonElement>(null);
   useEffect(() => { setOpen(false); }, [pathname]);
   useEffect(() => {
     if (!open) return;
     const outside = (event: PointerEvent) => { if (!root.current?.contains(event.target as Node)) setOpen(false); };
-    const escape = (event: KeyboardEvent) => { if (event.key === "Escape") setOpen(false); };
+    const escape = (event: KeyboardEvent) => { if (event.key === "Escape") { setOpen(false); trigger.current?.focus(); } };
     document.addEventListener("pointerdown", outside);
     document.addEventListener("keydown", escape);
     return () => { document.removeEventListener("pointerdown", outside); document.removeEventListener("keydown", escape); };
   }, [open]);
-  const items = navItems();
+  const landing = useLandingEnabled();
+  const items = navItems(!landing.loading && landing.enabled);
   const links = (stacked: boolean) => <>
     {items.map(item => {
       const current = item.match(pathname);
@@ -58,8 +63,8 @@ export function HubHeader({ tools }: { tools?: ReactNode }) {
         {/* Below lg the nav folds into the menu; Docs stays one tap away (on /docs the search takes its place). */}
         {tools ? null : <span className="lg:hidden"><Link to="/docs" className="sw-hub-nav-link">{t`Docs`}</Link></span>}
         <span className="hidden lg:inline-flex"><ThemeToggle variant="icon" /></span>
-        <Link to="/member" className="desk-button whitespace-nowrap">{t`Sign in`}</Link>
-        <button type="button" className="desk-button min-w-11 px-3 lg:hidden" aria-expanded={open} aria-controls={panelId}
+        <HubAccount />
+        <button ref={trigger} type="button" className="desk-button min-w-11 px-3 lg:hidden" aria-expanded={open} aria-controls={panelId}
           onClick={() => setOpen(value => !value)}>
           {open ? <X size={20} aria-hidden="true" /> : <Menu size={20} aria-hidden="true" />}<span className="sr-only">{t`Menu`}</span>
         </button>

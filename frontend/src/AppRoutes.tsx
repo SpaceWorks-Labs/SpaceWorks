@@ -4,6 +4,8 @@ import { isCardPath } from "./features/cards/routeNames";
 import { isDonationPath } from "./features/donations/routeNames";
 import { lazy, Suspense, type ReactNode } from "react";
 import { Navigate, Route, Routes, useLocation, useParams, useSearchParams } from "react-router-dom";
+import { AboutLandingGate } from "./features/hub/LandingGate";
+import { SingleTenantHome } from "./features/public/SingleTenantHome";
 import { FamilyHome, RouteFallback } from "./features/public/FamilyHome";
 import { PublicDeskKioskPage } from "./features/kiosk/PublicDeskKioskPage";
 import { ScannerPage } from "./features/kiosk/ScannerPage";
@@ -29,7 +31,7 @@ import {
 // panels inside are lazy again (StaffTabContent.tsx).
 const MemberBorrowingHistoryPage = lazy(() => import("./features/members/MemberBorrowingHistoryPage").then(m => ({ default: m.MemberBorrowingHistoryPage })));
 const PublicInventoryRoute = lazy(() => import("./features/inventory/PublicInventoryRoute").then(m => ({ default: m.PublicInventoryRoute })));
-const AboutPage = lazy(() => import("./features/AboutPage").then((m) => ({ default: m.AboutPage })));
+const HubLandingPage = lazy(() => import("./features/hub/HubLandingPage").then(m => ({ default: m.HubLandingPage })));
 const FeaturesPage = lazy(() => import("./features/hub/FeaturesPage").then((m) => ({ default: m.FeaturesPage })));
 const FeatureModulePage = lazy(() => import("./features/hub/featuresPage/FeatureModulePage").then((m) => ({ default: m.FeatureModulePage })));
 const SpacesPage = lazy(() => import("./features/discover/spaces/SpacesPage").then((m) => ({ default: m.SpacesPage })));
@@ -119,6 +121,8 @@ export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landi
   } else if (mode === "single") {
     routes = <Routes>
       <Route path="/" element={<FamilyHome />} />
+      <Route path="/m/:slug" element={<SingleTenantHome />} />
+      <Route path="/spaces" element={<SpacesPage />} />
       <Route path="/inventory" element={<PublicInventoryRoute />} />
       <Route path="/items/:itemId" element={<PublicItemPage />} />
       <Route path="/checkout" element={<PublicSelfCheckoutPage />} />
@@ -177,7 +181,7 @@ export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landi
       <Route path="/stats" element={<PublicStatsPage />} />
       <Route path="/stats/tv" element={<PublicStatsTvPage />} />
       <Route path="/now" element={<PresenceNowPage />} />
-      <Route path="/about" element={<AboutPage />} />
+      <Route path="/about" element={<AboutLandingGate landing={<HubLandingPage />} />} />
       <Route path="/features" element={<FeaturesPage />} />
       <Route path="/features/:module" element={<FeatureModulePage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
@@ -196,7 +200,7 @@ export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landi
   } else {
     routes = <Routes>
       <Route path="/" element={landing} />
-      <Route path="/about" element={<AboutPage />} />
+      <Route path="/about" element={<AboutLandingGate landing={<HubLandingPage />} />} />
       <Route path="/features" element={<FeaturesPage />} />
       <Route path="/features/:module" element={<FeatureModulePage />} />
       <Route path="/spaces" element={<SpacesPage />} />

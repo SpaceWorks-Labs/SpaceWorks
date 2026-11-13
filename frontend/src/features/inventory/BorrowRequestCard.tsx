@@ -11,6 +11,7 @@ type BorrowRequestCardProps = {
   submitError?: string;
   submitPending: boolean;
   submitted: boolean;
+  historyHref?: string;
   totalItems: number;
   onClear: () => void;
   onRequestedForChange: (value: string) => void;
@@ -32,6 +33,7 @@ export function BorrowRequestCard({
   submitError,
   submitPending,
   submitted,
+  historyHref,
   totalItems,
   onClear,
   onRequestedForChange,
@@ -111,6 +113,7 @@ export function BorrowRequestCard({
         {submitError ? <Notice tone="danger" text={submitError} /> : null}
         {submitted ? (
           <div className="rounded-xl border border-success bg-success px-3 py-2 text-on-success dark:bg-success-soft dark:text-success-ink">
+            {historyHref ? <a href={historyHref} className="desk-button">{t`My requests`}</a> : null}
             <h3 className="title-section text-on-success dark:text-success-ink">{t`Request submitted`}</h3>
             <p className="mt-1 text-sm">
               {contact

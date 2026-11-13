@@ -1,11 +1,10 @@
 import { plural, t } from "@lingui/core/macro";
 import { useMemo } from "react";
 import { BrandFacets } from "../../../components/BrandFacets";
-import { PublicLayout } from "../../../components/layouts";
+import { HubFooter } from "../../hub/HubFooter";
 import { HubHeader } from "../../hub/HubHeader";
 import "../../hub/hub.css";
 import { useHostingConfig } from "../../hosting/hostingApi";
-import { LICENSE_URL } from "../../inventory/PublicPageChrome";
 import { usePublicMakerspaces } from "../../inventory/usePublicInventory";
 import { SpacesDirectory } from "./SpacesDirectory";
 import { placesOf } from "./spacesFilter";
@@ -29,14 +28,9 @@ export function SpacesPage() {
   const query = usePublicMakerspaces();
   const hosting = useHostingConfig().data === true;
   const places = useMemo(() => placesOf(query.data ?? []).length, [query.data]);
-  const hostLink = hosting ? [{ label: t`Host your makerspace`, href: "/hosting" }] : [];
-  // Same bar as the landing, Features and Docs (HubHeader: sticky, Spaces current, menu below lg); PublicLayout brings no bar of its own.
-  return <div className="sw-hub"><HubHeader /><PublicLayout makerspace={{ name: "Space Works", slug: "", homeHref: "/" }} chrome="none"
-    nav={[]} state={{ status: "ready" }}
-    hero={<SpacesHero total={query.data?.length} places={places} />}
-    footer={{ credit: "Space Works · Made for shared workshops", links: [{ label: t`About`, href: "/about" }, ...hostLink,
-      { label: t`License`, href: LICENSE_URL, external: true }, { label: t`Platform sign-in`, href: "/admin" }] }}>
+  return <div className="sw-hub"><HubHeader /><main className="sw-layout sw-layout-wide py-8 md:py-12">
+    <SpacesHero total={query.data?.length} places={places} />
     <SpacesDirectory spaces={query.data} loading={query.isLoading} error={query.isError} retrying={query.isFetching}
       onRetry={() => { void query.refetch(); }} hosting={hosting} />
-  </PublicLayout></div>;
+  </main><HubFooter /></div>;
 }

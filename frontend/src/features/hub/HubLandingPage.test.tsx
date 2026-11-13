@@ -266,3 +266,6 @@ describe("HubLandingPage", () => {
     directory.enabled = false;
   });
 });
+
+vi.mock("./useLandingEnabled", () => ({ useLandingEnabled: () => ({ loading: false, enabled: true }) }));
+vi.mock("./HubAccount", () => ({ HubAccount: () => <a href="/member">Sign in</a> }));

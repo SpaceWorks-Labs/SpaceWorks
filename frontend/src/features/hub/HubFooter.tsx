@@ -3,13 +3,14 @@ import { Link } from "react-router-dom";
 import { AnimatedLogoMark } from "../../components/brand/AnimatedLogoMark";
 import { useOrganizationDirectoryEnabled } from "../organizations/publicDirectoryApi";
 import { useHostingConfig } from "../hosting/hostingApi";
+import { useLandingEnabled } from "./useLandingEnabled";
 import { ExternalLink } from "./ExternalLink";
 import { ANDROID_REPO_URL, DOCS_LINKS, GITHUB_URL, HUB_VERSION, IOS_REPO_URL, ISSUES_URL, LICENSE_SPDX, LICENSE_URL } from "./hubLinks";
 
 /** `external` is the accessible name of a link that leaves the app (it starts with the visible label). */
 type FooterLink = { label: string; to: string; external?: string };
 
-function columns(directory: boolean, hosting: boolean): { title: string; links: FooterLink[] }[] {
+function columns(directory: boolean, hosting: boolean, about: boolean): { title: string; links: FooterLink[] }[] {
   return [
     { title: t`Use it`, links: [
       { label: t`Features`, to: "/features" }, { label: t`Find a space`, to: "/spaces" },
@@ -17,7 +18,7 @@ function columns(directory: boolean, hosting: boolean): { title: string; links: 
       // Decision 295: only while this deployment takes requests for new spaces.
       ...(hosting ? [{ label: t`Request a workspace`, to: "/hosting" }] : []),
       { label: t`Sign in`, to: "/member" },
-      { label: t`Staff console`, to: "/admin" }, { label: t`About`, to: "/about" },
+      { label: t`Staff console`, to: "/admin" }, ...(about ? [{ label: t`About`, to: "/about" }] : []),
     ] },
     { title: t`Docs`, links: [
       { label: t`Getting started`, to: DOCS_LINKS.gettingStarted }, { label: t`Tutorials`, to: DOCS_LINKS.tutorials },
@@ -42,6 +43,7 @@ function columns(directory: boolean, hosting: boolean): { title: string; links: 
 }
 
 export function HubFooter() {
+  const landing = useLandingEnabled();
   const year = new Date().getFullYear();
   const directory = useOrganizationDirectoryEnabled();
   const hosting = useHostingConfig().data === true;
@@ -53,7 +55,7 @@ export function HubFooter() {
         </Link>
         <p className="max-w-xs text-sm leading-6 text-muted">{t`Open-source software for makerspaces, fab labs and community workshops.`}</p>
       </div>
-      {columns(directory, hosting).map(column => <nav key={column.title} aria-label={t`Footer: ${column.title}`} className="grid content-start gap-1">
+      {columns(directory, hosting, !landing.loading && landing.enabled).map(column => <nav key={column.title} aria-label={t`Footer: ${column.title}`} className="grid content-start gap-1">
         <h2 className="title-section mb-2">{column.title}</h2>
         {column.links.map(link => link.external
           ? <ExternalLink key={link.label} href={link.to} label={link.external} iconSize={14} className="sw-hub-footer-link">{link.label}</ExternalLink>

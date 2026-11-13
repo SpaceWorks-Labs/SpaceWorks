@@ -77,3 +77,6 @@ describe("FeatureModulePage and the retired Printing module (decision 340b)", ()
     expect(screen.getAllByText(/3D print queue is one machine type here/).length).toBeGreaterThan(0);
   });
 });
+
+vi.mock("../useLandingEnabled", () => ({ useLandingEnabled: () => ({ loading: false, enabled: true }) }));
+vi.mock("../HubAccount", () => ({ HubAccount: () => <a href="/member">Sign in</a> }));

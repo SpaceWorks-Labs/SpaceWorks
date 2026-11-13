@@ -31,3 +31,5 @@ describe.each([[true], [false]])("features pages with landing_enabled = %s", ena
     expect(await screen.findByRole("heading", { level: 1, name: "Machines" })).toBeInTheDocument();
   });
 });
+
+vi.mock("../HubAccount", () => ({ HubAccount: () => <a href="/member">Sign in</a> }));

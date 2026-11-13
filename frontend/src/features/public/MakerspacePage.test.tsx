@@ -8,6 +8,8 @@ import { emptyWeek } from "../staff/makerspaceProfileForm";
 import { MakerspacePage } from "./MakerspacePage";
 import { PublicInventoryRoute } from "../inventory/PublicInventoryRoute";
 
+const landing = vi.hoisted(() => ({ loading: false, enabled: true }));
+vi.mock("../hub/useLandingEnabled", () => ({ useLandingEnabled: () => landing }));
 const state = vi.hoisted(() => ({ bootstrap: null as unknown as TenantBootstrap, products: [] as unknown[], published: null as unknown, inventoryRead: vi.fn(), categoriesRead: vi.fn() }));
 const { tenantPublicRequest } = vi.hoisted(() => ({ tenantPublicRequest: vi.fn() }));
 vi.mock("../../lib/api", async () => ({ ...await vi.importActual<typeof import("../../lib/api")>("../../lib/api"), tenantPublicRequest }));
@@ -58,6 +60,7 @@ function show() {
 const sections = (container: HTMLElement) => [...container.querySelectorAll("[data-section]")].map((node) => node.getAttribute("data-section"));
 
 beforeEach(() => {
+  landing.enabled = true;
   tenantPublicRequest.mockReset();
   state.inventoryRead.mockClear(); state.categoriesRead.mockClear(); state.published = null;
   state.bootstrap = bootstrap(ALL);
@@ -247,4 +250,18 @@ it("navigates from the overview to inventory and keeps the existing request flow
   expect(screen.queryByRole("heading", { name: "Featured activities" })).toBeNull();
   fireEvent.click(screen.getByRole("button", { name: "Review request" }));
   expect(screen.getByRole("dialog", { name: "Your request" })).toHaveTextContent("Request panel content");
+});
+
+it.each([true, false])("keeps hub links in the tenant bar and footer (landing=%s) without replacing tenant navigation", enabled => {
+  landing.enabled = enabled; respond(); show();
+  const hub = screen.getByRole("navigation", { name: "Space Works" });
+  const footer = screen.getByRole("navigation", { name: "Footer" });
+  for (const region of [hub, footer]) {
+    for (const [label, href] of [["Docs", "/docs"], ["Features", "/features"], ["Spaces", "/spaces"]]) {
+      expect(within(region).getByRole("link", { name: label })).toHaveAttribute("href", href);
+    }
+    expect(within(region).getByRole("link", { name: /^GitHub/ })).toHaveAttribute("href", "https://github.com/SpaceWorks-Labs/SpaceWorks");
+    expect(within(region).queryByRole("link", { name: "About" }) !== null).toBe(enabled);
+  }
+  expect(screen.getByRole("navigation", { name: "Public navigation" })).toBeInTheDocument();
 });

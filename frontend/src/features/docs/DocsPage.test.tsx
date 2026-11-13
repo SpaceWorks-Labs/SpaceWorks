@@ -5,6 +5,8 @@ import { DocsPage } from "./DocsPage";
 import { allDocs, neighbours } from "./docsIndex";
 vi.mock("../organizations/publicDirectoryApi", () => ({ useOrganizationDirectoryEnabled: () => false }));
 vi.mock("../hosting/hostingApi", () => ({ useHostingConfig: () => ({ data: false }) }));
+vi.mock("../hub/useLandingEnabled", () => ({ useLandingEnabled: () => ({ loading: false, enabled: true }) }));
+vi.mock("../hub/HubAccount", () => ({ HubAccount: () => <a href="/member">Sign in</a> }));
 
 // The API reference has its own tests; here its search is a stub so the palette stays fast.
 vi.mock("./apiReference/apiSearch", () => ({

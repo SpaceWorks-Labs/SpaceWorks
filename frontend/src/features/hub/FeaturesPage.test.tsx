@@ -77,3 +77,6 @@ describe("FeaturesPage and the retired Printing module (decision 340b)", () => {
     expect([...machines.querySelectorAll("[data-module]")].map(card => card.getAttribute("data-module"))).toEqual(["machines", "machine_service"]);
   });
 });
+
+vi.mock("./useLandingEnabled", () => ({ useLandingEnabled: () => ({ loading: false, enabled: true }) }));
+vi.mock("./HubAccount", () => ({ HubAccount: () => <a href="/member">Sign in</a> }));

@@ -10,6 +10,7 @@ type QueryState = { data?: Makerspace[]; isLoading?: boolean; isError?: boolean;
 const query = vi.hoisted(() => ({ value: {} as QueryState }));
 vi.mock("../../inventory/usePublicInventory", () => ({ usePublicMakerspaces: () => query.value }));
 const hosting = vi.hoisted(() => ({ value: { data: false as boolean | undefined } }));
+vi.mock("../../organizations/publicDirectoryApi", () => ({ useOrganizationDirectoryEnabled: () => false }));
 vi.mock("../../hosting/hostingApi", () => ({ useHostingConfig: () => hosting.value }));
 
 const spaces: Makerspace[] = [
@@ -169,3 +170,6 @@ describe("SpacesPage header", () => {
     expect(container.querySelector("[data-sw-logo-target]")).not.toBeNull();
   });
 });
+
+vi.mock("../../hub/useLandingEnabled", () => ({ useLandingEnabled: () => ({ loading: false, enabled: true }) }));
+vi.mock("../../hub/HubAccount", () => ({ HubAccount: () => <a href="/member">Sign in</a> }));

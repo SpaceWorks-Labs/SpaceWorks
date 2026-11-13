@@ -13,6 +13,8 @@ import { NotifyWhenBack } from "./NotifyWhenBack";
 import { AvailabilityBadge } from "./AvailabilityBadge";
 import { useTenantBootstrap } from "./usePublicInventory";
 import { ExpectedBack } from "./ExpectedBack";
+import { publicFamilies } from "../../lib/publicHome";
+import { ItemRequestForm, useItemRequestDraft } from "./ItemRequestForm";
 import { WaitlistJoin } from "./WaitlistJoin";
 
 // The numeric identity is stable even if the optional readable suffix changes.
@@ -30,6 +32,7 @@ export function PublicItemPage() {
   const bootstrap = tenant.mode === "single" ? tenant.bootstrap : bootstrapQuery.data;
   const brandStyle = useTenantBranding(bootstrap);
   const id = publicItemId(itemId);
+  const requestDraft = useItemRequestDraft(id);
   const item = useQuery({
     queryKey: ["public-inventory-detail", spaceSlug, id],
     queryFn: () => tenantPublicRequest<Product>(spaceSlug, `/public/${encodeURIComponent(spaceSlug)}/inventory/${id}/`),
@@ -43,8 +46,9 @@ export function PublicItemPage() {
   const title = missing ? "Item not found" : disabled ? "Inventory is not enabled" : product?.name ?? "Item details";
   const description = product?.description || `Browse public tools and equipment at ${name}.`;
   const modules = new Set(bootstrap?.modules ?? []);
+  const requestEnabled = Boolean(bootstrap && publicFamilies(bootstrap).includes("inventory") && modules.has("request_workflow") && product && !product.event_only);
   const eventsOn = modules.has("events"); // decision 228a: no event route to point at while Events is off
-  const state = id && item.isLoading ? { status: "loading" as const } : item.error || missing
+  const state = !bootstrap && bootstrapQuery.error ? { status: "error" as const, error: t`Couldn't load this space. Try again.`, onRetry: () => { void bootstrapQuery.refetch(); } } : !bootstrap || id && item.isLoading ? { status: "loading" as const } : item.error || missing
     ? { status: "error" as const, error: missing ? t`This item isn't in the public catalogue.` : disabled ? t`This makerspace is not publishing inventory.` : t`Couldn't load this item. Try again.`, onRetry: () => { void item.refetch(); } }
     : { status: "ready" as const };
   if (missing || disabled) return <div style={brandStyle}><PageMetadata title={`${title} · ${name}`} description={description} path={tenantPath(`items/${id ?? itemId}`)} image={bootstrap?.makerspace.logo_url} siteName={name} /><CenteredCardLayout state={{ status: "ready" }} title={title}
@@ -61,9 +65,9 @@ export function PublicItemPage() {
         actionCard={{ title: t`Borrow this item`, state: "open", summary: product ? <><AvailabilityBadge availability={product.availability} eventsOn={eventsOn} /><ExpectedBack product={product} className="mt-2" /></> : null,
           form: product?.event_only ? <p className="text-sm text-muted">{eventsOn ? t`This item is lent only at events. Register for an event that offers it, and the organizers can request it for you.` : t`Not available to borrow right now`}</p>
             : product ? <>{bootstrap?.features.includes("inventory.notify_when_back") ? <NotifyWhenBack slug={spaceSlug} productId={product.id} /> : null}
-            <WaitlistJoin makerspaceId={bootstrap?.makerspace.id} product={product} features={bootstrap?.features} /></> : null,
-          primary: modules.has("request_workflow") && !product?.event_only ? { label: t`Request from inventory`, href: tenantPath("inventory") } : undefined,
-          mobileBar: { summary: product?.name ?? t`Item details`, label: t`Borrow this item` } }} />
+            <WaitlistJoin makerspaceId={bootstrap?.makerspace.id} product={product} features={bootstrap?.features} />
+            {requestEnabled && bootstrap ? <ItemRequestForm key={product.id} product={product} bootstrap={bootstrap} state={requestDraft} /> : null}</> : null,
+          mobileBar: { initiallyOpen: requestEnabled && requestDraft.returning, summary: product?.name ?? t`Item details`, label: requestEnabled ? t`Request` : t`Item details` } }} />
     </PublicLayout>
   </div>;
 }

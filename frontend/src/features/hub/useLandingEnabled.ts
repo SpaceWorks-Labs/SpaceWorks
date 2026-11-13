@@ -6,7 +6,7 @@ type LandingConfig = { landing_enabled?: boolean };
 
 /**
  * Decision 300(b): the deployment's `HUB_LANDING_ENABLED` switch, read from the existing public
- * config. `enabled` is undefined while the answer is loading so the front page never flashes the
+ * config. Callers wait for `loading` to clear so the front page never flashes the
  * landing before an opt-out arrives. A failed or older config (no field) means the default: on.
  */
 export function useLandingEnabled(): { loading: boolean; enabled: boolean } {

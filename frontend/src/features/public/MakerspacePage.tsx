@@ -1,4 +1,7 @@
 import { t } from "@lingui/core/macro";
+import { TenantHubLinks } from "../hub/TenantHubLinks";
+import { useLandingEnabled } from "../hub/useLandingEnabled";
+import { GITHUB_URL } from "../hub/hubLinks";
 import { ClosedNoticeBanner } from "./ClosedNoticeBanner";
 import { OpenNowIndicator } from "./OpenNowIndicator";
 import { SpaceNowSections } from "../spaceDisplay/SpaceNowSections";
@@ -34,6 +37,7 @@ import { nounTitleOf, spaceKindOf } from "../../lib/spaceNoun";
  */
 export function MakerspacePage({ profileSlug, profileOnly = false }: { profileSlug?: string; profileOnly?: boolean } = {}) {
   const { slug } = useParams();
+  const landing = useLandingEnabled();
   const tenant = useTenant();
   const makerspaceSlug = profileSlug ?? (tenant.mode === "single" ? tenant.slug : slug ?? "");
   const path = useTenantPath(makerspaceSlug);
@@ -71,7 +75,10 @@ export function MakerspacePage({ profileSlug, profileOnly = false }: { profileSl
     {families.has("membership") ? <MembershipSection policy={bootstrap.makerspace.membership_policy} path={path} /> : null}
     {families.has("membership") && bootstrap.features?.includes("membership.day_passes") ? <PublicDayPasses slug={makerspaceSlug} memberHref={path("member")} /> : null}
   </div>;
-  const page = <PublicLayout {...chrome} width="wide" state={{ status: "ready" }}
+  const page = <PublicLayout {...chrome} footer={{ ...chrome.footer, links: [...chrome.footer.links.filter(link => link.href !== "/about"),
+      { label: t`Docs`, href: "/docs" }, { label: t`GitHub`, href: GITHUB_URL, external: true },
+      { label: t`Features`, href: "/features" }, { label: t`Spaces`, href: "/spaces" },
+      ...(!landing.loading && landing.enabled ? [{ label: t`About`, href: "/about" }] : [])] }} width="wide" state={{ status: "ready" }}
     hero={published ? <PublicPageHero page={published} slug={makerspaceSlug} actions={actions} bannerUrl={bootstrap.makerspace.cover_image_url} /> : <MakerspaceHeader name={name} bootstrap={bootstrap} actions={actions} />}>
     {published ? <div className="grid gap-8"><PublicPageSections sections={published.sections} functional={functional} token={published.publication_token} slug={makerspaceSlug}
       image={(url, alt) => <PageImage url={url} alt={alt} slug={makerspaceSlug} token={published.publication_token} />} />
@@ -85,6 +92,6 @@ export function MakerspacePage({ profileSlug, profileOnly = false }: { profileSl
   return <div style={published ? pageStyle : brandStyle}>
     <PageMetadata title={published?.title ?? name} description={published?.description ?? (bootstrap.branding.welcome_body || (spaceKindOf(bootstrap.makerspace) === "organization" ? t`Events, rooms and membership with ${name}.` : t`Events, tools and spaces at ${name}.`))} path={published?.canonical_url ?? path()}
       image={published?.cover?.url ?? (published ? null : bootstrap.makerspace.cover_image_url || bootstrap.makerspace.logo_url)} imageAlt={published?.cover?.alt} siteName={name} />
-    {page}
+    <TenantHubLinks />{page}
   </div>;
 }

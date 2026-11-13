@@ -45,6 +45,8 @@ type PublicRequestPanelProps = {
   features?: readonly string[];
   makerspaceId?: number;
   modules?: readonly string[];
+  /** Single-item forms submit ordinary requests; contextual kits belong to the catalogue. */
+  contextual?: boolean;
   pendingOwner?: PendingIntake<SelfBody>;
   contextualLocked?: boolean;
   onContextLock?: () => void;
@@ -63,7 +65,7 @@ export function PublicRequestPanel({
   activeTab: controlledTab,
   onActiveTabChange,
   draft: draftProp,
-  features,
+  features, contextual = true,
   makerspaceId, modules = [], pendingOwner, contextualLocked: parentLocked, onContextLock, onContextDone, onContextSuccess, planConfirmed, onNewRequest,
 }: PublicRequestPanelProps) {
   const queryClient = useQueryClient();
@@ -208,7 +210,7 @@ export function PublicRequestPanel({
             </p>
             {/* 0.12.0 row 29: sign in, then come back to this page with the cart as it was. */}
             {!contactMode && !session.owner ? <a className="desk-button-brand mt-3 inline-flex" onClick={() => stashCartForSignIn(items)}
-              href={`${tenantPath(tenantMode, makerspaceSlug, "member")}?next=${encodeURIComponent(window.location.pathname + window.location.search)}`}>{t`Sign in to borrow`}</a> : null}
+              href={`${tenantPath(tenantMode, makerspaceSlug, "member")}?next=${encodeURIComponent(window.location.pathname + window.location.search + window.location.hash)}`}>{t`Sign in to borrow`}</a> : null}
           </div>
 
           {selfCheckout ? <div className="shrink-0 [&>[role=radiogroup]]:flex [&>[role=radiogroup]]:w-full [&_[role=radio]]:flex-1">
@@ -228,6 +230,7 @@ export function PublicRequestPanel({
                   submitError={eligibilityMessage(submitMutation.error) ?? submitMutation.error?.message}
                   submitPending={submitMutation.isPending}
                   submitted={submitted}
+                  historyHref={!contactMode ? tenantPath(tenantMode, makerspaceSlug, "member/loans/history") : undefined}
                   totalItems={totalItems}
                   onClear={onClear}
                   onRequestedForChange={setRequestedFor}
@@ -239,7 +242,7 @@ export function PublicRequestPanel({
                 />
                 {ordinary.unknown && !ordinary.busy ? <div className="mt-3 grid gap-2 text-sm" role="status"><p className="text-ink">{t`The previous request may have been submitted. Review your borrowing history before making another.`}</p><button type="button" className="desk-button w-fit" onClick={() => { if (!identityAdmitted() || !makerspaceId) return; setHistoryError(false); void memberRequest<{ results: { id: number; status: string; created_at: string }[] }>(`/member/makerspaces/${makerspaceId}/borrowing-history?period=all&page=1`).then(page => { if (identityAdmitted()) setHistory({ scope, rows: page.results }); }).catch(() => setHistoryError(true)); }}>{t`Load my borrowing history`}</button>{historyError ? <p className="text-danger" role="alert">{t`History is unavailable. Try again before starting another request.`}</p> : null}{history?.scope === scope ? <>{history.rows.length ? <ul className="grid gap-1">{history.rows.map(row => <li key={row.id}>{t`Request #${row.id}`} · {statusStageLabel(row.status)} · {formatDateTime(row.created_at)}</li>)}</ul> : <p className="text-muted">{t`No earlier requests found.`}</p>}<a className="desk-button w-fit" href={tenantPath(tenantMode, makerspaceSlug, "member/loans/history")}>{t`Open full borrowing history`}</a><button type="button" className="desk-button w-fit" onClick={() => { if (!identityAdmitted() || ordinary.busy) return; ordinary.unknown = false; setHistory(undefined); notifyOrdinary(ordinary); }}>{t`I reviewed my history; start another request`}</button></> : null}</div> : null}
                 {contextualLocked && !modules.includes("events") && !modules.includes("bookings") ? <p role="status">{t`A previous request may have been submitted. Review your request history before making another.`}</p> : null}
-                {!contactMode && makerspaceId && verifiedOwner ? <ContextualRequest key={`${scope}:${modules.includes("events")}:${modules.includes("bookings")}`} scope={scope} slug={makerspaceSlug} makerspaceId={makerspaceId} eventsEnabled={modules.includes("events")} bookingsEnabled={modules.includes("bookings")} fields={{ requested_for: requestedFor.trim(), items: items.map(item => ({ product_id: item.productId, quantity: item.quantity })), website, ...(reservations ? pickupWindowPayload(pickup) : {}) }} canSubmit={requestedFor.trim().length > 0 && !(reservations && pickupWindowProblem(pickup)) && !submitMutation.isPending} admitted={admitted} pendingOwner={pendingOwner ?? localOwner} onLock={() => { setLockedScope(scope); setPlanSubmitted(undefined); onNewRequest?.(); onContextLock?.(); }} onDenied={() => { setLockedScope(undefined); onContextDone?.(); }} onSuccess={contextSuccess} /> : null}
+                {contextual && !contactMode && makerspaceId && verifiedOwner ? <ContextualRequest key={`${scope}:${modules.includes("events")}:${modules.includes("bookings")}`} scope={scope} slug={makerspaceSlug} makerspaceId={makerspaceId} eventsEnabled={modules.includes("events")} bookingsEnabled={modules.includes("bookings")} fields={{ requested_for: requestedFor.trim(), items: items.map(item => ({ product_id: item.productId, quantity: item.quantity })), website, ...(reservations ? pickupWindowPayload(pickup) : {}) }} canSubmit={requestedFor.trim().length > 0 && !(reservations && pickupWindowProblem(pickup)) && !submitMutation.isPending} admitted={admitted} pendingOwner={pendingOwner ?? localOwner} onLock={() => { setLockedScope(scope); setPlanSubmitted(undefined); onNewRequest?.(); onContextLock?.(); }} onDenied={() => { setLockedScope(undefined); onContextDone?.(); }} onSuccess={contextSuccess} /> : null}
                 <PricePreview className="mt-4" makerspaceSlug={makerspaceSlug} request={{ domain: "loans", items: items.map(item => ({ product_id: item.productId, quantity: item.quantity })) }} />
               </div>
             ) : null}

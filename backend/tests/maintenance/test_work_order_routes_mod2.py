@@ -9,6 +9,8 @@ from apps.maintenance.models import MaintenanceLog, WorkOrder
 from tests.maintenance.l16_helpers import switch, world
 from tests.return_helpers import authenticated_client, make_member
 
+from tests.refusal_helpers_mod2b import refused
+
 pytestmark = pytest.mark.django_db
 
 
@@ -130,9 +132,9 @@ def test_signed_out_other_tenant_and_plain_member_are_refused(route):
         return _assign(user, order, w.manager.pk)
 
     url = reverse("admin-work-order-status" if route == "move" else "admin-work-order-assign", args=[order.pk])
-    assert APIClient().post(url, {"status": "in_progress", "assignee_id": 1}, format="json").status_code in (401, 403)
+    refused(APIClient().post(url, {"status": "in_progress", "assignee_id": 1}, format="json"), 401, "not_authenticated")
     assert call(outsider).status_code == 404  # never leaks that the id exists
-    assert call(plain).status_code in (403, 404)
+    refused(call(plain), 404, "not_found")
     order.refresh_from_db()
     assert order.status == "open" and order.assignee_id is None
 
@@ -141,7 +143,7 @@ def test_inventory_manager_cannot_move_a_machine_order_but_can_move_an_item_orde
     w = world("wo-im")
     machine_order = _order(w)
     item_order = _order(w, subject_type="inventory_product", machine=None, product=w.product, title="Item")
-    assert _move(w.im, machine_order, "in_progress").status_code in (403, 404)
+    refused(_move(w.im, machine_order, "in_progress"), 404, "not_found")
     assert _move(w.im, item_order, "in_progress").status_code == 200
 
 

@@ -13,6 +13,8 @@ from tests.events.collab_helpers import client_for
 from tests.events.orders_helpers import l6_space, make_staff, place, ticketed_event, verified
 from tests.return_helpers import make_member, make_space
 
+from tests.refusal_helpers_mod2b import refused
+
 pytestmark = pytest.mark.django_db
 
 
@@ -85,9 +87,9 @@ def test_addon_patch_rejects_bad_input_with_400_and_changes_nothing(body):
 def test_addon_detail_refuses_signed_out_other_tenant_and_a_plain_member():
     space, event, staff, ticket = ticketed_event(amount=10)
     addon = create_addon(event, actor=staff, name="Kit", kind="kit", amount=Decimal("4.000"))
-    assert APIClient().patch(_addon_url(addon), {"stock": 1}, format="json").status_code in (401, 403)
-    assert client_for(_outsider()).patch(_addon_url(addon), {"stock": 1}, format="json").status_code in (403, 404)
-    assert client_for(verified("mod2-plain")).delete(_addon_url(addon)).status_code in (403, 404)
+    refused(APIClient().patch(_addon_url(addon), {"stock": 1}, format="json"), 401, "not_authenticated")
+    refused(client_for(_outsider()).patch(_addon_url(addon), {"stock": 1}, format="json"), 404, "not_found")
+    refused(client_for(verified("mod2-plain")).delete(_addon_url(addon)), 404, "not_found")
     assert EventAddon.objects.filter(pk=addon.pk).exists()
 
 
@@ -119,8 +121,8 @@ def test_sales_settings_boundaries_max_plus_one_refused_and_edge_accepted(field,
 
 def test_sales_settings_off_with_the_orders_capability_and_for_other_tenants():
     space, event, staff, ticket = ticketed_event(amount=10)
-    assert client_for(_outsider()).get(_settings_url(event)).status_code in (403, 404)
-    assert APIClient().get(_settings_url(event)).status_code in (401, 403)
+    refused(client_for(_outsider()).get(_settings_url(event)), 404, "not_found")
+    refused(APIClient().get(_settings_url(event)), 401, "not_authenticated")
     space.enabled_features = [k for k in space.enabled_features if k != "events.orders"]
     space.save(update_fields=["enabled_features"])
     for call in (client_for(staff).get, lambda url: client_for(staff).put(url, {}, format="json")):
@@ -139,9 +141,9 @@ def test_staff_order_list_and_detail_scope_by_event_and_tenant():
     detail = client_for(staff).get(reverse("admin-event-order-detail", kwargs={"pk": order_id}))
     assert detail.status_code == 200 and detail.json()["id"] == order_id
     stranger = client_for(_outsider())
-    assert stranger.get(reverse("admin-event-orders", kwargs={"pk": event.pk})).status_code in (403, 404)
-    assert stranger.get(reverse("admin-event-order-detail", kwargs={"pk": order_id})).status_code in (403, 404)
-    assert client_for(buyer).get(reverse("admin-event-order-detail", kwargs={"pk": order_id})).status_code in (403, 404)
+    refused(stranger.get(reverse("admin-event-orders", kwargs={"pk": event.pk})), 404, "not_found")
+    refused(stranger.get(reverse("admin-event-order-detail", kwargs={"pk": order_id})), 404, "not_found")
+    refused(client_for(buyer).get(reverse("admin-event-order-detail", kwargs={"pk": order_id})), 404, "not_found")
     space.enabled_features = [k for k in space.enabled_features if k != "events.orders"]
     space.save(update_fields=["enabled_features"])
     assert client_for(staff).get(reverse("admin-event-orders", kwargs={"pk": event.pk})).status_code == 404

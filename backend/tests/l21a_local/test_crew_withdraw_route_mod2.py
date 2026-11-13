@@ -8,6 +8,8 @@ from apps.audit.models import AuditLog
 from apps.events.models import EventCrewMember, EventParticipationSettings, EventRegistration
 from tests.events.collab_helpers import client_for, make_event, make_member, make_space, make_staff
 
+from tests.refusal_helpers_mod2b import refused
+
 pytestmark = pytest.mark.django_db
 
 
@@ -59,8 +61,8 @@ def test_a_member_with_no_crew_row_and_signed_out_cannot_withdraw():
     space, event = _world("crew-wd-none")
     outsider = make_member(space, "crew-wd-outsider")
     assert _withdraw(event, outsider).status_code == 404
-    assert APIClient().post(reverse("events-programme-member-crew-withdraw", kwargs={"pk": event.pk})
-                            ).status_code in (401, 403)
+    refused(APIClient().post(reverse("events-programme-member-crew-withdraw", kwargs={"pk": event.pk})),
+            401, "authentication_required")
 
 
 def test_withdrawing_never_touches_another_members_crew_row():

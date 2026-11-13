@@ -14,6 +14,8 @@ from apps.payments.models import Payment
 from tests.machines.eta_helpers import job, owner, world
 from tests.machines.test_job_flow import priced
 
+from tests.refusal_helpers_mod2b import refused
+
 pytestmark = pytest.mark.django_db
 S = MachineServiceRequest.Status
 
@@ -54,7 +56,7 @@ def test_approving_twice_is_refused_and_does_not_audit_or_charge_again():
     assert _approve(_client(member), row, row.quote_digest).status_code == 200
     payments = Payment.objects.count()
     second = _approve(_client(member), row, row.quote_digest)
-    assert second.status_code >= 400
+    refused(second, 409, "service_invalid_transition")
     assert Payment.objects.count() == payments
     assert AuditLog.objects.filter(target_id=str(row.pk), action__icontains="quote_approved").count() == 1
 
@@ -63,7 +65,10 @@ def test_approving_twice_is_refused_and_does_not_audit_or_charge_again():
 def test_a_wrong_or_malformed_digest_never_approves(digest):
     w, member, row = _quoted("mod2-q-digest")
     response = _approve(_client(member), row, digest)
-    assert response.status_code in (400, 409)
+    if digest == "0" * 64:
+        refused(response, 409, "price_changed")
+    else:
+        assert response.status_code == 400 and "digest" in response.json()
     row.refresh_from_db()
     assert row.status == S.QUOTED
 
@@ -79,7 +84,7 @@ def test_an_expired_quote_cannot_be_approved_and_nothing_is_charged():
     MachineServiceRequest.objects.filter(pk=row.pk).update(quote_expires_at=timezone.now() - timedelta(minutes=1))
     before = Payment.objects.count()
     response = _approve(_client(member), row, row.quote_digest)
-    assert response.status_code >= 400
+    refused(response, 409, "service_invalid_transition")
     row.refresh_from_db()
     assert row.status != S.ACCEPTED and Payment.objects.count() == before
 
@@ -91,8 +96,8 @@ def test_decline_cancels_with_nothing_charged_and_a_second_decline_is_refused():
     assert response.status_code == 200, response.content
     row.refresh_from_db()
     assert row.status == S.CANCELLED and Payment.objects.count() == before
-    assert _decline(_client(member), row).status_code >= 400
-    assert _approve(_client(member), row, row.quote_digest).status_code >= 400
+    refused(_decline(_client(member), row), 409, "service_invalid_transition")
+    refused(_approve(_client(member), row, row.quote_digest), 409, "service_invalid_transition")
 
 
 def test_another_member_and_signed_out_cannot_answer_someone_elses_quote():
@@ -100,7 +105,7 @@ def test_another_member_and_signed_out_cannot_answer_someone_elses_quote():
     stranger = owner("mod2-q-stranger")
     for call in (lambda c: _approve(c, row, row.quote_digest), lambda c: _decline(c, row)):
         assert call(_client(stranger)).status_code == 404  # not a 403: never confirms the job exists
-        assert call(APIClient()).status_code in (401, 403)
+        refused(call(APIClient()), 401, "not_authenticated")
     row.refresh_from_db()
     assert row.status == S.QUOTED
 
@@ -109,7 +114,7 @@ def test_an_unquoted_pending_job_cannot_be_approved_or_declined_through_the_quot
     w = priced(world("mod2-q-pending"))
     member = owner("mod2-q-pending-m")
     row = job(w, member=member)
-    assert _approve(_client(member), row, "0" * 64).status_code >= 400
-    assert _decline(_client(member), row).status_code >= 400
+    refused(_approve(_client(member), row, "0" * 64), 409, "service_invalid_transition")
+    refused(_decline(_client(member), row), 409, "service_invalid_transition")
     row.refresh_from_db()
     assert row.status != S.CANCELLED

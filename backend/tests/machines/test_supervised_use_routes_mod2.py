@@ -12,6 +12,8 @@ from apps.presence.models import PresenceSession
 from tests.machines.certification_helpers import _member
 from tests.machines.test_induction_supervised_l3a import _world
 
+from tests.refusal_helpers_mod2b import refused
+
 pytestmark = pytest.mark.django_db
 
 API = "/api/v1/member"
@@ -55,7 +57,7 @@ def test_use_start_end_round_trip_audits_once_and_refuses_a_double_start_and_dou
     ended = boss.post(f"{API}/supervised-uses/{use_id}/end", {}, format="json")
     assert ended.status_code == 200 and ended.json()["ended_at"]
     twice = boss.post(f"{API}/supervised-uses/{use_id}/end", {}, format="json")
-    assert twice.json().get("code") == "use_closed" and twice.status_code >= 400
+    refused(twice, 409, "use_closed")
     for action in ("supervised_use_started", "supervised_use_ended"):
         assert AuditLog.objects.filter(action=f"machine_session.{action}", target_id=str(use_id)).count() == 1
 
@@ -80,8 +82,8 @@ def test_a_person_not_added_cannot_start_a_use():
     student, _ = _member(w.space, "mod2-added")
     stranger, _ = _member(w.space, "mod2-stranger")
     boss, sid = _open(w, student)
-    refused = boss.post(f"{API}/supervised-sessions/{sid}/uses", {"user_id": stranger.pk}, format="json")
-    assert refused.status_code in (403, 404)
+    blocked = boss.post(f"{API}/supervised-sessions/{sid}/uses", {"user_id": stranger.pk}, format="json")
+    refused(blocked, 404, "not_found")
     assert not SupervisedUse.objects.filter(session_id=sid).exists()
 
 
@@ -98,7 +100,7 @@ def test_other_members_and_other_tenants_cannot_drive_the_session_and_do_not_lea
                            format="json").status_code == 404
         assert client.post(f"{API}/supervised-uses/{use_id}/end", {}, format="json").status_code == 404
         assert client.delete(f"{API}/supervised-sessions/{sid}/supervisees/{student.pk}").status_code == 404
-    assert APIClient().post(f"{API}/supervised-uses/{use_id}/end", {}, format="json").status_code in (401, 403)
+    refused(APIClient().post(f"{API}/supervised-uses/{use_id}/end", {}, format="json"), 401, "not_authenticated")
     assert SupervisedUse.objects.get(pk=use_id).ended_at is None
 
 
@@ -110,7 +112,7 @@ def test_removing_a_supervisee_ends_their_open_use_and_audits():
     removed = boss.delete(f"{API}/supervised-sessions/{sid}/supervisees/{student.pk}")
     assert removed.status_code == 200
     assert SupervisedUse.objects.get(pk=use_id).ended_at is not None
-    assert boss.delete(f"{API}/supervised-sessions/{sid}/supervisees/{student.pk}").status_code in (400, 404)
+    assert boss.delete(f"{API}/supervised-sessions/{sid}/supervisees/{student.pk}").status_code == 400
 
 
 def test_closed_session_refuses_further_uses_and_close_is_not_repeatable():
@@ -118,10 +120,10 @@ def test_closed_session_refuses_further_uses_and_close_is_not_repeatable():
     student, _ = _member(w.space, "mod2-cl-student")
     boss, sid = _open(w, student)
     assert boss.post(f"{API}/supervised-sessions/{sid}/close", {}, format="json").status_code == 200
-    refused = boss.post(f"{API}/supervised-sessions/{sid}/uses", {"user_id": student.pk}, format="json")
-    assert refused.status_code >= 400 and refused.json().get("code") == "supervised_session_closed"
+    blocked = boss.post(f"{API}/supervised-sessions/{sid}/uses", {"user_id": student.pk}, format="json")
+    refused(blocked, 409, "supervised_session_closed")
     again = boss.post(f"{API}/supervised-sessions/{sid}/close", {}, format="json")
-    assert again.status_code >= 400
+    refused(again, 409, "supervised_session_closed")
     assert AuditLog.objects.filter(action="machine_session.supervised_closed", target_id=str(sid)).count() == 1
 
 

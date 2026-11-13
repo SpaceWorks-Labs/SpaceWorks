@@ -9,6 +9,8 @@ from tests.parity_0120.adapter_api.adapter_case import adapter_case, plain_membe
 from tests.return_helpers import make_member, make_space
 from rest_framework.test import APIClient
 
+from tests.refusal_helpers_mod2b import refused
+
 pytestmark = pytest.mark.django_db(transaction=True)
 URL = "https://hooks.example.com/spaceworks"
 
@@ -65,9 +67,10 @@ def test_rotate_and_deliveries_refuse_plain_members_other_tenants_and_signed_out
     other = adapter_case("mod2-rot-roles-other")
     member = APIClient()
     member.force_authenticate(plain_member("mod2-plain", case["space"]))
-    for client in (member, other["client"], APIClient()):
-        assert _rotate(client, case).status_code in (401, 403, 404)
-        assert _deliveries(client, case).status_code in (401, 403, 404)
+    for client, expected in ((member, (404, "not_found")), (other["client"], (404, "not_found")),
+                             (APIClient(), (401, "not_authenticated"))):
+        refused(_rotate(client, case), *expected)
+        refused(_deliveries(client, case), *expected)
     assert not AuditLog.objects.filter(action="devices.adapter_webhook_rotated").exists()
 
 
@@ -136,8 +139,9 @@ def test_jog_is_refused_for_plain_members_other_tenants_and_when_off():
     member = APIClient()
     member.force_authenticate(plain_member("mod2-jog-plain", case["space"]))
     url = reverse(JOG, args=[case["binding_id"]])
-    for client in (member, other["client"], APIClient()):
-        assert client.post(url, {"dx": 1}, format="json").status_code in (401, 403, 404)
+    for client, expected in ((member, (404, "not_found")), (other["client"], (404, "not_found")),
+                             (APIClient(), (401, "not_authenticated"))):
+        refused(client.post(url, {"dx": 1}, format="json"), *expected)
     _feature_off(case)
     assert case["client"].post(url, {"dx": 1}, format="json").status_code == 404
     assert not AdapterCommand.objects.filter(binding_id=case["binding_id"], command="jog").exists()
@@ -171,11 +175,11 @@ def test_shelf_coverage_limits_bad_input_roles_and_switch():
     assert case["client"].post(url, {"targets": [one], "extra": 1}, format="json").status_code == 400
     member = APIClient()
     member.force_authenticate(plain_member("mod2-cov-plain", case["space"]))
-    assert member.post(url, {"targets": [one]}, format="json").status_code == 403
+    refused(member.post(url, {"targets": [one]}, format="json"), 403, "permission_denied")
     foreign = make_member("mod2-cov-foreign", make_space("mod2-cov-foreign-space"))
     stranger = APIClient()
     stranger.force_authenticate(foreign)
-    assert stranger.post(url, {"targets": [one]}, format="json").status_code in (403, 404)
-    assert APIClient().post(url, {"targets": [one]}, format="json").status_code in (401, 403)
+    refused(stranger.post(url, {"targets": [one]}, format="json"), 403, "permission_denied")
+    refused(APIClient().post(url, {"targets": [one]}, format="json"), 401, "not_authenticated")
     _feature_off(case)
     assert case["client"].post(url, {"targets": [one]}, format="json").status_code == 404

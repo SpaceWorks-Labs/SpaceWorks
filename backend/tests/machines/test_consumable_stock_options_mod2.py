@@ -8,6 +8,8 @@ from apps.machines.models import MachineConsumablePool
 from tests.machines.test_machine_scope_surfaces import client_for, lab  # noqa: F401  (fixture)
 from tests.return_helpers import make_member, make_product, make_space
 
+from tests.refusal_helpers_mod2b import refused
+
 pytestmark = pytest.mark.django_db
 
 
@@ -38,7 +40,7 @@ def test_scope_refuses_a_manager_of_another_type_and_a_foreign_tenant(lab):  # n
     assert client_for(lab["laser_mgr"]).get(_url(lab["space"], lab["printer_type"])).status_code == 403
     stranger_space = make_space("stock-stranger")
     stranger = make_member("stock-stranger-sm", stranger_space)
-    assert client_for(stranger).get(_url(lab["space"], lab["printer_type"])).status_code in (403, 404)
+    refused(client_for(stranger).get(_url(lab["space"], lab["printer_type"])), 404, "not_found")
 
 
 def test_item_search_is_capped_at_20_trimmed_and_tenant_scoped(lab):  # noqa: F811
@@ -61,7 +63,7 @@ def test_item_search_is_capped_at_20_trimmed_and_tenant_scoped(lab):  # noqa: F8
 def test_machines_module_off_answers_404_and_signed_out_is_refused(lab):  # noqa: F811
     from rest_framework.test import APIClient
     from tests.module_helpers import disable_module
-    assert APIClient().get(_url(lab["space"], lab["printer_type"])).status_code in (401, 403)
+    refused(APIClient().get(_url(lab["space"], lab["printer_type"])), 401, "not_authenticated")
     disable_module(lab["space"], "machines")
     response = client_for(lab["printer_mgr"]).get(_url(lab["space"], lab["printer_type"]))
     assert response.status_code == 404 and response.json()["code"] == "module_disabled"

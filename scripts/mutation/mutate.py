@@ -267,6 +267,8 @@ class Engine:
             self.durations[item.nodeid] = time.time() - s
         cov.stop()
         data = cov.get_data()
+        slow = sorted(self.durations.items(), key=lambda kv: -kv[1])[:5]
+        print("[mutation] slowest baseline tests: " + "; ".join(f"{k} {v:.0f}s" for k, v in slow), flush=True)
         print(f"[mutation] baseline {time.time() - t0:.0f}s, {len(items)} tests, {len(self.baseline_failed)} failing in baseline (excluded)", flush=True)
         for nodeid in sorted(self.baseline_failed):
             print(f"[mutation] baseline-failing: {nodeid}", flush=True)
@@ -441,7 +443,7 @@ def main():
     ap.add_argument("--min-timeout", type=float, default=60)
     ap.add_argument("--list-only", action="store_true")
     args = ap.parse_args()
-    args.out = args.out or str(BACKEND.parent / "mutation-results" / f"{args.name}.json")
+    args.out = args.out or str(BACKEND.parent / "mutation-results" / f"{args.name.replace(chr(47), chr(95))}.json")
     sys.path.insert(0, str(BACKEND))
     os.chdir(BACKEND)
     if args.list_only:

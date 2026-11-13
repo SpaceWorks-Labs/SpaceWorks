@@ -48,7 +48,7 @@ jobs:
           MUT_REGEX: ${{ matrix.regex }}
         run: |
           set -euo pipefail
-          shard_tag="${MUT_SHARD//[.]/of}"
+          shard_tag="$(printf %s "$MUT_SHARD" | tr / _)"
           extra=()
           # Re-run only earlier survivors when a results file is committed for this entry.
           if [ -f "mutation-baseline/${MUT_NAME}-${shard_tag}.only.json" ]; then

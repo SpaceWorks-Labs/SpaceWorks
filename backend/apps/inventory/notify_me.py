@@ -41,19 +41,22 @@ def subscribe(product, user):
         product=product, user=user, defaults={"makerspace": product.makerspace},
     )
     watch = tenant_watches(product.makerspace).select_for_update().get(pk=watch.pk)
-    if not created and (watch.notified_at is not None or watch.ready_at is not None):
+    rearmed = not created and (watch.notified_at is not None or watch.ready_at is not None)
+    if rearmed:
         watch.notified_at = watch.ready_at = None
         watch.created_at = timezone.now()
         watch.save(update_fields=["notified_at", "ready_at", "created_at"])
-    record(user, "inventory.watch_subscribed", makerspace=product.makerspace, target=product)
+    if created or rearmed:  # a double click or retry is not a second subscription, so it is not a second audit entry
+        record(user, "inventory.watch_subscribed", makerspace=product.makerspace, target=product)
     return watch
 
 
 @transaction.atomic
 def unsubscribe(product, user):
     require_active_member(user, product.makerspace)
-    tenant_watches(product.makerspace).filter(product=product, user=user).delete()
-    record(user, "inventory.watch_unsubscribed", makerspace=product.makerspace, target=product)
+    removed, _ = tenant_watches(product.makerspace).filter(product=product, user=user).delete()
+    if removed:  # deleting nothing changed nothing, so it leaves no audit entry
+        record(user, "inventory.watch_unsubscribed", makerspace=product.makerspace, target=product)
 
 
 def availability_rose(product, previous):

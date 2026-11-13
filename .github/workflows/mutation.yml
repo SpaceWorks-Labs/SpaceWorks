@@ -58,12 +58,12 @@ jobs:
           TEST_ENTRYPOINT=python bash scripts/dev.sh test /workspace/scripts/mutation/mutate.py \
             --name "${MUT_NAME}-${shard_tag}" --shard "$MUT_SHARD" \
             --files $MUT_FILES --test-dirs $MUT_DIRS --test-regex "$MUT_REGEX" "${extra[@]}" \
-            | tee "mutation-${MUT_NAME}-${shard_tag}.log"
+            | tee "$GITHUB_WORKSPACE/mutation-${MUT_NAME}-${shard_tag}.log"
 
       - name: Survivors
         if: always()
         run: |
-          grep -E "^[.]mutation[.] (FINAL|baseline)|^SURVIVOR|baseline-failing" mutation-*.log || true
+          grep -hE "mutation. (FINAL|baseline)|^SURVIVOR|baseline-failing" ./mutation-*.log || true
 
       - uses: actions/upload-artifact@v4
         if: always()

@@ -30,6 +30,11 @@ import types
 from dataclasses import dataclass
 from pathlib import Path
 
+try:
+    import pytest
+except ImportError:  # host-side --list-only needs no pytest
+    pytest = None
+
 BACKEND = Path(__file__).resolve().parents[2] / "backend"
 TOKEN_RE = re.compile(r"^[A-Za-z0-9_.:\-/]{2,}$")
 LOG_NAMES = {"logger", "log", "logging", "LOGGER", "_logger", "_log"}
@@ -243,6 +248,7 @@ class Engine:
         self.mutating = False
         self._mut_failed = None
 
+    @(pytest.hookimpl(tryfirst=True) if pytest else (lambda f: f))
     def pytest_runtestloop(self, session):
         import coverage
 
@@ -401,13 +407,6 @@ class Engine:
         raise MutantTimeout()
 
 
-def _with_tryfirst(engine):
-    import pytest
-
-    engine.pytest_runtestloop = pytest.hookimpl(tryfirst=True)(engine.pytest_runtestloop)
-    return engine
-
-
 def select_tests(args) -> list[str]:
     root = BACKEND
     chosen: set[str] = set()
@@ -453,11 +452,9 @@ def main():
             total += len(ms)
         print("total", total)
         return 0
-    import pytest
-
     tests = select_tests(args)
     print(f"[mutation] {len(tests)} test files selected", flush=True)
-    return pytest.main(["-q", "-p", "no:cacheprovider", *tests], plugins=[_with_tryfirst(Engine(args))])
+    return pytest.main(["-q", "-p", "no:cacheprovider", *tests], plugins=[Engine(args)])
 
 
 if __name__ == "__main__":

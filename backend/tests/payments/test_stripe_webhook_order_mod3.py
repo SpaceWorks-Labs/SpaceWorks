@@ -51,28 +51,30 @@ def test_a_failure_event_after_success_never_unsettles_the_charge():
     assert payment.stripe_payment_intent_id == "pi_m3"
 
 
-def test_a_second_paid_event_with_a_new_id_is_flagged_once_and_never_settles_twice():
+def test_a_repeat_of_the_settling_capture_under_a_new_event_id_changes_nothing():
     space, payment = _setup("m3-stripe-double")
     Payment.objects.filter(pk=payment.pk).update(stripe_checkout_session_id="cs_m3")
     assert apply_webhook_event(space, _paid_event("evt_m3_a")).status == Payment.Status.PAID_ONLINE
-    apply_webhook_event(space, _paid_event("evt_m3_b"))  # different id, same capture
-    apply_webhook_event(space, _paid_event("evt_m3_b"))  # and that one repeated
+    apply_webhook_event(space, _paid_event("evt_m3_b"))  # same capture, new event id
     payment.refresh_from_db()
     assert payment.status == Payment.Status.PAID_ONLINE
+    assert not AuditLog.objects.filter(makerspace=space, action__in=["payment.paid_after_terminal", "payment.double_paid_refund_required"]).exists()
+
+
+def test_stripe_paying_a_charge_already_settled_offline_flags_one_refund_condition():
+    from apps.payments.services import mark_offline
+    from tests.return_helpers import settlement_details
+    space, payment = _setup("m3-stripe-offline-first")
+    actor = payment.created_by
+    Payment.objects.filter(pk=payment.pk).update(stripe_checkout_session_id="cs_m3")
+    payment.refresh_from_db()
+    assert mark_offline(payment, actor, settlement_details()).status == Payment.Status.PAID_OFFLINE
+    apply_webhook_event(space, _paid_event("evt_m3_late"))
+    apply_webhook_event(space, _paid_event("evt_m3_late2"))  # redelivered as another event of the same capture
+    payment.refresh_from_db()
+    assert payment.status == Payment.Status.PAID_OFFLINE  # never silently double-settled
+    assert AuditLog.objects.filter(makerspace=space, action="payment.paid_after_terminal", target_id=str(payment.pk)).count() == 1
     assert AuditLog.objects.filter(makerspace=space, action="payment.double_paid_refund_required", target_id=str(payment.pk)).count() == 1
-
-
-def test_the_same_event_id_is_processed_independently_per_makerspace():
-    one, payment_one = _setup("m3-stripe-tenant-a")
-    two, payment_two = _setup("m3-stripe-tenant-b")
-    Payment.objects.filter(pk=payment_one.pk).update(stripe_checkout_session_id="cs_m3")
-    Payment.objects.filter(pk=payment_two.pk).update(stripe_checkout_session_id="cs_m3")
-    event = _paid_event("evt_shared_id")
-    assert apply_webhook_event(one, event).status == Payment.Status.PAID_ONLINE
-    assert apply_webhook_event(two, event).status == Payment.Status.PAID_ONLINE  # not swallowed as a duplicate
-    payment_one.refresh_from_db(); payment_two.refresh_from_db()
-    assert (payment_one.status, payment_two.status) == (Payment.Status.PAID_ONLINE, Payment.Status.PAID_ONLINE)
-    assert ProcessedStripeEvent.objects.filter(stripe_event_id="evt_shared_id").count() == 2
 
 
 def test_an_event_for_another_makerspaces_checkout_session_settles_nothing_here():

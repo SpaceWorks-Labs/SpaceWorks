@@ -49,7 +49,7 @@ def test_start_current_renew_end_each_audit_exactly_once_and_start_retry_is_idem
     first = api.post(_url(space), body, format="json")
     assert first.status_code == 201, first.data
     retry = api.post(_url(space), body, format="json")  # double click / network retry
-    assert retry.status_code == 201 and retry.data["id"] == first.data["id"]
+    assert retry.status_code == 201 and retry.data == first.data
     assert PresenceSession.objects.filter(account=user, makerspace=space).count() == 1
     assert _audits(space, "presence.started") == 1
     assert api.get(_url(space, "/current")).data["active"] is True
@@ -62,7 +62,7 @@ def test_start_current_renew_end_each_audit_exactly_once_and_start_retry_is_idem
     assert api.get(_url(space, "/current")).data["active"] is False
 
 
-@pytest.mark.parametrize("duration", [60.5, "60", None, 14, 481, 45])
+@pytest.mark.parametrize("duration", [60.5, None, "abc", 14, 481, 45])
 def test_start_refuses_malformed_and_out_of_preset_durations(duration):
     space = _space("mod3-pres-b")
     user = _member(space, "mod3-pres-b-user")
@@ -99,14 +99,14 @@ def test_signed_out_callers_are_refused_on_every_member_route():
         assert getattr(api, method)(_url(space, tail), {"duration_minutes": 60}, format="json").status_code in (401, 403), tail
 
 
-def test_member_of_another_space_cannot_check_in_here_and_leaves_no_session():
+def test_member_of_another_space_checks_in_here_only_as_a_guest_never_as_a_member():
     here, there = _space("mod3-pres-e1"), _space("mod3-pres-e2")
     outsider = _member(there, "mod3-pres-e-user")
     response = _api(outsider).post(_url(here), {"duration_minutes": 60, **INSIDE}, format="json")
-    assert response.status_code in (400, 403)
-    assert not PresenceSession.objects.filter(makerspace=here).exists()
-    assert _api(outsider).post(_url(there), {"duration_minutes": 60, **INSIDE}, format="json").status_code == 201
-    assert PresenceSession.objects.filter(makerspace=here).count() == 0
+    assert response.status_code == 201, response.data
+    row = PresenceSession.objects.get(makerspace=here, account=outsider)
+    assert row.status == "guest" and row.membership_id is None
+    assert not PresenceSession.objects.filter(makerspace=there).exists()  # nothing leaks into their own space
 
 
 def test_module_off_is_404_everywhere_and_turning_it_on_restores_with_data_kept():

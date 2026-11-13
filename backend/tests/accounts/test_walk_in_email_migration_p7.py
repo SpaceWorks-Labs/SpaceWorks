@@ -1,44 +1,31 @@
+"""Bounded form (decision 487): the data step runs against the live-schema registry, no schema rewind. The
+full rewind-and-replay is in tests/deep_migrations/test_walk_in_email_migration_p7_deep.py."""
+from importlib import import_module
+
 import pytest
 from django.db import connection
-from django.db.migrations.executor import MigrationExecutor
+from django.db.migrations.loader import MigrationLoader
 from django.utils import timezone
 
+from apps.accounts.models import User
 
-@pytest.mark.django_db(transaction=True)
+pytestmark = pytest.mark.django_db
+migration = import_module("apps.accounts.migrations.0016_clear_walk_in_email_verification")
+
+
 def test_walk_in_email_verification_is_cleared_by_migration():
-    from_target = [("accounts", "0015_backfill_is_walk_in")]
-    target = [("accounts", "0016_clear_walk_in_email_verification")]
-    executor = MigrationExecutor(connection)
+    loader = MigrationLoader(connection)
+    registry = loader.project_state(loader.graph.leaf_nodes("accounts")).apps
+    stamp = timezone.now()
+    walk_in = User.objects.create(username="migration-walk-in-email", email="walk-in-migration@example.test",
+                                  password="!")
+    account = User.objects.create(username="migration-real-account-email", email="account-migration@example.test",
+                                  password="!")
+    # The historical state this migration repairs: a walk-in carrying a verified-email stamp.
+    User.objects.filter(pk=walk_in.pk).update(is_walk_in=True, email_verified_at=stamp)
+    User.objects.filter(pk=account.pk).update(is_walk_in=False, email_verified_at=stamp)
 
-    try:
-        executor.migrate(from_target)
-        old_apps = executor.loader.project_state(from_target).apps
-        OldUser = old_apps.get_model("accounts", "User")
-        stamp = timezone.now()
-        walk_in = OldUser.objects.create(
-            username="migration-walk-in-email",
-            email="walk-in-migration@example.test",
-            password="!",
-            is_walk_in=True,
-            email_verified_at=stamp,
-        )
-        account = OldUser.objects.create(
-            username="migration-real-account-email",
-            email="account-migration@example.test",
-            password="!",
-            is_walk_in=False,
-            email_verified_at=stamp,
-        )
+    migration.clear_walk_in_email_verification(registry, None)
 
-        executor = MigrationExecutor(connection)
-        executor.migrate(target)
-        new_apps = executor.loader.project_state(target).apps
-        NewUser = new_apps.get_model("accounts", "User")
-
-        assert NewUser.objects.get(pk=walk_in.pk).email_verified_at is None
-        assert NewUser.objects.get(pk=account.pk).email_verified_at == stamp
-    finally:
-        # Rewinding one app may unapply dependent migrations in other apps. Restore
-        # the complete graph so later tests see the real schema, not a partial leaf.
-        restore = MigrationExecutor(connection)
-        restore.migrate(restore.loader.graph.leaf_nodes())
+    assert User.objects.get(pk=walk_in.pk).email_verified_at is None
+    assert User.objects.get(pk=account.pk).email_verified_at == stamp

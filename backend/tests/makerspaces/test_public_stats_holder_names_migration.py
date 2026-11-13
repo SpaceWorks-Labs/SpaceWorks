@@ -1,39 +1,29 @@
+"""Bounded form (decision 487): the data step runs against the live-schema registry, no schema rewind. The
+full rewind-and-replay is in tests/deep_migrations/test_public_stats_holder_names_migration_deep.py."""
+from importlib import import_module
+
 import pytest
 from django.db import connection
-from django.db.migrations.executor import MigrationExecutor
+from django.db.migrations.loader import MigrationLoader
+
+from apps.makerspaces.models import Makerspace
+
+pytestmark = pytest.mark.django_db
+migration = import_module("apps.makerspaces.migrations.0060_makerspace_public_stats_show_holder_names")
 
 
-@pytest.mark.django_db(transaction=True)
 def test_existing_makerspaces_enable_holder_names_but_new_ones_default_off():
-    from_target = [("makerspaces", "0059_memberprofile_show_attended_events")]
-    target = [("makerspaces", "0060_makerspace_public_stats_show_holder_names")]
-    executor = MigrationExecutor(connection)
+    loader = MigrationLoader(connection)
+    registry = loader.project_state(loader.graph.leaf_nodes("makerspaces")).apps
+    existing = Makerspace.objects.create(
+        name="Existing private stats space", slug="existing-private-stats-space", public_stats_enabled=False)
+    Makerspace.objects.filter(pk=existing.pk).update(public_stats_show_holder_names=False)
 
-    try:
-        executor.migrate(from_target)
-        old_apps = executor.loader.project_state(from_target).apps
-        OldMakerspace = old_apps.get_model("makerspaces", "Makerspace")
-        existing = OldMakerspace.objects.create(
-            name="Existing private stats space",
-            slug="existing-private-stats-space",
-            public_stats_enabled=False,
-        )
+    migration.enable_holder_names(registry, None)
 
-        executor = MigrationExecutor(connection)
-        executor.migrate(target)
-        new_apps = executor.loader.project_state(target).apps
-        NewMakerspace = new_apps.get_model("makerspaces", "Makerspace")
+    assert Makerspace.objects.get(pk=existing.pk).public_stats_show_holder_names is True
+    created_after_upgrade = Makerspace.objects.create(name="New holder-private space", slug="new-holder-private-space")
+    assert created_after_upgrade.public_stats_show_holder_names is False
 
-        assert NewMakerspace.objects.get(pk=existing.pk).public_stats_show_holder_names is True
-        created_after_upgrade = NewMakerspace.objects.create(
-            name="New holder-private space",
-            slug="new-holder-private-space",
-        )
-        assert created_after_upgrade.public_stats_show_holder_names is False
-
-        # Exercise the RunPython reverse before restoring the current full graph.
-        executor = MigrationExecutor(connection)
-        executor.migrate(from_target)
-    finally:
-        restore = MigrationExecutor(connection)
-        restore.migrate(restore.loader.graph.leaf_nodes())
+    migration.disable_holder_names(registry, None)
+    assert Makerspace.objects.get(pk=existing.pk).public_stats_show_holder_names is False

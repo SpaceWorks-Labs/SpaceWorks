@@ -1,0 +1,120 @@
+{
+  "contract_version": 3,
+  "owner": "P",
+  "enabled_default": false,
+  "settings": [
+    "ACCOUNT_SAVED_DETAILS_ENABLED",
+    "ACCOUNT_PII_KEY_BROKER",
+    "ACCOUNT_PII_MASTER_KEY",
+    "ACCOUNT_PII_MASTER_KEY_PREVIOUS",
+    "ACCOUNT_PII_AWS_KMS_KEY_ID"
+  ],
+  "brokers": [
+    "local",
+    "aws_kms"
+  ],
+  "local_secret_bytes": 32,
+  "independent_of_tenant_pii_flag": true,
+  "plaintext_fallback": false,
+  "aad": "account:<user_id>:<table>:<pk>:<field>",
+  "envelope": "pii:account:gcm:v1",
+  "preparation": {
+    "ttl_seconds": 60,
+    "opaque_in_process": true,
+    "ciphertext_only": true,
+    "allocated_intent_id": "22222222-2222-4222-8222-222222222222",
+    "subject_existing": {
+      "event_id": 42,
+      "owner_member_id": 17,
+      "kind": "role_assignment",
+      "subject_id": 81
+    },
+    "subject_new": {
+      "event_id": 42,
+      "owner_member_id": 17,
+      "kind": "application",
+      "creation_operation_id": "33333333-3333-4333-8333-333333333333"
+    },
+    "required_bindings": [
+      "intent_id",
+      "operation_id",
+      "owner",
+      "event",
+      "subject_kind",
+      "subject_id_or_creation_operation",
+      "key_version",
+      "key_epoch",
+      "canonical_answer_sha256",
+      "form_sha256",
+      "expires_at"
+    ]
+  },
+  "prepare_outside_domain_transaction": true,
+  "replay_receipt_before_preparation": true,
+  "insert_checks": [
+    "shared_account_fence",
+    "live_epoch",
+    "expiry",
+    "owner",
+    "subject",
+    "form_hash",
+    "answer_hash",
+    "date_revision",
+    "consent"
+  ],
+  "worker_payload_retention_hours": 24,
+  "pending_expiry_days": 7,
+  "status_retention_days": 30,
+  "no_true_choice_allows_no_vault": true,
+  "true_choice_requires_ready_key": true,
+  "errors": [
+    {
+      "status": 503,
+      "body": {
+        "code": "saved_details_unavailable",
+        "detail": "Saved details unavailable.",
+        "fields": {}
+      }
+    },
+    {
+      "status": 503,
+      "body": {
+        "code": "account_key_unavailable",
+        "detail": "Account key unavailable.",
+        "fields": {}
+      }
+    },
+    {
+      "status": 503,
+      "body": {
+        "code": "event_pii_unavailable",
+        "detail": "Event pii unavailable.",
+        "fields": {}
+      }
+    },
+    {
+      "status": 409,
+      "body": {
+        "code": "account_key_preparing",
+        "detail": "Account key preparing.",
+        "fields": {}
+      }
+    },
+    {
+      "status": 409,
+      "body": {
+        "code": "account_key_changed",
+        "detail": "Account key changed.",
+        "fields": {}
+      }
+    },
+    {
+      "status": 409,
+      "body": {
+        "code": "save_preparation_expired",
+        "detail": "Save preparation expired.",
+        "fields": {}
+      }
+    }
+  ]
+}

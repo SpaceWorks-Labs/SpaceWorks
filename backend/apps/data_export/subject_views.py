@@ -1,9 +1,11 @@
+from django.utils.translation import gettext
+from apps.operations.durable_dispatch import dispatch
 """Authenticated owner-only subject export API."""
 
 import logging
 
 from django.shortcuts import get_object_or_404
-from drf_spectacular.utils import OpenApiResponse, extend_schema
+from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework import serializers
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
@@ -34,7 +36,7 @@ class SubjectExportCreateSerializer(serializers.Serializer):
         # which otherwise produces a list where Serializer.errors needs a mapping.
         if not isinstance(data, dict) or data:
             raise serializers.ValidationError({
-                "non_field_errors": ["Supply an empty object; identity comes from authentication."],
+                "non_field_errors": [gettext("Supply an empty object; identity comes from authentication.")],
             })
         return super().run_validation(data)
 
@@ -82,7 +84,8 @@ class SubjectExportBaseView(APIView):
 
 class SubjectExportListView(SubjectExportBaseView):
     @extend_schema(tags=["Member account"], summary="List the caller's personal exports",
-                   request=None, responses={200: SubjectExportListSerializer, **ERRORS})
+                   request=None, parameters=[OpenApiParameter("page", int, OpenApiParameter.QUERY, description="Page number (24 rows per page).")],
+                   responses={200: SubjectExportListSerializer, **ERRORS})
     def get(self, request, makerspace_id):
         self.makerspace(request, makerspace_id)
         paginator = PageNumberPagination()
@@ -90,7 +93,7 @@ class SubjectExportListView(SubjectExportBaseView):
         return paginator.get_paginated_response(SubjectExportSerializer(page, many=True).data)
 
     @extend_schema(tags=["Member account"], summary="Request a personal ZIP/JSON data export",
-                   request={"application/json": {"type": "object", "additionalProperties": False}},
+                   request=None,
                    responses={202: SubjectExportSerializer, **ERRORS})
     def post(self, request, makerspace_id):
         space = self.makerspace(request, makerspace_id)
@@ -104,7 +107,7 @@ class SubjectExportListView(SubjectExportBaseView):
             self.throttled(request, throttle.wait())
         job = create_subject_export(request.user, space)
         try:
-            run_subject_export_task.delay(str(job.pk))
+            dispatch(run_subject_export_task, str(job.pk))
         except Exception:
             # Durable pending jobs are recovered by F1 even when the broker is down.
             logger.warning("subject_export_enqueue_failed", extra={"job_id": str(job.pk)})
@@ -130,7 +133,7 @@ class SubjectExportDownloadView(SubjectExportBaseView):
         try:
             payload = signed_download(job, request.user)
         except storage.ExportStorageError:
-            return Response({"detail": "Export storage is temporarily unavailable.", "code": "storage_unavailable"}, status=503)
+            return Response({"detail": gettext("Export storage is temporarily unavailable."), "code": "storage_unavailable"}, status=503)
         response = Response(DataExportDownloadUrlSerializer(payload).data)
         response["Cache-Control"] = "private, no-store"
         return response

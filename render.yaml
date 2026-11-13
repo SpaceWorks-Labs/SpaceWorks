@@ -1,181 +1,90 @@
-# Render Blueprint for the lean-paid always-on path.
-# H1 NOTE: the image now fails closed without the root-owned host marker. Render does not
-# mount that marker through this Blueprint, so deployment is intentionally refused until
-# a provider adapter lands in H1b. The explicit roles below must not be removed or replaced
-# with an ENTRYPOINT override.
-# Migrations are a documented ONE-OFF run against the Supabase direct/session URL,
-# not part of deploy. See docs/deploy-production.md. The app runtime uses the
-# transaction pooler URL. VPS deployment via docker-compose.prod.yml is the alternative.
-
+# Generated role contract; run the separate finite release before enabling services.
+# Upload private rendered runtime settings; maintenance credentials belong only to release.
+# Secret JSON mounts must be uploaded as provider secret files at their configured paths.
+# The zero digest in the checked template MUST be replaced by one verified same-build digest.
 envVarGroups:
-  - name: makerspace-prod
+  - name: spaceworks-runtime
     envVars:
-      - key: SECRET_KEY
-        sync: false
-      - key: API_CLIENT_ENC_KEY
-        sync: false
-      # Audit row-MAC attestation. Blank is a valid state and leaves rows honestly
-      # unattested; set it to enable. The anchoring settings (AUDIT_ATTESTATION_*) are
-      # added per deployment when an off-box anchor is actually configured, since an
-      # anchor stored with this deployment's own credentials proves nothing against
-      # someone who holds them.
-      - key: AUDIT_MAC_MASTER_KEY
-        sync: false
-      - key: DEBUG
-        value: "False"
-      - key: ALLOWED_HOSTS
-        sync: false
-      - key: CORS_ALLOWED_ORIGINS
-        sync: false
-      - key: CSRF_TRUSTED_ORIGINS
-        sync: false
-      - key: ENABLE_HTTPS
-        value: "true"
-      - key: TRUST_X_FORWARDED_PROTO
-        value: "true"
-      # Render terminates TLS at its own edge proxy and appends the client to
-      # X-Forwarded-For, so exactly one proxy is trusted. Unset, DRF falls back to
-      # legacy behaviour and keys throttles on REMOTE_ADDR -- which here is Render's
-      # proxy, so every user in the world shares one rate-limit bucket. Raise this only
-      # if a CDN is put in front of Render.
-      - key: TRUSTED_PROXY_COUNT
-        value: "1"
-      - key: SECURE_HSTS_SECONDS
-        value: "0"
-      - key: DATABASE_URL
-        sync: false
-      - key: MANAGED_POSTGRES
-        value: "True"
-      - key: CONN_MAX_AGE
-        value: "0"
-      - key: DISABLE_SERVER_SIDE_CURSORS
-        value: "True"
-      - key: AWS_STORAGE_BUCKET_NAME
-        sync: false
-      - key: AWS_S3_ENDPOINT_URL
-        sync: false
-      - key: AWS_S3_PUBLIC_ENDPOINT_URL
-        sync: false
-      - key: AWS_ACCESS_KEY_ID
-        sync: false
-      - key: AWS_SECRET_ACCESS_KEY
-        sync: false
-      - key: AWS_S3_REGION_NAME
-        value: auto
-      - key: STORAGE_PRESIGN_METHOD
-        value: put
-      - key: EMAIL_BACKEND
-        sync: false
-      - key: EMAIL_HOST
-        sync: false
-      - key: EMAIL_PORT
-        value: "587"
-      - key: EMAIL_HOST_USER
-        sync: false
-      - key: EMAIL_HOST_PASSWORD
-        sync: false
-      - key: EMAIL_USE_TLS
-        value: "True"
-      - key: DEFAULT_FROM_EMAIL
-        sync: false
-      - key: CRON_SECRET
-        sync: false
-      - key: BACKUP_AGE_RECIPIENT
-        sync: false
-      - key: BACKUP_ARCHIVE_SIGNING_PRIVATE_KEY
-        sync: false
-      - key: BACKUP_ARCHIVE_VERIFY_PUBLIC_KEY
-        sync: false
-      # NOTE: CELERY_BROKER_URL is NOT defined here - Render `fromService` refs are only
-      # honored inside a service's own envVars, not inside an envVarGroup. It is wired
-      # directly onto the web + worker services below.
-      - key: PUBLIC_APP_BASE_URL
-        sync: false
-      - key: TELEGRAM_BOT_TOKEN
-        sync: false
-      - key: TELEGRAM_WEBHOOK_SECRET
-        sync: false
-
+      - {"key": "INFRA_HOSTS", "sync": false}
+      - {"key": "ALLOWED_HOSTS", "sync": false}
+      - {"key": "API_CLIENT_ENC_KEY", "sync": false}
+      - {"key": "AUDIT_MAC_MASTER_KEY", "sync": false}
+      - {"key": "AWS_ACCESS_KEY_ID", "sync": false}
+      - {"key": "AWS_S3_ENDPOINT_URL", "sync": false}
+      - {"key": "AWS_S3_PUBLIC_ENDPOINT_URL", "sync": false}
+      - {"key": "AWS_S3_REGION_NAME", "value": "auto"}
+      - {"key": "AWS_SECRET_ACCESS_KEY", "sync": false}
+      - {"key": "AWS_SESSION_TOKEN", "sync": false}
+      - {"key": "AWS_STORAGE_BUCKET_NAME", "sync": false}
+      - {"key": "BACKUP_AGE_RECIPIENT", "value": ""}
+      - {"key": "BACKUP_ARCHIVE_SIGNING_PRIVATE_KEY", "sync": false}
+      - {"key": "BACKUP_ARCHIVE_VERIFY_PUBLIC_KEY", "value": ""}
+      - {"key": "BEHIND_TRUSTED_PROXY", "value": "False"}
+      - {"key": "CACHE_URL", "sync": false}
+      - {"key": "CARD_FONT_DOWNLOADS_ENABLED", "value": "True"}
+      - {"key": "CELERY_BROKER_URL", "sync": false}
+      - {"key": "CELERY_TASK_ALWAYS_EAGER", "value": "False"}
+      - {"key": "CLOUD_SCHEDULER", "value": "beat"}
+      - {"key": "CLOUD_TASK_PROFILE", "value": "redis"}
+      - {"key": "CONN_HEALTH_CHECKS", "value": "True"}
+      - {"key": "CONN_MAX_AGE", "value": "60"}
+      - {"key": "CONTROL_PLANE_PROXY", "value": "false"}
+      - {"key": "CORS_ALLOWED_ORIGINS", "sync": false}
+      - {"key": "CRON_INTERVAL_SECONDS", "value": "60"}
+      - {"key": "CRON_SECRET", "sync": false}
+      - {"key": "CSRF_TRUSTED_ORIGINS", "sync": false}
+      - {"key": "DATABASE_CONNECTION_MODE", "value": "direct"}
+      - {"key": "DATABASE_URL", "sync": false}
+      - {"key": "DEBUG", "value": "False"}
+      - {"key": "DEFAULT_FROM_EMAIL", "sync": false}
+      - {"key": "DISABLE_SERVER_SIDE_CURSORS", "value": "False"}
+      - {"key": "EMAIL_PROVIDER", "value": "resend"}
+      - {"key": "EMAIL_PROVIDER_CONFIG_FILE", "sync": false}
+      - {"key": "ENABLE_HTTPS", "value": "true"}
+      - {"key": "EVENT_REIMBURSEMENT_EVENT_STORAGE_BYTES", "value": "1073741824"}
+      - {"key": "EVENT_REIMBURSEMENT_FILE_MAX_BYTES", "value": "10485760"}
+      - {"key": "EVENT_REIMBURSEMENT_MEMBER_STORAGE_BYTES", "value": "104857600"}
+      - {"key": "EVENT_REIMBURSEMENT_PAYEE_PURGE_DAYS", "value": "30"}
+      - {"key": "EVENT_REIMBURSEMENT_RECEIPT_RETENTION_DAYS", "value": "2555"}
+      - {"key": "EVENT_STAGE_FILE_RETENTION_DAYS", "value": "365"}
+      - {"key": "EVENT_STATION_PIN_PEPPER", "sync": false}
+      - {"key": "LOGIN_IP_BLOCK_ENABLED", "value": "True"}
+      - {"key": "MANAGED_POSTGRES", "value": "True"}
+      - {"key": "MESSAGING_WEBHOOK_BASE_URL", "value": ""}
+      - {"key": "MIN_NATIVE_APP_VERSION_ANDROID", "value": ""}
+      - {"key": "MIN_NATIVE_APP_VERSION_IOS", "value": ""}
+      - {"key": "NOTIFICATION_DISCORD_REDIRECT_URI", "value": ""}
+      - {"key": "NOTIFICATION_MATTERMOST_ALLOW_PRIVATE_HOSTS", "value": "False"}
+      - {"key": "NOTIFICATION_MATTERMOST_REDIRECT_URI", "value": ""}
+      - {"key": "NOTIFICATION_SLACK_REDIRECT_URI", "value": ""}
+      - {"key": "PASSWORD_BREACH_CHECK_ENABLED", "value": "True"}
+      - {"key": "PII_DEK_CACHE_TTL_SECONDS", "value": "300"}
+      - {"key": "PII_ENCRYPTION_DUAL_READ", "value": "True"}
+      - {"key": "PII_ENCRYPTION_ENABLED", "value": "False"}
+      - {"key": "PII_KEY_BROKER", "value": "local"}
+      - {"key": "PII_MASTER_KEY", "sync": false}
+      - {"key": "PII_SEARCH_HASH_KEY", "sync": false}
+      - {"key": "PLATFORM_STAFF_ORIGINS", "sync": false}
+      - {"key": "PORT", "value": "8000"}
+      - {"key": "PUBLIC_APP_BASE_URL", "sync": false}
+      - {"key": "PUBLIC_IMAGE_BASE_URL", "sync": false}
+      - {"key": "PUBLIC_IMAGE_BUCKET", "sync": false}
+      - {"key": "SECRET_KEY", "sync": false}
+      - {"key": "SPACEWORKS_DEPLOYMENT_ID", "value": ""}
+      - {"key": "SPACEWORKS_DEPLOYMENT_MODE", "value": "managed"}
+      - {"key": "SPACEWORKS_DEPLOYMENT_PROFILE", "value": "full"}
+      - {"key": "STORAGE_CAPABILITIES_FILE", "sync": false}
+      - {"key": "STORAGE_PRESIGN_METHOD", "value": "put"}
+      - {"key": "TRUSTED_PROXY_COUNT", "value": "1"}
+      - {"key": "TRUST_X_FORWARDED_PROTO", "value": "true"}
+      - {"key": "TURNSTILE_FAIL_MODE", "value": "open"}
+      - {"key": "TURNSTILE_HOSTNAMES", "value": ""}
+      - {"key": "TURNSTILE_SITE_KEY", "value": ""}
+      - {"key": "UPLOAD_SCAN_POLICY", "value": "none"}
+      - {"key": "WEBAUTHN_RP_NAME", "value": "Space Works"}
+      - {"key": "WEB_PUSH_VAPID_SUBJECT", "value": ""}
+      - {"key": "WHATSAPP_META_GRAPH_VERSION", "value": "v25.0"}
 services:
-  - type: redis
-    name: makerspace-redis
-    plan: starter
-    ipAllowList: []
-    maxmemoryPolicy: noeviction
-
-  - type: web
-    name: makerspace-backend
-    env: docker
-    plan: starter
-    dockerfilePath: ./backend/Dockerfile
-    dockerContext: ./backend
-    healthCheckPath: /api/v1/health/readiness/
-    # collectstatic runs at START (not preDeploy) so the populated STATIC_ROOT lives in
-    # the SAME container that serves traffic - Render's preDeploy runs in a separate
-    # instance whose filesystem is discarded. collectstatic needs no DB, so it is safe
-    # here; migrations are NOT run at start (they are a one-off against the direct/session
-    # pooler - see docs/deploy-production.md), because the runtime DATABASE_URL is the
-    # transaction pooler which can't run migration prepared statements.
-    startCommand: --role backend sh -c "python manage.py collectstatic --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 60"
-    envVars:
-      - fromGroup: makerspace-prod
-      - key: CELERY_BROKER_URL
-        fromService:
-          type: redis
-          name: makerspace-redis
-          property: connectionString
-
-  - type: worker
-    name: makerspace-worker
-    env: docker
-    plan: starter
-    dockerfilePath: ./backend/Dockerfile
-    dockerContext: ./backend
-    dockerCommand: --role worker celery -A config worker -l info
-    envVars:
-      - fromGroup: makerspace-prod
-      - key: CELERY_BROKER_URL
-        fromService:
-          type: redis
-          name: makerspace-redis
-          property: connectionString
-
-  - type: worker
-    name: makerspace-beat
-    env: docker
-    plan: starter
-    dockerfilePath: ./backend/Dockerfile
-    dockerContext: ./backend
-    dockerCommand: --role beat celery -A config beat -l info
-    envVars:
-      - fromGroup: makerspace-prod
-      - key: CELERY_BROKER_URL
-        fromService:
-          type: redis
-          name: makerspace-redis
-          property: connectionString
-
-  - type: web
-    name: makerspace-frontend
-    env: static
-    buildCommand: cd frontend && npm ci && npm run build
-    staticPublishPath: ./frontend/dist
-    envVars:
-      # sync:false so Render PROMPTS for the real backend API root at deploy time.
-      # VITE_API_URL is a BUILD-TIME var baked into the static bundle by Vite - a
-      # concrete placeholder here would ship an invalid URL until someone edits it
-      # and rebuilds (Codex Stage-4 P2). Set it to https://<backend-host>/api .
-      - key: VITE_API_URL
-        sync: false
-      - key: VITE_TENANT_TOKEN
-        sync: false
-      - key: VITE_PUBLIC_API_KEY
-        sync: false
-      - key: VITE_PUBLIC_CLIENT_ID
-        sync: false
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
-    # If you serve a runtime config.js instead of Vite envs, set config.js apiUrl
-    # to the backend API root above.
+  - {"type": "web", "name": "spaceworks-web", "runtime": "image", "image": {"url": "ghcr.io/spaceworks-labs/spaceworks-backend@sha256:0000000000000000000000000000000000000000000000000000000000000000"}, "plan": "0.5c-512mb", "dockerCommand": "--role backend python -m scripts.run_cloud_role web", "envVars": [{"fromGroup": "spaceworks-runtime"}], "autoDeployTrigger": "off", "numInstances": 1, "healthCheckPath": "/api/v1/health/readiness/"}
+  - {"type": "worker", "name": "spaceworks-worker", "runtime": "image", "image": {"url": "ghcr.io/spaceworks-labs/spaceworks-backend@sha256:0000000000000000000000000000000000000000000000000000000000000000"}, "plan": "0.5c-512mb", "dockerCommand": "--role worker python -m scripts.run_cloud_role worker", "envVars": [{"fromGroup": "spaceworks-runtime"}], "autoDeployTrigger": "off", "numInstances": 1}
+  - {"type": "worker", "name": "spaceworks-beat", "runtime": "image", "image": {"url": "ghcr.io/spaceworks-labs/spaceworks-backend@sha256:0000000000000000000000000000000000000000000000000000000000000000"}, "plan": "0.5c-512mb", "dockerCommand": "--role beat python -m scripts.run_cloud_role beat", "envVars": [{"fromGroup": "spaceworks-runtime"}], "autoDeployTrigger": "off", "numInstances": 1}

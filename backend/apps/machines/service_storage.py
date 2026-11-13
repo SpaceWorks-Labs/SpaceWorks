@@ -1,12 +1,11 @@
 """Private attachment storage for machine service requests."""
+from django.utils.translation import gettext
 from dataclasses import dataclass
 import logging
 import uuid
 
 from botocore.exceptions import BotoCoreError, ClientError
 from django.conf import settings
-from django.db import transaction
-from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
 from apps.audit import services as audit
@@ -19,9 +18,9 @@ from apps.maker_file_formats import (
     sniff_pdf_or_image,
 )
 from apps.machines import storage as machine_storage
-from apps.machines.models import Machine, MachineServiceRequest, ServiceRequestFile
+from apps.machines.models import Machine, ServiceRequestFile
 from apps.machines.service_file_policies import get_policy, policy_for_machine, policy_for_queue
-from apps.makerspaces import limits
+from apps.makerspaces import limits  # noqa: F401  (patched here by tests; used by the attach module)
 from apps.object_storage import delete_all_versions
 
 logger = logging.getLogger(__name__)
@@ -52,7 +51,7 @@ def staging_key(object_key):
 def validate_upload_declaration(policy, filename, content_type):
     ext = extension_from_name(filename)
     if not allowed_pair(ext, content_type, policy.allowed_extensions, policy.allowed_mimes):
-        raise ValidationError({"filename": "Unsupported attachment extension or content type."}, code="invalid_attachment")
+        raise ValidationError({"filename": gettext("Unsupported attachment extension or content type.")}, code="invalid_attachment")
 
 
 def policy_for_file(file):
@@ -69,6 +68,7 @@ def create_staged_file(service_request, *, actor, filename, content_type):
         machine = Machine.objects.get(pk=service_request.bucket.machine_id)
         queue, policy, context_id, makerspace = None, policy_for_machine(machine), machine.pk, machine.makerspace
     validate_upload_declaration(policy, filename, content_type)
+    limits.check_upload_headroom(makerspace)  # #234: storage full refuses before the upload
     upload = ServiceRequestFile.objects.create(
         makerspace=makerspace, machine=machine, queue=queue,
         kind=ServiceRequestFile.Kind.ATTACHMENT,
@@ -99,6 +99,7 @@ def create_staged_queue_file(queue, *, actor, filename, content_type, kind=Servi
     """
     policy = policy_for_queue(queue)
     validate_upload_declaration(policy, filename, content_type)
+    limits.check_upload_headroom(queue.makerspace)  # #234
     upload = ServiceRequestFile.objects.create(
         makerspace=queue.makerspace, queue=queue,
         kind=kind,
@@ -120,6 +121,11 @@ def create_staged_queue_file(queue, *, actor, filename, content_type, kind=Servi
 
 
 def presigned_upload(object_key, content_type, max_bytes):
+    """Sign an upload to the STAGING key in both modes (Hard Rule): the final key is never client-writable.
+
+    A POST presign used to sign the final key, so within its TTL the client could POST again and replace an object
+    that had already been validated and attached (M7). ``finalize_upload`` promotes staging exactly once.
+    """
     try:
         if settings.STORAGE_PRESIGN_METHOD == "put":
             url = _public_client().generate_presigned_url(
@@ -130,7 +136,7 @@ def presigned_upload(object_key, content_type, max_bytes):
             )
             return {"url": url, "method": "PUT", "headers": {"Content-Type": content_type}}
         return _public_client().generate_presigned_post(
-            Bucket=settings.AWS_STORAGE_BUCKET_NAME, Key=object_key,
+            Bucket=settings.AWS_STORAGE_BUCKET_NAME, Key=staging_key(object_key),
             Fields={"Content-Type": content_type},
             Conditions=[{"Content-Type": content_type}, ["content-length-range", 1, max_bytes]],
             ExpiresIn=settings.EVIDENCE_URL_TTL_SECONDS,
@@ -139,9 +145,9 @@ def presigned_upload(object_key, content_type, max_bytes):
         raise StorageUnavailable from exc
 
 
-def object_size(object_key):
+def _head(object_key):
     try:
-        response = _client().head_object(Bucket=settings.AWS_STORAGE_BUCKET_NAME, Key=object_key)
+        return _client().head_object(Bucket=settings.AWS_STORAGE_BUCKET_NAME, Key=object_key)
     except ClientError as exc:
         status = exc.response.get("ResponseMetadata", {}).get("HTTPStatusCode")
         code = exc.response.get("Error", {}).get("Code")
@@ -150,7 +156,11 @@ def object_size(object_key):
         raise StorageUnavailable from exc
     except BotoCoreError as exc:
         raise StorageUnavailable from exc
-    return int(response["ContentLength"])
+
+
+def object_size(object_key):
+    response = _head(object_key)
+    return None if response is None else int(response["ContentLength"])
 
 
 def delete_object(object_key):
@@ -162,27 +172,62 @@ def delete_object(object_key):
         logger.exception("Failed to delete machine service object %s.", object_key)
 
 
+def purge_object(object_key):
+    """Delete every version of one key and CONFIRM it, or raise ``StorageUnavailable``.
+
+    For retention and purge paths, which may mark a row purged only after the bytes are really gone (L-A5);
+    ``delete_object`` stays best-effort for compensation paths that must not mask the original error.
+    """
+    try:
+        delete_all_versions(_client(), bucket=settings.AWS_STORAGE_BUCKET_NAME, key=object_key)
+    except Exception as exc:  # noqa: BLE001 - every storage failure is the same retryable outcome
+        raise StorageUnavailable from exc
+
+
+def purge_upload(object_key):
+    """Both keys of an upload (final and staging), confirmed; raises so the caller leaves the row for a retry."""
+    purge_object(object_key)
+    purge_object(staging_key(object_key))
+
+
 def cleanup_upload(object_key):
     delete_object(object_key)
     delete_object(staging_key(object_key))
 
 
+def _pinned_source(source, head):
+    """CopySource pinned to the exact staged object that was measured: its version, else its ETag."""
+    copy_source = {"Bucket": settings.AWS_STORAGE_BUCKET_NAME, "Key": source}
+    extra = {}
+    if head.get("VersionId") and head["VersionId"] != "null":
+        copy_source["VersionId"] = head["VersionId"]
+    elif head.get("ETag"):
+        extra["CopySourceIfMatch"] = head["ETag"]
+    return copy_source, extra
+
+
 def finalize_upload(object_key, max_bytes):
-    if settings.STORAGE_PRESIGN_METHOD != "put":
-        return object_size(object_key)
+    """Promote the staged upload to the final key exactly once, pinned to the object that was measured.
+
+    Every presign targets staging (both modes), so the final key is written only here. A final object that already
+    exists was promoted earlier (or written by a pre-fix POST presign) and wins: staging is discarded, so a
+    still-valid presign can never replace an accepted object. Callers validate the FINAL key afterwards.
+    """
     final_size = object_size(object_key)
     if final_size is not None:
         delete_object(staging_key(object_key))
         return final_size
     source = staging_key(object_key)
-    size = object_size(source)
-    if size is None or not 1 <= size <= max_bytes:
+    head = _head(source)
+    if head is None:
+        return None
+    size = int(head["ContentLength"])
+    if not 1 <= size <= max_bytes:
         return size
+    copy_source, extra = _pinned_source(source, head)
     try:
         _client().copy_object(
-            Bucket=settings.AWS_STORAGE_BUCKET_NAME,
-            CopySource={"Bucket": settings.AWS_STORAGE_BUCKET_NAME, "Key": source},
-            Key=object_key,
+            Bucket=settings.AWS_STORAGE_BUCKET_NAME, CopySource=copy_source, Key=object_key, **extra,
         )
     except (BotoCoreError, ClientError) as exc:
         raise StorageUnavailable from exc
@@ -196,9 +241,9 @@ def finalize_upload(object_key, max_bytes):
 def validate_service_object(file, policy):
     size = object_size(file.object_key)
     if size is None:
-        raise ValidationError({"file_id": "Uploaded attachment was not found."}, code="invalid_attachment")
+        raise ValidationError({"file_id": gettext("Uploaded attachment was not found.")}, code="invalid_attachment")
     if not 1 <= size <= policy.max_bytes:
-        raise ValidationError({"file_id": "Uploaded attachment exceeds the size limit."}, code="invalid_attachment")
+        raise ValidationError({"file_id": gettext("Uploaded attachment exceeds the size limit.")}, code="invalid_attachment")
     try:
         response = _client().get_object(Bucket=settings.AWS_STORAGE_BUCKET_NAME, Key=file.object_key)
         data = response["Body"].read(policy.max_bytes)
@@ -207,87 +252,18 @@ def validate_service_object(file, policy):
         raise StorageUnavailable from exc
     ext = extension_from_name(file.original_filename)
     if not allowed_pair(ext, stored_content_type, policy.allowed_extensions, policy.allowed_mimes):
-        raise ValidationError({"file_id": "Attachment extension and content type do not match."}, code="invalid_attachment")
+        raise ValidationError({"file_id": gettext("Attachment extension and content type do not match.")}, code="invalid_attachment")
     sniffed = sniff_pdf_or_image(data)
     strict_mime = STRICT_MIME_BY_EXTENSION.get(ext)
     if strict_mime or sniffed:
         if not strict_mime or stored_content_type != strict_mime or sniffed != strict_mime:
-            raise ValidationError({"file_id": "Attachment content does not match its extension."}, code="invalid_attachment")
+            raise ValidationError({"file_id": gettext("Attachment content does not match its extension.")}, code="invalid_attachment")
         content_type = sniffed
     elif not has_required_signature(ext, data):
-        raise ValidationError({"file_id": "Attachment signature is invalid."}, code="invalid_attachment")
+        raise ValidationError({"file_id": gettext("Attachment signature is invalid.")}, code="invalid_attachment")
     else:
         content_type = stored_content_type
     return ServiceObjectValidationResult(size=size, content_type=content_type)
-
-
-def finalize_file(service_request, *, file_id, actor):
-    try:
-        file = ServiceRequestFile.objects.select_related(
-            "makerspace", "machine__makerspace", "queue__makerspace"
-        ).get(pk=file_id, owner_user_id=actor.pk)
-    except ServiceRequestFile.DoesNotExist as exc:
-        raise ValidationError(
-            {"file_id": "Attachment is unavailable for this request."},
-            code="invalid_attachment",
-        ) from exc
-    # Refuse an already-attached file before touching object storage so a retry or
-    # concurrent finalize can never delete the live object a committed record points at.
-    if file.service_request_id is not None or file.attached_at is not None:
-        raise ValidationError({"file_id": "Attachment is unavailable for this request."}, code="invalid_attachment")
-    policy = policy_for_file(file)
-    try:
-        size = finalize_upload(file.object_key, policy.max_bytes)
-        if size is None or not 1 <= size <= policy.max_bytes:
-            raise ValidationError({"file_id": "Uploaded attachment is invalid."}, code="invalid_attachment")
-        result = validate_service_object(file, policy)
-        with transaction.atomic():
-            locked_request = MachineServiceRequest.objects.select_for_update(of=("self",)).select_related(
-                "bucket__machine__makerspace", "queue__makerspace"
-            ).get(pk=service_request.pk)
-            locked_file = ServiceRequestFile.objects.select_for_update().get(pk=file.pk)
-            if (
-                locked_file.owner_user_id != actor.pk
-                or locked_file.service_request_id is not None
-                or locked_file.makerspace_id != locked_request.makerspace_id
-                or (locked_request.queue_id and locked_file.queue_id != locked_request.queue_id)
-                or (locked_request.bucket_id and locked_file.machine_id != locked_request.bucket.machine_id)
-            ):
-                raise ValidationError({"file_id": "Attachment is unavailable for this request."}, code="invalid_attachment")
-            limits.add_storage(locked_request.makerspace, result.size)
-            locked_file.service_request = locked_request
-            locked_file.attached_at = timezone.now()
-            locked_file.size_bytes = result.size
-            locked_file.content_type = result.content_type
-            locked_file.save(update_fields=["service_request", "attached_at", "size_bytes", "content_type"])
-            audit.record(
-                actor, "machine_service.file_attached", makerspace=locked_request.makerspace,
-                target=locked_file, meta={"request_id": locked_request.pk, "file_id": locked_file.pk, "size_bytes": result.size},
-            )
-            return locked_file
-    except Exception:
-        # Only compensate a still-staged upload; if a concurrent finalize won the
-        # race and attached this file, leave its object intact.
-        if ServiceRequestFile.objects.filter(
-            pk=file.pk, service_request__isnull=True, attached_at__isnull=True
-        ).exists():
-            cleanup_upload(file.object_key)
-        raise
-
-
-def delete_staged_file(file, *, actor):
-    with transaction.atomic():
-        locked = ServiceRequestFile.objects.select_for_update().select_related("makerspace").get(pk=file.pk)
-        if locked.service_request_id is not None or locked.attached_at is not None:
-            raise ValidationError({"file_id": "Attached files cannot be deleted."}, code="invalid_attachment")
-        audit.record(
-            actor, "machine_service.file_deleted", makerspace=locked.makerspace,
-            target=locked, meta={"file_id": locked.pk, "size_bytes": locked.size_bytes},
-        )
-        limits.free_storage(locked.makerspace, locked.size_bytes)
-        object_key = locked.object_key
-        locked.delete()
-    cleanup_upload(object_key)
 
 
 def presigned_get_url(object_key):
@@ -298,3 +274,21 @@ def presigned_get_url(object_key):
         )
     except (BotoCoreError, ClientError) as exc:
         raise StorageUnavailable from exc
+
+
+def presigned_download_url(object_key, content_type):
+    """A signed GET that always downloads with a fixed, server-chosen type: stored bytes never render as a page on
+    the storage origin, whatever was uploaded. ``<img>``/``<video>`` tags still display it."""
+    try:
+        return _public_client().generate_presigned_url(
+            "get_object", Params={
+                "Bucket": settings.AWS_STORAGE_BUCKET_NAME, "Key": object_key,
+                "ResponseContentDisposition": "attachment", "ResponseContentType": content_type,
+            }, ExpiresIn=settings.EVIDENCE_URL_TTL_SECONDS,
+        )
+    except (BotoCoreError, ClientError) as exc:
+        raise StorageUnavailable from exc
+
+
+# Attach/delete live in a sibling module; re-exported so existing imports keep resolving.
+from apps.machines.service_storage_attach import delete_staged_file, finalize_file  # noqa: E402,F401

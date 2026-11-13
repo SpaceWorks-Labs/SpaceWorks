@@ -1,3 +1,4 @@
+from django.utils.translation import gettext, gettext_noop
 from uuid import uuid4
 
 from django.conf import settings
@@ -9,9 +10,16 @@ from django.db import models
 from django.db.models import F, Q
 from django.utils import timezone
 from apps.forms_schema.validation import validate_form_schema
+from .programme.accent_presets import ACCENT_CHOICES
+from .venue import validate_map_url
+from apps.payments.money_model import MoneyDecimalField
 
 
 class Event(models.Model):
+    ACCENT_CHOICES = ACCENT_CHOICES
+    version = models.PositiveIntegerField(default=1)
+    event_date_revision = models.PositiveIntegerField(default=1)
+    accent_preset = models.CharField(max_length=24, choices=ACCENT_CHOICES, blank=True, default="")
     class Status(models.TextChoices):
         DRAFT = "draft", "Draft"
         PUBLISHED = "published", "Published"
@@ -20,12 +28,27 @@ class Event(models.Model):
 
     class RegistrationAudience(models.TextChoices):
         MEMBERS = "members", "Members"
-        ACCOUNTS = "accounts", "Authenticated accounts"
-        INVITE = "invite", "Invited accounts"
+        ACCOUNTS = "accounts", gettext_noop("Authenticated accounts")
+        INVITE = "invite", gettext_noop("Invited accounts")
+        PARTICIPATING_ORGANIZATIONS = "participating_organizations", gettext_noop("Participating organizations")
 
-    registration_audience = models.CharField(max_length=8, choices=RegistrationAudience.choices, default=RegistrationAudience.MEMBERS)
+    organization_admission_blocked = models.BooleanField(default=False, editable=False)
+    registration_audience = models.CharField(max_length=32, choices=RegistrationAudience.choices, default=RegistrationAudience.MEMBERS)
     category = models.ForeignKey("events.EventCategory", on_delete=models.SET_NULL, null=True, blank=True, related_name="events")
     tags = models.JSONField(default=list, blank=True)
+
+    class Listing(models.TextChoices):
+        LISTED = "listed", "Listed"
+        UNLISTED = "unlisted", "Unlisted"
+
+    class PageState(models.TextChoices):
+        LIVE = "live", "Live"
+        OFFLINE = "offline", "Offline"
+
+    class DeliveryMode(models.TextChoices):
+        IN_PERSON = "in_person", gettext_noop("In person")
+        ONLINE = "online", "Online"
+        HYBRID = "hybrid", "Hybrid"
 
     class LocationKind(models.TextChoices):
         INDOOR = 'indoor', 'Indoor'
@@ -63,6 +86,8 @@ class Event(models.Model):
     starts_at = models.DateTimeField()
     ends_at = models.DateTimeField()
     location = models.CharField(max_length=255, blank=True)
+    venue_address = models.CharField(max_length=500, blank=True, default="")
+    venue_map_url = models.CharField(max_length=500, blank=True, default="", validators=[validate_map_url])
     location_kind = models.CharField(
         max_length=8,
         choices=LocationKind.choices,
@@ -75,9 +100,9 @@ class Event(models.Model):
         validators=[validate_form_schema],
     )
     capacity = models.PositiveIntegerField(default=0)
-    payment_amount = models.DecimalField(
-        max_digits=12,
-        decimal_places=2,
+    payment_amount = MoneyDecimalField(
+        max_digits=13,
+        decimal_places=3,
         default=0,
         validators=[MinValueValidator(0)],
     )
@@ -89,10 +114,23 @@ class Event(models.Model):
         blank=True,
     )
     is_public = models.BooleanField(default=False)
+    # Release 2 L1, the public surface. "Who can find it" (listing) is independent of
+    # "who can see it" (is_public); page_state takes a published page down without a
+    # lifecycle change; join_url_encrypted is deployment-key ciphertext, released only to
+    # confirmed registrants (events/online_delivery.py).
+    listing = models.CharField(max_length=10, choices=Listing.choices, default=Listing.LISTED)
+    page_state = models.CharField(max_length=8, choices=PageState.choices, default=PageState.LIVE)
+    delivery_mode = models.CharField(max_length=10, choices=DeliveryMode.choices, default=DeliveryMode.IN_PERSON)
+    join_url_encrypted = models.TextField(blank=True, default="")
+    show_registration_count = models.BooleanField(default=True)
     # Public-bucket object key for the event cover image. Managed only by the
     # dedicated image endpoints (never by the generic update path), so it is
     # deliberately absent from services.EVENT_FIELDS.
     image_key = models.CharField(max_length=300, blank=True, default="")
+    # Decision 221b: event-linked loans fall due this many hours after the event ends
+    # (null = at the end). Owned by the equipment-settings route, not services.EVENT_FIELDS.
+    equipment_return_hours = models.PositiveIntegerField(
+        null=True, blank=True, validators=[MaxValueValidator(720)])
     status = models.CharField(
         max_length=16,
         choices=Status.choices,
@@ -113,6 +151,8 @@ class Event(models.Model):
     class Meta:
         ordering = ["starts_at", "id"]
         constraints = [
+            models.CheckConstraint(condition=Q(accent_preset__in=("", *dict(ACCENT_CHOICES))),
+                                   name="event_accent_palette_only"),
             models.CheckConstraint(
                 condition=Q(ends_at__gte=F("starts_at")),
                 name="event_ends_not_before_start",
@@ -154,6 +194,10 @@ class Event(models.Model):
                 ),
                 name="event_series_identity_all_or_none",
             ),
+            models.CheckConstraint(condition=Q(listing__in=("listed", "unlisted")), name="event_listing_valid"),
+            models.CheckConstraint(condition=Q(page_state__in=("live", "offline")), name="event_page_state_valid"),
+            models.CheckConstraint(condition=Q(delivery_mode__in=("in_person", "online", "hybrid")),
+                                   name="event_delivery_mode_valid"),
             models.UniqueConstraint(
                 fields=("series", "series_occurrence_key"),
                 name="uniq_event_series_occurrence_key",
@@ -180,18 +224,21 @@ class Event(models.Model):
 
     def clean(self):
         super().clean()
+        if self.starts_at and self.ends_at:
+            from .website_validation import validate_owner_window
+            validate_owner_window(self)
         from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
         try:
             ZoneInfo(self.timezone_name)
         except (ZoneInfoNotFoundError, ValueError, TypeError) as exc:
-            raise ValidationError({"timezone_name": "Use a valid IANA timezone name."}) from exc
+            raise ValidationError({"timezone_name": gettext("Use a valid IANA timezone name.")}) from exc
         if (
             self.registration_cutoff_at is not None
             and self.registration_cutoff_lead_minutes is not None
         ):
             raise ValidationError(
-                "Choose either an absolute registration cutoff or lead minutes, not both."
+                gettext("Choose either an absolute registration cutoff or lead minutes, not both.")
             )
         if (
             self.registration_cutoff_at is not None
@@ -199,28 +246,31 @@ class Event(models.Model):
             and self.registration_cutoff_at > self.starts_at
         ):
             raise ValidationError({
-                "registration_cutoff_at": "Registration cutoff cannot be after the event starts."
+                "registration_cutoff_at": gettext("Registration cutoff cannot be after the event starts.")
             })
         if self.category_id and self.category.makerspace_id != self.makerspace_id:
-            raise ValidationError({"category": "Category must belong to this makerspace."})
+            raise ValidationError({"category": gettext("Category must belong to this makerspace.")})
         if not isinstance(self.tags, list) or len(self.tags) > 20 or any(not isinstance(tag, str) or not tag.strip() or len(tag) > 50 for tag in self.tags):
-            raise ValidationError({"tags": "Use at most 20 nonempty tags of at most 50 characters."})
+            raise ValidationError({"tags": gettext("Use at most 20 nonempty tags of at most 50 characters.")})
         identity = (
             self.series_id,
             self.series_occurrence_key,
             self.series_revision,
         )
         if any(value is None for value in identity) and any(value is not None for value in identity):
-            raise ValidationError("Series occurrence identity must be entirely set or entirely empty.")
+            raise ValidationError(gettext("Series occurrence identity must be entirely set or entirely empty."))
         if self.series_id and self.makerspace_id != self.series.makerspace_id:
-            raise ValidationError({"series": "Series and occurrence must share a makerspace."})
+            raise ValidationError({"series": gettext("Series and occurrence must share a makerspace.")})
         if not isinstance(self.series_override_fields, list) or any(
             not isinstance(value, str) for value in self.series_override_fields
         ):
-            raise ValidationError({"series_override_fields": "Expected a list of field names."})
+            raise ValidationError({"series_override_fields": gettext("Expected a list of field names.")})
     def save(self, *args, **kwargs):
         self.title = (self.title or "").strip()
-        if self.pk:
+        # Asset replay inserts with the PK reserved by its rolled-back first pass.
+        # A forced INSERT cannot replace an existing identity; the PK constraint
+        # still refuses collisions. Ordinary saves retain the immutable fields.
+        if self.pk and not kwargs.get("force_insert"):
             original = type(self).objects.only(
                 "public_token", "calendar_uid", "makerspace_id"
             ).get(

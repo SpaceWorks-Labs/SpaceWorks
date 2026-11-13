@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.db.models import F, Q
 from rest_framework.exceptions import ValidationError
 
@@ -7,12 +8,15 @@ from apps.inventory.search import apply_q
 def apply_inventory_list_filters(queryset, query_params):
     out_of_stock = query_params.get("out_of_stock", "")
     if out_of_stock not in {"", "true", "false"}:
-        raise ValidationError({"out_of_stock": "Use true or false."})
+        raise ValidationError({"out_of_stock": gettext("Use true or false.")})
     if out_of_stock == "true":
         queryset = queryset.filter(available_quantity=0)
     archived = query_params.get("archived")
     if archived in {"true", "false"}:
         queryset = queryset.filter(is_archived=(archived == "true"))
+    category = query_params.get("category")
+    if category and str(category).isdigit():  # decision 242: IN9
+        queryset = queryset.filter(category_id=int(category))
     q = (query_params.get("q") or "").strip()
     if q:
         # Full-text + trigram over the product's own columns (apps/inventory/search.py); the

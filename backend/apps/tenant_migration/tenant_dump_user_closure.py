@@ -23,6 +23,28 @@ USER_REF_DOMAIN = b"lane-d-user-v1\0"
 SEMANTIC_USER_REWRITE_HANDLERS = {}
 
 
+def person_annotation():
+    from django.db.models import BooleanField, Case, Value, When
+
+    from apps.accounts.staff_identity import person_q
+    return Case(When(person_q(), then=Value(True)), default=Value(False), output_field=BooleanField())
+
+
+
+def _sealed_member_edges(row):
+    """A sealed submission roster names each member's account ID in a JSON list."""
+    members = row.get("sealed_member_ids") or []
+    if not isinstance(members, list) or any(type(value) is not int or value <= 0 for value in members):
+        raise TenantDumpClosureRefused(
+            "A sealed submission roster has an invalid member reference.",
+            reason_code="semantic_user_reference_invalid",
+        )
+    return [("sealed_member_ids", value) for value in members]
+
+
+SEMANTIC_USER_REWRITE_HANDLERS[("events.SubmissionSnapshot", "json:sealed_member_ids")] = _sealed_member_edges
+
+
 @dataclass(frozen=True)
 class UserClosure:
     included: tuple[dict, ...]
@@ -58,11 +80,9 @@ def build_user_closure(rows, makerspace_id, capture_id, *, using="default"):
     references = _referencing_edges(rows)
     user_ids = set(references)
     User = apps.get_model("accounts.User")
-    existing_user_ids = set(
-        User._base_manager.using(using)
-        .filter(pk__in=user_ids)
-        .values_list("pk", flat=True)
-    )
+    identities = {row["id"]: row for row in User._base_manager.using(using).filter(pk__in=user_ids)
+                  .annotate(person=person_annotation()).values("id", "person", "retired_at", "merged_into_id")}
+    existing_user_ids = set(identities)
     missing = sorted(user_ids - existing_user_ids, key=str)
     if missing:
         refused = tuple(
@@ -76,16 +96,23 @@ def build_user_closure(rows, makerspace_id, capture_id, *, using="default"):
             closure=closure,
         )
 
-    memberships = defaultdict(set)
+    memberships, staff_here = defaultdict(set), set()
     Membership = apps.get_model("makerspaces.MakerspaceMembership")
     for row in Membership._base_manager.using(using).filter(
         user_id__in=user_ids
-    ).values("user_id", "makerspace_id"):
+    ).values("user_id", "makerspace_id", "track", "status"):
         memberships[row["user_id"]].add(row["makerspace_id"])
+        if row["makerspace_id"] == int(makerspace_id) and row["track"] == "staff" and row["status"] == "active":
+            staff_here.add(row["user_id"])
 
     included, stubbed = [], []
     for pk in sorted(user_ids, key=str):
-        exclusive = memberships[pk] == {int(makerspace_id)}
+        identity = identities[pk]
+        # A person travels in full when every membership is in this space, or when they
+        # hold an active staff role here (#128 C-18: staff sign in on the target). Shells
+        # and platform accounts are always PII-free stubs.
+        live_person = identity["person"] and identity["retired_at"] is None and identity["merged_into_id"] is None
+        exclusive = live_person and (memberships[pk] == {int(makerspace_id)} or pk in staff_here)
         if exclusive:
             included.append(
                 _entry(capture_id, pk, "tenant_exclusive", references[pk], emitted=pk)
@@ -174,7 +201,7 @@ def _semantic_edges(rows, references):
 
 def _database_reference_rows(using):
     result = {}
-    labels = {
+    labels = {"accounts.User"} | {
         label
         for (fidelity, label, _field), edge in USER_EDGES.items()
         if fidelity is Fidelity.PORTABLE and edge.included
@@ -195,7 +222,8 @@ def _entry(capture_id, pk, reason, edges, *, emitted):
         "reason_code": reason,
         "stub_schema_version": STUB_SCHEMA_VERSION if reason == "not_tenant_exclusive" else None,
         "referencing_edges": [
-            {"model_label": label, "source_row_pk": row_pk, "field_name": field}
+            {"model_label": label, "source_row_pk": row_pk if type(row_pk) is int else str(row_pk),
+             "field_name": field}
             for label, row_pk, field in sorted(edges, key=_edge_key)
         ],
     }

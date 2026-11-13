@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from drf_spectacular.utils import (
     OpenApiParameter,
     OpenApiResponse,
@@ -9,9 +10,12 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.accounts.schemas_auth import SupportedLocaleSerializer
 from apps.makerspaces.models import Makerspace
-from apps.makerspaces.platform import bootstrap_payload, resolve_frontend
+from apps.makerspaces.platform import bootstrap_payload, paused_frontend, resolve_frontend
 from apps.makerspaces.opening_hours_schema import OpeningHoursField
+from apps.makerspaces.telemetry_schema import TelemetryConfigSerializer
+from apps.makerspaces.telemetry_public import effective_telemetry, legacy_allowed
 
 TenantBootstrapSerializer = inline_serializer(
     name="TenantBootstrap",
@@ -28,6 +32,8 @@ TenantBootstrapSerializer = inline_serializer(
                 "opening_hours": OpeningHoursField(),
                 "map_url": serializers.URLField(allow_blank=True),
                 "geofence_enabled": serializers.BooleanField(required=False),
+                # Decision 242(m): present (true) only for a non-profit taking gifts.
+                "donate_enabled": serializers.BooleanField(required=False),
                 "logo_url": serializers.CharField(allow_blank=True, allow_null=True),
                 "cover_image_url": serializers.CharField(
                     allow_blank=True, allow_null=True
@@ -39,13 +45,23 @@ TenantBootstrapSerializer = inline_serializer(
                 "membership_policy": serializers.ChoiceField(
                     choices=Makerspace.MembershipPolicy.choices
                 ),
-                # `required=False` for the same reason as `geofence_enabled`: the key is
-                # emitted ONLY when the makerspace opted into account-less requests, so
-                # every other deployment keeps a byte-for-byte identical payload. Absent
-                # means an account is required.
+                # Present only for a space without member accounts (#80): borrow
+                # requests then take name, phone, email and an email code, no account.
                 "request_access": serializers.ChoiceField(
-                    choices=[("anyone", "anyone")], required=False
+                    choices=[("contact", "contact")], required=False
                 ),
+                # Present only while `public_site.closed_notice` is on and set (#77).
+                "closed_notice": inline_serializer(name="TenantBootstrapClosedNotice", required=False, fields={
+                    "text": serializers.CharField(),
+                    "reopens_on": serializers.DateField(allow_null=True),
+                }),
+                # Present only when the space records opening hours (P3-4).
+                "open_status": inline_serializer(name="TenantBootstrapOpenStatus", required=False, fields={
+                    "open_now": serializers.BooleanField(),
+                    "closes_at": serializers.DateTimeField(allow_null=True, help_text="End of the current opening."),
+                    "next_opens_at": serializers.DateTimeField(allow_null=True, help_text=(
+                        "Next opening while closed; null when open, or when the hours never reopen.")),
+                }),
             },
         ),
         "frontend": inline_serializer(
@@ -61,10 +77,23 @@ TenantBootstrapSerializer = inline_serializer(
         "modules": serializers.ListField(child=serializers.CharField()),
         "edition": serializers.CharField(),
         "features": serializers.ListField(child=serializers.CharField()),
+        # #184 G5: per chargeable domain, whether its money is tracked (charges.enabled AND
+        # charges.<domain>). False means that domain is free and shows no money UI.
+        "charges_tracked": inline_serializer(name="TenantChargesTracked", fields={
+            domain: serializers.BooleanField() for domain in
+            ("loans", "machines", "bookings", "events", "membership", "shop", "donations")
+        }),
         "workflows": serializers.ListField(child=serializers.CharField()),
         "theme": serializers.JSONField(),
         "branding": serializers.JSONField(),
+        "telemetry": TelemetryConfigSerializer(),
+        "telemetry_legacy_allowed": serializers.BooleanField(),
         "email_enabled": serializers.BooleanField(),
+        "default_locale": serializers.CharField(help_text="The space's default language code."),
+        "supported_locales": SupportedLocaleSerializer(many=True),
+        "messaging": inline_serializer(name="TenantMessagingAvailability", fields={
+            "sms": serializers.BooleanField(), "whatsapp": serializers.BooleanField(),
+        }),
         "public_api": inline_serializer(
             name="TenantBootstrapPublicApi",
             fields={
@@ -92,19 +121,25 @@ class BootstrapView(APIView):
                 response=TenantBootstrapSerializer,
                 description="Frontend-safe tenant bootstrap payload.",
             ),
-            404: OpenApiResponse(description="No active tenant frontend matched."),
+            404: OpenApiResponse(description="No active tenant frontend matched; `code` is `space_paused` when the matched space is paused."),
         },
     )
     def get(self, request, *args, **kwargs):
-        makerspace = resolve_frontend(
-            tenant=request.query_params.get("tenant"),
-            slug=request.query_params.get("slug"),
-            origin=request.headers.get("Origin"),
-            host=request.get_host(),
-        )
+        lookup = dict(tenant=request.query_params.get("tenant"), slug=request.query_params.get("slug"),
+                      origin=request.headers.get("Origin"), host=request.get_host())
+        makerspace = resolve_frontend(**lookup)
         if makerspace is None:
-            return Response(
-                {"detail": "No active tenant frontend matched."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
-        return Response(bootstrap_payload(makerspace))
+            body = {"detail": gettext("No active tenant frontend matched.")}
+            if paused_frontend(**lookup):
+                body = {"detail": gettext("This space is paused."), "code": "space_paused"}
+            return Response(body, status=status.HTTP_404_NOT_FOUND)
+        # The space is authoritative now: its default replaces only an ambient/system locale.
+        from config.locale_resolution import activate_resolved_makerspace_locale
+
+        activate_resolved_makerspace_locale(request, makerspace)
+        payload = bootstrap_payload(makerspace)
+        payload["telemetry"] = effective_telemetry(makerspace)
+        payload["telemetry_legacy_allowed"] = legacy_allowed(makerspace)
+        response = Response(payload)
+        response["Cache-Control"] = "no-store"
+        return response

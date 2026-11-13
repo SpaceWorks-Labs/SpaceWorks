@@ -1,5 +1,6 @@
 """Closed, CSS-safe tenant theme configuration shared by API and control forms."""
 
+from django.utils.translation import gettext
 import re
 
 from django.core.exceptions import ValidationError
@@ -14,19 +15,19 @@ HEX_COLOR = re.compile(r"#[0-9a-fA-F]{3}(?:[0-9a-fA-F]{3})?\Z")
 
 def validate_theme_config(value):
     if not isinstance(value, dict):
-        raise ValidationError("Theme configuration must be an object.")
+        raise ValidationError(gettext("Theme configuration must be an object."))
     if value.keys() - THEME_KEYS:
-        raise ValidationError("Theme configuration contains unsupported keys.")
+        raise ValidationError(gettext("Theme configuration contains unsupported keys."))
     for key, item in value.items():
         if not isinstance(item, str):
-            raise ValidationError(f"{key} must be a string.")
+            raise ValidationError(gettext('{key} must be a string.').format(key=key))
         if key == "mode" and item not in {"system", "light", "dark"}:
-            raise ValidationError("Theme mode must be system, light or dark.")
+            raise ValidationError(gettext("Theme mode must be system, light or dark."))
         if key in {"primary_color", "accent_color"} and item and not HEX_COLOR.fullmatch(item):
-            raise ValidationError(f"{key} must be a #RGB or #RRGGBB colour, or blank.")
+            raise ValidationError(gettext('{key} must be a #RGB or #RRGGBB colour, or blank.').format(key=key))
         if key == "logo_url" and item:
             if len(item) > 2048:
-                raise ValidationError("Logo URL must be at most 2048 characters.")
+                raise ValidationError(gettext("Logo URL must be at most 2048 characters."))
             URLValidator(schemes=["https", "http"])(item)
     failures = contrast_failures(value)
     if failures:
@@ -34,8 +35,7 @@ def validate_theme_config(value):
         # DRF uses these codes to return the documented contrast error object.
         raise ValidationError([
             ValidationError(
-                f"{item['mode']}: {item['pair']} is {item['ratio']:.2f}:1; "
-                f"requires {item['minimum']}:1. Choose a lighter or darker primary colour.",
+                gettext('{value}: {value2} is {value3:.2f}:1; requires {value4}:1. Choose a lighter or darker primary colour.').format(value=item['mode'], value2=item['pair'], value3=item['ratio'], value4=item['minimum']),
                 code="theme_contrast",
             ) for item in failures
         ])

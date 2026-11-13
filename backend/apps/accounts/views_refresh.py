@@ -1,5 +1,6 @@
 """Browser login, refresh, logout, and current-user endpoints."""
 
+from django.utils.translation import gettext
 from django.conf import settings
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework.exceptions import APIException, AuthenticationFailed
@@ -11,6 +12,7 @@ from apps.accounts import audit_events
 from apps.accounts.auth_cookies import (
     assert_csrf,
     clear_refresh_cookies,
+    csrf_surface,
     set_refresh_cookies,
 )
 from apps.accounts.models import User
@@ -25,6 +27,8 @@ from apps.accounts.schemas_auth import (
 )
 from apps.accounts.serializers import LoginSerializer, SpaceWorksTokenRefreshSerializer, user_payload
 from apps.accounts.tokens import SpaceWorksRefreshToken
+from apps.accounts.session_context import SessionContextSerializer, cookie_name, decode_cookie, request_context
+from apps.accounts.restricted_admission import state_may_sign_in
 
 
 def _refresh_user_is_active(token_str):
@@ -38,51 +42,8 @@ def _refresh_user_is_active(token_str):
         user
         and not user.is_tenant_dump_stub
         and user.is_active
-        and user.access_status == User.AccessStatus.ACTIVE
+        and state_may_sign_in(user)  # decision 361: a restricted person keeps refreshing
     )
-
-
-def _refresh_surface(token_str):
-    # A claim refresh is its own token type, so it must be decoded as one before the
-    # generic path -- otherwise its surface reads as None and the CSRF check picks the
-    # wrong exact-origin rule.
-    try:
-        if ClaimRefreshToken(token_str).get("surface") == "member":
-            return "member"
-    except TokenError:
-        pass
-    try:
-        surface = SpaceWorksRefreshToken(token_str).get("surface")
-        # Verification-only and legacy surface-less browser sessions use the member
-        # origin policy. Neither may inherit staff-origin trust while refreshing.
-        return surface if surface == "staff" else "member"
-    except TokenError:
-        return None
-
-
-def _assert_staff_refresh_scope(request, token_str):
-    try:
-        token = SpaceWorksRefreshToken(token_str)
-    except TokenError:
-        return
-    if token.get("surface") != "staff":
-        return
-    from rest_framework.exceptions import PermissionDenied
-
-    from apps.makerspaces.origin_scope import (
-        AMBIGUOUS_STAFF_ORIGIN_SCOPE,
-        NO_STAFF_ORIGIN_SCOPE,
-        staff_origin_scope,
-    )
-
-    actual = staff_origin_scope(request)
-    expected = str(token.get("staff_scope") or "")
-    if actual is AMBIGUOUS_STAFF_ORIGIN_SCOPE:
-        raise PermissionDenied("Staff origin is ambiguous.")
-    if expected == "platform" and actual is NO_STAFF_ORIGIN_SCOPE:
-        return
-    if str(actual) != expected:
-        raise PermissionDenied("Staff session origin does not match.")
 
 
 class RefreshView(TokenRefreshView):
@@ -91,7 +52,7 @@ class RefreshView(TokenRefreshView):
         tags=["Auth"],
         summary="Refresh access token",
         auth=[],
-        request=None,
+        request=SessionContextSerializer,
         responses={
             200: RefreshResponseSerializer,
             401: OpenApiResponse(description="Missing, invalid, or replayed refresh token."),
@@ -99,13 +60,21 @@ class RefreshView(TokenRefreshView):
         },
     )
     def post(self, request, *args, **kwargs):
-        cookie = request.COOKIES.get(settings.AUTH_REFRESH_COOKIE)
+        context = request_context(request)
+        cookie = request.COOKIES.get(cookie_name(context))
         try:
-            assert_csrf(
-                request, surface=_refresh_surface(cookie) if cookie else None
-            )
+            assert_csrf(request, surface=csrf_surface(context))
             if cookie:
-                _assert_staff_refresh_scope(request, cookie)
+                token = decode_cookie(cookie, context)
+                if token.get("kind") == "platform":
+                    from apps.accounts.surface_policy import assert_surface
+                    actor = User.objects.filter(pk=token.get("user_id")).first()
+                    if actor is None:
+                        raise AuthenticationFailed(gettext("Account is not available."))
+                    assert_surface(actor, token.get("surface"), request)
+        except TokenError as exc:
+            audit_events.record_refresh_rejected(cookie, "invalid_token")
+            raise InvalidToken("Invalid refresh cookie.") from exc
         except APIException:
             audit_events.record_auth_event(
                 None, "auth.refresh_rejected", meta={"reason": "csrf"}
@@ -139,8 +108,8 @@ class RefreshView(TokenRefreshView):
             audit_events.record_auth_event(
                 actor, "auth.refresh_succeeded", target=actor
             )
-            response = Response({"access": pair.access})
-            set_refresh_cookies(response, pair.refresh, request)
+            response = Response({"access": pair.access, "user": user_payload(actor, request=request)})
+            set_refresh_cookies(response, pair.refresh, request, context=context)
             return response
         if not _refresh_user_is_active(cookie):
             actor = audit_events.user_from_refresh_token(cookie)
@@ -150,10 +119,10 @@ class RefreshView(TokenRefreshView):
                 target=actor,
                 meta={"reason": "restricted_account"},
             )
-            response = Response({"detail": "Account access is restricted."}, status=403)
-            clear_refresh_cookies(response)
+            response = Response({"detail": gettext("Account access is restricted.")}, status=403)
+            clear_refresh_cookies(response, context=context)
             return response
-        serializer = self.get_serializer(data={"refresh": cookie})
+        serializer = self.get_serializer(data={"refresh": cookie}, context={"request": request, "session_context": context})
         try:
             serializer.is_valid(raise_exception=True)
         except InvalidToken:
@@ -173,10 +142,12 @@ class RefreshView(TokenRefreshView):
             audit_events.record_refresh_rejected(cookie, "invalid_token")
             raise InvalidToken(str(exc)) from exc
         data = serializer.validated_data
-        response = Response({"access": data["access"]})
+        actor = audit_events.user_from_refresh_token(data.get("refresh"))
+        audit_events.record_auth_event(actor, "auth.refresh_succeeded", target=actor)
+        response = Response({"access": data["access"], "user": data["user"]})
         new_refresh = data.get("refresh")
         if new_refresh:
-            set_refresh_cookies(response, new_refresh, request)
+            set_refresh_cookies(response, new_refresh, request, context=context)
         return response
 
 

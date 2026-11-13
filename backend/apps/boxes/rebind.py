@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.db import IntegrityError, transaction
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
@@ -16,7 +17,7 @@ from apps.makerspaces.guards import require_module
 def rebind_qr_target(user, qr_id, data):
     qr = locked_qr_for_action(user, rbac.Action.MANAGE_QR, pk=qr_id)
     if qr.status != QrCode.Status.ACTIVE:
-        raise ValidationError("QR code is not active.")
+        raise ValidationError(gettext("QR code is not active."))
     require_module(qr.makerspace, "qr_management")
     asset_move = data.get("destination_makerspace_id") and qr.target_type == QrCode.TargetType.ASSET
     if asset_move:
@@ -29,14 +30,14 @@ def rebind_qr_target(user, qr_id, data):
             request_target_id=data.get("target_id"),
         )
     if qr_has_active_loan(qr.makerspace, qr):
-        raise Conflict("Cannot rebind a QR with an outstanding loan.")
+        raise Conflict(gettext("Cannot rebind a QR with an outstanding loan."))
 
     target_type = data["target_type"]
     target = _locked_target(user, target_type, data["target_id"])
     cross = target.makerspace_id != qr.makerspace_id
     _require_rebind_permission(user, qr, target, target_type, cross, asset_move=False)
     if _target_has_qr(qr, target, target_type):
-        raise Conflict("Target already has an active QR code.")
+        raise Conflict(gettext("Target already has an active QR code."))
 
     old_meta = {
         "old_makerspace_id": qr.makerspace_id,
@@ -51,7 +52,7 @@ def rebind_qr_target(user, qr_id, data):
         with transaction.atomic():
             qr.save(update_fields=["makerspace", "target_type", "target_id", "updated_at"])
     except IntegrityError:
-        raise Conflict("Target already has an active QR code.")
+        raise Conflict(gettext("Target already has an active QR code."))
 
     new_name = data.get("new_name", "").strip()
     if new_name:
@@ -95,7 +96,7 @@ def _require_rebind_permission(user, qr, target, target_type, cross, asset_move=
             qr.target_type != QrCode.TargetType.PRODUCT
             or target_type != QrCode.TargetType.PRODUCT
         ):
-            raise ValidationError("Only products can be rebound across makerspaces.")
+            raise ValidationError(gettext("Only products can be rebound across makerspaces."))
         require_module(target.makerspace, "qr_management")
         return
     allowed = rbac.can(user, rbac.Action.MANAGE_QR, qr.makerspace_id) and rbac.can(
@@ -137,7 +138,7 @@ def _rename_target(user, target, target_type, old_name, new_name):
             with transaction.atomic():
                 target.save(update_fields=["asset_tag", "updated_at"])
         except IntegrityError as exc:
-            raise ValidationError("An asset with that tag already exists.") from exc
+            raise ValidationError(gettext("An asset with that tag already exists.")) from exc
     audit.record(
         user,
         "inventory.renamed",

@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from uuid import uuid4
 
 from django.conf import settings
@@ -8,6 +9,8 @@ from django.db.models import Q
 from django.utils import timezone
 
 from apps.forms_schema.validation import validate_form_schema
+from .venue import validate_map_url
+from apps.payments.money_model import MoneyDecimalField
 
 
 class EventSeries(models.Model):
@@ -24,10 +27,13 @@ class EventSeries(models.Model):
     makerspace = models.ForeignKey(
         "makerspaces.Makerspace", on_delete=models.CASCADE, related_name="event_series"
     )
-    registration_audience = models.CharField(max_length=8, choices=(("members", "Members"), ("accounts", "Authenticated accounts"), ("invite", "Invited accounts")), default="members")
+    organization_admission_blocked = models.BooleanField(default=False, editable=False)
+    registration_audience = models.CharField(max_length=32, choices=(("members", "Members"), ("accounts", "Authenticated accounts"), ("invite", "Invited accounts"), ("participating_organizations", "Participating organizations")), default="members")
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True)
     location = models.CharField(max_length=255, blank=True)
+    venue_address = models.CharField(max_length=500, blank=True, default="")
+    venue_map_url = models.CharField(max_length=500, blank=True, default="", validators=[validate_map_url])
     location_kind = models.CharField(
         max_length=8, choices=(('indoor', 'Indoor'), ('outdoor', 'Outdoor'), ('other', 'Other')),
         default="other",
@@ -36,13 +42,16 @@ class EventSeries(models.Model):
         null=True, blank=True, default=None, validators=[validate_form_schema]
     )
     capacity = models.PositiveIntegerField(default=0)
-    payment_amount = models.DecimalField(
-        max_digits=12, decimal_places=2, default=0, validators=[MinValueValidator(0)]
+    payment_amount = MoneyDecimalField(
+        max_digits=13, decimal_places=3, default=0, validators=[MinValueValidator(0)]
     )
     registration_requires_approval = models.BooleanField(default=False)
     cancellation_cutoff_hours = models.PositiveIntegerField(null=True, blank=True, validators=[MaxValueValidator(8760)])
     registration_cutoff_lead_minutes = models.PositiveIntegerField(null=True, blank=True)
     is_public = models.BooleanField(default=False)
+    # Series-level "who can find" default, copied to occurrences when they are generated.
+    listing = models.CharField(max_length=10, choices=(("listed", "Listed"), ("unlisted", "Unlisted")),
+                               default="listed")
     image_key = models.CharField(max_length=300, blank=True, default="")
 
     recurrence_timezone = models.CharField(max_length=64)
@@ -79,6 +88,12 @@ class EventSeries(models.Model):
                 name="series_ms_status_date_idx",
             )
         ]
+
+    def clean(self):
+        super().clean()
+        if self.pk and self.dtstart_local_date and self.dtstart_local_time and self.duration_minutes:
+            from .website_validation import validate_owner_window
+            validate_owner_window(self)
 
     def save(self, *args, **kwargs):
         self.title = (self.title or "").strip()
@@ -126,7 +141,7 @@ class EventSeriesCollaborator(models.Model):
         super().clean()
         if self.series_id and self.makerspace_id == self.series.makerspace_id:
             raise ValidationError(
-                {"makerspace": "A series host cannot also be its collaborator."}
+                {"makerspace": gettext("A series host cannot also be its collaborator.")}
             )
 
 

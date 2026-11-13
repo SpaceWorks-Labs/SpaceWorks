@@ -22,15 +22,17 @@ def occurrence_subject(subject_id, starts_at):
     return f"{subject_id}:{starts_at.astimezone(datetime_timezone.utc).isoformat()}"
 
 
-def unfinished_subjects(queryset, makerspace, source, offsets, *, now, due_field="starts_at"):
+def unfinished_subjects(queryset, makerspace, source, offsets, *, now, due_field="starts_at", identity=None,
+                        legacy_subject_filter=None):
     """Terminal schedules cannot occupy every batch and starve later members."""
+    subject_filter = (Q(subject=OuterRef("reminder_identity"))
+                      | Q(subject__startswith=Concat(OuterRef("reminder_identity"), Value(":"))))
+    if legacy_subject_filter is not None:
+        subject_filter |= legacy_subject_filter
     schedules = rbac.scope_for_scheduled_work(
         ReminderSchedule.objects.all(), makerspace_id=makerspace.pk,
-    ).filter(source=source, due_at=OuterRef(due_field), kind="starts").filter(
-        Q(subject=OuterRef("reminder_identity"))
-        | Q(subject__startswith=Concat(OuterRef("reminder_identity"), Value(":"))),
-    )
-    queryset = queryset.annotate(reminder_identity=Cast("pk", output_field=CharField()))
+    ).filter(source=source, due_at=OuterRef(due_field), kind="starts").filter(subject_filter)
+    queryset = queryset.annotate(reminder_identity=identity if identity is not None else Cast("pk", output_field=CharField()))
     # A future second step must not keep the first batch occupied after its due
     # first step completed. Discover only subjects with unfinished steps due NOW;
     # schedule_reminders still seeds all their later offsets on first discovery.
@@ -59,7 +61,8 @@ def recipient_member(makerspace, member_id, feature):
     return membership.user
 
 
-def dispatch_member_reminder(makerspace, *, feature, member, context, data):
+def dispatch_member_reminder(makerspace, *, feature, member, context, data,
+                             source_kind="", source_id=None, source_metadata=None):
     """Use matrix, template, email-module and quota delivery gates.
 
     A reminder names only its owner, so never fan it out to staff or chat rooms.
@@ -67,6 +70,7 @@ def dispatch_member_reminder(makerspace, *, feature, member, context, data):
     """
     template = render(makerspace, feature, "requester", "reminder", context)
     delivery = EmailDelivery(
+        source_kind=source_kind, source_id=source_id, source_metadata=source_metadata or {},
         to_email=member.email, subject=template["subject"],
         text_body=template["text_body"], html_body=template["html_body"],
         audience="requester", stream=feature, mute_event="reminder", user_id=member.pk,

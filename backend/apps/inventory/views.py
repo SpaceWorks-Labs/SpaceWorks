@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.db.models import Count, Q
 from django.contrib.postgres.search import SearchVector
 from django.http import Http404
@@ -30,10 +31,10 @@ class PublicInventoryErrorSerializer(serializers.Serializer):
 
 
 PUBLIC_INVENTORY_ERRORS = {
-    400: OpenApiResponse(PublicInventoryErrorSerializer, description="Public inventory module or loans feature is disabled."),
+    400: OpenApiResponse(PublicInventoryErrorSerializer, description="Invalid request."),
     401: OpenApiResponse(PublicInventoryErrorSerializer, description="Invalid authentication credentials."),
     403: OpenApiResponse(PublicInventoryErrorSerializer, description="Public API client is not authorized."),
-    404: OpenApiResponse(PublicInventoryErrorSerializer, description="Item or public makerspace not found, or hidden by edition."),
+    404: OpenApiResponse(PublicInventoryErrorSerializer, description="Item or public makerspace not found, hidden by edition, or the public inventory module or loans feature is turned off."),
     429: OpenApiResponse(PublicInventoryErrorSerializer, description="Public read rate limit exceeded."),
 }
 
@@ -56,6 +57,17 @@ class PublicMakerspaceListView(ListAPIView):
         return servable_queryset(Makerspace.objects.filter(
             public_site_enabled=True,
         )).exclude(hidden_from_central_directory=True).order_by("name")
+
+    def list(self, request, *args, **kwargs):
+        # Offers and next_event are computed once for the whole directory (one query
+        # per area), never per row.
+        from rest_framework.response import Response
+
+        from apps.inventory.public_offers import build_public_offers
+
+        spaces = list(self.filter_queryset(self.get_queryset()))
+        context = {**self.get_serializer_context(), "public_offers": build_public_offers(spaces)}
+        return Response(PublicMakerspaceSerializer(spaces, many=True, context=context).data)
 
 
 @extend_schema(
@@ -106,6 +118,7 @@ class PublicInventoryListView(ListAPIView):
             makerspace.products.select_related("category").filter(
                 is_public=True,
                 is_archived=False,
+                is_consumable=False,
             ),
             relation="makerspace",
         )
@@ -194,7 +207,7 @@ class PublicInventoryDetailView(RetrieveAPIView):
         try:
             return super().get_object()
         except Http404 as exc:
-            raise NotFound("Item not found.") from exc
+            raise NotFound(gettext("Item not found.")) from exc
 
     def get_queryset(self):
         makerspace = get_public_makerspace(self.kwargs["makerspace_slug"])
@@ -207,6 +220,7 @@ class PublicInventoryDetailView(RetrieveAPIView):
             makerspace.products.select_related("category").filter(
                 is_public=True,
                 is_archived=False,
+                is_consumable=False,
             ),
             relation="makerspace",
         ).order_by("name")

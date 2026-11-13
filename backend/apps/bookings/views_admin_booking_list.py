@@ -33,15 +33,12 @@ class SpaceBookingListView(StaffBookingCreateMixin, APIView):
         },
     )
     def get(self, request, pk, *args, **kwargs):
-        space = manageable_space(request.user, pk)
+        space = manageable_space(request.user, pk, "manage_reservations")
         filters = BookingListFilterSerializer(data=request.query_params)
         filters.is_valid(raise_exception=True)
-        queryset = rbac.scope_by_action(
-            request.user,
-            rbac.Action.MANAGE_BOOKINGS,
-            Booking.objects.filter(space=space),
-            field='space__makerspace_id',
-        )
+        from apps.machines.event_use import with_event  # decision 342: no query per row for the event link
+        from .services_restore import annotate_restore_history
+        queryset = annotate_restore_history(with_event(Booking.objects.filter(space=space).select_related("space__makerspace")))
         data = filters.validated_data
         if data.get('booking_id'):
             queryset = queryset.filter(pk=data['booking_id'])
@@ -60,6 +57,8 @@ class SpaceBookingListView(StaffBookingCreateMixin, APIView):
             Payment.SubjectType.BOOKING,
             [booking.pk for booking in page],
         )
+        from .event_labels import event_labels
+        context['event_labels'] = event_labels(request.user, space.makerspace, [booking.pk for booking in page])
         return Response(
             {
                 'count': paginator.page.paginator.count,

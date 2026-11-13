@@ -1,5 +1,7 @@
+import { t } from "@lingui/core/macro";
+import { SelectedReportPanel as Panel } from "./OperationsReportSelection";
 import { BarChart, DataState, ReportTable, StatCards } from "./OperationsReportsParts";
-import { Panel } from "./shared";
+
 import { useMemberActivityReport, type MemberActivityReportProps, type MemberActivityRow } from "./operationsReportsMembersApi";
 
 type Props = MemberActivityReportProps;
@@ -10,16 +12,14 @@ export function OperationsReportsMembers(props: Props) {
   if (!props.enabled) return null;
 
   return (
-    <Panel title="Member activity">
+    <Panel title={t`Member activity`}>
       <p className="text-sm text-muted">
-        Aggregate membership health for the selected scope.
-      </p>
-      <p className="mt-1 text-sm text-muted">This report contains aggregate makerspace counts only; it does not include member identities or contact details.</p>
+        {t`Aggregate membership health for the selected scope.`}</p>
+      <p className="mt-1 text-sm text-muted">{t`This report contains aggregate makerspace counts only; it does not include member identities or contact details.`}</p>
       <p className="mt-2 text-xs text-muted">
-        Current-state counts describe today&apos;s membership snapshot. Activations and revocations use current lifecycle timestamps in the selected date range.
-      </p>
-      <p className="mt-1 text-xs text-muted">These are current lifecycle timestamps, not immutable event-history counts.</p>
-      <DataState loading={report.isLoading} error={report.error} empty={!rows.length}>
+        {t`Current-state counts describe today's membership snapshot. Activations and revocations use current lifecycle timestamps in the selected date range.`}</p>
+      <p className="mt-1 text-xs text-muted">{t`These are current lifecycle timestamps, not immutable event-history counts.`}</p>
+      <DataState loading={report.isLoading} error={report.error} onRetry={() => void report.refetch()} empty={!rows.length}>
         {props.aggregate ? (
           <div className="mt-4 space-y-4">
             {rows.map((row) => (
@@ -49,15 +49,15 @@ function MemberActivityMetrics({ row }: { row: MemberActivityRow }) {
       ]} />
       <div className="mt-4">
         <BarChart rows={[
-          { label: "Active", value: row.active_members },
-          { label: "Pending", value: row.pending_requests },
-          { label: "Invited", value: row.open_invites },
-          { label: "Verified", value: row.verified_members },
+          { label: t`Active`, value: row.active_members },
+          { label: t`Pending`, value: row.pending_requests },
+          { label: t`Invited`, value: row.open_invites },
+          { label: t`Verified`, value: row.verified_members },
         ]} valueLabel="members" />
       </div>
       <dl className="mt-4 grid gap-2 text-sm sm:grid-cols-2">
-        <MetricDetail label="Membership policy" value={humanizePolicy(row.membership_policy)} />
-        <MetricDetail label="Referrals" value={row.referrals_enabled ? "Enabled" : "Disabled"} />
+        <MetricDetail label={t`Membership policy`} value={humanizePolicy(row.membership_policy)} />
+        <MetricDetail label={t`Referrals`} value={row.referrals_enabled ? t`Enabled` : t`Disabled`} />
       </dl>
       <ReportTable data={{ rows: [Object.keys(row), Object.values(row).map((value) => value ?? null)] }} />
     </>
@@ -69,8 +69,8 @@ function MetricDetail({ label, value }: { label: string; value: string }) {
 }
 
 function humanizePolicy(policy: string) {
-  if (policy === "invite_only") return "Invite only";
-  if (policy === "request") return "Request approval";
-  if (policy === "open") return "Open signup";
+  if (policy === "invite_only") return t`Invite only`;
+  if (policy === "request") return t`Request approval`;
+  if (policy === "open") return t`Open signup`;
   return policy.replace(/_/g, " ");
 }

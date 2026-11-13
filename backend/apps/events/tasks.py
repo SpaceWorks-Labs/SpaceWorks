@@ -1,3 +1,4 @@
+from apps.operations.cloud_jobs import bounded
 import logging
 
 from celery import shared_task
@@ -17,14 +18,15 @@ logger = logging.getLogger(__name__)
 
 
 def extend_published_series():
+    from apps.makerspaces.scheduled_scope import live_space_ids
     series_ids = servable_queryset(
         EventSeries.objects.filter(
             status=EventSeries.Status.PUBLISHED,
-            makerspace__enabled_modules__contains=["events"],
+            makerspace_id__in=live_space_ids("events"),
         ),
         relation="makerspace",
     ).order_by("pk").values_list("pk", flat=True)
-    for series_id in series_ids.iterator(chunk_size=100):
+    for series_id in bounded.page(series_ids, "event-series"):
         try:
             with transaction.atomic():
                 series = EventSeries.objects.select_for_update().get(pk=series_id)
@@ -59,3 +61,19 @@ def extend_published_series():
 @shared_task
 def extend_event_series_task():
     extend_published_series()
+
+
+# Registered here so the worker knows the campaign channel fan-out task.
+from apps.events.broadcast_channels import event_broadcast_channels  # noqa: E402,F401
+from apps.events.tasks_programme import sweep_admission_deadlines_task  # noqa: E402,F401
+from apps.events.tasks_contributions import sweep_contributor_maintenance_task  # noqa: E402,F401
+from apps.events.certificates.tasks import process_batch, render_one, resume_batches, resume_certificates  # noqa: E402,F401
+from apps.events.programme.broadcast_schedule import resume_scheduled_broadcasts  # noqa: E402,F401
+from apps.events.tasks_assets import (  # noqa: E402,F401
+    sweep_asset_work_task, sweep_asset_deadlines_task, sweep_asset_retention_task,
+    reconcile_asset_obligations_task,
+)
+from apps.events.tasks_recovery import sweep_judging_notices_task, sweep_print_cleanup_task  # noqa: E402,F401
+from apps.events.reminders_payments import sweep_order_checkouts_task  # noqa: E402,F401  (lane L6)
+from apps.events.tasks_invites import send_invite_updates_task  # noqa: E402,F401  (lane L6)
+from apps.events.tasks_attendance import send_attendance_round_task  # noqa: E402,F401  (lane L21a)

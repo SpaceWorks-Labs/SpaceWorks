@@ -1,0 +1,27 @@
+/* Box logo unfold. The four flap paths SpaceWorksLogo tags turn on their own hinge corner (the
+   corner nearest the box), so the box opens a little and springs shut. Rotation only: never a
+   recolour, stretch or skew, and at rest the logo is the master. Runs only while ProgrammeDelight
+   marks the page (delight on, not kiosk/scanner/checkout/payment) and motion is allowed. */
+.sw-logo-flap { transform-box: fill-box; }
+.sw-logo-flap-tl { transform-origin: 100% 100%; }
+.sw-logo-flap-tr { transform-origin: 0% 100%; }
+.sw-logo-flap-bl { transform-origin: 100% 0%; }
+.sw-logo-flap-br { transform-origin: 0% 0%; }
+@media (prefers-reduced-motion: no-preference) {
+  :root[data-sw-delight] .sw-logo-flap { transition: transform 460ms cubic-bezier(0.34, 1.56, 0.64, 1); }
+  :root[data-sw-delight] :is(a, button, [data-logo]):is(:hover, :focus-visible) .sw-logo-flap-tl { transform: rotate(-7deg); }
+  :root[data-sw-delight] :is(a, button, [data-logo]):is(:hover, :focus-visible) .sw-logo-flap-tr { transform: rotate(7deg); }
+  :root[data-sw-delight] :is(a, button, [data-logo]):is(:hover, :focus-visible) .sw-logo-flap-bl { transform: rotate(5deg); }
+  :root[data-sw-delight] :is(a, button, [data-logo]):is(:hover, :focus-visible) .sw-logo-flap-br { transform: rotate(-5deg); }
+  :root[data-sw-delight] [data-logo-pop] .sw-logo-flap { animation: 560ms cubic-bezier(0.34, 1.56, 0.64, 1); }
+  :root[data-sw-delight] [data-logo-pop] .sw-logo-flap-tl { animation-name: sw-flap-tl; }
+  :root[data-sw-delight] [data-logo-pop] .sw-logo-flap-tr { animation-name: sw-flap-tr; }
+  :root[data-sw-delight] [data-logo-pop] .sw-logo-flap-bl { animation-name: sw-flap-bl; }
+  :root[data-sw-delight] [data-logo-pop] .sw-logo-flap-br { animation-name: sw-flap-br; }
+}
+@keyframes sw-flap-tl { 40% { transform: rotate(-13deg); } }
+@keyframes sw-flap-tr { 40% { transform: rotate(13deg); } }
+@keyframes sw-flap-bl { 40% { transform: rotate(9deg); } }
+@keyframes sw-flap-br { 40% { transform: rotate(-9deg); } }
+/* Flaps may swing a little past the viewBox while open; at rest nothing reaches it. */
+:root[data-sw-delight] [data-logo] svg { overflow: visible; }

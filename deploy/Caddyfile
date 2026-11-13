@@ -1,22 +1,84 @@
 {
     email "{$TLS_EMAIL}"
+    skip_install_trust
 }
 import {$STORAGE_CADDY_CONFIG:/etc/caddy/storage-disabled.caddy}
+import /etc/caddy/control-tunnel-{$CONTROL_PLANE_TUNNEL:off}.caddy
 {$PUBLIC_DOMAIN} {
     encode zstd gzip
 
-    handle /api/v1/internal/* {
+    handle /.well-known/assetlinks.json {
+        reverse_proxy backend:8000
+    }
+
+    handle /.well-known/apple-app-site-association {
+        reverse_proxy backend:8000
+    }
+
+    @internal path /api/v1/internal /api/v1/internal/* /api/v1/metrics /api/v1/metrics/*
+    handle @internal {
         respond 403
     }
     handle /api/v1/live/* {
         reverse_proxy live:8000
     }
 
-    @backend path /api/* /static/* /docs* /redoc* /schema*
+    import /etc/caddy/control-plane-{$CONTROL_PLANE_PROXY:false}.caddy
+
+    @profile_crawler {
+        path_regexp profile_card (?i)^/([a-z0-9](?:[a-z0-9._-]{1,28}[a-z0-9]))/?$
+        not path /.well-known /.well-known/* /about /about/* /admin /admin/* /api /api/* /assets /assets/* /bookings /bookings/* /checkout /checkout/* /config.js /config.js/* /control /control/* /discover /discover/* /docs /docs/* /e /e/* /embed /embed/* /event-check-in /event-check-in/* /events /events/* /favicon.ico /favicon.ico/* /guest-admin /guest-admin/* /health /health/* /healthz /healthz/* /index.html /index.html/* /install /install/* /inventory /inventory/* /items /items/* /kiosk /kiosk/* /m /m/* /machines /machines/* /media /media/* /member /member/* /member-sw.js /member-sw.js/* /mfa /mfa/* /now /now/* /o /o/* /organization-invitations /organization-invitations/* /print /print/* /redoc /redoc/* /reset-password /reset-password/* /robots.txt /robots.txt/* /scanner /scanner/* /schema /schema/* /setup /setup/* /share /share/* /sitemap.xml /sitemap.xml/* /staff /staff/* /staff-invitations /staff-invitations/* /static /static/* /stats /stats/* /superadmin /superadmin/* /sw.js /sw.js/*
+        header_regexp User-Agent (?i)(facebookexternalhit|Facebot|Twitterbot|LinkedInBot|Slackbot|Discordbot|WhatsApp|TelegramBot)
+    }
+    handle @profile_crawler {
+        rewrite * /share/profiles/{re.profile_card.1}/
+        reverse_proxy backend:8000
+    }
+
+    @event_crawler {
+        path_regexp event_card ^/(m/[^/]+/)?events/([0-9a-fA-F-]{36})/?$
+        header_regexp User-Agent (?i)(facebookexternalhit|Facebot|Twitterbot|LinkedInBot|Slackbot|Discordbot|WhatsApp|TelegramBot)
+    }
+    handle @event_crawler {
+        rewrite * /share/events/{re.event_card.2}/
+        reverse_proxy backend:8000
+    }
+    @event_short_crawler {
+        path_regexp event_short_card ^/e/([0-9a-fA-F-]{36})/?$
+        header_regexp User-Agent (?i)(facebookexternalhit|Facebot|Twitterbot|LinkedInBot|Slackbot|Discordbot|WhatsApp|TelegramBot)
+    }
+    handle @event_short_crawler {
+        rewrite * /share/events/{re.event_short_card.1}/
+        reverse_proxy backend:8000
+    }
+    @event_short_code_crawler {
+        path_regexp event_short_code ^/e/([0-9A-Za-z]{7})/?$
+        header_regexp User-Agent (?i)(facebookexternalhit|Facebot|Twitterbot|LinkedInBot|Slackbot|Discordbot|WhatsApp|TelegramBot)
+    }
+    handle @event_short_code_crawler {
+        rewrite * /share/e/{re.event_short_code.1}/
+        reverse_proxy backend:8000
+    }
+    @booking_crawler {
+        path_regexp booking_card ^/(m/[^/]+/)?bookings/([0-9a-fA-F-]{36})/?$
+        header_regexp User-Agent (?i)(facebookexternalhit|Facebot|Twitterbot|LinkedInBot|Slackbot|Discordbot|WhatsApp|TelegramBot)
+    }
+    handle @booking_crawler {
+        rewrite * /share/bookings/{re.booking_card.2}/
+        reverse_proxy backend:8000
+    }
+
+    @backend path /embed/* /share/* /sitemap.xml /robots.txt /api/* /static/* /redoc* /schema*
     reverse_proxy @backend backend:8000 {
         header_up X-Forwarded-Proto https
         header_up X-Forwarded-Host {host}
     }
 
-    reverse_proxy {$SPACEWORKS_WEB_UPSTREAM:frontend:80}
+    reverse_proxy {$SPACEWORKS_WEB_UPSTREAM:frontend:80} {
+        # Backend responses own their referrer policy (embeds and credentials use no-referrer).
+        header_down Referrer-Policy strict-origin
+        header_down X-Frame-Options "DENY"
+        # Add framing protection without replacing the SPA's analytics policy.
+        header_down +Content-Security-Policy "frame-ancestors 'none'"
+    }
 }

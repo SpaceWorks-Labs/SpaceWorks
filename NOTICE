@@ -2,7 +2,7 @@ Space Works — Open Source Makerspace Manager
 Copyright (C) 2026 Space Works contributors.
 
 Space Works is a self-hostable, multi-tenant management platform built for makerspace
-communities — covering inventory, tool and equipment lending, and 3D printing in
+communities — covering inventory, tool and equipment loans, and 3D printing in
 one place — so a community can see what tools and equipment exist, who borrowed
 what, what is available, and how every loan and print job moves from request to
 completion, without spreadsheets or guesswork.
@@ -26,3 +26,42 @@ Full terms:
 This program is distributed in the hope that it will be useful, but WITHOUT ANY
 WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+
+Self-hosted fonts are NOT covered by the AGPL: Gilroy Light and ExtraBold only (Radomir
+Tinkov Free Font EULA — see frontend/public/fonts/README.md for its redistribution
+limits), Outfit and Unbounded (SIL OFL 1.1). Licence texts: frontend/public/fonts/LICENSES/
+and backend/apps/events/certificates/fonts/.
+
+Backend image dependency: pillow-heif (BSD-3-Clause) decodes HEIC/HEIF uploads; its
+wheels bundle libheif and libde265 (LGPL-3.0) and x265 (GPL-2.0-or-later). Their licence
+texts ship inside the installed package (LICENSES_bundled.txt).
+
+Card rendering dependencies: pypdfium2 (Apache-2.0 or BSD-3-Clause; bundles PDFium, BSD-3-Clause)
+rasterises card PNGs; onnxruntime (MIT) runs the u2netp background-removal model (Apache-2.0),
+which an operator fetches with `manage.py fetch_card_photo_model`. Card fonts other than the bundled
+ones are fetched on demand from the Google Fonts catalogue into private storage; each family keeps
+its own licence (SIL OFL 1.1, Apache-2.0 or the Ubuntu Font Licence).
+
+Adapted code: the light/dark theme transition (frontend/src/lib/themeTransition.*) is adapted
+from yuyu by twilighty-abhi (https://github.com/twilighty-abhi/yuyu), AGPL-3.0. The 404 pet
+behaviour (frontend/src/components/delight/NotFoundPatch.tsx: trot, follow, wander, nap) is also
+adapted from yuyu by twilighty-abhi (https://github.com/twilighty-abhi/yuyu), AGPL-3.0.
+
+Mascot: Patch, the painted wolf (frontend/public/brand/patch/), is Space Works' own artwork, taken
+unaltered from the SpaceWorks-Design repository (mascot/, and mascot/dark/ for the dark theme's
+sticker-bordered files); the walk sprite sheets are its walk/ and walk-left/ frames laid side by side.
+
+Third-party frontend packages for maker-file previews: three, fflate (MIT), linkedom (ISC),
+@tracespace/core (MIT) and occt-import-js (LGPL-2.1, OpenCascade; loaded as a separate WebAssembly module).
+
+Backend dependencies for passkeys (WebAuthn): webauthn 3.0.1 (py_webauthn, BSD-3-Clause),
+pyOpenSSL 26.4.0 (Apache-2.0), pyasn1 0.6.5 (BSD-2-Clause) and pyasn1-modules 0.4.2 (BSD-2-Clause);
+tldextract 5.4.0 (BSD-3-Clause) with its bundled Public Suffix List snapshot (MPL-2.0, data only),
+filelock 4.2.4 (MIT) and requests-file 3.0.1 (Apache-2.0).
+
+Frontend dependency for passkeys (WebAuthn): @simplewebauthn/browser 14.0.0 (MIT, no dependencies of its own).
+
+Translation pipeline (phase 8 i18n): Lingui 6.10.1 (MIT) -- @lingui/core and @lingui/react at
+runtime; @lingui/cli, @lingui/conf, @lingui/format-po and @lingui/vite-plugin at build time, with
+@lingui/native-tools 0.1.6 (MIT) for the macro transform. The backend image installs GNU gettext
+(GPL-3.0-or-later, build tool only) to compile Django's message catalogues.

@@ -1,0 +1,74 @@
+{
+  "contract_version": 3,
+  "owner": "E",
+  "source": "makerspaces.MemberProfile.avatar_key",
+  "options": {
+    "selected_profile_id": null,
+    "options": [
+      {
+        "membership_id": 11,
+        "profile_id": 31,
+        "makerspace_name": "Source Workshop",
+        "has_photo": true,
+        "source_revision": "2026-10-18T10:00:00Z",
+        "public_eligible": true
+      }
+    ],
+    "no_photo_allowed": true
+  },
+  "selection": {
+    "operation_id": "11111111-1111-4111-8111-111111111111",
+    "expected_version": 4,
+    "profile_id": 31,
+    "membership_id": 11,
+    "source_revision": "2026-10-18T10:00:00Z",
+    "print_photo_consent": true,
+    "public_card_consent": true,
+    "public_card_scopes": [
+      "team",
+      "mentor"
+    ]
+  },
+  "no_photo": {
+    "operation_id": "11111111-1111-4111-8111-111111111111",
+    "expected_version": 4,
+    "profile_id": null,
+    "membership_id": null,
+    "source_revision": null,
+    "print_photo_consent": false,
+    "public_card_consent": false,
+    "public_card_scopes": []
+  },
+  "defaults": {
+    "selected_profile": null,
+    "selected_membership": null,
+    "print_photo_consent": false,
+    "public_card_consent": false,
+    "public_card_scopes": []
+  },
+  "resource_snapshot": {
+    "profile_id": 31,
+    "membership_id": 11,
+    "source_revision": "2026-10-18T10:00:00Z",
+    "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "consent_revision": 4,
+    "credential_generation": 2
+  },
+  "implicit_host_or_first_membership": false,
+  "staff_has_profile": false,
+  "cross_venue_requires_explicit_selection": true,
+  "public_scope_enum": [
+    "team",
+    "mentor",
+    "judge"
+  ],
+  "render_checks": [
+    "exact_hash_and_version",
+    "current_profile_visibility",
+    "current_consent_revision",
+    "credential_generation",
+    "current_authority",
+    "no_mutable_profile_fetch_under_event_lock"
+  ],
+  "old_public_source_url_recallable": false
+}

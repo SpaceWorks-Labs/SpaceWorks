@@ -17,6 +17,9 @@ class FeedbackSurveyWriteSerializer(serializers.Serializer):
     )
     questions = serializers.JSONField()
     certificate_enabled = serializers.BooleanField(default=False, required=False)
+    anonymous = serializers.BooleanField(required=False, help_text=(
+        "Collect answers with no link to the person (certificates off and events.anonymous_feedback on). "
+        "Omit to keep the current choice; a new form defaults to anonymous while certificates are off."))
 
     def validate_questions(self, value):
         return validate_feedback_schema(value)
@@ -29,6 +32,9 @@ class FeedbackSurveySerializer(serializers.Serializer):
     questions = serializers.JSONField(read_only=True)
     is_open = serializers.BooleanField(read_only=True)
     certificate_enabled = serializers.BooleanField(read_only=True)
+    anonymous = serializers.BooleanField(read_only=True)
+    anonymous_available = serializers.SerializerMethodField(
+        help_text="True while the space has events.anonymous_feedback on (the switch can be offered).")
     answered_question_ids = serializers.ListField(
         child=serializers.CharField(), read_only=True,
     )
@@ -37,15 +43,27 @@ class FeedbackSurveySerializer(serializers.Serializer):
     response_count = serializers.IntegerField(read_only=True, required=False)
 
 
+    def get_anonymous_available(self, obj) -> bool:
+        from apps.makerspaces.platform import feature_enabled
+        event = getattr(obj, "event", None)
+        return bool(event is not None and feature_enabled(event.makerspace, "events.anonymous_feedback"))
+
+
 class FeedbackSurveyAdminEnvelopeSerializer(serializers.Serializer):
     survey = FeedbackSurveySerializer(allow_null=True)
 
 
 class CertificateSummarySerializer(serializers.ModelSerializer):
+    kind_title = serializers.SerializerMethodField(help_text="Plain name of the certificate kind, e.g. \"Winner's certificate\".")
+
     class Meta:
         model = EventAttendanceCertificate
-        fields = ("id", "status", "revision", "issued_at", "rendered_at", "revoked_at")
+        fields = ("id", "status", "revision", "kind", "kind_title", "issued_at", "rendered_at", "revoked_at")
         read_only_fields = fields
+
+    def get_kind_title(self, obj) -> str:
+        from apps.events.certificates.merge import kind_title
+        return kind_title(obj.kind)
 
 
 class FeedbackResponseSerializer(serializers.Serializer):
@@ -85,7 +103,7 @@ class FeedbackResponseListSerializer(serializers.Serializer):
 class FeedbackFormSerializer(serializers.Serializer):
     event = serializers.DictField(read_only=True)
     survey = FeedbackSurveySerializer(read_only=True)
-    mode = serializers.ChoiceField(choices=("anonymous", "certificate"), read_only=True)
+    mode = serializers.ChoiceField(choices=("anonymous", "certificate", "identified"), read_only=True)
     requires_auth = serializers.BooleanField(read_only=True)
     certificate = CertificateSummarySerializer(allow_null=True, read_only=True, required=False)
 

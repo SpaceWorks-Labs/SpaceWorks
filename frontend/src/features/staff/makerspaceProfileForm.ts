@@ -1,5 +1,6 @@
+import { t } from "@lingui/core/macro";
 export const weekdays = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
-export const dayLabels = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+export const dayLabels = [t`Monday`, t`Tuesday`, t`Wednesday`, t`Thursday`, t`Friday`, t`Saturday`, t`Sunday`];
 export type Interval = { start: string; end: string };
 export type WeeklyHours = Record<(typeof weekdays)[number], Interval[]>;
 export type OpeningHours = { weekly: WeeklyHours | Record<string, never>; exceptions: Record<string, Interval[]> } | Record<string, never>;

@@ -1,7 +1,6 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-
-import { SpaceWorksBadge } from "../../components/SpaceWorksLogo";
+import { CenteredCardLayout } from "../../components/layouts";
 import { NewPasswordFields } from "./NewPasswordFields";
 import {
   CONFIRM_FAILURE_MESSAGE,
@@ -9,12 +8,16 @@ import {
   confirmOtpPasswordReset,
   isRecoveryUnavailable,
   requestPasswordReset,
+  type RecoveryContext,
 } from "./passwordRecovery";
-
 type RecoveryStep = "request" | "confirm" | "success" | "unavailable";
 
-export function PasswordRecoveryFlow() {
-  const [step, setStep] = useState<RecoveryStep>("request");
+export function PasswordRecoveryFlow({ recoveryContext, signInHref = "/admin", initialStep = "request" }: {
+  recoveryContext?: RecoveryContext;
+  signInHref?: string;
+  initialStep?: "request" | "confirm";
+}) {
+  const [step, setStep] = useState<RecoveryStep>(initialStep);
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -23,20 +26,19 @@ export function PasswordRecoveryFlow() {
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
   const [cooldown, setCooldown] = useState(0);
-
+  const counting = cooldown > 0;
   useEffect(() => {
-    if (cooldown <= 0) return;
+    if (!counting) return;
     const timer = window.setInterval(() => {
       setCooldown((seconds) => Math.max(0, seconds - 1));
     }, 1000);
     return () => window.clearInterval(timer);
-  }, [cooldown > 0]);
-
+  }, [counting]);
   const requestCode = async (isResend: boolean) => {
     setPending(true);
     setError("");
     try {
-      const result = await requestPasswordReset({ email });
+      const result = await requestPasswordReset({ email: email.trim(), ...recoveryContext });
       setAcknowledgement(result.detail);
       setCooldown(RESEND_COOLDOWN_SECONDS);
       if (!isResend) setStep("confirm");
@@ -44,18 +46,17 @@ export function PasswordRecoveryFlow() {
       if (isRecoveryUnavailable(requestError)) {
         setStep("unavailable");
       } else {
-        setError("Unable to request password recovery. Please try again.");
+        setError(t`Unable to request password recovery. Please try again.`);
       }
     } finally {
       setPending(false);
     }
   };
-
   const submitConfirmation = async () => {
     setPending(true);
     setError("");
     try {
-      await confirmOtpPasswordReset({ email, code, new_password: newPassword });
+      await confirmOtpPasswordReset({ email: email.trim(), code, new_password: newPassword, ...recoveryContext });
       setStep("success");
     } catch {
       // All server rejections intentionally share one message. Showing password-policy
@@ -65,104 +66,44 @@ export function PasswordRecoveryFlow() {
       setPending(false);
     }
   };
-
   const canConfirm = /^\d{6}$/.test(code)
+    && Boolean(email.trim())
     && newPassword.length >= 8
     && newPassword === confirmPassword
     && !pending;
-
-  return (
-    <main className="desk-shell grid place-items-center px-5">
-      <section className="desk-panel w-full max-w-md p-6">
-        <SpaceWorksBadge className="mb-5" />
-        <p className="text-xs font-semibold tracking-wide text-accent-ink">Account access</p>
-
-        {step === "unavailable" ? (
-          <>
-            <h1 className="mt-2 text-2xl font-bold text-ink">Password recovery unavailable</h1>
-            <p className="mt-4 text-sm text-muted" role="alert">
-              Password recovery is unavailable on this deployment — contact your makerspace staff
-            </p>
-            <Link className="desk-button-ghost mt-5 w-full" to="/admin">Back to sign in</Link>
-          </>
-        ) : null}
-
-        {step === "request" ? (
-          <form onSubmit={(event) => { event.preventDefault(); void requestCode(false); }}>
-            <h1 className="mt-2 text-2xl font-bold text-ink">Reset password</h1>
-            <p className="mt-2 text-sm text-muted">
-              Enter your account email to request a six-digit recovery code.
-            </p>
-            <label className="mt-5 block text-sm font-semibold" htmlFor="recovery-email">Email</label>
-            <input
-              id="recovery-email"
-              className="desk-input mt-1 w-full"
-              name="email"
-              autoComplete="email"
-              type="email"
-              required
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-            />
-            {error ? <p className="mt-3 text-sm text-danger" role="alert">{error}</p> : null}
-            <button className="desk-button-secondary mt-5 w-full" type="submit" disabled={pending}>
-              {pending ? "Requesting..." : "Request recovery code"}
-            </button>
-            <Link className="desk-button-ghost mt-3 w-full" to="/admin">Back to sign in</Link>
-          </form>
-        ) : null}
-
-        {step === "confirm" ? (
-          <form onSubmit={(event) => { event.preventDefault(); if (canConfirm) void submitConfirmation(); }}>
-            <h1 className="mt-2 text-2xl font-bold text-ink">Enter your recovery code</h1>
-            <p className="mt-2 text-sm text-muted">{acknowledgement}</p>
-            <p className="mt-2 text-sm text-muted">
-              Email delivery runs on a schedule and may take a few minutes.
-            </p>
-            <label className="mt-5 block text-sm font-semibold" htmlFor="recovery-code">
-              Six-digit code
-            </label>
-            <input
-              id="recovery-code"
-              className="desk-input mt-1 w-full"
-              autoComplete="one-time-code"
-              inputMode="numeric"
-              pattern="[0-9]{6}"
-              maxLength={6}
-              required
-              value={code}
-              onChange={(event) => setCode(event.target.value.replace(/\D/g, ""))}
-            />
-            <NewPasswordFields
-              idPrefix="otp-reset"
-              newPassword={newPassword}
-              confirmPassword={confirmPassword}
-              onNewPasswordChange={setNewPassword}
-              onConfirmPasswordChange={setConfirmPassword}
-            />
-            {error ? <p className="mt-3 text-sm text-danger" role="alert">{error}</p> : null}
-            <button className="desk-button-secondary mt-5 w-full" type="submit" disabled={!canConfirm}>
-              {pending ? "Updating..." : "Update password"}
-            </button>
-            <button
-              className="desk-button-ghost mt-3 w-full"
-              type="button"
-              disabled={pending || cooldown > 0}
-              onClick={() => void requestCode(true)}
-            >
-              {cooldown > 0 ? `Request another code in ${cooldown}s` : "Request another code"}
-            </button>
-          </form>
-        ) : null}
-
-        {step === "success" ? (
-          <>
-            <h1 className="mt-2 text-2xl font-bold text-ink">Password updated</h1>
-            <p className="mt-4 text-sm text-muted">Your password has been updated. You can now sign in.</p>
-            <Link className="desk-button-secondary mt-5 w-full" to="/admin">Go to sign in</Link>
-          </>
-        ) : null}
-      </section>
-    </main>
-  );
+  const titles = { request: "Reset password", confirm: "Enter your recovery code", success: "Password updated", unavailable: "Password recovery unavailable" };
+  const body = step === "request" ? recoveryContext ? t`Enter your account username or email to request a six-digit recovery code.` : t`Enter your account email to request a six-digit recovery code.`
+    : step === "confirm" ? acknowledgement || "Enter your username or email and the six-digit recovery code from your email."
+    : step === "success" ? `Your password has been updated. You can now sign in.${recoveryContext ? " Authenticator verification is still required if enabled for your account." : ""}`
+    : "Password recovery is unavailable on this deployment — contact your makerspace staff";
+  return <CenteredCardLayout state={{ status: "ready" }} eyebrow={recoveryContext ? t`Platform account access` : t`Account access`}
+    media={{ icon: step === "success" ? "Check" : step === "confirm" ? "Mail" : "KeyRound", tone: step === "success" ? "success" : "accent" }}
+    title={titles[step]} body={<p role={step === "unavailable" ? "alert" : undefined}>{body}</p>}
+    primary={step === "success" || step === "unavailable" ? { label: step === "success" ? t`Go to sign in` : t`Back to sign in`, href: signInHref } : {
+      label: step === "request" ? t`Request recovery code` : t`Update password`, pending,
+      pendingLabel: step === "request" ? t`Requesting…` : t`Updating…`, disabled: step === "confirm" && !canConfirm,
+      disabledReason: "Enter the six-digit code and matching passwords.",
+      onClick: () => (document.getElementById("password-recovery-form") as HTMLFormElement)?.requestSubmit(),
+    }}
+    escape={step === "request" ? { label: t`Back to sign in`, href: signInHref } : step === "confirm" ? {
+      label: cooldown > 0 ? t`Request another code in ${cooldown}s` : t`Request another code`,
+      disabled: pending || cooldown > 0 || !email.trim(), disabledReason: "Enter your account identifier and wait before requesting another code.", onClick: () => void requestCode(true),
+    } : undefined}
+    content={step === "request" || step === "confirm" ? <form id="password-recovery-form" className="grid gap-2"
+      onSubmit={(event) => { event.preventDefault(); if (step === "request" && !pending) void requestCode(false); else if (canConfirm) void submitConfirmation(); }}>
+      {step === "request" || recoveryContext ? <label className="grid gap-2 text-sm font-semibold" htmlFor="recovery-email">{recoveryContext ? t`Username or email` : t`Email`}
+        <input id="recovery-email" className="desk-input w-full" name="email" autoComplete={recoveryContext ? "username" : "email"} type={recoveryContext ? "text" : "email"} required
+          value={email} onChange={(event) => setEmail(event.target.value)} />
+      </label> : null}
+      {step === "confirm" ? <>
+        <p className="text-sm text-muted">{t`Email delivery runs on a schedule and may take a few minutes.`}</p>
+        <label className="mt-3 grid gap-2 text-sm font-semibold" htmlFor="recovery-code">{t`Six-digit code`}<input id="recovery-code" className="desk-input w-full" autoComplete="one-time-code" inputMode="numeric"
+            pattern="[0-9]{6}" maxLength={6} required value={code} onChange={(event) => setCode(event.target.value.replace(/\D/g, ""))} />
+        </label>
+        <NewPasswordFields idPrefix="otp-reset" newPassword={newPassword} confirmPassword={confirmPassword}
+          onNewPasswordChange={setNewPassword} onConfirmPasswordChange={setConfirmPassword} />
+      </> : null}
+      {error ? <p className="mt-3 text-sm text-danger" role="alert">{error}</p> : null}
+    <button type="submit" disabled={pending} hidden aria-hidden="true" tabIndex={-1} />
+    </form> : undefined} />;
 }

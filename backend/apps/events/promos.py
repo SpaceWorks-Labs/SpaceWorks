@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from decimal import Decimal, ROUND_HALF_UP
 import secrets
 
@@ -5,29 +6,43 @@ from django.db import transaction
 from django.utils import timezone
 from rest_framework.exceptions import NotFound, ValidationError
 
-from apps.events.invites import code_digest, require_feature
+from apps.events.feature_gates import require_feature
+from apps.events.invites import code_digest
+from apps.payments.money import quantize_money
 from apps.events.models import EventPromoCode
 from apps.events.services import _audit, _locked_event
 from apps.makerspaces.guards import require_module_locked
 
 
 @transaction.atomic
-def create_promo(event, *, actor, code="", percent_off=0, amount_off=0, max_uses=1, expires_at=None):
+def create_promo(event, *, actor, code="", percent_off=0, amount_off=0, max_uses=1, expires_at=None,
+                 kind="discount", applies_per="ticket", ticket_type_id=None):
     event = _locked_event(event.pk)
     event.makerspace = require_module_locked(event.makerspace, "events")
     require_feature(event, "events.promo_codes")
     amount_off = Decimal(str(amount_off))
-    if not (0 <= percent_off <= 100) or amount_off < 0 or bool(percent_off) == bool(amount_off):
-        raise ValidationError("Choose one positive percentage or amount discount.")
+    ticket_type = None
+    if ticket_type_id is not None:
+        ticket_type = event.ticket_types.filter(pk=ticket_type_id).first()
+        if ticket_type is None:
+            raise ValidationError({"ticket_type_id": gettext("Choose a ticket type of this event.")})
+    if kind == "access":
+        # Release 2 L6 (G29): an access code unlocks one hidden ticket type and discounts nothing.
+        require_feature(event, "events.orders")
+        if ticket_type is None or percent_off or amount_off:
+            raise ValidationError(gettext("An access code names one ticket type and gives no discount."))
+    elif not (0 <= percent_off <= 100) or amount_off < 0 or bool(percent_off) == bool(amount_off):
+        raise ValidationError(gettext("Choose one positive percentage or amount discount."))
     if max_uses < 1 or (expires_at and expires_at <= timezone.now()):
-        raise ValidationError("Use a positive limit and future expiry.")
+        raise ValidationError(gettext("Use a positive limit and future expiry."))
     code = code.strip() or secrets.token_urlsafe(24)
     digest = code_digest(code, "promo")
     if EventPromoCode.objects.filter(event=event, code_digest=digest).exists():
-        raise ValidationError({"code": "Code is unavailable."})
+        raise ValidationError({"code": gettext("Code is unavailable.")})
     promo = EventPromoCode.objects.create(
         event=event, makerspace=event.makerspace, code_digest=digest,
         percent_off=percent_off, amount_off=amount_off, max_uses=max_uses, expires_at=expires_at,
+        kind=kind, applies_per=applies_per, ticket_type=ticket_type,
     )
     _audit(event, actor, "event.promo_created", promo)
     return promo, code
@@ -38,12 +53,14 @@ def redeem_promo(event, code, amount):
     promo = EventPromoCode.objects.select_for_update().filter(
         event=event, makerspace=event.makerspace, code_digest=code_digest(code, "promo"),
     ).first()
-    if not promo or promo.revoked_at or promo.uses >= promo.max_uses or (
+    if not promo or promo.kind != "discount" or promo.revoked_at or promo.uses >= promo.max_uses or (
         promo.expires_at and promo.expires_at <= timezone.now()
     ):
-        raise NotFound("Promo code not found.")
+        raise NotFound(gettext("Promo code not found."))
     discount = amount * Decimal(promo.percent_off) / 100 if promo.percent_off else promo.amount_off
-    discount = min(amount, discount).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    from apps.payments.pricing.rates import RateCard
+    currency = RateCard(event.makerspace, "events").currency
+    discount = quantize_money(min(amount, discount), currency, ROUND_HALF_UP)
     promo.uses += 1
     promo.save(update_fields=["uses"])
     return promo, discount

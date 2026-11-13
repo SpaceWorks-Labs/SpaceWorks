@@ -15,8 +15,9 @@ from apps.tenant_migration.gate_locks import (
     shared_boundary,
     unscoped_writer_shared_boundary,
 )
-from apps.tenant_migration.gate_policy import HTTP_EXEMPTIONS
+from apps.tenant_migration.gate_policy import HTTP_EXEMPTIONS, PROVIDER_INGRESS_ROUTES
 from apps.tenant_migration.gate_runtime import boundary_tenant_write
+from apps.space_controls.superadmin_bypass import mark_dispatched
 
 
 SAFE_METHODS = frozenset({"GET", "HEAD", "OPTIONS", "TRACE"})
@@ -31,12 +32,31 @@ class SourceMigrationGateMiddleware:
     def __call__(self, request):
         if request.method in SAFE_METHODS:
             return self.get_response(request)
+        from apps.integrations.notification_cutover import boundary
+        with boundary():
+            return self._write(request)
+
+    def _write(self, request):
         try:
             match = resolve(request.path_info)
         except Resolver404:
             return self.get_response(request)
         request.resolver_match = match
+        if match.view_name in PROVIDER_INGRESS_ROUTES:
+            # Signature validation and durable receipts are deployment operations.
+            # In particular, sender-level STOP must not wait for a tenant freeze.
+            # An outer tenant/unscoped lock here would invert the processor's
+            # sender/cutover/source lock order. Tenant status/proof application
+            # remains protected by its own inner tenant_write transaction.
+            return self.get_response(request)
         makerspace_ids = _makerspace_ids(request, match)
+        from apps.space_controls import superadmin_bypass
+        from apps.space_controls.write_policy import http_context
+        bypass = superadmin_bypass.for_request(request, match.url_name or "")
+        with http_context(request.path_info, match.url_name or ""), superadmin_bypass.scope(bypass):
+            return self._dispatch(request, match, makerspace_ids)
+
+    def _dispatch(self, request, match, makerspace_ids):
         try:
             refusal_exempt = match.view_name in HTTP_EXEMPTIONS
             if makerspace_ids:
@@ -44,8 +64,10 @@ class SourceMigrationGateMiddleware:
                     lock = shared_boundary if refusal_exempt else boundary_tenant_write
                     for makerspace_id in makerspace_ids:
                         locks.enter_context(lock(makerspace_id))
+                    mark_dispatched()
                     return self.get_response(request)
             with unscoped_writer_shared_boundary():
+                mark_dispatched()
                 return self.get_response(request)
         except SourceMigrationGateClosed as exc:
             return _locked_response(exc)

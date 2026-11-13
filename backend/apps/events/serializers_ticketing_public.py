@@ -17,9 +17,10 @@ class EventTicketingPublicSerializer(serializers.Serializer):
         # checks once per host, rather than querying restoration state per field/row.
         cache = self.context.setdefault("ticket_feature_flags", {})
         if obj.makerspace_id not in cache:
+            projected = self.context.get("event_feature_flags", {}).get(obj.makerspace_id)
             cache[obj.makerspace_id] = {
-                "tickets": feature_enabled(obj.makerspace, "events.ticket_types"),
-                "promos": feature_enabled(obj.makerspace, "events.promo_codes"),
+                "tickets": projected["events.ticket_types"] if projected is not None else feature_enabled(obj.makerspace, "events.ticket_types"),
+                "promos": projected["events.promo_codes"] if projected is not None else feature_enabled(obj.makerspace, "events.promo_codes"),
                 "membership": module_enabled(obj.makerspace, "membership"),
             }
         return cache[obj.makerspace_id]
@@ -29,7 +30,7 @@ class EventTicketingPublicSerializer(serializers.Serializer):
         from .ticketing import ticket_selection_required
         if hasattr(obj, "public_ticket_rows"):
             return self._feature_flags(obj)["tickets"] and any(
-                row.makerspace_id == obj.makerspace_id for row in obj.public_ticket_rows
+                row.makerspace_id == obj.makerspace_id and row.purpose == "participant" for row in obj.public_ticket_rows
             )
         return ticket_selection_required(obj)
 
@@ -51,12 +52,15 @@ class EventTicketingPublicSerializer(serializers.Serializer):
             member = flags["membership"] and obj.makerspace_id in self.context.get("ticket_membership_ids", set())
             rows = [row for row in obj.public_ticket_rows if
                     row.makerspace_id == obj.makerspace_id
+                    and row.purpose == "participant"
                     and (row.sales_start_at is None or row.sales_start_at <= now)
                     and (row.sales_end_at is None or row.sales_end_at > now)
                     and (member or row.audience == "public")]
         else:
             rows = available_ticket_types(obj, getattr(request, "user", None))
-        return [{"id": row.pk, "name": row.name, "amount": str(row.amount), "audience": row.audience, "spots_left": registration_spots_left(obj, row)} for row in rows]
+        return [{"id": row.pk, "name": row.name, "amount": str(row.amount), "audience": row.audience,
+                 "spots_left": registration_spots_left(obj, row) if obj.show_registration_count else None}
+                for row in rows]
 
     @extend_schema_field(serializers.BooleanField())
     def get_promo_codes_enabled(self, obj):

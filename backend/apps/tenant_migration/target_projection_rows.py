@@ -2,9 +2,19 @@
 
 from .target_projection_types import RowDisposition, RowPolicy
 from .projection_wp4 import ROW_POLICIES as WP4_ROW_POLICIES
+from .catalog_p2_presence import DROP_MODELS as PRESENCE_DROPS
 
 
 ROW_POLICIES = {
+    **{label: RowPolicy(RowDisposition.DROP, reason) for label, reason in PRESENCE_DROPS.items()},
+    "events.EventCertificateArtwork": RowPolicy(
+        RowDisposition.DROP,
+        "Unpromoted upload reservations have no durable artwork or portable authority.",
+        condition=("promoted_at", None),
+    ),
+    "makerspaces.MembershipAdditionalRole": RowPolicy(RowDisposition.DROP, "Imported memberships are reduced to Member; additional authority is dropped.", condition=("_staff_account", False)),
+    "machines.MembershipMachineScope": RowPolicy(RowDisposition.DROP, "Imported memberships carry no machine-management authority.", condition=("_staff_account", False)),
+    "machines.MembershipMachineTypeScope": RowPolicy(RowDisposition.DROP, "Imported memberships carry no machine-management authority.", condition=("_staff_account", False)),
     **WP4_ROW_POLICIES,
     "makerspaces.MakerspaceLoanPolicy": RowPolicy(
         RowDisposition.PRESERVE_LIVE,
@@ -12,7 +22,8 @@ ROW_POLICIES = {
     ),
     # machines.MakerspaceMachineTypePolicy uses the ordinary data projection;
     # numeric preferences carry no actor or authority grants.
-    "notifications.MemberNotificationPreference": RowPolicy(RowDisposition.DROP, "Personal delivery policy is target-owned."),
+    "notifications.MemberNotificationPreference": RowPolicy(RowDisposition.DROP, "Only staff notification preferences travel.", condition=("_staff_account", False)),
+    "notifications.NotificationPreference": RowPolicy(RowDisposition.DROP, "Only staff category/channel choices travel; endpoints require fresh proof.", condition=("_staff_account", False)),
     "notifications.NotificationInboxRow": RowPolicy(RowDisposition.DROP, "Source inbox text and read state are delivery telemetry."),
     "integrations.EmailSuppression": RowPolicy(RowDisposition.DROP, "Deployment-keyed suppressed addresses do not travel."),
     "operations.ReminderSchedule": RowPolicy(
@@ -28,8 +39,6 @@ ROW_POLICIES = {
         "Owner decision 22: preserve the exact live machine grant and provenance.",
     ),
     "makerspaces.MakerspaceRole": RowPolicy(RowDisposition.KEEP_TARGET, "Target-seeded roles are authoritative; archived role rows are dropped."),
-    "machines.RoleMachineScope": RowPolicy(RowDisposition.DROP, "Archived role scope would rewrite target machine authority."),
-    "machines.RoleMachineTypeScope": RowPolicy(RowDisposition.DROP, "Archived scopes can both grant authority and collide with seeded scopes."),
     "integrations.NotificationRecipient": RowPolicy(RowDisposition.DROP, "Every explicit recipient kind is a live disclosure rule."),
     "integrations.RecipientMachineTypeScope": RowPolicy(RowDisposition.DROP, "A child of a dropped recipient cannot arrive live."),
     "integrations.RecipientMachineScope": RowPolicy(RowDisposition.DROP, "A child of a dropped recipient cannot arrive live."),
@@ -46,6 +55,6 @@ ROW_POLICIES = {
     "makerspaces.MembershipRequest": RowPolicy(
         RowDisposition.DROP,
         "Imported invitations are authority the target never authorized and must be re-created.",
-        condition=("state", frozenset({"requested", "invited", "awaiting_vouches"})),
+        condition=("state", frozenset({"requested", "invited", "awaiting_vouches", "changes_requested"})),
     ),
 }

@@ -1,3 +1,5 @@
+from django.utils.translation import gettext
+from apps.storage_clients import s3_client
 from dataclasses import dataclass
 import logging
 import uuid
@@ -30,7 +32,7 @@ class WarrantyObjectValidationResult:
 
 
 def _s3_client(endpoint_url):
-    return boto3.client(
+    return s3_client(
         "s3",
         endpoint_url=endpoint_url,
         aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
@@ -63,7 +65,7 @@ def staging_key(final_key):
 def assert_warranty_object_key_for_makerspace(object_key, makerspace_id):
     if not str(object_key).startswith(f"warranty/{makerspace_id}/"):
         raise ValidationError(
-            {"object_key": "Warranty document key does not belong to this makerspace."}
+            {"object_key": gettext("Warranty document key does not belong to this makerspace.")}
         )
 
 
@@ -71,19 +73,23 @@ def ext_for(content_type, filename):
     allowed_mime = set(settings.WARRANTY_DOC_ALLOWED_MIME)
     allowed_exts = ALLOWED_EXTENSIONS_BY_MIME.get(content_type)
     if content_type not in allowed_mime or not allowed_exts:
-        raise ValidationError({"content_type": "Unsupported warranty document type."})
+        raise ValidationError({"content_type": gettext("Unsupported warranty document type.")})
 
     safe_name = (filename or "").replace("\\", "/").rsplit("/", 1)[-1]
     ext = safe_name.rsplit(".", 1)[-1].lower() if "." in safe_name else ""
     if ext not in allowed_exts:
         raise ValidationError(
-            {"filename": "Filename extension does not match the content type."}
+            {"filename": gettext("Filename extension does not match the content type.")}
         )
     return ext
 
 
 def presigned_upload(object_key, content_type):
     try:
+        if getattr(settings, "STORAGE_CAPABILITIES_FILE", ""):
+            import sys
+            from apps.private_uploads import presign
+            return presign(sys.modules[__name__], object_key, content_type, settings.WARRANTY_DOC_MAX_BYTES)
         if settings.STORAGE_PRESIGN_METHOD == "put":
             url = _public_client().generate_presigned_url(
                 "put_object",
@@ -147,6 +153,10 @@ def object_size(object_key):
 
 
 def finalize_upload(object_key, max_bytes):
+    if getattr(settings, "STORAGE_CAPABILITIES_FILE", ""):
+        import sys
+        from apps.private_uploads import finalize
+        return finalize(sys.modules[__name__], object_key, max_bytes)
     if settings.STORAGE_PRESIGN_METHOD != "put":
         return object_size(object_key)
 
@@ -184,11 +194,11 @@ def presigned_get_url(object_key):
 def validate_warranty_object(object_key):
     size = object_size(object_key)
     if size is None:
-        raise ValidationError({"object_key": "Warranty document was not found."})
+        raise ValidationError({"object_key": gettext("Warranty document was not found.")})
     if size == 0:
-        raise ValidationError({"object_key": "Warranty document is empty."})
+        raise ValidationError({"object_key": gettext("Warranty document is empty.")})
     if size > settings.WARRANTY_DOC_MAX_BYTES:
-        raise ValidationError({"object_key": "Warranty document exceeds the size limit."})
+        raise ValidationError({"object_key": gettext("Warranty document exceeds the size limit.")})
 
     try:
         response = _client().get_object(
@@ -206,7 +216,7 @@ def validate_warranty_object(object_key):
             content_type = image_type
     if content_type not in set(settings.WARRANTY_DOC_ALLOWED_MIME):
         raise ValidationError(
-            {"object_key": "Warranty document is not a valid PDF or image."},
+            {"object_key": gettext("Warranty document is not a valid PDF or image.")},
             code="invalid_document",
         )
     return WarrantyObjectValidationResult(size=size, content_type=content_type)

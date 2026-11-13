@@ -2,6 +2,7 @@ from dataclasses import dataclass, replace
 
 from django.utils import timezone
 
+from apps.accounts.staff_identity import is_person
 from apps.accounts.claim_sessions import claim_context
 from apps.accounts.models import User
 from apps.makerspaces.models import MakerspaceMembership, MakerspaceWaiver
@@ -34,6 +35,8 @@ class ActiveMemberPresence:
     accepted_waiver: MakerspaceWaiver | None
     # Also None for the identity-only request path; no current caller reads it there.
     session: PresenceSession | None
+    # Decision 223: the live guest pass that admitted a non-member, else None.
+    guest_pass: object | None = None
 
 
 def require_active_account(user, makerspace):
@@ -82,13 +85,29 @@ def require_active_member(user, makerspace):
     return ActiveMemberPresence(membership, waiver, None)
 
 
-def _require_active_identity(user, makerspace):
+def require_active_principal(user, makerspace):
+    """`require_active_account` for any account kind (events programme surfaces).
+
+    Staged forms, reimbursements and payouts serve staff and finance reviewers as well
+    as members, so they cannot use the member-only identity check; the account
+    lifecycle refusals are the same.
+    """
+    _require_active_identity(user, makerspace, any_kind=True)
+    return ActiveMemberPresence(None, None, None)
+
+
+def _require_active_identity(user, makerspace, *, any_kind=False):
     if not is_servable(makerspace) or not (
         user
         and user.is_authenticated
         and user.pk
+        and (any_kind or is_person(user))
         and user.is_active
         and user.access_status == User.AccessStatus.ACTIVE
+        and not user.is_tenant_dump_stub
+        and not user.retired_at
+        and not user.deletion_requested_at
+        and not user.account_purged_at
     ):
         raise MemberPresenceRequired()
 
@@ -123,7 +142,8 @@ def require_active_member_presence(user, makerspace):
     is not.
     """
     active = require_active_member(user, makerspace)
-    if not runtime_active("presence"):
+    from apps.makerspaces.platform import module_enabled
+    if not runtime_active("presence") or not module_enabled(makerspace, "presence"):
         return active
     session = PresenceSession.objects.filter(
         member=user, makerspace=makerspace, ended_at__isnull=True,

@@ -28,10 +28,16 @@ class Warranty(models.Model):
     warranty_expires_on = models.DateField(null=True, blank=True)
     vendor_name = models.CharField(max_length=200, blank=True)
     vendor_contact = models.CharField(max_length=200, blank=True)
+    # The saved supplier (L12 vendor records); the two text fields stay as typed.
+    vendor = models.ForeignKey("procurement.Vendor", null=True, blank=True, on_delete=models.SET_NULL,
+                               related_name="warranties")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
+        # #188: plain-language admin name (the default plural was broken English).
+        verbose_name = "warranty"
+        verbose_name_plural = "warranties"
         constraints = [
             models.CheckConstraint(
                 condition=(

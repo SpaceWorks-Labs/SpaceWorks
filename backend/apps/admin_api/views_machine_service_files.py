@@ -1,5 +1,6 @@
 """Staff-only private attachment endpoints for machine service requests."""
 
+from django.utils.translation import gettext
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status
@@ -66,8 +67,8 @@ def _narrow_files_to_machine_scope(actor, queryset):
     manage_scope = rbac.makerspaces_for_action(actor, rbac.Action.MANAGE_MACHINES)
     if manage_scope is rbac.ALL:
         # Files from multiple makerspaces can reach this helper. ALL describes the
-        # action-level tenant grant, not whether a hidden-space membership's role is
-        # machine-scoped, so give scoped_related_q concrete ids for its plural resolver.
+        # action-level tenant grant, so give scoped_related_q concrete ids for its
+        # plural resolver.
         manage_scope = set(queryset.values_list("makerspace_id", flat=True).distinct())
     return queryset.filter(
         role_scope.scoped_related_q(
@@ -142,7 +143,7 @@ class MachineServiceFileUrlView(APIView):
     def get(self, request, pk, *args, **kwargs):
         file = _manageable_file(request.user, pk, attached=True)
         if file.service_request_id is None or file.attached_at is None:
-            return Response({"detail": "Attachment is not available."}, status=status.HTTP_409_CONFLICT)
+            return Response({"detail": gettext("Attachment is not available.")}, status=status.HTTP_409_CONFLICT)
         try:
             url = service_storage.presigned_get_url(file.object_key)
         except StorageUnavailable:

@@ -1,4 +1,6 @@
+from apps.boxes.external_qr import value_error
 from apps.boxes.models import Box
+from apps.boxes.qr_lookup import normalize_scanned
 from apps.inventory.models import Category, InventoryProduct, PublicAvailabilityMode, TrackingMode
 
 
@@ -18,6 +20,8 @@ OPTIONAL_FIELDS = {
     "issued_quantity",
     "damaged_quantity",
     "lost_quantity",
+    # A label printed outside SpaceWorks, linked on apply (`bulk_import_qr`).
+    "qr_code",
 }
 VALID_FIELDS = REQUIRED_FIELDS | OPTIONAL_FIELDS
 QUANTITY_BUCKET_FIELDS = {
@@ -107,6 +111,11 @@ def _normalize_row(makerspace, row, mapping):
     if image_key and not image_key.startswith(f"items/{makerspace.id}/"):
         errors["image_key"] = "Image key must belong to this makerspace."
     data["image_key"] = image_key
+
+    if "qr_code" in data:
+        data["qr_code"] = normalize_scanned(data["qr_code"])
+        if data["qr_code"] and value_error(data["qr_code"]):
+            errors["qr_code"] = value_error(data["qr_code"])
 
     category_name = str(data.pop("category", "") or "").strip()
     if category_name:

@@ -1,3 +1,4 @@
+from django.utils.translation import gettext_noop
 from django.conf import settings
 from django.db import models
 
@@ -17,7 +18,7 @@ class EmailTemplate(models.Model):
         MEMBERSHIP = "membership", "Membership"
         DEVICES = "devices", "Devices"
         PAYMENTS = "payments", "Payments"
-        STOCK = "stock", "Stock and procurement"
+        STOCK = "stock", gettext_noop("Stock and procurement")
         CERTIFICATIONS = "certifications", "Certifications"
 
     class Audience(models.TextChoices):
@@ -62,6 +63,17 @@ class EmailTemplate(models.Model):
         return f"{self.makerspace}:{self.stream}/{self.audience}/{self.key}"
 
 class PlatformEmailSettings(models.Model):
+    class Meta:
+        # #188: plain-language admin name (the default plural was broken English).
+        verbose_name = "platform email settings"
+        verbose_name_plural = "platform email settings"
+
+    # Blank preserves the legacy environment/SMTP contract until migration/writes.
+    email_provider = models.CharField(max_length=16, blank=True, choices=[
+        ("", "Environment / legacy"), ("smtp", "SMTP"), ("resend", "Resend"),
+        ("postmark", "Postmark"), ("ses", "Amazon SES"), ("brevo", "Brevo"),
+        ("mailgun", "Mailgun"), ("sendgrid", "SendGrid")])
+    email_provider_config = models.TextField(blank=True)
     smtp_host = models.CharField(max_length=200, blank=True)
     smtp_port = models.PositiveIntegerField(default=587)
     smtp_username = models.CharField(max_length=200, blank=True)
@@ -76,6 +88,14 @@ class PlatformEmailSettings(models.Model):
 
     def get_smtp_password(self):
         return decrypt_value(self.smtp_password) if self.smtp_password else ""
+
+    def set_email_provider_config(self, values):
+        from .mail_providers.config import encode_config
+        self.email_provider_config = encrypt_value(encode_config(values)) if values else ""
+
+    def get_email_provider_config(self):
+        import json
+        return json.loads(decrypt_value(self.email_provider_config)) if self.email_provider_config else {}
 
     @classmethod
     def load(cls):
@@ -111,12 +131,20 @@ class EmailLog(ScopedPiiModelMixin, models.Model):
     )
     # Family key independent of template stream/event aliases.
     feature = models.CharField(max_length=32, blank=True)
+    # Durable source identity contains identifiers/window snapshots only, never credentials.
+    source_kind = models.CharField(max_length=48, blank=True)
+    source_id = models.PositiveBigIntegerField(null=True, blank=True)
+    source_metadata = models.JSONField(default=dict, blank=True)
     subject = models.TextField()
     text_body = models.TextField(blank=True)
     html_body = models.TextField(blank=True)
     stream = models.CharField(max_length=32, blank=True)
     event = models.CharField(max_length=64, blank=True)
     audience = models.CharField(max_length=16, blank=True)
+    provider_source = models.CharField(max_length=8, blank=True, choices=[("platform", "Platform"), ("own", "Own")])
+    provider_message_id = models.CharField(max_length=255, blank=True, db_index=True)
+    bounced_at = models.DateTimeField(null=True, blank=True)
+    complained_at = models.DateTimeField(null=True, blank=True)
     connection_kind = models.CharField(max_length=16, default="makerspace")
     status = models.CharField(
         max_length=8,
@@ -126,6 +154,14 @@ class EmailLog(ScopedPiiModelMixin, models.Model):
     error = models.TextField(blank=True)
     attempts = models.PositiveIntegerField(default=0)
     retry_generation = models.PositiveIntegerField(default=0)
+    # Deferred free mail stays pending; this timestamp prevents a retry storm.
+    email_retry_at = models.DateTimeField(null=True, blank=True, db_index=True)
+    email_retryable = models.BooleanField(default=True)
+    provider_name = models.CharField(max_length=16, blank=True)
+    # provider_message_id is declared once above (mobile delivery analytics, max 255);
+    # the cloud transports store their accepted ID in that same column.
+    provider_recipient_hash = models.CharField(max_length=64, blank=True)
+    provider_delivery_status = models.CharField(max_length=16, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     sent_at = models.DateTimeField(null=True, blank=True)
@@ -140,6 +176,13 @@ class EmailLog(ScopedPiiModelMixin, models.Model):
 
     def __str__(self):
         return f"EmailLog#{self.pk} [{self.status}]"
+
+class EmailProviderWebhookReceipt(models.Model):
+    makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.CASCADE)
+    log = models.ForeignKey(EmailLog, on_delete=models.CASCADE)
+    event_key = models.CharField(max_length=64, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
 
 class DailyEmailCounter(models.Model):
     makerspace = models.ForeignKey(

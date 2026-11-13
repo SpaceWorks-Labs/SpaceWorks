@@ -5,6 +5,18 @@ import { resolve } from "node:path";
 import { runInNewContext } from "node:vm";
 
 const output = resolve("dist");
+// Dev-only galleries (gallery.html, motion-gallery.html) and their entry chunks must never ship.
+for (const page of ["gallery.html", "motion-gallery.html"]) {
+  await assert.rejects(access(resolve(output, page)), `Dev-only ${page} must not be in the production build.`);
+}
+for (const asset of await readdir(resolve(output, "assets"), { recursive: true })) {
+  assert(!/galleryMain|motionGallery|LayoutGallery/i.test(String(asset)), `Dev gallery chunk shipped: ${asset}`);
+}
+// The deployment CSP has no 'unsafe-inline' and no hash: the shell may carry no inline script.
+const shell = await readFile(resolve(output, "index.html"), "utf8");
+for (const [tag] of shell.matchAll(/<script\b[^>]*>/g)) assert(/\ssrc=/.test(tag), `Inline script in dist/index.html: ${tag}`);
+assert(shell.includes('<script src="/boot.js"></script>'), "Pre-paint boot script missing from the shell.");
+await access(resolve(output, "boot.js"));
 const worker = await readFile(resolve(output, "sw.js"), "utf8");
 const manifest = JSON.parse(await readFile(resolve(output, "pwa-manifest.json"), "utf8"));
 await assert.rejects(access(resolve("public/sw.js")), "The static public worker must be removed.");
@@ -20,10 +32,34 @@ for (const entry of manifest) {
   assert.equal(entry.revision, createHash("sha256").update(bytes).digest("hex"));
   assert(worker.includes(entry.url) && worker.includes(entry.revision), `Revision absent from worker: ${entry.url}`);
 }
+// Maker-preview vendors stay out of the install-time precache (runtime-cached instead).
+const preview = /^(?:three\.module-[\w-]+\.js|occt-import-js-[\w-]+\.wasm|preview\.worker-[\w-]+\.js)$/;
+const lazyPreview = [];
 for (const asset of await readdir(resolve(output, "assets"))) {
-  if (/\.(?:js|css|woff2?|png|svg|webp|wasm)$/.test(asset)) {
+  if (preview.test(asset)) {
+    lazyPreview.push(asset);
+    assert(!manifest.some(({ url }) => url === `/assets/${asset}`) && !worker.includes(asset),
+      `Preview vendor must not be precached: ${asset}`);
+  } else if (/\.(?:js|css|woff2?|png|svg|webp|wasm)$/.test(asset)) {
     assert(manifest.some(({ url }) => url === `/assets/${asset}`), `Emitted asset absent: ${asset}`);
   }
+}
+assert.equal(lazyPreview.length, 3, "Expected the three, occt WASM and preview worker vendor files.");
+assert(worker.includes("spaceworks-preview-runtime-v1"), "Preview vendors need the bounded runtime cache.");
+// Patch, the mascot, is banned on kiosk surfaces: none of its files may enter the kiosk precache.
+const patchFiles = await readdir(resolve(output, "brand", "patch"));
+assert(patchFiles.length > 0, "Patch artwork missing from the build.");
+for (const file of patchFiles) {
+  assert(!manifest.some(({ url }) => url === `/brand/patch/${file}`) && !worker.includes(`/brand/patch/${file}`),
+    `Patch artwork must not be precached: ${file}`);
+}
+assert(!manifest.some(({ url }) => url.startsWith("/brand/patch/")), "Patch artwork must not be precached.");
+for (const size of [192, 512]) {
+  const prepared = await readFile(resolve("public", "brand", `icon-${size}.png`));
+  assert.equal(prepared.readUInt32BE(16), size);
+  assert.equal(prepared.readUInt32BE(20), size);
+  assert.deepEqual(await readFile(resolve(output, "member-pwa", `icon-${size}.png`)), prepared,
+    "member-pwa must emit the prepared brand icon bytes.");
 }
 console.log(`PWA verified: ${manifest.length} revisioned shell/assets, kiosk navigation fallback, scanner WASM.`);
 
@@ -59,6 +95,9 @@ for (const scope of ["/member", "/m/forge/member"]) {
   assert.equal(await offline.text(), "offline:/member-pwa/offline.html");
   const appManifest = await (await dispatch(`${scope}/manifest.webmanifest?name=Forge`, "same-origin")).json();
   assert.equal(appManifest.scope, scope); assert.equal(appManifest.start_url, scope); assert.equal(appManifest.id, scope);
+  assert.equal(appManifest.background_color, "#FFF4E8");
+  assert.equal(appManifest.theme_color, "#FFF4E8");
+  assert(appManifest.icons.every(icon => icon.purpose === "any maskable"));
   assert.equal(appManifest.name, "Forge"); assert.equal(appManifest.display, "standalone");
   assert.deepEqual(appManifest.icons.map(icon => icon.sizes), ["192x192", "512x512"]);
 }

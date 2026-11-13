@@ -8,16 +8,42 @@ class MakerspacesConfig(AppConfig):
 
     def ready(self):
         from django.db import transaction
-        from django.utils import timezone
 
         from apps.makerspaces import checks_station  # noqa: F401
-        from apps.makerspaces import domain_verification
         from apps.makerspaces.cors import register_signal
         from apps.makerspaces.hosting import invalidate
         from apps.makerspaces.models import Makerspace
 
         register_signal()
         self._register_separability()
+        from .security_lock_guard import register as register_security_guard
+        register_security_guard()
+        from .public_profile_cache import register_signals
+        from .profile_activity_sources import register_builtin_sources
+        register_signals()
+        from .profile_github_queue import register_signals as register_github_signals
+        register_github_signals()
+        register_builtin_sources()
+        from .profile_activity_p2 import register_sources
+        register_sources()
+        from .notifications_p2_members import register as register_member_notifications
+        from .notifications_p2_terms import register as register_term_notifications
+        from .notifications_p2_subdomains import register as register_subdomain_notifications
+        register_member_notifications()
+        register_term_notifications()
+        register_subdomain_notifications()
+        from .notifications_p2_broadcasts import register as register_broadcast_notifications
+        register_broadcast_notifications()
+        from .notifications_p2_vouches import register as register_vouch_notifications
+        register_vouch_notifications()
+        from .notifications_l4 import register as register_l4_notifications
+        register_l4_notifications()
+        from .notifications_guest_passes import register as register_guest_pass_notifications
+        register_guest_pass_notifications()
+        from .notifications_guardian import register as register_guardian_notifications
+        register_guardian_notifications()
+        from .notifications_profile_open import register as register_profile_open_notifications
+        register_profile_open_notifications()
 
         def invalidate_hosting_cache(**kwargs):
             # Any write to frontend_domain / frontend_domain_status must drop the
@@ -25,19 +51,9 @@ class MakerspacesConfig(AppConfig):
             # _commit_status, provision_subdomain, and /control/ edits are all covered.
             transaction.on_commit(invalidate)
 
-        def reconcile_selfhost_domain(sender, instance, **kwargs):
-            # Self-host: any saved makerspace with a non-empty but not-yet-VERIFIED
-            # frontend_domain is trusted automatically (operator owns DNS + server).
-            # Use .update() to avoid recursive save(); schedule an explicit invalidate
-            # because .update() bypasses the post_save signal above.
-            if not domain_verification.is_self_host():
-                return
-            if instance.frontend_domain and instance.frontend_domain_status != Makerspace.DomainStatus.VERIFIED:
-                Makerspace.objects.filter(pk=instance.pk).update(
-                    frontend_domain_status=Makerspace.DomainStatus.VERIFIED,
-                    domain_verified_at=timezone.now(),
-                )
-                transaction.on_commit(invalidate)
+        # #192: there is no save-time self-host auto-trust any more. A Space Manager may set
+        # a domain on self-host, and it must stay PENDING until its DNS TXT proof passes;
+        # the superadmin's writers (`apply_domain_change(operator_trusted=True)`) trust theirs.
 
         def ensure_default_roles_on_create(sender, instance, created, **kwargs):
             if not created:
@@ -45,8 +61,8 @@ class MakerspacesConfig(AppConfig):
             from apps.makerspaces.roles import ensure_default_roles
 
             # Seed in the SAME transaction as the makerspace insert (not on_commit)
-            # so a new makerspace is never observable without its five protected
-            # defaults, and a seeding failure rolls the creation back.
+            # so a new makerspace is never observable without its seven built-in
+            # roles, and a seeding failure rolls the creation back.
             ensure_default_roles(instance)
 
         def ensure_pii_write_fence_on_create(sender, instance, created, **kwargs):
@@ -69,12 +85,6 @@ class MakerspacesConfig(AppConfig):
                     "joining_fee": instance.membership_dues_amount,
                 })
 
-        post_save.connect(
-            reconcile_selfhost_domain,
-            sender=Makerspace,
-            dispatch_uid="makerspaces.reconcile_selfhost_domain_on_save",
-            weak=False,
-        )
         post_save.connect(
             invalidate_hosting_cache,
             sender=Makerspace,

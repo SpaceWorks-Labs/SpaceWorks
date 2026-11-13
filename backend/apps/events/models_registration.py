@@ -1,3 +1,4 @@
+from django.utils.translation import gettext, gettext_noop
 from uuid import uuid4
 
 from django.conf import settings
@@ -5,13 +6,26 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
 from django.utils import timezone
-from apps.encryption.mappers import ScopedPiiModelMixin
+from apps.events.submissions.pii import PrivateDocumentMixin
 from apps.events.models_event import Event
+from apps.payments.money_model import MoneyDecimalField
 
 
-class EventRegistration(ScopedPiiModelMixin, models.Model):
+class EventRegistration(PrivateDocumentMixin, models.Model):
+    pii_document_fields = frozenset({"custom_answers"})
+    pii_text_fields = frozenset({"name", "email", "phone"})
+    pii_on_demand_keys = True
+    version = models.PositiveIntegerField(default=1)
+    attendance_revision = models.PositiveBigIntegerField(default=0)
+    answer_locked_at = models.DateTimeField(null=True, blank=True)
+    date_review_required = models.BooleanField(default=False)
+    credential_mode = models.CharField(max_length=8, default="legacy",
+                                       choices=(("legacy", "Legacy"), ("v2", "Version 2"), ("inert", "Inert")))
+    #: A free crew place (lane L21a, #128 C-36): never counted in capacity, never charged,
+    #: never part of an order or a team. Only `contributions/crew_workflow` sets it.
+    is_crew = models.BooleanField(default=False, editable=False)
     class Status(models.TextChoices):
-        PENDING_APPROVAL = "pending_approval", "Pending approval"
+        PENDING_APPROVAL = "pending_approval", gettext_noop("Pending approval")
         REGISTERED = "registered", "Registered"
         WAITLISTED = "waitlisted", "Waitlisted"
         REJECTED = "rejected", "Rejected"
@@ -24,13 +38,13 @@ class EventRegistration(ScopedPiiModelMixin, models.Model):
         related_name="registrations",
     )
     # Admission provenance survives later changes to the event audience.
-    registration_audience = models.CharField(max_length=8, choices=Event.RegistrationAudience.choices, default=Event.RegistrationAudience.MEMBERS)
+    registration_audience = models.CharField(max_length=32, choices=Event.RegistrationAudience.choices, default=Event.RegistrationAudience.MEMBERS)
     ticket_type = models.ForeignKey("events.EventTicketType", on_delete=models.SET_NULL, null=True, blank=True)
     invite = models.ForeignKey("events.EventInvite", on_delete=models.SET_NULL, null=True, blank=True)
     promo_code = models.ForeignKey("events.EventPromoCode", on_delete=models.SET_NULL, null=True, blank=True)
     # Null preserves legacy flat-price behavior; new registrations freeze their quote.
-    quoted_amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
-    discount_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    quoted_amount = MoneyDecimalField(max_digits=13, decimal_places=3, null=True, blank=True)
+    discount_amount = MoneyDecimalField(max_digits=13, decimal_places=3, default=0)
     # editable=False keeps this out of ModelForms and admin. Do not re-read it in
     # save(): register() uses save(update_fields=...) on a hot path, and no application
     # code assigns the token after creation.
@@ -87,7 +101,7 @@ class EventRegistration(ScopedPiiModelMixin, models.Model):
         "encryption.SearchKeyGeneration", on_delete=models.PROTECT,
         null=True, editable=False,
     )
-    custom_answers = models.JSONField(null=True, blank=True, default=None)
+    custom_answers = models.TextField(null=True, blank=True, default=None)
     status = models.CharField(
         max_length=20,
         choices=Status.choices,
@@ -95,6 +109,13 @@ class EventRegistration(ScopedPiiModelMixin, models.Model):
     )
     calendar_sequence = models.PositiveIntegerField(default=0)
     calendar_updated_at = models.DateTimeField(default=timezone.now)
+    cancelled_at = models.DateTimeField(null=True, blank=True)
+    status_before_cancel = models.CharField(max_length=20, blank=True, default="")
+    # A tail restore must not rewrite the original registration creation time.
+    waitlist_position_at = models.DateTimeField(null=True, blank=True)
+    # Parity E-B5 (C22): the deadline for paying an approved/promoted/re-accepted paid place. Past it the
+    # place is released; null means no pay window is running.
+    pay_by = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -113,7 +134,7 @@ class EventRegistration(ScopedPiiModelMixin, models.Model):
                 fields=["event", "member"],
                 condition=Q(
                     member__isnull=False,
-                    status__in=("pending_approval", "registered", "waitlisted"),
+                    status__in=("pending_approval", "registered", "waitlisted", "attended"),
                 ),
                 name="uniq_active_event_registration_member",
             ),
@@ -139,17 +160,21 @@ class EventRegistration(ScopedPiiModelMixin, models.Model):
         for field in ("ticket_type", "invite", "promo_code"):
             value = getattr(self, field)
             if value and value.event_id != self.event_id:
-                raise ValidationError({field: "Must belong to this event."})
+                raise ValidationError({field: gettext("Must belong to this event.")})
         if (
             self.host_waiver_id and self.event_id
             and self.host_waiver.makerspace_id != self.event.makerspace_id
         ):
             raise ValidationError(
-                {"host_waiver": "Waiver must belong to the event's host makerspace."}
+                {"host_waiver": gettext("Waiver must belong to the event's host makerspace.")}
             )
 
     def save(self, *args, **kwargs):
-        self.name = (self.name or "").strip()
-        self.email = (self.email or "").strip().lower()
-        self.phone = (self.phone or "").strip()
+        selected = kwargs.get("update_fields")
+        # Partial status/credential writes must not reassign untouched mapped fields:
+        # that would discard their authenticated cache without persisting new envelopes.
+        for name in ("name", "email", "phone"):
+            if selected is None or name in selected:
+                value = (getattr(self, name) or "").strip()
+                setattr(self, name, value.lower() if name == "email" else value)
         super().save(*args, **kwargs)

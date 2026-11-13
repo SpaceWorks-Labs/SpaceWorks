@@ -1,4 +1,5 @@
-import { Skeleton, SkeletonRows } from "../../../components/ui";
+import { formatLocale } from "../../../lib/format";
+import { t } from "@lingui/core/macro";
 
 export type LedgerSource = "request" | "self_checkout" | "direct_handout";
 export type LedgerSourceFilter = "" | "reviewed" | "self_checkout" | "direct";
@@ -16,6 +17,10 @@ export type LedgerRow = {
   makerspace_id: number;
   reference_id: number;
   status: string;
+  /** Drill-down keys (IN7); absent on servers older than 0.12.0. */
+  request_id?: number | null;
+  product_id?: number | null;
+  holder_id?: number | null;
 };
 
 export type LedgerResponse = {
@@ -27,33 +32,10 @@ export type SortKey = "item_name" | "holder" | "quantity" | "since" | "due" | "s
 export type SortDirection = "asc" | "desc";
 
 export const sourceLabels: Record<LedgerSource, string> = {
-  request: "Request",
-  self_checkout: "Self-checkout",
-  direct_handout: "Direct",
+  request: t`Request`,
+  self_checkout: t`Self-checkout`,
+  direct_handout: t`Direct`,
 };
-
-export function LedgerSkeleton({ aggregate }: { aggregate: boolean }) {
-  return (
-    <div className="overflow-x-auto rounded-md border border-line">
-      <table className="min-w-[760px] divide-y divide-line text-left text-sm" aria-hidden="true">
-        <thead className="eyebrow bg-bg">
-          <tr>
-            {["Item", "Holder", "Qty", "Out since", "Due", "Source", aggregate ? "Makerspace" : ""]
-              .filter(Boolean)
-              .map((label) => (
-                <th scope="col" key={label} className="whitespace-nowrap px-3 py-2">
-                  <Skeleton className="h-3 w-20" />
-                </th>
-              ))}
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-line bg-surface">
-          <SkeletonRows rows={4} cols={aggregate ? 7 : 6} />
-        </tbody>
-      </table>
-    </div>
-  );
-}
 
 export function UnitLines({ row }: { row: LedgerRow }) {
   if (row.units.length) {
@@ -106,6 +88,7 @@ export function ledgerParams({
   search,
   source,
   overdueOnly,
+  due = "",
   sort,
 }: {
   page?: number;
@@ -113,6 +96,8 @@ export function ledgerParams({
   search: string;
   source: LedgerSourceFilter;
   overdueOnly: boolean;
+  /** The dashboard's due-back windows: `today` or `soon` (the next three days). */
+  due?: string;
   sort: string;
 }) {
   const params = new URLSearchParams();
@@ -122,6 +107,7 @@ export function ledgerParams({
   if (trimmed) params.set("search", trimmed);
   if (source) params.set("source", source);
   if (overdueOnly) params.set("overdue", "true");
+  if (due) params.set("due", due);
   params.set("sort", sort);
   return params;
 }
@@ -134,5 +120,5 @@ export function formatDate(value: string | null) {
   if (!value) return "\u2014";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "\u2014";
-  return date.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+  return date.toLocaleDateString(formatLocale(), { year: "numeric", month: "short", day: "numeric" });
 }

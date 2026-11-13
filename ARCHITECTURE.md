@@ -22,9 +22,9 @@ The operational posture is self-host first:
 - Managed/SaaS behavior is env-gated and dormant by default: managed Postgres purge handling,
   PUT presigning for Supabase-compatible storage, connection-pool settings, hosted-domain
   verification, and fair-use limits. `MANAGED_POSTGRES` defaults to false and
-  `STORAGE_PRESIGN_METHOD` to `post` (`backend/config/settings.py:53-75`).
-- Per-makerspace PII encryption is also dormant unless explicitly enabled; disabled installs do
-  not require key material (`backend/config/settings.py:373-385`).
+  `STORAGE_PRESIGN_METHOD` to `post` (`backend/config/settings_runtime.py`).
+- Optional per-makerspace PII encryption is off by default. Mandatory finance fields always need
+  a wrapping key or broker (`backend/config/settings_credentials.py`).
 
 ## 2. Topology and tenancy
 
@@ -47,11 +47,11 @@ module flags, branding, public API key, domain/origin setup, archive state, and 
   makerspace and rejects cross-tenant targets even where a user otherwise has access
   (`backend/apps/makerspaces/origin_scope.py:39-122`). Normal staff querysets must also use
   action-scoped RBAC, described below.
-- A tenant can be hidden from the central directory. `superadmin_access_enabled=False` is a
-  hard block on global superadmin powers; only an explicit active membership with the required
-  action can see or operate that tenant (`backend/apps/accounts/rbac.py:295-358`).
-- Archive is a soft operational removal (`archived_at` is the source of truth); only archived,
-  superadmin-visible tenants can be permanently purged. Purge clears the object graph and
+- A tenant can be hidden from the central directory; that is directory visibility only. The
+  superadmin is always on: global superadmin authority reaches every servable tenant, and only
+  archived or otherwise unservable tenants are excluded (`backend/apps/accounts/rbac.py`).
+- Archive is a soft operational removal (`archived_at` is the source of truth); only archived
+  tenants can be permanently purged. Purge clears the object graph and
   storage keys under an explicit immutable-delete escape hatch
   (`backend/apps/makerspaces/models.py:203-208`, `backend/apps/makerspaces/lifecycle.py:44-66`,
   `backend/apps/makerspaces/lifecycle.py:197-264`).
@@ -72,7 +72,7 @@ module flags, branding, public API key, domain/origin setup, archive state, and 
 `accounts.User` is global, not tenant-local. It extends Django's user with display/contact
 fields, a global role used principally for superadmin, active/restricted status, and retained
 legacy Check-In identity fields (`backend/apps/accounts/models.py:10-78`). DRF defaults to JWT
-authentication and deny-by-default permissions (`backend/config/settings.py:389-399`). Login
+authentication and deny-by-default permissions (`backend/config/settings_drf.py`). Login
 returns a short-lived access JWT while refresh is held in an HTTP-only cookie; refresh/logout
 implement rotation/blacklisting and CSRF/origin checks (`backend/apps/accounts/views.py:94-251`,
 `backend/apps/accounts/auth_cookies.py:9-52`). The React client stores the access token only in
@@ -150,34 +150,36 @@ flowchart TD
 ```
 
 Check-In is retired as a runtime integration: `apps.checkin` is not installed
-(`backend/config/settings.py:78-116`), no Check-In routes are present in the URL configuration,
-and the M7 test asserts the removed import surface and routes
-(`backend/tests/accounts/test_checkin_retirement_m7.py:17-36`). Historical columns such as
-`User.external_checkin_user_id` and `PrintRequestFile.owner_checkin_user_id` remain read-only
-legacy data to keep old records and staff labels interpretable; they are not populated by the
-member flows (`backend/apps/accounts/models.py:25-45`,
-`backend/tests/accounts/test_checkin_retirement_m7.py:38-73`).
+(`backend/config/settings_django.py`), and no Check-In routes are present in the URL configuration.
+The last leftover, `User.external_checkin_user_id`, was dropped (`accounts/0043`, owner decision #80);
+nothing reads or writes a Check-In identity any more.
 
 ## 5. Core domain modules
 
 ### Runtime backend app map
 
-The runtime backend consists of 23 source apps (not `checkin`):
+`INSTALLED_APPS` (`backend/config/settings_django.py`) lists 39 project apps (there is no `checkin`):
 
-- **Platform and access:** `accounts` (users, auth, RBAC), `makerspaces` (tenant root,
-  memberships, roles, waivers, domains, lifecycle), `presence` (sessions/gate), `admin_api`
-  (React-staff API composition), and `apiclients` (signed external clients).
+- **Platform and access:** `accounts` (users, auth, RBAC), `makerspaces` (tenant root, module and
+  feature registries, memberships, roles, waivers, domains, lifecycle), `organizations`, `presence`
+  (sessions/gate), `admin_api` (React-staff API composition), `apiclients` (signed external
+  clients), `space_controls`, `tenant_rls`, `separability` and `encryption`.
 - **Physical inventory:** `inventory`, `boxes`, `hardware_requests`, `evidence`, `audit`, and
   `operations` (ledger, stocktake/transfer, reports, QR batches).
-- **Fabrication and facilities:** `printing`, `machines` (including machine service),
-  `maintenance`, `bookings`, `events`, `procurement`, and `warranty`.
-- **Shared/product support:** `integrations`, `notifications`, `encryption`, `forms_schema`, and
-  `roadmap`.
+- **Fabrication and facilities:** `machines` (including machine service and 3D printing),
+  `maintenance`, `procurement` (To-Buy), `warranty`, `devices`, `bookings`, `events` and
+  `event_reimbursements`.
+- **Money and commerce:** `payments` (core ledger), `payments_rail` (online checkout), and `shop`.
+- **Cards and identity programmes:** `card_designs` and `id_programmes`.
+- **Operations and hosting:** `backup`, `tenant_migration`, `data_export`, `hosting_requests`,
+  `managed_hosting` and `analytics`.
+- **Shared/product support:** `integrations`, `notifications` and `roadmap`. `printing` is a
+  tombstoned legacy app kept only for its historical migrations; 3D printing now runs as a machine
+  type through machine service. Helper packages such as `forms_schema`, `maker_formats`, `openapi_contract` and
+  `storage_capabilities` are
+  imported libraries, not installed apps.
 
-Each app's migrations are colocated in its `migrations/` directory. Relevant recent leaves include
-`accounts/0006`, `makerspaces/0041-0044`, `presence/0001`, `hardware_requests/0023`,
-`printing/0021`, `bookings/0006`, `events/0006`, and `machines/0010`; their leaf names make the
-M/N additions visible without treating migration names as runtime behavior.
+Each app's migrations are colocated in its `migrations/` directory.
 
 ### Inventory, custody, evidence, and audit
 
@@ -210,7 +212,7 @@ are the transition/side-effect authorities, using transactions and audit records
 | --- | --- |
 | Hardware requests | `hardware_requests.workflow` is a thin export barrel for submission/review, box handover, and return authorities (`backend/apps/hardware_requests/workflow.py:1-37`). State: `pending_approval → accepted → issued → partially_returned → returned`, with rejection from pending (`backend/apps/hardware_requests/models.py:8-36`). Hardware issue requires an assigned box and finalized issue evidence; returns require evidence and remarks. |
 | Self checkout | `self_checkout_workflow` creates/returns a QR-bound `PublicToolLoan`, changes the underlying request, asset state, and audit trail atomically (`backend/apps/hardware_requests/self_checkout_workflow.py:41-162`). |
-| Printing | `printing.workflow` owns `pending → accepted → printing → completed → collected`, plus rejected/failed and controlled reprint. It reconciles filament and notifies after state changes (`backend/apps/printing/workflow.py:18-23`, `backend/apps/printing/workflow.py:33-277`). |
+| 3D printing | Print jobs are machine-service requests on a printer machine type, so `machines.service_workflow` (below) owns their transitions. The `printing` module adds the public print intake and printer-facing handling (`backend/apps/machines/public_printer_service.py`); the legacy `printing` app holds only historical migrations. |
 | Space bookings | `services_bookings` owns pending/confirmed/rejected and the confirmed terminal transitions (cancelled/completed/no-show), including locked overlap checks and lifecycle notifications (`backend/apps/bookings/services_bookings.py:51-235`). |
 | Events | `events.services` owns draft/published/cancelled/completed event transitions, capacity/waitlist promotion, registration cancellation, and attendance (`backend/apps/events/services.py:58-242`). |
 | Machine service | `machines.service_workflow` is explicitly the sole transition authority. It gates the module and machine availability, tracks pending/accepted/in-progress/completed-or-failed/collected, debits consumptions, writes audit events, and sends notifications after commit (`backend/apps/machines/service_workflow.py:1-44`, `backend/apps/machines/service_workflow.py:72-287`). |
@@ -297,8 +299,8 @@ and per-makerspace write fences fail protected writes closed during sensitive op
 
 - **Quantity:** only inventory availability changes quantity buckets; no bucket goes below zero.
 - **Transition:** state changes go through each domain's authority, not direct `.status` writes.
-- **Tenant:** staff reads are RBAC/action scoped and origin scoped; hidden/archived makerspaces
-  are excluded even from global superadmin scope unless the explicit-membership exception applies.
+- **Tenant:** staff reads are RBAC/action scoped and origin scoped; archived makerspaces are
+  excluded even from global superadmin scope.
 - **Traceability:** issues need box scan + issue photo; returns need return photo + remark;
   audit/scan/attached-evidence records are immutable outside the narrowly scoped purge path; only a
   never-consumed presign may be removed by the exact-row abandoned-upload cleanup.
@@ -308,7 +310,7 @@ and per-makerspace write fences fail protected writes closed during sensitive op
   bucket; sensitive evidence remains signed/private.
 - **Deployment:** managed fair-use quotas cover products, assets, machines, members, storage,
   print, email/notification channels, API clients, and custom roles; `None` means unlimited in
-  self-host mode (`backend/config/settings.py:54-73`, `backend/apps/makerspaces/limits.py:62-356`).
+  self-host mode (`backend/config/settings_runtime.py`, `backend/apps/makerspaces/limits.py`).
 - **Parity:** staff actions are exposed through both the React operational console and the
   superadmin `/control/` control plane where appropriate, but neither is allowed to bypass the
   same RBAC/workflow/services layer.
@@ -317,7 +319,12 @@ and per-makerspace write fences fail protected writes closed during sensitive op
 
 `frontend/src` contains reusable `components`, `lib`, generated API metadata, and feature slices:
 
-- `inventory`, `printing`, `bookings`, `roadmap`, and `stats` are public-facing slices;
+- `discovery`, `public`, `publicPages`, `inventory`, `printing`, `bookings`, `events`, `shop`,
+  `donations` and `stats` are public-facing slices (a makerspace home is an overview of its enabled
+  areas; borrowing lives on its own Inventory page);
+- `help` renders the in-app guide from the Markdown files in `src/help-content/<locale>/`, filtered by
+  role and by the space's enabled modules and features;
+- `kiosk` holds the scanner Station and public desk pages;
 - `members` is the member self-service portal; it restores the refresh session, requests/join
   status, waiver acceptance, presence start/end, and My Activity
   (`frontend/src/features/members/MemberArea.tsx:19-50`);
@@ -328,7 +335,8 @@ and per-makerspace write fences fail protected writes closed during sensitive op
 
 TanStack Query is the server-state mechanism: it wraps tenant bootstrap, lists, details, and
 mutations; mutations invalidate keyed queries rather than maintain duplicate domain state. The
-root installs `QueryClientProvider` and `BrowserRouter` (`frontend/src/main.tsx:3-26`).
+root installs `QueryClientProvider` and `BrowserRouter` (`frontend/src/main.tsx`). The theme
+defaults to light; a saved light or dark choice is respected (`frontend/src/lib/theme.ts`).
 
 The handwritten `lib/api.ts` covers auth refresh, tenant bootstrap, public publishable-key
 requests, and staff requests; OpenAPI remains the contract snapshot in
@@ -356,15 +364,15 @@ schema URL) and writes the lightweight typed path/tag client at `src/generated/a
 1. The public print page bootstraps the tenant and reads public printer/spool metadata.
 2. The signed-in member passes membership, current-waiver, and presence checks before presigning
    and submitting the file/request.
-3. The print workflow owns later staff transitions, printer assignment, filament reservation/
-   reconciliation, payment state, notifications, and audit records. Tokenized public status is
+3. The machine-service workflow owns later staff transitions, printer assignment, material
+   consumption, payment state, notifications, and audit records. Tokenized public status is
    limited to the request's public token rather than requester history.
 
 ### Superadmin archive and purge
 
-1. A superadmin archives a visible makerspace through the guarded lifecycle; scopes stop serving
+1. A superadmin archives a makerspace through the guarded lifecycle; scopes stop serving
    it operationally.
-2. Purge requires archived state, visible superadmin access, and the explicit `/control/`
+2. Purge requires archived state and the explicit `/control/`
    confirmation path. The lifecycle collects object keys, enables the transaction-local immutable
    deletion exception suited to self-host or managed Postgres, deletes the graph, emits
    `makerspace.purge_started`/`makerspace.purged`, and attempts storage cleanup.
@@ -396,8 +404,11 @@ npm run dev
 backend, worker/beat, and nginx frontend services (`docker-compose.yml`). The backend pytest
 configuration discovers `backend/tests/test_*.py`; tests use the Postgres-backed Django harness,
 while integration behavior covers storage, presence, encryption, workflows, and tenant isolation
-(`backend/pytest.ini:1-4`). Run the full gate with `cd backend && pytest`; build the frontend with
-`npm run build`; regenerate API metadata with `npm run generate:api` after schema changes.
+(`backend/pytest.ini:1-4`). The test trees are local-only and not committed. Run backend tests with
+`./scripts/dev.sh test <pytest args>`, which starts a disposable Postgres, Redis and object store
+per run; build the frontend with `npm run build`; regenerate the OpenAPI snapshot and API client
+after schema changes (`python manage.py spectacular --format openapi-json --file
+../frontend/openapi-schema.json`, then `npm run generate:api`).
 
 Every schema change is a Django migration in the owning app. Migrations carry database-enforced
 constraints/triggers where model methods are insufficient (notably audit/evidence/QR
@@ -405,18 +416,18 @@ immutability). Do not hand-edit a migration that has been deployed; add a forwar
 
 ### CI and releases
 
-The checked-in GitHub Actions release workflow publishes only when `VERSION` changes on `main`.
-It validates semantic versioning, builds/pushes backend and frontend GHCR images with full/minor/
-latest tags, then creates `vX.Y.Z` and a GitHub Release
-(`.github/workflows/release.yml:1-104`). Security audit automation is separate in
-`.github/workflows/security-audit.yml`.
+The checked-in GitHub Actions release workflow treats every commit on `main` as a releasable
+build. It validates that `VERSION` is a semantic version, builds and pushes backend and frontend GHCR
+images tagged `<VERSION>-main.<run>.<sha>`, creates a matching GitHub Release, and then promotes the
+newest build to the rolling series, `main` and `latest` tags (`.github/workflows/release.yml`). The
+Checks workflow runs type-checks, lint, builds, Django checks, the OpenAPI contract and the repository
+rules; security audit automation is separate in `.github/workflows/security-audit.yml`.
 
 ## 11. Scan notes and assumption corrections
 
 - M1-M7 are explicitly identified in the `dev` commit history through `73a480c`; the member activity
   portal and member machine-service submission are represented by `610abea` and `cb003a7`, and N6/N7
-  scoped-PII hardening is represented by `7d91633`. M7 removed Check-In runtime code. The remaining
-  `backend/apps/checkin/` directory contains only `__pycache__`, not Python source or an installed app.
+  scoped-PII hardening is represented by `7d91633`. M7 removed the Check-In app entirely.
 - M9 closeout (2026-07-19) proved clean migrations from an empty PostgreSQL database, ran the three
   required foreground test chunks (2,107 passing tests), regenerated the 302-path OpenAPI client, and
   passed `tsc -b` plus the production Vite build. The isolated H4 review found two rollback/runbook

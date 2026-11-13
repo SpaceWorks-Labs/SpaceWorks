@@ -29,7 +29,7 @@ class MemberLoanRenewView(APIView):
     staff = False
 
     @extend_schema(tags=["Loans"], summary="Extend an issued loan within its policy",
-                   request={"type": "object", "properties": {}}, responses={
+                   request=None, responses={
                        200: LoanRenewalSerializer, 400: ErrorSerializer,
                        401: ErrorSerializer, 403: ErrorSerializer, 404: ErrorSerializer,
                    })
@@ -44,8 +44,10 @@ class MemberLoanRenewView(APIView):
             rows = rbac.scope_by_makerspace(request.user, HardwareRequest.objects.all()).filter(requester=request.user)
         makerspace = get_object_or_404(spaces, pk=makerspace_id)
         require_module(makerspace, "request_workflow")
-        if not self.staff:
-            require_module(makerspace, "membership")
+        if not self.staff:  # membership module, or the account-only switch (dec 221a)
+            from apps.hardware_requests.renewal_workflow import require_self_renewal_allowed
+            from apps.makerspaces.models_loan_policy import MakerspaceLoanPolicy
+            require_self_renewal_allowed(makerspace, MakerspaceLoanPolicy.for_makerspace(makerspace))
         require_feature(makerspace, "loans.renewals")
         loan = get_object_or_404(rows, pk=pk, makerspace=makerspace)
         updated = workflow.renew_loan(request.user, loan, staff=self.staff)

@@ -29,6 +29,7 @@ def build_inventory_control(makerspace_id, *, limit=None, date_range=None):
             _transfers(space.id, add)
         if module_enabled(space, "stocktake"):
             _stocktakes(space.id, add)
+            _shelf_checks(space.id, add)
         if module_enabled(space, "qr_print_batches"):
             _qr_batches(space.id, add)
         if module_enabled(space, "asset_units"):
@@ -70,6 +71,19 @@ def _stocktakes(space_id, add):
     for row in qs.values("status").annotate(count=Count("id", distinct=True), quantity=Sum("lines__variance_quantity"), last=Max("started_at")):
         add(module_key="stocktake", metric_key="session_status", dimension=row["status"],
             count=row["count"], quantity=row["quantity"] or 0, last_activity_at=row["last"])
+
+
+def _shelf_checks(space_id, add):
+    """One row for the "Check shelves" walks (decision 331c): walks, locations needing attention, share that were OK."""
+    from apps.devices.models import ShelfCheck
+    totals = ShelfCheck.objects.filter(makerspace_id=space_id).aggregate(
+        count=Count("id"), ok=Sum("ok_count"), attention=Sum("attention_count"), last=Max("created_at"))
+    if not totals["count"]:
+        return
+    seen = (totals["ok"] or 0) + (totals["attention"] or 0)
+    add(module_key="stocktake", metric_key="shelf_checks", dimension="all", count=totals["count"],
+        quantity=totals["attention"] or 0, rate_percent=round((totals["ok"] or 0) / seen * 100, 2) if seen else None,
+        last_activity_at=totals["last"])
 
 
 def _qr_batches(space_id, add):

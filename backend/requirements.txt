@@ -1,31 +1,69 @@
 Django>=6.0,<6.1
 djangorestframework>=3.17
 django-environ>=0.14
+# HTTP transports; SES uses the existing boto3 dependency. Selection stays explicit.
+# No [amazon-ses] extra: it only adds amazon-s3-encryption-client-python for anymail's
+# inbound SES webhook (not routed here), and that package caps cryptography below 49.
+django-anymail==15.2
 django-unfold>=0.100,<0.101
 psycopg2-binary>=2.9
 django-cors-headers>=4.9
 django-axes>=8,<9
 django-csp>=4,<5
-drf-spectacular>=0.30
+# Exact pin: the CI `contracts` job diffs a freshly generated schema against
+# frontend/openapi-schema.json, so an upstream release must not change it unasked.
+# Bump deliberately and regenerate the snapshot and api.ts in the same commit.
+drf-spectacular==0.30.0
 # Pinned explicitly although drf-spectacular already requires it: `spectacular
 # --format openapi-yaml` needs it, and so does the deploy-manifest drift guard in
 # tests/test_env_surface_drift.py. A direct use deserves a direct pin -- otherwise the
 # day drf-spectacular drops the dependency, an unrelated upgrade breaks both.
 PyYAML>=6,<7
 gunicorn>=23
+prometheus-client>=0.22,<1
 pytest>=9
 pytest-django>=4.12
 whitenoise>=6.12
 segno
 djangorestframework-simplejwt>=5.5
-cryptography>=44
+# #196 app connections: OAuth 2.0 / OIDC provider (authorization code + PKCE, rotating refresh).
+django-oauth-toolkit==3.4.1
+oauthlib==4.0.1
+jwcrypto==1.6.1
+# >=50 closes GHSA-g6cj-pr64-35w5, GHSA-jwv3-5hgf-82ww and GHSA-m2h6-j472-rp4c.
+cryptography>=50
+# App Attest's CBOR attestation object and COSE credential key (also passkeys).
+cbor2==6.1.5
+# Passkeys (WebAuthn, release 2 S-A): py_webauthn and its verification stack, exact pins.
+# pyasn1 0.6.5 is younger than two weeks: it fixes GHSA-2qm8-x737-gmw5 and three more
+# advisories open on 0.6.4, so pip-audit wins over the age rule here.
+webauthn==3.0.1
+pyOpenSSL==26.4.0
+pyasn1==0.6.5
+pyasn1-modules==0.4.2
+# Relying-party ID safety: tldextract's bundled Public Suffix List snapshot, never fetched
+# (accounts/passkeys/rp_id.py passes suffix_list_urls=()). filelock 4.2.4 is the oldest
+# release past the 4.1-4.2.0 advisories.
+tldextract==5.4.0
+filelock==4.2.4
+requests-file==3.0.1
 django-storages[s3]>=1.14,<2
-boto3>=1.36,<2
+boto3>=1.43.6,<2
 requests>=2.32,<3
 httpx[http2]==0.28.1
 openpyxl>=3.1,<4
 Pillow
-reportlab>=4.2,<5
+# HEIC/HEIF decoding for event stage files and reimbursement receipts
+# (staged_forms/file_validation.py, event_payouts/attachment_content.py). BSD-3-Clause;
+# the manylinux wheel bundles libheif/libde265 (LGPL-3.0) and x265 (GPL-2.0+), all
+# AGPL-3.0-compatible and listed in NOTICE.
+pillow-heif==1.8.1
+reportlab[shaping]>=4.5.1,<5
+# Card barcodes (decision 345(c)): Code 39, EAN-13/UPC-A, PDF417, Data Matrix, Aztec. Apache-2.0, pure Python.
+# 0.20 (2026-08-27): 0.21 is younger than the two-week age rule.
+pystrich==0.20
+python-bidi>=0.6,<0.7
+arabic-reshaper>=3,<4
 python-dateutil>=2.9,<3
 tzdata>=2025.2
 icalendar>=7.0,<8
@@ -35,3 +73,19 @@ dnspython>=2.7,<3
 stripe==15.3.1
 # Imported only when SENTRY_DSN is set (config/settings.py); pinned so pip-audit tracks it.
 sentry-sdk[django,celery]>=2.30,<3
+
+# Static Noto coverage, grapheme clusters and CJK instancing.
+fonttools>=4.60,<5
+regex>=2025.9.18
+# PDF glyph/extraction regression checks (alongside pytest above).
+pypdf>=6,<7
+# Release 2 L3 (ID cards): card PNGs are the PDF page rasterised by pdfium, so the two
+# never disagree (Apache-2.0 / BSD-3-Clause; NOTICE). The photo background clean-up runs a
+# small local model through onnxruntime (MIT), never a hosted API (Q-I3).
+pypdfium2==5.14.0
+onnxruntime==1.31.0
+# Transitive security floors (decision 222(b) image scan, 2026-11-10): certifi
+# GHSA-6q48-6c7w-9gw2, urllib3 and msgpack advisories. Raise with the next scan.
+certifi>=2026.10.18
+urllib3>=2.8.0
+msgpack>=1.2.3

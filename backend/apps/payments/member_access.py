@@ -15,7 +15,7 @@ def member_payment_memberships(user):
     copies of the same five-part security check in two apps, which is precisely the drift
     nobody notices until an audit compares them.
     """
-    return active_member_memberships(user)
+    return active_member_memberships(user, allow_restricted=True)
 
 
 def member_payment_actor(user, makerspace_id):
@@ -35,9 +35,9 @@ def member_may_see_own_charges(user, makerspace_id):
     Deliberately narrow in three ways, because widening a money surface is exactly where
     a security check gets quietly lost:
 
-    * the account itself must still be live and unrestricted -- the same clauses
-      `active_member_memberships` applies, so a suspended or restricted user gains
-      nothing here;
+    * the account itself must still be live (`is_active`). A restricted or suspended
+      account is admitted on purpose (decision 260, G-1): paying a debt is how a
+      restriction is cleared, so locking them out of their own charges made it permanent;
     * it only admits a caller who holds NO membership in this makerspace. If they hold
       one, its status decides, so a REVOKED member is still refused -- that is a
       deliberate existing contract and not mine to reverse;
@@ -57,7 +57,6 @@ def member_may_see_own_charges(user, makerspace_id):
         and user.is_authenticated
         and user.pk
         and user.is_active
-        and user.access_status == user.AccessStatus.ACTIVE
     ):
         return False
     if MakerspaceMembership.objects.filter(

@@ -1,3 +1,5 @@
+import { t } from "@lingui/core/macro";
+import { PasswordStrength } from "./PasswordStrength";
 export function NewPasswordFields({
   idPrefix,
   newPassword,
@@ -17,8 +19,7 @@ export function NewPasswordFields({
   return (
     <>
       <label className="mt-3 block text-sm font-semibold" htmlFor={`${idPrefix}-password`}>
-        New password
-      </label>
+        {t`New password`}</label>
       <input
         id={`${idPrefix}-password`}
         className="desk-input mt-1 w-full"
@@ -29,19 +30,18 @@ export function NewPasswordFields({
         aria-invalid={tooShort}
         onChange={(event) => onNewPasswordChange(event.target.value)}
       />
+      <PasswordStrength password={newPassword} />
       {tooShort ? (
         <p
           id={`${idPrefix}-password-error`}
           className="mt-2 text-sm text-danger"
           role="alert"
         >
-          Password must be at least 8 characters.
-        </p>
+          {t`Password must be at least 8 characters.`}</p>
       ) : null}
 
       <label className="mt-3 block text-sm font-semibold" htmlFor={`${idPrefix}-confirm`}>
-        Confirm password
-      </label>
+        {t`Confirm password`}</label>
       <input
         id={`${idPrefix}-confirm`}
         className="desk-input mt-1 w-full"
@@ -58,8 +58,7 @@ export function NewPasswordFields({
           className="mt-2 text-sm text-danger"
           role="alert"
         >
-          Passwords do not match.
-        </p>
+          {t`Passwords do not match.`}</p>
       ) : null}
     </>
   );

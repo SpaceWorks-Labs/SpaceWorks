@@ -1,3 +1,5 @@
+from django.utils.translation import gettext
+from apps.operations.cloud_jobs import bounded
 from django.db import transaction
 from django.utils import timezone
 
@@ -27,7 +29,7 @@ def _run_legacy_return_reminders(*, now=None, limit=200) -> dict:
     # Keep frozen/not-restored tenants in the RBAC scan so the gate counts skips.
     queryset = _legacy_rows(now).select_related("makerspace", "requester").order_by("return_due_at", "id")[:limit]
     counts = {"sent": 0, "skipped": 0}
-    for hardware_request in queryset:
+    for hardware_request in bounded.page(queryset, "return-reminders"):
         with fanout_tenant_write(
             hardware_request.makerspace_id,
             operation="return_reminder",
@@ -43,32 +45,30 @@ def _run_legacy_return_reminders(*, now=None, limit=200) -> dict:
             if hardware_request is None:
                 counts["skipped"] += 1
                 continue
+            # Claim and durable notification intent share a transaction. Broker
+            # failures are recovered by the outbox, never by re-sending a new intent.
             with transaction.atomic():
-                claimed = _legacy_rows(now).filter(
-                    pk=hardware_request.pk,
-                ).update(return_reminder_sent_at=now)
-            if not claimed:
-                continue
-            try:
-                sent = notifications.notify_return_due(hardware_request)
-            except Exception:
-                rbac.scope_for_scheduled_work(HardwareRequest.objects.all(), makerspace_id=hardware_request.makerspace_id).filter(pk=hardware_request.pk).update(
-                    return_reminder_sent_at=None
+                claimed = _legacy_rows(now).filter(pk=hardware_request.pk).update(
+                    return_reminder_sent_at=now,
                 )
-                raise
+                if not claimed:
+                    continue
+                sent = notifications.notify_return_due(hardware_request)
+                if not sent:
+                    rbac.scope_for_scheduled_work(HardwareRequest.objects.all(),
+                        makerspace_id=hardware_request.makerspace_id).filter(pk=hardware_request.pk).update(
+                        return_reminder_sent_at=None,
+                    )
             if sent:
                 counts["sent"] += 1
                 emit_notification(
                     hardware_request.makerspace,
                     level="warning",
                     event="loan.overdue",
-                    title="Overdue loan reminder sent",
-                    body=f"Request #{hardware_request.pk} is overdue; a reminder was sent.",
+                    title=gettext("Overdue loan reminder queued"),
+                    body=gettext('Request #{pk} is overdue; a reminder was queued.').format(pk=hardware_request.pk),
                 )
                 continue
-            rbac.scope_for_scheduled_work(HardwareRequest.objects.all(), makerspace_id=hardware_request.makerspace_id).filter(pk=hardware_request.pk).update(
-                return_reminder_sent_at=None
-            )
             counts["skipped"] += 1
 
     return counts

@@ -7,9 +7,15 @@ from rest_framework.views import APIView
 
 from apps.integrations.email import email_enabled
 from apps.openapi_errors import errors
+from apps.accounts.services_device_tokens import mobile_grant_creation_enabled
+from apps.makerspaces.config_native import NativeConfigSerializer, native_config
+from apps.makerspaces.telemetry_schema import TelemetryConfigSerializer
+from apps.makerspaces.telemetry_public import platform_telemetry, legacy_allowed
 
 
 class PublicConfigSerializer(serializers.Serializer):
+    platform_telemetry = TelemetryConfigSerializer()
+    platform_telemetry_legacy_allowed = serializers.BooleanField()
     email_enabled = serializers.BooleanField()
     public_image_max_bytes = serializers.IntegerField()
     social_auth = serializers.DictField(required=False)
@@ -17,6 +23,20 @@ class PublicConfigSerializer(serializers.Serializer):
     password_login = serializers.DictField(required=False)
     self_registration = serializers.DictField(required=False)
     member_accounts = serializers.DictField(required=False)
+    hosting_requests = serializers.DictField(required=False)
+    managed_plans = serializers.DictField(
+        required=False, help_text="Present only while the managed-hosting limiter is on (#187A): "
+                                  "{enabled: true, online_billing: bool}. Absent = render nothing of it.")
+    passkeys_enabled = serializers.BooleanField(
+        help_text="Passkey sign-in and registration are offered (the platform switch; a person's staff spaces "
+                  "may still turn them off for that person). Passkeys are never required.")
+    turnstile_site_key = serializers.CharField(
+        required=False, help_text="Cloudflare Turnstile site key; present only when Turnstile is configured. "
+                                  "Show the widget when a sign-in answers captcha_required.")
+    native = NativeConfigSerializer(required=False)
+    landing_enabled = serializers.BooleanField(
+        help_text="The deployment's HUB_LANDING_ENABLED switch (default true). False: the main host's front "
+                  "page is the only public space's home (or the /spaces directory) instead of the product landing.")
 
 
 class PublicConfigView(APIView):
@@ -27,18 +47,25 @@ class PublicConfigView(APIView):
     @extend_schema(
         tags=["Platform"],
         summary="Return frontend-safe platform configuration",
+        description="Includes native minimum app versions and public provider settings only while the mobile module permits new grants.",
         responses={200: PublicConfigSerializer, **errors(400, 503)},
     )
     def get(self, request, *args, **kwargs):
+        from apps.accounts.login_methods import passkeys_enabled
         payload = {
+            "platform_telemetry": platform_telemetry(),
+            "platform_telemetry_legacy_allowed": legacy_allowed(),
             "email_enabled": email_enabled(),
             "public_image_max_bytes": settings.PUBLIC_IMAGE_MAX_BYTES,
+            "passkeys_enabled": passkeys_enabled(),
+            "landing_enabled": bool(getattr(settings, "HUB_LANDING_ENABLED", True)),
         }
         from apps.accounts.login_methods import (
             password_login_enabled,
             phone_login_enabled,
             self_registration_enabled,
             social_login_enabled,
+            provider_login_enabled,
         )
         from apps.accounts.member_identity import member_accounts_enabled
 
@@ -51,12 +78,17 @@ class PublicConfigView(APIView):
         # screen must not render a provider whose endpoint 404s.
         if social_login_enabled():
             social = PlatformSocialAuthSettings.objects.filter(pk=1).first()
-            if social and social.google_web_client_id:
+            from apps.accounts.member_identity import member_login_allowed
+            from apps.accounts.social_lockout import provider_configured
+
+            if provider_configured(social, "github") and member_login_allowed("github"):
+                configured["github"] = True
+            if provider_login_enabled("google") and social and social.google_web_client_id:
                 configured["google"] = {
                     "enabled": True,
                     "web_client_id": social.google_web_client_id,
                 }
-            if social and social.apple_service_id:
+            if provider_login_enabled("apple") and social and social.apple_service_id:
                 configured["apple"] = {
                     "enabled": True,
                     "service_id": social.apple_service_id,
@@ -104,4 +136,22 @@ class PublicConfigView(APIView):
             # built-in providers because the STAFF login screen reads the same endpoint;
             # what stops a member-surface login is the check in `SocialLoginView`.
             payload["member_accounts"] = {"enabled": False}
-        return Response(payload)
+        # Present only on a managed platform that can mail a confirmation link, so
+        # every other deployment's payload stays byte-for-byte unchanged.
+        from apps.hosting_requests.availability import public_available
+
+        if public_available():
+            payload["hosting_requests"] = {"enabled": True, "kinds": ["makerspace", "organization"]}
+        from apps.managed_hosting.availability import online_billing_enabled, plans_enabled
+
+        if plans_enabled():  # #187A: absent while MANAGED_PLANS_ENABLED is off (byte-for-byte unchanged)
+            payload["managed_plans"] = {"enabled": True, "online_billing": online_billing_enabled()}
+        from apps.accounts.turnstile import configured as turnstile_configured
+
+        if turnstile_configured():  # omitted until both keys are set, like social_auth
+            payload["turnstile_site_key"] = settings.TURNSTILE_SITE_KEY
+        if mobile_grant_creation_enabled():
+            payload["native"] = native_config()
+        response = Response(payload)
+        response["Cache-Control"] = "no-store"
+        return response

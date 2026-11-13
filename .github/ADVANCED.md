@@ -1,20 +1,19 @@
 # Space Works — Advanced configuration
 
 Optional configuration for operators. None of this is needed for a standard self-hosted install —
-the [Quick start](../README.md#quick-start-run-it) covers the common case. See
+the [Quick start](../README.md#quickstart) covers the common case. See
 [docs/self-hosting.md](../docs/self-hosting.md) for the full environment reference.
 
-## Telegram alerts & accept/reject callbacks
+## Telegram alerts
 
 Set the group chat ID + bot token in the staff `API clients → Integration settings` panel; set
-`TELEGRAM_WEBHOOK_SECRET` for webhook callbacks. The bot token is encrypted at rest with
-`API_CLIENT_ENC_KEY` (a Fernet key).
+`TELEGRAM_WEBHOOK_SECRET` to authenticate the retained webhook route, which only acknowledges and
+discards callbacks. Telegram is outbound-only; decisions are made in the staff console. The bot
+token is encrypted at rest with `API_CLIENT_ENC_KEY` (a Fernet key).
 
 To post into more than one group, add **rooms** under `Settings → Notification channels → Rooms`
-instead of a second bot. Every room shares the makerspace's bot: Telegram delivers all button
-presses to one registered webhook authenticated by the single `TELEGRAM_WEBHOOK_SECRET`, so a second
-bot's callbacks could not be authenticated or routed — its accept/reject buttons would be dead.
-Adding one bot to several groups is the normal Telegram flow and costs nothing.
+instead of a second bot. Each makerspace has one bot token, shared by every Telegram room.
+Adding that bot to several groups is the normal Telegram flow and costs nothing.
 
 ## Chat rooms and stored credentials
 

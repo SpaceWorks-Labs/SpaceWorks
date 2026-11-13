@@ -1,3 +1,6 @@
+import { t } from "@lingui/core/macro";
+import { SettingsQueryState } from "./SettingsQueryState";
+import { SettingsRow } from "../../components/ui";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
@@ -5,16 +8,20 @@ import { staffRequest } from "../../lib/api";
 import { useScopeOptions } from "./NotificationDestinations";
 import { EventRecipients } from "./NotificationRecipientEvent";
 import type { RecipientRulesResponse } from "./notificationDestinationTypes";
+import { notificationEventLabel } from "../notifications/notificationEventLabels";
+import { LogoLoader } from "../../components/LogoLoader";
 
 const FEATURE_LABELS: Record<string, string> = {
-  events: "Events",
-  bookings: "Bookings",
-  maintenance: "Maintenance",
-  devices: "Devices",
-  members: "Members",
-  payments: "Payments",
-  stock: "Stock and procurement",
-  certifications: "Certifications",
+  events: t`Events`,
+  bookings: t`Bookings`,
+  maintenance: t`Maintenance`,
+  devices: t`Devices`,
+  members: t`Members`,
+  payments: t`Payments`,
+  stock: t`Stock and procurement`,
+  certifications: t`Machine access`,
+  // Decision 343: which staff get machine-service job notices (the `printing` family is machine service's).
+  printing: t`Machine service jobs`,
 };
 
 const RECIPIENTS_KEY = (makerspaceId: number) =>
@@ -24,9 +31,11 @@ const RECIPIENTS_KEY = (makerspaceId: number) =>
 export function NotificationRecipientPicker({
   makerspaceId,
   delegated = false,
+  visible = true,
 }: {
   makerspaceId: number;
   delegated?: boolean;
+  visible?: boolean;
 }) {
   const path = `/admin/makerspace/${makerspaceId}/notification-recipient-rules`;
   const data = useQuery({
@@ -37,9 +46,9 @@ export function NotificationRecipientPicker({
   const broadOptions = useScopeOptions(makerspaceId, !delegated);
   const options = delegated && data.data
     ? {
-        machineTypes: data.data.scope_options.machine_types,
-        machines: data.data.scope_options.machines,
-        categories: data.data.scope_options.categories,
+        machineTypes: data.data.scope_options?.machine_types ?? [],
+        machines: data.data.scope_options?.machines ?? [],
+        categories: data.data.scope_options?.categories ?? [],
       }
     : broadOptions;
   const features = data.data?.features ?? [];
@@ -47,30 +56,29 @@ export function NotificationRecipientPicker({
     ? { feature: features[0].key, event: features[0].events[0] }
     : null);
   const events = features.find((item) => item.key === current?.feature)?.events ?? [];
+  if (!visible) return null;
 
   return (
-    <section aria-labelledby="notification-recipients-heading" className="mt-6">
-      <h4 id="notification-recipients-heading" className="title-section">
-        Who gets notified
-      </h4>
+    <section className="mt-6" aria-labelledby="notification-recipients-heading"><h3 id="notification-recipients-heading" className="title-section">{t`Who gets notified`}</h3>
+    <SettingsQueryState query={data} resource={t`recipient`}><SettingsRow label={t`Recipients`} helper={t`Which staff get each kind of alert.`}><div className="@container min-w-0">
+
       <p className="mt-2 text-sm text-muted">
         {delegated
-          ? "Pick recipients for maintenance alerts within your machine scope. Every rule must name at least one reachable machine or machine type."
-          : "Pick recipients per event. Leave an event empty to notify everyone whose role covers it, which is the default. A member who has turned notifications off is never mailed, even when selected."}
+          ? t`Pick recipients for maintenance alerts within your machine scope. Every rule must name at least one reachable machine or machine type.`
+          : t`Pick recipients per event. Leave an event empty to notify everyone whose role covers it, which is the default. A member who has turned notifications off is never mailed, even when selected.`}
       </p>
 
-      {data.isLoading ? <p className="mt-3 text-sm text-muted">Loading…</p> : null}
+      {data.isLoading ? <LogoLoader label={t`Loading…`} size={48} className="min-h-16 py-3" /> : null}
       {!data.isLoading && features.length === 0 ? (
         <p className="mt-3 text-sm text-muted">
-          None of the modules with selectable recipients are installed.
-        </p>
+          {t`None of the modules with selectable recipients are installed.`}</p>
       ) : null}
 
       {current ? (
         <>
-          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          <div className="mt-3 grid gap-2 @md:grid-cols-2">
             <label className="grid gap-1 text-sm">
-              <span className="eyebrow">Area</span>
+              <span className="eyebrow">{t`Area`}</span>
               <select
                 className="desk-input"
                 onChange={(changed) => {
@@ -88,7 +96,7 @@ export function NotificationRecipientPicker({
               </select>
             </label>
             <label className="grid gap-1 text-sm">
-              <span className="eyebrow">Event</span>
+              <span className="eyebrow">{t`Event`}</span>
               <select
                 className="desk-input"
                 onChange={(changed) =>
@@ -97,7 +105,7 @@ export function NotificationRecipientPicker({
                 value={current.event}
               >
                 {events.map((event) => (
-                  <option key={event} value={event}>{event.replace(/_/g, " ")}</option>
+                  <option key={event} value={event}>{notificationEventLabel(event)}</option>
                 ))}
               </select>
             </label>
@@ -116,6 +124,6 @@ export function NotificationRecipientPicker({
           ) : null}
         </>
       ) : null}
-    </section>
+    </div></SettingsRow></SettingsQueryState></section>
   );
 }

@@ -1,12 +1,13 @@
 """Persist supervisor facts outside a database that is about to be replaced."""
 
 import json
-from datetime import timedelta
+from datetime import datetime, timedelta
 from pathlib import Path
 
 import logging
 
 from django.core.management import call_command
+from django.core.management.base import CommandError
 from django.db import transaction
 from django.utils import timezone
 
@@ -19,6 +20,23 @@ from apps.backup.models import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def _control_fields(control):
+    """The decision and deadline a control record carries, validated before any write."""
+    decision = control.get("decision") if isinstance(control, dict) else None
+    if decision not in RestoreOperation.Decision.values:
+        raise CommandError(f"The control record has no valid restore decision (got {decision!r}).")
+    raw = control.get("decision_deadline_at")
+    if raw in (None, ""):
+        return decision, None
+    try:
+        deadline = datetime.fromisoformat(raw)
+    except (TypeError, ValueError):
+        raise CommandError("The control record decision_deadline_at is not an ISO-8601 timestamp.") from None
+    if timezone.is_naive(deadline):
+        raise CommandError("The control record decision_deadline_at must carry a UTC offset.")
+    return decision, deadline
 
 
 def export_control_record(restore_id, output, decision=None):
@@ -42,8 +60,16 @@ def export_control_record(restore_id, output, decision=None):
 @transaction.atomic
 def rehydrate_control_record(restore_id, options):
     from apps.accounts.models import User
+    from apps.backup.services_access import (
+        invalidate_download_tokens_after_restore as invalidate_archive_download_tokens_after_restore,
+    )
+    from apps.data_export.restore_hooks import invalidate_download_tokens_after_restore
+    from apps.tenant_migration.restore_hooks import (
+        invalidate_download_tokens_after_restore as invalidate_tenant_dump_download_tokens_after_restore,
+    )
 
     control = json.loads(Path(options["control_record"]).read_text(encoding="utf-8"))
+    decision, deadline = _control_fields(control)
     manifest = json.loads(Path(options["manifest"]).read_text(encoding="utf-8"))
     completed_at = timezone.now()
     archive = BackupArchive.objects.select_for_update().get(
@@ -85,9 +111,9 @@ def rehydrate_control_record(restore_id, options):
             "requested_by": requested_by,
             "requested_by_username_snapshot": control.get("requested_by_username", ""),
             "stage": RestoreOperation.Stage.DB_RESTORING,
-            "decision": control["decision"],
+            "decision": decision,
             "restore_diff": control.get("restore_diff") or {},
-            "decision_deadline_at": control.get("decision_deadline_at"),
+            "decision_deadline_at": deadline,
             "fencing_token": control.get("fencing_token") or None,
         },
     )
@@ -95,6 +121,24 @@ def rehydrate_control_record(restore_id, options):
     state.mode = DeploymentRecoveryState.Mode.QUIESCED
     state.active_restore = restore
     state.save(update_fields=("mode", "active_restore", "updated_at"))
+    from apps.makerspaces.models import Makerspace
+    from apps.makerspaces.loan_context_generations import rotate
+    from apps.data_export.loan_context_integrity import validate_loan_context_import
+    for space in Makerspace.objects.select_for_update().order_by('pk').iterator():
+        validate_loan_context_import(space.pk)
+        rotate(space)
+    count = invalidate_download_tokens_after_restore()
+    archive_count = invalidate_archive_download_tokens_after_restore()
+    tenant_dump_count = invalidate_tenant_dump_download_tokens_after_restore()
+    logger.info(
+        "restore_download_bearers_cleared",
+        extra={
+            "restore_id": str(restore_id),
+            "data_export_bearers_cleared": count,
+            "archive_bearers_cleared": archive_count,
+            "tenant_dump_bearers_cleared": tenant_dump_count,
+        },
+    )
     return restore
 
 
@@ -104,26 +148,11 @@ def validate_restored_state(restore_id):
         raise RuntimeError("Only the validating stage can run restored-state checks.")
     call_command("check", verbosity=0)
     from apps.accounts.token_guard import validate_token_configuration
-    from apps.backup.custody import validate_deployment_custody
     from apps.backup.route_guard import validate_recovery_route_allowlists
     from apps.encryption.readiness import assert_ready
 
     assert_ready()
-    # `validate_deployment_custody` has already PERSISTED each makerspace's custody
-    # state in deterministic order, so the alarm exists before we decide anything.
-    custody = validate_deployment_custody()
-    if custody.zero_recipient_off_makerspace_ids:
-        # Deliberately NOT fatal. Zero recipients is an explicitly supported state --
-        # a compromise always proceeds even when it breaches the floor -- so aborting
-        # here would make every deployment archive containing such a tenant
-        # unrestorable, with no repair path (quarantine blocks acknowledgement and
-        # exposes no recipient management). Refusing the restore does not fix the
-        # tenant's custody posture; it only prevents recovery.
-        # The fail-closed rule belongs on the BUILD side, where `selection_for`
-        # already refuses to encrypt an archive to nobody.
-        logger.error(
-            "restore_zero_recipient_self_governed_makerspaces",
-            extra={"makerspace_ids": list(custody.zero_recipient_off_makerspace_ids)},
-        )
     validate_token_configuration()
     validate_recovery_route_allowlists()
+    from .public_page_verification import verify_public_pages
+    verify_public_pages()

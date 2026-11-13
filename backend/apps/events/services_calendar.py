@@ -6,10 +6,12 @@ from django.utils import timezone
 
 from apps.events.models import Event, EventRegistration, EventSeries
 from apps.events.services_recurrence import local_anchor
+from apps.events.website_visibility import listed_q
 
 
 CALENDAR_EVENT_FIELDS = frozenset({
     "title", "description", "starts_at", "ends_at", "location", "timezone_name", "is_public",
+    "listing", "page_state",
 })
 CALENDAR_SERIES_FIELDS = frozenset({
     "title", "description", "location", "recurrence_timezone", "dtstart_local_date",
@@ -24,6 +26,8 @@ def calendar_event_changed(event, *, now=None):
         calendar_updated_at=now,
     )
     event.refresh_from_db(fields=("calendar_sequence", "calendar_updated_at"))
+    from .registration_invites import event_changed  # #169 (lane L6): updated invites, SEQUENCE+1
+    event_changed(event)
     return event
 
 
@@ -111,6 +115,12 @@ def _event_component(event, *, registration=None):
         description = f"Registration status: {state}." + (
             f"\n\n{event.description}" if event.description else ""
         )
+        # The join link rides only a CONFIRMED registrant's own calendar (L1, G3).
+        from .online_delivery import join_url_for
+        join = join_url_for(registration)
+        if join:
+            description = f"Join online: {join}\n\n{description}"
+            component.add("url", join)
     else:
         updated = event.calendar_updated_at
     _add_common(
@@ -128,13 +138,26 @@ def _event_component(event, *, registration=None):
     return component
 
 
+def _publicly_listed(event):
+    # A series feed is a calendar LISTING: unlisted or offline occurrences retire like
+    # private ones, so they never ride a public RRULE feed.
+    return event.is_public and event.listing == Event.Listing.LISTED and event.page_state == Event.PageState.LIVE
+
+
 def render_public_event_calendar(event):
-    if event.series_id and event.series.is_public:
+    if (event.series_id and event.series.is_public
+            and not event.series_occurrence_key.startswith("copy")):
         return render_public_series_calendar(event.series)
     method = "CANCEL" if event.status == Event.Status.CANCELLED else "PUBLISH"
     calendar = _calendar(event.title, method=method)
     calendar.add_component(_event_component(event))
+    _stage_deadlines(calendar, event)
     return calendar.to_ical()
+
+
+def _stage_deadlines(calendar, event):
+    from .submissions.stage_public import add_stage_deadlines  # #178: stage deadlines ride the event's feed.
+    add_stage_deadlines(calendar, event, component_class=_icalendar_types()[1], add_common=_add_common, utc=_utc)
 
 
 def _series_local_start(series):
@@ -166,7 +189,7 @@ def _series_exception(series, event):
     recurrence_id = datetime.strptime(local_text, "%Y%m%dT%H%M%S").replace(
         tzinfo=ZoneInfo(series.recurrence_timezone), fold=0
     )
-    hidden = not event.is_public
+    hidden = not _publicly_listed(event)
     status = "CANCELLED" if event.status == Event.Status.CANCELLED or hidden else "CONFIRMED"
     _add_common(
         component,
@@ -186,6 +209,23 @@ def _series_exception(series, event):
         updated_at=max(series.calendar_updated_at, event.calendar_updated_at),
     )
     component.add("recurrence-id", recurrence_id)
+    return component
+
+
+def _series_copy_component(series, event):
+    if _publicly_listed(event):
+        return _event_component(event)
+    _Calendar, ICalEvent, _Timezone, _vRecur = _icalendar_types()
+    component = ICalEvent()
+    start = _series_local_start(series)
+    # Retire the independent UID using only public series fields, including times.
+    _add_common(
+        component, uid=f"event-{event.calendar_uid}@spaceworks",
+        title=series.title, description=series.description, location=series.location,
+        starts_at=start, ends_at=start + timedelta(minutes=series.duration_minutes),
+        status="CANCELLED", sequence=event.calendar_sequence,
+        updated_at=max(series.calendar_updated_at, event.calendar_updated_at),
+    )
     return component
 
 
@@ -216,12 +256,16 @@ def render_public_series_calendar(series):
     ) | series.occurrences.filter(
         series_revision=series.revision,
         status=Event.Status.CANCELLED,
-    ) | series.occurrences.filter(
-        series_revision=series.revision,
-        is_public=False,
-    )
-    for event in exceptions.distinct().order_by("starts_at", "pk"):
+    ) | series.occurrences.filter(series_revision=series.revision).exclude(listed_q())
+    for event in exceptions.exclude(series_occurrence_key__startswith="copy").distinct().order_by("starts_at", "pk"):
         calendar.add_component(_series_exception(series, event))
+    # Extra copies are independent of template overrides/revision. An old-revision
+    # cancellation must still retire the previously published independent UID.
+    copies = series.occurrences.filter(series_occurrence_key__startswith="copy").exclude(
+        status=Event.Status.DRAFT,
+    )
+    for event in copies.order_by("starts_at", "pk"):
+        calendar.add_component(_series_copy_component(series, event))
     return calendar.to_ical()
 
 
@@ -237,4 +281,6 @@ def render_member_calendar(makerspace, registrations):
                 and registration.event.status == Event.Status.PUBLISHED):
             add_member_alarms(component, makerspace, registration.event.title)
         calendar.add_component(component)
+        if registration.status == EventRegistration.Status.REGISTERED:
+            _stage_deadlines(calendar, registration.event)
     return calendar.to_ical()

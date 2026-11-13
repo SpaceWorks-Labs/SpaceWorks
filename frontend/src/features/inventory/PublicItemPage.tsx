@@ -1,17 +1,21 @@
+import { t } from "@lingui/core/macro";
+import { CenteredCardLayout, PublicLayout, PublicDetailLayout } from "../../components/layouts";
+import { publicPageChrome } from "./PublicPageChrome";
 import { useQuery } from "@tanstack/react-query";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { PageMetadata } from "../../components/PageMetadata";
-import { SiteFooter } from "../../components/SiteFooter";
-import { SkipLink } from "../../components/SkipLink";
-import { ThemeToggle } from "../../components/ThemeToggle";
-import { Card, Skeleton } from "../../components/ui";
-import { StructuredApiError, tenantPublicRequest } from "../../lib/api";
+import { Card } from "../../components/ui";
+import { StructuredApiError, isSurfaceOff, tenantPublicRequest } from "../../lib/api";
 import { useTenant, useTenantPath } from "../../lib/tenant";
 import { useTenantBranding } from "../../lib/useTenantBranding";
 import type { Product } from "../../types/inventory";
 import { NotifyWhenBack } from "./NotifyWhenBack";
 import { AvailabilityBadge } from "./AvailabilityBadge";
 import { useTenantBootstrap } from "./usePublicInventory";
+import { ExpectedBack } from "./ExpectedBack";
+import { publicFamilies } from "../../lib/publicHome";
+import { ItemRequestForm, useItemRequestDraft } from "./ItemRequestForm";
+import { WaitlistJoin } from "./WaitlistJoin";
 
 // The numeric identity is stable even if the optional readable suffix changes.
 export function publicItemId(value: string) {
@@ -28,6 +32,7 @@ export function PublicItemPage() {
   const bootstrap = tenant.mode === "single" ? tenant.bootstrap : bootstrapQuery.data;
   const brandStyle = useTenantBranding(bootstrap);
   const id = publicItemId(itemId);
+  const requestDraft = useItemRequestDraft(id);
   const item = useQuery({
     queryKey: ["public-inventory-detail", spaceSlug, id],
     queryFn: () => tenantPublicRequest<Product>(spaceSlug, `/public/${encodeURIComponent(spaceSlug)}/inventory/${id}/`),
@@ -36,30 +41,33 @@ export function PublicItemPage() {
   });
   const product = item.error ? undefined : item.data;
   const name = bootstrap?.branding.display_name || bootstrap?.makerspace.name || "Makerspace";
-  const missing = !id || (item.error instanceof StructuredApiError && item.error.status === 404);
-  const disabled = item.error instanceof StructuredApiError && item.error.status === 400;
+  const disabled = isSurfaceOff(item.error);
+  const missing = !id || (!disabled && item.error instanceof StructuredApiError && item.error.status === 404);
   const title = missing ? "Item not found" : disabled ? "Inventory is not enabled" : product?.name ?? "Item details";
   const description = product?.description || `Browse public tools and equipment at ${name}.`;
   const modules = new Set(bootstrap?.modules ?? []);
-  return <main style={brandStyle} className="desk-shell flex min-h-screen flex-col">
+  const requestEnabled = Boolean(bootstrap && publicFamilies(bootstrap).includes("inventory") && modules.has("request_workflow") && product && !product.event_only);
+  const eventsOn = modules.has("events"); // decision 228a: no event route to point at while Events is off
+  const state = !bootstrap && bootstrapQuery.error ? { status: "error" as const, error: t`Couldn't load this space. Try again.`, onRetry: () => { void bootstrapQuery.refetch(); } } : !bootstrap || id && item.isLoading ? { status: "loading" as const } : item.error || missing
+    ? { status: "error" as const, error: missing ? t`This item isn't in the public catalogue.` : disabled ? t`This makerspace is not publishing inventory.` : t`Couldn't load this item. Try again.`, onRetry: () => { void item.refetch(); } }
+    : { status: "ready" as const };
+  if (missing || disabled) return <div style={brandStyle}><PageMetadata title={`${title} · ${name}`} description={description} path={tenantPath(`items/${id ?? itemId}`)} image={bootstrap?.makerspace.logo_url} siteName={name} /><CenteredCardLayout state={{ status: "ready" }} title={title}
+    body={missing ? t`This item isn't in the public catalogue.` : t`This makerspace is not publishing inventory.`}
+    primary={{ label: t`Back to inventory`, href: tenantPath("inventory") }} /></div>;
+  return <div style={brandStyle}>
     <PageMetadata title={`${title} · ${name}`} description={description} path={tenantPath(`items/${product?.id ?? id ?? itemId}`)} image={product?.image_url || bootstrap?.makerspace.logo_url} siteName={name} />
-    <SkipLink />
-    <header className="border-b border-line bg-panel"><div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-5 py-4">
-      <Link className="desk-button" to={tenantPath()}>Back to {name}</Link><ThemeToggle />
-    </div></header>
-    <section id="main-content" tabIndex={-1} className="mx-auto w-full max-w-5xl flex-1 px-5 py-8">
-      {id && item.isLoading ? <><h1 className="title-page">Item details</h1><p role="status" className="my-3 text-sm text-muted">Loading item...</p><Skeleton className="h-64 w-full" /></> : null}
-      {missing || item.error ? <Card><h1 className="title-page">{missing || disabled ? title : "Item unavailable"}</h1><p className="mt-3 text-sm text-muted">{missing ? "This item is not available on the public catalogue." : disabled ? "This makerspace is not publishing inventory." : "Could not load this item. Please try again."}</p>{!missing && !disabled ? <button type="button" className="desk-button mt-4" onClick={() => item.refetch()}>Retry</button> : null}</Card> : null}
-      {product ? <article className="desk-panel grid gap-6 p-5 md:grid-cols-2">
-        {product.image_url ? <img src={product.image_url} alt={product.name} className="w-full rounded-xl object-contain" /> : null}
-        <div><h1 className="title-page">{product.name}</h1><div className="mt-3"><AvailabilityBadge availability={product.availability} /></div>
-          {product.borrowing_terms ? <p className="mt-3 rounded border border-line p-2 text-sm">{product.borrowing_terms}</p> : null}
-          {bootstrap?.features.includes("inventory.notify_when_back") ? <NotifyWhenBack slug={spaceSlug} productId={product.id} /> : null}
-          {product.category_name ? <p className="eyebrow mt-3">{product.category_name}</p> : null}
-          <p className="mt-5 whitespace-pre-wrap break-words text-sm leading-6">{product.description || "No description provided."}</p>
-          {modules.has("request_workflow") ? <Link className="desk-button-secondary mt-5 inline-flex" to={tenantPath()}>Request from the catalogue</Link> : null}
-        </div>
-      </article> : null}
-    </section><SiteFooter branding={bootstrap?.branding} />
-  </main>;
+    <PublicLayout {...publicPageChrome(spaceSlug, name, tenantPath, bootstrap)} state={state}
+      breadcrumb={[{ label: t`Inventory`, href: tenantPath("inventory") }, { label: title }]}>
+      <PublicDetailLayout title={title} state={state} cover={product?.image_url ? { src: product.image_url, alt: product.name } : undefined}
+        chips={product?.category_name ? [{ label: product.category_name }] : []}
+        sections={product ? [{ id: "description", label: t`Description`, content: <p className="whitespace-pre-wrap leading-7">{product.description || t`No description provided.`}</p> },
+          ...(product.borrowing_terms ? [{ id: "borrowing", label: t`Borrowing terms`, content: <Card>{product.borrowing_terms}</Card> }] : [])] : []}
+        actionCard={{ title: t`Borrow this item`, state: "open", summary: product ? <><AvailabilityBadge availability={product.availability} eventsOn={eventsOn} /><ExpectedBack product={product} className="mt-2" /></> : null,
+          form: product?.event_only ? <p className="text-sm text-muted">{eventsOn ? t`This item is lent only at events. Register for an event that offers it, and the organizers can request it for you.` : t`Not available to borrow right now`}</p>
+            : product ? <>{bootstrap?.features.includes("inventory.notify_when_back") ? <NotifyWhenBack slug={spaceSlug} productId={product.id} /> : null}
+            <WaitlistJoin makerspaceId={bootstrap?.makerspace.id} product={product} features={bootstrap?.features} />
+            {requestEnabled && bootstrap ? <ItemRequestForm key={product.id} product={product} bootstrap={bootstrap} state={requestDraft} /> : null}</> : null,
+          mobileBar: { initiallyOpen: requestEnabled && requestDraft.returning, summary: product?.name ?? t`Item details`, label: requestEnabled ? t`Request` : t`Item details` } }} />
+    </PublicLayout>
+  </div>;
 }

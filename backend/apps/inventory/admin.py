@@ -18,6 +18,7 @@ from unfold.contrib.filters.admin import (
 
 from apps.audit import services as audit
 from apps.inventory import availability
+from apps.makerspaces.guards import SurfaceOff
 from apps.inventory import admin_assets  # noqa: F401
 from apps.inventory.admin_bulk_import import bulk_import_view
 from apps.inventory.admin_image_uploads import PublicImageAdminForm, PublicImageAdminMixin
@@ -25,6 +26,7 @@ from apps.inventory.models import Category, InventoryProduct
 from apps.operations import services as operations_services
 from apps.operations.serializers import AssetGenerateSerializer
 from config.admin_access import SuperuserOnlyModelAdmin
+from django.utils.translation import gettext_lazy
 
 
 class InventoryQuantityAdjustmentForm(forms.Form):
@@ -109,7 +111,7 @@ class InventoryProductAdmin(PublicImageAdminMixin, SuperuserOnlyModelAdmin, Mode
     def bulk_import_admin_view(self, request):
         return bulk_import_view(self, request)
 
-    @admin.action(description="Generate QR assets for selected inventory")
+    @admin.action(description=gettext_lazy("Generate QR assets for selected inventory"))
     def generate_qr_assets(self, request, queryset):
         if "apply" not in request.POST:
             context = {
@@ -152,7 +154,7 @@ class InventoryProductAdmin(PublicImageAdminMixin, SuperuserOnlyModelAdmin, Mode
                     product,
                     serializer.validated_data,
                 )
-            except (DRFValidationError, DjangoValidationError, ObjectDoesNotExist) as exc:
+            except (DRFValidationError, DjangoValidationError, ObjectDoesNotExist, SurfaceOff) as exc:
                 self.message_user(request, f"{product.pk}: {exc}", level=messages.ERROR)
             else:
                 success_count += 1
@@ -166,7 +168,7 @@ class InventoryProductAdmin(PublicImageAdminMixin, SuperuserOnlyModelAdmin, Mode
             )
         return None
 
-    @admin.action(description="Adjust selected inventory quantities")
+    @admin.action(description=gettext_lazy("Adjust selected inventory quantities"))
     def adjust_quantities(self, request, queryset):
         if queryset.count() != 1:
             self.message_user(
@@ -222,7 +224,7 @@ class InventoryProductAdmin(PublicImageAdminMixin, SuperuserOnlyModelAdmin, Mode
             )
         return None
 
-    @admin.action(description="Repair units from the needs-fix shelf")
+    @admin.action(description=gettext_lazy("Repair units from the needs-fix shelf"))
     def repair_needs_fix(self, request, queryset):
         return self._needs_fix_action(
             request,
@@ -232,7 +234,7 @@ class InventoryProductAdmin(PublicImageAdminMixin, SuperuserOnlyModelAdmin, Mode
             service=availability.repair_from_needs_fix,
         )
 
-    @admin.action(description="Scrap units from the needs-fix shelf")
+    @admin.action(description=gettext_lazy("Scrap units from the needs-fix shelf"))
     def scrap_needs_fix(self, request, queryset):
         return self._needs_fix_action(
             request,

@@ -1,54 +1,131 @@
+import { formatLocale } from "../../lib/format";
+import { t } from "@lingui/core/macro";
+import { PublicStageDeadlines, type PublicStage } from "../events/stageTime";
+import { PublicProgrammeEntry } from '../events/programme/PublicProgrammeEntry';
+import { PublishedPeoplesChoice } from '../events/peoplesChoice/PeoplesChoiceAward';
+import { PublicVolunteerCards } from '../events/contributions/PublicVolunteerCards';
+import { PublicCrewSection } from '../events/participation/PublicCrewSection';
+import { programmeHref } from '../events/programme/routeNames';
+import { CenteredCardLayout, PublicLayout, PublicDetailLayout } from "../../components/layouts";
+import { publicPageChrome } from "./PublicPageChrome";
+import { PublicEventWebsite } from "../events/PublicEventWebsite";
+import { PublicWebsiteImage } from "../../components/PublicWebsiteImage";
+import { OrganizationEventAdmission } from "../events/OrganizationEventAdmission";
 import { useState } from "react";
 import { downloadEventCalendar } from "../events/eventCalendar";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Link, useLocation, useParams } from "react-router-dom";
+import { surfaceOf } from "../events/publicSurface";
+import { useLocation, useParams } from "react-router-dom";
+import { StatusPill } from "../../components/ui";
+import { useTenantBranding } from "../../lib/useTenantBranding";
+import { eventCapacityLabel } from "./PublicEventCard";
+import { formatSlug } from "./PublicInventoryParts";
+import { publicErrorState } from "./publicErrorState";
+import { useTenantBootstrap } from "./usePublicInventory";
 import { PageMetadata } from "../../components/PageMetadata";
-import { SkipLink } from "../../components/SkipLink";
 import { StructuredApiError, tenantPublicRequest } from "../../lib/api";
 import { useTenant, useTenantPath } from "../../lib/tenant";
-import { EventRegistrationForm } from "./EventRegistrationForm";
+import { chargesOn } from "../../lib/charges";
+import { EventRegistrationEntry } from "./EventRegistrationEntry";
 import { EventPrice } from "../events/EventPrice";
 import type { PublicEventDetail } from "../events/eventTicketTypes";
+import { useEventVenueSection } from "../bookings/EventVenueBlock";
+import { EventVenueDetails, hasVenueDetails, type Venue as VenueFields } from "../events/EventVenueDetails";
+import { PageShare } from "../publicPages/PageShare";
+import { PublicSponsorCards } from "../publicPages/PublicSponsorCards";
+import { useEventSponsors } from "../donations/useEventSponsors";
+import { PublicPrizes, usePublicPrizes } from "../events/prizes";
+import { EventShopOfferList } from "../shop/EventShopOffers";
+import { eventOffersEnabled, useEventShopOffers } from "../shop/eventOffersApi";
 
 /** WP2 mounts this component on both central and tenant-domain event routes. */
-export function PublicEventDetailPage() {
-  const { slug, publicToken } = useParams();
+/** #178: the hackathon's stage deadlines (event detail only; hand-typed until the client is regenerated). */
+const stagesOf = (event: object) => ((event as { submission_stages?: PublicStage[] }).submission_stages ?? []);
+
+export function PublicEventDetailPage({ resolvedSlug, resolvedToken, canonicalUrl }: { resolvedSlug?: string; resolvedToken?: string; canonicalUrl?: string } = {}) {
+  const { slug, publicToken: routeToken } = useParams();
+  const publicToken = resolvedToken ?? routeToken;
   const tenant = useTenant();
-  const makerspaceSlug = tenant.mode === "single" ? tenant.slug : slug ?? "";
+  const makerspaceSlug = resolvedSlug ?? (tenant.mode === "single" ? tenant.slug : slug ?? "");
   const tenantPath = useTenantPath(makerspaceSlug);
   const location = useLocation();
+  // Central routes load the tenant bootstrap themselves so the header carries the brand and programme nav.
+  const bootstrapQuery = useTenantBootstrap(makerspaceSlug, tenant.mode === "central");
+  const bootstrap = tenant.mode === "single" ? tenant.bootstrap : bootstrapQuery.data;
+  const brandStyle = useTenantBranding(bootstrap);
+  const showPrice = chargesOn(bootstrap, "events"); // #184: no price at all when event charges are off
   const [shareError, setShareError] = useState("");
+  const sponsors = useEventSponsors(makerspaceSlug, publicToken, Boolean(bootstrap?.features.includes("finance.sponsors")));
   const calendar = useMutation({ mutationFn: (item: PublicEventDetail) => downloadEventCalendar(makerspaceSlug, item) });
   const eventQuery = useQuery({
     queryKey: ["public-event", makerspaceSlug, publicToken],
     staleTime: 0, gcTime: 0, refetchOnMount: "always",
+    // Keep live programme delays current while the page is open.
+    refetchInterval: 30_000, refetchIntervalInBackground: false, refetchOnWindowFocus: true,
     queryFn: () => tenantPublicRequest<PublicEventDetail>(makerspaceSlug, `/public/${encodeURIComponent(makerspaceSlug)}/events/${encodeURIComponent(publicToken ?? "")}/`),
     enabled: Boolean(makerspaceSlug && publicToken),
     retry: (count, error) => !(error instanceof StructuredApiError && error.status < 500) && count < 2,
   });
   const event = eventQuery.error ? undefined : eventQuery.data;
+  // Hack-money G6: prizes appear only when the organiser shows prize amounts publicly (else 404, no section).
+  const prizes = usePublicPrizes(makerspaceSlug, event?.public_token ?? "", Boolean(bootstrap?.features.includes("events.prize_payouts")));
+  // #135 Q-S18: shop items offered at this event, bought as ordinary shop orders with event pickup.
+  const offers = useEventShopOffers(makerspaceSlug, event?.public_token, eventOffersEnabled(bootstrap));
+  const venueSection = useEventVenueSection(makerspaceSlug, event?.public_token, (token) => tenantPath(`bookings/${token}`));
   const error = eventQuery.error instanceof StructuredApiError ? eventQuery.error : null;
-  return <main className="desk-shell min-h-screen p-5">
-    <SkipLink />
-    <div id="main-content" className="mx-auto grid max-w-3xl gap-4">
-      <Link className="desk-button w-fit" to={tenantPath("events")}>All events</Link>
-      {eventQuery.isLoading ? <p role="status">Loading event…</p> : null}
-      {eventQuery.error ? <p role="alert">{error?.status === 404 ? "Event not found." : error?.status === 400 ? "Events are unavailable at this makerspace." : "Unable to load this event."}</p> : null}
-      {event ? <>
-        <PageMetadata title={event.title} description={event.description.slice(0, 200)} path={location.pathname} image={event.image_url} />
-        {event.image_url ? <img src={event.image_url} alt="" className="max-h-80 w-full rounded-xl object-cover" /> : null}
-        <h1 className="title-page">{event.title}</h1>
-        <p>{new Date(event.starts_at).toLocaleString()} · {event.location}</p>
-        {event.category ? <p className="text-sm text-muted">{event.category.name}</p> : null}
-        {event.tags?.length ? <p className="text-sm text-muted">{event.tags.join(" · ")}</p> : null}
-        <p className="whitespace-pre-wrap">{event.description}</p>
-        <EventPrice amount={event.payment_amount} currency={event.currency} tickets={event.ticket_types} ticketRequired={event.ticket_selection_required} />
-        <button className="desk-button w-fit" type="button" disabled={calendar.isPending} onClick={() => calendar.mutate(event)}>Add to calendar</button>
-        {calendar.error ? <p role="alert">Could not download this calendar.</p> : null}
-        <button className="desk-button w-fit" type="button" onClick={async () => { setShareError(""); try { if (navigator.share) await navigator.share({ title: event.title, url: window.location.href }); else await navigator.clipboard.writeText(window.location.href); } catch { setShareError("Could not share this event."); } }}>Share event</button>
-        {shareError ? <p role="alert">{shareError}</p> : null}
-        {event.registration_open ? <EventRegistrationForm key={`${makerspaceSlug}:${event.public_token}`} makerspaceSlug={makerspaceSlug} publicToken={event.public_token} waitlist={event.availability === "Full"} approvalRequired={event.registration_requires_approval} customForm={event.custom_form} audience={event.registration_audience} tickets={event.ticket_types} ticketRequired={event.ticket_selection_required} promoEnabled={event.promo_codes_enabled} currency={event.currency} /> : <p>Registration is closed.</p>}
-      </> : null}
-    </div>
-  </main>;
+  const name = bootstrap?.branding.display_name || bootstrap?.makerspace.name || formatSlug(makerspaceSlug) || "Makerspace";
+  const state = eventQuery.isLoading ? { status: "loading" as const } : eventQuery.error
+    ? publicErrorState(eventQuery.error, { surface: "events" }, () => { void eventQuery.refetch(); }) : { status: "ready" as const };
+  const organizationAudience = event?.registration_audience === "participating_organizations";
+  const showCount = event?.show_registration_count !== false && event?.registration_count != null;
+  const cutoff = event?.effective_registration_cutoff_at ? `Closed ${new Date(event.effective_registration_cutoff_at).toLocaleString(formatLocale())}.` : "";
+  // A closed organization event keeps its admission form: an owned registration may still need its consent renewed.
+  // That form says "Registration is closed." itself, so the card note only adds when it closed.
+  const closedNote = organizationAudience ? cutoff || undefined : `Registration is closed.${cutoff ? ` ${cutoff}` : ""}`;
+  if (error?.status === 404) return <CenteredCardLayout state={{ status: "ready" }} title={t`Event not found`} body={t`This event is no longer available.`} primary={{ label: t`All events`, href: tenantPath("events") }} />;
+  return <div style={brandStyle}>
+    {event ? <PageMetadata title={event.title} description={event.description.slice(0, 300)} path={canonicalUrl ?? location.pathname} image={event.website && "cover" in event.website ? event.website.cover?.url : event.image_url} imageAlt={event.website?.cover?.alt} noindex={surfaceOf(event).indexable === false} /> : null}
+    <PublicLayout {...publicPageChrome(makerspaceSlug, name, tenantPath, bootstrap)} state={state}
+      breadcrumb={[{ label: t`All events`, href: tenantPath("events") }, { label: event?.title ?? t`Event` }]}>
+      <PublicDetailLayout title={event?.title ?? t`Event`} state={state}
+        cover={event?.image_url && !(event.website && "cover" in event.website) ? { src: event.image_url, alt: "" } : undefined}
+        chips={[...(event?.audience_label ? [{ label: event.audience_label, tone: "info" as const }] : []), ...(event?.category ? [{ label: event.category.name }] : []), ...(event?.tags ?? []).map(label => ({ label, href: `/discover?tag=${encodeURIComponent(label)}` }))]}
+        facts={event ? [{ identity: { kind: "date", date: event.starts_at }, primary: new Date(event.starts_at).toLocaleString(formatLocale()), secondary: `Until ${new Date(event.ends_at).toLocaleString(formatLocale())}` },
+          ...(event.location ? [{ identity: { kind: "icon" as const, icon: "Info" as const, tone: "neutral" as const }, primary: event.location }] : [])] : []}
+        sections={event ? [{ id: "about", label: t`About`, content: <p className="whitespace-pre-wrap leading-7">{event.description}</p> },
+          ...(hasVenueDetails(event as VenueFields) ? [{ id: "where", label: t`Where`, content: <EventVenueDetails venue={event as VenueFields} /> }] : []),
+          ...(stagesOf(event).length ? [{ id: "submission-deadlines", label: t`Submission deadlines`, content: <PublicStageDeadlines stages={stagesOf(event)} timeZone={(event as { timezone_name?: string }).timezone_name ?? "UTC"} /> }] : []),
+          ...(canonicalUrl ? [{ id: "share", label: t`Share`, content: <PageShare title={event.title} description={event.description} canonicalUrl={canonicalUrl} /> }] : []),
+          ...(event.website ? [{ id: "website", label: t`Event details`, content: <PublicEventWebsite website={event.website}
+            links={{ schedule: tenantPath(`events/${event.public_token}/schedule`), speaker: (value: string) => tenantPath(`events/${event.public_token}/speakers/${encodeURIComponent(value)}`), session: (value: string) => tenantPath(`events/${event.public_token}/sessions/${encodeURIComponent(value)}`) }}
+            image={(url: string, alt: string) => <PublicWebsiteImage makerspaceSlug={makerspaceSlug} url={url} alt={alt} />} /> }] : []),
+          // Lane L21a: the opt-in public crew section (public profiles only, #25).
+          ...(bootstrap?.features.includes('events.crew') ? [{ id: 'crew', label: t`Crew`, content: <PublicCrewSection publicToken={event.public_token} profileHref={handle => `/${encodeURIComponent(handle)}`} /> }] : []),
+          ...(bootstrap?.features.includes('events.volunteering') ? [{ id: 'volunteers', label: t`Volunteers needed`, content: <PublicVolunteerCards publicToken={event.public_token} onApply={id => window.location.assign(programmeHref(event.public_token, `roles/${id}`, makerspaceSlug))} /> }] : []),
+          ...(prizes.data?.length ? [{ id: 'prizes', label: t`Prizes`, content: <PublicPrizes rows={prizes.data} /> }] : []),
+          ...(sponsors.length ? [{ id: 'sponsors', label: t`Sponsors`, content: <PublicSponsorCards rows={sponsors} /> }] : []),
+          ...(offers.data?.products.length ? [{ id: 'merch', label: t`Merch`, content: <EventShopOfferList offers={offers.data} slug={makerspaceSlug} path={tenantPath} selling={chargesOn(bootstrap, "shop")} /> }] : []),
+          ...(bootstrap?.features.includes('events.project_gallery') ? [{ id: 'projects', label: t`Projects and results`, content: <div className="grid gap-4"><div className="flex flex-wrap gap-3"><a className="desk-button" href={tenantPath(`events/${event.public_token}/gallery`)}>{t`Project gallery`}</a><a className="desk-button" href={tenantPath(`events/${event.public_token}/results`)}>{t`Results`}</a></div>
+            {/* #181: the published People's choice award, beside (never instead of) the judged results. */}
+            <PublishedPeoplesChoice slug={makerspaceSlug} token={event.public_token} enabled={Boolean(bootstrap?.features.includes('events.peoples_choice'))}
+              projectHref={id => tenantPath(`events/${event.public_token}/gallery/${encodeURIComponent(id)}`)} /></div> }] : []), ...venueSection] : []}
+        actionCard={{ title: event?.registration_requires_approval ? t`Apply to join` : event?.availability === "Full" ? t`Join waitlist` : t`Join this event`,
+          state: event?.registration_open || organizationAudience ? "open" : "closed", note: event?.registration_open ? undefined : closedNote,
+          summary: event ? <div className="flex flex-wrap items-end gap-6">
+            {showPrice ? <EventPrice amount={event.payment_amount} currency={event.currency} tickets={event.ticket_types} ticketRequired={event.ticket_selection_required} /> : null}
+            <dl><dt className="eyebrow">{t`Capacity`}</dt><dd className="font-semibold tabular-nums text-ink">{eventCapacityLabel(event.capacity)}</dd></dl>
+            {showCount ? <dl><dt className="eyebrow">{t`Registered`}</dt><dd className="font-semibold tabular-nums text-ink">{event.registration_count}</dd></dl> : null}
+            <StatusPill label={event.availability} tone={event.availability === "Full" ? "warn" : "success"} />
+          </div> : null,
+          form: event ? <PublicProgrammeEntry publicToken={event.public_token} slug={makerspaceSlug} features={bootstrap?.features} versionedForm={Boolean(event.custom_form && !Array.isArray(event.custom_form))}>
+            {event && organizationAudience ? <OrganizationEventAdmission key={`${makerspaceSlug}:${event.public_token}`} event={event} makerspaceSlug={makerspaceSlug} organisation={name} />
+            : event?.registration_open ? <EventRegistrationEntry key={`${makerspaceSlug}:${event.public_token}`} event={event} makerspaceSlug={makerspaceSlug} organisation={name} ordersEnabled={Boolean(bootstrap?.features.includes("events.orders"))} /> : null}</PublicProgrammeEntry> : null,
+          secondary: event ? [{ label: t`Add to calendar`, pending: calendar.isPending, onClick: () => calendar.mutate(event) }, { label: t`Share event`, onClick: async () => {
+            setShareError(""); try { if (navigator.share) await navigator.share({ title: event.title, url: canonicalUrl ?? window.location.href }); else await navigator.clipboard.writeText(canonicalUrl ?? window.location.href); } catch { setShareError(t`Could not share this event.`); }
+          } }] : [],
+          mobileBar: { summary: event?.title ?? t`Event`, label: event?.registration_open ? t`Register` : t`View event` },
+          doneContent: <>{calendar.error ? <p role="alert">{t`Could not download this calendar.`}</p> : null}{shareError ? <p role="alert">{shareError}</p> : null}</> }} />
+    </PublicLayout>
+    {calendar.error || shareError ? <div role="alert" className="sw-layout p-4 text-danger">{shareError || t`Could not download this calendar.`}</div> : null}
+  </div>;
 }

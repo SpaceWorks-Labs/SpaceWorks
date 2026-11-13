@@ -1,8 +1,11 @@
-import { Field } from "../../components/ui";
+import { t } from "@lingui/core/macro";
+import { ErrorBlock, Field } from "../../components/ui";
 import { ApiClientScopePicker } from "./ApiClientScopePicker";
-import type { ApiClientCreateResponse, ApiClientScopeOption } from "./apiClientsApi";
+import { ApiClientSecretReveal } from "./ApiClientSecretReveal";
+import type { ApiClientCreateResponse, ApiClientScopeOption, ApiClientType } from "./apiClientsApi";
 import { splitOrigins } from "./apiClientsApi";
-
+import { LogoLoader } from "../../components/LogoLoader";
+import { BoxArt } from "../../components/BoxSpinner";
 type Props = {
   canManageMakerspace: boolean;
   label: string;
@@ -14,8 +17,11 @@ type Props = {
   error: Error | null;
   scopeOptions: ApiClientScopeOption[];
   scopes: string[];
+  clientType?: ApiClientType;
+  onClientTypeChange?: (value: ApiClientType) => void;
   scopesLoading: boolean;
   scopesError: Error | null;
+  onRetryScopes?: () => void;
   onLabelChange: (value: string) => void;
   onReasonChange: (value: string) => void;
   onOriginsChange: (value: string) => void;
@@ -23,6 +29,11 @@ type Props = {
   onSubmit: () => void;
   onDismissSecret: () => void;
 };
+
+const clientTypes = (): { value: ApiClientType; label: string; hint: string }[] => [
+  { value: "server", label: t`Our own system`, hint: t`A script, an ERP or a backend that signs each request.` },
+  { value: "peer", label: t`Another space`, hint: t`Their backend reads only your public catalogue, events and stats.` },
+];
 
 export function ApiClientCreateCard({
   canManageMakerspace,
@@ -35,8 +46,11 @@ export function ApiClientCreateCard({
   error,
   scopeOptions,
   scopes,
+  clientType = "server",
+  onClientTypeChange,
   scopesLoading,
   scopesError,
+  onRetryScopes,
   onLabelChange,
   onReasonChange,
   onOriginsChange,
@@ -46,28 +60,39 @@ export function ApiClientCreateCard({
 }: Props) {
   if (canManageMakerspace) {
     return (
-      <article className="rounded-md border border-line bg-surface p-3">
-        <h3 className="font-semibold text-ink">API clients</h3>
+      <article className="grid gap-3">
         <div className="mt-3 grid gap-2">
-          <Field label="Client label">
+          <Field label={t`Client label`}>
             <input
               className="desk-input w-full"
               value={label}
               onChange={(event) => onLabelChange(event.target.value)}
             />
           </Field>
-          <Field label="Allowed browser origins">
+          <fieldset className="grid gap-2">
+            <legend className="font-semibold text-ink">{t`Who will use it?`}</legend>
+            {clientTypes().map((option) => (
+              <label key={option.value} className="flex cursor-pointer items-start gap-3 rounded-xl border border-line bg-panel p-3 has-[:checked]:border-accent has-[:checked]:bg-accent-soft">
+                <input type="radio" name="api-client-type" className="mt-1 h-4 w-4 accent-accent" value={option.value}
+                  checked={clientType === option.value} disabled={isPending}
+                  onChange={() => onClientTypeChange?.(option.value)} />
+                <span className="grid gap-0.5"><span className="font-semibold text-ink">{option.label}</span>
+                  <span className="text-xs text-muted">{option.hint}</span></span>
+              </label>
+            ))}
+          </fieldset>
+          <Field label={clientType === "peer" ? t`The other space's web address` : t`Allowed browser origins`}>
             <textarea
               className="desk-input min-h-24 w-full"
-              placeholder="Allowed browser origins, one per line. Example: https://lab.example.com"
+              placeholder={t`One per line. Example: https://lab.example.com`}
               value={origins}
               onChange={(event) => onOriginsChange(event.target.value)}
             />
           </Field>
           <div className="grid gap-2">
-            <span className="eyebrow">Scopes</span>
-            <p className="text-xs text-muted">Choose the exact public API access this client needs.</p>
-            {scopesLoading ? <p className="text-sm text-muted">Loading scope choices...</p> : null}
+            <span className="font-semibold text-ink">{t`What can it do?`}</span>
+            <p className="text-xs text-muted">{t`Choose the exact public API access this client needs.`}</p>
+            {scopesLoading ? <LogoLoader size={48} className="min-h-32 py-3" /> : null}
             {!scopesLoading && scopeOptions.length ? (
               <ApiClientScopePicker
                 options={scopeOptions}
@@ -76,7 +101,7 @@ export function ApiClientCreateCard({
                 disabled={isPending}
               />
             ) : null}
-            {scopesError ? <p className="text-sm text-danger">{scopesError.message}</p> : null}
+            {scopesError ? <ErrorBlock error={scopesError} resource={t`API scopes`} onRetry={onRetryScopes} /> : null}
           </div>
         </div>
         <button
@@ -84,55 +109,34 @@ export function ApiClientCreateCard({
           disabled={!label.trim() || !splitOrigins(origins).length || !scopes.length || scopesLoading || !!scopesError || isPending}
           onClick={onSubmit}
         >
-          {isPending ? "Creating..." : "Create API client"}
+          {isPending ? <><BoxArt size={16} mono />{t`Creating…`}</> : t`Create API client`}
         </button>
         {error ? <p className="mt-2 text-sm text-danger">{error.message}</p> : null}
-        {oneTimeSecret ? (
-          <div className="mt-3 rounded-md border border-accent/40 bg-accent/10 p-3">
-            <p className="text-sm font-semibold text-ink">Copy this secret now &mdash; it will not be shown again.</p>
-            <p className="mt-2 break-all rounded-md border border-line bg-bg p-2 font-mono text-xs text-ink">
-              {oneTimeSecret.client_secret}
-            </p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <button
-                className="desk-button"
-                type="button"
-                onClick={() => void navigator.clipboard.writeText(oneTimeSecret.client_secret)}
-              >
-                Copy
-              </button>
-              <button className="desk-button-primary" type="button" onClick={onDismissSecret}>
-                Done
-              </button>
-            </div>
-          </div>
-        ) : null}
+        {oneTimeSecret ? <ApiClientSecretReveal secret={oneTimeSecret.client_secret} onDismiss={onDismissSecret} /> : null}
       </article>
     );
   }
-
   return (
-    <article className="rounded-md border border-line bg-surface p-3">
-      <h3 className="font-semibold text-ink">Request API access</h3>
+    <article className="grid gap-3">
       <div className="mt-3 grid gap-2">
-        <Field label="Request label">
+        <Field label={t`Request label`}>
           <input
             className="desk-input w-full"
             value={label}
             onChange={(event) => onLabelChange(event.target.value)}
           />
         </Field>
-        <Field label="Reason for API access">
+        <Field label={t`Reason for API access`}>
           <textarea
             className="desk-input min-h-24 w-full"
             value={reason}
             onChange={(event) => onReasonChange(event.target.value)}
           />
         </Field>
-        <Field label="Allowed browser origins">
+        <Field label={t`Allowed browser origins`}>
           <textarea
             className="desk-input min-h-24 w-full"
-            placeholder="Allowed browser origins, one per line. Example: https://lab.example.com"
+            placeholder={t`Allowed browser origins, one per line. Example: https://lab.example.com`}
             value={origins}
             onChange={(event) => onOriginsChange(event.target.value)}
           />
@@ -143,12 +147,11 @@ export function ApiClientCreateCard({
         disabled={!label.trim() || !reason.trim() || !splitOrigins(origins).length || isPending}
         onClick={onSubmit}
       >
-        {isPending ? "Submitting..." : "Submit API access request"}
+        {isPending ? <><BoxArt size={16} mono />{t`Submitting…`}</> : t`Submit API access request`}
       </button>
       {submitted ? (
         <p className="mt-2 text-sm text-muted">
-          Request submitted. A superadmin will review and share the key with you securely.
-        </p>
+          {t`Request submitted. A superadmin will review and share the key with you securely.`}</p>
       ) : null}
       {error ? <p className="mt-2 text-sm text-danger">{error.message}</p> : null}
     </article>

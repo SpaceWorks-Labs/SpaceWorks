@@ -1,53 +1,95 @@
+import { plural, t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
-
-import { Badge } from "../../components/ui";
-import { Panel } from "./panels/shared";
-import { getPlatformDashboard, getPlatformProblems, monitoringDate, usageAmount } from "./platformMonitoringApi";
+import { consoleSessionHref } from "../../lib/api/sessionContext";
+import { DashboardLayout } from "../../components/layouts";
+import { type CalloutProps, DataTable, EmptyState, KeyValueCard, ListRow, RelativeTime, StatusPill } from "../../components/ui";
+import { adminQueryState } from "./adminPresentation";
+import { getPlatformDashboard, getPlatformProblems, usageAmount, type Problem } from "./platformMonitoringApi";
 import { UsageTable } from "./TenantUsagePanel";
+import { PlatformAnalyticsPanels } from "./PlatformAnalyticsPanels";
+import { PlatformQueuesTable } from "./platformConsole/PlatformQueuesTable";
+import { PlatformSearch } from "./platformConsole/PlatformSearch";
+import { limitLabel } from "./platformSpaces/limitCopy";
+
+const spaceStateStatLabel = (state: string) => ({ active: t`Active spaces`, importing: t`Spaces importing`,
+  aborted: t`Aborted imports`, suspended: t`Paused spaces`, archived: t`Archived spaces`, read_only: t`Read-only spaces`,
+  scheduled: t`Spaces scheduled to change` } as Record<string, string>)[state]
+  ?? t`Spaces: ${sentenceCase(state).toLowerCase()}`;
+const offsiteStateLabel = (state: string) => ({ never: t`Never copied`, pending: t`Waiting to upload`, uploading: t`Uploading`,
+  bytes_verified: t`Copy verified`, abandoned: t`Abandoned`, deleted: t`Removed by retention` } as Record<string, string>)[state]
+  ?? sentenceCase(state);
+const sentenceCase = (state: string) => { const text = state.replace(/_/g, " "); return text.charAt(0).toUpperCase() + text.slice(1); };
+const backupStatusLabel = (status: string) => ({ never: t`Never run`, pending: t`Waiting to start`, running: t`Running`, promoting: t`Finishing`,
+  available: t`Succeeded`, failed: t`Failed`, expired: t`Expired by retention`,
+  deployment_backup_requires_host_supervisor: t`Run by whoever runs your server` } as Record<string, string>)[status] ?? sentenceCase(status);
+
+const failedDeliveries = (count: number) => plural(count, { one: "# failed delivery", other: "# failed deliveries" });
+
+// Tenant repair screens use control's separate platform session and authority.
+const problemHref = (problem: Problem) => problem.makerspace_id === null
+  ? consoleSessionHref(problem.fix_url, "platform")
+  : `/control/makerspaces/makerspace/${problem.makerspace_id}/change/`;
 
 export function PlatformDashboardPanel() {
   const dashboard = useQuery({ queryKey: ["platform-dashboard"], queryFn: getPlatformDashboard, refetchInterval: 60_000 });
   const problems = useQuery({ queryKey: ["platform-problems"], queryFn: getPlatformProblems, refetchInterval: 60_000 });
   const data = dashboard.data;
-  return <div className="space-y-4">
-    <Panel title="Platform dashboard">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <p className="text-sm text-muted">Hidden tenants are excluded. Usage totals cover live, available tenants.</p>
-        <button className="desk-button" disabled={dashboard.isFetching || problems.isFetching} onClick={() => { void dashboard.refetch(); void problems.refetch(); }}>Refresh dashboard and checks</button>
-      </div>
-      {dashboard.isLoading ? <p role="status">Loading platform dashboard…</p> : null}
-      {dashboard.error ? <p role="alert" className="text-danger">{dashboard.error.message}</p> : null}
-      {data ? <>
-        <p className="mb-3 text-sm text-muted">Checked {monitoringDate(data.checked_at)}</p>
-        <dl className="grid gap-3 sm:grid-cols-3">{Object.entries(data.tenants_by_state).map(([state, count]) => <div key={state} className="rounded-md border border-line p-3"><dt className="capitalize text-muted">{state} tenants</dt><dd className="text-xl font-semibold">{count}</dd></div>)}</dl>
-        <div className="my-4 grid gap-4 md:grid-cols-2">
-          <div><h3 className="font-semibold">Backup and offsite</h3><p>Last backup result: {data.backup.status}</p><p>Last success: {monitoringDate(data.backup.last_success_at)}</p><p>Automatic backups: {data.backup.automatic_enabled ? "On" : "Off"}</p>
-            {data.offsite.length ? data.offsite.map((row) => <p key={row.name}>{row.name}: {row.state.replace(/_/g, " ")} {row.has_error ? "· Needs attention" : ""} · {monitoringDate(row.verified_at)}</p>) : <p>No offsite destinations configured.</p>}
-            <Link className="text-brand underline" to="/admin/backup-restore">Backup settings</Link>
-          </div>
-          <div><h3 className="font-semibold">Delivery</h3><p>Failed emails: {data.failed_deliveries.email}</p><p>Failed notifications: {data.failed_deliveries.notifications}</p>
-            <Link className="text-brand underline" to="/admin/platform">Platform settings</Link>
-          </div>
-        </div>
-        <details><summary className="cursor-pointer font-semibold">Usage totals</summary><dl className="mt-3 grid gap-2 sm:grid-cols-3">{Object.entries(data.usage_totals).map(([key, value]) => <div key={key}><dt className="capitalize text-muted">{key.replace(/_/g, " ")}</dt><dd>{usageAmount(value, key === "storage" ? "bytes" : "count")}</dd></div>)}</dl></details>
-      </> : null}
-    </Panel>
-    <Panel title="Problems">
-      {problems.isLoading ? <p role="status">Running checks…</p> : null}
-      {problems.error ? <p role="alert" className="text-danger">{problems.error.message}</p> : null}
-      {problems.data ? <>
-        <p className="mb-3 text-sm text-muted">Checked {monitoringDate(problems.data.checked_at)}. Checks also run every 15 minutes through the platform scheduler.</p>
-        <ul className="space-y-2">{problems.data.results.map((row, index) => <li key={`${row.key}:${row.makerspace_id}:${index}`} className="flex flex-wrap items-center gap-2 rounded-md border border-line p-3">
-          <Badge tone={row.status === "error" ? "danger" : row.status === "warn" ? "warn" : "success"}>{row.status}</Badge>
-          <span className="min-w-0 flex-1">{row.message}</span>
-          {row.fix_url.startsWith("/control/") ? <a className="text-brand underline" href={row.fix_url}>Inspect</a> : <Link className="text-brand underline" to={row.fix_url}>Inspect</Link>}
-        </li>)}</ul>
-      </> : null}
-    </Panel>
-    {data ? <>
-      <section id="scheduler"><Panel title="Scheduler freshness"><p className="mb-3 text-sm text-muted">For missing executions, check the host's beat and worker services, or its scheduled cron runner. For failed executions, inspect worker logs. Freshness records show beat completions and cron attempts.</p><div className="overflow-x-auto"><table className="w-full text-left text-sm"><caption className="sr-only">Periodic task freshness</caption><thead><tr><th scope="col" className="p-2">Task</th><th scope="col" className="p-2">Cadence</th><th scope="col" className="p-2">Last execution</th><th scope="col" className="p-2">Status</th></tr></thead><tbody>{data.scheduler.map((task) => <tr key={task.name} className="border-t border-line"><th scope="row" className="p-2 font-medium">{task.name}</th><td className="p-2">{task.cadence_minutes} minutes</td><td className="p-2">{monitoringDate(task.last_run_at)}</td><td className="p-2">{task.status}</td></tr>)}</tbody></table></div></Panel></section>
-      <Panel title="Tenant usage">{data.tenants.map((tenant) => <details key={tenant.id} className="mb-3 rounded-md border border-line p-3"><summary className="cursor-pointer font-semibold">{tenant.name}</summary><Link className="my-2 inline-block text-brand underline" to={`/m/${tenant.slug}/admin/usage`}>Open usage page</Link><UsageTable data={tenant.usage} /></details>)}</Panel>
-    </> : null}
-  </div>;
+  const attention = problems.data?.results.find(problem => problem.status === "error");
+  const refresh = () => { void dashboard.refetch(); void problems.refetch(); };
+  // Problems has its own query: a failed dashboard must not hide the checks that explain it.
+  const state = dashboard.isLoading && problems.isLoading ? adminQueryState(dashboard, "platform dashboard") : { status: "ready" as const };
+  const callout: CalloutProps | undefined = dashboard.isError
+    ? { size: "banner", tone: "danger", lead: t`Couldn't load the platform dashboard.`, body: dashboard.error.message, action: { label: t`Retry`, onClick: () => { void dashboard.refetch(); } } }
+    : attention ? { size: "banner", tone: "danger", lead: attention.message, body: t`Review this check before your next deployment change.`, action: { label: t`Open in control panel`, href: problemHref(attention) } } : undefined;
+  return <DashboardLayout header={{ title: t`Platform overview`, eyebrow: t`Space Works`,
+    subtitle: t`Usage totals cover every live makerspace.`,
+    meta: data ? <Trans>Checked <RelativeTime date={data.checked_at} /></Trans> : undefined,
+    secondary: { label: t`Run checks now`, onClick: refresh, disabled: dashboard.isFetching || problems.isFetching, disabledReason: t`Checks are running.` } }}
+    callout={callout}
+    state={state} stats={data ? Object.entries(data.tenants_by_state).map(([name, value]) => ({ label: spaceStateStatLabel(name), value })) : []}
+    overflowStats={data ? { label: t`Delivery and usage totals`, stats: [
+      { label: t`Failed emails`, value: data.failed_deliveries.email },
+      { label: t`Failed notifications`, value: data.failed_deliveries.notifications },
+      ...Object.entries(data.usage_totals).map(([key, value]) => ({ label: limitLabel(key), value: usageAmount(value, key === "storage" ? "bytes" : "count") })),
+    ] } : undefined}
+    main={[
+      { title: t`Problems`, empty: { message: t`All checks passed. Run checks again after a deployment change.` },
+        content: problems.isLoading ? <p role="status">{t`Running checks…`}</p> : problems.isError ? <EmptyState message={t`Couldn't load problems. Try again.`} action={{ label: t`Retry`, onClick: () => { void problems.refetch(); } }} />
+          : <div className="grid gap-3"><p className="text-sm text-muted">{problems.data ? <Trans>Checked <RelativeTime date={problems.data.checked_at} />.</Trans> : null}{" "}{t`Checks also run every 15 minutes through the platform scheduler.`}</p>
+            {problems.data?.results.map((row, index) => <ListRow key={`${row.key}:${row.makerspace_id}:${index}`} title={row.message}
+              meta={<StatusPill tone={row.status === "error" ? "danger" : row.status === "warn" ? "warn" : "success"} label={row.status === "ok" ? t`OK` : row.status === "warn" ? t`Warning` : t`Error`} />}
+              right={<a className="desk-button" href={problemHref(row)}>{t`Open in control panel`}</a>} />)}</div>,
+        isEmpty: Boolean(problems.data && !problems.data.results.length) },
+      // Decision 242(l): counts by space and a platform-wide finder; superadmin-only routes, never rows.
+      { title: t`Queues and safety by space`, content: <PlatformQueuesTable />, empty: { message: t`No live spaces yet.` } },
+      { title: t`Find across spaces`, content: <PlatformSearch spaceNames={Object.fromEntries((data?.tenants ?? []).map(tenant => [tenant.id, tenant.name]))} />,
+        empty: { message: t`Search is unavailable.` } },
+      { title: t`Analytics`, content: <PlatformAnalyticsPanels spaces={data?.tenants} />, empty: { message: t`No platform activity yet.` } },
+      ...(data ? [
+        { title: t`Makerspace usage`, empty: { message: t`No usage yet. Check again after a space is active.` }, isEmpty: !data.tenants.length,
+          content: <div className="grid gap-3">{data.tenants.map(tenant => <details key={tenant.id} className="rounded-xl border border-line bg-panel p-4">
+            <summary className="min-h-11 cursor-pointer rounded-control py-2 font-display text-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">{tenant.name}</summary>
+            <UsageTable data={tenant.usage} />
+          </details>)}</div> },
+        { title: t`Background jobs`, empty: { message: t`No background job records yet. Ask whoever runs your server to check the background services.` }, isEmpty: !data.scheduler.length,
+          content: <section id="scheduler"><p className="mb-4 text-sm text-muted">{t`These jobs send reminders, run backups and expire holds. If one is late, ask whoever runs your server to check that the background services are running.`}</p>
+            <DataTable data={data.scheduler} getRowId={row => row.name} columns={[
+              { key: "name", header: t`Task` }, { key: "cadence_minutes", header: t`Cadence`, render: row => plural(row.cadence_minutes, { one: "Every # minute", other: "Every # minutes" }) },
+              { key: "last_run_at", header: t`Last execution`, render: row => row.last_run_at ? <RelativeTime date={row.last_run_at} /> : t`No execution recorded` },
+              { key: "status", header: t`Status`, render: row => <StatusPill label={row.status === "ok" ? t`OK` : row.status === "warn" ? t`Warning` : t`Error`} tone={row.status === "ok" ? "success" : row.status === "warn" ? "warn" : "danger"} /> },
+            ]} /></section> },
+      ] : []),
+    ]}
+    railContent={data ? <section aria-label={t`Backup and offsite`} className="grid gap-3"><KeyValueCard title={t`Backup status`} items={[
+            { label: t`Last backup result`, value: <StatusPill label={data.backup.status_label || backupStatusLabel(data.backup.status)} /> },
+            { label: t`Last success`, value: data.backup.last_success_at ? <RelativeTime date={data.backup.last_success_at} /> : t`No execution recorded` },
+            { label: t`Automatic backups`, value: <StatusPill label={data.backup.automatic_enabled ? t`On` : t`Off`} tone={data.backup.automatic_enabled ? "success" : "neutral"} /> },
+            ...data.offsite.map(row => ({ label: row.name, value: <><StatusPill label={offsiteStateLabel(row.state)} tone={row.has_error ? "warn" : "neutral"} />{row.has_error ? t` · Needs attention` : ""} … {row.verified_at ? <RelativeTime date={row.verified_at} /> : t`No verification recorded`}</> })),
+            ...(!data.offsite.length ? [{ label: t`Offsite destinations`, value: t`No offsite destinations configured.` }] : []),
+          ]} /><a className="desk-button" href={consoleSessionHref("/admin/platform-data", "platform")}>{t`Backup settings`}</a></section> : undefined}
+    rail={data ? { title: t`Delivery`, items: [
+      { key: "emails", actor: t`Email`, children: failedDeliveries(data.failed_deliveries.email), date: data.checked_at },
+      { key: "notifications", actor: t`Notifications`, children: failedDeliveries(data.failed_deliveries.notifications), date: data.checked_at },
+    ], seeAll: { label: t`Platform settings`, href: consoleSessionHref("/admin/platform", "platform") } } : undefined} />;
 }

@@ -1,7 +1,9 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 
 import { staffRequest } from "../../../lib/api";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 type AssetEditRow = {
   id: number;
@@ -53,8 +55,7 @@ export function AssetEditForm({
   if (locked) {
     return (
       <p className="mt-2 text-xs text-warn-ink">
-        This asset is currently {asset.status}; finish its loan before editing its details.
-      </p>
+        {t`This asset is currently ${asset.status}; finish its loan before editing its details.`}</p>
     );
   }
 
@@ -68,36 +69,36 @@ export function AssetEditForm({
     >
       <div className="grid gap-2 sm:grid-cols-2">
         <label className="eyebrow grid gap-1">
-          <span>Asset tag</span>
+          <span>{t`Asset tag`}</span>
           <input className="desk-input" value={assetTag} onChange={(e) => setAssetTag(e.target.value)} required />
         </label>
         <label className="eyebrow grid gap-1">
-          <span>Serial number</span>
+          <span>{t`Serial number`}</span>
           <input className="desk-input" value={serial} onChange={(e) => setSerial(e.target.value)} />
         </label>
       </div>
       <label className="eyebrow grid gap-1">
-        <span>Container</span>
+        <span>{t`Container`}</span>
         <select className="desk-input" value={boxId} onChange={(e) => setBoxId(e.target.value)}>
-          <option value="">No container</option>
+          <option value="">{t`No container`}</option>
           {containers.map((container) => (
             <option key={container.id} value={container.id}>{container.label}</option>
           ))}
         </select>
       </label>
       <label className="eyebrow grid gap-1">
-        <span>Notes</span>
+        <span>{t`Notes`}</span>
         <textarea className="desk-input min-h-16 w-full" value={notes} onChange={(e) => setNotes(e.target.value)} />
       </label>
       <label className="eyebrow flex items-center gap-2">
         <input type="checkbox" checked={publicEnabled} onChange={(e) => setPublicEnabled(e.target.checked)} />
-        <span>Enabled for public self-checkout</span>
+        <span>{t`Enabled for public self-checkout`}</span>
       </label>
       {save.error ? <p className="text-xs text-danger">{save.error.message}</p> : null}
       <div className="desk-actions flex flex-wrap justify-end gap-2">
-        <button className="desk-button-ghost" type="button" disabled={save.isPending} onClick={onCancel}>Cancel</button>
+        <button className="desk-button-ghost" type="button" disabled={save.isPending} onClick={onCancel}>{t`Cancel`}</button>
         <button className="desk-button-primary" type="submit" disabled={save.isPending || !assetTag.trim()}>
-          {save.isPending ? "Saving..." : "Save"}
+          {save.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Save`}
         </button>
       </div>
     </form>

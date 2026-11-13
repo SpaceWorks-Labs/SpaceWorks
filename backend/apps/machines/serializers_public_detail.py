@@ -6,11 +6,12 @@ from .models import MachineUsageEntry
 
 from .serializers_public_machines import PublicMachineSerializer
 from .public_detail import queue_estimate, training
+from .service_queue_eta_serializers import MachineQueueSummarySerializer
 
 
-class PublicQueueEstimateSerializer(serializers.Serializer):
-    length = serializers.IntegerField(min_value=0)
-    eta_minutes = serializers.IntegerField(min_value=0, allow_null=True)
+class PublicQueueEstimateSerializer(MachineQueueSummarySerializer):
+    """Legacy ``length``/``eta_minutes`` keys kept; ``eta_minutes`` is now the machine's
+    simulated final free-at offset (never total minutes divided by machine count)."""
 
 
 class PublicMachineDetailSerializer(PublicMachineSerializer):
@@ -28,6 +29,20 @@ class PublicMachineDetailSerializer(PublicMachineSerializer):
         return {"id": machine.machine_type_id, "name": machine.machine_type.name, "icon": machine.machine_type.icon}
     status_since = serializers.DateTimeField(read_only=True)
     training_required = serializers.SerializerMethodField()
+    expected_back_on = serializers.SerializerMethodField()
+
+    @extend_schema_field(serializers.DateField(allow_null=True))
+    def get_expected_back_on(self, machine):
+        """While out of service: the DATE staff expect it back (downtime ledger). No reason text."""
+        if machine.status not in ("maintenance", "offline"):
+            return None
+        from .models import MachineDowntime
+        row = MachineDowntime.objects.filter(machine=machine, ended_at__isnull=True,
+                                             expected_back_at__isnull=False).first()
+        if row is None:
+            return None
+        from apps.makerspaces.local_time import to_local
+        return to_local(machine.makerspace, row.expected_back_at).date()
     queue = serializers.SerializerMethodField()
 
     @extend_schema_field(serializers.BooleanField(allow_null=True))
@@ -36,4 +51,5 @@ class PublicMachineDetailSerializer(PublicMachineSerializer):
 
     @extend_schema_field(PublicQueueEstimateSerializer(allow_null=True))
     def get_queue(self, machine):
-        return queue_estimate(machine)
+        # The view supplies one page-level summary map; detail falls back to one snapshot.
+        return queue_estimate(machine, self.context.get("queue_summaries"))

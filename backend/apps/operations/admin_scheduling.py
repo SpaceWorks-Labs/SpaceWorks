@@ -1,8 +1,8 @@
 """Read-only `/control/` view of the beat-less scheduler's last runs.
 
 `run_scheduled_tasks` records each task's last run and last error in `PeriodicTaskRun`,
-and the cron drivers swallow its exit code (`|| true` in the cloud compose file and the
-single-box runner) so one failing task cannot stop the loop. Without this page that
+and the cron driver swallows its exit code (`|| true` in the cloud compose file)
+so one failing task cannot stop the loop. Without this page that
 record was invisible: a reminder sweep could fail every night with nothing in any console.
 Rows are written only by the command, so nothing here is editable.
 """
@@ -12,6 +12,7 @@ from unfold.admin import ModelAdmin
 
 from apps.operations.models_scheduling import PeriodicTaskRun
 from config.admin_access import SuperuserOnlyModelAdmin
+from django.utils.translation import gettext_lazy
 
 
 @admin.register(PeriodicTaskRun)
@@ -22,7 +23,7 @@ class PeriodicTaskRunAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
     readonly_fields = ("name", "last_run_at", "last_error")
     fields = readonly_fields
 
-    @admin.display(description="Last run")
+    @admin.display(description=gettext_lazy("Last run"))
     def status(self, obj):
         return "Failed" if obj.last_error else "OK"
 

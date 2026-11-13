@@ -22,11 +22,13 @@ ACTION_MODULES = {
     "admin_direct": "guest_handover", "evidence": "evidence_uploads",
     "qr": "qr_management", "bulk_import": "bulk_import", "container": "containers",
     "stock_transfer": "stock_transfers", "stocktake": "stocktake",
-    "procurement": "procurement", "machine": "machines", "service": "machine_service",
-    "event": "events", "booking": "bookings", "maintenance": "maintenance",
-    "membership": "membership", "notification": "notifications", "email": "email",
+    # `procurement`/`maintenance` actions count toward their parents since #97.
+    "procurement": "staff_admin", "machine": "machines", "service": "machine_service",
+    "event": "events", "booking": "bookings", "maintenance": "machines",
+    "membership": "membership", "presence": "presence", "notification": "notifications", "email": "email",
     "payment": "payments", "device": "mobile", "devices": "devices",
     "report": "reports",
+    "analytics": "analytics",
 }
 
 

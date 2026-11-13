@@ -2,6 +2,7 @@
 
 from rest_framework.response import Response
 from apps.accounts import audit_events
+from apps.accounts.services_social_login import social_audit_meta
 from apps.accounts.social_nonces import SocialAuthUnavailable
 from apps.accounts.models_oidc import provider_for_slug, slug_from_provider_key
 from apps.accounts.models_social import SocialProvider
@@ -40,5 +41,25 @@ def _verify(provider, raw_token, nonce, audience):
     return verify_apple_token(raw_token, nonce=nonce, audience=audience)
 
 
-def _audit_failure(provider, reason):
+def _audit_failure(provider, reason, request=None):
     audit_events.record_auth_event(None, "auth.social_login_failed", meta={"provider": provider, "reason": reason})
+    if request is not None:  # S-B: a refused social sign-in feeds the failure counters
+        from apps.accounts.security_signals import send_login_refused
+        send_login_refused(request, "", f"social_{reason}")
+
+
+def _store_apple(provider, user, claims, data):
+    if provider == SocialProvider.APPLE:
+        from apps.accounts.apple_credentials import store_refresh_credential
+        store_refresh_credential(user, claims, data.get("authorization_code", ""),
+                                 data.get("redirect_uri", "") if data["delivery"] == "web" else "")
+
+
+def _challenged(provider, user, outcome, claims, data, challenge):
+    """The provider proved the person; their mandatory second factor comes next (#62)."""
+    audit_events.record_auth_event(user, "auth.social_login_succeeded", target=user,
+                                   meta=social_audit_meta(provider, outcome, claims["sub"]))
+    _store_apple(provider, user, claims, data)
+    response = Response(challenge)
+    response["Cache-Control"] = "no-store"
+    return response

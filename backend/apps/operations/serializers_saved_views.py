@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from rest_framework import serializers
 import re
 
@@ -17,21 +18,24 @@ class SavedViewSerializer(serializers.ModelSerializer):
 
     def validate_state(self, value):
         if len(value) > 20:
-            raise serializers.ValidationError("At most 20 list-state keys are allowed.")
+            raise serializers.ValidationError(gettext("At most 20 list-state keys are allowed."))
         # Values are filter snapshots, never navigation URLs or executable actions.
         allowed = {"id", "q", "search", "ordering", "page", "status", "subject_type", "due_state", "archived", "low_stock", "role", "state", "starts_at", "ends_at", "action", "actor", "targetType", "targetId", "start", "end", "history", "pendingPage", "acceptedPage", "activePage", "historyPage", "requestPage", "requestState", "requestOrdering"}
         allowed |= {"columns", "density", "out_of_stock", "queue"}
+        allowed |= {"triage", "prize", "round", "below_target"}  # L21b staff event lists (X40)
+        allowed |= {"event", "reply", "list", "collected"}  # parity E-B5: one event's guest list
+        allowed |= {"machine", "member", "machine_type", "source", "since", "until"}  # open item A17: Machines list filters
         if set(value) - allowed:
-            raise serializers.ValidationError("Unsupported list-state key.")
+            raise serializers.ValidationError(gettext("Unsupported list-state key."))
         if "density" in value and value["density"] not in {"comfortable", "compact"}:
-            raise serializers.ValidationError("Unsupported table density.")
+            raise serializers.ValidationError(gettext("Unsupported table density."))
         columns = value.get("columns", "")
         if columns:
             keys = columns.split(",")
             if len(keys) > 30 or len(keys) != len(set(keys)) or any(
                 not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_.-]{0,79}", key) for key in keys
             ):
-                raise serializers.ValidationError("Choose distinct column identifiers.")
+                raise serializers.ValidationError(gettext("Choose distinct column identifiers."))
         return value
 
 

@@ -1,10 +1,12 @@
 """Makerspace archive and recovery lifecycle."""
 
+from django.utils.translation import gettext
 from django.core.exceptions import ValidationError
 from django.db import transaction
 
 from apps.audit import services as audit
 from apps.makerspaces.servability import is_servable
+from .lifecycle_authority import require_platform_superadmin
 
 
 def archive_impact(makerspace):
@@ -19,10 +21,17 @@ def archive_impact(makerspace):
         via_makerspace=makerspace,
         status=Payment.Status.PENDING,
     ).exclude(makerspace=makerspace).count()
+    # Event payout obligations are money the space owes members. Recording a payout
+    # needs a servable space, so archiving pauses settlement until it is restored.
+    from apps.payments.event_payouts.obligation_models import EventPayoutObligation
+    unpaid_event_payouts = EventPayoutObligation.objects.filter(
+        makerspace=makerspace, state="open", approved_minor__gt=0,
+    ).count()
     return {
         "owned_pending": owned_pending,
         "routed_pending": routed_pending,
         "total_pending": owned_pending + routed_pending,
+        "unpaid_event_payouts": unpaid_event_payouts,
     }
 
 
@@ -33,10 +42,8 @@ def archive(makerspace, actor):
 
 
 def _archive_locked(makerspace, actor, *, archived_at):
-    if not makerspace.superadmin_access_enabled:
-        raise ValidationError("Cannot archive a hidden makerspace.")
     if not is_servable(makerspace):
-        raise ValidationError("Makerspace is not available for archival.")
+        raise ValidationError(gettext("Makerspace is not available for archival."))
 
     # This is an advisory snapshot: payment creation does not universally take
     # this lock, so a concurrent insert can change the count before commit.
@@ -58,17 +65,16 @@ def _archive_locked(makerspace, actor, *, archived_at):
 
 
 def unarchive(makerspace, actor):
+    require_platform_superadmin(actor)
     with transaction.atomic():
         locked = makerspace.__class__.objects.select_for_update().get(pk=makerspace.pk)
-        if not locked.superadmin_access_enabled:
-            raise ValidationError("Cannot unarchive a hidden makerspace.")
         if locked.archived_at is None:
-            raise ValidationError("Makerspace is not archived.")
+            raise ValidationError(gettext("Makerspace is not archived."))
         from apps.tenant_migration.cutover import has_active_migrated_out_handoff
 
         if has_active_migrated_out_handoff(locked.pk):
             raise ValidationError(
-                "A migrated-out makerspace can only be reopened with a signed abort receipt."
+                gettext("A migrated-out makerspace can only be reopened with a signed abort receipt.")
             )
 
         locked.archived_at = None

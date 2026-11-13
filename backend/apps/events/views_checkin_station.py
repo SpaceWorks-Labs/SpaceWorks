@@ -215,6 +215,7 @@ class EventStationSyncView(_StationCookieView):
                 source=EventCheckInEvent.Source.VENUE_STATION,
                 session_id=session_id,
                 station_version=credential.version,
+                badge_receipts=serializer.validated_data.get("badge_receipts"),
             )
         except ValidationError:
             raise PermissionDenied(STATION_REFUSAL) from None

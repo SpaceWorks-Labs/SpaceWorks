@@ -1,5 +1,6 @@
 """Register a host-authenticated disaster archive before restore supervision."""
 
+from django.utils.translation import gettext
 from datetime import timedelta
 import hmac
 import os
@@ -17,33 +18,35 @@ from apps.backup.models import BackupArchive, PlatformBackupSettings, RestoreOpe
 
 
 def import_disaster_archive(actor, encrypted_path, manifest, *, expected_sha256=None):
+    from .cloud_operations import require_host
+    require_host("deployment_restore_requires_host_supervisor")
     if not isinstance(expected_sha256, str) or re.fullmatch(
         r"[0-9a-f]{64}", expected_sha256
     ) is None:
         raise ValidationError(
-            "A valid expected sha256 digest is required "
-            "(64 lowercase hexadecimal characters)."
+            gettext("A valid expected sha256 digest is required "
+            "(64 lowercase hexadecimal characters).")
         )
     try:
         archive_id = uuid.UUID(str(manifest["archive_id"]))
     except (KeyError, TypeError, ValueError) as exc:
-        raise ValidationError("The imported archive manifest has no valid archive id.") from exc
+        raise ValidationError(gettext("The imported archive manifest has no valid archive id.")) from exc
     if (
         manifest.get("format") not in SUPPORTED_ARCHIVE_FORMATS
         or manifest.get("scope") != BackupArchive.Scope.DEPLOYMENT
     ):
-        raise ValidationError("Only a Phase 5A full-deployment archive can be imported.")
+        raise ValidationError(gettext("Only a Phase 5A full-deployment archive can be imported."))
     if not manifest.get("age_encrypted"):
-        raise ValidationError("The imported archive is not declared age-encrypted.")
+        raise ValidationError(gettext("The imported archive is not declared age-encrypted."))
     path = os.fspath(encrypted_path)
     size = os.path.getsize(path)
     if size <= 0:
-        raise ValidationError("The imported archive is empty.")
+        raise ValidationError(gettext("The imported archive is empty."))
     archive_sha256 = sha256_file(path)
     if not hmac.compare_digest(expected_sha256, archive_sha256):
-        raise ValidationError("The imported archive sha256 does not match the expected digest.")
+        raise ValidationError(gettext("The imported archive sha256 does not match the expected digest."))
     if BackupArchive.objects.filter(pk=archive_id).exists():
-        raise ValidationError("This archive is already registered on the target deployment.")
+        raise ValidationError(gettext("This archive is already registered on the target deployment."))
     object_key = f"backup-archives/deployment/{archive_id}.tar.age"
     storage.upload_archive(object_key, path)
     try:

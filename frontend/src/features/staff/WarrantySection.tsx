@@ -1,3 +1,5 @@
+import { t } from "@lingui/core/macro";
+import { ConfirmDialog, ErrorBlock, SettingsActions, SettingsRow } from "../../components/ui";
 import { useEffect, useId, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -12,6 +14,7 @@ import {
   type WarrantyHostKind,
   type WarrantyPayload,
 } from "./warrantyApi";
+import { LogoLoader } from "../../components/LogoLoader";
 
 type WarrantySectionProps = {
   hostKind: WarrantyHostKind;
@@ -46,6 +49,7 @@ export function WarrantySection({ hostKind, hostId, disabled = false }: Warranty
   });
   const [form, setForm] = useState<WarrantyForm>(emptyForm);
   const [documentError, setDocumentError] = useState("");
+  const [deleteId, setDeleteId] = useState<number | null>(null);
 
   useEffect(() => {
     setForm(formFromWarranty(warranty.data ?? null));
@@ -66,7 +70,7 @@ export function WarrantySection({ hostKind, hostId, disabled = false }: Warranty
 
   const upload = useMutation({
     mutationFn: async (files: File[]) => {
-      if (!warranty.data) throw new Error("Save warranty details first to attach documents.");
+      if (!warranty.data) throw new Error(t`Save warranty details first to attach documents.`);
       for (const file of files) {
         await uploadWarrantyDocument(warranty.data.id, file);
       }
@@ -76,12 +80,12 @@ export function WarrantySection({ hostKind, hostId, disabled = false }: Warranty
       if (inputRef.current) inputRef.current.value = "";
       invalidate();
     },
-    onError: (err) => setDocumentError(err instanceof Error ? err.message : "Upload failed."),
+    onError: (err) => setDocumentError(err instanceof Error ? err.message : t`Upload failed.`),
   });
 
   const remove = useMutation({
     mutationFn: deleteWarrantyDocument,
-    onSuccess: invalidate,
+    onSuccess: () => { setDeleteId(null); invalidate(); },
   });
 
   const current = warranty.data;
@@ -93,90 +97,83 @@ export function WarrantySection({ hostKind, hostId, disabled = false }: Warranty
       const { url } = await getWarrantyDocumentUrl(documentId);
       window.open(url, "_blank", "noopener");
     } catch (err) {
-      setDocumentError(err instanceof Error ? err.message : "Could not open document.");
+      setDocumentError(err instanceof Error ? err.message : t`Could not open document.`);
     }
   }
 
   return (
     <section className="min-w-0 rounded-md border border-line bg-bg p-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h4 className="title-section">Warranty</h4>
+        <h4 className="title-section">{t`Warranty`}</h4>
         <WarrantyStatusBadge status={current?.status ?? "unknown"} />
       </div>
 
-      {warranty.isLoading ? <p className="mt-2 text-xs text-muted">Loading warranty...</p> : null}
-      {warranty.error instanceof Error ? <p className="mt-2 text-xs text-danger">{warranty.error.message}</p> : null}
+      {warranty.isLoading ? <LogoLoader size={48} className="min-h-40 py-3" /> : null}
+      {warranty.error ? <ErrorBlock resource={t`warranty details`} error={warranty.error} onRetry={() => { void warranty.refetch(); }} /> : null}
 
-      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+      <div className="mt-3 divide-y divide-line">
         <WarrantyInput
-          label="Purchased"
+          label={t`Purchased`}
           type="date"
           value={form.purchased_on}
           disabled={disabled || save.isPending}
           onChange={(value) => setForm((currentForm) => ({ ...currentForm, purchased_on: value }))}
         />
         <WarrantyInput
-          label="Expires"
+          label={t`Expires`}
           type="date"
           value={form.warranty_expires_on}
           disabled={disabled || save.isPending}
           onChange={(value) => setForm((currentForm) => ({ ...currentForm, warranty_expires_on: value }))}
         />
         <WarrantyInput
-          label="Vendor"
+          label={t`Vendor`}
           value={form.vendor_name}
           disabled={disabled || save.isPending}
           onChange={(value) => setForm((currentForm) => ({ ...currentForm, vendor_name: value }))}
         />
         <WarrantyInput
-          label="Contact"
+          label={t`Contact`}
           value={form.vendor_contact}
           disabled={disabled || save.isPending}
           onChange={(value) => setForm((currentForm) => ({ ...currentForm, vendor_contact: value }))}
         />
       </div>
 
-      {!disabled ? (
-        <div className="mt-2 flex flex-wrap items-center gap-2">
-          <button type="button" className="desk-button-primary" disabled={save.isPending} onClick={() => save.mutate()}>
-            {save.isPending ? "Saving..." : current ? "Save warranty" : "Create warranty"}
-          </button>
-          {save.error instanceof Error ? <span className="text-xs text-danger">{save.error.message}</span> : null}
-        </div>
-      ) : null}
+      {!disabled && (!current || JSON.stringify(form) !== JSON.stringify(formFromWarranty(current))) ? <SettingsActions pending={save.isPending}
+        onDiscard={() => setForm(formFromWarranty(current ?? null))} onSave={() => save.mutate()} /> : null}
+      {save.error ? <ErrorBlock error={save.error} /> : null}
 
       <div className="mt-3 border-t border-line pt-3">
-        <h5 className="title-section">Documents</h5>
+        <h5 className="title-section">{t`Documents`}</h5>
         {documents.length ? (
           <div className="mt-2 grid gap-2">
             {documents.map((document) => (
               <div key={document.id} className="flex min-w-0 flex-wrap items-center gap-2 rounded-md border border-line bg-surface px-2 py-1.5 text-xs">
                 <span className="min-w-0 flex-1 break-words text-ink">{document.original_filename}</span>
-                <span className="font-mono text-muted">{formatBytes(document.size_bytes)}</span>
+                <span className="tabular-nums text-muted">{formatBytes(document.size_bytes)}</span>
                 <button type="button" className="desk-button text-xs" onClick={() => openDocument(document.id)}>
-                  View
-                </button>
+                  {t`View`}</button>
                 {!disabled ? (
                   <button
                     type="button"
                     className="desk-button-danger text-xs"
                     disabled={remove.isPending}
-                    onClick={() => remove.mutate(document.id)}
+                    onClick={() => setDeleteId(document.id)}
                   >
-                    Remove
-                  </button>
+                    {t`Remove…`}</button>
                 ) : null}
               </div>
             ))}
           </div>
         ) : (
-          <p className="mt-2 text-xs text-muted">No documents attached.</p>
+          <p className="mt-2 text-xs text-muted">{t`No documents attached.`}</p>
         )}
 
         {!disabled ? (
           current ? (
             <div className="mt-2">
-              <label htmlFor={inputId} className="sr-only">Add warranty documents</label>
+              <label htmlFor={inputId} className="sr-only">{t`Add warranty documents`}</label>
               <input
                 id={inputId}
                 ref={inputRef}
@@ -188,17 +185,18 @@ export function WarrantySection({ hostKind, hostId, disabled = false }: Warranty
                   const files = Array.from(event.target.files ?? []);
                   if (files.length) upload.mutate(files);
                 }}
-                className="block w-full max-w-full min-w-0 text-xs text-muted file:mr-3 file:rounded-lg file:border file:border-line file:bg-accent file:px-3 file:py-1.5 file:font-mono file:text-xs file:font-semibold file:text-on-accent"
+                className="block min-h-11 w-full max-w-full min-w-0 text-xs text-muted file:mr-3 file:rounded-lg file:border file:border-line file:bg-accent file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-on-accent"
               />
-              {upload.isPending ? <p className="mt-1 text-xs text-muted">Uploading...</p> : null}
+              {upload.isPending ? <p className="mt-1 text-xs text-muted">{t`Uploading…`}</p> : null}
             </div>
           ) : (
-            <p className="mt-2 text-xs text-muted">Save warranty details first to attach documents.</p>
+            <p className="mt-2 text-xs text-muted">{t`Save warranty details first to attach documents.`}</p>
           )
         ) : null}
         {documentError ? <p className="mt-2 text-xs text-danger">{documentError}</p> : null}
         {remove.error instanceof Error ? <p className="mt-2 text-xs text-danger">{remove.error.message}</p> : null}
       </div>
+      <ConfirmDialog open={deleteId !== null} title={t`Remove warranty document?`} message={t`The file will no longer be attached to this warranty.`} confirmLabel={t`Remove`} tone="danger" pending={remove.isPending} onCancel={() => setDeleteId(null)} onConfirm={() => { if (deleteId !== null) remove.mutate(deleteId); }} />
     </section>
   );
 }
@@ -217,8 +215,7 @@ function WarrantyInput({
   type?: "text" | "date";
 }) {
   return (
-    <label className="grid min-w-0 gap-1 text-xs text-muted">
-      <span>{label}</span>
+    <SettingsRow label={label}>
       <input
         className="desk-input min-w-0"
         type={type}
@@ -226,7 +223,7 @@ function WarrantyInput({
         disabled={disabled}
         onChange={(event) => onChange(event.target.value)}
       />
-    </label>
+    </SettingsRow>
   );
 }
 

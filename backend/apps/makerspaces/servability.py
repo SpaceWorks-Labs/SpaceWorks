@@ -1,19 +1,64 @@
-"""Canonical policy for deciding whether a makerspace may serve traffic."""
+"""Canonical policy for deciding whether a makerspace may serve traffic.
 
-from django.db.models import Q, QuerySet, Subquery
+A space the superadmin PAUSED (``LifecycleState.SUSPENDED``, #185) is unservable for
+everyone except an active platform superadmin (#110/#190: nothing is hidden from the
+superadmin). That one admission lives here, so rbac, lookups and every servable query
+inherit it: ``admit_superadmin`` marks the current request or job once its actor is
+authenticated, ``request_scope`` resets it per request. Reads then work normally;
+writes still pass the source gate, where the superadmin's write is admitted and audited
+(``space_controls.superadmin_bypass``). Archived spaces stay unservable for everyone.
+"""
+
+from contextlib import contextmanager
+from contextvars import ContextVar
+
+from django.db.models import Q, QuerySet
 
 from apps.makerspaces.models import Makerspace
 
+ACTIVE = Makerspace.LifecycleState.ACTIVE
+SUSPENDED = Makerspace.LifecycleState.SUSPENDED
+_superadmin_admitted = ContextVar("servability_superadmin_admitted", default=False)
+
+
+@contextmanager
+def request_scope():
+    """One request or job: the admission never outlives it (set by ``admit_superadmin``)."""
+    token = _superadmin_admitted.set(False)
+    try:
+        yield
+    finally:
+        _superadmin_admitted.reset(token)
+
+
+def admit_superadmin(user):
+    """Admit paused spaces for the rest of this scope when ``user`` is a live platform superadmin."""
+    from apps.accounts.platform_authority import is_platform_superadmin
+
+    if is_platform_superadmin(user):
+        _superadmin_admitted.set(True)
+
+
+def superadmin_admitted() -> bool:
+    return _superadmin_admitted.get()
+
+
+def servable_states():
+    return (ACTIVE, SUSPENDED) if _superadmin_admitted.get() else (ACTIVE,)
+
 
 def is_servable(makerspace: Makerspace, *, allow_archived: bool = False) -> bool:
-    """Return whether traffic may use it, optionally for archived recovery only."""
-    from apps.backup.not_restored import is_not_restored
+    """Return whether traffic may use it, optionally for archived recovery only.
 
-    return (
-        makerspace.lifecycle_state == Makerspace.LifecycleState.ACTIVE
-        and (allow_archived or makerspace.archived_at is None)
-        and not is_not_restored(makerspace.pk)
-    )
+    ``allow_archived`` answers the capability/settlement question (webhooks settling
+    money, module and feature capability). A space a superadmin SUSPENDED (#185) keeps
+    its data and money exactly like an archived one, so it passes that path too. Normal
+    traffic refuses it unless the actor is the admitted superadmin.
+    """
+    state = makerspace.lifecycle_state
+    if allow_archived:
+        return state in (ACTIVE, SUSPENDED)
+    return state in servable_states() and makerspace.archived_at is None
 
 
 def servable_queryset(queryset: QuerySet | None = None, *, relation: str = ""):
@@ -24,41 +69,35 @@ def servable_queryset(queryset: QuerySet | None = None, *, relation: str = ""):
 
 def servable_q(relation: str = "") -> Q:
     """Return the canonical policy as a composable relation-aware query predicate."""
-    from apps.backup.not_restored import active_makerspace_ids
-
     prefix = f"{relation}__" if relation else ""
-    ordinary = Q(
+    return Q(
         **{
             f"{prefix}archived_at__isnull": True,
-            f"{prefix}lifecycle_state": Makerspace.LifecycleState.ACTIVE,
+            f"{prefix}lifecycle_state__in": servable_states(),
         }
     )
-    return ordinary & ~Q(
-        **{f"{prefix}pk__in": Subquery(active_makerspace_ids())}
-    )
+
+
+def public_availability_queryset(queryset: QuerySet) -> QuerySet:
+    """Expose minimal status for active or paused spaces without granting tenant access."""
+    return queryset.filter(archived_at__isnull=True, lifecycle_state__in=(ACTIVE, SUSPENDED))
 
 
 def unservable_makerspace_ids() -> set[int]:
     """Return IDs that every normal authorization scope must exclude."""
-    from apps.backup.not_restored import active_component_states
-
-    ordinary = archived_or_inactive_makerspace_ids()
-    pending = set(
-        active_component_states().values_list("makerspace_id_snapshot", flat=True)
-    )
-    return ordinary | pending
+    return archived_or_inactive_makerspace_ids()
 
 
 def archived_or_inactive_makerspace_ids() -> set[int]:
-    """The archived/inactive half of the policy, without the not-restored half.
+    """Archived or non-active makerspaces: the whole unservable set.
 
-    A caller that must still let a pending (not-restored) tenant reach the
-    not-restored write gate needs this rather than `unservable_makerspace_ids`,
-    which unions both and would filter the tenant out before the gate ran.
+    Kept as its own name because accounts/rbac.py pins callers to it; it equals
+    `unservable_makerspace_ids` now that no opaque, not-restored tenant exists. Paused
+    spaces are in it except for the admitted superadmin.
     """
     return set(
         Makerspace.objects.exclude(
             archived_at__isnull=True,
-            lifecycle_state=Makerspace.LifecycleState.ACTIVE,
+            lifecycle_state__in=servable_states(),
         ).values_list("id", flat=True)
     )

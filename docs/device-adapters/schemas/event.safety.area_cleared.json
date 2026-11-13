@@ -1,0 +1,14 @@
+{
+  "$id": "https://spaceworks.invalid/schemas/device-adapter/v1/event.safety.area_cleared.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "confirmed": {
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "confirmed"
+  ],
+  "type": "object"
+}

@@ -1,0 +1,15 @@
+# Explicit host/full add-on only. Existing installs retain their selected policy.
+services:
+  clamav:
+    image: clamav/clamav:stable
+    restart: unless-stopped
+    volumes: [clamav_signatures:/var/lib/clamav]
+  backend:
+    environment: &scan
+      UPLOAD_SCAN_POLICY: clamav
+      CLAMD_HOST: clamav
+      CLAMD_PORT: "3310"
+  worker:
+    environment: *scan
+volumes:
+  clamav_signatures:

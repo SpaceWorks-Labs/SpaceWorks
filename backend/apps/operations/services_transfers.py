@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.db import transaction
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
@@ -13,6 +14,8 @@ from apps.operations.services_transfer_splits import move_quantity_stock
 
 def apply_stock_transfer(actor, makerspace, data):
     with transaction.atomic():
+        from apps.managed_hosting.extra_quotas import check_extra_quota_locked
+        check_extra_quota_locked(makerspace, "stock_transfers_monthly")  # decision 328a: refuses only a NEW transfer
         destination_makerspace_id = data.get("destination_makerspace_id") or makerspace.id
         is_cross = destination_makerspace_id != makerspace.id
         source = _container(data.get("source_container_id"), makerspace.id)
@@ -66,10 +69,10 @@ def _apply_intra_makerspace_line(actor, transfer, makerspace, source, destinatio
             makerspace=makerspace,
         )
         if source and asset.box_id != source.id:
-            raise ValidationError({"asset_id": "Asset is not in the source container."})
+            raise ValidationError({"asset_id": gettext("Asset is not in the source container.")})
         from_status = line_data.get("from_status") or ""
         if from_status and asset.status != from_status:
-            raise ValidationError({"from_status": "Asset is not currently in this status."})
+            raise ValidationError({"from_status": gettext("Asset is not currently in this status.")})
         to_status = line_data.get("to_status") or ""
         if to_status and to_status != asset.status:
             try:
@@ -85,7 +88,7 @@ def _apply_intra_makerspace_line(actor, transfer, makerspace, source, destinatio
             makerspace=makerspace,
         )
         if source and product.box_id != source.id:
-            raise ValidationError({"product_id": "Product is not in the source container."})
+            raise ValidationError({"product_id": gettext("Product is not in the source container.")})
         destination_product, split_created = move_quantity_stock(
             product,
             destination,
@@ -125,7 +128,7 @@ def _apply_cross_makerspace_line(
     scope here — move quantity stock instead."""
     if line_data.get("asset_id"):
         raise ValidationError(
-            {"asset_id": "Individual asset units cannot be moved across makerspaces; transfer quantity stock instead."}
+            {"asset_id": gettext("Individual asset units cannot be moved across makerspaces; transfer quantity stock instead.")}
         )
     quantity = line_data.get("quantity") or 1
     src = InventoryProduct.objects.select_for_update().get(
@@ -134,10 +137,10 @@ def _apply_cross_makerspace_line(
     )
     if src.tracking_mode == TrackingMode.INDIVIDUAL:
         raise ValidationError(
-            {"product_id": "Individual-tracked products cannot be moved across makerspaces yet."}
+            {"product_id": gettext("Individual-tracked products cannot be moved across makerspaces yet.")}
         )
     if quantity > src.available_quantity:
-        raise ValidationError({"quantity": "Cannot transfer more than the available stock."})
+        raise ValidationError({"quantity": gettext("Cannot transfer more than the available stock.")})
 
     dest_queryset = InventoryProduct.objects.select_for_update().filter(
         makerspace_id=dest_makerspace_id,
@@ -151,7 +154,7 @@ def _apply_cross_makerspace_line(
         # Crediting quantity onto an individual-tracked product would create phantom
         # units with no backing InventoryAsset/QR rows. Refuse instead of corrupting.
         raise ValidationError(
-            {"product_id": "Destination already has an individual-tracked product with this name."}
+            {"product_id": gettext("Destination already has an individual-tracked product with this name.")}
         )
     if dest is None:
         dest = InventoryProduct.objects.create(

@@ -1,0 +1,32 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+{% block content %}
+<form method="get">
+  <label for="backup-scope">{% translate "Scope" %}</label>
+  <select id="backup-scope" name="scope">
+    <option value="platform" selected>{% translate "Whole platform" %}</option>
+    {% for space in spaces %}<option value="{{ space.pk }}">{% blocktranslate trimmed with name=space.name %}One space: {{ name }}{% endblocktranslate %}</option>{% endfor %}
+  </select>
+  <button type="submit">{% translate "Open" %}</button>
+</form>
+
+<h2>{% translate "Whole-platform restore points" %}</h2>
+<form method="post">{% csrf_token %}<button type="submit">{% translate "Back up now" %}</button></form>
+<p>{% blocktranslate trimmed %}A whole-platform restore runs on the host through the supervised restore flow (Restore operations).
+To restore ONE space, choose it above; its own nightly and on-demand backups are restorable in the app.
+To restore one space from a whole-platform backup: restore via host command (see docs), which adds it as a restore point of that space.{% endblocktranslate %}</p>
+<table><thead><tr><th scope="col">{% translate "Taken" %}</th><th scope="col">{% translate "Kind" %}</th><th scope="col">{% translate "Size" %}</th></tr></thead><tbody>
+{% for row in archives %}<tr><td>{{ row.completed_at }}</td><td>{{ row.get_trigger_display }}</td><td>{{ row.size_bytes|filesizeformat }}</td></tr>
+{% empty %}<tr><td colspan="3">{% translate "No whole-platform backups yet." %}</td></tr>{% endfor %}
+</tbody></table>
+
+<h2>{% translate "Schedule" %}</h2>
+<p>{% translate "Automatic backups:" %} {% if schedule.automatic_backups_enabled %}{% translate "on" %}{% else %}{% translate "off" %}{% endif %}{% blocktranslate trimmed with platform_nightly=schedule.platform_nightly spaces_nightly=schedule.spaces_nightly daily_keep_days=schedule.daily_keep_days weekly_keep_weeks=schedule.weekly_keep_weeks on_demand_keep_days=schedule.on_demand_keep_days %}.
+Whole platform: {{ platform_nightly }}. Each space: {{ spaces_nightly }}.
+Nightly backups keep {{ daily_keep_days }} days plus {{ weekly_keep_weeks }} weekly copies;
+"Back up now" keeps {{ on_demand_keep_days }} days.{% endblocktranslate %}
+{% if not schedule.server_restore_key_configured %}<strong>{% translate "This server has no restore key, so one-space backups cannot be restored in the app." %}</strong>{% endif %}</p>
+<table><thead><tr><th scope="col">{% translate "Space" %}</th><th scope="col">{% translate "Last nightly" %}</th><th scope="col">{% translate "Last backup" %}</th></tr></thead><tbody>
+{% for row in schedule.spaces %}<tr><td><a href="{% url 'admin:makerspaces_makerspace_backup' row.makerspace_id %}">{{ row.name }}</a></td><td>{{ row.last_nightly_at|default:"never" }}</td><td>{{ row.last_backup_at|default:"never" }}</td></tr>{% endfor %}
+</tbody></table>
+{% endblock %}

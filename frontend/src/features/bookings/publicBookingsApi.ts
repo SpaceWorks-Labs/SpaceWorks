@@ -1,17 +1,20 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import type { ApiPath } from "../../generated/api";
-import { StructuredApiError, tenantPublicRequest } from "../../lib/api";
+import { StructuredApiError, tenantMemberRequest, tenantPublicRequest } from "../../lib/api";
 import type { CustomAnswers, CustomFormSchema } from "../forms/customFormTypes";
+import type { GalleryPhoto } from "../../components/ui/Gallery";
 
 export type PublicBookableSpace = {
   public_token: string;
   name: string;
-  kind: "dev_room" | "bench" | "meeting" | "other";
+  kind: "dev_room" | "bench" | "meeting" | "other" | "machine";
   description: string;
   capacity: number;
   location: string;
   image_url: string;
+  /** Ordered place photos (Phase 2 gallery); absent on older servers. */
+  photos?: GalleryPhoto[];
   approval_mode: "instant" | "approve";
   custom_form: CustomFormSchema;
   show_public_availability: boolean;
@@ -24,17 +27,26 @@ export type PublicAvailability = {
   ends_at: string;
   timezone: string;
   opening_intervals: { starts_at: string; ends_at: string }[];
-  availability: { starts_at: string; ends_at: string; booker_name: string | null }[] | null;
+  /** `tentative`: a pending event hold (decision 223 m); its `booker_name` is always null. */
+  availability: { starts_at: string; ends_at: string; booker_name: string | null; tentative?: boolean }[] | null;
+  /** Time the room cannot be booked; never detailed. Absent on servers that predate it. */
+  unavailable?: PublicBusyBlock[];
 };
+
+export type PublicBusyBlock = { starts_at: string; ends_at: string; kind: "unavailable" | "closed" };
 
 export type PublicBookingInput = {
   starts_at: string;
   ends_at: string;
   custom_answers?: CustomAnswers | null;
   website?: string;
+  /** Optional, machine-time bookings only: an event the member may act for (decision 342). */
+  event_id?: number;
+  /** The digest of the price preview the member saw (lane L15); 409 `price_changed` if it moved. */
+  quote_digest?: string;
 };
 
-export type PublicBookingResult = { status: "pending" | "confirmed" };
+export type PublicBookingResult = { status: "pending" | "confirmed"; public_token?: string; confirmation_available?: boolean; amount_due?: string | null; currency?: string | null; pay_online?: boolean };
 
 const SPACES_PATH: ApiPath = "/api/v1/public/{makerspace_slug}/spaces/";
 const AVAILABILITY_PATH: ApiPath = "/api/v1/public/{makerspace_slug}/spaces/{public_token}/availability/";
@@ -77,12 +89,13 @@ export function usePublicAvailability(slug: string, token: string, startsAt: str
 export function useSubmitPublicBooking(slug: string, token: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (payload: PublicBookingInput) => tenantPublicRequest<PublicBookingResult>(
+    mutationFn: (payload: PublicBookingInput) => tenantMemberRequest<PublicBookingResult>(
       slug,
       pathFor(BOOK_PATH, slug, token),
       { method: "POST", body: JSON.stringify(payload) },
     ),
     onSuccess: async (result) => {
+      await queryClient.invalidateQueries({ queryKey: ["member", slug] });
       if (result.status === "confirmed") {
         await queryClient.invalidateQueries({ queryKey: publicBookingKeys.availabilityPrefix(slug, token) });
       }

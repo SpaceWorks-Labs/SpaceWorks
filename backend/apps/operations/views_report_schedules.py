@@ -1,7 +1,10 @@
+from django.utils.translation import gettext
+from django.db import transaction
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
 from rest_framework import generics, status
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -12,6 +15,7 @@ from apps.makerspaces.guards import require_module
 from apps.operations.models_report_schedules import ReportSchedule
 from apps.operations.report_delivery_storage import delete_report_object
 from apps.operations.report_registry import REPORT_DEFINITIONS, REPORT_REGISTRY
+from apps.operations.report_schedule_reach import manageable
 from apps.operations.report_schedule_services import run_schedule
 from apps.operations.serializers_report_schedules import (
     ReportDeliverySerializer,
@@ -19,12 +23,13 @@ from apps.operations.serializers_report_schedules import (
 )
 from apps.operations.serializers_reports import ReportErrorSerializer
 from apps.operations.views_report_helpers import _makerspace_for_catalog
+from apps.payments.payout_session import is_payout_report, require_full_session
 
 ERROR_RESPONSES = {
-    400: OpenApiResponse(ReportErrorSerializer, description="Invalid schedule or module disabled."),
+    400: OpenApiResponse(ReportErrorSerializer, description="Invalid schedule."),
     401: OpenApiResponse(ReportErrorSerializer, description="Authentication required."),
     403: OpenApiResponse(ReportErrorSerializer, description="Permission denied."),
-    404: OpenApiResponse(ReportErrorSerializer, description="Makerspace or schedule not found."),
+    404: OpenApiResponse(ReportErrorSerializer, description="Makerspace or schedule not found, or the module is turned off."),
     423: OpenApiResponse(ReportErrorSerializer, description="Tenant writes are frozen."),
     503: OpenApiResponse(ReportErrorSerializer, description="Tenant write gate unavailable."),
 }
@@ -35,15 +40,18 @@ def _scoped_schedule(user, pk):
     visible = ReportSchedule.objects.none()
     for action in {definition.required_action for definition in REPORT_DEFINITIONS}:
         visible = visible | rbac.scope_by_action(user, action, ReportSchedule.objects.all())
-    report_key = visible.filter(pk=pk).values_list("report_key", flat=True).first()
+    # Built with the creator's reach: only the creator or the Space Manager manages it.
+    report_key = manageable(user, visible).filter(pk=pk).values_list("report_key", flat=True).first()
     if report_key is None:
         raise Http404
     definition = REPORT_REGISTRY.get(report_key)
+    if definition is not None and definition.platform_only:
+        raise Http404
     action = definition.required_action if definition else rbac.Action.MANAGE_MAKERSPACE
     queryset = rbac.scope_by_action(
         user, action, ReportSchedule.objects.select_related("makerspace", "destination", "created_by")
     )
-    schedule = get_object_or_404(rbac.hide_from_superadmin(user, queryset), pk=pk)
+    schedule = get_object_or_404(queryset, pk=pk)
     require_module(schedule.makerspace, "reports")
     return schedule
 
@@ -75,16 +83,20 @@ class ReportScheduleListCreateView(generics.ListCreateAPIView):
     def get_queryset(self):
         makerspace = self._makerspace()
         # Only schedules for reports this actor may run: a MANAGE_MAKERSPACE-only report's
-        # schedule is invisible to a VIEW_AUDIT holder, exactly like the catalog.
+        # schedule is invisible to a VIEW_AUDIT holder, exactly like the catalog. A
+        # schedule whose report source is off is hidden too (kept, skipped by the runner).
+        from .report_sources import definition_live
         keys = [
             definition.key for definition in REPORT_DEFINITIONS
-            if rbac.can(self.request.user, definition.required_action, makerspace.id)
+            if not definition.platform_only
+            and rbac.can(self.request.user, definition.required_action, makerspace.id)
+            and definition_live(makerspace, definition)
         ]
         rows = ReportSchedule.objects.none()
         for action in {REPORT_REGISTRY[key].required_action for key in keys}:
             rows = rows | rbac.scope_by_action(self.request.user, action, ReportSchedule.objects.all())
         return (
-            rows.filter(makerspace=makerspace, report_key__in=keys)
+            manageable(self.request.user, rows).filter(makerspace=makerspace, report_key__in=keys)
             .select_related("destination", "created_by")
             .order_by("-created_at", "-id")
         )
@@ -93,11 +105,16 @@ class ReportScheduleListCreateView(generics.ListCreateAPIView):
         makerspace = self._makerspace()
         definition = REPORT_REGISTRY[serializer.validated_data["report_key"]]
         require_action(self.request.user, definition.required_action, makerspace.id)
-        schedule = serializer.save(makerspace=makerspace, created_by=self.request.user)
-        audit.record(
-            self.request.user, "report_schedule.created", makerspace=makerspace, target=schedule,
-            meta={"schedule_id": schedule.pk, "report_key": schedule.report_key},
-        )
+        if is_payout_report(definition):  # 224(c): a token must not schedule payee money out
+            require_full_session(self.request)
+        from apps.managed_hosting.extra_quotas import check_extra_quota_locked
+        with transaction.atomic():
+            check_extra_quota_locked(makerspace, "scheduled_reports")  # decision 328a: refuses only a NEW schedule
+            schedule = serializer.save(makerspace=makerspace, created_by=self.request.user)
+            audit.record(
+                self.request.user, "report_schedule.created", makerspace=makerspace, target=schedule,
+                meta={"schedule_id": schedule.pk, "report_key": schedule.report_key},
+            )
 
 
 class ReportScheduleDetailView(APIView):
@@ -115,6 +132,9 @@ class ReportScheduleDetailView(APIView):
         serializer.is_valid(raise_exception=True)
         new_key = serializer.validated_data.get("report_key", schedule.report_key)
         require_action(request.user, REPORT_REGISTRY[new_key].required_action, schedule.makerspace_id)
+        old = REPORT_REGISTRY.get(schedule.report_key)
+        if is_payout_report(REPORT_REGISTRY[new_key]) or (old is not None and is_payout_report(old)):
+            require_full_session(request)  # 224(c)
         schedule = serializer.save()
         audit.record(
             request.user, "report_schedule.updated", makerspace=schedule.makerspace, target=schedule,
@@ -153,11 +173,16 @@ class ReportScheduleRunNowView(APIView):
     )
     def post(self, request, pk, *args, **kwargs):
         schedule = _scoped_schedule(request.user, pk)
-        require_action(request.user, REPORT_REGISTRY[schedule.report_key].required_action, schedule.makerspace_id)
+        definition = REPORT_REGISTRY.get(schedule.report_key)
+        if definition is None:
+            raise ValidationError({"report_key": [gettext("Report is unavailable on this deployment.")]})
+        require_action(request.user, definition.required_action, schedule.makerspace_id)
+        if is_payout_report(definition):
+            require_full_session(request)  # 224(c)
         delivery = run_schedule(schedule.pk, force=True, actor=request.user)
         if delivery is None:
             return Response(
-                {"detail": "Schedule is inactive or was skipped.", "code": "report_schedule_skipped"},
+                {"detail": gettext("Schedule is inactive or was skipped."), "code": "report_schedule_skipped"},
                 status=status.HTTP_409_CONFLICT,
             )
         return Response(ReportDeliverySerializer(delivery).data)

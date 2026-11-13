@@ -6,7 +6,7 @@ from enum import StrEnum
 from django.apps import apps
 
 from apps.backup.archive_objects import OBJECT_FIELD_NAMES
-from apps.backup.recipient_selection import BackupBuildError
+from apps.backup.build_errors import BackupBuildError
 
 
 class BucketRule(StrEnum):
@@ -35,6 +35,61 @@ class FieldObjectRule:
 # Literal, field-specific declarations are intentional. The equality guard below
 # makes adding an object-bearing concrete field a preflight failure.
 FIELD_OBJECT_RULES = (
+    FieldObjectRule("accounts.AccountPurgeObject", "object_key", BucketRule.PUBLIC_IMAGE,
+                    ReferencePolicy.COORDINATION_ONLY,
+                    coordination_path="makerspace_id",
+                    coordination_reason="account_erasure_journal"),
+    FieldObjectRule("backup.ManagedStagedObject", "object_key", BucketRule.PRIVATE,
+                    ReferencePolicy.COORDINATION_ONLY,
+                    coordination_reason="private_ephemeral_ciphertext_lineage"),
+    FieldObjectRule("events.BadgePrintCleanupReceipt", "object_key", BucketRule.PRIVATE,
+                    ReferencePolicy.COORDINATION_ONLY, coordination_reason="permanent_event_print_custody"),
+    FieldObjectRule("events.EventAssetObligation", "object_key", BucketRule.PRIVATE,
+                    ReferencePolicy.COORDINATION_ONLY, coordination_reason="permanent_event_asset_custody"),
+    FieldObjectRule("events.EventAssetObligation", "staging_key", BucketRule.PRIVATE,
+                    ReferencePolicy.COORDINATION_ONLY, coordination_reason="permanent_event_asset_custody"),
+    FieldObjectRule("events.EventAssetObligation", "verification_key", BucketRule.PRIVATE,
+                    ReferencePolicy.COORDINATION_ONLY, coordination_reason="permanent_event_asset_custody"),
+    FieldObjectRule("tenant_migration.TenantImportObject", "staging_key", BucketRule.FROM_ROW,
+                    ReferencePolicy.COORDINATION_ONLY, coordination_reason="target_import_staging"),
+    FieldObjectRule("accounts.MemberSavedAsset", "object_key", BucketRule.PRIVATE, retention_aware=True),
+    FieldObjectRule("accounts.MemberSavedAsset", "staging_key", BucketRule.PRIVATE,
+                    ReferencePolicy.COORDINATION_ONLY, coordination_reason="account_upload_staging"),
+    FieldObjectRule("accounts.MemberSavedAsset", "verification_key", BucketRule.PRIVATE,
+                    ReferencePolicy.COORDINATION_ONLY, coordination_reason="account_upload_verification"),
+    FieldObjectRule("accounts.AccountSavedDetailsExportJob", "object_key", BucketRule.PRIVATE,
+                    ReferencePolicy.COORDINATION_ONLY, coordination_reason="account_export_coordination"),
+    FieldObjectRule("events.EventCertificateLibraryArtwork", "object_key", BucketRule.PRIVATE),
+    # Adapter photo/recording artifacts are short-lived private media (the row stays as a `purged` marker once the
+    # bytes expire): coordination only, never captured as backup bytes.
+    FieldObjectRule("devices.AdapterArtifact", "object_key", BucketRule.PRIVATE,
+                    ReferencePolicy.COORDINATION_ONLY, coordination_path="makerspace_id",
+                    coordination_reason="adapter_artifact_ephemeral_media"),
+    FieldObjectRule("events.BadgePrintJob", "object_key", BucketRule.PRIVATE,
+                    ReferencePolicy.COORDINATION_ONLY, coordination_path="event__makerspace_id",
+                    coordination_reason="event_print_coordination"),
+    FieldObjectRule("events.BadgePrintResource", "object_key", BucketRule.PRIVATE,
+                    ReferencePolicy.COORDINATION_ONLY, coordination_path="job__event__makerspace_id",
+                    coordination_reason="event_print_resource_coordination"),
+    FieldObjectRule("events.SubmissionAsset", "staging_key", BucketRule.PRIVATE,
+                    ReferencePolicy.COORDINATION_ONLY, coordination_path="event__makerspace_id",
+                    coordination_reason="event_upload_staging"),
+    FieldObjectRule("events.SubmissionAsset", "verification_key", BucketRule.PRIVATE,
+                    ReferencePolicy.COORDINATION_ONLY, coordination_path="event__makerspace_id",
+                    coordination_reason="event_upload_verification"),
+    FieldObjectRule("events.HackathonParticipantAsset", "staging_key", BucketRule.PRIVATE,
+                    ReferencePolicy.COORDINATION_ONLY, coordination_path="event__makerspace_id",
+                    coordination_reason="event_resume_staging"),
+    FieldObjectRule("events.HackathonParticipantAsset", "verification_key", BucketRule.PRIVATE,
+                    ReferencePolicy.COORDINATION_ONLY, coordination_path="event__makerspace_id",
+                    coordination_reason="event_resume_verification"),
+    FieldObjectRule("payments.PaymentDocument", "branding_logo_key", BucketRule.PRIVATE),
+    FieldObjectRule("bookings.BookingResourcePageAsset", "object_key", BucketRule.PRIVATE),
+    FieldObjectRule("events.EventPageAsset", "object_key", BucketRule.PRIVATE),
+    FieldObjectRule("makerspaces.MakerspacePublicPageAsset", "object_key", BucketRule.PRIVATE),
+    FieldObjectRule("organizations.OrganizationPublicPageAsset", "object_key", BucketRule.PRIVATE),
+    FieldObjectRule("makerspaces.PublicPageObjectCleanup", "object_key", BucketRule.PRIVATE,
+                    ReferencePolicy.COORDINATION_ONLY, coordination_reason="public_page_cleanup"),
     FieldObjectRule("backup.BackupArchive", "object_key", BucketRule.PRIVATE,
                     ReferencePolicy.COORDINATION_ONLY,
                     coordination_path="makerspace_id",
@@ -47,12 +102,16 @@ FIELD_OBJECT_RULES = (
                     coordination_path="makerspace_id",
                     coordination_reason="recursive_tenant_exit_artifact"),
     FieldObjectRule("bookings.BookableSpace", "image_key", BucketRule.PUBLIC_IMAGE),
+    FieldObjectRule("bookings.BookableSpacePhoto", "object_key", BucketRule.PUBLIC_IMAGE),
     FieldObjectRule("data_export.DataExportJob", "object_key", BucketRule.PRIVATE,
                     coordination_path="makerspace_id",
                     coordination_reason="data_export_coordination"),
     FieldObjectRule("events.Event", "image_key", BucketRule.PUBLIC_IMAGE),
     FieldObjectRule("events.EventSeries", "image_key", BucketRule.PUBLIC_IMAGE),
     FieldObjectRule("events.EventAttendanceCertificate", "object_key", BucketRule.PRIVATE),
+    FieldObjectRule("events.EventCertificateArtwork", "object_key", BucketRule.PRIVATE),
+    FieldObjectRule("events.SubmissionAsset", "object_key", BucketRule.PRIVATE, retention_aware=True),
+    FieldObjectRule("events.HackathonParticipantAsset", "object_key", BucketRule.PRIVATE, retention_aware=True),
     # retention_aware: phase 9 may expire these bytes while the row survives, so capture
     # must tolerate a missing object rather than treat it as corruption.
     FieldObjectRule(
@@ -70,11 +129,20 @@ FIELD_OBJECT_RULES = (
     FieldObjectRule("inventory.InventoryProduct", "image_key", BucketRule.PUBLIC_IMAGE),
     FieldObjectRule("machines.Machine", "image_key", BucketRule.PUBLIC_IMAGE),
     FieldObjectRule("machines.MachineDocument", "object_key", BucketRule.PRIVATE),
+    FieldObjectRule("machines.MachineTypeDocument", "object_key", BucketRule.PRIVATE),
     FieldObjectRule("machines.ServiceRequestFile", "object_key", BucketRule.PRIVATE),
     FieldObjectRule("maintenance.MaintenanceLogDocument", "object_key", BucketRule.PRIVATE),
+    # L16: a private repair photo (staging-key presign, promoted once on attach).
+    FieldObjectRule("maintenance.IssuePhoto", "object_key", BucketRule.PRIVATE),
     FieldObjectRule("makerspaces.Makerspace", "cover_image_key", BucketRule.PUBLIC_IMAGE),
     FieldObjectRule("makerspaces.Makerspace", "logo_key", BucketRule.PUBLIC_IMAGE),
     FieldObjectRule("makerspaces.MemberProfile", "avatar_key", BucketRule.PUBLIC_IMAGE),
+    # Decision 305: account-level profile images. The rows are omitted from every space archive, so the
+    # objects are coordination (account custody), never archive content.
+    FieldObjectRule("makerspaces.AccountProfile", "avatar_key", BucketRule.PUBLIC_IMAGE,
+                    ReferencePolicy.COORDINATION_ONLY, coordination_reason="account_level_profile_image"),
+    FieldObjectRule("makerspaces.AccountProject", "image_key", BucketRule.PUBLIC_IMAGE,
+                    ReferencePolicy.COORDINATION_ONLY, coordination_reason="account_level_profile_image"),
     # A member card photo is a face: private bucket, short-lived signed reads only.
     FieldObjectRule("makerspaces.MemberCard", "photo_object_key", BucketRule.PRIVATE),
     FieldObjectRule("makerspaces.MemberProject", "image_key", BucketRule.PUBLIC_IMAGE),
@@ -89,6 +157,15 @@ FIELD_OBJECT_RULES = (
     FieldObjectRule("warranty.WarrantyDocument", "object_key", BucketRule.PRIVATE),
 )
 
+from .object_ownership_reimbursements import field_object_rules as _reimbursement_rules
+FIELD_OBJECT_RULES += _reimbursement_rules(FieldObjectRule, BucketRule, ReferencePolicy)
+from .object_ownership_l3 import field_object_rules as _l3_rules  # noqa: E402
+FIELD_OBJECT_RULES += _l3_rules(FieldObjectRule, BucketRule, ReferencePolicy)
+# Release 2 L18: a sponsor's public logo (the sponsor wall).
+FIELD_OBJECT_RULES += (FieldObjectRule("payments.Sponsor", "logo_key", BucketRule.PUBLIC_IMAGE),)
+# Release 2 L22: a shop product's public image.
+FIELD_OBJECT_RULES += (FieldObjectRule("shop.ShopProduct", "image_key", BucketRule.PUBLIC_IMAGE),)
+
 AUDIT_META_OBJECT_VARIANTS = {
     "machine.document_added": "object_key",
     "machine.document_removed": "object_key",
@@ -96,6 +173,9 @@ AUDIT_META_OBJECT_VARIANTS = {
 
 
 def validate_object_reference_registry():
+    from .object_reference_retention import adapter_for
+    for rule in FIELD_OBJECT_RULES:
+        adapter_for(rule)
     actual = {
         (model._meta.label, field.name)
         for model in apps.get_models()

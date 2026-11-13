@@ -1,6 +1,9 @@
 from django.db import OperationalError, ProgrammingError
 from django.http import JsonResponse
 from django.urls import Resolver404, resolve
+from django.utils.translation import gettext
+
+from config.locale_resolution import early_response_locale, finalize_response
 
 from apps.backup.models import DeploymentRecoveryState
 from apps.backup.route_policy import route_allowed
@@ -28,15 +31,33 @@ class DeploymentRecoveryGateMiddleware:
         try:
             mode = self._load_mode()
         except (OperationalError, ProgrammingError):
-            return self._refused("unavailable")
+            return self._refused("unavailable", request)
         if mode == DeploymentRecoveryState.Mode.NORMAL:
+            from apps.operations.cloud_runtime import managed, writer
+            if managed() and request.path_info.rstrip("/") not in {"/api/v1/health", "/api/v1/health/readiness"}:
+                from apps.backup.managed.admission import ManagedAdmissionError
+                try:
+                    with writer("web"):
+                        response = self.get_response(request)
+                        if getattr(response, "streaming", False):
+                            response.streaming_content = _managed_stream(response.streaming_content)
+                        return response
+                except ManagedAdmissionError:
+                    return self._refused("managed_admission_refused", request)
+            if not managed() and request.path_info.rstrip("/") not in {"/api/v1/health", "/api/v1/health/readiness"}:
+                from apps.operations.cloud_runtime import check
+                from apps.backup.managed.admission import ManagedAdmissionError
+                try:
+                    check()
+                except (ManagedAdmissionError, OperationalError, ProgrammingError):
+                    return self._refused("mode_binding_unavailable", request)
             return self.get_response(request)
         try:
             view_name = resolve(request.path_info).view_name or ""
         except Resolver404:
-            return self._refused(mode)
+            return self._refused(mode, request)
         if not route_allowed(mode, view_name, request.method):
-            return self._refused(mode)
+            return self._refused(mode, request)
         return self.get_response(request)
 
     @staticmethod
@@ -48,16 +69,26 @@ class DeploymentRecoveryGateMiddleware:
         return state.mode if state else "unavailable"
 
     @staticmethod
-    def _refused(mode):
-        detail = (
-            "This deployment is in recovery quarantine. Only recovery routes are available."
-            if mode == DeploymentRecoveryState.Mode.QUARANTINED
-            else (
-                "This deployment is being prepared as a non-routable import target."
-                if mode == DeploymentRecoveryState.Mode.TARGET_IMPORT
-                else "This deployment is temporarily unavailable for restore."
+    def _refused(mode, request):
+        # This gate sits OUTSIDE the locale reset boundary (it must stay first), so its one
+        # answer is rendered inside the same pre-auth resolution's scoped override.
+        with early_response_locale(request):
+            detail = (
+                gettext("This deployment is in recovery quarantine. Only recovery routes are available.")
+                if mode == DeploymentRecoveryState.Mode.QUARANTINED
+                else (
+                    gettext("This deployment is being prepared as a non-routable import target.")
+                    if mode == DeploymentRecoveryState.Mode.TARGET_IMPORT
+                    else gettext("This deployment is temporarily unavailable for restore.")
+                )
             )
-        )
-        return JsonResponse(
-            {"detail": detail, "code": f"deployment_{mode}"}, status=503
-        )
+            response = JsonResponse({"detail": detail, "code": f"deployment_{mode}"}, status=503)
+            return finalize_response(response)
+
+
+def _managed_stream(content):
+    from apps.operations.cloud_runtime import writer
+    with writer("web") as check:
+        for chunk in content:
+            check()
+            yield chunk

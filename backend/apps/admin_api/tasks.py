@@ -58,6 +58,18 @@ def _claim_job(job_id):
         )
         if job is None or job.status != BulkImportJob.Status.PENDING:
             return None
+        from apps.accounts import rbac
+        from apps.operations.cloud_jobs.authority import allowed
+        if not allowed(job.actor, rbac.Action.EDIT_INVENTORY, job.makerspace_id):
+            job.status, job.error, job.completed_at = "failed", "Requester authority changed.", timezone.now()
+            job.save(update_fields=["status", "error", "completed_at", "updated_at"])
+            return None
+        from apps.makerspaces.platform import module_enabled
+        if not module_enabled(job.makerspace, "bulk_import"):
+            # Switched off after the upload (#183B): never run, like a switched-off card job.
+            job.status, job.error, job.completed_at = "failed", "Bulk import is switched off.", timezone.now()
+            job.save(update_fields=["status", "error", "completed_at", "updated_at"])
+            return None
         job.status = BulkImportJob.Status.RUNNING
         job.error = ""
         job.save(update_fields=["status", "error", "updated_at"])

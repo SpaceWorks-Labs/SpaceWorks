@@ -1,0 +1,50 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+{% block extrahead %}{{ block.super }}{% if refresh %}<meta http-equiv="refresh" content="5">{% endif %}{% endblock %}
+{% block content %}
+<p><a href="{% url 'admin:makerspaces_makerspace_backup' space.pk %}">{% blocktranslate trimmed with name=space.name %}Back to backups of {{ name }}{% endblocktranslate %}</a></p>
+<p><strong>{{ op.get_stage_display }}</strong>{% if op.progress.percent %} &middot; {{ op.progress.percent }}%{% endif %}
+{% if op.error_detail %}<br>{{ op.error_detail }}{% endif %}</p>
+
+{% if preview %}
+<h2>{% translate "Preview" %}</h2>
+<p>{% blocktranslate trimmed with snapshot_at=preview.snapshot_at removed_rows=preview.totals.removed_rows added_rows=preview.totals.added_rows removed=preview.memberships.removed restored=preview.memberships.restored count=preview.objects.count bytes=preview.objects.bytes|filesizeformat %}Restore point taken {{ snapshot_at }}. {{ removed_rows }} rows created since then go;
+{{ added_rows }} rows deleted since then come back; memberships: {{ removed }} removed,
+{{ restored }} restored. {{ count }} files ({{ bytes }}).{% endblocktranslate %}</p>
+<p>{% blocktranslate trimmed with money_after_restore_point=preview.money_after_restore_point|length evidence_after_restore_point=preview.evidence_after_restore_point reattributed=preview.accounts.reattributed erased_since=preview.accounts.erased_since inbound_relinked=preview.inbound_relinked %}Kept and flagged "after the restore point": {{ money_after_restore_point }} payment records;
+{{ evidence_after_restore_point }} newer evidence photos kept as orphaned records.
+Accounts: {{ reattributed }} references re-attributed to the space's anonymous principal,
+{{ erased_since }} deleted accounts stay erased. {{ inbound_relinked }} rows in other spaces re-link to restored rows.{% endblocktranslate %}</p>
+{% if preview.accounts.merged_since %}
+<p>{% blocktranslate trimmed with merged_since=preview.accounts.merged_since %}{{ merged_since }} account(s) were merged into another person since the restore point; their rows follow to that person:{% endblocktranslate %}</p>
+<ul>{% for row in preview.accounts.merged_followed %}<li>{% blocktranslate trimmed with account=row.account survivor=row.survivor %}Account #{{ account }} &rarr; #{{ survivor }}{% endblocktranslate %}</li>{% endfor %}</ul>
+{% endif %}
+{% if preview.blocked %}
+<p><strong>{% translate "Blocked:" %}</strong> {% blocktranslate trimmed with blocking_count=preview.blocking_count %}{{ blocking_count }} rows outside this space would be left pointing at rows the restore removes.{% endblocktranslate %}</p>
+<ul>{% for row in preview.blocking %}<li>{% blocktranslate trimmed with model=row.model pk=row.pk references=row.references reason=row.reason %}{{ model }} #{{ pk }} &rarr; {{ references }} ({{ reason }}){% endblocktranslate %}</li>{% endfor %}</ul>
+{% endif %}
+<table><thead><tr><th scope="col">{% translate "Records" %}</th><th scope="col">{% translate "Now" %}</th><th scope="col">{% translate "In the restore point" %}</th></tr></thead><tbody>
+{% for row in preview.models %}<tr><td>{{ row.label }}</td><td>{{ row.live }}</td><td>{{ row.archived }}</td></tr>{% endfor %}
+</tbody></table>
+{% endif %}
+
+{% if op.stage == "preview_ready" and not preview.blocked %}
+<h2>{% translate "Confirm" %}</h2>
+<form method="post">{% csrf_token %}
+  <input type="hidden" name="action" value="confirm">
+  <label for="confirm-slug">{% translate "Type" %} <code>{{ space.slug }}</code> {% translate "to restore this space" %}</label><br>
+  <input id="confirm-slug" name="confirm_slug" autocomplete="off" required>
+  <button type="submit">{% blocktranslate trimmed with name=space.name %}Restore {{ name }}{% endblocktranslate %}</button>
+</form>
+{% endif %}
+{% if op.stage == "requested" or op.stage == "staging" or op.stage == "preview_ready" %}
+<form method="post">{% csrf_token %}<input type="hidden" name="action" value="abort"><button type="submit">{% translate "Cancel this restore" %}</button></form>
+{% endif %}
+
+{% if report %}
+<h2>{% translate "Result" %}</h2>
+<p>{% blocktranslate trimmed with safety_archive_id=op.safety_archive_id objects_restored=report.objects_restored objects_verified=report.objects_verified %}Safety backup: {{ safety_archive_id }}. Files restored: {{ objects_restored }}, verified in place: {{ objects_verified }}.{% endblocktranslate %}</p>
+{% if report.money_after_restore_point %}<p>{% translate "Review these payment records made after the restore point:" %}</p>
+<ul>{% for row in report.money_after_restore_point %}<li>{{ row.model }} #{{ row.pk }}: {{ row.amount }} {{ row.currency }} ({{ row.status }}), {{ row.created_at }}</li>{% endfor %}</ul>{% endif %}
+{% endif %}
+{% endblock %}

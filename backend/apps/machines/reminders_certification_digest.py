@@ -1,14 +1,12 @@
 """Daily, type-scoped staff counts. No member names or training notes in chat."""
 
+from django.utils.translation import gettext
 from datetime import timedelta
 
 from django.db.models import CharField, Value, Q
 from django.db.models.functions import Cast, Concat
 
 from apps.accounts import rbac
-from apps.integrations.destinations import NotificationScope
-from apps.integrations.email_templates_registry_helpers import bag
-from apps.integrations.notifications_research import notify_family
 from apps.makerspaces.local_time import local_day_bounds, to_local
 from apps.operations.reminder_consumer_queries import unfinished
 from apps.operations.reminder_registry import ReminderMessage, ReminderSubject
@@ -51,12 +49,10 @@ def build(makerspace, reminder, now, local_tz):
     count = counts(makerspace, int(type_id), now)
     if not count:
         return None
-    return ReminderMessage(title="Expiring certifications", event="expiring",
-                           body=f"{count} certification(s) expire soon; review and renew training.")
+    return ReminderMessage(title=gettext("Expiring certifications"), event="expiring",
+                           body=gettext('{count} certification(s) expire soon; review and renew training.').format(count=count))
 
 
 def dispatch(makerspace, reminder, message):
-    type_id = int(reminder.subject.split(":", 1)[0])
-    notify_family(makerspace, "certifications", "expiring",
-                  bag(id=type_id, name=message.body, expires_at="See certification roster"),
-                  data={"machine_type_id": type_id}, scope=NotificationScope(machine_type=type_id))
+    from .notifications_p2_certifications import notify_digest
+    return notify_digest(makerspace, reminder, message)

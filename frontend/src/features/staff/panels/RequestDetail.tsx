@@ -1,0 +1,70 @@
+import { formatLocale } from "../../../lib/format";
+import { t } from "@lingui/core/macro";
+import { useContext, type ReactNode } from "react";
+import { DetailLayout } from "../../../components/layouts";
+import { KeyValueCard, ListRow, RelativeTime, StatusBadge, type Action } from "../../../components/ui";
+import { requestStatusLabel } from "../../../components/ui/StatusStepper";
+import { StatusStepper } from "../../../components/ui/StatusStepper";
+import { RequestTimelineBlock } from "./LoanTimeline";
+import type { HardwareRequest } from "./Queues";
+import { RequestEvidence } from "./RequestEvidence";
+import { LoanChargesPanel } from "../loanCharges/LoanChargesPanel";
+import { LoanRepairsPanel } from "../loanRepairs/LoanRepairsPanel";
+import { BorrowerHistoryToggle } from "../memberActivity/BorrowerHistory";
+import { StaffListContext } from "../StaffListContext";
+
+// A26: the member 360 refuses handover-only desks, so only offer it to inventory reviewers.
+const HISTORY_ACTIONS = ["view_inventory", "accept_request", "manage_members"];
+
+type Actor = { username: string; role: string };
+export function RequestDetail({ row, canViewAudit, primary, secondary, menu, extra, view, onView, onClose }: {
+  row: HardwareRequest; canViewAudit: boolean; primary?: Action; secondary?: Action; menu?: Action[]; extra?: ReactNode;
+  view: string; onView: (view: string) => void; onClose: () => void;
+}) {
+  const access = useContext(StaffListContext);
+  const canSeeHistory = Boolean(access.isSuperadmin || access.actions?.some(action => HISTORY_ACTIONS.includes(action)));
+  const active = ["overview", "evidence", ...(canViewAudit ? ["timeline"] : [])].includes(view) ? view : "overview";
+  const actors = row as HardwareRequest & { accepted_by?: Actor; issued_by?: Actor };
+  const tabs = ["overview", "evidence", ...(canViewAudit ? ["timeline"] : [])].map(key => {
+    const url = new URL(window.location.href); url.searchParams.set("requestView", key);
+    return { key, label: key[0].toUpperCase() + key.slice(1), href: url.pathname + url.search };
+  });
+  return <div onClickCapture={event => {
+    const anchor = (event.target as HTMLElement).closest('nav[aria-label="Page sections"] a');
+    if (!anchor || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+    const next = new URL((anchor as HTMLAnchorElement).href).searchParams.get("requestView");
+    if (next) { event.preventDefault(); event.stopPropagation(); onView(next); }
+  }}><DetailLayout presentation="drawer" open onClose={onClose} drawerWidth={640}
+    title={t`Request #${row.id}`} identity={{ kind: "avatar", name: row.requester_display || row.requester_username, seed: row.requester_username }}
+    status={<StatusBadge status={row.status} label={requestStatusLabel(row.status)} />} meta={[row.requester_display || row.requester_username,
+      row.return_due_at ? <span>{t`Due `}<RelativeTime date={row.return_due_at} /></span> : "No due date set"]}
+    actions={{ overflow: menu }} tabs={tabs} activeTab={active} state={{ status: "ready" }}
+    main={active === "evidence" ? <RequestEvidence row={row} /> : active === "timeline" ? <RequestTimelineBlock requestId={row.id} /> : <div className="grid gap-6">
+      {row.status === "cancelled" || row.status === "expired" ? <p className="rounded-xl border border-line p-4 text-sm text-muted">{row.status === "expired"
+        ? t`Expired: it was not collected before the pickup deadline, so its items went back on the shelf.` : t`Cancelled before it was handed over.`}</p> : <StatusStepper status={row.status} />}
+      <section aria-label={t`Items`}><h2 className="title-panel mb-3">{t`Items`}</h2><div className="grid gap-3">{row.items.map(item => <ListRow key={item.id} title={item.product_name}
+        meta={<>{item.storage_location ? t`Shelf: ${item.storage_location} · ` : ""}{item.requires_asset_qr ? t`QR-tracked` : t`Quantity-tracked`}</>}
+        right={<span className="tabular-nums">{row.status === "pending_approval" ? item.requested_quantity : row.status === "accepted" ? item.accepted_quantity : item.issued_quantity} / {item.requested_quantity}</span>} />)}</div></section>
+      {row.status === "rejected" && row.rejection_reason ? <p className="rounded-xl border border-danger-line p-4 text-danger">{t`Rejected: ${row.rejection_reason}`}</p> : null}
+      {row.items.some(item => item.damaged_quantity || item.missing_quantity || item.needs_fix_quantity) ? <div className="rounded-xl border border-danger-line p-4 text-danger"><h2 className="title-section">{t`Items needing attention`}</h2>
+        {row.items.filter(item => item.damaged_quantity || item.missing_quantity || item.needs_fix_quantity).map(item => <p key={item.id}>{t`${item.product_name}: ${item.damaged_quantity} damaged · ${item.missing_quantity} missing · ${item.needs_fix_quantity} to-fix`}</p>)}</div> : null}
+      {extra}
+      <LoanChargesPanel loan={row} />
+      <LoanRepairsPanel loan={row} />
+      {canSeeHistory && row.requester_id && row.makerspace_id
+        ? <BorrowerHistoryToggle key={row.requester_id} makerspaceId={row.makerspace_id} userId={row.requester_id} /> : null}
+    </div>}
+    aside={active === "overview" ? <KeyValueCard items={[
+      { label: t`Purpose`, value: <span className="break-words">{row.requested_for || t`No note`}</span> },
+      { label: t`Contact`, value: <span className="break-words">{[row.requester_contact_email, row.requester_contact_phone].filter(Boolean).join(" · ") || t`No contact details`}</span> },
+      { label: t`Box`, value: row.assigned_box_label || row.assigned_box?.label || "Not assigned" },
+      ...(actors.accepted_by ? [{ label: t`Accepted by`, value: formatActor(actors.accepted_by) }] : []),
+      ...(actors.issued_by ? [{ label: t`Issued by`, value: formatActor(actors.issued_by) }] : []),
+      ...(row.return_reminder_sent_at ? [{ label: t`Reminder sent`, value: <RelativeTime date={row.return_reminder_sent_at} /> }] : []),
+      ...(row.pickup_from ? [{ label: t`Collect from`, value: new Date(row.pickup_from).toLocaleString(formatLocale()) }] : []),
+      ...(row.pickup_until ? [{ label: t`Pickup deadline`, value: new Date(row.pickup_until).toLocaleString(formatLocale()) }] : []),
+    ]} /> : undefined}
+    footer={{ primary, secondary: secondary ? [secondary] : [] }} />
+  </div>;
+}
+function formatActor(actor: Actor) { return actor.role ? `${actor.username} (${actor.role})` : actor.username; }

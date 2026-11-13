@@ -1,3 +1,5 @@
+from django.utils.translation import gettext
+from apps.storage_clients import s3_client
 """Private-bucket storage for machine manuals/SOP documents.
 
 Mirrors apps/warranty/storage.py: same PRIVATE evidence bucket, presign POST/PUT per
@@ -36,7 +38,7 @@ class MachineObjectValidationResult:
 
 
 def _s3_client(endpoint_url):
-    return boto3.client(
+    return s3_client(
         "s3",
         endpoint_url=endpoint_url,
         aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
@@ -69,7 +71,7 @@ def staging_key(final_key):
 def assert_machine_object_key_for_makerspace(object_key, makerspace_id):
     if not str(object_key).startswith(f"machines/{makerspace_id}/"):
         raise ValidationError(
-            {"object_key": "Machine document key does not belong to this makerspace."}
+            {"object_key": gettext("Machine document key does not belong to this makerspace.")}
         )
 
 
@@ -81,12 +83,16 @@ def ext_for(content_type, filename):
         settings.MACHINE_DOC_ALLOWED_EXT,
         settings.MACHINE_DOC_ALLOWED_MIME,
     ):
-        raise ValidationError({"filename": "Unsupported document extension or content type."})
+        raise ValidationError({"filename": gettext("Unsupported document extension or content type.")})
     return ext
 
 
 def presigned_upload(object_key, content_type):
     try:
+        if getattr(settings, "STORAGE_CAPABILITIES_FILE", ""):
+            import sys
+            from apps.private_uploads import presign
+            return presign(sys.modules[__name__], object_key, content_type, settings.MACHINE_DOC_MAX_BYTES)
         if settings.STORAGE_PRESIGN_METHOD == "put":
             url = _public_client().generate_presigned_url(
                 "put_object",
@@ -150,6 +156,10 @@ def object_size(object_key):
 
 
 def finalize_upload(object_key, max_bytes):
+    if getattr(settings, "STORAGE_CAPABILITIES_FILE", ""):
+        import sys
+        from apps.private_uploads import finalize
+        return finalize(sys.modules[__name__], object_key, max_bytes)
     if settings.STORAGE_PRESIGN_METHOD != "put":
         return object_size(object_key)
 
@@ -187,11 +197,11 @@ def presigned_get_url(object_key):
 def validate_machine_object(object_key):
     size = object_size(object_key)
     if size is None:
-        raise ValidationError({"object_key": "Machine document was not found."})
+        raise ValidationError({"object_key": gettext("Machine document was not found.")})
     if size == 0:
-        raise ValidationError({"object_key": "Machine document is empty."})
+        raise ValidationError({"object_key": gettext("Machine document is empty.")})
     if size > settings.MACHINE_DOC_MAX_BYTES:
-        raise ValidationError({"object_key": "Machine document exceeds the size limit."})
+        raise ValidationError({"object_key": gettext("Machine document exceeds the size limit.")})
 
     try:
         response = _client().get_object(
@@ -211,7 +221,7 @@ def validate_machine_object(object_key):
         settings.MACHINE_DOC_ALLOWED_MIME,
     ):
         raise ValidationError(
-            {"object_key": "Machine document extension and content type do not match."},
+            {"object_key": gettext("Machine document extension and content type do not match.")},
             code="invalid_document",
         )
 
@@ -220,14 +230,14 @@ def validate_machine_object(object_key):
     if strict_mime or sniffed:
         if not strict_mime or stored_content_type != strict_mime or sniffed != strict_mime:
             raise ValidationError(
-                {"object_key": "Machine document content does not match its extension."},
+                {"object_key": gettext("Machine document content does not match its extension.")},
                 code="invalid_document",
             )
         content_type = sniffed
     else:
         if not has_required_signature(ext, data):
             raise ValidationError(
-                {"object_key": "Machine document signature is invalid."},
+                {"object_key": gettext("Machine document signature is invalid.")},
                 code="invalid_document",
             )
         content_type = stored_content_type

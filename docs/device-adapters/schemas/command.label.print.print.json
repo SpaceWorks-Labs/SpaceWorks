@@ -1,0 +1,27 @@
+{
+  "$id": "https://spaceworks.invalid/schemas/device-adapter/v1/command.label.print.print.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "batch_id": {
+      "maximum": 4611686018427387904,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "item_count": {
+      "maximum": 100000,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "label_command_id": {
+      "format": "uuid",
+      "maxLength": 36,
+      "minLength": 36,
+      "type": "string"
+    }
+  },
+  "required": [
+    "label_command_id"
+  ],
+  "type": "object"
+}

@@ -1,30 +1,160 @@
-<div class="capability-matrix">
-  {% for group, options, index in widget.optgroups %}
-    {% for option in options %}
-      {% if option.value|slice:":7" == "feature" %}
+{% load i18n %}<div class="capability-matrix">
+  <div class="capability-toolbar" role="search">
+    <label class="capability-search-label" for="capability-search">{% trans "Search modules and features" %}</label>
+    <input id="capability-search" type="search" class="capability-search" data-capability-search placeholder="{% trans 'Search by name' %}" autocomplete="off">
+    <div class="capability-filters" role="group" aria-label="{% trans 'Show' %}">
+      <button type="button" aria-pressed="true" data-capability-filter="all">{% trans "All" %}</button>
+      <button type="button" aria-pressed="false" data-capability-filter="on">{% trans "On" %}</button>
+      <button type="button" aria-pressed="false" data-capability-filter="off">{% trans "Off" %}</button>
+    </div>
+  </div>
+  {% for section in capability_sections %}
+    <details class="capability-area" open data-capability-area>
+      <summary><strong>{{ section.label }}</strong> <span class="capability-count" data-capability-count>{{ section.total }}</span>
+        <span class="capability-area-note">{{ section.description }}</span></summary>
+      {% for entry in section.modules %}
+        <fieldset class="capability-group" data-capability-group>
+          <label class="capability-module" data-module-option>
+            <input type="checkbox" name="{{ widget.name }}" value="{{ entry.option.value }}"{% if entry.option.selected %} checked{% endif %}>
+            {{ entry.option.label }}
+          </label>
+          {% for option in entry.features %}
+            <label class="capability-feature" data-feature-option>
+              <input type="checkbox" name="{{ widget.name }}" value="{{ option.value }}"{% if option.selected %} checked{% endif %}>
+              {{ option.label }}
+            </label>
+          {% endfor %}
+        </fieldset>
+      {% endfor %}
+      {% for option in section.loose_features %}
         <label class="capability-feature" data-feature-option>
-      {% else %}
-        <label class="capability-module" data-module-option>
-      {% endif %}
-        <input type="checkbox" name="{{ widget.name }}" value="{{ option.value }}"{% if option.selected %} checked{% endif %}>
-        {{ option.label }}
-      </label>
-    {% endfor %}
+          <input type="checkbox" name="{{ widget.name }}" value="{{ option.value }}"{% if option.selected %} checked{% endif %}>
+          {{ option.label }}
+        </label>
+      {% endfor %}
+    </details>
   {% endfor %}
+  <p class="capability-empty" hidden data-capability-empty>{% trans "Nothing matches." %}</p>
+  <p class="capability-notice" role="status" aria-live="polite" data-capability-notice></p>
 </div>
-{{ feature_parents|json_script:"capability-feature-parents" }}
+{{ capability_rules|json_script:"capability-rules" }}
 <script>
+  // Owner decision #87. Mirrors apps/makerspaces/admin_capability_completion.py, which
+  // re-applies the same rules on save. No checkbox is ever disabled.
   (function () {
-    const parents = JSON.parse(document.getElementById('capability-feature-parents').textContent);
-    document.querySelectorAll('[data-feature-option]').forEach((row) => {
-      const input = row.querySelector('input');
-      const parent = parents[input.value];
-      // Parentless feature (parent === null): standalone, always selectable.
-      if (!parent) return;
-      const module = [...document.querySelectorAll('[data-module-option] input')].find((item) => item.value === `module:${parent}`);
-      const sync = () => { input.disabled = !module || !module.checked; };
-      if (module) module.addEventListener('change', sync);
-      sync();
-    });
+    const rules = JSON.parse(document.getElementById('capability-rules').textContent);
+    const notice = document.querySelector('[data-capability-notice]');
+    const inputs = new Map([...document.querySelectorAll('.capability-matrix input')].map((input) => [input.value, input]));
+    // The bare name: drop the feature arrow and the "(requires ...)"/"(core ...)" suffixes.
+    const label = (value) => inputs.get(value).parentElement.textContent.trim().replace(/^->\s*/, '').replace(/\s*\(.*$/, '');
+    const say = (text) => { notice.textContent = text; };
+    const check = (value, ticked) => {
+      const input = inputs.get(value);
+      if (!input || input.checked) return;
+      input.checked = true;
+      ticked.push(label(value));
+    };
+    const tickModule = (value, ticked) => {
+      ((rules.modules[value] || {}).requires || []).forEach((required) => check(required, ticked));
+    };
+    const untick = (removedModules, removedFeatures) => {
+      const off = [];
+      const uncheck = (value) => {
+        const input = inputs.get(value);
+        if (!input || !input.checked) return false;
+        input.checked = false;
+        off.push(label(value));
+        return true;
+      };
+      Object.entries(rules.modules).forEach(([value, rule]) => {
+        if (!rule.core && rule.requires.some((required) => removedModules.has(required)) && uncheck(value)) removedModules.add(value);
+      });
+      Object.entries(rules.features).forEach(([value, rule]) => {
+        if (rule.needs.some((module) => removedModules.has(module)) && uncheck(value)) removedFeatures.add(value);
+      });
+      let changed = true;
+      while (changed) {
+        changed = false;
+        Object.entries(rules.features).forEach(([value, rule]) => {
+          if (rule.requires_features.some((feature) => removedFeatures.has(feature)) && uncheck(value)) {
+            removedFeatures.add(value);
+            changed = true;
+          }
+        });
+      }
+      return off;
+    };
+    const turnedOff = (value, off) => say(off.length ? `Also turned off ${off.join(', ')}: they need ${label(value)}.` : '');
+    inputs.forEach((input, value) => input.addEventListener('change', () => {
+      const ticked = [];
+      const module = rules.modules[value];
+      if (module && !input.checked) {
+        if (module.core) {
+          input.checked = true;
+          say(`${label(value)} is a core module and always on.`);
+        } else {
+          turnedOff(value, untick(new Set([value]), new Set()));
+        }
+        return;
+      }
+      if (!module && !input.checked) {
+        turnedOff(value, untick(new Set(), new Set([value])));
+        return;
+      }
+      if (module) {
+        tickModule(value, ticked);
+      } else {
+        // A feature ticks its parent, every module it needs and every feature it
+        // requires (and theirs in turn), exactly as complete_selection does on save.
+        const tickFeature = (feature, seen) => {
+          if (seen.has(feature)) return;
+          seen.add(feature);
+          const rule = rules.features[feature] || {};
+          if (feature !== value) check(feature, ticked);
+          (rule.needs || []).forEach((needed) => { check(needed, ticked); tickModule(needed, ticked); });
+          (rule.requires_features || []).forEach((required) => tickFeature(required, seen));
+        };
+        tickFeature(value, new Set());
+      }
+      say(ticked.length ? `Also turned on ${ticked.join(', ')}: ${label(value)} needs them.` : '');
+    }));
+  })();
+</script>
+<script>
+  // Search and state filter only toggle `hidden`; hidden checkboxes still post, so a filter can never change a save.
+  (function () {
+    const root = document.querySelector('.capability-matrix');
+    const search = root.querySelector('[data-capability-search]');
+    const buttons = [...root.querySelectorAll('[data-capability-filter]')];
+    let state = 'all';
+    const apply = () => {
+      const q = search.value.trim().toLowerCase();
+      let shown = 0;
+      root.querySelectorAll('[data-capability-area]').forEach((area) => {
+        let any = 0;
+        const rows = area.querySelectorAll('[data-module-option], [data-feature-option]');
+        rows.forEach((row) => {
+          const group = row.closest('[data-capability-group]');
+          const text = (row.textContent + ' ' + row.querySelector('input').value).toLowerCase();
+          const on = row.querySelector('input').checked;
+          const fits = (!q || text.includes(q)) && (state === 'all' || (state === 'on') === on);
+          row.hidden = !fits;
+          if (fits) any += 1;
+          if (group) group.hidden = !group.querySelector('label:not([hidden])');
+        });
+        area.hidden = !any;
+        if (q && any) area.open = true;
+        area.querySelector('[data-capability-count]').textContent = any;
+        shown += any;
+      });
+      root.querySelector('[data-capability-empty]').hidden = shown > 0;
+    };
+    search.addEventListener('input', apply);
+    root.addEventListener('change', () => { if (state !== 'all') apply(); });
+    buttons.forEach((button) => button.addEventListener('click', () => {
+      state = button.dataset.capabilityFilter;
+      buttons.forEach((other) => other.setAttribute('aria-pressed', String(other === button)));
+      apply();
+    }));
   })();
 </script>

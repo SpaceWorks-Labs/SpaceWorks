@@ -28,8 +28,8 @@ GROUP_NOTIFICATIONS = "notifications"
 GROUP_REPORTS = "reports"
 GROUP_PAYMENTS = "payments"
 GROUP_MOBILE = "mobile"
-GROUP_BACKUP = "backup"
 GROUP_DEVICES = "devices"
+GROUP_SHOP = "shop"
 
 
 @dataclass(frozen=True)
@@ -70,7 +70,7 @@ GROUPS = (
     GroupDefinition(
         GROUP_NOTIFICATIONS, "Notifications",
         "The in-app inbox and every outbound channel: email, Telegram, Slack, "
-        "Mattermost and Discord. API-client issuance sits here.",
+        "Mattermost, Discord, SMS and WhatsApp. API-client issuance sits here.",
     ),
     GroupDefinition(
         GROUP_REPORTS, "Reports",
@@ -88,14 +88,15 @@ GROUPS = (
         "Attested device sessions, native push and the in-app payment sheet.",
     ),
     GroupDefinition(
-        GROUP_BACKUP, "Backup & custody",
-        "Makerspace archive requests, archive-recipient keys and custody status. The "
-        "deployment's own backups cover every makerspace whether or not this is on.",
-    ),
-    GroupDefinition(
         GROUP_DEVICES, "Connected devices",
         "Printers and label printers enrolled with their own signing key. A device is "
         "never a staff account: it proves possession of its key on every request.",
+    ),
+    # Release 2 L22 (#135 Q-S1): the shop is its own top-level module, an owner exception to #97.
+    GroupDefinition(
+        GROUP_SHOP, "Shop",
+        "Sell consumables, kits and merch at the front desk and online, with stock, receipts "
+        "and every sale in the finance ledger.",
     ),
 )
 

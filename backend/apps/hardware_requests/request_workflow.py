@@ -1,15 +1,15 @@
+from apps.accounts.account_kind_guards import require_member_account
+
 from dataclasses import dataclass
 
-from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
 
 from apps.audit import services as audit
+from apps.accounts.account_obligations import lock_obligation_owner
 from apps.hardware_requests import notifications
-from apps.hardware_requests.models import HardwareRequest, HardwareRequestItem
+from apps.hardware_requests.models import HardwareRequest
 from apps.hardware_requests.workflow_errors import (
-    AnonymousRequestIdempotencyConflict,
-    AnonymousRequestOutstandingLimit,
     InvalidTransition,
     RequestValidationError,
     RequesterBlocked,
@@ -17,18 +17,23 @@ from apps.hardware_requests.workflow_errors import (
 from apps.hardware_requests.workflow_utils import locked_request
 from apps.inventory import availability
 from apps.makerspaces.models import Makerspace
-from apps.notifications.emit import emit_notification
 
 
 @dataclass(frozen=True)
 class RequesterSnapshot:
-    """Identity captured on a request independently from its durable principal."""
+    """Identity captured on a request independently from its durable principal.
+
+    The signed-in account's own details, or -- for an account-less request in a space
+    without member accounts (#80) -- the name, phone and email the borrower typed, the
+    email already proven by a one-time code. Either way `requester_contact_verified`
+    keeps its default of True; rows from the retired unverified opt-in keep their False
+    flag and the mail suppression it drives.
+    """
 
     username: str
     name: str
     email: str
     phone: str
-    contact_verified: bool
 
 
 def submit_request(
@@ -39,97 +44,29 @@ def submit_request(
     requester_principal,
     contact_snapshot,
     audit_actor,
-    idempotency_key_fingerprint="",
-    payload_fingerprint="",
+    account_less_marker="",
+    contact_key="",
+    pickup_from=None,
+    pickup_until=None,
+    waitlist_entry_id=None,
 ):
+    require_member_account(requester_principal)
     with transaction.atomic():
         from apps.encryption.write_fence import assert_mapped_write_allowed
+        from apps.tenant_migration.gate_runtime import assert_write_allowed
 
+        assert_write_allowed(makerspace.id)
         assert_mapped_write_allowed(makerspace.id)
-        if not contact_snapshot.contact_verified:
-            # Serialize the tenant ceiling with creation. A count followed by INSERT
-            # without this lock lets concurrent requests all observe spare capacity.
-            makerspace = Makerspace.objects.select_for_update().get(pk=makerspace.pk)
-            existing = anonymous_idempotency_replay(
-                makerspace,
-                idempotency_key_fingerprint,
-                payload_fingerprint,
-            )
-            if existing is not None:
-                return existing
-            _enforce_anonymous_outstanding_limit(makerspace)
-
         makerspace = Makerspace.objects.select_for_update().get(pk=makerspace.pk)
-        from apps.makerspaces.guards import require_feature
-
-        require_feature(makerspace, "loans.enabled")
-        availability.enforce_submission_borrow_limits(makerspace, requester_principal, items)
-        request = HardwareRequest.objects.create(
-            makerspace=makerspace,
-            requester=requester_principal,
-            requester_username=contact_snapshot.username,
-            requester_name=contact_snapshot.name,
-            requester_contact_email=contact_snapshot.email,
-            requester_contact_phone=contact_snapshot.phone,
-            requester_contact_verified=contact_snapshot.contact_verified,
-            anonymous_idempotency_key_fingerprint=idempotency_key_fingerprint,
-            anonymous_payload_fingerprint=payload_fingerprint,
-            status=HardwareRequest.Status.PENDING_APPROVAL,
-            requested_for=requested_for,
-        )
-        HardwareRequestItem.objects.bulk_create(
-            [
-                HardwareRequestItem(
-                    request=request,
-                    product=item["product"],
-                    requested_quantity=item["quantity"],
-                )
-                for item in items
-            ]
-        )
-        audit.record(
-            audit_actor,
-            "request.submitted",
-            makerspace=makerspace,
-            target=request,
-        )
-        notifications.notify_request_submitted(request)
-        emit_notification(
-            makerspace,
-            level="info",
-            event="request.submitted",
-            title="New hardware request",
-            body=f"Hardware request #{request.pk} submitted.",
-        )
-        return request
-
-
-def anonymous_idempotency_replay(makerspace, key_fingerprint, payload_fingerprint):
-    if not key_fingerprint:
-        raise RequestValidationError("An Idempotency-Key header is required.")
-    existing = HardwareRequest.objects.filter(
-        makerspace=makerspace,
-        anonymous_idempotency_key_fingerprint=key_fingerprint,
-    ).first()
-    if existing is None:
-        return None
-    if existing.anonymous_payload_fingerprint != payload_fingerprint:
-        raise AnonymousRequestIdempotencyConflict(
-            "This idempotency key was already used for a different request."
-        )
-    return existing
-
-
-def _enforce_anonymous_outstanding_limit(makerspace):
-    limit = settings.ANONYMOUS_REQUEST_OUTSTANDING_LIMIT
-    outstanding = HardwareRequest.objects.filter(
-        makerspace=makerspace,
-        status=HardwareRequest.Status.PENDING_APPROVAL,
-    ).exclude(anonymous_idempotency_key_fingerprint="").count()
-    if outstanding >= limit:
-        raise AnonymousRequestOutstandingLimit(
-            "This makerspace is not accepting more anonymous requests until "
-            "pending requests are reviewed."
+        from apps.managed_hosting.extra_quotas import check_extra_quota
+        check_extra_quota(makerspace, "hardware_requests_monthly")  # decision 328a: refuses only a NEW request
+        requester_principal = lock_obligation_owner(requester_principal)
+        from apps.hardware_requests.request_submission_locked import submit_locked
+        return submit_locked(
+            makerspace, items, requested_for, requester_principal=requester_principal,
+            contact_snapshot=contact_snapshot, audit_actor=audit_actor,
+            account_less_marker=account_less_marker, contact_key=contact_key,
+            pickup_from=pickup_from, pickup_until=pickup_until, waitlist_entry_id=waitlist_entry_id,
         )
 
 
@@ -170,15 +107,21 @@ def accept_request(actor, request, accepted=None):
                 "Accept at least one unit, or reject the request instead."
             )
 
+        # A claimed waitlist offer's held units become this reservation in the same
+        # transaction (release then reserve under the same product lock).
+        from apps.hardware_requests import waitlist
+        waitlist.convert_claim(locked)
         # reserve_for_request now runs the individual-asset guard under its own
         # product row lock, so the check and the reservation can't race apart.
         availability.reserve_for_request(locked)
 
+        from apps.hardware_requests.pickup_windows import deadline_at_accept
         locked.status = HardwareRequest.Status.ACCEPTED
         locked.accepted_by = actor
         locked.accepted_at = timezone.now()
+        locked.pickup_until = deadline_at_accept(locked, now=locked.accepted_at)
         locked.save(
-            update_fields=["status", "accepted_by", "accepted_at", "updated_at"]
+            update_fields=["status", "accepted_by", "accepted_at", "pickup_until", "updated_at"]
         )
         audit.record(
             actor,
@@ -203,6 +146,8 @@ def reject_request(actor, request, reason):
                 f"Cannot reject hardware request with status {locked.status}."
             )
 
+        from apps.hardware_requests import waitlist
+        waitlist.release_claim(locked)
         locked.status = HardwareRequest.Status.REJECTED
         locked.rejection_reason = reason
         locked.save(update_fields=["status", "rejection_reason", "updated_at"])

@@ -9,6 +9,7 @@ from django.utils import timezone
 from apps.audit import services as audit
 from apps.evidence import storage
 from apps.hardware_requests.models_replay import ReplayCommand
+from apps.hardware_requests.workflow_errors import DepositRequired
 from apps.hardware_requests.replay_claims import claim_locked, complete_locked, fail_claim, fail_locked, release
 from apps.hardware_requests.replay_dispatch import dispatch
 from apps.hardware_requests.replay_failures import ReplayFailure, TRANSIENT, mapped_failure
@@ -16,6 +17,24 @@ from apps.hardware_requests.replay_records import age, audit_meta, check_predece
 from apps.tenant_migration.gate_runtime import assert_write_allowed
 
 logger = logging.getLogger(__name__)
+
+
+def keep_raised_deposit(exc, user):
+    """Re-raise, in its own transaction, the deposit an issue gate raised before refusing.
+
+    `DepositRequired` is raised inside the dispatch transaction, so the Payment row it just
+    created rolls back with it -- the member was told to settle a deposit that no longer
+    existed (payments audit 0.12.0, A-4). The online path keeps it because the debt is
+    recorded post-commit; the replay does the same here, idempotently via `_deposit`.
+    """
+    from apps.hardware_requests.loan_charges_issue import _deposit, deposit_quote
+    from apps.hardware_requests.models import HardwareRequest
+
+    try:
+        request = HardwareRequest.objects.select_related("makerspace").get(pk=exc.payment.subject_id)
+        _deposit(request, user, deposit_quote(request))
+    except Exception:
+        logger.exception("kiosk_replay_deposit_keep_failed", extra={"payment_id": getattr(exc.payment, "pk", None)})
 
 
 def _owned(identity, envelope):
@@ -82,6 +101,8 @@ def execute(identity, envelope):
             data = result(command)
         return data
     except Exception as exc:
+        if isinstance(exc, DepositRequired):
+            keep_raised_deposit(exc, user)
         failure = mapped_failure(exc, envelope["kind"])
         if failure is None:
             # Log only identifiers and exception type, never QR/payload/secret text.

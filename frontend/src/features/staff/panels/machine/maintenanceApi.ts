@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { staffRequest } from "../../../../lib/api";
@@ -26,6 +27,8 @@ export type MaintenanceSchedule = {
   created_at: string;
   updated_at: string;
   overdue: boolean;
+  /** Lock the machine out (no job starts) while this schedule is overdue. */
+  blocks_use?: boolean;
 };
 export type MaintenanceLog = {
   id: number;
@@ -52,11 +55,13 @@ export type ScheduleInput = {
   job_count?: number | null;
   anchor?: "completion" | "calendar";
   next_due: string;
+  blocks_use?: boolean;
 };
 export type LogInput = {
   summary: string;
   performed_at?: string;
   cost?: string | null;
+  cost_method?: string;
   parts_note?: string;
   set_idle?: boolean;
   schedule_id?: number;
@@ -112,6 +117,7 @@ function useScheduleInvalidation(makerspaceId: number, machineId: number) {
     await Promise.all([
       client.invalidateQueries({ queryKey: maintenanceKeys.schedules(machineId) }),
       client.invalidateQueries({ queryKey: ["dashboard", makerspaceId] }),
+      client.invalidateQueries({ queryKey: ["machine-lockout", machineId] }),
     ]);
   };
 }
@@ -164,6 +170,8 @@ export function useLogMaintenance(makerspaceId: number, machineId: number) {
         client.invalidateQueries({ queryKey: machineKeys.detail(machineId) }),
         client.invalidateQueries({ queryKey: machineKeys.all }),
         client.invalidateQueries({ queryKey: ["dashboard", makerspaceId] }),
+        client.invalidateQueries({ queryKey: ["machine-lockout", machineId] }),
+        client.invalidateQueries({ queryKey: ["machine-downtime", machineId] }),
       ]);
     },
   });
@@ -229,12 +237,12 @@ export async function uploadToContract(file: File, contract: UploadContract) {
     const response = await fetch(contract.upload.url, {
       method: "PUT", body: file, headers: contract.upload.headers,
     });
-    if (!response.ok) throw new Error(`Storage upload failed (${response.status})`);
+    if (!response.ok) throw new Error(t`Storage upload failed (${response.status})`);
     return;
   }
   const body = new FormData();
   Object.entries(contract.upload.fields ?? {}).forEach(([key, value]) => body.append(key, value));
   body.append("file", file);
   const response = await fetch(contract.upload.url, { method: "POST", body });
-  if (!response.ok) throw new Error(`Storage upload failed (${response.status})`);
+  if (!response.ok) throw new Error(t`Storage upload failed (${response.status})`);
 }

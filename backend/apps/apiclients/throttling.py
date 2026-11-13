@@ -14,7 +14,20 @@ class ClientTierRateThrottle(ScopedRateThrottle):
         self.scope = f"client_{self._tier(api_client)}"
         self.rate = self.get_rate()
         self.num_requests, self.duration = self.parse_rate(self.rate)
+        self._apply_space_limit(api_client)
         return SimpleRateThrottle.allow_request(self, request, view)
+
+    def _apply_space_limit(self, api_client):
+        """Decision 284: the superadmin's per-space `api_requests_per_minute` may only LOWER the tier rate.
+
+        No override (the default) leaves the tier rate exactly as it was; 0 refuses every request.
+        """
+        if api_client.makerspace_id is None:
+            return
+        from apps.managed_hosting.extra_quotas import quota_limit
+        cap = quota_limit(api_client.makerspace, "api_requests_per_minute")
+        if cap is not None and cap * self.duration < self.num_requests * 60:
+            self.num_requests, self.duration = cap, 60
 
     def get_cache_key(self, request, view):
         api_client = getattr(request, "api_client", None)

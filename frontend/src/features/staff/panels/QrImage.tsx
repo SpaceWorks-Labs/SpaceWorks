@@ -1,6 +1,8 @@
+import { t } from "@lingui/core/macro";
 import { useMemo } from "react";
 
 import { useStaffGet } from "./shared";
+import { BoxSpinner } from "../../../components/BoxSpinner";
 
 type QrPrintPayload = {
   payload: string;
@@ -15,11 +17,11 @@ export function QrImage({ qrId, label }: { qrId: number; label: string }) {
   }, [qr.data?.svg]);
 
   if (qr.isLoading) {
-    return <div className="grid aspect-square place-items-center rounded-md border border-line text-xs text-muted">Loading QR</div>;
+    return <div className="grid aspect-square place-items-center rounded-md border border-line"><BoxSpinner label={t`Loading QR`} size={24} /></div>;
   }
 
   if (qr.isError || !src) {
-    return <div className="grid aspect-square place-items-center rounded-md border border-danger/40 text-xs text-danger">QR unavailable</div>;
+    return <div className="grid aspect-square place-items-center rounded-md border border-danger/40 text-xs text-danger">{t`QR unavailable`}</div>;
   }
 
   return <img className="aspect-square w-full rounded-md border border-line bg-white p-2" src={src} alt={`${label} QR`} />;

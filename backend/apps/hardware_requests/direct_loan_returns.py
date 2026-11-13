@@ -4,6 +4,7 @@ from django.utils import timezone
 
 from apps.audit import services as audit
 from apps.boxes.models import QrCode, QrScanEvent
+from apps.boxes.qr_lookup import scanned_q
 from apps.evidence import storage
 from apps.evidence.consumption import mark_consumed
 from apps.evidence.finalization import charge_storage_once, lock_evidence_for_attachment
@@ -229,7 +230,7 @@ def _return_scan_qr(loan, qr_payload):
             raise RequestValidationError("Return QR scan is required.")
         qr = (
             QrCode.objects.select_for_update()
-            .filter(pk__in=expected_ids, makerspace=loan.makerspace, payload=qr_payload)
+            .filter(scanned_q(qr_payload), pk__in=expected_ids, makerspace=loan.makerspace)
             .first()
         )
         if qr is None:
@@ -243,8 +244,8 @@ def _return_scan_qr(loan, qr_payload):
     qr = (
         QrCode.objects.select_for_update()
         .filter(
+            scanned_q(qr_payload),
             makerspace=loan.makerspace,
-            payload=qr_payload,
             status=QrCode.Status.ACTIVE,
         )
         .first()

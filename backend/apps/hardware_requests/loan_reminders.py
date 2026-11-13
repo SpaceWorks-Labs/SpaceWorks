@@ -1,5 +1,6 @@
 """Loan ladder source for F1. No addresses or payloads persist in schedule rows."""
 
+from django.utils.translation import gettext
 from datetime import timedelta
 
 from itertools import islice
@@ -43,6 +44,8 @@ def _discover(makerspace, now, limit, local_tz, *, kind, source):
     # Completed older subjects must not crowd out later eligible borrowers.
     iterator = rows.iterator(chunk_size=200)
     while page := list(islice(iterator, 200)):
+        from apps.operations.cloud_jobs import bounded
+        bounded.check()
         completed = {}
         for subject, offset in _rows(ReminderSchedule, makerspace).filter(
             source=source, subject__in=[_subject(loan) for loan in page], kind=kind,
@@ -95,30 +98,30 @@ def build_reminder(makerspace, reminder, now, local_tz):
     title = "Overdue loan escalation" if reminder.kind == "escalation" else "Loan return reminder"
     return ReminderMessage(
         title=title, event="loan.overdue_escalated" if reminder.kind == "escalation" else "loan.return_reminder",
-        body=f"Request #{loan.pk} {'is overdue' if overdue else 'is due for return'}; return by {due}.",
+        body=gettext('Request #{pk} {value}; return by {due}.').format(pk=loan.pk, value='is overdue' if overdue else 'is due for return', due=due),
         level="warning" if overdue else "info",
     )
 
 
 def dispatch_reminder(makerspace, reminder, message, now, local_tz):
     from apps.hardware_requests.loan_reminder_notifications import deliver_loan_reminder
-    from apps.notifications.emit import emit_notification
 
     # Revalidate after the shared source gate too, just before outbound delivery.
     loan = _current(makerspace, reminder)
     if loan is None:
         return
     result = deliver_loan_reminder(makerspace, loan, reminder, message, local_tz)
-    if reminder.kind == "escalation":
-        emit_notification(makerspace, title=message.title, event=message.event,
-                          body=message.body, level=message.level)
-    elif reminder.offset_seconds == 0 and result.delivered_counts.get("email"):
+    # Escalations already reserve staff-only envelopes. A legacy feed mirror
+    # would create a second staff alert outside that source-backed identity.
+    if reminder.kind == "borrower" and reminder.offset_seconds == 0 and result and result.scheduled:
         _rows(HardwareRequest, makerspace).filter(pk=loan.pk, return_due_at=reminder.due_at).update(
             return_reminder_sent_at=now,
         )
-    if result.failed_counts:
+    if result is None or result.failed_counts:
         # The claim remains permanent even when delivery fails. Preserve that
         # at-most-once rule, but expose the failure to F1 instead of recording success.
+        # None means the adapter itself failed (its savepoint rolled back); nobody
+        # reachable is NOT a failure, exactly as before.
         raise RuntimeError("Loan reminder delivery failed.")
 
 

@@ -39,7 +39,6 @@ def _arguments(argv):
     parser.add_argument("state", choices=[state.value for state in MarkerState])
     parser.add_argument("--intent", action="store_true")
     parser.add_argument("--replace-database-identity", action="store_true")
-    parser.add_argument("--readiness-json")
     parser.add_argument("--operation-json")
     parser.add_argument(
         "--capability-journal",
@@ -48,23 +47,21 @@ def _arguments(argv):
     return parser.parse_args(argv)
 
 
+def _sql_role(parsed):
+    """The SQL role behind a wire login: a Supabase shared pooler logs in as ``role.projectref``."""
+    user = unquote(parsed.username)
+    if (parsed.hostname or "").lower().endswith((".pooler.supabase.com", ".pooler.supabase.co")):
+        role, separator, project = user.rpartition(".")
+        if separator and role and project.isascii() and project.isalnum():
+            return role
+    return user
+
+
 def _credentials(url):
     parsed = urlparse(url)
     if parsed.scheme not in {"postgres", "postgresql"} or not parsed.username or parsed.password is None:
         raise RuntimeError("Runtime database URL must contain a PostgreSQL user and password.")
-    return unquote(parsed.username), unquote(parsed.password)
-
-
-def _readiness(path, current):
-    if path:
-        payload = json.loads(Path(path).read_text(encoding="utf-8"))
-        # Full marker parsing below is the single shape validator.
-        return payload
-    return {
-        "reservations": list(current.reservations),
-        "fences": list(current.fences),
-        "not_restored": list(current.not_restored),
-    }
+    return _sql_role(parsed), unquote(parsed.password)
 
 
 def _operation(path, current):
@@ -93,7 +90,6 @@ def main(argv=None):
     if args.intent and (
         state != MarkerState.CANDIDATE_PREPARATION
         or args.replace_database_identity
-        or args.readiness_json
         or operation is None
     ):
         raise RuntimeError(
@@ -101,8 +97,6 @@ def main(argv=None):
         )
     if current.stage == MarkerStage.INTENT and current.operation != operation:
         raise RuntimeError("An existing intent belongs to a different operation.")
-    if args.replace_database_identity and not args.readiness_json:
-        raise RuntimeError("Replacing database identity requires explicit readiness facts.")
     runtime_url = os.environ.get("SPACEWORKS_RUNTIME_DATABASE_URL")
     if not runtime_url:
         raise RuntimeError("SPACEWORKS_RUNTIME_DATABASE_URL is required.")
@@ -167,7 +161,6 @@ def main(argv=None):
             payload = marker_payload(
                 state,
                 identity,
-                readiness=_readiness(args.readiness_json, current),
                 operation=operation,
             )
             if state == MarkerState.CANDIDATE_HEALTH and (

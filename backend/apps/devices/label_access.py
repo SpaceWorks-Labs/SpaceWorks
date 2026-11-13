@@ -1,4 +1,5 @@
 """Label adapter scope and lock order: tenant -> device -> command -> label -> batch."""
+from django.utils.translation import gettext
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
@@ -11,6 +12,17 @@ from apps.makerspaces.guards import require_module
 from apps.operations.models import QrPrintBatch
 
 MODULES = ("devices", "qr_print_batches")
+
+
+def prints_labels(device):
+    """A label printer, or an adapter with an enabled binding serving ``label.print`` (decision 312)."""
+    if device.kind == Device.Kind.LABEL_PRINTER:
+        return True
+    if device.kind != Device.Kind.ADAPTER:
+        return False
+    from apps.devices.models import AdapterBinding
+    return any("label.print" in caps for caps in AdapterBinding.objects.filter(
+        device=device, enabled=True).values_list("capabilities", flat=True))
 
 
 def require_adapter(makerspace_id):
@@ -33,9 +45,9 @@ def locked_label_device(principal):
     require_adapter(makerspace.pk)
     device = get_object_or_404(Device.objects.select_for_update(),
                                pk=principal.device_id, makerspace=makerspace)
-    if (device.kind != Device.Kind.LABEL_PRINTER or device.status != Device.Status.ACTIVE
+    if (not prints_labels(device) or device.status != Device.Status.ACTIVE
             or device.key_version != principal.key_version):
-        raise PermissionDenied("Device authorization is no longer active.")
+        raise PermissionDenied(gettext("Device authorization is no longer active."))
     return makerspace, device
 
 
@@ -48,9 +60,9 @@ def owned_label(device, label_id):
         pk=identity["command_id"], device=device, makerspace_id=device.makerspace_id)
     label = LabelPrintCommand.objects.select_for_update().get(pk=label_id)
     if command.device_key_version != device.key_version:
-        raise PermissionDenied("Command belongs to a previous device key.")
+        raise PermissionDenied(gettext("Command belongs to a previous device key."))
     if command.status != DeviceCommand.Status.ACKNOWLEDGED or command.kind != "label_print":
-        raise LabelConflict("Command must be acknowledged and not cancelled.")
+        raise LabelConflict(gettext("Command must be acknowledged and not cancelled."))
     return label, command
 
 
@@ -58,7 +70,7 @@ def delivery_target(makerspace, device, command):
     """Return None for generic polling; caller commits cancellation, not a 400 rollback."""
     label = LabelPrintCommand.objects.select_for_update().filter(
         command=command, device=device, makerspace=makerspace).first()
-    if (label is None or device.kind != Device.Kind.LABEL_PRINTER
+    if (label is None or not prints_labels(device)
             or command.device_key_version != device.key_version
             or label.result in [LabelPrintCommand.Result.SUCCEEDED, LabelPrintCommand.Result.FAILED]
             or not all(module_enabled(makerspace, key) for key in MODULES)):
@@ -73,5 +85,5 @@ def locked_batch(label, device):
         pk=label.batch_id, makerspace_id=device.makerspace_id,
         status=QrPrintBatch.Status.PRINTED).first()
     if batch is not None and batch.items.count() != label.item_count_snapshot:
-        raise ValidationError("Label batch contents changed.")
+        raise ValidationError(gettext("Label batch contents changed."))
     return batch

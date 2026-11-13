@@ -19,29 +19,74 @@ PORTABLE_DATASETS = {
 }
 
 
+# label -> (columns the previous format lacks, columns only the previous format has).
+PREVIOUS_FORMAT_DRIFT = {
+    "accounts.User": (frozenset(), frozenset({"staff_makerspace_id"})),
+    "makerspaces.MakerspaceMembership": (frozenset({"track"}), frozenset()),
+}
+
+
 class PortableArchive:
     def __init__(self, root):
         self.root = Path(root)
         if not self.root.is_dir():
             raise ArchiveFormatError("The decrypted archive directory does not exist.")
+        self._staff_context = None
 
     def rows(self, model_label):
+        from .portable_staff import StaffArchiveContext
+        if self._staff_context is None:
+            self._staff_context = StaffArchiveContext(self)
+        for row in self.raw_rows(model_label):
+            yield self._staff_context.decorate(model_label, row)
+
+    def raw_rows(self, model_label):
         dataset = PORTABLE_DATASETS.get(model_label)
         if dataset is None:
             raise ArchiveFormatError(f"No PORTABLE dataset exists for {model_label}.")
         path = self.root / dataset.path
         if not path.is_file():
+            from .public_page_legacy import missing_dataset_allowed
+            if missing_dataset_allowed(self, model_label):
+                return
             raise ArchiveFormatError(f"Archive dataset is missing: {dataset.path}.")
         with path.open(encoding="utf-8", newline="") as handle:
             reader = csv.DictReader(handle)
             expected = {column.name for column in dataset.columns}
             actual = set(reader.fieldnames or ())
-            if actual != expected:
-                raise ArchiveFormatError(
-                    f"Archive columns drifted for {model_label}; "
-                    f"missing={sorted(expected - actual)}, extra={sorted(actual - expected)}."
-                )
-            yield from reader
+            if actual != expected and not self._previous_format_columns(model_label, expected, actual):
+                from .public_page_legacy import missing_columns_allowed
+                if actual - expected or not missing_columns_allowed(self, model_label, expected - actual):
+                    raise ArchiveFormatError(
+                        f"Archive columns drifted for {model_label}; "
+                        f"missing={sorted(expected - actual)}, extra={sorted(actual - expected)}."
+                    )
+            # Only the previous-format drift (a Format 1 archive) is filled with blanks for portable_staff
+            # to convert. A legacy public-page column stays ABSENT so `row_planning` reconstructs it
+            # (an `identity_id` of "" would be refused as an empty non-null value).
+            missing = ({name: "" for name in expected - actual}
+                       if self._previous_format_columns(model_label, expected, actual) else {})
+            if model_label == "accounts.User":
+                from .archive_user_lifecycle import lifecycle_rows
+
+                yield from ({**missing, **row} for row in lifecycle_rows(self, reader))
+            else:
+                yield from ({**missing, **row} for row in reader)
+
+    def format_version(self):
+        if not hasattr(self, "_format_version"):
+            path = self.root / "migration-manifest.json"
+            self._format_version = (self.json("migration-manifest.json").get("format_version")
+                                    if path.is_file() else None)
+        return self._format_version
+
+    def _previous_format_columns(self, model_label, expected, actual):
+        """Format 1 (one version back, Q11): before one account per person the user rows
+        named a staff tenant and the roster had no track; portable_staff converts them."""
+        drift = PREVIOUS_FORMAT_DRIFT.get(model_label)
+        if drift is None or self.format_version() != 1:
+            return False
+        return expected - actual <= drift[0] and actual - expected <= drift[1]
 
     def json(self, relative_path):
         path = self.root / relative_path

@@ -7,50 +7,27 @@ from rest_framework.response import Response
 
 from apps.accounts import rbac
 from apps.audit import services as audit
+from apps.card_designs.serializers_openapi import PhotoUploadSerializer
 from apps.evidence.responses import storage_unavailable_response
 from apps.evidence.storage import StorageUnavailable
-from apps.makerspaces import member_card_printing, member_card_storage, member_card_templates
+from apps.makerspaces import member_card_storage
 from apps.makerspaces.member_card_serializers import (
     MemberCardOwnUpdateSerializer,
     MemberCardPhotoFinalizeSerializer,
     MemberCardPhotoPresignSerializer,
     MemberCardSerializer,
 )
-from apps.makerspaces.member_card_services import active_qr
 from apps.makerspaces.models import MemberCard
 from apps.makerspaces.profile_views import MemberProfileBaseView
 from apps.makerspaces.throttles import MemberImagePresignThrottle
 from apps.makerspaces.member_card_own_serializer import OwnMemberCardSerializer
 
 ERRORS = {
-    400: OpenApiResponse(description="Membership module disabled or invalid input."),
+    400: OpenApiResponse(description="Invalid input."),
     401: OpenApiResponse(description="Authentication required."),
     403: OpenApiResponse(description="An active membership is required."),
-    404: OpenApiResponse(description="No card has been issued to this membership."),
+    404: OpenApiResponse(description="No card has been issued to this membership, or the membership module is turned off."),
 }
-
-
-def _certification_names(membership):
-    from apps.machines.certifications import live_certification_names
-
-    return live_certification_names(membership)
-
-
-def snapshot_for(card, *, watermark=""):
-    membership = card.membership
-    role = membership.assigned_role.name if membership and membership.assigned_role_id else (membership.role if membership else "")
-    qr = active_qr(card)
-    return member_card_printing.CardSnapshot(
-        card_number=card.card_number,
-        printed_name=card.printed_name,
-        makerspace_name=(card.makerspace.branding_config or {}).get("display_name") or card.makerspace.name,
-        issued_at=card.issued_at.date().isoformat(),
-        membership_role=str(role or ""),
-        qr_payload=qr.payload if qr else None,
-        photo=member_card_storage.photo_bytes(card),
-        watermark=watermark,
-        certifications=_certification_names(membership),
-    )
 
 
 class OwnMemberCardMixin(MemberProfileBaseView):
@@ -90,7 +67,7 @@ class MemberCardPhotoView(OwnMemberCardMixin):
     throttle_classes = [MemberImagePresignThrottle]
 
     @extend_schema(tags=["Member profile"], summary="Create a card photo upload URL (staging only)",
-                   request=MemberCardPhotoPresignSerializer, responses={201: OpenApiTypes.OBJECT, **ERRORS,
+                   request=MemberCardPhotoPresignSerializer, responses={201: PhotoUploadSerializer, **ERRORS,
                    503: OpenApiResponse(description="Storage unavailable.")})
     def post(self, request, makerspace_id):
         card = self.card(request, makerspace_id)
@@ -139,13 +116,10 @@ class MemberCardPreviewView(OwnMemberCardMixin):
     @extend_schema(tags=["Member profile"], summary="Preview my card as a watermarked PDF", request=None,
                    responses={(200, "application/pdf"): OpenApiTypes.BINARY, **ERRORS})
     def get(self, request, makerspace_id):
+        from apps.card_designs.cards import render
         card = self.card(request, makerspace_id)
-        template = dict(member_card_templates.template_for(card.makerspace), page="cr80")
-        pdf = member_card_printing.render_cards_pdf(
-            member_card_templates.normalize_template(template),
-            [snapshot_for(card, watermark="PREVIEW - not valid")],
-            title="Member card preview",
-        )
+        # Release 2 L3: the real design, watermarked, with placeholder codes.
+        pdf, _content_type, _filename = render("member_card", card, fmt="pdf", preview_label="PREVIEW - not valid")
         response = HttpResponse(pdf, content_type="application/pdf")
         response["Content-Disposition"] = 'inline; filename="member-card-preview.pdf"'
         return response

@@ -1,5 +1,6 @@
 """Staff refund endpoint. Gated exactly like waive: same subject-authority helper."""
 
+from django.utils.translation import gettext
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
@@ -47,8 +48,12 @@ class PaymentRefundView(APIView):
             .first()
         )
         if payment is None:
-            raise NotFound("Payment not found.")
+            raise NotFound(gettext("Payment not found."))
         _require_subject_authority(request.user, [payment])
+        from apps.payments.donations.refunds import refuse_direct_refund  # lane L18: gifts only via a case
+        from apps.shop.refunds import refuse_direct_refund as refuse_shop_refund  # lane L22: shop sales only via a case
+        refuse_shop_refund(payment)
+        refuse_direct_refund(payment)
         refund_payment(
             payment,
             amount=payload.validated_data["amount"],

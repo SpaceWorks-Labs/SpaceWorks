@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.db import IntegrityError, transaction
 from django.core.exceptions import ObjectDoesNotExist
 from apps.accounts import rbac
@@ -35,7 +36,7 @@ def _count_target(model, actor, pk, makerspace, action=rbac.Action.EDIT_INVENTOR
     try:
         return rows.get(pk=pk, makerspace=makerspace)
     except ObjectDoesNotExist as exc:
-        raise ValidationError("Select a count target in this makerspace.") from exc
+        raise ValidationError(gettext("Select a count target in this makerspace.")) from exc
 
 
 def _container(actor, pk, makerspace):
@@ -49,10 +50,12 @@ def _locked_stocktake(actor, stocktake):
 
 @transaction.atomic
 def create_stocktake(actor, makerspace, data):
+    from apps.managed_hosting.extra_quotas import check_extra_quota_locked
+    check_extra_quota_locked(makerspace, "stocktake_sessions_monthly")  # decision 328a: refuses only a NEW session
     try:
         container = _container(actor, data.get("container_id"), makerspace)
     except ObjectDoesNotExist as exc:
-        raise ValidationError({"container_id": "Select a container in this makerspace."}) from exc
+        raise ValidationError({"container_id": gettext("Select a container in this makerspace.")}) from exc
     stocktake = StocktakeSession.objects.create(
         makerspace=makerspace,
         container=container,
@@ -66,12 +69,13 @@ def create_stocktake(actor, makerspace, data):
 
 def resolve_scan_target(actor, stocktake, payload):
     from apps.accounts import rbac
-    from apps.boxes.access import qr_for_action
+    from apps.boxes.access import scanned_qr_for_action
     from apps.boxes.models import Box, QrCode
 
-    qr = qr_for_action(actor, rbac.Action.VIEW_INVENTORY, payload=payload, status=QrCode.Status.ACTIVE)
+    # Pinned to the stocktake's space: an external label value is unique only there.
+    qr = scanned_qr_for_action(actor, rbac.Action.VIEW_INVENTORY, payload, makerspace_id=stocktake.makerspace_id)
     if qr.makerspace_id != stocktake.makerspace_id:
-        raise ValidationError("QR belongs to a different makerspace.")
+        raise ValidationError(gettext("QR belongs to a different makerspace."))
     if qr.target_type == QrCode.TargetType.BOX:
         box = _count_target(Box, actor, qr.target_id, stocktake.makerspace, rbac.Action.VIEW_INVENTORY)
         return {"type": "box", "container_id": box.id, "label": box.label, "code": box.code}
@@ -93,7 +97,7 @@ def add_stocktake_line(actor, stocktake, data):
     with transaction.atomic():
         locked = _locked_stocktake(actor, stocktake)
         if locked.status not in {StocktakeSession.Status.DRAFT, StocktakeSession.Status.COUNTING}:
-            raise ValidationError("Cannot add count lines after stocktake is completed.")
+            raise ValidationError(gettext("Cannot add count lines after stocktake is completed."))
         product = None
         asset = None
         expected = 0
@@ -101,7 +105,7 @@ def add_stocktake_line(actor, stocktake, data):
         try:
             container = _container(actor, data.get("container_id"), locked.makerspace)
         except ObjectDoesNotExist as exc:
-            raise ValidationError({"container_id": "Select a container in this makerspace."}) from exc
+            raise ValidationError({"container_id": gettext("Select a container in this makerspace.")}) from exc
         _validate_line_container(locked, container)
         if data.get("asset_id"):
             asset = _count_target(InventoryAsset, actor, data["asset_id"], locked.makerspace)
@@ -127,7 +131,7 @@ def add_stocktake_line(actor, stocktake, data):
                 notes=data.get("notes", ""),
             )
         except IntegrityError as exc:
-            raise ValidationError("Duplicate stocktake line.") from exc
+            raise ValidationError(gettext("Duplicate stocktake line.")) from exc
         audit.record(actor, "stocktake.line_counted", makerspace=locked.makerspace, target=locked, meta={"line_id": line.id})
         return line
 
@@ -136,21 +140,24 @@ def complete_stocktake(actor, stocktake):
     with transaction.atomic():
         locked = _locked_stocktake(actor, stocktake)
         if locked.status != StocktakeSession.Status.COUNTING:
-            raise ValidationError("Only counting stocktakes can be completed.")
+            raise ValidationError(gettext("Only counting stocktakes can be completed."))
         if locked.variance_threshold is not None and not locked.lines.exists():
-            raise ValidationError("Count at least one line before completing a disciplined stocktake.")
+            raise ValidationError(gettext("Count at least one line before completing a disciplined stocktake."))
         locked.approval_required = needs_approval(locked)
         locked.status = StocktakeSession.Status.COMPLETED if locked.approval_required else StocktakeSession.Status.APPROVED
         locked.completed_at = timezone.now()
         locked.save(update_fields=["status", "completed_at", "approval_required"])
         audit.record(actor, "stocktake.completed", makerspace=locked.makerspace, target=locked)
+        from .notifications_p2_alerts import notify_stocktake, stocktake_intent
+        notify_stocktake(locked, "completed")
         emit_notification(
             locked.makerspace,
             level="info",
             event="stocktake.completed",
-            title="Stocktake awaiting approval" if locked.approval_required else "Stocktake ready to apply",
-            body=f"Stocktake #{locked.pk} was completed. " + (
-                "Review is required." if locked.approval_required else "Variances are within the configured threshold."),
+            source_intent=stocktake_intent(locked, "completed"),
+            title=gettext("Stocktake awaiting approval") if locked.approval_required else gettext("Stocktake ready to apply"),
+            body=gettext('Stocktake #{pk} was completed. ').format(pk=locked.pk) + (
+                gettext("Review is required.") if locked.approval_required else gettext("Variances are within the configured threshold.")),
         )
         return locked
 
@@ -159,7 +166,7 @@ def approve_stocktake(actor, stocktake):
     with transaction.atomic():
         locked = _locked_stocktake(actor, stocktake)
         if locked.status != StocktakeSession.Status.COMPLETED:
-            raise ValidationError("Only completed stocktakes can be approved.")
+            raise ValidationError(gettext("Only completed stocktakes can be approved."))
         if locked.variance_threshold is not None and not rbac.can(actor, rbac.Action.MANAGE_MAKERSPACE, locked.makerspace_id):
             from rest_framework.exceptions import PermissionDenied
             raise PermissionDenied()
@@ -168,7 +175,7 @@ def approve_stocktake(actor, stocktake):
             makerspace=locked.makerspace, actor=actor, action="stocktake.line_counted",
             target_type=locked._meta.label_lower, target_id=str(locked.pk)).exists()
         if locked.variance_threshold is not None and (locked.started_by_id == actor.pk or counted):
-            raise ValidationError("A different approver must review a variance above the threshold.")
+            raise ValidationError(gettext("A different approver must review a variance above the threshold."))
         locked.status = StocktakeSession.Status.APPROVED
         locked.approved_by = actor
         locked.approved_at = timezone.now()
@@ -181,7 +188,7 @@ def apply_stocktake_adjustments(actor, stocktake):
     with transaction.atomic():
         locked = _locked_stocktake(actor, stocktake)
         if locked.status != StocktakeSession.Status.APPROVED:
-            raise ValidationError("Only approved stocktakes can be applied.")
+            raise ValidationError(gettext("Only approved stocktakes can be applied."))
         if locked.approval_required and locked.variance_threshold is not None and not rbac.can(actor, rbac.Action.MANAGE_MAKERSPACE, locked.makerspace_id):
             from rest_framework.exceptions import PermissionDenied
             raise PermissionDenied()

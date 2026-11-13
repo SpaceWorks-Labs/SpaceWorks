@@ -1,0 +1,454 @@
+{
+  "website": {
+    "tagline": "A day of making",
+    "accent_color": "",
+    "section_order": [
+      "HERO",
+      "ABOUT",
+      "HIGHLIGHTS",
+      "SCHEDULE",
+      "SPEAKERS",
+      "SPONSORS",
+      "VENUE",
+      "FAQ",
+      "RESOURCES",
+      "EDITORIAL"
+    ],
+    "section_enabled": {
+      "HERO": true,
+      "ABOUT": true,
+      "HIGHLIGHTS": true,
+      "SCHEDULE": true,
+      "SPEAKERS": true,
+      "SPONSORS": true,
+      "VENUE": true,
+      "FAQ": true,
+      "RESOURCES": true,
+      "EDITORIAL": true
+    },
+    "venue": null,
+    "editorial_document": {
+      "schema_version": 1,
+      "cover_mode": "inherit",
+      "cover_asset_id": null,
+      "accent_choice": "inherit",
+      "sections": []
+    },
+    "revision": 3,
+    "released": true,
+    "inherited": false,
+    "sections": [
+      {
+        "kind": "intro",
+        "slug": "legacy-story",
+        "title": "Legacy story",
+        "body": "**Legacy section** [section link](https://example.com) <b>raw</b>",
+        "url": "",
+        "asset_id": null,
+        "visibility": "published",
+        "position": 0,
+        "body_rendering": "legacy_literal_v1",
+        "image_url": null,
+        "image_alt_text": "",
+        "headline": "",
+        "organization": "",
+        "website_url": "",
+        "linkedin_url": "",
+        "x_url": "",
+        "sponsor_tier": "community_partner",
+        "icon": ""
+      }
+    ],
+    "sessions": [
+      {
+        "session_id": "46582470-dbbf-4b11-a052-4b92ea877aa6",
+        "slug": "talk",
+        "title": "Released title",
+        "body": "**Legacy session** [session link](https://example.com) <b>raw</b>",
+        "body_rendering": "legacy_literal_v1",
+        "starts_at": "2026-10-20T09:00:00Z",
+        "ends_at": "2026-10-20T09:30:00Z",
+        "effective_starts_at": "2026-10-20T09:10:00Z",
+        "effective_ends_at": "2026-10-20T09:40:00Z",
+        "delay_minutes": 10,
+        "visibility": "published",
+        "track": null,
+        "room": null,
+        "speakers": []
+      }
+    ],
+    "cover": {
+      "url": "https://objects.example.test/events/artwork.webp",
+      "alt": "Event artwork"
+    },
+    "presentation": {
+      "accent_choice": "inherit",
+      "resolved_theme": {
+        "theme_config": {},
+        "light": {
+          "fill": [
+            0,
+            110,
+            99
+          ],
+          "foreground": [
+            255,
+            244,
+            232
+          ],
+          "hover": [
+            2,
+            103,
+            93
+          ],
+          "active": [
+            4,
+            97,
+            88
+          ],
+          "soft": [
+            224,
+            238,
+            236
+          ],
+          "ink": [
+            0,
+            110,
+            99
+          ],
+          "pairs": [
+            [
+              "on-brand on brand",
+              5.675786680802773,
+              4.5
+            ],
+            [
+              "on-brand on brand-hover",
+              6.242862494184726,
+              4.5
+            ],
+            [
+              "on-brand on brand-active",
+              6.777944481536066,
+              4.5
+            ],
+            [
+              "brand-ink on bg",
+              5.675786680802773,
+              4.5
+            ],
+            [
+              "brand-ink on surface",
+              5.275732540859666,
+              4.5
+            ],
+            [
+              "brand-ink on panel",
+              6.157377933021693,
+              4.5
+            ],
+            [
+              "brand-ink on hover",
+              4.987993590700785,
+              4.5
+            ],
+            [
+              "brand-ink on brand-soft",
+              5.163547443910529,
+              4.5
+            ],
+            [
+              "brand-ink on accent-soft",
+              5.163547443910529,
+              4.5
+            ],
+            [
+              "brand-ink on emphasis-soft",
+              5.470816429681026,
+              4.5
+            ],
+            [
+              "brand-ink on success-soft",
+              6.065898915008323,
+              4.5
+            ],
+            [
+              "brand-ink on warn-soft",
+              5.894335127474259,
+              4.5
+            ],
+            [
+              "brand-ink on info-soft",
+              5.838613044270765,
+              4.5
+            ],
+            [
+              "ink on brand-soft",
+              12.371694844852996,
+              4.5
+            ],
+            [
+              "muted on brand-soft",
+              4.884850241756286,
+              4.5
+            ],
+            [
+              "accent-ink on brand-soft",
+              5.163547443910529,
+              4.5
+            ],
+            [
+              "success-ink on brand-soft",
+              4.822860408580859,
+              4.5
+            ],
+            [
+              "warn-ink on brand-soft",
+              4.850890615665438,
+              4.5
+            ],
+            [
+              "info-ink on brand-soft",
+              4.816206437313093,
+              4.5
+            ],
+            [
+              "danger on brand-soft",
+              5.425748299197106,
+              4.5
+            ],
+            [
+              "brand boundary on bg",
+              5.675786680802773,
+              3
+            ],
+            [
+              "brand boundary on surface",
+              5.275732540859666,
+              3
+            ],
+            [
+              "brand boundary on panel",
+              6.157377933021693,
+              3
+            ]
+          ]
+        },
+        "dark": {
+          "fill": [
+            0,
+            110,
+            99
+          ],
+          "foreground": [
+            255,
+            244,
+            232
+          ],
+          "hover": [
+            2,
+            103,
+            93
+          ],
+          "active": [
+            4,
+            97,
+            88
+          ],
+          "soft": [
+            18,
+            29,
+            28
+          ],
+          "ink": [
+            128,
+            177,
+            166
+          ],
+          "pairs": [
+            [
+              "on-brand on brand",
+              5.675786680802773,
+              4.5
+            ],
+            [
+              "on-brand on brand-hover",
+              6.242862494184726,
+              4.5
+            ],
+            [
+              "on-brand on brand-active",
+              6.777944481536066,
+              4.5
+            ],
+            [
+              "brand-ink on bg",
+              8.757329821613373,
+              4.5
+            ],
+            [
+              "brand-ink on surface",
+              8.207964862396615,
+              4.5
+            ],
+            [
+              "brand-ink on panel",
+              7.682486881698102,
+              4.5
+            ],
+            [
+              "brand-ink on hover",
+              7.1068095279317145,
+              4.5
+            ],
+            [
+              "brand-ink on brand-soft",
+              7.188546979584179,
+              4.5
+            ],
+            [
+              "brand-ink on accent-soft",
+              7.188546979584179,
+              4.5
+            ],
+            [
+              "brand-ink on emphasis-soft",
+              7.130525979347319,
+              4.5
+            ],
+            [
+              "brand-ink on success-soft",
+              6.705189333349742,
+              4.5
+            ],
+            [
+              "brand-ink on warn-soft",
+              6.8044872266468825,
+              4.5
+            ],
+            [
+              "brand-ink on info-soft",
+              6.872282642647631,
+              4.5
+            ],
+            [
+              "ink on brand-soft",
+              15.889819252940857,
+              4.5
+            ],
+            [
+              "muted on brand-soft",
+              7.593660110602338,
+              4.5
+            ],
+            [
+              "accent-ink on brand-soft",
+              7.188546979584179,
+              4.5
+            ],
+            [
+              "success-ink on brand-soft",
+              15.571187826430789,
+              4.5
+            ],
+            [
+              "warn-ink on brand-soft",
+              13.106592749865724,
+              4.5
+            ],
+            [
+              "info-ink on brand-soft",
+              12.16507676954799,
+              4.5
+            ],
+            [
+              "danger on brand-soft",
+              9.0823835740251,
+              4.5
+            ],
+            [
+              "brand boundary on bg",
+              8.757329821613373,
+              3
+            ],
+            [
+              "brand boundary on surface",
+              8.207964862396615,
+              3
+            ],
+            [
+              "brand boundary on panel",
+              7.682486881698102,
+              3
+            ]
+          ]
+        }
+      }
+    }
+  },
+  "functional": {
+    "id": "20000000-0000-4000-8000-000000000002",
+    "type": "functional_content",
+    "enabled": true,
+    "payload": {
+      "links": [
+        {
+          "family": "inventory",
+          "url": "https://platform.example.test/m/lab"
+        },
+        {
+          "family": "events",
+          "url": "https://platform.example.test/m/lab/events"
+        },
+        {
+          "family": "bookings",
+          "url": "https://platform.example.test/m/lab/bookings"
+        },
+        {
+          "family": "machines",
+          "url": "https://platform.example.test/m/lab/machines"
+        },
+        {
+          "family": "membership",
+          "url": "https://platform.example.test/m/lab/member"
+        }
+      ]
+    }
+  },
+  "legacy_organization": {
+    "slug": "builders",
+    "name": "Builders",
+    "description": "Build together",
+    "website": "",
+    "logo_url": null,
+    "catalogue_links": {
+      "makerspaces": "/api/v1/public/organizations/builders/makerspaces/",
+      "events": "/api/v1/public/organizations/builders/events/"
+    },
+    "collections": {
+      "linked_makerspaces": {
+        "title": "",
+        "count": 0,
+        "results": [],
+        "collection_url": "/api/v1/public/organizations/builders/makerspaces/"
+      },
+      "organization_events": {
+        "title": "",
+        "upcoming": {
+          "count": 0,
+          "results": [],
+          "collection_url": "/api/v1/public/organizations/builders/events/?period=upcoming"
+        },
+        "past": {
+          "count": 0,
+          "results": [],
+          "collection_url": "/api/v1/public/organizations/builders/events/?period=past"
+        }
+      }
+    },
+    "canonical_url": "https://platform.example.test/o/builders",
+    "plans": null,
+    "home_space": null,
+    "workspace": null
+  }
+}

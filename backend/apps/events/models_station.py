@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.core.exceptions import ValidationError
 from django.db import models
 
@@ -32,9 +33,9 @@ class EventStationBinding(models.Model):
                 # useful error with a related-object lookup exception from clean().
                 return
             if event_makerspace_id != station_makerspace_id:
-                raise ValidationError("Event and Station must belong to the same makerspace.")
+                raise ValidationError(gettext("Event and Station must belong to the same makerspace."))
             if station_kind != Station.Kind.EVENT_CHECKIN:
-                raise ValidationError("Event bindings require an event check-in Station.")
+                raise ValidationError(gettext("Event bindings require an event check-in Station."))
 
     def save(self, *args, **kwargs):
         self.full_clean()

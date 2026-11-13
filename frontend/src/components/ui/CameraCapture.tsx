@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { CameraTorch } from "./CameraTorch";
@@ -11,6 +12,7 @@ import {
   subscribe,
   trapDialogFocus,
 } from "./dialogFocus";
+import { BoxArt } from "../BoxSpinner";
 
 type CameraCaptureProps = {
   open: boolean;
@@ -29,18 +31,18 @@ function cameraErrorMessage(error: unknown) {
   if (error instanceof Error && error.message === SECURE_CONTEXT_ERROR) return error.message;
   if (error instanceof DOMException) {
     if (error.name === "NotAllowedError") {
-      return "Camera permission was denied. Allow camera access in your browser and try again.";
+      return t`Camera permission was denied. Allow camera access in your browser and try again.`;
     }
-    if (error.name === "NotFoundError") return "No camera was found on this device.";
+    if (error.name === "NotFoundError") return t`No camera was found on this device.`;
   }
-  return "The camera could not start. Close this window and try again.";
+  return t`The camera could not start. Close this window and try again.`;
 }
 
 function canvasToBlob(canvas: HTMLCanvasElement, quality: number) {
   return new Promise<Blob>((resolve, reject) => {
     canvas.toBlob((blob) => {
       if (blob) resolve(blob);
-      else reject(new Error("The captured photo could not be encoded. Please retake it."));
+      else reject(new Error(t`The captured photo could not be encoded. Please retake it.`));
     }, "image/jpeg", quality);
   });
 }
@@ -50,9 +52,9 @@ function blobToDataUrl(blob: Blob) {
     const reader = new FileReader();
     reader.onload = () => {
       if (typeof reader.result === "string") resolve(reader.result);
-      else reject(new Error("The captured photo preview could not be created."));
+      else reject(new Error(t`The captured photo preview could not be created.`));
     };
-    reader.onerror = () => reject(new Error("The captured photo preview could not be created."));
+    reader.onerror = () => reject(new Error(t`The captured photo preview could not be created.`));
     reader.readAsDataURL(blob);
   });
 }
@@ -113,6 +115,7 @@ function OpenCameraCapture({ onClose, onCapture, label }: Omit<CameraCaptureProp
       popDialog(token);
       if (tokenRef.current === token) tokenRef.current = null;
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- close only reads refs (stopCamera, onCloseRef), so the mount-time copy is never stale; the dialog must register once per mount
   }, []);
 
   useEffect(() => {
@@ -190,7 +193,7 @@ function OpenCameraCapture({ onClose, onCapture, label }: Omit<CameraCaptureProp
     try {
       const canvas = document.createElement("canvas");
       const context = canvas.getContext("2d");
-      if (!context) throw new Error("The captured photo could not be processed. Please retake it.");
+      if (!context) throw new Error(t`The captured photo could not be processed. Please retake it.`);
 
       let selectedBlob: Blob | null = null;
       captureLoop: for (const longEdge of LONG_EDGE_STEPS) {
@@ -204,12 +207,12 @@ function OpenCameraCapture({ onClose, onCapture, label }: Omit<CameraCaptureProp
         }
       }
 
-      if (!selectedBlob) throw new Error("The captured photo could not be encoded. Please retake it.");
+      if (!selectedBlob) throw new Error(t`The captured photo could not be encoded. Please retake it.`);
       const file = new File([selectedBlob], `capture-${Date.now()}.jpg`, { type: "image/jpeg" });
       const preview = await blobToDataUrl(selectedBlob);
       setCaptured({ file, preview });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "The photo could not be captured. Please try again.");
+      setError(err instanceof Error ? err.message : t`The photo could not be captured. Please try again.`);
     } finally {
       setCapturing(false);
     }
@@ -217,39 +220,37 @@ function OpenCameraCapture({ onClose, onCapture, label }: Omit<CameraCaptureProp
 
   const title = label ?? "Take photo";
   return createPortal(
-    <div
+    <div data-replay-block
       ref={layerRef}
       inert={!amTop}
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-3 sm:p-4"
+      className="sw-camera-layer fixed inset-0 z-[100] flex items-end justify-center bg-scrim/70 pt-[max(0.5rem,env(safe-area-inset-top))] sm:items-center sm:p-4"
       onMouseDown={(event) => { if (event.target === event.currentTarget) close(); }}
     >
-      <div ref={panelRef} role="dialog" aria-modal={amTop ? "true" : undefined} aria-labelledby={titleId} tabIndex={-1} className="flex max-h-[90vh] w-full max-w-lg flex-col gap-3 overflow-y-auto rounded-lg border border-line bg-panel p-4 shadow-xl outline-none">
+      <div ref={panelRef} role="dialog" aria-modal={amTop ? "true" : undefined} aria-labelledby={titleId} tabIndex={-1} className="sw-camera-panel sw-camera flex max-h-full w-full max-w-lg flex-col gap-3 overflow-y-auto overscroll-contain rounded-t-xl border border-line bg-panel p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-overlay outline-none sm:max-h-[90dvh] sm:rounded-lg sm:pb-4">
         <h2 id={titleId} className="text-lg font-semibold text-ink">{title}</h2>
         <div aria-live="assertive" aria-atomic="true">
           {error ? <p className="text-sm text-danger">{error}</p> : null}
         </div>
-        <div className={captured ? "hidden" : "relative"}>
-          <video ref={videoRef} className="max-h-[60vh] w-full rounded-md bg-black object-contain" autoPlay playsInline muted onLoadedMetadata={updateReady} onCanPlay={updateReady} />
-          {!ready && !error ? <p className="absolute inset-0 grid place-items-center text-sm text-white">Starting camera...</p> : null}
+        <div className={`sw-camera-media ${captured ? "hidden" : "relative"}`}>
+          <video ref={videoRef} className="max-h-[60dvh] w-full rounded-md bg-surface object-contain" autoPlay playsInline muted onLoadedMetadata={updateReady} onCanPlay={updateReady} />
+          {!ready && !error ? <p className="absolute inset-0 grid place-items-center text-sm text-ink">{t`Starting camera...`}</p> : null}
         </div>
         {captured ? (
           <>
-            <img src={captured.preview} alt="Captured photo preview" className="max-h-[60vh] w-full rounded-md bg-black object-contain" />
+            <img src={captured.preview} alt={t`Captured photo preview`} className="sw-camera-media max-h-[60dvh] w-full rounded-md bg-surface object-contain" />
             <div className="grid gap-2 sm:grid-cols-2">
               <button className="desk-button min-h-11" type="button" onClick={() => { setCaptured(null); setError(""); }}>
-                Retake
-              </button>
+                {t`Retake`}</button>
               <button className="desk-button-primary min-h-11" type="button" onClick={() => { onCapture(captured.file); close(); }}>
-                Use photo
-              </button>
+                {t`Use photo`}</button>
             </div>
           </>
         ) : (
           <button className="desk-button-primary min-h-11 w-full" type="button" disabled={!ready || capturing} onClick={takePhoto}>
-            {capturing ? "Capturing..." : "Take photo"}
+            {capturing ? <><BoxArt size={16} mono />{t`Capturing...`}</> : t`Take photo`}
           </button>
         )}
-        <button className="desk-button min-h-11 w-full" type="button" onClick={close}>Cancel</button>
+        <button className="desk-button min-h-11 w-full" type="button" onClick={close}>{t`Cancel`}</button>
         {!captured ? <CameraTorch stream={streamRef} ready={ready} /> : null}
       </div>
     </div>,

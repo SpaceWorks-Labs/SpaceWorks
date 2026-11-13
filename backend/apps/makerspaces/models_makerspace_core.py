@@ -1,3 +1,4 @@
+from django.utils.translation import gettext_noop
 from urllib.parse import urlsplit
 
 from django.conf import settings
@@ -8,10 +9,11 @@ from django.db.models import Q
 from django.db.models.functions import Lower
 from django.utils.crypto import get_random_string
 
+from config.locale_registry import validate_supported_locale
+
 from apps.makerspaces.capabilities import default_enabled_features
 from apps.makerspaces.module_registry import default_enabled_module_keys
 from apps.makerspaces.provenance import validate_actor_snapshot
-from apps.makerspaces.request_access import reconcile_enabled_modules
 from apps.makerspaces.models_makerspace_secrets import MakerspaceSecretsMixin
 from apps.makerspaces.models_makerspace_validation import clean_makerspace
 from apps.makerspaces.profile_validation import (
@@ -37,6 +39,8 @@ from apps.makerspaces.models import (
 
 
 from .models_public_site import PublicSiteSettings
+from .loan_context_generations import new_generations, validate_generations
+from apps.payments.money_model import MoneyDecimalField
 
 
 class Makerspace(MakerspaceSecretsMixin, PublicSiteSettings):
@@ -44,11 +48,20 @@ class Makerspace(MakerspaceSecretsMixin, PublicSiteSettings):
         ACTIVE = "active", "Active"
         IMPORTING = "importing", "Importing"
         ABORTED = "aborted", "Aborted"
+        # #185: a superadmin paused the space (reversible). Unservable like an archive,
+        # but data, money settlement and the schedule stay; see apps.space_controls.
+        SUSPENDED = "suspended", "Suspended"
+
+    class Kind(models.TextChoices):
+        # Decision 295: an organization workspace is a space whose community is an
+        # organization (events, memberships, cards, bookings), not a hardware workshop.
+        MAKERSPACE = "makerspace", "Makerspace"
+        ORGANIZATION = "organization", "Organization"
 
     class MembershipPolicy(models.TextChoices):
         REQUEST = "request", "Request"
         OPEN = "open", "Open"
-        INVITE_ONLY = "invite_only", "Invite only"
+        INVITE_ONLY = "invite_only", gettext_noop("Invite only")
 
     class DomainStatus(models.TextChoices):
         PENDING = "pending", "Pending"
@@ -56,10 +69,11 @@ class Makerspace(MakerspaceSecretsMixin, PublicSiteSettings):
         FAILED = "failed", "Failed"
 
     class PublicPrintStatusLookupPolicy(models.TextChoices):
-        TOKEN_ONLY = "token_only", "Token only"
-        EMAIL_UNVERIFIED = "email_unverified", "Email unverified"
+        TOKEN_ONLY = "token_only", gettext_noop("Token only")
+        EMAIL_UNVERIFIED = "email_unverified", gettext_noop("Email unverified")
 
     name = models.CharField(max_length=200)
+    kind = models.CharField(max_length=16, choices=Kind.choices, default=Kind.MAKERSPACE)
     slug = models.SlugField(unique=True, db_index=True)
     public_code = models.CharField(
         max_length=4,
@@ -75,6 +89,9 @@ class Makerspace(MakerspaceSecretsMixin, PublicSiteSettings):
     )
     location = models.CharField(max_length=200, blank=True)
     timezone = models.CharField(max_length=100, default=default_timezone, validators=[validate_timezone])
+    # Phase 8 i18n: the language shared output (chat, the makerspace feed, batch PDFs) and
+    # members without a preference of their own see. Codes come from the locale registry.
+    default_locale = models.CharField(max_length=16, default="en", validators=[validate_supported_locale])
     country = models.CharField(max_length=2, blank=True, default="", validators=[validate_country])
     opening_hours = models.JSONField(default=dict, blank=True, validators=[validate_opening_hours])
     map_url = models.URLField(blank=True, default="", validators=[validate_google_maps_url])
@@ -82,15 +99,6 @@ class Makerspace(MakerspaceSecretsMixin, PublicSiteSettings):
     geofence_longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True, validators=[MinValueValidator(-180), MaxValueValidator(180)])
     geofence_radius_m = models.PositiveIntegerField(default=25, validators=[MinValueValidator(1)])
     geofence_enabled = models.BooleanField(default=False)
-    # Account-less requests are an unauthenticated write surface, so this is an
-    # independent opt-in. In particular, it must not follow the membership module:
-    # recommended installs omit that module and must stay closed after an upgrade.
-    #
-    # The reverse direction IS coupled, and `save()` enforces it: installing
-    # `membership` forces this off, because the anonymous branch of RequestSubmitView
-    # runs before any membership guard and would otherwise walk straight past the
-    # requirement the operator just switched on. See `request_access`.
-    anonymous_requests_enabled = models.BooleanField(default=False)
     public_print_status_lookup_policy = models.CharField(
         max_length=32,
         choices=PublicPrintStatusLookupPolicy.choices,
@@ -101,13 +109,18 @@ class Makerspace(MakerspaceSecretsMixin, PublicSiteSettings):
         choices=MembershipPolicy.choices,
         default=MembershipPolicy.REQUEST,
     )
-    membership_dues_amount = models.DecimalField(
-        max_digits=12,
-        decimal_places=2,
+    membership_dues_amount = MoneyDecimalField(
+        max_digits=13,
+        decimal_places=3,
         default=0,
         validators=[MinValueValidator(0)],
     )
     referrals_enabled = models.BooleanField(default=False)
+    # The month (1-12) the space's financial year starts; April by default (decision 71).
+    # Read through `makerspaces.financial_year`, never directly.
+    financial_year_start_month = models.PositiveSmallIntegerField(
+        default=4, validators=[MinValueValidator(1), MaxValueValidator(12)],
+    )
     # Opt-in: a member whose membership terms have all expired or been cancelled is
     # refused a borrow request like a non-member. A member with no term at all is never
     # affected -- plans are optional. Enforced by `request_access.require_current_term`.
@@ -119,9 +132,10 @@ class Makerspace(MakerspaceSecretsMixin, PublicSiteSettings):
         decimal_places=2,
         default=0,
     )
-    superadmin_access_enabled = models.BooleanField(default=True)
     staff_notifications_enabled = models.BooleanField(default=True)
-    booking_requester_notifications_enabled = models.BooleanField(default=False)
+    booking_requester_notifications_enabled = models.BooleanField(default=True)
+    # Open item A44, decided: the default stays [24] (one reminder a day ahead). A 1-hour reminder is a per-space
+    # choice made here, so a default install never sends two pings per event; tests pin the default.
     event_reminder_lead_hours = models.JSONField(
         default=default_reminder_lead_hours, blank=True, validators=[validate_reminder_lead_hours],
     )
@@ -156,6 +170,7 @@ class Makerspace(MakerspaceSecretsMixin, PublicSiteSettings):
         default=generate_publishable_key,
     )
     cors_allowed_origins = models.JSONField(default=list, blank=True)
+    loan_context_generations = models.JSONField(default=new_generations, editable=False, validators=[validate_generations])
     enabled_modules = models.JSONField(default=default_enabled_modules, blank=True)
     enabled_features = models.JSONField(default=default_enabled_features, blank=True)
     resource_limit_overrides = models.JSONField(default=dict, blank=True)
@@ -164,6 +179,10 @@ class Makerspace(MakerspaceSecretsMixin, PublicSiteSettings):
     branding_config = models.JSONField(default=default_branding_config, blank=True)
     telegram_group_chat_id = models.CharField(max_length=64, blank=True)
     telegram_bot_token = models.CharField(max_length=200, blank=True)
+    email_provider = models.CharField(max_length=16, blank=True, choices=[
+        (v, v) for v in ("", "inherit", "smtp", "resend", "postmark", "ses", "brevo", "mailgun", "sendgrid")
+    ])
+    email_provider_config = models.TextField(blank=True)
     smtp_host = models.CharField(max_length=200, blank=True)
     smtp_port = models.PositiveIntegerField(default=587)
     smtp_username = models.CharField(max_length=200, blank=True)
@@ -174,6 +193,13 @@ class Makerspace(MakerspaceSecretsMixin, PublicSiteSettings):
     # 465-only provider (e.g. Gmail implicit SSL) instead of STARTTLS on 587.
     smtp_use_ssl = models.BooleanField(default=False)
     smtp_from_email = models.EmailField(blank=True)
+    # Parity E-B8: the display name and Reply-To on every email this space sends, and proof that the space's own
+    # SMTP account delivered a test message. `smtp_verified_fingerprint` is a hash of the settings that passed; any
+    # edit changes the hash, so edited settings are unused until they pass again (never a stale "verified" flag).
+    email_from_name = models.CharField(max_length=120, blank=True)
+    email_reply_to = models.EmailField(blank=True)
+    smtp_verified_fingerprint = models.CharField(max_length=64, blank=True)
+    smtp_verified_at = models.DateTimeField(null=True, blank=True)
     # Per-makerspace chat webhooks (Slack, Slack-compatible Mattermost, and Discord).
     # Stored as Fernet ciphertext (or "") exactly like telegram_bot_token/smtp_password;
     # TextField avoids truncation after base64 expansion. Never returned by any
@@ -195,6 +221,9 @@ class Makerspace(MakerspaceSecretsMixin, PublicSiteSettings):
         on_delete=models.SET_NULL,
         related_name="created_makerspaces",
     )
+    # The inert principal that account-less requests filed before #75f point at. Nothing
+    # creates one any more; the link stays so those rows remain readable and the principal
+    # stays identifiable (`accounts.principal_guards`, report exclusions).
     anonymous_requester = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         null=True,
@@ -233,13 +262,12 @@ class Makerspace(MakerspaceSecretsMixin, PublicSiteSettings):
                 name="uniq_makerspace_frontend_domain_ci",
             ),
             models.CheckConstraint(
-                condition=Q(hidden_from_central_directory=False)
-                | Q(frontend_domain__isnull=False),
-                name="ck_makerspace_hidden_requires_domain",
-            ),
-            models.CheckConstraint(
                 condition=Q(membership_dues_amount__gte=0),
                 name="makerspace_dues_nonnegative",
+            ),
+            models.CheckConstraint(
+                condition=Q(financial_year_start_month__gte=1, financial_year_start_month__lte=12),
+                name="makerspace_fy_start_month_range",
             ),
         ]
 
@@ -255,22 +283,6 @@ class Makerspace(MakerspaceSecretsMixin, PublicSiteSettings):
         sync_loan_policy = bool(self.pk) and (fields is None or "default_loan_days" in fields)
         self.public_code = (self.public_code or "").upper()
         self.frontend_domain = normalize_frontend_domain(self.frontend_domain)
-        # Membership and account-less requests are mutually exclusive, and this is the
-        # ONE chokepoint every writer passes through: module install/uninstall, profile
-        # application, the /control/ capability matrix, setup_instance, seed_demo and a
-        # plain obj.save(). Enforcing it here rather than in each of them is what makes
-        # the state unreachable instead of merely discouraged -- see
-        # `request_access` for why the pair is impossible.
-        reconciled = reconcile_enabled_modules(
-            self.enabled_modules, self.anonymous_requests_enabled
-        )
-        if reconciled != self.anonymous_requests_enabled:
-            self.anonymous_requests_enabled = reconciled
-            # A partial save that did not name this field would otherwise change the
-            # attribute in memory and leave the row in the impossible state.
-            update_fields = kwargs.get("update_fields")
-            if update_fields is not None:
-                kwargs["update_fields"] = [*update_fields, "anonymous_requests_enabled"]
         with transaction.atomic():
             super().save(*args, **kwargs)
             if sync_loan_policy:

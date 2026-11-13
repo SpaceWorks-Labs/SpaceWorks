@@ -1,5 +1,7 @@
 # SpaceWorks project status — what exists today
 
+GitHub member sign-in is available through browser OAuth with PKCE, verified primary email, encrypted platform credentials and lockout guards; it does not issue staff sessions.
+
 > **This is the what-exists-today half of `CLAUDE.md` / `AGENTS.md`.** It was split out when that
 > file crossed the harness's memory-file size warning; nothing was dropped in the move. It has no
 > `AGENTS.md`-style twin — both names of that document point at this one path, so edit it in place.
@@ -9,18 +11,96 @@
 > integrations and overall implementation status. The rules these areas impose live in
 > `docs/INVARIANTS.md`; when a feature landed is in `docs/PROJECT-HISTORY.md`.
 
+## 0.12.0 release (in preparation, 2026-11-09)
+
+`VERSION` is `0.12.0` on the release integration branch (`codex/release-0.11.0-integration`). It is not
+yet published: the full backend and frontend regressions, the browser suite, the live flow audit and
+publication are release gates recorded outside this file. The 0.11.0 candidate was never published and is
+folded into 0.12.0; the last published release is 0.9.3. 0.12.0 adds the decision-216 module
+interconnections (event/booking loan context, equipment kits, the event–booking link, related facts,
+linked finance and loan-context reports) — see the [0.12.0 notes](release-0.12.0.md). Counted from the
+code on 2026-11-08 unless noted:
+
+- **Modules and features.** 36 module keys in 12 console areas (6 core); 209 feature keys, of which the
+  staff console shows 208 (`machines.integrations` is control-plane only).
+- **Roles.** Ten built-in roles: Space Manager, Inventory Manager, Machine Manager, Event Manager,
+  Booking Manager, Handover, Technician, Shop Manager, Fundraising and Member.
+- **API.** 1,827 OpenAPI paths (2026-11-09); schema version `0.12.0` once `frontend/openapi-schema.json`
+  is regenerated.
+- **Audit.** 1,311 reviewed audit actions plus 59 shared-service prefixes
+  ([audit action reference](audit-action-reference.md)).
+- **Help.** 122 English in-app help articles in 13 role sections ([user manuals](USER-MANUALS.md)).
+
+The owner decisions closing the candidate (#203–#210) add the separate **Inventory** page, light mode by
+default, per-area public-stat settings, the shared listing banner, Shop pickup fulfilment, listing photos
+across areas, own-history links and the uploaded tenant logo in the public header.
+
+## Release 2 (combined tree, 2026-11-05)
+
+Every release-2 lane is merged into one combined tree that became the 0.11.0 candidate, now part of
+0.12.0 above. What it adds, in short:
+
+- **Accounts.** One account per person; ten built-in roles (Technician, Shop Manager and Fundraising are new); staff
+  roles granted to people or by emailed invitation; mandatory staff two-step sign-in with a 3-day grace;
+  passkeys, unusual-sign-in checks, security alerts, IP blocking, Turnstile and breached-password checks;
+  per-space security rows with platform locks. Native apps get a clean break (see the
+  [mobile PRD](mobile/MOBILE-APP-PRD.md)) and event-role grants for judges, mentors and crew.
+- **Money.** The pricing kernel, tax, the finance ledger, refund cases, price-drop refunds, donations and
+  sponsors, paid ticketing v2 and venue fees, and the per-space shop.
+- **Operations.** ID cards and ID programmes, repairs and the Technician, maintenance under each parent,
+  machine sessions, machines and loans depth, the public stats page, the help centre, Google Sheets
+  imports and per-space Metabase analytics.
+- **Platform.** The superadmin is always on; one backup and restore flow with per-space restore points;
+  the Postgres RLS backstop; per-space key rotation and emergency re-key.
+- **Django settings.** `config.settings` assembles the domain settings sections and applies deployment
+  overrides in order. The release regression with RLS forced on, the end-to-end flow audit and
+  README screenshots are separate release gates.
+
+## Events programme status
+
+The hackathon programme (hackathons, Mentor Desk, mentor rounds, volunteering, project gallery) ships as
+ordinary per-space switches, off for a new space. Release 2 added applications for any event, review
+stages, crew, finalists, prize payouts and team fees. Runtime and browser evidence is recorded by the
+release-phase flow audit. See the [closure ledger](events/integration-status.md),
+[operator runbook](events/operations.md), [source map](SOURCE-MAP-EVENTS-PROGRAMME.md)
+and [acceptance checklist](events/acceptance.md).
+
 ## Admin control plane (superadmin-only)
 
-The **Unfold Django admin is the Super Admin's sole control plane**, mounted at **`/control/`** (NOT
-`/admin/` — that belongs to the React staff console SPA route), locked to superadmins, and **not exposed on
-the public frontend port** (`frontend/nginx.conf` does not proxy it, so makerspace staff on port 80 can
-never reach the Django console). Gated two ways: `config.admin_access.AdminSuperuserOnlyMiddleware` (denies
+The **Unfold Django admin is the Super Admin's server-side power tool and fallback**, mounted at
+**`/control/`** (NOT `/admin/` — that belongs to the React staff console SPA route), locked to superadmins.
+Day-to-day platform work is in the web superadmin console, which has a path for every `/control/` write
+except host-only ones (`config/control_parity.py`, #190; after the r2-parity-followups lane only
+platform/server backup key rotation and the platform-wide re-encryption, the RLS sync, axes recovery and raw
+plumbing rows remain host-only). Since 0.12.0 the web console groups that work into platform pages that
+open without choosing a space: Platform dashboard, Spaces (with Create makerspace and the requests queue),
+Platform analytics, People & access, Platform security, Data & recovery (including offsite backup
+destinations, previously `/control/`-only) and Platform settings (`features/staff/platformConsole/`).
+The `/control/` sidebar is fourteen ordered groups (Overview, Spaces, People & roles, Inventory, Machines, Events, Bookings, Shop, Money, Messaging & notifications, Integrations & analytics, Limits & hosting, Data & recovery, Security & audit) built
+from one catalogue (`config/control_catalog.py`, #188) and its home is a dashboard of totals, items needing
+attention and quick links. **It is server-only by default (#189/#191):** with `CONTROL_PLANE_PROXY=false`
+`config/control_plane_access.py` answers 404 to everything but loopback and the SSH tunnel, and the website
+edges answer 404 too. On supported bundled topologies, `CONTROL_PLANE_PROXY=true` routes `/control/` and
+`/mfa/control/` through Caddy or the website nginx; `CONTROL_PLANE_ALLOW_CIDRS` restricts the socket peer
+IP (blank allows any peer), never a forwarded client-IP header. The optional TLS-layer
+`CONTROL_PLANE_TUNNEL_PORT` instead provides a loopback-only HTTPS listener for an SSH tunnel
+(Docker Engine 28+); it works with website exposure off. Apply changes with `scripts/apply-settings.sh`.
+SaaS and API-only behind an operator's proxy are excluded from this switch. See the
+[control-plane deployment rules](INVARIANTS.md#container--deployment-invariants).
+Gated two ways: `config.admin_access.AdminSuperuserOnlyMiddleware` (denies
 any authenticated non-superadmin; the `/api/v1/admin/...` React staff APIs are NOT gated) and
 `config.admin_access.SuperuserOnlyModelAdmin` (first base of every `ModelAdmin`). Superadmin operations are
 Django admin **actions that route through the existing services** (never mutating status directly);
 issue/return remain React-only. Superadmin monitoring surfaces (QR ZIP, inline QR/photo previews, print file
-downloads) are read-only and guard storage failures. Design spec:
-`docs/superpowers/specs/2026-06-13-superadmin-admin-control-plane-design.md`.
+downloads) are read-only and guard storage failures.
+Since owner decision #115 the superadmin also works in the React staff console as any space's Space
+Manager: choose a space and every report, analytics page, export, setting and email surface of that
+space opens (person data masked outside a PII window); each `/control/` makerspace page links there,
+and the platform dashboard compares and totals the spaces.
+On a managed platform the **Hosting requests** model admin (sidebar entry beside Subdomain requests, hidden
+on self-host) reviews requests to host a makerspace: read-only rows, Accept/Reject actions (reject needs a
+reason that is emailed), and a "Create makerspace" link that re-authenticates and opens the existing Add
+makerspace form pre-filled. Nothing is provisioned automatically.
 
 **U-SEC:** django-axes admin-login lockout, scoped `login`/`public_request_submit` throttles + write-only
 `website` honeypot on public submit, production-gated security headers, always-on CSP via django-csp 4, and
@@ -28,19 +108,45 @@ a `pip-audit` CI job. The global CSP `script-src` omits `'unsafe-eval'`; a tiny
 `config.admin_access.AdminCspEvalMiddleware` appends `'unsafe-eval'` to `script-src` **and** the S3 public
 origin to `img-src` **only for `/control/` responses** (django-unfold ships eval-requiring Alpine.js; the
 JSON API + public docs stay on the strict policy).
+Release 2 (lane S-C, #62/#66) adds sign-in protection: automatic IP blocking against credential stuffing
+(one address failing against 10 different accounts in 15 minutes is blocked for an hour), superadmin
+allow/deny rules and the automatic-block list in `/control/`, the Have I Been Pwned breached-password
+check (k-anonymity, fail-open) on every password a person or admin sets, optional Cloudflare Turnstile
+after failed sign-ins (off until keys; the SPA CSP allows `challenges.cloudflare.com` only then), and the
+per-space staff IP allow-list and CAPTCHA settings. Host recovery: `manage.py login_security --list |
+--allow <cidr> | --unblock <ip|all>` beside `axes_reset_ip` and `recover_superadmin --reset-mfa`. Rules
+are under **IP blocking, allow/deny rules and CAPTCHA** in `docs/INVARIANTS.md`.
 
-**Staff MFA and invitations (Wave 1).** TOTP is mandatory for superadmins, required for
-staff when a makerspace enables `security.staff_mfa_required`, and optional for members.
-Password, social/OIDC, phone and native sign-in return an opaque five-minute challenge
-before issuing any session tokens. Current provider adapters do not parse an MFA
-assertion, so social/OIDC always require SpaceWorks verification. A locked credential
+**Staff MFA and invitations.** Since release 2 (lane S-A, owner decision #62) two-step sign-in is
+**mandatory for every staff role in every space** (an authenticator app or a passkey); it is a platform
+rule, not a setting, and the old `security.staff_mfa_required` switch is retired (makerspaces 0119). A
+person who gains a staff role without a factor gets a 3-day grace, then staff screens refuse
+(`mfa_enrollment_required`) until they enrol; member features never block (#128 C-1). The superadmin
+stays optional (password-only until they enroll) and members opt in. Passkeys (WebAuthn, web only)
+sign people in and count as the staff factor. The MFA-reset rule, `staff_mfa_readiness` and the details
+are in **Login security** in `docs/INVARIANTS.md`.
+When MFA applies, enrolled password, phone and native password sign-ins return an
+opaque five-minute challenge before issuing tokens. Identity-provider sign-ins (Google,
+Apple and configured OIDC) skip local TOTP for members only and carry provider proof, which never
+satisfies a staff route. The platform login-method setting `mfa_enabled` defaults on and governs
+MEMBER opt-in only: switching it off pauses member enrollment/recovery regeneration without clearing
+credentials, and never pauses staff MFA.
+Sessions minted while bypassing a challenge are refused when MFA is re-enabled, including
+rotated native sessions and Django control sessions; verified and provider sessions retain
+credential-version revocation. A locked credential
 accepts a +/-1 time-step window and refuses replay. Ten recovery codes are hashed and
 shown once; regeneration and optional disable require password reauthentication.
 Secrets and enrollment keys use the existing Fernet mechanism. Credential versions
 invalidate older access, refresh, device and control-panel sessions. `/mfa/control/`
-finishes the Django password session before `/control/` becomes accessible. Operators
-can recover a lost superadmin authenticator with host-only `recover_superadmin --reset-mfa`;
-this clears credentials and sessions and forces fresh enrollment, rather than bypassing MFA.
+finishes the Django password session of an enrolled superadmin before `/control/` becomes
+accessible. Operators can recover a lost superadmin authenticator with host-only
+`recover_superadmin --reset-mfa`; this clears the credential and sessions and returns the
+account to password sign-in until it enrolls again (superadmin MFA is optional). A superadmin
+can also reset a forgotten password by emailed OTP through the platform context
+(`/admin/reset-password?context=platform`): it needs platform mail configured and a request
+Origin in `PLATFORM_STAFF_ORIGINS`, and is re-checked at confirmation. The member-context flow
+still discards superadmin accounts. Host-side `changepassword` / `recover_superadmin` remain
+the out-of-band path when platform mail is unavailable.
 Spent MFA challenges join the existing 30-day auth-challenge cleanup.
 
 `staff.invitations` defaults on. Staff with makerspace-management authority invite an
@@ -48,7 +154,7 @@ address to a permitted local role, list/revoke/resend invitations in Users, and 
 a copyable link even when tenant email delivery is unavailable. Email addresses are
 encrypted, tokens are stored as digests, resend rotates the bearer and rechecks the
 current sender's authority, and acceptance is
-single use. Existing accounts prove their current password and enrolled MFA; new
+single use. Existing accounts prove their current password and, while platform MFA is on, enrolled MFA; new
 accounts receive a verified address. Both get the same response with no session tokens.
 Acceptance rechecks tenant servability, role grants and the inviter's current ceiling;
 revoked, restricted, walk-in and imported-stub principals cannot regain authority.
@@ -63,9 +169,29 @@ into grouped sections and a test asserts every sidebar link resolves. `tests/tes
 walks every registered admin and forces an explicit scoped/global decision (via `NESTED_MAKERSPACE_LOOKUPS`
 / `GLOBAL_ADMIN_MODELS`) so a new admin can't silently leak across the superadmin hide/archive scoping.
 
+The superadmin is always on (P1b, owner decisions #110/#111): the `/control/` makerspace list is one
+ordinary list, and platform superadmins archive, unarchive, purge and review pending archive requests after
+recent control-session reauthentication, always seeing the unsettled-charge counts. Every backup is
+encrypted to the platform key; there are no archive recipients, custody states or custody alarms, and the
+`backup` module key is retired (managers see a read-only "Last backup" line). The tenant-exit export takes
+one-shot `--recipient` keys plus the platform key. `Makerspace.superadmin_access_enabled` is dropped
+(`makerspaces/0110`).
+
+**Per-space backup and restore (P1b B2):** every live space gets a nightly one-space archive (raw tenant
+slice, encrypted to the platform key and this server's restore key) plus "Back up now"; the superadmin
+restores ONE space from its own restore points through preview -> confirm (re-auth + typed slug) -> live
+progress, with a mandatory safety backup first, in one transaction with identical ids. The same flow is in
+the React Backup & Restore panel (scope picker, timeline, schedule view) and the `/control/` backup
+console. Rules: **Per-space backup and restore** in `docs/INVARIANTS.md`. One space from a WHOLE-PLATFORM
+backup (#144): the operator decrypts it off the server and `manage.py extract_space_restore_point` adds that
+space as an ordinary restore point (docs/self-hosting.md, "Restore one space").
+
 **Non-technical install:** the root `install.sh` curl flow on supported Linux families or Windows Git Bash
 (preflight → tagged source archive → published-image pull → `setup.sh` secrets/instance/live module ticks →
 version marker), with `SPACEWORKS_DIR` override and an existing-install update/module menu.
+The frontend question is **Full** (web app + API) or **API-only** (backend for mobile apps and
+integrations; optional website elsewhere), also `--frontend full|api-only`; it is recorded once as
+`SPACEWORKS_RUN_FRONTEND=yes|no`, which compose, update and rollback already follow.
 Fresh installs pin the newest published, non-draft, non-prerelease GitHub release built from `main`.
 Reruns stage that release's updater/helpers, back up the database, then install the closed host runtime
 bundle with previous files retained in `backups/host-config-*`. A normal user's install and optional
@@ -112,14 +238,24 @@ end-to-end (public browse, auth/RBAC, API-client HMAC, QR/box, audit/evidence, 3
 Request Workflow, procurement "To Buy", stock transfers incl. true cross-makerspace movement, stocktake,
 analytics/ledger/exports, Users CRUD, and the FabLab modules). The detailed PRDs (`docs/prd-*.md`) are
 **internal planning docs kept local only** (gitignored); "PRD §N" references point to those. Google Sheets
-OAuth publishing, native apps, and physical label-printer control remain out of scope.
+OAuth publishing remains outside this programme. Native backend contracts and physical device
+protocols are implemented; external Android/iOS app builds and real-provider/device release checks
+remain separate work. See the [mobile PRD](mobile/MOBILE-APP-PRD.md).
+
+**2026-10-18 reconciliation, as amended by release 2.** Native staff use a staff step-up grant on
+the person's own account, fixed to one space, with two-step sign-in and attestation; any person may
+delete their account (one account per person). Canonical personal envelopes now incorporate
+Twilio SMS, Twilio/Meta WhatsApp, durable STOP/sender history, BSUID correlation and per-device
+push with optional inbox links. Reports use canonical delivery/mapped history rather than the
+retired addressed send table. Destructive integrations 0043 is unsupplied and sending activation
+remains held pending [replay sign-off](notification-reconciliation-rollout.md).
 
 ## Observability (phase 0 of the 2026-09-03 forward plan)
 
 **Wave 6 platform monitoring lane (uncommitted; coordinator verification pending).**
 The central staff console adds a superadmin-only platform dashboard and read-only
-problem checks, plus scoped Usage & limits for makerspace managers. Hidden tenants
-are excluded from platform monitoring. Checks run every 15 minutes in beat and
+problem checks, plus scoped Usage & limits for makerspace managers. No tenant can be
+hidden from the platform (#110). Checks run every 15 minutes in beat and
 cron; beat completion telemetry now shares the scheduler journal. Implementation,
 thresholds and unsupported MFA/TLS signals: [platform monitoring](platform-monitoring.md).
 
@@ -129,9 +265,10 @@ otherwise), bound in `config/request_id.py` and echoed on the response. Log line
 the worker (`config/celery_signals.py`). Audit rows are correlated **through the log line**
 (`audit_recorded` with the row's `event_uuid`), not by writing the id into `meta`, so the attested record
 is unchanged. `GET /api/v1/metrics/` serves Prometheus text behind `METRICS_TOKEN` (404 when unset);
-`SENTRY_DSN` opts into error tracking with PII off. CI: `.github/workflows/tests.yml` runs both test
-topologies, the frontend build and the CLAUDE.md/AGENTS.md drift check, and the release workflow depends on
-it. The forward plan itself is local-only under `docs/plans/2026-09-03-forward-plan/`.
+`SENTRY_DSN` opts into error tracking with PII off. Tests run locally before pushing
+(`./scripts/dev.sh test`, `./scripts/dev.sh e2e`), not in Actions. The release workflow builds/publishes
+backend/frontend images, creates the GitHub Release, promotes rolling tags and optionally deploys via
+the self-hosted runner; `security-audit.yml` runs `pip-audit` on PRs.
 
 **Search and live updates (phase 1).** Every inventory, machine and event list accepts `?q=` (full-text with
 phrase and exclusion syntax, typo-tolerant on the name) through `apps/inventory/search.py`; the member
@@ -150,7 +287,7 @@ asynchronous, throttled, bounded integrity verification of a filtered range
 coverage; the `audit-trail` report is a CSV-only, export-only, unschedulable, tenant-only download.
 
 **Browser and accessibility gates (phase 2).** `frontend/e2e/` (Playwright) drives the loan spine through a
-real browser and object storage — `scripts/dev.sh e2e` locally, the `e2e` job in CI — and axe runs in
+real browser and object storage — `./scripts/dev.sh e2e` locally before pushing — and axe runs in
 both jsdom panel tests and Chromium. `manage.py seed_e2e` seeds a disposable makerspace per run.
 
 **Signed webhooks (phase 3).** `webhook` is a notification channel module: a destination with an HTTPS
@@ -158,11 +295,12 @@ endpoint and a signing secret receives every matrix-routed notification as signe
 (`docs/api-client-protocol.md` → "Outbound webhooks"), through the same delivery log and retries as the
 chat channels; failed deliveries can be re-queued from `/control/`.
 
-**Editions and the single box (phase 4).** `SPACEWORKS_EDITION` (`makerspace`, `events`, `bookings`,
+**Editions (phase 4).** `SPACEWORKS_EDITION` (`makerspace`, `events`, `bookings`,
 `organization`) hides the loan or events surfaces and 404s their public routes without changing any
-capability (`docs/MODULES.md` → Editions); `events` and `bookings` install profiles match. The single-box
-shape (`Dockerfile.allinone`, `docker/compose.single.yml`, `.spaceworks-layer`) runs everything but
-Postgres and MinIO in one container; setup asks for both the edition and the shape.
+capability (`docs/MODULES.md` → Editions); `events` and `bookings` install profiles match.
+The single-box shape and `spaceworks-allinone` image were removed on 2026-10-15;
+`.spaceworks-layer=single` is refused by setup, update and the Compose wrapper with
+[switch steps](update-recovery.md#moving-off-a-single-box-install).
 
 **Member ID cards and certification gating (phase 5).** A member card is a revocable QR credential over one
 membership, printed as a CR80 card or a sheet, resolvable only by staff holding `scan_member_cards`, with a
@@ -188,7 +326,7 @@ Stack (in use):
 - **Database:** PostgreSQL 16 (via `docker-compose.yml`)
 - **Styling:** Tailwind CSS 4 (CSS-first; `src/index.css` uses `@import "tailwindcss"` + `@config
   "../tailwind.config.ts"`; PostCSS via `@tailwindcss/postcss`) with CSS-variable light/dark theme tokens.
-  Light default; dark toggle persisted locally.
+  The theme follows the OS theme until the user chooses; the choice is persisted locally (#77).
 - **API documentation:** drf-spectacular / OpenAPI (snapshot `frontend/openapi-schema.json` + generated
   `frontend/src/generated/api.ts`; regenerate both when routes/models change — spectacular needs
   `--format openapi-json`).
@@ -202,3 +340,22 @@ one-minute offline detection, signed-heartbeat recovery, bounded auth retention,
 notifications/templates, an identity Devices console and offline failure classification in module
 operational health. No public endpoint or report schema added. Printer/label UI requires 7b/7c,
 absent from this 7a-based lane. Generated API snapshots remain coordinator-owned.
+
+
+## Cloud integration in progress (2026-10-18)
+
+The cloud/integration tree contains runtime/database, storage, HTTP mail, jobs/tick, recipes and static/UI lanes.
+Shared models/migrations/settings/routes/mail/images/health/panels are being integrated. Defaults remain host/full.
+Additional managed/full and managed/free images declare amd64/arm64 with build-time static; no publication occurs here.
+
+All nine cloud/VPS lanes are now combined. Closure source adds durable encrypted object staging, managed
+writer/presign drain and supervised reconciliation, bounded catalog/domain/work adapters, physical storage
+and provider-account mail accounting, C5 privileged active-database targeting and C17 real scheduler/worker
+diagnostics. Full retains its task calendars, cache/queue choices, upload limits and host recovery authority;
+the host beat wrapper adds observation with the same persistent schedule.
+
+This is not an AO24/AO25 or launch acceptance pass. Incoming Pages, Events submission runtime and
+reimbursement packages are absent here, so those programme entries remain inactive. Real Docker/provider/
+VM/browser/recovery evidence remains required. The release process regenerates OpenAPI/client/catalogue hash
+in Docker; those generated artifacts were deliberately left untouched. See [hosting](deploy/cloud-overview.md),
+[free limits](deploy/cloud-free.md) and [recovery](deploy/cloud-recovery.md).

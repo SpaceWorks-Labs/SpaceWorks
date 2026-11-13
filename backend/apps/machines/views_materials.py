@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.shortcuts import get_object_or_404
 from django.core.exceptions import ValidationError as ModelValidationError
 from django.db import transaction, IntegrityError
@@ -37,7 +38,8 @@ def managed_space(actor, pk, feature="machines.material_catalogue"):
                                Makerspace.objects.all(), field="id"), pk=pk)
     require_module(space, "machines")
     if not feature_enabled(space, feature):
-        raise ValidationError({"detail": "This machine feature is disabled."})
+        from apps.makerspaces.guards import feature_off
+        raise feature_off(feature, "This machine feature is turned off.")
     if not rbac.is_space_manager_identity(actor, space.pk):
         raise PermissionDenied()
     return space
@@ -60,7 +62,7 @@ class MaterialSerializer(serializers.ModelSerializer):
     def to_internal_value(self, data):
         from collections.abc import Mapping
         if not isinstance(data, Mapping):
-            raise serializers.ValidationError({"non_field_errors": ["Expected an object."]})
+            raise serializers.ValidationError({"non_field_errors": [gettext("Expected an object.")]})
         unknown = set(data) - {name for name, field in self.fields.items() if not field.read_only}
         if unknown:
             raise serializers.ValidationError({name: "Unexpected field." for name in sorted(unknown)})
@@ -80,12 +82,12 @@ class MaterialSerializer(serializers.ModelSerializer):
         if self.instance:
             rows = rows.exclude(pk=self.instance.pk)
         if rows.exists():
-            raise serializers.ValidationError({"name": "This material already exists for this machine type."})
+            raise serializers.ValidationError({"name": gettext("This material already exists for this machine type.")})
         return attrs
 
     def validate_machine_type(self, value):
         if value.makerspace_id not in (None, self.context["space"].pk):
-            raise serializers.ValidationError("Machine type belongs to another makerspace.")
+            raise serializers.ValidationError(gettext("Machine type belongs to another makerspace."))
         return value
 
 
@@ -95,7 +97,7 @@ class IntakeSerializer(serializers.Serializer):
     def to_internal_value(self, data):
         from collections.abc import Mapping
         if not isinstance(data, Mapping) or set(data) - {"intake_schema"}:
-            raise serializers.ValidationError({"non_field_errors": ["Only intake_schema is accepted."]})
+            raise serializers.ValidationError({"non_field_errors": [gettext("Only intake_schema is accepted.")]})
         return super().to_internal_value(data)
 
     def validate_intake_schema(self, value):
@@ -104,11 +106,6 @@ class IntakeSerializer(serializers.Serializer):
         except ModelValidationError as exc:
             raise serializers.ValidationError(getattr(exc, "messages", [str(exc)])) from exc
         return value
-
-
-class PublicIntakeSerializer(serializers.Serializer):
-    materials = MaterialSerializer(many=True)
-    intake_schema = serializers.JSONField()
 
 
 class PublicMaterialSerializer(serializers.Serializer):
@@ -135,14 +132,14 @@ class PublicTypeIntakeView(APIView):
         from apps.makerspaces.editions import require_public_surface
         require_public_surface("machines")
         if not space.public_inventory_enabled:
-            raise ValidationError({"detail": "Public site is disabled."})
+            raise ValidationError({"detail": gettext("Public site is disabled.")})
         machine_type = type_for(space, type_id)
         from .models import Machine
         published = rbac.scope_public_catalogue(Machine.objects.all(), space).filter(
             machine_type=machine_type, is_active=True, is_public=True).exists()
         from .printer_capabilities import is_printer_type
         from apps.makerspaces.platform import module_enabled
-        if not published and is_printer_type(machine_type) and module_enabled(space, "printing"):
+        if not published and is_printer_type(machine_type) and module_enabled(space, "machine_service"):
             from .public_printer_service import public_queues
             published = public_queues(space).exists()
         if not published:
@@ -165,7 +162,7 @@ class MaterialListView(generics.ListCreateAPIView):
                 if type_id <= 0:
                     raise ValueError()
             except ValueError as exc:
-                raise ValidationError({"machine_type_id": "Enter a positive identifier."}) from exc
+                raise ValidationError({"machine_type_id": gettext("Enter a positive identifier.")}) from exc
             rows = rows.filter(machine_type=type_for(space, type_id))
         return rows.order_by("name", "pk")
 
@@ -186,7 +183,7 @@ class MaterialListView(generics.ListCreateAPIView):
         try:
             row = serializer.save(makerspace=space)
         except IntegrityError as exc:
-            raise ValidationError({"name": "This material already exists for this machine type."}) from exc
+            raise ValidationError({"name": gettext("This material already exists for this machine type.")}) from exc
         record(self.request.user, "machine.material_created", makerspace=space, target=row)
 
 
@@ -210,7 +207,7 @@ class MaterialDetailView(MaterialListView, generics.RetrieveUpdateDestroyAPIView
         try:
             row = serializer.save()
         except IntegrityError as exc:
-            raise ValidationError({"name": "This material already exists for this machine type."}) from exc
+            raise ValidationError({"name": gettext("This material already exists for this machine type.")}) from exc
         record(self.request.user, "machine.material_updated", makerspace=row.makerspace, target=row)
 
     @transaction.atomic

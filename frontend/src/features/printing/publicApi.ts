@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type { PublicPrinterPool, PublicPrinterQueue, PublicPrinterStatus, PublicPrinterSubmit, PublicPrinterUpload } from "../../generated/api";
 import { publicV1Request, tenantPublicRequest } from "../../lib/api";
 
@@ -23,14 +24,14 @@ export function presignPrintUpload(slug: string, body: PrintUploadBody) {
 export async function uploadToStorage(upload: PrintUpload, file: File) {
   if (upload.method === "PUT") {
     const res = await fetch(upload.url, { method: "PUT", body: file, headers: upload.headers });
-    if (!res.ok) throw new Error(`Upload failed (${res.status})`);
+    if (!res.ok) throw new Error(t`Upload failed (${res.status})`);
     return;
   }
   const formData = new FormData();
   for (const [key, value] of Object.entries(upload.fields)) formData.append(key, value);
   formData.append("file", file);
   const res = await fetch(upload.url, { method: "POST", body: formData });
-  if (!res.ok) throw new Error(`Upload failed (${res.status})`);
+  if (!res.ok) throw new Error(t`Upload failed (${res.status})`);
 }
 
 export function submitPrintRequest(slug: string, payload: PrintRequestPayload) {

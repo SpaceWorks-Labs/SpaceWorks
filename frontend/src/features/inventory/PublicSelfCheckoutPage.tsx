@@ -1,14 +1,15 @@
-import { KitChecklistCapture, useKitChecklist, type KitPreview } from "./KitChecklist";
-import { tenantPublicRequest } from "../../lib/api";
+import { t } from "@lingui/core/macro";
 import { SiteFooter } from "../../components/SiteFooter";
+import { MakerspaceBrand } from "../../components/MakerspaceBrand";
+import { FlowLayout } from "../../components/layouts";
+import { KitChecklistCapture, useKitChecklist, type KitPreview } from "./KitChecklist";
+import { getAccessToken, refreshAccessToken, tenantPublicRequest } from "../../lib/api";
 import { useTenantBranding } from "../../lib/useTenantBranding";
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { MakerspaceBrand } from "../../components/MakerspaceBrand";
-import { SpaceWorksBadge } from "../../components/SpaceWorksLogo";
-import { Card } from "../../components/ui/Card";
+import { SegmentedControl } from "../../components/ui";
 import QrScanner from "../../components/ui/QrScanner";
 import { featureEnabled } from "../../lib/features";
 import { useTenant, useTenantPath } from "../../lib/tenant";
@@ -18,6 +19,8 @@ import { checkoutTool, returnTool } from "./selfCheckoutApi";
 import { ResultCard } from "./PublicToolResultCard";
 import { invalidatePublicInventory } from "../staff/queryInvalidation";
 import { useTenantBootstrap } from "./usePublicInventory";
+import { ContactFields } from "./ContactFields";
+import { useToolContact } from "./useToolContact";
 
 type Mode = "checkout" | "return";
 
@@ -27,23 +30,25 @@ type MutationInput = {
 
 export function PublicSelfCheckoutPage() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const { slug } = useParams();
   const tenant = useTenant();
   const makerspaceSlug = tenant.mode === "single" ? tenant.slug : slug ?? "";
   const tenantPath = useTenantPath(makerspaceSlug);
-  const [mode, setMode] = useState<Mode>("checkout");
+  const [chosenMode, setMode] = useState<Mode>("checkout");
   const [issueEvidenceId, setIssueEvidenceId] = useState<number | null>(null);
   const [returnEvidenceId, setReturnEvidenceId] = useState<number | null>(null);
   const [returnRemark, setReturnRemark] = useState("");
   const [uploadKey, setUploadKey] = useState(0);
   const [scannerOpen, setScannerOpen] = useState(false);
   const [scannedPayload, setScannedPayload] = useState("");
-  const kits = useKitChecklist(`/public/${makerspaceSlug}/tools/checklist`,
-    { payload: scannedPayload, phase: mode === "checkout" ? "issue" : "return" }, Boolean(scannedPayload),
-    (path, body) => tenantPublicRequest<KitPreview>(makerspaceSlug, path, { method: "POST", body: JSON.stringify(body) }));
-
   const bootstrapQuery = useTenantBootstrap(makerspaceSlug, tenant.mode === "central");
   const bootstrap = tenant.mode === "single" ? tenant.bootstrap : bootstrapQuery.data;
+  // No member accounts: everyone borrows with a confirmed contact (#91), and the kit preview
+  // is keyed to that confirmed email instead of a session (#104): it checks the code, the
+  // checkout spends it.
+  const contact = useToolContact(makerspaceSlug, bootstrap?.makerspace.request_access === "contact");
+
   const brandStyle = useTenantBranding(bootstrap);
   const features = tenant.mode === "single" ? tenant.bootstrap?.features ?? [] : bootstrap?.features ?? [];
   const displayName =
@@ -52,6 +57,26 @@ export function PublicSelfCheckoutPage() {
     formatSlug(makerspaceSlug) ||
     "Makerspace";
   const enabled = featureEnabled(features, "inventory.self_checkout");
+  const contactAccess = bootstrap?.makerspace.request_access === "contact";
+  // Taking a tool without an account has its own switch (#95); giving one back never does.
+  const borrowOff = contactAccess && !featureEnabled(features, "inventory.contact_self_checkout");
+  const mode: Mode = borrowOff ? "return" : chosenMode;
+  // With member accounts every handover needs a signed-in account: restore it once, and
+  // ask a signed-out visitor to sign in before they photograph anything.
+  const accountAccess = Boolean(bootstrap) && !contactAccess;
+  const [session, setSession] = useState<"restoring" | "in" | "out">(() => getAccessToken() ? "in" : "restoring");
+  useEffect(() => {
+    if (!accountAccess || session !== "restoring") return;
+    let live = true;
+    void refreshAccessToken().then(ok => { if (live) setSession(ok ? "in" : "out"); }).catch(() => { if (live) setSession("out"); });
+    return () => { live = false; };
+  }, [accountAccess, session]);
+  const signedOut = accountAccess && session === "out";
+  const kits = useKitChecklist(`/public/${makerspaceSlug}/tools/checklist`,
+    { payload: scannedPayload, phase: mode === "checkout" ? "issue" : "return",
+      ...(contact.enabled ? { contact_email: contact.uploadEmail, email_code: contact.code } : {}) },
+    Boolean(scannedPayload) && contact.ready,
+    (path, body) => tenantPublicRequest<KitPreview>(makerspaceSlug, path, { method: "POST", body: JSON.stringify(body) }));
 
   const loanMutation = useMutation({
     mutationFn: ({ payload }: MutationInput) =>
@@ -60,14 +85,17 @@ export function PublicSelfCheckoutPage() {
             payload,
             evidence_id: issueEvidenceId as number,
             kit_checklist: kits.counts,
+            ...contact.body(issueEvidenceId),
           })
         : returnTool(makerspaceSlug, {
             payload,
             evidence_id: returnEvidenceId as number,
             remark: returnRemark.trim(),
             kit_checklist: kits.counts,
+            ...contact.body(returnEvidenceId),
           }),
     onSuccess: () => {
+      contact.afterHandover();
       setScannedPayload("");
       invalidatePublicInventory(queryClient, makerspaceSlug);
       if (mode === "checkout") {
@@ -79,11 +107,12 @@ export function PublicSelfCheckoutPage() {
       setUploadKey((key) => key + 1);
     },
   });
-  const canScan =
+  const { mutate: runLoan } = loanMutation;
+  const canScan = contact.ready && (
     mode === "checkout"
       ? issueEvidenceId !== null
       : returnEvidenceId !== null &&
-        returnRemark.trim().length > 0;
+        returnRemark.trim().length > 0);
 
   function scanTool(payload: string) {
     if (!canScan) {
@@ -97,163 +126,41 @@ export function PublicSelfCheckoutPage() {
     if (scannedPayload && kits.ready && !kits.components.length) {
       const payload = scannedPayload;
       setScannedPayload("");
-      loanMutation.mutate({ payload });
+      runLoan({ payload });
     }
-  }, [scannedPayload, kits.ready, kits.components.length]);
+  }, [scannedPayload, kits.ready, kits.components.length, runLoan]);
 
-  return (
-    <main style={brandStyle} className="desk-shell">
-      <header className="border-b border-line bg-panel">
-        <div className="mx-auto flex max-w-screen-xl flex-col gap-4 px-5 py-6 sm:px-8">
-          <p className="eyebrow text-secondary-ink">
-            Public Tool Checkout
-          </p>
-          <div className="flex flex-wrap items-end justify-between gap-3">
-            <div className="min-w-0">
-              <h1 className="title-page">
-                <MakerspaceBrand
-                  name={displayName}
-                  logoUrl={bootstrap?.makerspace.logo_url}
-                  size="lg"
-                />
-              </h1>
-              <p className="mt-2 text-sm text-muted">
-                Scan a physical tool label to check it out or return it.
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <SpaceWorksBadge />
-              <Link className="desk-button" to={tenantPath()}>
-                Back to inventory
-              </Link>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <section className="mx-auto max-w-screen-sm px-5 py-6 sm:px-8">
-        {bootstrapQuery.isLoading ? (
-          <Card>
-            <p className="text-sm text-muted">Loading checkout access...</p>
-          </Card>
-        ) : null}
-
-        {bootstrapQuery.isError ? (
-          <Card>
-            <p className="text-sm text-danger">Could not load checkout access. Try again in a moment.</p>
-          </Card>
-        ) : null}
-        {!bootstrapQuery.isLoading && !bootstrapQuery.isError && !enabled ? (
-          <Card>
-            <p className="eyebrow text-secondary-ink">
-              Self-checkout
-            </p>
-            <h2 className="title-panel mt-2">
-              Self-checkout is not enabled for this makerspace.
-            </h2>
-            <Link className="desk-button mt-4" to={tenantPath()}>
-              Back to inventory
-            </Link>
-          </Card>
-        ) : null}
-
-        {!bootstrapQuery.isLoading && !bootstrapQuery.isError && enabled ? (
-          <Card>
-            <div
-              aria-label="Checkout mode"
-              className="desk-panel mt-4 flex gap-1 p-1"
-            >
-              <button
-                aria-pressed={mode === "checkout"}
-                className={
-                  mode === "checkout"
-                    ? "desk-tab desk-tab-active border-secondary bg-secondary text-on-secondary hover:bg-secondary hover:text-on-secondary"
-                    : "desk-tab hover:text-secondary-ink"
-                }
-                type="button"
-                onClick={() => { setMode("checkout"); setScannedPayload(""); }}
-              >
-                Use (check out)
-              </button>
-              <button
-                aria-pressed={mode === "return"}
-                className={
-                  mode === "return"
-                    ? "desk-tab desk-tab-active border-secondary bg-secondary text-on-secondary hover:bg-secondary hover:text-on-secondary"
-                    : "desk-tab hover:text-secondary-ink"
-                }
-                type="button"
-                onClick={() => { setMode("return"); setScannedPayload(""); }}
-              >
-                Return
-              </button>
-            </div>
-
-            <div className="mt-4">
-              {mode === "checkout" ? (
-                <PublicEvidenceUpload
-                  key={`issue-${uploadKey}`}
-                  slug={makerspaceSlug}
-                  evidenceType="issue"
-                  disabled={loanMutation.isPending}
-                  onUploaded={setIssueEvidenceId}
-                />
-              ) : (
-                <>
-                  <PublicEvidenceUpload
-                    key={`return-${uploadKey}`}
-                    slug={makerspaceSlug}
-                    evidenceType="return"
-                    disabled={loanMutation.isPending}
-                    onUploaded={setReturnEvidenceId}
-                  />
-                  <label className="mt-3 block">
-                    <span className="eyebrow mb-1 block">
-                      Return condition notes
-                    </span>
-                    <textarea
-                      className="desk-input min-h-24 w-full"
-                      required
-                      value={returnRemark}
-                      onChange={(event) => setReturnRemark(event.target.value)}
-                    />
-                  </label>
-                </>
-              )}
-            </div>
-
-            <button
-              className="desk-button-secondary mt-4 w-full disabled:cursor-not-allowed disabled:opacity-50"
-              disabled={!canScan || loanMutation.isPending}
-              type="button"
-              onClick={() => setScannerOpen(true)}
-            >
-              {loanMutation.isPending ? "Submitting..." : "Scan QR"}
-            </button>
-
-            <KitChecklistCapture checklist={kits} />
-            {scannedPayload && kits.components.length ? <button className="desk-button-primary mt-3 w-full" type="button"
-              disabled={!canScan || !kits.ready || loanMutation.isPending} onClick={() => loanMutation.mutate({ payload: scannedPayload })}>
-              Confirm {mode === "checkout" ? "checkout" : "return"}
-            </button> : null}
-            {loanMutation.isError ? (
-              <p className="mt-4 rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-sm text-danger">
-                {loanMutation.error.message}
-              </p>
-            ) : null}
-
-            {loanMutation.isSuccess ? (
-              <div className="mt-4">
-                <ResultCard result={loanMutation.data} />
-              </div>
-            ) : null}
-          </Card>
-        ) : null}
-      </section>
-
-      {scannerOpen ? (
-        <QrScanner onClose={() => setScannerOpen(false)} onScan={scanTool} />
-      ) : null}
-    <SiteFooter branding={bootstrap?.branding} /></main>
-  );
+  const phase = !canScan ? "photo" : scannedPayload && kits.components.length ? "kit" : "scan";
+  const state = bootstrapQuery.isLoading || (accountAccess && session === "restoring") ? { status: "loading" as const } : bootstrapQuery.isError
+    ? { status: "error" as const, error: t`Couldn't load checkout access. Try again.`, onRetry: () => { void bootstrapQuery.refetch(); } } : { status: "ready" as const };
+  return <div style={brandStyle}>
+    <FlowLayout title={t`Borrow or return a tool`} subject={displayName} state={state} compact
+      isEmpty={!enabled || signedOut} empty={!enabled ? { message: t`Self-checkout isn't on at ${displayName}.`, action: { label: t`Back to inventory`, href: tenantPath("inventory") } }
+        : { message: t`Sign in to your account at ${displayName} to borrow or return a tool here.`, action: { label: t`Sign in`, href: tenantPath("member") } }}
+      current={phase} steps={[
+        { key: "photo", label: mode === "return" ? t`Photo and condition notes` : t`Photo`, state: phase === "photo" ? "current" : "done", required: true },
+        { key: "scan", label: t`Scan the tool`, state: phase === "scan" ? "current" : phase === "kit" ? "done" : "todo", required: true },
+        ...(kits.components.length ? [{ key: "kit", label: t`Check the kit`, state: phase === "kit" ? "current" as const : "todo" as const, required: true }] : []),
+      ]}
+      onCancel={() => navigate(tenantPath("inventory"))}
+      footer={{ next: { label: scannedPayload && kits.components.length ? (mode === "checkout" ? t`Confirm checkout` : t`Confirm return`) : t`Scan QR`,
+        pending: loanMutation.isPending, disabled: !canScan || (Boolean(scannedPayload) && !kits.ready),
+        disabledReason: mode === "return" ? t`Upload a return photo and add condition notes before scanning.` : t`Upload a photo of the tool before scanning.`,
+        onClick: () => scannedPayload && kits.components.length ? loanMutation.mutate({ payload: scannedPayload }) : setScannerOpen(true) } }}
+      error={loanMutation.isError ? { size: "panel", tone: "danger", lead: t`Couldn't complete this handover.`, body: loanMutation.error.message } : undefined}
+      result={loanMutation.isSuccess ? { tone: "success", title: mode === "checkout" ? t`You've got it.` : t`Returned. Thanks!`, summary: <ResultCard result={loanMutation.data} />,
+        next: { label: mode === "checkout" ? t`Borrow another` : t`Return another`, onClick: () => loanMutation.reset() } } : undefined}
+      work={<div className="grid gap-5"><MakerspaceBrand name={displayName} logoUrl={bootstrap?.makerspace.logo_url} fallback="logo" />
+        {borrowOff ? <p className="text-sm text-muted" role="status">{t`Borrowing without an account is switched off here, so ask at the front desk to borrow. You can still return a tool.`}</p>
+          : <div className="[&>[role=radiogroup]]:flex [&>[role=radiogroup]]:w-full [&_[role=radio]]:flex-1"><SegmentedControl label={t`Checkout mode`} value={mode} options={[{ value: "checkout", label: t`Borrow` }, { value: "return", label: t`Return` }]} onChange={value => { setMode(value as Mode); setScannedPayload(""); }} /></div>}
+        {contact.details ? <ContactFields contact={contact.details} /> : null}
+        <p className="text-sm text-muted">{mode === "checkout" ? t`Take a photo of the tool, then scan its QR label.` : t`Take a return photo and describe its condition, then scan its QR label.`}</p>
+        {mode === "checkout" ? <PublicEvidenceUpload key={`issue-${uploadKey}`} slug={makerspaceSlug} evidenceType="issue" disabled={loanMutation.isPending} contactEmail={contact.uploadEmail} onUploaded={(id, grant) => { contact.remember(id, grant); setIssueEvidenceId(id); }} />
+          : <><PublicEvidenceUpload key={`return-${uploadKey}`} slug={makerspaceSlug} evidenceType="return" disabled={loanMutation.isPending} contactEmail={contact.uploadEmail} onUploaded={(id, grant) => { contact.remember(id, grant); setReturnEvidenceId(id); }} />
+            <label className="grid gap-2 text-sm font-semibold">{t`Return condition notes`}<textarea className="desk-input min-h-24 w-full resize-y font-normal" required value={returnRemark} onChange={event => setReturnRemark(event.target.value)} /></label></>}
+        <KitChecklistCapture checklist={kits} />
+      </div>} />
+    {scannerOpen ? <QrScanner onClose={() => setScannerOpen(false)} onScan={scanTool} /> : null}
+    <SiteFooter branding={bootstrap?.branding} />
+  </div>;
 }

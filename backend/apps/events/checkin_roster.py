@@ -29,22 +29,28 @@ def host_waiver_state(registration):
 
 
 def minimum_roster(event):
-    rows = list(
-        EventRegistration.objects.filter(
-            event=event,
-            status=EventRegistration.Status.REGISTERED,
-        )
-        .select_related("event")
-        .order_by("created_at", "id")[: settings.EVENT_CHECKIN_ROSTER_MAX + 1]
-    )
+    """The offline roster: confirmed registrants with a scannable code. While `events.badge_desk_print` is on it
+    also carries v2-credential registrants (their live code travels inside the encrypted, lease-scoped blob, the
+    same protection legacy tokens have) and each person's badge row, so a desk can print with the network down."""
+    from .badge_prints import desk_print_on
+    badges = desk_print_on(event.makerspace)
+    queryset = EventRegistration.objects.filter(event=event, status=EventRegistration.Status.REGISTERED)
+    if not badges:
+        queryset = queryset.filter(credential_mode="legacy")
+    rows = list(queryset.select_related("event__makerspace").order_by("created_at", "id")[
+        : settings.EVENT_CHECKIN_ROSTER_MAX + 1])
     if len(rows) > settings.EVENT_CHECKIN_ROSTER_MAX:
         raise RosterTooLarge()
-    return [
-        {
-            "registration_id": row.pk,
-            "checkin_token": row.checkin_token,
-            "name": row.name,
-            "host_waiver_state": host_waiver_state(row),
-        }
-        for row in rows
-    ]
+    if not badges:
+        return [{"registration_id": row.pk, "checkin_token": str(row.checkin_token), "name": row.name,
+                 "host_waiver_state": host_waiver_state(row)} for row in rows]
+    from . import badge_desk
+    from .badge_credentials import current_checkin_payload
+    badge_rows = {item["registration_id"]: item for item in badge_desk.rows(event, rows, with_payload=False)}
+    result = []
+    for row in rows:
+        payload = current_checkin_payload(row)
+        result.append({"registration_id": row.pk, "checkin_token": payload, "name": row.name,
+                       "host_waiver_state": host_waiver_state(row), "checkin_payload": payload,
+                       "badge": badge_rows[row.pk]})
+    return result

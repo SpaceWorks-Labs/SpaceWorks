@@ -13,6 +13,8 @@ class InventoryConfig(AppConfig):
     name = "apps.inventory"
 
     def ready(self):
+        from .notifications_p2 import register
+        register()
         from django.db.models.signals import post_save
 
         from apps.makerspaces.models import Makerspace

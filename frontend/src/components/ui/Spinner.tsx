@@ -1,8 +1,6 @@
-export function Spinner() {
-  return (
-    <div role="status" className="inline-flex items-center gap-3 text-muted">
-      <span className="h-8 w-8 animate-spin rounded-full border-4 border-line border-t-accent" />
-      <span className="sr-only">Loading</span>
-    </div>
-  );
+import { BoxSpinner } from "../BoxSpinner";
+
+/** Kept for existing callers: the inline loading state is now the Space Works box. */
+export function Spinner({ label, size = 24 }: { label?: string; size?: number }) {
+  return <BoxSpinner label={label} size={size} className="text-muted" />;
 }

@@ -1,0 +1,102 @@
+import { formatLocale } from "../../lib/format";
+import { plural, t } from "@lingui/core/macro";
+import { StatusPill } from "../../components/ui";
+import type { EtaReason, ServiceRequestEta as Eta } from "./types";
+import { normalizeServiceStatus } from "./types";
+
+// Server values only: the browser never sums a queue, decrements a countdown or derives a
+// finish time. A stale snapshot is labelled with when it was calculated, never "corrected".
+const REASON_TEXT: Record<EtaReason, string> = {
+  awaiting_approval: t`Staff still need to approve this job.`,
+  missing_estimate: t`A job in line (or this one) has no time estimate yet.`,
+  no_active_machine: t`No compatible machine is available right now.`,
+  overdue_running_job: t`A running job is taking longer than estimated.`,
+  unknown_running_job: t`A machine's current job has no reliable end time.`,
+  inactive_scope: t`This queue is paused.`,
+  competing_scopes: t`These machines are shared with other queues.`,
+};
+
+export function minutesLabel(minutes: number): string {
+  if (minutes <= 0) return "now";
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  if (!hours) return t`about ${rest} min`;
+  return rest ? t`about ${hours} h ${rest} min` : t`about ${hours} h`;
+}
+
+function sameLocalDay(a: Date, b: Date) {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+
+/** Local wall time with an explicit timezone label; the date appears once it is not today. */
+export function clockLabel(iso: string, reference: Date): string {
+  const date = new Date(iso);
+  const options: Intl.DateTimeFormatOptions = sameLocalDay(date, reference)
+    ? { hour: "2-digit", minute: "2-digit", timeZoneName: "short" }
+    : { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZoneName: "short" };
+  return new Intl.DateTimeFormat(formatLocale(), options).format(date);
+}
+
+function Clock({ iso, reference }: { iso: string; reference: Date }) {
+  return <time dateTime={iso}>{clockLabel(iso, reference)}</time>;
+}
+
+function headline(eta: Eta, status: string, reference: Date) {
+  const finish = eta.estimated_finish_at;
+  if (eta.confidence === "unavailable" || !finish || eta.start_in_minutes == null) return null;
+  if (status === "in_progress") {
+    return <>{t`Done around `}<Clock iso={finish} reference={reference} /> <span className="text-muted">(estimate)</span></>;
+  }
+  const start = eta.start_in_minutes <= 0 ? "Could start now" : `Starts in ${minutesLabel(eta.start_in_minutes)}`;
+  return <>{t`${start} · done around `}<Clock iso={finish} reference={reference} /> <span className="text-muted">(estimate)</span></>;
+}
+
+function lineCopy(eta: Eta, status: string): string | null {
+  if (status === "pending") {
+    const pending = eta.awaiting_review_ahead;
+    return eta.approved_ahead === 0 && pending === 0
+      ? t`Awaiting review`
+      : t`Awaiting review · ${eta.approved_ahead} approved ahead · ${pending} awaiting review ahead`;
+  }
+  if (status === "accepted") {
+    return eta.approved_ahead === 0
+      ? t`You're next among approved jobs`
+      : plural(eta.approved_ahead, { one: "# approved job ahead of you", other: "# approved jobs ahead of you" });
+  }
+  return null;
+}
+
+/** The one ETA presentation shared by status pages, the member dashboard and staff consoles. */
+export function ServiceRequestEta({ eta, status, compact = false, showLine = true, now }: {
+  eta: Eta | null | undefined; status: string; compact?: boolean; showLine?: boolean; now?: Date;
+}) {
+  if (!eta) return null;
+  const normalized = normalizeServiceStatus(status);
+  const reference = now ?? new Date();
+  const lead = headline(eta, normalized, reference);
+  const line = showLine ? lineCopy(eta, normalized) : null;
+  const pill = eta.confidence === "unavailable"
+    ? <StatusPill label={t`Estimate unavailable`} tone="neutral" />
+    : normalized === "pending"
+      ? <StatusPill label={t`If approved`} tone="warn" />
+      : eta.confidence === "rough" ? <StatusPill label={t`Rough estimate`} tone="warn" /> : null;
+  const reasons = eta.reasons.filter(reason => reason !== "awaiting_approval" || normalized !== "pending");
+  if (compact) {
+    return <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-ink">
+      {lead ?? <span className="text-muted">{t`Estimate unavailable`}</span>}
+      {lead && pill && eta.confidence !== "estimated" ? pill : null}
+      {line ? <span className="text-muted">{line}</span> : null}
+    </span>;
+  }
+  return <div className="grid gap-2 text-sm text-ink" data-testid="service-request-eta">
+    <div className="flex flex-wrap items-center gap-2">
+      {lead ? <p className="font-semibold">{lead}</p> : <p className="font-semibold">{t`We can't estimate a time yet.`}</p>}
+      {pill}
+    </div>
+    {line ? <p className="text-muted">{line}</p> : null}
+    {reasons.length ? <ul className="grid gap-1 text-muted">{reasons.map(reason => <li key={reason}>{REASON_TEXT[reason]}</li>)}</ul> : null}
+    <p className="text-xs text-muted">
+      {t`Estimates assume continuous machine time and depend on staff availability. Updated `}<Clock iso={eta.calculated_at} reference={reference} />.
+    </p>
+  </div>;
+}

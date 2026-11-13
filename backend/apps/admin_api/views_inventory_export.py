@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework.exceptions import ValidationError
@@ -79,14 +80,14 @@ class InventoryExportView(APIView):
         },
     )
     def get(self, request, makerspace_id, *args, **kwargs):
-        require_module(makerspace_id, "staff_admin")
+        require_module(makerspace_id, "public_inventory")
         # EDIT_INVENTORY (not VIEW_INVENTORY): the bulk export carries storage_location
         # and box_code, so it stays a manager surface — handout-only guest admins, who
         # only hold VIEW_INVENTORY, must not be able to pull it.
         require_action(request.user, rbac.Action.EDIT_INVENTORY, makerspace_id)
         fmt = request.query_params.get("format", "csv")
         if fmt not in {"csv", "xlsx"}:
-            raise ValidationError({"format": "Use csv or xlsx."})
+            raise ValidationError({"format": gettext("Use csv or xlsx.")})
 
         queryset = rbac.scope_by_action(
             request.user, rbac.Action.EDIT_INVENTORY, InventoryProduct.objects.all(),

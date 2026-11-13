@@ -24,15 +24,16 @@ class ReadOnlyMigrationAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
 
 class DisclosureClosureApprovalAdmin(ReadOnlyMigrationAdmin):
     list_display = (
-        "id", "makerspace", "closure_digest", "approved_by", "approved_at", "revoked_at",
+        "id", "makerspace", "approved_by", "approved_at", "revoked_at",
     )
     list_filter = ("makerspace", "approved_at", "revoked_at")
+    search_fields = ("makerspace__name",)
     readonly_fields = tuple(field.name for field in DisclosureClosureApproval._meta.fields)
 
 
 class TenantMigrationExportJobAdmin(ReadOnlyMigrationAdmin):
     list_display = (
-        "export_job", "closure_digest", "archive_digest", "format_version",
+        "export_job", "format_version",
     )
     list_filter = ("export_job__makerspace", "format_version")
     readonly_fields = tuple(field.name for field in TenantMigrationExportJob._meta.fields)
@@ -43,6 +44,7 @@ class TenantDumpCaptureAdmin(ReadOnlyMigrationAdmin):
         "id", "makerspace", "status", "source_postgres_major", "created_at", "published_at",
     )
     list_filter = ("status", "source_encryption_mode", "created_at")
+    search_fields = ("makerspace__name",)
     readonly_fields = tuple(field.name for field in TenantDumpCapture._meta.fields)
 
     def resolve_hidden_lookup(self):
@@ -53,3 +55,7 @@ if not app_is_tombstoned("tenant_migration"):
     admin.site.register(DisclosureClosureApproval, DisclosureClosureApprovalAdmin)
     admin.site.register(TenantMigrationExportJob, TenantMigrationExportJobAdmin)
     admin.site.register(TenantDumpCapture, TenantDumpCaptureAdmin)
+    from .admin_selfhost_move import SelfHostMoveRequestAdmin
+    from .models_selfhost_move import SelfHostMoveRequest
+
+    admin.site.register(SelfHostMoveRequest, SelfHostMoveRequestAdmin)

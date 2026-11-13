@@ -12,7 +12,7 @@ days (0–365), grace days (0–365), retries (0–3), and up to ten reminder of
 before and after expiry (1–365 days). The defaults are seven opening days, zero
 grace/retries, and reminders 14, 7 and 1 days before expiry.
 
-F1 opens the renewal charge on the makerspace's local calendar day. The existing
+The reminder sweeper opens the renewal charge on the makerspace's local calendar day. The existing
 charge seam records debt independently of the online payments module. A settled
 or waived renewal opens exactly one successor starting at the previous expiry;
 free plans and disabled charge tracking extend without a payment rail. A future
@@ -26,7 +26,7 @@ The promise of grace is saved on the term and survives later plan changes/import
 Expiry at the grace boundary changes the term, never membership or account status.
 The existing `lapsed_members_cannot_borrow` switch controls borrowing restrictions.
 
-F1 deduplicates reminder identities; F3 renders `MEMBERS`/membership lifecycle
+The reminder sweeper deduplicates reminder identities; the notification layer renders `MEMBERS`/membership lifecycle
 emails for the owning account address. Delivery additionally needs the notification
 email cell and email module enabled, and honors recipient selection/preferences.
 There are no staff chat deliveries for these renewal notices.
@@ -48,7 +48,7 @@ Cancel renewal records the reason, stops further renewal and cancels pending
 renewal debt while retaining the current term. Leaving records a separate audited
 departure and reuses existing membership revocation cleanup, preserving the global
 account/history. A sole makerspace manager must appoint another manager first.
-Plan changes remain staff initiated. Pause, proration and erasure are outside this lane.
+Plan changes remain staff initiated. Pause, proration and erasure are not part of this feature.
 Cancellation stays in force for the current membership lifecycle, including imported
 history. A fresh admission after departure clears it in the audited activation transaction.
 

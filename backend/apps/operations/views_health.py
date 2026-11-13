@@ -45,20 +45,18 @@ class ReadinessView(APIView):
         from django.conf import settings
         from apps.backup.host_readiness import HostReadinessError, assert_host_ready
 
+        from apps.backup.managed.admission import ManagedAdmissionError
         try:
             assert_host_ready(settings.SPACEWORKS_HOST_MARKER_PATH)
-        except HostReadinessError as exc:
+            if settings.SPACEWORKS_DEPLOYMENT_MODE == "managed":
+                from .cloud_runtime import check, assert_scheduler_adapters_ready
+                check()
+                assert_scheduler_adapters_ready()
+        except (HostReadinessError, ManagedAdmissionError) as exc:
             return Response(
                 {"status": "unavailable", "detail": str(exc)},
                 status=status.HTTP_503_SERVICE_UNAVAILABLE,
             )
         from apps.encryption.readiness import assert_ready
-        from apps.backup.readiness import archive_custody_readiness
         assert_ready()
-        return Response(
-            {
-                "status": "ready",
-                "database": "ok",
-                "archive_custody": archive_custody_readiness(),
-            }
-        )
+        return Response({"status": "ready", "database": "ok"})

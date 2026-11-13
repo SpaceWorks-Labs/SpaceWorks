@@ -1,13 +1,24 @@
+import { formatLocale } from "../../lib/format";
+import { t } from "@lingui/core/macro";
+import { consoleSessionHref } from "../../lib/api/sessionContext";
+import { ModuleAnalytics } from "./panels/ModuleAnalytics";
+import { SettingsQueryState } from "./SettingsQueryState";
+import { ErrorBlock } from "../../components/ui";
+import { SettingsRow } from "../../components/ui";
 import type React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 
 import type { ApiPath } from "../../generated/api";
-import { Badge, Metric } from "../../components/ui";
+import { StatusPill as Badge, Metric } from "../../components/ui";
 import { staffRequest } from "../../lib/api";
 import { type ChatDestinationsHealth, IntegrationHealthRooms } from "./IntegrationHealthRooms";
 import type { Makerspace } from "./StaffPanels";
 import { staffTabPath } from "./staffTabs";
+
+import { DeploymentPanel } from "../deployment/DeploymentPanel";
+import type { TenantDeploymentSummary } from "../deployment/types";
+import { LogoLoader } from "../../components/LogoLoader";
 
 type HealthStatus = "ok" | "warn" | "error" | "unknown";
 
@@ -17,6 +28,7 @@ type SectionHealth = {
 };
 
 type IntegrationHealth = {
+  deployment?: TenantDeploymentSummary;
   status: Exclude<HealthStatus, "unknown">;
   email: SectionHealth & {
     total?: number;
@@ -55,7 +67,7 @@ type IntegrationHealth = {
 
 const integrationHealthPath: ApiPath = "/api/v1/admin/makerspace/{makerspace_id}/integration-health";
 
-export function IntegrationHealthPanel({ makerspace }: { makerspace: Makerspace }) {
+export function IntegrationHealthPanel({ makerspace, isSuperadmin = false }: { makerspace: Makerspace; isSuperadmin?: boolean }) {
   const health = useQuery({
     queryKey: ["integration-health", makerspace.id],
     queryFn: () =>
@@ -70,51 +82,59 @@ export function IntegrationHealthPanel({ makerspace }: { makerspace: Makerspace 
   const data = health.data;
 
   return (
-    <div className="min-w-0 rounded-md border border-line bg-bg p-4">
+    // A failed background refresh keeps the last known readings; only a first load blanks the row.
+    <SettingsQueryState query={{ isLoading: health.isLoading, error: health.data ? null : health.error, refetch: health.refetch }} resource={t`integration health`}><SettingsRow label={t`Integration health`} helper={t`Check connected services and delivery before sending alerts.`}><div className="@container grid min-w-0 gap-4">
+      {data?.deployment ? <DeploymentPanel data={data.deployment} /> : null}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-base font-semibold text-ink">Integration health</h3>
-            <Badge tone={statusTone(data?.status ?? "unknown")}>{statusLabel(data?.status)}</Badge>
+
+            <Badge label="" tone={statusTone(data?.status ?? "unknown")}>{statusLabel(data?.status)}</Badge>
           </div>
-          {health.isLoading ? <p className="mt-2 text-sm text-muted">Loading integration health...</p> : null}
-          {health.error ? <p className="mt-2 text-sm text-danger">{health.error.message}</p> : null}
+          {health.isLoading ? <LogoLoader label={t`Loading integration health…`} size={48} className="min-h-16 py-3" /> : null}
+          {health.error ? <ErrorBlock error={new Error(t`Couldn't load integration health. Try again.`)} onRetry={() => { void health.refetch(); }} /> : null}
         </div>
         <div className="flex flex-wrap gap-2">
-          <Link className="desk-button" to={staffTabPath("email-logs", false, makerspace.slug)}>Email log</Link>
-          <Link className="desk-button" to={staffTabPath("api", false, makerspace.slug)}>Telegram test</Link>
+          <Link className="desk-button" to={consoleSessionHref(staffTabPath("email-logs", false, makerspace.slug))}>{t`Delivery log`}</Link>
+          {/* The Telegram card (superadmin only) sits on this same page, so jump to it in place. */}
+          {isSuperadmin ? <button className="desk-button" type="button" onClick={() => {
+            const card = document.getElementById("telegram-settings");
+            card?.scrollIntoView({ behavior: "smooth", block: "start" });
+            card?.focus({ preventScroll: true });
+          }}>{t`Telegram test`}</button> : null}
         </div>
       </div>
 
+      <ModuleAnalytics makerspace={makerspace} tab="communications" />
       {data ? (
-        <div className="mt-4 grid gap-3 xl:grid-cols-2">
-          <HealthBlock title="Email" status={data.email.status} detail={data.email.detail}>
-            <div className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-5">
-              <Metric label="Total" value={data.email.total} />
-              <Metric label="Pending" value={data.email.pending} />
-              <Metric label="Sent" value={data.email.sent} />
-              <Metric label="Failed" value={data.email.failed} danger={(data.email.failed ?? 0) > 0} />
-              <Metric label="Stalled" value={data.email.stalled} danger={(data.email.stalled ?? 0) > 0} />
+        <div className="mt-4 grid gap-3 @3xl:grid-cols-2">
+          <HealthBlock title={t`Email`} status={data.email.status} detail={data.email.detail}>
+            <div className="grid grid-cols-2 gap-2 text-sm @md:grid-cols-5">
+              <Metric label={t`Total`} value={data.email.total} />
+              <Metric label={t`Pending`} value={data.email.pending} />
+              <Metric label={t`Sent`} value={data.email.sent} />
+              <Metric label={t`Failed`} value={data.email.failed} danger={(data.email.failed ?? 0) > 0} />
+              <Metric label={t`Stalled`} value={data.email.stalled} danger={(data.email.stalled ?? 0) > 0} />
             </div>
             <div className="mt-3 rounded-md border border-line bg-surface p-3 text-sm">
               {data.email.last_failure ? (
                 <>
-                  <p className="font-semibold text-ink">{data.email.last_failure.subject || "Last failure"}</p>
+                  <p className="font-semibold text-ink">{data.email.last_failure.subject || t`Last failure`}</p>
                   <p className="mt-1 text-xs text-muted">
                     {data.email.last_failure.stream || "email"} - {relativeTime(data.email.last_failure.created_at)}
                   </p>
-                  <p className="mt-2 break-words text-muted">{data.email.last_failure.error || "No error detail."}</p>
+                  <p className="mt-2 break-words text-muted">{data.email.last_failure.error || t`No error detail.`}</p>
                 </>
               ) : (
-                <p className="text-muted">No failed deliveries.</p>
+                <p className="text-muted">{t`No failed deliveries.`}</p>
               )}
             </div>
           </HealthBlock>
 
-          <HealthBlock title="Deliveries by stream" status={data.deliveries_by_stream.status} detail={data.deliveries_by_stream.detail}>
-            <div className="grid gap-2 sm:grid-cols-2">
-              <StreamDelivery label="Hardware" value={data.deliveries_by_stream.hardware} />
-              <StreamDelivery label="Printing" value={data.deliveries_by_stream.printing} />
+          <HealthBlock title={t`Deliveries by stream`} status={data.deliveries_by_stream.status} detail={data.deliveries_by_stream.detail}>
+            <div className="grid gap-2 @sm:grid-cols-2">
+              <StreamDelivery label={t`Hardware`} value={data.deliveries_by_stream.hardware} />
+              <StreamDelivery label={t`Printing`} value={data.deliveries_by_stream.printing} />
             </div>
           </HealthBlock>
 
@@ -122,7 +142,7 @@ export function IntegrationHealthPanel({ makerspace }: { makerspace: Makerspace 
             <ConfiguredBadge configured={data.smtp.configured} />
           </HealthBlock>
 
-          <HealthBlock title="Telegram" status={data.telegram.status} detail={data.telegram.detail}>
+          <HealthBlock title={t`Telegram`} status={data.telegram.status} detail={data.telegram.detail}>
             <ConfiguredBadge configured={data.telegram.configured} />
           </HealthBlock>
 
@@ -130,17 +150,17 @@ export function IntegrationHealthPanel({ makerspace }: { makerspace: Makerspace 
             <ConfiguredBadge configured={data.sms?.configured} />
           </HealthBlock>
 
-          <HealthBlock title="Native push" status={data.native_push?.status} detail={data.native_push?.detail}>
+          <HealthBlock title={t`Native push`} status={data.native_push?.status} detail={data.native_push?.detail}>
             <ConfiguredBadge configured={data.native_push?.configured} />
-            <p className="mt-2 text-sm text-muted">{data.native_push?.enabled ? "Enabled" : "Disabled for this makerspace"}</p>
+            <p className="mt-2 text-sm text-muted">{data.native_push?.enabled ? t`Enabled` : t`Disabled for this makerspace`}</p>
             {data.native_push?.last_failure ? <p className="mt-2 break-words text-sm text-danger">
-              Last delivery failed: {data.native_push.last_failure.error || "No error detail."}
+              {t`Last delivery failed: `}{data.native_push.last_failure.error || t`No error detail.`}
               {" - "}{relativeTime(data.native_push.last_failure.at)}
             </p> : null}
           </HealthBlock>
 
           <HealthBlock
-            title="Chat and webhook rooms"
+            title={t`Chat and webhook rooms`}
             status={data.chat_destinations?.status}
             detail={data.chat_destinations?.detail}
             wide
@@ -148,20 +168,20 @@ export function IntegrationHealthPanel({ makerspace }: { makerspace: Makerspace 
             <IntegrationHealthRooms section={data.chat_destinations} formatTime={relativeTime} />
           </HealthBlock>
 
-          <HealthBlock title="Worker" status={data.worker.status} detail={data.worker.detail} wide>
-            <div className="grid gap-2 text-sm sm:grid-cols-4">
-              <BooleanMetric label="Broker" value={data.worker.broker_configured} trueLabel="Configured" falseLabel="Eager only" />
-              <BooleanMetric label="Eager" value={data.worker.eager} trueLabel="On" falseLabel="Off" />
-              <BooleanMetric label="Stale" value={data.worker.stale} trueLabel="Yes" falseLabel="No" danger={data.worker.stale} />
+          <HealthBlock title={t`Worker`} status={data.worker.status} detail={data.worker.detail} wide>
+            <div className="grid grid-cols-2 gap-2 text-sm @md:grid-cols-4">
+              <BooleanMetric label={t`Broker`} value={data.worker.broker_configured} trueLabel="Configured" falseLabel="Eager only" />
+              <BooleanMetric label={t`Eager`} value={data.worker.eager} trueLabel="On" falseLabel="Off" />
+              <BooleanMetric label={t`Stale`} value={data.worker.stale} trueLabel="Yes" falseLabel="No" danger={data.worker.stale} />
               <div className="rounded-md border border-line bg-surface p-3">
-                <p className="text-xs font-semibold uppercase text-muted">Last seen</p>
-                <p className="mt-1 font-semibold text-ink">{data.worker.last_seen ? relativeTime(data.worker.last_seen) : "Never"}</p>
+                <p className="text-xs font-semibold uppercase text-muted">{t`Last seen`}</p>
+                <p className="mt-1 font-semibold text-ink">{data.worker.last_seen ? relativeTime(data.worker.last_seen) : t`Never`}</p>
               </div>
             </div>
           </HealthBlock>
         </div>
       ) : null}
-    </div>
+    </div></SettingsRow></SettingsQueryState>
   );
 }
 
@@ -179,10 +199,10 @@ function HealthBlock({
   children: React.ReactNode;
 }) {
   return (
-    <section className={`min-w-0 rounded-md border border-line bg-bg p-3 ${wide ? "xl:col-span-2" : ""}`}>
+    <section className={`@container min-w-0 rounded-md border border-line bg-bg p-3 ${wide ? "@3xl:col-span-2" : ""}`}>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <h4 className="font-semibold text-ink">{title}</h4>
-        <Badge tone={statusTone(status)}>{statusLabel(status)}</Badge>
+        <Badge label="" tone={statusTone(status)}>{statusLabel(status)}</Badge>
       </div>
       {detail ? <p className="mb-3 break-words text-sm text-danger">{detail}</p> : null}
       {children}
@@ -215,13 +235,13 @@ function StreamDelivery({ label, value }: { label: string; value?: string | null
   return (
     <div className="rounded-md border border-line bg-surface p-3 text-sm">
       <p className="font-semibold text-ink">{label}</p>
-      <p className="mt-1 text-muted">{value ? relativeTime(value) : "Never sent"}</p>
+      <p className="mt-1 text-muted">{value ? relativeTime(value) : t`Never sent`}</p>
     </div>
   );
 }
 
 function ConfiguredBadge({ configured }: { configured?: boolean }) {
-  return <Badge tone={configured ? "success" : "neutral"}>{configured ? "Configured" : "Not configured"}</Badge>;
+  return <Badge label="" tone={configured ? "success" : "neutral"}>{configured ? t`Configured` : t`Not configured`}</Badge>;
 }
 
 function statusTone(status?: HealthStatus) {
@@ -232,7 +252,7 @@ function statusTone(status?: HealthStatus) {
 }
 
 function statusLabel(status?: HealthStatus) {
-  if (!status) return "Unknown";
+  if (!status) return t`Unknown`;
   return status.charAt(0).toUpperCase() + status.slice(1);
 }
 
@@ -244,7 +264,7 @@ function relativeTime(value: string) {
   const minute = 60_000;
   const hour = 60 * minute;
   const day = 24 * hour;
-  const rtf = new Intl.RelativeTimeFormat(undefined, { numeric: "auto" });
+  const rtf = new Intl.RelativeTimeFormat(formatLocale(), { numeric: "auto" });
   if (absMs < hour) return rtf.format(Math.round(diffMs / minute), "minute");
   if (absMs < day) return rtf.format(Math.round(diffMs / hour), "hour");
   return rtf.format(Math.round(diffMs / day), "day");

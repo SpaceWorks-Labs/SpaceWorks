@@ -7,6 +7,8 @@ from rest_framework.exceptions import ValidationError as DRFValidationError
 from apps.audit import services as audit
 from apps.evidence.storage import StorageUnavailable
 from apps.inventory import public_image_storage
+from django.utils.translation import gettext_lazy
+from django.utils.translation import gettext
 
 
 class PublicImageAdminForm(forms.ModelForm):
@@ -20,13 +22,13 @@ class PublicImageAdminForm(forms.ModelForm):
         cleaned = super().clean()
         upload = cleaned.get("image_upload")
         if upload and cleaned.get("clear_image"):
-            raise forms.ValidationError("Choose upload or clear image, not both.")
+            raise forms.ValidationError(gettext("Choose upload or clear image, not both."))
         if upload:
             if not self.instance.pk:
-                raise forms.ValidationError("Save the object before uploading an image.")
+                raise forms.ValidationError(gettext("Save the object before uploading an image."))
             if upload.size > settings.PUBLIC_IMAGE_MAX_BYTES:
                 raise forms.ValidationError(
-                    f"Image must be {settings.PUBLIC_IMAGE_MAX_BYTES} bytes or smaller."
+                    gettext("Image must be %(bytes)s bytes or smaller.") % {"bytes": settings.PUBLIC_IMAGE_MAX_BYTES}
                 )
             try:
                 cleaned["_image_ext"] = public_image_storage.ext_for(
@@ -44,7 +46,7 @@ class PublicImageAdminMixin:
     image_attach_action = ""
     image_clear_action = ""
 
-    @admin.display(description="Image preview")
+    @admin.display(description=gettext_lazy("Image preview"))
     def image_preview(self, obj):
         object_key = getattr(obj, self.image_field, "")
         url = public_image_storage.public_url(object_key)

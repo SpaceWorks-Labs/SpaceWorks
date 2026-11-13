@@ -1,0 +1,115 @@
+// Version history: every saved revision, newest first. Pick one to see it; "Restore this
+// version" saves it as a NEW draft (compare-and-swap on the current revision). Publishing
+// stays separate, so cards keep the published version until someone publishes.
+import { t } from "@lingui/core/macro";
+import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+
+import { StructuredApiError } from "../../lib/api";
+import { Badge } from "../ui/Badge";
+import { ConfirmDialog } from "../ui/ConfirmDialog";
+import { ErrorBlock } from "../ui/ErrorBlock";
+import { Pagination } from "../ui/Pagination";
+import { RelativeTime } from "../ui/RelativeTime";
+import type { CardDesign } from "./cardTypes";
+import { fitInside } from "./canvasMath";
+import { CardThumbnail } from "./CardThumbnail";
+import { designKey } from "./designerApi";
+import { restoreRevision, REVISIONS_PAGE_SIZE, revisionsKey, useRevision, useRevisions, type CardRevision } from "./designerHistoryApi";
+import { LogoLoader } from "../LogoLoader";
+import { VersionCompare } from "./VersionCompare";
+
+const REVIEW: Record<Exclude<CardRevision["review"], "">, { label: string; tone: "warn" | "success" | "danger" | "neutral" }> = {
+  pending: { label: t`Waiting for approval`, tone: "warn" }, approved: { label: t`Approved`, tone: "success" },
+  rejected: { label: t`Sent back`, tone: "danger" }, withdrawn: { label: t`Withdrawn`, tone: "neutral" },
+};
+
+export function HistoryPanel({ designId, canEdit, values, prepare, onRestored, onReload }: {
+  designId: number; canEdit: boolean; values: Record<string, string>; prepare: () => Promise<number>;
+  onRestored: (design: CardDesign) => void; onReload: () => void;
+}) {
+  const client = useQueryClient();
+  const [page, setPage] = useState(1);
+  const [chosen, setChosen] = useState<number | null>(null);
+  const [confirming, setConfirming] = useState(false);
+  const [comparing, setComparing] = useState<[number, number] | null>(null);
+  const [pending, setPending] = useState(false);
+  const [outcome, setOutcome] = useState<{ tone: "info" | "error" | "conflict"; text: string } | null>(null);
+  const list = useRevisions(designId, page);
+  const detail = useRevision(designId, chosen);
+  const rows = list.data?.results ?? [];
+  const row = rows.find((item) => item.revision === chosen) ?? detail.data ?? null;
+
+  async function restore() {
+    if (chosen === null) return;
+    setPending(true); setOutcome(null);
+    try {
+      const current = await prepare();
+      const design = await restoreRevision(designId, chosen, current);
+      client.setQueryData(designKey(designId), design);
+      onRestored(design);
+      setOutcome({ tone: "info", text: t`Version ${chosen} is now your draft. Publish when you are ready.` });
+      setChosen(null); setPage(1);
+      void client.invalidateQueries({ queryKey: revisionsKey(designId) });
+    } catch (error) {
+      if (error instanceof StructuredApiError && error.status === 409) setOutcome({ tone: "conflict", text: t`Someone else saved this design.` });
+      else setOutcome({ tone: "error", text: error instanceof Error ? error.message : t`That version couldn't be restored.` });
+    } finally { setPending(false); setConfirming(false); }
+  }
+
+  const document = detail.data?.document;
+  const current = rows.find((item) => item.is_current)?.revision ?? null;
+  const thumb = document ? fitInside(220, 150, document.front.page_width_mm, document.front.page_height_mm) : 0;
+  const preview = chosen !== null ? <div className="mt-1 grid gap-2 rounded-control border border-line bg-surface p-2" aria-live="polite">
+    {detail.isLoading ? <LogoLoader size={48} className="min-h-32 py-3" /> : null}
+    {detail.isError ? <ErrorBlock error={detail.error} resource={t`this version`} onRetry={() => void detail.refetch()} /> : null}
+    {document ? <div className="grid justify-items-center gap-2">
+      <CardThumbnail side={document.front} designId={designId} values={values} mono={document.mono}
+        watermark={document.watermark} width={thumb}
+        label={t`Version ${chosen}, front`} />
+      {document.back_enabled ? <CardThumbnail side={document.back} designId={designId} values={values} mono={document.mono}
+        watermark={document.watermark}
+        width={thumb} label={t`Version ${chosen}, back`} /> : null}
+    </div> : null}
+    {current !== null && chosen !== null && chosen !== current ? <button type="button" className="desk-button min-h-11"
+      onClick={() => setComparing([Math.min(chosen, current), Math.max(chosen, current)])}>{t`Compare with the current version`}</button> : null}
+    {canEdit && row && !row.is_current ? <button type="button" className="desk-button-primary min-h-11" disabled={pending || !document}
+      onClick={() => setConfirming(true)}>{t`Restore this version`}</button> : null}
+    {row?.is_current ? <p className="text-xs text-muted">{t`This is the version you are editing.`}</p> : null}
+  </div> : null;
+  return <div className="grid gap-3">
+    <div className="grid gap-1">
+      <h3 className="text-sm font-semibold text-ink">{t`Version history`}</h3>
+      <p className="text-sm text-muted">{t`Each save keeps a version. Restoring one makes it a new draft; cards keep the published version until you publish.`}</p>
+    </div>
+    {outcome?.tone === "conflict" ? <p role="alert" className="text-sm text-danger">{outcome.text}{" "}
+      <button type="button" className="underline" onClick={onReload}>{t`Load their version`}</button> {t` (your unsaved edits are dropped).`}</p> : null}
+    {outcome && outcome.tone !== "conflict" ? <p role={outcome.tone === "error" ? "alert" : "status"}
+      className={`text-sm ${outcome.tone === "error" ? "text-danger" : "text-muted"}`}>{outcome.text}</p> : null}
+    {list.isLoading ? <LogoLoader size={48} className="min-h-40 py-3" /> : null}
+    {list.isError ? <ErrorBlock error={list.error} resource={t`version history`} onRetry={() => void list.refetch()} /> : null}
+    {list.data && !rows.length ? <p className="text-sm text-muted">{t`No saved versions yet.`}</p> : null}
+    <ul className="grid gap-1" aria-label={t`Versions, newest first`}>
+      {rows.map((item) => <li key={item.revision}>
+        <button type="button" aria-pressed={chosen === item.revision} onClick={() => setChosen(chosen === item.revision ? null : item.revision)}
+          className={`grid min-h-11 w-full gap-1 rounded-control border px-2 py-2 text-left text-sm focus-visible:outline-2 focus-visible:outline-focus ${chosen === item.revision ? "border-accent-ink bg-accent-soft" : "border-transparent hover:bg-hover"}`}>
+          <span className="flex flex-wrap items-center gap-1.5">
+            <span className="font-semibold text-ink">{t`Version ${item.revision}`}</span>
+            {item.is_current ? <Badge tone="accent">{t`Current`}</Badge> : null}
+            {item.is_published ? <Badge tone="success">{t`Published`}</Badge> : null}
+            {item.review ? <Badge tone={REVIEW[item.review].tone}>{REVIEW[item.review].label}</Badge> : null}
+          </span>
+          <span className="text-xs text-muted">{item.created_by || t`Someone`} · <RelativeTime date={item.created_at} /> · {item.layers} layers</span>
+        </button>
+        {chosen === item.revision ? preview : null}
+      </li>)}
+    </ul>
+    {list.data ? <Pagination page={page} totalPages={Math.ceil(list.data.count / REVISIONS_PAGE_SIZE)} count={list.data.count}
+      pageSize={REVISIONS_PAGE_SIZE} disabled={list.isFetching} onChange={(next) => { setPage(next); setChosen(null); }} /> : null}
+    {comparing ? <VersionCompare designId={designId} older={comparing[0]} newer={comparing[1]} values={values}
+      onClose={() => setComparing(null)} /> : null}
+    <ConfirmDialog open={confirming} title={t`Restore version ${chosen ?? ""}?`} confirmLabel={t`Restore as a draft`} pending={pending}
+      message={t`It replaces what you are editing now as a new draft. Cards keep the published version until you publish.`}
+      onCancel={() => setConfirming(false)} onConfirm={() => void restore()} />
+  </div>;
+}

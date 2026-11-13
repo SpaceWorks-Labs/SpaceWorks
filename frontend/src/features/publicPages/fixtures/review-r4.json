@@ -1,0 +1,369 @@
+{
+  "palette_page": {
+    "schema_version": 1,
+    "kind": "makerspace",
+    "canonical_url": "https://platform.example.test/m/lab",
+    "title": "Lab",
+    "description": "",
+    "publication_token": "10000000-0000-4000-8000-000000000001",
+    "cover": null,
+    "presentation": {
+      "accent_choice": "workshop_orange",
+      "resolved_theme": {
+        "theme_config": {
+          "primary_color": "#FF7447"
+        },
+        "light": {
+          "fill": [
+            255,
+            116,
+            71
+          ],
+          "foreground": [
+            20,
+            44,
+            42
+          ],
+          "hover": [
+            255,
+            129,
+            87
+          ],
+          "active": [
+            255,
+            142,
+            103
+          ],
+          "soft": [
+            255,
+            238,
+            233
+          ],
+          "ink": [
+            154,
+            85,
+            59
+          ],
+          "pairs": [
+            [
+              "on-brand on brand",
+              5.508545156656776,
+              4.5
+            ],
+            [
+              "on-brand on brand-hover",
+              5.99228777889861,
+              4.5
+            ],
+            [
+              "on-brand on brand-active",
+              6.5454001142418345,
+              4.5
+            ],
+            [
+              "brand-ink on bg",
+              5.180573070649375,
+              4.5
+            ],
+            [
+              "brand-ink on surface",
+              4.815423740566039,
+              4.5
+            ],
+            [
+              "brand-ink on panel",
+              5.620145382403836,
+              4.5
+            ],
+            [
+              "brand-ink on hover",
+              4.552790075771719,
+              4.5
+            ],
+            [
+              "brand-ink on brand-soft",
+              4.993486518077358,
+              4.5
+            ],
+            [
+              "brand-ink on accent-soft",
+              4.713026817484235,
+              4.5
+            ],
+            [
+              "brand-ink on emphasis-soft",
+              4.993486518077358,
+              4.5
+            ],
+            [
+              "brand-ink on success-soft",
+              5.536647928411698,
+              4.5
+            ],
+            [
+              "brand-ink on warn-soft",
+              5.380053118285417,
+              4.5
+            ],
+            [
+              "brand-ink on info-soft",
+              5.329192798840911,
+              4.5
+            ],
+            [
+              "ink on brand-soft",
+              13.107901526118832,
+              4.5
+            ],
+            [
+              "muted on brand-soft",
+              5.175534697690807,
+              4.5
+            ],
+            [
+              "accent-ink on brand-soft",
+              5.470816429681026,
+              4.5
+            ],
+            [
+              "success-ink on brand-soft",
+              5.109856014286967,
+              4.5
+            ],
+            [
+              "warn-ink on brand-soft",
+              5.139554224502217,
+              4.5
+            ],
+            [
+              "info-ink on brand-soft",
+              5.102806082872614,
+              4.5
+            ],
+            [
+              "danger on brand-soft",
+              5.748620161042089,
+              4.5
+            ],
+            [
+              "brand boundary on bg",
+              5.180573070649375,
+              3
+            ],
+            [
+              "brand boundary on surface",
+              4.815423740566039,
+              3
+            ],
+            [
+              "brand boundary on panel",
+              5.620145382403836,
+              3
+            ]
+          ]
+        },
+        "dark": {
+          "fill": [
+            255,
+            116,
+            71
+          ],
+          "foreground": [
+            20,
+            44,
+            42
+          ],
+          "hover": [
+            255,
+            129,
+            87
+          ],
+          "active": [
+            255,
+            142,
+            103
+          ],
+          "soft": [
+            48,
+            32,
+            26
+          ],
+          "ink": [
+            255,
+            116,
+            71
+          ],
+          "pairs": [
+            [
+              "on-brand on brand",
+              5.508545156656776,
+              4.5
+            ],
+            [
+              "on-brand on brand-hover",
+              5.99228777889861,
+              4.5
+            ],
+            [
+              "on-brand on brand-active",
+              6.5454001142418345,
+              4.5
+            ],
+            [
+              "brand-ink on bg",
+              7.841142927380662,
+              4.5
+            ],
+            [
+              "brand-ink on surface",
+              7.349252219566753,
+              4.5
+            ],
+            [
+              "brand-ink on panel",
+              6.878749448085055,
+              4.5
+            ],
+            [
+              "brand-ink on hover",
+              6.363299133561339,
+              4.5
+            ],
+            [
+              "brand-ink on brand-soft",
+              5.820340222839734,
+              4.5
+            ],
+            [
+              "brand-ink on accent-soft",
+              6.4364852592391735,
+              4.5
+            ],
+            [
+              "brand-ink on emphasis-soft",
+              6.3845343832399655,
+              4.5
+            ],
+            [
+              "brand-ink on success-soft",
+              6.00369621664625,
+              4.5
+            ],
+            [
+              "brand-ink on warn-soft",
+              6.092605620493189,
+              4.5
+            ],
+            [
+              "brand-ink on info-soft",
+              6.153308318405869,
+              4.5
+            ],
+            [
+              "ink on brand-soft",
+              14.368735483203297,
+              4.5
+            ],
+            [
+              "muted on brand-soft",
+              6.866742266964628,
+              4.5
+            ],
+            [
+              "accent-ink on brand-soft",
+              6.500409376217939,
+              4.5
+            ],
+            [
+              "success-ink on brand-soft",
+              14.080605668050646,
+              4.5
+            ],
+            [
+              "warn-ink on brand-soft",
+              11.851938735806316,
+              4.5
+            ],
+            [
+              "info-ink on brand-soft",
+              11.000551198978886,
+              4.5
+            ],
+            [
+              "danger on brand-soft",
+              8.212954789149292,
+              4.5
+            ],
+            [
+              "brand boundary on bg",
+              7.841142927380662,
+              3
+            ],
+            [
+              "brand boundary on surface",
+              7.349252219566753,
+              3
+            ],
+            [
+              "brand boundary on panel",
+              6.878749448085055,
+              3
+            ]
+          ]
+        }
+      }
+    },
+    "sections": [
+      {
+        "id": "32c417ce-8dda-50d7-b563-2b09c335ffd1",
+        "type": "functional_content",
+        "enabled": true,
+        "payload": {
+          "links": [
+            {
+              "family": "inventory",
+              "url": "https://platform.example.test/m/lab"
+            },
+            {
+              "family": "events",
+              "url": "https://platform.example.test/m/lab/events"
+            },
+            {
+              "family": "bookings",
+              "url": "https://platform.example.test/m/lab/bookings"
+            },
+            {
+              "family": "machines",
+              "url": "https://platform.example.test/m/lab/machines"
+            },
+            {
+              "family": "membership",
+              "url": "https://platform.example.test/m/lab/member"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "discovery": {
+    "count": 1,
+    "next": null,
+    "previous": null,
+    "results": [
+      {
+        "title": "Workshop",
+        "description": "",
+        "url": "https://tenant.example.test/e/10000000-0000-4000-8000-000000000004",
+        "image_url": "https://tenant.example.test/api/v1/public/page-event/events/10000000-0000-4000-8000-000000000004/website/assets/12/",
+        "image_alt": "Workshop cover",
+        "date": "2099-10-17T04:30:00Z",
+        "location": "",
+        "availability": "Available",
+        "audience_label": "",
+        "revision": "fixture-revision",
+        "registration_count": 0,
+        "makerspace_name": "page-event"
+      }
+    ]
+  }
+}

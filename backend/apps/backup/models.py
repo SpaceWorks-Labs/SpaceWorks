@@ -1,9 +1,9 @@
+from django.utils.translation import gettext_noop
 import uuid
 
 from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
-from django.utils import timezone
 
 
 ARCHIVE_PURGE_WARNING = (
@@ -13,6 +13,11 @@ ARCHIVE_PURGE_WARNING = (
 
 
 class PlatformBackupSettings(models.Model):
+    class Meta:
+        # #188: plain-language admin name (the default plural was broken English).
+        verbose_name = "backup settings"
+        verbose_name_plural = "backup settings"
+
     automatic_backups_enabled = models.BooleanField(default=False)
     retention_days = models.PositiveSmallIntegerField(
         default=30, validators=(MinValueValidator(1), MaxValueValidator(3650))
@@ -20,6 +25,13 @@ class PlatformBackupSettings(models.Model):
     last_scheduled_at = models.DateTimeField(null=True, blank=True)
     last_success_at = models.DateTimeField(null=True, blank=True)
     last_error = models.CharField(max_length=500, blank=True)
+    # Release 2 L11: a restore drill per space every N days (0 = off), the optional
+    # "archive ready" operator notice (off by default, #128 C-24) and a pending
+    # re-encryption of archives still encrypted to a retired key (cleared to cancel).
+    restore_drill_interval_days = models.PositiveSmallIntegerField(
+        default=7, validators=(MaxValueValidator(365),))
+    archive_ready_notice_enabled = models.BooleanField(default=False)
+    reencrypt_requested_at = models.DateTimeField(null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     @classmethod
@@ -33,7 +45,7 @@ class PlatformBackupSettings(models.Model):
 
 class BackupArchive(models.Model):
     class Scope(models.TextChoices):
-        DEPLOYMENT = "deployment", "Full deployment"
+        DEPLOYMENT = "deployment", gettext_noop("Full deployment")
         MAKERSPACE = "makerspace", "Makerspace"
 
     class Status(models.TextChoices):
@@ -44,14 +56,23 @@ class BackupArchive(models.Model):
         FAILED = "failed", "Failed"
         EXPIRED = "expired", "Expired"
 
+    class Trigger(models.TextChoices):
+        ON_DEMAND = "on_demand", gettext_noop("Back up now")
+        NIGHTLY = "nightly", "Nightly"
+        SAFETY = "safety", gettext_noop("Before a restore")
+        EXTRACTED = "extracted", gettext_noop("From a whole-platform backup")
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     scope = models.CharField(max_length=16, choices=Scope.choices)
+    # What the payload is: "tenant_slice_v2" (both membership tracks; "tenant_slice_v1" still
+    # converts on read) is the per-space raw slice a space restore reads; deployment
+    # archives keep their manifest format and leave this blank.
+    format = models.CharField(max_length=32, blank=True, default="")
+    trigger = models.CharField(max_length=16, choices=Trigger.choices, default=Trigger.ON_DEMAND)
     makerspace = models.ForeignKey(
         "makerspaces.Makerspace", null=True, blank=True, on_delete=models.SET_NULL,
         related_name="backup_archives",
     )
-    superadmin_access_at_decision = models.BooleanField(null=True)
-    legacy_pre_decision_snapshot = models.BooleanField(default=False)
     requested_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.PROTECT,
         related_name="requested_backup_archives",
@@ -87,14 +108,6 @@ class BackupArchive(models.Model):
         constraints = [
             models.CheckConstraint(
                 condition=(
-                    ~models.Q(scope="makerspace")
-                    | models.Q(superadmin_access_at_decision__isnull=False)
-                    | models.Q(legacy_pre_decision_snapshot=True)
-                ),
-                name="backup_makerspace_decision_snapshot_present",
-            ),
-            models.CheckConstraint(
-                condition=(
                     ~models.Q(status="available")
                     | models.Q(expires_at__isnull=False)
                 ),
@@ -103,109 +116,19 @@ class BackupArchive(models.Model):
         ]
 
 
-class MakerspaceArchiveRecipient(models.Model):
-    makerspace = models.ForeignKey(
-        "makerspaces.Makerspace",
-        on_delete=models.CASCADE,
-        related_name="archive_recipients",
-    )
-    public_recipient = models.CharField(max_length=200)
-    fingerprint = models.CharField(max_length=64)
-    label = models.CharField(max_length=120)
-    added_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        null=True,
-        blank=True,
-        on_delete=models.PROTECT,
-        related_name="added_archive_recipients",
-    )
-    added_at = models.DateTimeField(auto_now_add=True)
-    revoked_at = models.DateTimeField(null=True, blank=True)
-    compromised_at = models.DateTimeField(null=True, blank=True)
-    verified_at = models.DateTimeField(null=True, blank=True)
-    challenge_nonce_digest = models.CharField(max_length=64, blank=True)
-    challenge_issued_at = models.DateTimeField(null=True, blank=True)
-
-    class Meta:
-        ordering = ("pk",)
-
-
-class MakerspaceArchiveCustodyState(models.Model):
-    class State(models.TextChoices):
-        HEALTHY = "healthy", "Healthy"
-        NOT_APPLICABLE = "not_applicable", "Not applicable"
-        DEGRADED_ONE_RECIPIENT = (
-            "degraded_one_recipient",
-            "Degraded: one recipient",
-        )
-        FLOOR_BREACHED_ZERO = "floor_breached_zero", "Floor breached: zero"
-
-    makerspace = models.OneToOneField(
-        "makerspaces.Makerspace",
-        on_delete=models.CASCADE,
-        related_name="archive_custody_state",
-    )
-    state = models.CharField(
-        max_length=32,
-        choices=State.choices,
-        default=State.HEALTHY,
-    )
-    reason_code = models.CharField(max_length=64, blank=True)
-    entered_at = models.DateTimeField(default=timezone.now)
-    cleared_at = models.DateTimeField(null=True, blank=True)
-    last_alarm_at = models.DateTimeField(null=True, blank=True)
-    triggering_recipient = models.ForeignKey(
-        MakerspaceArchiveRecipient,
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-        related_name="triggered_custody_states",
-    )
-    alarm_episode = models.PositiveBigIntegerField(default=0)
-    alarm_revision = models.PositiveBigIntegerField(default=0)
-
-
-class ArchiveRecipientReservation(models.Model):
-    class Kind(models.TextChoices):
-        TENANT = "tenant", "Tenant"
-        PLATFORM = "platform", "Platform"
-
-    fingerprint = models.CharField(max_length=64, unique=True)
-    makerspace_id_snapshot = models.BigIntegerField(null=True)
-    kind = models.CharField(max_length=16, choices=Kind.choices)
-    reserved_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        constraints = [
-            models.CheckConstraint(
-                condition=(
-                    models.Q(kind="tenant", makerspace_id_snapshot__isnull=False)
-                    | models.Q(kind="platform", makerspace_id_snapshot__isnull=True)
-                ),
-                name="archive_reservation_kind_matches_tenant",
-            )
-        ]
-
-
-
-# Stable public model imports; restore, custody and artifact implementations stay split out.
+# Stable public model imports; restore and artifact implementations stay split out.
 from .models_restore import (  # noqa: E402,F401
     BackupLease,
     DeploymentRecoveryState,
     RestoreOperation,
     RestoreRollbackObject,
 )
-from .models_custody_alarm import ArchiveCustodyAlarmDelivery  # noqa: E402,F401
-from .models_artifact_ledger import B1ActivationState, BackupArtifactComponent, BackupArtifactLedger, BackupComponentRecipient  # noqa: E402,F401
-from .models_tenant_exit_custody import (  # noqa: E402,F401
-    MakerspaceTenantExitCustodyState,
-    TenantExitCustodyAlarmDelivery,
-)
-from .models_restore_reservations import (  # noqa: E402,F401
-    B1FenceContinuity,
-    B1ReservationEntry,
-    B1RestoreComponentState,
-    B1RestoreOperationState,
-)
+from .models_artifact_ledger import BackupArtifactComponent, BackupArtifactLedger  # noqa: E402,F401
 from .models_runs import BackupRun, BackupRunCoverage  # noqa: E402,F401
 from .models_offsite import BackupDestination, BackupDestinationUpload  # noqa: E402,F401
+from .models_space_restore import MakerspaceRestoreOperation  # noqa: E402,F401
+from .models_keys import BackupKeyFingerprint  # noqa: E402,F401
+from .models_drill import RestoreDrillReport  # noqa: E402,F401
+
+from .managed.models import ManagedDeploymentState, ManagedCaptureState, ManagedWriterBoundary  # noqa: F401,E402
+from .managed.models_staging import ManagedStagedObject, ManagedPresignLease  # noqa: F401,E402

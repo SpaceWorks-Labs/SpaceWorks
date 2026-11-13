@@ -5,6 +5,7 @@ Plan reads and term assignment require `MANAGE_MEMBERS`; plan edits require
 so a manager of another makerspace sees 404, never 403, and every one of them is gated
 by the `membership` module -- plans are community-membership behaviour (A7).
 """
+from django.utils.translation import gettext
 from django.db import IntegrityError, transaction
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiResponse, extend_schema
@@ -24,8 +25,10 @@ from apps.admin_api.serializers_membership_plans import (
 from apps.admin_api.views_member_memberships import _makerspace as manageable_makerspace
 from apps.audit import services as audit
 from apps.makerspaces.guards import require_module, require_module_locked
+from apps.makerspaces.membership_plan_policy import sync_plan_features
 from apps.makerspaces.membership_plan_services import cancel_term, create_term
 from apps.makerspaces.models import MakerspaceMembership, MembershipPlan, MembershipTerm
+from apps.payments.price_drop.preview import PREVIEW_PARAMETER, previewable
 
 _MANAGE = rbac.Action.MANAGE_MEMBERS
 INVALID = OpenApiResponse(description="Invalid input.")
@@ -49,7 +52,7 @@ class MembershipPlanListCreateView(APIView):
     )
     def get(self, request, makerspace_id):
         makerspace = _gated_makerspace(request.user, makerspace_id)
-        rows = MembershipPlan.objects.filter(makerspace=makerspace).order_by("name", "pk")
+        rows = MembershipPlan.objects.filter(makerspace=makerspace).order_by("sort_order", "name", "pk")
         return Response(MembershipPlanSerializer(rows, many=True).data)
 
     @extend_schema(
@@ -60,18 +63,26 @@ class MembershipPlanListCreateView(APIView):
     )
     def post(self, request, makerspace_id):
         makerspace = _gated_makerspace(request.user, makerspace_id, rbac.Action.MANAGE_MAKERSPACE)
-        serializer = MembershipPlanSerializer(data=request.data)
+        from apps.makerspaces.member_unit_scope import require_space_wide
+        require_space_wide(request.user, makerspace.pk)  # parity O-B1: a unit-scoped role cannot change plans
+        serializer = MembershipPlanSerializer(data=request.data, context={"makerspace": makerspace})
         serializer.is_valid(raise_exception=True)
         try:
             with transaction.atomic():
                 makerspace = require_module_locked(makerspace, "membership")
+                from apps.managed_hosting.extra_quotas import check_extra_quota
+                check_extra_quota(makerspace, "membership_plans")  # decision 284: typed 409
                 row = MembershipPlan.objects.create(
                     makerspace=makerspace, **serializer.validated_data
                 )
                 audit.record(request.user, "membership_plan.created", makerspace=makerspace,
                              target=row, meta={"plan_id": row.pk, "name": row.name})
+                if row.sac_code:
+                    audit.record(request.user, "membership_plan.sac_changed", makerspace=makerspace, target=row,
+                                 meta={"plan_id": row.pk, "cleared": False})
+                sync_plan_features(makerspace, actor=request.user)
         except IntegrityError as exc:
-            raise ValidationError({"name": "A plan with this name already exists."}) from exc
+            raise ValidationError({"name": gettext("A plan with this name or slug already exists.")}) from exc
         return Response(MembershipPlanSerializer(row).data, status=status.HTTP_201_CREATED)
 
 
@@ -81,25 +92,38 @@ class MembershipPlanDetailView(APIView):
     @extend_schema(
         tags=["Admin memberships"], description="Requires manage_makerspace in this makerspace; manage_members alone cannot change plan definitions or prices.",
         summary="Update a membership plan",
-        request=MembershipPlanSerializer,
+        request=MembershipPlanSerializer, parameters=[PREVIEW_PARAMETER],
         responses={200: MembershipPlanSerializer, 400: INVALID, **ERRORS},
     )
+    @previewable
     def patch(self, request, pk):
         row = get_object_or_404(
             rbac.scope_by_action(request.user, rbac.Action.MANAGE_MAKERSPACE,
                                  MembershipPlan.objects.select_related("makerspace")), pk=pk
         )
         makerspace = _gated_makerspace(request.user, row.makerspace_id, rbac.Action.MANAGE_MAKERSPACE)
-        serializer = MembershipPlanSerializer(row, data=request.data, partial=True)
+        from apps.makerspaces.member_unit_scope import require_space_wide
+        require_space_wide(request.user, makerspace.pk)  # parity O-B1
+        serializer = MembershipPlanSerializer(row, data=request.data, partial=True,
+                                              context={"makerspace": makerspace})
         serializer.is_valid(raise_exception=True)
         try:
             with transaction.atomic():
                 makerspace = require_module_locked(makerspace, "membership")
+                sac_before = row.sac_code
                 row = serializer.save()
+                if row.sac_code != sac_before:  # parity O-B3: log that the code changed (not personal data)
+                    audit.record(request.user, "membership_plan.sac_changed", makerspace=makerspace, target=row,
+                                 meta={"plan_id": row.pk, "cleared": not row.sac_code})
                 audit.record(request.user, "membership_plan.updated", makerspace=makerspace,
                              target=row, meta={"plan_id": row.pk, "fields": sorted(serializer.validated_data)})
+                sync_plan_features(makerspace, actor=request.user)
+                if {"amount", "renewal_amount"} & set(serializer.validated_data):
+                    # Lane L24: a lowered plan price opens refund cases for paid terms not yet started.
+                    from apps.payments.price_drop.triggers import after_plan_price
+                    after_plan_price(request.user, row)
         except IntegrityError as exc:
-            raise ValidationError({"name": "A plan with this name already exists."}) from exc
+            raise ValidationError({"name": gettext("A plan with this name or slug already exists.")}) from exc
         return Response(MembershipPlanSerializer(row).data)
 
 
@@ -136,9 +160,13 @@ class MembershipTermListCreateView(APIView):
             MembershipPlan.objects.filter(makerspace=makerspace),
             pk=serializer.validated_data["plan_id"],
         )
-        term = create_term(
-            request.user, membership, plan, starts_at=serializer.validated_data.get("starts_at")
-        )
+        from django.db import transaction
+        from apps.makerspaces.membership_term_charges import raise_term_start
+        with transaction.atomic():
+            term = create_term(
+                request.user, membership, plan, starts_at=serializer.validated_data.get("starts_at")
+            )
+            raise_term_start(request.user, term)  # #184: the term's frozen price is owed
         term = MembershipTerm.objects.select_related("plan").get(pk=term.pk)
         return Response(MembershipTermSerializer(term).data, status=status.HTTP_201_CREATED)
 

@@ -59,10 +59,12 @@ def finalize_upload(evidence, max_bytes):
 
 def charge_storage_once(evidence, size):
     """Charge PUT-backed evidence once, at the consuming workflow's DB boundary."""
-    if settings.STORAGE_PRESIGN_METHOD != "put":
+    from apps.evidence import storage
+
+    if not storage.uses_put_uploads():
         return
 
-    from apps.makerspaces.limits import add_storage
+    from apps.makerspaces.limits import charge_upload
 
     with transaction.atomic():
         state = EvidenceUploadFinalization.objects.select_for_update().get(
@@ -71,7 +73,7 @@ def charge_storage_once(evidence, size):
         )
         if state.quota_charged:
             return
-        add_storage(evidence.makerspace, size)
+        charge_upload(evidence.makerspace, size, kind="evidence")  # decision 284: split evidence byte limit
         state.quota_charged = True
         state.save(update_fields=["quota_charged", "updated_at"])
 

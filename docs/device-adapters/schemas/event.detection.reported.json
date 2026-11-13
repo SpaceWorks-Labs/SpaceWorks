@@ -1,0 +1,38 @@
+{
+  "$id": "https://spaceworks.invalid/schemas/device-adapter/v1/event.detection.reported.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "artifact_id": {
+      "format": "uuid",
+      "maxLength": 36,
+      "minLength": 36,
+      "type": "string"
+    },
+    "confidence": {
+      "maximum": 1,
+      "minimum": 0,
+      "type": "number"
+    },
+    "kind": {
+      "enum": [
+        "failure",
+        "spaghetti",
+        "fire",
+        "smoke",
+        "person",
+        "other"
+      ],
+      "type": "string"
+    },
+    "note": {
+      "maxLength": 200,
+      "type": "string"
+    }
+  },
+  "required": [
+    "kind",
+    "confidence"
+  ],
+  "type": "object"
+}

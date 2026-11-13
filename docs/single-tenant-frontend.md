@@ -70,10 +70,11 @@ add. (`makerspace.cors_allowed_origins`, synced from active API-client
 are **public-only**: they can make publishable-key API calls but can never pass the
 staff refresh/CSRF flow or hold a staff session.)
 
-Optionally, a makerspace that has a working domain can enable **Hide from central
-directory** (`Makerspace.hidden_from_central_directory`) to drop itself from the
-central landing-page makerspace list. Its `/m/<slug>` deep link still resolves — it
-is a discovery hide, not a hard block.
+Optionally, a makerspace can switch on **Hide this space from the platform**
+(`Makerspace.hidden_from_central_directory`; no custom domain needed) to drop
+itself from the central directory, Discover and the shared listings. Its `/m/<slug>`
+deep link still resolves — it is a discovery hide, not a hard block. See
+[own-domain-and-frontend.md](own-domain-and-frontend.md).
 
 Staff refresh/logout rejects non-localhost `http://` origins and matches the exact
 `https://<domain>` origin (host-only or odd-port variants are rejected). Use HTTPS

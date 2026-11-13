@@ -6,6 +6,7 @@ WRAPPER_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="${SPACEWORKS_UPDATE_INSTALL_DIR:-$(cd "$WRAPPER_SCRIPT_DIR/.." && pwd)}"
 export SPACEWORKS_UPDATE_INSTALL_DIR="$ROOT"
 source "$WRAPPER_SCRIPT_DIR/spaceworks-repository.sh"
+source "$WRAPPER_SCRIPT_DIR/compose-deployment.sh"
 configure_release_repository
 TOPOLOGY="${1:-}"
 [[ "$TOPOLOGY" == "bundled" || "$TOPOLOGY" == "cloud" ]] || {
@@ -36,9 +37,6 @@ for argument in "$@"; do
   esac
 done
 
-OPS_DIR="${SPACEWORKS_OPS_HOST_DIR:-/var/lib/spaceworks/ops}"
-POINTER="$OPS_DIR/database-pointer.env"
-RECORD="$OPS_DIR/compose-topology.json"
 if [[ "$TOPOLOGY" == "bundled" ]]; then
   STATIC_ENV="${SPACEWORKS_STATIC_ENV_FILE:-$ROOT/.env}"
   COMPOSE_FILES=("$ROOT/docker-compose.prod.yml")
@@ -46,12 +44,12 @@ else
   STATIC_ENV="${SPACEWORKS_STATIC_ENV_FILE:-/etc/spaceworks/cloud.env}"
   COMPOSE_FILES=("$ROOT/docker-compose.cloud.yml")
 fi
+source "$WRAPPER_SCRIPT_DIR/installer/host-paths.sh"
+resolve_host_paths || exit $?
+POINTER="$OPS_DIR/database-pointer.env"
+RECORD="$OPS_DIR/compose-topology.json"
 LAYER="${SPACEWORKS_COMPOSE_LAYER:-}"
-if [[ -z "$LAYER" && "${SPACEWORKS_COMPOSE_BUILD_LAYER:-0}" == "1" ]]; then
-  LAYER="build"
-fi
-# The install shape chosen at setup persists here so an update never silently changes a
-# single-box install back into the multi-service one (or vice versa).
+# The Compose layer chosen at setup persists here across updates.
 if [[ -z "$LAYER" && -f "$ROOT/.spaceworks-layer" ]]; then
   LAYER="$(tr -d '[:space:]' < "$ROOT/.spaceworks-layer")"
   [[ "$LAYER" =~ ^[a-z-]+$ ]] || { echo "Invalid layer in $ROOT/.spaceworks-layer." >&2; exit 64; }
@@ -63,6 +61,7 @@ if [[ "${SPACEWORKS_COMPOSE_BUILD_LAYER:-0}" == 1 ]]; then
     tls|saas) LAYER="build-$LAYER" ;;
   esac
 fi
+refuse_single_box_layer "$LAYER" || exit $?
 if [[ "$TOPOLOGY" == "cloud" && "$LAYER" != "none" ]]; then
   echo "Named Compose overlays are available only for bundled topology." >&2
   exit 64
@@ -78,23 +77,24 @@ case "$LAYER" in
   build-saas)
     COMPOSE_FILES+=("$ROOT/docker/compose.build.yml" "$ROOT/docker/compose.saas.yml")
     ;;
-  # The single-box shape: parks the multi-service processes behind an inactive profile and
-  # activates the `app` service the base file declares under `profiles: ["single"]`.
-  single)
-    COMPOSE_FILES+=("$ROOT/docker/compose.single.yml")
-    export COMPOSE_PROFILES="single${COMPOSE_PROFILES:+,$COMPOSE_PROFILES}"
-    ;;
   *)
-    echo "Unknown Compose layer; use none, build, tls, build-tls, saas, build-saas, or single." >&2
+    echo "Unknown Compose layer; use none, build, tls, build-tls, saas, build-saas." >&2
     exit 64
     ;;
 esac
 if [[ "$LAYER" != "none" ]]; then
   RECORD="$OPS_DIR/compose-topology-$LAYER.json"
 fi
-source "$WRAPPER_SCRIPT_DIR/compose-deployment.sh"
 if [[ "$TOPOLOGY" == bundled ]]; then
+  saved_profiles="$(deployment_value COMPOSE_PROFILES)"
+  if [[ -n "$saved_profiles" ]]; then
+    [[ "$saved_profiles" =~ ^[a-zA-Z0-9_-]+(,[a-zA-Z0-9_-]+)*$ ]] || { echo 'Invalid saved Compose profiles.' >&2; exit 64; }
+    export COMPOSE_PROFILES="$saved_profiles${COMPOSE_PROFILES:+,$COMPOSE_PROFILES}"
+  fi
   append_deployment_layers "$LAYER" "$ROOT"
+  if [[ "$DEPLOYMENT_SUFFIX" == *-control-tunnel* ]]; then
+    require_tunnel_engine || exit 64
+  fi
   RECORD="${RECORD%.json}${DEPLOYMENT_SUFFIX}.json"
   if [[ "$LAYER" == *tls ]]; then
     export COMPOSE_PROFILES="tls${COMPOSE_PROFILES:+,$COMPOSE_PROFILES}"
@@ -135,4 +135,8 @@ fi
 # names before Docker Compose starts so only the final pointer file can define them.
 unset DATABASE_URL
 unset SPACEWORKS_DB_POINTER_GENERATION
+# The control-plane selectors and the ports they are checked against were validated from .env
+# above; a shell export would otherwise reach Compose unvalidated (e.g. a Caddy import glob).
+unset CONTROL_PLANE_PROXY CONTROL_PLANE_ALLOW_CIDRS CONTROL_PLANE_TUNNEL_PORT
+unset TLS_HTTP_PORT TLS_HTTPS_PORT MINIO_API_PORT MINIO_CONSOLE_PORT
 exec docker compose ${COMPOSE_ARGS[@]+"${COMPOSE_ARGS[@]}"} "$@"

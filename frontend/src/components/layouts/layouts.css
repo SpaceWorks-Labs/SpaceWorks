@@ -1,0 +1,122 @@
+/* Geometry only. Colours, controls and type come from the wave-1/2a vocabulary. */
+.sw-layout { width: 100%; min-width: 0; max-width: 1192px; margin-inline: auto; padding: 24px max(16px, env(safe-area-inset-right)) 24px max(16px, env(safe-area-inset-left)); }
+.sw-layout-wide { max-width: 1800px; }
+.sw-layout-narrow { max-width: 792px; }
+.sw-layout:focus-visible { outline: 2px solid rgb(var(--color-focus)); outline-offset: -2px; }
+.sw-columns, .sw-detail-columns, .sw-form-columns, .sw-flow-columns, .sw-settings-columns { display: grid; min-width: 0; gap: 24px; }
+.sw-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.sw-auth { display: grid; gap: 24px; min-height: calc(100dvh - 80px); }
+.sw-auth-brand { display: none; }
+.sw-auth-form { width: 100%; max-width: 400px; margin: auto; }
+.sw-centered-card { width: 100%; max-width: 440px; margin: auto; }
+.sw-centered-wide { max-width: 720px; }
+.sw-kiosk { min-height: 100dvh; font-size: 18px; }
+.sw-kiosk :is(button, input, select, a:not(.skip-link), summary) { min-height: 56px; min-width: 56px; font-size: 18px; }
+.sw-kiosk-stage { display: grid; gap: 24px; }
+.sw-kiosk-stage > * { min-width: 0; }
+.sw-kiosk-pin { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.sw-kiosk-pin button { min-height: 76px; font-size: 26px; }
+.sw-kiosk-flow :is(button, input, select, a:not(.skip-link), summary) { min-height: 56px; min-width: 56px; font-size: 18px; }
+@media (min-width: 768px) {
+  .sw-layout { padding: 32px max(24px, env(safe-area-inset-right)) 32px max(24px, env(safe-area-inset-left)); max-width: 1168px; }
+  .sw-layout-wide { max-width: 1800px; }
+  .sw-layout-narrow { max-width: 768px; }
+  .sw-auth-brand { display: flex; min-height: 120px; }
+  .sw-auth { grid-template-rows: auto 1fr; }
+  .sw-auth-brand { grid-row: 1; }
+  .sw-centered-card { border: 1px solid rgb(var(--color-line)); border-radius: 20px; padding: 32px; background: rgb(var(--color-panel)); }
+  .sw-centered-480 { max-width: 480px; }
+  .sw-public-mobile-bar { display: none; }
+}
+@media (min-width: 900px) { .sw-stats { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (min-width: 1280px) {
+  .sw-layout { padding: 40px max(36px, env(safe-area-inset-right)) 40px max(36px, env(safe-area-inset-left)); max-width: 1192px; }
+  .sw-layout-wide { max-width: 1800px; }
+  .sw-layout-narrow { max-width: 792px; }
+  .sw-columns { grid-template-columns: minmax(0, 1fr) 260px; gap: 28px; }
+  .sw-detail-columns { grid-template-columns: minmax(0, 1fr) 280px; }
+  .sw-detail-start { grid-template-columns: 280px minmax(0, 1fr); }
+  .sw-detail-start > aside { grid-row: 1; grid-column: 1; }
+  .sw-detail-start > div { grid-column: 2; }
+  .sw-form-columns { grid-template-columns: minmax(0, 1fr) 300px; gap: 32px; }
+  .sw-flow-columns { grid-template-columns: 300px minmax(0, 1fr); }
+  .sw-settings-columns { grid-template-columns: 200px minmax(0, 1fr); }
+  .sw-settings-nav { position: sticky; top: 24px; align-self: start; }
+  .sw-auth { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: 1fr; }
+  .sw-auth-brand { grid-row: auto; min-height: 600px; }
+  .sw-kiosk-stage { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+}
+
+.sw-overlay-content { padding: 0; max-width: none; }
+.sw-public-chrome { padding-block: 16px; }
+.sw-auth-showcase > :nth-child(odd) { transform: rotate(-3deg); }
+.sw-auth-showcase > :nth-child(even) { transform: rotate(2deg); }
+@media (min-width: 768px) {
+  .sw-detail-drawer-640 > div > aside { max-width: 640px; }
+  .sw-detail-drawer-720 > div > aside { max-width: 720px; }
+}
+
+.sw-kiosk :is(.text-xs, .text-sm, .text-base, .text-label, .text-body) { font-size: 18px; }
+
+.sw-public-narrow { max-width: 632px; }
+@media (min-width: 768px) { .sw-public-narrow { max-width: 648px; } }
+@media (min-width: 1280px) { .sw-public-narrow { max-width: 672px; } }
+
+/* A drawer stays narrow even when its containing browser is desktop-sized. */
+.sw-detail-drawer .sw-detail-columns { grid-template-columns: minmax(0, 1fr); }
+.sw-detail-drawer .sw-detail-start > :is(div, aside) { grid-column: auto; grid-row: auto; }
+.sw-public-detail { padding-bottom: calc(112px + env(safe-area-inset-bottom)); }
+@media (min-width: 768px) { .sw-public-detail { padding-bottom: 32px; } }
+
+@media (min-width: 768px) { .sw-settings-row > [role="group"] { grid-template-columns: 220px minmax(0, 1fr); } }
+@media (min-width: 1280px) { .sw-settings-row > [role="group"] { grid-template-columns: 300px minmax(0, 1fr); } }
+
+/* Mobile header action sits above the shell navigation and the device safe area. */
+@media (max-width: 767px) {
+  :is(div, main, section):has(> header .sw-sticky-primary) { padding-bottom: calc(96px + var(--shell-safe-bottom, env(safe-area-inset-bottom))); }
+  .sw-sticky-primary { position: fixed; inset-inline: 0; bottom: var(--shell-bottom-offset, 0px); z-index: 20;
+    padding: 12px max(16px, env(safe-area-inset-right)) calc(12px + var(--shell-safe-bottom, env(safe-area-inset-bottom))) max(16px, env(safe-area-inset-left));
+    background: rgb(var(--color-panel)); border-top: 1px solid rgb(var(--color-line)); }
+}
+
+/* Public main + action panel ("Your request", registration, booking). The panel keeps at least
+   360px: when the main column would drop under 60% of the row it wraps underneath instead of
+   squeezing, so the panel never becomes a narrow column of one-word lines. */
+.sw-public-columns { display: flex; flex-wrap: wrap; align-items: flex-start; min-width: 0; gap: 24px; }
+.sw-public-columns > :first-child { flex: 999 1 0%; min-width: 60%; }
+.sw-public-columns > :not(:first-child) { flex: 1 1 360px; min-width: 0; }
+@media (min-width: 1280px) { .sw-public-columns { column-gap: 36px; } }
+@media (min-width: 1536px) { .sw-public-columns > :not(:first-child) { flex-basis: 400px; } }
+
+/* Drawers and dialogs are narrow regardless of the browser width: their column layouts stack. */
+.sw-detail-drawer :is(.sw-columns, .sw-form-columns, .sw-flow-columns, .sw-settings-columns) { grid-template-columns: minmax(0, 1fr); }
+.sw-detail-drawer .sw-settings-nav { position: static; }
+
+/* A kiosk fills the device: its frame clears the notch, status bar and home indicator. */
+.sw-kiosk > .sw-layout { padding-top: max(24px, env(safe-area-inset-top)); padding-bottom: max(24px, env(safe-area-inset-bottom)); }
+
+/* asideSide="start": the aside leads when the columns stack, matching its desktop position. */
+.sw-detail-start > aside { order: -1; }
+
+/* Landing: the space grid steps 1/2/3/4 columns; on monitors the page
+   widens to 1440 so the teal field and four cards share one measure. */
+.sw-space-grid { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 640px) { .sw-space-grid { gap: 24px; grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1280px) { .sw-space-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (min-width: 1680px) {
+  .sw-space-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .sw-landing main.sw-layout { max-width: 1440px; }
+}
+
+/* First-load stagger (StaggerGroup): the first eight children fade and rise, 30 ms apart. */
+@media (prefers-reduced-motion: no-preference) {
+  .sw-stagger > :nth-child(-n+8) { animation: sw-stagger-rise 200ms ease-out both; }
+  .sw-stagger > :nth-child(2) { animation-delay: 30ms; }
+  .sw-stagger > :nth-child(3) { animation-delay: 60ms; }
+  .sw-stagger > :nth-child(4) { animation-delay: 90ms; }
+  .sw-stagger > :nth-child(5) { animation-delay: 120ms; }
+  .sw-stagger > :nth-child(6) { animation-delay: 150ms; }
+  .sw-stagger > :nth-child(7) { animation-delay: 180ms; }
+  .sw-stagger > :nth-child(8) { animation-delay: 210ms; }
+}
+@keyframes sw-stagger-rise { from { opacity: 0; transform: translateY(6px); } }

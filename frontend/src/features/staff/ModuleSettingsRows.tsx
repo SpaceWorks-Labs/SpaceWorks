@@ -1,0 +1,77 @@
+import { t } from "@lingui/core/macro";
+import { SettingsRow, StatusPill } from "../../components/ui";
+import { toast } from "../../components/ui/toastStore";
+import { moduleList, workflowLabel } from "../../lib/moduleLabels";
+
+export type ModuleRow = {
+  key: string; label: string; description: string; installed: boolean; core: boolean;
+  available: boolean; requires: string[]; pulls_in: string[]; required_by: string[]; workflows: string[];
+  /** #128 C-10: on the managed platform a limit-gated install is the superadmin's. */
+  install_requires_superadmin?: boolean; limits?: string[];
+  /** Why the actor cannot switch it (server-derived): core, not_shipped or limit. */
+  lock_reason?: LockReason | null;
+};
+export type LockReason = "core" | "not_shipped" | "limit";
+export type ModuleGroup = {
+  key: string; label: string; description: string; always_on: boolean;
+  installed_count: number; module_count: number; modules: ModuleRow[];
+};
+export type ModulesResponse = {
+  groups: ModuleGroup[];
+  /** Superadmin only: what this deployment ships. */
+  /** Superadmin only: the real /control/ capability-purge URL for this space (reverse() on the server). */
+  capability_purge_url?: string | null;
+  /** Decision 329 (c): feature switches this deployment cannot turn on (their own app or a needed module is not shipped). */
+  feature_locks?: Record<string, "not_shipped">;
+  /** Arch review 7: each feature's direct prerequisites from the capability registry (resolve transitively). */
+  feature_requirements?: Record<string, { modules: string[]; features: string[] }>;
+  deployment: { apps: { app_label: string; label?: string; shipped: boolean; note: string }[]; env_line: string; requires_restart: boolean } | null;
+};
+
+export function ModuleSettingsRow({ module, pending, onChange }: {
+  module: ModuleRow; pending: boolean; onChange: (action: "install" | "uninstall") => void;
+}) {
+  const blocked = module.installed && module.required_by.length > 0;
+  const gated = !module.installed && module.install_requires_superadmin === true;
+  const requiredBy = moduleList(module.required_by);
+  const reason = blocked ? t`Turn off ${requiredBy} first.`
+    : !module.available ? t`Not shipped by this deployment.`
+    : gated ? t`This module has a usage limit on this platform. Ask the platform administrator to turn it on.` : undefined;
+  return <SettingsRow label={module.label} helper={module.description}>
+    <div className="@container grid gap-2">
+      {module.core ? <StatusPill tone="neutral" label={t`Always on`} />
+        : <label className="flex min-h-11 cursor-pointer items-center gap-3 rounded-control focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-focus">
+          <input type="checkbox" role="switch" aria-label={module.label} aria-describedby={reason ? `module-${module.key}-reason` : undefined}
+            className="h-5 w-5 accent-accent" checked={module.installed} disabled={pending || blocked || gated || (!module.installed && !module.available)}
+            onChange={() => onChange(module.installed ? "uninstall" : "install")} />
+          <span className="text-sm text-ink">{pending ? t`Updating…` : module.installed ? t`On` : t`Off`}</span>
+        </label>}
+      {module.workflows.length ? <p className="text-sm text-muted">{t`Turns on: ${module.workflows.map(workflowLabel).join(", ")}`}</p> : null}
+      {!module.installed && module.pulls_in.length ? <p className="text-sm text-muted">{t`Also switches on: ${moduleList(module.pulls_in)}`}</p> : null}
+      {reason ? <p id={`module-${module.key}-reason`} className="text-sm text-muted">{reason}</p> : null}
+      {!module.installed && module.required_by.length ? <p className="text-sm text-muted">{t`Required by ${requiredBy}`}</p> : null}
+    </div>
+  </SettingsRow>;
+}
+
+const appLabel = (label: string) => ({ accounts: t`Accounts`, admin_api: t`Admin API`, analytics: t`Analytics`, apiclients: t`API clients`, audit: t`Audit log`,
+  backup: t`Backups`, bookings: t`Bookings`, boxes: t`Boxes`, card_designs: t`Card designs`, data_export: t`Data export`, devices: t`Devices`,
+  encryption: t`Encryption`, event_reimbursements: t`Event reimbursements`, events: t`Events`, evidence: t`Evidence photos`, forms_schema: t`Forms`,
+  hardware_requests: t`Hardware requests`, hosting_requests: t`Hosting requests`, id_programmes: t`ID programmes`, integrations: t`Integrations`,
+  inventory: t`Inventory`, machines: t`Machines`, maintenance: t`Maintenance`, maker_formats: t`Maker file formats`, makerspaces: t`Makerspaces`,
+  managed_hosting: t`Hosting other makerspaces`, notifications: t`Notifications`, operations: t`Operations`, organizations: t`Organizations`, payments: t`Payments`,
+  payments_rail: t`Online payments`, presence: t`Presence`, printing: t`3D printing`, procurement: t`Procurement`, roadmap: t`Roadmap`,
+  separability: t`Separability`, shop: t`Shop`, space_controls: t`Space controls`, storage_capabilities: t`Storage`, tenant_migration: t`Space migration`,
+  tenant_rls: t`Space data isolation`, warranty: t`Warranty` } as Record<string, string>)[label]
+  ?? (label.charAt(0).toUpperCase() + label.slice(1).replace(/_/g, " "));
+
+export function DeploymentModules({ deployment }: { deployment: NonNullable<ModulesResponse["deployment"]> }) {
+  return <div className="grid gap-3">
+    <p className="text-sm text-muted">{t`Deployment apps are set at startup. Copy this line into your environment and restart to change what is shipped for every space (this is for whoever runs your server).`}</p>
+    {deployment.apps.map(app => <SettingsRow key={app.app_label} label={app.label || appLabel(app.app_label)} helper={app.note}>
+      <StatusPill tone={app.shipped ? "success" : "neutral"} label={app.shipped ? t`Shipped` : t`Removed`} />
+    </SettingsRow>)}
+    <pre className="overflow-auto rounded-control border border-line bg-surface p-4 text-sm text-ink"><code>{deployment.env_line}</code></pre>
+    <button type="button" className="desk-button w-fit" onClick={async () => { try { await navigator.clipboard.writeText(deployment.env_line); toast(t`Environment line copied.`); } catch { toast(t`Couldn't copy. Select and copy the environment line.`, { tone: "error" }); } }}>{t`Copy environment line`}</button>
+  </div>;
+}

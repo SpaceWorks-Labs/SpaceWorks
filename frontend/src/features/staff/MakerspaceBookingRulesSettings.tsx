@@ -1,9 +1,17 @@
+import { t } from "@lingui/core/macro";
+import { SettingsQueryState } from "./SettingsQueryState";
+import { ErrorBlock, Pagination } from "../../components/ui";
+import { SettingsEditorActions } from "./SettingsEditorActions";
+import { SettingsRow } from "../../components/ui";
 import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { StructuredApiError, staffRequest } from "../../lib/api";
 import { useStaffGet } from "./StaffPanels";
 import type { Makerspace } from "./panels/shared";
+import { bookingKeys } from "./bookingsApi";
+import type { Paginated } from "./eventsApiTypes";
+import { LogoLoader } from "../../components/LogoLoader";
 
 type SpaceRules = {
   id: number;
@@ -35,32 +43,33 @@ type RuleDraft = Record<NumberRuleField, string> & {
 type FieldErrors = Partial<Record<RuleField, string>>;
 
 const NUMBER_FIELDS: Array<{ key: NumberRuleField; label: string; min: number }> = [
-  { key: "min_booking_duration_minutes", label: "Minimum booking duration (minutes)", min: 1 },
-  { key: "max_booking_duration_minutes", label: "Maximum booking duration (minutes)", min: 1 },
-  { key: "booking_lead_time_minutes", label: "Booking lead time (minutes)", min: 0 },
-  { key: "max_booking_advance_days", label: "Maximum booking advance (days)", min: 1 },
-  { key: "buffer_before_minutes", label: "Buffer before (minutes)", min: 0 },
-  { key: "buffer_after_minutes", label: "Cleanup after (minutes)", min: 0 },
-  { key: "cancellation_cutoff_hours", label: "Cancellation cutoff (hours before start)", min: 0 },
+  { key: "min_booking_duration_minutes", label: t`Minimum booking duration (minutes)`, min: 1 },
+  { key: "max_booking_duration_minutes", label: t`Maximum booking duration (minutes)`, min: 1 },
+  { key: "booking_lead_time_minutes", label: t`Booking lead time (minutes)`, min: 0 },
+  { key: "max_booking_advance_days", label: t`Maximum booking advance (days)`, min: 1 },
+  { key: "buffer_before_minutes", label: t`Buffer before (minutes)`, min: 0 },
+  { key: "buffer_after_minutes", label: t`Cleanup after (minutes)`, min: 0 },
+  { key: "cancellation_cutoff_hours", label: t`Cancellation cutoff (hours before start)`, min: 0 },
 ];
 const RULE_FIELDS: RuleField[] = [...NUMBER_FIELDS.map(({ key }) => key), "approval_mode"];
 
-export function MakerspaceBookingRulesSettings({ makerspace }: { makerspace: Makerspace }) {
-  // page_size=200 is the backend max; a makerspace never has that many
-  // bookable spaces, so one page always covers the whole editable set.
-  const spaces = useStaffGet<{ count: number; results: SpaceRules[] }>(
-    ["booking-rule-spaces", makerspace.id],
-    `/admin/makerspaces/${makerspace.id}/spaces/?page_size=200`,
+export function MakerspaceBookingRulesSettings({ makerspace }: { makerspace: Pick<Makerspace, "id"> }) {
+  const [page, setPage] = useState(1);
+  useEffect(() => { setPage(1); }, [makerspace.id]);
+  const pageSize = 24;
+  const spaces = useStaffGet<Paginated<SpaceRules>>(
+    ["booking-rule-spaces", makerspace.id, page],
+    `/admin/makerspaces/${makerspace.id}/spaces/?page=${page}&page_size=${pageSize}`,
   );
   const activeSpaces = spaces.data?.results.filter((space) => space.is_active) ?? [];
 
   return (
-    <div className="min-w-0 rounded-md border border-line bg-bg p-4">
-      <h3 className="text-base font-semibold text-ink">Booking rules per space</h3>
-      <p className="mt-1 text-xs text-muted">Buffers reserve time around each booking. A cancellation cutoff of 0 allows members to cancel any time before the booking starts.</p>
-      {spaces.isLoading ? <p className="mt-3 text-sm text-muted">Loading bookable spaces...</p> : null}
+    <SettingsQueryState query={spaces} resource={t`booking rules`}><SettingsRow label={t`Booking rules per space`} helper={t`Buffers reserve time around each booking. A cancellation cutoff of 0 allows members to cancel any time before the booking starts.`}><div className="@container grid min-w-0 gap-4">
+
+
+      {spaces.isLoading ? <LogoLoader label={t`Loading bookable spaces…`} size={48} className="min-h-16 py-3" /> : null}
       {!spaces.isLoading && activeSpaces.length === 0 ? (
-        <p className="mt-3 text-sm text-muted">No active bookable spaces.</p>
+        <p className="mt-3 text-sm text-muted">{t`No active bookable spaces on this page.`}</p>
       ) : null}
       {activeSpaces.length > 0 ? (
         <div className="mt-4 grid min-w-0 gap-4">
@@ -69,8 +78,9 @@ export function MakerspaceBookingRulesSettings({ makerspace }: { makerspace: Mak
           ))}
         </div>
       ) : null}
-      {spaces.error ? <p className="mt-3 text-sm text-danger">{spaces.error.message}</p> : null}
-    </div>
+      {spaces.error ? <ErrorBlock error={new Error(t`Couldn't load booking rules. Try again.`)} onRetry={() => { void spaces.refetch(); }} /> : null}
+      {spaces.data ? <Pagination page={page} count={spaces.data.count} pageSize={pageSize} totalPages={Math.ceil(spaces.data.count / pageSize)} onChange={setPage} disabled={spaces.isFetching} /> : null}
+    </div></SettingsRow></SettingsQueryState>
   );
 }
 
@@ -84,6 +94,7 @@ function SpaceRuleRow({ makerspaceId, space }: { makerspaceId: number; space: Sp
     setDraft(draftFromSpace(space));
     setFieldErrors({});
     setRowError("");
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- space is reseeded field by field (id and the listed rule fields); depending on the whole object would discard the draft on every refetch
   }, [
     space.id,
     space.min_booking_duration_minutes,
@@ -122,6 +133,8 @@ function SpaceRuleRow({ makerspaceId, space }: { makerspaceId: number; space: Sp
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["booking-rule-spaces", makerspaceId] });
+      queryClient.invalidateQueries({ queryKey: bookingKeys.spaces(makerspaceId) });
+      queryClient.invalidateQueries({ queryKey: bookingKeys.detail(space.id) });
     },
   });
 
@@ -134,7 +147,7 @@ function SpaceRuleRow({ makerspaceId, space }: { makerspaceId: number; space: Sp
       }}
     >
       <h4 className="text-sm font-semibold text-ink">{space.name}</h4>
-      <div className="grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid min-w-0 gap-3 @md:grid-cols-2">
         {NUMBER_FIELDS.map(({ key, label, min }) => (
           <label className="grid min-w-0 content-start gap-1 text-sm text-ink" key={key}>
             <span className="font-semibold">{label}</span>
@@ -151,9 +164,9 @@ function SpaceRuleRow({ makerspaceId, space }: { makerspaceId: number; space: Sp
           </label>
         ))}
         <label className="grid min-w-0 content-start gap-1 text-sm text-ink">
-          <span className="font-semibold">Approval mode</span>
+          <span className="font-semibold">{t`Approval mode`}</span>
           <select
-            aria-label={`Approval mode for ${space.name}`}
+            aria-label={t`Approval mode for ${space.name}`}
             className="desk-input"
             value={draft.approval_mode}
             disabled={updateRules.isPending}
@@ -162,8 +175,8 @@ function SpaceRuleRow({ makerspaceId, space }: { makerspaceId: number; space: Sp
               approval_mode: event.target.value as SpaceRules["approval_mode"],
             }))}
           >
-            <option value="instant">Instant confirmation</option>
-            <option value="approve">Staff approval required</option>
+            <option value="instant">{t`Instant confirmation`}</option>
+            <option value="approve">{t`Staff approval required`}</option>
           </select>
           {fieldErrors.approval_mode ? (
             <span className="text-xs text-danger">{fieldErrors.approval_mode}</span>
@@ -171,13 +184,7 @@ function SpaceRuleRow({ makerspaceId, space }: { makerspaceId: number; space: Sp
         </label>
       </div>
       <div>
-        <button
-          className="desk-button-primary w-full max-w-full sm:w-auto"
-          type="submit"
-          disabled={updateRules.isPending}
-        >
-          {updateRules.isPending ? "Saving..." : "Save rules"}
-        </button>
+        <SettingsEditorActions dirty={JSON.stringify(draft) !== JSON.stringify(draftFromSpace(space))} onDiscard={() => { setDraft(draftFromSpace(space)); setFieldErrors({}); setRowError(""); }} pending={updateRules.isPending} disabled={updateRules.isPending} />
       </div>
       {rowError ? <p className="text-sm text-danger">{rowError}</p> : null}
     </form>

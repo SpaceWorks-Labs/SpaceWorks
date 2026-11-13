@@ -32,6 +32,32 @@ REVIEWED_NON_CREDENTIAL = {
 }
 REVIEWED_NON_CREDENTIAL.update(PRINTER_NON_CREDENTIAL)
 REVIEWED_NON_CREDENTIAL.update(WP3_NON_CREDENTIAL)
+from .credentials_events_programme import NON_CREDENTIAL as PROGRAMME_NON_CREDENTIAL
+REVIEWED_NON_CREDENTIAL.update(PROGRAMME_NON_CREDENTIAL)
+REVIEWED_NON_CREDENTIAL[("makerspaces.MembershipPlan", "join_state")] = (
+    "Join-form field mode (hidden/optional/required) for collecting a place of supply; not a bearer credential.")
+from .credentials_reimbursements import NON_CREDENTIAL as REIMBURSEMENT_NON_CREDENTIAL
+REVIEWED_NON_CREDENTIAL.update(REIMBURSEMENT_NON_CREDENTIAL)
+from .classification_r2_l1 import NON_CREDENTIAL as R2_L1_NON_CREDENTIAL  # noqa: E402
+REVIEWED_NON_CREDENTIAL.update(R2_L1_NON_CREDENTIAL)
+from .classification_r2_l4 import NON_CREDENTIAL as R2_L4_NON_CREDENTIAL  # noqa: E402
+REVIEWED_NON_CREDENTIAL.update(R2_L4_NON_CREDENTIAL)
+from .classification_r2_l5 import NON_CREDENTIAL as R2_L5_NON_CREDENTIAL  # noqa: E402
+REVIEWED_NON_CREDENTIAL.update(R2_L5_NON_CREDENTIAL)
+from .classification_l12 import NON_CREDENTIAL as L12_NON_CREDENTIAL  # noqa: E402
+REVIEWED_NON_CREDENTIAL.update(L12_NON_CREDENTIAL)
+from .classification_l23 import NON_CREDENTIAL as L23_NON_CREDENTIAL  # noqa: E402
+REVIEWED_NON_CREDENTIAL.update(L23_NON_CREDENTIAL)
+from .classification_l16 import NON_CREDENTIAL as L16_NON_CREDENTIAL  # noqa: E402
+REVIEWED_NON_CREDENTIAL.update(L16_NON_CREDENTIAL)
+from .classification_l3 import NON_CREDENTIAL as L3_NON_CREDENTIAL  # noqa: E402
+REVIEWED_NON_CREDENTIAL.update(L3_NON_CREDENTIAL)
+from .classification_r2_l6 import NON_CREDENTIAL as R2_L6_NON_CREDENTIAL  # noqa: E402
+REVIEWED_NON_CREDENTIAL.update(R2_L6_NON_CREDENTIAL)
+from .classification_r2_l21a import NON_CREDENTIAL as R2_L21A_NON_CREDENTIAL  # noqa: E402
+REVIEWED_NON_CREDENTIAL.update(R2_L21A_NON_CREDENTIAL)
+from .classification_r2_l22 import NON_CREDENTIAL as R2_L22_NON_CREDENTIAL  # noqa: E402
+REVIEWED_NON_CREDENTIAL.update(R2_L22_NON_CREDENTIAL)
 
 
 def validate_credentials(fields=None):
@@ -46,3 +72,7 @@ def validate_credentials(fields=None):
         if isinstance(disposition, Omitted) or (label, field_name) in REVIEWED_NON_CREDENTIAL:
             continue
         raise RegistryError(f"credential-like field not omitted: {fidelity} {label}.{field_name}")
+from .classification_e_b8 import NON_CREDENTIAL as E_B8_NON_CREDENTIAL  # noqa: E402
+REVIEWED_NON_CREDENTIAL.update(E_B8_NON_CREDENTIAL)
+from .classification_r3_events_badges import NON_CREDENTIAL as R3_EVENTS_BADGES_NON_CREDENTIAL  # noqa: E402  (parity E-B2)
+REVIEWED_NON_CREDENTIAL.update(R3_EVENTS_BADGES_NON_CREDENTIAL)

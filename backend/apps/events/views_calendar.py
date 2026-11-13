@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 import hashlib
 
 from django.http import HttpResponse
@@ -39,7 +40,7 @@ from apps.makerspaces.editions import public_surface_available
 from apps.makerspaces.guards import require_module, require_module_for_servable
 from apps.makerspaces.lookup import get_public_makerspace
 from apps.makerspaces.member_activity_service import active_membership
-from apps.makerspaces.platform import module_enabled
+from apps.makerspaces.platform import feature_enabled, module_enabled
 
 
 CALENDAR_RESPONSE = OpenApiResponse(
@@ -73,9 +74,15 @@ def _calendar_response(payload, filename, request, *, private=False):
 def _member_membership(request, makerspace_id):
     membership = active_membership(request.user, makerspace_id)
     if membership is None:
-        raise PermissionDenied("Active membership is required.")
+        raise PermissionDenied(gettext("Active membership is required."))
     require_module(membership.makerspace, "events")
     return membership
+
+
+def _require_feed_switch(makerspace):
+    """Release 2 L18: `events.calendar_feed` (on by default) switches the private feed off."""
+    if not feature_enabled(makerspace, "events.calendar_feed"):
+        raise NotFound({"detail": gettext("The event calendar feed is turned off here."), "code": "feature_disabled"})
 
 
 class PublicEventCalendarView(APIView):
@@ -94,7 +101,7 @@ class PublicEventCalendarView(APIView):
             Event.objects.select_related("series").filter(
                 makerspace=makerspace,
                 public_token=public_token,
-                is_public=True,
+                is_public=True, page_state=Event.PageState.LIVE,
                 status__in=(
                     Event.Status.PUBLISHED, Event.Status.COMPLETED, Event.Status.CANCELLED,
                 ),
@@ -135,6 +142,7 @@ class MemberEventCalendarFeedView(APIView):
     )
     def get(self, request, makerspace_id):
         membership = _member_membership(request, makerspace_id)
+        _require_feed_switch(membership.makerspace)
         return Response(MemberCalendarFeedStateSerializer(feed_state(membership)).data)
 
     @extend_schema(
@@ -145,6 +153,7 @@ class MemberEventCalendarFeedView(APIView):
     )
     def post(self, request, makerspace_id):
         membership = _member_membership(request, makerspace_id)
+        _require_feed_switch(membership.makerspace)
         serializer = MemberCalendarFeedIssueSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         feed, raw_token = issue_or_rotate_feed(membership, actor=request.user)
@@ -198,6 +207,8 @@ class PublicMemberEventCalendarFeedView(APIView):
             or not module_enabled(makerspace, "events")
             # A feed URL is a public route: an edition hiding `events` hides it too.
             or not public_surface_available("events")
+            # Release 2 L18: the switch off kills every live link at once (rows kept).
+            or not feature_enabled(makerspace, "events.calendar_feed")
         ):
             raise NotFound()
         rows = registrations_for_space(makerspace, membership.user)

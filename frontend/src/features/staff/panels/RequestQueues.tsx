@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { StaffLoanRenew } from "../StaffLoanRenew";
 import { featureEnabled } from "../../../lib/features";
 import { useContext, useEffect, useState } from "react";
@@ -5,17 +6,20 @@ import { StaffListContext } from "../StaffListContext";
 import { HandoverWizard } from "../handover/HandoverWizard";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { Field } from "../../../components/ui";
+import type { ReactNode } from "react";
+import { useLocation } from "react-router-dom";
+import { ListLayout } from "../../../components/layouts";
+import type { Action, CalloutProps } from "../../../components/ui";
+import { RouteLink } from "../../../components/ui/RouteLink";
+import { requestTabHref, requestTabLabels, visibleRequestTabs, type RequestTab, type RequestView } from "./requestTabs";
+import { useRequestQueues } from "./useRequestQueues";
 import { staffRequest } from "../../../lib/api";
-import { Pagination } from "../../../components/ui/Pagination";
 import { useDebouncedValue } from "../../../lib/useDebouncedValue";
 import { useUrlListState } from "../../../lib/useUrlListState";
 import { ListViewControls } from "../ListViewControls";
-import { usePaginatedQuery } from "../../../lib/usePaginatedQuery";
 import { issueErrorMessage } from "../issueErrors";
-import { Panel, type Makerspace } from "./shared";
+import { type Makerspace } from "./shared";
 import { RequestList } from "./QueuesList";
-import { PendingActions, AcceptedActions, ActiveActions, HistoryPanel } from "./QueuesDisplay";
 import { actionInvalidationScope, invalidateRequestQueues } from "./QueuesInvalidation";
 import {
   AssignIssueModal,
@@ -24,11 +28,15 @@ import {
   ReturnRequestModal,
   type AssignIssueValues,
   type RejectRequestValues,
+  type ReturnDueNotice,
   type ReturnDueValues,
   type ReturnRequestValues,
 } from "./QueuesModals";
-import { RequestListSkeleton } from "./QueuesSkeleton";
 import { AcceptRequestModal } from "./QueuesAcceptModal";
+import { DamageChargeDialog, needsDamageCharges } from "../loanCharges/DamageChargeStep";
+import { RequestCancelDialog } from "./RequestCancelDialog";
+import { BulkDecisionBar } from "../bulk/BulkDecisionBar";
+import { BoxSpinner } from "../../../components/BoxSpinner";
 
 export type RequestItem = {
   id: number;
@@ -48,6 +56,9 @@ export type RequestItem = {
 };
 export type HardwareRequest = {
   id: number;
+  /** Open item A26: the space and the borrower's account, for the borrower history drawer. */
+  makerspace_id?: number;
+  requester_id?: number;
   has_kit_checklist?: boolean;
   status: string;
   requester_username: string;
@@ -59,15 +70,21 @@ export type HardwareRequest = {
   return_evidence_ids?: number[];
   requested_for: string;
   return_due_at: string | null;
+  return_due_notice?: ReturnDueNotice | null;
   return_reminder_sent_at: string | null;
   items: RequestItem[];
   // AdminRequestSerializer serializes the assigned container as the flat `assigned_box_label`.
   assigned_box_label?: string | null;
   assigned_box?: { code: string; label: string };
+  // Lane L12: the collection window; an accepted request expires after `pickup_until`.
+  pickup_from?: string | null;
+  pickup_until?: string | null;
 };
 
-export function Queues({ makerspace, guestOnly, canViewAudit = false }: { makerspace: Makerspace; guestOnly: boolean; canViewAudit?: boolean }) {
+export function Queues({ makerspace, guestOnly, canViewAudit = false, recovery, callout }: { makerspace: Makerspace; guestOnly: boolean; canViewAudit?: boolean; recovery?: ReactNode; callout?: CalloutProps }) {
   const queryClient = useQueryClient();
+  // Tab counts reuse the dashboard numbers the shell already caches; no extra request is made.
+  const counts = queryClient.getQueryData<{ pending_requests?: number; awaiting_issue?: number }>(["dashboard", makerspace.id]);
   const authority = useContext(StaffListContext);
   const can = (action: string) => authority.isSuperadmin || authority.actions?.includes(action);
   const [guided, setGuided] = useState<{ row: HardwareRequest; mode: "issue" | "return" } | null>(null);
@@ -76,59 +93,22 @@ export function Queues({ makerspace, guestOnly, canViewAudit = false }: { makers
   const [rejectRow, setRejectRow] = useState<HardwareRequest | null>(null);
   const [assignIssueRow, setAssignIssueRow] = useState<HardwareRequest | null>(null);
   const [returnRow, setReturnRow] = useState<HardwareRequest | null>(null);
+  const [chargeRequestId, setChargeRequestId] = useState<number | null>(null);
+  const [cancelRow, setCancelRow] = useState<HardwareRequest | null>(null);
   const [modalError, setModalError] = useState("");
   const [defaultLoanDays, setDefaultLoanDays] = useState(String(makerspace.default_loan_days ?? 7));
-  const list = useUrlListState({ queue: "", id: "", search: "", ordering: "-created_at", pendingPage: "1", acceptedPage: "1", activePage: "1", historyPage: "1", history: "false" });
-  const queue = ["pending", "accepted"].includes(list.values.queue) ? list.values.queue : "";
-  const showHistory = list.values.history === "true";
+  const location = useLocation();
+  const list = useUrlListState({ request: "", requestView: "overview", queue: "", id: "", search: "", ordering: "-created_at", pendingPage: "1", acceptedPage: "1", activePage: "1", historyPage: "1", history: "false" });
+  const visible = visibleRequestTabs(guestOnly, authority.actions, authority.isSuperadmin);
   const search = list.values.search;
-  const setSearch = (value: string) => list.setFilter("search", value);
   const debouncedSearch = useDebouncedValue(search);
-
-  const pending = usePaginatedQuery<HardwareRequest>({
-    key: ["pending", makerspace.id],
-    id: list.values.id,
-    page: Number(list.values.pendingPage),
-    onPageChange: (page) => list.setPage(page, "pendingPage"),
-    ordering: list.values.ordering,
-    path: `/admin/makerspace/${makerspace.id}/pending-requests`,
-    enabled: !guestOnly && (!queue || queue === "pending"),
-    search: debouncedSearch,
-    resetKey: String(makerspace.id),
-  });
-  const accepted = usePaginatedQuery<HardwareRequest>({
-    key: ["accepted", makerspace.id],
-    id: list.values.id,
-    page: Number(list.values.acceptedPage),
-    onPageChange: (page) => list.setPage(page, "acceptedPage"),
-    ordering: list.values.ordering,
-    path: `/admin/makerspace/${makerspace.id}/accepted-requests`,
-    enabled: !queue || queue === "accepted",
-    search: debouncedSearch,
-    resetKey: String(makerspace.id),
-  });
-  const active = usePaginatedQuery<HardwareRequest>({
-    key: ["active", makerspace.id],
-    id: list.values.id,
-    page: Number(list.values.activePage),
-    onPageChange: (page) => list.setPage(page, "activePage"),
-    ordering: list.values.ordering,
-    path: `/admin/makerspace/${makerspace.id}/active-loans`,
-    enabled: !queue,
-    search: debouncedSearch,
-    resetKey: String(makerspace.id),
-  });
-  const history = usePaginatedQuery<HardwareRequest>({
-    key: ["request-history", makerspace.id],
-    id: list.values.id,
-    page: Number(list.values.historyPage),
-    onPageChange: (page) => list.setPage(page, "historyPage"),
-    ordering: list.values.ordering,
-    path: `/admin/makerspace/${makerspace.id}/request-history`,
-    enabled: showHistory && !queue,
-    search: debouncedSearch,
-    resetKey: String(makerspace.id),
-  });
+  const queues = useRequestQueues(makerspace.id, list.values, visible, debouncedSearch, list.setPage);
+  const { tab, selected, queries, involved } = queues;
+  const openGuided = (row: HardwareRequest, mode: "issue" | "return") => {
+    // Close the detail before opening its task dialog, so focus stays in one overlay.
+    list.update({ request: "", id: "", queue: tab ?? "", history: "false", requestView: "overview" }, false);
+    setGuided({ row, mode });
+  };
 
   const action = useMutation({
     mutationFn: ({ path, body }: { path: string; body?: object }) => staffRequest(path, { method: "POST", body: JSON.stringify(body ?? {}) }),
@@ -139,6 +119,7 @@ export function Queues({ makerspace, guestOnly, canViewAudit = false }: { makers
   }, [makerspace.default_loan_days, makerspace.id]);
 
   const openModal = (setter: (row: HardwareRequest | null) => void, row: HardwareRequest) => {
+    list.update({ request: "", id: "", queue: tab ?? "", history: "false", requestView: "overview" }, false);
     setModalError("");
     setter(row);
   };
@@ -151,17 +132,21 @@ export function Queues({ makerspace, guestOnly, canViewAudit = false }: { makers
     setReturnRow(null);
     setModalError("");
   };
-  const runAction = async (path: string, body?: object, onDone = closeModals) => {
+  const runAction = async (path: string, body?: object, onDone: (data: unknown) => void = closeModals) => {
     setModalError("");
     try {
-      await action.mutateAsync({ path, body });
-      onDone();
+      onDone(await action.mutateAsync({ path, body }));
     } catch (error) {
-      setModalError(error instanceof Error ? error.message : "Action failed.");
+      setModalError(error instanceof Error ? error.message : t`Action failed.`);
     }
   };
   const submitReturnDue = (values: ReturnDueValues) => {
-    if (dueRow) void runAction(`/admin/requests/${dueRow.id}/return-due`, { return_due_at: values.returnDueAt ? new Date(values.returnDueAt).toISOString() : null });
+    // Saved as entered; a closed-time warning keeps the dialog open so staff can adjust it.
+    if (dueRow) void runAction(`/admin/requests/${dueRow.id}/return-due`, { return_due_at: values.returnDueAt ? new Date(values.returnDueAt).toISOString() : null }, (data) => {
+      const saved = data as HardwareRequest | undefined;
+      if (saved?.return_due_notice) setDueRow(saved);
+      else closeModals();
+    });
   };
   const submitAccept = (acceptedQuantities: { item_id: number; quantity: number }[]) => {
     if (acceptRow) void runAction(`/admin/requests/${acceptRow.id}/accept`, { accepted_quantities: acceptedQuantities });
@@ -170,7 +155,7 @@ export function Queues({ makerspace, guestOnly, canViewAudit = false }: { makers
     if (rejectRow) void runAction(`/admin/requests/${rejectRow.id}/reject`, { reason: values.reason });
   };
   const submitReturn = (values: ReturnRequestValues) => {
-    if (returnRow) void runAction(`/admin/requests/${returnRow.id}/return`, { evidence_id: values.evidenceId, box_code: values.boxCode, remark: values.remark, resolutions: values.resolutions, kit_checklist: values.kitChecklist ?? [] });
+    if (returnRow) void runAction(`/admin/requests/${returnRow.id}/return`, { evidence_id: values.evidenceId, box_code: values.boxCode, remark: values.remark, resolutions: values.resolutions, kit_checklist: values.kitChecklist ?? [] }, () => { closeModals(); if (needsDamageCharges(makerspace, values.resolutions)) setChargeRequestId(returnRow.id); });
   };
   const submitAssignIssue = async (values: AssignIssueValues) => {
     if (!assignIssueRow) return;
@@ -186,43 +171,89 @@ export function Queues({ makerspace, guestOnly, canViewAudit = false }: { makers
       closeModals();
     } catch (error) {
       const message = issueErrorMessage(error);
-      setModalError(boxAssigned ? `Box assigned, but issue failed: ${message} The request still needs the issue step; retry with the assigned box.` : message);
+      setModalError(boxAssigned ? t`Box assigned, but issue failed: ${message} The request still needs the issue step; retry with the assigned box.` : message);
     }
   };
 
-  return (
-    <div className="grid gap-4">
-      {queue ? <button className="desk-button-ghost w-fit" type="button" onClick={() => list.setFilter("queue", "")}>Show all request queues</button> : null}
-      <ListViewControls state={list} makerspaceId={makerspace.id} entity="requests" search={false} sorts={[["-created_at", "Newest"], ["created_at", "Oldest"], ["return_due_at", "Due first"]]} />
-      <Field label="Search requests"><input className="desk-input" placeholder="Search requester name, email, phone, or purpose" value={search} onChange={(event) => setSearch(event.target.value)} /></Field>
-      {!guestOnly && (!queue || queue === "pending") ? (
-        <Panel title="Pending review">
-          {pending.isLoading ? <RequestListSkeleton /> : <RequestList rows={pending.results} canViewAudit={canViewAudit} actions={(row) => <PendingActions row={row} disabled={action.isPending} openModal={openModal} setAcceptRow={setAcceptRow} setRejectRow={setRejectRow} setDueRow={setDueRow} />} />}
-          <Pagination page={pending.page} totalPages={pending.totalPages} onChange={pending.setPage} count={pending.count} pageSize={pending.pageSize} />
-          {pending.error instanceof Error ? <p className="mt-2 text-sm text-danger">{pending.error.message}</p> : null}
-        </Panel>
-      ) : null}
-      {!queue || queue === "accepted" ? <Panel title="Ready for handover">
-        {accepted.isLoading ? <RequestListSkeleton /> : <RequestList rows={accepted.results} canViewAudit={canViewAudit} actions={(row) => <><AcceptedActions row={row} disabled={action.isPending} openModal={openModal} setAssignIssueRow={setAssignIssueRow} setDueRow={setDueRow} />{can("issue_request") && can("assign_box") && can("upload_evidence") ? <button className="desk-button-primary" onClick={() => setGuided({ row, mode: "issue" })}>Guided issue</button> : null}</>} />}
-        <Pagination page={accepted.page} totalPages={accepted.totalPages} onChange={accepted.setPage} count={accepted.count} pageSize={accepted.pageSize} />
-        {accepted.error instanceof Error ? <p className="mt-2 text-sm text-danger">{accepted.error.message}</p> : null}
-      </Panel> : null}
-      {!guestOnly && !queue ? (
-        <Panel title="Active loans">
-          {active.isLoading ? <RequestListSkeleton /> : <RequestList rows={active.results} canViewAudit={canViewAudit} actions={(row) => <><ActiveActions row={row} disabled={action.isPending} openModal={openModal} setDueRow={setDueRow} setReturnRow={setReturnRow} />{can("return_request") && can("upload_evidence") ? <button className="desk-button-primary" onClick={() => setGuided({ row, mode: "return" })}>Guided return</button> : null}{makerspace.enabled_features?.includes("loans.renewals") ? <StaffLoanRenew makerspaceId={makerspace.id} requestId={row.id} /> : null}</>} />}
-          <Pagination page={active.page} totalPages={active.totalPages} onChange={active.setPage} count={active.count} pageSize={active.pageSize} />
-          {active.error instanceof Error ? <p className="mt-2 text-sm text-danger">{active.error.message}</p> : null}
-        </Panel>
-      ) : null}
-      {!queue ? <HistoryPanel show={showHistory && !queue} loading={history.isLoading} rows={history.results} page={history.page} totalPages={history.totalPages} count={history.count} pageSize={history.pageSize} canViewAudit={canViewAudit} onPageChange={history.setPage} onToggle={() => list.setFilter("history", String(!showHistory))} /> : null}
+  const primary = (row: HardwareRequest, queue: RequestView | undefined = tab): Action | undefined => {
+    if (queue === "pending") return { label: t`Accept`, onClick: () => openModal(setAcceptRow, row), disabled: action.isPending };
+    if (queue === "accepted") return can("issue_request") && can("assign_box") && can("upload_evidence")
+      ? { label: t`Start handover`, onClick: () => openGuided(row, "issue") }
+      : { label: t`Assign + issue`, onClick: () => openModal(setAssignIssueRow, row) };
+    if (queue === "active") return can("return_request") && can("upload_evidence")
+      ? { label: t`Record return`, onClick: () => openGuided(row, "return") }
+      : { label: t`Return`, onClick: () => openModal(setReturnRow, row) };
+  };
+  const menu = (row: HardwareRequest, queue: RequestView | undefined = tab): Action[] => queue === "history" ? [] : [
+    { label: t`Set due`, onClick: () => openModal(setDueRow, row), disabled: action.isPending },
+    ...(queue === "accepted" ? [{ label: t`Assign + issue (quick form)`, onClick: () => openModal(setAssignIssueRow, row), disabled: action.isPending }] : []),
+    ...(queue === "active" ? [{ label: t`Partial return (quick form)`, onClick: () => openModal(setReturnRow, row), disabled: action.isPending }] : []),
+    ...((queue === "pending" || queue === "accepted") && can("accept_request") ? [{ label: t`Cancel request`, tone: "danger" as const, confirms: true, onClick: () => openModal(setCancelRow, row) }] : []),
+  ];
+  const messages: Record<RequestView, string> = {
+    all: "No requests in any queue yet. New requests land in Pending review.",
+    pending: "No requests waiting for review. Check Ready for handover for the next step.",
+    accepted: "Nothing to hand over. Accepted requests land here.",
+    active: "Nothing is out on loan. Check Ready for handover to issue a request.",
+    history: "Returned and closed requests will appear here. Check the other queues for work in progress.",
+  };
+  const retry = () => { if (queues.probeError) queues.retry(); else involved.forEach(key => { if (queries[key].isError) void queries[key].refetch(); }); };
+  const state = queues.finding || involved.some(key => queries[key].isLoading) ? { status: "loading" as const }
+    : queues.probeError || involved.some(key => queries[key].isError) ? { status: "error" as const,
+      error: queues.probeError ? t`Couldn't open request #${list.values.id || list.values.request}. Try again.` : t`Couldn't load requests. Try again.`, onRetry: retry }
+    : { status: "ready" as const };
+  return <div onClickCapture={event => {
+    const anchor = (event.target as HTMLElement).closest('nav[aria-label="Page sections"] a');
+    if (!anchor || anchor.closest('[role="dialog"]') || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+    const next = new URL((anchor as HTMLAnchorElement).href).searchParams.get("queue");
+    if (next && (next === "all" ? visible.length > 1 : visible.includes(next as RequestTab))) { event.preventDefault(); list.update({ queue: next, history: "false", request: "", requestView: "overview" }); }
+  }}>
+    <ListLayout header={{ title: t`Requests`, subtitle: t`Borrow requests from members, from review to return.`,
+      meta: queues.finding ? <BoxSpinner label={t`Finding request #${list.values.id || list.values.request}…`} /> : undefined,
+      primary: tab === "accepted" && selected.count === 1 && selected.results[0] ? primary(selected.results[0]) : undefined }}
+      callout={callout}
+      tabs={[...visible, ...(visible.length > 1 ? ["all" as const] : [])].map(key => ({ key, label: requestTabLabels[key], href: requestTabHref(location.pathname, location.search, key),
+        count: key === "pending" ? counts?.pending_requests : key === "accepted" ? counts?.awaiting_issue : undefined }))}
+      activeTab={tab} state={state} isEmpty={!visible.length || queues.notFound || involved.every(key => !queries[key].results.length)}
+      empty={{ message: !visible.length ? t`You don't have access to request queues in this makerspace.`
+        : queues.notFound ? t`We couldn't find request #${list.values.id || list.values.request} in your queues.` : messages[tab ?? "pending"] }}
+      filtered={Boolean(search || list.values.id || list.values.request)}
+      filteredEmpty={{ message: queues.notFound ? t`We couldn't find request #${list.values.id || list.values.request} in your queues.` : t`No requests match these filters. Clear filters to see your queue.`,
+        action: { label: t`Clear filters`, onClick: () => list.update({ search: "", id: "", request: "", requestView: "overview" }) } }}
+      filters={{ toolbar: <ListViewControls searchControl={{ label: t`Search requests`, placeholder: t`Search by name, email, phone or purpose`, value: search, onChange: value => list.setFilter("search", value) }} state={list} makerspaceId={makerspace.id} entity="requests" search={false} sorts={[["-created_at", "Newest"], ["created_at", "Oldest"], ["return_due_at", "Due first"]]} /> }}
+      body={{ kind: "rows", rows: <div role="region" aria-label={requestTabLabels[tab ?? "pending"]} className={tab === "all" ? "grid gap-8" : undefined}>
+        {/* Decision 242 / U5: accept or reject many pending requests at once (all or nothing). */}
+        {tab === "pending" && can("accept_request") && can("reject_request") ? <BulkDecisionBar title={t`Decide several borrow requests`}
+          rows={queries.pending.results.map(row => ({ id: row.id, label: `#${row.id} · ${row.requester_display || row.requester_username} · ${row.items.map(item => `${item.product_name} × ${item.requested_quantity}`).join(", ")}` }))}
+          decisions={[{ key: "accept", label: t`Accept in full` }, { key: "reject", label: t`Reject`, needsReason: true, danger: true }]}
+          path={decision => `/admin/bulk/requests/${decision}`}
+          onDone={() => { invalidateRequestQueues(queryClient, makerspace.id, actionInvalidationScope("/accept")); void queryClient.invalidateQueries({ queryKey: ["dashboard", makerspace.id] }); }} /> : null}
+        {involved.map(key => {
+          const rows = queries[key].results;
+          if (tab === "all" && !rows.length) return null;
+          const list = <RequestList makerspace={makerspace} rows={rows} canViewAudit={canViewAudit} primary={row => primary(row, key)} menu={row => menu(row, key)}
+            reject={key === "pending" ? row => ({ label: t`Reject`, tone: "danger", onClick: () => openModal(setRejectRow, row) }) : undefined}
+            extra={key === "active" && makerspace.enabled_features?.includes("loans.renewals") ? row => <StaffLoanRenew makerspaceId={makerspace.id} requestId={row.id} /> : undefined} />;
+          return tab !== "all" ? <div key={key}>{list}</div> : <section key={key} aria-label={requestTabLabels[key]} className="grid gap-3">
+            <h2 className="title-section">{requestTabLabels[key]} <span className="font-normal text-muted">({queries[key].count})</span></h2>
+            {list}
+            {queries[key].count > rows.length ? <RouteLink className="inline-flex min-h-11 w-fit items-center text-sm font-semibold text-accent-ink underline" href={requestTabHref(location.pathname, location.search, key)}>
+              {t`Show all ${queries[key].count} in ${requestTabLabels[key]}`}</RouteLink> : null}
+          </section>;
+        })}
+      </div> }}
+      pagination={visible.length && !queues.finding && tab !== "all" ? { page: selected.page, pageSize: selected.pageSize, count: selected.count, onChange: selected.setPage } : undefined}
+      detail={<><div className="mt-8">{recovery}</div>
       <AcceptRequestModal row={acceptRow} open={Boolean(acceptRow)} pending={action.isPending} error={modalError} onClose={closeModals} onSubmit={submitAccept} />
       {guided ? <HandoverWizard key={`${makerspace.id}:${guided.row.id}:${guided.mode}`} row={guided.row} mode={guided.mode} makerspace={makerspace} canScanCards={Boolean(can("scan_member_cards"))} onClose={() => setGuided(null)} /> : null}
-      <ReturnDueModal row={dueRow} defaultValue={dueRow?.return_due_at ? localDateTimeValue(dueRow.return_due_at) : localDateTimeValue(defaultDueDate(Number(defaultLoanDays) || 7).toISOString())} open={Boolean(dueRow)} pending={action.isPending} error={modalError} onClose={closeModals} onSubmit={submitReturnDue} />
+      <ReturnDueModal row={dueRow} defaultValue={dueRow?.return_due_at ? localDateTimeValue(dueRow.return_due_at) : localDateTimeValue(defaultDueDate(Number(defaultLoanDays) || 7).toISOString())} notice={dueRow?.return_due_notice} timeZone={makerspace.timezone} open={Boolean(dueRow)} pending={action.isPending} error={modalError} onClose={closeModals} onSubmit={submitReturnDue} />
       <RejectRequestModal row={rejectRow} open={Boolean(rejectRow)} pending={action.isPending} error={modalError} onClose={closeModals} onSubmit={submitReject} />
       <AssignIssueModal row={assignIssueRow} open={Boolean(assignIssueRow)} pending={action.isPending} error={modalError} onClose={closeModals} onSubmit={submitAssignIssue} makerspaceId={makerspace.id} kitEnabled={featureEnabled(makerspace.enabled_features ?? [], "loans.kit_checklist")} />
       <ReturnRequestModal row={returnRow} open={Boolean(returnRow)} pending={action.isPending} error={modalError} onClose={closeModals} onSubmit={submitReturn} makerspaceId={makerspace.id} />
-    </div>
-  );
+      {cancelRow ? <RequestCancelDialog key={cancelRow.id} row={cancelRow} makerspaceId={makerspace.id} onClose={() => setCancelRow(null)} /> : null}
+      {chargeRequestId ? <DamageChargeDialog key={chargeRequestId} makerspaceId={makerspace.id} requestId={chargeRequestId} onClose={() => setChargeRequestId(null)} /> : null}
+      </>} />
+  </div>;
 }
 
 function defaultDueDate(days: number) {
@@ -230,7 +261,6 @@ function defaultDueDate(days: number) {
   date.setDate(date.getDate() + days);
   return date;
 }
-
 function localDateTimeValue(value: string) {
   const date = new Date(value);
   const offset = date.getTimezoneOffset() * 60000;

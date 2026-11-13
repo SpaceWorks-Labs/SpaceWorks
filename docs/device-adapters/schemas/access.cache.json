@@ -1,0 +1,72 @@
+{
+  "$id": "https://spaceworks.invalid/schemas/device-adapter/v1/access.cache.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "binding_id": {
+      "format": "uuid",
+      "maxLength": 36,
+      "minLength": 36,
+      "type": "string"
+    },
+    "entries": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "digest": {
+            "maxLength": 64,
+            "minLength": 64,
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "nfc"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "digest",
+          "type"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "expires_at": {
+      "maximum": 4102444800,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "issued_at": {
+      "maximum": 4102444800,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "kid": {
+      "maximum": 1000000,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "signature": {
+      "maxLength": 128,
+      "minLength": 128,
+      "type": "string"
+    },
+    "version": {
+      "maximum": 1000000000000,
+      "minimum": 1,
+      "type": "integer"
+    }
+  },
+  "required": [
+    "binding_id",
+    "kid",
+    "version",
+    "issued_at",
+    "expires_at",
+    "entries",
+    "signature"
+  ],
+  "type": "object"
+}

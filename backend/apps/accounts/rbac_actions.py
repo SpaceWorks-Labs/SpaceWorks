@@ -2,8 +2,6 @@
 
 import logging
 
-from django.db.models import Q
-
 from apps.makerspaces.models import MakerspaceMembership
 
 
@@ -44,10 +42,48 @@ class Action:
     MANAGE_MEMBERS = "manage_members"
     VIEW_FINANCE = "view_finance"
     RECORD_PAYMENT = "record_payment"
+    RECORD_REIMBURSEMENT_PAYOUT = "record_reimbursement_payout"
     VIEW_AUDIT = "view_audit"
     TRANSFER_STOCK = "transfer_stock"        # superadmin only
     MANAGE_STAFF = "manage_staff"            # superadmin only
     MANAGE_MAKERSPACE = "manage_makerspace"  # superadmin only
+    # Release 2 L16 (#128 C-3): the built-in Technician role holds exactly these three.
+    # WORK_REPAIRS works the repair jobs assigned to the holder; RUN_MAINTENANCE logs
+    # scheduled maintenance and SET_SERVICE_STATE takes a subject in or out of service,
+    # both only within the machine types / items / rooms the person's coverage names.
+    WORK_REPAIRS = "work_repairs"
+    RUN_MAINTENANCE = "run_maintenance"
+    SET_SERVICE_STATE = "set_service_state"
+    # Release 2 L3: organisation ID programmes on the HOST space (VIEW masks holder PII),
+    # and approving card designs saved by others (#128 C-28, #136). Grantable to custom
+    # roles and through the organisation branch; the Space Manager holds all three
+    # through MANAGE_MAKERSPACE below, so no stored role changes.
+    VIEW_ID_PROGRAMMES = "view_id_programmes"
+    MANAGE_ID_PROGRAMMES = "manage_id_programmes"
+    APPROVE_CARD_DESIGNS = "approve_card_designs"
+    # Release 2 L22 (#128 C-7, #135 Q-S9, #137): the per-space shop. MANAGE_SHOP runs the
+    # catalogue, prices, stock, returns, cash-ups and the shop's own settings; SELL_SHOP
+    # sells at the front desk and hands over collected orders; VIEW_SHOP reads orders and
+    # stock. The built-in Shop Manager holds all three; the Space Manager through
+    # MANAGE_MAKERSPACE below, so no stored role changes. Never organization-grantable.
+    MANAGE_SHOP = "manage_shop"
+    SELL_SHOP = "sell_shop"
+    VIEW_SHOP = "view_shop"
+    # Release 2 L25 (#163B, owner-approved new action): open the space's embedded Metabase
+    # dashboards. Read-only; managing the database login and the Metabase secret is the
+    # Space Manager's (rbac.is_space_manager_identity), who holds this through
+    # MANAGE_MAKERSPACE below, so no stored role changes.
+    VIEW_ANALYTICS = "view_analytics"
+    # Decision 242(m): run the space's donations and sponsors (campaigns, gifts, pledges,
+    # donor list, receipts) and nothing else of its money. The built-in Fundraising role
+    # holds exactly this; the Space Manager through MANAGE_MAKERSPACE below, so no stored
+    # role changes. Never organization-grantable: donor money stays inside ONE space.
+    MANAGE_DONATIONS = "manage_donations"
+    # Parity O-B1: member units (districts, chapters, branches) inside one space. MANAGE edits the tree,
+    # assigns members and staff scopes; VIEW reads the tree (the unit picker). Role- and org-grantable.
+    # Unit SCOPE is not an action: it narrows local membership authority (`member_unit_scope.py`).
+    MANAGE_MEMBER_UNITS = "manage_member_units"
+    VIEW_MEMBER_UNITS = "view_member_units"
 
 
 IMPLIED_ACTIONS = {
@@ -58,7 +94,22 @@ IMPLIED_ACTIONS = {
     Action.MANAGE_MACHINES: {Action.MANAGE_PRINTING, Action.COLLECT_SERVICE_REQUEST},
     Action.MANAGE_MEMBER_CARDS: {Action.SCAN_MEMBER_CARDS},
     Action.MANAGE_MEMBERS: {Action.MANAGE_MEMBER_CARDS},
+    # Release 2 L3.
+    Action.MANAGE_ID_PROGRAMMES: {Action.VIEW_ID_PROGRAMMES},
+    Action.MANAGE_MAKERSPACE: {Action.MANAGE_ID_PROGRAMMES, Action.APPROVE_CARD_DESIGNS},
 }
+# Release 2 L22: the shop ladder, and the Space Manager reaches it through MANAGE_MAKERSPACE.
+IMPLIED_ACTIONS[Action.MANAGE_SHOP] = {Action.SELL_SHOP, Action.VIEW_SHOP}
+IMPLIED_ACTIONS[Action.SELL_SHOP] = {Action.VIEW_SHOP}
+IMPLIED_ACTIONS[Action.MANAGE_MAKERSPACE] = IMPLIED_ACTIONS[Action.MANAGE_MAKERSPACE] | {Action.MANAGE_SHOP}
+# Release 2 L25: the Space Manager sees the space's analytics dashboards.
+IMPLIED_ACTIONS[Action.MANAGE_MAKERSPACE] = IMPLIED_ACTIONS[Action.MANAGE_MAKERSPACE] | {Action.VIEW_ANALYTICS}
+# Decision 242(m): the Space Manager runs donations.
+IMPLIED_ACTIONS[Action.MANAGE_MAKERSPACE] = IMPLIED_ACTIONS[Action.MANAGE_MAKERSPACE] | {Action.MANAGE_DONATIONS}
+# Parity O-B1: the Space Manager manages member units; whoever manages members can read the unit tree.
+IMPLIED_ACTIONS[Action.MANAGE_MEMBER_UNITS] = {Action.VIEW_MEMBER_UNITS}
+IMPLIED_ACTIONS[Action.MANAGE_MEMBERS] = IMPLIED_ACTIONS[Action.MANAGE_MEMBERS] | {Action.VIEW_MEMBER_UNITS}
+IMPLIED_ACTIONS[Action.MANAGE_MAKERSPACE] = IMPLIED_ACTIONS[Action.MANAGE_MAKERSPACE] | {Action.MANAGE_MEMBER_UNITS}
 
 
 def expand_implied_actions(actions) -> set:
@@ -99,6 +150,7 @@ _SPACE_MANAGER_ACTIONS = {
     Action.MANAGE_MAKERSPACE, Action.MANAGE_MACHINES, Action.MANAGE_EVENTS,
     Action.MANAGE_BOOKINGS, Action.MANAGE_MEMBER_CARDS, Action.MANAGE_DEVICES,
     Action.MANAGE_MEMBERS, Action.VIEW_FINANCE, Action.RECORD_PAYMENT,
+    Action.RECORD_REIMBURSEMENT_PAYOUT,
 }
 _PRINT_MANAGER_ACTIONS = {
     Action.MANAGE_PRINTING,
@@ -121,8 +173,8 @@ _INVENTORY_MANAGER_ACTIONS = {
 _MEMBERSHIP_ROLE_ACTIONS = {
     MakerspaceMembership.Role.SPACE_MANAGER: _SPACE_MANAGER_ACTIONS,
     MakerspaceMembership.Role.INVENTORY_MANAGER: _INVENTORY_MANAGER_ACTIONS,
-    # Kept as the raw legacy value so an unmigrated/null-FK membership remains
-    # session-compatible after the protected default is retired.
+    # Retained vocabulary for historical displays/migration tests. Null-primary
+    # memberships no longer grant authority after account separation.
     "print_manager": _PRINT_MANAGER_ACTIONS,
     MakerspaceMembership.Role.MACHINE_MANAGER: _MACHINE_MANAGER_ACTIONS,
 }
@@ -140,17 +192,21 @@ ROLE_FORBIDDEN_ACTIONS = frozenset({
 ROLE_GRANTABLE_ACTIONS = frozenset(ALL_ACTIONS - ROLE_FORBIDDEN_ACTIONS)
 ORGANIZATION_GRANTABLE_ACTIONS = frozenset(
     ROLE_GRANTABLE_ACTIONS - {Action.MANAGE_MACHINES, Action.MANAGE_DEVICES}
+    # L16: repair work is physical trust inside ONE space, like a device key.
+    - {Action.WORK_REPAIRS, Action.RUN_MAINTENANCE, Action.SET_SERVICE_STATE}
+    # L22: a shop's till and stock are money and goods inside ONE space.
+    - {Action.MANAGE_SHOP, Action.SELL_SHOP, Action.VIEW_SHOP}
+    # Decision 242(m): donor money and donor details stay inside ONE space.
+    - {Action.MANAGE_DONATIONS}
 )
 ROLE_SUPERADMIN_ASSIGNABLE_ACTIONS = frozenset({Action.MANAGE_MAKERSPACE})
 # What counts as handover-only work: taking an accepted request or a finished machine job
 # to the counter, handing it over, taking it back, and photographing both ends of that.
 #
-# This is a DESCRIPTION, not a grant and no longer a ceiling. It is derived from no role --
-# the built-in that used to define it was retired, and `role_services._validate_actions`
-# dropped the cap that keyed on it, so any role may hold any subset of these alongside
-# anything else. Its only consumer is `is_handout_only`, which decides how narrow the staff
-# console renders for someone whose whole job is the front desk. Adding an action here
-# widens what still reads as "front desk"; it grants nothing to anyone.
+# This is a description, not a grant or ceiling. Handover is a built-in role;
+# its grants live in role_catalog. This set only tells `is_handout_only` how
+# narrow to render the console, including staff who also collect cash receipts.
+# Adding an action here grants nothing to anyone.
 HANDOUT_ACTIONS = frozenset({
     Action.VIEW_INVENTORY, Action.ASSIGN_BOX, Action.ISSUE_REQUEST,
     Action.ISSUE_DIRECT_LOAN, Action.RETURN_REQUEST, Action.UPLOAD_EVIDENCE,
@@ -164,22 +220,9 @@ def actions_for_membership(membership) -> set:
     """Resolve role actions for a membership, failing closed on invalid role data."""
     if membership is None or getattr(membership, "status", "active") != "active":
         return set()
-    if membership.assigned_role_id is not None:
-        role = membership.assigned_role
-        if role.makerspace_id != membership.makerspace_id:
-            return set()
-        value = role.granted_actions
-        if not isinstance(value, list):
-            logging.getLogger("apps.accounts.rbac").warning(
-                "Ignoring malformed granted actions on an assigned makerspace role."
-            )
-            return set()
-        return expand_implied_actions({
-            action
-            for action in value
-            if isinstance(action, str) and action in ROLE_GRANTABLE_ACTIONS
-        })
-    return expand_implied_actions(_MEMBERSHIP_ROLE_ACTIONS.get(membership.role, set()))
+    from .rbac_roles import stored_actions_for_membership
+
+    return expand_implied_actions(stored_actions_for_membership(membership))
 
 
 def actions_for_organization_membership(membership) -> set:
@@ -207,12 +250,8 @@ def actions_for_organization_membership(membership) -> set:
 def _action_scope_filters(action):
     """Build assigned-role and legacy-role filters for an action scope query."""
     satisfying = actions_satisfying(action)
-    assigned_filter = Q()
-    for granted_action in satisfying:
-        assigned_filter |= Q(assigned_role__granted_actions__contains=[granted_action])
-    legacy_roles = [
-        role
-        for role, actions in _MEMBERSHIP_ROLE_ACTIONS.items()
-        if actions & satisfying
-    ]
-    return assigned_filter, legacy_roles
+    from .rbac_roles import direct_role_filter
+
+    assigned_filter = direct_role_filter(satisfying)
+    # Null-primary rows have no validated account/role context after the split.
+    return assigned_filter, []

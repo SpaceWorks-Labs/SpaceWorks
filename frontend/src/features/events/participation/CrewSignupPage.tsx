@@ -1,0 +1,61 @@
+import { LogoLoader } from "../../../components/LogoLoader";
+import { formatLocale } from "../../../lib/format";
+import { t } from "@lingui/core/macro";
+import { useState } from "react";
+import { useParams } from "react-router-dom";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { memberRequest } from "../../../lib/api";
+import { Card, ErrorText, StatusBadge } from "../../../components/ui";
+import { ownSavedDetails } from "../../accountSavedDetails/api";
+
+type Crew = { id: number; version: number; crew_role: string; state: string; show_publicly: boolean };
+type State = { event_id: number; event_title: string; starts_at: string; open: boolean; approval_required: boolean; crew: Crew | null };
+
+const LABELS: Record<string, string> = { applied: t`Waiting for review`, approved: t`You are on the crew`,
+  declined: t`Not this time`, withdrawn: t`You withdrew`, removed: t`Removed by the organisers` };
+
+/** The crew sign-up link (#128 C-36). A crew place is free; dietary needs stay private (#28). */
+export function CrewSignupPage() {
+  const { eventId } = useParams();
+  const url = `/events/${Number(eventId)}/crew-signup/`;
+  const client = useQueryClient();
+  const state = useQuery({ queryKey: ["member-crew", eventId], retry: false, queryFn: () => memberRequest<State>(url) });
+  const [role, setRole] = useState(""), [dietary, setDietary] = useState(""), [notes, setNotes] = useState("");
+  const [shown, setShown] = useState(false), [prefillNote, setPrefillNote] = useState("");
+  // Opt-in (#28): Saved details are read only when the member asks, and only the dietary
+  // field is copied into this form; nothing leaves the browser until they sign up.
+  const prefill = useMutation({ mutationFn: ownSavedDetails, onSuccess: details => {
+    const value = details.fields.find(field => field.field_key === "dietary_needs")?.value;
+    if (typeof value === "string" && value.trim()) { setDietary(value.slice(0, 300)); setPrefillNote("Filled from your Saved details. Edit it if needed."); }
+    else setPrefillNote("Your Saved details have no dietary needs.");
+  }, onError: () => setPrefillNote("Your Saved details are not available right now.") });
+  const save = (data: State) => client.setQueryData(["member-crew", eventId], data);
+  const signup = useMutation({ mutationFn: () => memberRequest<State>(url, { method: "POST",
+    body: JSON.stringify({ crew_role: role, dietary, notes, show_publicly: shown }) }), onSuccess: save });
+  const withdraw = useMutation({ mutationFn: () => memberRequest<State>(url + "withdraw/", { method: "POST", body: "{}" }), onSuccess: save });
+  if (state.error) return <div className="mx-auto max-w-xl p-4"><ErrorText message={t`This crew sign-up is not open.`} /></div>;
+  if (!state.data) return <LogoLoader label={t`Loading…`} />;
+  const data = state.data, live = data.crew && ["applied", "approved"].includes(data.crew.state);
+  return <div className="mx-auto grid max-w-xl gap-4 p-4">
+    <h1 className="font-display text-2xl text-ink">{t`Join the crew`}</h1>
+    <p className="text-ink">{data.event_title}, {new Date(data.starts_at).toLocaleString(formatLocale())}</p>
+    {signup.error || withdraw.error ? <ErrorText message={(signup.error ?? withdraw.error)!.message} /> : null}
+    {data.crew ? <Card><div className="flex flex-wrap items-center justify-between gap-3">
+      <StatusBadge status={data.crew.state} label={LABELS[data.crew.state] ?? data.crew.state} />
+      {live ? <button type="button" className="desk-button" disabled={withdraw.isPending} onClick={() => withdraw.mutate()}>{t`Withdraw`}</button> : null}
+    </div></Card> : null}
+    {!live && data.open ? <Card><form className="grid gap-3" onSubmit={event => { event.preventDefault(); signup.mutate(); }}>
+      <label className="grid gap-1 text-sm text-ink">{t`How would you like to help? (optional)`}<input className="desk-input" maxLength={60} value={role} onChange={e => setRole(e.target.value)} placeholder={t`Door, AV, catering`} /></label>
+      <label className="grid gap-1 text-sm text-ink">{t`Dietary needs (only counted for catering, never shown with your name)`}<input className="desk-input" maxLength={300} value={dietary} onChange={e => setDietary(e.target.value)} /></label>
+      <div className="flex flex-wrap items-center gap-3">
+        <button type="button" className="desk-button" disabled={prefill.isPending} onClick={() => prefill.mutate()}>{t`Use my Saved details`}</button>
+        {prefillNote ? <p role="status" className="text-sm text-muted">{prefillNote}</p> : null}
+      </div>
+      <label className="grid gap-1 text-sm text-ink">{t`Anything else the organisers should know`}<textarea className="desk-input min-h-20" maxLength={1000} value={notes} onChange={e => setNotes(e.target.value)} /></label>
+      <label className="flex min-h-11 items-center gap-3 text-sm text-ink"><input type="checkbox" checked={shown}
+        onChange={e => setShown(e.target.checked)} />{t`Show me in the event's public crew section (needs a public profile)`}</label>
+      <p className="text-sm text-muted">{data.approval_required ? t`The organisers review each sign-up.` : t`You join straight away.`} {t` Your crew place is free.`}</p>
+      <button type="submit" className="desk-button justify-self-start" disabled={signup.isPending}>{t`Sign up`}</button>
+    </form></Card> : null}
+  </div>;
+}

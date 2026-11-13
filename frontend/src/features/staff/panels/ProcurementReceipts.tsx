@@ -1,3 +1,6 @@
+import { t } from "@lingui/core/macro";
+import { EmptyState } from "../../../components/ui/EmptyState";
+import { ConfirmDialog, OverflowMenu, RelativeTime } from "../../../components/ui";
 import { useId, useRef, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 
@@ -26,6 +29,7 @@ export function ProcurementReceipts({ itemId, receipts, onChanged }: { itemId: n
   const inputId = useId();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [error, setError] = useState("");
+  const [deleteId, setDeleteId] = useState<number | null>(null);
 
   const upload = useMutation({
     mutationFn: async (files: File[]) => {
@@ -38,13 +42,13 @@ export function ProcurementReceipts({ itemId, receipts, onChanged }: { itemId: n
       if (inputRef.current) inputRef.current.value = "";
       onChanged();
     },
-    onError: (err) => setError(err instanceof Error ? err.message : "Upload failed."),
+    onError: (err) => setError(err instanceof Error ? err.message : t`Upload failed.`),
   });
 
   const remove = useMutation({
     mutationFn: (receiptId: number) => staffRequest<void>(`/procurement/to-buy/receipts/${receiptId}`, { method: "DELETE" }),
-    onSuccess: onChanged,
-    onError: (err) => setError(err instanceof Error ? err.message : "Could not delete receipt."),
+    onSuccess: () => { setDeleteId(null); onChanged(); },
+    onError: (err) => setError(err instanceof Error ? err.message : t`Could not delete receipt.`),
   });
 
   async function openReceipt(receiptId: number) {
@@ -53,22 +57,22 @@ export function ProcurementReceipts({ itemId, receipts, onChanged }: { itemId: n
       const { url } = await staffRequest<{ url: string }>(`/procurement/to-buy/receipts/${receiptId}/url`);
       window.open(url, "_blank", "noopener");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not open receipt.");
+      setError(err instanceof Error ? err.message : t`Could not open receipt.`);
     }
   }
 
   return (
-    <div className="min-w-[14rem] space-y-2">
+    <div className="min-w-0 space-y-4">
       <div className="grid gap-1">
         {receipts.length ? receipts.map((receipt) => (
           <div key={receipt.id} className="flex min-w-0 flex-wrap items-center gap-2 rounded-md border border-line bg-surface px-2 py-1 text-xs">
-            <span className="min-w-0 flex-1 font-mono text-muted">{formatDateTime(receipt.created_at)}</span>
-            <button type="button" className="desk-button-ghost text-xs" onClick={() => openReceipt(receipt.id)}>View</button>
-            <button type="button" className="desk-button-danger text-xs" disabled={remove.isPending} onClick={() => remove.mutate(receipt.id)}>Delete</button>
+            <span className="min-w-0 flex-1 tabular-nums text-muted"><RelativeTime date={receipt.created_at} exact /></span>
+            <button type="button" className="desk-button-ghost text-xs" onClick={() => openReceipt(receipt.id)}>{t`View`}</button>
+            <OverflowMenu label={t`Receipt actions`} actions={[{ label: t`Delete receipt`, confirms: true, tone: "danger", disabled: remove.isPending, onClick: () => setDeleteId(receipt.id) }]} />
           </div>
-        )) : <p className="text-xs text-muted">No receipts.</p>}
+        )) : <EmptyState message={t`No receipts.`} />}
       </div>
-      <label htmlFor={inputId} className="sr-only">Add receipt</label>
+      <label htmlFor={inputId} className="sr-only">{t`Add receipt`}</label>
       <input
         id={inputId}
         ref={inputRef}
@@ -80,10 +84,11 @@ export function ProcurementReceipts({ itemId, receipts, onChanged }: { itemId: n
           const files = Array.from(event.target.files ?? []);
           if (files.length) upload.mutate(files);
         }}
-        className="block w-full max-w-full min-w-0 text-xs text-muted file:mr-2 file:rounded-lg file:border file:border-line file:bg-accent file:px-2 file:py-1 file:font-mono file:text-xs file:font-semibold file:text-on-accent"
+        className="block min-h-11 w-full max-w-full min-w-0 text-xs text-muted file:mr-2 file:rounded-lg file:border file:border-line file:bg-accent file:px-2 file:py-1 file:text-xs file:font-semibold file:text-on-accent"
       />
-      {upload.isPending ? <p className="text-xs text-muted">Uploading...</p> : null}
+      {upload.isPending ? <p className="text-xs text-muted">{t`Uploading…`}</p> : null}
       {error ? <p className="text-xs text-danger">{error}</p> : null}
+      <ConfirmDialog open={deleteId !== null} title={t`Delete receipt?`} message={t`This file will no longer be attached to the purchase.`} confirmLabel={t`Delete`} tone="danger" pending={remove.isPending} onCancel={() => setDeleteId(null)} onConfirm={() => { if (deleteId !== null) remove.mutate(deleteId); }} />
     </div>
   );
 }
@@ -103,21 +108,17 @@ async function uploadReceipt(itemId: number, file: File) {
       body: file,
       headers: presigned.upload.headers,
     });
-    if (!response.ok) throw new Error(`Storage upload failed (${response.status})`);
+    if (!response.ok) throw new Error(t`Storage upload failed (${response.status})`);
   } else {
     const formData = new FormData();
     Object.entries(presigned.upload.fields ?? {}).forEach(([key, value]) => formData.append(key, value));
     formData.append("file", file);
     const response = await fetch(presigned.upload.url, { method: "POST", body: formData });
-    if (!response.ok) throw new Error(`Storage upload failed (${response.status})`);
+    if (!response.ok) throw new Error(t`Storage upload failed (${response.status})`);
   }
 
   return staffRequest(`/procurement/to-buy/${itemId}/receipts`, {
     method: "POST",
     body: JSON.stringify({ object_key: presigned.object_key }),
   });
-}
-
-function formatDateTime(value: string) {
-  return new Date(value).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
 }

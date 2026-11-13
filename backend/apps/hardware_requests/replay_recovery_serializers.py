@@ -1,5 +1,6 @@
 """Bounded operational recovery DTOs; no payload, QR or channel credentials."""
 
+from django.utils.translation import gettext
 from datetime import timedelta
 
 from django.conf import settings
@@ -69,7 +70,7 @@ class ReplayResolutionSerializer(serializers.Serializer):
     def validate(self, attrs):
         requires_replacement = attrs["resolution_code"] == ReplayCommand.Resolution.REPLACED_ONLINE
         if requires_replacement != (attrs["replacement_command_id"] is not None):
-            raise serializers.ValidationError("Only replaced_online requires a replacement command UUID.")
+            raise serializers.ValidationError(gettext("Only replaced_online requires a replacement command UUID."))
         return attrs
 
 

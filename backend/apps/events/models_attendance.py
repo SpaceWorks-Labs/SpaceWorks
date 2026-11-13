@@ -1,3 +1,4 @@
+from django.utils.translation import gettext, gettext_noop
 from uuid import uuid4
 
 from django.conf import settings
@@ -14,11 +15,11 @@ class EventCheckInEvent(models.Model):
     """Immutable evidence that an attended transition happened."""
 
     class Source(models.TextChoices):
-        ONLINE = "online", "Online staff confirmation"
-        QR = "qr", "Online QR check-in"
-        OFFLINE_SYNC = "offline_sync", "Authenticated offline synchronization"
-        VENUE_STATION = "venue_station", "PIN venue station"
-        LEGACY = "legacy", "Legacy attendance history"
+        ONLINE = "online", gettext_noop("Online staff confirmation")
+        QR = "qr", gettext_noop("Online QR check-in")
+        OFFLINE_SYNC = "offline_sync", gettext_noop("Authenticated offline synchronization")
+        VENUE_STATION = "venue_station", gettext_noop("PIN venue station")
+        LEGACY = "legacy", gettext_noop("Legacy attendance history")
 
     makerspace = models.ForeignKey(
         Makerspace,
@@ -83,10 +84,10 @@ class EventCheckInEvent(models.Model):
         super().clean()
         if self.registration_id and self.event_id:
             if self.registration.event_id != self.event_id:
-                raise ValidationError("Registration must belong to the check-in event.")
+                raise ValidationError(gettext("Registration must belong to the check-in event."))
         if self.event_id and self.makerspace_id:
             if self.event.makerspace_id != self.makerspace_id:
-                raise ValidationError("Check-in event must belong to the host makerspace.")
+                raise ValidationError(gettext("Check-in event must belong to the host makerspace."))
 
     def save(self, *args, **kwargs):
         if self.pk is not None:
@@ -95,3 +96,30 @@ class EventCheckInEvent(models.Model):
 
     def delete(self, *args, **kwargs):
         raise RuntimeError("EventCheckInEvent rows are immutable.")
+
+
+class EventAttendanceCorrection(models.Model):
+    """Durable watermark: old venue scans cannot override a later correction."""
+
+    registration = models.ForeignKey(EventRegistration, on_delete=models.PROTECT, related_name="attendance_corrections")
+    event = models.ForeignKey(Event, on_delete=models.PROTECT, related_name="attendance_corrections")
+    attendance_revision = models.PositiveBigIntegerField()
+    invalidated_through_checkin_id = models.PositiveBigIntegerField()
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="+")
+    operation_id = models.UUIDField(default=uuid4, unique=True, editable=False)
+    corrected_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=("registration", "attendance_revision"), name="event_attendance_correction_revision"),
+            models.CheckConstraint(condition=models.Q(attendance_revision__gte=1, invalidated_through_checkin_id__gte=1),
+                                   name="event_attendance_correction_positive"),
+        ]
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            raise RuntimeError("Attendance corrections are immutable.")
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise RuntimeError("Attendance corrections require an authorized purge.")

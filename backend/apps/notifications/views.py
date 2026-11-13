@@ -9,10 +9,12 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts import rbac
+from apps.audit import services as audit
 from apps.admin_api.permissions import IsActiveStaff
 from apps.machines import role_scope
 from apps.makerspaces.guards import require_module
 from apps.makerspaces.servability import servable_queryset
+from apps.notifications.legacy_feed_scope import scope_feed
 from apps.notifications.models import Notification
 from apps.notifications.serializers import NotificationSerializer
 
@@ -30,9 +32,8 @@ class NotificationMarkAllReadSerializer(serializers.Serializer):
 
 
 NOTIFICATION_ERROR_RESPONSES = {
-    400: OpenApiResponse(description="Notifications module is disabled."),
     403: OpenApiResponse(description="Permission denied."),
-    404: OpenApiResponse(description="Not found."),
+    404: OpenApiResponse(description="Not found, or the notifications module is turned off."),
 }
 
 
@@ -86,7 +87,7 @@ class NotificationListView(APIView):
     )
     def get(self, request, makerspace_id, *args, **kwargs):
         makerspace = _makerspace_for_manager(request.user, makerspace_id)
-        queryset = Notification.objects.filter(makerspace=makerspace).order_by("-created_at")
+        queryset = scope_feed(request.user, makerspace.id, Notification.objects.filter(makerspace=makerspace)).order_by("-created_at")
         if request.query_params.get("unread") == "true":
             queryset = queryset.filter(read_at__isnull=True)
         paginator = self.pagination_class()
@@ -109,10 +110,10 @@ class NotificationUnreadCountView(APIView):
     )
     def get(self, request, makerspace_id, *args, **kwargs):
         makerspace = _makerspace_for_manager(request.user, makerspace_id)
-        count = Notification.objects.filter(
+        count = scope_feed(request.user, makerspace.id, Notification.objects.filter(
             makerspace=makerspace,
             read_at__isnull=True,
-        ).count()
+        )).count()
         return Response({"count": count})
 
 
@@ -128,10 +129,11 @@ class NotificationMarkReadView(APIView):
     )
     def post(self, request, makerspace_id, pk, *args, **kwargs):
         makerspace = _makerspace_for_manager(request.user, makerspace_id)
-        notification = get_object_or_404(Notification, pk=pk, makerspace=makerspace)
+        notification = get_object_or_404(scope_feed(request.user, makerspace.id, Notification.objects.filter(makerspace=makerspace)), pk=pk)
         if notification.read_at is None:
             notification.read_at = timezone.now()
             notification.save(update_fields=["read_at"])
+            audit.record(request.user, "notification.read", makerspace=makerspace, target=notification)
         return Response(NotificationSerializer(notification).data)
 
 
@@ -150,10 +152,13 @@ class NotificationMarkAllReadView(APIView):
     )
     def post(self, request, makerspace_id, *args, **kwargs):
         makerspace = _makerspace_for_manager(request.user, makerspace_id)
-        updated = Notification.objects.filter(
+        updated = Notification.objects.filter(pk__in=list(scope_feed(request.user, makerspace.id, Notification.objects.filter(
             makerspace=makerspace,
             read_at__isnull=True,
-        ).update(read_at=timezone.now())
+        )).values_list("pk", flat=True))).update(read_at=timezone.now())
+        if updated:
+            audit.record(request.user, "notification.read_all", makerspace=makerspace, target=makerspace,
+                         meta={"updated": updated})
         return Response({"updated": updated})
 
 def _is_guest_only(user, makerspace_id):

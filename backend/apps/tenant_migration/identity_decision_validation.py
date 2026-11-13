@@ -11,6 +11,19 @@ from .protocol_errors import MembershipDependencyError
 
 def validate_membership_dispositions(archive, decisions):
     """Reject dropped memberships whose non-null archived dependents survive."""
+    # One account per person: a source "staff" row is an inert merged shell (a split-format
+    # staff account was decorated into a person), and both shells and platform provenance
+    # become new inert rows. A person's staff roles travel with the person's decision.
+    source_kinds = {str(row["id"]): row.get("account_kind", "member") for row in archive.rows("accounts.User")}
+    for item in decisions:
+        if source_kinds.get(str(item["source_user_id"])) in {"platform", "staff"} and (
+            item["identity_resolution"] != ImportIdentityDecision.IdentityResolution.CREATE_WALK_IN
+            or item.get("target_user_id") is not None
+        ):
+            raise MembershipDependencyError("Platform provenance and merged shells must become new inert rows.")
+        if item.get("grant_staff_roles") and (
+                item["identity_resolution"] != ImportIdentityDecision.IdentityResolution.LINK_EXISTING):
+            raise MembershipDependencyError("Only a linked person's staff roles take an explicit grant.")
     dropped_users = {
         str(item["source_user_id"])
         for item in decisions

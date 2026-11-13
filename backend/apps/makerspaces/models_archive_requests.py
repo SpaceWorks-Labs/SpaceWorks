@@ -1,3 +1,4 @@
+from django.utils.translation import gettext_lazy
 from django.conf import settings
 from django.db import models
 from django.db.models import Q
@@ -33,7 +34,7 @@ class MakerspaceArchiveRequest(models.Model):
     resolved_at = models.DateTimeField(null=True, blank=True)
     reason = models.TextField(
         max_length=2000,
-        help_text="Do not include personal data. Maximum 2,000 characters.",
+        help_text=gettext_lazy("Do not include personal data. Maximum 2,000 characters."),
     )
     resolution_note = models.TextField(blank=True, max_length=2000)
     status = models.CharField(

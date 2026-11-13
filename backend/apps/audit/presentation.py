@@ -3,7 +3,8 @@
 The staff audit list, the request timeline and the audit-trail CSV all call this, so
 there is no second path that can hand ``row.meta`` to a reader. It fails closed:
 
-- an action absent from the catalogue gets a fixed "unrecognized" label and ``{}``;
+- an action absent from the catalogue gets ``{}`` and a fixed "unrecognized" label, unless
+  it is a reviewed wrapper action (``presentation_fallback_labels``), which reads as words;
 - an action under the dynamic deny policy gets ``{}`` (its label may still be shown);
 - otherwise only the catalogue's exact LEAF paths are rebuilt, and only when the stored
   value is a scalar or a flat list of scalars -- a dict where a leaf was declared means
@@ -14,12 +15,15 @@ there is no second path that can hand ``row.meta`` to a reader. It fails closed:
 
 from dataclasses import dataclass
 
+from config.locale_resolution import display
+
 from .presentation_catalog import (
     LINK_RESOLVERS,
     PRESENTATION_CATALOG,
     UNRECOGNIZED_LABEL,
     is_denied,
 )
+from .presentation_fallback_labels import LABEL_ONLY_ACTIONS, humanized_label
 
 _MISSING = object()
 _SCALARS = (str, int, float, bool, type(None))
@@ -87,7 +91,12 @@ def target_link(row):
 
 def action_label(action):
     entry = PRESENTATION_CATALOG.get(action)
-    return entry.label if entry is not None else UNRECOGNIZED_LABEL
+    if entry is not None:
+        return display(entry.label)
+    # A reviewed wrapper action reads as words; its metadata stays denied (see module doc).
+    if action and (is_denied(action) or action in LABEL_ONLY_ACTIONS):
+        return humanized_label(action)
+    return display(UNRECOGNIZED_LABEL)
 
 
 def project(row):

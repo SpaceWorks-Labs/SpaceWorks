@@ -8,7 +8,7 @@ wait on GitHub, and must never break because GitHub is down.
 from django.core.management.base import BaseCommand
 
 from apps.makerspaces import github_contributions
-from apps.makerspaces.models import MemberProfile
+from apps.makerspaces.models import AccountProfile
 
 
 class Command(BaseCommand):
@@ -27,7 +27,7 @@ class Command(BaseCommand):
                 "GITHUB_API_TOKEN is not set — contribution counts are dormant."
             )
             return
-        profiles = MemberProfile.objects.exclude(github_username="")
+        profiles = AccountProfile.objects.exclude(github_username="")
         updated = skipped = failed = 0
         for profile in profiles:
             if not options["all"] and not github_contributions.due_for_sync(profile):

@@ -1,0 +1,100 @@
+import { formatLocale } from "../../lib/format";
+import { t } from "@lingui/core/macro";
+import { useState } from "react";
+
+import { ErrorBlock, ListRow, OverflowMenu, Pagination, SegmentedControl, StatusBadge } from "../../components/ui";
+import { QueryContent } from "../../components/layouts/LayoutFrame";
+import { opsQueryState, opsStatusLabel } from "./opsPresentation";
+import { BookingDecisionDialog } from "./BookingDecisionDialog";
+import { useBookingQueue, type QueueStatus } from "./bookingQueueApi";
+import { useBookableSpaces, useBookingAction, type Booking } from "./bookingsApi";
+import { RequestedPrice } from "./pricing/RequestedPrice";
+import { linkedEventText } from "./BookingAgenda";
+import { BulkDecisionBar } from "./bulk/BulkDecisionBar";
+import { useQueryClient } from "@tanstack/react-query";
+
+const statusOptions = (): { value: QueueStatus; label: string }[] => [
+  { value: "pending", label: t`Awaiting review` }, { value: "confirmed", label: t`Confirmed` },
+  { value: "rejected", label: t`Rejected` }, { value: "cancelled", label: t`Cancelled` },
+  // BK1: finished and missed bookings were reachable only per room.
+  { value: "completed", label: t`Completed` }, { value: "no_show", label: t`No-show` }, { value: "all", label: t`All` },
+];
+
+function when(booking: Booking) {
+  const format = new Intl.DateTimeFormat(formatLocale(), { dateStyle: "medium", timeStyle: "short" });
+  return `${format.format(new Date(booking.starts_at))} – ${format.format(new Date(booking.ends_at))}`;
+}
+
+/** The Requests queue: every booking awaiting review across the spaces this person manages. */
+export function BookingQueuePanel({ makerspaceId, status, onStatus, onOpenBooking }: {
+  makerspaceId: number; status: QueueStatus; onStatus: (status: QueueStatus) => void;
+  onOpenBooking: (booking: Booking) => void;
+}) {
+  const [page, setPage] = useState(1);
+  const [space, setSpace] = useState(0);
+  const queue = useBookingQueue(makerspaceId, status, page, space || undefined);
+  const spaces = useBookableSpaces(makerspaceId);
+  const rooms = (spaces.data?.results ?? []).filter(room => room.is_active);
+  const action = useBookingAction(makerspaceId);
+  const [rejecting, setRejecting] = useState<Booking | null>(null);
+  const [actingOn, setActingOn] = useState<number | null>(null);
+  const approve = (booking: Booking) => { setActingOn(booking.id); action.mutate({ bookingId: booking.id, action: "approve" }, { onSettled: () => setActingOn(null) }); };
+  const data = queue.data;
+  const queryClient = useQueryClient();
+  return (
+    <section aria-labelledby="booking-queue-title" className="grid gap-4">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h2 id="booking-queue-title" className="title-panel">{t`Requests `}<span className="tabular-nums">({data?.count ?? 0})</span></h2>
+          <p className="mt-1 text-sm text-muted">{t`Approve or decline booking requests across all your spaces. Requesters are notified either way.`}</p>
+        </div>
+        <SegmentedControl label={t`Request status`} value={status} options={statusOptions()}
+          onChange={value => { onStatus(value as QueueStatus); setPage(1); }} />
+      </div>
+      {rooms.length > 1 ? <label className="grid max-w-sm gap-1 text-sm">{t`Space`}
+        <select className="desk-input max-w-full" value={space} onChange={event => { setSpace(Number(event.target.value)); setPage(1); }}>
+          <option value={0}>{t`All your spaces`}</option>
+          {rooms.map(room => <option key={room.id} value={room.id}>{room.name}</option>)}
+        </select></label> : null}
+      {action.error ? <ErrorBlock error={action.error} /> : null}
+      {/* Decision 242 / U5: approve or reject this page's waiting requests together (all or nothing). */}
+      {status === "pending" ? <BulkDecisionBar title={t`Decide several booking requests`}
+        rows={(data?.results ?? []).filter(booking => booking.status === "pending").map(booking => ({ id: booking.id, label: `${booking.name} · ${booking.space_name ?? t`Space`} · ${when(booking)}` }))}
+        decisions={[{ key: "approve", label: t`Approve` }, { key: "reject", label: t`Reject`, needsReason: true, danger: true }]}
+        path={decision => `/admin/bulk/bookings/${decision}`}
+        onDone={() => { void queryClient.invalidateQueries({ queryKey: ["booking-queue"] }); void queryClient.invalidateQueries({ queryKey: ["booking-space"] }); void queryClient.invalidateQueries({ queryKey: ["dashboard", makerspaceId] }); }} /> : null}
+      <QueryContent state={opsQueryState(queue, "booking requests")} isEmpty={data?.results.length === 0}
+        empty={{ message: status === "pending" ? t`Nothing to review. New booking requests appear here.` : t`No bookings match this filter.` }}>
+        <ul className="grid gap-3">
+          {data?.results.map(booking => (
+            <li key={booking.id}>
+              <ListRow title={booking.name} identity={{ kind: "date", date: booking.starts_at }}
+                meta={<>{booking.space_name ?? t`Space`} · {when(booking)}
+                  {booking.linked_event ? <span className="mt-1 block font-medium text-ink">{linkedEventText(booking.linked_event)}</span> : null}
+                  {booking.is_house ? <span className="mt-1 block">{t`House booking (no member, no charge)`}</span> : null}
+                  {booking.organization_name ? <span className="mt-1 block">{t`For organization: ${booking.organization_name}`}</span> : null}
+                  {booking.decision_reason ? <span className="mt-1 block">{t`Reason: ${booking.decision_reason}`}</span> : null}
+                  <RequestedPrice booking={booking} /></>}
+                onClick={() => onOpenBooking(booking)}
+                right={<div className="flex flex-wrap items-center justify-end gap-2">
+                  <StatusBadge status={booking.status} label={opsStatusLabel(booking.status)} />
+                  {booking.status === "pending" ? <>
+                    <button type="button" className="desk-button-brand min-h-11" disabled={action.isPending && actingOn === booking.id}
+                      onClick={() => approve(booking)}>{action.isPending && actingOn === booking.id ? t`Approving…` : t`Approve`}</button>
+                    <OverflowMenu label={t`More actions for ${booking.name}`} actions={[
+                      { label: t`Reject with reason`, tone: "danger", onClick: () => setRejecting(booking) },
+                      { label: t`Open in space`, onClick: () => onOpenBooking(booking) },
+                    ]} />
+                  </> : <button type="button" className="desk-button-ghost min-h-11" onClick={() => onOpenBooking(booking)}>{t`Open`}</button>}
+                </div>} />
+            </li>
+          ))}
+        </ul>
+        {data && data.count > 24 ? <Pagination page={page} pageSize={24} count={data.count} totalPages={Math.ceil(data.count / 24)} onChange={setPage} /> : null}
+      </QueryContent>
+      <BookingDecisionDialog key={rejecting?.id ?? "none"} open={rejecting !== null} action="reject" bookerName={rejecting?.name ?? ""}
+        pending={action.isPending} onCancel={() => setRejecting(null)}
+        onConfirm={reason => rejecting && action.mutate({ bookingId: rejecting.id, action: "reject", reason }, { onSettled: () => setRejecting(null) })} />
+    </section>
+  );
+}

@@ -1,5 +1,6 @@
-from rest_framework.exceptions import AuthenticationFailed, PermissionDenied
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, TokenRefreshSerializer
+from django.utils.translation import gettext
+from rest_framework.exceptions import AuthenticationFailed
+from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 from rest_framework_simplejwt.settings import api_settings
 
 from apps.accounts.models import User
@@ -18,7 +19,7 @@ class SpaceWorksTokenRefreshSerializer(TokenRefreshSerializer):
         def validate_token(refresh):
             if any(claim in refresh.payload for claim in DEVICE_REFRESH_CLAIMS):
                 raise AuthenticationFailed(
-                    "Device refresh tokens must use the device refresh endpoint.",
+                    gettext("Device refresh tokens must use the device refresh endpoint."),
                     code="device_refresh_wrong_endpoint",
                 )
             validate_auth_generation(refresh)
@@ -44,6 +45,14 @@ class SpaceWorksTokenRefreshSerializer(TokenRefreshSerializer):
                     self.error_messages["no_active_account"],
                     code="no_active_account",
                 )
+            from apps.accounts.surface_policy import validate_account_token
+            validate_account_token(user, refresh)
+            from apps.accounts.session_issuance import validate_session_generation
+            validate_session_generation(user, refresh)
+            from apps.accounts.session_context import validate_context
+            requested = self.context.get("session_context")
+            if requested is not None:
+                validate_context(refresh, requested)
             from apps.accounts.mfa_policy import assert_verified
             assert_verified(user, refresh)
             from apps.accounts.web_sessions import validate_session
@@ -51,13 +60,22 @@ class SpaceWorksTokenRefreshSerializer(TokenRefreshSerializer):
             return user
 
         def mint_replacement(refresh, _user):
+            from apps.accounts.mfa_policy import restore_proof, stamp_claims
+            restore_proof(_user, refresh)
+            stamp_claims(_user, refresh)
+            previous_iat = refresh.get("iat")
             refresh.set_jti()
             refresh.set_exp()
             refresh.set_iat()
+            from apps.accounts.staff_session_policy import stamp_rotated
+            stamp_rotated(_user, refresh, previous_iat)
             from apps.accounts.web_sessions import extend_session
             extend_session(_user, refresh)
             refresh.outstand()
-            data = {"access": str(refresh.access_token)}
+            from apps.accounts.serializers_payload import user_payload
+            data = {"access": str(refresh.access_token),
+                    "user": user_payload(_user, request=self.context.get("request"),
+                                         session_authority=refresh["surface"])}
             data["refresh"] = str(refresh)
             return data
 

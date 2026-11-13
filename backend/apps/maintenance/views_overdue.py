@@ -7,7 +7,8 @@ from rest_framework import generics, serializers
 from apps.accounts import rbac
 from apps.admin_api.permissions import IsActiveStaff
 from apps.machines import role_scope
-from apps.makerspaces.guards import require_module
+from apps.makerspaces.local_time import to_local
+from apps.makerspaces.folded_capabilities import MACHINES_MAINTENANCE, require_capability
 from apps.makerspaces.servability import servable_queryset
 from apps.maintenance.models import MaintenanceSchedule
 from apps.openapi_errors import errors
@@ -34,13 +35,12 @@ class OverdueMaintenanceListView(generics.ListAPIView):
         action = rbac.Action.MANAGE_MACHINES
         space = get_object_or_404(rbac.scope_by_action(actor, action, servable_queryset(), field="id"),
                                  pk=self.kwargs["makerspace_id"])
-        require_module(space, "maintenance")
-        require_module(space, "machines")
+        require_capability(space, MACHINES_MAINTENANCE)
         query = rbac.scope_by_action(actor, action, MaintenanceSchedule.objects.all(),
                                      field="machine__makerspace_id")
         scope = role_scope.manage_scope_for(actor, space.pk)
         from .meters import due_queryset
-        query = due_queryset(query.filter(machine__makerspace=space, is_active=True), timezone.localdate())
+        query = due_queryset(query.filter(machine__makerspace=space, is_active=True), to_local(space, timezone.now()).date())
         return query.filter(
             role_scope.scope_q_for(scope, machine_id_paths=("machine_id",),
                                    type_id_paths=("machine__machine_type_id",)),

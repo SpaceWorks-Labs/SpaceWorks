@@ -1,0 +1,22 @@
+{% load i18n unfold %}{% comment %}/control/ home: limits and quotas near their limit (config.control_limits).{% endcomment %}
+{% component "unfold/components/card.html" with title=_("Limits near quota") %}
+    <div data-testid="control-home-limits">
+    {% if not control_limits.ok %}
+        <p class="text-sm">{% translate "Limits could not be read just now." %}</p>
+    {% elif control_limits.rows %}
+        <ul class="flex flex-col gap-3 text-sm">
+            {% for row in control_limits.rows %}
+                <li>
+                    <div class="flex justify-between gap-4"><span><span class="font-semibold">{{ row.space.name }}</span> &middot; {{ row.label }}</span>
+                        <span class="tabular-nums">{{ row.percent }}%</span></div>
+                    <div class="sw-meter {% if row.level == 'limit' %}sw-meter--danger{% else %}sw-meter--warning{% endif %}" role="img" aria-label="{% blocktranslate with percent=row.percent trimmed %}{{ percent }} percent used{% endblocktranslate %}"><span style="width: {{ row.bar }}%"></span></div>
+                </li>
+            {% endfor %}
+        </ul>
+        {% if control_limits.more %}<p class="text-sm mt-2">{% blocktranslate count counter=control_limits.more trimmed %}And {{ counter }} more.{% plural %}And {{ counter }} more.{% endblocktranslate %}</p>{% endif %}
+    {% else %}
+        <p class="text-sm">{% translate "No space is close to a limit. Every limit is off until you set one." %}</p>
+    {% endif %}
+    {% if control_limits.link %}<p class="text-sm mt-3"><a class="underline" href="{{ control_limits.link }}">{% translate "See every space's limits" %}</a></p>{% endif %}
+    </div>
+{% endcomponent %}

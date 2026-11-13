@@ -5,8 +5,14 @@ from apps.makerspaces.secrets import decrypt_value, encrypt_value
 
 
 class PlatformPushSettings(models.Model):
+    class Meta:
+        # #188: plain-language admin name (the default plural was broken English).
+        verbose_name = "platform push settings"
+        verbose_name_plural = "platform push settings"
+
     id = models.PositiveSmallIntegerField(primary_key=True, default=1, editable=False)
     fcm_service_account = models.TextField(blank=True, default="")
+    firebase_web_config = models.JSONField(default=dict, blank=True)
     apns_private_key = models.TextField(blank=True, default="")
     apns_team_id = models.CharField(max_length=64, blank=True, default="")
     apns_key_id = models.CharField(max_length=64, blank=True, default="")

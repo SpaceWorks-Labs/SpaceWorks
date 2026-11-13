@@ -1,0 +1,17 @@
+{
+  "$id": "https://spaceworks.invalid/schemas/device-adapter/v1/command.media.snapshot.snapshot.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "watch_id": {
+      "format": "uuid",
+      "maxLength": 36,
+      "minLength": 36,
+      "type": "string"
+    }
+  },
+  "required": [
+    "watch_id"
+  ],
+  "type": "object"
+}

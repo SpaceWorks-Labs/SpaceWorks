@@ -14,9 +14,16 @@ from apps.bookings.services_bookings import (
     reject_booking,
 )
 from apps.bookings.services_rules import update_booking_rules
+from .services_clone import clone_space
+from .services_restore import restore_booking
+from .services_staff_edit import edit_booking_details, edit_booking_time
 from apps.makerspaces import limits
 
 __all__ = [
+    'clone_space',
+    'restore_booking',
+    'edit_booking_details',
+    'edit_booking_time',
     'approve_booking',
     'cancel_booking',
     'complete_booking',
@@ -36,8 +43,8 @@ __all__ = [
 def create_space(
     *, makerspace, actor, name, kind, description, capacity, location, is_public,
     show_public_availability=False, show_public_booker_names=False,
-    approval_mode=BookableSpace.ApprovalMode.INSTANT, custom_form=None,
-    requester_notifications_enabled=None, payment_amount=0, machine_type=None,
+    approval_mode=None, custom_form=None,
+    requester_notifications_enabled=None, payment_amount=0, machine_type=None, machine=None,
 ):
     return services_spaces.create_space(
         makerspace=makerspace,
@@ -56,6 +63,7 @@ def create_space(
         payment_amount=payment_amount,
         machine_type=machine_type,
         audit_service=audit,
+        machine=machine,
     )
 
 

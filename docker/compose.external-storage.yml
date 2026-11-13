@@ -1,26 +1,29 @@
 # No bundled storage and no dependency that could implicitly start it.
+# Each dependency is removed with !reset instead of replacing the whole depends_on map,
+# so this overlay stacks with compose.external-db.yml and compose.external-redis.yml.
+# ./storage-config holds capabilities.json (no credentials), written by the installer when
+# the operator describes the outside storage; STORAGE_CAPABILITIES_FILE in .env points at it.
 services:
   minio:
     profiles: [storage-disabled]
   createbuckets:
     profiles: [storage-disabled]
   backend:
-    depends_on: !override
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      orchestration-ready:
-        condition: service_completed_successfully
+    depends_on:
+      createbuckets: !reset null
+    volumes:
+      - ./storage-config:/run/spaceworks-storage:ro
   candidate-backend:
-    depends_on: !override
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-  app:
-    depends_on: !override
-      db:
-        condition: service_healthy
-      orchestration-ready:
-        condition: service_completed_successfully
+    depends_on:
+      createbuckets: !reset null
+    volumes:
+      - ./storage-config:/run/spaceworks-storage:ro
+  live:
+    volumes:
+      - ./storage-config:/run/spaceworks-storage:ro
+  worker:
+    volumes:
+      - ./storage-config:/run/spaceworks-storage:ro
+  beat:
+    volumes:
+      - ./storage-config:/run/spaceworks-storage:ro

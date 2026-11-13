@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "contract_version": 1,
+  "stage": "integration-order-step-1",
+  "common_base": "01ac3decc0d3f32817cbf8956bf8b26cc5d7e7e7",
+  "branch": "cloud/integration",
+  "recorded_on": "2026-10-18",
+  "initial_worktree_clean": true,
+  "initial_index_empty": true,
+  "owner_decisions": [36, 37, 38, 39, 40, 41, 42, 43],
+  "http_tick_approved": true,
+  "new_i_owned_paths": [
+    "backend/cloud_contracts/**",
+    "backend/config/cloud_settings/**",
+    "deploy/contracts/**",
+    "docs/deploy/cloud-contracts.md",
+    "docker-compose.managed.yml",
+    "docker-compose.managed-brokerless.yml",
+    "docker-compose.free.yml"
+  ],
+  "incoming_programmes": {"pages": null, "events": null, "reimbursement": null},
+  "baseline_execution": "not_run_owner_prohibits_Docker_and_Django",
+  "historical_failures": {"total": 63, "deployment_related": 46, "other": 17, "exemptions": 0},
+  "ao24": "not_verified",
+  "ao25": "not_verified",
+  "gates": [
+    "reviewed_lane_implementations",
+    "integrator_model_migrations_and_classification",
+    "both_profile_schema_client_generation",
+    "real_PostgreSQL_guard_loss_concurrency_resume",
+    "512MB_0.1CPU_single_web_evidence",
+    "full_profile_isolation",
+    "live_provider_and_Worker_acceptance"
+  ]
+}

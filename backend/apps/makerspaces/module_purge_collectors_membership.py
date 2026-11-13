@@ -25,7 +25,9 @@ def membership_public_image_keys(makerspace):
             profile__membership__makerspace=makerspace
         ).values_list("image_key", flat=True)
     )
-    return [key for key in dict.fromkeys(keys) if key]
+    from apps.makerspaces.account_profile_purge import without_account_held
+
+    return without_account_held(list(dict.fromkeys(keys)))
 
 
 def membership_private_keys(makerspace, add):
@@ -81,6 +83,17 @@ def membership_delete(makerspace, cursor):
         status=QrCode.Status.ACTIVE,
     ).update(status=QrCode.Status.REVOKED)
     cards, card_labels = _delete(MemberCard.objects.filter(makerspace=makerspace))
+    # Release 2 L3: member-card designs, their settings and the space-level approval switch.
+    from apps.card_designs.models import CardApprovalSetting, CardDesign
+    from apps.makerspaces.models import MemberCardSettings
+    _designs, design_labels = _delete(CardDesign.objects.filter(makerspace=makerspace, domain="member_cards"))
+    _settings, settings_labels = _delete(MemberCardSettings.objects.filter(makerspace=makerspace))
+    _approval, approval_labels = _delete(CardApprovalSetting.objects.filter(makerspace=makerspace, group="membership"))
+    from apps.card_designs.models_numbering import CardNumberCounter, CardNumberScheme
+    _schemes, scheme_labels = _delete(CardNumberScheme.objects.filter(makerspace=makerspace))
+    _counters, counter_labels = _delete(CardNumberCounter.objects.filter(makerspace=makerspace))
+    card_labels = (card_labels | design_labels | settings_labels | approval_labels | scheme_labels
+                   | counter_labels)
     # Terms before plans: a term PROTECTs its plan. Renewal Payment rows are money and
     # stay (the FK to them lives on the term side); the leads queue goes with the module.
     terms, term_labels = _delete(
@@ -88,11 +101,21 @@ def membership_delete(makerspace, cursor):
     )
     plans, plan_labels = _delete(MembershipPlan.objects.filter(makerspace=makerspace))
     leads, lead_labels = _delete(InvitationRequest.objects.filter(makerspace=makerspace))
+    # Decision 223: guest passes ride the membership module; their charges (`Payment`) stay.
+    from apps.makerspaces.guest_pass_purge import module_delete as guest_pass_delete
+    guest_passes, guest_pass_labels = guest_pass_delete(makerspace)
+    from apps.makerspaces.community_purge import module_delete as community_delete
+    community_rows, community_labels = community_delete(makerspace)
+    from apps.makerspaces.member_unit_purge import module_delete as unit_delete
+    unit_rows, unit_labels = unit_delete(makerspace)
     return _counts(
         model_labels=(
             profile_labels | request_labels | card_labels | term_labels | plan_labels
-            | lead_labels | admission_labels
+            | lead_labels | admission_labels | guest_pass_labels | community_labels | unit_labels
         ),
+        guest_passes=guest_passes,
+        community_rows=community_rows,
+        member_units=unit_rows,
         member_cards=cards,
         member_profiles=profiles,
         membership_requests=requests,

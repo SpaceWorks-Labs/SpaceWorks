@@ -1,23 +1,33 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { ListRow, RelativeTime, PagePager } from "../../components/ui";
+import { QueryContent } from "../../components/layouts/LayoutFrame";
 
 import { memberRequest, memberRequestBlob, staffRequest, staffRequestBlob } from "../../lib/api";
+import { formatMoney } from "../../lib/money";
+
+const kindLabel = (kind: PaymentDocument["kind"]) =>
+  kind === "receipt" ? t`Receipt` : kind === "credit_note" ? t`Credit note` : t`Bill`;
 
 export type PaymentDocument = {
-  id: number; payment: number; number: string; kind: "receipt" | "credit_note";
+  id: number; payment: number; number: string; kind: "receipt" | "credit_note" | "bill";
   amount: string; currency: string; issued_at: string; money_at: string;
+  status: string;
 };
 type DocumentPage = { count: number; next: string | null; previous: string | null; results: PaymentDocument[] };
 
-export function PaymentDocuments({ makerspaceId, audience }: { makerspaceId: number; audience: "member" | "staff" }) {
+export function PaymentDocuments({ makerspaceId, audience, initiallyExpanded = false }: { makerspaceId: number; audience: "member" | "staff"; initiallyExpanded?: boolean }) {
   const [page, setPage] = useState(1);
-  const [expanded, setExpanded] = useState(false);
+  const [kind, setKind] = useState("");
+  const [expanded, setExpanded] = useState(initiallyExpanded);
   const request = audience === "member" ? memberRequest : staffRequest;
   const base = audience === "member" ? `/member/makerspaces/${makerspaceId}` : `/admin/makerspace/${makerspaceId}`;
   const documents = useQuery({
-    queryKey: ["payment-documents", audience, makerspaceId, page],
-    queryFn: () => request<DocumentPage>(`${base}/payment-documents?page=${page}`),
+    queryKey: ["payment-documents", audience, makerspaceId, page, kind],
+    queryFn: () => request<DocumentPage>(`${base}/payment-documents?page=${page}${kind ? `&kind=${kind}` : ""}`),
     enabled: expanded,
+    refetchInterval: expanded ? 30_000 : false,
   });
   const download = useMutation({
     mutationFn: async (document: PaymentDocument) => {
@@ -29,28 +39,31 @@ export function PaymentDocuments({ makerspaceId, audience }: { makerspaceId: num
       const url = URL.createObjectURL(blob);
       const link = window.document.createElement("a");
       link.href = url;
-      link.download = `payment-document-${document.id}.pdf`;
+      link.download = `${document.number || `payment-document-${document.id}`}.pdf`.replace(/[\\/:*?"<>|]/g, "-");
       link.click();
-      URL.revokeObjectURL(url);
+      // Revoked a moment later: revoking in the same tick can abort the save in Firefox and Safari.
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
     },
   });
-  return <section className="mt-4 border-t border-line pt-4" aria-label="Receipt documents">
-    <h3 className="font-semibold text-ink">Receipts and credit notes</h3>
-    <button className="desk-button-secondary" type="button" aria-expanded={expanded} onClick={() => setExpanded(!expanded)}>{expanded ? "Hide documents" : "Show documents"}</button>
-    {expanded ? <>
-    {documents.isLoading ? <p className="text-sm text-muted">Loading documents...</p> : null}
-    {documents.error || download.error ? <p role="alert" className="text-sm text-danger">{(documents.error || download.error)?.message}</p> : null}
-    {documents.data?.count === 0 ? <p className="text-sm text-muted">No issued documents.</p> : null}
-    <ul className="space-y-2">{documents.data?.results.map((document) => <li key={document.id} className="flex flex-wrap items-center gap-2 text-sm">
-      <span>{document.kind === "receipt" ? "Receipt" : "Credit note"} {document.number}</span>
-      <span className="font-mono">{document.currency.toUpperCase()} {document.amount}</span>
-      <button className="desk-button-secondary" type="button" disabled={download.isPending} onClick={() => download.mutate(document)}>Download PDF</button>
-    </li>)}</ul>
-    {documents.data && documents.data.count > 24 ? <div className="mt-2 flex items-center gap-2">
-      <button className="desk-button-secondary" type="button" disabled={!documents.data.previous} onClick={() => setPage(page - 1)}>Previous</button>
-      <span>Page {page}</span>
-      <button className="desk-button-secondary" type="button" disabled={!documents.data.next} onClick={() => setPage(page + 1)}>Next</button>
+  return <section className="grid gap-4" aria-label={t`Payment documents`}>
+    {!initiallyExpanded ? <div className="flex flex-wrap items-center justify-between gap-3">
+      <h3 className="title-panel">{t`Bills, receipts and credit notes`}</h3>
+      <button className="desk-button" type="button" aria-expanded={expanded} onClick={() => setExpanded(!expanded)}>{expanded ? t`Hide documents` : t`Show documents`}</button>
     </div> : null}
-    </> : null}
+    {expanded ? <><label className="grid gap-1 text-sm">{t`Document kind`}<select className="desk-input" value={kind} onChange={event => { setKind(event.target.value); setPage(1); }}>
+        <option value="">{t`All documents`}</option><option value="bill">{t`Bills`}</option>
+        <option value="receipt">{t`Receipts`}</option><option value="credit_note">{t`Credit notes`}</option>
+      </select>
+    </label><QueryContent state={documents.isLoading ? { status: "loading" } : documents.error
+      ? { status: "error", error: t`Couldn't load documents. Try again.`, onRetry: () => { void documents.refetch(); } } : { status: "ready" }}
+      isEmpty={documents.data?.count === 0} empty={{ message: t`No issued documents match this filter.` }}>
+      <div className="grid gap-3">{documents.data?.results.map(document => <ListRow key={document.id}
+        title={`${kindLabel(document.kind)} ${document.number}`}
+        identity={{ kind: "date", date: document.issued_at }}
+        meta={<><span className="tabular-nums">{formatMoney(document.amount, document.currency)}</span>{document.status ? <span>{document.status}</span> : null}<span aria-hidden="true"> · </span><RelativeTime date={document.issued_at} /></>}
+        right={<button className="desk-button" type="button" disabled={download.isPending} onClick={() => download.mutate(document)}>{t`Download PDF`}</button>} />)}</div>
+      {documents.data ? <PagePager page={page} setPage={setPage} count={documents.data.count} next={documents.data.next} /> : null}
+    </QueryContent></> : null}
+    {download.error ? <p role="alert" className="text-sm text-danger">{download.error.message}</p> : null}
   </section>;
 }

@@ -3,6 +3,8 @@ from django.db import models
 
 from unfold.admin import ModelAdmin
 
+from apps.accounts.admin_pii_masking import PiiMaskingAdminMixin
+
 from apps.machines import services
 from apps.machines.models import (
     Machine,
@@ -13,8 +15,6 @@ from apps.machines.models import (
     MachineType,
     MachineUsageEntry,
     PrintingCutoverRepair,
-    RoleMachineScope,
-    RoleMachineTypeScope,
     PrintingCutoverState,
     MachineConsumablePool,
     MachineConsumableAdjustment,
@@ -25,11 +25,12 @@ from apps.machines.models import (
     ServiceRequestFile,
 )
 from config.admin_access import SuperuserOnlyModelAdmin
+from django.utils.translation import gettext_lazy
 
 
 @admin.register(MachineType)
 class MachineTypeAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
-    list_display = ("id", "slug", "name", "makerspace", "is_builtin", "managing_action")
+    list_display = ("name", "slug", "makerspace", "is_builtin", "managing_action")
     list_filter = ("is_builtin", "makerspace")
     search_fields = ("slug", "name", "makerspace__name")
     raw_id_fields = ("makerspace",)
@@ -37,8 +38,9 @@ class MachineTypeAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
     formfield_overrides = {
         models.JSONField: {
             "help_text": (
-                "requires_booking is not yet enforced. Machine time bookings are "
-                "not available; this flag does not block service requests or job starts."
+                "requires_booking: with Machine time booking on, a person using a machine of "
+                "this type must hold a live booking on it, and nobody may start a job while "
+                "someone else holds it."
             ),
         },
     }
@@ -54,7 +56,7 @@ class MachineTypeAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
 @admin.register(Machine)
 class MachineAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
     list_display = (
-        'id', 'name', 'makerspace', 'machine_type', 'status', 'is_public', 'is_active'
+        'name', 'makerspace', 'machine_type', 'status', 'is_public', 'is_active'
     )
     list_filter = ('status', 'is_public', 'is_active', 'makerspace', 'machine_type')
     search_fields = ("name", "location", "makerspace__name")
@@ -65,6 +67,7 @@ class MachineAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
         'is_public',
         "is_active",
         "image_key",
+        "open_to_all_members",
         "created_by",
         "created_at",
         "updated_at",
@@ -87,15 +90,15 @@ class MachineAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
         if done:
             self.message_user(request, f"{label} {done} machine(s).")
 
-    @admin.action(description="Retire selected machines")
+    @admin.action(description=gettext_lazy("Retire selected machines"))
     def retire_selected(self, request, queryset):
         self._run(request, queryset, services.retire_machine, "Retired")
 
-    @admin.action(description="Reactivate selected machines")
+    @admin.action(description=gettext_lazy("Reactivate selected machines"))
     def unretire_selected(self, request, queryset):
         self._run(request, queryset, services.unretire_machine, "Reactivated")
 
-    @admin.action(description="Set status: maintenance")
+    @admin.action(description=gettext_lazy("Set status: maintenance"))
     def mark_maintenance(self, request, queryset):
         self._run(
             request, queryset,
@@ -103,7 +106,7 @@ class MachineAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
             "Set maintenance on",
         )
 
-    @admin.action(description="Set status: idle")
+    @admin.action(description=gettext_lazy("Set status: idle"))
     def mark_idle(self, request, queryset):
         self._run(
             request, queryset,
@@ -133,7 +136,7 @@ class MachineOperatorAdmin(_ReadOnlyMachineChildAdmin):
 
 
 @admin.register(MachineUsageEntry)
-class MachineUsageEntryAdmin(_ReadOnlyMachineChildAdmin):
+class MachineUsageEntryAdmin(PiiMaskingAdminMixin, _ReadOnlyMachineChildAdmin):
     list_display = ("id", "machine", "hours", "source", "logged_by", "created_at")
     list_filter = ("source",)
     search_fields = ("machine__name",)
@@ -177,14 +180,14 @@ class MachineConsumableAdmin(_ReadOnlyMachineChildAdmin):
 
 @admin.register(ServiceBucket)
 class ServiceBucketAdmin(_ReadOnlyMachineChildAdmin):
-    list_display = ("id", "machine", "name", "is_active", "created_at")
+    list_display = ("name", "machine", "is_active", "created_at")
     list_filter = ("is_active", "machine")
     search_fields = ("machine__name", "name")
 
 
 @admin.register(ServiceQueue)
 class ServiceQueueAdmin(_ReadOnlyMachineChildAdmin):
-    list_display = ("id", "name", "makerspace", "machine_type", "is_active", "allocation_policy")
+    list_display = ("name", "makerspace", "machine_type", "is_active", "allocation_policy")
     list_filter = ("is_active", "allocation_policy", "machine_type")
     search_fields = ("name", "makerspace__name")
 
@@ -192,7 +195,7 @@ class ServiceQueueAdmin(_ReadOnlyMachineChildAdmin):
 @admin.register(MachineConsumablePool)
 class MachineConsumablePoolAdmin(_ReadOnlyMachineChildAdmin):
     list_display = (
-        "id", "label", "makerspace", "machine", "machine_type", "remaining_grams",
+        "label", "makerspace", "machine", "machine_type", "remaining_grams",
         "is_active", "is_public",
     )
     list_filter = ("is_active", "is_public", "material", "machine_type")
@@ -210,8 +213,8 @@ class MachineConsumableAdjustmentAdmin(_ReadOnlyMachineChildAdmin):
 
 
 @admin.register(MachineServiceRequest)
-class MachineServiceRequestAdmin(_ReadOnlyMachineChildAdmin):
-    list_display = ("id", "title", "bucket", "assigned_machine", "status", "created_at")
+class MachineServiceRequestAdmin(PiiMaskingAdminMixin, _ReadOnlyMachineChildAdmin):
+    list_display = ("title", "bucket", "assigned_machine", "status", "created_at")
     list_filter = ("status", "assigned_machine", "bucket__machine")
     search_fields = ("title", "requester_name", "contact_email")
     raw_id_fields = ("bucket", "requester", "assigned_machine")
@@ -233,30 +236,9 @@ class ServiceRequestConsumptionAdmin(_ReadOnlyMachineChildAdmin):
     raw_id_fields = ("service_request", "machine_consumable", "product", "created_by")
 
 
-@admin.register(RoleMachineTypeScope)
-class RoleMachineTypeScopeAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
-    """Which machine types a role's MANAGE_MACHINES grant reaches.
-
-    Writable here on purpose: this is the break-glass surface for a deployment that has
-    scoped a role down to nothing by accident, and the alternative is a shell. Staff edit
-    these through the role editor, which enforces the tenant match; the admin is
-    superadmin-only and `role_scope` re-checks the makerspace at resolution anyway, so a
-    bad row written here is inert rather than a cross-tenant leak.
-    """
-
-    list_display = ("id", "role", "machine_type", "created_at")
-    list_filter = ("role__makerspace",)
-    search_fields = ("role__name", "machine_type__name")
-    raw_id_fields = ("role", "machine_type")
-    readonly_fields = ("created_at",)
+# Per-machine and per-machine-type scope (decision 282), read-only (0.12.0).
+from apps.machines import admin_scope  # noqa: E402,F401
 
 
-@admin.register(RoleMachineScope)
-class RoleMachineScopeAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
-    """Which individual machines a role's MANAGE_MACHINES grant reaches."""
-
-    list_display = ("id", "role", "machine", "created_at")
-    list_filter = ("role__makerspace",)
-    search_fields = ("role__name", "machine__name")
-    raw_id_fields = ("role", "machine")
-    readonly_fields = ("created_at",)
+# Machine access grants (decision 319) and the retired certification history, read-only (0.12.0).
+from apps.machines import admin_access  # noqa: E402,F401

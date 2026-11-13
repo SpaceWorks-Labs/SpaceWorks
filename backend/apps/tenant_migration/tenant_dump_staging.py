@@ -15,6 +15,9 @@ MARKER_KIND = "spaceworks-tenant-dump-capture-v1"
 
 
 def staging_base():
+    if settings.SPACEWORKS_DEPLOYMENT_MODE == "managed":
+        import tempfile
+        return Path(tempfile.gettempdir(), "spaceworks-tenant-captures")
     configured = getattr(settings, "TENANT_DUMP_STAGING_DIR", "")
     return Path(configured or Path(settings.BACKUP_OPS_DIR, "tenant-dump-captures"))
 
@@ -44,6 +47,10 @@ def create_capture_root(capture_id):
 
 def require_owned_root(capture_id):
     root = capture_root(capture_id)
+    if settings.SPACEWORKS_DEPLOYMENT_MODE == "managed" and not root.exists():
+        from .cloud_capture_staging import hydrate
+        root.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+        hydrate(capture_id, root)
     try:
         payload = json.loads((root / MARKER).read_text(encoding="utf-8"))
     except (OSError, ValueError) as exc:
@@ -54,6 +61,13 @@ def require_owned_root(capture_id):
 
 
 def delete_owned_root(capture_id):
+    if settings.SPACEWORKS_DEPLOYMENT_MODE == "managed":
+        from apps.backup.managed.staging import retire_owner
+        retire_owner(capture_id)
+        root = capture_root(capture_id)
+        if root.exists():
+            shutil.rmtree(root)
+        return
     root = require_owned_root(capture_id)
     shutil.rmtree(root)
 

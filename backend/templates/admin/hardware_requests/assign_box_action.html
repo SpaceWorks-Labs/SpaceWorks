@@ -1,4 +1,5 @@
 {% extends "admin/base_site.html" %}
+{% load i18n %}
 
 {% block content %}
 <form method="post" action="{{ request.path }}">
@@ -9,7 +10,7 @@
     {% for obj in queryset %}
       <input type="hidden" name="{{ action_checkbox_name }}" value="{{ obj.pk }}">
       <div class="form-row">
-        <label for="id_box_code_{{ obj.pk }}">Request {{ obj.pk }}:</label>
+        <label for="id_box_code_{{ obj.pk }}">{% blocktranslate trimmed with pk=obj.pk %}Request {{ pk }}:{% endblocktranslate %}</label>
         <input id="id_box_code_{{ obj.pk }}" type="text" name="box_code_{{ obj.pk }}">
       </div>
     {% endfor %}

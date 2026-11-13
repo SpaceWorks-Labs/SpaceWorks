@@ -4,21 +4,22 @@
 > crossed the harness's memory-file size warning; nothing was dropped in the move. It has no
 > `AGENTS.md`-style twin — both names of that document point at this one path, so edit it in place.
 >
-> Read it before starting a build on this program: it carries the current program state, the Codex
-> gates, the worktree/test-harness conventions and the dev stack and isolated test runner. The
+> Read it before starting a build on this program: it carries the current program state, who does the
+> work (Claude agents; Codex is off), the worktree/test-harness conventions and the dev stack and isolated test runner. The
 > non-negotiable one-liners are quoted in `CLAUDE.md`; everything else — the *why*, and every trap
 > that has already cost a session — is here.
 
 ## Current work — FabLab expansion (branch `dev`)
 
-Active multi-part FabLab program built on `dev`. This is a **Codex-driven workflow** (Codex writes specs and
-code in parallel where files don't collide; Claude orchestrates and verifies). **What has shipped is listed
+Active multi-part program built on `dev`. It began as a **Codex-driven workflow**; since owner decision
+#119 (2026-10-27) Claude agents write, review and fix everything, in parallel worktrees where files do
+not collide, and a staging agent merges and verifies. **What has shipped is listed
 in `docs/PROJECT-HISTORY.md`** — do not maintain a second copy of that list here.
 
 **Programs already shipped on `dev`**, each with its rules in `docs/INVARIANTS.md` and its dated entry in
 `docs/PROJECT-HISTORY.md`: the FabLab modules (Events, Bookings, Maintenance, Analytics/reports, Machine
 Manager role, public self-booking + shared custom forms, the notification matrix, scoped PII encryption
-H1–H4, custom editable roles L); **Phase C** (capabilities toggles, Stripe payments, advisory geofenced
+H1–H4, historical custom editable roles L, replaced by seven fixed built-ins on 2026-10-16); **Phase C** (capabilities toggles, Stripe payments, advisory geofenced
 check-in, custom machine-type config, per-space pricing, Stripe Connect, reconciliation, native device
 sessions + push + PaymentSheet, social sign-in); machine-scoped `MANAGE_MACHINES`; deployment-removable
 `payments` + install profiles + `suggest_tombstones`; generic OIDC providers; phone + SMS login;
@@ -36,14 +37,12 @@ Merkle batches, organizations conferring actions across their makerspaces, and a
 protected route behind a `legacy:v1` cutover) — its rules are the two newest sections of
 `docs/INVARIANTS.md`.
 
-**Codex is AVAILABLE — verified 2026-08-15: `codex doctor` reports `auth is configured` (ChatGPT tokens,
-standalone runtime 0.147.0, all checks green) — so the Stage-1/2/4 gates in `~/.claude/CLAUDE.md` are LIVE
-and must be run.** It runs as the `gpt-5.6-sol` model at **high** reasoning effort
-(`model = "gpt-5.6-sol"`, `model_reasoning_effort = "high"` in `~/.codex/config.toml`). There was
-a stretch when `codex doctor` reported no credentials, during which Claude implemented directly and the
-owner waived those gates; that no longer applies. **Re-check `codex doctor` rather than trusting this
-paragraph** — it is the one claim here that goes stale without anyone editing the file, and it stayed wrong
-for weeks.
+**Codex is OFF; Claude agents do all the work (owner decision #119, 2026-10-27).** The owner briefly
+switched implementation to Codex (#118) and reversed it the same day: every build, plan review, code
+review and fix is done by Claude agents, and no Codex run is started unless the owner asks for it
+again. Where the global config sends Stage 1, 2 or 4 to `/run-codex`, a Claude agent does that stage.
+If Codex is turned back on, check `codex doctor` first; the earlier note that the gates were "LIVE"
+went stale for weeks without anyone editing it.
 
 **The commit-trailer rule is attribution, not ceremony:** name Codex in a `Co-Authored-By` trailer only on
 work Codex actually wrote. A Codex trailer on work it did not write is false attribution, and that overrides
@@ -51,7 +50,7 @@ the unconditional three-trailer rule in the global config — so the trailer set
 really wrote the code, never by the branch or the program.
 
 Per owner direction, the **single user QA is deferred to the very end** (after all Parts) — no per-Part QA
-gate. Specs live (gitignored) under `docs/superpowers/specs/2026-07-1*`. Commits sit **local and unpushed on
+gate. Commits sit **local and unpushed on
 `dev`**; **pushing is the owner's call alone.** Ask `git rev-list --count origin/dev..dev` rather than
 trusting any number written here.
 
@@ -68,11 +67,14 @@ plus their prior verdict returned both approvals in minutes.
 
 ## Standing build conventions for this program
 
+- **The Codex notes below apply only if the owner turns Codex back on (#119).**
 - **Parallel Codex via git worktree.** A second track runs in a sibling worktree (e.g. `../IM-nbuild` on its
   own branch) with a dedicated test DB, so two Codex builds don't collide on shared files (`rbac.py`,
   `origin_scope.py`, `admin_api/urls.py`, `openapi-schema.json`, `api.ts`). Worktrees are fresh checkouts →
-  **gitignored files (e.g. `backend/.env`) must be copied in**. Cap at 2 heavy builds. At the end: merge the
-  worktree branch → `dev`, `git worktree remove`, drop its DB.
+  **gitignored files (e.g. `backend/.env`) must be copied in**. Cap at 2 heavy builds. At the end, prepare
+  and verify the proposed merge, report exactly what would land, then hand it to the owner. **Only the
+  owner merges and pushes.** Keep the worktree until the owner has merged; remove it and its dedicated
+  test DB only after that handoff is complete.
 - **Codex gotchas.** Run Codex with skill-free prompts that skip reading this file, in the **background**
   (`run_in_background:true`) — the 10-min foreground ceiling is too short. Stage-4 = `codex exec review
   --uncommitted` (no `--sandbox`, no custom prompt; findings at the literal tail). If Codex dies with
@@ -86,7 +88,9 @@ plus their prior verdict returned both approvals in minutes.
   network and disposable Postgres 16 (tmpfs), Redis and MinIO, with no host ports or shared ops mounts.
   The current repository is mounted at `/workspace`, with pytest in `/workspace/backend`; explicit
   test environment values override any mounted `backend/.env`, and two Fernet keys are generated
-  inside `spaceworks-backend`. Build that image with `./scripts/dev.sh up --build` first.
+  inside `spaceworks-backend`. The runner rebuilds that image only when `backend/Dockerfile`,
+  `requirements.txt` or the font/runtime build scripts change (label `spaceworks.test-deps`;
+  force with `SPACEWORKS_TEST_REBUILD=1`), because the source itself is bind-mounted.
   Cleanup removes all run-labelled containers and the network, including on interruption.
   **Never run two `pytest` procs against one DB** (TRUNCATE-FK teardown races + false concurrency
   failures) and **never run the full suite concurrently with `codex review`** (it runs its own pytest).
@@ -97,6 +101,18 @@ plus their prior verdict returned both approvals in minutes.
   noise. This bullet once exempted `test_machine_image_presign_finalize_delete_and_audit` as a permitted
   MinIO-host-port failure; that test no longer exists in the tree and the exemption went with it. Do not
   reintroduce a "known failures" allowance without naming the test and the date it was granted.
+- **Affected tests for small changes; the full suite is the release gate.** `./scripts/dev.sh
+  affected [backend|frontend]` runs only what the change since `AFFECTED_BASE` can reach (default:
+  the branch upstream, else the previous commit; never `origin/dev`, which can sit hundreds of
+  commits behind a release branch). `scripts/affected_tests.py` selects the pytest files that import a
+  changed module or one of its direct importers (model/migration/view/URL/serializer changes widen
+  to the whole app; settings, requirements or conftest changes run everything), and the frontend
+  uses `vitest related`. Edited test files are gitignored, so pass them explicitly. Run the full
+  backend and frontend suites once before a release.
+- **Pre-push hook.** `./scripts/dev.sh hooks` enables `.githooks/pre-push`: repository rules on
+  every push, `tsc -b` + ESLint on changed files + related vitest for frontend changes, affected
+  pytest for backend changes. A push to `main` is refused unless `SPACEWORKS_FULL_SUITE_PASSED=1`
+  says the full regression passed on that commit. `SKIP_PREPUSH=1` skips it once.
 - **Local dev topology — everything in Docker with live reload.** `./scripts/dev.sh up --build`.
   The gitignored, machine-specific `docker-compose.override.yml` supplies local port remaps; the
   committed dev layer bind-mounts `./backend` and `./frontend`, runs Django with autoreload and
@@ -109,7 +125,7 @@ plus their prior verdict returned both approvals in minutes.
   **`scripts/dev.sh` exists because passing any `-f` to `docker compose` disables the automatic merge
   of `docker-compose.override.yml`.** It spells the chain out as base → override → dev, in that order: the
   override supplies the infrastructure port remaps, and the dev layer must come last so its app-service
-  commands, ports and bind mounts win. Other than `up`, `down`, `test` and `e2e`, every argument is
+  commands, ports and bind mounts win. Other than `up`, `down`, `test`, `affected`, `hooks` and `e2e`, every argument is
   forwarded verbatim to Compose. Three traps this topology already hit:
   - **The base file hands `backend`'s environment to `migrate`/`worker`/`beat` through a YAML anchor**, so a
     patch to `backend` alone never reaches them — the override applies the MinIO host-port rewrite to all
@@ -170,8 +186,40 @@ orchestration-ready and createbuckets, and removes those four containers only af
 A failure keeps the containers and prints a `dev.sh logs <svc>` hint. A later `up` recreates them;
 `restart` affects long-running services only. `down` keeps volumes unless you pass `-v`.
 
-- Public inventory page: `http://localhost:5000/m/makerspace`
+- Public Inventory page: `http://localhost:5000/m/makerspace/inventory` (makerspace overview: `http://localhost:5000/m/makerspace`)
 - API: `http://localhost:8000/api` — Swagger UI at `/docs/`, ReDoc at `/redoc/`, schema at `/schema/`.
+
+## Where tests live (decision 244)
+
+Every test is part of the repository and is committed. None is ever deleted to make a run pass.
+
+| Kind | Location | Run with |
+| --- | --- | --- |
+| Backend | `backend/tests/<app>/`, one package (with `__init__.py`) per app under `backend/apps/` | `./scripts/dev.sh test tests/<app>` |
+| Frontend unit and component | `*.test.ts` / `*.test.tsx` beside the code they cover, under `frontend/src/` | `npm test -- <file> --pool=forks --maxWorkers=1` from `frontend/` |
+| End to end | `frontend/e2e/` | `./scripts/dev.sh e2e` |
+
+The layout stays under `backend/tests/` rather than inside each app because the shared `conftest.py` fixtures
+and the path-pinned guard tests depend on it.
+
+Cross-cutting suites also live there by purpose rather than by app (`limits_0120/`, `completeness/`,
+`parity_0120/`, `open_items_0120/`, `modules/`, `legacy_worktree_imports/`, …). Some small apps are covered
+only by those suites and have no folder of their own yet (for example `boxes`, `card_designs`,
+`id_programmes`, `managed_hosting`, `printing`, `space_controls`, `storage_capabilities`): a new test for one
+of them starts its `backend/tests/<app>/` package.
+
+A test that cannot pass in this release because its feature is not in this release is **skip-marked with a
+reason that names the missing feature**, never removed:
+
+- Backend: a module-level `pytest.skip("Not in release X: <feature>", allow_module_level=True)` placed
+  before the imports that would fail.
+- Frontend: `it.skip(...)` / `describe.skip(...)`, or the file lives under `frontend/legacy-worktree-imports/`,
+  which `frontend/vite.config.ts` excludes from the run.
+
+Each feature gets condition coverage: module or capability on and off, each role allowed and refused, the
+happy path, validation errors, idempotency or concurrency where relevant, cross-space isolation, and money and
+session rules where money is involved. Run the changed and affected areas, not the whole suite, while
+working; run the full suite once before a release.
 
 ## The `live` service (SSE)
 
@@ -187,7 +235,7 @@ eager, broker-less local flow) makes the endpoint answer 503 and the console kee
 
 `frontend/e2e/` drives a REAL stack — never mocks — and pins the Hard Rules through a browser and a real
 presigned upload to object storage. `./scripts/dev.sh up --build`, then `./scripts/dev.sh e2e`
-is the recipe for a laptop and CI. Install host frontend dependencies with `cd frontend && npm ci`
+is the local recipe before pushing. Install host frontend dependencies with `cd frontend && npm ci`
 and Chromium with `npx playwright install --with-deps chromium` first. The script polls the running
 Django :8000 health endpoint and Vite :5000 for up to 60 seconds, runs `seed_e2e --write-json` in
 backend, copies the seed JSON to `frontend/e2e/.seed.json`, and passes its native host path to
@@ -196,9 +244,54 @@ from one IP. Seeding refuses unless `DEBUG` or `E2E_SEED_ALLOWED=1`.
 
 Each seed run creates a fresh random `e2e-<token>` tenant with users and immutable workflow records;
 those tenants accumulate in the persistent dev database, isolated from other data. `dev.sh down -v`
-wipes that database when wanted; CI starts fresh on each runner. Seed identifiers are loaded by
+wipes that database when wanted. Seed identifiers are loaded by
 `frontend/e2e/helpers.ts` from the output of
 `backend/apps/operations/management/commands/seed_e2e.py`.
 
 Unit-level accessibility checks use `frontend/src/test/axe.ts` (jsdom cannot compute
 colour contrast; `e2e/a11y.spec.ts` covers that in Chromium).
+
+Run tests locally before pushing (`.githooks/pre-push`; `./scripts/dev.sh hooks` enables it):
+`./scripts/dev.sh affected` for everyday changes, and `./scripts/dev.sh test`, `npm test` and
+`./scripts/dev.sh e2e` as the full regression before a release. GitHub Actions also runs the committed
+suites (decision 244): `.github/workflows/tests.yml` runs the backend suite in six shards through the same
+isolated `scripts/dev.sh test` runner, and the whole vitest suite, on PRs into `main`/`dev`, pushes to `dev`
+and by hand (Playwright e2e stays local: it needs the dev stack). Otherwise GitHub Actions runs basic
+checks: it builds/publishes backend/frontend images, creates the GitHub Release, promotes rolling
+tags and optionally deploys through the self-hosted runner; `security-audit.yml` runs `pip-audit`
+when the requirements change and weekly.
+
+## CI checks (`.github/workflows/checks.yml`)
+
+The **Checks** workflow runs on every PR into `main` or `dev`, on pushes to `dev`, and by hand. It runs
+**checks only** (owner decision #108), so a green Checks run is not a test run; the committed suites run
+in the separate **Tests** workflow (`tests.yml`, decision 244). Its four jobs are the required status checks on `main`, plus `version-bump` (below, PRs into `main` only); keep their names:
+
+- **`version-bump`** — pull requests into `main` only: `scripts/ci/check_version_bump.py` requires `VERSION` to be strictly higher than `main`'s, 
+  the settings/OpenAPI/README version strings to match, `docs/release-<VERSION>.md` to exist and no `v<VERSION>` tag to exist yet. 
+  `release.yml` repeats the "VERSION changed" check on every push to `main`. Bump with `sh scripts/bump-version.sh <new-version>`; 
+  see `docs/project/release-process.md`.
+- **`frontend`** — `npm ci`, then `npx tsc -b` and `npm run lint` side by side (ESLint,
+  `frontend/eslint.config.js`: the recommended JS and typescript-eslint rules plus the rules of
+  hooks; `exhaustive-deps` only warns, and the test suites are not linted), then
+  `npm run build:bundle` (Vite + the PWA verify script; `npm run build` would type-check again).
+- **`backend`** — Python 3.12 from `.github/actions/backend-python` (a virtualenv cached by the
+  `requirements.txt` hash), `scripts/ci/lint_backend.sh` (ruff, errors only: syntax, undefined names,
+  redefinitions, repeated dict keys; style rules stay in the gitignored local `ruff.toml`),
+  `manage.py check`, `manage.py makemigrations --check --dry-run`. Settings
+  get dummy values plus keys from `scripts/ci/throwaway_keys.py` (`SECRET_KEY` and the
+  Fernet keys, including the mandatory `PII_MASTER_KEY`); no database or service is started.
+- **`contracts`** — regenerates the OpenAPI snapshot (`spectacular --format openapi-json`) and fails on
+  any diff with `frontend/openapi-schema.json`; reruns `npm run generate:api` and fails if
+  `frontend/src/generated/api.ts` changes; runs `validate_catalog()`, so a stale
+  `CATALOG_SCHEMA_SHA256` fails here.
+- **`rules`** — `scripts/ci/check_rules.py`: the 300-line ceiling over tracked, non-migration, non-test,
+  non-generated source files in `backend/apps`, `backend/config` and `frontend/src`, with an empty
+  allowlist. It also checks `CLAUDE.md` == `AGENTS.md` and enforces
+  no tracked plans, prompts, hand-offs, lane notes or research notes (#148b; `planning_reason` lists the
+  folders and note names it refuses, help articles excepted, and `.gitignore` carries the same patterns).
+
+Run the rules locally with `python scripts/ci/check_rules.py` from anywhere in the repo; it measures
+tracked files only, so local test trees never affect it. The backend and contracts commands need Linux
+(`apps/backup` imports `fcntl`), so run them in a `python:3.12-slim` container or the backend image
+rather than a Windows venv, with the same dummy env the workflow sets.

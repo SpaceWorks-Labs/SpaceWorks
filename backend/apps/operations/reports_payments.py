@@ -12,6 +12,7 @@ from django.db.models import (
 )
 from django.db.models.functions import Coalesce
 
+from apps.accounts import rbac
 from apps.operations.report_registry import ReportResult
 from apps.operations.report_scope import scoped_ids
 from apps.payments.models import ManualSettlement, Payment, Refund
@@ -39,9 +40,12 @@ def build_payment_reconciliation(
     date_range=None,
     subject_type=None,
     status=None,
+    actor=None,
 ):
     aggregate = makerspace_id is None
     queryset = Payment.objects.filter(makerspace_id__in=scoped_ids(makerspace_id))
+    queryset = (rbac.scope_by_action(actor, rbac.Action.VIEW_FINANCE, queryset) if actor is not None
+                else rbac.scope_for_scheduled_work(queryset))
     if subject_type:
         queryset = queryset.filter(subject_type=subject_type)
     if status:
@@ -60,7 +64,7 @@ def build_payment_reconciliation(
     # from" for both rails. Currencies are never combined -- `currency` stays a grouping
     # key, so a space taking both INR and USD gets one row per currency, never a total
     # that silently adds them.
-    money = DecimalField(max_digits=20, decimal_places=2)
+    money = DecimalField(max_digits=21, decimal_places=3)
     queryset = queryset.annotate(
         refund_total=Coalesce(
             Subquery(Refund.objects.filter(payment_id=OuterRef("pk"), status=Refund.Status.SUCCEEDED, amended_by__isnull=True)

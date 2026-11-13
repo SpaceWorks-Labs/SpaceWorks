@@ -1,9 +1,12 @@
 import { lazy } from "react";
 
+export const AnalyticsPanel = lazy(() => import("./analytics/AnalyticsPanel").then((m) => ({ default: m.AnalyticsPanel })));
+export const PlatformSpacesPanel = lazy(() => import("./platformSpaces/PlatformSpacesPanel").then((m) => ({ default: m.PlatformSpacesPanel })));
 export const PlatformDashboardPanel = lazy(() => import("./PlatformDashboardPanel").then((m) => ({ default: m.PlatformDashboardPanel })));
 export const TenantUsagePanel = lazy(() => import("./TenantUsagePanel").then((m) => ({ default: m.TenantUsagePanel })));
 
 export const DevicesPanel = lazy(() => import("./panels/DevicesPanel").then((m) => ({ default: m.DevicesPanel })));
+export const SchedulePanel = lazy(() => import("./schedule/SchedulePanel").then((m) => ({ default: m.SchedulePanel })));
 export const DashboardPanel = lazy(() => import("./panels/DashboardPanel").then((m) => ({ default: m.DashboardPanel })));
 export const NotificationInbox = lazy(() => import("./panels/NotificationInbox").then((m) => ({ default: m.NotificationInbox })));
 export const DirectLoans = lazy(() => import("./DirectLoans").then((m) => ({ default: m.DirectLoans })));
@@ -12,6 +15,8 @@ export const Ledger = lazy(() => import("./panels/Ledger").then((m) => ({ defaul
 export const MachinesPanel = lazy(() => import("./panels/MachinesPanel").then((m) => ({ default: m.MachinesPanel })));
 export const EventsPanel = lazy(() => import("./EventsPanel").then((m) => ({ default: m.EventsPanel })));
 export const OrganizedEventsPanel = lazy(() => import("./panels/OrganizedEventsPanel").then((m) => ({ default: m.OrganizedEventsPanel })));
+export const GrantedEventsPanel = lazy(() => import("./GrantedEventsPanel").then((m) => ({ default: m.GrantedEventsPanel })));
+export const GrantedBookingSpacesPanel = lazy(() => import("./GrantedBookingSpacesPanel").then((m) => ({ default: m.GrantedBookingSpacesPanel })));
 export const OrganizationAnalyticsPanel = lazy(() => import("./panels/OrganizationAnalyticsPanel").then((m) => ({ default: m.OrganizationAnalyticsPanel })));
 export const OrganizationsPanel = lazy(() => import("./panels/OrganizationsPanel").then((m) => ({ default: m.OrganizationsPanel })));
 export const BookingsPanel = lazy(() => import("./BookingsPanel").then((m) => ({ default: m.BookingsPanel })));
@@ -33,15 +38,23 @@ export const EmailLogPanel = lazy(() => import("./panels/DeliveryLogPanel").then
 export const WarrantyPanel = lazy(() => import("./panels/WarrantyPanel").then((m) => ({ default: m.WarrantyPanel })));
 export const AccountabilityPanel = lazy(() => import("./panels/AccountabilityPanel").then((m) => ({ default: m.AccountabilityPanel })));
 export const Categories = lazy(() => import("./panels/Categories").then((m) => ({ default: m.Categories })));
-export const NeedsFixShelf = lazy(() => import("./panels/NeedsFixShelf").then((m) => ({ default: m.NeedsFixShelf })));
+export const NeedsFixTab = lazy(() => import("./panels/NeedsFixTab").then((m) => ({ default: m.NeedsFixTab })));
 export const ApiClientsPanel = lazy(() => import("./ApiClientsPanel").then((m) => ({ default: m.ApiClientsPanel })));
-export const PlatformEmailPanel = lazy(() => import("./PlatformEmailPanel").then((m) => ({ default: m.PlatformEmailPanel })));
-export const PlatformStripeConnectPanel = lazy(() => import("./PlatformStripeConnectPanel").then((m) => ({ default: m.PlatformStripeConnectPanel })));
-export const PlatformSocialAuthPanel = lazy(() => import("./PlatformSocialAuthPanel").then((m) => ({ default: m.PlatformSocialAuthPanel })));
+export const PlatformSettingsPanel = lazy(() => import("./PlatformSettingsPanel").then((m) => ({ default: m.PlatformSettingsPanel })));
+export const SecuritySettingsPanel = lazy(() => import("./SecuritySettingsPanel").then((m) => ({ default: m.SecuritySettingsPanel })));
 export const MakerspaceSettingsPanel = lazy(() => import("./MakerspaceSettingsPanel").then((m) => ({ default: m.MakerspaceSettingsPanel })));
 export const ModulesPanel = lazy(() => import("./ModulesPanel").then((m) => ({ default: m.ModulesPanel })));
 export const PaymentsPanel = lazy(() => import("./PaymentsPanel").then((m) => ({ default: m.PaymentsPanel })));
+export const FinancePanel = lazy(() => import("../finance/FinancePanel").then((m) => ({ default: m.FinancePanel })));
+export const RefundQueue = lazy(() => import("./refunds/RefundQueue").then((m) => ({ default: m.RefundQueue })));
+export const EventPayoutsSection = lazy(() => import("./EventPayoutsSection").then((m) => ({ default: m.EventPayoutsSection })));
 export const HandoverConsole = lazy(() => import("./panels/machine/HandoverConsole").then((m) => ({ default: m.HandoverConsole })));
 export const DataExportsPanel = lazy(() => import("./DataExportsPanel").then((m) => ({ default: m.DataExportsPanel })));
 export const BackupRestorePanel = lazy(() => import("./BackupRestorePanel").then((m) => ({ default: m.BackupRestorePanel })));
 export const TenantMigrationPanel = lazy(() => import("./TenantMigrationPanel").then((m) => ({ default: m.TenantMigrationPanel })));
+export const RepairsPanel = lazy(() => import("./repairs/RepairsPanel").then((m) => ({ default: m.RepairsPanel })));
+export const IncidentRegister = lazy(() => import("../incidents/IncidentRegister").then((m) => ({ default: m.IncidentRegister })));
+export const ConsumablesPanel = lazy(() => import("./panels/ConsumablesPanel").then((m) => ({ default: m.ConsumablesPanel })));
+export const ShopPanel = lazy(() => import("./shop/ShopPanel").then((m) => ({ default: m.ShopPanel })));
+export const DonationsArea = lazy(() => import("./sponsors/DonationsArea").then((m) => ({ default: m.DonationsArea })));
+

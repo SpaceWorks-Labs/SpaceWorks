@@ -1,11 +1,17 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { formatDateTime, formatLocale } from "../../lib/format";
+import { plural, t } from "@lingui/core/macro";
+import { useEffect, useState } from "react";
 
-import { EmptyState, Skeleton, StatusBadge } from "../../components/ui";
-import { StructuredApiError } from "../../lib/api";
-import { CollaborationInbox } from "./CollaborationInbox";
+import { EmptyState, ListRow, StatusBadge } from "../../components/ui";
+import { FormPageLayout, ListLayout } from "../../components/layouts";
+import { opsQueryState, opsStatusLabel } from "./opsPresentation";
+import { StructuredApiError, isSurfaceOff } from "../../lib/api";
+import { useEventCollaborationReview } from "./EventCollaborationReview";
+import { EventCreatePreview } from "./EventCreatePreview";
+import { EventPartnersSection, emptyPartnerValues, partnerPayload } from "./EventPartnersSection";
 import { EventDrawer } from "./EventDrawer";
+import { EventRegistrationQueue } from "./EventRegistrationQueue";
 import { EventSeriesDrawer } from "./EventSeriesDrawer";
-import { EventSeriesCollaborationInbox } from "./EventSeriesCollaborationInbox";
 import { EventSeriesFields, emptySeriesForm, seriesPayload } from "./EventSeriesForm";
 import { eventErrorText } from "./eventUi";
 import {
@@ -15,96 +21,152 @@ import {
   type EventFormValues,
 } from "./EventFormFields";
 import { useCreateEvent, useEvents, type StaffEvent } from "./eventsApi";
-import { useCreateEventSeries, useEventSeriesList } from "./eventSeriesApi";
+import { EVENT_SERIES_PAGE_SIZE, useCreateEventSeries, useEventSeriesList } from "./eventSeriesApi";
 import { useUrlListState } from "../../lib/useUrlListState";
 import { ListViewControls } from "./ListViewControls";
-import { useSearchParams } from "react-router-dom";
-import { Panel } from "./panels/shared";
+import { useLocation, useSearchParams } from "react-router-dom";
 import { useQuickCreate } from "./quickCreate";
+import { useDomainSettingsDialog } from "./useDomainSettingsDialog";
+import { useAreaPaymentsDrawer } from "./areaPayments/useAreaPaymentsDrawer";
+import { EventSurfaceSettings } from "./eventPublishing/EventSurfaceSettings";
+import { EventRoomStep, emptyRoomChoice, roomStepPayload } from "./EventRoomStep";
+import { roomFailureText, useCreateEventWithRoom } from "./eventVenueApi";
+import { toast } from "../../components/ui/toastStore";
+import { EventInsightsCard, spaceInsightsPath } from "./eventProgramme/EventInsightsCard";
 
 export { EventDrawer };
 
 function dateRange(event: StaffEvent) {
-  return `${new Date(event.starts_at).toLocaleString()} – ${new Date(event.ends_at).toLocaleString()}`;
+  return `${new Date(event.starts_at).toLocaleString(formatLocale())} – ${new Date(event.ends_at).toLocaleString(formatLocale())}`;
 }
 
-export function EventsPanel({ makerspaceId }: { makerspaceId: number }) {
+export function EventsPanel({ makerspaceId, enabledFeatures = [], enabledModules = [], publicSiteEnabled = false }: {
+  makerspaceId: number; enabledFeatures?: string[]; enabledModules?: string[]; publicSiteEnabled?: boolean;
+}) {
   const list = useUrlListState({ q: "", status: "", ordering: "starts_at", page: "1" });
   const { page, setPage } = list;
   const [params, setParams] = useSearchParams();
-  const events = useEvents(makerspaceId, page, list.query);
+  // Notices link to /admin/events/<id> (desk links) as well as ?event=<id>; either opens that event.
+  const pathEventId = /\/events\/(\d+)(?:\/|$)/.exec(useLocation().pathname)?.[1] ?? null;
+  const isSeries = params.get("eventsView") === "series";
+  // Open item A22: the cross-event queue of registrations waiting on staff.
+  const isQueue = params.get("eventsView") === "queue";
+  // Parity E-F3 (A21): top events and the returning share, while events.space_insights is on.
+  const insightsOn = enabledFeatures.includes("events.space_insights");
+  const isInsights = insightsOn && params.get("eventsView") === "insights";
+  const events = useEvents(makerspaceId, isSeries ? 1 : page, isSeries ? "" : list.query);
   const create = useCreateEvent(makerspaceId);
-  const series = useEventSeriesList(makerspaceId);
+  const createWithRoom = useCreateEventWithRoom(makerspaceId);
+  const [room, setRoom] = useState(emptyRoomChoice);
+  const roomStep = enabledModules.includes("bookings") ? roomStepPayload(room) : null;
+  const roomIncomplete = enabledModules.includes("bookings") && room.mode !== "none" && !roomStep;
+  const series = useEventSeriesList(makerspaceId, isSeries ? page : 1);
   const createSeries = useCreateEventSeries(makerspaceId);
   const [values, setValues] = useState<EventFormValues>(emptyEventForm);
   const [seriesValues, setSeriesValues] = useState(emptySeriesForm);
+  const [partners, setPartners] = useState(emptyPartnerValues);
+  const [audienceEdited, setAudienceEdited] = useState(false);
+  const [seriesAudienceEdited, setSeriesAudienceEdited] = useState(false);
+  useEffect(() => {
+    setValues(emptyEventForm); setSeriesValues(emptySeriesForm); setPartners(emptyPartnerValues);
+    setAudienceEdited(false); setSeriesAudienceEdited(false); setRoom(emptyRoomChoice);
+  }, [makerspaceId]);
+  const defaultAudience = events.data?.default_registration_audience;
+  const newValues = defaultAudience && !audienceEdited ? { ...values, registration_audience: defaultAudience } : values;
+  const newSeriesValues = defaultAudience && !seriesAudienceEdited ? { ...seriesValues, registration_audience: defaultAudience } : seriesValues;
   const [creationMode, setCreationMode] = useState<"single" | "series">("single");
-  const [selectedId, setSelectedId] = useState<number | null>(() => Number(params.get("event")) || null);
-  const linkedId = params.get("event");
+  const [selectedId, setSelectedId] = useState<number | null>(() => Number(params.get("event") ?? pathEventId) || null);
+  const linkedId = params.get("event") ?? pathEventId;
   useEffect(() => { setSelectedId(Number(linkedId) || null); }, [linkedId]);
   const closeSelection = () => { setSelectedId(null); setParams((current) => { const next = new URLSearchParams(current); next.delete("event"); return next; }); };
   const [selectedSeriesId, setSelectedSeriesId] = useState<number | null>(null);
-  useQuickCreate("event", () => { setCreationMode("single"); document.querySelector<HTMLElement>("[data-create-event] input")?.focus(); });
+  const [creating, setCreating] = useState(false);
+  useQuickCreate("event", () => { setCreationMode("single"); setCreating(true); });
+  // The Event Manager owns the events.* switches and event defaults (domain-settings API).
+  // L1: the event report switches (DY-61) and the embed allow-list sit below the switches.
+  const eventSettings = useDomainSettingsDialog(makerspaceId, "events", true, <EventSurfaceSettings makerspaceId={makerspaceId} />, publicSiteEnabled);
+  // Decision 242(a): every event charge type the Event Manager owns, settled from inside Events.
+  const eventPayments = useAreaPaymentsDrawer(makerspaceId, "events");
 
-  function submit(event: FormEvent) {
-    event.preventDefault();
-    create.mutate(payloadFor(values), {
-      onSuccess: (created) => {
-        setValues(emptyEventForm);
-        setSelectedId(created.id);
-      },
-    });
+  function submit() {
+    // Unknown default and untouched field: let the server apply the space's default audience.
+    const { registration_audience: audience, ...rest } = payloadFor(newValues);
+    const extras = partnerPayload(partners, newValues.registration_audience === "participating_organizations");
+    const body = defaultAudience || audienceEdited ? { ...rest, ...extras, registration_audience: audience } : { ...rest, ...extras };
+    const done = (id: number) => {
+      setCreating(false);
+      setValues(emptyEventForm); setAudienceEdited(false); setPartners(emptyPartnerValues); setRoom(emptyRoomChoice);
+      openEvent(id);
+    };
+    // Decision 223 G6: with a room step the draft and its room go in one call; a failed room keeps the draft.
+    if (roomStep) createWithRoom.mutate({ event: body, room: roomStep }, { onSuccess: ({ event, room: result }) => {
+      if (result.status === "failed") toast(t`The event was created as a draft, but the room step failed: ${roomFailureText(result)} Retry from the venue panel.`, { tone: "error" });
+      else toast(result.booking_status === "pending" ? t`Event created. The room request awaits approval.` : t`Event created with its room.`, { tone: "success" });
+      done(event.id);
+    } });
+    else create.mutate(body, { onSuccess: (created) => done(created.id) });
   }
-  function submitSeries(event: FormEvent) {
-    event.preventDefault();
-    createSeries.mutate(seriesPayload(seriesValues), {
+  function submitSeries() {
+    const { registration_audience: seriesAudience, ...seriesRest } = seriesPayload(newSeriesValues);
+    createSeries.mutate(defaultAudience || seriesAudienceEdited ? { ...seriesRest, registration_audience: seriesAudience } : seriesRest, {
       onSuccess: (created) => {
-        setSeriesValues(emptySeriesForm);
+        setCreating(false);
+        setSeriesValues(emptySeriesForm); setSeriesAudienceEdited(false);
         setSelectedSeriesId(created.series.id);
       },
     });
   }
 
-  const apiError = events.error instanceof StructuredApiError ? events.error : null;
-  if (apiError?.status === 403) return <Panel title="Events"><EmptyState title="Permission required" description="Event management access is required." /></Panel>;
-  if (apiError?.status === 400 && apiError.body.module) return <Panel title="Events"><EmptyState title="Events module unavailable" description={apiError.message} /></Panel>;
-
-  return <Panel title="Events">
-    <ListViewControls state={list} makerspaceId={makerspaceId} entity="events" sorts={[["starts_at", "Starts first"], ["-starts_at", "Starts last"], ["title", "Title"]]} />
-    <label className="text-xs text-muted">Status<select className="desk-input" value={list.values.status} onChange={(event) => list.setFilter("status", event.target.value)}><option value="">All</option>{["draft", "published", "cancelled", "completed"].map((value) => <option key={value}>{value}</option>)}</select></label>
-    <p className="mb-4 text-sm text-muted">Create events, review applications, and record attendance.</p>
-    <CollaborationInbox makerspaceId={makerspaceId} />
-    <EventSeriesCollaborationInbox makerspaceId={makerspaceId} />
-    <div className="mb-3 flex gap-2" role="group" aria-label="Event type"><button className={creationMode === "single" ? "desk-button-primary" : "desk-button"} type="button" onClick={() => setCreationMode("single")}>One-time event</button><button className={creationMode === "series" ? "desk-button-primary" : "desk-button"} type="button" onClick={() => setCreationMode("series")}>Recurring series</button></div>
-    <form data-create-event className="mb-5 rounded-xl border border-line bg-bg p-4" onSubmit={creationMode === "single" ? submit : submitSeries}>
-      <h3 className="title-section mb-3">Create draft {creationMode === "single" ? "event" : "series"}</h3>
-      {creationMode === "single" ? <EventFields values={values} setValues={setValues} /> : <EventSeriesFields values={seriesValues} setValues={setSeriesValues} />}
-      <div className="mt-3 flex flex-wrap items-center gap-3">
-        <button className="desk-button-primary" type="submit" disabled={create.isPending || createSeries.isPending}>{create.isPending || createSeries.isPending ? "Creating..." : creationMode === "single" ? "Create event" : "Create series"}</button>
-        {create.error || createSeries.error ? <p className="text-sm text-danger" role="alert">{eventErrorText(create.error || createSeries.error)}</p> : null}
-      </div>
-    </form>
-    <section className="mb-5"><h3 className="title-section mb-3">Recurring series</h3>{series.isLoading ? <Skeleton className="h-20 w-full" /> : null}{series.error ? <p className="text-sm text-danger" role="alert">{eventErrorText(series.error)}</p> : null}{series.data && !series.data.results.length ? <p className="text-sm text-muted">No recurring series yet.</p> : null}<div className="grid gap-2">{series.data?.results.map((row) => <button key={row.id} className="desk-button-ghost justify-between border border-line p-3" type="button" onClick={() => setSelectedSeriesId(row.id)}><span className="text-left"><span className="font-semibold">{row.title}</span><span className="block text-xs text-muted">{row.next_occurrence_at ? `Next: ${new Date(row.next_occurrence_at).toLocaleString()}` : "No future occurrence"} · {row.future_occurrence_count} buffered</span></span><StatusBadge status={row.status} /></button>)}</div></section>
-    {events.isLoading ? <div className="grid gap-2" aria-label="Loading events">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-16 w-full" />)}</div> : null}
-    {events.error ? <EmptyState title="Unable to load events" description={eventErrorText(events.error)} action={<button className="desk-button" type="button" onClick={() => events.refetch()}>Retry</button>} /> : null}
-    {events.data && !events.data.results.length ? <EmptyState title="No events yet" description="Create the first draft event above." /> : null}
-    {events.data?.results.length ? <div className="overflow-x-auto rounded-xl border border-line">
-      <table className="w-full text-left text-sm"><caption className="sr-only">Events in chronological order</caption>
-        <thead className="bg-surface"><tr><th className="eyebrow p-3">Event</th><th className="eyebrow p-3">Status</th><th className="eyebrow p-3">Capacity</th><th className="eyebrow p-3">Registrations</th></tr></thead>
-        <tbody>{events.data.results.map((item) => <tr key={item.id} className="border-t border-line">
-          <td className="p-3"><button className="desk-button-ghost h-auto justify-start px-0 text-left" type="button" onClick={() => setSelectedId(item.id)}>{item.title}</button><span className="mt-1 block font-mono text-xs text-muted">{dateRange(item)}{item.location ? ` · ${item.location}` : ""}</span></td>
-          <td className="p-3"><StatusBadge status={item.status} /></td>
-          <td className="p-3 font-mono">{item.capacity === 0 ? "Unlimited" : item.capacity}</td>
-          <td className="p-3 font-mono">{item.registration_counts.registered + item.registration_counts.attended} confirmed · {item.registration_counts.pending_approval} pending</td>
-        </tr>)}</tbody>
-      </table>
-    </div> : null}
-    {events.data ? <div className="mt-3 flex items-center justify-between gap-3 text-sm">
-      <button className="desk-button" type="button" disabled={!events.data.previous} onClick={() => setPage((current) => Math.max(1, current - 1))}>Previous</button>
-      <span className="font-mono text-muted">Page {page}{" - "}{events.data.count} total</span>
-      <button className="desk-button" type="button" disabled={!events.data.next} onClick={() => setPage((current) => current + 1)}>Next</button>
-    </div> : null}
-    {selectedId !== null ? <EventDrawer key={selectedId} eventId={selectedId} makerspaceId={makerspaceId} onClose={closeSelection} /> : null}
-    {selectedSeriesId !== null ? <EventSeriesDrawer key={selectedSeriesId} seriesId={selectedSeriesId} makerspaceId={makerspaceId} onClose={() => setSelectedSeriesId(null)} onSelectOccurrence={(eventId) => { setSelectedSeriesId(null); setSelectedId(eventId); }} /> : null}
-  </Panel>;
+  // Tabs are server-side status filters (the API filters by status, not date), so every page of
+  // events is reachable — filtering one fetched page in the browser used to hide events.
+  const statusTabs = [{ key: "all", label: t`All` }, { key: "published", label: t`Published` }, { key: "draft", label: t`Drafts` }, { key: "completed", label: t`Completed` }, { key: "cancelled", label: t`Cancelled` }];
+  const view = { active: isSeries ? "series" : isQueue ? "queue" : isInsights ? "insights" : list.values.status || "all",
+    tabs: [...statusTabs.map(tab => ({ ...tab, href: "#" })), { key: "queue", label: t`Waiting on you`, href: "#" },
+      { key: "series", label: t`Series`, href: "#", count: series.data?.count }, ...(insightsOn ? [{ key: "insights", label: t`Insights`, href: "#" }] : [])] };
+  const selectTab = (key: string) => {
+    setParams(current => {
+      const next = new URLSearchParams(current);
+      if (key === "series" || key === "queue" || key === "insights") next.set("eventsView", key); else next.delete("eventsView");
+      if (key === "all" || key === "series" || key === "queue" || key === "insights") next.delete("status"); else next.set("status", key);
+      next.delete("page");
+      return next;
+    });
+  };
+  const collaborations = useEventCollaborationReview(makerspaceId);
+  const activeError = isSeries ? series.error : events.error;
+  const apiError = activeError instanceof StructuredApiError ? activeError : null;
+  const denied = apiError?.status === 403 || isSurfaceOff(apiError);
+  const rows = events.data?.results ?? [];
+  const shown = rows;
+  const organizationAudience = enabledFeatures.includes("events.organization_audience");
+  const openEvent = (id: number) => { setSelectedId(id); setParams(current => { const next = new URLSearchParams(current); next.set("event", String(id)); return next; }); };
+  if (selectedId !== null) return <EventDrawer key={selectedId} eventId={selectedId} makerspaceId={makerspaceId} enabledFeatures={enabledFeatures} enabledModules={enabledModules} onClose={closeSelection}
+    onOpenSeries={seriesId => { closeSelection(); setSelectedSeriesId(seriesId); }} />;
+  if (selectedSeriesId !== null) return <EventSeriesDrawer key={selectedSeriesId} seriesId={selectedSeriesId} makerspaceId={makerspaceId} enabledFeatures={enabledFeatures} onClose={() => setSelectedSeriesId(null)} onSelectOccurrence={id => { setSelectedSeriesId(null); openEvent(id); }} />;
+  if (creating) return <FormPageLayout state={{ status: "ready" }} header={{ title: creationMode === "single" ? t`New event` : t`New series`, subtitle: t`Start with a draft. Publish when every detail is ready.` }}
+    back={{ label: t`All events`, onClick: () => setCreating(false) }} cancel={{ label: t`Cancel`, onClick: () => setCreating(false) }}
+    form={<div data-create-event>{creationMode === "single" ? <><EventFields layout="split" organizationAudienceEnabled={organizationAudience} onlineEnabled={enabledFeatures.includes("events.online_delivery")} values={newValues} setValues={(next) => { if (next.registration_audience !== newValues.registration_audience) setAudienceEdited(true); setValues(next); }}
+        moreExtras={<EventPartnersSection values={partners} setValues={setPartners} hostId={makerspaceId} audienceSelected={newValues.registration_audience === "participating_organizations"} />} />
+        {creationMode === "single" && enabledModules.includes("bookings") ? <div className="mt-4"><EventRoomStep makerspaceId={makerspaceId} start={newValues.starts_at} end={newValues.ends_at} capacity={Number(newValues.capacity) || 0} value={room} onChange={setRoom} /></div> : null}</>
+      : <EventSeriesFields organizationAudienceEnabled={organizationAudience} values={newSeriesValues} setValues={(next) => { if (next.registration_audience !== newSeriesValues.registration_audience) setSeriesAudienceEdited(true); setSeriesValues(next); }} />}
+      {create.error || createSeries.error || createWithRoom.error ? <p className="mt-3 text-sm text-danger" role="alert">{eventErrorText(create.error || createSeries.error || createWithRoom.error)}</p> : null}</div>}
+    preview={{ label: t`Event preview`, content: <EventCreatePreview values={creationMode === "single" ? newValues : newSeriesValues} currency={events.data?.results[0]?.currency} /> }}
+    submit={{ label: creationMode === "single" ? t`Create event` : t`Create series`, pending: create.isPending || createSeries.isPending || createWithRoom.isPending, pendingLabel: t`Creating…`,
+      disabled: events.isPending || (creationMode === "single" && roomIncomplete), disabledReason: events.isPending ? t`Loading this space's default registration audience.` : creationMode === "single" && roomIncomplete ? t`Finish the venue step or choose “No room for now”.` : undefined, onClick: creationMode === "single" ? submit : submitSeries }} />;
+  return <div><ListLayout
+    header={{ title: t`Events`, subtitle: t`Bring people together. Make something happen.`, primary: denied ? undefined : { label: t`New event`, onClick: () => { setCreationMode("single"); setCreating(true); } }, secondary: denied ? undefined : { label: t`New series`, onClick: () => { setCreationMode("series"); setCreating(true); } }, overflow: denied ? undefined : [...eventSettings.actions, ...eventPayments.actions] }}
+    callout={denied ? undefined : collaborations.callout}
+    state={denied || isQueue || isInsights ? { status: "ready" } : opsQueryState(view.active === "series" ? series : events, "events")}
+    isEmpty={Boolean(denied) || (!isQueue && !isInsights && (view.active === "series" ? !series.data?.results.length : !events.data?.count))}
+    empty={{ message: denied ? apiError?.status === 403 ? t`Event management access is required.` : t`The events module is unavailable.` : view.active === "series" ? t`No series yet. Create your first recurring event.` : t`Your events will appear here. Create your first event.`, action: denied ? undefined : { label: t`New event`, onClick: () => { setCreationMode("single"); setCreating(true); } } }}
+    tabs={view.tabs} activeTab={view.active} onTabChange={selectTab}
+    filtered={!isQueue && !isInsights && view.active !== "series" && Boolean(list.values.q || list.values.status)}
+    filteredEmpty={{ message: list.values.q ? t`No events match this search. Try another title.` : t`No ${opsStatusLabel(list.values.status).toLowerCase()} events.`, action: { label: t`Clear filters`, onClick: () => list.update({ q: "", status: "" }) } }}
+    filters={isSeries || isQueue || isInsights ? undefined : { toolbar: <ListViewControls state={list} makerspaceId={makerspaceId} entity="events" searchLabel="Search events" sorts={[["starts_at", "Starts first"], ["-starts_at", "Starts last"], ["title", "Title"]]} /> }}
+    body={{ kind: "rows", rows: isInsights ? <EventInsightsCard path={spaceInsightsPath(makerspaceId)} onOpenEvent={openEvent} /> : isQueue ? <EventRegistrationQueue makerspaceId={makerspaceId} onOpenEvent={openEvent} /> : view.active === "series" ? series.data?.results.map(row => <ListRow key={row.id} title={row.title} onClick={() => setSelectedSeriesId(row.id)} draft={row.status === "draft"} identity={row.next_occurrence_at ? { kind: "date", date: row.next_occurrence_at } : { kind: "icon", icon: "Calendar", tone: "accent" }} meta={`${plural(row.future_occurrence_count, { one: "# upcoming date scheduled", other: "# upcoming dates scheduled" })} · ${row.next_occurrence_at ? formatDateTime(row.next_occurrence_at) : t`No future dates`}`} right={<StatusBadge domain="event" status={row.status} label={opsStatusLabel(row.status)} />} />) : !shown.length ? <EmptyState message={view.active === "all" ? t`No events match this search.` : t`No ${opsStatusLabel(view.active).toLowerCase()} events.`} /> : shown.map(item => <ListRow key={item.id} title={item.title} identity={{ kind: "date", date: item.starts_at }} draft={item.status === "draft"} onClick={() => openEvent(item.id)} meta={<>{dateRange(item)}{item.location ? ` · ${item.location}` : ""}<span className="block">{t`${item.registration_counts.pending_approval} pending approval`}</span></>} right={<div className="grid justify-items-end gap-2"><StatusBadge domain="event" status={item.status} label={opsStatusLabel(item.status)} /><span className="text-sm tabular-nums">{item.capacity ? t`${item.registration_counts.registered + item.registration_counts.attended} of ${item.capacity} going` : t`${item.registration_counts.registered + item.registration_counts.attended} going`}</span>{item.capacity ? <progress className="h-1 w-28 accent-accent" value={item.registration_counts.registered + item.registration_counts.attended} max={item.capacity} aria-label={t`${item.title} places filled`} /> : null}</div>} />) }}
+    pagination={isQueue || isInsights ? undefined : isSeries ? series.data ? { page, pageSize: EVENT_SERIES_PAGE_SIZE, count: series.data.count, onChange: setPage } : undefined : events.data ? { page, pageSize: 24, count: events.data.count, onChange: setPage } : undefined}
+    detail={denied ? undefined : collaborations.detail} />
+    {eventSettings.dialog}
+    {eventPayments.dialog}
+  </div>;
 }

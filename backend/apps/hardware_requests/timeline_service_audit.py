@@ -28,20 +28,21 @@ def _reference_clauses(request_pk):
     return clauses
 
 
-def request_audit_rows(hardware_request):
+def request_audit_rows(hardware_request, actor=None):
     query = Q(target_type=REQUEST_TARGET_TYPE, target_id=str(hardware_request.pk))
     query |= _reference_clauses(hardware_request.pk)
-    return (
-        AuditLog.objects.filter(makerspace_id=hardware_request.makerspace_id)
-        .filter(query)
-        .select_related("actor")
-        .order_by("created_at", "pk")
-    )
+    rows = AuditLog.objects.filter(makerspace_id=hardware_request.makerspace_id).filter(query)
+    if actor is not None:
+        # Open item B1: never rely on every correlated row being lending/handover; a future
+        # non-lending action that references a request stays out of a narrower reader's timeline.
+        from apps.audit.area_scope import scope_audit_rows
+        rows = scope_audit_rows(actor, rows)
+    return rows.select_related("actor").order_by("created_at", "pk")
 
 
-def audit_events(hardware_request, make_event):
+def audit_events(hardware_request, make_event, actor=None):
     events = []
-    for row in request_audit_rows(hardware_request):
+    for row in request_audit_rows(hardware_request, actor):
         projection = project(row)
         events.append(
             make_event(

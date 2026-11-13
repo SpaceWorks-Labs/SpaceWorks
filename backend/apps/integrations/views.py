@@ -1,21 +1,24 @@
+from django.utils.translation import gettext
+from .notification_cutover import guarded, sending_allowed, CutoverClosed
 import logging
 
-from django.conf import settings
 from django.shortcuts import get_object_or_404
-from django.utils.crypto import constant_time_compare
-from drf_spectacular.utils import OpenApiResponse, extend_schema
+from drf_spectacular.utils import OpenApiResponse, extend_schema, inline_serializer
+from rest_framework import serializers
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
 from apps.accounts import rbac
+from apps.audit import services as audit
 from apps.accounts.models import User
 from apps.integrations.serializers import (
     TelegramTestAlertSerializer,
     TelegramWebhookSerializer,
 )
 from apps.integrations.telegram import TelegramDeliveryError, send_message
+from .notification_telegram_callbacks import handle_start, webhook_secret_ok
 from apps.makerspaces.models import Makerspace
 from apps.makerspaces.guards import require_module
 from apps.openapi_errors import errors
@@ -24,37 +27,34 @@ logger = logging.getLogger(__name__)
 
 
 class TelegramWebhookView(APIView):
-    """Accept-and-ignore. Telegram is a notification channel, not an action surface.
+    """Verify private account-link proofs; acknowledge and discard all decisions.
 
-    The accept/reject buttons are gone and this endpoint no longer touches the request
-    workflow. **The route is kept anyway**, deliberately: a deployment that has already
-    called `setWebhook` has this URL registered with Telegram, we cannot call
-    `deleteWebhook` on its behalf, and Telegram retries a non-2xx response for hours. A
-    200 acknowledgement is the graceful retirement; a 404 would be a permanent error loop
-    in someone else's infrastructure.
-
-    The secret check stays for the same reason it was added -- `from.id` in the payload is
-    attacker-controllable and the endpoint must stay closed to strangers -- and because
-    the moment a callback DID something again, an endpoint that had quietly stopped
-    checking would be the vulnerability.
+    Telegram is a notification channel, not an action surface: every `callback_query`
+    is acknowledged and discarded and nothing here reaches the request workflow. The
+    route is kept because a deployment that already called `setWebhook` would otherwise
+    have Telegram retry a 404 for hours. The only state it may change is a personal
+    endpoint link from a private `/start <code>` message, and only after the secret
+    header has been verified -- `from.id` in the payload is attacker-controllable.
     """
 
     permission_classes = [AllowAny]
+    authentication_classes = []
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = "telegram_webhook"
 
     @extend_schema(
         tags=["Telegram"],
-        summary="Acknowledge a Telegram webhook (no action is taken)",
+        summary="Verify a private Telegram account link or acknowledge an ignored update",
         description=(
-            "Retained so an already-registered webhook does not retry forever. Callback "
-            "queries are acknowledged and discarded: accepting and rejecting borrow "
-            "requests happens in the staff console, never from chat."
+            "Requires X-Telegram-Bot-Api-Secret-Token. Only /start <code> in a private "
+            "chat can consume an account/tenant/integration-bound connection challenge. "
+            "Invalid, expired or replayed codes are acknowledged without linking. Every "
+            "callback_query and other update is discarded; decisions stay in the console."
         ),
         auth=[],
         request=TelegramWebhookSerializer,
         responses={
-            200: OpenApiResponse(description="Acknowledged; no action taken."),
+            200: OpenApiResponse(description="Acknowledged; eligible private proof consumed, otherwise ignored."),
             **errors(
                 400, 403, 429,
                 e403="TELEGRAM_WEBHOOK_SECRET is unset, or the secret-token header is wrong.",
@@ -63,15 +63,17 @@ class TelegramWebhookView(APIView):
     )
     def post(self, request, *args, **kwargs):
         if not _webhook_secret_ok(request):
-            return Response({"detail": "Invalid webhook secret."}, status=403)
+            return Response({"detail": gettext("Invalid webhook secret.")}, status=403)
         serializer = TelegramWebhookSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        if serializer.validated_data.get("callback_query"):
+        if "callback_query" in request.data:
             logger.info(
                 "Telegram callback ignored; chat is not an action surface.",
                 extra={"has_callback": True},
             )
-        return Response({"detail": "Ignored."})
+        else:
+            handle_start(request)
+        return Response({"detail": gettext("Ignored.")})
 
 
 class TelegramTestAlertView(APIView):
@@ -81,13 +83,20 @@ class TelegramTestAlertView(APIView):
         request=TelegramTestAlertSerializer,
         responses={
             200: OpenApiResponse(
+                inline_serializer("TelegramTestAlertResult", fields={
+                    "delivered": serializers.BooleanField(),
+                    "detail": serializers.CharField(required=False),
+                }),
                 description="Delivery attempt result; `delivered: false` with a reason when "
                 "Telegram is unconfigured or rejects the message."
             ),
-            **errors(400, 401, 403, 404),
+            **errors(400, 401, 403, 404, 503),
         },
     )
+    @guarded(mutation=True)
     def post(self, request, *args, **kwargs):
+        if not sending_allowed():
+            raise CutoverClosed()
         serializer = TelegramTestAlertSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         makerspace = get_object_or_404(
@@ -109,6 +118,8 @@ class TelegramTestAlertView(APIView):
         # gets a clear {delivered:false, detail} instead of an opaque 500 — the test
         # alert is a diagnostic, so a delivery failure is an expected outcome, not a
         # server error.
+        # A test send reaches a real group chat, so it is audited like DeliveryTestView's.
+        audit.record(request.user, "telegram.test_sent", makerspace=makerspace, target=makerspace)
         try:
             delivered = send_message(makerspace, serializer.validated_data["message"])
         except TelegramDeliveryError:
@@ -116,8 +127,8 @@ class TelegramTestAlertView(APIView):
                 {
                     "delivered": False,
                     "detail": (
-                        "Telegram rejected the message. Check the bot token is correct "
-                        "and the bot has been added to the group chat."
+                        gettext("Telegram rejected the message. Check the bot token is correct "
+                        "and the bot has been added to the group chat.")
                     ),
                 }
             )
@@ -125,21 +136,11 @@ class TelegramTestAlertView(APIView):
             return Response(
                 {
                     "delivered": False,
-                    "detail": "Telegram is not configured — save a bot token and group chat ID first.",
+                    "detail": gettext("Telegram is not configured — save a bot token and group chat ID first."),
                 }
             )
         return Response({"delivered": True})
 
 
 def _webhook_secret_ok(request):
-    # Telegram echoes the secret_token configured at setWebhook time in this header.
-    # Fail closed when unset. Nothing behind this endpoint acts any more, but `from.id`
-    # in the payload is attacker-controllable, and an endpoint that quietly stopped
-    # authenticating is exactly what would turn a future callback into a vulnerability.
-    secret = settings.TELEGRAM_WEBHOOK_SECRET
-    if not secret:
-        return False
-    provided = request.headers.get("X-Telegram-Bot-Api-Secret-Token", "")
-    # Not hmac.compare_digest: on str arguments it raises TypeError for any non-ASCII
-    # character, so a stranger's header could turn this 403 into a 500.
-    return constant_time_compare(provided, secret)
+    return webhook_secret_ok(request)

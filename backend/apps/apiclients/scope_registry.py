@@ -1,7 +1,5 @@
-from dataclasses import dataclass
-
 from django.conf import settings
-from django.urls import URLPattern, URLResolver, get_resolver, resolve
+from django.urls import URLPattern, URLResolver, get_resolver
 
 from apps.apiclients.scope_registry_routes import (
     PUBLIC_ALL,
@@ -9,13 +7,32 @@ from apps.apiclients.scope_registry_routes import (
     PUBLIC_WRITE,
     SCOPE_REGISTRY,
     TARGET_GLOBAL,
+    TARGET_PUBLIC_HANDLE,
     TARGET_MODES,
     TARGET_TENANT_SLUG,
     TARGET_TENANT_TOKEN,
+    TARGET_CLIENT_SUBJECT,
     ScopeRegistryEntry,
 )
+from .scope_registry_exclusions import OWNER_SESSION_EXCLUSIONS, STAFF_ACCOUNT_EXCLUSIONS
+from .scope_registry_reads import read_scope_vocabulary
+from .scope_registry_public_pages import is_global_target, resolve_handle_target
+from .scope_registry_requests import _request_match, resolve_view_name
+from .scope_registry_verdicts import PEER_CLIENT_TYPE, ScopeObservation, peer_may_reach, target_allows
+
+# Split across siblings to stay under the size ceiling: `scope_registry_exclusions`
+# (session-only view names), `scope_registry_requests` (URL match caching) and
+# `scope_registry_verdicts` (ScopeObservation, target_allows). Target resolution, lookup,
+# classify and drift validation stay HERE on purpose: callers override `lookup`,
+# `resolve_target`, `resolve_handle_target` and `_urlconf_routes` on this module, and the
+# functions that use them must see the override.
 
 LEGACY_SCOPE = "legacy:v1"
+# `public:<area>:read|write` -- derived from the built registry so a tombstoned domain's
+# routes take their area scopes with them (scope_registry_areas).
+AREA_SCOPES = frozenset(
+    f"public:{entry.area}:{entry.access}" for entry in SCOPE_REGISTRY.values() if entry.area
+)
 SCOPE_VOCABULARY = frozenset(
     {
         LEGACY_SCOPE,
@@ -23,7 +40,7 @@ SCOPE_VOCABULARY = frozenset(
         PUBLIC_WRITE,
         PUBLIC_ALL,
     }
-)
+) | read_scope_vocabulary() | AREA_SCOPES
 BROWSER_SCOPES = frozenset(
     {
         LEGACY_SCOPE,
@@ -31,45 +48,19 @@ BROWSER_SCOPES = frozenset(
         PUBLIC_WRITE,
         PUBLIC_ALL,
     }
-)
-
-
-@dataclass(frozen=True, slots=True)
-class ScopeObservation:
-    view_name: str | None
-    method: str
-    verdict: bool
-    target_resolution: str
-    target_resolved: bool | None
-    target_makerspace_id: int | None
+) | AREA_SCOPES
 
 
 def lookup(view_name, method):
+    # This provider fetch is authorized solely by a single-use media grant. It is
+    # outside protected prefixes; public scopes must never substitute for its token.
+    if view_name == "notification-media":
+        return None
+    if view_name in STAFF_ACCOUNT_EXCLUSIONS or view_name in OWNER_SESSION_EXCLUSIONS:
+        return None
     if not view_name or not method:
         return None
     return SCOPE_REGISTRY.get((view_name, method.upper()))
-
-
-def _request_match(request):
-    match = getattr(request, "resolver_match", None)
-    if match is not None:
-        return match
-    if hasattr(request, "_scope_registry_resolver_match"):
-        return request._scope_registry_resolver_match
-    try:
-        match = resolve(request.path_info)
-    except Exception:
-        match = None
-    request._scope_registry_resolver_match = match
-    return match
-
-
-def resolve_view_name(request):
-    try:
-        match = _request_match(request)
-        return getattr(match, "view_name", None) if match is not None else None
-    except Exception:
-        return None
 
 
 def resolve_target(request, entry):
@@ -78,6 +69,11 @@ def resolve_target(request, entry):
     try:
         match = _request_match(request)
         kwargs = getattr(match, "kwargs", {}) or {}
+        if entry.target_mode == TARGET_PUBLIC_HANDLE:
+            return resolve_handle_target(request, match)
+        if entry.target_mode == TARGET_CLIENT_SUBJECT:
+            from .read_contract import resolve_read_target
+            return resolve_read_target(request, match)
         if entry.target_mode == TARGET_TENANT_SLUG:
             from apps.makerspaces.lookup import get_public_makerspace
 
@@ -92,13 +88,35 @@ def resolve_target(request, entry):
             return None, False
         token = kwargs.get("public_token")
         view_name = getattr(match, "view_name", None)
+        from apps.accounts.programme_route_catalog import BY_NAME
+        if view_name in BY_NAME:
+            from apps.makerspaces.origin_scope_programme import programme_route_targets
+            from apps.makerspaces.models import Makerspace
+            _, targets, invalid, _ = programme_route_targets(view_name, kwargs)
+            if invalid or len(targets) != 1:
+                return None, False
+            target = Makerspace.objects.filter(pk=next(iter(targets))).first()
+            return target, target is not None
+        if view_name in {"public-profile", "public-profile-activity", "public-profile-events", "public-profile-projects", "public-profile-github"}:
+            # Decision 304: the profile is global, so the tenant a machine client is checked against is
+            # the person's home space (newest active, servable membership); a client is always the
+            # logged-out audience, so the open-web consent still applies.
+            from django.contrib.auth.models import AnonymousUser
+            from apps.makerspaces.account_profile_access import resolve_by_handle
+            from apps.makerspaces.profile_images import home_space
+            profile, _ = resolve_by_handle(kwargs.get("handle"), AnonymousUser(), request)
+            space = home_space(profile.user)
+            return space, space is not None
+        if view_name in {"public-event-code", "public-event-short-code"}:
+            from apps.events.views_public_codes import api_client_target
+            return api_client_target(request, view_name, kwargs)
         if view_name == "hardware_requests:request-status":
             from apps.hardware_requests.models import HardwareRequest
 
             row = HardwareRequest.objects.select_related("makerspace").filter(
                 public_token=token
             ).first()
-        elif view_name == "public-printer-service-status":
+        elif view_name in {"public-printer-service-status", "public-machine-service-status"}:
             from apps.machines.models import MachineServiceRequest
 
             row = MachineServiceRequest.objects.select_related("makerspace").filter(
@@ -119,17 +137,10 @@ def resolve_target_once(request, entry):
     return result
 
 
-def target_allows(entry, client, target, resolved):
-    if entry.target_mode == TARGET_GLOBAL:
-        return client.makerspace_id is None or entry.tenant_apps_admitted
-    if not resolved:
-        return False
-    target_id = getattr(target, "pk", None)
-    return client.makerspace_id is None or target_id == client.makerspace_id
-
-
 def scope_allows(entry, scopes):
     scopes = frozenset(scopes or ())
+    if not entry.required_scopes.issubset(scopes):
+        return False
     if LEGACY_SCOPE in scopes and entry.legacy_v1:
         return True
     return not scopes.isdisjoint(entry.scopes)
@@ -144,7 +155,7 @@ def classify(request, client):
 
     target, resolved = resolve_target_once(request, entry)
     target_id = getattr(target, "pk", None)
-    target_resolution = "global" if entry.target_mode == TARGET_GLOBAL else "resolved"
+    target_resolution = "global" if entry.target_mode == TARGET_GLOBAL or is_global_target(target) else "resolved"
     if not resolved:
         return ScopeObservation(view_name, method, False, "unresolved", False, None)
     if not target_allows(entry, client, target, resolved):
@@ -152,6 +163,8 @@ def classify(request, client):
             view_name, method, False, target_resolution, True, target_id
         )
     verdict = scope_allows(entry, client.scopes)
+    if getattr(client, "client_type", None) == PEER_CLIENT_TYPE and not peer_may_reach(entry, method):
+        verdict = False
     return ScopeObservation(
         view_name, method, verdict, target_resolution, True, target_id
     )
@@ -184,9 +197,15 @@ def _urlconf_routes(patterns, route="", namespaces=()):
         yield full_route, view_name, _concrete_methods(pattern.callback)
 
 
+def _protected_prefixes():
+    from .read_prefixes import mandatory_hmac_prefixes
+    return tuple(prefix.lstrip("/") for prefix in dict.fromkeys(
+        [*settings.HMAC_PROTECTED_PATH_PREFIXES, *mandatory_hmac_prefixes()]))
+
+
 def validate_registry():
     routes = list(_urlconf_routes(get_resolver().url_patterns))
-    prefixes = tuple(prefix.lstrip("/") for prefix in settings.HMAC_PROTECTED_PATH_PREFIXES)
+    prefixes = _protected_prefixes()
     protected = [
         (route, view_name, methods)
         for route, view_name, methods in routes
@@ -201,7 +220,11 @@ def validate_registry():
         for _route, view_name, methods in protected
         for method in methods
     }
-    stale = sorted(key for key in SCOPE_REGISTRY if key not in protected_keys)
+    from .scope_registry_messaging import DENIED_KEYS
+    # Explicit denies are valid outside HMAC prefixes, but must still name a live operation.
+    live_keys = {(name, method) for _route, name, methods in routes for method in methods}
+    stale = sorted(key for key in SCOPE_REGISTRY if key not in protected_keys
+                   and not (key in DENIED_KEYS and key in live_keys))
     # A protected route whose methods cannot be derived contributes nothing to
     # `missing`, so it would pass the completeness guard while being unregistered.
     # Report it as its own drift class: today every protected route is a class-based
@@ -217,7 +240,7 @@ def validate_registry():
 
 
 def unregistered_protected_routes():
-    prefixes = tuple(prefix.lstrip("/") for prefix in settings.HMAC_PROTECTED_PATH_PREFIXES)
+    prefixes = _protected_prefixes()
     missing = [
         (route, view_name, method)
         for route, view_name, methods in _urlconf_routes(get_resolver().url_patterns)
@@ -229,9 +252,9 @@ def unregistered_protected_routes():
 
 
 __all__ = [
-    "BROWSER_SCOPES", "LEGACY_SCOPE",
+    "AREA_SCOPES", "BROWSER_SCOPES", "LEGACY_SCOPE",
     "PUBLIC_ALL", "PUBLIC_READ", "PUBLIC_WRITE", "SCOPE_REGISTRY",
-    "SCOPE_VOCABULARY", "TARGET_GLOBAL", "TARGET_MODES", "TARGET_TENANT_SLUG",
+    "SCOPE_VOCABULARY", "TARGET_GLOBAL", "TARGET_PUBLIC_HANDLE", "TARGET_MODES", "TARGET_TENANT_SLUG",
     "TARGET_TENANT_TOKEN", "ScopeObservation", "ScopeRegistryEntry", "classify",
     "lookup", "resolve_target", "resolve_target_once", "resolve_view_name",
     "scope_allows", "target_allows", "unregistered_protected_routes",

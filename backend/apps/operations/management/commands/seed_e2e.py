@@ -18,8 +18,9 @@ from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
+from apps.accounts.staff_identity import PERSON_KIND, PLATFORM_KIND
 from apps.accounts.models import User
-from apps.backup.custody import initialize_custody_state
+from apps.makerspaces.staff_role_grants import grant_staff_role
 from apps.boxes.models import Box
 from apps.hardware_requests import request_workflow
 from apps.inventory.categories import ensure_default_categories
@@ -29,6 +30,7 @@ from apps.makerspaces.module_install import apply_profile
 from apps.makerspaces.module_profiles import RECOMMENDED
 from ._seed_e2e_discovery import seed_discovery
 from apps.operations.e2e_kiosk_seed import seed_kiosk
+from apps.operations.seed_handles import claim_seeded_handles
 
 DEFAULT_PASSWORD = "e2e-pass-12345"
 SECRET_LOCATION = "E2E SECRET SHELF 42"
@@ -57,6 +59,9 @@ class Command(BaseCommand):
         password = options["password"]
         with transaction.atomic():
             seeded = self._seed(slug, token, password)
+        # Decision 308: a personal account without a username handle is blocked from every write (403
+        # `handle_required`), so a fresh seed gives each account one (see operations/seed_handles.py).
+        claim_seeded_handles()
         payload = json.dumps(seeded, indent=2)
         if options["write_json"]:
             Path(options["write_json"]).write_text(payload + "\n")
@@ -66,7 +71,8 @@ class Command(BaseCommand):
     def _user(self, username, role, password, **flags):
         user = User.objects.create_user(
             username=username, email=f"{username}@e2e.local", password=password, role=role,
-            access_status=User.AccessStatus.ACTIVE, **flags,
+            access_status=User.AccessStatus.ACTIVE,
+            account_kind=PLATFORM_KIND if flags.get("is_superuser") else PERSON_KIND, **flags,
         )
         user.must_change_password = False
         user.save(update_fields=["must_change_password"])
@@ -78,19 +84,17 @@ class Command(BaseCommand):
         )
         makerspace = Makerspace.objects.create(
             slug=slug, name="E2E Makerspace", location="E2E Test Bench",
-            public_inventory_enabled=True, superadmin_access_enabled=True, created_by=superadmin,
+            public_inventory_enabled=True, created_by=superadmin,
         )
-        initialize_custody_state(makerspace.pk)
         apply_profile(makerspace, RECOMMENDED, actor=superadmin)
         ensure_default_categories(makerspace)
 
-        manager = self._user(f"e2e_manager_{token}", User.Role.SPACE_MANAGER, password)
-        MakerspaceMembership.objects.create(
-            user=manager, makerspace=makerspace, role=MakerspaceMembership.Role.SPACE_MANAGER
-        )
+        manager = self._user(f"e2e_manager_{token}", User.Role.SPACE_MANAGER, password, display_name="E2E Manager")
+        grant_staff_role(makerspace=makerspace, user=manager, actor=superadmin,
+                         roles=[makerspace.roles.get(slug="space_manager")])
         member = self._user(f"e2e_member_{token}", User.Role.REQUESTER, password)
         MakerspaceMembership.objects.create(
-            user=member, makerspace=makerspace, role=MakerspaceMembership.Role.INVENTORY_MANAGER
+            user=member, makerspace=makerspace, role="custom", assigned_role=makerspace.roles.get(slug="member"),
         )
 
         box = Box.objects.create(
@@ -105,7 +109,6 @@ class Command(BaseCommand):
         )
         snapshot = SimpleNamespace(
             username=member.username, name="E2E Member", email=member.email, phone="",
-            contact_verified=True,
         )
         pending = request_workflow.submit_request(
             makerspace, [{"product": product, "quantity": 1}], PENDING_REQUEST_FOR,

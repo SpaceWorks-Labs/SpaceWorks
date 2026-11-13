@@ -46,6 +46,7 @@ EVENTS_KEYS = (
     "registration_approved",
     "registration_rejected",
     "registration_cancelled",
+    "registration_restored",
     "registration_promoted",
     "registration_attended",
     "series_published",
@@ -54,7 +55,7 @@ EVENTS_KEYS = (
     "series_generation_failed",
     "reminder",
 )
-BOOKINGS_KEYS = ("created", "confirmed", "rejected", "cancelled", "completed", "no_show", "reminder")
+BOOKINGS_KEYS = ("created", "confirmed", "rejected", "cancelled", "restored", "completed", "no_show", "reminder")
 MAINTENANCE_KEYS = (
     "schedule_created",
     "schedule_updated",
@@ -84,7 +85,8 @@ MAKERSPACE_FIELDS = [
     {"name": "makerspace.name", "description": "Makerspace name."},
     {"name": "makerspace.location", "description": "Makerspace location label."},
     {"name": "makerspace.map_url", "description": "Google Maps link for the makerspace."},
-    {"name": "event_name", "description": "Lifecycle event that triggered this email."},
+    {"name": "event_name", "description": "Lifecycle event key that triggered this email (for comparisons)."},
+    {"name": "event_label", "description": "The same lifecycle event in readable words."},
     {"name": "now", "description": "Current render time."},
 ]
 
@@ -97,6 +99,8 @@ EVENTS_FIELDS = [
     {"name": "registration.id", "description": "Registration number, when one applies."},
     {"name": "registration.name", "description": "Registrant name, when one applies."},
     {"name": "registration.status", "description": "Registration status."},
+    {"name": "join_url", "description": "Join link for online/hybrid events; confirmed registrants only, "
+     "added to confirmation emails (R2 L1/L2)."},
     {"name": "next_steps", "description": "Default guidance sentence for this event."},
     *MAKERSPACE_FIELDS,
 ]
@@ -161,7 +165,8 @@ def _events_sample(bag, key):
             when="21 June 2026 18:00 to 20:00",
             location="Main workshop",
         ),
-        registration=bag(id=5, name="Alex Maker", status="confirmed"),
+        registration=bag(id=5, name="Alex Maker", status="registered"),
+        join_url="https://meet.example.org/laser-induction",
         next_steps=EVENTS_REQUESTER_BODIES[key],
     )
 

@@ -1,13 +1,14 @@
-"""Platform-only orchestration, with hidden tenants excluded before any reads."""
+"""Platform-only orchestration across every makerspace."""
 
 from collections import Counter
 
 from django.utils import timezone
 
-from apps.accounts import rbac
-from apps.integrations.models import EmailLog, NotificationDeliveryLog
+from apps.integrations.models import EmailLog, NotificationDeliveryLog, NotificationDelivery
+from apps.integrations.models_tracking import PushDeliveryAttempt
 from apps.makerspaces import limits
 from apps.makerspaces.models import Makerspace
+from apps.makerspaces.platform import module_enabled
 from apps.makerspaces.servability import servable_queryset
 from apps.makerspaces.usage_snapshot import usage_snapshot
 from apps.operations.platform_signals import (
@@ -16,16 +17,13 @@ from apps.operations.platform_signals import (
 from apps.operations.platform_integration_health import integration_snapshot
 
 
-def platform_spaces(actor=None):
-    # Platform monitoring never includes sovereign tenants, even when the operator
-    # separately has a membership there. The tenant usage endpoint still honors it.
-    rows = Makerspace.objects.filter(superadmin_access_enabled=True)
-    return rbac.hide_from_superadmin(actor, rows, field="id")
+def platform_spaces():
+    return Makerspace.objects.all()
 
 
-def build_platform_dashboard(actor=None):
+def build_platform_dashboard():
     now = timezone.now()
-    spaces = platform_spaces(actor)
+    spaces = platform_spaces()
     states = Counter({state: 0 for state in Makerspace.LifecycleState.values})
     states["archived"] = 0
     for row in spaces.values("lifecycle_state", "archived_at"):
@@ -39,21 +37,38 @@ def build_platform_dashboard(actor=None):
         totals.update({row["key"]: row["used"] for row in usage["resources"]
                        if row["used"] is not None})
         tenants.append({"id": space.pk, "name": space.name, "slug": space.slug,
+                        "reports_enabled": module_enabled(space, "reports"),
                         "usage": usage})
     # Scoping is resolved once at the tenant boundary; all related summaries use
     # exactly those IDs. No raw errors or recipient/subject text enters the API.
+    from .deployment_projection import deployment_projection
     return {
+        "deployment": deployment_projection(),
         "checked_at": now, "tenants_by_state": dict(states),
         "usage_totals": dict(totals), "tenants": tenants,
         "backup": backup_snapshot(), "offsite": offsite_snapshot(ids),
         "scheduler": scheduler_snapshot(now),
         "failed_deliveries": {
             "email": EmailLog.objects.filter(makerspace_id__in=ids, status="failed").count(),
-            "notifications": NotificationDeliveryLog.objects.filter(
-                makerspace_id__in=ids, status="failed",
-            ).count(),
+            "notifications": _notification_failures(ids),
         },
     }
+
+
+def _notification_failures(space_ids):
+    logs = NotificationDeliveryLog.objects.filter(makerspace_id__in=space_ids, status="failed")
+    # Staff push has per-device outcomes. A failed parent contributes only when
+    # delivery failed before any device rows existed, never alongside its children.
+    return (
+        logs.exclude(channel="native_push").count()
+        + logs.filter(channel="native_push", pushdeliveryattempt__isnull=True).count()
+        + PushDeliveryAttempt.objects.filter(
+            delivery_log__makerspace_id__in=space_ids, status="failed",
+        ).count()
+        + NotificationDelivery.objects.filter(
+            makerspace_id__in=space_ids, state="failed",
+        ).exclude(channel="email").count()
+    )
 
 
 def tenant_check_context(space, key):

@@ -22,6 +22,12 @@ x-host-bootstrap: &host-bootstrap
   environment: &host-bootstrap-env
     DATABASE_URL: postgres://${POSTGRES_USER:-makerspace}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-makerspace_manager}
     SPACEWORKS_RUNTIME_DATABASE_URL: ${DATABASE_URL:?use scripts/spaceworks-compose.sh}
+    SPACEWORKS_PRIVILEGED_TARGET_REQUIRED: ${SPACEWORKS_PRIVILEGED_TARGET_REQUIRED:-0}
+    SPACEWORKS_PRIVILEGED_TARGET_NAME: ${SPACEWORKS_PRIVILEGED_TARGET_NAME:-}
+    SPACEWORKS_PRIVILEGED_TARGET_OID: ${SPACEWORKS_PRIVILEGED_TARGET_OID:-}
+    SPACEWORKS_PRIVILEGED_TARGET_UUID: ${SPACEWORKS_PRIVILEGED_TARGET_UUID:-}
+    SPACEWORKS_INITIALIZE_DATABASE_NAME: ${SPACEWORKS_INITIALIZE_DATABASE_NAME:-}
+    SPACEWORKS_INITIALIZE_DATABASE_OID: ${SPACEWORKS_INITIALIZE_DATABASE_OID:-}
     SPACEWORKS_HOST_MARKER_WRITE_PATH: /host-state/restore-marker.json
     SPACEWORKS_SCHEDULER_MODE: image
     SPACEWORKS_SCHEDULER_SERVICES: beat
@@ -79,16 +85,115 @@ services:
       mc anonymous set download "local/$$PUBLIC_IMAGE_BUCKET";
       '
   redis:
-    image: redis:7-alpine
+    image: redis:${REDIS_IMAGE_TAG:-7.4.11-alpine}
     restart: *default-restart
     logging: *default-logging
+    # Decision 339: AOF so queued jobs survive a restart; volatile-lru evicts only keys with a TTL (cache
+    # entries), never the Celery queues, which carry none. Never published on a host port.
+    command: ["redis-server", "--appendonly", "yes", "--appendfsync", "everysec", "--maxmemory", "${REDIS_MAXMEMORY:-512mb}", "--maxmemory-policy", "volatile-lru"]
+    volumes: [redis_data:/data]
     healthcheck: {test: ["CMD", "redis-cli", "ping"], interval: 10s, timeout: 5s, retries: 6}
   backend:
     image: ${MAKERSPACE_BACKEND_IMAGE:-ghcr.io/spaceworks-labs/spaceworks-backend}:${MAKERSPACE_IMAGE_TAG:-latest}
     restart: *default-restart
     logging: *default-logging
     environment: &backend-env
+      PII_ENCRYPTION_ENABLED: ${PII_ENCRYPTION_ENABLED:-False}
+      PII_ENCRYPTION_DUAL_READ: ${PII_ENCRYPTION_DUAL_READ:-True}
+      PII_KEY_BROKER: ${PII_KEY_BROKER:-local}
+      PII_MASTER_KEY: ${PII_MASTER_KEY:-}
+      PUSH_TOKEN_HMAC_KEY: ${PUSH_TOKEN_HMAC_KEY:-}
+      PII_MASTER_KEY_PREVIOUS: ${PII_MASTER_KEY_PREVIOUS:-}
+      PII_SEARCH_HASH_KEY: ${PII_SEARCH_HASH_KEY:-}
+      PII_DEK_CACHE_TTL_SECONDS: ${PII_DEK_CACHE_TTL_SECONDS:-300}
+      PII_AWS_KMS_KEY_ID: ${PII_AWS_KMS_KEY_ID:-}
+      PII_AWS_KMS_REGION: ${PII_AWS_KMS_REGION:-}
+      PII_AWS_KMS_ENDPOINT_URL: ${PII_AWS_KMS_ENDPOINT_URL:-}
+      UPLOAD_SCAN_POLICY: ${UPLOAD_SCAN_POLICY:-}
+      CLAMD_HOST: ${CLAMD_HOST:-}
+      CLAMD_PORT: ${CLAMD_PORT:-3310}
+      CLAMD_TIMEOUT_SECONDS: ${CLAMD_TIMEOUT_SECONDS:-5}
+      CLAMD_MAX_SCAN_BYTES: ${CLAMD_MAX_SCAN_BYTES:-2147483648}
+      EMAIL_PROVIDER: ${EMAIL_PROVIDER:-}
+      EMAIL_PROVIDER_CONFIG_FILE: ${EMAIL_PROVIDER_CONFIG_FILE:-}
+      EMAIL_PROVIDER_WEBHOOKS_ENABLED: ${EMAIL_PROVIDER_WEBHOOKS_ENABLED:-False}
+      AWS_SESSION_TOKEN: ${AWS_SESSION_TOKEN:-}
+      STORAGE_CAPABILITIES_FILE: ${STORAGE_CAPABILITIES_FILE:-}
+      STORAGE_CAPABILITY_TTL_SECONDS: ${STORAGE_CAPABILITY_TTL_SECONDS:-900}
+      TRUST_FORWARDED_HOST: ${TRUST_FORWARDED_HOST:-False}
+      TRUSTED_EDGE_CIDRS: ${TRUSTED_EDGE_CIDRS:-}
+      TRUSTED_EDGE_UPSTREAM_HOSTS: ${TRUSTED_EDGE_UPSTREAM_HOSTS:-}
+      TRUSTED_EDGE_INGRESS_SECRET: ${TRUSTED_EDGE_INGRESS_SECRET:-}
+      DATABASE_CONNECTION_MODE: ${DATABASE_CONNECTION_MODE:-direct}
+      CONN_HEALTH_CHECKS: ${CONN_HEALTH_CHECKS:-True}
       SECRET_KEY: ${SECRET_KEY:?set SECRET_KEY}
+      EVENT_STATION_PIN_PEPPER: ${EVENT_STATION_PIN_PEPPER:-}
+      ACCOUNT_SAVED_DETAILS_ENABLED: "${ACCOUNT_SAVED_DETAILS_ENABLED:-False}"
+      ACCOUNT_PII_KEY_BROKER: "${ACCOUNT_PII_KEY_BROKER:-local}"
+      ACCOUNT_PII_MASTER_KEY: "${ACCOUNT_PII_MASTER_KEY:-}"
+      ACCOUNT_PII_MASTER_KEY_PREVIOUS: "${ACCOUNT_PII_MASTER_KEY_PREVIOUS:-}"
+      ACCOUNT_PII_AWS_KMS_KEY_ID: "${ACCOUNT_PII_AWS_KMS_KEY_ID:-}"
+      ACCOUNT_SAVED_ASSET_BUDGET_BYTES: "${ACCOUNT_SAVED_ASSET_BUDGET_BYTES:-52428800}"
+      ACCOUNT_SAVED_RESUME_SCAN_REQUIRED: "${ACCOUNT_SAVED_RESUME_SCAN_REQUIRED:-False}"
+      ACCOUNT_SAVED_RESUME_SCANNER: "${ACCOUNT_SAVED_RESUME_SCANNER:-}"
+      EVENT_REGISTRATION_CREDENTIAL_DIGEST_KEY: "${EVENT_REGISTRATION_CREDENTIAL_DIGEST_KEY:-}"
+      EVENT_REGISTRATION_CREDENTIAL_KEY_VERSION: "${EVENT_REGISTRATION_CREDENTIAL_KEY_VERSION:-1}"
+      EVENT_REGISTRATION_CREDENTIAL_KEYS: "${EVENT_REGISTRATION_CREDENTIAL_KEYS:-{}}"
+      EVENT_ASSET_SCAN_BACKEND: "${EVENT_ASSET_SCAN_BACKEND:-none}"
+      EVENT_ASSET_CLAMAV_HOST: "${EVENT_ASSET_CLAMAV_HOST:-}"
+      EVENT_ASSET_CLAMAV_PORT: "${EVENT_ASSET_CLAMAV_PORT:-3310}"
+      UI_DELIGHT_ENABLED: "${UI_DELIGHT_ENABLED:-True}"
+      UI_EASTER_EGGS_ENABLED: "${UI_EASTER_EGGS_ENABLED:-True}"
+      HUB_LANDING_ENABLED: "${HUB_LANDING_ENABLED:-True}"
+      SPACEWORKS_EDITION: ${SPACEWORKS_EDITION:-makerspace}
+      WEB_ANALYTICS_SCRIPT_URL: ${WEB_ANALYTICS_SCRIPT_URL:-}
+      WEB_ANALYTICS_COLLECT_URL: ${WEB_ANALYTICS_COLLECT_URL:-}
+      WEB_ANALYTICS_DOMAIN: ${WEB_ANALYTICS_DOMAIN:-}
+      WEB_TELEMETRY_ALLOWED_ORIGINS: ${WEB_TELEMETRY_ALLOWED_ORIGINS:-}
+      WALLET_APPLE_PASS_TYPE_ID: ${WALLET_APPLE_PASS_TYPE_ID:-}
+      WALLET_APPLE_TEAM_ID: ${WALLET_APPLE_TEAM_ID:-}
+      WALLET_APPLE_CERT_FILE: ${WALLET_APPLE_CERT_FILE:-}
+      WALLET_APPLE_KEY_FILE: ${WALLET_APPLE_KEY_FILE:-}
+      WALLET_APPLE_WWDR_FILE: ${WALLET_APPLE_WWDR_FILE:-}
+      WALLET_GOOGLE_ISSUER_ID: ${WALLET_GOOGLE_ISSUER_ID:-}
+      WALLET_GOOGLE_SERVICE_ACCOUNT_FILE: ${WALLET_GOOGLE_SERVICE_ACCOUNT_FILE:-}
+      NOTIFICATION_SLACK_REDIRECT_URI: ${NOTIFICATION_SLACK_REDIRECT_URI:-}
+      NOTIFICATION_MATTERMOST_REDIRECT_URI: ${NOTIFICATION_MATTERMOST_REDIRECT_URI:-}
+      NOTIFICATION_DISCORD_REDIRECT_URI: ${NOTIFICATION_DISCORD_REDIRECT_URI:-}
+      NOTIFICATION_MATTERMOST_ALLOW_PRIVATE_HOSTS: ${NOTIFICATION_MATTERMOST_ALLOW_PRIVATE_HOSTS:-False}
+      WHATSAPP_META_GRAPH_VERSION: ${WHATSAPP_META_GRAPH_VERSION:-v25.0}
+      # Release 2 (0.11.0) operator settings; each default equals settings.py, so leaving
+      # them unset changes nothing. Tuning knobs (TTLs, thresholds) stay at their settings
+      # defaults; see docs/environment-reference.md.
+      TURNSTILE_SITE_KEY: ${TURNSTILE_SITE_KEY:-}
+      TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY:-}
+      TURNSTILE_FAIL_MODE: ${TURNSTILE_FAIL_MODE:-open}
+      TURNSTILE_HOSTNAMES: ${TURNSTILE_HOSTNAMES:-}
+      LOGIN_IP_BLOCK_ENABLED: ${LOGIN_IP_BLOCK_ENABLED:-True}
+      PASSWORD_BREACH_CHECK_ENABLED: ${PASSWORD_BREACH_CHECK_ENABLED:-True}
+      WEBAUTHN_RP_NAME: ${WEBAUTHN_RP_NAME:-Space Works}
+      WEB_PUSH_VAPID_PRIVATE_KEY: ${WEB_PUSH_VAPID_PRIVATE_KEY:-}
+      WEB_PUSH_VAPID_SUBJECT: ${WEB_PUSH_VAPID_SUBJECT:-}
+      MESSAGING_WEBHOOK_BASE_URL: ${MESSAGING_WEBHOOK_BASE_URL:-}
+      MIN_NATIVE_APP_VERSION_IOS: ${MIN_NATIVE_APP_VERSION_IOS:-}
+      MIN_NATIVE_APP_VERSION_ANDROID: ${MIN_NATIVE_APP_VERSION_ANDROID:-}
+      CARD_FONT_DOWNLOADS_ENABLED: ${CARD_FONT_DOWNLOADS_ENABLED:-True}
+      CARD_PHOTO_MODEL_PATH: ${CARD_PHOTO_MODEL_PATH:-/var/lib/spaceworks/models/u2netp.onnx}
+      ADAPTER_CACHE_KEY_VERSION: ${ADAPTER_CACHE_KEY_VERSION:-1}
+      ADAPTER_CACHE_KEY_ROTATED_AT: ${ADAPTER_CACHE_KEY_ROTATED_AT:-0}
+      ADAPTER_CACHE_KEY_GRACE_DAYS: ${ADAPTER_CACHE_KEY_GRACE_DAYS:-7}
+      ADAPTER_ACCESS_CACHE_TTL_SECONDS: ${ADAPTER_ACCESS_CACHE_TTL_SECONDS:-900}
+      ADAPTER_TELEMETRY_RAW_HOURS: ${ADAPTER_TELEMETRY_RAW_HOURS:-24}
+      ADAPTER_TELEMETRY_MINUTE_DAYS: ${ADAPTER_TELEMETRY_MINUTE_DAYS:-7}
+      ADAPTER_TELEMETRY_QUARTER_DAYS: ${ADAPTER_TELEMETRY_QUARTER_DAYS:-90}
+      ADAPTER_TURN_URLS: ${ADAPTER_TURN_URLS:-}
+      ADAPTER_TURN_SECRET: ${ADAPTER_TURN_SECRET:-}
+      ROUTE_METRICS_ENABLED: ${ROUTE_METRICS_ENABLED:-False}
+      PROMETHEUS_MULTIPROC_DIR: ${PROMETHEUS_MULTIPROC_DIR:-/tmp/spaceworks-prometheus}
+      METRICS_TOKEN: ${METRICS_TOKEN:-}
+      ORGANIZATION_SELF_CREATION_ENABLED: ${ORGANIZATION_SELF_CREATION_ENABLED:-False}
+      ORGANIZATION_SELF_CREATION_MAX_OWNED: ${ORGANIZATION_SELF_CREATION_MAX_OWNED:-3}
+      ORGANIZATION_SELF_CREATION_MAX_PER_DAY: ${ORGANIZATION_SELF_CREATION_MAX_PER_DAY:-1}
       DEBUG: "False"
       ALLOWED_HOSTS: ${ALLOWED_HOSTS:?set ALLOWED_HOSTS}
       DATABASE_URL: ${DATABASE_URL:?use scripts/spaceworks-compose.sh}
@@ -102,6 +207,8 @@ services:
       PLATFORM_SUBDOMAIN_AUTO_TLS: ${PLATFORM_SUBDOMAIN_AUTO_TLS:-false}
       PLATFORM_ORIGIN_HOST: ${PLATFORM_ORIGIN_HOST:-}
       PLATFORM_STAFF_ORIGINS: ${PLATFORM_STAFF_ORIGINS:-}
+      MANAGED_PLANS_ENABLED: ${MANAGED_PLANS_ENABLED:-}
+      MANAGED_BILLING_ONLINE_ENABLED: ${MANAGED_BILLING_ONLINE_ENABLED:-False}
       INFRA_HOSTS: ${INFRA_HOSTS:-localhost,127.0.0.1,backend}
       BEHIND_TRUSTED_PROXY: ${BEHIND_TRUSTED_PROXY:-false}
       API_CLIENT_ENC_KEY: ${API_CLIENT_ENC_KEY:-}
@@ -119,9 +226,13 @@ services:
       AUDIT_ATTESTATION_HTTP_URL: ${AUDIT_ATTESTATION_HTTP_URL:-}
       AUDIT_ATTESTATION_HTTP_BEARER_TOKEN: ${AUDIT_ATTESTATION_HTTP_BEARER_TOKEN:-}
       AUDIT_ATTESTATION_HTTP_TIMEOUT: ${AUDIT_ATTESTATION_HTTP_TIMEOUT:-10}
+      AUTH_COOKIE_SECURE: ${AUTH_COOKIE_SECURE:-True}
+      AUTH_COOKIE_SAMESITE: ${AUTH_COOKIE_SAMESITE:-None}
       ENABLE_HTTPS: ${ENABLE_HTTPS:-false}
       TRUST_X_FORWARDED_PROTO: ${TRUST_X_FORWARDED_PROTO:-false}
       TRUSTED_PROXY_COUNT: ${TRUSTED_PROXY_COUNT:-1}
+      # #189/#191: Django's own reach check follows the same switch as the proxy route.
+      CONTROL_PLANE_PROXY: ${CONTROL_PLANE_PROXY:-false}
       CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS:-}
       AXES_FAILURE_LIMIT: ${AXES_FAILURE_LIMIT:-5}
       EMAIL_BACKEND: ${EMAIL_BACKEND:-django.core.mail.backends.smtp.EmailBackend}
@@ -143,14 +254,23 @@ services:
       EVIDENCE_OBJECT_RETENTION_DAYS: ${EVIDENCE_OBJECT_RETENTION_DAYS:-365}
       EVIDENCE_OBJECT_EXPIRY_ENABLED: ${EVIDENCE_OBJECT_EXPIRY_ENABLED:-False}
       EVIDENCE_RETENTION_BATCH_SIZE: ${EVIDENCE_RETENTION_BATCH_SIZE:-100}
+      EVENT_REIMBURSEMENT_RECEIPT_RETENTION_DAYS: ${EVENT_REIMBURSEMENT_RECEIPT_RETENTION_DAYS:-2555}
+      EVENT_REIMBURSEMENT_PAYEE_PURGE_DAYS: ${EVENT_REIMBURSEMENT_PAYEE_PURGE_DAYS:-30}
+      EVENT_REIMBURSEMENT_FILE_MAX_BYTES: ${EVENT_REIMBURSEMENT_FILE_MAX_BYTES:-10485760}
+      EVENT_REIMBURSEMENT_MEMBER_STORAGE_BYTES: ${EVENT_REIMBURSEMENT_MEMBER_STORAGE_BYTES:-104857600}
+      EVENT_REIMBURSEMENT_EVENT_STORAGE_BYTES: ${EVENT_REIMBURSEMENT_EVENT_STORAGE_BYTES:-1073741824}
+      EVENT_STAGE_FILE_RETENTION_DAYS: ${EVENT_STAGE_FILE_RETENTION_DAYS:-365}
+      EVENT_STAGE_MEMBER_QUOTA_BYTES: ${EVENT_STAGE_MEMBER_QUOTA_BYTES:-104857600}
+      EVENT_STAGE_EVENT_QUOTA_BYTES: ${EVENT_STAGE_EVENT_QUOTA_BYTES:-1073741824}
       EVIDENCE_ABANDONED_UPLOAD_CLEANUP_ENABLED: ${EVIDENCE_ABANDONED_UPLOAD_CLEANUP_ENABLED:-False}
       EVIDENCE_ABANDONED_UPLOAD_RETENTION_DAYS: ${EVIDENCE_ABANDONED_UPLOAD_RETENTION_DAYS:-7}
       CRON_SECRET: ${CRON_SECRET:-}
-      METRICS_TOKEN: ${METRICS_TOKEN:-}
       SENTRY_DSN: ${SENTRY_DSN:-}
       SENTRY_TRACES_SAMPLE_RATE: ${SENTRY_TRACES_SAMPLE_RATE:-0.0}
       SENTRY_ENVIRONMENT: ${SENTRY_ENVIRONMENT:-production}
       CELERY_BROKER_URL: ${CELERY_BROKER_URL:-redis://redis:6379/0}
+      CACHE_URL: ${CACHE_URL:-}
+      LIVE_REDIS_URL: ${LIVE_REDIS_URL:-}
       BACKUP_AGE_RECIPIENT: ${BACKUP_AGE_RECIPIENT:-}
       BACKUP_ARCHIVE_SIGNING_PRIVATE_KEY: ${BACKUP_ARCHIVE_SIGNING_PRIVATE_KEY:-}
       BACKUP_ARCHIVE_VERIFY_PUBLIC_KEY: ${BACKUP_ARCHIVE_VERIFY_PUBLIC_KEY:-}
@@ -158,51 +278,26 @@ services:
       SPACEWORKS_HOST_MARKER_PATH: /run/spaceworks-host/restore-marker.json
       BACKUP_PRODUCER_CAPABILITY_MARKER_PATH: /run/spaceworks-host/producer-capability.json
       BACKUP_PRODUCER_PRIVILEGED_SCRIPTS_DIR: /run/spaceworks-privileged-scripts
-    command: ["--role", "backend", "sh", "-c", "python manage.py collectstatic --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers ${GUNICORN_WORKERS:-3} --timeout ${GUNICORN_TIMEOUT:-60} --graceful-timeout 30 --max-requests 1000 --max-requests-jitter 100 --access-logfile - --error-logfile -"]
+    command: ["--role", "backend", "sh", "-c", "python manage.py collectstatic --noinput && gunicorn --config python:config.gunicorn_metrics config.wsgi:application --bind 0.0.0.0:8000 --workers ${GUNICORN_WORKERS:-3} --timeout ${GUNICORN_TIMEOUT:-60} --graceful-timeout 30 --max-requests 1000 --max-requests-jitter 100 --access-logfile - --error-logfile -"]
     healthcheck: {test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health/readiness/', timeout=3).read()\""], interval: 10s, timeout: 5s, retries: 6, start_period: 45s}
     depends_on: {db: {condition: service_healthy}, redis: {condition: service_healthy}, createbuckets: {condition: service_completed_successfully}, orchestration-ready: {condition: service_completed_successfully}}
     volumes:
       - ${SPACEWORKS_OPS_HOST_DIR:-/var/lib/spaceworks/ops}/work:/var/lib/spaceworks/ops/work
       - ${SPACEWORKS_OPS_HOST_DIR:-/var/lib/spaceworks/ops}/operation.lock:/var/lib/spaceworks/ops/operation.lock
       - ${SPACEWORKS_HOST_STATE_DIR:-/var/lib/spaceworks/host}/public:/run/spaceworks-host:ro
+      # The card photo clean-up model (manage.py fetch_card_photo_model), shared by web and worker.
+      - card_models:/var/lib/spaceworks/models
       - ./scripts:/run/spaceworks-privileged-scripts:ro
   live:
     image: ${MAKERSPACE_BACKEND_IMAGE:-ghcr.io/spaceworks-labs/spaceworks-backend}:${MAKERSPACE_IMAGE_TAG:-latest}
     restart: unless-stopped
     environment: *backend-env
-    command: ["--role", "backend", "gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "-k", "gthread", "--threads", "${LIVE_THREADS:-32}", "--timeout", "0", "--access-logfile", "-", "--error-logfile", "-"]
+    command: ["--role", "backend", "gunicorn", "--config", "python:config.gunicorn_metrics", "config.wsgi:application", "--bind", "0.0.0.0:8000", "-k", "gthread", "--threads", "${LIVE_THREADS:-32}", "--timeout", "0", "--access-logfile", "-", "--error-logfile", "-"]
     depends_on: {db: {condition: service_healthy}, redis: {condition: service_healthy}, orchestration-ready: {condition: service_completed_successfully}}
     volumes:
       - ${SPACEWORKS_HOST_STATE_DIR:-/var/lib/spaceworks/host}/public:/run/spaceworks-host:ro
-  app:
-    profiles: ["single"]
-    image: ${MAKERSPACE_ALLINONE_IMAGE:-ghcr.io/spaceworks-labs/spaceworks-allinone}:${MAKERSPACE_IMAGE_TAG:-latest}
-    restart: unless-stopped
-    environment:
-      <<: *backend-env
-      TENANT_API_URL: ${TENANT_API_URL:-/api}
-      TENANT_TOKEN: ${TENANT_TOKEN:-}
-    ports:
-      - "${HTTP_PORT_BIND:-0.0.0.0}:${HTTP_PORT:-80}:8080"
-    healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://127.0.0.1:8080/api/v1/health/readiness/ >/dev/null"]
-      interval: 15s
-      timeout: 5s
-      retries: 8
-      start_period: 90s
-    depends_on:
-      db:
-        condition: service_healthy
-      createbuckets:
-        condition: service_completed_successfully
-      orchestration-ready:
-        condition: service_completed_successfully
-    volumes:
-      - ${SPACEWORKS_OPS_HOST_DIR:-/var/lib/spaceworks/ops}/work:/var/lib/spaceworks/ops/work
-      - ${SPACEWORKS_OPS_HOST_DIR:-/var/lib/spaceworks/ops}/operation.lock:/var/lib/spaceworks/ops/operation.lock
-      - ${SPACEWORKS_HOST_STATE_DIR:-/var/lib/spaceworks/host}/public:/run/spaceworks-host:ro
-      - ./scripts:/run/spaceworks-privileged-scripts:ro
-      - allinone_state:/var/lib/spaceworks/redis
+      # The card photo clean-up model (manage.py fetch_card_photo_model), shared by web and worker.
+      - card_models:/var/lib/spaceworks/models
   orchestration-init:
     <<: *host-bootstrap
     depends_on: {db: {condition: service_healthy}}
@@ -211,6 +306,11 @@ services:
     environment:
       <<: *backend-env
       DATABASE_URL: postgres://${POSTGRES_USER:-makerspace}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-makerspace_manager}
+      SPACEWORKS_RUNTIME_DATABASE_URL: ${DATABASE_URL:?use scripts/spaceworks-compose.sh}
+      SPACEWORKS_PRIVILEGED_TARGET_REQUIRED: ${SPACEWORKS_PRIVILEGED_TARGET_REQUIRED:-0}
+      SPACEWORKS_PRIVILEGED_TARGET_NAME: ${SPACEWORKS_PRIVILEGED_TARGET_NAME:-}
+      SPACEWORKS_PRIVILEGED_TARGET_OID: ${SPACEWORKS_PRIVILEGED_TARGET_OID:-}
+      SPACEWORKS_PRIVILEGED_TARGET_UUID: ${SPACEWORKS_PRIVILEGED_TARGET_UUID:-}
     command: ["--role", "migrate", "python", "manage.py", "migrate"]
     volumes:
       - ${SPACEWORKS_OPS_HOST_DIR:-/var/lib/spaceworks/ops}/work:/var/lib/spaceworks/ops/work
@@ -230,6 +330,8 @@ services:
       - ${SPACEWORKS_OPS_HOST_DIR:-/var/lib/spaceworks/ops}/work:/var/lib/spaceworks/ops/work
       - ${SPACEWORKS_OPS_HOST_DIR:-/var/lib/spaceworks/ops}/operation.lock:/var/lib/spaceworks/ops/operation.lock
       - ${SPACEWORKS_HOST_STATE_DIR:-/var/lib/spaceworks/host}/public:/run/spaceworks-host:ro
+      # The card photo clean-up model (manage.py fetch_card_photo_model), shared by web and worker.
+      - card_models:/var/lib/spaceworks/models
       - ./scripts:/run/spaceworks-privileged-scripts:ro
     depends_on: {db: {condition: service_healthy}, redis: {condition: service_healthy}, orchestration-ready: {condition: service_completed_successfully}}
   beat:
@@ -248,16 +350,30 @@ services:
     profiles: [host-recovery]
     image: ${MAKERSPACE_BACKEND_IMAGE:-ghcr.io/spaceworks-labs/spaceworks-backend}:${MAKERSPACE_IMAGE_TAG:-latest}
     environment: *backend-env
-    command: ["--role", "backend", "gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "1", "--access-logfile", "-", "--error-logfile", "-"]
+    command: ["--role", "backend", "gunicorn", "--config", "python:config.gunicorn_metrics", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "1", "--access-logfile", "-", "--error-logfile", "-"]
     healthcheck: {test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health/readiness/', timeout=3).read()\""], interval: 10s, timeout: 5s, retries: 6}
     volumes:
       - ${SPACEWORKS_OPS_HOST_DIR:-/var/lib/spaceworks/ops}/work:/var/lib/spaceworks/ops/work
       - ${SPACEWORKS_OPS_HOST_DIR:-/var/lib/spaceworks/ops}/operation.lock:/var/lib/spaceworks/ops/operation.lock
       - ${SPACEWORKS_HOST_STATE_DIR:-/var/lib/spaceworks/host}/public:/run/spaceworks-host:ro
+      # The card photo clean-up model (manage.py fetch_card_photo_model), shared by web and worker.
+      - card_models:/var/lib/spaceworks/models
     depends_on: {db: {condition: service_healthy}, redis: {condition: service_healthy}, createbuckets: {condition: service_completed_successfully}}
   frontend:
     image: ${MAKERSPACE_FRONTEND_IMAGE:-ghcr.io/spaceworks-labs/spaceworks-frontend}:${MAKERSPACE_IMAGE_TAG:-latest}
     restart: *default-restart
+    environment:
+      UI_DELIGHT_ENABLED: "${UI_DELIGHT_ENABLED:-True}"
+      UI_EASTER_EGGS_ENABLED: "${UI_EASTER_EGGS_ENABLED:-True}"
+      WEB_ANALYTICS_SCRIPT_URL: ${WEB_ANALYTICS_SCRIPT_URL:-}
+      WEB_ANALYTICS_COLLECT_URL: ${WEB_ANALYTICS_COLLECT_URL:-}
+      WEB_ANALYTICS_DOMAIN: ${WEB_ANALYTICS_DOMAIN:-}
+      WEB_ANALYTICS_EXTRA_CONNECT_ORIGINS: ${WEB_ANALYTICS_EXTRA_CONNECT_ORIGINS:-}
+      WEB_TELEMETRY_ALLOWED_ORIGINS: ${WEB_TELEMETRY_ALLOWED_ORIGINS:-}
+      # Public site key only: it lets the SPA's CSP load Cloudflare Turnstile (S-C).
+      TURNSTILE_SITE_KEY: ${TURNSTILE_SITE_KEY:-}
+      CONTROL_PLANE_PROXY: ${CONTROL_PLANE_PROXY:-false}
+      CONTROL_PLANE_ALLOW_CIDRS: ${CONTROL_PLANE_ALLOW_CIDRS:-}
     logging: *default-logging
     ports:
       - "${HTTP_PORT_BIND:-0.0.0.0}:${HTTP_PORT:-80}:80"
@@ -274,5 +390,6 @@ services:
 volumes:
   makerspace_manager_pgdata:
   minio_data:
+  redis_data:
   celerybeat_data:
-  allinone_state:
+  card_models:

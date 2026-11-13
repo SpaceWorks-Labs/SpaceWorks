@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -57,7 +58,7 @@ class StockTransferLine(models.Model):
 
     def clean(self):
         if bool(self.product_id) == bool(self.asset_id):
-            raise ValidationError("Provide exactly one of product or asset.")
+            raise ValidationError(gettext("Provide exactly one of product or asset."))
 
 
 from .models_stocktake_discipline import StocktakePolicy, StocktakeSchedule  # noqa: F401
@@ -113,7 +114,7 @@ class StocktakeLine(models.Model):
 
     def clean(self):
         if bool(self.product_id) == bool(self.asset_id):
-            raise ValidationError("Provide exactly one of product or asset.")
+            raise ValidationError(gettext("Provide exactly one of product or asset."))
 
     class Meta:
         constraints = [
@@ -191,6 +192,9 @@ class QrPrintBatch(models.Model):
     printed_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
+        # #188: plain-language admin name (the default plural was broken English).
+        verbose_name = "QR label batch"
+        verbose_name_plural = "QR label batches"
         indexes = [
             models.Index(
                 fields=["makerspace", "-created_at"],
@@ -212,3 +216,10 @@ class QrPrintBatchItem(models.Model):
         constraints = [
             models.UniqueConstraint(fields=["batch", "qr_code"], name="uniq_qr_print_batch_item_qr"),
         ]
+
+from .models_cloud_jobs import CloudTaskState, CloudTickRun, CloudTickRateWindow  # noqa: F401,E402
+from .models_cloud_email import CloudEmailBudgetAccount, CloudEmailReservation  # noqa: F401,E402
+from .models_storage_capabilities import StorageCapabilityState  # noqa: F401,E402
+from .models_cloud_usage import (CloudUsageSample, CloudObjectUsageReceipt,
+                                CloudObjectAccount, CloudObjectReservation,
+                                CloudStorageMigrationReceipt)  # noqa: F401,E402

@@ -1,5 +1,7 @@
+import { t } from "@lingui/core/macro";
+import { QueryContent } from "../../components/layouts/LayoutFrame";
+import { Callout, KeyValueCard } from "../../components/ui";
 import { type Makerspace } from "./StaffPanels";
-
 type ApiSettingsSummary = {
   public_code: string;
   cors_allowed_origins: string[];
@@ -9,32 +11,18 @@ export function ApiClientsAccessSummary({
   makerspace,
   isSuperadmin,
   settings,
+  loading, error, onRetry,
 }: {
   makerspace: Makerspace;
   isSuperadmin: boolean;
   settings?: ApiSettingsSummary;
+  loading?: boolean; error?: Error | null; onRetry?: () => void;
 }) {
-  return (
-    <article className="rounded-md border border-line bg-surface p-3">
-      <h3 className="font-semibold text-ink">Makerspace API access</h3>
-      <Config label="Makerspace code" value={settings?.public_code ?? makerspace.public_code} />
-      <Config
-        label="Allowed browser origins"
-        value={
-          isSuperadmin
-            ? (settings?.cors_allowed_origins ?? []).join(", ") || "No active client origins"
-            : "Managed by superadmin"
-        }
-      />
-    </article>
-  );
-}
-
-function Config({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="mt-3">
-      <p className="text-xs uppercase tracking-wide text-muted">{label}</p>
-      <p className="mt-1 break-all font-mono text-xs text-ink">{value}</p>
-    </div>
-  );
+  return <QueryContent state={{ status: loading ? "loading" : error ? "error" : "ready", error: t`Couldn't load API settings. Try again.`, onRetry }}><div className="grid gap-4">
+    <Callout size="card" tone="warn" lead={t`Keep keys in a secret manager.`} body={t`Never put them in browser code or URLs.`} />
+    <KeyValueCard title={t`Makerspace API access`} items={[
+      { label: t`Makerspace code`, value: settings?.public_code ?? makerspace.public_code },
+      { label: t`Allowed browser origins`, value: isSuperadmin ? (settings?.cors_allowed_origins ?? []).join(", ") || t`No active client origins` : t`Set by the platform administrator` },
+    ]} />
+  </div></QueryContent>;
 }

@@ -1,6 +1,8 @@
+import { t } from "@lingui/core/macro";
+import { opsStatusLabel } from "./opsPresentation";
 import { useEffect, useState } from "react";
 
-import { Skeleton, StatusBadge } from "../../components/ui";
+import { StatusBadge } from "../../components/ui";
 import { CustomFormBuilder } from "../forms/CustomFormBuilder";
 import type { CustomFormQuestion } from "../forms/customFormTypes";
 import {
@@ -8,24 +10,31 @@ import {
   useConfigureFeedbackSurvey,
   useEventFeedbackSurvey,
   useOpenFeedbackSurvey,
+  useApplyFeedbackTemplate,
+  type FeedbackTemplate,
 } from "./eventFeedbackApi";
 import { EventFeedbackResponses } from "./EventFeedbackResponses";
 import { eventErrorText } from "./eventUi";
+import { LogoLoader } from "../../components/LogoLoader";
+import { BoxArt } from "../../components/BoxSpinner";
 
 const FEEDBACK_TYPES = [
   "short_text", "paragraph", "number", "single_choice", "multi_choice", "dropdown", "yes_no",
 ] as const;
 
-export function EventFeedbackPanel({ eventId, makerspaceId }: { eventId: number; makerspaceId: number }) {
+export function EventFeedbackPanel({ visible = true, eventId, makerspaceId, canViewResponses = true, canManageCertificates = true }: { visible?: boolean; eventId: number; makerspaceId: number; canViewResponses?: boolean; canManageCertificates?: boolean }) {
   const surveyQuery = useEventFeedbackSurvey(eventId);
   const survey = surveyQuery.data?.survey;
   const [title, setTitle] = useState("");
   const [thankYou, setThankYou] = useState("");
   const [questions, setQuestions] = useState<CustomFormQuestion[]>([]);
   const [certificateEnabled, setCertificateEnabled] = useState(false);
+  const [anonymous, setAnonymous] = useState(false);
   const configure = useConfigureFeedbackSurvey(eventId, makerspaceId);
   const open = useOpenFeedbackSurvey(eventId, makerspaceId);
   const close = useCloseFeedbackSurvey(eventId, makerspaceId);
+  const template = useApplyFeedbackTemplate(eventId, makerspaceId);
+  const [selectedTemplate, setSelectedTemplate] = useState<FeedbackTemplate>("quick_pulse");
 
   useEffect(() => {
     if (!survey) return;
@@ -33,35 +42,50 @@ export function EventFeedbackPanel({ eventId, makerspaceId }: { eventId: number;
     setThankYou(survey.thank_you_text);
     setQuestions(survey.questions);
     setCertificateEnabled(survey.certificate_enabled);
+    setAnonymous(Boolean(survey.anonymous));
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- the draft is reseeded only when the survey id, open state or answered-question set changes (the joined ids are that signature); depending on the survey object would overwrite edits on every refetch
   }, [survey?.id, survey?.is_open, survey?.answered_question_ids.join("|")]);
 
-  const error = configure.error || open.error || close.error;
-  const pending = configure.isPending || open.isPending || close.isPending;
+  const error = configure.error || open.error || close.error || template.error;
+  const pending = configure.isPending || open.isPending || close.isPending || template.isPending;
+  const hasResponses = (survey?.response_count ?? 0) > 0 || Boolean(survey?.answered_question_ids.length);
 
+  if (!visible) return null;
   return <section className="border-t border-line pt-5" aria-labelledby="feedback-title">
     <div className="flex flex-wrap items-center justify-between gap-2">
-      <div><h3 id="feedback-title" className="title-section">Post-event feedback</h3>
-        <p className="text-sm text-muted">Answered questions stay immutable; unopened questions remain editable.</p>
+      <div><h3 id="feedback-title" className="title-section">{t`Post-event feedback`}</h3>
+        <p className="text-sm text-muted">{t`Answered questions stay immutable; unopened questions remain editable.`}</p>
       </div>
-      {survey ? <StatusBadge status={survey.is_open ? "open" : "closed"} /> : null}
+      {survey ? <StatusBadge status={survey.is_open ? "open" : "closed"} label={opsStatusLabel(survey.is_open ? "open" : "closed")} /> : null}
     </div>
-    {surveyQuery.isLoading ? <Skeleton className="mt-3 h-32 w-full" /> : null}
+    {surveyQuery.isLoading ? <LogoLoader size={48} className="min-h-32 py-3" /> : null}
     {surveyQuery.error ? <p className="mt-3 text-sm text-danger">{eventErrorText(surveyQuery.error)}</p> : null}
+    {!surveyQuery.isLoading && !surveyQuery.error ? <div className="mt-4 grid gap-2">
+      <label className="grid gap-1 text-sm">{t`Feedback template`}<select className="desk-input" value={selectedTemplate} disabled={pending || hasResponses} onChange={(e) => setSelectedTemplate(e.target.value as FeedbackTemplate)}>
+        <option value="quick_pulse">{t`Quick pulse`}</option><option value="event_review">{t`Event review`}</option><option value="session_speaker">{t`Session & speaker review`}</option>
+      </select></label>
+      <button className="desk-button w-fit" type="button" disabled={pending || hasResponses} onClick={() => template.mutate(selectedTemplate, { onSuccess: (next) => {
+        setTitle(next.title); setThankYou(next.thank_you_text); setQuestions(next.questions); setCertificateEnabled(next.certificate_enabled);
+      } })}>{template.isPending ? <><BoxArt size={16} mono />{t`Applying...`}</> : t`Apply template`}</button>
+      <p className="text-xs text-muted">{hasResponses ? t`Templates cannot replace a survey once it has responses.` : t`Applying a template replaces the current survey questions.`}</p>
+    </div> : null}
     {!surveyQuery.isLoading ? <form className="mt-4 grid gap-3" onSubmit={(event) => {
       event.preventDefault();
-      configure.mutate({ title, thank_you_text: thankYou, questions, certificate_enabled: certificateEnabled });
+      configure.mutate({ title, thank_you_text: thankYou, questions, ...(canManageCertificates ? { certificate_enabled: certificateEnabled } : {}),
+        ...(survey?.anonymous_available ? { anonymous: anonymous && !certificateEnabled } : {}) });
     }}>
-      <label className="grid gap-1"><span className="eyebrow">Survey title</span><input className="desk-input" required maxLength={200} value={title} onChange={(event) => setTitle(event.target.value)} /></label>
-      <label className="grid gap-1"><span className="eyebrow">Thank-you message</span><textarea className="desk-input min-h-20" maxLength={2000} value={thankYou} onChange={(event) => setThankYou(event.target.value)} /></label>
-      <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={certificateEnabled} onChange={(event) => setCertificateEnabled(event.target.checked)} />Require an attended member and issue an attendance certificate</label>
-      <CustomFormBuilder value={questions} onChange={(value) => setQuestions(value ?? [])} allowedTypes={FEEDBACK_TYPES} lockedQuestionIds={survey?.answered_question_ids} legend="Feedback questions" emptyMessage="Add at least one question before opening the survey." />
+      <label className="grid gap-1"><span className="eyebrow">{t`Survey title`}</span><input className="desk-input" required maxLength={200} value={title} onChange={(event) => setTitle(event.target.value)} /></label>
+      <label className="grid gap-1"><span className="eyebrow">{t`Thank-you message`}</span><textarea className="desk-input min-h-20" maxLength={2000} value={thankYou} onChange={(event) => setThankYou(event.target.value)} /></label>
+      {canManageCertificates ? <label className="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" checked={certificateEnabled} onChange={(event) => setCertificateEnabled(event.target.checked)} />{t`Require an attended member and issue an attendance certificate`}</label> : null}
+      {survey?.anonymous_available ? <label className="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" checked={anonymous && !certificateEnabled} disabled={certificateEnabled || hasResponses} onChange={(event) => setAnonymous(event.target.checked)} />{t`Anonymous: keep answers with no link to the person`}{certificateEnabled ? t` (turn certificates off first)` : ""}</label> : null}
+      <CustomFormBuilder value={questions} onChange={(value) => setQuestions(value ?? [])} allowedTypes={FEEDBACK_TYPES} lockedQuestionIds={survey?.answered_question_ids} legend={t`Feedback questions`} emptyMessage={t`Add at least one question before opening the survey.`} />
       <div className="flex flex-wrap gap-2">
-        <button className="desk-button-primary" type="submit" disabled={pending}>Save survey</button>
-        {survey && !survey.is_open ? <button className="desk-button-success" type="button" disabled={pending} onClick={() => open.mutate()}>Open responses</button> : null}
-        {survey?.is_open ? <button className="desk-button-danger" type="button" disabled={pending} onClick={() => close.mutate()}>Close responses</button> : null}
+        <button className="desk-button-primary" type="submit" disabled={pending}>{t`Save survey`}</button>
+        {survey && !survey.is_open ? <button className="desk-button-success" type="button" disabled={pending} onClick={() => open.mutate()}>{t`Open responses`}</button> : null}
+        {survey?.is_open ? <button className="desk-button-danger" type="button" disabled={pending} onClick={() => close.mutate()}>{t`Close responses`}</button> : null}
       </div>
     </form> : null}
     {error ? <p className="mt-2 text-sm text-danger" role="alert">{eventErrorText(error)}</p> : null}
-    {survey ? <EventFeedbackResponses eventId={eventId} makerspaceId={makerspaceId} responseCount={survey.response_count ?? 0} /> : null}
+    {survey && canViewResponses ? <EventFeedbackResponses eventId={eventId} makerspaceId={makerspaceId} responseCount={survey.response_count ?? 0} canManageCertificates={canManageCertificates} /> : null}
   </section>;
 }

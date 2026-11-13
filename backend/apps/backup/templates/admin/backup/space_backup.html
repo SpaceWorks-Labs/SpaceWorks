@@ -1,0 +1,53 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+{% block content %}
+<p><a href="{% url 'admin:makerspaces_makerspace_change' space.pk %}">{% blocktranslate trimmed with name=space.name %}Back to {{ name }}{% endblocktranslate %}</a>
+ &middot; <a href="{% url 'admin:backup_platformbackupsettings_console' %}">{% translate "All backups (choose a scope)" %}</a></p>
+<p>{% blocktranslate trimmed %}Restoring rolls this space back to the chosen restore point. The live audit history,
+payments recorded after the restore point and newer evidence photos are kept. A safety backup
+of the space as it is now is taken first; the restore refuses if that backup fails. Other spaces
+are never changed. Every step needs a recent identity check and is recorded in this space's audit log.{% endblocktranslate %}</p>
+
+<form method="post">{% csrf_token %}
+  <input type="hidden" name="action" value="backup_now">
+  <button type="submit">{% translate "Back up now" %}</button>
+</form>
+
+<h2>{% translate "Restore points" %}</h2>
+<table>
+  <thead><tr><th scope="col">{% translate "Taken" %}</th><th scope="col">{% translate "Scope" %}</th><th scope="col">{% translate "Kind" %}</th><th scope="col">{% translate "Size" %}</th><th scope="col"></th></tr></thead>
+  <tbody>
+  {% for item in timeline %}
+    <tr>
+      <td>{{ item.archive.completed_at }}</td>
+      <td>{% if item.scope == "space" %}{% translate "This space" %}{% else %}{% translate "Whole platform" %}{% endif %}</td>
+      <td>{{ item.archive.get_trigger_display }}</td>
+      <td>{{ item.archive.size_bytes|filesizeformat }}</td>
+      <td>
+        {% if item.restorable %}
+        <form method="post">{% csrf_token %}
+          <input type="hidden" name="action" value="restore"><input type="hidden" name="archive_id" value="{{ item.archive.pk }}">
+          <button type="submit">{% translate "Restore&hellip;" %}</button>
+        </form>
+        {% elif item.scope == "platform" %}
+          <small>{% translate "Restore via host command (see docs):" %} <code>{% translate "extract_space_restore_point" %}</code> {% translate "turns it into a restore point of this space." %}</small>
+        {% else %}
+          <small>{% translate "Not restorable in the app (not encrypted to this server's restore key)." %}</small>
+        {% endif %}
+      </td>
+    </tr>
+  {% empty %}
+    <tr><td colspan="5">{% translate "No restore points yet." %}</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+<h2>{% translate "Restores" %}</h2>
+<ul>
+{% for row in restores %}
+  <li><a href="{% url 'admin:makerspaces_makerspace_space_restore' space.pk row.pk %}">{{ row.created_at }}: {{ row.get_stage_display }}</a></li>
+{% empty %}
+  <li>{% translate "No restores yet." %}</li>
+{% endfor %}
+</ul>
+{% endblock %}

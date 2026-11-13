@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.db import IntegrityError, transaction
 from django.http import Http404
 from django.shortcuts import get_object_or_404
@@ -11,7 +12,6 @@ from apps.admin_api.permissions import IsActiveStaff
 from apps.audit import services as audit
 from apps.evidence.responses import storage_unavailable_response
 from apps.evidence.storage import StorageUnavailable
-from apps.makerspaces.guards import require_module
 from apps.procurement import access, storage
 from apps.procurement.models import ToBuyItem, ToBuyReceipt
 from apps.procurement.serializers import (
@@ -21,7 +21,7 @@ from apps.procurement.serializers import (
     ToBuyReceiptUploadResponseSerializer,
     ToBuyReceiptUrlSerializer,
 )
-from apps.procurement.views_common import MODULE_KEY, PROCUREMENT_ERROR_RESPONSES
+from apps.procurement.views_common import PROCUREMENT_ERROR_RESPONSES, require_item_switch
 
 
 def resolve_item(user, pk):
@@ -38,7 +38,7 @@ def resolve_item(user, pk):
         ),
         pk=pk,
     )
-    require_module(item.makerspace, MODULE_KEY)
+    require_item_switch(item)
     return item
 
 
@@ -54,7 +54,7 @@ def resolve_receipt(user, pk):
         pk=pk,
         to_buy_item=item,
     )
-    require_module(item.makerspace, MODULE_KEY)
+    require_item_switch(item)
     receipt.to_buy_item = item
     return receipt
 
@@ -126,7 +126,7 @@ class ToBuyReceiptListCreateView(APIView):
         serializer.is_valid(raise_exception=True)
         object_key = serializer.validated_data["object_key"]
         if ToBuyReceipt.objects.filter(object_key=object_key).exists():
-            raise ValidationError({"object_key": "This receipt is already attached."})
+            raise ValidationError({"object_key": gettext("This receipt is already attached.")})
         try:
             storage.finalize_receipt_upload(item, object_key)
         except StorageUnavailable:
@@ -139,7 +139,7 @@ class ToBuyReceiptListCreateView(APIView):
                     uploaded_by=request.user,
                 )
         except IntegrityError as exc:
-            raise ValidationError({"object_key": "This receipt is already attached."}) from exc
+            raise ValidationError({"object_key": gettext("This receipt is already attached.")}) from exc
         audit.record(
             request.user,
             "procurement.receipt_added",

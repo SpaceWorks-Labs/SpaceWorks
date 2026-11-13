@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.db import transaction
 from django.http import Http404
 from django.utils import timezone
@@ -60,7 +61,7 @@ def move_to_inventory(
         elif mode == MoveMode.TOPUP:
             product = _topup_product(locked, product_id)
         else:
-            raise ValidationError({"mode": "Use create or topup."})
+            raise ValidationError({"mode": gettext("Use create or topup.")})
 
         try:
             product = availability.adjust_quantities(
@@ -111,6 +112,7 @@ def move_to_printing(actor, item, *, target, data):
             target=target,
             data=data,
             machine_type=locked.machine_type,
+            source_pool=locked.source_pool,
         )
         if target == PrintingTarget.SPOOL:
             locked.resulting_pool = result
@@ -119,7 +121,7 @@ def move_to_printing(actor, item, *, target, data):
             locked.resulting_machine = result
             update_fields = ["moved_to_inventory_at", "resulting_machine", "updated_at"]
         else:
-            raise ValidationError({"target": "Use spool or printer."})
+            raise ValidationError({"target": gettext("Use spool or printer.")})
         locked.moved_to_inventory_at = timezone.now()
         locked.save(update_fields=update_fields)
         audit.record(actor, "procurement.moved_to_printing", makerspace=locked.makerspace, target=locked, meta={"item_id": locked.id, "target": target, "result_id": result.id, "kernel": True})
@@ -127,20 +129,20 @@ def move_to_printing(actor, item, *, target, data):
 
 def _assert_move_allowed(item, expected_kind):
     if item.kind != expected_kind:
-        raise ValidationError({"kind": f"Item must be {expected_kind}."})
+        raise ValidationError({"kind": gettext('Item must be {expected_kind}.').format(expected_kind=expected_kind)})
     if item.status != ToBuyItem.Status.RECEIVED:
-        raise ValidationError({"status": "Item must be received before it can be moved."})
+        raise ValidationError({"status": gettext("Item must be received before it can be moved.")})
     if item.moved_to_inventory_at is not None:
-        raise ValidationError({"detail": "Already moved to inventory."})
+        raise ValidationError({"detail": gettext("Already moved to inventory.")})
 
 
 def _positive_quantity(value):
     try:
         quantity = int(value)
     except (TypeError, ValueError) as exc:
-        raise ValidationError({"quantity": "Quantity must be a positive integer."}) from exc
+        raise ValidationError({"quantity": gettext("Quantity must be a positive integer.")}) from exc
     if quantity < 1:
-        raise ValidationError({"quantity": "Quantity must be at least 1."})
+        raise ValidationError({"quantity": gettext("Quantity must be at least 1.")})
     return quantity
 
 
@@ -176,8 +178,14 @@ def _create_inventory_product(
 
 
 def _topup_product(item, product_id):
+    # A reorder or auto To-Buy refills its origin product (MI-40): the origin is the
+    # default target and no other product may be credited with it.
+    if item.source_product_id:
+        if product_id and int(product_id) != item.source_product_id:
+            raise ValidationError({"product_id": gettext("This item restocks its source product.")})
+        product_id = item.source_product_id
     if not product_id:
-        raise ValidationError({"product_id": "This field is required for topup."})
+        raise ValidationError({"product_id": gettext("This field is required for topup.")})
     try:
         return InventoryProduct.objects.select_related("makerspace").get(
             pk=product_id,

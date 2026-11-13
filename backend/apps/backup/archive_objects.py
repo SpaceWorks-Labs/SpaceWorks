@@ -5,18 +5,53 @@ from django.conf import settings
 
 from apps.backup import storage
 from apps.data_export.datasets import DATASET_SPECS
+from .capture_managers import every_row
 
 
 OBJECT_FIELD_NAMES = frozenset({
     "object_key", "image_key", "avatar_key", "cover_image_key", "copy_key",
     "logo_key",
     "photo_object_key",
+    "branding_logo_key",
+    "staging_key", "verification_key",
 })
 
 NON_OBJECT_KEY_FIELDS = frozenset({
+    # Sender/correlation identities are protected provider state, never S3 keys.
+    ("integrations.MakerspaceMessagingSettings", "sms_sender_key"),
+    ("integrations.MakerspaceMessagingSettings", "whatsapp_sender_key"),
+    ("integrations.MessagingDelivery", "event_key"),
+    ("integrations.MessagingDelivery", "sender_key"),
+    ("integrations.MessagingRecipientAlias", "sender_key"),
+    ("integrations.MessagingRecipientCorrelation", "sender_key"),
+    ("integrations.MessagingSenderIdentity", "sender_key"),
+    ("integrations.MessagingSuppression", "sender_key"),
+    ("integrations.MessagingWebhookEvent", "sender_key"),
+    # Canonical cutover sender bindings and receipt dedupe identities are provider
+    # correlation strings (deployment-local), never bucket locators.
+    ("integrations.ChannelConfiguration", "sender_key"),
+    ("integrations.MessagingConsent", "sender_key"),
+    ("integrations.NotificationCredentialVersion", "sender_key"),
+    ("integrations.NotificationDelivery", "sender_key"),
+    ("integrations.NotificationIngress", "dedupe_key"),
+    ("integrations.NotificationIngress", "sender_key"),
+    ("integrations.NotificationProviderReference", "sender_key"),
+    ("operations.CloudEmailReservation", "attempt_key"),  # stable mail replay identity
+    ("operations.CloudObjectUsageReceipt", "operation_key"),  # accounting idempotency, no object locator
+    # Replay-receipt digest of tenant, provider and event id, not a locator.
+    ("integrations.EmailProviderWebhookReceipt", "event_key"),
+    # Notification intent and delivery-target identities, never bucket locators.
+    ("integrations.NotificationEnvelope", "dedup_key"),
+    ("integrations.NotificationDelivery", "target_key"),
     # UUID identifying one inbox fan-out, never a bucket locator.
     ("notifications.NotificationInboxRow", "event_key"),
+    # UUID of the notification an escalation follows (L2), never a bucket locator.
+    ("notifications.NotificationEscalation", "event_key"),
+    # Name of the module setting a Space Manager locked (L17), never a bucket locator.
+    ("makerspaces.ModuleSettingLock", "setting_key"),
     ("accounts.NativeAppRegistration", "verifier_config_key"),
+    # App Attest credential PEM, never an object-storage locator.
+    ("accounts.DeviceGrant", "attestation_public_key"),
     ("accounts.PlatformSocialAuthSettings", "apple_private_key"),
     ("audit.AuditMacKey", "wrapped_key"),
     ("audit.AuditSigningKey", "public_key"),
@@ -32,6 +67,21 @@ NON_OBJECT_KEY_FIELDS = frozenset({
     # position within a recurring series, and the rollup keys name which metric a row
     # holds. Nothing is stored in a bucket for any of them.
     ("events.Event", "series_occurrence_key"),
+    # Stage trigger and payee-template selectors are closed vocabulary labels.
+    ("events.StageFormAssignment", "trigger_key"),
+    ("payments.EventPayeeRevision", "template_key"),
+    ("events.HackathonPrizeClaim", "template_key"),  # hack-money: the same payee-template selector
+    # L3 card designer: the deployment-wide font cache and expiring job results are omitted
+    # models (not tenant archive content); the job's idempotency key is a replay identity.
+    ("card_designs.CardFont", "font_key"),
+    ("card_designs.CardJob", "idempotency_key"),
+    ("card_designs.CardJob", "result_key"),
+    # D314c: derived cut-outs and bulk-photo-batch files are omitted, regenerable / temporary private objects.
+    ("card_designs.CardPhotoCutout", "source_key"),
+    ("card_designs.CardPhotoCutout", "cutout_key"),
+    ("card_designs.CardPhotoBatchItem", "file_key"),
+    # Superadmin hosting billing: an encrypted provider credential, never a bucket locator.
+    ("managed_hosting.PlatformHostingBillingSettings", "stripe_secret_key"),
     ("operations.ReportMetricRollup", "dimension_key"),
     ("operations.ReportMetricRollup", "metric_key"),
     ("operations.ReportMetricRollup", "report_key"),
@@ -55,8 +105,27 @@ NON_OBJECT_KEY_FIELDS = frozenset({
     # copy would restore as a pointer to something that must not exist.
     ("tenant_migration.TenantDumpCapture", "unpublished_object_key"),
     ("tenant_migration.TenantImportObject", "source_key"),
-    ("tenant_migration.TenantImportObject", "staging_key"),
     ("tenant_migration.TenantImportObject", "target_key"),
+    # Events programme logical identifiers: a saved-detail field name, a form identity,
+    # a help-request dedup token and an integrity-rule name. None names a bucket object.
+    ("accounts.MemberSavedDetail", "field_key"),
+    ("events.EventFormRevision", "form_key"),
+    ("events.EventHelpRequest", "dedup_key"),
+    ("events.SubmissionIntegrityFlag", "rule_key"),
+    # Login security (S0): an IP/network block key and a passkey's COSE public key bytes.
+    ("accounts.IPAutoBlock", "ip_key"),
+    ("accounts.WebAuthnCredential", "public_key"),
+    # Logical identity strings added in 0.12.0, none a bucket locator: a "YYYY-MM" period of the organization
+    # hours ledger, a card-number scheme label, a machine-type consumable template selector, and the shop
+    # order's client replay token.
+    ("bookings.OrganizationHoursLedger", "period_key"),
+    ("card_designs.CardNumberCounter", "scheme_key"),
+    ("machines.MachineTypeConsumable", "template_key"),
+    ("shop.ShopOrder", "idempotency_key"),
+    # Decision 312/321: an opt-in recording clip that is retention-limited and purged by a sweep. It is
+    # deliberately NOT archived (a restored pointer would dangle once the clip expires); the row keeps the key
+    # only until the purge clears it.
+    ("devices.AdapterWatch", "recording_key"),
 })
 
 
@@ -65,13 +134,25 @@ def object_closure():
     result = {"private": {}, "public_image": {}}
     for model in apps.get_models():
         # Receipt keys are deletion locators for objects that must NOT exist.
-        if model._meta.label == "evidence.EvidenceAbandonedUploadReceipt":
+        if model._meta.label in {"evidence.EvidenceAbandonedUploadReceipt", "accounts.AccountPurgeObject",
+                                  "backup.ManagedStagedObject"}:
             continue
-        collect_model_objects(model._default_manager.all(), model, result)
+        collect_model_objects(every_row(model).all(), model, result)
     return result
 
 
 def collect_model_objects(queryset, model, result, fixed_makerspace_id=None):
+    if model._meta.label == "accounts.AccountPurgeObject":
+        # A deletion journal is never a request to resurrect erased profile bytes.
+        return
+    # Share the compound archive's field-specific bucket declarations. A public
+    # gallery uses object_key too; field spelling alone cannot select its bucket.
+    from .object_ownership_registry import FIELD_OBJECT_RULES, ReferencePolicy
+
+    buckets = {(rule.model_label, rule.field_name): rule.bucket.value for rule in FIELD_OBJECT_RULES}
+    rules = {(rule.model_label, rule.field_name): rule for rule in FIELD_OBJECT_RULES}
+    if model._meta.label in {"events.EventCertificateArtwork", "events.EventCertificateLibraryArtwork"}:
+        queryset = queryset.filter(promoted_at__isnull=False)
     spec = DATASET_SPECS.get(model._meta.label)
     ownership_paths = spec[1].any_paths if spec else ()
     if not ownership_paths and any(
@@ -81,8 +162,14 @@ def collect_model_objects(queryset, model, result, fixed_makerspace_id=None):
     for field in model._meta.concrete_fields:
         if field.name not in OBJECT_FIELD_NAMES:
             continue
+        rule = rules[(model._meta.label, field.name)]
+        if rule.policy == ReferencePolicy.COORDINATION_ONLY:
+            continue
         if model._meta.label == "evidence.EvidencePhoto" and field.name == "object_key":
             _collect_evidence_objects(queryset, result, fixed_makerspace_id)
+            continue
+        from .object_reference_legacy import collect_retained
+        if collect_retained(queryset, model, rule, ownership_paths, result, fixed_makerspace_id):
             continue
         if field.name == "copy_key":
             rows = queryset.exclude(copy_key="").values_list(
@@ -93,7 +180,7 @@ def collect_model_objects(queryset, model, result, fixed_makerspace_id=None):
                     "makerspace_id": owner, "module_key": module_key,
                 }
             continue
-        bucket_kind = "public_image" if field.name != "object_key" else "private"
+        bucket_kind = buckets[(model._meta.label, field.name)]
         value_paths = [
             path if path in {"pk", "id"} else f"{path}_id"
             for path in ownership_paths
@@ -148,6 +235,7 @@ def _collect_evidence_objects(queryset, result, fixed_makerspace_id):
 
 
 def capture_objects(root, object_keys, modes):
+    from .object_capture_proof import PROOF_FIELDS, assert_capture_proof
     manifest = []
     buckets = {
         "private": settings.AWS_STORAGE_BUCKET_NAME,
@@ -178,17 +266,26 @@ def capture_objects(root, object_keys, modes):
             item = storage.download_object(
                 buckets[kind], key, destination, versioned=modes[kind] == "versioned"
             )
-            manifest.append({"bucket_kind": kind, **ownership, **item})
+            assert_capture_proof(ownership, item)
+            public_facts = {name: value for name, value in ownership.items() if name not in PROOF_FIELDS}
+            manifest.append({"bucket_kind": kind, **public_facts, **item})
     return manifest
 
 
 def module_for_model(label):
+    if label.startswith("events."):
+        return "events"
     return {
+        "events.EventPageAsset": "events",
+        "bookings.BookingResourcePageAsset": "bookings",
         "events.Event": "events",
         "events.EventSeries": "events",
         "events.EventAttendanceCertificate": "events",
+        "events.EventCertificateArtwork": "events",
         "bookings.BookableSpace": "bookings",
+        "bookings.BookableSpacePhoto": "bookings",
         "maintenance.MaintenanceLogDocument": "maintenance",
+        "maintenance.IssuePhoto": "maintenance",
         "procurement.ToBuyReceipt": "procurement",
         "makerspaces.MemberProfile": "membership",
         "makerspaces.MemberProject": "membership",

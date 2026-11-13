@@ -1,14 +1,18 @@
 """The sole state-transition authority for machine service requests."""
 
+from apps.accounts.account_kind_guards import require_member_account
+
 from django.db import transaction
 from django.utils import timezone
+from apps.accounts.account_obligations import lock_obligation_owner
 
 from apps.makerspaces import limits
 from apps.machines import role_scope
-from apps.machines.certifications import require_certification_for_member
+from apps.machines.access_grants import require_type_access
 from apps.machines.models import Machine, MachineServiceRequest, ServiceBucket, ServiceQueue, get_or_create_default_bucket
 from apps.machines.service_consumption import debit_consumptions
 from apps.machines.service_errors import ServiceConsumptionInvalid, ServiceInvalidTransition, ServiceMachineUnavailable
+from apps.machines.service_queue_notices import initiator_for, reevaluate_head, reserve_milestone
 from apps.machines.service_workflow_helpers import (
     _assert_request_write_allowed,
     _assert_submission_write_allowed,
@@ -18,36 +22,50 @@ from apps.machines.service_workflow_helpers import (
     _locked_request,
     _locked_submission_machine,
     _locked_submission_target,
+    _lock_scope,
     _minutes,
     _notify_after_commit,
     _percent,
+    _release_hold,
     _release_queue_machine,
     _require_available,
     _require_edge,
     _require_module,
     _require_printer_start_inputs,
+    _submission_makerspace_id,
     _validate_capability_payload,
 )
 
 
 def submit(bucket_or_machine, requester, *, requester_name, contact_email, contact_phone, title, description="", source_link="", actor=None, member=None, capability_payload=None, certification_override_reason=""):
     """Create a pending legacy bucket request or unassigned pooled request."""
+    require_member_account(requester)
+    if member is not None:
+        require_member_account(member)
     with transaction.atomic():
         _assert_submission_write_allowed(bucket_or_machine)
+        # Makerspace fence FIRST, then the queue / bucket machine: the same order as the
+        # device printer adapter (makerspace -> ... -> request -> machine), so submit can
+        # never close a submit/device/request->queue lock cycle.
+        _require_module(_submission_makerspace_id(bucket_or_machine), locked=True)
         target = _locked_submission_target(bucket_or_machine) if isinstance(bucket_or_machine, ServiceQueue) else _locked_submission_machine(bucket_or_machine)
         makerspace = target.makerspace
         machine_type = target.machine_type if isinstance(target, ServiceQueue) else target.machine_type
         _validate_capability_payload(machine_type, capability_payload or {}, makerspace)
-        # Certification gating. Only for a member-attributed submission: an anonymous or
+        # Machine access gating (decision 319). Only for a member-attributed submission: an anonymous or
         # staff-entered request is somebody asking staff to run the machine, which is not
         # the member operating it, so there is nothing to have been trained for.
-        require_certification_for_member(
-            makerspace, member, machine_type, purpose="service", actor=actor,
-            override_reason=certification_override_reason,
-        )
-        _require_module(makerspace, locked=True)
+        if member is not None:  # decision 319: a machine access grant, never a certification
+            require_type_access(member, makerspace, machine_type)
+        owner = lock_obligation_owner(member if member is not None else requester)
+        if member is not None:
+            member = owner
+        else:
+            requester = owner
         limits.check_quota(makerspace, "machine_service_open", adding=1)
         limits.check_quota(makerspace, "machine_service_submit", adding=1)
+        from apps.managed_hosting.extra_quotas import check_extra_quota
+        check_extra_quota(makerspace, "machine_jobs_monthly")  # decision 284: typed 409; a job already queued is never read
         if isinstance(target, ServiceQueue):
             if not target.is_active:
                 raise ServiceMachineUnavailable("Service queue is inactive.")
@@ -68,14 +86,19 @@ def submit(bucket_or_machine, requester, *, requester_name, contact_email, conta
         return service_request
 
 
-def accept(service_request, actor, *, estimated_minutes=None, planned_grams=None, note=""):
+def accept(service_request, actor, *, estimated_minutes=None, planned_grams=None, note="", override_length=False):
     with transaction.atomic():
         _assert_request_write_allowed(service_request)
         locked = _locked_request(service_request)
         _require_module(locked.makerspace)
         _require_edge(locked, MachineServiceRequest.Status.ACCEPTED)
+        if locked.status == MachineServiceRequest.Status.QUOTED:
+            raise ServiceInvalidTransition("A quoted job enters the queue when the member approves it.")
+        _lock_scope(locked)
         if estimated_minutes is not None:
             locked.estimated_minutes = _minutes(estimated_minutes, "estimated_minutes")
+        from apps.machines.job_rules import require_acceptable
+        require_acceptable(locked, planned_grams=planned_grams, override_length=override_length)
         if planned_grams is not None:
             grams = _decimal(planned_grams, "planned_grams")
             if grams < 0:
@@ -92,11 +115,12 @@ def accept(service_request, actor, *, estimated_minutes=None, planned_grams=None
         locked.status, locked.handled_by, locked.accepted_by, locked.accepted_at = MachineServiceRequest.Status.ACCEPTED, actor, actor, timezone.now()
         locked.save(update_fields=["status", "handled_by", "accepted_by", "accepted_at", "estimated_minutes", "planned_grams", "capability_payload", "reason", "updated_at"])
         _audit_transition(actor, locked, "accepted")
+        reevaluate_head(locked, initiator=initiator_for(actor))
         _notify_after_commit(locked, "accepted")
         return locked
 
 
-def reject(service_request, actor, *, reason):
+def reject(service_request, actor, *, reason, code=""):
     with transaction.atomic():
         _assert_request_write_allowed(service_request)
         if not str(reason or "").strip():
@@ -104,79 +128,19 @@ def reject(service_request, actor, *, reason):
         locked = _locked_request(service_request)
         _require_module(locked.makerspace)
         _require_edge(locked, MachineServiceRequest.Status.REJECTED)
+        _lock_scope(locked)
+        locked.refresh_from_db()  # fresh hold fields/relations under the lock
+        released = _release_hold(locked, actor, reason=str(reason).strip())
         locked.status, locked.handled_by, locked.reason = MachineServiceRequest.Status.REJECTED, actor, str(reason).strip()
-        locked.save(update_fields=["status", "handled_by", "reason", "updated_at"])
-        _audit_transition(actor, locked, "rejected")
+        locked.reject_code = str(code or "")[:32]
+        locked.save(update_fields=["status", "handled_by", "reason", "reject_code", "updated_at"])
+        _audit_transition(actor, locked, "rejected", extra={"released_hold": released, "code": locked.reject_code})
+        reevaluate_head(locked, initiator=initiator_for(actor))
         _notify_after_commit(locked, "rejected")
         return locked
 
 
-def start(service_request, actor, machine_scope, *, machine_id=None, estimated_minutes=None, consumable_pool_id=None, planned_grams=None, planned_quantity=None):
-    with transaction.atomic():
-        _assert_request_write_allowed(service_request)
-        locked = _locked_request(service_request)
-        _require_module(locked.makerspace)
-        _require_edge(locked, MachineServiceRequest.Status.IN_PROGRESS)
-        queue = None
-        if locked.queue_id:
-            queue = ServiceQueue.objects.select_for_update().select_related("makerspace", "machine_type").get(pk=locked.queue_id)
-            locked.queue = queue
-        candidate_scope = role_scope.scope_q_for(
-            machine_scope,
-            machine_id_paths=("pk",),
-            type_id_paths=("machine_type_id",),
-        )
-        if machine_id is None and queue and queue.allocation_policy == ServiceQueue.AllocationPolicy.FIRST_IDLE:
-            machine = Machine.objects.select_for_update().select_related("makerspace", "machine_type").filter(
-                candidate_scope,
-                makerspace_id=locked.makerspace_id, machine_type_id=queue.machine_type_id,
-                is_active=True, status=Machine.Status.IDLE,
-            ).order_by("id").first()
-        elif machine_id is None:
-            raise ServiceMachineUnavailable("A machine is required to start service.")
-        else:
-            machine = Machine.objects.select_for_update().select_related("makerspace", "machine_type").filter(
-                candidate_scope,
-                pk=machine_id,
-            ).first()
-        if machine is None or machine.makerspace_id != locked.makerspace_id:
-            raise ServiceMachineUnavailable("Machine is not available for this service request.")
-        if locked.queue_id and machine.machine_type_id != queue.machine_type_id:
-            raise ServiceMachineUnavailable("Machine is not compatible with this service queue.")
-        _require_available(machine)
-        if locked.queue_id and queue.capacity is not None:
-            active = MachineServiceRequest.objects.select_for_update().filter(queue=locked.queue, status=MachineServiceRequest.Status.IN_PROGRESS).count()
-            if active >= queue.capacity:
-                raise ServiceMachineUnavailable("Service queue capacity has been reached.")
-        if estimated_minutes is not None:
-            locked.estimated_minutes = _minutes(estimated_minutes, "estimated_minutes")
-        _require_printer_start_inputs(locked, machine, consumable_pool_id, planned_grams)
-        if consumable_pool_id is not None or planned_grams is not None or planned_quantity is not None:
-            if consumable_pool_id is None or (planned_grams is None) == (planned_quantity is None):
-                raise ServiceConsumptionInvalid("A consumable pool and exactly one planned quantity must be supplied together.")
-            from apps.machines.models import MachineConsumablePool
-            from apps.machines.service_consumable_pools import reserve_for_request
-            reserve_for_request(locked, actor, pool=MachineConsumablePool.objects.get(pk=consumable_pool_id),
-                                planned_grams=planned_grams, planned_quantity=planned_quantity, machine=machine)
-            locked.refresh_from_db()
-        locked.assigned_machine, locked.status, locked.handled_by, locked.started_at = machine, MachineServiceRequest.Status.IN_PROGRESS, actor, timezone.now()
-        locked.run_machine_name = machine.name
-        locked.run_machine_model = str((machine.type_payload or {}).get("model", ""))
-        locked.run_estimated_minutes = locked.estimated_minutes
-        locked.run_planned_grams = locked.planned_grams
-        if locked.run_consumable_pool_id:
-            pool = locked.run_consumable_pool
-            locked.run_consumable_label, locked.run_consumable_material, locked.run_consumable_color = pool.label, pool.material, pool.color
-        locked.save(update_fields=["assigned_machine", "status", "handled_by", "started_at", "estimated_minutes", "run_machine_name", "run_machine_model", "run_consumable_label", "run_consumable_material", "run_consumable_color", "run_estimated_minutes", "run_planned_grams", "updated_at"])
-        machine.status = Machine.Status.RUNNING
-        machine.save(update_fields=["status", "updated_at"])
-        _audit_transition(actor, locked, "assigned", extra={"machine_id": machine.pk})
-        _audit_transition(actor, locked, "started")
-        _notify_after_commit(locked, "started")
-        return locked
-
-
-def complete(service_request, actor, *, actual_minutes, consumptions, actual_grams=None, actual_quantity=None):
+def complete(service_request, actor, *, actual_minutes, consumptions, actual_grams=None, actual_quantity=None, initiator=None, pickup_location="", profile_consumptions=None, enforce_required=True):
     with transaction.atomic():
         _assert_request_write_allowed(service_request)
         locked = _locked_request(service_request)
@@ -185,6 +149,7 @@ def complete(service_request, actor, *, actual_minutes, consumptions, actual_gra
         _lock_assigned_machine(locked)
         locked.actual_minutes = _minutes(actual_minutes, "actual_minutes")
         debit_consumptions(locked, actor, consumptions, outcome="completed")
+        _record_profile(locked, actor, profile_consumptions, enforce_required=enforce_required)
         if locked.run_consumable_pool_id:
             from apps.machines.service_consumable_pools import reconcile_request
             reconcile_request(locked, actor, actual_grams=locked.planned_grams if actual_grams is None else actual_grams,
@@ -192,16 +157,31 @@ def complete(service_request, actor, *, actual_minutes, consumptions, actual_gra
             locked.refresh_from_db()
             locked.actual_minutes = _minutes(actual_minutes, "actual_minutes")
         locked.status, locked.handled_by, locked.completed_at = MachineServiceRequest.Status.COMPLETED, actor, timezone.now()
-        locked.save(update_fields=["status", "handled_by", "actual_minutes", "completed_at", "updated_at"])
-        _release_queue_machine(locked)
+        from apps.machines.job_pickup import new_pickup_code
+        locked.pickup_code, locked.pickup_location = new_pickup_code(), str(pickup_location or "").strip()[:120]
+        locked.save(update_fields=["status", "handled_by", "actual_minutes", "completed_at", "pickup_code",
+                                   "pickup_location", "updated_at"])
+        from .consumable_costs import record_service_cost
+        record_service_cost(locked, actor)
+        _release_queue_machine(locked, actor)
         _audit_transition(actor, locked, "completed")
+        reserve_milestone(locked, "completed", initiator=initiator or initiator_for(actor))
         _notify_after_commit(locked, "completed")
-        from apps.machines.service_payments import create_for_completed_request
-        create_for_completed_request(locked, actor)
+        from apps.machines.job_charges import charge_completed
+        charge_completed(locked, actor)
         return locked
 
 
-def fail(service_request, actor, *, reason, percent_complete, actual_minutes, consumptions, actual_grams=None, actual_quantity=None):
+def _record_profile(locked, actor, entries, *, enforce_required):
+    """Decision 341: the type's profile consumables, recorded by staff; required ones gate completion."""
+    from apps.machines import consumable_usage
+    if entries:
+        consumable_usage.record_actuals(locked, actor, entries, source="staff")
+    if enforce_required:
+        consumable_usage.require_required(locked)
+
+
+def fail(service_request, actor, *, reason, percent_complete, actual_minutes, consumptions, actual_grams=None, actual_quantity=None, code="", fault="", profile_consumptions=None):
     with transaction.atomic():
         _assert_request_write_allowed(service_request)
         if not str(reason or "").strip():
@@ -212,6 +192,7 @@ def fail(service_request, actor, *, reason, percent_complete, actual_minutes, co
         _lock_assigned_machine(locked)
         locked.actual_minutes, locked.fail_percent_complete, locked.reason, locked.failed_at = _minutes(actual_minutes, "actual_minutes"), _percent(percent_complete), str(reason).strip(), timezone.now()
         debit_consumptions(locked, actor, consumptions, outcome="failed")
+        _record_profile(locked, actor, profile_consumptions, enforce_required=False)
         if locked.run_consumable_pool_id:
             from apps.machines.service_consumable_pools import reconcile_request
             if locked.reserved_quantity is not None and locked.metering_unit != "weight":
@@ -228,24 +209,17 @@ def fail(service_request, actor, *, reason, percent_complete, actual_minutes, co
             locked.fail_percent_complete = _percent(percent_complete)
             locked.reason = str(reason).strip()
             locked.failed_at = timezone.now()
+        from apps.machines.service_workflow_failure import after_fail, validate_failure
+        locked.fail_code, locked.fail_fault = validate_failure(code, fault)
         locked.status, locked.handled_by = MachineServiceRequest.Status.FAILED, actor
-        locked.save(update_fields=["status", "handled_by", "actual_minutes", "fail_percent_complete", "reason", "failed_at", "updated_at"])
-        _release_queue_machine(locked)
-        _audit_transition(actor, locked, "failed")
+        locked.save(update_fields=["status", "handled_by", "actual_minutes", "fail_percent_complete", "reason", "failed_at",
+                                   "fail_code", "fail_fault", "updated_at"])
+        from .consumable_costs import record_service_cost
+        record_service_cost(locked, actor)
+        _release_queue_machine(locked, actor)
+        _audit_transition(actor, locked, "failed", extra={"code": locked.fail_code, "fault": locked.fail_fault})
         _notify_after_commit(locked, "failed")
-        return locked
-
-
-def collect(service_request, actor):
-    with transaction.atomic():
-        _assert_request_write_allowed(service_request)
-        locked = _locked_request(service_request)
-        _require_module(locked.makerspace)
-        _require_edge(locked, MachineServiceRequest.Status.COLLECTED)
-        locked.status, locked.handled_by, locked.collected_by, locked.collected_at = MachineServiceRequest.Status.COLLECTED, actor, actor, timezone.now()
-        locked.save(update_fields=["status", "handled_by", "collected_by", "collected_at", "updated_at"])
-        _audit_transition(actor, locked, "collected")
-        _notify_after_commit(locked, "collected")
+        after_fail(locked, actor)
         return locked
 
 
@@ -253,10 +227,16 @@ def create_reprint(service_request, actor):
     """Create an accepted child request that retains the original attachment root."""
     with transaction.atomic():
         _assert_request_write_allowed(service_request)
+        from apps.makerspaces.models import Makerspace
+        from apps.tenant_migration.gate_runtime import assert_write_allowed
+        assert_write_allowed(service_request.makerspace_id)
+        Makerspace.objects.select_for_update().get(pk=service_request.makerspace_id)
         original = _locked_request(service_request)
+        lock_obligation_owner(original.member if original.member_id else original.requester)
         if original.status not in {MachineServiceRequest.Status.FAILED, MachineServiceRequest.Status.COMPLETED, MachineServiceRequest.Status.COLLECTED}:
             raise ServiceInvalidTransition("Only terminal service requests can be reprinted.")
         root = original.reprint_of or original
+        _lock_scope(original)
         child = MachineServiceRequest.objects.create(
             bucket=original.bucket, queue=original.queue, makerspace=original.makerspace, requester=original.requester, member=original.member,
             requester_name=original.requester_name, contact_email=original.contact_email, contact_phone=original.contact_phone,
@@ -265,7 +245,18 @@ def create_reprint(service_request, actor):
             assigned_machine=original.assigned_machine if original.bucket_id else None, accepted_by=actor,
             accepted_at=timezone.now(), estimated_minutes=original.estimated_minutes, planned_grams=original.planned_grams,
             reprint_of=root,
+            # A re-run keeps the original's place (#142: reprints keep their place) and,
+            # when prepaid, is covered by the original's charge.
+            queued_at=original.queued_at or original.created_at, urgent=original.urgent, prepay=original.prepay,
+            copies=original.copies, own_material=original.own_material, material_note=original.material_note,
         )
         _audit_transition(actor, child, "reprint_created", extra={"reprint_of_id": root.pk})
+        reevaluate_head(child, initiator=initiator_for(actor))
+        _notify_after_commit(child, "reprinted")
         return child
 
+
+# Re-exported so `service_workflow_actions.start` keeps resolving for existing callers.
+from apps.machines.service_workflow_start import start  # noqa: E402
+from apps.machines.service_workflow_cancel import cancel  # noqa: E402
+from apps.machines.service_workflow_collect import collect  # noqa: E402

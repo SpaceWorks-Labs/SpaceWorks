@@ -1,0 +1,34 @@
+{
+  "$id": "https://spaceworks.invalid/schemas/device-adapter/v1/pose.pan_tilt.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "kind": {
+      "enum": [
+        "pan_tilt"
+      ],
+      "type": "string"
+    },
+    "laser_power_pct": {
+      "maximum": 100,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "pan_deg": {
+      "maximum": 180,
+      "minimum": -180,
+      "type": "number"
+    },
+    "tilt_deg": {
+      "maximum": 180,
+      "minimum": -180,
+      "type": "number"
+    }
+  },
+  "required": [
+    "kind",
+    "pan_deg",
+    "tilt_deg"
+  ],
+  "type": "object"
+}

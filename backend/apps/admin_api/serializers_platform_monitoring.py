@@ -2,11 +2,12 @@ from rest_framework import serializers
 
 
 class UsageResourceSerializer(serializers.Serializer):
-    key = serializers.CharField()
+    key = serializers.CharField(help_text="Resource limit key, including daily sms and whatsapp logical messages.")
     label = serializers.CharField()
     used = serializers.IntegerField(allow_null=True)
     limit = serializers.IntegerField(allow_null=True)
     unit = serializers.ChoiceField(choices=("bytes", "count"))
+    area = serializers.CharField(required=False, help_text="Console area of the key; resources are grouped by it.")
 
 
 class MakerspaceUsageSerializer(serializers.Serializer):
@@ -19,6 +20,7 @@ class PlatformTenantUsageSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     name = serializers.CharField()
     slug = serializers.CharField()
+    reports_enabled = serializers.BooleanField()
     usage = MakerspaceUsageSerializer()
 
 
@@ -26,6 +28,7 @@ class PlatformBackupHealthSerializer(serializers.Serializer):
     automatic_enabled = serializers.BooleanField()
     last_success_at = serializers.DateTimeField(allow_null=True)
     status = serializers.CharField()
+    status_label = serializers.CharField(help_text="Translated display label for `status`.")
     started_at = serializers.DateTimeField(allow_null=True)
     finished_at = serializers.DateTimeField(allow_null=True)
     has_error = serializers.BooleanField()
@@ -52,7 +55,11 @@ class FailedDeliveriesSerializer(serializers.Serializer):
     notifications = serializers.IntegerField()
 
 
+from .serializers_deployment import DeploymentSummarySerializer
+
+
 class PlatformDashboardSerializer(serializers.Serializer):
+    deployment = DeploymentSummarySerializer(required=False)
     checked_at = serializers.DateTimeField()
     tenants_by_state = serializers.DictField(child=serializers.IntegerField())
     usage_totals = serializers.DictField(child=serializers.IntegerField())

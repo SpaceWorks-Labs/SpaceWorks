@@ -1,0 +1,204 @@
+"""Shared transactional fan-out for the Phase-2 domain adapters.
+
+Personal bodies belong to envelopes; only a separate, bounded staff summary is
+ever handed to the existing room dispatcher. No transport runs in this module.
+"""
+import hashlib
+import logging
+from functools import wraps
+
+from django.db import transaction
+from django.utils.translation import gettext
+
+from apps.accounts import rbac
+from apps.accounts.models import User
+from apps.integrations.notification_outbox import emit
+from apps.integrations.notify import NotificationResult
+from apps.integrations.staff_notifications import staff_user_ids_for_feature
+
+logger = logging.getLogger(__name__)
+ROOM_CHANNELS = ("telegram", "slack", "mattermost", "discord", "webhook")
+
+
+def safe_notification(function):
+    from apps.integrations.fanout_jobs import maybe_defer, register
+    register(function)
+
+    @wraps(function)
+    def guarded(*args, **kwargs):
+        # Fan-out (recipients, rendering, delivery) runs in a Celery worker; the request only enqueues an
+        # id-only job (integrations/fanout_jobs.py). Inline where no worker exists (eager, free profile).
+        if maybe_defer(function, args, kwargs):
+            return NotificationResult(True)
+        try:
+            # A failed INSERT must roll back its savepoint before being swallowed,
+            # otherwise Django would leave the domain transaction unusable.
+            with transaction.atomic():
+                return function(*args, **kwargs)
+        except Exception as exc:
+            logger.warning("domain_notification_failed", extra={
+                "adapter": function.__name__, "failure_type": type(exc).__name__,
+            })
+            return NotificationResult(False, failed_counts={"outbox": 1})
+    return guarded
+
+
+def scoped(model, space_id, *, field="makerspace_id"):
+    return rbac.scope_notification_policy(model.objects.all(), makerspace_id=space_id, field=field)
+
+
+def identity(*parts):
+    return hashlib.sha256("\x1f".join(str(part) for part in parts).encode()).hexdigest()
+
+
+def revision(*parts):
+    return identity(*parts)
+
+
+def body(subject, text, link="", html=""):
+    return {"subject": subject, "text": text, "html": html, "link": link}
+
+
+def in_locale(builder, *, space=None, user=None):
+    """A body, or a zero-argument builder run in the recipient's language (user, space default, system)."""
+    if not callable(builder):
+        return builder
+    from config.locale_resolution import override_for
+    with override_for(user=user, makerspace=space):
+        return {key: (str(value) if value is not None else value) for key, value in builder().items()}
+
+
+def staff_link(space, tab):
+    # Bind navigation to the source tenant, rather than a browser's last-picked
+    # makerspace. These are ordinary authenticated console routes, never grants.
+    from apps.integrations.notification_links import local_link
+    return local_link(space, "admin", tab)
+
+
+def template(space, stream, audience, event, context, *, link=""):
+    from apps.integrations.email_templates import render
+    value = render(space, stream, audience, event, context)
+    return body(value["subject"], value["text_body"], link, value["html_body"])
+
+
+def finish_reminder(space, reminder, now, result):
+    """Commit a permanent reminder completion together with its outbox intents.
+
+    The sweeper's subsequent completion is deliberately idempotent. Transport
+    delivery/retries now belong to the envelope, not to the permanent claim.
+    """
+    from .reminder_services import complete_reminder
+    complete_reminder(makerspace=space, reminder_id=reminder.pk,
+        claim_token=reminder.claim_token, now=now, failed=bool(result and result.failed_counts))
+
+
+def fanout(*, row, space, feature, stream, event, source_kind, revision,
+           owner=None, owner_body=None, staff_body=None, context=None, scope=None,
+           staff=True, rooms=True, staff_context=None, staff_feature=None, staff_stream=None, owner_context=None):
+    """Call inside the domain transaction; repeat calls reserve the same intent."""
+    from apps.integrations import recipients
+    from apps.integrations.destinations import NotificationScope
+    from apps.integrations.notification_catalog import is_notification_enabled
+    from apps.integrations.dispatch_channels import dispatch_channel
+    from apps.integrations.models import NotificationDeliveryLog
+    from apps.makerspaces.servability import is_servable
+
+    if not is_servable(space):
+        return NotificationResult(False)
+    context = context or {}
+    from apps.integrations.notification_projection import addressed_context
+    owner_values = {**addressed_context(space, feature, event, "requester", owner_context), **context}
+    scope = scope or NotificationScope()
+    # Account notices can retain a separate community staff summary. Its
+    # recipients, module gate and matrix must continue to use that category.
+    staff_feature = staff_feature or feature
+    staff_stream = staff_stream or stream
+    staff_values = {**addressed_context(space, staff_feature, event, "staff", staff_context), **context}
+    key = identity(space.pk, source_kind, row.pk, revision, event)
+    envelopes = []
+    # Bodies may be builders: each envelope renders in its own recipient's language (emit); the shared
+    # room summary has no single recipient, so it uses the makerspace default.
+    room_body = in_locale(staff_body, space=space)
+    # The domain owner is explicit, and may have no membership at all.
+    if owner is not None and owner_body is not None and (
+        not recipients.has_selection(space, feature, event, scope)
+        or recipients.requester_selected(space, feature, event, scope)
+    ):
+        envelopes.append(emit(makerspace=space, recipient=owner, feature=feature,
+            stream=stream, event=event, audience="requester", source_kind=source_kind,
+            source_id=row.pk, subject=row, revision=revision, scope=scope,
+            dedup_key=f"p2:{key}:u:{owner.pk}", context=owner_values, rendered=owner_body))
+    staff_ids = staff_user_ids_for_feature(space, staff_feature, event, scope) if staff else []
+    for account in User.objects.filter(pk__in=staff_ids).order_by("pk"):
+        if owner is not None and owner.pk == account.pk and envelopes:
+            continue
+        envelopes.append(emit(makerspace=space, recipient=account, feature=staff_feature,
+            stream=staff_stream, event=event, audience="staff", source_kind=source_kind,
+            source_id=row.pk, subject=row, revision=revision, scope=scope,
+            dedup_key=f"p2:{key}:u:{account.pk}", context=staff_values,
+            rendered=staff_body or (lambda: body("Space Works", gettext("A staff update is available.")))))
+    if staff and rooms and room_body and space.staff_notifications_enabled:
+        from apps.integrations.chat_templates import render_chat_text
+        room_text = render_chat_text(space, staff_feature, event, room_body["text"], staff_context)
+        for channel in ROOM_CHANNELS:
+            if not is_notification_enabled(space, staff_feature, channel):
+                continue
+            # Domain row locks serialize repeated edge emission. The room logs
+            # themselves commit with the edge, including a recoverable body.
+            if scoped(NotificationDeliveryLog, space.pk).filter(
+                channel=channel, payload__p2_intent=key,
+            ).exists():
+                continue
+            dispatch_channel(makerspace=space, channel=channel, feature=staff_feature,
+                event=event, text_body=room_text, scope=scope,
+                payload={"p2_intent": key, "source_kind": source_kind,
+                         "source_id": str(row.pk), "revision": revision,
+                         "context": context, "scope": scope.as_dict()})
+    return NotificationResult(bool(envelopes))
+
+
+def direct_mail_unless_routed(*, space, source_kind, row, revision, event, owner, to_email,
+                              subject, text, stream, audience, feature, sync=False, persist_body=True,
+                              address_owner=True, document_reference=None):
+    """Keep a pre-Phase-2 direct email (welcome, verification, invitation, payment
+    document) that the members/payments matrix never governed and whose email cell
+    defaults OFF. It is sent after commit unless the owner's own envelope will
+    already email the same message, so there is never a second copy."""
+    from apps.integrations.dispatch import dispatch_email
+    from apps.integrations.models import EmailLog
+    from apps.integrations.models_contract import NotificationEnvelope
+    from apps.integrations.notification_resolution import resolve
+    if not to_email:
+        return None
+    key = f"p2:{identity(space.pk, source_kind, row.pk, revision, event)}:u:{owner.pk if owner else '-'}"
+    envelope = NotificationEnvelope.objects.filter(dedup_key=key).first() if owner else None
+    if envelope is not None and any(target.channel == "email" for target in resolve(envelope)):
+        return None
+
+    def send():
+        from apps.integrations.notification_resolution import eligible
+        if envelope is not None and not eligible(envelope):
+            return
+        # Admission can finish later in the same transaction. Resolve again
+        # after commit so a now-eligible owner envelope owns the email leg.
+        if envelope is not None and any(target.channel == "email" for target in resolve(envelope)):
+            return
+        if scoped(EmailLog, space.pk).filter(source_metadata__p2_direct=key).exists():
+            return
+        if address_owner and owner:
+            owner.refresh_from_db()
+        address = owner.email if owner and address_owner else to_email
+        if not address:
+            return
+        metadata = {"p2_direct": key, "address_owner": address_owner}
+        if document_reference:
+            metadata["document"] = document_reference
+        dispatch_email(makerspace=space, to_email=address, subject=subject, text_body=text,
+            stream=stream, event=event, audience=audience, feature=feature, sync=sync,
+            persist_body=persist_body, recipient_id=owner.pk if owner and address_owner else None,
+            source_kind="notification.direct" if envelope else "payments.document" if document_reference else "",
+            source_id=envelope.pk if envelope else row.pk if document_reference else None,
+            source_metadata=metadata)
+
+    transaction.on_commit(send, robust=True)
+    return key

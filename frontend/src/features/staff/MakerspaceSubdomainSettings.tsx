@@ -1,9 +1,15 @@
+import { t } from "@lingui/core/macro";
+import { SettingsQueryState } from "./SettingsQueryState";
+import { ErrorBlock } from "../../components/ui";
+import { SettingsRow } from "../../components/ui";
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { Badge } from "../../components/ui";
+import { StatusPill as Badge, RelativeTime } from "../../components/ui";
 import { staffRequest } from "../../lib/api";
 import { type Makerspace, useStaffGet } from "./StaffPanels";
+import { LogoLoader } from "../../components/LogoLoader";
+import { BoxArt } from "../../components/BoxSpinner";
 
 type Props = {
   makerspace: Makerspace;
@@ -59,21 +65,19 @@ export function MakerspaceSubdomainSettings({ makerspace, settings }: Props) {
     requests.isLoading || submitRequest.isPending || Boolean(pendingRequest) || !requestedLabel.trim();
 
   return (
-    <div className="min-w-0 rounded-md border border-line bg-bg p-4">
+    <SettingsQueryState query={requests} resource={t`subdomain`}><SettingsRow label={t`Request a subdomain`} helper={t`Ask the platform team to provision a dedicated subdomain for this makerspace.`}><div className="@container grid min-w-0 gap-4">
       <div className="grid min-w-0 gap-4">
         <div className="grid min-w-0 max-w-2xl gap-2">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-base font-semibold text-ink">Request a subdomain</h3>
-            {hasActiveSubdomain ? <Badge tone="success">Active</Badge> : null}
+
+            {hasActiveSubdomain ? <Badge label="" tone="success">{t`Active`}</Badge> : null}
           </div>
-          <p className="text-sm text-muted">
-            Ask the platform team to provision a dedicated subdomain for this makerspace.
-          </p>
+
         </div>
 
         {hasActiveSubdomain ? (
           <p className="text-sm text-ink">
-            Active subdomain: <span className="font-semibold">{activeSubdomain}</span>
+            {t`Active subdomain: `}<span className="font-semibold">{activeSubdomain}</span>
           </p>
         ) : (
           <form
@@ -84,8 +88,7 @@ export function MakerspaceSubdomainSettings({ makerspace, settings }: Props) {
             }}
           >
             <label className="grid gap-2 text-sm font-semibold text-ink" htmlFor="subdomain-label">
-              Desired subdomain label
-              <input
+              {t`Desired subdomain label`}<input
                 id="subdomain-label"
                 className="desk-input"
                 placeholder="alpha"
@@ -95,39 +98,37 @@ export function MakerspaceSubdomainSettings({ makerspace, settings }: Props) {
               />
             </label>
             <button className="desk-button-primary" type="submit" disabled={submitDisabled}>
-              {submitRequest.isPending ? "Submitting..." : "Submit request"}
+              {submitRequest.isPending ? <><BoxArt size={16} mono />{t`Submitting…`}</> : t`Submit request`}
             </button>
           </form>
         )}
 
         {pendingRequest && !hasActiveSubdomain ? (
-          <p className="text-sm text-muted">Request pending review</p>
+          <p className="text-sm text-muted">{t`Request pending review`}</p>
         ) : null}
         {submitRequest.error ? (
           <p className="text-sm text-danger">{submitRequest.error.message}</p>
         ) : null}
-        {requests.error ? <p className="text-sm text-danger">{requests.error.message}</p> : null}
+        {requests.error ? <ErrorBlock error={new Error(t`Couldn't load subdomain. Try again.`)} onRetry={() => { void requests.refetch(); }} /> : null}
 
-        {requests.isLoading ? <p className="text-sm text-muted">Loading requests...</p> : null}
+        {requests.isLoading ? <LogoLoader label={t`Loading requests…`} size={48} className="min-h-16 py-3" /> : null}
         {history.length > 0 ? (
           <ul className="grid gap-2">
             {history.map((request) => (
               <li
-                className="flex flex-wrap items-center gap-2 rounded-md border border-line bg-surface p-3 text-sm"
+                className="min-h-11 flex flex-wrap items-center gap-2 rounded-md border border-line bg-surface p-3 text-sm"
                 key={request.id}
               >
                 <span className="font-semibold text-ink">{request.requested_label}</span>
-                <Badge tone={statusTone(request.status)}>{statusLabel(request.status)}</Badge>
+                <Badge label="" tone={statusTone(request.status)}>{statusLabel(request.status)}</Badge>
                 {request.note ? <span className="text-muted">{request.note}</span> : null}
-                <time className="text-xs text-muted" dateTime={request.created_at}>
-                  {new Date(request.created_at).toLocaleString()}
-                </time>
+                <RelativeTime date={request.created_at} />
               </li>
             ))}
           </ul>
         ) : null}
       </div>
-    </div>
+    </div></SettingsRow></SettingsQueryState>
   );
 }
 

@@ -49,3 +49,11 @@ class MakerspaceSecretsMixin:
 
     def get_discord_webhook_url(self):
         return decrypt_value(self.discord_webhook_url)
+
+    def set_email_provider_config(self, values):
+        from apps.integrations.mail_providers.config import encode_config
+        self.email_provider_config = encrypt_value(encode_config(values)) if values else ""
+
+    def get_email_provider_config(self):
+        import json
+        return json.loads(decrypt_value(self.email_provider_config)) if self.email_provider_config else {}

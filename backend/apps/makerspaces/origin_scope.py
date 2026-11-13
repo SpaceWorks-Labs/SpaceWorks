@@ -1,11 +1,12 @@
+from django.utils.translation import gettext
 from urllib.parse import urlsplit
 
 from django.conf import settings
 from rest_framework.exceptions import PermissionDenied
 
-from apps.accounts import rbac
 from apps.makerspaces.models import Makerspace, MakerspaceMembership
 from apps.makerspaces.origin_scope_routes import (
+    QUERY_SCOPED_ROUTES,
     MAKERSPACE_KWARG_ROUTES as _MAKERSPACE_KWARG_ROUTES,
     MODEL_LOOKUPS as _MODEL_LOOKUPS,
     TARGET_SET_LOOKUPS,
@@ -60,14 +61,19 @@ def validate_native_makerspace_scope(request, user, grant):
         return None
     if not _active_attested_grant(user, grant):
         raise PermissionDenied(
-            'Native makerspace selection requires an active device grant.'
+            gettext('Native makerspace selection requires an active device grant.')
         )
     try:
         makerspace_id = int(raw)
     except (TypeError, ValueError) as exc:
-        raise PermissionDenied('Invalid native makerspace selection.') from exc
+        raise PermissionDenied(gettext('Invalid native makerspace selection.')) from exc
     if makerspace_id <= 0 or str(makerspace_id) != str(raw).strip():
-        raise PermissionDenied('Invalid native makerspace selection.')
+        raise PermissionDenied(gettext('Invalid native makerspace selection.'))
+    # A staff device grant is a step-up fixed to one tenant and reads the STAFF row
+    # there; every other grant is membership-only and reads the community row.
+    staff_grant = getattr(grant, 'authority', None) == 'staff'
+    if staff_grant and makerspace_id != grant.staff_makerspace_id:
+        raise PermissionDenied(gettext('Staff makerspace selection is fixed to the grant tenant.'))
 
     origin = _origin_candidate(request)
     origin_scope = staff_origin_scope(request)
@@ -77,36 +83,62 @@ def validate_native_makerspace_scope(request, user, grant):
             AMBIGUOUS_STAFF_ORIGIN_SCOPE,
         ):
             raise PermissionDenied(
-                'Browser origin cannot use native makerspace selection.'
+                gettext('Browser origin cannot use native makerspace selection.')
             )
         if origin_scope != makerspace_id:
             raise PermissionDenied(
-                'Makerspace selection conflicts with browser origin.'
+                gettext('Makerspace selection conflicts with browser origin.')
             )
 
-    memberships = servable_queryset(MakerspaceMembership.objects.filter(
+    track = MakerspaceMembership.Track.STAFF if staff_grant else MakerspaceMembership.Track.COMMUNITY
+    memberships = servable_queryset(MakerspaceMembership.track_manager(track).filter(
         user=user,
         makerspace_id=makerspace_id,
         status='active',
     ), relation="makerspace").select_related('makerspace', 'assigned_role')
-    memberships = rbac.hide_from_superadmin(
-        user, memberships, field='makerspace_id'
-    )
     membership = memberships.first()
+    own_charges = False
     if membership is None:
-        raise PermissionDenied('Makerspace selection is not available.')
+        from .origin_scope_own_charges import admits_own_charge_selection
+        # Decision 354: an account-only borrower selects the space only for their own charges.
+        own_charges = not staff_grant and getattr(grant, 'authority', 'member') == 'member' and (
+            admits_own_charge_selection(request, user, makerspace_id))
+        if not own_charges:
+            raise PermissionDenied(gettext('Makerspace selection is not available.'))
 
     url_name, targets, invalid, native_route_allowed = request_route_targets(
         request
     )
+    if not native_route_allowed:
+        from .origin_scope_native_slug import native_slug_targets
+        slug = native_slug_targets(request)
+        if slug is not None:
+            targets, native_route_allowed = targets | slug[0], True
+            invalid = invalid or slug[1] or len(targets) > 1
+    if not native_route_allowed:
+        from .origin_scope_native_staff import native_staff_targets
+        staff = native_staff_targets(request)  # nullable-owner lookups, native only (MOB-STAFF)
+        if staff is not None:
+            targets, native_route_allowed = targets | staff[0], True
+            invalid = invalid or staff[1] or len(targets) > 1
+    from .origin_scope_routes_public_pages import GLOBAL_ROUTES
+    if url_name in GLOBAL_ROUTES:
+        raise PermissionDenied(gettext("Global organization pages cannot select a makerspace."))
     if invalid or not native_route_allowed:
-        raise PermissionDenied('Makerspace target could not be resolved.')
+        raise PermissionDenied(gettext('Makerspace target could not be resolved.'))
     if targets and targets != {makerspace_id}:
         raise PermissionDenied(
-            'Makerspace target does not match the selected makerspace.'
+            gettext('Makerspace target does not match the selected makerspace.')
+        )
+    if url_name in QUERY_SCOPED_ROUTES and targets != {makerspace_id}:
+        # These listings narrow by their query parameter, not by the native selection,
+        # so a native request must name the selected makerspace explicitly.
+        raise PermissionDenied(
+            gettext('This listing requires its makerspace query parameter to match the selection.')
         )
     request.selected_makerspace_id = makerspace_id
     request.selected_makerspace_membership = membership
+    request.selected_makerspace_own_charges = own_charges
     request.selected_makerspace_route = url_name
     return makerspace_id
 
@@ -130,12 +162,18 @@ def require_native_selected_makerspace(request, makerspace_id=None):
         or (makerspace_id is not None and selected != makerspace_id)
     ):
         raise PermissionDenied(
-            'A matching native makerspace selection is required.'
+            gettext('A matching native makerspace selection is required.')
         )
     return membership
 
 
 def staff_origin_scope_allows(request, view=None):
+    from .origin_scope_routes_public_pages import (
+        ORGANIZATION_PAGE_EDITORS, organization_editor_origin_allowed,
+    )
+    match = getattr(request, 'resolver_match', None)
+    if getattr(match, 'url_name', '') in ORGANIZATION_PAGE_EDITORS:
+        return organization_editor_origin_allowed(request)
     scope = staff_origin_scope(request)
     if scope is NO_STAFF_ORIGIN_SCOPE:
         return True

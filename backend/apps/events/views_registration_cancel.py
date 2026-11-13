@@ -60,7 +60,8 @@ class MemberEventRegistrationCancelView(APIView):
         space = participant_space(request.user, makerspace_id, pk)
         require_module(space, "events")
         # Check the host gate before the history helper filters disabled hosts out,
-        # so a module-off cancellation returns 400 rather than a misleading 404.
+        # so a module-off cancellation answers the typed `module_disabled` 404 rather than a
+        # bare not-found.
         registration = get_object_or_404(
             registrations_for_space(space, request.user, include_disabled_hosts=True)
             .select_related("event__makerspace"),

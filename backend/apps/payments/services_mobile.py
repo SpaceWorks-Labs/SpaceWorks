@@ -3,7 +3,7 @@ from django.db import transaction
 from apps.audit import services as audit
 from apps.payments import stripe_client
 from apps.payments.connect import refresh_connected_account
-from apps.payments.money import to_minor_units
+from apps.payments.money import AmountNotCapturable, to_provider_minor_units
 from apps.payments.models import (
     MakerspacePaymentSettings,
     Payment,
@@ -12,6 +12,8 @@ from apps.payments.models import (
 from apps.payments.resolution import source_for_payment
 from apps.payments.services import PaymentRailConflict
 from apps.payments.services_checkout import _claim_provider
+from apps.payments.checkout_coordination import PaymentSettlementPending, settlement_in_progress
+from apps.payments.services_mobile_razorpay import create_mobile_order
 
 
 def create_mobile_intent(payment_id, *, actor):
@@ -50,6 +52,8 @@ def create_mobile_intent(payment_id, *, actor):
             raise PaymentRailConflict(
                 'The payment already uses the Checkout payment rail.'
             )
+        if settlement_in_progress(payment):
+            raise PaymentSettlementPending('An offline payment of this charge is waiting for staff.')
         # Claim the rail before creating a provider object, exactly as hosted checkout
         # does. Without this a cash-raised charge could settle online while still stamped
         # `unclaimed`, which would misreport it and leave refunds with no vendor to
@@ -57,14 +61,21 @@ def create_mobile_intent(payment_id, *, actor):
         if payment.provider == Payment.Provider.UNCLAIMED:
             _claim_provider(payment)
         source = source_for_payment(payment)
-        # The native PaymentSheet is Stripe-only. A Razorpay source carries the Razorpay
-        # key secret in `secret_key`, so without the vendor check below this sent that
-        # secret to Stripe as an API key. Raising here also rolls back the claim above.
-        if source is None or source.vendor != Payment.Provider.STRIPE or not source.publishable_key:
+        if source is None or not source.publishable_key:
             raise stripe_client.PaymentsUnavailable(
                 'Mobile payments are not configured.'
             )
+        if source.vendor == Payment.Provider.RAZORPAY:
+            return create_mobile_order(payment, source, actor=actor)
+        if source.vendor != Payment.Provider.STRIPE:
+            raise stripe_client.PaymentsUnavailable('Unsupported mobile payment vendor.')
         _validate_connect_source(payment, merchant)
+        if payment.stripe_provider == Payment.StripeProvider.CONNECT and not payment.stripe_payment_intent_id:
+            from apps.managed_hosting.platform_limits import rail_refusal
+            from apps.payments.checkout_coordination import PlatformRailLimitReached
+            refusal = rail_refusal(payment.makerspace, payment)
+            if refusal:
+                raise PlatformRailLimitReached(refusal)
 
         if payment.stripe_payment_intent_id:
             intent = stripe_client.retrieve_payment_intent(
@@ -107,6 +118,7 @@ def create_mobile_intent(payment_id, *, actor):
                 meta={'stripe_provider': payment.stripe_provider},
             )
         return {
+            'vendor': 'stripe',
             'payment_id': payment.pk,
             'client_secret': client_secret,
             'publishable_key': source.publishable_key,
@@ -133,9 +145,16 @@ def _validate_connect_source(payment, merchant):
         )
 
 
+def _minor(payment):
+    try:
+        return to_provider_minor_units(payment.amount, payment.currency)
+    except AmountNotCapturable as exc:
+        raise stripe_client.PaymentsUnavailable("The charge amount is finer than Stripe can capture.") from exc
+
+
 def _intent_params(payment):
     params = {
-        'amount': to_minor_units(payment.amount, payment.currency),
+        'amount': _minor(payment),
         'currency': payment.currency,
         'automatic_payment_methods': {'enabled': True},
         'metadata': {

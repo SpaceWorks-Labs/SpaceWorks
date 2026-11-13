@@ -1,5 +1,6 @@
 """Project-owned JWT classes bound to one deployment generation."""
 
+from django.utils.translation import gettext
 from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
 from django.db import transaction
 
@@ -15,7 +16,7 @@ def validate_auth_generation(token):
 
     if str(token.get("auth_generation") or "") != current_auth_generation():
         raise AuthenticationFailed(
-            "This session belongs to a different authentication generation.",
+            gettext("This session belongs to a different authentication generation."),
             code="auth_generation_mismatch",
         )
 
@@ -39,28 +40,26 @@ class SpaceWorksRefreshToken(_GenerationBoundToken, RefreshToken):
         # A credential change also locks User. Hold that same lock through both
         # verification and minting so an unenrolled login cannot pick up the new
         # credential's version between these reads without proving its factor.
-        from apps.accounts.models import User
-        # NO KEY UPDATE remains compatible with FK inserts by concurrent native
-        # logins; FOR UPDATE here could deadlock their shared FK-lock upgrades.
-        locked = User.objects.select_for_update(no_key=True).get(pk=user.pk)
-        if hasattr(user, "_mfa_verified_version"):
-            locked._mfa_verified_version = user._mfa_verified_version
-        user = locked
-        if getattr(user, "is_tenant_dump_stub", False):
-            from rest_framework.exceptions import AuthenticationFailed
-
-            raise AuthenticationFailed("Account is not available.")
-        from apps.accounts.mfa_policy import assert_verified, credential
+        from apps.accounts.session_issuance import lock_session_user
+        user = lock_session_user(user)
+        from apps.accounts.mfa_policy import assert_verified, stamp_claims
         assert_verified(user)
         token = super().for_user(user)
-        row = credential(user)
-        if row:
-            token["mfa_version"] = str(row.version)
+        # One account per person: ``kind`` is person|platform and no token names a
+        # makerspace. Staff authority is resolved per request from the person's roles.
+        from apps.accounts.surface_policy import PLATFORM_KIND, assert_surface, token_kind
+        token["kind"] = token_kind(user)
+        token["credential_generation"] = user.credential_generation
+        token["surface"] = "platform" if token["kind"] == PLATFORM_KIND else "member"
+        assert_surface(user, token["surface"])
+        stamp_claims(user, token)  # mfa_source, mfa_version and the mfa_method factor
+        from apps.accounts.staff_session_policy import stamp_new
+        stamp_new(user, token)  # auth_time, and staff_until for a person with a staff role
         token["auth_generation"] = current_auth_generation()
         if web_session:
             from apps.accounts.web_sessions import create_session
-            from rest_framework_simplejwt.token_blacklist.models import OutstandingToken
 
             create_session(user, token)
-            OutstandingToken.objects.filter(jti=token["jti"]).update(token=str(token))
+        from rest_framework_simplejwt.token_blacklist.models import OutstandingToken
+        OutstandingToken.objects.filter(jti=token["jti"], user=user).update(token=str(token))
         return token

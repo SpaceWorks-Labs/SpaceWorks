@@ -4,20 +4,18 @@ from django.apps import apps
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
+from contextlib import ExitStack
+from uuid import UUID
 
 from apps.encryption.crypto import PiiUnavailable, is_envelope
-from apps.encryption.registry import all_fields, fields_for_label, makerspace_id_for, registered_labels
+from apps.encryption.registry import fields_for_label, registered_labels
+from apps.encryption.maintenance_programme import IMMUTABLE_LABELS, MANDATORY_SOURCE_LABEL, encrypt_immutable
+from apps.encryption.write_fence import fence_operation
 
 
 FILTERS = {
-    "notifications.MemberBroadcast": {"makerspace_id": None},
-    "notifications.NotificationInboxRow": {"makerspace_id": None},
-    "hardware_requests.HardwareRequest": {"makerspace_id": None},
-    "events.EventRegistration": {"event__makerspace_id": None},
-    "bookings.Booking": {"space__makerspace_id": None},
-    "machines.MachineServiceRequest": {"makerspace_id": None},
-    "machines.MachineUsageEntry": {"machine__makerspace_id": None},
-    "integrations.EmailLog": {"makerspace_id": None},
+    label: {fields_for_label(label)[0].makerspace_path.replace(".", "__"): None}
+    for label in registered_labels()
 }
 
 
@@ -31,6 +29,7 @@ class Command(BaseCommand):
         parser.add_argument("--resume-after-pk", type=int, default=0)
         parser.add_argument("--dry-run", action="store_true")
         parser.add_argument("--verify-only", action="store_true")
+        parser.add_argument("--fence-operation", type=UUID)
 
     def handle(self, *args, **options):
         if options["batch_size"] < 1:
@@ -39,6 +38,8 @@ class Command(BaseCommand):
         if mutate and not settings.PII_ENCRYPTION_ENABLED:
             raise CommandError("PII_ENCRYPTION_ENABLED must be enabled before backfill.")
         label, makerspace_id = options["model"], options["makerspace"]
+        if mutate and any(field.encryption_required for field in fields_for_label(label)):
+            raise CommandError("Mandatory finance fields are encrypted on insertion. Use --verify-only; plaintext repair is forbidden.")
         model = apps.get_model(label)
         filters = FILTERS[label]
         filters = filters.copy()
@@ -50,7 +51,12 @@ class Command(BaseCommand):
             ids = list(model.objects.filter(**filters, pk__gt=checkpoint).order_by("pk").values_list("pk", flat=True)[:options["batch_size"]])
             if not ids:
                 break
-            with transaction.atomic():
+            with ExitStack() as stack:
+                from apps.encryption.preparation import prepare_tenants
+                stack.enter_context(prepare_tenants([makerspace_id]))
+                stack.enter_context(transaction.atomic())
+                if options.get("fence_operation"):
+                    stack.enter_context(fence_operation(options["fence_operation"]))
                 rows = list(model.objects.select_for_update().filter(pk__in=ids).order_by("pk"))
                 for row in rows:
                     for field in fields_for_label(label):
@@ -61,7 +67,11 @@ class Command(BaseCommand):
                         if is_envelope(raw):
                             try:
                                 # Attribute access authenticates and never falls back to plaintext.
-                                getattr(row, field.field_name)
+                                if label == MANDATORY_SOURCE_LABEL:
+                                    from apps.encryption.maintenance import decrypted_values
+                                    decrypted_values(row, (field,))
+                                else:
+                                    getattr(row, field.field_name)
                             except PiiUnavailable as exc:
                                 counts["missing_key" if exc.__class__.__name__ == "PiiKeyUnavailable" else "corrupt"] += 1
                             else:
@@ -70,9 +80,18 @@ class Command(BaseCommand):
                         counts["plaintext"] += 1
                     if mutate:
                         # save() uses the row PK + registry resolver and only encrypts source fields.
-                        row.save()
+                        if label in IMMUTABLE_LABELS:
+                            encrypt_immutable(row)
+                        elif label == MANDATORY_SOURCE_LABEL:
+                            # Intrinsic source ciphertext is not an optional mapper.
+                            if not is_envelope(row.__dict__.get("source_dob_envelope")):
+                                raise CommandError("Birth-date source ciphertext is mandatory.")
+                        elif label == "integrations.MessagingConsent":
+                            row.save(update_fields=["phone_e164"])
+                        else:
+                            row.save()
                 checkpoint = rows[-1].pk
             self.stdout.write(f"checkpoint={checkpoint} plaintext={counts['plaintext']} encrypted={counts['encrypted']} empty={counts['empty']}")
         self.stdout.write(" ".join(f"{key}={value}" for key, value in counts.items()))
-        if counts["corrupt"] or (not settings.PII_ENCRYPTION_DUAL_READ and counts["plaintext"]):
+        if counts["corrupt"] or counts["missing_key"] or (not settings.PII_ENCRYPTION_DUAL_READ and counts["plaintext"]):
             raise CommandError("Scoped PII verification failed.")

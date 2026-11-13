@@ -1,4 +1,5 @@
-import { useId, useMemo, useState } from "react";
+import { t } from "@lingui/core/macro";
+import { useId, useMemo, useState, type Dispatch, type SetStateAction } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import type { PrinterPool } from "../../../../generated/api";
@@ -6,14 +7,18 @@ import { staffRequest } from "../../../../lib/api";
 import { isBuiltinPrinterType, type MachineType } from "../../machinesApi";
 import { PoolColourSelector } from "./PoolColourSelector";
 import { poolPath, poolQueryKey, type PoolUnit } from "./servicePools";
+import { BoxArt } from "../../../../components/BoxSpinner";
 
 type Props = {
+  visible?: boolean;
+  draft?: PoolDraft;
+  onDraftChange?: Dispatch<SetStateAction<PoolDraft>>;
   makerspaceId: number;
   machineType?: MachineType;
   existingPools: PrinterPool[];
 };
 
-type PoolDraft = {
+export type PoolDraft = {
   material: string;
   color: string;
   colorHex: string;
@@ -24,7 +29,7 @@ type PoolDraft = {
   isPublic: boolean;
 };
 
-const blankPool = (): PoolDraft => ({
+export const blankPool = (): PoolDraft => ({
   material: "",
   color: "",
   colorHex: "",
@@ -35,10 +40,12 @@ const blankPool = (): PoolDraft => ({
   isPublic: true,
 });
 
-export function ConsumablePoolCreateForm({ makerspaceId, machineType, existingPools }: Props) {
+export function ConsumablePoolCreateForm({ makerspaceId, machineType, existingPools, visible = true, draft, onDraftChange }: Props) {
   const queryClient = useQueryClient();
   const brandListId = useId();
-  const [pool, setPool] = useState(blankPool);
+  const [localPool, setLocalPool] = useState(blankPool);
+  const pool = draft ?? localPool;
+  const setPool = onDraftChange ?? setLocalPool;
   const printerType = isBuiltinPrinterType(machineType);
   const materialPresets = machineType?.capability_config?.accepted_materials;
   const brands = useMemo(() => {
@@ -74,18 +81,18 @@ export function ConsumablePoolCreateForm({ makerspaceId, machineType, existingPo
     ? `Type-wide — available to every ${machineType.name} machine.`
     : "Space-wide — available to every compatible machine in this makerspace.";
 
+  if (!visible) return null;
   return (
     <form className="grid gap-3" onSubmit={(event) => { event.preventDefault(); createPool.mutate(); }}>
       <div>
-        <h4 className="title-section">{printerType ? "Add filament" : "Create consumable pool"}</h4>
-        <p className="mt-1 text-sm text-muted"><span className="eyebrow mr-2">Scope</span>{scopeCopy}</p>
+        <h4 className="title-section">{printerType ? t`Add filament` : t`Create consumable pool`}</h4>
+        <p className="mt-1 text-sm text-muted"><span className="eyebrow mr-2">{t`Scope`}</span>{scopeCopy}</p>
       </div>
-      <div className="grid gap-2 md:grid-cols-3">
+      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
         <label className="eyebrow grid gap-1">
-          Material
-          {materialPresets ? (
+          {t`Material`}{materialPresets ? (
             <select className="desk-input" value={pool.material} onChange={(event) => setPool({ ...pool, material: event.target.value })} required>
-              <option value="">Select material</option>
+              <option value="">{t`Select material`}</option>
               {materialPresets.map((material) => <option key={material} value={material}>{material}</option>)}
             </select>
           ) : (
@@ -93,34 +100,30 @@ export function ConsumablePoolCreateForm({ makerspaceId, machineType, existingPo
           )}
         </label>
         <label className="eyebrow grid gap-1">
-          Brand
-          <input className="desk-input" list={brandListId} value={pool.brand} onChange={(event) => setPool({ ...pool, brand: event.target.value })} />
+          {t`Brand`}<input className="desk-input" list={brandListId} value={pool.brand} onChange={(event) => setPool({ ...pool, brand: event.target.value })} />
           <datalist id={brandListId}>{brands.map((brand) => <option key={brand} value={brand} />)}</datalist>
         </label>
         {printerType ? (
           <div>
-            <span className="eyebrow block">Unit</span>
-            <p className="flex min-h-11 items-center text-sm text-ink">Grams</p>
+            <span className="eyebrow block">{t`Unit`}</span>
+            <p className="flex min-h-11 items-center text-sm text-ink">{t`Grams`}</p>
           </div>
         ) : (
           <label className="eyebrow grid gap-1">
-            Unit
-            <select className="desk-input" value={pool.unit} onChange={(event) => setPool({ ...pool, unit: event.target.value as PoolUnit })}>
-              <option value="grams">Grams</option>
-              <option value="milliliters">Milliliters</option>
-              <option value="millimeters">Millimeters</option>
-              <option value="count">Count</option>
+            {t`Unit`}<select className="desk-input" value={pool.unit} onChange={(event) => setPool({ ...pool, unit: event.target.value as PoolUnit })}>
+              <option value="grams">{t`Grams`}</option>
+              <option value="milliliters">{t`Milliliters`}</option>
+              <option value="millimeters">{t`Millimeters`}</option>
+              <option value="count">{t`Count`}</option>
             </select>
           </label>
         )}
         <label className="eyebrow grid gap-1">
-          Initial quantity
-          <input className="desk-input" type="number" min="0" step="any" value={pool.quantity} onChange={(event) => setPool({ ...pool, quantity: event.target.value })} required />
+          {t`Initial quantity`}<input className="desk-input" type="number" min="0" step="any" value={pool.quantity} onChange={(event) => setPool({ ...pool, quantity: event.target.value })} required />
         </label>
         {pool.unit === "grams" ? (
           <label className="eyebrow grid gap-1">
-            Low threshold (grams)
-            <input className="desk-input" type="number" min="0" step="any" value={pool.lowThreshold} onChange={(event) => setPool({ ...pool, lowThreshold: event.target.value })} />
+            {t`Low threshold (grams)`}<input className="desk-input" type="number" min="0" step="any" value={pool.lowThreshold} onChange={(event) => setPool({ ...pool, lowThreshold: event.target.value })} />
           </label>
         ) : null}
       </div>
@@ -139,10 +142,10 @@ export function ConsumablePoolCreateForm({ makerspaceId, machineType, existingPo
           type="button"
           onClick={() => setPool({ ...pool, isPublic: !pool.isPublic })}
         >
-          {pool.isPublic ? "Visible to requesters" : "Hidden from requesters"}
+          {pool.isPublic ? t`Visible to requesters` : t`Hidden from requesters`}
         </button>
         <button className="desk-button-primary" disabled={!pool.material.trim() || !pool.quantity || createPool.isPending} type="submit">
-          {createPool.isPending ? "Adding..." : printerType ? "Add filament" : "Add pool"}
+          {createPool.isPending ? <><BoxArt size={16} mono />{t`Adding...`}</> : printerType ? t`Add filament` : t`Add pool`}
         </button>
       </div>
       {createPool.error instanceof Error ? <p className="text-sm text-danger">{createPool.error.message}</p> : null}

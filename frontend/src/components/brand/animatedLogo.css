@@ -1,0 +1,14 @@
+/* Space Works mark: on hover / keyboard focus the box folds shut from the resting logo and opens back to it
+   (design repo docs/motion.md, rule M-LOGO). LogoBoxOverlay.tsx starts the cycle (JS) and sets
+   [data-logo-playing] on the mark while it runs; the overlay artwork is the shared boxOpen `hov` animation
+   (2200 ms: fold 600 ms + opening 1600 ms, no hold). Mounted only while playing, so at rest the static master
+   is all that is drawn. Touch never starts it; reduced motion never starts it. The overlay is absolutely
+   positioned inside the fixed-size logo box: no layout shift. */
+.sw-logo-box { display: block; position: absolute; pointer-events: none; }
+.sw-logo-box > .sw-box { width: 100%; height: 100%; }
+/* The artwork follows the ground the mark is on (theme by default): boxOpen's boxGroundCss() supplies g-dark / g-light. */
+[data-logo][data-logo-playing] .sw-logo-sym { visibility: hidden; }
+@media (prefers-reduced-motion: reduce) { .sw-logo-box { display: none; } }
+
+/* SW-412 correction: the reversed static master stays cream, matching its v2.0.0 animation. */
+@media (forced-colors: active) { .sw-logo-colour .sw-logo-flap { fill: CanvasText !important; } }

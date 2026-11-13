@@ -1,0 +1,15 @@
+{
+  "$id": "https://spaceworks.invalid/schemas/device-adapter/v1/event.adapter.note.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "message": {
+      "maxLength": 200,
+      "type": "string"
+    }
+  },
+  "required": [
+    "message"
+  ],
+  "type": "object"
+}

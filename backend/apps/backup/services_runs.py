@@ -20,6 +20,8 @@ logger = logging.getLogger(__name__)
 
 
 def schedule_deployment_backup():
+    from .cloud_operations import require_host
+    require_host("deployment_backup_requires_host_supervisor")
     with deployment_operation_lock():
         sweep_stale_promotions()
         _fail_stale_runs()
@@ -66,7 +68,7 @@ def _claim_scheduled_window():
 
 
 def _build_run_archives(run):
-    frozen = {int(key): value for key, value in run.flag_snapshot.items()}
+    frozen = {int(key) for key in run.flag_snapshot}
     makerspaces = {
         row.pk: row for row in Makerspace.objects.filter(pk__in=frozen).order_by("pk")
     }
@@ -74,36 +76,15 @@ def _build_run_archives(run):
         None,
         scope=BackupArchive.Scope.DEPLOYMENT,
         backup_run=run,
-        superadmin_access_at_decision=True,
     )
-    for makerspace_id, enabled in sorted(frozen.items()):
-        if enabled:
-            record_coverage(
-                run,
-                makerspace=makerspaces[makerspace_id],
-                archive=global_archive,
-                path=BackupRunCoverage.Path.GLOBAL,
-            )
-    _build_and_record(run, global_archive)
-
-    for makerspace_id, enabled in sorted(frozen.items()):
-        if enabled:
-            continue
-        makerspace = makerspaces[makerspace_id]
-        archive = create_archive(
-            None,
-            scope=BackupArchive.Scope.MAKERSPACE,
-            makerspace=makerspace,
-            backup_run=run,
-            superadmin_access_at_decision=enabled,
-        )
+    for makerspace_id in sorted(frozen):
         record_coverage(
             run,
-            makerspace=makerspace,
-            archive=archive,
-            path=BackupRunCoverage.Path.TENANT,
+            makerspace=makerspaces[makerspace_id],
+            archive=global_archive,
+            path=BackupRunCoverage.Path.GLOBAL,
         )
-        _build_and_record(run, archive)
+    _build_and_record(run, global_archive)
 
 
 def _build_and_record(run, archive):

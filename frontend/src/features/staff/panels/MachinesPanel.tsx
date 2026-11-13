@@ -1,5 +1,9 @@
+import { plural, t } from "@lingui/core/macro";
+import { consoleSessionHref } from "../../../lib/api/sessionContext";
 import { useEffect, useMemo, useState } from "react";
-import { Link, Navigate, useLocation, useSearchParams } from "react-router-dom";
+import { LinkedJob } from "./machine/LinkedJob";
+import { Navigate, useLocation, useSearchParams } from "react-router-dom";
+import { useTransitionNavigate } from "../../../lib/motion";
 import { useQuery } from "@tanstack/react-query";
 
 import type { PrinterPool } from "../../../generated/api";
@@ -12,11 +16,26 @@ import { SharedConsumablesSection } from "./machine/SharedConsumablesSection";
 import { poolPath, poolQueryKey } from "./machine/servicePools";
 import { useServiceDrafts } from "./machine/serviceDrafts";
 import { MachineTypesPanel } from "./MachineTypesPanel";
+import { MachineTypeWizard } from "./machine/typeWizard/MachineTypeWizard";
+import { TemplateCataloguePanel } from "./machine/typeWizard/TemplateCataloguePanel";
 import { NotificationRecipientPicker } from "../NotificationRecipientPicker";
-import { Panel, useStaffGet } from "./shared";
+import { DomainSettingsDisclosure } from "../DomainSettingsSection";
+import { useAreaPaymentsDrawer } from "../areaPayments/useAreaPaymentsDrawer";
+import { DomainPublicStats } from "../../stats/settings/DomainPublicStats";
+import { useStaffGet } from "./shared";
+import { ListLayout } from "../../../components/layouts";
+import { opsQueryState } from "../opsPresentation";
 import { DashboardMachineQueue, isDashboardMachineQueue } from "./DashboardMachineQueue";
+import { WorkOrdersScreen } from "./machine/workOrders/WorkOrdersScreen";
+import { SessionsScreen } from "./machine/sessions/SessionsScreen";
+import { AllJobsScreen } from "./machine/AllJobsScreen";
+import { AdaptersScreen } from "./machine/adapters/AdaptersScreen";
+import { MachineAccessScreen } from "../../machine-access/MachineAccessScreen";
+import { adapterSwitches } from "./machine/adapters/adaptersApi";
 
 type StatusFilter = "all" | MachineStatus;
+/** The type page's tab views (MachineTypePage); `work-orders` and `sessions` stay `?view=` screens. */
+const TYPE_VIEWS = ["machines", "queue", "board", "consumables", "access", "settings"];
 
 type Props = {
   enabledFeatures?: string[];
@@ -27,18 +46,22 @@ type Props = {
   machineServiceEnabled: boolean;
   printingEnabled: boolean;
   reportsEnabled?: boolean;
+  publicSiteEnabled?: boolean;
   delegatedRecipientRulesEnabled: boolean;
   guestOnly?: boolean;
   makerspaceSlug?: string | null;
   singleTenantLocked?: boolean;
+  printerAdapter?: boolean;
+  /** Device adapters console: manage_devices + devices module + machines.integrations (decision 312). */
+  adapterConsole?: boolean;
 };
-
-const focusRing = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus";
 
 export function MachinesPanel(props: Props) {
   const [params] = useSearchParams();
   const queue = params.get("work_queue") ?? "";
   if (isDashboardMachineQueue(queue)) return <DashboardMachineQueue makerspaceId={props.makerspaceId} slug={props.makerspaceSlug} single={props.singleTenantLocked ?? false} guest={props.guestOnly ?? false} enabled={queue === "maintenance_overdue" ? props.maintenanceEnabled : props.printingEnabled && props.machineServiceEnabled} />;
+  const job = Number(params.get("job"));
+  if (Number.isInteger(job) && job > 0 && props.machineServiceEnabled) return <><LinkedJob jobId={job} /><MachinesWorkspace {...props} /></>;
   return <MachinesWorkspace {...props} />;
 }
 
@@ -51,15 +74,22 @@ function MachinesWorkspace({
   machineServiceEnabled,
   printingEnabled,
   reportsEnabled = true,
+  publicSiteEnabled = false,
   delegatedRecipientRulesEnabled,
   guestOnly = false,
   makerspaceSlug = null,
   singleTenantLocked = false,
+  printerAdapter = false,
+  adapterConsole = false,
 }: Props) {
   const location = useLocation();
+  const navigate = useTransitionNavigate();
   const [params, setParams] = useSearchParams();
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [sharedOpen, setSharedOpen] = useState(false);
+  const [wizardOpen, setWizardOpen] = useState(false);
+  // Decision 242(a): job and session charges of the manager's own machine types, from inside Machines.
+  const machinePayments = useAreaPaymentsDrawer(makerspaceId, "machines");
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const linkedId = params.get("machine");
   useEffect(() => { setSelectedId(Number(linkedId) || null); }, [linkedId]);
@@ -78,8 +108,8 @@ function MachinesWorkspace({
     canManage && machineServiceEnabled,
   );
   const types = collectionResults(machineTypes.data);
-  const allMachines = machines.data?.results ?? [];
-  const pools = poolQuery.data ?? [];
+  const allMachines = useMemo(() => machines.data?.results ?? [], [machines.data]);
+  const pools = useMemo(() => poolQuery.data ?? [], [poolQuery.data]);
   const sharedPools = useMemo(
     () => pools.filter((pool) => pool.machine_id === null && pool.machine_type_id === null),
     [pools],
@@ -103,10 +133,15 @@ function MachinesWorkspace({
   }, [allMachines, types]);
 
   const hrefFor = (machineType: MachineType) =>
-    staffTabPath("machines", guestOnly, makerspaceSlug, singleTenantLocked, machineTypeSegment(machineType));
-  const indexHref = staffTabPath("machines", guestOnly, makerspaceSlug, singleTenantLocked);
+    consoleSessionHref(staffTabPath("machines", guestOnly, makerspaceSlug, singleTenantLocked, machineTypeSegment(machineType)));
+  const indexHref = consoleSessionHref(staffTabPath("machines", guestOnly, makerspaceSlug, singleTenantLocked));
+  const tabHref = (tab: string) => consoleSessionHref(staffTabPath(tab, guestOnly, makerspaceSlug, singleTenantLocked));
 
-  const requestedTypeId = parseMachineTypeSegment(staffSubPathFromPath(location.pathname, guestOnly));
+  // `/machines/<id-slug>/<view>` on a type page, `/machines/<view>` for a sole type shown
+  // inline on the index (0.12.0 row 14: views are routed, like settings subpages).
+  const segments = staffSubPathFromPath(location.pathname, guestOnly).split("/").filter(Boolean);
+  const requestedTypeId = parseMachineTypeSegment(segments[0] ?? "");
+  const routedView = (requestedTypeId !== null ? segments[1] : segments[0]) ?? "";
   // Both server-scoped sources must have SETTLED SUCCESSFULLY before an id can be called
   // unreachable. Judging on the type query alone would bounce a type known only through the
   // nested fallback; judging while either is loading would bounce every direct link on first
@@ -126,6 +161,34 @@ function MachinesWorkspace({
   const soleType = reachableTypes.length === 1 ? reachableTypes[0] : null;
   const shownType = selectedType ?? (requestedTypeId === null ? soleType : null);
 
+  // Work orders (machines.maintenance) are a screen of their own, reached from the index, a type page or a drawer.
+  const openWorkOrders = () => setParams(new URLSearchParams({ view: "work-orders" }));
+  // Machine sessions (L23, machines.sessions): live, to check and closed, from the index.
+  const sessionsEnabled = enabledFeatures.includes("machines.sessions");
+  const openSessions = (typeId?: number) => setParams(new URLSearchParams({ view: "sessions", ...(typeId ? { s_machine_type: String(typeId) } : {}) }));
+  // A15: every job across the types this person manages, grouped by type then machine.
+  const jobsEnabled = machineServiceEnabled && canManage;
+  const openJobs = () => setParams(new URLSearchParams({ view: "jobs" }));
+  if (jobsEnabled && params.get("view") === "jobs") {
+    return <AllJobsScreen makerspaceId={makerspaceId} machines={allMachines} onBack={() => setParams(new URLSearchParams())} />;
+  }
+  if (canManage && params.get("view") === "access") {
+    return <MachineAccessScreen makerspaceId={makerspaceId} machines={allMachines}
+      onBack={() => setParams(current => { const next = new URLSearchParams(current); next.delete("view"); return next; })} />;
+  }
+  if (adapterConsole && params.get("view") === "adapters") {
+    return <AdaptersScreen makerspaceId={makerspaceId} switches={adapterSwitches(enabledFeatures)}
+      onBack={() => setParams(current => { const next = new URLSearchParams(current); ["view", "adapter", "adapter_tab", "adapter_view"].forEach(key => next.delete(key)); return next; })} />;
+  }
+  if (sessionsEnabled && params.get("view") === "sessions") {
+    return <SessionsScreen makerspaceId={makerspaceId} machines={allMachines}
+      onBack={() => setParams(current => { const next = new URLSearchParams(current); [...next.keys()].filter(key => key === "view" || key === "session_status" || key.startsWith("s_")).forEach(key => next.delete(key)); return next; })} />;
+  }
+  if (maintenanceEnabled && params.get("view") === "work-orders") {
+    return <WorkOrdersScreen makerspaceId={makerspaceId} machines={allMachines}
+      onBack={() => setParams(current => { const next = new URLSearchParams(current); ["view", "work_order", "wo_status", "wo_machine"].forEach(key => next.delete(key)); return next; })} />;
+  }
+
   // Normalise an unknown or unreachable type id back to the index -- the console's existing
   // behaviour for a stale deep link, rather than a dead denial page. `replace` so the bad
   // URL does not sit in history waiting for the back button.
@@ -140,9 +203,8 @@ function MachinesWorkspace({
   // early.
   if (requestedTypeId !== null && !selectedType && !sourcesSettled) {
     return (
-      <Panel title="Machines">
-        <div className="h-40 animate-pulse rounded-xl border border-line bg-surface" aria-label="Loading machine type" />
-      </Panel>
+      <ListLayout header={{ title: t`Machines` }} state={opsQueryState(machines.isLoading || machines.isError ? machines : machineTypes, "machine type")}
+        body={{ kind: "rows", rows: null }} empty={{ message: t`No machine types available. Ask your space manager to configure your machine access.` }} />
     );
   }
 
@@ -155,98 +217,59 @@ function MachinesWorkspace({
     (pool.machine_id !== null && machineIds.has(pool.machine_id)),
   );
   const onTypePage = shownType !== null && selectedType !== null;
+  const viewHref = (view: string) => {
+    const rest = new URLSearchParams(params);
+    rest.delete("view");
+    const segment = [onTypePage && shownType ? machineTypeSegment(shownType) : "", view === "machines" ? "" : view].filter(Boolean).join("/");
+    const query = rest.toString();
+    return consoleSessionHref(`${staffTabPath("machines", guestOnly, makerspaceSlug, singleTenantLocked, segment)}${query ? `?${query}` : ""}`);
+  };
+  // Pre-0.12.0 bookmarks and links (`?view=settings`, the dashboard's `?view=queue`) move to the routed view.
+  const legacyView = params.get("view");
+  if (shownType && legacyView && TYPE_VIEWS.includes(legacyView)) return <Navigate replace to={viewHref(legacyView)} />;
 
-  return (
-    <Panel title={shownType ? shownType.name : "Machines"}>
-      <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-        <div className="min-w-0">
-          {onTypePage ? (
-            <Link className={`mb-1 inline-flex min-h-11 items-center gap-1 font-mono text-[11px] uppercase tracking-wide text-accent-ink hover:underline ${focusRing}`} to={indexHref}>
-              ← All machine types
-            </Link>
-          ) : null}
-          <p className="text-sm text-muted">
-            {shownType
-              ? `Machines, consumables and the service queue for ${shownType.name}.`
-              : "Manage shared equipment, operators, usage, documents, and operating status."}
-          </p>
-          {machines.data && !shownType ? (
-            <p className="mt-1 font-mono text-xs text-muted">{machines.data.count} machines total</p>
-          ) : null}
-        </div>
-        {shownType ? (
-          <label className="grid gap-1 font-mono text-[11px] uppercase tracking-wide text-muted sm:w-44">
-            Status
-            <select className={`desk-input min-h-11 ${focusRing}`} value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as StatusFilter)}>
-              <option value="all">All statuses</option>
-              <option value="idle">Idle</option><option value="running">Running</option><option value="reserved">Reserved</option>
-              <option value="maintenance">Maintenance</option><option value="offline">Offline</option>
-            </select>
-          </label>
-        ) : null}
-      </div>
-
-      {machineTypes.error instanceof Error ? <p className="mb-3 text-sm text-danger">{machineTypes.error.message}</p> : null}
-      {machines.error instanceof Error ? <p className="mb-3 text-sm text-danger">{machines.error.message}</p> : null}
-      {/* Panel level, not inside the Shared section: pools feed every type's start and
-          manual-usage forms, and Shared may be collapsed. A failed load would otherwise hand
-          those forms an empty selector with no indication stock failed to fetch, and an
-          operator would retry a start that cannot succeed. */}
-      {poolQuery.error instanceof Error ? (
-        <p className="mb-3 text-sm text-danger">Consumable pools could not be loaded: {poolQuery.error.message}</p>
-      ) : null}
-
-      {shownType ? (
-        <MachineTypePage
-          enabledFeatures={enabledFeatures}
-          makerspaceId={makerspaceId}
-          canManage={canManage}
-          canConfigureMachineTypes={canConfigureMachineTypes}
-          machineServiceEnabled={machineServiceEnabled}
-          printingEnabled={printingEnabled}
-          reportsEnabled={reportsEnabled}
-          machineType={shownType}
-          allMachines={typeMachines}
-          visibleMachines={typeMachines.filter((machine) => statusFilter === "all" || machine.status === statusFilter)}
-          typePools={typePools}
-          formPools={[...sharedPools, ...typePools]}
-          existingPools={pools}
-          machinesLoading={machines.isLoading}
-          machinesFailed={machines.isError}
-          onSelectMachine={setSelectedId}
-          draft={draftFor(shownType.id)}
-          setDraft={(update) => setDraft(shownType.id, update)}
-        />
-      ) : (
-        <MachineTypeCards
-          machineTypes={reachableTypes}
-          machines={allMachines}
-          machinesLoading={machines.isLoading}
-          machinesFailed={machines.isError}
-          typesLoading={machineTypes.isLoading}
-          typesFailed={machineTypes.isError}
-          hrefFor={hrefFor}
-        />
-      )}
-
-      {/* The settings block. Rendered on the index AND beneath a sole type's page, which is
-          what makes "land straight on my type" safe: none of these controls can become
-          unreachable for an actor who only ever has one type. */}
-      {!onTypePage ? (
-        <div className="mt-4 grid gap-4 border-t border-line pt-4">
-          <MachineTypesPanel makerspaceId={makerspaceId} canConfigureMachineTypes={canConfigureMachineTypes} />
-
-          {maintenanceEnabled && delegatedRecipientRulesEnabled ? (
-            <NotificationRecipientPicker delegated makerspaceId={makerspaceId} />
-          ) : null}
-
-          {canManage && machineServiceEnabled ? (
-            <SharedConsumablesSection makerspaceId={makerspaceId} pools={sharedPools} existingPools={pools} poolError={poolQuery.error} open={sharedOpen} onToggle={() => setSharedOpen((current) => !current)} />
-          ) : null}
-        </div>
-      ) : null}
-
-      {selectedId !== null ? <MachineDrawer enabledFeatures={enabledFeatures} key={selectedId} machineId={selectedId} makerspaceId={makerspaceId} canManageMachines={canManage} maintenanceEnabled={maintenanceEnabled} onClose={closeSelection} /> : null}
-    </Panel>
-  );
+  const settingsVisible = !shownType || routedView === "settings";
+  const viewMenu = [...(canManage ? [{ label: t`Machine access`, onClick: () => setParams(new URLSearchParams({ view: "access" })) }] : []),
+    ...(jobsEnabled ? [{ label: t`All jobs`, onClick: openJobs }] : []),
+    ...(maintenanceEnabled ? [{ label: t`Work orders`, onClick: openWorkOrders }] : []),
+    ...(sessionsEnabled ? [{ label: t`Sessions`, onClick: () => openSessions() }] : []),
+    ...(adapterConsole ? [{ label: t`Device adapters`, onClick: () => setParams(new URLSearchParams({ view: "adapters" })) }] : [])];
+  const settings = !onTypePage ? <>
+    {canConfigureMachineTypes && settingsVisible ? <TemplateCataloguePanel makerspaceId={makerspaceId} /> : null}
+    <MachineTypesPanel visible={settingsVisible} makerspaceId={makerspaceId} canConfigureMachineTypes={canConfigureMachineTypes} />
+    {maintenanceEnabled && delegatedRecipientRulesEnabled ? <NotificationRecipientPicker visible={settingsVisible} delegated makerspaceId={makerspaceId} /> : null}
+    {canManage && settingsVisible ? <DomainSettingsDisclosure makerspaceId={makerspaceId} domain="machines" /> : null}
+    {canManage && settingsVisible && publicSiteEnabled ? <DomainPublicStats makerspaceId={makerspaceId} area="machines" /> : null}
+    {canManage && machineServiceEnabled ? <SharedConsumablesSection visible={settingsVisible} makerspaceId={makerspaceId} pools={sharedPools} existingPools={pools} poolError={poolQuery.error} open={sharedOpen} onToggle={() => setSharedOpen(current => !current)} /> : null}
+  </> : null;
+  const detail = selectedId !== null ? <MachineDrawer enabledFeatures={enabledFeatures} publicBase={singleTenantLocked || !makerspaceSlug ? "" : `/m/${makerspaceSlug}`} key={selectedId} machineId={selectedId} makerspaceId={makerspaceId} canManageMachines={canManage} maintenanceEnabled={maintenanceEnabled} onClose={closeSelection} /> : null;
+  return <div onClickCapture={event => {
+    if (event.button || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return;
+    const link = (event.target as HTMLElement).closest<HTMLAnchorElement>('a[href^="/"]');
+    if (link?.getAttribute('href')?.startsWith(indexHref.split("?")[0])) { event.preventDefault(); navigate(link.getAttribute('href')!); }
+  }}>
+    {shownType ? <MachineTypePage enabledFeatures={enabledFeatures} makerspaceId={makerspaceId} canManage={canManage}
+      canConfigureMachineTypes={canConfigureMachineTypes} machineServiceEnabled={machineServiceEnabled} printingEnabled={printingEnabled}
+      reportsEnabled={reportsEnabled} machineType={shownType} allMachines={typeMachines}
+      visibleMachines={typeMachines.filter(machine => statusFilter === "all" || machine.status === statusFilter)}
+      typePools={typePools} formPools={[...sharedPools, ...typePools]} existingPools={pools}
+      machinesLoading={machines.isLoading} machinesFailed={machines.isError} onSelectMachine={setSelectedId}
+      draft={draftFor(shownType.id)} setDraft={update => setDraft(shownType.id, update)}
+      detail={detail} indexHref={onTypePage ? indexHref : undefined} settings={settings} statusFilter={statusFilter}
+      onStatusFilter={setStatusFilter} onRetry={() => { void machines.refetch(); void machineTypes.refetch(); }}
+      poolError={poolQuery.error instanceof Error ? poolQuery.error.message : undefined} onRetryPools={() => { void poolQuery.refetch(); }}
+      onWorkOrders={maintenanceEnabled ? openWorkOrders : undefined} onSessions={sessionsEnabled ? () => openSessions(shownType.id) : undefined} printerAdapter={printerAdapter}
+      routedView={{ active: routedView, href: viewHref }} tabHref={tabHref} /> :
+      <ListLayout header={{ title: t`Machines`, overflow: machinePayments.actions, subtitle: t`${plural(allMachines.length, { one: "# machine", other: "# machines" })} across ${plural(reachableTypes.length, { one: "# type", other: "# types" })}`,
+        primary: canConfigureMachineTypes ? { label: t`Add machine type`, icon: "Plus", onClick: () => setWizardOpen(true) } : undefined, secondary: viewMenu.length > 1 ? { label: t`Views`, menu: viewMenu } : viewMenu[0] }} state={reachableTypes.length ? { status: "ready" } : opsQueryState(machines.isError ? machines : machineTypes, "machines")}
+        callout={machineTypes.isError || machines.isError ? { size: "banner", tone: "warn", lead: "Some machine information couldn’t be loaded.", action: { label: t`Retry`, onClick: () => { void machines.refetch(); void machineTypes.refetch(); } } }
+          : poolQuery.isError ? { size: "banner", tone: "warn", lead: "Couldn’t load consumable pools. Try again before starting work.", action: { label: t`Retry`, onClick: () => { void poolQuery.refetch(); } } } : undefined}
+        body={{ kind: "rows", rows: <><MachineTypeCards machineTypes={reachableTypes} machines={allMachines}
+          machinesLoading={machines.isLoading} machinesFailed={machines.isError} typesLoading={machineTypes.isLoading}
+          typesFailed={machineTypes.isError} hrefFor={hrefFor} />{settings}</> }}
+        empty={{ message: t`No machine types available. Add your first machine type or ask your space manager for access.` }} detail={detail} />}
+    {machinePayments.dialog}
+    {wizardOpen ? <MachineTypeWizard makerspaceId={makerspaceId} onClose={() => setWizardOpen(false)} enabledFeatures={enabledFeatures} machineServiceEnabled={machineServiceEnabled}
+      printerAdapter={printerAdapter} hrefFor={tabHref} /> : null}
+  </div>;
 }

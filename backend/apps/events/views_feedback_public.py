@@ -1,7 +1,7 @@
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from drf_spectacular.utils import OpenApiResponse, extend_schema
-from rest_framework.exceptions import NotAuthenticated, NotFound, ValidationError
+from rest_framework.exceptions import NotFound
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -12,10 +12,6 @@ from apps.events.serializers_feedback import (
     FeedbackFormSerializer,
     FeedbackSubmissionResponseSerializer,
     FeedbackSubmissionSerializer,
-)
-from apps.events.services_feedback import (
-    submit_anonymous_feedback,
-    submit_identified_feedback,
 )
 from apps.hardware_requests.exceptions import ErrorSerializer
 from apps.makerspaces.guards import require_module_for_servable
@@ -36,7 +32,7 @@ def _public_feedback_event(makerspace, token):
         Event.objects.select_related("makerspace").filter(
             makerspace=makerspace,
             public_token=token,
-            is_public=True,
+            is_public=True, page_state=Event.PageState.LIVE,
             status__in=(Event.Status.PUBLISHED, Event.Status.COMPLETED),
             ends_at__lte=timezone.now(),
         )
@@ -48,6 +44,10 @@ def _public_feedback_event(makerspace, token):
 
 
 def feedback_form_payload(event, survey, *, certificate=None):
+    from apps.events.feedback_modes import feedback_mode
+    mode = feedback_mode(survey)
+    if mode == "unavailable":
+        raise NotFound()
     return {
         "event": {
             "public_token": str(event.public_token),
@@ -56,8 +56,8 @@ def feedback_form_payload(event, survey, *, certificate=None):
             "ends_at": event.ends_at,
         },
         "survey": survey,
-        "mode": "certificate" if survey.certificate_enabled else "anonymous",
-        "requires_auth": survey.certificate_enabled,
+        "mode": mode,
+        "requires_auth": mode != "anonymous",
         "certificate": certificate,
     }
 
@@ -80,21 +80,7 @@ class PublicEventFeedbackView(APIView):
         event, survey = _public_feedback_event(makerspace, public_token)
         serializer = FeedbackSubmissionSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        data = serializer.validated_data
-        if survey.certificate_enabled:
-            if not request.user.is_authenticated:
-                raise NotAuthenticated()
-            if "email" not in data:
-                raise ValidationError({"email": "This field is required."})
-            _response, certificate = submit_identified_feedback(
-                event,
-                actor=request.user,
-                email=data["email"],
-                answers=data["answers"],
-            )
-        else:
-            if "email" in data:
-                raise ValidationError({"email": "Email is not accepted for anonymous feedback."})
-            _response, certificate = submit_anonymous_feedback(event, data["answers"])
+        from apps.events.feedback_modes import submit
+        _response, certificate = submit(event, survey, user=request.user, data=serializer.validated_data)
         payload = {"thank_you_text": survey.thank_you_text, "certificate": certificate}
         return Response(FeedbackSubmissionResponseSerializer(payload).data, status=201)

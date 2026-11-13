@@ -1,7 +1,11 @@
+import { t } from "@lingui/core/macro";
+import { SelectedReportPanel as Panel } from "./OperationsReportSelection";
 import { DataState, ReportTable, type ReportRows } from "./OperationsReportsParts";
-import { Panel, useStaffGet } from "./shared";
+import { useStaffGet } from "./shared";
 import type { ReportCatalogItem } from "./operationsReportsConfig";
 import type { ReportViewState } from "./reportViewsApi";
+import { CatalogChartPanel } from "./charts/CatalogChartPanel";
+import { ChannelUsagePanel } from "./ChannelUsagePanel";
 
 export function SelectedReportPreview({ report, analyticsBase, scopeKey, start, end, grain, columns, months, filters }: {
   report?: ReportCatalogItem; analyticsBase: string; scopeKey: string | number;
@@ -20,15 +24,21 @@ export function SelectedReportPreview({ report, analyticsBase, scopeKey, start, 
     ["selected-report", scopeKey, report?.key, start, end, grain, months, filters],
     `${analyticsBase}/${report?.key}?${params}`, Boolean(report && report.available !== false && report.previewable !== false && !report.summary),
   );
-  if (!report || report.summary || report.previewable === false) return null;
+  if (!report || report.available === false || report.summary || report.previewable === false) return null;
   const rows = result.data?.rows ?? [];
   const indexes = columns.length && rows[0] ? columns.map((column) => rows[0].indexOf(column)).filter((index) => index >= 0) : [];
   const visible = indexes.length ? { rows: rows.map((row) => indexes.map((index) => row[index])) } : result.data;
-  return <Panel title={`${report.title} preview`}>
-    <DataState loading={result.isLoading} error={result.error} empty={rows.length <= 1}>
+  const chartRows = result.data?.typed_rows ?? rows.slice(1).map((row) => Object.fromEntries((rows[0] ?? []).map((header, index) => [String(header), row[index]])));
+  if (report.key === "channel-usage") return <Panel title={report.title} reportKey={report.key} generic>
+    <ChannelUsagePanel rows={chartRows} meta={result.data?.meta} loading={result.isLoading} error={result.error}
+      onRetry={() => void result.refetch()} spaceName={id => id == null ? t`Unattributed` : t`Space #${id}`} />
+  </Panel>;
+  return <><Panel title={`${report.title} preview`} reportKey={report.key} generic>
+    {report.chart_spec ? <CatalogChartPanel title={report.title} spec={report.chart_spec} hint={report.chart_hint} rows={chartRows}
+      loading={result.isLoading} error={result.error} onRetry={() => void result.refetch()} /> : <DataState loading={result.isLoading} error={result.error} onRetry={() => void result.refetch()} empty={rows.length <= 1}>
       <ReportTable data={visible} />
-    </DataState>
+    </DataState>}</Panel>
     {result.data?.meta?.definition ? <p className="mt-2 text-xs text-muted">{result.data.meta.definition}</p> : null}
     {result.data?.meta?.limitations ? <p className="mt-2 text-xs text-muted">{result.data.meta.limitations}</p> : null}
-  </Panel>;
+  </>;
 }

@@ -1,0 +1,102 @@
+# Generated role contract; run the separate finite release before enabling services.
+# Upload private rendered runtime settings; maintenance credentials belong only to release.
+# Secret JSON mounts must be uploaded as provider secret files at their configured paths.
+# The zero digest in the checked template MUST be replaced by one verified same-build digest.
+envVarGroups:
+  - name: spaceworks-runtime
+    envVars:
+      - {"key": "INFRA_HOSTS", "sync": false}
+      - {"key": "ALLOWED_HOSTS", "sync": false}
+      - {"key": "API_CLIENT_ENC_KEY", "sync": false}
+      - {"key": "AUDIT_MAC_MASTER_KEY", "sync": false}
+      - {"key": "AWS_ACCESS_KEY_ID", "sync": false}
+      - {"key": "AWS_S3_ENDPOINT_URL", "sync": false}
+      - {"key": "AWS_S3_PUBLIC_ENDPOINT_URL", "sync": false}
+      - {"key": "AWS_S3_REGION_NAME", "value": "auto"}
+      - {"key": "AWS_SECRET_ACCESS_KEY", "sync": false}
+      - {"key": "AWS_SESSION_TOKEN", "sync": false}
+      - {"key": "AWS_STORAGE_BUCKET_NAME", "sync": false}
+      - {"key": "BACKUP_AGE_RECIPIENT", "value": ""}
+      - {"key": "BACKUP_ARCHIVE_SIGNING_PRIVATE_KEY", "sync": false}
+      - {"key": "BACKUP_ARCHIVE_VERIFY_PUBLIC_KEY", "value": ""}
+      - {"key": "BEHIND_TRUSTED_PROXY", "value": "False"}
+      - {"key": "CACHE_URL", "value": ""}
+      - {"key": "CARD_FONT_DOWNLOADS_ENABLED", "value": "True"}
+      - {"key": "CELERY_BROKER_URL", "value": ""}
+      - {"key": "CELERY_RESULT_BACKEND", "value": ""}
+      - {"key": "CELERY_TASK_ALWAYS_EAGER", "value": "True"}
+      - {"key": "CLOUD_SCHEDULER", "value": "tick"}
+      - {"key": "CLOUD_TASK_PROFILE", "value": "brokerless"}
+      - {"key": "CONN_HEALTH_CHECKS", "value": "True"}
+      - {"key": "CONN_MAX_AGE", "value": "60"}
+      - {"key": "CONTROL_PLANE_PROXY", "value": "false"}
+      - {"key": "CORS_ALLOWED_ORIGINS", "sync": false}
+      - {"key": "CRON_INTERVAL_SECONDS", "value": "60"}
+      - {"key": "CRON_SECRET", "sync": false}
+      - {"key": "CSRF_TRUSTED_ORIGINS", "sync": false}
+      - {"key": "DATABASE_CONNECTION_MODE", "value": "session"}
+      - {"key": "DATABASE_URL", "sync": false}
+      - {"key": "DEBUG", "value": "False"}
+      - {"key": "DEFAULT_FROM_EMAIL", "sync": false}
+      - {"key": "DISABLE_SERVER_SIDE_CURSORS", "value": "False"}
+      - {"key": "EMAIL_PROVIDER", "value": "resend"}
+      - {"key": "EMAIL_PROVIDER_CONFIG_FILE", "sync": false}
+      - {"key": "ENABLE_HTTPS", "value": "true"}
+      - {"key": "EVENT_REIMBURSEMENT_EVENT_STORAGE_BYTES", "value": "1073741824"}
+      - {"key": "EVENT_REIMBURSEMENT_FILE_MAX_BYTES", "value": "10485760"}
+      - {"key": "EVENT_REIMBURSEMENT_MEMBER_STORAGE_BYTES", "value": "104857600"}
+      - {"key": "EVENT_REIMBURSEMENT_PAYEE_PURGE_DAYS", "value": "30"}
+      - {"key": "EVENT_REIMBURSEMENT_RECEIPT_RETENTION_DAYS", "value": "2555"}
+      - {"key": "EVENT_STAGE_FILE_RETENTION_DAYS", "value": "365"}
+      - {"key": "EVENT_STATION_PIN_PEPPER", "sync": false}
+      - {"key": "FREE_DB_CAP_BYTES", "value": "500000000"}
+      - {"key": "FREE_EMAIL_ACCOUNT_KEY", "value": "shared-resend-account"}
+      - {"key": "FREE_EMAIL_DAILY_CAP", "value": "100"}
+      - {"key": "FREE_EMAIL_MONTHLY_CAP", "value": "3000"}
+      - {"key": "FREE_EMAIL_RESET_TIMEZONE", "value": "UTC"}
+      - {"key": "FREE_OBJECT_CAP_BYTES", "value": "10000000000"}
+      - {"key": "FREE_TICK_BUDGET_SECONDS", "value": "20"}
+      - {"key": "FREE_TICK_INTERVAL_SECONDS", "value": "600"}
+      - {"key": "FREE_TICK_RATE_LIMIT_PER_MINUTE", "value": "6"}
+      - {"key": "FREE_TICK_SECRET", "sync": false}
+      - {"key": "GUNICORN_THREADS", "value": "1"}
+      - {"key": "GUNICORN_WORKERS", "value": "1"}
+      - {"key": "LIVE_REDIS_URL", "value": ""}
+      - {"key": "LOGIN_IP_BLOCK_ENABLED", "value": "True"}
+      - {"key": "MANAGED_POSTGRES", "value": "True"}
+      - {"key": "MESSAGING_WEBHOOK_BASE_URL", "value": ""}
+      - {"key": "MIN_NATIVE_APP_VERSION_ANDROID", "value": ""}
+      - {"key": "MIN_NATIVE_APP_VERSION_IOS", "value": ""}
+      - {"key": "NOTIFICATION_DISCORD_REDIRECT_URI", "value": ""}
+      - {"key": "NOTIFICATION_MATTERMOST_ALLOW_PRIVATE_HOSTS", "value": "False"}
+      - {"key": "NOTIFICATION_MATTERMOST_REDIRECT_URI", "value": ""}
+      - {"key": "NOTIFICATION_SLACK_REDIRECT_URI", "value": ""}
+      - {"key": "PASSWORD_BREACH_CHECK_ENABLED", "value": "True"}
+      - {"key": "PII_DEK_CACHE_TTL_SECONDS", "value": "300"}
+      - {"key": "PII_ENCRYPTION_DUAL_READ", "value": "True"}
+      - {"key": "PII_ENCRYPTION_ENABLED", "value": "False"}
+      - {"key": "PII_KEY_BROKER", "value": "local"}
+      - {"key": "PII_MASTER_KEY", "sync": false}
+      - {"key": "PII_SEARCH_HASH_KEY", "sync": false}
+      - {"key": "PLATFORM_STAFF_ORIGINS", "sync": false}
+      - {"key": "PORT", "value": "8000"}
+      - {"key": "PUBLIC_APP_BASE_URL", "sync": false}
+      - {"key": "PUBLIC_IMAGE_BASE_URL", "sync": false}
+      - {"key": "PUBLIC_IMAGE_BUCKET", "sync": false}
+      - {"key": "SECRET_KEY", "sync": false}
+      - {"key": "SPACEWORKS_DEPLOYMENT_ID", "value": ""}
+      - {"key": "SPACEWORKS_DEPLOYMENT_MODE", "value": "managed"}
+      - {"key": "SPACEWORKS_DEPLOYMENT_PROFILE", "value": "free"}
+      - {"key": "STORAGE_CAPABILITIES_FILE", "sync": false}
+      - {"key": "STORAGE_PRESIGN_METHOD", "value": "put"}
+      - {"key": "TRUSTED_PROXY_COUNT", "value": "1"}
+      - {"key": "TRUST_X_FORWARDED_PROTO", "value": "true"}
+      - {"key": "TURNSTILE_FAIL_MODE", "value": "open"}
+      - {"key": "TURNSTILE_HOSTNAMES", "value": ""}
+      - {"key": "TURNSTILE_SITE_KEY", "value": ""}
+      - {"key": "UPLOAD_SCAN_POLICY", "value": "none"}
+      - {"key": "WEBAUTHN_RP_NAME", "value": "Space Works"}
+      - {"key": "WEB_PUSH_VAPID_SUBJECT", "value": ""}
+      - {"key": "WHATSAPP_META_GRAPH_VERSION", "value": "v25.0"}
+services:
+  - {"type": "web", "name": "spaceworks-web", "runtime": "image", "image": {"url": "ghcr.io/spaceworks-labs/spaceworks-backend@sha256:0000000000000000000000000000000000000000000000000000000000000000"}, "plan": "free", "dockerCommand": "--role backend python -m scripts.run_cloud_role web", "envVars": [{"fromGroup": "spaceworks-runtime"}], "autoDeployTrigger": "off", "numInstances": 1, "healthCheckPath": "/api/v1/health/readiness/"}

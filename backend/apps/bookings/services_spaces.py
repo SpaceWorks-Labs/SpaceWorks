@@ -1,5 +1,6 @@
 '''Audited mutation boundary for bookable spaces.'''
 
+from django.utils.translation import gettext
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
 from django.db.models import Q
@@ -19,7 +20,7 @@ SPACE_FIELDS = frozenset(
         'name', 'kind', 'description', 'capacity', 'location', 'is_public',
         'show_public_availability', 'show_public_booker_names',
         'custom_form', 'requester_notifications_enabled', 'payment_amount',
-        'machine_type',
+        'machine_type', 'machine',
     }
 )
 
@@ -41,8 +42,30 @@ def _machine_type(makerspace, value):
         Q(makerspace__isnull=True) | Q(makerspace=makerspace), pk=value
     ).first()
     if machine_type is None:
-        raise serializers.ValidationError({'machine_type': 'Unknown machine type.'})
+        raise serializers.ValidationError({'machine_type': gettext('Unknown machine type.')})
     return machine_type
+
+
+def _machine(makerspace, value, current_space_id=None):
+    """Machine time booking (`machines.time_booking`, MI-43): this resource IS one machine.
+
+    Setting it needs the switch (clearing never does), one live resource per machine, and
+    the machine's type becomes the space's certification link.
+    """
+    if value is None:
+        return None
+    from apps.machines.models import Machine
+    from apps.makerspaces.guards import require_feature
+
+    require_feature(makerspace, 'machines.time_booking')
+    machine = Machine.objects.filter(makerspace=makerspace, is_active=True, pk=value).select_related(
+        'machine_type').first()
+    if machine is None:
+        raise serializers.ValidationError({'machine': gettext('Unknown machine.')})
+    taken = BookableSpace.objects.filter(machine=machine, is_active=True).exclude(pk=current_space_id)
+    if taken.exists():
+        raise serializers.ValidationError({'machine': gettext('This machine already has a bookable resource.')})
+    return machine
 
 
 def _canonical_form(value):
@@ -78,16 +101,33 @@ def _audit(space, actor, action, target, audit_service, meta=None):
     )
 
 
+def _type_booking_defaults(makerspace, machine_type):
+    if machine_type is None:
+        return {}
+    from apps.machines.type_setup import booking_defaults
+    return booking_defaults(makerspace.pk, machine_type.pk)
+
+
 @transaction.atomic
 def create_space(
     *, makerspace, actor, name, kind, description, capacity, location, is_public,
     audit_service, show_public_availability=False,
     show_public_booker_names=False,
-    approval_mode=BookableSpace.ApprovalMode.INSTANT, custom_form=None,
-    requester_notifications_enabled=None, payment_amount=0, machine_type=None,
+    approval_mode=None, custom_form=None,
+    requester_notifications_enabled=None, payment_amount=0, machine_type=None, machine=None,
 ):
     locked_makerspace = Makerspace.objects.select_for_update().get(pk=makerspace.pk)
-    machine_type = _machine_type(locked_makerspace, machine_type)
+    from .booking_authority import require_tenant
+    require_tenant(actor, locked_makerspace)
+    from apps.managed_hosting.extra_quotas import check_extra_quota
+    check_extra_quota(locked_makerspace, "bookable_spaces")  # decision 284: typed 409
+    machine = _machine(locked_makerspace, machine)
+    machine_type = machine.machine_type if machine else _machine_type(locked_makerspace, machine_type)
+    # Decision 343: a machine type's booking defaults seed a new space of that type (never a hard dependency:
+    # only consulted when a type is set, which means the machines app is installed).
+    type_defaults = _type_booking_defaults(locked_makerspace, machine_type)
+    approval_mode = approval_mode or type_defaults.pop("approval_mode", None) or BookableSpace.ApprovalMode.INSTANT
+    type_defaults.pop("approval_mode", None)
     space = BookableSpace(
         makerspace=locked_makerspace,
         created_by=actor,
@@ -104,7 +144,9 @@ def create_space(
         requester_notifications_enabled=requester_notifications_enabled,
         payment_amount=payment_amount,
         machine_type=machine_type,
+        machine=machine,
         is_active=True,
+        **type_defaults,
     )
     _validate_public_visibility(space)
     _validate(space)
@@ -121,6 +163,13 @@ def update_space(space, *, actor, audit_service, **changes):
         .select_related('makerspace')
         .get(pk=space.pk)
     )
+    from .booking_authority import require
+    require(actor, locked, "edit_details")
+    from .booking_permissions import DESCRIPTIVE_FIELDS
+    from .booking_authority import can_manage_grants
+    if not can_manage_grants(actor, locked) and set(changes) - DESCRIPTIVE_FIELDS:
+        from rest_framework.exceptions import PermissionDenied
+        raise PermissionDenied(gettext("Resource grants allow descriptive fields only."))
     if not locked.is_active:
         raise BookingInvalidTransition('Inactive spaces cannot be updated.')
     unknown = set(changes) - SPACE_FIELDS
@@ -132,6 +181,10 @@ def update_space(space, *, actor, audit_service, **changes):
         changes['custom_form'] = _canonical_form(changes['custom_form'])
     if 'machine_type' in changes:
         changes['machine_type'] = _machine_type(locked.makerspace, changes['machine_type'])
+    if 'machine' in changes:
+        changes['machine'] = _machine(locked.makerspace, changes['machine'], locked.pk)
+        if changes['machine'] is not None:
+            changes['machine_type'] = changes['machine'].machine_type
     for field, value in changes.items():
         setattr(locked, field, value)
     _validate_public_visibility(locked)
@@ -146,6 +199,10 @@ def update_space(space, *, actor, audit_service, **changes):
         audit_service,
         {'changed_fields': sorted(changes)},
     )
+    if 'payment_amount' in changes:
+        # Lane L24: a lowered room price opens refund cases for paid upcoming bookings.
+        from apps.payments.price_drop.triggers import after_space_price
+        after_space_price(actor, locked)
     locked.refresh_from_db()
     return locked
 
@@ -157,6 +214,8 @@ def deactivate_space(space, *, actor, audit_service):
         .select_related('makerspace')
         .get(pk=space.pk)
     )
+    from .booking_authority import require
+    require(actor, locked, None)
     if not locked.is_active:
         raise BookingInvalidTransition('Space is already inactive.')
     locked.is_active = False

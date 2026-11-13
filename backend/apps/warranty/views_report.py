@@ -1,10 +1,10 @@
+from django.utils.translation import gettext
 from datetime import timedelta
 from math import ceil
 
 from django.db.models import Count, Q
 from django.db.models.functions import Lower
 from django.shortcuts import get_object_or_404
-from django.utils import timezone
 from drf_spectacular.utils import OpenApiParameter, OpenApiTypes, extend_schema
 from rest_framework.exceptions import NotFound, PermissionDenied
 from rest_framework.response import Response
@@ -20,7 +20,11 @@ from apps.warranty.serializers import (
 )
 from apps.admin_api.views_inventory import InventoryPagination
 from apps.inventory.models import InventoryAsset
+from apps.makerspaces.local_time import local_now
 from apps.makerspaces.platform import module_enabled
+from apps.makerspaces.folded_capabilities import (
+    INVENTORY_WARRANTY, MACHINES_WARRANTY, WARRANTY_KEYS, capability_on, require_any_capability,
+)
 from apps.makerspaces.servability import servable_queryset
 from apps.machines import access as machine_access
 from apps.machines.models import Machine
@@ -76,6 +80,8 @@ class MakerspaceWarrantyReportView(APIView):
             ),
             pk=makerspace_id,
         )
+        # Each host kind follows its own parent's switch; with both off the report is gone.
+        require_any_capability(makerspace, WARRANTY_KEYS)
         if not (
             rbac.can(request.user, rbac.Action.EDIT_INVENTORY, makerspace.id)
             or machine_access.can_see_machines(request.user, makerspace.id)
@@ -84,7 +90,7 @@ class MakerspaceWarrantyReportView(APIView):
         query = WarrantyReportQuerySerializer(data=request.query_params)
         query.is_valid(raise_exception=True)
         filters = query.validated_data
-        today = timezone.localdate()
+        today = local_now(makerspace).date()  # decision 230(d): the space's own day
 
         asset_qs = _asset_hosts(request.user, makerspace, today, filters)
         machine_qs = _machine_hosts(request.user, makerspace, today, filters)
@@ -115,6 +121,7 @@ def _asset_hosts(user, makerspace, today, filters):
     if not (
         rbac.can(user, rbac.Action.EDIT_INVENTORY, makerspace_id)
         and module_enabled(makerspace, "staff_admin")
+        and capability_on(makerspace, INVENTORY_WARRANTY)
     ):
         return InventoryAsset.objects.none()
     qs = rbac.scope_by_action(
@@ -128,7 +135,7 @@ def _asset_hosts(user, makerspace, today, filters):
 
 
 def _machine_hosts(user, makerspace, today, filters):
-    if not module_enabled(makerspace, "machines"):
+    if not capability_on(makerspace, MACHINES_WARRANTY):
         return Machine.objects.none()
     qs = machine_access.scope_manageable_machines_for_actor(
         user,
@@ -172,13 +179,13 @@ def _page_number(request, total_count, page_size, page_query_param):
     try:
         page_number = int(raw)
     except (TypeError, ValueError) as exc:
-        raise NotFound("Invalid page.") from exc
+        raise NotFound(gettext("Invalid page.")) from exc
     if page_number < 1:
-        raise NotFound("Invalid page.")
+        raise NotFound(gettext("Invalid page."))
     if total_count == 0 and page_number != 1:
-        raise NotFound("Invalid page.")
+        raise NotFound(gettext("Invalid page."))
     if total_count and (page_number - 1) * page_size >= total_count:
-        raise NotFound("Invalid page.")
+        raise NotFound(gettext("Invalid page."))
     return page_number
 
 

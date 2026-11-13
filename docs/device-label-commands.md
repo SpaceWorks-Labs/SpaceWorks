@@ -1,4 +1,4 @@
-# Label commands (forward phase 7c)
+# Label commands
 
 An operator with `MANAGE_QR` can send an existing nonempty QR print batch to an
 enrolled, active label printer in the same makerspace. Both `devices` and

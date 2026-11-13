@@ -1,0 +1,39 @@
+{
+  "$id": "https://spaceworks.invalid/schemas/device-adapter/v1/pose.led_segment.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "color": {
+      "maxLength": 16,
+      "type": "string"
+    },
+    "count": {
+      "maximum": 512,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "kind": {
+      "enum": [
+        "led_segment"
+      ],
+      "type": "string"
+    },
+    "start": {
+      "maximum": 4095,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "strip": {
+      "maximum": 15,
+      "minimum": 0,
+      "type": "integer"
+    }
+  },
+  "required": [
+    "kind",
+    "strip",
+    "start",
+    "count"
+  ],
+  "type": "object"
+}

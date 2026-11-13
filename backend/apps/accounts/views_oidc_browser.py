@@ -1,16 +1,17 @@
 from django.conf import settings
 from apps.openapi_errors import errors
-from drf_spectacular.utils import OpenApiResponse, extend_schema, PolymorphicProxySerializer
-from apps.accounts.serializers_mfa import MFAChallengeResponseSerializer
+from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
-from apps.accounts import audit_events
+from apps.accounts import audit_events, device_memory
+from apps.accounts.login_risk import record_success
 from apps.accounts.auth_cookies import set_refresh_cookies
 from apps.accounts.login_methods import self_registration_enabled, social_login_enabled
 from apps.accounts.models_oidc import provider_for_slug, slug_from_provider_key
+from apps.accounts.models_social import SocialSurface
 from apps.accounts.oidc_browser_attempts import (
     OidcAttemptRejected,
     consume_attempt,
@@ -31,7 +32,7 @@ from apps.accounts.serializers_oidc_browser import (
     OidcBrowserStartSerializer,
 )
 from apps.accounts.services_social_identity import SocialResolutionError
-from apps.accounts.services_social_login import issue_social_session, social_audit_meta
+from apps.accounts.services_social_login import assert_staff_authority, issue_social_session, social_audit_meta
 from apps.accounts.social_jwt import SocialProviderUnavailable, SocialTokenError
 from apps.accounts.social_oidc import verify_oidc_token
 from apps.hardware_requests.exceptions import ErrorSerializer
@@ -45,6 +46,7 @@ def _error(code, status_code):
         "provider_already_linked": "A different identity from that provider is already linked.",
         "account_link_required": "This provider does not allow automatic account linking.",
         "registration_disabled": "Account registration is not available.",
+        "staff_access_required": "Staff access is required.",
     }
     return Response(
         {"detail": messages.get(code, messages["social_invalid"]), "code": code},
@@ -54,6 +56,7 @@ def _error(code, status_code):
 
 class OidcBrowserStartView(APIView):
     permission_classes = [AllowAny]
+    login_ip_guard = True  # S-C: platform IP rules, automatic blocks, Turnstile
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = "social_nonce"
 
@@ -95,6 +98,7 @@ class OidcBrowserStartView(APIView):
 
 class OidcBrowserCallbackView(APIView):
     permission_classes = [AllowAny]
+    login_ip_guard = True  # S-C: platform IP rules, automatic blocks, Turnstile
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = "social_login"
 
@@ -103,7 +107,7 @@ class OidcBrowserCallbackView(APIView):
         auth=[],
         request=OidcBrowserCallbackSerializer,
         responses={
-            200: PolymorphicProxySerializer(component_name="OidcBrowserLoginResult", serializers=[OidcBrowserLoginResponseSerializer, MFAChallengeResponseSerializer], resource_type_field_name=None),
+            200: OidcBrowserLoginResponseSerializer,
             400: OpenApiResponse(ErrorSerializer),
             401: OpenApiResponse(ErrorSerializer),
             403: OpenApiResponse(ErrorSerializer),
@@ -136,33 +140,37 @@ class OidcBrowserCallbackView(APIView):
                 attempt,
                 claims,
                 allow_user_creation=self_registration_enabled(),
+                staff_validator=(lambda user: assert_staff_authority(user, request))
+                if attempt.surface == SocialSurface.STAFF else None,
             )
             from apps.accounts.mfa_policy import needs_challenge
             from apps.accounts.mfa_challenges import start
             from apps.accounts.mfa_sessions import context
             if needs_challenge(user):
-                response = Response(start(user, context=context(request, surface="member")))
+                response = Response(start(user, context=context(
+                    request, surface=attempt.surface, login_method="social",
+                )))
                 response["Cache-Control"] = "no-store"
                 return response
             tokens = issue_social_session(
                 user,
-                surface="member",
+                surface=attempt.surface,
                 delivery="web",
                 nonce_row=attempt,
             )
         except OidcAttemptRejected:
             return _error("social_invalid", 401)
         except OidcTokenRejected:
-            _audit_failure(attempt, "token_rejected")
+            _audit_failure(attempt, "token_rejected", request)
             return _error("social_invalid", 401)
         except (OidcProviderUnavailable, SocialProviderUnavailable):
             _audit_failure(attempt, "provider_unavailable")
             return _error("social_unavailable", 503)
         except SocialTokenError:
-            _audit_failure(attempt, "invalid_token")
+            _audit_failure(attempt, "invalid_token", request)
             return _error("social_invalid", 401)
         except SocialResolutionError as exc:
-            _audit_failure(attempt, exc.code)
+            _audit_failure(attempt, exc.code, request)
             return _error(exc.code, exc.status_code)
         audit_events.record_auth_event(
             user,
@@ -173,15 +181,18 @@ class OidcBrowserCallbackView(APIView):
         response = Response(
             {
                 "access": tokens["access"],
-                "user": user_payload(user, request=request),
+                "user": user_payload(user, request=request, session_authority=attempt.surface),
                 "outcome": outcome,
+                **({"next": attempt.next_path} if attempt.next_path else {}),
             }
         )
         set_refresh_cookies(response, tokens["refresh"], request)
+        record_success(request, user, method="social", web=True)  # Q4: recorded, never stepped up
+        device_memory.attach(response, request)
         return response
 
 
-def _audit_failure(attempt, reason):
+def _audit_failure(attempt, reason, request=None):
     audit_events.record_auth_event(
         None,
         "auth.social_login_failed",
@@ -190,3 +201,6 @@ def _audit_failure(attempt, reason):
             "reason": reason,
         },
     )
+    if request is not None:  # S-B: feeds the failure counters
+        from apps.accounts.security_signals import send_login_refused
+        send_login_refused(request, "", f"social_{reason}")

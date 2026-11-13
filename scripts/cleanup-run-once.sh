@@ -3,7 +3,7 @@
 cleanup_run_once_jobs() {
   local service cid state
   source "${UPDATE_SCRIPT_DIR:-${RESTORE_SCRIPT_DIR:-$ROOT/scripts}}/compose-deployment.sh"
-  deployment_services
+  deployment_services || return $?
   for service in "${RUN_ONCE_SERVICES[@]}"; do
     cid="$("${COMPOSE[@]}" ps -a -q "$service")" || return 1
     [[ -n "$cid" ]] || continue

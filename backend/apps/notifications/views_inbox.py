@@ -11,6 +11,7 @@ from apps.accounts import rbac
 from apps.audit import services as audit
 from apps.integrations.notification_catalog import FEATURE_EVENTS
 from apps.notifications.access import personal_space
+from apps.notifications.inbox_families import VIRTUAL, families_present, filter_family
 from apps.notifications.models_inbox import NotificationInboxRow
 from apps.notifications.serializers_inbox import (
     CountSerializer, InboxPageSerializer, InboxSerializer, ReadAllSerializer,
@@ -24,7 +25,8 @@ WRITE_ERRORS = errors(400, 401, 403, 404, 423, 503)
 
 class InboxFilters(serializers.Serializer):
     unread = serializers.BooleanField(required=False, default=False)
-    feature = serializers.ChoiceField(choices=tuple(FEATURE_EVENTS), required=False)
+    archived = serializers.BooleanField(required=False, default=False)
+    feature = serializers.ChoiceField(choices=(*tuple(FEATURE_EVENTS), *VIRTUAL), required=False)
 
 
 class InboxBase(APIView):
@@ -40,27 +42,48 @@ class InboxBase(APIView):
 class InboxListView(InboxBase):
     @extend_schema(tags=["Personal notifications"], parameters=[
         OpenApiParameter("page", int), OpenApiParameter("unread", bool),
-        OpenApiParameter("feature", str, enum=list(FEATURE_EVENTS)),
+        OpenApiParameter("archived", bool, description="Archived messages only (notifications.inbox_snooze)."),
+        OpenApiParameter("feature", str, enum=[*FEATURE_EVENTS, *VIRTUAL],
+                         description="A display family: `shop` and `safety` are carved out of payments and maintenance."),
     ], responses={200: InboxPageSerializer, **ERRORS})
     def get(self, request, makerspace_id):
-        _, rows = self.rows(request, makerspace_id)
+        space, rows = self.rows(request, makerspace_id)
         filters = InboxFilters(data=request.query_params)
         filters.is_valid(raise_exception=True)
+        from .views_inbox_snooze import FEATURE, visible
+        from apps.makerspaces.platform import feature_enabled
+        if filters.validated_data["archived"] and feature_enabled(space, FEATURE):
+            rows = rows.filter(archived_on__isnull=False)
+        else:
+            rows = visible(rows, space)
         if filters.validated_data["unread"]:
             rows = rows.filter(read_at__isnull=True)
         if filters.validated_data.get("feature"):
-            rows = rows.filter(feature=filters.validated_data["feature"])
+            rows = filter_family(rows, filters.validated_data["feature"])
         paginator = PageNumberPagination()
         paginator.page_size = 24
         page = paginator.paginate_queryset(rows, request, view=self)
         return paginator.get_paginated_response(InboxSerializer(page, many=True).data)
 
 
+class FamiliesSerializer(serializers.Serializer):
+    families = serializers.ListField(child=serializers.CharField())
+
+
+class InboxFamiliesView(InboxBase):
+    @extend_schema(tags=["Personal notifications"], summary="The inbox families this person actually receives",
+                   responses={200: FamiliesSerializer, **ERRORS})
+    def get(self, request, makerspace_id):
+        _, rows = self.rows(request, makerspace_id)
+        return Response({"families": families_present(rows)})
+
+
 class InboxUnreadView(InboxBase):
     @extend_schema(tags=["Personal notifications"], responses={200: CountSerializer, **ERRORS})
     def get(self, request, makerspace_id):
-        _, rows = self.rows(request, makerspace_id)
-        return Response({"count": rows.filter(read_at__isnull=True).count()})
+        space, rows = self.rows(request, makerspace_id)
+        from .views_inbox_snooze import visible
+        return Response({"count": visible(rows, space).filter(read_at__isnull=True).count()})
 
 
 class InboxReadView(InboxBase):

@@ -9,7 +9,8 @@ from django.utils import timezone
 
 from apps.integrations import notification_rules
 from apps.integrations.chat_templates import render_chat_text
-from apps.integrations.dispatch import dispatch_email
+from apps.integrations.dispatch import dispatch_email  # noqa: F401 - tests patch notify.dispatch_email
+from .notify_legs import _leg_done, _mark_leg, _send_email_leg
 from apps.integrations.dispatch_channels import dispatch_channel
 from apps.integrations.lifecycle_data import lifecycle_data
 from apps.integrations.models import (
@@ -19,6 +20,9 @@ from apps.integrations.models import (
     NotificationFeature,
 )
 from apps.integrations.notification_catalog import FEATURE_EVENTS, is_notification_enabled, receipt_email_default
+from .notification_cloud_fanout import check as check_cloud_fanout, preflight as preflight_cloud_fanout
+from .notification_cloud_fanout import UnsupportedFanout
+from apps.operations.cloud_jobs.contracts import BudgetExpired, GuardLost
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +39,9 @@ class EmailDelivery:
     mute_event: str = ""
     persist_body: bool = True
     user_id: int | None = None
+    source_kind: str = ""
+    source_id: int | None = None
+    source_metadata: dict = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -54,6 +61,8 @@ class LifecyclePayload:
     data: dict = field(default_factory=dict)
     staff_channels_enabled: bool = True
     inbox: tuple = ()
+    # Internal source identity, separate from the public numeric-ID payload.
+    source: dict = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -84,26 +93,23 @@ def _email_muted(makerspace, delivery):
     return False
 
 
-def _dispatch_email_delivery(makerspace, feature, feature_event, delivery, sync, delivered, failed, staff_ids):
+def _dispatch_email_delivery(makerspace, feature, feature_event, delivery, sync, delivered, failed, staff_ids,
+                             envelope=None):
     from apps.notifications.preferences import mandatory_email
     mandatory = mandatory_email(delivery.stream, feature_event)
     if not mandatory and _email_muted(makerspace, delivery):
         return
+    import hashlib
+    leg = "email:" + hashlib.sha1(f"{delivery.audience}|{delivery.to_email.strip().casefold()}".encode()).hexdigest()[:20]
+    if _leg_done(envelope, leg):
+        return
     try:
-        log = dispatch_email(
-            makerspace=makerspace,
-            to_email=delivery.to_email,
-            subject=delivery.subject,
-            text_body=delivery.text_body,
-            html_body=delivery.html_body,
-            stream=delivery.stream,
-            event=feature_event if mandatory else delivery.mute_event or feature_event,
-            audience=delivery.audience,
-            persist_body=delivery.persist_body,
-            sync=sync,
-            recipient_id=delivery.user_id or staff_ids.get(delivery.to_email.strip().casefold()),
-            feature=feature,
-        )
+        check_cloud_fanout()
+        with transaction.atomic():
+            log = _send_email_leg(makerspace, feature, feature_event, delivery, sync, staff_ids, mandatory)
+            _mark_leg(envelope, leg)
+    except (BudgetExpired, GuardLost, UnsupportedFanout):
+        raise
     except Exception:
         _increment(failed, NotificationChannel.EMAIL)
         logger.warning(
@@ -112,31 +118,40 @@ def _dispatch_email_delivery(makerspace, feature, feature_event, delivery, sync,
         )
         return
     if log.status == EmailLog.Status.SKIPPED:
-        # Neither delivered nor failed: the makerspace turned email off, so counting it
-        # either way misreports the lifecycle result (`notify_return_due` returns
-        # `bool(delivered_counts)`, and a skip must not read as a sent reminder).
         return
     target = failed if log.status == EmailLog.Status.FAILED else delivered
     _increment(target, NotificationChannel.EMAIL)
 
 
-def _run_guarded(makerspace, feature, event, build, sync, occurred_at=None, event_key=None):
+def _run_guarded(makerspace, feature, event, build, sync, occurred_at=None, event_key=None, envelope=None):
     delivered, failed = {}, {}
     try:
         payload = build()
+        if payload.source:
+            from .notification_lifecycle_source import eligible_source
+            if not eligible_source(makerspace, feature, event, payload.source):
+                return NotificationResult(False)
+        preflight_cloud_fanout(makerspace, payload)
         data = lifecycle_data(payload.data)
+        if payload.source:
+            data["lifecycle_source"] = payload.source
+        event_key = event_key or uuid4()
         data["occurred_at"] = occurred_at or timezone.now().isoformat()
         enabled = {
             channel: is_notification_enabled(makerspace, feature, channel)
             for channel in NotificationChannel.values
         }
         # Inbox failure is isolated so email/chat still deliver.
-        if enabled[NotificationChannel.IN_APP]:
+        if enabled[NotificationChannel.IN_APP] and not _leg_done(envelope, "inbox"):
             try:
                 from apps.notifications.inbox import write_matrix_inbox
-                write_matrix_inbox(makerspace, feature, event, payload, event_key or uuid4())
+                with transaction.atomic():
+                    write_matrix_inbox(makerspace, feature, event, payload, event_key)
+                    _mark_leg(envelope, "inbox")
             except Exception:
                 logger.warning("matrix_inbox_failed", extra={"makerspace_id": makerspace.pk})
+        # Source adapters emit personal envelopes in their domain transaction.
+        # This compatibility fan-out owns only the deliberately retained room/mail legs.
         payer_receipt = (feature == NotificationFeature.PAYMENTS and event == "payment_received"
                          and receipt_email_default(makerspace))
         mandatory_hardware = feature == "hardware_requests" and event in {"return_reminder", "closed_with_issue"}
@@ -148,10 +163,12 @@ def _run_guarded(makerspace, feature, event, build, sync, occurred_at=None, even
                 pk__in=ids,
             ).values_list("pk", "email") if email}
             for delivery in payload.emails:
+                check_cloud_fanout()
                 if not (enabled[NotificationChannel.EMAIL] or mandatory_hardware
                         or (payer_receipt and delivery.audience == "requester")):
                     continue
-                _dispatch_email_delivery(makerspace, feature, event, delivery, sync, delivered, failed, staff_ids)
+                _dispatch_email_delivery(makerspace, feature, event, delivery, sync, delivered, failed, staff_ids,
+                                         envelope=envelope)
         # Rendered once for all chat channels: one stored body per event, not one per
         # channel. Falls back to `payload.text` whenever no row is authored.
         chat_text = render_chat_text(
@@ -165,26 +182,31 @@ def _run_guarded(makerspace, feature, event, build, sync, occurred_at=None, even
             NotificationChannel.WEBHOOK,
             NotificationChannel.NATIVE_PUSH,
         ):
-            if not enabled[channel] or not payload.staff_channels_enabled:
+            check_cloud_fanout()
+            if not enabled[channel] or not payload.staff_channels_enabled or _leg_done(envelope, f"room:{channel}"):
                 continue
             try:
-                logs = dispatch_channel(
-                    makerspace=makerspace,
-                    channel=channel,
-                    feature=feature,
-                    event=event,
-                    payload=data,
-                    text_body=(
-                        # Native push is not a room: it is the member's own device, and
-                        # it must not inherit a chat body written for a staff channel.
-                        payload.text
-                        if channel == NotificationChannel.NATIVE_PUSH
-                        else chat_text
-                    ),
-                    sync=sync,
-                    scope=payload.scope,
-                )
+                with transaction.atomic():
+                    logs = dispatch_channel(
+                        makerspace=makerspace,
+                        channel=channel,
+                        feature=feature,
+                        event=event,
+                        payload=({**data, "event_key": str(event_key)}
+                                 if channel == NotificationChannel.NATIVE_PUSH else data),
+                        text_body=(
+                            # Staff device push retains the adapter's staff wording rather
+                            # than inheriting the editable room template.
+                            payload.text
+                            if channel == NotificationChannel.NATIVE_PUSH
+                            else chat_text
+                        ),
+                        sync=sync,
+                        scope=payload.scope,
+                    )
+                    _mark_leg(envelope, f"room:{channel}")
             except Exception:
+                check_cloud_fanout()
                 _increment(failed, channel)
                 logger.warning(
                     "lifecycle_channel_dispatch_failed",
@@ -209,7 +231,12 @@ def _run_guarded(makerspace, feature, event, build, sync, occurred_at=None, even
                 # Counted per room, so three rooms is three deliveries: the counts back
                 # `bool(delivered_counts)`, and a partial fan-out must show both sides.
                 _increment(target, channel)
+    except (BudgetExpired, GuardLost, UnsupportedFanout):
+        raise
     except Exception:
+        from .notification_cloud_fanout import free
+        if free():
+            raise GuardLost("legacy_fanout_requires_reconciliation") from None
         logger.warning(
             "lifecycle_notification_failed",
             extra={
@@ -230,13 +257,19 @@ def notify_lifecycle(makerspace, *, feature, event, build, sync=False):
         )
         return NotificationResult(False, {}, {})
     # Snapshot at the event, before on_commit/queue delays; all rooms and retries agree.
+    from .fanout_jobs import stable_event_key
     occurred_at = timezone.now().isoformat()
-    event_key = uuid4()
-    if sync:
-        return _run_guarded(makerspace, feature, event, build, True, occurred_at, event_key)
+    event_key = stable_event_key()  # a retried fan-out job gets the same key, so the same shell and leg markers
     try:
+        from .notification_legacy import persist, dispatch
+        envelope = persist(makerspace, feature, event, None, event_key, occurred_at)
+        if envelope.processed_at is not None:
+            return NotificationResult(True, {}, {})
+        occurred_at = envelope.context.get("occurred_at", occurred_at)
+        if sync:
+            return dispatch(envelope, build, True, occurred_at, event_key)
         transaction.on_commit(
-            lambda: _run_guarded(makerspace, feature, event, build, False, occurred_at, event_key),
+            lambda: dispatch(envelope, build, False, occurred_at, event_key),
             robust=True,
         )
     except Exception:

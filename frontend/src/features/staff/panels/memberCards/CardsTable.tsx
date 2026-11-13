@@ -1,13 +1,8 @@
+import { t } from "@lingui/core/macro";
 import type { Key } from "react";
 
-import { Badge, DataTable, type DataTableColumn } from "../../../../components/ui";
+import { Badge, DataTable, OverflowMenu, RelativeTime, type DataTableColumn } from "../../../../components/ui";
 import type { CardStatus, MemberCard } from "./types";
-
-function shortDate(value: string | null) {
-  if (!value) return "never";
-  const parsed = new Date(value);
-  return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleDateString();
-}
 
 export function CardsTable({
   cards,
@@ -19,6 +14,7 @@ export function CardsTable({
   onPrint,
   onReissue,
   onRevoke,
+  rowActions,
 }: {
   cards: MemberCard[];
   status: CardStatus;
@@ -29,24 +25,31 @@ export function CardsTable({
   onPrint: (card: MemberCard) => void;
   onReissue: (card: MemberCard) => void;
   onRevoke: (card: MemberCard) => void;
+  /** Card-engine actions for an active card (download, email, photo request). */
+  rowActions?: (card: MemberCard) => { label: string; onClick: () => void; confirms?: boolean }[];
 }) {
   const columns: DataTableColumn<MemberCard>[] = [
     {
       key: "card_number",
-      header: "Card number",
+      header: t`Card number`,
       sortable: true,
-      render: (card) => <span className="font-mono text-xs">{card.card_number}</span>,
+      render: (card) => <span className="tabular-nums text-xs">{card.number_display || card.card_number}</span>,
     },
-    { key: "printed_name", header: "Name", sortable: true },
+    { key: "printed_name", header: t`Name`, sortable: true },
+    {
+      key: "valid_until",
+      header: t`Valid until`,
+      render: (card) => <span className="text-xs text-muted">{card.valid_until || "—"}</span>,
+    },
     {
       key: "is_active",
-      header: "Status",
+      header: t`Status`,
       render: (card) =>
         card.is_active ? (
-          <Badge tone="success">active</Badge>
+          <Badge tone="success">{t`Active`}</Badge>
         ) : (
           <span className="flex flex-wrap items-center gap-2">
-            <Badge tone="danger">revoked</Badge>
+            <Badge tone="danger">{t`Revoked`}</Badge>
             {card.revoked_reason ? (
               <span className="text-xs text-muted">{card.revoked_reason}</span>
             ) : null}
@@ -55,24 +58,25 @@ export function CardsTable({
     },
     {
       key: "print_count",
-      header: "Prints",
+      header: t`Prints`,
       sortable: true,
       render: (card) => (
         <span className="text-xs text-muted">
-          <span className="font-mono text-ink">{card.print_count}</span> · last{" "}
-          {shortDate(card.last_printed_at)}
+          <span className="tabular-nums text-ink">{card.print_count}</span> {t` · last${" "}`}
+          {card.last_printed_at ? <RelativeTime date={card.last_printed_at} /> : "never"}
         </span>
       ),
     },
     {
       key: "photo_set",
-      header: "Photo",
+      header: t`Photo`,
       render: (card) =>
-        card.photo_set ? <Badge tone="neutral">on file</Badge> : <span className="text-xs text-muted">none</span>,
+        card.photo_request_open ? <Badge tone="warn">{t`update asked`}</Badge>
+          : card.photo_set ? <Badge tone="neutral">{t`on file`}</Badge> : <span className="text-xs text-muted">none</span>,
     },
     {
       key: "actions",
-      header: "Actions",
+      header: t`Actions`,
       render: (card) => (
         <div className="desk-actions flex flex-wrap gap-2">
           <button
@@ -81,16 +85,15 @@ export function CardsTable({
             disabled={printingCardId === card.id}
             onClick={() => onPrint(card)}
           >
-            {printingCardId === card.id ? "Preparing…" : "Print"}
+            {printingCardId === card.id ? t`Preparing…` : t`Print`}
           </button>
           {card.is_active ? (
             <>
-              <button className="desk-button-ghost" type="button" onClick={() => onReissue(card)}>
-                Reissue
-              </button>
-              <button className="desk-button-ghost text-danger" type="button" onClick={() => onRevoke(card)}>
-                Revoke
-              </button>
+              <OverflowMenu label={"Actions for " + card.printed_name} actions={[
+                ...(rowActions ? rowActions(card) : []),
+                { label: t`Reissue`, confirms: true, onClick: () => onReissue(card) },
+                { label: t`Revoke`, confirms: true, tone: "danger", onClick: () => onRevoke(card) },
+              ]} />
             </>
           ) : null}
         </div>
@@ -110,12 +113,12 @@ export function CardsTable({
       columns={columns}
       data={cards}
       loading={loading}
-      skeletonCols={6}
-      emptyTitle={status === "active" ? "No active cards" : "No revoked cards"}
+      skeletonCols={7}
+      emptyTitle={status === "active" ? t`No active cards` : t`No revoked cards`}
       emptyDescription={
         status === "active"
-          ? "Issue a card to a member from the roster below."
-          : "Revoked cards stay listed here for the audit trail."
+          ? t`Issue a card from the Issue tab.`
+          : t`Revoked cards stay listed here for the audit trail.`
       }
       {...selection}
     />

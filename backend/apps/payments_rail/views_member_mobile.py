@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status
 from rest_framework.exceptions import NotFound
@@ -6,13 +7,15 @@ from rest_framework.views import APIView
 
 from apps.accounts.views_device import IsDeviceAccessToken
 from apps.hardware_requests.exceptions import ErrorSerializer
-from apps.makerspaces.origin_scope import require_native_selected_makerspace
+from apps.makerspaces.origin_scope_own_charges import require_native_charge_selection
 from apps.payments import stripe_client
 from apps.payments.availability import online_payments_enabled_for
 from apps.payments.member_scope import member_payment_queryset
 from apps.payments.models import Payment
+from apps.payments.providers import PaymentsUnavailable as ProviderPaymentsUnavailable
 from apps.payments.serializers_mobile import MobilePaymentIntentResponseSerializer
-from apps.payments.services import PaymentRailConflict
+from apps.payments.checkout_coordination import PlatformRailLimitReached
+from apps.payments.services import PaymentRailConflict, PaymentSettlementPending
 from apps.payments.services_mobile import create_mobile_intent
 
 
@@ -22,6 +25,12 @@ class MemberMobilePaymentIntentView(APIView):
     @extend_schema(
         tags=['Payments'],
         summary='Create or retrieve a native mobile payment intent',
+        description=(
+            'Requires an attested device token and ownership of a pending charge in the '
+            'selected makerspace. Returns vendor=stripe PaymentSheet parameters or '
+            'vendor=razorpay native Order parameters. An existing hosted checkout '
+            'returns payment_rail_conflict (409); unavailable payments return 503.'
+        ),
         request=None,
         responses={
             200: MobilePaymentIntentResponseSerializer,
@@ -33,7 +42,8 @@ class MemberMobilePaymentIntentView(APIView):
         },
     )
     def post(self, request, makerspace_id, payment_id):
-        require_native_selected_makerspace(request, makerspace_id)
+        # The selection is the path's space, by membership or (decision 354) by owning a charge here.
+        require_native_charge_selection(request, makerspace_id)
         # Same scope as the web surfaces: an event charge raised by a partner host is
         # payable from the member area the member reached it through, or the charge exists
         # with no way to settle it.
@@ -50,7 +60,7 @@ class MemberMobilePaymentIntentView(APIView):
             # the intent call, so raising here would surface as a 500.
             return Response(
                 {
-                    'detail': 'Online payment is not available for this charge.',
+                    'detail': gettext('Online payment is not available for this charge.'),
                     'code': 'payments_unavailable',
                 },
                 status=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -59,18 +69,29 @@ class MemberMobilePaymentIntentView(APIView):
             payload = create_mobile_intent(payment.pk, actor=request.user)
         except Payment.DoesNotExist as exc:
             raise NotFound() from exc
+        except PaymentSettlementPending:
+            return Response(
+                {
+                    'detail': gettext('Your offline payment of this charge is waiting for staff to confirm it.'),
+                    'code': PaymentSettlementPending.code,
+                },
+                status=status.HTTP_409_CONFLICT,
+            )
+        except PlatformRailLimitReached as exc:
+            return Response({'detail': str(exc), 'code': PlatformRailLimitReached.code},
+                            status=status.HTTP_409_CONFLICT)
         except PaymentRailConflict:
             return Response(
                 {
-                    'detail': 'The payment already uses a different online payment rail.',
+                    'detail': gettext('The payment already uses a different online payment rail.'),
                     'code': 'payment_rail_conflict',
                 },
                 status=status.HTTP_409_CONFLICT,
             )
-        except stripe_client.PaymentsUnavailable:
+        except (stripe_client.PaymentsUnavailable, ProviderPaymentsUnavailable):
             return Response(
                 {
-                    'detail': 'Payments are temporarily unavailable.',
+                    'detail': gettext('Payments are temporarily unavailable.'),
                     'code': 'payments_unavailable',
                 },
                 status=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -80,7 +101,7 @@ class MemberMobilePaymentIntentView(APIView):
             # or reveal Stripe diagnostics to the native client.
             return Response(
                 {
-                    'detail': 'Payments are temporarily unavailable.',
+                    'detail': gettext('Payments are temporarily unavailable.'),
                     'code': 'payments_unavailable',
                 },
                 status=status.HTTP_503_SERVICE_UNAVAILABLE,

@@ -1,0 +1,16 @@
+"""Shared registration error schemas, without a circular view-module dependency."""
+
+from drf_spectacular.utils import OpenApiResponse
+
+from apps.hardware_requests.exceptions import ErrorSerializer
+from .views_admin_event_detail import EVENT_ERROR_409, EVENT_VALIDATION_ERROR_SCHEMA
+
+REGISTRATION_ACTION_ERRORS = {
+    400: OpenApiResponse(EVENT_VALIDATION_ERROR_SCHEMA, description="Unexpected request body."),
+    401: OpenApiResponse(ErrorSerializer, description="Authentication is required."),
+    403: OpenApiResponse(ErrorSerializer, description="Event management is required."),
+    404: OpenApiResponse(ErrorSerializer, description="Registration not found, or the events module is turned off."),
+    409: EVENT_ERROR_409,
+    423: OpenApiResponse(ErrorSerializer, description="Source or protected writes are fenced."),
+    503: OpenApiResponse(ErrorSerializer, description="Private data or programme dependency unavailable."),
+}

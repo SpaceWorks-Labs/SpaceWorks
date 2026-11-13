@@ -32,6 +32,29 @@ def _rules(disposition, *fields):
 
 
 OMITTED_FIELD_RECONSTRUCTIONS = {
+    ("makerspaces.Makerspace", "email_provider"): EMPTY_STRING,
+    ("makerspaces.Makerspace", "email_provider_config"): EMPTY_STRING,
+    ("events.EventMemberCard", "public_id"): FRESH,
+    ("events.EventBroadcast", "confirmed_preview"): NULL,
+    ("events.EventFormRevision", "created_by"): NULL,
+    ("events.EventAttendanceCertificate", "render_token"): NULL,
+    ("events.EventMemberPresentation", "selected_profile"): NULL,
+    ("events.EventMemberPresentation", "selected_membership"): NULL,
+    **{(label, name): disposition for label in (
+        "events.SubmissionAsset", "events.HackathonParticipantAsset",
+    ) for name, disposition in (
+        ("staging_key", DERIVED), ("verification_key", DERIVED), ("claim", DERIVED),
+        ("source_version_id", EMPTY_STRING), ("verification_version_id", EMPTY_STRING),
+        ("source_etag", EMPTY_STRING), ("multipart_upload_id", EMPTY_STRING), ("upload_not_after", NULL),
+    )},
+    ("bookings.BookingBroadcastDelivery", "outbox"): NULL,
+    ("events.EventBroadcastDelivery", "outbox"): NULL,
+    # Imported consent is inert (catalog_messaging): the sender/proof binding is
+    # deployment-local, so the target projects an unbound, empty consent row.
+    ("integrations.MessagingConsent", "sender_key"): EMPTY_STRING,
+    ("integrations.MessagingConsent", "endpoint"): NULL,
+    ("integrations.MessagingConsent", "configuration_generation"): DERIVED,
+    ("integrations.MessagingConsent", "lifted_suppression_id"): DERIVED,
     **_rules(
         DROP_ROW,
         ("apiclients.ApiClient", "client_id"),
@@ -45,11 +68,13 @@ OMITTED_FIELD_RECONSTRUCTIONS = {
         # the encrypted webhook is removed, even when the source row is inactive.
         ("integrations.NotificationDestination", "webhook_url"),
         ("integrations.NotificationDestination", "signing_secret"),
+        ("integrations.NotificationDestination", "previous_signing_secret"),
     ),
     **_rules(
         FRESH,
         ("bookings.BookableSpace", "public_token"),
         ("bookings.Booking", "public_token"),
+        ("bookings.Booking", "checkin_token"),
         ("events.Event", "public_token"),
         ("events.EventSeries", "public_token"),
         # Deliberately invalidate source event check-in QR codes at the trust boundary.
@@ -83,11 +108,11 @@ OMITTED_FIELD_RECONSTRUCTIONS = {
     ),
     **_rules(
         EMPTY_STRING,
-        ("backup.MakerspaceArchiveRecipient", "challenge_nonce_digest"),
         ("machines.Machine", "camera_feed_url"),
         ("makerspaces.Makerspace", "telegram_bot_token"),
         ("makerspaces.Makerspace", "smtp_password"),
         ("makerspaces.Makerspace", "slack_webhook_url"),
+        ("events.Event", "join_url_encrypted"),
         ("makerspaces.Makerspace", "mattermost_webhook_url"),
         ("makerspaces.Makerspace", "discord_webhook_url"),
         ("payments.MakerspacePaymentSettings", "stripe_publishable_key"),
@@ -101,7 +126,6 @@ OMITTED_FIELD_RECONSTRUCTIONS = {
     ),
     **_rules(
         NULL,
-        ("backup.MakerspaceArchiveRecipient", "verified_at"),
         # A device key is proven per deployment; the imported device arrives pending
         # and re-enrolls (target_projection_devices), so no key travels.
         ("devices.Device", "public_key"),
@@ -115,7 +139,6 @@ OMITTED_FIELD_RECONSTRUCTIONS = {
         # one when it next claims the row; carrying it would hand the target a live
         # claim it never issued.
         ("evidence.EvidenceObjectRetentionState", "claim_token"),
-        ("backup.MakerspaceArchiveRecipient", "challenge_issued_at"),
         # Nullable AND globally unique, so the guard requires NULL: a freshly
         # generated identity would claim provenance the target has not attested. The
         # target reseals its own rows (row_mac is DERIVED above).
@@ -140,3 +163,23 @@ OMITTED_FIELD_RECONSTRUCTIONS = {
         ("payments.Payment", "stripe_payment_intent_id"),
     ),
 }
+
+# Release 2 L6: claim and transfer token digests are bearer material. The target mints
+# fresh unclaimable values; the buyer or sender re-sends the invite.
+OMITTED_FIELD_RECONSTRUCTIONS.update(_rules(
+    FRESH, ("events.EventOrderSeat", "claim_token_digest"), ("events.EventTicketTransfer", "token_digest")))
+
+# Release 2 L18: a guest's donation and pledge link secrets are bearer material; the target
+# mints fresh values (guests get fresh links).
+OMITTED_FIELD_RECONSTRUCTIONS.update(_rules(
+    FRESH, ("payments.Donation", "access_secret"), ("payments.DonationPledge", "manage_secret")))
+# Release 2 L22: a guest's status-link secret is bearer material; the target mints a fresh one.
+OMITTED_FIELD_RECONSTRUCTIONS.update(_rules(FRESH, ("shop.ShopOrder", "status_secret")))
+# Release 2 L16: a technician's opt-in link digest and bot-proven chat id are not carried; the
+# target stores them empty and the technician opts in again there.
+OMITTED_FIELD_RECONSTRUCTIONS.update(_rules(
+    EMPTY_STRING, ("maintenance.TechnicianContact", "opt_in_digest"),
+    ("maintenance.TechnicianContact", "telegram_chat_id")))
+# Loan-context concurrency epochs are deployment-local; the target derives fresh ones
+# from the field default (never the source's epochs).
+OMITTED_FIELD_RECONSTRUCTIONS.update(_rules(DERIVED, ("makerspaces.Makerspace", "loan_context_generations")))

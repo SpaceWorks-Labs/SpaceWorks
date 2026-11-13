@@ -1,3 +1,4 @@
+import type { MachineQueueSummary } from "../../../generated/api";
 export type MachineStatus = "idle" | "running" | "reserved" | "maintenance" | "offline";
 export type MachineAccessLevel = "operate" | "manage" | "full";
 export type MachineWarrantyStatus = "unknown" | "active" | "expiring_soon" | "expired";
@@ -29,6 +30,8 @@ export type MachineTypeCapabilityConfig = {
 export type Machine = {
   public_fields?: string[];
   status_since?: string;
+  /** Decision 319: when on, every active member may use this machine without a grant. */
+  open_to_all_members?: boolean;
   id: number;
   makerspace: number;
   machine_type: MachineType;
@@ -50,6 +53,8 @@ export type Machine = {
   can_retire: boolean;
   can_unretire: boolean;
   can_manage: boolean;
+  /** Present only where the viewer may manage this machine's service work. */
+  service_queue_summary?: MachineQueueSummary | null;
   created_at: string;
   updated_at: string;
 };
@@ -78,6 +83,8 @@ export type MachineOperatorCandidate = {
 };
 
 export type MachineUsageEntry = {
+  member?: number | null;
+  started_at?: string | null;
   id: number;
   hours: string;
   source: string;

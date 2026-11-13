@@ -1,5 +1,5 @@
 from drf_spectacular.utils import OpenApiResponse, extend_schema
-from rest_framework import status
+from rest_framework import serializers, status
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -18,6 +18,16 @@ from apps.machines.serializers import (
     MachineDocumentSerializer,
 )
 from apps.makerspaces.guards import require_module
+from apps.card_designs.serializers_openapi import StagedUploadSerializer
+
+
+class DocumentUploadResponseSerializer(serializers.Serializer):
+    object_key = serializers.CharField()
+    upload = StagedUploadSerializer()
+
+
+class SignedUrlSerializer(serializers.Serializer):
+    url = serializers.URLField()
 
 
 def _resolved_machine(user, pk):
@@ -40,7 +50,7 @@ class MachineDocumentPresignView(APIView):
         summary='Create a machine document upload URL',
         request=DocumentPresignSerializer,
         responses={
-            201: OpenApiResponse(description='Machine document upload details.'),
+            201: OpenApiResponse(DocumentUploadResponseSerializer, description='Machine document upload details.'),
             400: OpenApiResponse(description='Invalid document upload request.'),
             503: OpenApiResponse(
                 description='Machine document storage is unavailable.'
@@ -56,6 +66,8 @@ class MachineDocumentPresignView(APIView):
         data = serializer.validated_data
         ext = storage.ext_for(data['content_type'], data['filename'])
         object_key = storage.machine_object_key(machine.makerspace_id, ext)
+        from apps.makerspaces.limits import check_upload_headroom
+        check_upload_headroom(machine.makerspace)  # #234: refuse before the upload when storage is full
         try:
             upload = storage.presigned_upload(object_key, data['content_type'])
         except StorageUnavailable:
@@ -126,7 +138,7 @@ class MachineDocumentUrlView(APIView):
         summary='Create a signed machine document view URL',
         request=None,
         responses={
-            200: OpenApiResponse(description='Signed machine document URL.'),
+            200: OpenApiResponse(SignedUrlSerializer, description='Signed machine document URL.'),
             503: OpenApiResponse(
                 description='Machine document storage is unavailable.'
             ),

@@ -1,4 +1,5 @@
 """Tenure and concurrent pending limits, with immutable voucher accountability."""
+from django.utils.translation import gettext
 from datetime import timedelta
 
 from django.db import transaction
@@ -8,6 +9,7 @@ from rest_framework.exceptions import PermissionDenied
 from apps.accounts import rbac
 from apps.audit import services as audit
 from apps.makerspaces.guards import require_module_locked
+from apps.makerspaces.platform import feature_enabled
 from apps.makerspaces.membership_admission import OPEN_STATES, advance, transition
 from apps.makerspaces.membership_admission_settings import AdmissionError, ensure_join_allowed, vouching_on
 from apps.makerspaces.models import MakerspaceMembership, MembershipRequest, MembershipVouch
@@ -29,7 +31,7 @@ def valid_vouches(row, policy, *, now=None):
 
 def require_vouches(row, policy):
     if valid_vouches(row, policy).count() < policy.vouches_required:
-        raise AdmissionError("membership_vouches_required", "This applicant still needs eligible vouches.")
+        raise AdmissionError("membership_vouches_required", gettext("This applicant still needs eligible vouches."))
 
 
 def vouch_for_request(actor, row):
@@ -37,13 +39,18 @@ def vouch_for_request(actor, row):
         makerspace = require_module_locked(row.makerspace_id, "membership")
         policy = ensure_join_allowed(makerspace)
         row = MembershipRequest.objects.select_for_update().get(pk=row.pk, makerspace=makerspace)
+        if not feature_enabled(makerspace, "membership.vouching"):
+            # #183B: the switch off leaves no vouch surface (404); a space that is simply
+            # not in vouch mode keeps its typed 400 below.
+            from apps.makerspaces.guards import feature_off
+            raise feature_off("membership.vouching", "Vouching is turned off for this makerspace.")
         if not vouching_on(makerspace, policy):
-            raise AdmissionError("membership_vouching_disabled", "Vouching is disabled for this makerspace.")
+            raise AdmissionError("membership_vouching_disabled", gettext("Vouching is disabled for this makerspace."))
         if row.state not in ("awaiting_vouches", "requested", "awaiting_payment") or not row.user_id or row.user_id == actor.pk:
-            raise AdmissionError("membership_vouch_unavailable", "This application cannot receive a vouch.")
+            raise AdmissionError("membership_vouch_unavailable", gettext("This application cannot receive a vouch."))
         now = timezone.now()
         if row.expires_at and row.expires_at <= now:
-            raise AdmissionError("membership_request_expired", "This membership application has expired.")
+            raise AdmissionError("membership_request_expired", gettext("This membership application has expired."))
         membership = rbac.scope_by_makerspace(actor, MakerspaceMembership.objects.select_for_update()).filter(
             makerspace=makerspace, user=actor, status="active", user__is_active=True, user__access_status="active",
         ).first()
@@ -51,21 +58,23 @@ def vouch_for_request(actor, row):
             raise PermissionDenied()
         since = membership.activated_at or membership.created_at
         if since > now - timedelta(days=policy.voucher_min_tenure_days):
-            raise AdmissionError("membership_voucher_tenure", "You have not reached the minimum voucher tenure.")
+            raise AdmissionError("membership_voucher_tenure", gettext("You have not reached the minimum voucher tenure."))
         pending = MembershipVouch.objects.filter(
             makerspace=makerspace, voucher=actor, expires_at__gt=now,
             request__state__in=OPEN_STATES, request__expires_at__gt=now,
         ).count()
         if pending >= policy.voucher_pending_limit:
-            raise AdmissionError("membership_voucher_limit", "You have reached the pending-applicant vouch limit.")
+            raise AdmissionError("membership_voucher_limit", gettext("You have reached the pending-applicant vouch limit."))
         if row.vouches.filter(voucher=actor).exists():
-            raise AdmissionError("membership_vouch_exists", "You have already vouched for this application.")
+            raise AdmissionError("membership_vouch_exists", gettext("You have already vouched for this application."))
         vouch = MembershipVouch.objects.create(
             makerspace=makerspace, request=row, voucher=actor,
             expires_at=now + timedelta(days=policy.vouch_expiry_days),
         )
         audit.record(actor, "membership.vouched", makerspace=makerspace, target=row,
                      meta={"vouch_id": vouch.pk, "voucher_id": actor.pk})
+        from .notifications_p2_vouches import notify_vouch
+        notify_vouch(vouch)
         if valid_vouches(row, policy, now=now).count() >= policy.vouches_required:
             if row.state == "awaiting_payment":
                 advance(actor, row, policy)

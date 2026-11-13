@@ -6,6 +6,8 @@ export type MemberCard = {
   id: number;
   // A per-makerspace PositiveIntegerField on the backend, not a formatted string.
   card_number: number;
+  /** The printed number in the space's pattern (L4), e.g. "TNK-2026-0042". */
+  number_display: string;
   printed_name: string;
   membership_id: number | null;
   is_active: boolean;
@@ -15,6 +17,10 @@ export type MemberCard = {
   print_count: number;
   last_printed_at: string | null;
   issued_at: string;
+  /** Already formatted: a date, "No end date", "Expired", or empty for a revoked card. */
+  valid_until: string;
+  photo_request_open: boolean;
+  last_emailed_at: string | null;
   revoked_at: string | null;
   revoked_reason: string;
   created_at: string;
@@ -45,30 +51,10 @@ export type CardResolveResult = {
   photo_url?: string;
 };
 
-export const CARD_FRONT_FIELDS = [
-  "printed_name",
-  "card_number",
-  "makerspace",
-  "issued_at",
-  "membership_role",
-] as const;
-export type CardFrontField = (typeof CARD_FRONT_FIELDS)[number];
-
-export type CardTemplate = {
-  version: number;
-  page: "a4" | "letter" | "cr80";
-  orientation: "portrait" | "landscape";
-  card_width_mm: number;
-  card_height_mm: number;
-  margin_mm: number;
-  gap_mm: number;
-  front_fields: string[];
-  back_text: string;
-  include_photo: boolean;
-  include_qr: boolean;
-  name_font_size_pt: number;
-  font_size_pt: number;
-  crop_marks: boolean;
+export type MemberCardSettings = {
+  auto_issue: boolean; email_on_issue: boolean; public_verify: boolean; verify_show_plan: boolean;
+  design_approval_required: boolean; email_available: boolean; photo_cleanup_available: boolean;
+  wallet_platforms: string[];
 };
 
 /** Only the fields the issue roster reads. The membership list is shared with the

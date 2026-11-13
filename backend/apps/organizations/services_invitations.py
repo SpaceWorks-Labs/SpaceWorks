@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 import hashlib
 import secrets
 from datetime import timedelta
@@ -11,6 +12,7 @@ from apps.accounts import rbac
 from apps.accounts.models import User
 from apps.audit import services as audit
 from apps.organizations import governance
+from apps.organizations import invitation_delivery as _delivery
 from apps.organizations.access import is_superadmin, lock_governance_membership
 from apps.organizations.exceptions import (
     InvitationExpired,
@@ -32,10 +34,10 @@ MAX_EXPIRY_DAYS = 30
 
 def _clean_actions(values, allowed, field):
     if not isinstance(values, list) or any(not isinstance(item, str) for item in values):
-        raise ValidationError({field: "Use a list of action values."})
+        raise ValidationError({field: gettext("Use a list of action values.")})
     unknown = set(values) - set(allowed)
     if unknown:
-        raise ValidationError({field: f"Unknown action value: {sorted(unknown)[0]}."})
+        raise ValidationError({field: gettext('Unknown action value: {value}.').format(value=sorted(unknown)[0])})
     return sorted(set(values))
 
 
@@ -63,6 +65,7 @@ def create_invitation(
     governance_actions,
     granted_actions,
     expires_in_days=DEFAULT_EXPIRY_DAYS,
+    invitee_email="",
 ):
     proposed_governance = _clean_actions(
         governance_actions, governance.GOVERNANCE_ACTIONS, "governance_actions"
@@ -72,18 +75,20 @@ def create_invitation(
     )
     if not 1 <= expires_in_days <= MAX_EXPIRY_DAYS:
         raise ValidationError(
-            {"expires_in_days": f"Use a value from 1 to {MAX_EXPIRY_DAYS}."}
+            {"expires_in_days": gettext('Use a value from 1 to {MAX_EXPIRY_DAYS}.').format(MAX_EXPIRY_DAYS=MAX_EXPIRY_DAYS)}
         )
 
     locked_org = Organization.objects.select_for_update().get(pk=organization.pk)
     membership = lock_governance_membership(
         actor, locked_org, governance.MANAGE_ORGANIZATION_MEMBERS
     )
+    from apps.organizations.services_review import require_not_inert
+    require_not_inert(locked_org)  # a pending, declined or suspended organization is inert
     held_governance, held_grants = _authority_actions(actor, membership)
     if not set(proposed_governance).issubset(held_governance):
-        raise PermissionDenied("You cannot grant organization authority you do not hold.")
+        raise PermissionDenied(gettext("You cannot grant organization authority you do not hold."))
     if not set(proposed_grants).issubset(held_grants):
-        raise PermissionDenied("You cannot grant makerspace actions you do not hold.")
+        raise PermissionDenied(gettext("You cannot grant makerspace actions you do not hold."))
 
     raw_token = secrets.token_urlsafe(32)
     invitation = OrganizationInvitation.objects.create(
@@ -93,6 +98,7 @@ def create_invitation(
         granted_actions=proposed_grants,
         expires_at=timezone.now() + timedelta(days=expires_in_days),
         created_by=actor,
+        invitee_email_digest=_delivery.email_digest(invitee_email),
     )
     audit.record(
         actor,
@@ -105,13 +111,15 @@ def create_invitation(
             "expires_at": invitation.expires_at.isoformat(),
         },
     )
+    if invitee_email:
+        transaction.on_commit(lambda: _delivery.send(invitation, invitee_email, raw_token, actor))
     return invitation, raw_token
 
 
 @transaction.atomic
 def revoke_invitation(invitation, *, actor):
+    organization = Organization.objects.select_for_update().get(pk=invitation.organization_id)
     locked = OrganizationInvitation.objects.select_for_update().get(pk=invitation.pk)
-    organization = Organization.objects.select_for_update().get(pk=locked.organization_id)
     lock_governance_membership(
         actor, organization, governance.MANAGE_ORGANIZATION_MEMBERS
     )
@@ -131,20 +139,27 @@ def revoke_invitation(invitation, *, actor):
 
 @transaction.atomic
 def redeem_invitation(token, *, actor):
-    invitation = OrganizationInvitation.objects.select_for_update().filter(
-        token_digest=_digest(token)
-    ).first()
+    digest = _digest(token)
+    candidate = OrganizationInvitation.objects.filter(token_digest=digest).first()
+    if candidate is None:
+        raise Http404()
+    organization = Organization.objects.select_for_update().filter(pk=candidate.organization_id).first()
+    if organization is None:
+        raise Http404()
+    invitation = OrganizationInvitation.objects.select_for_update().filter(token_digest=digest).first()
     if invitation is None:
         raise Http404()
-    organization = Organization.objects.select_for_update().get(pk=invitation.organization_id)
     locked_actor = User.objects.select_for_update().get(pk=actor.pk)
     if (
-        not locked_actor.is_active
+        not governance.member_account(locked_actor)
         or locked_actor.access_status != User.AccessStatus.ACTIVE
         or locked_actor.must_change_password
         or not organization.is_active
     ):
         raise PermissionDenied()
+    from apps.accounts.native_session import is_native_session
+    if is_native_session(actor):
+        raise PermissionDenied(gettext("Use a member browser session for organization authority."))
     if invitation.redeemed_at is not None:
         raise InvitationRedeemed()
     if invitation.revoked_at is not None:

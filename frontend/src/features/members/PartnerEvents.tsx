@@ -1,7 +1,11 @@
-import { useState } from "react";
+import { formatLocale } from "../../lib/format";
+import { t } from "@lingui/core/macro";
+import { ListRow, Modal } from "../../components/ui";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { EventContactFallback } from "../events/EventContactFallback";
+import { EventConsentRepairForm } from "../events/EventConsentRepairForm";
 import { StructuredApiError } from "../../lib/api";
 import { EventTicketPicker } from "../events/EventTicketPicker";
 import { EventPrice } from "../events/EventPrice";
@@ -11,9 +15,9 @@ import { CustomFormFields } from "../forms/CustomFormFields";
 import type { CustomAnswers, CustomFormSchema } from "../forms/customFormTypes";
 import { staffRequest } from "../../lib/api";
 
-const EVENT_TONES = ["border-accent", "border-secondary", "border-success", "border-warn"] as const;
+const EVENT_TONES = ["border-accent", "border-brand", "border-success", "border-warn"] as const;
 type CollaborativeEventWithPolicy = CollaborativeEvent & {
-  registration_audience?: "members" | "accounts" | "invite";
+  registration_audience?: "members" | "accounts" | "invite" | "participating_organizations";
   ticket_types?: EventTicket[]; ticket_selection_required?: boolean; promo_codes_enabled?: boolean;
   payment_amount?: string; currency?: string;
   registration_requires_approval: boolean;
@@ -31,10 +35,10 @@ type CollaborativeEventWithPolicy = CollaborativeEvent & {
  */
 export function PartnerEvents({
   makerspaceId,
-  slug,
+  slug, onAvailable, visible = true,
 }: {
   makerspaceId: number;
-  slug: string;
+  slug: string; onAvailable?: (available: boolean) => void; visible?: boolean;
 }) {
   const queryClient = useQueryClient();
   const events = useQuery({
@@ -46,6 +50,8 @@ export function PartnerEvents({
     retry: false,
   });
   const [openId, setOpenId] = useState<number | null>(null);
+  useEffect(() => { if (!visible) setOpenId(null); }, [visible]);
+  const [repairedConsent, setRepairedConsent] = useState<string[]>([]);
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [needsPhone, setNeedsPhone] = useState(false);
@@ -99,6 +105,7 @@ export function PartnerEvents({
   });
 
   const rows = events.data ?? [];
+  useEffect(() => { onAvailable?.(Boolean(events.data?.length)); }, [events.data, onAvailable]);
   const groups = rows.reduce<Array<{
     key: string; title: string | null; events: CollaborativeEventWithPolicy[];
   }>>((result, event) => {
@@ -113,15 +120,12 @@ export function PartnerEvents({
   return (
     <section className="desk-panel p-5" aria-labelledby="partner-events-title">
       <h2 id="partner-events-title" className="title-panel">
-        Events at partner makerspaces
-      </h2>
+        {t`Events at partner makerspaces`}</h2>
       <p className="mt-1 text-sm text-muted">
-        Your makerspace collaborates with these hosts, so you can register even when the
-        event is not listed publicly.
-      </p>
+        {t`Your makerspace collaborates with these hosts, so you can register even when the event is not listed publicly.`}</p>
       <div className="mt-3 space-y-5 text-sm">
         {groups.map((group) => <section key={group.key} aria-label={group.title ?? undefined}>
-          {group.title ? <div className="mb-2"><p className="eyebrow text-secondary-ink">Recurring series</p><h3 className="title-section">{group.title}</h3></div> : null}
+          {group.title ? <div className="mb-2"><p className="eyebrow text-brand-ink">{t`Recurring series`}</p><h3 className="title-section">{group.title}</h3></div> : null}
           <ul className="space-y-3">{group.events.map((event) => {
           // A host may attach a custom form, and the backend validates required answers.
           // Without rendering those fields the button would post `{}` and such an event
@@ -135,6 +139,7 @@ export function PartnerEvents({
           // holds that acceptance and the POST path deliberately exempts them -- asking
           // again would be a second, meaningless agreement.
           const waiver = event.host_slug === slug ? null : event.host_waiver;
+          const consentKey = `${event.id}:${event.host_waiver?.id}:${event.host_waiver?.version}`;
           const open = openId === event.id;
           const tickets = event.ticket_types ?? [];
           const mustExpand = needsAnswers || Boolean(waiver) || Boolean(event.ticket_selection_required) || tickets.length > 0 || event.registration_audience === "invite" || Boolean(event.promo_codes_enabled);
@@ -143,19 +148,11 @@ export function PartnerEvents({
             && acceptedWaiver.id === waiver?.id
             && acceptedWaiver.version === waiver?.version
           );
-          return (
-            <li key={event.id} className={`border-l-2 ${EVENT_TONES[event.id % EVENT_TONES.length]} py-2 pl-3`}>
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div>
-                  {group.title ? <h4 className="title-section">{event.title}</h4> : <h3 className="title-section">{event.title}</h3>}
-                  <p className="eyebrow mt-1">
-                    Hosted by {event.host_name} · <span className="font-mono">{new Date(event.starts_at).toLocaleString()}</span>
-                  </p>
-                </div>
+          const registrationButton = (
                 <button
                   type="button"
-                  className="desk-button-secondary"
-                  disabled={!event.registration_open || register.isPending || (open && (blocked || (tickets.length > 0 && ticketId === null) || (event.ticket_selection_required && !tickets.length) || (event.registration_audience === "invite" && !inviteCode.trim())))}
+                  className="desk-button-brand"
+                  disabled={!event.registration_open || register.isPending || (open && (blocked || (tickets.length > 0 && ticketId === null) || (event.ticket_selection_required && !tickets.length)))}
                   onClick={() => {
                     if (mustExpand && !open) {
                       setPhone(""); setEmail(""); setNeedsPhone(false); setNeedsEmail(false);
@@ -178,31 +175,34 @@ export function PartnerEvents({
                     });
                   }}
                 >
-                  {!event.registration_open ? "Registration closed" : mustExpand && !open ? `${event.registration_requires_approval ? "Apply" : "Register"}…` : event.registration_requires_approval ? "Apply" : "Register"}
+                  {!event.registration_open ? t`Registration closed` : mustExpand && !open ? (event.registration_requires_approval ? t`Apply…` : t`Register…`) : event.registration_requires_approval ? t`Apply` : t`Register`}
                 </button>
-              </div>
+          );
+          return (
+            <li key={event.id} className={`border-l-2 ${EVENT_TONES[event.id % EVENT_TONES.length]} py-2 pl-3`}>
+              <ListRow title={event.title} identity={{ kind: "date", date: event.starts_at }} meta={`Hosted by ${event.host_name}`} right={open ? undefined : registrationButton} />
+              {open ? <Modal open title={t`Register for ${event.title}`} onClose={() => { setOpenId(null); setAcceptedWaiver(null); }} footer={registrationButton}>
               <EventPrice amount={event.payment_amount ?? "0"} currency={event.currency ?? ""} tickets={tickets} ticketRequired={event.ticket_selection_required} />
               {open ? <div className="mt-3 grid gap-2">
                 <EventContactFallback needsPhone={needsPhone} needsEmail={needsEmail} phone={phone} email={email} onPhone={setPhone} onEmail={setEmail} disabled={register.isPending} />
                 <EventTicketPicker tickets={tickets} value={ticketId} onChange={setTicketId} currency={event.currency ?? ""} disabled={register.isPending} />
-                {event.registration_audience === "invite" ? <label>Invitation code<input className="desk-input" value={inviteCode} onChange={(e) => setInviteCode(e.target.value)} /></label> : null}
-                {event.promo_codes_enabled ? <label>Promo code (optional)<input className="desk-input" value={promoCode} onChange={(e) => setPromoCode(e.target.value)} /></label> : null}
+                {event.registration_audience === "invite" ? <><label className="grid gap-1 text-sm">{t`Invitation code`}<input className="desk-input" autoCapitalize="characters" spellCheck={false} value={inviteCode} onChange={(e) => setInviteCode(e.target.value)} /></label><p className="text-sm text-muted">{t`Leave blank if your verified account email was invited.`}</p></> : null}
+                {event.promo_codes_enabled ? <label className="grid gap-1 text-sm">{t`Promo code (optional)`}<input className="desk-input" autoCapitalize="characters" spellCheck={false} value={promoCode} onChange={(e) => setPromoCode(e.target.value)} /></label> : null}
               </div> : null}
-              {!event.registration_open && event.effective_registration_cutoff_at ? <p className="mt-2 text-xs text-muted">Closed at {new Date(event.effective_registration_cutoff_at).toLocaleString()}</p> : null}
+              {!event.registration_open && event.effective_registration_cutoff_at ? <p className="mt-2 text-xs text-muted">{t`Closed at ${new Date(event.effective_registration_cutoff_at).toLocaleString(formatLocale())}`}</p> : null}
               {/* Unmounted when closed rather than hidden, so keyboard users cannot tab
                   into fields for an event they are not registering for. */}
               {open && waiver ? (
                 <div className="mt-3">
                   <h4 className="title-section">
-                    {event.host_name}&apos;s waiver (version {waiver.version})
-                  </h4>
+                    {t`${event.host_name}'s waiver (version ${waiver.version})`}</h4>
                   <div className="mt-1 max-h-40 overflow-y-auto whitespace-pre-wrap rounded-md border border-line bg-bg p-2 text-sm text-muted">
                     {waiver.body}
                   </div>
-                  <label className="mt-2 flex items-center gap-2 text-sm text-ink">
+                  <label className="mt-2 flex min-h-11 items-center gap-3 text-sm text-ink">
                     <input
                       type="checkbox"
-                      className="h-4 w-4"
+                      className="h-5 w-5 shrink-0"
                       checked={!blocked}
                       onChange={(e) => setAcceptedWaiver(
                         e.target.checked && waiver
@@ -210,22 +210,29 @@ export function PartnerEvents({
                           : null,
                       )}
                     />
-                    I accept {event.host_name}&apos;s waiver
-                  </label>
+                    {t`I accept ${event.host_name}'s waiver`}</label>
                 </div>
               ) : null}
-              {open && schema ? (
+              {schema ? (
                 <div className="mt-3">
                   <CustomFormFields schema={schema} answers={answers} onChange={setAnswers} />
                 </div>
               ) : null}
+              {register.error ? <p role="alert" className="text-sm text-danger">{register.error.message}</p> : null}
+              </Modal> : <EventPrice amount={event.payment_amount ?? "0"} currency={event.currency ?? ""} tickets={tickets} ticketRequired={event.ticket_selection_required} />}
+              {/* Consent repair belongs to an existing registration, so it stays outside the register sheet. */}
+              {repairedConsent.includes(consentKey) ? <p role="status" className="mt-2 text-sm text-success-ink">{t`Your registration consent has been updated.`}</p> :
+                event.consent_repair_required && event.host_waiver ? <div className="mt-3"><EventConsentRepairForm
+                  key={consentKey} makerspaceSlug={event.host_slug} publicToken=""
+                  waiver={event.host_waiver} partner={{ makerspaceId, eventId: event.id, slug }}
+                  onRepaired={() => setRepairedConsent(current => [...current, consentKey])} /></div> : null}
             </li>
           );
         })}</ul></section>)}
       </div>
-      {register.error ? (
+      {register.error && openId === null ? (
         <p className="mt-2 text-sm text-danger" role="alert">
-          {register.error instanceof Error ? register.error.message : "Could not register."}
+          {register.error instanceof Error ? register.error.message : t`Could not register.`}
         </p>
       ) : null}
     </section>

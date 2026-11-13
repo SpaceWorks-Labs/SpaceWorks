@@ -1,0 +1,94 @@
+/* Brand colour fields. Each field is a scoped token island: it redefines
+   the tokens its subtree reads, so buttons, inputs, links and focus rings recolour themselves.
+   Values are brand hexes as triplets (p.9) or documented brand-mixes; fields are flat (p.16). */
+
+/* Teal field: p.13 "Make room." card, p.7 #04 reversed on teal. Identical in both modes.
+   In dark mode the sign-in brand panel also becomes a teal field (the light panel is Deep Ink). */
+.sw-field-teal,
+:root.dark .sw-auth-brand:not(.sw-field-brand) {
+  background-color: rgb(0 110 99);
+  color: rgb(255 244 232);
+  --color-panel: 0 110 99;
+  --color-surface: 0 110 99;
+  --color-hover: 2 103 93;           /* = accent-hover; cream label 6.24 */
+  --color-ink: 255 244 232;          /* cream on teal 5.68 (p.10) */
+  --color-muted: 255 244 232;
+  --color-line: 102 164 152;         /* Teal + 40% Cream, decorative */
+  --color-outline: 255 244 232;      /* control boundary 5.68 */
+  --color-focus: 223 255 143;        /* Citron ring on teal 5.52 */
+  --color-accent-ink: 255 244 232;
+  --color-accent-soft: 2 103 93;
+}
+
+/* Citron field: p.2, p.5, p.11, p.15. A light-token island, identical in both modes. */
+.sw-field-citron {
+  background-color: rgb(223 255 143);
+  color: rgb(20 44 42);
+  color-scheme: light;
+  --color-panel: 223 255 143;
+  --color-surface: 223 255 143;
+  --color-hover: 203 234 133;        /* = success-hover */
+  --color-ink: 20 44 42;             /* ink on citron 13.23 */
+  --color-muted: 91 104 99;          /* 5.23 */
+  --color-line: 182 213 123;         /* = success-active */
+  --color-outline: 20 44 42;
+  --color-focus: 0 110 99;           /* teal on citron 5.52 */
+  --color-accent: 0 110 99;
+  --color-accent-hover: 2 103 93;
+  --color-accent-active: 4 97 88;
+  --color-on-accent: 255 244 232;
+  --color-accent-ink: 0 110 99;
+  --color-accent-soft: 203 234 133;
+}
+
+/* Deep Ink field: p.1 cover. Pair with .sw-island-dark (index.css), which supplies the dark token set. */
+.sw-field-ink {
+  background-color: rgb(var(--color-bg));
+  color: rgb(var(--color-ink));
+}
+
+/* Tenant field (member sign-in): the tenant's derived brand fill; on-brand is always >= 4.5:1. */
+.sw-field-brand {
+  background-color: rgb(var(--color-brand));
+  color: rgb(var(--color-on-brand));
+  --color-ink: var(--color-on-brand);
+  --color-muted: var(--color-on-brand);
+  --color-line: var(--color-on-brand);
+  --color-outline: var(--color-on-brand);
+  --color-focus: var(--color-on-brand);
+  --color-accent-ink: var(--color-on-brand);
+}
+
+/* Type steps for fields and heroes (p.12; p.1 draws the accent near 76/80 on the cover). */
+.sw-hero-title { font-family: "Unbounded", "Outfit", ui-sans-serif, system-ui, sans-serif; font-weight: 600; font-size: 32px; line-height: 40px;
+  letter-spacing: -0.02em; text-wrap: balance; }
+.sw-hero-lede { font-weight: 500; font-size: 16px; line-height: 24px; }
+.sw-field-heading { font-weight: 600; font-size: 32px; line-height: 38px; letter-spacing: -0.015em; text-wrap: balance; }
+.sw-field-eyebrow { font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+  color: rgb(var(--color-accent-ink)); }
+@media (min-width: 640px) {
+  .sw-hero-title { font-size: 48px; line-height: 56px; }
+  .sw-hero-lede { font-size: 20px; line-height: 28px; }
+  .sw-field-heading { font-size: 48px; line-height: 52px; }
+}
+@media (min-width: 1280px) { .sw-hero-title { font-size: 64px; line-height: 72px; } }
+@media (min-width: 1680px) {
+  .sw-hero-title { font-size: 76px; line-height: 80px; }
+  .sw-hero-lede { font-size: 24px; line-height: 32px; }
+  .sw-field-heading { font-size: 56px; line-height: 60px; }
+}
+
+/* Entrance motion: once, page-level, never on hover (spec §2.5). Facets open along their own edge
+   slope; showcase cards rise. The individual translate property keeps the cards' existing tilt. */
+@keyframes sw-facet-in { from { opacity: 0; translate: 8px 6px; } to { opacity: 1; translate: 0 0; } }
+@keyframes sw-rise { from { opacity: 0; translate: 0 12px; } to { opacity: 1; translate: 0 0; } }
+@media (prefers-reduced-motion: no-preference) {
+  .sw-facets path { transform-box: fill-box; animation: sw-facet-in 640ms cubic-bezier(0.32, 0.72, 0, 1) 120ms both; }
+  .sw-facets path:nth-of-type(2) { animation-delay: 200ms; }
+  .sw-auth-showcase > * { animation: sw-rise 480ms cubic-bezier(0.32, 0.72, 0, 1) both; }
+  .sw-auth-showcase > :nth-child(2) { animation-delay: 120ms; }
+  .sw-auth-showcase > :nth-child(3) { animation-delay: 240ms; }
+}
+
+/* One checkbox/radio size and accent everywhere (44px row targets come from the label). */
+input[type="checkbox"], input[type="radio"] { width: 1.25rem; height: 1.25rem; accent-color: rgb(var(--color-accent)); }

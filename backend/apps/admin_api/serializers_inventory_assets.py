@@ -1,6 +1,8 @@
+from django.utils.translation import gettext
 from rest_framework import serializers
 
 from apps.boxes.models import Box, QrCode
+from apps.boxes.qr_lookup import label_value
 from apps.inventory.models import InventoryAsset
 
 
@@ -17,7 +19,7 @@ class InventoryQuantityAdjustmentSerializer(serializers.Serializer):
             attrs.get("delta_lost", 0),
         ]
         if not any(deltas):
-            raise serializers.ValidationError("At least one quantity delta is required.")
+            raise serializers.ValidationError(gettext("At least one quantity delta is required."))
         return attrs
 
 
@@ -84,7 +86,9 @@ class InventoryAssetAdminSerializer(serializers.ModelSerializer):
 
     def get_qr_payload(self, obj) -> str | None:
         qr = self._active_qr(obj)
-        return qr.payload if qr else None
+        # The value printed on the label: an external label's own value, never the
+        # internal payload (both still resolve when scanned).
+        return label_value(qr) if qr else None
 
 
 class NullableBoxPrimaryKeyRelatedField(serializers.PrimaryKeyRelatedField):
@@ -113,7 +117,7 @@ class InventoryAssetAdminUpdateSerializer(serializers.ModelSerializer):
 
     def validate_box(self, value):
         if value is not None and value.makerspace_id != self.instance.makerspace_id:
-            raise serializers.ValidationError("Container is not in this makerspace.")
+            raise serializers.ValidationError(gettext("Container is not in this makerspace."))
         return value
 
     def validate(self, attrs):
@@ -131,7 +135,7 @@ class InventoryAssetAdminUpdateSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(
                     {
                         "asset_tag": (
-                            "An asset with this tag already exists in this makerspace."
+                            gettext("An asset with this tag already exists in this makerspace.")
                         )
                     }
                 )

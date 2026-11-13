@@ -1,3 +1,5 @@
+from django.utils.translation import gettext
+from apps.operations.durable_dispatch import dispatch
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
@@ -70,7 +72,7 @@ class DataExportListCreateView(APIView):
         serializer = DataExportCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         job = services.create_export_job(request.user, makerspace)
-        run_data_export_task.delay(str(job.pk))
+        dispatch(run_data_export_task, str(job.pk))
         job.refresh_from_db()
         return Response(DataExportJobSerializer(job).data, status=status.HTTP_201_CREATED)
 
@@ -97,7 +99,7 @@ class DataExportDetailView(APIView):
         )
         if job.fidelity == "PORTABLE" and not _is_superadmin(request.user):
             return Response(
-                {"detail": "Source superadmin access is required.", "code": "forbidden"},
+                {"detail": gettext("Source superadmin access is required."), "code": "forbidden"},
                 status=status.HTTP_403_FORBIDDEN,
             )
         return Response(DataExportJobSerializer(job).data)
@@ -124,7 +126,7 @@ class DataExportDownloadUrlView(APIView):
         )
         if job.fidelity == "PORTABLE" and not _is_superadmin(request.user):
             return Response(
-                {"detail": "Source superadmin access is required.", "code": "forbidden"},
+                {"detail": gettext("Source superadmin access is required."), "code": "forbidden"},
                 status=status.HTTP_403_FORBIDDEN,
             )
         raw, expires_at = services.issue_download_token(job, request.user)
@@ -160,7 +162,7 @@ class DataExportDownloadView(APIView):
             body = storage.open_archive(job.object_key)
         except storage.ExportStorageError:
             return Response(
-                {"detail": "The export archive is temporarily unavailable."},
+                {"detail": gettext("The export archive is temporarily unavailable.")},
                 status=status.HTTP_503_SERVICE_UNAVAILABLE,
             )
         portable = job.fidelity == "PORTABLE"

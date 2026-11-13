@@ -1,7 +1,9 @@
+import { t } from "@lingui/core/macro";
+import { SelectedReportPanel as Panel } from "./OperationsReportSelection";
 import type { ReactNode } from "react";
 
 import { BarChart, DataState, LineChart, PerMakerspaceTables, PieChart, ReportTable, StackedBarChart, chartRows, reportRows, type ReportRows } from "./OperationsReportsParts";
-import { Panel, useStaffGet } from "./shared";
+import { useStaffGet } from "./shared";
 
 function useHardwareReport(key: string, analyticsBase: string, scopeKey: string | number, startDate: string, endDate: string, enabled: boolean) {
   const dateQuery = [startDate && `start=${encodeURIComponent(startDate)}`, endDate && `end=${encodeURIComponent(endDate)}`].filter(Boolean).join("&");
@@ -31,28 +33,28 @@ export function OperationsReportsHardware({
   const qrScans = useHardwareReport("qr-scans", analyticsBase, scopeKey, startDate, endDate, enabled);
   return (
     <>
-      <div className="grid gap-4 xl:grid-cols-2">
-        <Panel title="Most lent"><DataState loading={mostLent.isLoading} error={mostLent.error} empty={!reportRows(mostLent.data).length}>{aggregate ? <PerMakerspaceTables data={mostLent.data} nameOf={makerspaceName} /> : <><BarChart rows={chartRows(mostLent.data, "product_name", "times_lent")} valueLabel="loans" /><ReportTable data={mostLent.data} /></>}</DataState></Panel>
-        <Panel title="Top borrowers"><DataState loading={topBorrowers.isLoading} error={topBorrowers.error} empty={!reportRows(topBorrowers.data).length}>{aggregate ? <PerMakerspaceTables data={topBorrowers.data} nameOf={makerspaceName} /> : <><BarChart rows={chartRows(topBorrowers.data, "holder", "requests")} valueLabel="requests" /><ReportTable data={topBorrowers.data} /></>}</DataState></Panel>
+      <div className="contents">
+        <Panel title={t`Most lent`}><DataState loading={mostLent.isLoading} error={mostLent.error} onRetry={() => void mostLent.refetch()} empty={!reportRows(mostLent.data).length}>{aggregate ? <PerMakerspaceTables data={mostLent.data} nameOf={makerspaceName} /> : <><BarChart rows={chartRows(mostLent.data, "product_name", "times_lent")} valueLabel="loans" /><ReportTable data={mostLent.data} /></>}</DataState></Panel>
+        <Panel title={t`Top borrowers`}><DataState loading={topBorrowers.isLoading} error={topBorrowers.error} onRetry={() => void topBorrowers.refetch()} empty={!reportRows(topBorrowers.data).length}>{aggregate ? <PerMakerspaceTables data={topBorrowers.data} nameOf={makerspaceName} /> : <><BarChart rows={chartRows(topBorrowers.data, "holder", "requests")} valueLabel="requests" /><ReportTable data={topBorrowers.data} /></>}</DataState></Panel>
       </div>
-      <div className="grid gap-4 xl:grid-cols-2">
-        <ReportPanel title="Damaged / missing" query={damagedMissing} aggregate={aggregate} makerspaceName={makerspaceName} chart={(data) => <StackedBarChart rows={stackedRows(data, "product", [["Damaged", "damaged_quantity"], ["Missing", "missing_quantity"]])} valueLabel="units" />} />
-        <ReportPanel title="Damaged / lost" query={damagedLost} aggregate={aggregate} makerspaceName={makerspaceName} chart={(data) => <StackedBarChart rows={stackedRows(data, "product_name", [["Damaged", "damaged_quantity"], ["Lost", "lost_quantity"]])} valueLabel="units" />} />
-        <ReportPanel title="Recently added" query={recentlyAdded} aggregate={aggregate} makerspaceName={makerspaceName} chart={(data) => <LineChart rows={chartRows(data, "created_at", "total_quantity").reverse()} valueLabel="units" />} />
-        <ReportPanel title="Taken items" query={takenItems} aggregate={aggregate} makerspaceName={makerspaceName} chart={(data) => <BarChart rows={chartRows(data, "product", "issued_quantity")} valueLabel="issued" />} />
-        <ReportPanel title="Active loans" query={activeLoans} aggregate={aggregate} makerspaceName={makerspaceName} chart={(data) => <StackedBarChart rows={datedCategories(data, "issued_at", "status")} valueLabel="loans" />} />
-        <ReportPanel title="Returns" query={returns} aggregate={aggregate} makerspaceName={makerspaceName} chart={(data) => <StackedBarChart rows={datedCategories(data, "closed_at", "status")} valueLabel="returns" />} />
-        <ReportPanel title="QR scans" query={qrScans} aggregate={aggregate} makerspaceName={makerspaceName} chart={(data) => <PieChart rows={chartRows(data, "context", "count")} valueLabel="scans" />} />
+      <div className="contents">
+        <ReportPanel title={t`Damaged / missing`} query={damagedMissing} aggregate={aggregate} makerspaceName={makerspaceName} chart={(data) => <StackedBarChart rows={stackedRows(data, "product", [["Damaged", "damaged_quantity"], ["Missing", "missing_quantity"]])} valueLabel="units" />} />
+        <ReportPanel title={t`Damaged / lost`} query={damagedLost} aggregate={aggregate} makerspaceName={makerspaceName} chart={(data) => <StackedBarChart rows={stackedRows(data, "product_name", [["Damaged", "damaged_quantity"], ["Lost", "lost_quantity"]])} valueLabel="units" />} />
+        <ReportPanel title={t`Recently added`} query={recentlyAdded} aggregate={aggregate} makerspaceName={makerspaceName} chart={(data) => <LineChart rows={chartRows(data, "created_at", "total_quantity").reverse()} valueLabel="units" />} />
+        <ReportPanel title={t`Taken items`} query={takenItems} aggregate={aggregate} makerspaceName={makerspaceName} chart={(data) => <BarChart rows={chartRows(data, "product", "issued_quantity")} valueLabel="issued" />} />
+        <ReportPanel title={t`Active loans`} query={activeLoans} aggregate={aggregate} makerspaceName={makerspaceName} chart={(data) => <StackedBarChart rows={datedCategories(data, "issued_at", "status")} valueLabel="loans" />} />
+        <ReportPanel title={t`Returns`} query={returns} aggregate={aggregate} makerspaceName={makerspaceName} chart={(data) => <StackedBarChart rows={datedCategories(data, "closed_at", "status")} valueLabel="returns" />} />
+        <ReportPanel title={t`QR scans`} query={qrScans} aggregate={aggregate} makerspaceName={makerspaceName} chart={(data) => <PieChart rows={chartRows(data, "context", "count")} valueLabel="scans" />} />
       </div>
     </>
   );
 }
 
 function ReportPanel({ title, query, aggregate, makerspaceName, chart }: {
-  title: string; query: { isLoading: boolean; error: unknown; data?: ReportRows };
+  title: string; query: { isLoading: boolean; error: unknown; refetch: () => unknown; data?: ReportRows };
   aggregate: boolean; makerspaceName: (id: number) => string; chart: (data?: ReportRows) => ReactNode;
 }) {
-  return <Panel title={title}><DataState loading={query.isLoading} error={query.error} empty={!reportRows(query.data).length}>{aggregate ? <PerMakerspaceTables data={query.data} nameOf={makerspaceName} /> : <>{chart(query.data)}<ReportTable data={query.data} /></>}</DataState></Panel>;
+  return <Panel title={title}><DataState loading={query.isLoading} error={query.error} onRetry={() => void query.refetch()} empty={!reportRows(query.data).length}>{aggregate ? <PerMakerspaceTables data={query.data} nameOf={makerspaceName} /> : <>{chart(query.data)}<ReportTable data={query.data} /></>}</DataState></Panel>;
 }
 
 function valueAt(data: ReportRows | undefined, row: (string | number | boolean | null)[], key: string) {

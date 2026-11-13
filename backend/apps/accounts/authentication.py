@@ -1,4 +1,6 @@
-from django.utils import timezone
+from django.utils.translation import gettext
+import re
+
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.exceptions import PermissionDenied
 from rest_framework_simplejwt.authentication import JWTAuthentication
@@ -15,28 +17,19 @@ from apps.accounts.claim_tenants import claim_tenant_matches
 from apps.accounts.claim_tokens import ClaimAccessToken
 from apps.accounts.claim_routes import CLAIM_REACHABLE_PREFIXES
 from apps.accounts.models import User
-from apps.accounts.models_devices import (
-    DeviceGrant,
-    DeviceRefreshFamily,
-    NativeAppRegistration,
-)
+from apps.accounts.authentication_device import heartbeat_device_grant, validated_device_grant
 from apps.accounts.tokens import validate_auth_generation
+from config.locale_resolution import activate_authenticated_locale, display
 
 
 VERIFICATION_ONLY_SURFACE = "verification_only"
-# One-release compatibility shim: the next release rejects tokens whose surface claim
-# is absent outright. During this release they receive member authority, never the old
-# unrestricted behavior; staff with an old token must sign in again.
-TREAT_MISSING_SURFACE_AS_MEMBER_FOR_ONE_RELEASE = True
-# A staff PASSWORD session. `staff` carries a mandatory trusted-origin binding, because
-# it was defined for browser social sessions -- so reusing it for password login would
-# break every origin-less staff caller (management commands, server-to-server, tests).
-# This surface is behaviourally what a staff password session already was, only now
-# stated explicitly, so the shim above can start rejecting an absent claim next release.
-# It is NOT weaker than `member` for these users: it is only ever minted for an actor who
-# already passed assert_staff_authority, and RBAC still authorises every request.
-STAFF_API_SURFACE = "staff_api"
-_KNOWN_SESSION_SURFACES = {"member", "staff", STAFF_API_SURFACE, VERIFICATION_ONLY_SURFACE}
+# Account-split cutover rejects the pre-kind and surface-less token generations.
+TREAT_MISSING_SURFACE_AS_MEMBER_FOR_ONE_RELEASE = False
+# One account per person (release 2): a person's session is `member` (or
+# `verification_only`) whatever staff roles they hold -- staff routes are admitted per
+# request by surface_policy -- and the superadmin's is `platform`. The release-1
+# `staff`, `staff_api` and `delegated` surfaces are gone with the staff account kind.
+_KNOWN_SESSION_SURFACES = {"member", "platform", VERIFICATION_ONLY_SURFACE}
 
 
 class SpaceWorksJWTAuthentication(JWTAuthentication):
@@ -50,21 +43,41 @@ class SpaceWorksJWTAuthentication(JWTAuthentication):
         if authenticated is None:
             return None
         user, token = authenticated
-        if user.is_tenant_dump_stub:
-            raise AuthenticationFailed("Account is not available.")
+        if user.is_tenant_dump_stub or user.deletion_requested_at is not None:
+            raise AuthenticationFailed(gettext("Account is not available."))
         validate_auth_generation(token)
+        from apps.accounts.session_issuance import validate_session_generation
+        validate_session_generation(user, token)
+        # Phase 8: the principal is valid, so any refusal below renders in its locale.
+        activate_authenticated_locale(request, user)
+        # Set before route policy runs: native members cannot use organization
+        # grants/governance to enter delegated staff routes, and the route gate needs the
+        # grant's authority (a staff grant is a step-up fixed to one makerspace).
+        grant = None
+        # Decision 260: a restricted or suspended account still reaches its own charges and sign-out.
+        from apps.accounts.restricted_admission import restricted_route_admitted
+        restricted_ok = restricted_route_admitted(user, request)
+        if token.get("device_grant_id"):
+            from apps.accounts.native_session import mark_native_session
+            user.native_device_session = True
+            mark_native_session(user)
+            if not token.get("device_family_id"):
+                raise AuthenticationFailed(gettext("Invalid device authorization."))
+            grant = validated_device_grant(user, token, restricted_ok=restricted_ok)
+            # #162(2): a member grant carries no staff authority, a staff grant only its tenant's.
+            from apps.accounts.session_authority import limit_staff_authority
+            limit_staff_authority(user, [grant.staff_makerspace_id] if grant.authority == "staff" else ())
+        from apps.accounts.surface_policy import enforce_request
+        enforce_request(user, token, request, grant=grant, restricted_ok=restricted_ok)
         from apps.accounts.mfa_policy import assert_verified
         assert_verified(user, token)
         from apps.backup.recovery import assert_principal_allowed
 
         assert_principal_allowed(user)
         surface = _effective_session_surface(token)
-        if surface == "staff":
-            _validate_staff_surface(request, token)
         if user.self_registered_at is not None and user.email_verified_at is None:
             # Enforce provenance at authentication too: an older device/phone issuer
-            # cannot bypass verification merely because its token says member (or, for
-            # the one-release legacy case, has no surface claim).
+            # cannot bypass verification merely because its token says member.
             surface = VERIFICATION_ONLY_SURFACE
         elif surface == VERIFICATION_ONLY_SURFACE:
             # Confirmation updates the user row, so the same already-issued session
@@ -73,46 +86,51 @@ class SpaceWorksJWTAuthentication(JWTAuthentication):
         if surface == VERIFICATION_ONLY_SURFACE and not _verification_path_allowed(
             request.path
         ):
-            raise PermissionDenied(
-                "Verify the account email before accessing member APIs."
-            )
-        if surface == "member" and not _member_surface_path_allowed(
-            request.path
-        ):
-            raise PermissionDenied("Member sessions cannot access staff APIs.")
-        grant_id = token.get("device_grant_id")
-        if grant_id is None:
+            # Typed (decision 355) so a phone app routes to its verify-email screen.
+            raise PermissionDenied({"detail": gettext("Verify the account email before accessing member APIs."),
+                                    "code": "email_verification_required"})
+        if grant is None:
             from apps.accounts.web_sessions import validate_session
             validate_session(user, token)
             if request.headers.get("X-Makerspace-Id") is not None:
-                raise PermissionDenied("Native makerspace selection requires a device grant.")
-            _assert_source_gate(request)
+                raise PermissionDenied(gettext("Native makerspace selection requires a device grant."))
+            _assert_source_gate(request, user)
+            request.session_authority = surface
+            from apps.makerspaces.handle_gate import assert_handle_chosen
+            assert_handle_chosen(request, user)  # decision 308: typed `handle_required`
+            from apps.accounts.channel_activity import note_web_request
+            note_web_request(request, user, token)
             return authenticated
-        family_id = token.get("device_family_id")
-        if not family_id:
-            raise AuthenticationFailed("Invalid device authorization.")
-        grant = (
-            DeviceGrant.objects.select_related("registration")
-            .filter(pk=grant_id, user=user)
-            .first()
-        )
-        valid = bool(
-            grant and grant.status == DeviceGrant.Status.ACTIVE
-            and grant.registration.status == NativeAppRegistration.Status.APPROVED
-            and user.is_active and user.access_status == User.AccessStatus.ACTIVE
-            and DeviceRefreshFamily.objects.filter(
-                pk=family_id, grant=grant, user=user, revoked_at__isnull=True
-            ).exists()
-        )
-        if not valid:
-            raise AuthenticationFailed("Device authorization is no longer active.")
+        staff = grant.authority == "staff"
+        if grant.authority in ("staff", "event") and token.get("mfa_source") != "verified":
+            raise AuthenticationFailed(gettext("Native staff and event sessions require MFA."))
         request.device_grant = grant
         request.native_app_registration = grant.registration
         from apps.makerspaces.origin_scope import validate_native_makerspace_scope
 
-        validate_native_makerspace_scope(request, user, grant)
-        _assert_source_gate(request)
-        DeviceGrant.objects.filter(pk=grant.pk).update(last_used_at=timezone.now())
+        from apps.accounts.delegated_routes import DELEGABLE, MEMBERSHIP_ONLY, route_class
+        staff_route = route_class(getattr(request.resolver_match, "url_name", None)) in {DELEGABLE, MEMBERSHIP_ONLY}
+        if staff and staff_route and request.headers.get("X-Makerspace-Id") is None:
+            raise PermissionDenied(gettext("Native staff APIs require X-Makerspace-Id."))
+        selected = validate_native_makerspace_scope(request, user, grant)
+        membership = getattr(request, "selected_makerspace_membership", None)
+        activate_authenticated_locale(request, user, getattr(membership, "makerspace", None))
+        if staff and selected is not None:
+            kwargs = getattr(request.resolver_match, "kwargs", {}) or {}
+            for key in ("makerspace_id", "makerspace_pk"):
+                if key in kwargs and str(kwargs[key]) != str(selected):
+                    raise PermissionDenied(gettext("Makerspace target does not match the selected makerspace."))
+        _assert_source_gate(request, user)
+        grant = heartbeat_device_grant(user, token, restricted_ok=restricted_ok)
+        request.device_grant = grant
+        from apps.accounts.device_activity import record_device_activity
+        from apps.accounts.channel_activity import app_version_from, note_phone_request
+        record_device_activity(grant, getattr(request, "selected_makerspace_membership", None), app_version_from(request))
+        note_phone_request(request, grant, getattr(request, "selected_makerspace_membership", None))
+        from apps.accounts.native_event_grants import session_authority_for
+        request.session_authority = session_authority_for(grant) if grant.authority != "member" else surface
+        from apps.makerspaces.handle_gate import assert_handle_chosen
+        assert_handle_chosen(request, user)  # decision 308: typed `handle_required`
         return user, token
 
     def _authenticate_claim(self, request):
@@ -138,9 +156,9 @@ class SpaceWorksJWTAuthentication(JWTAuthentication):
             from apps.presence.services import expire_claim_presence
 
             expire_claim_presence(token.get("claim_session_id"))
-            raise AuthenticationFailed("Claim session is no longer active.") from exc
+            raise AuthenticationFailed(gettext("Claim session is no longer active.")) from exc
         if isinstance(policy, Refused):
-            raise PermissionDenied(policy.reason)
+            raise PermissionDenied(display(policy.reason))
         if not isinstance(policy, ControlRoute) and not claim_tenant_matches(
             policy.tenant,
             claim_makerspace_id=claim.membership.makerspace_id,
@@ -148,16 +166,25 @@ class SpaceWorksJWTAuthentication(JWTAuthentication):
             url_kwargs=getattr(request.resolver_match, "kwargs", {}) or {},
             body=request.data,
         ):
-            raise PermissionDenied("Claim session is not valid for this makerspace.")
+            raise PermissionDenied(gettext("Claim session is not valid for this makerspace."))
         user = attach_claim_context(claim.membership.user, claim)
-        if user.is_tenant_dump_stub:
-            raise AuthenticationFailed("Claim identity is not available.")
+        from apps.accounts.session_authority import limit_staff_authority
+        limit_staff_authority(user)  # #162(2): a claim session never carries staff authority.
+        if user.is_tenant_dump_stub or user.deletion_requested_at is not None:
+            raise AuthenticationFailed(gettext("Claim identity is not available."))
         from apps.backup.recovery import assert_principal_allowed
 
         assert_principal_allowed(user)
+        from apps.accounts.delegated_routes import DELEGABLE, MEMBERSHIP_ONLY, route_class
+        if (route_class(getattr(request.resolver_match, "url_name", None)) in {DELEGABLE, MEMBERSHIP_ONLY}
+                and not _member_surface_path_allowed(request.path)):
+            # A claim session is a bounded walk-in session: it never carries staff authority.
+            raise PermissionDenied(gettext("Claim sessions cannot use staff routes."))
         request.claim_session = claim
+        request.session_authority = "member"
         request.selected_makerspace_id = claim.membership.makerspace_id
-        _assert_source_gate(request)
+        activate_authenticated_locale(request, user, claim.membership.makerspace_id)
+        _assert_source_gate(request, user)
         return user, token
 
 
@@ -171,6 +198,20 @@ from drf_spectacular.contrib.rest_framework_simplejwt import (  # noqa: E402
 class SpaceWorksJWTScheme(SimpleJWTScheme):
     target_class = "apps.accounts.authentication.SpaceWorksJWTAuthentication"
 
+    def get_security_definition(self, auto_schema):
+        return {
+            **super().get_security_definition(auto_schema),
+            "description": (
+                "One account per person: a person's token reaches staff routes only "
+                "where they hold a staff role (in every targeted makerspace), with "
+                "staff MFA. Native member grants never carry staff authority; a native "
+                "staff grant is fixed to one makerspace and its staff routes require a "
+                "matching X-Makerspace-Id. Member APIs may omit the header. Personal "
+                "notification inbox, preferences and announcements accept member "
+                "sessions; broadcasts and the makerspace-wide feed need staff authority."
+            ),
+        }
+
 
 # An ordinary member session is BROADER than a bounded claim session, so it needs its own
 # allowlist rather than borrowing the claim prefixes. Reusing CLAIM_REACHABLE_PREFIXES was
@@ -178,16 +219,31 @@ class SpaceWorksJWTScheme(SimpleJWTScheme):
 # password login carries it, a legitimate member-owned action outside those prefixes --
 # registering a phone for push -- starts 403ing. Anything added here must be an action the
 # member performs on their OWN records; staff APIs never belong.
-MEMBER_SURFACE_PREFIXES = CLAIM_REACHABLE_PREFIXES + ("/api/v1/integrations/push/",)
+MEMBER_SURFACE_PREFIXES = CLAIM_REACHABLE_PREFIXES + (
+    "/api/v1/integrations/push/", "/api/v1/notifications/inbox/",
+    "/api/v1/notifications/preferences/", "/api/v1/notifications/announcements/",
+)
+PERSONAL_NOTIFICATION_PATH = re.compile(
+    r"/api/v1/integrations/makerspace/[0-9]+/personal/"
+    r"(?:endpoints(?:/start|/[0-9]+)?|challenges/[0-9]+/verify|preferences|deliveries)/?"
+)
 
 
 def _member_surface_path_allowed(path):
-    return path.startswith(MEMBER_SURFACE_PREFIXES)
+    # Accepting one's own invitation precedes staff access. Keep these exact paths:
+    # listing, creating and revoking invitations still require a staff session.
+    return path.rstrip("/") in {
+        "/api/v1/me/messaging",
+        "/api/v1/me/messaging/consent",
+        "/api/v1/admin/event-staff-invites/redeem",
+        "/api/v1/admin/booking-staff-invites/redeem",
+    } or bool(PERSONAL_NOTIFICATION_PATH.fullmatch(path)) or path.startswith(MEMBER_SURFACE_PREFIXES)
 
 
 def _verification_path_allowed(path):
     return path.rstrip("/") in {
         "/api/v1/auth/me",
+        "/api/v1/auth/logout-all",
         "/api/v1/auth/email-verification/resend",
         "/api/v1/auth/email-verification/confirm",
     }
@@ -198,33 +254,14 @@ def _effective_session_surface(token):
     if surface is None and TREAT_MISSING_SURFACE_AS_MEMBER_FOR_ONE_RELEASE:
         return "member"
     if surface not in _KNOWN_SESSION_SURFACES:
-        raise AuthenticationFailed("Invalid session surface.")
+        raise AuthenticationFailed(gettext("Invalid session surface."))
     return surface
 
 
-def _assert_source_gate(request):
+def _assert_source_gate(request, user=None):
+    from apps.makerspaces.servability import admit_superadmin
     from apps.tenant_migration.gate_runtime import assert_request_write_allowed
 
-    assert_request_write_allowed(request)
-
-
-def _validate_staff_surface(request, token):
-    from apps.accounts.social_nonces import request_origin
-    from apps.makerspaces.cors import staff_origin_is_registered
-    from apps.makerspaces.origin_scope import (
-        AMBIGUOUS_STAFF_ORIGIN_SCOPE,
-        NO_STAFF_ORIGIN_SCOPE,
-        staff_origin_scope,
-    )
-
-    if not staff_origin_is_registered(request_origin(request)):
-        raise PermissionDenied("Staff social sessions require a trusted staff origin.")
-    actual = staff_origin_scope(request)
-    expected = str(token.get("staff_scope") or "")
-    if actual is AMBIGUOUS_STAFF_ORIGIN_SCOPE:
-        raise PermissionDenied("Staff origin is ambiguous.")
-    if expected == "platform":
-        if actual is not NO_STAFF_ORIGIN_SCOPE:
-            raise PermissionDenied("Staff session origin does not match.")
-    elif str(actual) != expected:
-        raise PermissionDenied("Staff session origin does not match.")
+    # #110/#190: a live platform superadmin also reaches paused spaces for this request.
+    admit_superadmin(user)
+    assert_request_write_allowed(request, user=user)

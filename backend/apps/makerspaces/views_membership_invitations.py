@@ -19,7 +19,7 @@ from apps.makerspaces.serializers_admission import AdmissionAnswersSerializer
 
 
 ERRORS = {400: ErrorSerializer, 401: ErrorSerializer, 403: ErrorSerializer, 404: ErrorSerializer,
-          423: ErrorSerializer, 503: ErrorSerializer}
+          409: ErrorSerializer, 423: ErrorSerializer, 503: ErrorSerializer}
 
 
 def _claimable_invitations(user):
@@ -52,7 +52,7 @@ class InvitationDiscoveryView(APIView):
             from rest_framework.exceptions import PermissionDenied
             raise PermissionDenied()
         # A community invitation or referral of a space that has since switched the
-        # module off is not claimable (the claim answers 400), so it is not offered.
+        # module off is not claimable (the claim answers 404), so it is not offered.
         invitations = [
             item for item in _claimable_invitations(request.user)
             if is_staff_invitation(item) or module_enabled(item.makerspace, "membership")

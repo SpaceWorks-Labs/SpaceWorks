@@ -1,0 +1,79 @@
+{
+  "app_id": "REPLACE_APP_ID",
+  "definition": {
+    "name": "spaceworks-web",
+    "type": "WEB",
+    "regions": [
+      "fra"
+    ],
+    "scalings": [
+      {
+        "min": 1,
+        "max": 1
+      }
+    ],
+    "instance_types": [
+      {
+        "type": "small"
+      }
+    ],
+    "env": [
+      {
+        "key": "SPACEWORKS_DEPLOYMENT_MODE",
+        "value": "managed"
+      },
+      {
+        "key": "SPACEWORKS_DEPLOYMENT_PROFILE",
+        "value": "full"
+      },
+      {
+        "key": "CLOUD_TASK_PROFILE",
+        "value": "brokerless"
+      },
+      {
+        "key": "CLOUD_SCHEDULER",
+        "value": "loop"
+      },
+      {
+        "key": "SPACEWORKS_SECRET_FILE_MODE",
+        "value": "inline"
+      }
+    ],
+    "docker": {
+      "image": "ghcr.io/spaceworks-labs/spaceworks-backend@sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      "args": [
+        "--role",
+        "backend",
+        "python",
+        "-m",
+        "scripts.run_cloud_role",
+        "web"
+      ]
+    },
+    "ports": [
+      {
+        "port": 8000,
+        "protocol": "http"
+      }
+    ],
+    "routes": [
+      {
+        "path": "/",
+        "port": 8000
+      }
+    ],
+    "checks": [
+      {
+        "type": "HTTP",
+        "port": 8000,
+        "http": {
+          "path": "/api/v1/health/readiness/",
+          "method": "GET"
+        },
+        "grace_period": 30,
+        "interval": 15,
+        "timeout": 5
+      }
+    ]
+  }
+}

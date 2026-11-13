@@ -7,6 +7,7 @@ from apps.makerspaces.secrets import decrypt_value, encrypt_value
 class SocialProvider(models.TextChoices):
     GOOGLE = "google", "Google"
     APPLE = "apple", "Apple"
+    GITHUB = "github", "GitHub"
 
 
 class SocialSurface(models.TextChoices):
@@ -40,6 +41,9 @@ class SocialIdentity(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
+        # #188: plain-language admin name (the default plural was broken English).
+        verbose_name = "linked sign-in account"
+        verbose_name_plural = "linked sign-in accounts"
         constraints = [
             models.UniqueConstraint(
                 fields=["provider", "provider_sub"], name="uniq_social_provider_sub"
@@ -108,6 +112,11 @@ class SocialLoginNonce(models.Model):
 
 
 class PlatformSocialAuthSettings(models.Model):
+    class Meta:
+        # #188: plain-language admin name (the default plural was broken English).
+        verbose_name = "social sign-in settings"
+        verbose_name_plural = "social sign-in settings"
+
     id = models.PositiveSmallIntegerField(primary_key=True, default=1, editable=False)
     google_web_client_id = models.CharField(max_length=255, blank=True, default="")
     google_ios_client_id = models.CharField(max_length=255, blank=True, default="")
@@ -117,6 +126,8 @@ class PlatformSocialAuthSettings(models.Model):
     apple_team_id = models.CharField(max_length=64, blank=True, default="")
     apple_key_id = models.CharField(max_length=64, blank=True, default="")
     apple_private_key = models.TextField(blank=True, default="")
+    github_client_id = models.CharField(max_length=255, blank=True, default="")
+    github_client_secret = models.TextField(blank=True, default="")
     updated_at = models.DateTimeField(auto_now=True)
 
     @classmethod
@@ -133,6 +144,16 @@ class PlatformSocialAuthSettings(models.Model):
     @property
     def apple_private_key_set(self):
         return bool(self.apple_private_key)
+
+    def set_github_client_secret(self, raw):
+        self.github_client_secret = encrypt_value(raw) if raw else ""
+
+    def get_github_client_secret(self):
+        return decrypt_value(self.github_client_secret) if self.github_client_secret else ""
+
+    @property
+    def github_client_secret_set(self):
+        return bool(self.github_client_secret)
 
     def client_id(self, provider, client_platform):
         if provider == SocialProvider.GOOGLE:

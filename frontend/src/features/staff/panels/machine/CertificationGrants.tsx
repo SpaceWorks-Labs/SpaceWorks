@@ -1,10 +1,15 @@
+import { formatLocale } from "../../../../lib/format";
+import { t } from "@lingui/core/macro";
+import { EmptyState } from "../../../../components/ui/EmptyState";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ConfirmDialog } from "../../../../components/ui";
+import { ConfirmDialog, PagePager } from "../../../../components/ui";
 import {
   certificationKeys, getCertificationGrants, getCertificationMembers,
   grantCertification, renewCertification, revokeCertification,
 } from "../../certificationsApi";
+import { LogoLoader } from "../../../../components/LogoLoader";
+import { BoxArt } from "../../../../components/BoxSpinner";
 
 export function CertificationGrants({ typeId, active }: { typeId: number; active: boolean }) {
   const client = useQueryClient();
@@ -28,21 +33,21 @@ export function CertificationGrants({ typeId, active }: { typeId: number; active
     },
   });
   return <div className="grid gap-3">
-    {grants.isLoading ? <p role="status">Loading training records…</p> : null}
-    {grants.isSuccess && !grants.data.count ? <p className="text-sm text-muted">No grants yet.</p> : null}
+    {grants.isLoading ? <LogoLoader label={t`Loading training records…`} size={48} className="min-h-16 py-3" /> : null}
+    {grants.isSuccess && !grants.data.count ? <EmptyState message={t`No grants yet.`} /> : null}
     <ul className="grid gap-2">{grants.data?.results.map((grant) => <li key={grant.id} className="rounded-lg border border-line p-3 text-sm">
-      <strong>{grant.member_name}</strong><p className="text-muted">Granted {new Date(grant.granted_at).toLocaleDateString()} · {grant.revoked_at ? "Revoked" : grant.is_live ? "Valid" : "Expired"} · {grant.expires_at ? `Expires ${new Date(grant.expires_at).toLocaleDateString()}` : "No expiry"}</p>
+      <strong>{grant.member_name}</strong><p className="text-muted">{t`Granted ${new Date(grant.granted_at).toLocaleDateString(formatLocale())} · `}{grant.revoked_at ? t`Revoked` : grant.is_live ? t`Valid` : t`Expired`} · {grant.expires_at ? t`Expires ${new Date(grant.expires_at).toLocaleDateString(formatLocale())}` : t`No expiry`}</p>
       {grant.notes ? <p>{grant.notes}</p> : null}
-      <div className="mt-2 flex gap-2">{active ? <button className="desk-button-ghost" disabled={mutate.isPending} onClick={() => setAction({ id: grant.id, kind: "renew" })}>Renew</button> : null}{!grant.revoked_at ? <button className="desk-button-danger" disabled={mutate.isPending} onClick={() => setAction({ id: grant.id, kind: "revoke" })}>Revoke</button> : null}</div>
+      <div className="mt-2 flex flex-wrap gap-2">{active ? <button className="desk-button-ghost" disabled={mutate.isPending} onClick={() => setAction({ id: grant.id, kind: "renew" })}>{t`Renew`}</button> : null}{!grant.revoked_at ? <button className="desk-button-danger" disabled={mutate.isPending} onClick={() => setAction({ id: grant.id, kind: "revoke" })}>{t`Revoke`}</button> : null}</div>
     </li>)}</ul>
-    {grants.data && grants.data.count > 24 ? <div className="flex gap-2"><button className="desk-button-ghost" disabled={grantPage === 1 || grants.isFetching} onClick={() => setGrantPage(grantPage - 1)}>Previous grants</button><button className="desk-button-ghost" disabled={!grants.data.next || grants.isFetching} onClick={() => setGrantPage(grantPage + 1)}>More grants</button></div> : null}
-    <label className="grid gap-1 text-sm">Training notes / revocation reason<textarea className="desk-input" value={notes} onChange={(e) => setNotes(e.target.value)} /></label>
+    {grants.data ? <PagePager page={grantPage} setPage={setGrantPage} count={grants.data.count} next={grants.data.next} disabled={grants.isFetching} /> : null}
+    <label className="grid gap-1 text-sm">{t`Training notes / revocation reason`}<textarea className="desk-input" value={notes} onChange={(e) => setNotes(e.target.value)} /></label>
     {active ? <form className="grid gap-2" onSubmit={(e) => { e.preventDefault(); mutate.mutate(null); }}>
-      <label className="grid gap-1 text-sm">Member<select className="desk-input" required value={member} onChange={(e) => setMember(e.target.value)}><option value="">Select a member</option>{members.data?.results.map((row) => <option key={row.id} value={row.id}>{row.name}</option>)}</select></label>
-      <div className="flex gap-2"><button type="button" className="desk-button-ghost" disabled={page === 1 || members.isFetching} onClick={() => { setPage(page - 1); setMember(""); }}>Previous members</button><button type="button" className="desk-button-ghost" disabled={!members.data?.next || members.isFetching} onClick={() => { setPage(page + 1); setMember(""); }}>More members</button></div>
-      <button className="desk-button-primary w-fit" disabled={!member || mutate.isPending}>{mutate.isPending ? "Saving…" : "Grant certification"}</button>
+      <label className="grid gap-1 text-sm">{t`Member`}<select className="desk-input" required value={member} onChange={(e) => setMember(e.target.value)}><option value="">{t`Select a member`}</option>{members.data?.results.map((row) => <option key={row.id} value={row.id}>{row.name}</option>)}</select></label>
+      <PagePager page={page} setPage={next => { setPage(next); setMember(""); }} next={members.data?.next} disabled={members.isFetching} />
+      <button className="desk-button-primary w-fit" disabled={!member || mutate.isPending}>{mutate.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Grant certification`}</button>
     </form> : null}
     {[grants.error, members.error, mutate.error].map((error, index) => error instanceof Error ? <p role="alert" className="text-sm text-danger" key={index}>{error.message}</p> : null)}
-    <ConfirmDialog open={action !== null} title={action?.kind === "renew" ? "Renew certification?" : "Revoke certification?"} message={action?.kind === "renew" ? "A new grant will record reassessed training from today. The previous record stays in history." : "The member will lose this grant immediately. The training record stays in history."} confirmLabel={action?.kind === "renew" ? "Renew" : "Revoke"} tone={action?.kind === "revoke" ? "danger" : "default"} pending={mutate.isPending} onConfirm={() => { if (action) mutate.mutate(action); }} onCancel={() => setAction(null)} />
+    <ConfirmDialog open={action !== null} title={action?.kind === "renew" ? t`Renew certification?` : t`Revoke certification?`} message={action?.kind === "renew" ? t`A new grant will record reassessed training from today. The previous record stays in history.` : t`The member will lose this grant immediately. The training record stays in history.`} confirmLabel={action?.kind === "renew" ? t`Renew` : t`Revoke`} tone={action?.kind === "revoke" ? "danger" : "default"} pending={mutate.isPending} onConfirm={() => { if (action) mutate.mutate(action); }} onCancel={() => setAction(null)} />
   </div>;
 }

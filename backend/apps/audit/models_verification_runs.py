@@ -7,6 +7,7 @@ latest event; nothing is ever updated in place. No actor label, raw metadata, ex
 text, MAC material or anchor payload is persisted -- only closed codes and counts.
 """
 
+from django.utils.translation import gettext_noop
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
@@ -67,30 +68,30 @@ class AuditVerificationRunEvent(models.Model):
         SUCCEEDED = "SUCCEEDED", "Succeeded"
         INCOMPLETE = "INCOMPLETE", "Incomplete"
         FAILED = "FAILED", "Failed"
-        TIMED_OUT = "TIMED_OUT", "Timed out"
+        TIMED_OUT = "TIMED_OUT", gettext_noop("Timed out")
 
     class ChainStatus(models.TextChoices):
         PENDING = "pending", "Pending"
-        LOCALLY_VERIFIED = "locally_verified", "Locally verified"
+        LOCALLY_VERIFIED = "locally_verified", gettext_noop("Locally verified")
         INVALID = "invalid", "Invalid"
         UNAVAILABLE = "unavailable", "Unavailable"
 
     class AnchorStatus(models.TextChoices):
         PENDING = "pending", "Pending"
-        NOT_CONFIGURED = "not_configured", "Not configured"
-        EXTERNALLY_ANCHORED = "externally_anchored", "Externally anchored"
+        NOT_CONFIGURED = "not_configured", gettext_noop("Not configured")
+        EXTERNALLY_ANCHORED = "externally_anchored", gettext_noop("Externally anchored")
         INVALID = "invalid", "Invalid"
         UNAVAILABLE = "unavailable", "Unavailable"
 
     class FailureCode(models.TextChoices):
         NONE = "", "None"
-        ANCHOR_RETRY_EXHAUSTED = "anchor_retry_exhausted", "Anchor retry exhausted"
-        VERIFICATION_UNAVAILABLE = "verification_unavailable", "Verification unavailable"
-        VERIFICATION_BOUNDS_EXCEEDED = "verification_bounds_exceeded", "Bounds exceeded"
-        DATABASE_RETRY_EXHAUSTED = "database_retry_exhausted", "Database retry exhausted"
-        TASK_ERROR = "task_error", "Task error"
-        SOFT_TIME_LIMIT = "soft_time_limit", "Soft time limit"
-        STALE_RUN = "stale_run", "Stale run"
+        ANCHOR_RETRY_EXHAUSTED = "anchor_retry_exhausted", gettext_noop("Anchor retry exhausted")
+        VERIFICATION_UNAVAILABLE = "verification_unavailable", gettext_noop("Verification unavailable")
+        VERIFICATION_BOUNDS_EXCEEDED = "verification_bounds_exceeded", gettext_noop("Bounds exceeded")
+        DATABASE_RETRY_EXHAUSTED = "database_retry_exhausted", gettext_noop("Database retry exhausted")
+        TASK_ERROR = "task_error", gettext_noop("Task error")
+        SOFT_TIME_LIMIT = "soft_time_limit", gettext_noop("Soft time limit")
+        STALE_RUN = "stale_run", gettext_noop("Stale run")
 
     run = models.ForeignKey(AuditVerificationRun, on_delete=models.CASCADE, related_name="events")
     state = models.CharField(max_length=16, choices=State.choices)

@@ -1,10 +1,13 @@
+import { t } from "@lingui/core/macro";
 import { MfaFlow } from "./MfaFlow";
 import { isMfaChallenge, type MfaChallenge } from "./mfaApi";
 import { useEffect, useRef, useState } from "react";
 
 import { publicV1Request } from "../../lib/api";
+import { markUsernameReview } from "../profile/username/usernameApi";
 import {
   beginOidcBrowser,
+  beginGithubBrowser,
   completeOidcBrowserCallback,
   mountGoogleButton,
   signInWithApple,
@@ -12,25 +15,32 @@ import {
   type SocialLoginResult,
   type SocialSurface,
 } from "./socialSdk";
+import { BoxArt } from "../../components/BoxSpinner";
 
 export function SocialSignInButtons({
   surface,
   onSuccess,
   email = "",
   makerspaceSlug = "",
+  onMfaChallenge,
 }: {
   surface: SocialSurface;
   onSuccess: (result: SocialLoginResult) => void;
   email?: string;
   makerspaceSlug?: string;
+  onMfaChallenge?: (challenge: MfaChallenge) => void;
 }) {
   const [challenge, setChallenge] = useState<MfaChallenge>();
   const receive = (result: SocialLoginResult | MfaChallenge) => {
-    if (isMfaChallenge(result)) setChallenge(result);
-    else onSuccessRef.current(result);
+    if (isMfaChallenge(result)) { if (onMfaChallenge) onMfaChallenge(result); else setChallenge(result); }
+    else { if (result.outcome === "created") markUsernameReview(); onSuccessRef.current(result); }
   };
   const googleHost = useRef<HTMLDivElement>(null);
   const onSuccessRef = useRef(onSuccess);
+  const receiveRef = useRef(receive);
+  useEffect(() => {
+    receiveRef.current = receive;
+  });
   const [config, setConfig] = useState<SocialConfig>();
   const [memberAccounts, setMemberAccounts] = useState(true);
   const [error, setError] = useState("");
@@ -56,14 +66,14 @@ export function SocialSignInButtons({
   }, []);
 
   useEffect(() => {
-    if (surface !== "member" || callbackHandled.current) return;
+    if (callbackHandled.current) return;
     callbackHandled.current = true;
     void completeOidcBrowserCallback()
       .then((result) => {
-        if (result) receive(result);
+        if (result) receiveRef.current(result);
       })
       .catch((nextError: unknown) => {
-        setError(nextError instanceof Error ? nextError.message : "Identity-provider sign-in failed.");
+        setError(nextError instanceof Error ? nextError.message : t`Identity-provider sign-in failed.`);
       });
   }, [surface]);
 
@@ -75,35 +85,47 @@ export function SocialSignInButtons({
       host,
       config.google.web_client_id,
       surface,
-      (result) => receive(result),
+      (result) => receiveRef.current(result),
       (nextError) => setError(nextError.message),
     ).catch((nextError: unknown) => {
-      setError(nextError instanceof Error ? nextError.message : "Google sign-in failed.");
+      setError(nextError instanceof Error ? nextError.message : t`Google sign-in failed.`);
     });
   }, [config, surface]);
 
-  const oidcProviders = surface === "member"
-    ? Object.entries(config ?? {}).filter(
+  const oidcProviders = Object.entries(config ?? {}).filter(
         (entry): entry is [string, NonNullable<SocialConfig[`oidc:${string}`]>] =>
-          entry[0].startsWith("oidc:") && Boolean(entry[1]?.enabled),
-      )
-    : [];
+          entry[0].startsWith("oidc:") && typeof entry[1] === "object" && Boolean(entry[1]?.enabled),
+      );
   // Accounts-off hides only the built-in consumer ecosystem. Institution-owned OIDC
   // is the member login path that must remain available; staff still keep the built-ins.
   const showBuiltins = surface === "staff" || memberAccounts;
   const showGoogle = showBuiltins && Boolean(config?.google?.enabled);
   const showApple = showBuiltins && Boolean(config?.apple?.enabled);
+  const showGithub = surface === "member" && memberAccounts && config?.github === true;
   if (challenge) return <MfaFlow challenge={challenge} onCancel={() => setChallenge(undefined)}
     onComplete={(result) => { setChallenge(undefined); onSuccessRef.current({ access: result.access, user: result.user as unknown as Record<string, unknown>, outcome: "existing" }); }} />;
-  if (!showGoogle && !showApple && oidcProviders.length === 0) return null;
+  if (!showGoogle && !showApple && !showGithub && oidcProviders.length === 0) return null;
   return (
-    <section className="mt-5 border-t border-line pt-5" aria-label="Social sign in">
-      <p className="eyebrow mb-3 text-center">Or continue with</p>
+    <section aria-label={t`Social sign in`}>
       <div className="flex flex-col items-center gap-3">
         {showGoogle ? <div ref={googleHost} className="min-h-10 w-full text-center" /> : null}
+        {showGithub ? (
+          <button className="desk-button w-full max-w-[360px]" type="button"
+            disabled={Boolean(oidcPending)} onClick={async () => {
+              setOidcPending("github");
+              setError("");
+              try { await beginGithubBrowser(); }
+              catch (nextError) {
+                setOidcPending("");
+                setError(nextError instanceof Error ? nextError.message : t`GitHub sign-in failed.`);
+              }
+            }}>
+            {oidcPending === "github" ? t`Connecting to GitHub…` : t`Continue with GitHub`}
+          </button>
+        ) : null}
         {showApple ? (
           <button
-            className="desk-button-secondary w-full max-w-[360px]"
+            className="desk-button w-full max-w-[360px]"
             type="button"
             disabled={applePending}
             onClick={async () => {
@@ -112,13 +134,13 @@ export function SocialSignInButtons({
               try {
                 receive(await signInWithApple(config?.apple?.service_id ?? "", surface));
               } catch (nextError) {
-                setError(nextError instanceof Error ? nextError.message : "Apple sign-in failed.");
+                setError(nextError instanceof Error ? nextError.message : t`Apple sign-in failed.`);
               } finally {
                 setApplePending(false);
               }
             }}
           >
-            {applePending ? "Connecting to Apple…" : "Continue with Apple"}
+            {applePending ? <><BoxArt size={16} mono />{t`Connecting to Apple…`}</> : t`Continue with Apple`}
           </button>
         ) : null}
         {oidcProviders.map(([key, provider]) => {
@@ -126,23 +148,23 @@ export function SocialSignInButtons({
           return (
             <button
               key={key}
-              className="desk-button-secondary w-full max-w-[360px]"
+              className="desk-button w-full max-w-[360px]"
               type="button"
               disabled={Boolean(oidcPending)}
               onClick={async () => {
                 setOidcPending(key);
                 setError("");
                 try {
-                  await beginOidcBrowser(slug, email, makerspaceSlug);
+                  await beginOidcBrowser(slug, email, makerspaceSlug, surface);
                 } catch (nextError) {
                   setOidcPending("");
-                  setError(nextError instanceof Error ? nextError.message : "Identity-provider sign-in failed.");
+                  setError(nextError instanceof Error ? nextError.message : t`Identity-provider sign-in failed.`);
                 }
               }}
             >
               {oidcPending === key
-                ? `Connecting to ${provider.display_name}…`
-                : `Continue with ${provider.display_name}`}
+                ? t`Connecting to ${provider.display_name}…`
+                : t`Continue with ${provider.display_name}`}
             </button>
           );
         })}

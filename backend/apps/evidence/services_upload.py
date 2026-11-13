@@ -29,6 +29,10 @@ def issue_upload(
     ``consumption_state`` stays ``legacy_unknown`` (never a cleanup candidate) unless the
     caller is a production presign view that opts its rows into abandoned-upload cleanup.
     """
+    from apps.makerspaces.limits import check_upload_headroom
+
+    # #234: a full storage budget or a declared file over the per-file cap refuses before upload.
+    check_upload_headroom(makerspace, size_bytes)
     object_key = evidence_object_key(makerspace.pk, evidence_type)
     upload = presigned_upload(object_key, content_type)
     with transaction.atomic():

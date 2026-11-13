@@ -1,5 +1,6 @@
 """Persistent B4 cutover controls and non-destructive repair evidence."""
 
+from django.utils.translation import gettext_noop
 from django.conf import settings
 from django.db import models
 
@@ -29,11 +30,11 @@ class PrintingCutoverRepair(models.Model):
     """An explicit forward-repair queue; imported history is never edited."""
 
     class Kind(models.TextChoices):
-        INVALID_SOURCE = "invalid_source", "Invalid legacy source"
-        MISMATCH = "mismatch", "Reconciliation mismatch"
-        MISSING_OBJECT = "missing_object", "Missing storage object"
-        COLLISION = "collision", "Provenance/object collision"
-        WARRANTY = "warranty", "Unmapped warranty link"
+        INVALID_SOURCE = "invalid_source", gettext_noop("Invalid legacy source")
+        MISMATCH = "mismatch", gettext_noop("Reconciliation mismatch")
+        MISSING_OBJECT = "missing_object", gettext_noop("Missing storage object")
+        COLLISION = "collision", gettext_noop("Provenance/object collision")
+        WARRANTY = "warranty", gettext_noop("Unmapped warranty link")
 
     makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.CASCADE, related_name="printing_cutover_repairs")
     kind = models.CharField(max_length=32, choices=Kind.choices)

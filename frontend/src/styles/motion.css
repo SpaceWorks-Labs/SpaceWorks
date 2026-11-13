@@ -1,0 +1,52 @@
+/* Shared motion: reduced-motion floor, press/hover feel, sliding indicators, height collapse.
+   Transform and opacity only (height is the one exception, via grid rows, because a section that
+   opens must push the page down). No shadows, gradients or glass. Tokens are in index.css. */
+
+/* Reduced motion: nothing moves. Overrides every animation and transition in the app, including
+   third-party ones, and the JS side (src/lib/motion) skips View Transitions and exit delays. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0s !important;
+    scroll-behavior: auto !important;
+  }
+  ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
+}
+
+/* Buttons: colours ease in 120 ms; pressing sinks the control to 0.98. Focus rings are untouched. */
+:is(.desk-button, .desk-button-primary, .desk-button-brand, .desk-button-emphasis, .desk-button-success,
+  .desk-button-warn, .desk-button-danger, .desk-button-ghost, .desk-button-danger-outline, .desk-tab, .desk-nav-item) {
+  transition-property: color, background-color, border-color, transform;
+  transition-duration: var(--sw-dur-fast);
+  transition-timing-function: var(--sw-ease-standard);
+}
+@media (prefers-reduced-motion: no-preference) {
+  :is(.desk-button, .desk-button-primary, .desk-button-brand, .desk-button-emphasis, .desk-button-success,
+    .desk-button-warn, .desk-button-danger, .desk-button-ghost, .desk-button-danger-outline):active:not(:disabled, [aria-disabled="true"]) {
+    transform: scale(0.98);
+  }
+}
+
+/* Sliding indicator (sidebar item, tab underline): one absolutely placed box moved by
+   useSlideIndicator. While it is placed, the item's own highlight steps aside. */
+.sw-indicator {
+  position: absolute; left: 0; top: 0; z-index: 0; pointer-events: none; opacity: 0;
+  transition: transform var(--sw-dur-base) var(--sw-ease-standard);
+}
+[data-slide] a[aria-current="page"].sw-slide-item { background-color: transparent; border-color: transparent; }
+[data-slide] .desk-tab-active { border-bottom-color: transparent; }
+.sw-tab-indicator { border-bottom: 2px solid rgb(var(--color-accent-ink)); }
+
+/* Height collapse: grid rows 1fr <-> 0fr, with a fade. The inner padding/margin pair keeps
+   focus rings of edge items from being clipped by overflow:hidden. */
+.sw-collapse { display: grid; grid-template-rows: 1fr; }
+.sw-collapse-inner { min-height: 0; min-width: 0; overflow: hidden; padding: 4px; margin: -4px; }
+@media (prefers-reduced-motion: no-preference) {
+  .sw-collapse[data-state="open"] { animation: sw-collapse-open var(--sw-dur-base) var(--sw-ease-standard); }
+  .sw-collapse[data-state="closed"] { animation: sw-collapse-close var(--sw-dur-fast) var(--sw-ease-exit) forwards; }
+}
+@keyframes sw-collapse-open { from { grid-template-rows: 0fr; opacity: 0; } }
+@keyframes sw-collapse-close { to { grid-template-rows: 0fr; opacity: 0; } }

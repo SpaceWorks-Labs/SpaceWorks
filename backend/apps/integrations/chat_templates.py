@@ -12,6 +12,7 @@ Two guarantees, and the second is a security boundary rather than a convenience:
   so a future call site cannot leak member-facing content into a shared room.
 """
 
+from django.utils.translation import gettext
 import logging
 
 from django.core.exceptions import ValidationError
@@ -46,8 +47,10 @@ def chat_entry(feature, event):
     Deliberately the STAFF entry: a chat body may only ever be built from staff-audience
     variables, so the editor cannot offer a member-facing field it would then leak.
     """
-    from .chat_templates_catalog import chat_only_entry
+    from .chat_templates_catalog import PERSONAL_ONLY_EVENTS, chat_only_entry
 
+    if (feature, event) in PERSONAL_ONLY_EVENTS:
+        return None
     if feature == "hardware_requests" and event == "overdue_escalated":
         return get_entry("hardware", CHAT_AUDIENCE, "return_reminder")
     return get_entry(stream_for_feature(feature), CHAT_AUDIENCE, event) or chat_only_entry(feature, event)
@@ -56,13 +59,13 @@ def chat_entry(feature, event):
 def validate_chat_template_string(feature, event, text_body):
     entry = chat_entry(feature, event)
     if entry is None:
-        raise ValidationError("Unknown chat template feature or event.")
+        raise ValidationError(gettext("Unknown chat template feature or event."))
     try:
         Template(text_body or "").render(Context(entry.sample_context, autoescape=False))
     except TemplateSyntaxError as exc:
-        raise ValidationError(f"Chat template has invalid syntax: {exc}") from exc
+        raise ValidationError(gettext('Chat template has invalid syntax: {exc}').format(exc=exc)) from exc
     except Exception as exc:
-        raise ValidationError(f"Chat template has invalid syntax: {exc}") from exc
+        raise ValidationError(gettext('Chat template has invalid syntax: {exc}').format(exc=exc)) from exc
 
 
 def render_chat_text(makerspace, feature, event, fallback_text, context=None, *, audience=CHAT_AUDIENCE):

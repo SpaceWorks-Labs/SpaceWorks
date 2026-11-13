@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "status": "verify capacity and ongoing allowance at signup; no deployment certification",
+  "deployment_mode": "host",
+  "deployment_profile": "full",
+  "installer": "existing full VPS installer after lane V audited C1-C21 fixes",
+  "no_free_profile_changes": true,
+  "architectures": [
+    "linux/amd64",
+    "linux/arm64"
+  ],
+  "prerequisites": [
+    "Home-region capacity for selected Always Free shape; availability is not guaranteed.",
+    "Current identity/card requirements and verified ongoing free limits; trial credits are separate.",
+    "Verify immutable release image manifests plus runtime on the selected architecture.",
+    "Off-VM encrypted DB/object/config/key recovery and a proven restore procedure."
+  ],
+  "risks": [
+    "Idle instances can be reclaimed; capacity shortage can prevent replacement.",
+    "Do not assume upgrading to PAYG prevents reclamation.",
+    "Never create artificial load to evade idle rules.",
+    "Deletion/durability and free allowances do not constitute a backup guarantee."
+  ],
+  "planning_allowances": {
+    "ampere_a1": "Verify current aggregate OCPU/RAM allowance and shape availability in home region.",
+    "boot_block_storage": "Verify total free allocation across boot/block volumes before provisioning.",
+    "card": "Verify during signup; record requirement, spend controls and any overage exposure."
+  },
+  "sources": [
+    "https://www.oracle.com/cloud/free/",
+    "https://docs.oracle.com/en-us/iaas/Content/FreeTier/freetier_topic-Always_Free_Resources.htm"
+  ],
+  "source_checked_on": "2026-10-18",
+  "live_validation": null
+}

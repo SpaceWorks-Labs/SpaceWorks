@@ -1,5 +1,7 @@
+import { t } from "@lingui/core/macro";
+import type { ReactNode } from "react";
 import type { EventPayload, StaffEvent } from "./eventsApi";
-import { CustomFormBuilder } from "../forms/CustomFormBuilder";
+import { EventEssentialFields, EventMoreFields } from "./EventFieldGroups";
 
 export type EventFormValues = Omit<EventPayload, "starts_at" | "ends_at" | "registration_cutoff_at"> & {
   starts_at: string;
@@ -8,13 +10,14 @@ export type EventFormValues = Omit<EventPayload, "starts_at" | "ends_at" | "regi
 };
 
 export const emptyEventForm: EventFormValues = {
-  title: "", description: "", starts_at: "", ends_at: "", location: "",
+  accent_preset: "", title: "", description: "", starts_at: "", ends_at: "", location: "", venue_address: "", venue_map_url: "",
   timezone_name: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
   capacity: 0, payment_amount: "0.00", registration_requires_approval: false,
   registration_cutoff_at: null, registration_cutoff_lead_minutes: null,
   cancellation_cutoff_hours: null,
+  show_registration_count: true,
   is_public: false, registration_audience: "members", category_id: null, tags: [],
-  custom_form: null,
+  custom_form: null, listing: "listed", delivery_mode: "in_person",
 };
 
 function localDate(value: string) {
@@ -24,52 +27,61 @@ function localDate(value: string) {
 
 export function valuesFor(event: StaffEvent): EventFormValues {
   return {
-    title: event.title, description: event.description,
+    accent_preset: event.accent_preset ?? "", title: event.title, description: event.description,
     starts_at: localDate(event.starts_at), ends_at: localDate(event.ends_at),
     timezone_name: event.timezone_name,
-    location: event.location, capacity: event.capacity,
+    location: event.location, venue_address: event.venue_address ?? "", venue_map_url: event.venue_map_url ?? "", capacity: event.capacity,
     payment_amount: event.payment_amount,
     registration_requires_approval: event.registration_requires_approval,
     registration_cutoff_at: event.registration_cutoff_at ? localDate(event.registration_cutoff_at) : null,
     registration_cutoff_lead_minutes: event.registration_cutoff_lead_minutes,
     cancellation_cutoff_hours: event.cancellation_cutoff_hours ?? null,
+    show_registration_count: event.show_registration_count ?? true,
     is_public: event.is_public, registration_audience: event.registration_audience ?? "members", category_id: event.category_id ?? null, tags: event.tags ?? [],
     custom_form: event.custom_form,
+    listing: event.listing ?? "listed", delivery_mode: event.delivery_mode ?? "in_person",
+    // Only an editor of a space with online events reads the link; otherwise it is never resent.
+    ...(event.join_url ? { join_url: event.join_url } : {}),
   };
 }
 
 export function payloadFor(values: EventFormValues): EventPayload {
   return {
     ...values, tags: (values.tags ?? []).map((tag) => tag.trim()).filter(Boolean), title: values.title.trim(), description: values.description.trim(),
-    location: values.location.trim(), starts_at: new Date(values.starts_at).toISOString(),
+    location: values.location.trim(), venue_address: (values.venue_address ?? "").trim(), venue_map_url: (values.venue_map_url ?? "").trim(), starts_at: new Date(values.starts_at).toISOString(),
     ends_at: new Date(values.ends_at).toISOString(),
     registration_cutoff_at: values.registration_cutoff_at ? new Date(values.registration_cutoff_at).toISOString() : null,
   };
 }
 
-export function EventFields({ values, setValues, disabled = false, approvalLocked = false }: {
+export function EventFields({ values, setValues, disabled = false, approvalLocked = false, settings = false, canEditDetails = true, canEditSchedule = true, canEditPrice = true, organizationAudienceEnabled = false, onlineEnabled = false, layout = "all", moreExtras }: {
   values: EventFormValues; setValues: (values: EventFormValues) => void;
-  disabled?: boolean; approvalLocked?: boolean;
+  disabled?: boolean; approvalLocked?: boolean; settings?: boolean;
+  canEditDetails?: boolean; canEditSchedule?: boolean; canEditPrice?: boolean; organizationAudienceEnabled?: boolean;
+  /** The events.online_delivery switch is on: show how people attend and the join link. */
+  onlineEnabled?: boolean;
+  /** "split" tucks everything past the essentials into a collapsed "More options"; "essentials" omits it. */
+  layout?: "all" | "split" | "essentials";
+  /** Extra create-time steps (partners, organizers) that belong behind "More options". */
+  moreExtras?: ReactNode;
 }) {
-  const set = <K extends keyof EventFormValues>(key: K, value: EventFormValues[K]) => setValues({ ...values, [key]: value });
-  const cutoffMode = values.registration_cutoff_at !== null ? "absolute" : values.registration_cutoff_lead_minutes !== null ? "lead" : "none";
-  return <div className="grid gap-3 sm:grid-cols-2">
-    <label className="grid gap-1 text-sm font-semibold text-ink sm:col-span-2">Title<input className="desk-input" value={values.title} onChange={(e) => set("title", e.target.value)} required disabled={disabled} maxLength={200} /></label>
-    <label className="grid gap-1 text-sm font-semibold text-ink">Starts<input className="desk-input" type="datetime-local" value={values.starts_at} onChange={(e) => set("starts_at", e.target.value)} required disabled={disabled} /></label>
-    <label className="grid gap-1 text-sm font-semibold text-ink">Ends<input className="desk-input" type="datetime-local" value={values.ends_at} onChange={(e) => set("ends_at", e.target.value)} required disabled={disabled} /></label>
-    <label className="grid gap-1 text-sm font-semibold text-ink sm:col-span-2">Event time zone<input className="desk-input font-mono" value={values.timezone_name} onChange={(e) => set("timezone_name", e.target.value)} required disabled={disabled} maxLength={64} /><span className="text-xs font-normal text-muted">Use an IANA name such as Asia/Kolkata. Review migrated events because their original zone was not recorded.</span></label>
-    <label className="grid gap-1 text-sm font-semibold text-ink">Location<input className="desk-input" value={values.location} onChange={(e) => set("location", e.target.value)} disabled={disabled} maxLength={255} /></label>
-    <label className="grid gap-1 text-sm font-semibold text-ink">Capacity<input className="desk-input" type="number" min="0" value={values.capacity} onChange={(e) => set("capacity", Number(e.target.value))} disabled={disabled} /><span className="text-xs font-normal text-muted">Use 0 for Unlimited.</span></label>
-    <label className="grid gap-1 text-sm font-semibold text-ink">Registration audience<select className="desk-input" value={values.registration_audience ?? "members"} disabled={disabled} onChange={(e) => set("registration_audience", e.target.value as EventFormValues["registration_audience"])}><option value="members">Members</option><option value="accounts">Authenticated accounts</option><option value="invite">Invited accounts</option></select><span className="text-xs font-normal text-muted">Enable account registration or invitations in makerspace feature settings before selecting that audience.</span></label>
-    <label className="grid gap-1 text-sm font-semibold text-ink">Tags (comma separated)<input className="desk-input" value={(values.tags ?? []).join(",")} disabled={disabled} onChange={(e) => set("tags", e.target.value.split(","))} /></label>
-    <label className="grid gap-1 text-sm font-semibold text-ink">Registration price<input className="desk-input" type="number" min="0" step="0.01" value={values.payment_amount} onChange={(e) => set("payment_amount", e.target.value)} disabled={disabled} /><span className="text-xs font-normal text-muted">Charged only when a place is confirmed.</span></label>
-    <label className="grid gap-1 text-sm font-semibold text-ink">Member cancellation closes hours before<input className="desk-input" type="number" min="0" max="8760" value={values.cancellation_cutoff_hours ?? ""} onChange={(e) => set("cancellation_cutoff_hours", e.target.value === "" ? null : Number(e.target.value))} disabled={disabled} /><span className="text-xs font-normal text-muted">Leave blank to allow cancellation until the event starts. Settled refunds are handled by staff.</span></label>
-    <label className="grid gap-1 text-sm font-semibold text-ink">Registration cutoff<select className="desk-input" value={cutoffMode} disabled={disabled} onChange={(e) => { const mode = e.target.value; setValues({ ...values, registration_cutoff_at: mode === "absolute" ? (values.starts_at || "") : null, registration_cutoff_lead_minutes: mode === "lead" ? 0 : null }); }}><option value="none">No cutoff</option><option value="absolute">At a date and time</option><option value="lead">Before the event starts</option></select></label>
-    {cutoffMode === "absolute" ? <label className="grid gap-1 text-sm font-semibold text-ink">Cutoff time<input className="desk-input" type="datetime-local" value={values.registration_cutoff_at ?? ""} onChange={(e) => set("registration_cutoff_at", e.target.value)} disabled={disabled} required /></label> : null}
-    {cutoffMode === "lead" ? <label className="grid gap-1 text-sm font-semibold text-ink">Minutes before start<input className="desk-input" type="number" min="0" value={values.registration_cutoff_lead_minutes ?? 0} onChange={(e) => set("registration_cutoff_lead_minutes", Number(e.target.value))} disabled={disabled} /></label> : null}
-    <label className="grid gap-1 text-sm font-semibold text-ink sm:col-span-2">Description<textarea className="desk-input min-h-24" value={values.description} onChange={(e) => set("description", e.target.value)} disabled={disabled} /></label>
-    <label className="flex items-center gap-2 text-sm text-ink sm:col-span-2"><input type="checkbox" checked={values.registration_requires_approval} onChange={(e) => set("registration_requires_approval", e.target.checked)} disabled={disabled || approvalLocked} />Require staff approval for registrations</label>
-    <label className="flex items-center gap-2 text-sm text-ink sm:col-span-2"><input type="checkbox" checked={values.is_public} onChange={(e) => set("is_public", e.target.checked)} disabled={disabled} />Show this event on the public Events page</label>
-    <div className="sm:col-span-2"><CustomFormBuilder value={values.custom_form} onChange={(value) => set("custom_form", value)} disabled={disabled} /></div>
+  // Event staff grants split editing three ways: details, schedule (publish) and price (manager).
+  const group = { values, setValues, settings, organizationAudienceEnabled, onlineEnabled, approvalLocked,
+    details: disabled || !canEditDetails, schedule: disabled || !canEditSchedule, price: disabled || !canEditPrice };
+  const grid = settings ? "divide-y divide-line" : "grid gap-4 sm:grid-cols-2";
+  if (layout === "essentials") return <div className={grid}><EventEssentialFields {...group} /></div>;
+  if (layout === "all") return <div className={grid}><EventEssentialFields {...group} /><EventMoreFields {...group} /></div>;
+  return <div className="grid gap-4">
+    <div className={grid}><EventEssentialFields {...group} /></div>
+    {moreExtras && values.registration_audience === "participating_organizations" ? <p role="note" className="text-sm text-muted">{t`Choose the participating organizations under More options.`}</p> : null}
+    {/* A required control inside a closed disclosure cannot take focus, so a failed submit opens it. */}
+    <details className="rounded-xl border border-line bg-panel" onInvalidCapture={(event) => { event.currentTarget.open = true; }}>
+      <summary className="flex min-h-11 cursor-pointer items-center px-4 py-3 text-sm font-semibold text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">{t`More options`}</summary>
+      <div className="grid gap-4 border-t border-line p-4">
+        <p className="text-sm text-muted">{t`Description, price, cutoffs, approval, the registration form and partners. Every option can be changed later in the event's settings.`}</p>
+        <div className={grid}><EventMoreFields {...group} /></div>
+        {moreExtras}
+      </div>
+    </details>
   </div>;
 }

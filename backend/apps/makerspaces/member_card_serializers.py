@@ -11,13 +11,17 @@ class MemberCardSerializer(serializers.ModelSerializer):
     is_active = serializers.BooleanField(read_only=True)
     photo_set = serializers.SerializerMethodField()
     qr_active = serializers.SerializerMethodField()
+    # Release 2 L3: the printed number (L4 pattern), valid-until, and open photo requests.
+    number_display = serializers.SerializerMethodField()
+    valid_until = serializers.SerializerMethodField()
+    photo_request_open = serializers.SerializerMethodField()
 
     class Meta:
         model = MemberCard
         fields = (
-            "id", "card_number", "printed_name", "membership_id", "is_active", "photo_set",
-            "photo_consent_at", "qr_active", "print_count", "last_printed_at", "issued_at",
-            "revoked_at", "revoked_reason", "created_at", "updated_at",
+            "id", "card_number", "number_display", "printed_name", "membership_id", "is_active", "photo_set",
+            "photo_consent_at", "qr_active", "print_count", "last_printed_at", "issued_at", "valid_until",
+            "photo_request_open", "last_emailed_at", "revoked_at", "revoked_reason", "created_at", "updated_at",
         )
         read_only_fields = fields
 
@@ -26,6 +30,24 @@ class MemberCardSerializer(serializers.ModelSerializer):
 
     def get_qr_active(self, obj) -> bool:
         return getattr(obj, "_qr_active", None) is not False and obj.is_active
+
+    def get_number_display(self, obj) -> str:
+        from apps.makerspaces.membership_number import display_number
+        membership = obj.membership
+        if membership is not None and membership.member_number:
+            return display_number(membership)
+        return str(obj.card_number)
+
+    def get_valid_until(self, obj) -> str:
+        from apps.card_designs.holders_member import fmt_date, term_state
+        if obj.membership is None or not obj.is_active:
+            return ""
+        state, term = term_state(obj.membership)
+        return fmt_date(term.ends_at) if term else ("No end date" if state == "open" else "Expired")
+
+    def get_photo_request_open(self, obj) -> bool:
+        from apps.card_designs.models import CardPhotoRequest
+        return CardPhotoRequest.objects.filter(member_card=obj, resolved_at__isnull=True).exists()
 
 
 class MemberCardIssueSerializer(serializers.Serializer):
@@ -38,6 +60,8 @@ class MemberCardReissueSerializer(serializers.Serializer):
 
 class MemberCardRevokeSerializer(serializers.Serializer):
     reason = serializers.CharField(max_length=32, required=False, allow_blank=True)
+    # Release 2 L3: staff must say why (stored encrypted on the card, never in audit meta).
+    note = serializers.CharField(max_length=500, min_length=3)
 
 
 class MemberCardOwnUpdateSerializer(serializers.Serializer):
@@ -60,7 +84,8 @@ class MemberCardPrintSerializer(serializers.Serializer):
 
 
 class MemberCardResolveSerializer(serializers.Serializer):
-    payload = serializers.CharField(max_length=64)
+    # A 32-hex desk payload, or (release 2 L3) a scanned check link / token.
+    payload = serializers.CharField(max_length=300)
 
 
 class MemberCardResolveResultSerializer(serializers.Serializer):

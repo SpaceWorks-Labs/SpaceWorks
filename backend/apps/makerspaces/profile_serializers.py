@@ -2,7 +2,7 @@
 
 Two rules here are security, not tidiness:
 
-* **link URLs must be http or https.** These render as `href` on a page other members
+* **link URLs must be https.** These render as `href` on a page other members
   read, so a stored `javascript:` URL is stored XSS with a click as the trigger. The
   scheme allowlist is the whole defence; escaping the text does nothing for an href.
 * **every list is capped.** They are member-writable JSON columns on a row the member
@@ -10,9 +10,11 @@ Two rules here are security, not tidiness:
   render on everyone else's screen.
 """
 
+from django.utils.translation import gettext
 from urllib.parse import urlparse
 
 from rest_framework import serializers
+from .public_profile_validation import PublicationWriteSerializer
 
 MAX_INTERESTS = 20
 MAX_LANGUAGES = 10
@@ -20,7 +22,7 @@ MAX_EDUCATION = 10
 MAX_LINKS = 10
 MAX_PROJECTS = 20
 MAX_BIO = 2000
-ALLOWED_LINK_SCHEMES = ("http", "https")
+ALLOWED_LINK_SCHEMES = ("https",)
 
 
 class TagListField(serializers.ListField):
@@ -46,7 +48,7 @@ class ProjectLinkSerializer(serializers.Serializer):
 
     def validate_url(self, value):
         if urlparse(value).scheme.lower() not in ALLOWED_LINK_SCHEMES:
-            raise serializers.ValidationError("Links must start with http:// or https://.")
+            raise serializers.ValidationError(gettext("Links must start with https://."))
         return value
 
 
@@ -56,13 +58,16 @@ class ProjectWriteSerializer(serializers.Serializer):
     # why replace rather than merge.
     id = serializers.IntegerField(required=False)
     title = serializers.CharField(max_length=200)
+    subtitle = serializers.CharField(max_length=200, required=False, allow_blank=True)
+    tags = TagListField(max_items=20)
+    public_visible = serializers.BooleanField(required=False)
     description = serializers.CharField(max_length=4000, required=False, allow_blank=True, default="")
     links = serializers.ListField(
         child=ProjectLinkSerializer(), required=False, allow_empty=True, max_length=MAX_LINKS
     )
 
 
-class ProfileWriteSerializer(serializers.Serializer):
+class ProfileWriteSerializer(PublicationWriteSerializer):
     is_visible = serializers.BooleanField(required=False)
     show_attended_events = serializers.BooleanField(required=False)
     show_certifications = serializers.BooleanField(required=False)
@@ -85,11 +90,15 @@ class ProfileWriteSerializer(serializers.Serializer):
 
 
 class ProjectReadSerializer(serializers.Serializer):
-    id = serializers.IntegerField()
+    id = serializers.IntegerField(required=False)
     title = serializers.CharField()
+    subtitle = serializers.CharField()
+    tags = serializers.JSONField()
+    public_visible = serializers.BooleanField()
     description = serializers.CharField()
     links = serializers.JSONField()
     image_url = serializers.CharField(allow_null=True)
+    imported = serializers.BooleanField(required=False, default=False)
 
 
 class AttendedEventSerializer(serializers.Serializer):
@@ -112,7 +121,10 @@ class ProfileActivitySerializer(serializers.Serializer):
         }
 
 
-class ProfileReadSerializer(serializers.Serializer):
+class ProfileReadSerializer(PublicationWriteSerializer):
+    verified = serializers.BooleanField()
+    public_consented_at = serializers.DateTimeField(allow_null=True)
+    handle = serializers.CharField(allow_null=True)
     membership_id = serializers.IntegerField()
     display_name = serializers.CharField()
     is_visible = serializers.BooleanField()
@@ -128,6 +140,7 @@ class ProfileReadSerializer(serializers.Serializer):
     education = serializers.JSONField()
     github_username = serializers.CharField()
     github_contributions = serializers.IntegerField(allow_null=True)
+    github_verified = serializers.BooleanField()
     projects = ProjectReadSerializer(many=True)
     activity = ProfileActivitySerializer()
 

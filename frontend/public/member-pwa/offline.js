@@ -1,6 +1,7 @@
 // Explicit opt-in projection only, never a persisted QueryClient or API cache.
 const key = `spaceworks.member-card:${location.pathname.replace(/\/$/, "")}`;
 const panel = document.getElementById("card");
+function showSpaceName(value) { const context = document.getElementById("space-name"); if (context) context.textContent = value; }
 const loansKey = `spaceworks.member-loans:${location.pathname.replace(/\/$/, "")}`;
 const loansPanel = document.getElementById("loans");
 try {
@@ -21,7 +22,8 @@ try {
   const card = JSON.parse(localStorage.getItem(key) || "null");
   if (card && typeof card.name === "string" && typeof card.qr === "string" && typeof card.savedAt === "string") {
     panel.replaceChildren();
-    for (const text of [card.space, card.name, `Card ${card.number}`, `Last checked ${new Date(card.savedAt).toLocaleString()}`]) {
+    showSpaceName(typeof card.space === "string" ? card.space : "Space Works");
+    for (const text of [card.space, card.name, `Card ${card.number}`, `Saved ${new Date(card.savedAt).toLocaleString()} · last-known`]) {
       const paragraph = document.createElement("p"); paragraph.textContent = text; panel.append(paragraph);
     }
     if (card.qr.startsWith("data:image/png;base64,")) {
@@ -31,6 +33,7 @@ try {
 } catch { /* Unavailable storage leaves the useful empty state. */ }
 document.getElementById("forget").onclick = () => {
   try { localStorage.removeItem(key); localStorage.removeItem(loansKey); } catch { /* Storage may be disabled. */ }
+  showSpaceName("Space Works");
   panel.textContent = "Saved card forgotten.";
   loansPanel.textContent = "Saved loans forgotten.";
 };
@@ -38,6 +41,7 @@ document.getElementById("retry").onclick = () => location.reload();
 // Logout or an account switch in another tab must also erase the displayed copy.
 window.addEventListener("storage", event => {
   if (event.key === null || event.key === key || event.key === loansKey || event.key === "spaceworks.offline-card-owner") {
+    showSpaceName("Space Works");
     panel.textContent = "Saved card changed or forgotten. Connect to check your account again.";
     loansPanel.textContent = "Saved loans changed or forgotten. Connect to check your account again.";
   }

@@ -17,10 +17,8 @@ urlpatterns = [
         {"role": MakerspaceMembership.Role.INVENTORY_MANAGER},
         name="admin-users-inventory-managers",
     ),
-    # `users/guest-admins` is gone: Guest Admin is no longer a built-in role, so there is
-    # no fixed role for this route to create. Handover staff are given a custom role
-    # through the role-assignment API, which is what the console has used all along --
-    # nothing in the frontend or the test suite ever called this endpoint.
+    # `users/guest-admins` is gone: Guest Admin is no longer a built-in role.
+    # Handover is now a built-in assigned through the role API.
     # `users/print-managers` is gone for the same reason as `users/guest-admins`, and it
     # was worse than dead: migration 0046 retired Print Manager into Machine Manager but
     # left the route mounted, so on any makerspace created since -- which never seeds a
@@ -31,6 +29,18 @@ urlpatterns = [
         views.StaffListCreateView.as_view(),
         {"role": MakerspaceMembership.Role.MACHINE_MANAGER},
         name="admin-users-machine-managers",
+    ),
+    path(
+        "users/event-managers", views.StaffListCreateView.as_view(),
+        {"role": MakerspaceMembership.Role.EVENT_MANAGER}, name="admin-users-event-managers",
+    ),
+    path(
+        "users/booking-managers", views.StaffListCreateView.as_view(),
+        {"role": MakerspaceMembership.Role.BOOKING_MANAGER}, name="admin-users-booking-managers",
+    ),
+    path(
+        "users/handover", views.StaffListCreateView.as_view(),
+        {"role": MakerspaceMembership.Role.HANDOVER}, name="admin-users-handover",
     ),
     path(
         "memberships/<int:pk>",

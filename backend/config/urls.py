@@ -17,6 +17,8 @@ from apps.payments_rail.views_connect import (
     StripeConnectWebhookView,
 )
 from apps.separability.registry import runtime_active
+from django.conf import settings
+from config.cloud_settings.urls import free_tick_paths
 
 
 def separable_paths(app_label, *routes):
@@ -66,10 +68,23 @@ def docs_root(_request):
     )
 
 
+from apps.accounts.views_mobile_associations import AssetLinksView, AppleAppSiteAssociationView
 from apps.accounts.control_mfa import control_mfa
+from apps.accounts.reauthentication_control import control_reauthentication
+from apps.operations.control_storage import control_storage
+from apps.tenant_rls.control import control_rls
 
 urlpatterns = [
+    path(".well-known/assetlinks.json", AssetLinksView.as_view(), name="mobile-assetlinks"),
+    path(".well-known/apple-app-site-association", AppleAppSiteAssociationView.as_view(), name="mobile-apple-association"),
+    path("", include("apps.makerspaces.public_page_share_urls")),
+    *free_tick_paths(settings.SPACEWORKS_DEPLOYMENT_PROFILE),
+    path("mfa/reauth/", control_reauthentication, name="control-reauthentication"),
+    path("", include("apps.makerspaces.website_urls")),
+    *separable("events", "", "apps.events.urls_embed"),  # release 2 L1: framable event card
+    *separable("events", "api/v1/discover/", "apps.events.urls_discover"),  # parity E-F3: organiser picker
     path("mfa/control/", control_mfa, name="control-mfa"),
+    *separable("tenant_migration", "", "apps.tenant_migration.urls_selfhost_download"),  # #190
     path(
         "api/v1/backups/download/<uuid:archive_id>/<str:token>",
         BackupArchiveDownloadView.as_view(),
@@ -116,9 +131,15 @@ urlpatterns = [
         "api/v1/public/organizations/",
         include("apps.organizations.urls_public"),
     ),
+    path("api/v1/public/hosting/", include("apps.hosting_requests.urls_public")),
     *separable("events", "api/v1/public/", "apps.events.urls_public"),
+    *separable("events", "api/v1/", "apps.events.urls_programme"),
+    path("api/v1/", include("apps.accounts.urls_programme")),
+    *separable("events", "api/v1/events/", "apps.events.urls_integration"),
     *separable("bookings", "api/v1/public/", "apps.bookings.urls_public"),
+    *separable("bookings", "api/v1/booking-integration/", "apps.bookings.urls_integration"),
     *separable("presence", "api/v1/public/", "apps.presence.urls"),
+    *separable("presence", "api/v1/", "apps.presence.urls_display"),
     # The LEDGER is unconditional: money owed, its receipts and its reconciliation
     # outlive any decision about shipping a provider integration.
     path("api/v1/", include("apps.payments.urls")),
@@ -132,6 +153,8 @@ urlpatterns = [
     # Mounted at /control/ (not /admin/) so it never collides with the React staff
     # console, which owns /admin on the SPA. The Django admin is the Super Admin
     # control plane and lives on its own dedicated prefix.
+    path("control/storage/", admin.site.admin_view(control_storage), name="control-storage"),
+    path("control/row-level-security/", admin.site.admin_view(control_rls), name="control-rls"),
     path("control/", admin.site.urls),
     path("api/", include("apps.inventory.urls")),          # existing, unchanged
     # Versioned alias of the public routes. Namespaced so it does NOT collide with the
@@ -139,21 +162,60 @@ urlpatterns = [
     # while /api/v1/public/... is reachable directly (and via "v1:public-inventory").
     path("api/v1/", include(("apps.inventory.urls", "inventory"), namespace="v1")),
     path("api/v1/", include("apps.makerspaces.urls")),
+    path("api/v1/", include("apps.makerspaces.public_page_urls")),
+    path("api/v1/admin/", include("apps.makerspaces.public_page_editor_urls")),
+    path("api/v1/public/organizations/", include("apps.organizations.urls_public_page_collections")),
+    *separable("events", "api/v1/", "apps.events.urls_public_codes"),
     path("api/v1/member/", include("apps.payments.urls_member")),
+    # Core event-payout ledger: never module/rail/Events gated, so retained obligations
+    # stay readable and settleable after the reimbursement add-on or Events is removed.
+    path("api/v1/member/event-payouts/", include("apps.payments.event_payouts.urls_member")),
+    path("api/v1/admin/makerspaces/<int:makerspace_id>/event-payouts/",
+         include("apps.payments.event_payouts.urls_finance")),
     *separable("payments_rail", "api/v1/member/", "apps.payments_rail.urls_member"),
     path("api/v1/", include("apps.hardware_requests.urls")),
     path("api/v1/auth/", include("apps.accounts.urls")),   # staff auth surface
     path("api/v1/admin/", include("apps.admin_api.urls")),
     path("api/v1/admin/", include("apps.organizations.urls_admin")),
+    path("api/v1/admin/", include("apps.hosting_requests.urls_staff")),
+    # #185: superadmin space controls (health, lifecycle, onboarding, announcements) and notices.
+    path("api/v1/admin/", include("apps.space_controls.urls_admin")),
+    path("api/v1/", include("apps.space_controls.urls")),
+    # #187A: the managed-hosting limiter; every route 404s while MANAGED_PLANS_ENABLED is off.
+    path("api/v1/admin/", include("apps.managed_hosting.urls_admin")),
+    path("api/v1/managed-hosting/", include("apps.managed_hosting.urls_webhooks")),
+    # Release 2 L3: the shared card engine (designs, jobs, member-card extras).
+    path("api/v1/admin/", include("apps.card_designs.urls_admin")),
+    path("api/v1/member/", include("apps.card_designs.urls_member")),
+    path("api/v1/public/", include("apps.card_designs.urls_public")),
+    # Apple's pass web service: pass-token auth, outside the HMAC-protected public prefixes.
+    path("api/v1/wallet/", include("apps.card_designs.urls_wallet")),
+    *separable("id_programmes", "api/v1/admin/", "apps.id_programmes.urls_admin"),
+    *separable("id_programmes", "api/v1/public/", "apps.id_programmes.urls_public"),
+    *separable("id_programmes", "api/v1/member/", "apps.id_programmes.urls_member"),
+    # Release 2 L22: the per-space shop (public page, the buyer's orders, staff and the desk).
+    *separable("shop", "api/v1/public/", "apps.shop.urls_public"),
+    *separable("shop", "api/v1/member/", "apps.shop.urls_member"),
+    *separable("shop", "api/v1/admin/", "apps.shop.urls_admin"),
+    *separable("events", "api/v1/admin/", "apps.events.urls_id_cards"),
+    *separable("events", "api/v1/member/", "apps.events.urls_id_cards_member"),
+    # Release 2 L25 (#163B): per-space and platform Metabase analytics.
+    path("api/v1/admin/", include("apps.analytics.urls")),
     # Mounted at admin_api's own prefix so the paths and route names are unchanged by
     # the relocation, and *after* it so a relocated route can never shadow one that
     # stayed behind. Every warranty pattern is a distinct literal, so ordering is
     # belt-and-braces rather than load-bearing.
     *separable("warranty", "api/v1/admin/", "apps.warranty.urls"),
     *separable("maintenance", "api/v1/admin/", "apps.maintenance.urls"),
+    # Lane L16: member and account-less issue reports, and the technician opt-in page.
+    *separable("maintenance", "api/v1/", "apps.maintenance.repairs.urls_public"),
     *separable("presence", "api/v1/admin/", "apps.presence.urls_admin"),
     *separable("events", "api/v1/admin/", "apps.events.urls_admin"),
     *separable("events", "api/v1/member/", "apps.events.urls_member"),
+    # Reimbursement add-on: removable with its module, and withdrawn with Events.
+    *separable("event_reimbursements", "api/v1/member/makerspaces/<int:makerspace_id>/events/<int:pk>/",
+               "apps.event_reimbursements.urls_member"),
+    *separable("event_reimbursements", "api/v1/admin/events/<int:pk>/", "apps.event_reimbursements.urls_admin"),
     *separable("events", "api/v1/", "apps.events.urls_station"),
     *separable("bookings", "api/v1/admin/", "apps.bookings.urls_admin"),
     # Staff device admin under api/v1/admin/ plus the signed device protocol under
@@ -184,3 +246,14 @@ urlpatterns = [
         name="redoc",
     ),
 ]
+
+from apps.integrations.messaging.urls import member_urlpatterns as messaging_member_urls
+from apps.integrations.messaging.urls import staff_urlpatterns as messaging_staff_urls
+urlpatterns += [path("api/v1/", include(messaging_member_urls)), path("api/v1/admin/", include(messaging_staff_urls))]
+
+urlpatterns += [path("api/v1/integrations/messaging/", include("apps.integrations.messaging.urls_webhooks"))]
+
+# Release 2 (#196): personal access tokens, app connections and the OAuth 2.0 protocol.
+from apps.apiclients.urls_tokens import account_urlpatterns as _token_urls, protocol_urlpatterns,     staff_urlpatterns as _oauth_app_urls
+urlpatterns += [path("api/v1/auth/", include(_token_urls)), path("api/v1/admin/", include(_oauth_app_urls)),
+                path("api/v1/oauth/", include((protocol_urlpatterns(), "oauth2_provider")))]

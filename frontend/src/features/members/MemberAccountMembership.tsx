@@ -1,6 +1,9 @@
+import { t } from "@lingui/core/macro";
+import { DangerZone, StatusPill } from "../../components/ui";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { accountKey, endMembership, ownMembership } from "./memberAccountApi";
+import { LogoLoader } from "../../components/LogoLoader";
 
 export function MemberAccountMembership({ makerspaceId, onLeft }: { makerspaceId: number; onLeft: () => void }) {
   const [action, setAction] = useState<"cancel" | "leave" | null>(null);
@@ -12,16 +15,17 @@ export function MemberAccountMembership({ makerspaceId, onLeft }: { makerspaceId
     if (action === "leave") onLeft();
     setAction(null); setReason("");
   } });
-  return <section className="desk-panel p-5"><h2 className="title-panel">Your membership</h2>
-    {membership.isLoading ? <p role="status">Loading membership…</p> : null}
-    {membership.data?.renewal_cancelled_at ? <p role="status">Renewal is cancelled. Your current term remains available until it ends.</p> : null}
-    <p className="text-sm text-muted mt-2">Cancel renewal to keep your current term. Leaving ends your membership immediately. Existing loans and payment records remain on file.</p>
-    {membership.data ? <div className="flex flex-wrap gap-2 mt-3"><button className="desk-button-secondary" disabled={Boolean(membership.data.renewal_cancelled_at) || change.isPending} onClick={() => { change.reset(); setAction("cancel"); }}>Cancel renewal</button><button className="desk-button-secondary" disabled={change.isPending} onClick={() => { change.reset(); setAction("leave"); }}>Leave makerspace</button></div> : null}
-    {action ? <form className="mt-4 grid gap-3" onSubmit={(event) => { event.preventDefault(); change.mutate(); }}>
-      <label className="text-sm">Reason<textarea className="desk-input mt-1" required maxLength={1000} value={reason} onChange={(event) => setReason(event.target.value)} /></label>
-      <p>{action === "leave" ? "Confirm that you want to leave this makerspace now." : "Confirm that you want to stop future renewal."}</p>
-      <div className="flex gap-2"><button className="desk-button-primary" disabled={!reason.trim() || change.isPending}>Confirm {action === "leave" ? "leave" : "cancellation"}</button><button type="button" className="desk-button" disabled={change.isPending} onClick={() => setAction(null)}>Keep membership</button></div>
+  // Rendered inside the account page's Membership settings section, which owns the card and the heading.
+  return <div className="grid min-w-0 gap-3">
+    {membership.isLoading ? <LogoLoader label={t`Loading membership…`} size={48} className="min-h-16 py-3" /> : null}
+    {membership.data?.renewal_cancelled_at ? <p role="status" className="text-sm text-ink">{t`Renewal is cancelled. Your current term remains available until it ends.`}</p> : null}
+    <p className="text-sm text-muted">{t`Cancel renewal to keep your current term. Leaving ends your membership immediately. Existing loans and payment records remain on file.`}</p>
+    {membership.data ? <><div><StatusPill label={membership.data.status || t`Membership`} /></div><DangerZone title={t`Cancel renewal`} consequence={t`Your current term stays available until it ends.`} action={{ label: t`Cancel renewal`, disabled: Boolean(membership.data.renewal_cancelled_at) || change.isPending, disabledReason: membership.data.renewal_cancelled_at ? t`Renewal is already cancelled` : change.isPending ? t`Updating membership` : undefined, onClick: () => { change.reset(); setAction("cancel"); } }} /><DangerZone title={t`Leave makerspace`} consequence={t`Membership ends immediately. Existing loans and payment records remain on file.`} action={{ label: t`Leave makerspace`, disabled: change.isPending, disabledReason: change.isPending ? t`Updating membership` : undefined, onClick: () => { change.reset(); setAction("leave"); } }} /></> : null}
+    {action ? <form className="grid gap-3" onSubmit={(event) => { event.preventDefault(); change.mutate(); }}>
+      <label className="grid gap-2 text-sm font-semibold">{t`Reason`}<textarea className="desk-input w-full" required maxLength={1000} value={reason} onChange={(event) => setReason(event.target.value)} /></label>
+      <p className="text-sm text-ink">{action === "leave" ? t`Confirm that you want to leave this makerspace now.` : t`Confirm that you want to stop future renewal.`}</p>
+      <div className="flex flex-wrap gap-2 [&>button]:flex-1 sm:[&>button]:flex-none"><button type="submit" className="desk-button-primary" disabled={!reason.trim() || change.isPending}>{action === "leave" ? t`Confirm leave` : t`Confirm cancellation`}</button><button type="button" className="desk-button" disabled={change.isPending} onClick={() => setAction(null)}>{t`Keep membership`}</button></div>
     </form> : null}
-    {membership.error || change.error ? <p role="alert" className="text-danger">{(membership.error || change.error)?.message}</p> : null}
-  </section>;
+    {membership.error || change.error ? <p role="alert" className="text-sm text-danger">{(membership.error || change.error)?.message}</p> : null}
+  </div>;
 }

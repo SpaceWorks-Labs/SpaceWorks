@@ -1,0 +1,22 @@
+{
+  "$id": "https://spaceworks.invalid/schemas/device-adapter/v1/kiosk.issue.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "evidence_id": {
+      "maximum": 4611686018427387904,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "qr_payload": {
+      "maxLength": 256,
+      "minLength": 1,
+      "type": "string"
+    }
+  },
+  "required": [
+    "qr_payload",
+    "evidence_id"
+  ],
+  "type": "object"
+}

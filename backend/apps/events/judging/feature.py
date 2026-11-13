@@ -1,0 +1,25 @@
+"""L21b capability gates. Off means the route does not exist (404); data is kept for when it returns."""
+
+from django.http import Http404
+
+from apps.makerspaces.platform import feature_enabled
+
+FINALISTS = "events.finalists"
+PRIZE_PAYOUTS = "events.prize_payouts"
+ENTRY_FEES = "events.entry_fees"
+PAID_TEAMS = "events.paid_teams"
+SAVED_VIEWS = "events.saved_views"
+GALLERY_SEARCH = "events.gallery_search"
+# r2-peoples-choice (#181 S3): the optional People's choice award on the public gallery.
+PEOPLES_CHOICE = "events.peoples_choice"
+# Parity E-B4: the judging scores CSV.
+SCORES_EXPORT = "events.scores_export"
+
+
+def enabled(makerspace, key):
+    return feature_enabled(makerspace, key)
+
+
+def require_capability(event, key):
+    if not feature_enabled(event.makerspace, key):
+        raise Http404

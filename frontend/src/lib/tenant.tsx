@@ -86,8 +86,9 @@ export function TenantProvider({ children }: { children: ReactNode }) {
   // 5xx) is operational and must surface as a single-tenant error, not silently render
   // the wrong site.
   if (originBootstrap && !originQuery.isLoading && !originQuery.data) {
-    const status = (originQuery.error as { status?: number } | null)?.status;
-    if (status === 404) {
+    const { status, code } = (originQuery.error as { status?: number; code?: string } | null) ?? {};
+    // A paused space on its own domain stays "single" so the app shows the paused page (#185(1)).
+    if (status === 404 && code !== "space_paused") {
       return (
         <TenantContext.Provider value={CENTRAL_VALUE}>{children}</TenantContext.Provider>
       );
@@ -108,12 +109,20 @@ export function TenantProvider({ children }: { children: ReactNode }) {
   return <TenantContext.Provider value={value}>{children}</TenantContext.Provider>;
 }
 
+// A developer error (wrong component tree), never shown to people, so it is not translated (decision 285).
+const MISSING_PROVIDER = "useTenant must be used inside TenantProvider";
+
 export function useTenant() {
   const value = useContext(TenantContext);
   if (!value) {
-    throw new Error("useTenant must be used inside TenantProvider");
+    throw new Error(MISSING_PROVIDER);
   }
   return value;
+}
+
+/** The tenant context, or null outside a TenantProvider (optional surfaces render nothing). */
+export function useOptionalTenant() {
+  return useContext(TenantContext);
 }
 
 export function tenantPath(mode: "central" | "single", slug: string, subpath = "") {

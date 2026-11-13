@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.shortcuts import get_object_or_404
 from django.db import transaction
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
@@ -48,6 +49,7 @@ from apps.openapi_errors import errors
                 ),
             ),
             OpenApiParameter(name="archived", type=str, location=OpenApiParameter.QUERY, required=False, description="`true` for archived, `false` for active; `all` or omitted includes both."),
+            OpenApiParameter(name="category", type=int, location=OpenApiParameter.QUERY, required=False, description="Category id (decision 242)."),
             OpenApiParameter(name="low_stock", type=str, location=OpenApiParameter.QUERY, required=False, description="`true` to list items at or below 20% of total."),
             OpenApiParameter(name="out_of_stock", type=str, enum=["true", "false"], description="`true` for exactly zero available, matching the dashboard tile."),
         ], responses={200: InventoryProductAdminSerializer(many=True), **{code: ErrorSerializer for code in (400, 401, 403, 404)}},
@@ -69,7 +71,7 @@ class InventoryListCreateView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         makerspace_id = self.kwargs["makerspace_id"]
-        require_module(makerspace_id, "staff_admin")
+        require_module(makerspace_id, "public_inventory")
         require_action(self.request.user, rbac.Action.VIEW_INVENTORY, makerspace_id)
         qs = rbac.scope_by_action(self.request.user, rbac.Action.VIEW_INVENTORY, InventoryProduct.objects.filter(makerspace_id=makerspace_id))
         return apply_inventory_list_filters(qs, self.request.query_params)
@@ -77,7 +79,7 @@ class InventoryListCreateView(generics.ListCreateAPIView):
     @transaction.atomic
     def perform_create(self, serializer):
         makerspace_id = self.kwargs["makerspace_id"]
-        require_module(makerspace_id, "staff_admin")
+        require_module(makerspace_id, "public_inventory")
         require_action(self.request.user, rbac.Action.EDIT_INVENTORY, makerspace_id)
         _assert_box_in_makerspace(serializer.validated_data.get("box"), makerspace_id)
         _assert_category_in_makerspace(
@@ -118,7 +120,7 @@ class InventoryDetailView(generics.RetrieveUpdateAPIView):
 
     def get_object(self):
         product = super().get_object()
-        require_module(product.makerspace, "staff_admin")
+        require_module(product.makerspace, "public_inventory")
         return product
 
     @transaction.atomic
@@ -156,7 +158,7 @@ class InventoryQuantityAdjustmentView(APIView):
             ),
             pk=pk,
         )
-        require_module(product.makerspace_id, "staff_admin")
+        require_module(product.makerspace_id, "public_inventory")
         require_action(request.user, rbac.Action.EDIT_INVENTORY, product.makerspace_id)
         serializer = InventoryQuantityAdjustmentSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -178,12 +180,12 @@ class InventoryQuantityAdjustmentView(APIView):
 def _assert_box_in_makerspace(box, makerspace_id):
     """A product may only point at a box in its own makerspace (tenant isolation)."""
     if box is not None and box.makerspace_id != makerspace_id:
-        raise ValidationError({"box": "Box belongs to a different makerspace."})
+        raise ValidationError({"box": gettext("Box belongs to a different makerspace.")})
 
 
 def _assert_category_in_makerspace(category, makerspace_id):
     """A product may only point at a category in its own makerspace."""
     if category is not None and category.makerspace_id != makerspace_id:
         raise ValidationError(
-            {"category": "Category belongs to a different makerspace."}
+            {"category": gettext("Category belongs to a different makerspace.")}
         )

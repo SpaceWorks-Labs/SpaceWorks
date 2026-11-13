@@ -8,6 +8,8 @@ from apps.hardware_requests.exceptions import ErrorSerializer
 
 class BillingPolicyValidationErrorSerializer(serializers.Serializer):
     number_prefix = serializers.ListField(child=serializers.CharField(), required=False)
+    bill_prefix = serializers.ListField(child=serializers.CharField(), required=False)
+    payment_instructions = serializers.ListField(child=serializers.CharField(), required=False)
     legal_name = serializers.ListField(child=serializers.CharField(), required=False)
     address = serializers.ListField(child=serializers.CharField(), required=False)
     tax_id = serializers.ListField(child=serializers.CharField(), required=False)
@@ -17,6 +19,8 @@ class BillingPolicyValidationErrorSerializer(serializers.Serializer):
     reminder_days_before = serializers.JSONField(required=False)
     reminder_days_after = serializers.JSONField(required=False)
     max_reminders = serializers.ListField(child=serializers.CharField(), required=False)
+    upi_vpa = serializers.ListField(child=serializers.CharField(), required=False)
+    upi_payee_name = serializers.ListField(child=serializers.CharField(), required=False)
     non_field_errors = serializers.ListField(child=serializers.CharField(), required=False)
 
 

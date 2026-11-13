@@ -1,20 +1,39 @@
+import { lingui } from "@lingui/vite-plugin";
 import react from "@vitejs/plugin-react";
-import { defineConfig } from "vitest/config";
+import { configDefaults, defineConfig } from "vitest/config";
 import { kioskPwa } from "./scripts/kiosk-pwa";
 import { memberPwa } from "./scripts/member-pwa";
+import { docsContent } from "./scripts/docs-plugin";
+import { apiReference } from "./scripts/api-reference-plugin";
+import { existsSync, readFileSync } from "node:fs";
 
-// This config file runs in Node, but the project carries no @types/node (the app
-// itself is browser-only). Declaring the one global we need keeps `tsc -b` happy
-// without pulling in a dependency the app never uses.
-declare const process: { env: Record<string, string | undefined> };
+/**
+ * The product version, read once at build time from the repository's VERSION file. The Docker build
+ * context is frontend/ alone, so there it falls back to the OpenAPI snapshot's info.version, which
+ * scripts/bump-version.sh writes from VERSION and scripts/ci/check_version_bump.py holds equal to it.
+ */
+function productVersion() {
+  const file = new URL("../VERSION", import.meta.url);
+  if (existsSync(file)) return readFileSync(file, "utf8").trim();
+  const schema = JSON.parse(readFileSync(new URL("./openapi-schema.json", import.meta.url), "utf8")) as { info: { version: string } };
+  return schema.info.version;
+}
 
 export default defineConfig({
-  plugins: [react(), memberPwa(), kioskPwa()],
+  define: { __SPACEWORKS_VERSION__: JSON.stringify(productVersion()) },
+  // Lingui compiles imported .po catalogues and transforms its macros natively (phase 8 i18n).
+  // "message" keeps each source message beside its id, so English needs no catalogue chunk.
+  plugins: [react(), lingui({ macroTransform: { macro: { descriptorFields: "message" } } }), memberPwa(), kioskPwa(), docsContent(), apiReference()],
   server: {
     port: 5000,
     // Inside the dev container the backend is another service on the compose
     // network, not localhost — docker-compose.dev.yml sets this to http://backend:8000.
     proxy: {
+      // Shared website HTML belongs to Django, including its exact framing policy.
+      ...Object.fromEntries(["/embed/", "/share/", "/sitemap.xml", "/robots.txt"].map(path => [path, {
+        target: process.env.VITE_DEV_PROXY_TARGET || "http://localhost:8000",
+        changeOrigin: false,
+      }])),
       "/api": {
         target: process.env.VITE_DEV_PROXY_TARGET || "http://localhost:8000",
         changeOrigin: true,
@@ -22,6 +41,10 @@ export default defineConfig({
     },
   },
   build: {
+    // Everything past 500 kB is already a lazy chunk nobody downloads up front: the docs graph (Mermaid, ELK,
+    // the API reference), the 3D viewer, the preview worker and the event drawer. The ceiling sits just above
+    // the largest of them (ELK, ~1.4 MB) so a NEW oversized chunk still warns; the entry chunk is ~590 kB.
+    chunkSizeWarningLimit: 1500,
     rollupOptions: {
       output: {
         // Two stable vendor chunks so an app deploy does not invalidate the framework bytes
@@ -31,11 +54,26 @@ export default defineConfig({
           if (id.includes("node_modules/@tanstack/")) return "tanstack";
           return undefined;
         },
+        // /docs code, page bodies, the API reference and Mermaid live under assets/docs/, which the
+        // kiosk worker leaves out of its install-time precache (scripts/kiosk-pwa.ts DOCS_ASSET).
+        chunkFileNames(chunk) {
+          const docs = chunk.moduleIds.some(id => /^\0virtual:spaceworks-(doc|api)|[\\/]src[\\/]features[\\/]docs[\\/]|node_modules[\\/](mermaid|@mermaid-js)[\\/]/.test(id));
+          return docs ? "assets/docs/[name]-[hash].js" : "assets/[name]-[hash].js";
+        },
       },
     },
   },
   test: {
     environment: "jsdom",
     setupFiles: ["./src/test/setup.ts"],
+    // The full suite (1,200 files) runs many jsdom workers at once; under that load a few async UI tests
+    // passed alone but crossed the 5 s default. 15 s keeps real hangs failing without false reds.
+    testTimeout: 15_000,
+    // Tests of checkout and OAuth redirects call window.location.assign; jsdom reports that single message as
+    // "not implemented". The redirect target is asserted where it matters, and every other log still prints.
+    onConsoleLog: (log) => (log.includes("Not implemented: navigation to another Document") ? false : undefined),
+    // scripts/*.test.mjs are node:test suites (`node --test`), not vitest files.
+    // legacy-worktree-imports/ holds skipped tests kept for reference (see the header of each file).
+    exclude: [...configDefaults.exclude, "scripts/**/*.test.mjs", "e2e/**", "legacy-worktree-imports/**"],
   },
 });

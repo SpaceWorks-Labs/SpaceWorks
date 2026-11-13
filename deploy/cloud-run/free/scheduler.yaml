@@ -1,0 +1,25 @@
+{
+  "name": "projects/PROJECT/locations/REGION/jobs/spaceworks-free-tick",
+  "schedule": "*/10 * * * *",
+  "timeZone": "UTC",
+  "attemptDeadline": "180s",
+  "retryConfig": {
+    "retryCount": 2,
+    "maxRetryDuration": "300s",
+    "minBackoffDuration": "10s",
+    "maxBackoffDuration": "60s"
+  },
+  "httpTarget": {
+    "uri": "https://FREE_SERVICE.run.app/api/v1/internal/free/tick",
+    "httpMethod": "POST",
+    "headers": {
+      "X-Cron-Secret": "REPLACE_FROM_SECRET_MANAGER_DO_NOT_PUBLISH",
+      "Content-Type": "application/json"
+    },
+    "body": "e30=",
+    "oidcToken": {
+      "serviceAccountEmail": "spaceworks-trigger@PROJECT.iam.gserviceaccount.com",
+      "audience": "https://FREE_SERVICE.run.app"
+    }
+  }
+}

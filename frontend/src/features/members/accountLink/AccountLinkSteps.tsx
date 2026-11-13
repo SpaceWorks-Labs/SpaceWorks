@@ -1,0 +1,81 @@
+import { t } from "@lingui/core/macro";
+import { useId } from "react";
+import { Field } from "../../../components/ui";
+import type { MergeMethod } from "./accountLinkApi";
+import { Fingerprint } from "lucide-react";
+import { BoxArt } from "../../../components/BoxSpinner";
+
+const METHODS: { value: MergeMethod; label: string; hint: string }[] = [
+  { value: "credentials", label: t`Its password and authenticator`, hint: t`Sign in to the other account here, once.` },
+  { value: "email_codes", label: t`Codes sent to both emails`, hint: t`We email one code to this account and one to the other account.` },
+];
+
+export function StartStep({ identifier, method, onIdentifier, onMethod }: {
+  identifier: string; method: MergeMethod; onIdentifier: (value: string) => void; onMethod: (value: MergeMethod) => void;
+}) {
+  const legend = useId();
+  return <div className="grid gap-5">
+    <p className="text-sm text-muted">{t`Nothing changes until you review what moves and confirm. Accounts are never linked on email alone.`}</p>
+    <Field label={t`Username or email of the other account`}>
+      <input className="desk-input min-h-11" value={identifier} autoComplete="off" autoCapitalize="none" spellCheck={false}
+        maxLength={254} onChange={event => onIdentifier(event.target.value)} />
+    </Field>
+    <div role="radiogroup" aria-labelledby={legend} className="grid gap-3">
+      <p id={legend} className="text-sm font-semibold text-ink">{t`How will you prove it's yours?`}</p>
+      <div className="grid gap-3 md:grid-cols-2">{METHODS.map(option => <label key={option.value}
+        className={`flex min-h-11 cursor-pointer items-start gap-3 rounded-control border p-4 ${method === option.value ? "border-accent bg-accent-soft" : "border-line"}`}>
+        <input type="radio" name="account-link-method" className="mt-1 h-5 w-5 shrink-0 accent-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+          value={option.value} checked={method === option.value} onChange={() => onMethod(option.value)} />
+        <span className="grid gap-1"><span className="font-semibold text-ink">{option.label}</span>
+          <span className="text-sm text-muted">{option.hint}</span></span>
+      </label>)}</div>
+    </div>
+  </div>;
+}
+
+export type ProofFields = { password: string; otp: string; survivorCode: string; sourceCode: string };
+const digits = (value: string) => value.replace(/\s+/g, "");
+
+export function ProveStep({ method, identifier, fields, onChange, onResend, resending, resent, passkey }: {
+  method: MergeMethod; identifier: string; fields: ProofFields; onChange: (fields: ProofFields) => void;
+  onResend: () => void; resending: boolean; resent: boolean;
+  passkey?: { onUse: () => void; pending: boolean };
+}) {
+  const set = (key: keyof ProofFields, value: string) => onChange({ ...fields, [key]: value });
+  if (method === "credentials") return <div className="grid gap-4">
+    <p className="text-sm text-muted">{t`Enter the password and a current authenticator code for `}<strong className="text-ink">{identifier}</strong>. You stay signed in to this account.</p>
+    <Field label={t`Password of the other account`}>
+      <input className="desk-input min-h-11" type="password" autoComplete="off" value={fields.password}
+        onChange={event => set("password", event.target.value)} />
+    </Field>
+    <Field label={t`Authenticator code`} hint={t`The 6-digit code from the other account's authenticator app.`}>
+      <input className="desk-input min-h-11" inputMode="numeric" autoComplete="off" maxLength={10} value={fields.otp}
+        onChange={event => set("otp", digits(event.target.value))} />
+    </Field>
+    {passkey ? <div className="grid gap-2">
+      <p className="text-sm text-muted">{t`No authenticator code? Enter the password above, then use a passkey saved for the other account.`}</p>
+      <div><button type="button" className="desk-button min-h-11 gap-2" disabled={!fields.password || passkey.pending}
+        aria-busy={passkey.pending || undefined} onClick={passkey.onUse}>
+        <Fingerprint aria-hidden="true" size={20} />{passkey.pending ? <><BoxArt size={16} mono />{t`Waiting for your device…`}</> : t`Use its passkey instead`}</button></div>
+    </div> : null}
+  </div>;
+  return <div className="grid gap-4">
+    <p className="text-sm text-muted">{t`If `}<strong className="text-ink">{identifier}</strong> {t` is an account we can link, we've emailed it a code, and sent a second code to this account's email. Codes expire quickly.`}</p>
+    <Field label={t`Code sent to this account's email`}>
+      <input className="desk-input min-h-11" inputMode="numeric" autoComplete="one-time-code" maxLength={12} value={fields.survivorCode}
+        onChange={event => set("survivorCode", digits(event.target.value))} />
+    </Field>
+    <Field label={t`Code sent to the other account's email`}>
+      <input className="desk-input min-h-11" inputMode="numeric" autoComplete="off" maxLength={12} value={fields.sourceCode}
+        onChange={event => set("sourceCode", digits(event.target.value))} />
+    </Field>
+    <div className="flex flex-wrap items-center gap-3">
+      <button type="button" className="desk-button min-h-11" disabled={resending} aria-busy={resending || undefined} onClick={onResend}>
+        {resending ? <><BoxArt size={16} mono />{t`Sending…`}</> : t`Send new codes`}</button>
+      {resent ? <p role="status" className="text-sm text-muted">{t`New codes sent. Earlier codes no longer work.`}</p> : null}
+    </div>
+  </div>;
+}
+
+export const proofReady = (method: MergeMethod, fields: ProofFields) => method === "credentials"
+  ? Boolean(fields.password && fields.otp.length >= 6) : Boolean(fields.survivorCode && fields.sourceCode);

@@ -40,6 +40,20 @@ class WalkInMemberCreateSerializer(serializers.Serializer):
     application_answers = serializers.JSONField(required=False, allow_null=True)
 
 
+class WalkInGuestPassOutcomeSerializer(serializers.Serializer):
+    """Decision 223 (i): the walk-in got a guest pass for today, not a membership."""
+    user_id = serializers.IntegerField(source="holder.id")
+    display_name = serializers.CharField(source="holder.display_name")
+    username = serializers.CharField(source="holder.username")
+    is_walk_in = serializers.BooleanField(source="holder.is_walk_in")
+    guest_pass_id = serializers.IntegerField(source="id")
+    guest_pass_valid_until = serializers.DateTimeField(source="valid_until")
+    waiver_accepted = serializers.SerializerMethodField()
+
+    def get_waiver_accepted(self, obj) -> bool:
+        return obj.accepted_waiver_id is not None
+
+
 class WalkInAdmissionOutcomeSerializer(serializers.Serializer):
     user_id = serializers.IntegerField()
     display_name = serializers.CharField()
@@ -68,7 +82,7 @@ class WalkInMemberCreateView(APIView):
         tags=["Admin memberships"],
         summary="Create a walk-in member record",
         request=WalkInMemberCreateSerializer,
-        responses={201: PolymorphicProxySerializer(component_name="WalkInAdmissionResult", serializers=[DirectLoanMemberSerializer, WalkInAdmissionOutcomeSerializer], resource_type_field_name=None), **ERRORS},
+        responses={201: PolymorphicProxySerializer(component_name="WalkInAdmissionResult", serializers=[DirectLoanMemberSerializer, WalkInAdmissionOutcomeSerializer, WalkInGuestPassOutcomeSerializer], resource_type_field_name=None), **ERRORS},
     )
     def post(self, request, makerspace_id):
         makerspace = _makerspace_for_action(
@@ -86,6 +100,9 @@ class WalkInMemberCreateView(APIView):
             phone=data.get("phone", ""),
             application_answers=data.get("application_answers"),
         )
+        from apps.makerspaces.models import GuestPass
+        if isinstance(membership, GuestPass):
+            return Response(WalkInGuestPassOutcomeSerializer(membership).data, status=status.HTTP_201_CREATED)
         if isinstance(membership, MembershipRequest):
             return Response({"user_id": membership.user_id, "display_name": membership.user.display_name,
                              "username": membership.user.username,

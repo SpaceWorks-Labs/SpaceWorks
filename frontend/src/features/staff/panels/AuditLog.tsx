@@ -1,114 +1,68 @@
+import { formatLocale } from "../../../lib/format";
+import { t } from "@lingui/core/macro";
+import { useQuery } from "@tanstack/react-query";
+import { ListLayout } from "../../../components/layouts";
+import { DataTable, RelativeTime } from "../../../components/ui";
+import { staffRequest } from "../../../lib/api";
 import { useUrlListState } from "../../../lib/useUrlListState";
 import { ListViewControls } from "../ListViewControls";
-
-import { Skeleton } from "../../../components/ui";
 import { AuditLogFilters, auditFilterParams, emptyAuditFilters, type AuditFilters } from "./AuditLogFilters";
+import { AuditLogDetails } from "./AuditLogDetails";
+import { auditAreaLabel, auditAreasFor } from "./auditAreas";
 import { AuditVerificationStatus } from "./AuditVerificationStatus";
-import { Panel, useStaffGet } from "./shared";
+import { useStaffGet } from "./shared";
 
 type AuditLogEntry = {
-  id: number;
-  action: string;
-  action_label: string;
-  actor_display: string | null;
-  target_type: string;
-  target_id: string | number | null;
-  meta: Record<string, unknown>;
-  meta_redacted: boolean;
-  created_at: string;
+  id: number; action: string; action_label: string; actor_display: string | null;
+  target_type: string; target_id: string | number | null;
+  meta: Record<string, unknown>; meta_redacted: boolean; created_at: string;
 };
+type AuditLogResponse = { count: number; next: string | null; previous: string | null; results: AuditLogEntry[] };
 
-type AuditLogResponse = {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: AuditLogEntry[];
-};
-
-export function AuditLog({ makerspaceId }: { makerspaceId?: number }) {
-  const list = useUrlListState({ ...emptyAuditFilters, makerspace: makerspaceId ? String(makerspaceId) : "", ordering: "-created_at", page: "1" });
+/** One space's trail, or with `platform` (#190) every space plus the platform's own rows, for the superadmin.
+ * `actions` are the reader's effective actions in the space; without them (superadmin) the whole trail shows. */
+export function AuditLog({ makerspaceId, platform = false, actions }: { makerspaceId?: number; platform?: boolean; actions?: readonly string[] }) {
+  // #219e: a reader who is not the Space Manager sees only their own areas' rows (server-enforced).
+  const areas = platform ? null : auditAreasFor(actions);
+  const list = useUrlListState({ ...emptyAuditFilters, makerspace: makerspaceId ? String(makerspaceId) : "", platform_only: "", ordering: "-created_at", page: "1" });
   const filters: AuditFilters = list.values;
-  const { page, setPage } = list;
   const filterParams = auditFilterParams(filters);
+  // Verification selects by the server's audit filters; `area` is a list-only narrowing.
+  const verifyParams = Object.fromEntries(Object.entries(filterParams).filter(([key]) => key !== "area"));
+  // #219(e-1): an area reader without view_audit reads rows but cannot start verification runs.
+  const canVerify = !platform && (!actions || actions.includes("view_audit"));
   const params = new URLSearchParams(filterParams);
-  params.set("page", String(page));
+  params.set("page", String(list.page));
   params.set("ordering", list.values.ordering);
+  if (platform && list.values.platform_only) params.set("platform_only", "true");
   const query = params.toString();
-  const logs = useStaffGet<AuditLogResponse>(["audit", query], `/admin/audit-logs?${query}`);
+  const spaceLogs = useStaffGet<AuditLogResponse>(["audit", query], `/admin/audit-logs?${query}`, !platform);
+  const platformLogs = useQuery({ queryKey: ["platform-audit", query], enabled: platform,
+    queryFn: () => staffRequest<AuditLogResponse>(`/admin/audit-logs?${query}`, {}, "platform") });
+  const logs = platform ? platformLogs : spaceLogs;
+  const clear = () => list.update({ ...emptyAuditFilters, makerspace: makerspaceId ? String(makerspaceId) : "", platform_only: "" });
+  const chips = Object.entries(filters).filter(([key, value]) => key in emptyAuditFilters && value && !(key === "makerspace" && value === String(makerspaceId)))
+    .map(([key, value]) => ({ key, label: key === "area" ? t`Area: ${auditAreaLabel(value)}` : `${key.replace(/_/g, " ")}: ${value}`, onRemove: () => list.update({ [key]: "" }) }))
+    .concat(platform && list.values.platform_only ? [{ key: "platform_only", label: t`Platform-level only`, onRemove: () => list.update({ platform_only: "" }) }] : []);
 
-  // Any filter change resets to the first page; the old page may not exist any more.
-  const updateFilters = (next: AuditFilters) => {
-    list.update(next);
-  };
-
-  return (
-    <Panel title="Audit logs">
-      {makerspaceId ? <ListViewControls state={list} makerspaceId={makerspaceId} entity="audit" search={false} sorts={[["-created_at", "Newest"], ["created_at", "Oldest"], ["action", "Action"]]} /> : null}
-      <AuditLogFilters filters={filters} onChange={updateFilters} />
-      <AuditVerificationStatus key={new URLSearchParams(filterParams).toString()} makerspaceId={filters.makerspace} params={filterParams} />
-      <div className="grid gap-2 text-sm">
-        {logs.error ? <p className="text-sm text-danger">{logs.error.message}</p> : null}
-        {logs.isLoading ? <AuditLogSkeleton /> : null}
-        {logs.data?.results?.map((log) => (
-          <div key={log.id} className="rounded-md border border-line bg-surface p-2">
-            <span className="font-semibold">{log.action_label}</span>
-            <span className="ml-2 font-mono text-xs text-muted">{log.action}</span>
-            {log.actor_display ? <span className="ml-2 text-muted">by {log.actor_display}</span> : null}
-            <span className="ml-2 text-muted">{log.target_type}:{log.target_id}</span>
-            <span className="ml-2 font-mono text-muted">{formatLocalDateTime(log.created_at)}</span>
-            <MetaLine meta={log.meta} redacted={log.meta_redacted} />
-          </div>
-        ))}
-      </div>
-      <div className="mt-3 flex items-center justify-between gap-3 text-sm">
-        <button className="desk-button-ghost" disabled={!logs.data?.previous} onClick={() => setPage((current) => Math.max(1, current - 1))}>
-          Previous
-        </button>
-        <span className="text-muted">
-          Page {page}{" \u2014 "}{logs.data?.count ?? 0} total
-        </span>
-        <button className="desk-button-ghost" disabled={!logs.data?.next} onClick={() => setPage((current) => current + 1)}>
-          Next
-        </button>
-      </div>
-    </Panel>
-  );
-}
-
-// Only the server's projected metadata is ever rendered; there is no raw-meta field.
-function MetaLine({ meta, redacted }: { meta: Record<string, unknown>; redacted: boolean }) {
-  const entries = Object.entries(meta ?? {});
-  if (!entries.length && !redacted) return null;
-  return (
-    <p className="mt-1 text-xs text-muted">
-      {entries.map(([key, value]) => `${key}: ${typeof value === "object" ? JSON.stringify(value) : String(value)}`).join(" · ")}
-      {redacted ? <span className="ml-1 italic">(some details withheld)</span> : null}
-    </p>
-  );
-}
-
-function AuditLogSkeleton() {
-  return (
-    <div className="grid gap-2" aria-hidden="true">
-      {Array.from({ length: 5 }, (_, index) => (
-        <div key={index} className="rounded-md border border-line bg-surface p-2">
-          <div className="flex flex-wrap gap-3">
-            <Skeleton className="h-4 w-40" />
-            <Skeleton className="h-4 w-56" />
-            <Skeleton className="h-4 w-32" />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function formatLocalDateTime(value: string) {
-  return new Date(value).toLocaleString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
+  return <ListLayout width="wide"
+    header={{ title: platform ? t`Platform audit log` : t`Audit log`, subtitle: platform ? t`Every space's trail and the platform's own actions, append-only. Filter by makerspace ID, or show platform-level rows only.` : areas ? t`State changes in the areas you work in, append-only. The Space Manager sees the whole trail.` : t`Every state change in this makerspace, append-only.`, meta: canVerify ? <AuditVerificationStatus key={new URLSearchParams(verifyParams).toString()} makerspaceId={filters.makerspace} params={verifyParams} /> : undefined }}
+    state={{ status: logs.isLoading ? "loading" : logs.error ? "error" : "ready", error: t`Couldn't load audit entries${logs.error?.message ? ` (${logs.error.message})` : ""}. Try again.`, onRetry: () => void logs.refetch() }}
+    isEmpty={Boolean(logs.data && !logs.data.results.length)} filtered={chips.length > 0}
+    empty={{ message: areas ? t`No audit entries in your areas yet.` : t`No audit entries yet. Complete a workflow to start the trail.` }}
+    filteredEmpty={{ message: t`No entries match these filters. Clear filters to see the trail.`, action: { label: t`Clear filters`, onClick: clear } }}
+    filters={{ sort: makerspaceId ? <ListViewControls state={list} makerspaceId={makerspaceId} entity="audit" search={false} sorts={[["-created_at", t`Newest`], ["created_at", t`Oldest`], ["action", t`Action`]]} /> : undefined,
+      // Active filters stay visible (and removable) outside the closed popover.
+      activeCount: chips.length, chips, controls: <>{platform ? <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={Boolean(list.values.platform_only)}
+        onChange={event => list.update({ platform_only: event.target.checked ? "1" : "" })} />{t`Platform-level rows only`}</label> : null}
+        <AuditLogFilters filters={filters} areas={areas} onChange={next => list.update(next)} /></>, onClear: clear }}
+    body={{ kind: "table", table: <DataTable data={logs.data?.results ?? []} listState={list}
+      ordering={list.values.ordering} onOrderingChange={ordering => list.update({ ordering })}
+      columns={[
+        { key: "action", header: t`Activity`, sortable: true, render: log => <div><span className="font-semibold">{log.actor_display ?? t`System`}</span><p>{log.action_label}</p></div> },
+        { key: "target_type", header: t`Target`, render: log => <span className="break-all">{log.target_type}:{log.target_id}</span> },
+        { key: "created_at", header: t`When`, sortable: true, render: log => <div><p className="tabular-nums">{new Date(log.created_at).toLocaleString(formatLocale())}</p><p className="text-muted"><RelativeTime date={log.created_at} /></p></div> },
+        { key: "details", header: t`Details`, render: log => <AuditLogDetails action={log.action} meta={log.meta} redacted={log.meta_redacted} /> },
+      ]} /> }}
+    pagination={{ page: list.page, pageSize: 24, count: logs.data?.count ?? 0, onChange: page => list.setPage(page) }} />;
 }

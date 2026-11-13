@@ -1,0 +1,110 @@
+"""Provider-authenticated Meta ingress. No JWT, browser cookies or chat decisions."""
+from django.utils.translation import gettext
+import hmac
+import logging
+
+from django.http import HttpResponse
+from django.shortcuts import get_object_or_404
+from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
+from rest_framework import serializers
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
+from rest_framework.throttling import SimpleRateThrottle
+from rest_framework.views import APIView
+
+from apps.accounts import rbac
+from apps.makerspaces.servability import servable_queryset
+from .models_endpoints import ChannelConfiguration
+from .notification_api_errors import errors
+from .notification_wa_meta_callbacks import items, verified_payload
+from .notification_wa_meta_http import ID, credentials
+from .notification_wa_meta_ingress import apply_item
+from .notification_wa_meta_schema import MetaWebhookSerializer
+
+logger = logging.getLogger(__name__)
+
+
+class MetaWebhookThrottle(SimpleRateThrottle):
+    scope = "whatsapp_meta_webhook"
+    rate = "120/min"
+
+    def get_cache_key(self, request, view):
+        return self.cache_format % {"scope": self.scope,
+            "ident": f"{view.kwargs.get('makerspace_id')}:{self.get_ident(request)}"}
+
+
+class MetaWebhookResultSerializer(serializers.Serializer):
+    accepted = serializers.BooleanField()
+
+
+class MetaWebhookView(APIView):
+    authentication_classes = []
+    permission_classes = [AllowAny]
+    throttle_classes = [MetaWebhookThrottle]
+
+    def configuration(self, makerspace_id, generation, phone_number_id, *, request=None, verify_token=None):
+        if type(makerspace_id) is not int or makerspace_id < 1 or not ID.fullmatch(phone_number_id):
+            return None
+        from .notification_sender import callback_configurations
+        rows = callback_configurations(makerspace_id, "meta", generation)
+        for config in rows:
+            values = credentials(config)
+            if values and values["phone_number_id"] == phone_number_id:
+                if request is not None and verified_payload(config, request) is None:
+                    continue
+                if verify_token is not None and (len(verify_token) > 8000 or not hmac.compare_digest(
+                        verify_token.encode(), values["webhook_verify_token"].encode())):
+                    continue
+                return config
+        return None
+
+    @extend_schema(tags=["Notification contract"], auth=[], parameters=[
+        OpenApiParameter("hub.mode", str, required=True, description="Must equal subscribe."),
+        OpenApiParameter("hub.verify_token", str, required=True, description="Configured webhook verify token."),
+        OpenApiParameter("hub.challenge", str, required=True, description="Opaque challenge echoed as text/plain."),
+    ], responses={(200, "text/plain"): OpenApiResponse(str, description="Unmodified challenge."),
+                  **errors(400, 403, 404, 429, 503)})
+    def get(self, request, makerspace_id, generation, phone_number_id):
+        try:
+            token = request.query_params.get("hub.verify_token", "")
+            config = self.configuration(makerspace_id, generation, phone_number_id, verify_token=token)
+            values = credentials(config) if config else {}
+            challenge = request.query_params.get("hub.challenge", "")
+            valid = bool(values and phone_number_id == values["phone_number_id"]
+                and request.query_params.get("hub.mode") == "subscribe"
+                and len(token) <= 8000 and hmac.compare_digest(token.encode(), values["webhook_verify_token"].encode()))
+            if not valid:
+                return Response({"detail": gettext("Webhook verification failed."), "code": "invalid_webhook"}, status=403)
+            if not challenge or len(challenge) > 4096:
+                return Response({"detail": gettext("Invalid challenge."), "code": "invalid_challenge"}, status=400)
+            return HttpResponse(challenge, content_type="text/plain")
+        except (KeyError, TypeError, ValueError):
+            return Response({"detail": gettext("Webhook verification failed."), "code": "invalid_webhook"}, status=403)
+
+    @extend_schema(tags=["Notification contract"], auth=[],
+        parameters=[OpenApiParameter("X-Hub-Signature-256", str, location="header", required=True,
+            description="sha256= + HMAC-SHA256 of the raw request body using the app secret.")],
+        request=MetaWebhookSerializer, responses={200: MetaWebhookResultSerializer, **errors(400, 403, 404, 423, 429, 503)},
+        description="Signed batch of messages/statuses/user_preferences. WABA and phone number must match the configured installation and URL generation.")
+    def post(self, request, makerspace_id, generation, phone_number_id):
+        config = self.configuration(makerspace_id, generation, phone_number_id, request=request)
+        if config is None:
+            return Response({"detail": gettext("Webhook verification failed."), "code": "invalid_webhook"}, status=403)
+        payload = verified_payload(config, request)
+        if payload is None:
+            return Response({"detail": gettext("Webhook verification failed."), "code": "invalid_webhook"}, status=403)
+        try:
+            batch = items(config, payload)
+        except ValueError:
+            return Response({"detail": gettext("Invalid webhook payload."), "code": "invalid_payload"}, status=400)
+        try:
+            from .notification_wa_journal import accept_meta_item
+            from .notification_cutover import boundary
+            with boundary():
+                for index, item in enumerate(batch):
+                    accept_meta_item(config, request, index, item)
+        except Exception as exc:
+            logger.warning("notification.meta_callback_unavailable", extra={"configuration_id": config.pk,
+                "failure_type": type(exc).__name__})
+            return Response({"detail": gettext("Callback storage is temporarily unavailable."), "code": "unavailable"}, status=503)
+        return Response({"accepted": True})

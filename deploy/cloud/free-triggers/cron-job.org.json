@@ -1,0 +1,48 @@
+{
+  "job": {
+    "title": "Space Works free tick (best effort)",
+    "url": "https://API_HOST/api/v1/internal/free/tick",
+    "enabled": false,
+    "saveResponses": false,
+    "requestMethod": 1,
+    "requestTimeout": 30,
+    "redirectSuccess": false,
+    "schedule": {
+      "timezone": "UTC",
+      "expiresAt": 0,
+      "hours": [
+        -1
+      ],
+      "mdays": [
+        -1
+      ],
+      "minutes": [
+        0,
+        10,
+        20,
+        30,
+        40,
+        50
+      ],
+      "months": [
+        -1
+      ],
+      "wdays": [
+        -1
+      ]
+    },
+    "extendedData": {
+      "headers": {
+        "Content-Type": "application/json",
+        "X-Cron-Secret": "REPLACE_PRIVATELY_FROM_GENERATED_SECRET"
+      },
+      "body": "{}"
+    },
+    "notification": {
+      "onFailure": true,
+      "onFailureCount": 3,
+      "onDisable": true,
+      "onSuccess": false
+    }
+  }
+}

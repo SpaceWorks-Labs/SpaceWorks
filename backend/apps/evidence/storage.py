@@ -7,8 +7,13 @@ from botocore.client import Config
 from botocore.exceptions import BotoCoreError, ClientError
 from django.conf import settings
 
-from apps.evidence.image_validation import image_mime_from_bytes
+from apps.evidence.image_validation import allowed_mime_for_key, detect_mime_for_key
 from apps.object_storage import delete_all_versions
+from apps.storage_capabilities import CapabilityError, capabilities_for
+from apps.storage_capabilities.budget import checkpoint, client_options
+from apps.storage_capabilities.presigning import presign_upload
+from apps.storage_capabilities.runtime import configured_contracts
+from apps.storage_capabilities.promotion import promote
 
 
 logger = logging.getLogger(__name__)
@@ -33,18 +38,22 @@ def _s3_client(endpoint_url):
     return boto3.client(
         "s3",
         endpoint_url=endpoint_url,
-        aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+        aws_access_key_id=settings.AWS_ACCESS_KEY_ID or None,
+        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY or None,
+        aws_session_token=getattr(settings, "AWS_SESSION_TOKEN", None) or None,
         region_name=settings.AWS_S3_REGION_NAME,
         config=Config(
             signature_version=settings.AWS_S3_SIGNATURE_VERSION,
             s3={"addressing_style": settings.AWS_S3_ADDRESSING_STYLE},
+            **client_options(),
         ),
     )
 
 
 def _client():
-    return _s3_client(settings.AWS_S3_ENDPOINT_URL)
+    client = _s3_client(settings.AWS_S3_ENDPOINT_URL)
+    capabilities_for(client, settings.AWS_STORAGE_BUCKET_NAME, required=True, role="private")
+    return client
 
 
 def _public_client():
@@ -64,11 +73,13 @@ def delete_object(object_key):
         delete_all_versions(
             _client(), bucket=settings.AWS_STORAGE_BUCKET_NAME, key=object_key
         )
-    except (BotoCoreError, ClientError):
-        logger.exception("Failed to delete storage object %s.", object_key)
+        return True
+    except (BotoCoreError, ClientError, CapabilityError):
+        logger.warning("evidence_object_delete_failed")
+        return False
 
 
-def delete_object_strict(object_key):
+def delete_object_strict(object_key, *, operation_key=None):
     """Delete every version and report whether a current object was visible."""
     existed = object_exists(object_key)
     try:
@@ -77,23 +88,28 @@ def delete_object_strict(object_key):
             bucket=settings.AWS_STORAGE_BUCKET_NAME,
             key=object_key,
             require_version_listing=True,
+            **({"operation_key": operation_key} if operation_key is not None else {}),
         )
-    except (BotoCoreError, ClientError) as exc:
+    except (BotoCoreError, ClientError, CapabilityError) as exc:
         raise StorageUnavailable from exc
     return "deleted" if existed else "absent_or_version_only"
 
 
 def copy_object(source_key, dest_key):
+    def validate(snapshot, size):
+        mime = detect_mime_for_key(dest_key, snapshot.read(settings.EVIDENCE_MAX_BYTES + 1))
+        if mime not in allowed_mime_for_key(dest_key, settings.EVIDENCE_ALLOWED_MIME):
+            raise EvidenceObjectValidationError("invalid_image", "Evidence object is not a valid image.")
+        return mime
+
     try:
-        _client().copy_object(
-            Bucket=settings.AWS_STORAGE_BUCKET_NAME,
-            CopySource={
-                "Bucket": settings.AWS_STORAGE_BUCKET_NAME,
-                "Key": source_key,
-            },
-            Key=dest_key,
+        promote(
+            _client(), source_bucket=settings.AWS_STORAGE_BUCKET_NAME,
+            source_key=source_key, destination_bucket=settings.AWS_STORAGE_BUCKET_NAME,
+            destination_key=dest_key, max_bytes=settings.EVIDENCE_MAX_BYTES,
+            validate=validate,
         )
-    except (BotoCoreError, ClientError) as exc:
+    except (BotoCoreError, ClientError, CapabilityError, OSError) as exc:
         raise StorageUnavailable from exc
 
 
@@ -117,42 +133,42 @@ def finalize_upload(evidence, max_bytes):
         raise StorageUnavailable from exc
 
 
-def presigned_upload(object_key, content_type):
+def presigned_upload(object_key, content_type, max_bytes=None):
+    """`max_bytes` may only LOWER the evidence ceiling (member-card photos: the card-photo normaliser's 8 MB)."""
     try:
-        if settings.STORAGE_PRESIGN_METHOD == "put":
-            # Presigned PUT cannot enforce content-length at upload time; finalize HEADs staging.
-            url = _public_client().generate_presigned_url(
-                "put_object",
-                Params={
-                    "Bucket": settings.AWS_STORAGE_BUCKET_NAME,
-                    "Key": staging_key(object_key),
-                    "ContentType": content_type,
-                },
-                ExpiresIn=settings.EVIDENCE_URL_TTL_SECONDS,
-            )
-            return {
-                "url": url,
-                "method": "PUT",
-                "headers": {"Content-Type": content_type},
-            }
-        return _public_client().generate_presigned_post(
-            Bucket=settings.AWS_STORAGE_BUCKET_NAME,
-            Key=staging_key(object_key),
-            Fields={"Content-Type": content_type},
-            Conditions=[
-                {"Content-Type": content_type},
-                ["content-length-range", 1, settings.EVIDENCE_MAX_BYTES],
-            ],
-            ExpiresIn=settings.EVIDENCE_URL_TTL_SECONDS,
+        return presign_upload(
+            _public_client(), backend_client=_client(),
+            bucket=settings.AWS_STORAGE_BUCKET_NAME, key=staging_key(object_key),
+            content_type=content_type, max_bytes=min(max_bytes or settings.EVIDENCE_MAX_BYTES, settings.EVIDENCE_MAX_BYTES),
+            ttl=settings.EVIDENCE_URL_TTL_SECONDS, requested=settings.STORAGE_PRESIGN_METHOD,
         )
-    except (BotoCoreError, ClientError) as exc:
+    except (BotoCoreError, ClientError, CapabilityError) as exc:
         raise StorageUnavailable from exc
 
 
+def uses_put_uploads():
+    """Resolve accounting policy without creating an SDK client under a row lock."""
+    requested = settings.STORAGE_PRESIGN_METHOD
+    if requested in {"put", "post"}:
+        return requested == "put"
+    contract = configured_contracts().get("private")
+    if contract is None:
+        raise CapabilityError("storage_auto_requires_capability_contract")
+    return contract.presign_method(requested) == "put"
+
+
 def validate_evidence_object(object_key):
-    size = object_size(object_key)
-    if size is None:
-        raise EvidenceObjectValidationError("missing", "Evidence object was not found.")
+    s3 = _client()
+    checkpoint()
+    try:
+        head = s3.head_object(Bucket=settings.AWS_STORAGE_BUCKET_NAME, Key=object_key)
+    except ClientError as exc:
+        if exc.response.get("Error", {}).get("Code") in {"404", "NoSuchKey", "NotFound"}:
+            raise EvidenceObjectValidationError("missing", "Evidence object was not found.") from None
+        raise StorageUnavailable from exc
+    except BotoCoreError as exc:
+        raise StorageUnavailable from exc
+    size = int(head["ContentLength"])
     if size == 0:
         raise EvidenceObjectValidationError("empty", "Evidence object is empty.")
     if size > settings.EVIDENCE_MAX_BYTES:
@@ -160,17 +176,28 @@ def validate_evidence_object(object_key):
             "too_large", "Evidence object exceeds the size limit."
         )
 
+    body = None
     try:
-        response = _client().get_object(
-            Bucket=settings.AWS_STORAGE_BUCKET_NAME,
-            Key=object_key,
-        )
-        data = response["Body"].read(settings.EVIDENCE_MAX_BYTES)
+        params = {"Bucket": settings.AWS_STORAGE_BUCKET_NAME, "Key": object_key}
+        if head.get("VersionId") and head["VersionId"] != "null":
+            params["VersionId"] = head["VersionId"]
+        elif head.get("ETag"):
+            params["IfMatch"] = head["ETag"]
+        else:
+            raise StorageUnavailable("Evidence snapshot could not be pinned.")
+        checkpoint()
+        body = s3.get_object(**params)["Body"]
+        data = body.read(settings.EVIDENCE_MAX_BYTES + 1)
     except (BotoCoreError, ClientError, OSError) as exc:
         raise StorageUnavailable from exc
+    finally:
+        if body is not None:
+            body.close()
+    if len(data) != size:
+        raise EvidenceObjectValidationError("size_changed", "Evidence object size changed.")
 
-    content_type = image_mime_from_bytes(data)
-    if content_type not in settings.EVIDENCE_ALLOWED_MIME:
+    content_type = detect_mime_for_key(object_key, data)
+    if content_type not in allowed_mime_for_key(object_key, settings.EVIDENCE_ALLOWED_MIME):
         raise EvidenceObjectValidationError(
             "invalid_image", "Evidence object is not a valid image."
         )
@@ -178,6 +205,7 @@ def validate_evidence_object(object_key):
 
 def presigned_get_url(object_key):
     try:
+        _client()  # verify the private role using the backend API identity
         return _public_client().generate_presigned_url(
             "get_object",
             Params={"Bucket": settings.AWS_STORAGE_BUCKET_NAME, "Key": object_key},
@@ -189,6 +217,7 @@ def presigned_get_url(object_key):
 
 def object_exists(object_key):
     try:
+        checkpoint()
         _client().head_object(
             Bucket=settings.AWS_STORAGE_BUCKET_NAME,
             Key=object_key,
@@ -206,6 +235,7 @@ def object_exists(object_key):
 
 def object_size(object_key):
     try:
+        checkpoint()
         response = _client().head_object(
             Bucket=settings.AWS_STORAGE_BUCKET_NAME,
             Key=object_key,

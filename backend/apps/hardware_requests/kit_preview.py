@@ -1,5 +1,6 @@
 """Read-only target lookup for checklist capture, never issues stock."""
 
+from django.utils.translation import gettext
 from collections import Counter
 
 from django.shortcuts import get_object_or_404
@@ -8,6 +9,7 @@ from rest_framework.exceptions import ValidationError
 from apps.accounts import rbac
 from apps.boxes.access import inventory_qr_codes
 from apps.boxes.models import Box, QrCode
+from apps.boxes.qr_lookup import normalize_scanned, scanned_or_404
 from apps.hardware_requests.kit_checklists import expectations, unique_expectations
 from apps.inventory.models import InventoryAsset, InventoryProduct, TrackingMode
 from apps.makerspaces.platform import feature_enabled
@@ -16,6 +18,10 @@ from apps.makerspaces.platform import feature_enabled
 def preview_targets(actor, makerspace, *, items=(), qr_payloads=(), container_id=None, public=False):
     action = rbac.Action.ISSUE_DIRECT_LOAN
     def scoped(rows):
+        if public and actor is None:
+            # An account-less borrower (#104): no membership to scope by; the public
+            # self-checkout filters below are what bound the preview.
+            return rows.filter(makerspace=makerspace)
         return (rbac.scope_by_makerspace(actor, rows) if public else
                 rbac.scope_by_action(actor, action, rows)).filter(makerspace=makerspace)
 
@@ -31,12 +37,12 @@ def preview_targets(actor, makerspace, *, items=(), qr_payloads=(), container_id
         product = get_object_or_404(products, pk=entry["product_id"])
         quantities[product] += entry["quantity"]
     seen = set()
-    for payload in qr_payloads:
+    for payload in map(normalize_scanned, qr_payloads):
         if payload in seen:
-            raise ValidationError("The same QR was scanned more than once.")
+            raise ValidationError(gettext("The same QR was scanned more than once."))
         seen.add(payload)
-        qr = get_object_or_404(scoped(inventory_qr_codes(QrCode.objects.all())),
-                               payload=payload, status=QrCode.Status.ACTIVE)
+        qr = scanned_or_404(scoped(inventory_qr_codes(QrCode.objects.filter(status=QrCode.Status.ACTIVE))),
+                            payload)
         if qr.target_type == QrCode.TargetType.PRODUCT:
             quantities[get_object_or_404(products, pk=qr.target_id)] += 1
         elif qr.target_type == QrCode.TargetType.ASSET:
@@ -45,7 +51,7 @@ def preview_targets(actor, makerspace, *, items=(), qr_payloads=(), container_id
         else:
             target = get_object_or_404(scoped(Box.objects.all()), pk=qr.target_id, is_active=True)
             if box and box.pk != target.pk:
-                raise ValidationError("Only one container may be checked out.")
+                raise ValidationError(gettext("Only one container may be checked out."))
             box = target
             for asset in assets.filter(box=box).select_related("product"):
                 quantities[asset.product] += 1

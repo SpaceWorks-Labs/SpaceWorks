@@ -16,9 +16,15 @@ class PublicEventDetailView(APIView):
     throttle_classes = [ClientTierRateThrottle]
     throttle_scope = "public_read"
 
-    @extend_schema(tags=["Public events"], auth=[], request=None, responses={200: PublicEventSerializer, **PUBLIC_EVENT_ERRORS})
+    @extend_schema(tags=["Public events"], auth=[], request=None,
+                   description="Reachable for listed AND unlisted public events (an unlisted event is "
+                               "open to anyone holding its link); unlisted answers carry "
+                               "`X-Robots-Tag: noindex, nofollow`. Offline pages are 404.",
+                   responses={200: PublicEventSerializer, **PUBLIC_EVENT_ERRORS})
     def get(self, request, makerspace_slug, public_token):
         space = get_public_makerspace(makerspace_slug)
         require_module_for_servable(space, "events")
         event = get_object_or_404(_public_events(space).select_related("makerspace__payment_settings", "series", "category"), public_token=public_token)
-        return Response(PublicEventSerializer(event, context={"request": request}).data)
+        from .views_public_codes import robots
+        context = {"request": request, "submission_stages": True}  # #178: stage deadlines on the event page.
+        return robots(Response(PublicEventSerializer(event, context=context).data), event)

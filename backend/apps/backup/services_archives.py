@@ -1,8 +1,8 @@
 """Archive request, build, promotion, and failure lifecycles."""
 
+from django.utils.translation import gettext
 import logging
 import os
-from datetime import timedelta
 import uuid
 
 from django.db import transaction
@@ -19,6 +19,7 @@ from apps.backup.models import (
     PlatformBackupSettings,
 )
 from apps.backup.operation_lock import deployment_operation_lock
+from apps.backup.retention import archive_expires_at
 from apps.backup.runs import BackupRunHolderMismatchError
 from apps.backup.services_archive_failures import (
     _fail_archive,
@@ -28,14 +29,10 @@ from apps.backup.services_archive_failures import (
 )
 from apps.backup.services_lease import _claim_lease, _release_lease
 from apps.makerspaces.models import Makerspace
+from apps.backup.space_restore_plan import FORMAT as SPACE_FORMAT
 
 
 logger = logging.getLogger(__name__)
-
-
-def superadmin_access_decision(makerspace):
-    """Return the access decision from a makerspace row locked by the caller."""
-    return makerspace.superadmin_access_enabled
 
 
 def create_archive(
@@ -44,25 +41,27 @@ def create_archive(
     scope,
     makerspace=None,
     backup_run=None,
-    superadmin_access_at_decision=None,
+    trigger=BackupArchive.Trigger.ON_DEMAND,
 ):
+    from .cloud_operations import require_deployment_archive
+    require_deployment_archive(scope)
+    from .cloud_operations import require_managed_tenant_capture
+    require_managed_tenant_capture()
     if scope == BackupArchive.Scope.DEPLOYMENT and makerspace is not None:
-        raise ValidationError("A deployment archive cannot be scoped to a makerspace.")
+        raise ValidationError(gettext("A deployment archive cannot be scoped to a makerspace."))
     if scope == BackupArchive.Scope.MAKERSPACE and makerspace is None:
-        raise ValidationError("A makerspace archive requires a makerspace.")
+        raise ValidationError(gettext("A makerspace archive requires a makerspace."))
     with transaction.atomic():
         locked_run = _lock_archive_run(backup_run)
         if makerspace is not None:
             makerspace = Makerspace.objects.select_for_update().get(pk=makerspace.pk)
-            if locked_run is None:
-                superadmin_access_at_decision = superadmin_access_decision(makerspace)
-            else:
-                frozen = locked_run.flag_snapshot.get(str(makerspace.pk))
-                if type(frozen) is not bool:
-                    raise ValidationError(
-                        "The makerspace is not in the backup run cohort."
-                    )
-                superadmin_access_at_decision = frozen
+            if (
+                locked_run is not None
+                and str(makerspace.pk) not in locked_run.flag_snapshot
+            ):
+                raise ValidationError(
+                    gettext("The makerspace is not in the backup run cohort.")
+                )
         archive_id = uuid.uuid4()
         archive = BackupArchive.objects.create(
             id=archive_id,
@@ -70,15 +69,16 @@ def create_archive(
             makerspace=makerspace,
             requested_by=actor,
             backup_run=locked_run,
-            superadmin_access_at_decision=superadmin_access_at_decision,
             object_key=f"backup-archives/{scope}/{archive_id}.tar.age",
+            trigger=trigger,
+            format=SPACE_FORMAT if scope == BackupArchive.Scope.MAKERSPACE else "",
         )
         audit.record(
             actor,
             "backup.archive_requested",
             makerspace=makerspace,
             target=archive,
-            meta={"scope": scope, "archives_outside_purge_guarantee": True},
+            meta={"scope": scope, "trigger": trigger, "archives_outside_purge_guarantee": True},
         )
     return archive
 
@@ -92,20 +92,27 @@ def _lock_archive_run(run):
             "Backup archive creation refused because the run holder does not match."
         )
     if locked.status not in (BackupRun.Status.PENDING, BackupRun.Status.RUNNING):
-        raise ValidationError("A terminal backup run cannot create another archive.")
+        raise ValidationError(gettext("A terminal backup run cannot create another archive."))
     return locked
 
 
 def run_archive(archive_id):
     try:
-        with deployment_operation_lock():
-            sweep_stale_promotions()
-            return _run_archive_locked(archive_id)
+        from .cloud_operations import require_deployment_archive
+        scope = BackupArchive.objects.filter(pk=archive_id).values_list("scope", flat=True).first()
+        require_deployment_archive(scope)
+        with deployment_operation_lock() as guard:
+            from .cloud_continuity import operation_guard
+            with operation_guard(guard):
+                return _run_guarded_archive(archive_id)
     except Exception:
-        # A duplicate that loses the host lock owns no archive claim and therefore
-        # must not fail the process that does own it.
         logger.exception("backup_archive_failed", extra={"archive_id": str(archive_id)})
         return BackupArchive.objects.filter(pk=archive_id).first()
+
+
+def _run_guarded_archive(archive_id):
+    sweep_stale_promotions()
+    return _run_archive_locked(archive_id)
 
 
 def _run_archive_locked(archive_id, *, manage_lease=True, lease_holder=None):
@@ -123,7 +130,8 @@ def _run_archive_locked(archive_id, *, manage_lease=True, lease_holder=None):
         archive = _claim_archive(archive_id, build_holder)
         if archive is None:
             return BackupArchive.objects.filter(pk=archive_id).first()
-        build = build_archive(archive)
+        from .cloud_continuity import guarded_effect
+        build = guarded_effect(build_archive, archive)
         encrypted, manifest, tempdir, archive_sha256 = build
         size = os.path.getsize(encrypted)
         if archive.scope == BackupArchive.Scope.DEPLOYMENT:
@@ -132,8 +140,8 @@ def _run_archive_locked(archive_id, *, manage_lease=True, lease_holder=None):
             expected_status = BackupArchive.Status.PROMOTING
             upload_verify_and_promote(archive, build, size)
         else:
-            storage.upload_staging(archive.staging_object_key, encrypted)
-            storage.stream_verify(
+            guarded_effect(storage.upload_staging, archive.staging_object_key, encrypted)
+            guarded_effect(storage.stream_verify,
                 archive.staging_object_key,
                 expected_size=size,
                 expected_sha256=archive_sha256,
@@ -141,10 +149,10 @@ def _run_archive_locked(archive_id, *, manage_lease=True, lease_holder=None):
             if not _claim_promotion(archive.pk, build_holder):
                 return BackupArchive.objects.get(pk=archive_id)
             expected_status = BackupArchive.Status.PROMOTING
-            storage.create_final_from_staging(
+            guarded_effect(storage.create_final_from_staging,
                 archive.staging_object_key, archive.object_key
             )
-            storage.stream_verify(
+            guarded_effect(storage.stream_verify,
                 archive.object_key,
                 expected_size=size,
                 expected_sha256=archive_sha256,
@@ -238,8 +246,8 @@ def _commit_archive_available(archive_id, holder, manifest, size, archive_sha256
     archive.age_encrypted = True
     archive.completed_at = completed_at
     if archive.expires_at is None:
-        archive.expires_at = completed_at + timedelta(
-            days=PlatformBackupSettings.load().retention_days
+        archive.expires_at = archive_expires_at(
+            archive, completed_at, PlatformBackupSettings.load().retention_days
         )
     archive.save()
     if archive.backup_run_id is None:

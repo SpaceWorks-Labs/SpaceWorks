@@ -6,12 +6,14 @@ def typed_report_rows(report_key, rows):
             "requester": "requester",
             "status": "status",
             "issued_at": "issued_at",
+            "count": "count",
         },
         "returns": {
             "id": "id",
             "requester": "requester",
             "status": "status",
             "closed_at": "closed_at",
+            "count": "count",
         },
         "damaged-missing": {
             "product": "product",

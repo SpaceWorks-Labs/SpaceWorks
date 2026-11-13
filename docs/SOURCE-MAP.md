@@ -8,6 +8,391 @@
 
 ## Current source map (real paths)
 
+Equipment context keeps optional associations inside their owning domains: `events/models_loan_context.py`
+and `bookings/models_loan_context.py` point to the canonical hardware request. Their `loan_context_services.py`
+files own scoped reads and mutations. Core `hardware_requests/loan_context_access.py` authorizes the existing
+request source; `accounts/loan_context_identity.py` resolves historical verified merge aliases.
+`makerspaces/loan_context_generations.py` invalidates stale edit versions across purge and restore.
+`data_export/loan_context_integrity.py` validates imported links. Frontend `features/staff/loanContext/`
+owns the scoped editor and TanStack Query state. Schema-only context command bodies and parameter bounds live in
+`hardware_requests/openapi_loan_context.py`; serializer instance annotations preserve per-field bounds. Operational report definitions/builders remain under
+`operations/`; see [equipment context](equipment-contexts.md) and [equipment reports](equipment-reports.md).
+
+
+Django loads `backend/config/settings.py`. The adjacent `settings_*.py` sections hold runtime,
+database and middleware, storage, delivery, recovery, scheduling, credentials, DRF, security,
+schema and logging settings. The entry point applies cloud and API overlays in order.
+
+Canonical personal delivery is the envelope/configuration/provider pipeline indexed in
+[SOURCE-MAP-NOTIFICATIONS.md](SOURCE-MAP-NOTIFICATIONS.md). SMS, Twilio/Meta WhatsApp,
+physical sender/STOP protection, device children and canonical reports are reconciled there.
+Addressed enqueue/worker compatibility shims are inert; legacy schema and historical import
+helpers remain for replay pending the independent
+[retirement and activation checkpoints](notification-reconciliation-rollout.md).
+
+Reports have their own map: [SOURCE-MAP-REPORTS.md](SOURCE-MAP-REPORTS.md) holds the report registry,
+the output allowlist and the measurement notes of every report family (it replaces the old
+report-builder notes).
+
+Web telemetry configuration is separate from Metabase: `analytics/telemetry_api.py` and
+`telemetry_service.py` own scoped staff settings; `makerspaces/telemetry_schema.py`,
+`telemetry_defaults.py` and `telemetry_public.py` validate and project public configuration into
+the tenant bootstrap or platform config without tenant-to-platform fallback. The nonrotating
+`accounts/views_browser_state.py` reports browser credential presence for telemetry admission.
+Frontend `components/WebTelemetry.tsx` and `lib/telemetry/` own consent, route/session fences and
+provider adapters; `features/staff/analytics/WebTelemetrySettings.tsx` owns the settings form.
+
+Firebase browser notifications use `notifications/models_browser_firebase.py`,
+`browser_firebase_challenge.py`, `browser_firebase_delivery.py` and the `views_browser_firebase*`
+siblings for possession proof, owner-epoch fence, opaque hints and scoped configuration/resume.
+`integrations/firebase_web_config.py`, `views_firebase_web_settings.py` and
+`push_firebase_browser.py` own public web settings and the typed FID send using the existing
+encrypted platform credential. Frontend `features/notifications/firebase/` and the isolated
+`public/firebase-alerts-sw.js` own the browser bridge; the existing W3C browser-alert and native
+push paths remain separate. See the notification map for the canonical addressed delivery pipeline.
+
+The [Events programme map](SOURCE-MAP-EVENTS-PROGRAMME.md) covers application/team,
+upload/retention, contributor/Mentor Desk, judging/gallery, credential/certificate,
+form/Saved details and runtime/retention adapters at `f1ef7736`. It includes incomplete
+provider installation explicitly; see the [closure ledger](events/integration-status.md)
+before interpreting a mounted route as an enabled/accepted workflow.
+
+The Postgres row-level-security backstop (L8): `apps/tenant_rls/` -- `policies.py` and `sql.py` generate
+the policies from the data-export classification, `context.py`/`middleware.py`/`wrapper.py` bind the
+transaction-local GUCs (`app.rls_bound`, `app.makerspace_id`, `app.rls_capability`, `app.rls_mode`),
+`capabilities.py` and `scope_registry.py` list the cross-tenant capabilities, `role_contract.py` and
+`checks.py` hold the runtime-role contract and system checks, and the `rls_sync`/`rls_status` commands
+install and report the policies. Per-space key rotation: `encryption/rotation.py`, `models_rotation.py`,
+`rekey_rows.py`/`rekey_tasks.py`/`rekey_finish.py` (emergency re-key), `search_keys.py` (the blind-index
+key) and `publishable_keys.py` (publishable-key rotation with a grace window).
+
+The help centre (L20): articles are Markdown under `frontend/src/help-content/en/<audience>/` (member,
+each staff role, finance, organisation, host operator, superadmin); `features/help/` renders them
+(`HelpPage`, `HelpIndex`, `HelpArticleView`, `helpContent.ts`, `helpAudience.ts` for role gating,
+`helpSearch.ts`, `HelpLink` for the links on staff screens). Routes `/help`, `/help/:sectionId` and
+`/help/:sectionId/:articleSlug`.
+
+The public stats page (#170, L26): `inventory/public_stats.py` assembles it from
+`public_stats_period.py` (fixed period, small-number suppression), `public_stats_events.py`,
+`public_stats_community.py`, `public_stats_activity.py` (period figures) and the legacy
+`public_stats_hardware.py`; `public_stats_cache.py` fronts it and `public_stats_serializers.py` is its
+schema. The Settings › Public stats group is `makerspaces/public_stats_settings.py`:
+`public_stats_catalogue.py` owns widget keys, `public_stats_capabilities.py` exposes L17 decisions,
+`public_stats_settings_writes.py` merges authorized updates, and the settings view/serializers
+own GET/PUT/PATCH. `inventory/public_stats_projection.py` masks the existing public payload;
+original builders keep their privacy and quantity ownership.
+Frontend: `features/stats/` (`PublicStatsPage`, `PublicStatsTvPage` at `/stats/tv`, `StatsBody`,
+`StatsMetrics`, `StatsSectionsMore`) and `features/stats/settings/` (the settings panel).
+
+Public-image POST/PUT presigns live in `inventory/public_image_storage.py` and
+`bookings/storage.py`; both delegate bounded validation and conditional, write-once promotion
+to `inventory/public_image_promotion.py`. Membership owner mail is classified as staff/account
+or community in `makerspaces/notifications_p2_members.py` (copy in `notifications_p2_members_bodies.py`); `operations/notifications_p2.py`
+keeps the owner route separate from the existing staff-summary category.
+Member-account comeback lives in `accounts/account_restore.py` (locked eligibility and identity-only
+reactivation), `account_restore_email.py` (reset-queue restore links), `account_restore_phone.py`
+(phone login-start restore OTPs), and `account_restore_social.py` / `account_restore_social_device.py`
+(fresh existing provider proofs). `recovery_locks.py` owns User-before-envelope proof locking.
+`models_account_restore.py` stores single-use provider intents; `views_account_restore.py` and
+`serializers_account_restore.py` expose their anonymous, throttled confirmation contracts.
+The web restore-link landing page is `features/auth/AccountRestorePage.tsx`.
+
+Account deletion Stage B lives in `accounts/account_purge.py` (tenant orchestration and
+global identity finalization), `account_purge_scrub.py` (mutable tenant copies, the person and every
+merged shell), `account_purge_aliases.py` (shell leftovers, merge-record PII scrub, account-key shred) and
+`account_purge_objects.py` (committed object deletion followed by quota release).
+`models_account_purge.py` defines tenant progress, object cleanup and Apple credential/
+revocation work. `apple_credentials.py` exchanges sign-in authorization codes;
+`apple_revocation.py` retries revocation from the Stage A on-commit task and daily sweep.
+`models_email.py` holds the email-challenge/counter classes re-exported by `models.py`.
+The member account page composes `MemberAccountDeletion.tsx`,
+`AccountDeletionReauthentication.tsx`, `AccountDeletionBlockers.tsx` and the session-keyed
+TanStack Query hooks in `accountDeletionApi.ts`. Privacy disclosure is in
+`docs/privacy-account-deletion.md`.
+Mobile analytics prerequisites (1f-1): `accounts/models_activity.py` owns grant/day and
+anonymous attestation outcomes; `device_activity.py` records validated authentication
+activity. `accounts/authentication_device.py` validates native grants and locks User before
+DeviceGrant for the revocation-safe heartbeat used by `authentication.py`.
+`integrations/models_tracking.py` owns staff push attempts, anonymous SMS
+outcomes and tenant-bound bounce replay identities. Staff delivery uses `push.py`; member
+delivery uses `notifications/member_push.py`, `envelope_push_leases.py` and
+`envelope_push_transport.py` beneath the canonical envelope delivery. The older lease helpers
+remain for retained legacy staff matrix legs.
+`integrations/email.py` stamps connection provenance, `dispatch_delivery.py` retains
+provider IDs and `views_bounce.py` handles exact correlation and replay protection.
+
+Addressed template values share domain adapters without importing the optional inbox:
+`payments/notification_projections.py` owns audience-specific payment bags and local due
+dates; `machines/service_printing_projection.py` owns the kernel-to-printing projection
+(including capability quantity and printing status). Payment and printing notification
+adapters pass reviewed scalar projections into canonical envelopes.
+`hardware_requests/notification_projection.py` supplies the source-backed audience projection;
+legacy `integrations/messaging/sources.py` remains a compatibility seam, not another outbox.
+
+`machines/models_tracking.py`, `status_tracking.py` and `consumable_costs.py` own immutable
+status/cost facts. `service_manual_usage.py` contains typed manual logging behind the
+`service_consumable_pools.py` compatibility wrapper; `usage_attribution.py` validates
+optional local members/times. `inventory/cost_basis.py` validates current price units for
+products and pools. `admin_api/views_machine_usage_candidates.py` and the React
+`panels/machine/UsageAttributionFields.tsx` provide the scoped optional member picker.
+
+Machine analytics (1f-2 area C) register in `operations/report_definitions_machines.py`.
+`reports_machine_common.py` resolves staff authority/type scope, `reports_machine_facts.py`
+projects allowlisted source facts, and the usage/heatmap/downtime/service/maintenance/queue/health
+builders own their measurements. `org_machine_reports.py` combines partitioned numeric inputs;
+`org_machine_report_schemas.py` declares organization schema parity. Typed API rows live in
+`serializers_reports_machine_analytics.py`. The field and measurement handoff is
+[`docs/SOURCE-MAP-REPORTS.md`](SOURCE-MAP-REPORTS.md#machines); focused tests are `backend/tests/analytics/test_c_*_m1f2.py`.
+
+Role dashboards (1f-4): `operations/dashboard_widgets.py` declares and gates report-backed
+widgets, while `dashboard_counts.py` preserves the legacy count contract and
+`dashboard_handover.py` serves queue-only handover homes. `serializers_dashboard.py`
+describes the additive widget/chart and queue payload. `org_report_charts.py` projects
+existing strategy-backed organization charts onto combined fields; `org_reports.py`
+keeps combined data inseparable from its tenant breakdown.
+Personal usage lives beside member activity: `makerspaces/member_usage_views.py` owns
+the membership-versus-core-payments boundary at `/member/makerspaces/<id>/my-usage`,
+`member_usage_service.py` owns authenticated-user-only facts, and
+`member_usage_serializers.py` documents the summary/chart response. Claim policy is in
+`accounts/claim_routes_member.py`. Tests: `analytics/test_dashboards_m1f4.py`,
+`test_my_usage_m1f4.py` and `test_dashboard_native_org_m1f4.py`.
+
+`inventory/models_tracking.py` defines stock observations; `availability_stock.observe_stock`
+reads authoritative quantity buckets, while `stock_snapshots.py` gates tenant fan-out and
+`tasks.py` exposes the daily task. `data_export/classification_m1f1.py` classifies new facts;
+`subject_runtime.py` provides the separate personal runtime allowlist, consumed by
+`subject_archive.py`. Tenant imports remap cost sources in `semantic_remap.py` using
+`tracking_references.py`; `verification_semantic.py` verifies non-FK references behind
+the existing `verification.py` exports. Regression coverage is `backend/tests/analytics/`.
+
+Frontend analytics (1f-5) lives in `features/staff/panels/`: `reportAreas.ts` groups only
+server-catalog entries into nine areas, `ReportAreaSections.tsx` mounts the selected
+report query, and `AnalyticsData.tsx` pairs charts with complete source-table toggles
+(including rows omitted by chart axes or top-N display). `analyticsApi.ts` imports the
+generated serializer types and owns scoped query keys under the existing `operations-report`
+invalidation prefix, and matrix-to-record projection. `charts/wireChartSpec.ts` adapts
+the backend F1 spec into the existing accessible chart kit, preserving tenant, currency,
+measurement-unit and negative-value rules. Null specs retain the table presentation.
+`DashboardAnalyticsWidgets.tsx` renders server-authorized widget kinds and the separate
+handover queue home; `staffAccess.ts` and the flat sidebar admit that queue-only home.
+`ModuleAnalytics.tsx` embeds catalog-authorized small panels in inventory, machines,
+bookings, events, membership, money, communications and device consoles. The online
+payment rail is not a gate on core money analytics.
+
+`features/members/memberUsageApi.ts` and `MemberUsagePanel.tsx` own the personal
+`my-usage` query, keyed by makerspace under `member`, and its charts in the member
+overview. They suppress 403/404 and display payments independently of membership usage.
+`organizationAnalyticsApi.ts`, `organizationReportChoices.ts` and
+`panels/OrganizationAnalyticsPanel.tsx` retain the server's combined total alongside
+every makerspace breakdown, with period/grain controls and nullable combined chart specs.
+`platformAnalyticsApi.ts`, `PlatformAnalyticsPanels.tsx` and `PlatformAnalyticsPicker.tsx`
+add services/usage charts and paginated tenant drill-down to `PlatformDashboardPanel`.
+Hidden service buckets have one anonymous label and no tenant identifiers; scoped
+catalog/report 403s remain explicit blocks. The two platform fallback specs mirror the
+registry for cached responses predating chart metadata; current platform responses include
+the canonical `chart_spec`. Report, dashboard, member, organization and picker contracts
+now import `frontend/src/generated/api.ts`; widget JSON is projected at the chart boundary.
+Vitest panel suites live beside these components, with registry fixtures and shared
+fetch/provider helpers in `src/test/reportChartCases.ts` and `analyticsFixtures.tsx`.
+
+Personal channel UI is consolidated in `features/notifications/`: `channelsApi.ts`,
+`channelCatalog.ts`, `ChannelSetupPanel/Form`, `WhatsAppTemplatesEditor`, `ChannelTestSend`
+and `ChannelDeliveryLog` own canonical configuration, approval, diagnostics and history.
+`PersonalChannels`, `ChannelPreferences`, `MyNotificationSettings` and `SmsConsent` own
+connections, category selections and current phone/sender-bound consent. `smsConsentApi.ts`
+uses the retained core consent endpoints. `features/messaging/MessagingFeedback.tsx` supplies
+shared inline feedback. The old messagingApi, MakerspaceMessagingSettings, MessagingTestSend,
+WhatsAppTemplateBindings/BindingForm and MemberMessaging components are deleted.
+`MemberArea.tsx` exposes Channels to server-authorized account-only owners independently of
+membership/inbox; old messaging section links remain aliases. Staff have a core My channels tab;
+platform navigation remains separate. Query keys bind account, context and tenant; session
+switches clear private caches and late mutation results cannot populate another account.
+`MemberPhoneVerification.tsx` refreshes consent reads after linking without subscribing anyone.
+
+The design revamp shell lives in `frontend/src/components/shell/` (barrel `index.ts`):
+`AppShell` composes the desktop `Sidebar`, `SidebarSection`/`SidebarItem`,
+`WorkspaceSwitcher`, `UserMenu`, `MobileTopBar`, `SidebarDrawer`, `BottomTabs` and
+`JobTrayPill`. The logo/switcher/search and user chip frame one scrolling navigation
+region, including Settings and Platform. The shell uses the wave-1 brand tokens and
+`SpaceWorksLogo`; reusable UI primitives remain in `components/ui/` (`index.ts`).
+Every routed screen renders exactly one page layout from `components/layouts/` (barrel
+`index.ts`): `DashboardLayout`, `ListLayout`, `DetailLayout` (page or drawer), `SettingsLayout`,
+`FormPageLayout`, `FlowLayout` (page, dialog or kiosk), `AuthLayout`, `CenteredCardLayout`,
+`PublicLayout`, `PublicDetailLayout` and `KioskLayout`; layouts own geometry, landmarks, the
+single `h1` and loading/error/empty switching, and contain no gating. Shared primitives
+(`PageHeader`, `Tabs`, `StatCard`, `ListRow`, `DateChip`/`IdentityChip`, `StatusPill`, `Callout`,
+`SettingsRow`, `DangerZone`, `ActivityRail`, `TicketCard`, `ScanWorkbench`, …) are exported, with
+their prop types, from `components/ui/index.ts`. Design source of truth: `docs/brand/` (brand
+guidelines v1 + logo masters); the same assets ship in the
+`SpaceWorks-Labs/SpaceWorks-Design-System` repository for use as a submodule.
+
+**`design-system/`** is that repository as a git submodule, pinned to a release tag (never a moving branch;
+decision 415). Clone with `git clone --recurse-submodules`, or run `git submodule update --init` in an existing
+clone. It is reference material for contributors (tokens, motion templates, rules, brand assets): no build, test or
+Docker image reads it, so a checkout without it still builds and runs. Bump it by checking out the new tag inside
+`design-system/` and committing the changed pointer.
+
+`features/staff/sidebarSections.ts` owns the 42-key sidebar presentation map;
+`StaffShell.tsx` adapts the existing permission/module-filtered tabs, shared Inbox unread
+query, cached dashboard counts and machine-type cache. `StaffWorkspace.tsx` retains
+canonicalisation and `StaffListContext`; `StaffApp.tsx` retains its pre-shell gates.
+The picker stays outside the shell (S10); global routes use its no-workspace mode.
+`StaffHeader.tsx`, `StaffDock.tsx`, `StaffDockPopover.tsx`, `useDockAnchor.ts` and
+`staffNavIcons.tsx` were removed. `CommandPalette` stays mounted across drawer closure;
+`JobTray` keeps job polling alive behind its compact pill and unmounts closed dialog controls.
+`features/members/MemberPortalTabs.tsx` composes the member `AppShell` from the unchanged
+`memberTabs(modules)` selector, using URL navigation links and the shared `#main-content`
+skip target. `MemberArea.tsx` supplies workspace/account data and unchanged tab bodies.
+BK-H signed booking reads are mapped in
+[SOURCE-MAP-BOOKING-READS.md](SOURCE-MAP-BOOKING-READS.md). They use the existing core
+HMAC, typed-target, cursor and re-auth contracts; Events is never imported.
+
+BK-F resource websites are mapped in [SOURCE-MAP-BOOKING-WEBSITES.md](SOURCE-MAP-BOOKING-WEBSITES.md).
+Bookings supplies typed adapters to the always-present website/asset/clone infrastructure.
+
+Event uploads, website copy-on-write and duplication use
+`makerspaces/event_asset_transaction.py` to reserve keys/quota, release all domain row
+locks for `event_asset_work.py` storage operations, then revalidate and commit the complete
+graph. `events/website_copy_snapshot.py` freezes relational copy inputs across that gap.
+`makerspaces/website_asset_journal.py` owns the durable cleanup-intent/write-claim fence
+and exactly-once attachment charge. `resource_clone.py` retains the existing Bookings
+transaction and the shared compensation helper; event callers use its phased subclass.
+Before that engine runs, `events/website_preparation.py` (`prepared_page_write`) and
+`events/clone_preparation.py` re-read the actor, declare and prepare the tenant/event scope
+outside any domain transaction and pre-allocate the EventPage ID, which the engine reuses on
+both passes (`event_asset_transaction(page_id=...)`). Inside, `services_write_boundary.event_write`
+takes the fences and locks, `prepared_copies` refuses a page that changed since preparation,
+and duplication adds the fenced programme and design copy steps (decision #86, 2026-10-23).
+
+BK-G printable passes are mapped in [SOURCE-MAP-BOOKING-PASSES.md](SOURCE-MAP-BOOKING-PASSES.md).
+They consume the existing core positioned-layout/PDF primitives without importing Events.
+
+BK-C booking arrival is isolated in `bookings/models_arrival.py` (abstract credential /
+projection fields and append-only history), `services_arrival.py` (resolve/confirm/reverse),
+`services_arrival_policy.py` (locked lifecycle/time-edit matrix) and `arrival_projection.py`
+(minimal scanner DTO and BK-E aggregate query). The existing Booking save boundary invokes
+the guard so BK-B's ordinary service saves consume it without duplicating BK-B tools.
+`confirmation_access.py`, `confirmation_render.py`, `serializers_arrival.py`,
+`views_confirmation.py`/`urls_confirmation.py` and `views_arrival.py`/`urls_arrival.py`
+own private confirmations and scanner endpoints. `calendar_render.py` is the shared booking
+feed/single-ICS serializer; PNG/calendar formatting reuses always-present
+`makerspaces/confirmation_render.py`. `makerspaces/confirmation_secrets.py` supplies neutral
+QR log redaction; `confirmation_privacy.py` applies private headers through the existing
+request-ID middleware and handlers, including errors before view dispatch. `tenant_migration/catalog_booking_arrival.py` declares portable arrival
+facts; credential omission/fresh reconstruction, User closure, datasets and purge are wired
+in their existing registries. No stored asset is introduced.
+Frontend `bookings/BookingConfirmation.tsx` + `bookingConfirmationApi.ts` provide private
+QR/download/rotation controls; `staff/BookingArrivalScanner.tsx` uses the shared camera
+scanner plus manual entry and explicit resolve/confirm/reverse controls. The drawer combines the BK-B tab shell and staff tools with the BK-C scanner.
+Roster `arrived_at` hides unavailable edits/cancellation/no-show actions; completion remains
+independent of arrival. MyBookings, public submission and the
+public bookings page link to owned confirmations without carrying a QR in navigation URLs.
+
+Lane D shared communications live in `integrations/broadcasts_models.py` (abstract schema),
+`broadcasts_registry.py` (typed adapters), `broadcasts_worker.py` (200-account batches and
+recovery), `broadcasts_delivery.py` (execution checks/status reconciliation) and
+`broadcasts_preferences.py` (shared saved-category routing for event and booking campaigns).
+Phase-1a personal notification contracts live in `integrations/models_contract.py`,
+`models_endpoints.py`, `notification_outbox.py`, `notification_resolution.py`,
+`notification_delivery.py`, `notification_proofs.py` and their `notification_*` siblings.
+`notifications/models_preferences.py` owns personal multi-select policy; the existing
+`integrations.NotificationPreference` still owns the tenant matrix. Domain lanes register
+live validators/renderers with `notification_sources.py`; provider lanes register factories
+through `notification_providers.py`. HTTP shapes and proof requirements are frozen in
+`docs/notification-contract.md`, with the Phase-2 trigger target in `docs/notification-coverage.md`.
+`delivery_sources.py` is the pre-send/digest eligibility registry; `delivery_digest.py`
+rebuilds summaries from durable source outbox references. `EmailDelivery` and `EmailLog`
+carry source kind/id/metadata through lifecycle dispatch, deferral and retry.
+`operations/report_subjects.py` owns generic subject validation/authorization;
+`report_download.py` dispatches registered CSV/XLSX/PDF renderers and download audits.
+`report_pdf.py` renders paginated metric/value tables with provenance; new event report
+definitions/builders/typed contracts are `report_definitions_events.py`,
+`reports_event_exports.py`, `serializers_reports_events_detail.py`.
+
+Booking/event analytics (1f-2 D/E): `operations/report_definitions_de.py` registers
+the new builders and organization combiners; `report_fields_de.py` owns their allowlists.
+`reports_booking_trends.py` provides booking-utilization v2; `reports_booking_analytics.py`
+owns occupancy, lead-time and member rankings. `reports_event_analytics.py`,
+`reports_event_revenue.py` and `reports_event_quality.py` own signup/funnel, money,
+and check-in/feedback measures respectively. `org_report_de.py` combines count/sum/rate
+inputs. Measurement boundaries and per-key fields are in [`docs/SOURCE-MAP-REPORTS.md`](SOURCE-MAP-REPORTS.md#bookings-and-events-areas-d-and-e).
+
+Booking resource reports (BK-E): `bookings/report_subject.py` registers the typed
+`bookable_space` policy; `report_features.py` projects request-local UI capabilities.
+`operations/report_definitions_bookings.py` registers four tenant-only reports;
+`reports_booking_resources.py` reuses `reports_bookings.py` and wires
+`extend_with_booking_arrival_counts` to BK-C `arrival_projection.arrival_metrics`,
+using the same tenant/resource/overlap window. Resource rows and exports include separately
+labelled current arrival counts; legacy tenant reservation utilisation is unchanged. `reports_booking_exports.py`
+reads allow-listed reservation/contact and answer snapshots through model accessors;
+`serializers_reports_bookings.py` defines the typed response contracts, including the
+resource-only arrival-count row.
+`reports_booking_pdf.py` supplies reservation semantics to the shared renderer;
+`report_pdf_fonts.py` selects the embedded Unicode font (backend image: DejaVu Sans).
+`BookingResourceAnalytics.tsx`, `BookingResourceTabs.tsx` and `bookingReportsApi.ts`
+provide resource/date query keys, accessible drawer tabs and audited download actions;
+`OperationsReportsBookings.tsx` exports the summary shared with the existing tenant report.
+Regression tests live under `backend/tests/operations/test_booking_*reports.py`,
+`test_booking_report_exports.py` and `test_booking_arrival_reports.py`; staff/arrival matrix regressions live in
+`backend/tests/bookings/test_arrival_staff_tools_integration.py`. The resource analytics
+Vitest file covers separately labelled arrival counts.
+
+Event adapters live in `events/broadcasts.py`, `models_broadcasts.py`,
+`services_broadcasts.py`, `views_broadcasts.py`, `serializers_broadcasts.py` and
+`urls_communications.py`; `services_bulk_invites.py`/`views_bulk_invites.py` own the
+bounded code-free email invitation flow, and `report_subject.py` owns event report policy.
+`makerspaces/module_purge_collectors_events.py` is re-exported by the existing collector
+barrel; `tenant_migration/catalog_broadcasts.py` declares inert portable history.
+Staff drawer components are `EventBroadcastsPanel.tsx`, `EventBulkInvites.tsx` and
+`EventAnalyticsPanel.tsx`, backed by `eventCommunicationsApi.ts` query keys/mutations.
+
+Event staff authority lives in `events/event_authority.py`, with its permission vocabulary
+in `event_permissions.py` and concrete typed event/series grants in `models_staff_grants.py`.
+`services_staff_grants.py` adapts the always-present
+`makerspaces/resource_grants_services.py` invite lifecycle; abstract fields and validation
+are in `makerspaces/resource_grants_models.py`. `resource_grant_sources.py` is the query-free
+runtime discovery registry consulted by account sign-in, auth payloads and MFA. Events
+registers its `staff_payload.py` source only while active; retention and purge continue
+to own concrete event rows after tombstoning. `views_staff_grants.py`,
+`serializers_staff_grants.py` and `urls_staff_grants.py` own invite/grant management and
+redemption; `views_accessible_events.py` lists only events the actor can access.
+`registration_view_errors.py` holds registration error schemas shared by the registration
+and eligible-member views, keeping their imports independent.
+`staff_grant_locks.py` stabilizes creator authority under user, role, membership and organizer
+locks; `serializers_event_authority.py` adds the shared permissions/manager projection to
+event and series serializers. `event_authority_page.py` resolves list-page authority in
+batches; list views pass its results through serializer context, while details keep
+per-object checks. Discovery includes series entries with `event_id=null`,
+so a granted series remains reachable before it has occurrences.
+Settings authority (L17, #101): `makerspaces/settings_authority.py` is the one write gate
+(`assert_setting_write`, `decide`, `record_change`); `settings_authority_registry.py` holds the
+module → manager-action map, finance prefixes, the rental-timing fixed exception and the
+rows-only extension tuples; `settings_authority_writes.py` writes grants and locks,
+`settings_authority_effective.py` answers "what may I edit", `settings_authority_views.py` is the
+staff API and `models_settings_authority.py` the append-only grant/lock rows.
+`domain_settings.py` and `loan_policy_settings.py` are adapters on it. Folded capabilities (#97):
+`capability_definitions_r2_l17.py` defines the per-parent keys, `folded_capabilities.py` the 404
+gates and the To-Buy kind / warranty host mapping, `capability_purge.py` +
+`capability_purge_plans.py` + `admin_capability_purge.py` the superadmin purge, and
+`module_switch_authority.py` who may install a module (#128 C-10). Report sources that are
+capabilities resolve in `operations/report_sources.py`. Frontend: `features/staff/
+SettingsAuthorityCard.tsx`, `SettingLock.tsx` and `settingsAuthorityApi.ts`.
+Fixed membership roles live in `makerspaces/role_catalog.py`. `accounts/rbac_roles.py`
+shares the valid-role predicate between object resolution and SQL `Exists` filters;
+`makerspaces/role_membership_writes.py` is the complete-set writer used by lifecycle
+and staff assignment services. Machine authority links are per membership and type in
+`machines/models_membership_scope.py`, resolved by `role_scope_resolution.py` and
+written by `member_scope_services.py`. The console API lives in
+`admin_api/views_member_scope.py` and `serializers_member_scope.py`.
+Frontend `features/staff/panels/RoleSetPicker.tsx` owns exclusive/combinable checkbox selection;
+`roleSets.ts` owns assignment ceilings, handwritten membership role-set types and cache invalidation.
+`RolesReference.tsx` renders the read-only server role catalogue. `MemberRolesControl.tsx` retains the compatibility role control; the backend refuses
+member-to-staff assignment; `MemberMachineTypes.tsx` edits per-person type scope using `rolesApi.ts`.
+The staffRoles panel reuses the picker; UsersTable and MembersPanel display the whole role set.
+Built-in staff roles are staff-track rows on a person, granted from the staff-roles screen.
+Role CRUD and RoleManager/RoleEditor/RoleMachineScopeEditor are removed. Booking rules reuse
+`MakerspaceBookingRulesSettings.tsx` in both Settings and Bookings.
+
 WP1 event access and ticketing lives in `events/registration_access.py`, `invites.py`,
 `ticketing.py` and `promos.py`; `participant_access.py` limits account ticket reads to
 the owned registration. New model, serializer and route files are indexed in
@@ -15,6 +400,40 @@ the owned registration. New model, serializer and route files are indexed in
 live in `frontend/src/features/inventory/PublicEventDetailPage.tsx` and
 `frontend/src/features/events/`; staff ticketing uses `eventTicketingApi.ts` and the
 `EventInvitesPanel`, `EventTicketsPanel` and `EventPromosPanel` components.
+
+Paid ticketing v2 (release 2 L6): models in `events/models_{orders,checkout_holds,addons,passes,transfers,
+venue_fees}.py`; the order quote `orders_quote.py` (+ `orders_codes.py`, `ticket_tiers.py`), placement
+`orders_checkout.py`, seats and invites `orders_attendees.py`, claims `orders_claims.py` (the
+`orders_context.py` seat context), settlement `orders_settlement.py` (dispatched from
+`payments/admission_settlement.py`), refunds `orders_refunds.py` (+ `payments/services_refund_partial.py`),
+the frozen per-ticket price `orders_pricing.py` (L24 contract), `orders_type_change.py`, `transfers.py`,
+`passes.py`, `addons.py`, `venue_fees.py` (+ `payments/pricing/build_venue.py`), the refund override in
+`cancellation_policy.py`, desk collection in `services_checkin.collect_at_desk`, the sweep
+`reminders_payments.py`, notices `notices_r2_l6.py`, confirmation invites `registration_invites.py`,
+`bookings/confirmation_invites.py`, `makerspaces/calendar_invites.py` and
+`integrations/inline_attachments.py`, and `orders:read` in `views_integration_orders.py`. Routes:
+`urls_ticketing.py` (staff), `urls_ticketing_member.py`, the shop in `views_ticketing_shop.py`. Frontend:
+`features/events/ticketing/` (shop, order summary, claim page, my orders; the member transfer and
+type-change card `TicketManageActions.tsx` and the series-pass page `MemberSeriesPassPage.tsx`) and
+`features/staff/eventTicketing/` (orders, sales rules, add-ons, refund policy, venue fee, passes, desk).
+Donations, sponsors and calendar sync (release 2 L18): the internal package `payments/donations/`
+(models `models_donations.py`, `models_sponsors.py`; giving `services.py`, `identity.py` (guest code and
+signed links), pledges `pledges.py`, 80G `tax_receipts.py` + `tax_receipt_pdf.py`, settlement `settlement.py`
+(from `payments/admission_settlement.py`), returns `refunds.py`, sponsors `sponsors.py`, the wall `wall.py`,
+notices `notices.py`, beat jobs `tasks.py`, report builders `reports.py` + `reports_sponsors.py` (registered in
+`operations/report_definitions_donations.py`; the `finance-donations` area is in `payments/reports_finance_ledger.py`); routes `urls.py`, views `views_public|guest|member|staff|sponsors|
+sponsor_logo.py`); decision 242(m) adds the non-profit profile `nonprofit.py` (schemes, live exemptions, the
+public Donate entry) and the Donations area's donors/export/receipt-resend/paid-claim routes `views_staff_area.py`;
+the staff console's own tab is `features/staff/sponsors/DonationsArea.tsx`). Calendar: `events/models_calendar_personal.py`, `calendar_feed_tokens.py`,
+`calendar_feed_shifts.py`, `calendar_feed_combined.py`, `views_calendar_feeds_r2.py`; the feed switches in
+`bookings/views_feed.py` and `events/views_calendar.py`. The Pages `sponsors` section is in
+`makerspaces/public_page_*`. Frontend: `features/donations/`, `features/staff/sponsors/`,
+`features/members/calendarFeeds/`.
+Organizer, audience and partner pickers share `features/staff/AsyncSearchPicker.tsx` through
+`EventPartnerPickers.tsx`; `EventPartnersSection.tsx` is the create form's "Organizers & partners" step,
+`EventAudienceOrganizations.tsx` the Settings-tab audience editor, `EventCheckInList.tsx` the Check-in
+tab's live list, and `eventPartnersApi.ts` their queries/mutations. `EventAudienceOptions.tsx` owns the
+one wording of the registration-audience choices used by events, series and space defaults.
 
 [Module families and public-site settings](SOURCE-MAP-MODULE-FAMILIES.md) maps the
 WP2 loan/public-site gates, compatibility splits, family dashboards and routing.
@@ -31,6 +450,20 @@ invitation delivery after commit. The console creation steps live in
 `features/staff/panels/usersModals/CreationWizardSteps.tsx`.
 `organizations/views_console.py` and `services_console.py` own superadmin create/link
 setup alongside `views_admin.py`; `features/staff/OrganizationSetup.tsx` renders it.
+`organizations/services_owner.py` owns atomic owner assignment shared by the installer, makerspace API
+and `/control/`; `makerspaces/admin_owner.py` defines the add-only owner organization form and the
+`MakerspaceAdmin` mixin that assigns the owner and turns a post-validation owner failure into a message.
+`hosting_requests/` owns managed-platform hosting requests: `workflow.py` is the only writer of
+`HostingRequest.status`, `authority.py` decides who may invite and when "Join <organization>" is offered,
+`retention.py`/`tasks.py` run the daily 48-hour delete and 90-day redaction, `notifications.py` sends the
+platform mail, `prefill.py` builds the pre-filled `/control/` add link, and `admin.py` is the `/control/`
+review (accept/reject actions and the re-auth-safe "Create makerspace" view). `makerspaces/admin_owner.py`
+records the link through the add form's hidden `hosting_request` field. Frontend: `features/hosting/`
+(`/hosting`, `/hosting/invite`, `/hosting/request`, `hostingApi.ts`) and
+`features/staff/HostingInvitations.tsx` (the makerspace-settings and organization "Invite a makerspace"
+section).
+`features/staff/panels/usersModals/OrganizationPicker.tsx` supplies the creation wizard's searchable,
+paginated active-organization picker and new-organization option.
 Organization-link audit IDs are inert source provenance in
 `tenant_migration/audit_references_meta_ux.py`.
 `features/members/memberCard/offlineLoans.ts` stores an explicit own-loan projection;
@@ -41,10 +474,29 @@ across panel navigation and fence late callbacks after account/session cleanup.
 WP3 delivery timing lives in `integrations/models_timing.py`, `quiet_hours.py`,
 `digests.py`, `timing_dispatch.py` and `reminders_deferred.py`; the existing F1 sweeper
 owns its durable release claims. `views_timing.py` configures tenant timing and the
-encrypted inbound credential; `bounce_webhooks.py` exports `views_bounce.py`, which verifies provider HMACs and writes
-address-hash suppression. `notifications/models_broadcasts.py`, `broadcasts.py` and
+encrypted inbound credential; `bounce_webhooks.py` exports `views_bounce.py`, which verifies provider HMACs; both its
+routes write the canonical bounce/complaint record and address-hash suppression through
+`email_provider_events.record_provider_event`. `notifications/models_broadcasts.py`, `broadcasts.py` and
 `views_broadcasts.py` own scoped member segments, matrix fan-out and personal announcements.
+`notifications/models_push.py` owns canonical per-device children; `member_push.py`,
+`member_push_policy.py`, `envelope_push_leases.py` and `envelope_push_transport.py` separate
+registered fan-out, current source/device gates, fenced claims and transport. The old
+member_push_leases helper remains for legacy staff matrix use. `notifications/tasks.py`
+re-enters canonical envelope delivery for five-minute recovery; old enqueue IDs are inert.
+`notifications/inbox_scope.py` validates persisted requester-selection subjects.
+`integrations/push.py` shares one-device provider sending; `push_payload.py` builds v3
+data (v2 keys unchanged, plus `channel`/`category`, 40/120-character title/body) through the
+existing `mobile_link_contract.py` routing contract. `push_categories.py` is the single source of
+truth for the watch-friendly presentation (L19, #116): feature -> Android channel and iOS
+(sub)thread, the three safe action sets, and the money/evidence events that never get buttons.
+`push_apns.py`/`push_fcm.py` place them on the wire (`aps.category`/`thread-id`; FCM
+`android.notification.channel_id`/`tag`, never `click_action`).
 `payments/failure_notifications.py` handles verified failed attempts without closing debt.
+`payments/services_mobile.py` coordinates native rail locks and vendor dispatch;
+`services_mobile_razorpay.py` validates and recovers native Orders through
+`providers/razorpay.py`. `serializers_mobile.py` defines the vendor-discriminated response.
+`terminal_settlement.py` retains late-capture refund anchors and deduplicates excess-collection
+audits; `reconciliation_rail.py` closes native Razorpay Orders locally without cancelling links.
 Booking models are explicitly exported from `bookings/models.py` over `models_spaces.py`,
 `models_booking.py` and `models_feed.py`; `services_reschedule.py` and `services_recurrence.py`
 reuse the ordinary space lock and booking policy. `views_feed.py` owns private booking ICS
@@ -64,10 +516,40 @@ Stocktake policy snapshots, blind serializers and schedules live in
 `operations/models_stocktake_discipline.py`, `serializers_stocktake.py`,
 `stocktake_discipline.py` and `views_stocktake_discipline.py`.
 `machines/views_public_detail.py`, `serializers_public_detail.py` and
-`public_detail.py` own the independent public detail/collection and aggregate ETA;
+`public_detail.py` own the independent public detail/collection; its opt-in `queue`
+summary now comes from the shared queue simulator (one snapshot per page);
 the original `machines/views_public.py` remains a separate surface.
+
+Machine-service queue ETA, notices and cancellation (decisions 44/45, every machine type):
+`machines/service_queue_eta_core.py` (pure simulator: `Timeline`, `lane_summary`) and
+`service_queue_eta_records.py` (records, reason vocabulary, 5-minute boundary rounding);
+`service_queue_eta.py` is the ORM adapter (`queue_snapshot_for`, `machine_queue_summaries_for`,
+at most four SELECTs per tenant snapshot, scalar columns only) and
+`service_queue_eta_serializers.py` the shared `ServiceRequestEtaSerializer` /
+`MachineQueueSummarySerializer`. `service_queue_position.py` keeps the legacy counts on one
+batched ranking. Requester milestone intents live in `service_queue_notices.py`
+(`reserve_milestone`, `reevaluate_head`) with delivery checks/rendering in
+`notifications_p2_service_notices.py`, wired under the one `machines.service` source kind.
+`service_workflow_cancel.py` owns `cancel()` (re-exported by `service_workflow`), and
+`service_workflow_start.py` owns `start()` (re-exported by `service_workflow_actions`);
+`service_manual_usage.py` owns linked/unlinked typed manual usage (re-exported by
+`service_consumable_pools`). Public token status for any type: `public_service_status.py` +
+`views_public_service_status.py`; owner member-surface routes: `views_service_cancel.py`;
+staff cancel: `admin_api/views_machine_service_actions.MachineServiceCancelView`. Member
+dashboard rows: `makerspaces/member_activity_machine_service.py`. Frontend:
+`frontend/src/features/machine-service/` (`ServiceRequestEta`, `QueueSummary`,
+`ServiceCancelButton`, `OwnerCancel`, `MemberServiceRequestRows`,
+`PublicMachineServiceStatusPage` at `/machine-service/requests/:publicToken`), with staff
+row helpers in `features/staff/panels/machine/ServiceEtaLine.tsx`.
 Local materials use `models_materials.py`, `material_catalogue.py` and
 `views_materials.py`; custom intake uses `intake.py` and `views_intake.py`.
+Per-type consumable profiles and type templates (decisions 341/343): vocabulary `consumable_profiles.py`, models
+`models_consumable_profiles.py`, editing `consumable_profile_services.py`, job usage `consumable_usage.py` (stock
+draws in `consumable_stock.py`), templates `template_spec.py` + `data/machine_type_templates.json` +
+`template_apply.py`, API `views_consumable_profiles.py`, `views_consumable_stock.py`, `views_job_consumables.py`;
+pricing lines `payments/pricing/build_machines.consumable_lines`; report `operations/reports_machine_consumables.py`.
+Per-type setup: `models_type_setup.py`, `type_setup.py` (booking defaults, read by `bookings/services_spaces.py`),
+`type_documents.py`, `views_type_setup.py`, `views_member_type_guide.py`.
 Maintenance usage calculations live in `maintenance/meters.py` and `meter_jobs.py`,
 with separate F1 occurrences in `reminders_meters.py`. Hashed staff ICS credentials
 and live scope checks use `models_feed.py`, `calendar_feed.py` and `views_feed.py`.
@@ -90,7 +572,21 @@ JWT lineage over the existing token ledger. Subject export routes/jobs live in
 existing field classification. `subject_boundary.py` reuses source-gate boundaries.
 Frontend account controls live in `features/members/MemberAccount*.tsx` with
 `memberAccountApi.ts`; staff plan controls use `MembershipRenewalFields.tsx`.
+`features/auth/SignOutEverywhere.tsx` calls account-wide logout from member Security
+and all account MFA settings, independently of membership self-service.
 See [member-account-renewals.md](member-account-renewals.md) for policy and limits.
+
+Account deletion (any person, staff roles included) lives in the `accounts/account_deletion*` service modules
+and `accounts/views_account_deletion.py` / `serializers_account_deletion.py`. Stage A archives identity,
+revokes session authority and coordinates existing membership/application services.
+`organizations/services_governance.py:self_departure` owns organization departure
+without requiring governance authority, while preserving the last-governor invariant.
+`accounts/reauthentication*.py` supplies browser/device proof and provider second-factor
+intents independently of the deletion transaction. Stage B purge uses the durable
+tenant/object journals described above.
+`accounts/account_obligations.py` locks the obligation owner after domain locks;
+new loans, bookings, registrations, service jobs and membership purchases use it
+to serialize against departure. Refresh rotation locks the account before tokens.
 Public item deep links live in `frontend/src/features/inventory/PublicItemPage.tsx`;
 they reuse `inventory/views.py`'s existing `PublicInventoryDetailView` and the
 catalogue's `PublicProductSerializer`. Public search builds an allowlisted vector
@@ -108,7 +604,11 @@ entry points are indexed in `docs/SOURCE-MAP-CONSOLES.md`.
 
 Cloud surfaces: `accounts/views_social.py` explicitly exports the nonce/login views in
 `views_social_login.py` and identity management in `views_social_identities.py`, with shared
-verification/error helpers in `views_social_helpers.py`. `integrations/health.py` explicitly exports
+verification/error helpers in `views_social_helpers.py`. `accounts/services_device_grants.py`
+owns shared first-grant creation for social and phone sign-in; `services_phone_device.py`
+consumes the OTP-bound attestation and carries member-only phone provenance through MFA.
+`makerspaces/config_native.py` owns native provider/version discovery and its OpenAPI serializers.
+`integrations/health.py` explicitly exports
 `health_status.py` rollups and `health_chat.py` destination/legacy delivery summaries. The
 read-only scheduler control page lives in `operations/admin_scheduling.py`.
 The shared reminder foundation is `operations/models_reminders.py`,
@@ -130,7 +630,61 @@ and report presentation is `staff/panels/OperationsReportsFinance.tsx`.
 Core due dates and billing policy live in `payments/due_dates.py`, `models_billing.py`
 and `views_billing.py`; manual receipt corrections/release reuse
 `services_refunds_offline.py` and `views_refunds_offline.py`.
+Refund cases: `payments/models_refund_cases.py` (RefundCase, RefundPolicy),
+`refund_policy.py` (the due arithmetic) with `refund_policy_membership.py` (term bands, the
+covered-term rule), `refund_cancellation.cancel_or_hold`/`hold_settled` (the cancel seams
+events, bookings and `membership_plan_services.cancel_term` call), `services_refund_cases.py` (open/upgrade/request/
+withdraw/void), `services_refund_decisions.py` (approve/decline, the only path to a
+Refund), `refund_case_access.py` (queue scoping), `refund_case_sweeper.py` (hourly
+rebuild), `notifications_refund_cases.py`, and the views `views_refund_cases.py`,
+`views_refund_policies.py` (with `serializers_refund_policies.py`), `views_refund_member.py`. `services_refunds.open_refund_locked`
+is the shared step-1 for a caller already holding the Payment lock. The report is
+`operations/reports_refunds.py`. Frontend: `features/staff/refunds/` (queue, decision
+dialog, policy panel with `RefundPolicyCard` and per-plan `RefundMembershipPolicies`), `staff/RefundReceiptFields.tsx` (shared receipt inputs) and
+`members/MemberRefundRequest.tsx`.
+Price-drop refunds (release 2 L24, #163A/#171): `payments/price_drop/` -- `triggers.py` (the one
+call every price save makes), `hook.py` (collect for a preview, or open the cases and audit),
+`preview.py` (`?price_drop_preview=1` dry-run decorator), `shares.py` (baseline and difference
+arithmetic), `approval.py` (Space Manager or finance admin decides a difference case), and one
+finder per area (`find_bookings.py`, `find_jobs.py`, `find_tickets.py`, `find_membership.py`).
+Prepaid-job cases live in `machines/job_refunds.py` (cancelled before start; cheaper than quoted).
+Frontend: `features/staff/priceDrop/` (the preview dialog and the save guard every price form uses).
+Money, tax and the finance ledger (release 2 L5): the tax engine is `payments/tax/` (`models_tax.py`
+settings and FY counters, `engine.py` splits, `apportion.py` credit notes, `gstin.py`, `snapshot.py`
+the per-charge freeze called from `services.create_payment`, `document_tax.py` the per-document plan,
+`fy.py`), with `numbering_fy.py`, `document_pdf_tax.py`, `tax_preview.py` and `views_tax.py`. Offline
+collection: `upi.py`, `models_claims.py`/`offline_claims.py`, `models_settlement.SettlementConfirmation`
+with `maker_checker.py`, `views_offline.py`. Online exceptions: `models_capture_flags.py`/`capture_flags.py`,
+`online_settlement.py` (the shared webhook/poll settle path), `models_disputes.py`/`services_disputes.py`
+(record) with `payments_rail/dispute_ingest.py` (ingest), `method_labels.py`, `gateway_poll.py` with
+`payments_rail/provider_poll.py`. Pay links: `models_pay_links.py`, `pay_links.py`, `views_pay_links.py`,
+`payments_rail/views_pay_link_checkout.py`. The finance ledger: `models_ledger_entries.py`,
+`ledger_api.py` (the `record_expense`/`record_receipt`/`void` contract other lanes call),
+`ledger_entries.py`, `finance_scope.py` (the only per-area visibility answer), `finance_rows.py` (every
+movement as rows), `reports_finance_ledger.py`, `models_event_budget.py`, `views_ledger.py`,
+`views_finance.py`, routes in `urls_l5.py`. Reports: `operations/report_definitions_finance_l5.py`,
+`reports_tax_gst.py`/`reports_tax_gst_json.py`/`reports_tax_returns.py`, `reports_bookkeeping_fy.py`,
+`reports_money_methods.py`. Capability keys: `makerspaces/capability_definitions_r2_l5.py`.
+Frontend: `features/finance/` (finance ledger, tax settings, claims/confirmations, flags, disputes,
+GST downloads), `features/members/MemberPaymentOffline.tsx` (UPI QR and claim) and `pages/PayLinkPage.tsx`.
 `operations/reports_cash_book.py` owns effective manual money-in/out totals.
+Pricing, paid and free everywhere (release 2 L15): `payments/pricing/` is the kernel -- `components.py`
+(the per-area component registry later lanes extend), `resolver.py` (`quote()`, the one resolver),
+`rates.py` (the rate card and per-component precedence), `adapters.py` (release-1 price columns read
+and written through), `build_loans.py`/`build_machines.py`/`build_other.py` (lines per area), `quotes.py`
+(the frozen `Quote`, rounding, digest), `discounts.py` (best automatic discount), `waivers.py` +
+`waiver_refunds.py` (loan fee waivers), `charging.py` (raise or audit free), `impact.py`,
+`admin_services.py`, `discount_services.py`, `public_quote.py`, `targets.py` (who prices which item),
+`card_payload.py`, `loan_charges_payload.py`. Models: `models_pricing.py` (PricingDefault,
+PricingDefaultLine, PriceOverride) and `models_pricing_rules.py` (PriceDiscount, LoanFeeWaiver); views
+`views_pricing.py`, `views_pricing_items.py`, `views_pricing_discounts.py`, `views_loan_charges.py`,
+`views_pricing_quote.py`, routes in `urls_pricing.py`. Seams: `hardware_requests/loan_charges_issue.py`
+(deposit gate, `on_request_issued` for every issue path), `loan_charges_rental.py`, `loan_charges_return.py`,
+`loan_charges_damage.py` behind the `loan_payments.py` barrel; `machines/service_payments.py`,
+`bookings/service_payments.py`, `events/service_payments.member_price`. Capability keys:
+`makerspaces/capability_definitions_r2_l15.py`. Frontend: `features/staff/pricing/` (Settings ›
+Pricing, discounts, `PriceOverrideCard`), `features/staff/loanCharges/` (Charges panel, Waive fees,
+the return charge step) and `features/payments/PricePreview.tsx`.
 `payments/schemas_billing.py` documents typed business errors and DRF field-validation
 responses. The module guide links into `MODULES-INVENTORY.md`, `MODULES-WORKSHOPS.md`,
 `MODULES-PLATFORM.md` and `MODULES-LIFECYCLE.md` to keep each reference below the file ceiling.
@@ -161,6 +715,50 @@ Platform monitoring uses `admin_api/views_platform_monitoring.py` and its schema
 `platform_integration_health.py` reads channels without creating settings; `tasks_platform.py`
 and `scheduler_telemetry.py` own scheduled checks and beat completion telemetry.
 Tenant counters and allowances are read by `makerspaces/usage_snapshot.py`.
+
+Report infrastructure: `operations/report_registry.py` composes `report_definitions_<area>.py`;
+`report_validation.py` validates privacy flags and chart specs (also a Django check),
+`report_output.py` projects public rows, and `platform_scope.py` separates platform context
+and service buckets from tenant authority. Organization builders register combine functions
+with `org_report_aggregate.register_combine`; `report_coverage_contract.py` is the phase-1f
+module-to-report acceptance table, separate from runtime prerequisites.
+`report_charts_remaining.py` supplies the F1 specs for legacy and subject-detail reports,
+including currency-separated ledger/journal summaries. Detail builders expose a numeric
+count per row where no measurement existed; health rows retain their tenant chart axis.
+`tests/operations/test_chart_spec_complete_m1f6.py` guards the whole previewable registry
+and both platform analytics responses. The latter use `PlatformAnalyticsReportSerializer`.
+
+H/I analytics register in `operations/report_definitions_hi.py`: communications v3 stays in
+`integrations/reports_communications.py`; tenant mobile counts live in
+`operations/reports_mobile_devices.py` and `reports_mobile_auth.py`. Their shared allowlists
+are `report_fields_hi.py`; `reports_mobile_platform.py` exposes context-guarded global source
+projections for platform builders. Measurement and disclosure notes: [SOURCE-MAP-REPORTS.md › areas-h-and-i](SOURCE-MAP-REPORTS.md#areas-h-and-i).
+Area J analytics: `operations/report_definitions_j.py` registers device, presence,
+audit, organization membership and delivery-health reports; `report_fields_j.py`
+declares their public schemas. `reports_j_*` builds tenant rows and `org_reports_j.py`
+combines organization counts and rate inputs. Person rankings and local hour-of-week
+are separate tenant-only keys. Organization membership is offered only on organization
+and deployment surfaces. `reports_platform_services.py` owns provider metering and the
+anonymous hidden-service bucket; `reports_platform_usage.py` owns visible-space activity,
+with finalized consumable sources in `reports_platform_consumables.py`.
+`views_platform_analytics.py` serves the two platform keys and the action-scoped tenant
+picker. `metrics_push.py` reads both per-device outcome ledgers for Prometheus.
+
+Superadmin platform overview (#183A): `operations/platform_overview.py` composes the blocks and
+the space selection (archived and importing/aborted spaces left out unless toggled);
+`platform_overview_blocks.py` holds the `Block`/`Metric` contract and the grouped per-space
+query helpers, so every total is the sum of its per-space rows. Blocks live in
+`platform_overview_people.py` (people, lending), `platform_overview_activity.py` (machines,
+events, bookings, membership) and `platform_overview_ops.py` (operations, module matrix);
+`platform_overview_money.py` groups money per currency from `reports_finance_sources` plus
+non-voided `LedgerEntry` rows. `platform_overview_window.py` resolves the UTC presets,
+`platform_overview_cache.py` + `tasks_platform_overview.py` cache the result and compute it in
+Celery (202 "computing" until ready), `platform_overview_export.py` writes the CSV and
+`views_platform_overview.py` serves `platform-overview` and the audited `platform-overview-export`
+(both `PLATFORM_ONLY_ROUTES`). The web console page is
+`frontend/src/features/platformOverview/` (the Platform overview tab of
+`staff/eventProgramme/PlatformProgrammeDashboard.tsx`).
+Field/measurement contracts and the complete lane handoff are in [`SOURCE-MAP-REPORTS.md`](SOURCE-MAP-REPORTS.md#area-j).
 
 Membership admission is described in [membership-admission.md](membership-admission.md).
 `makerspaces/models_admission.py` owns the settings and immutable vouch models.
@@ -209,206 +807,367 @@ Frontend `staff/SpacePacksPanel.tsx` owns export/preview/apply, with handwritten
 Platform profile admin scoping is declared in `config/admin_scope_registry.py`;
 the profile route is platform-exempt in `tenant_migration/gate_policy_http.py`,
 while pack application explicitly asserts the target source gate before writes.
-- `backend/config/` — Django project (`settings.py`, `urls.py`, wsgi/asgi). All API routes under `/api/`.
-  `config/admin_access.py` holds the `/control/` gating, CSP middleware, and the hidden-scope drift-guard
-  registries (`NESTED_MAKERSPACE_LOOKUPS`, `GLOBAL_ADMIN_MODELS`).
-- `backend/apps/accounts/` — custom `User` model (`AUTH_USER_MODEL`), browser JWT auth, attested device
-  grants/rotating refresh families, Google/Apple social identities + nonce/JWKS verification, and the
-  Auth & RBAC module: thin `rbac.py` import surface/coordinator over `rbac_actions.py`,
-  `rbac_memberships.py`, `rbac_organizations.py`, and `rbac_superadmin.py` (`can(...)`, action-based
-  `actions_for_membership`/`makerspaces_for_action`/`scope_by_action`, makerspace scoping, superadmin
-  hide/archive exclusion).
-- `backend/apps/makerspaces/` — `Makerspace` model (tenant root; unique `slug`; `frontend_domain`, module
-  flags, `resource_limit_overrides`, `archived_at`, `superadmin_access_enabled`), bootstrap views, dynamic
-  CORS, module guards, `module_registry.py` (canonical module registry — all module lists derive from
-  it; the `ModuleDefinition` tuple itself lives in `module_registry_catalog.py`, the import-time checks in
-  `module_registry_validation.py`, so add a module to the catalogue), `platform.py` (origin helpers), `limits.py` (fair-use quotas), `lifecycle.py` (archive/purge barrel
-  over `lifecycle_archive.py`, `lifecycle_purge.py` and `lifecycle_storage.py`),
-  `models_makerspace_validation.py` owns model clean checks; `theme_validation.py` validates
-  the closed theme JSON for control forms and API writes; `theme_contrast.py` owns
-  the shared WCAG contract. `theme_validation.public_theme_config` sanitizes bootstrap
-  colours while retaining independently valid logo and mode values.
-  `profile_validation.py` validates IANA timezone, ISO country and opening-hours JSON;
-  `opening_hours_schema.py` documents the shared hours schema. `local_time.py` owns
-  `local_now`, `to_local`, `local_day_bounds`, `is_open` and `next_open_interval`
-  (aware inputs, UTC half-open bounds; fold/gap policy in its docstring).
-  `admin_api/views_makerspace_profile.py` serves audited, MANAGE_MAKERSPACE-scoped
-  `/admin/makerspace/<id>/profile`; currency uses `MakerspacePaymentSettings.default_currency`.
-  `origin_scope.py` (browser origin→tenant guard), `provisioning.py`/`hosting.py`, `secrets.py`.
-  `models_stations.py` owns shared inert `Station` metadata plus the complete live
-  `StationCredential` envelope; `station_credentials.py`, `station_sessions.py`, `station_security.py` and
-  `station_throttles.py` own reusable rotation/reveal/disable, signing, PIN/origin and throttle mechanics
-  without importing event policy.
-  `role_services.py` re-exports `role_authority.py` (locked grant validation),
-  `role_crud.py` (audited role mutations), and `role_assignments.py` (staff and community
-  role assignment). The RBAC vocabulary remains in `accounts/rbac_actions.py`.
-  The tenant-migration authority guard scans the split role-authority/assignment modules.
-  Phase 9b kiosk Stations: `models_station_leases.py` (`StationOperatorLease`, `StationSessionRevocation`),
-  `kiosk_station_services.py` (scanner/handover lifecycle + PIN session), `station_operator_leases.py`
-  (lease issue/resolve/narrow/revoke), `station_views_admin.py`/`station_views_public.py`/`station_urls.py`
-  (routes), `station_lease_cleanup.py` + `tasks_station.py` (daily cleanup), `checks_station.py` (timing).
-  The handover side owns `hardware_requests/kiosk_command_policy.py` (the literal operation table),
-  `kiosk_online_commands.py` (work package + dispatch into existing workflows) and `kiosk_views.py`;
-  `evidence/services_upload.py` is the shared row+staging-presign service.
-- `backend/apps/organizations/` — `Organization` (platform entity, creatable before any makerspace, NOT a
-  module_registry key), its opt-in public profile and cross-makerspace event catalogue,
-  `OrganizationMakerspace` (the many-to-many link, at most one `owner` per space),
-  `OrganizationMembership` (org-level makerspace grants plus separate organization-governance actions),
-  and digest-only single-use `OrganizationInvitation` grants. Organization profile/member governance
-  lives in `governance.py` + `services_profiles.py`/`services_invitations.py`; makerspace authority is
-  resolved through `accounts/rbac.py` with its organization layer in `accounts/rbac_organizations.py`,
-  never mirrored into `MakerspaceMembership`; `accounts/org_payload.py` projects it into the auth payload.
-  `models.py` is the schema source of truth; `governance.py` owns the fixed organization-only action
-  vocabulary, `access.py` the visible/locked authorization queries, and the two `services_*` modules the
-  transactional audited profile and invitation mutations. `public_catalog.py` is the canonical public
-  organization-event queryset; `urls_public.py` withdraws that separable events route when `apps.events`
-  is tombstoned, while `urls_admin.py` and the corresponding `views_*`/`serializers_*` expose governance.
-- `backend/apps/apiclients/` — `ApiClient` (client_id + Fernet-encrypted HMAC secret), `ApiKeyRequest`, and
-  `scope_registry.py`/`scope_registry_routes.py` — the single source of truth for which protected route each
-  scope authorizes, keyed on the versioned `view_name`. `checks.py` is the deployment-time guard that a
-  widened `HMAC_PROTECTED_PATH_PREFIXES` has no unregistered routes. Verification itself lives in
-  `apps/inventory/middleware.py`. `origin_validation.py` is the shared exact-origin boundary, and
-  `ApiClientImportApproval` plus the import-provenance/delivery fields are Lane D's append-only,
-  artifact-bound API-client reset record.
-- `backend/apps/audit/` — append-only `AuditLog` + `audit.record(...)` (Postgres-trigger immutable), with
-  signing/batch models in `models_signing.py`, verification phases behind the `integrity.py` barrel, and
-  object-store/HTTP collector protocols behind the `anchors.py` barrel (typed sink failures in
-  `anchors_base.py`, the per-attempt read budget in `anchors_budget.py`, budgeted S3 reads in
-  `anchors_object_io.py`). `presentation.py` is the ONE projector from a stored row to what staff may see
-  (catalogue in `presentation_catalog*.py`, deny policy in `presentation_catalog_dynamic.py`, drift guard in
-  `presentation_guards.py` + `presentation_discovery.py`), used by the audit list, the request timeline and
-  the `audit-trail` CSV. Staff verification runs: models in `models_verification_runs.py`, admission in
-  `verification_runs.py`, one attempt in `verification_execution.py` over `integrity_scope.py` (bounded
-  genesis membership in `integrity_rows.py`, query-free fetched batch checks in `integrity_scope_anchors.py`), the task in
-  `tasks_verification.py`, the API in `views_verification.py`/`serializers_verification.py`, read-only
-  `/control/` views in `admin_verification.py`. The request timeline's audit/retention helper is
-  `hardware_requests/timeline_service_audit.py`; the audit report is `operations/reports_audit.py`.
-- `backend/apps/evidence/` — evidence photos (immutable once attached), S3 storage helpers, signed upload/view URLs gated by
-  per-makerspace `UPLOAD_EVIDENCE` + active status.
-  `retention_models.py` owns the optional per-makerspace `EvidenceRetentionPolicy` override and per-photo
-  `EvidenceObjectRetentionState`, re-exported by
-  `models.py`; both use normal primary keys plus unique one-to-ones so they can travel through tenant
-  migration. `retention_policy.py` is the single source of truth for the effective window and candidate/
-  preview query. `services_retention.py` owns the bounded idempotent sweep: it observes deployment recovery
-  and each tenant source gate, removes both final and staging bytes, credits confirmed storage and audits a
-  terminal expired state without mutating the `EvidencePhoto` row. `sweep_evidence_retention()` is the
-  single sweep entry point, `tasks.py` is its Celery/scheduled-task adapter, and `views_retention.py` exposes
-  the policy and preview API. Mechanism A (object expiry) always retains the row.
-  Abandoned-upload cleanup is separate: `consumption.py` owns the only permitted photo UPDATE (the
-  one-way `consumption_state` → `consumed` mark every consuming workflow makes inside its attachment
-  transaction); `abandoned_upload_candidates.py` is the single predicate (`unconsumed`, strictly old,
-  no inbound FK, no consumption audit, no live coordination claim) shared by preview, discovery and
-  rechecks; `abandoned_upload_cleanup.py` is the gated fan-out sweep (report fence first) and
-  `abandoned_upload_state.py` its claim/complete/release state machine, which deletes a proven
-  never-consumed presign row under the exact-ID GUC and writes the permanent FK-free
-  `EvidenceAbandonedUploadReceipt`; `abandoned_upload_reconciliation.py` re-deletes receipt keys forever
-  as deployment coordination (360-minute success / 720-minute failure cadence).
-- `backend/apps/boxes/` — `QrCode`/`Box` payloads, immutable `BoxScan`/`QrScanEvent`, `qr_render.py`
-  (namespaced standalone SVG shared by QR-print + batch ZIP), QR rebind. Camera scanner at
-  `frontend/src/components/ui/QrScanner.tsx` (native `BarcodeDetector` + `zxing-wasm` fallback).
-- `backend/apps/admin_api/` — staff REST surface: makerspaces, inventory CRUD + per-makerspace category CRUD
-  (`EDIT_INVENTORY`), bulk import, staff/membership + role management, user restrict/restore, API-client
-  issuance (`api_client_views.py`) and access requests (`api_key_request_views.py`), audit reads, warranty,
-  email-log, notification-recipient, FabLab report views.
-  `views_certifications.py` explicitly re-exports type endpoints from
-  `views_certification_types.py` and grant endpoints from `views_certification_grants.py`.
-- `backend/apps/operations/` — open operations/reporting: health, stock transfers (intra + true
-  cross-makerspace), stocktake, adjustments, ledger, `report_registry.py` + `report_scope.py` + `reports_*`
-  builders, CSV/XLSX exports, container APIs, QR print batches (`qr_zip.py`), dashboard, accountability.
-  `views.py`/`services.py` are thin re-export barrels over `views_*`/`services_*`.
-- `backend/apps/integrations/` — Telegram/email/Slack/Mattermost/native-push delivery, encrypted FCM/APNs
-  credentials + device registrations, `dispatch_email` choke point + `EmailLog` outbox + Celery task,
-  webhook (auth via `X-Telegram-Bot-Api-Secret-Token` vs `TELEGRAM_WEBHOOK_SECRET`, fail-closed),
-  `PlatformEmailSettings`, `DailyEmailCounter`, staff-notification recipient matrix.
-  F3's bounded templates live in `email_templates_registry_research.py`; domain
-  adapters use `notifications_research.py` for on-commit staff and owner email delivery.
-- Deployment and backup internals: see [SOURCE-MAP-PLATFORM.md](SOURCE-MAP-PLATFORM.md).
-- `backend/apps/devices/` — device identity (phase 7a, separable, module `devices`). `models_identity.py`
-  (Device, DeviceEnrollment, DeviceRequestNonce) and `models_events.py` (append-only DeviceEvent, DB
-  trigger in `0001`); `protocol.py` owns the v1 canonical bytes and published vectors;
-  `authentication.py` (DeviceAuthentication -> `DevicePrincipal`, never a User) and
-  `route_registry.py` + `checks.py` (the exact `/api/v1/device/` route/action registry and its system
-  check); `services_locks.py` is the Makerspace -> Device -> Enrollment lock order every mutation takes;
-  `services_enrollment.py` (PoP enroll/rotate/reactivate), `services_identity.py` (create/PATCH/revoke),
-  `services_requests.py` (atomic nonce claim, heartbeat), `services_events.py` (DeviceEvent + typed
-  `devices.*` audit).
-  Phase 7b adds `models_commands.py` and `models_printers.py` for durable delivery, bindings
-  and typed immutable reports. `services_commands.py` owns lease/ack/backoff; `printer_access.py`
-  owns current adapter checks and scope; `services_printer_reports.py` claims measurements before
-  `services_printer_apply.py` invokes the existing machine workflow in a separate transaction.
-  Binding and creation services are separate siblings; `printer_state.py` derives advisory staff
-  state. `urls_7b.py`/`route_registry_7b.py` extend the exact protocol and staff surfaces.
-  Shared export, PII, purge, origin and tenant-migration registries compose `*_7b.py` siblings.
-  Phase 7c adds `models_labels.py` (LabelPrintCommand and immutable LabelPrintResult),
-  `services_label_*`, `label_access.py`, `serializers_labels.py` and `views_labels.py`.
-  Labels reuse `services_commands.py` lease/ack/backoff and the operations ZIP renderer;
-  `*_7c.py` siblings compose the shared catalogs. The first send freezes a QR batch.
-  The full contract and invariants live in [device-label-commands.md](device-label-commands.md).
-- `backend/apps/data_export/` — Space-Manager data export (Phase 4). Per-fidelity (`REDACTED`/`PORTABLE`)
-  disposition registry over models, fields, datasets, traversals and the global-user reference closure, with
-  **drift guards that refuse an unclassified model or field**. `classification.py` and `references.py`
-  are thin barrels: the exported field lists live in `classification_domain.py`, the global/omitted
-  model reasons in `classification_platform.py`, and the declared `accounts.User` edges in
-  `references_core.py`; adapter extensions compose `classification_7b.py`/`references_7b.py`.
-  Credential omission checks live in `guards_credentials.py` behind the original `guards.py` exports. Its `guards._equal(subject, declared,
-  actual)` is called with the *scanned* set passed as `declared`, so `extra=` in a failure means **scanned
-  but not registered** — read the signature before deciding which side to fix.
-- `backend/apps/tenant_migration/` — per-makerspace migration, managed → self-host (Phase 5B), in
-  `SEPARABLE_APPS`. `source_gate.py` + `gate_locks.py`/`gate_runtime.py`/`gate_policy.py`/`middleware.py`/
-  `task_gate.py` (the write-drain lock protocol and its AST coverage guards in `source_gate_guards.py`);
-  `archive_envelope.py` + `object_export.py` (streamed into `age`); `admission.py` (the source-superadmin
-  closure approval); `materialization.py` + `raw_repository.py` + `row_planning.py`/`row_dispositions.py`
-  (one-shot insertion); `target_projection.py` (barrel over `target_projection_{types,fields,rows,references}.py`)
-  + `unique_values.py` (barrel: the rules dict is
-  `unique_values_core.py`, the disposition/policy types `unique_values_policy.py`) + `closure_references.py`;
-  `tenant_dump_model_catalog.py` + `tenant_dump_field_snapshot.py` +
-  `tenant_dump_authority.py` (public barrel over literal `tenant_dump_authority_entries.py`
-  and domain supplements)/`tenant_dump_catalog.py` (Lane D's deny-by-default source catalog), and
-  `tenant_dump_source_projection.py` (single-makerspace raw rows plus decision-22 grant closure);
-  `tenant_dump_builder.py` (Lane D's migrated scratch → verified custom-dump orchestrator), with
-  `tenant_dump_database.py`, `tenant_dump_graph.py`, `tenant_dump_raw.py`, `tenant_dump_sql.py` and
-  `tenant_dump_verification.py` owning run-scoped databases, actual-row FK ordering/nullable cycles,
-  reviewed raw columns, fence/closure SQL and restored-candidate verification respectively;
-  `tenant_dump_sequences.py` owns Lane D's exact empty/non-empty sequence state;
-  `tenant_dump_machine_types.py` resolves only fingerprint-identical global built-ins, while
-  `tenant_dump_objects.py` packages immutable staged object bytes without live-storage reads;
-  `tenant_dump_capture.py` + `tenant_dump_capture_database.py` freeze the full exported-snapshot database
-  and exact object bytes before `source_gate_release.py` performs the fenced `copy_capture` release;
-  `tenant_dump_staging.py` + `tenant_dump_database_cleanup.py` own marker-guarded crash cleanup;
-  `tenant_dump_cleanup.py` retries refused unpublished-object deletion from its durable capture-row key;
-  `tenant_dump_derivation.py` derives and seals output only from that capture;
-  `tenant_dump_pii.py` binds raw mapped-column mode findings and ciphertext AAD identities;
-  `tenant_dump_key_inventory.py` freezes and exact-set checks source-broker key facts, while
-  `tenant_dump_dek_protocol.py`/`tenant_dump_dek_helper.py`/`tenant_dump_deks.py` keep plaintext DEKs inside
-  the bounded child operation and emit only the tenant-recipient ciphertext;
-  `tenant_dump_recipients.py` keeps `outer_recipients` and `tenant_dek_recipients` distinct, and
-  `tenant_dump_envelope.py` owns the declared key-member presence/absence ledger plus streaming outer seal;
-  `tenant_dump_target.py` binds D5's pre-destructive identity proof to reconstruction, with
-  `tenant_dump_target_identities.py` enforcing read-only mode-0600 tenant mounts,
-  `tenant_dump_target_protocol.py`/`tenant_dump_target_helper.py`/`tenant_dump_target_deks.py` owning the
-  key-free parent plus bounded target decrypt/rewrap child, and `tenant_dump_target_readiness.py` rebuilding
-  target search derivations and authenticated readiness; `tenant_dump_target_custody.py` re-proves carried
-  recipient public metadata and independently derives Part A versus Lane D custody and decision-19b routing;
-  `tenant_dump_manifest.py` and `tenant_dump_lineage.py` bind D4 custody facts and parent/policy digests;
-  `tenant_dump_publication.py` owns recipient revalidation, refusal cleanup and the atomic
-  pending-to-published/download transition; `tenant_dump_audit_anchors.py` supplies the fail-closed
-  external-anchor absence proof;
-  `tenant_restore_orchestrator.py` is the D7 §5.4 ordered target-restore spine over H1;
-  `tenant_restore_activation.py` owns crash-safe pointer/marker re-entry and writer restart, with
-  `tenant_restore_preflight.py`, `tenant_restore_database*.py`, `tenant_restore_sibling.py`,
-  `tenant_restore_pgpass.py`, `tenant_restore_pointer.py` and `tenant_restore_scheduler.py` owning
-  topology/privilege/lifecycle/credential-minimization/CAS/callback refusal boundaries;
-  `tenant_restore_target_state.py`, `tenant_restore_objects.py`, `tenant_restore_api_clients.py`,
-  `tenant_restore_superadmin.py` and `host_credential_delivery.py` own target-import gating, pre-ledgered
-  object effects, approved authority reset and durable one-time credential delivery;
-  `verification.py` (pre-commit), audit-reference domains behind the `audit_references.py` barrel, and
-  `target_cutover.py` (pre-activation + `IMPORTING → ACTIVE`);
-  `receipts.py`/`receipt_crypto.py`/`cutover.py` (signed single-use handoff); `views_*.py` (superadmin REST).
-- `backend/apps/inventory/` — `InventoryProduct`/`InventoryAsset`, `availability.py` (**the only place**
-  available/reserved/issued/damaged/lost counts change: `reserve_for_request`, `issue_items`/`return_items`,
-  `issue_available`/`return_to_available`, `consume_available`; row-locked, never-below-zero,
-  `InsufficientStock`), `public_availability.py`, allowlist-only public serializers/views,
-  `public_image_storage.py`, `seed_demo`.
+Backend app ownership is indexed once in [SOURCE-MAP-APPS.md](SOURCE-MAP-APPS.md);
+recovery and tenant-dump internals are in [SOURCE-MAP-RECOVERY.md](SOURCE-MAP-RECOVERY.md).
+`backup/restore_hooks.py` and `tenant_migration/restore_hooks.py` clear copied download
+bearers during deployment restore and slice staging.
+
+Native mobile integration setup: `accounts/native_app_identity.py` owns global registration eligibility,
+identity normalization and production minimum-version comparison. `mobile_associations.py` builds
+  public documents using the unchanged `integrations/mobile_link_contract.py`;
+  `views_mobile_associations.py` enforces frontend-host eligibility. `mobile_readiness.py` is the one
+  read-only report builder used by `views_mobile_readiness.py` and `admin_native_apps.py`;
+  `forms_native_apps.py` validates registration edits. Operator setup: `docs/mobile-integration.md`.
+
+### Release 2 L2 (communications, analytics, programme closures)
+
+- `events/programme/broadcast_{designs,placeholders,tallies,draft,views_extra}.py` -- six brand
+  designs, the placeholder context, counts-only tallies, draft autosave, send/tallies/templates
+  routes; `integrations/broadcasts_templates.py` holds the 13 starter templates.
+- `events/approval_digest.py`, `events/notices_r2_l2.py` -- organiser digest; removal notice,
+  ticket re-send, join link in confirmations. `events/reminders.py::fresh_signup` (12 h skip).
+- `events/programme/analytics_{extras,org,views,serializers}.py` -- per-event extras and k>=10
+  organisation insights (read by `operations/platform_insights.py`).
+- `events/mentoring/chat_alerts.py`, `views_chat_alerts.py` -- room alerts and the room picker.
+- `events/mentoring/policy.py` `drop_in_allowed` / `request_eligible` / `request_alias` -- drop-in Mentor
+  Desk help and office hours on events without teams; member UI `features/events/programme/DropInJourney.tsx`.
+- `events/contributions/crew_reads.py` `crew_labels` -- the crew chip for cards, tickets and badges;
+  `makerspaces/public_page_crew.py` -- the event page's Crew section; `features/publicPages/PublicCrewCards.tsx`.
+- `events/hackathons/admission_stage_funnel.py` -- application stages as event-funnel steps.
+- `events/submissions/integrity_{jobs,http}.py`, `views_integrity.py`, `storage_reconcile.py`,
+  `storage_cleanup.record_receipts` -- GitHub flag job, receipts and reconciliation.
+- `events/feedback_modes.py` -- certificate / anonymous / identified feedback.
+- `events/models_r2_l2.py` -- integrity checks, storage receipts, mentor alert routes.
+- `integrations/{org_sender,org_sender_views,invite_chat,destination_health}.py`,
+  `integrations/models_org_sender.py`.
+- `notifications/{views_inbox_snooze,browser_alerts,browser_alert_crypto,views_browser_alerts,
+  escalation,models_browser_alerts}.py`; `frontend/public/browser-alerts-sw.js`.
+- `hosting_requests/workflow.py::request_changes|resubmit`, `HostingRequestRevision`.
+- Frontend: `features/staff/eventProgramme/{BroadcastTemplateGallery,BroadcastDesignPicker,
+  BroadcastUndoBar,BroadcastTalliesRow,EventAnalyticsExtras}.tsx`, `broadcastAutosave.ts`,
+  `staff/hackathonJudging/IntegrityFlag.tsx`, `staff/mentorDesk/MentorAlertRooms.tsx`,
+  `hosting/HostingResubmitFlow.tsx`, `notifications/{InboxRowActions,BrowserAlertsToggle}.tsx`,
+  `staff/OrganizationEmailSender.tsx`.
+
+### Release 2 L4 (membership lifecycle)
+
+- `makerspaces/financial_year.py` -- the ONE financial-year helper (`fy_bounds`, `fy_label`, fixed
+  signatures L5 reads); `admin_api/views_financial_year.py` (a finance setting via `settings_authority`).
+- `makerspaces/models_membership_{rules,terms,records,privacy,invites,imports,summary}.py` -- plan/term
+  vocabularies, `MembershipTerm` + append-only `MembershipTermStatusEvent`, record/titles, consent and
+  erasure, invite links, imported members, summary opt-outs. `capability_definitions_r2_l4.py` (14 keys),
+  `membership_features.py` (404 gates).
+- Services: `membership_plan_{types,policy}.py`, `membership_term_history.py`, `membership_number.py`,
+  `membership_renewal_desk.py`, `membership_{records,titles,consent,erasure,summary}.py`,
+  `membership_history_timeline.py`, `membership_invite_links.py`, `membership_admission_{plans,bulk}.py`,
+  `membership_import_accept.py`, `membership_admission_settings_l4.py`, `membership_refund_suggestion.py`,
+  `notifications_l4.py`, `public_page_plans.py`, `views_public_plans.py`, `views_membership_member_l4.py`.
+- Staff API: `admin_api/urls_membership_lifecycle.py` -> `views_membership_{desk,records,erasure_import,
+  plan_archive,refunds,register,summary}.py`; import planning/apply in `bulk_import_members{,_apply}.py`;
+  the import source (upload or public Google Sheet, L13) in `import_sources.py` + `import_sources_sheets.py`
+  (the only Google Sheets fetch), shared with `id_programmes/imports.py`; keys in `capability_definitions_r2_l13.py`.
+- Refunds: `payments/refund_policy_membership.py` (FY/fixed pro rata, lifetime band, `term_for_payment`),
+  `payments/refund_membership_term.py` (X21 term end after approval commits).
+- Reports: `operations/reports_membership_l4_{terms,lists}.py`, `reports_membership_summary.py`,
+  `report_definitions_membership_l4.py`.
+- Classification: `data_export/classification_r2_l4.py`, `tenant_migration/{catalog,audit_references}_r2_l4.py`,
+  `encryption/registry_r2_l4.py`, `audit/presentation_catalog_r2_l4.py`.
+- Frontend: `features/staff/membershipLifecycle/*`, `memberImport/*`, `MembershipPlanRulesFields.tsx`,
+  `MembershipAdmissionExtras.tsx`, `refunds/MembershipRefundExtras.tsx`, `members/{MemberAccountLifecycle,
+  AdmissionJoinWithPlans}.tsx`, `members/joinPlansApi.ts`, `publicPages/PublicPlanCards.tsx`.
+
+### Release 2 L23 (metered machine sessions, #158)
+
+- Switch: `makerspaces/capability_definitions_r2_l23.py` (`machines.sessions`); per-type
+  `session_max_minutes` on `machines/models_policy.py`, edited by
+  `admin_api/views_machine_session_settings.py` (settings-authority key `sessions.max_minutes`).
+- Models: `machines/models_sessions.py` (`MachineSession`, `MachineSessionAmendment`; the trigger in
+  `machines/migrations/0032_l23_machine_sessions.py`); `MachineUsageEntry.Source.SESSION`;
+  `Payment.SubjectType.MACHINE_SESSION`.
+- Workflow: `machines/sessions_service.py` (start, stop, amend, assign, confirm), `sessions_rules.py`
+  (typed start refusals), `sessions_billing.py` (frozen rate, final charge), `sessions_state.py`
+  (derived state), `sessions_device.py` (the agent-report hook), `sessions_sweep.py` +
+  `tasks_sessions.py` (auto-stop), `notifications_sessions.py`.
+- Routes: member `machines/views_sessions_member.py`; staff `admin_api/views_machine_sessions.py`;
+  serializers `machines/serializers_sessions.py`. Reports: `operations/reports_machine_sessions.py`,
+  `operations/report_definitions_machine_sessions.py`.
+- Classification: `data_export/classification_l23.py`, `tenant_migration/{catalog,audit_references,
+  unique_values,gate_policy_r2}_l23.py`, `tenant_migration/tenant_dump_authority_r2.py` (lane
+  authority composition), `audit/presentation_catalog_l23.py`, `accounts/merge_registry_rows_l23.py`,
+  `makerspaces/origin_scope_routes_r2_l23.py`.
+- Frontend: member `features/machine-sessions/` (`UseMachinePage` is the QR landing "Use this
+  machine" sheet with `SessionTimerCard`; `MySessionsPage`); staff `staff/panels/machine/sessions/`
+  (`SessionsScreen` = Machines › Sessions, `StaffSessionCard`, `SessionQrCard`,
+  `SessionSettingsEditor`).
+
+### Release 2 L25 (per-space Metabase analytics)
+
+- `apps/analytics/` -- `models.py` (AnalyticsConnection, PlatformAnalyticsConnection), `catalogue/`
+  (one module per domain + `registry.py` with `VIEWS_VERSION` 2, `render.py`, `types.py`; L18 in
+  `donations.py`, L22 in `shop.py`, L21a/L21b in `events.py`), `db_names.py`, `db_functions.py`, `db_ddl.py`, `db_sync.py`
+  (post/pre-migrate), `provisioning.py`, `embedding.py`, `access.py`, `services.py`, `api.py`,
+  `urls.py`, `purge.py`, `signals.py`, `management/commands/analytics_sync.py`.
+- Registries: `makerspaces/module_registry_r2_l25.py`, `accounts/rbac_actions.py` (`VIEW_ANALYTICS`),
+  `accounts/delegated_route_catalog_r2.py`, `audit/presentation_catalog_r2_l25.py`,
+  `data_export/classification_r2_l25.py`, `tenant_migration/catalog_r2_l25.py`,
+  `makerspaces/module_purge_plans.py`, `operations/report_coverage.py`.
+- Frontend: `features/staff/analytics/*`; docs `docs/analytics-views.md`.
+
+### Release 2 L3 (ID cards)
+
+- `apps/card_designs/` -- the shared card engine: `layout*.py` (document v2), `stocks.py`, `fonts.py`
+  + `font_catalog.json` + `font_fetch.py`/`font_store.py`, `contrast.py`, `rendering*.py`, `raster.py`,
+  `sheets.py`, `symbol.py`, `default_templates/`, `design_file.py`; `holders*.py` (holder-kind registry),
+  `resolution.py`, `approval.py`, `designs.py`, `tokens.py`, `lifecycle.py`, `cards.py`, `jobs.py` +
+  `job_runner.py` + `job_outputs.py` + `tasks.py`, `email*.py`, `photos.py`, `photo_cleanup.py`,
+  `segmentation.py`, `extras.py`, `verification.py`, `scan.py`, `wallet/`; views `views_*.py` (gap lane:
+  `views_approval.py` approval levels, `views_staff_photo.py` staff photos, `views_holder_face.py` printed
+  view + fonts), URLs `urls_{admin,member,public,wallet}.py`. `id_programmes/prefill.py` is the join prefill.
+  r2-idcards-best: `default_templates/{fronts,backs,themes}.py` (six templates × light/dark, two-sided),
+  `rendering_extras.py` (Code128 barcodes, photo filters), `history.py` + `views_history.py` (version
+  history, restore, "Preview as" holders, calibration), `holder_samples.py`, `calibration.py`,
+  `sheet_preview.py` + `views_sheet_preview.py` (with `id_programmes/views_preview.py` and
+  `events/id_cards_preview.py`), `serializers_history.py`.
+- Designer frontend (r2-idcards-best): `components/card-designer/` gains `TemplateGallery`, `PreviewAsControl`,
+  `HistoryPanel`, `PreflightPanel` + `preflight.ts`, `SelectionInspector` + `selection.ts`/`alignment.ts`
+  (multi-select, groups, align, distribute), `clipboard.ts`, `canvasMath.ts` (zoom, snapping),
+  `CanvasToolbar`/`CanvasOverlays`, `ShortcutsDialog` + `shortcuts.ts`, `textFit.ts` + `layerExtras.tsx`
+  (on-screen shrink-to-fit, barcode, photo filters), `WatermarkView.tsx`; `features/cards/SheetPreviewDialog.tsx`.
+- Gap-lane frontend: `components/photo-crop/` (crop dialog + picker), `features/cards/{ApprovalLevelSelect,
+  StaffPhotoDialog}.tsx`, `features/members/wallet/{CardFaces,CardPhotoSection,PhotoCleanup}.tsx`,
+  `features/staff/eventCardScan.tsx` (door card scan), `features/staff/eventCredentials/badgeStocks.ts`,
+  `components/card-designer/undoHistory.ts` (undo/redo shared with the badge designer).
+- `apps/id_programmes/` (separable) -- programmes, cards, numbering, questions, import, invites, join.
+- `apps/shop/` (separable, module `shop`, release 2 L22) -- `models_catalogue.py` (settings, products,
+  variants, kit parts), `models_orders.py` (orders, lines, returns), `models_stock.py` (movements,
+  holds), `models_pos.py` (cash sessions); `pricing.py` (baskets through L15 `quote()`), `tax_lines.py`
+  (per-product tax snapshot), `orders_core.py` (order + one charge), `checkout.py` (online orders,
+  guests), `settlement.py` (sell after payment), `services_orders.py` (ready, collect, cancel, lapse),
+  `services_pos.py` (desk sale and desk payment), `services_cash.py`, `services_returns.py`,
+  `services_catalogue.py`, `reorder.py` + `restock.py` (To-Buy), `notices.py`, `tasks.py` (minute sweep),
+  `receipts.py`, `public.py`, views/urls for public, member and staff. Stock math lives in
+  `apps/inventory/availability_shop.py`; reports in `apps/operations/reports_shop.py` and
+  `payments/reports_finance_ledger.py` (`finance-shop`). Frontend: `features/shop/` (public shop, basket,
+  checkout, guest status page), `features/staff/shop/` (orders, till, cash-up, receipt at 80 mm/A4,
+  catalogue, stock, settings, reports; `ShopPanel.tsx` is the tab), `features/members/shopOrders/`, and
+  `features/publicPages/PublicShopCards.tsx` (the Pages `shop` section).
+- Events: `events/models_id_cards.py`, `id_cards*.py`, `services_checkin_cards.py`,
+  `id_cards_tickets.py` (`render_ticket(registration, fmt)`), `urls_id_cards*.py`, `tasks_id_cards.py`.
+- Makerspaces: `models_member_card_settings.py`, `member_card_admin_views_l3.py`,
+  `capability_definitions_r2_l3.py`, `origin_scope_routes_r2_l3.py`, `capability_purge_plans_l3.py`,
+  `storage_keys_cards.py`.
+- Registries: `accounts/{merge_registry_rows_l3,claim_routes_l3}.py`, `encryption/registry_r2_l3.py`,
+  `data_export/classification_l3.py`, `tenant_migration/{catalog_l3,unique_values_l3,audit_references_l3,
+  gate_policy_r2_l3}.py` (authority entries in `tenant_dump_authority_r2.py`), `audit/presentation_catalog_l3.py`,
+  `backup/object_ownership_l3.py`, `operations/{reports_cards,report_definitions_cards}.py`.
+- Frontend: `components/card-designer/*` (the free canvas designer), `features/cards/*` (verify page,
+  routes, bulk jobs), `features/members/wallet/*` (My cards), `features/organizations/idProgrammes/*`,
+  `features/staff/eventCards/*`, `features/staff/panels/memberCards/{DesignTab,SettingsTab,apiCards,
+  CardsRowDialogs,PresenceCheckIn}.tsx`.
+
+### Release 2 L12 (machines and loans depth)
+
+- Switches: `makerspaces/capability_definitions_r2_l12.py` (12 keys); per-type job settings on
+  `machines/models_policy.py` (`MakerspaceMachineTypePolicy`), read through `machines/job_policy.py`.
+- Machine job flow (#140-#142): `machines/models_job_fields.py` (the job columns, an abstract mixin on
+  `MachineServiceRequest`), `job_intake.py` (the ONE member intake; the printer and generic routes call
+  its gate), `job_files.py` (maker_formats staging + range-read validation), `job_order.py` (the shared
+  queue order and anchors), `job_rules.py` (quote rule, length cap, open-job limit), `job_charges.py`
+  (cap at the quote, prepay, failed-job seam to L15), `job_pickup.py`, `job_sweeps.py` +
+  `tasks_jobs.py` (quotes, prepaid queueing, pickup reminders), `notifications_job_flow.py`.
+  Transitions: `service_workflow_review.py` (needs changes, quotes), `service_workflow_board.py`
+  (reorder, urgent, pre-assign), `service_workflow_batch.py`, `service_workflow_failure.py`, and the
+  edited `service_workflow_{actions,start,cancel,collect,helpers}.py`. Routes: `views_jobs.py`,
+  `views_jobs_member.py`; staff `admin_api/views_machine_jobs.py`, `views_machine_job_board.py`.
+- Gates L23 reuses: `machines/booking_gate.py` (requires_booking), `machines/lockout.py`,
+  `makerspaces/opening_hours.py`; downtime: `machines/models_downtime.py`, `downtime.py`,
+  `admin_api/views_machine_downtime.py`. Machine time booking: `BookableSpace.machine` in
+  `bookings/services_spaces.py`.
+- Work orders (the one repair model L16 builds on): `maintenance/models_work_orders.py`,
+  `work_orders.py`, `views_work_orders.py`; `MaintenanceSchedule.blocks_use`.
+- Consumables / To-Buy: `inventory/consumables.py`, `views_consumables.py`, `procurement/auto_drafts.py`,
+  `services_refill.py`, `services_bought.py` (mark bought -> L5 `record_expense`), vendors
+  `procurement/models_vendors.py`, `services_vendors.py`, `views_vendors.py`.
+- Loans: `hardware_requests/request_lifecycle.py` (cancelled/expired, re-exported by `workflow.py`),
+  `pickup_windows.py`, `waitlist.py`, `models_loans.py`, `notifications_loans.py`, `loan_depth_views.py`,
+  `tasks_loans.py`; `inventory/availability_reservations.py` (reservation release, waitlist holds),
+  `inventory/public_expected_back.py`.
+- Classification: `data_export/classification_l12.py`, `tenant_migration/{catalog,audit_references,
+  unique_values}_l12.py`, `audit/presentation_catalog_l12.py`, `accounts/merge_registry_rows_l12.py`.
+- Frontend, member: `features/machine-jobs/` ("Request a job" flow, `JobRequestPage`; my jobs
+  `MyMachineJobsPage`; one job `MachineJobPage` with quote, changes, pickup cards; `PrintRequestAlias`
+  keeps `/print` working). Loans: `inventory/{PickupWindowFields,WaitlistJoin,ExpectedBack,waitlistApi}`,
+  `members/{MemberWaitlist,MemberRequestWithdraw}.tsx`.
+- Frontend, staff: `staff/panels/machine/JobBoard*.tsx` (per-type queue board; `boardDrag.ts` drag to
+  reorder, `boardOrder.dropPosition`), `filePreview/` (GAP2 M5: `JobFilesDialog`, `JobFilePreview`,
+  `jobPreview.worker.ts`, `drawings.ts` G-code/DXF to SVG, `svgFile.ts`, `previewKinds.ts`; mesh
+  parsing shared with the hackathon preview through `events/hackathonSubmissions/previewMesh.ts`),
+  backend `machines/job_risk.py` (the at-risk flag, GAP2 M3), `JobAction*`,
+  `BatchDialogs.tsx`, `JobSettingsEditor.tsx`, `DowntimePanel.tsx` (+ lockout badge), `workOrders/`;
+  `staff/BookableSpaceMachine.tsx`; `staff/panels/{ConsumablesPanel,VendorsPanel,MarkBoughtDialog,
+  ItemWaitlist,RequestCancelDialog,InventoryLendingFlags}.tsx`, `staff/LoanReservationPolicySettings.tsx`.
+
+### Release 2 L16 (Technician role, issue reporting, repairs, per-parent maintenance)
+
+- Role: `technician` row in `makerspaces/role_catalog.py`, `accounts/rbac_actions.py`
+  (`WORK_REPAIRS`, `RUN_MAINTENANCE`, `SET_SERVICE_STATE`), migrations `makerspaces/0119`/`0120`.
+- Package `maintenance/repairs/` (models via `maintenance/models.py`, migration `maintenance/0005`):
+  `models_contacts.py` (directory, coverage, defaults), `models_issues.py` (`IssueReport`,
+  `IssueAssignment`), `models_records.py` (append-only history, photos, sends, parts),
+  `models_service.py` (room outages, item/room schedules and logs); `areas.py` (switches and
+  managers per area), `authority.py` (Technician scope, the two seams), `reporting.py` (who may
+  report), `services_issues.py` (lifecycle), `services_work.py` (visits, parts, quote, payout),
+  `dispatch.py` + `channels.py` + `optin.py` (sends and consent), `service_state.py` +
+  `room_outages.py`, `maintenance_subjects.py`, `photos.py` + `storage.py` (staging-key photos),
+  `notify.py`; routes `urls_staff.py` (admin prefix) and `urls_public.py` (member/public), views
+  `views_{issues,staff,contacts,maintenance,member,public}.py`.
+- RP-5 reports: builders `maintenance/repairs/reports.py` (columns in `report_fields.py`, viewer scope in
+  `report_scope.py`), registered by `operations/report_definitions_repairs.py`; `ReportDefinition.alternate_actions`
+  and `report_types.definition_actions` let the family admit each area's managers beside the Technician.
+- Seams outside the package: `maintenance/work_orders.may_manage`, `maintenance/services_shared.
+  prepare_machine(technician=)`, `bookings/admission._refuse_room_outage`,
+  `integrations/notification_telegram_callbacks._technician_opt_in`.
+- Item and room maintenance reminders (GAP2 M2): `maintenance/reminders_subjects.py` (two reminder
+  sources registered in `operations/reminder_registry.py`, plus its notification source registered in
+  `maintenance/apps.py`); switches in `makerspaces/capability_definitions_gap2.py`.
+- Maintenance spend (GAP2 M1): `maintenance/ledger.py` posts a run's cost to L5's ledger (machine logs,
+  schedules and work orders through `services_workflows._append_log`, item/room runs through
+  `maintenance_subjects.run`); `maintenance/serializers_cost.py` holds the shared `cost_method` and
+  `cost_currency` fields; `maintenance/0006` adds `SubjectMaintenanceLog.cost`. Frontend
+  `staff/panels/machine/MaintenanceCostInput.tsx` (cost plus "Paid by").
+- Switches: `makerspaces/capability_definitions_r2_l17.py` (the 8 keys), purge plans
+  `makerspaces/capability_purge_plans_l16.py`.
+- Classification: `data_export/classification_l16.py`, `tenant_migration/{catalog,audit_references,
+  unique_values}_l16.py`, `audit/presentation_catalog_l16.py`, `accounts/merge_registry_rows_l16.py`,
+  `encryption/registry_r2_l16.py`, `makerspaces/origin_scope_routes_r2_l16.py`.
+- Frontend: staff `features/staff/repairs/` (the Repairs tab: queue, My jobs, issue detail,
+  dispatch, service state, maintenance) and `features/staff/technicians/`; member
+  `features/repairs/ReportProblem.tsx` (on loans, bookings and machine jobs) and the public
+  `TechnicianOptInPage.tsx`.
+
+### Release 2 r2-submit-content (submission stages, #177-#180)
+
+- `events/submissions/models_stages.py` -- `SubmissionStage`, `SubmissionStageEntry`, `SnapshotStage`,
+  `StageShortlist`/`Entry`/`Announcement`, `StageExtension`; migrations `events/0072`-`0073` (backfill, guards).
+- `events/submissions/stage_runtime.py` -- windows, gates, active stage, per-stage current snapshots (the one
+  place stage windows are computed); `stage_submit.py` -- draft and submit enforcement, freezing, recording;
+  `stage_rules.py` -- plan validation and answer limits; `stage_presets.py` -- the presets (data only).
+- `events/submissions/stage_service.py`, `stage_config.py` -- the staff editor and the config mirror;
+  `stage_projection.py` -- staff and participant shapes; `stage_shortlists.py`, `stage_staff.py`,
+  `stage_triage.py` -- shortlist gates, extensions, per-stage triage; `views_stages.py`,
+  `serializers_stages.py`, routes in `urls_admin.py`, catalogue `accounts/programme_route_catalog_submit_content.py`.
+- `events/submissions/stage_judging.py` -- round stage, finalist carry-over, the award invariant;
+  `stage_evidence.py` -- stage-aware submission evidence (reimbursement G11 and any stage-based money);
+  `stage_notices.py` -- reminders and shortlist notices; `stage_public.py` -- event page and calendar deadlines;
+  `stage_gallery.py` -- public field filters, early public stages, `final_stage_entries`;
+  phase 2: `stage_feedback.py` (S4), `stage_promotion.py` (S12), `stage_judge_reminders.py` (S15),
+  `stage_integrity.py` (S14), `stage_analytics.py` (S16); migration `events/0074`.
+- Frontend: `features/staff/submissionStages/` (editor, presets, shortlist, promote, extensions, triage, funnel),
+  `features/events/stageTime.tsx`, the participant stage tracker under `features/events/hackathonSubmissions/`.
+- Registries: `tenant_migration/catalog_r2_submit_content.py`, `audit_references_r2_submit_content.py`,
+  `audit/presentation_catalog_r2_submit_content.py`, `accounts/merge_registry_rows_submit_content.py`.
+
+### Release 2 r2-peoples-choice (the People's choice award, #181 S3)
+
+- Switch: `events.peoples_choice` in `makerspaces/capability_definitions_r2_peoples_choice.py` (needs
+  `events.project_gallery`); the gate constant is `events/judging/feature.PEOPLES_CHOICE`.
+- Models `events/judging/models_peoples_choice.py` (`PeoplesChoiceConfig`, `PeoplesChoiceVote`, the
+  append-only `PeoplesChoiceResult` and `PeoplesChoiceStanding`); `HackathonPrizePayout.peoples_choice_standing`
+  (`models_payouts.py`). Migrations `events/0078_peoples_choice` and `0079_peoples_choice_guards` (append-only
+  and same-event triggers, the widened payout scope guard).
+- Workflows in `events/judging/`: `peoples_choice.py` (settings, state, the voting-open notice recipients),
+  `peoples_choice_votes.py` (the member ballot and vote), `peoples_choice_ballots.py` (staff ballot list and
+  void), `peoples_choice_results.py` (count, publish once, the public block, gallery badges),
+  `peoples_choice_payouts.py` (paying a winner through L21b's payout row, with the prize-tax proposal), `peoples_choice_money.py` (owed totals, prizes-owed rows, recoveries). HTTP: `views_peoples_choice.py`,
+  `serializers_peoples_choice.py`, routes in `judging/urls.py`; route catalogue
+  `accounts/programme_route_catalog_peoples_choice.py`; throttle `peoples_choice_vote` in `config/settings.py`.
+- Seams outside the package: `submissions/gallery_views.py` (the winner badge), `judging/provider_notices.py`
+  (`peoples_choice_open`), `judging/payouts.py` (projection and reversal of a standing payout).
+- Classification: `tenant_migration/catalog_r2_peoples_choice.py` (fields, datasets and ownership predicates,
+  authority, purge order) and `audit_references_r2_peoples_choice.py`, `audit/presentation_catalog_r2_peoples_choice.py`,
+  `accounts/merge_registry_rows_peoples_choice.py`.
+- Frontend: public/member `features/events/peoplesChoice/` (`api.ts`, `PeoplesChoiceVoting.tsx` for the gallery
+  banner and vote buttons, `PeoplesChoiceAward.tsx` for the results and event pages); staff
+  `features/staff/hackathonJudging/PeoplesChoice{Panel,Ballots,Payouts}.tsx` and `peoplesChoiceApi.ts`, mounted in
+  `ManagerExtras.tsx`.
+
+### Release 2 r2-superadmin-controls (#185, #187A, #190)
+
+- `space_controls/` (core, never tombstoned): `models.py` (`SpaceControlState`, `PlatformAnnouncement`,
+  `PlatformAnnouncementTarget`); `write_policy.py` is the ONE paused/read-only write guard, called from
+  `tenant_migration/gate_runtime._assert_gate_state` (and the per-request / per-sweep contexts from
+  `tenant_migration/middleware.py` and `fanout_tenant_write`); `errors.py` (`space_suspended`,
+  `space_read_only`, typed 409s); `superadmin_bypass.py` (#195: the audited superadmin admission, wired
+  into the gate middleware, `gate_runtime.assert_request_write_allowed`, `config/admin_source_gate.py`,
+  `TenantGateTask` and a Celery `before_task_publish` handler); `services_access.py` (suspend/unblock, read-only on/off: the only
+  writers), `services_schedule.py` + `schedule_mail.py` + `tasks.py` (scheduled archive/purge and
+  reminders), `services_ownership.py` (transfer), `onboarding.py` (approve -> create -> invite),
+  `announcements.py`, `notices.py` (the signed-in banner/paused feed), `health.py` (+ `plan_hook.py`),
+  `notifications.py` (platform mail to Space Managers); views `views_controls.py`, `views_lifecycle.py`,
+  `views_onboarding.py`, `views_announcements.py`; `/control/` fallback `admin_actions.py` (Makerspace
+  list actions) and `admin.py`.
+- `managed_hosting/` (#187A, off by default): `availability.py` (the two switches), `enforcement.py`
+  (the hooks into `makerspaces/limits_core.resource_limit`, `limits_usage.check_quota`,
+  `limits_reservations.reserve_notification_quota`, `integrations/dispatch_outbox.dispatch_email`,
+  `makerspaces/module_install.install_module`), `plans.py`, `usage.py`, `billing.py`, `trials.py`,
+  `online.py` (platform Stripe/Razorpay checkout and signed callbacks), `tasks.py`, views and `admin.py`.
+- `makerspaces`: `LifecycleState.SUSPENDED` (`0129`), `servability.is_servable` settlement path,
+  `config_views` (`managed_plans` key only while on). `hosting_requests`: `expected_members` (`0003`).
+- Registries: `accounts/delegated_route_catalog_superadmin.py`, `accounts/merge_registry_rows_superadmin.py`,
+  `audit/presentation_catalog_r2_superadmin.py`, `data_export/classification_r2_superadmin.py`,
+  `tenant_migration/{catalog,gate_policy}_r2_superadmin.py`, `apiclients/scope_registry_routes.py`.
+- Frontend: `features/staff/platformSpaces/` (the superadmin **Spaces** tab: health, onboarding,
+  announcements, plans, invoices, billing settings), `features/platformNotices/` (banners, the paused
+  page, the public `PausedTenantGate` and `SuperadminSpaceGuard`, which sets `lib/api/requests.setStaffWriteGuard`), `features/staff/hostingPlan/` (the Space Manager's plan usage
+  and invoices inside `TenantUsagePanel`).
+- Frontend, 0.12.0 platform console IA: `features/staff/platformConsole/` holds the platform pages that
+  open without a chosen space (`staffTabs.SUPERADMIN_GLOBAL_TABS`): **People & access**
+  (`platform-access`), **Platform security** (`platform-security`), **Data & recovery** (`platform-data`,
+  including the offsite-destination UI in `offsite/`), plus routing for **Platform settings** and
+  **Platform analytics**; `PlatformSectionPage` is the shared `?section=` page, and `PlatformSettingsPanel`
+  redirects the sections that moved out of it. **Spaces** gained Create makerspace and the requests queue.
+
+### Release 2 L9 (internationalisation, phase 8)
+
+- Registry and resolution (`backend/config/`): `supported_locales.json` (the one locale list),
+  `locale_registry.py` (`LANGUAGES`, `canonicalize`, `validate_supported_locale`),
+  `locale_resolution.py` (precedence, request activation, `override_for` for background output,
+  `early_response_locale`), `locale_context.py` (`LocaleContextResetMiddleware`,
+  `ExplicitLocaleMiddleware`). Activation in `accounts/authentication.py`; bootstrap in
+  `makerspaces/views.py`.
+- Persistence: `accounts/models_user.py` `preferred_locale` (`0057`),
+  `makerspaces/models_makerspace_core.py` `default_locale` (`0132`); `accounts/serializers_locale.py`
+  and `services_locale.py` (`PATCH auth/me` on `MeView` in `views_profile.py`), the payload fields
+  in `serializers_payload.py` and `schemas_auth.py`; the makerspace field and its audit in
+  `admin_api/serializers_makerspaces.py` and `views_makerspaces.py`.
+- Registries: `audit/presentation_catalog_r2_l9.py`, `data_export/classification_r2_l9.py` (plus
+  the user projection in `data_export/fields.py`), `tenant_migration/catalog_r2_l9.py`,
+  `tenant_dump_user_rows.py` (stub null), `portable_people.py` (created people keep a supported
+  preference), the `auth-me` entries in `accounts/claim_routes_auth.py` and
+  `tenant_migration/gate_policy_http.py`.
+- Catalogues and guards: `backend/locale/en/LC_MESSAGES/django.po`,
+  `backend/scripts/check_i18n_literals.py`; templates in `integrations/email_templates.py`
+  (defaults translated per recipient; edited rows byte-for-byte).
+- Frontend: `lingui.config.ts`, `src/lib/i18n.ts` (runtime and precedence), `src/lib/I18nRoot.tsx`
+  (provider and cache refresh), `src/lib/localeFetch.ts` (API locale headers), `src/lib/format.ts`
+  (formatting), `src/generated/locales.ts` (from `scripts/generate-locales.mjs`),
+  `src/locales/en/messages.po`, `components/shell/LanguageSwitcher.tsx` (mounted in `UserMenu`,
+  `features/inventory/PublicPageChrome.tsx` and `features/members/MemberAccountPage.tsx`),
+  the space default in `features/staff/MakerspaceGeneralSettings.tsx`; guards
+  `scripts/check-i18n-literals.mjs`, `scripts/i18n-literal-positions.mjs` and
+  `scripts/i18n-worker-closure.mjs`. Contributor guide: `docs/i18n.md`.
+
+## Makerspace origin scope and the native staff header (decision 353)
+`makerspaces/origin_scope.py` validates a native `X-Makerspace-Id` and scopes staff custom origins; the route
+tables it reads are `origin_scope_routes_catalog.py` (barrel) and its `origin_scope_*` siblings.
+- `makerspaces/origin_scope_routes_mobstaff.py` owns the MOB-STAFF tables: every `events-programme-admin-*`
+  (and series guest) route resolved to its event/series makerspace by `pk`, plus API-client-adjacent, OAuth app,
+  event image, organization-booking, Telegram test, insights and space-neutral routes, the native-only
+  lookup list, and `NATIVE_STAFF_WEB_ONLY` (staff routes a native grant deliberately cannot reach, with reasons).
+- `makerspaces/origin_scope_native_staff.py` resolves `NATIVE_ONLY_LOOKUPS` (nullable-owner rows such as API
+  clients) for a native header only, so the web superadmin keeps reaching global rows; like `origin_scope_native_slug.py`
+  it adds no RLS binding, source-gate target or staff-origin target.
+
 ## Domain and frontend map
 See [SOURCE-MAP-DOMAINS.md](SOURCE-MAP-DOMAINS.md) for hardware loans, payments,
 printing, events, the frontend directories and connected device monitoring.
@@ -423,6 +1182,34 @@ Saved-view audit targets travel as inert source provenance in
 `tenant_migration/audit_references_targets.py`, including after a preference is deleted.
 Booking/event `views_admin_spaces.py` / `views_admin_events.py` barrels re-export the corresponding `*_list/detail.py` handlers.
 
+## Global member profile (decisions 302-308)
+
+`apps/makerspaces/models_account_profile.py` holds `AccountProfile` and its children; `account_profile.py` (create/write/audit),
+`account_profile_read.py` (per-audience payload), `account_profile_access.py` (who may read; one 404),
+`account_profile_spaces.py` / `account_profile_activity.py` / `profile_achievements.py` (cross-space aggregation),
+`account_profile_views.py` + `account_profile_children_views.py` + `profile_image_views.py` (owner API),
+`profile_legacy_aliases.py` (deprecated per-space routes), `profile_activity_public.py` + `profile_github*.py` (graph and
+GitHub, account-level), `handle_gate.py` / `handle_views.py` (username required + availability), `account_profile_merge.py`
+(migration 0153), `account_profile_account_merge.py` and `account_profile_purge.py` (account merge/purge),
+`notifications_profile_open.py` (one-time notice). Classification: `data_export/classification_account_profile.py`.
+Contract for clients: `handover/reports/PROFILE-CONTRACT-0.12.0.md`.
+
+## Outbound calls to tenant-configured destinations
+
+`apps/outbound_policy.py` (resolve once, one blocked-address policy, pinned `Target`) and `apps/outbound_http.py`
+(the bounded, pinned, no-redirect, no-proxy transport with one deadline) are the single source of truth for any
+server-side call to a URL a space configured: device adapter webhooks (`devices/services_adapter_webhook.py`),
+the image adapter (`card_designs/image_adapter/client.py`, `url_policy.py`) and Anthias players
+(`presence/anthias_client.py`, with `presence/anthias_networks.py` naming the deployment's own networks).
+
+## Community and notification delivery
+
+Public handles/profiles, GitHub/activity history, presence/TV, event speakers and booking departures/
+galleries, the combined makerspace home and staff settings are indexed in
+[SOURCE-MAP-COMMUNITY.md](SOURCE-MAP-COMMUNITY.md). Personal contract/provider files, domain
+notification adapters and channel UI are indexed in
+[SOURCE-MAP-NOTIFICATIONS.md](SOURCE-MAP-NOTIFICATIONS.md). These maps include concrete backend,
+frontend, migration and registry siblings; INVARIANTS.md owns their rules.
 
 ## Self-host entry points
 
@@ -431,11 +1218,317 @@ shared deployment questionnaire. `setup.sh` consumes confirmed private answers a
 stack. `scripts/setup-questions.sh` owns question order/summary, `setup-question-input.sh` owns
 validation and private answer transport, and `setup-write-environment.sh` writes the confirmed dotenv
 and primary layer. `setup-first-run.sh` preserves existing secrets and supports a confirmed retry.
-`compose-deployment.sh` appends the frontend/storage overlays consistently for `spaceworks-compose.sh`
-and `setup-host-orchestration.sh` topology records. Update, rollback and restore use that wrapper.
+`setup-area-questions.sh` owns the shared area follow-ups; `setup-areas-json.sh` encodes their private
+stdin document. `module-area-selection.sh` presents the live on/partial/off menu, while
+`module-legacy-selection.sh` preserves module-key exclusion automation. Backend `makerspaces/setup_areas.py`
+maps bundles to registry modules/features; `setup_area_application.py` and `setup_settings.py` apply
+them atomically through audited writers via `apply_setup_areas`. `integrations/timing_settings.py`
+and `machines/policy_settings.py` are shared with their existing staff editors.
+`compose-deployment.sh` appends the frontend/storage overlays (and, for TLS layers, the control-plane
+tunnel overlay) consistently for `spaceworks-compose.sh` and `setup-host-orchestration.sh` topology
+records. Update, rollback and restore use that wrapper. `apply-settings.sh` applies the `CONTROL_PLANE_*`
+keys on an installed host without changing the release (`control-plane-settings.sh`, installer option 6,
+asks the questions and calls it with `--control-plane`); the opt-in route itself lives in
+`deploy/control-*.caddy` and the nginx generator `frontend/docker-entrypoint.d/40-control-plane.sh`, whose
+address validation (`frontend/docker/control-plane-allowlist.sh`) the questionnaire shares.
 
 `compose-deployment.sh` also selects the running app, writer, image, rollback and one-shot service sets.
 `update-rollback.sh` restores previous application images only, without rerunning migrations or replacing
 the database. `install-runner.sh` optionally registers the install-owner GitHub Actions systemd service
 and prints required repository/security settings; `runner-release.py` verifies its release asset checksum.
 The release workflow deploys an exact published main version through the installed updater.
+
+Lane E printable credentials: `operations/printable_layout.py`, `printable_serializers.py`,
+`printable_fonts.py` and `printable_pdf.py` are always-present geometry/font/overflow/PDF
+mechanisms with no domain imports. `events/badge_templates.py` validates event fields and
+converts v1 layouts; `badge_rendering.py` adapts authorized values. Certificate design is
+owned by `models_certificate_templates.py`, `certificate_templates.py`,
+`services_certificate_templates.py`, `certificate_artwork_storage.py`,
+`serializers_certificate_templates.py`, `views_certificate_templates.py` and
+`urls_credentials.py`; `services_certificates.py` freezes issuance and
+`certificate_rendering.py` consumes its snapshot; `certificate_rendering_legacy.py`
+preserves pre-designer PDF bytes for rows with empty migration snapshots.
+`backup/object_reference_certificates.py`
+registers artwork keys embedded in issuance JSON; the normal retention/purge registries
+also include concrete artwork and revision rows. Frontend shared design controls live in
+`components/print-layout/`; `EventCertificateDesigner.tsx` and
+`eventsCertificateDesignerApi.ts` own event draft/revision/upload/preview state.
+Release 2 certificates (#199): `events/certificates/merge.py` (kind/award/role/place labels and
+titles), `signatory_models.py`/`signatories.py`/`signatory_commands.py`/`signatory_views.py`/
+`signatory_notifications.py` (signatories and approvals), `signature_rendering.py`,
+`issue_plan.py`/`issue_views.py` (bulk plan, sample, issued list, staff PNG), `holder.py`/
+`outputs.py`/`output_views.py` (holder list, PNG, share image, name opt-in, public share image),
+`urls_member.py`; route rows in `accounts/programme_route_catalog_certificates.py`, tenant rows
+in `tenant_migration/catalog_r2_certificates.py`. Frontend: `staff/eventCredentials/designer/`
+(canvas, geometry, layer list, page/kind/sample pickers), `SignatoriesPanel.tsx`,
+`BulkCertificates.tsx` + `IssuedCertificatesList.tsx` + `issueApi.ts`,
+`members/certificates/` (holder list and signatory approvals) and
+`events/eventPresentation/CertificateVerificationPage.tsx` + `CertificateFileCheck.tsx`.
+
+Account contexts live in `accounts/models_user.py` (re-exported by `models.py`),
+`account_constraints.py`, `account_kind_guards.py` and `managers.py`. One account per person
+(release 2, U-A1): `accounts/staff_identity.py` is the single identity seam (person / platform /
+shell predicates, `has_staff_role`, `actor_ids_for`, `require_staff_mfa`);
+`makerspaces/membership_managers.py` holds the fail-closed track managers behind
+`MakerspaceMembership.objects` (community), `staff_tracks` and the reserved `all_tracks`;
+`makerspaces/staff_role_grants.py` grants staff roles to an existing person.
+`accounts/models_account_merge.py` holds `AccountMergeRecord`/`AccountMergeIntent`;
+`accounts/merge_registry.py` (+ `merge_registry_types.py`, `merge_registry_rows_*.py`) classifies
+every `accounts.User` reference for merges, checked by `accounts.E003` in `checks.py`.
+Interactive merges (U-C): `accounts/account_merge_eligibility.py` (refusals, source resolution,
+`merge_suggested`), `account_merge_proofs.py` (start/prove/resend/cancel over `login_codes`), `account_merge_passkey.py` (the
+`passkey-options` route and the passkey proof, GAP2 M6),
+`account_merge_mail.py` (platform mail), `account_merge_walk.py` (reads the registry: row lookup,
+unique-slot conflicts, loser revocation), `account_merge_preview.py`, `account_merge_shell.py` (the merge
+record and the inert shell) and the engine
+`account_merge.py`; the API is `views_account_merge.py` / `serializers_account_merge.py` /
+`urls_account_merge.py`. `accounts/unification_progress.py` adds merge progress to the report.
+`accounts/session_authority.py` limits staff-track authority per request for native member/staff
+grants and claim sessions (`rbac_memberships._staff_rows` applies it).
+`accounts/unification_plan.py` computes the conversion plan and its `plan_sha256` for
+`management/commands/account_unification_report.py` (+ `unification_report_context.py`) and
+the frozen conversion in `accounts/migrations/_0050_conversion.py`; the unified triggers are
+frozen in `_0049_unified_guards.py`, the track triggers in `makerspaces/migrations/0114_membership_track.py`.
+Login security (release 2, S0 contract): `accounts/login_security_contract.py` names every
+error code, factor, purpose, audit action and retention rule; `login_security_settings.py`
+holds the frozen per-space `SecuritySetting` rows; `login_codes.py` the emailed-code primitives;
+`models_webauthn.py`, `models_login_risk.py`, `models_ip_access.py` and `models_mfa_grace.py`
+the schema (accounts 0051-0053; 0051's device-trigger body is in `_0051_passkey_device_guard.py`).
+`makerspaces/security_policy_store.py` stores `policy`-backed security values in
+`MakerspaceSecurityPolicy` (`models_security.py`) and `security_settings_person.py` resolves a
+value per space or per person (strictest across their staff spaces).
+Login security S-A: `accounts/mfa_policy.py` is the MFA floor (mandatory staff MFA, `is_enrolled`,
+proof claims), `staff_identity.require_staff_mfa` the staff gate, `mfa_grace.py` the 3-day grace,
+`staff_session_policy.py` the staff session clock, `mfa_reset.py` (+ `views_mfa_reset.py`,
+`admin_mfa_reset.py`, `management/commands/reset_mfa.py`, `staff_mfa_readiness.py`) the MFA-reset rule,
+`security_signals.py` the `mfa_changed` signal, and `accounts/passkeys/` the WebAuthn backend (`rp_id`,
+`ceremonies`, `services`, `assertion`, `policy`, `views`, `urls`, `checks`; `native` and `native_login` for
+phone ceremonies, decision 358 B, whose sign-in views are `views_device_passkey.py`; routes classified in
+`passkey_route_catalog.py`). `makerspaces/migration_support/retire_staff_mfa.py` backs makerspaces 0119.
+Login security S-C: `accounts/ip_rules.py` (platform allow/deny rules, 60 s cache, `AXES_WHITELIST_CALLABLE`),
+`ip_guard.py` (client source, HMAC keys, failure counters, automatic blocks; remembered devices via S-B's `device_memory.lookup`),
+`ip_guard_signals.py` (what counts as a failure), `ip_guard_middleware.py` (`LoginIPGuardMiddleware` on
+`login_ip_guard` views), `ip_guard_schema.py` (the OpenAPI hook), `turnstile.py` (Cloudflare Turnstile),
+`password_breach.py` (the HIBP validator), `staff_network.py` (the per-space staff IP allow-list at the staff
+surface check), `admin_ip_access.py` (the `/control/` *IP rules* and *Automatic blocks* screens),
+`login_methods_status.py`, `tasks_login_security.py` (retention) and `management/commands/login_security.py`.
+Login security S-B: `accounts/login_risk.py` (the unusual-sign-in check and `record_success`),
+`login_risk_networks.py` (/24 and /64 HMACs), `login_risk_signals.py` (failure counts, lockout alerts),
+`device_memory.py` (`sw_device` / `device_trust`), `login_code_flow.py` (emailed codes on `login_codes`),
+`mfa_challenge_factors.py` (`factors[]` and checking the answer), `security_alerts.py` (+
+`tasks_security_alerts.py`, `templates/email/security_*`), `security_not_me.py`, `login_risk_retention.py`;
+views `views_login_codes.py`, `views_devices.py`, `views_security_alerts.py` on `urls_login_risk.py`
+(classified in `login_risk_route_catalog.py`); `data_export/subject_runtime_security.py` (subject export).
+Login security S-D (frontend): `features/auth/MfaFlow.tsx` is the second step, its factor picker driven by
+the challenge's `purpose` and `factors[]` (`mfaFactors.ts`; `MfaEmailCodeResend.tsx` resends an emailed code,
+two at most); `features/auth/passkeys/` holds the browser ceremony (`webauthn.ts`, `@simplewebauthn/browser`),
+passwordless sign-in with autofill (`usePasskeySignIn.ts`, `PasskeySignInButton.tsx` on `MemberAuthPanel`)
+and the passkey list on the account security page (`MfaAccountPage.tsx`, with `KnownDevicesList.tsx`);
+`ReauthenticationDialog.tsx` offers a passkey. `NotMePage.tsx` serves `/security/not-me#token=...`: it drops the
+fragment, sets `no-referrer` and posts only on the button. `components/auth/useTurnstileGate.tsx` imports the
+Turnstile widget only after a `captcha_required` refusal and only when `/api/v1/config` has a site key;
+`lib/api/authErrorCopy.ts` turns every login-security code into plain words. `components/shell/MfaReadinessBanner.tsx`
+is the 3-day grace banner (`StaffGateScreens.tsx`), and `features/staff/security/` the per-space security rows
+(number, choice and network-list editors with lock-floor badges). Member help, in the screens' own words: a
+passkey signs you in with your fingerprint, face or device PIN and only works on this website; an unusual
+sign-in emails a 6-digit code that works once for 10 minutes; "This wasn't me" signs you out everywhere,
+forgets remembered devices and turns your password off, but keeps your passkeys and authenticator.
+Staff roles on people (U-B): `staff_account_policy.py` is the one authority policy (superadmin-only
+Space Manager rule, no-self, last manager, tenant gate and quota codes, `StaffRoleRefused`);
+`staff_account_services.py` grants (to community members) and changes roles and machine scopes over
+`makerspaces/staff_role_grants.py`; `staff_account_lifecycle.py` revokes/restores rows and holds the
+superadmin's Disable/Re-enable account; `staff_role_notices.py` the "you were granted a staff role"
+notice. `admin_api/views_staff_roles.py`, `serializers_staff_roles.py` and `urls_staff_roles.py`
+expose `admin/makerspaces/<id>/staff-roles/`; the account and makerspace `admin_staff_*` modules
+reuse the services in `/control/`. `accounts/admin_native.py` holds native-app administration.
+`membership_context.py` shares the object/SQL account-validity rules used by RBAC.
+`backup/main_projection_catalog.py` owns the physical-table check re-exported by
+`main_projection_registry.py`; the staff inert-shell boundary is declared there, with
+projection in `backup/staff_shells.py` (inert since one account per person: no account names a
+staff tenant, and B1 deleted the guarded reversal and slice merges). Demo account/machine
+fixtures are split into `inventory/management/commands/_seed_demo_fixtures.py`.
+
+Sign-in and sessions (release 2, U-A2): `accounts/login_context.py` resolves the one password
+door (person or, from a platform origin, the superadmin); `surface_policy.py` owns `token_kind`
+(person|platform), the surface check and the per-request staff-route gate (`enforce_request`,
+`_staff_admits`); `authentication.py` validates the device grant before that gate and refuses
+claim sessions on staff routes; `tokens.py` mints person/platform tokens.
+`serializers_payload.py` (+ `payload_tracks.py` for the per-session community/staff rows and
+`staff_roles`) builds the frozen auth payload described in `schemas_auth.py`.
+`session_context.py`/`auth_cookies.py` select the person or platform refresh cookie and expire
+release-1 staff cookies at logout. `services_device_login.py` (password device login, member or
+staff step-up), `views_device_staff.py` (`auth/device/staff-grant`), `services_device_grants.py`
+(authority and grant creation), `services_device_tokens.py` (pair issue and refresh rotation,
+including the auth-generation refusal), `services_staff_grants.py` (staff-grant revocation on a
+lost role, its signal and audits) and `native_app_version.py` (`MIN_NATIVE_APP_VERSION_*`) own
+native authority.
+`delegated_routes.py` exposes the authority-source classification in `delegated_route_catalog.py`
+(release-2 lane rows in its `delegated_route_catalog_r2.py` sibling);
+`checks.py` fails unclassified staff URLs. `member_identity.py` and `account_kind_guards.py`
+keep member credential/community writers separate. `credential_revocation.py` and
+`credential_revocation_helpers.py` own generation fencing and account-owned credential teardown.
+`models_password_reset.py`, `services_password_reset.py`, `services_password_reset_confirmation.py`,
+`services_password_reset_drain.py` and `password_reset_crypto.py` bind recovery to the exact account
+and person (`member`) or platform context. `password_reset_context.py` owns the platform
+trusted-origin policy and the platform reset-page destination; `credential_locks.py` enforces the shared credential-operation lock order. `services_staff_invitations.py`
+(issue, resend, revoke), `staff_invitation_acceptance.py` (signed-in redemption with a fresh emailed code)
+and `staff_invitation_delivery.py` (invitee-only email and chat, a room notice) own staff-role invitations;
+`views_staff_invitations.py`/`serializers_staff_invitations.py` their HTTP contract (never the link).
+`accounts/admin_staff_lifecycle.py` and `makerspaces/admin_staff_accounts.py` provide control actions.
+
+Person and staff-role transport (U-D): `tenant_migration/portable_staff.py` (staff-track rows travel
+with their person; split-format conversion), `portable_people.py` (created people, with travelled
+credentials), `portable_shells.py` (PII-free merged shells and their aliases), `credential_block.py`
+(the C-18 credential block), `tenant_dump_staff.py`, `tenant_dump_user_closure.py`,
+`staff_postconditions.py` and `catalog_account_context.py`; `data_export/runner_users.py` (staff-track
+closure, shell scrub, sidecars) and `subject_selectors.py`/`subject_runtime.py` (`actor_ids_for`).
+`backup/capture_managers.py` is the every-row manager whole-tenant code reads through;
+`backup/space_restore_formats.py` (tenant_slice_v2, v1 conversion) and `space_restore_merges.py` (C-17).
+`makerspaces/staff_retirement.py` holds the inert-shell identity values (`shell_values`) used by
+backup projections and the merge engine; a tenant purge retires nobody.
+`makerspaces/lifecycle_purge_graph.py` owns the ordered whole-tenant deletion graph.
+`admin_governance.py` and `admin_lifecycle_review.py` provide the slim hidden-tenant lifecycle list
+and pending archive-request review; ordinary tenant object pages remain scoped.
+Shared chat destination facts use `integrations/notification_destination_events.py`;
+`notification_proofs.py` keeps proof and unlink account-bound. Transport/backup policy:
+[account-portability.md](account-portability.md).
+
+Frontend `lib/api/sessionContext.ts` selects the `person` or `platform` session (one account per
+person: console, member area, kiosk and scanner share the person session); `sessionTokens.ts`,
+`client.ts`, `requests.ts` and `reauthentication.ts` isolate tokens, refresh and late responses, and
+`mfaEnrollment.ts` is the shared `mfa_enrollment_required` signal (#128 C-1, shared with S-D).
+`lib/SessionBoundary.tsx` and `lib/queryClient.ts` partition server-state caches per session.
+`features/staff/useConsoleSession.ts` restores the console session; `consoleAccess.ts` decides which
+spaces a person may open (staff roles, delegated grants) and the MFA gate; `StaffGateScreens.tsx`
+holds the no-role, enrolment-required and grace-banner screens; `PlatformSignInPanel.tsx` is the
+superadmin's own sign-in (everyone else uses `MemberAuthPanel`); `ChangePasswordGate.tsx` handles a
+mandatory change. `features/staff/panels/staffRoles/` owns the staff-roles screen (grant, invite,
+change, revoke/restore, reset authenticator; no password controls). `features/members/accountLink/`
+owns "Link your staff account" (U-C's merge API) on the member account page, and
+`features/auth/StaffInvitationAcceptPage.tsx` the signed-in invitation redemption. Staff offline
+rosters, jobs and toasts are session-bound; member offline cards/loans retain their separate
+lifecycle.
+
+Addressed messaging is part of core integrations, not a second delivery pipeline.
+`models_endpoints.py` owns canonical channel configuration and templates; `models_contract.py`
+owns personal envelopes/deliveries; `models_cutover.py` owns `NotificationCutover`, encrypted
+`NotificationIngress`, `NotificationLegacyMapping`, credential versions and provider references.
+`models_messaging_consent.py` retains append-only consent and shared physical suppression,
+alias/correlation protection. Platform sender settings and sender identity/history remain in
+`models_messaging_settings.py`; its old tenant settings/binding models and the old
+`models_messaging_delivery.py` send records survive only for conversion/import compatibility.
+
+`notification_sender.py` owns canonical own/platform resolution, sender snapshots and retired
+verifiers; `notification_addressed.py` rechecks addressed eligibility, SMS routing snapshots,
+segments and WhatsApp correlation before provider I/O. `messaging/ties.py`, `consent.py`,
+`protections.py`, `stops.py`, `correlation.py`, `segments.py` and reviewed `projections.py`
+provide the ported safeguards. `recipients_addressed.py` / `recipients_owners.py` share source
+recipient extraction without requiring inbox installation. `notification_personal_policy.py`
+keeps opt-outs effective even when the optional inbox app is absent. OTP remains in `sms/`.
+
+`notification_ingress.py`, `notification_ingress_apply.py`, `notification_legacy_ingress.py`,
+`notification_callbacks.py` and provider ingress modules authenticate/journal/replay callbacks.
+The old messaging webhook URLs remain signed compatibility ingress, not send authority.
+`notification_cutover.py` and `management/commands/notification_cutover.py` own barrier, route,
+replay, verify and activate. Integrations 0041 expands; 0042 converts/maps restartably without
+sending. Destructive 0043 remains unsupplied. Historical migrations, including
+0035_messaging_tenant_tie and frozen conversion helpers, are retained.
+
+`notifications/member_push.py`, `envelope_push_leases.py`, `envelope_push_transport.py` and
+`models_push.py` own registered device fan-out beneath `NotificationDelivery(native_push)`.
+Notifications 0008 expands nullable parents, 0009 converts/maps old rows, 0010 verifies/enforces
+parent/device uniqueness. `inbox.py::write_envelope_inbox` supplies source audience/scope and a
+stable identity without triggering push; `privacy.py` owns push/inbox mapping redaction hooks.
+Deleting inbox rows preserves children through their canonical parent. The entire notifications
+app still owns adapter registration; disabling its inbox module is a distinct operation.
+
+`messaging/dispatch.py` and `worker.py` and old member-push enqueue/deliver task names are inert
+import/broker shims. `tasks_messaging.py` recovers canonical ingress; settings wipe tasks retain
+retired-secret hygiene. Duplicate settings/template writes return 503 then 410. Source adapter
+coverage and deliberate legacy pre-skips are indexed in notification-coverage.md.
+
+Messaging analytics uses `operations/reports_communications.py::build_communications_health`
+(version 4), `integrations/reports_messaging.py` and the operations canonical delivery-fact
+helpers. `NotificationDelivery` plus exact legacy mappings preserve original observations
+without counting another send; EmailLog and device children supply physical outcomes once.
+`report_fields_hi.py` owns public fields; `org_reports_messaging.py` combines weighted rates
+and excludes current consent snapshots from totals. Platform services/module health are v3;
+mobile devices/auth v2. Held ingress, original abandoned receipts, current proof-bound consent
+and billed-zero segments keep distinct measurements. See [measurement notes](SOURCE-MAP-REPORTS.md#communications-and-messaging).
+
+## Own borrowing and account histories
+
+`hardware_requests/member_history_views.py` serves the paginated personal-session
+`member/makerspaces/<id>/borrowing-history` list; `member_history_serializers.py` extends the
+retained public-status allowlist with own outcomes/dates. `accounts/rbac_borrowers.py` owns
+personal requester/tenant scope and merged actor read ownership, while the original workflow
+borrower filter is unchanged. Claim and API-client exclusions are explicit in their registries.
+No model or migration is added.
+
+Frontend `members/MemberBorrowingHistoryPage.tsx`, `borrowingHistoryApi.ts` and
+`BorrowingHistoryList.tsx` own the independent account-only read with recipient-partitioned
+query keys, states, filters and pagination. `MemberHistoryLinks.tsx` is the shared normal-navigation
+map from Member Home/Account to each enabled domain's own history and the permanent Payments
+ledger. `bookings/MyBookings.tsx` accepts the history entry's initial Past period, preserving its
+existing cancellation/reschedule/confirmation and account-switch behavior.
+
+## Public pages and shared handles
+
+Frontend `features/public/FamilyHome.tsx` owns tenant-root bootstrap and legacy booking query
+routing. `MakerspacePage.tsx` is the overview, `MakerspaceAreas.tsx` reuses the shared public
+navigation's enabled destinations, and `features/inventory/PublicInventoryRoute.tsx` gates the
+separate `/inventory` route before inventory queries mount. `PublicInventoryPage.tsx` retains
+inventory/request ownership and its kiosk embedding seam. `PublicPageChrome.tsx` is the shared
+Home/Inventory/navigation source. The Space Manager's existing `/cover` uploader is labelled
+Banner; its `cover_image_url` serves both overview and directory cards, with the same public-image
+serializer/storage and scoped authority. Shared `components/layouts/PublicHeader.tsx` applies
+the uploaded-logo-only tenant header rule across every public domain, with the original
+Space Works mark plus tenant name as its no-logo fallback.
+
+`makerspaces/public_page_*` owns the typed makerspace/organization page contract, authority,
+revision projections, handles, private uploads and cleanup. `public_page_urls.py`,
+`public_page_editor_urls.py` and `public_page_share_urls.py` are attached by `config/urls.py`.
+`events/urls_public_codes.py` supplies venue-targeted short-event reads only while Events is active.
+Release 2 L1's public event surface: `events/short_links.py` + `models_short_links.py` (codes, PII-free
+visit days, `visits(event, since)` for analytics) and `views_short_links_admin.py`; `website_visibility.py`
+(`public_q` access gate vs `listed_q` listing gate); `online_delivery.py` (delivery mode, the encrypted
+join link and `join_url_for`, the venue `map_url`); `embed_policy.py` + `models_embed_policy.py` +
+`views_embed.py` + `templates/events/embed.html` (the framable card); `share_cards.py` +
+`views_event_share.py` (the 1200x630 share PNG); `report_switches.py` (DY-61);
+`views_event_surface_settings.py` (embed policy, report switches, host options);
+`directories.host_makerspaces` (DY-63); `makerspaces/closed_notice.py` (#77 banner). Frontend:
+`features/staff/eventPublishing/` (three questions, editor fields, settings cards),
+`features/events/shortLinks/`, `features/events/publicSurface.ts`, `features/public/ClosedNoticeBanner.tsx`.
+`organizations/urls_public_page_collections.py` adds linked-space collections; the existing event
+catalogue supplies independent upcoming and minimal past periods.
+
+`accounts/claim_routes_public_pages.py`, `accounts/delegated_routes.py`,
+`apiclients/scope_registry_public_pages.py` and `makerspaces/origin_scope_routes_public_pages.py`
+classify safe reads, full-session editors, tagged tenant/global handles, venue tokens and platform
+organization origins. `tenant_migration/gate_policy_public_pages.py` declares write participation.
+`audit/presentation_catalog_profiles.py` labels page mutations; `presentation_discovery.py` holds
+the closed `finish` wrapper vocabulary exact while keeping its dynamic metadata redacted.
+
+`backup/public_page_registry.py` guards the four portable pointer exceptions, global ownership,
+creator User edges and private object declarations. `backup/public_page_verification.py`,
+`event_page_verification.py` and `event_page_draft_verification.py` check candidate database state
+before deployment/slice restore checkpoints and readable-main verification. They do not fetch
+public content or mutate restored documents. `makerspaces/public_page_lifecycle.py` enlists tenant
+and event asset deletion before purge; the durable cleanup worker retains retry and quota ownership.
+`tenant_migration/page_pointer_fixups.py` retains the separate draft-only portable import protocol.
+
+Edge crawler dispatch lives in `frontend/nginx.conf`, `deploy/Caddyfile.saas` and
+`deploy/Caddyfile.saas-install`; root-segment inventory lives in `public_profile_route_inventory.py`.
+Integration regression files are `backend/tests/public_pages/test_l3_*.py`.
+
+Cloud shared integration: config/cloud_settings composes lane contracts; operations/models_cloud_*, models_storage_capabilities and cloud_quotas own deployment-local state/projections; operations/cloud_runtime owns generation admission; scripts/cloud_entrypoint composes protected managed files before M admission. Provider/operator guides live under docs/deploy/cloud-*.md.
+
+`backup/managed/staging.py` owns ciphertext locators/deletion receipts; `writers.py`, `presigns.py`,
+`capture.py` and `recovery.py` own managed drain/reconciliation. `tenant_migration/cloud_import_*`
+adapts existing import protocols to object storage. `cloud_capture_staging.py` encrypts capture trees;
+`cloud_portable.py` qualifies and leases isolated scratch databases. Pure derivation manifest assembly
+lives in `tenant_dump_derivation_manifest.py`; readable-main operational omissions in
+`backup/main_projection_omissions.py`. `operations/cloud_jobs` remains the single periodic/work catalog
+and owns bounded cursor adapters and actual scheduler diagnostics; `cloud_quotas` owns physical usage,
+write reservations and audited storage/mail reconciliation. `backup/privileged_target.py`
+derives only the active database-name component for privileged host jobs and validates the protected tuple.

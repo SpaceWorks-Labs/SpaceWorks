@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from apps.machines.service_queue_eta_serializers import ServiceRequestEtaSerializer
+
 class MemberLoanActivitySerializer(serializers.Serializer):
     request_id = serializers.IntegerField()
     renewal_count = serializers.IntegerField()
@@ -11,14 +13,10 @@ class MemberLoanActivitySerializer(serializers.Serializer):
     overdue = serializers.BooleanField()
 
 
-class MemberBookingActivitySerializer(serializers.Serializer):
-    space_name = serializers.CharField()
-    starts_at = serializers.DateTimeField()
-    ends_at = serializers.DateTimeField()
-    status = serializers.CharField()
-
-
 class MemberPrintActivitySerializer(serializers.Serializer):
+    # Private to the owner: the id and can_cancel drive the dashboard's Cancel control.
+    request_id = serializers.IntegerField()
+    can_cancel = serializers.BooleanField()
     public_token = serializers.UUIDField()
     status = serializers.CharField()
     title = serializers.CharField()
@@ -26,10 +24,12 @@ class MemberPrintActivitySerializer(serializers.Serializer):
     accepted_at = serializers.DateTimeField(allow_null=True)
     started_at = serializers.DateTimeField(allow_null=True)
     completed_at = serializers.DateTimeField(allow_null=True)
+    cancelled_at = serializers.DateTimeField(allow_null=True)
     estimated_minutes = serializers.IntegerField()
     queue_position = serializers.IntegerField(allow_null=True)
     queue_approved_ahead = serializers.IntegerField(allow_null=True)
     queue_awaiting_review_ahead = serializers.IntegerField(allow_null=True)
+    eta = ServiceRequestEtaSerializer(allow_null=True)
 
 
 class MemberEventRegistrationActivitySerializer(serializers.Serializer):
@@ -48,11 +48,19 @@ class MemberEventRegistrationActivitySerializer(serializers.Serializer):
 
 
 class MemberMachineServiceActivitySerializer(serializers.Serializer):
+    request_id = serializers.IntegerField()
+    can_cancel = serializers.BooleanField()
+    public_token = serializers.UUIDField()
     machine_type = serializers.CharField(required=False)
+    machine_type_name = serializers.CharField()
     title = serializers.CharField()
     status = serializers.CharField()
     created_at = serializers.DateTimeField()
+    cancelled_at = serializers.DateTimeField(allow_null=True)
     queue_position = serializers.IntegerField(allow_null=True)
+    queue_approved_ahead = serializers.IntegerField(allow_null=True)
+    queue_awaiting_review_ahead = serializers.IntegerField(allow_null=True)
+    eta = ServiceRequestEtaSerializer(allow_null=True)
 
 
 class MemberPresenceActivitySerializer(serializers.Serializer):
@@ -78,6 +86,7 @@ class MemberLoanHistorySerializer(serializers.Serializer):
 
 
 class MemberRequestHistorySerializer(serializers.Serializer):
+    id = serializers.IntegerField()  # the member's own request: lets them withdraw it (L12)
     status = serializers.CharField()
     created_at = serializers.DateTimeField()
     item_count = serializers.IntegerField()
@@ -88,6 +97,8 @@ class MemberRequestHistorySerializer(serializers.Serializer):
 
 class MemberDuesSerializer(serializers.Serializer):
     dues_amount = serializers.CharField()
+    dues_currency = serializers.CharField(help_text=(
+        "The currency the dues charge uses: the space's payment-settings default currency."))
     # Amounts are strings keyed by currency code, never one summed number: outstanding
     # money cannot be added across currencies. Null when the ledger could not be read --
     # distinct from an empty map, which means nothing is outstanding.
@@ -104,6 +115,19 @@ class MemberTermSerializer(serializers.Serializer):
     # True only when no term is current AND the space has switched on
     # `lapsed_members_cannot_borrow` -- the member's own explanation for a refusal.
     blocks_borrowing = serializers.BooleanField()
+
+
+class MemberIncludedHoursSerializer(serializers.Serializer):
+    """One pool of the member's current term: plan hours per term, used and left (minutes)."""
+
+    kind = serializers.ChoiceField(choices=["booking", "machine"])
+    term_id = serializers.IntegerField()
+    plan_name = serializers.CharField()
+    term_starts_at = serializers.DateTimeField()
+    term_ends_at = serializers.DateTimeField()
+    allowance_minutes = serializers.IntegerField()
+    used_minutes = serializers.IntegerField()
+    remaining_minutes = serializers.IntegerField()
 
 
 class MemberNoticeSerializer(serializers.Serializer):
@@ -133,4 +157,6 @@ class MemberActivitySerializer(serializers.Serializer):
     membership_dues = MemberDuesSerializer(required=False)
     # The member's current (else latest) plan term; null when they have never held one.
     membership_term = MemberTermSerializer(required=False, allow_null=True)
+    # Decision 221(d): present only with bookings on; empty when the plan includes no hours.
+    included_hours = MemberIncludedHoursSerializer(many=True, required=False)
     notices = MemberNoticeSerializer(many=True, required=False)

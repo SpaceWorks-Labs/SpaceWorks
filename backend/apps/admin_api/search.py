@@ -9,6 +9,7 @@ from rest_framework.response import Response
 from rest_framework.throttling import UserRateThrottle
 from rest_framework.views import APIView
 
+from apps.accounts.staff_identity import person_q
 from apps.accounts import rbac
 from apps.admin_api.permissions import IsActiveStaff
 from apps.admin_api.staff_list_scope import request_scope, visible_space
@@ -28,7 +29,8 @@ class SearchInput(serializers.Serializer):
 
 
 class SearchHit(serializers.Serializer):
-    entity = serializers.ChoiceField(choices=["requests", "inventory", "members", "bookings", "events", "machines"])
+    entity = serializers.ChoiceField(choices=["requests", "inventory", "members", "bookings", "events", "machines",
+                                          "jobs", "shop", "payments", "incidents", "passes"])
     id = serializers.IntegerField()
     label = serializers.CharField()
     tab = serializers.CharField()
@@ -70,7 +72,7 @@ def search_hits(actor, space, term, limit):
         add("requests", rows, lambda row: f"Request #{row.pk} · {row.requested_for}", query=lambda row: {"id": str(row.pk), "history": "true"})
 
     if rbac.can(actor, rbac.Action.MANAGE_MEMBERS, space.pk):
-        rows = rbac.scope_by_action(actor, rbac.Action.MANAGE_MEMBERS, MakerspaceMembership.objects.filter(makerspace=space).select_related("user"))
+        rows = rbac.scope_by_action(actor, rbac.Action.MANAGE_MEMBERS, MakerspaceMembership.objects.filter(person_q("user__"), makerspace=space).select_related("user"))
         # Username is the existing unencrypted account identifier. Name/email
         # fuzzy discovery needs a separate global-PII indexing product decision.
         add("members", rows.filter(user__username__icontains=term), lambda row: row.user.username, query=lambda row: {"id": str(row.pk)})
@@ -91,7 +93,8 @@ def search_hits(actor, space, term, limit):
     if module_enabled(space, "machines") and access.can_see_machines(actor, space.pk):
         rows = access.scope_machines_for_actor(actor, Machine.objects.filter(makerspace=space))
         add("machines", apply_q(rows, term), lambda row: row.name, query=lambda row: {"machine": str(row.pk)})
-    return hits
+    from apps.admin_api.search_sources_more import extra_hits  # decision 242: jobs, shop, payments, incidents, passes
+    return hits + extra_hits(actor, space, term, limit)
 
 
 class StaffSearchView(APIView):

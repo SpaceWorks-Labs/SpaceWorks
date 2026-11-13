@@ -1,3 +1,5 @@
+from django.utils.translation import gettext
+from apps.accounts.reauthentication_permissions import RecentReauthenticationMixin
 import secrets
 from datetime import timedelta
 
@@ -9,6 +11,7 @@ from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import generics, status
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
+from rest_framework.throttling import ScopedRateThrottle
 
 from apps.accounts import rbac
 from apps.admin_api.api_client_serializers import (
@@ -20,6 +23,10 @@ from apps.admin_api.api_key_request_views import (
 )
 from apps.admin_api.permissions import IsActiveStaff
 from apps.apiclients.models import ApiClient
+from apps.apiclients.scope_grants import (
+    TENANT_GRANTABLE_SCOPES,
+    actor_may_grant_privileged_scopes,
+)
 from apps.apiclients.services import sync_makerspace_origins
 from apps.audit import services as audit
 from apps.hardware_requests.exceptions import ErrorSerializer
@@ -27,7 +34,9 @@ from apps.makerspaces import limits
 from apps.makerspaces.models import Makerspace
 
 
-ERRORS = {401: ErrorSerializer, 403: ErrorSerializer, 404: ErrorSerializer}
+ERRORS = {401: ErrorSerializer, 403: ErrorSerializer, 404: ErrorSerializer, 429: ErrorSerializer}
+# Credential management is a rare, human act: one per-person budget covers every call.
+THROTTLE = {"throttle_classes": [ScopedRateThrottle], "throttle_scope": "api_client_manage"}
 
 
 def _visible_makerspace(actor, makerspace_id):
@@ -62,9 +71,11 @@ def _related_makerspace(makerspace_id):
     post=extend_schema(responses={201: ApiClientCreateResponseSerializer, **ERRORS}),
 )
 @extend_schema(tags=["API clients"], summary="List or create makerspace API clients")
-class ApiClientListCreateView(generics.ListCreateAPIView):
+class ApiClientListCreateView(RecentReauthenticationMixin, generics.ListCreateAPIView):
     serializer_class = ApiClientSerializer
     permission_classes = [IsActiveStaff]
+    throttle_classes = THROTTLE["throttle_classes"]
+    throttle_scope = THROTTLE["throttle_scope"]
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -116,7 +127,9 @@ class ApiClientListCreateView(generics.ListCreateAPIView):
                 "scopes": client.scopes,
             },
         )
-        return Response(data, status=status.HTTP_201_CREATED)
+        response = Response(data, status=status.HTTP_201_CREATED)
+        response["Cache-Control"] = "private, no-store"  # a one-time secret: never cached
+        return response
 
 
 @extend_schema_view(
@@ -125,9 +138,11 @@ class ApiClientListCreateView(generics.ListCreateAPIView):
     delete=extend_schema(responses={204: None, **ERRORS}),
 )
 @extend_schema(tags=["API clients"], summary="Retrieve, update, or delete API client")
-class ApiClientDetailView(generics.RetrieveUpdateDestroyAPIView):
+class ApiClientDetailView(RecentReauthenticationMixin, generics.RetrieveUpdateDestroyAPIView):
     serializer_class = ApiClientSerializer
     permission_classes = [IsActiveStaff]
+    throttle_classes = THROTTLE["throttle_classes"]
+    throttle_scope = THROTTLE["throttle_scope"]
     http_method_names = ["get", "patch", "delete", "head", "options"]
 
     def get_queryset(self):
@@ -165,8 +180,9 @@ class ApiClientDetailView(generics.RetrieveUpdateDestroyAPIView):
                 )
             else:
                 makerspace = serializer.instance.makerspace
+            was_active = serializer.instance.is_active
             reactivating = (
-                not serializer.instance.is_active
+                not was_active
                 and serializer.validated_data.get("is_active") is True
             )
             if reactivating and makerspace is not None:
@@ -180,6 +196,13 @@ class ApiClientDetailView(generics.RetrieveUpdateDestroyAPIView):
                     target=instance,
                     meta={"previous_scopes": previous_scopes, "scopes": instance.scopes},
                 )
+            if was_active != instance.is_active:
+                # Revoking keeps the row (and its audit trail); deleting removes it. Literal
+                # actions, so the audit catalogue labels each one.
+                if instance.is_active:
+                    audit.record(self.request.user, "api_client.reactivated", makerspace=makerspace, target=instance)
+                else:
+                    audit.record(self.request.user, "api_client.revoked", makerspace=makerspace, target=instance)
         sync_makerspace_origins(instance.makerspace)
         audit.record(
             self.request.user,
@@ -206,9 +229,11 @@ class ApiClientDetailView(generics.RetrieveUpdateDestroyAPIView):
     request=None,
     responses={200: ApiClientCreateResponseSerializer, **ERRORS},
 )
-class ApiClientRotateSecretView(generics.GenericAPIView):
+class ApiClientRotateSecretView(RecentReauthenticationMixin, generics.GenericAPIView):
     serializer_class = ApiClientSerializer
     permission_classes = [IsActiveStaff]
+    throttle_classes = THROTTLE["throttle_classes"]
+    throttle_scope = THROTTLE["throttle_scope"]
 
     def get_queryset(self):
         return _visible_clients(self.request.user)
@@ -227,6 +252,15 @@ class ApiClientRotateSecretView(generics.GenericAPIView):
                 raise PermissionDenied()
             client.makerspace = _related_makerspace(client.makerspace_id)
             self.check_object_permissions(request, client)
+            # Replacing a credential grants access to its existing scopes. Check
+            # the locked row so a concurrent scope update cannot widen that access.
+            if (
+                set(client.scopes) - TENANT_GRANTABLE_SCOPES
+                and not actor_may_grant_privileged_scopes(request.user)
+            ):
+                raise PermissionDenied(
+                    gettext("Only a global superadmin may rotate a client with privileged scopes.")
+                )
             current_secret = client.get_secret()
             raw_secret = secrets.token_urlsafe(32)
             while secrets.compare_digest(raw_secret, current_secret):
@@ -255,4 +289,6 @@ class ApiClientRotateSecretView(generics.GenericAPIView):
             )
         data = ApiClientSerializer(client, context=self.get_serializer_context()).data
         data["client_secret"] = raw_secret
-        return Response(data)
+        response = Response(data)
+        response["Cache-Control"] = "private, no-store"  # a one-time secret: never cached
+        return response

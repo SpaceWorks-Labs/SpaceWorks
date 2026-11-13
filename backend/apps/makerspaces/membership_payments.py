@@ -1,4 +1,11 @@
-"""Membership-dues boundary; payment failures never affect activation."""
+"""Membership-dues boundary: the debt is recorded atomically, the online rail is best-effort.
+
+Same contract as the booking and event seams: a local ledger failure propagates and rolls
+the activation back with it (a member must never be activated with their dues silently
+dropped), while a provider failure after the debt is recorded only logs.
+"""
+
+import logging
 
 from django.db import IntegrityError, transaction
 
@@ -7,23 +14,25 @@ from apps.payments.models import MakerspacePaymentSettings, Payment
 from apps.payments.reconciliation import cancel_pending
 from apps.payments.services import create_checkout, create_payment
 
+logger = logging.getLogger(__name__)
+
 
 def create_for_active_membership(membership, actor):
+    makerspace = membership.makerspace
+    if (
+        makerspace.membership_dues_amount <= 0
+        or not charge_tracking_enabled(makerspace, "membership")
+    ):
+        return None
+    payment = _get_or_create(membership, actor or membership.user)
     try:
-        makerspace = membership.makerspace
-        if (
-            makerspace.membership_dues_amount <= 0
-            or not charge_tracking_enabled(makerspace, "membership")
-        ):
-            return None
-        payment = _get_or_create(membership, actor or membership.user)
         if payment.status == Payment.Status.PENDING and online_payments_enabled(
             makerspace, "membership"
         ):
             _schedule_checkout(payment)
-        return payment
     except Exception:
-        return None
+        logger.exception("membership_checkout_schedule_failed", extra={"payment_id": payment.pk})
+    return payment
 
 
 def _get_or_create(membership, actor):
@@ -60,7 +69,7 @@ def _schedule_checkout(payment):
         try:
             create_checkout(payment)
         except Exception:
-            pass
+            logger.exception("membership_checkout_failed", extra={"payment_id": payment.pk})
 
     transaction.on_commit(create_safely)
 

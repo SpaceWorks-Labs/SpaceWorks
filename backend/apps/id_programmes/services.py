@@ -1,0 +1,172 @@
+"""Create, change, close and delete ID programmes (SPEC §4.3, §5.2). Every change audited.
+
+A programme is hosted by a space its organisation OWNS (Q12: not possible otherwise).
+Deleting is allowed only while no card was ever approved; otherwise archive it (decision
+219(h)): it is closed and hidden from active lists, and its cards keep verifying until
+revoked or expired (Q10).
+"""
+from django.utils.translation import gettext
+from django.db import transaction
+from django.db.models import Q
+from django.utils.text import slugify
+from rest_framework.exceptions import APIException, PermissionDenied, ValidationError
+
+from apps.audit import services as audit
+
+from .models import IdProgramme, IdProgrammeCard
+from .numbering import prefix_from, validate_prefix
+from .questions import validate_schema
+
+EDITABLE = ("name", "description", "registration_open", "requires_approval", "id_prefix", "validity_mode",
+            "valid_until", "validity_days", "photo_mode", "form_schema", "public_verify", "email_daily_cap", "status")
+PRESETS = {
+    "students": {"name": "Student ID", "requires_approval": True, "photo_mode": "required", "validity_mode": "days",
+                 "validity_days": 365},
+    "volunteers": {"name": "Volunteer ID", "requires_approval": True, "photo_mode": "optional"},
+    "staff": {"name": "Staff ID", "requires_approval": True, "photo_mode": "required"},
+}
+
+
+def require_owner(organization, makerspace):
+    from apps.organizations.models import OrganizationMakerspace
+    if not OrganizationMakerspace.objects.filter(organization=organization, makerspace=makerspace,
+                                                 relationship="owner").exists():
+        raise ValidationError({"makerspace_id": gettext("Programmes are hosted by a space this organisation owns.")})
+
+
+def _clean(values, current=None):
+    data = dict(values)
+    if "id_prefix" in data:
+        validate_prefix(data["id_prefix"])
+    if "form_schema" in data:
+        data["form_schema"] = validate_schema(data["form_schema"])
+    mode = data.get("validity_mode", current.validity_mode if current else "none")
+    if mode == "fixed_date" and not data.get("valid_until", getattr(current, "valid_until", None)):
+        raise ValidationError({"valid_until": gettext("Choose the date cards stop being valid.")})
+    if mode == "days" and not data.get("validity_days", getattr(current, "validity_days", None)):
+        raise ValidationError({"validity_days": gettext("Choose for how many days a card is valid.")})
+    status = data.get("status", current.status if current else "draft")
+    if status != "active":
+        data["registration_open"] = False
+    return data
+
+
+def _unique_slug(organization, name):
+    base = slugify(name)[:70] or "programme"
+    slug, n = base, 2
+    while IdProgramme.objects.filter(organization=organization, slug=slug).exists():
+        slug, n = f"{base}-{n}", n + 1
+    return slug
+
+
+@transaction.atomic
+def create(actor, organization, makerspace, values):
+    from apps.accounts import rbac
+    from apps.card_designs.resolution import get_or_create
+    require_owner(organization, makerspace)
+    if not rbac.can(actor, rbac.Action.MANAGE_ID_PROGRAMMES, makerspace.pk):
+        raise PermissionDenied(gettext("You cannot create programmes for this space."))
+    preset = PRESETS.get(values.pop("preset", ""), {})
+    data = _clean({**preset, **values})
+    data.setdefault("name", preset.get("name", "ID programme"))
+    data.setdefault("id_prefix", prefix_from(data["name"]))
+    programme = IdProgramme.objects.create(organization=organization, makerspace=makerspace, created_by=actor,
+                                           slug=_unique_slug(organization, data["name"]),
+                                           **{key: value for key, value in data.items() if key in EDITABLE})
+    get_or_create(makerspace, "id_programme", actor=actor, programme=programme)
+    audit.record(actor, "id_programme.created", makerspace=makerspace, target=programme,
+                 meta={"programme_id": programme.pk})
+    return programme
+
+
+@transaction.atomic
+def update(actor, programme, values):
+    programme = IdProgramme.objects.select_for_update().get(pk=programme.pk)
+    if programme.archived_at is not None and values.get("status") == IdProgramme.Status.ACTIVE:
+        raise ValidationError({"status": gettext("Restore this programme from the archive before reopening it.")})
+    data = _clean(values, programme)
+    changed = [key for key, value in data.items() if key in EDITABLE and getattr(programme, key) != value]
+    for key in changed:
+        setattr(programme, key, data[key])
+    if changed:
+        programme.save()
+        action_fields = "fields_updated" if changed == ["form_schema"] else "updated"
+        if action_fields == "fields_updated":
+            audit.record(actor, "id_programme.fields_updated", makerspace=programme.makerspace, target=programme,
+                         meta={"programme_id": programme.pk})
+        else:
+            audit.record(actor, "id_programme.updated", makerspace=programme.makerspace, target=programme,
+                         meta={"programme_id": programme.pk, "fields": changed})
+        if programme.status == "closed" and "status" in changed:
+            audit.record(actor, "id_programme.closed", makerspace=programme.makerspace, target=programme,
+                         meta={"programme_id": programme.pk})
+    return programme
+
+
+class ArchiveInstead(APIException):
+    status_code = 409
+    default_code = "archive_instead"
+    default_detail = {"code": "archive_instead",
+                      "detail": "Cards in this programme were approved. Archive it instead of deleting it."}
+
+
+def was_used(programme):
+    return IdProgrammeCard.objects.filter(programme=programme, sequence__isnull=False).exists()
+
+
+def _has_published_design(programme):
+    """Deleting a programme cascades its CardDesigns; a published one reached holders (219(h))."""
+    from apps.card_designs.models import CardDesign
+    return CardDesign.objects.filter(programme=programme).filter(
+        Q(published_revision__isnull=False) | Q(published_at__isnull=False)).exists()
+
+
+@transaction.atomic
+def delete(actor, programme):
+    """Hard delete only while no card was ever approved (decision 219(h)); else 409."""
+    # Lock the programme and every card first: an approval committing mid-delete would otherwise
+    # cascade an approved card away after was_used() had already said no.
+    programme = IdProgramme.objects.select_for_update().get(pk=programme.pk)
+    list(IdProgrammeCard.objects.select_for_update().filter(programme=programme).values_list("pk", flat=True))
+    if was_used(programme) or _has_published_design(programme):
+        raise ArchiveInstead()
+    from apps.card_designs.storage import delete_quietly
+    keys = list(programme.cards.exclude(photo_object_key="").values_list("photo_object_key", flat=True))
+    audit.record(actor, "id_programme.deleted", makerspace=programme.makerspace, target=programme,
+                 meta={"programme_id": programme.pk})
+    programme.delete()
+    transaction.on_commit(lambda: [delete_quietly(key) for key in keys])
+
+
+@transaction.atomic
+def archive(actor, programme):
+    """Close the programme and hide it from active lists; every card and its history stays."""
+    from django.utils import timezone
+    programme = IdProgramme.objects.select_for_update().get(pk=programme.pk)
+    if programme.archived_at is not None:
+        return programme
+    was_closed = programme.status == IdProgramme.Status.CLOSED
+    programme.archived_at = timezone.now()
+    programme.registration_open = False
+    if programme.status == IdProgramme.Status.ACTIVE:
+        programme.status = IdProgramme.Status.CLOSED
+    programme.save(update_fields=["archived_at", "registration_open", "status", "updated_at"])
+    if not was_closed and programme.status == IdProgramme.Status.CLOSED:
+        audit.record(actor, "id_programme.closed", makerspace=programme.makerspace, target=programme,
+                     meta={"programme_id": programme.pk})
+    audit.record(actor, "id_programme.archived", makerspace=programme.makerspace, target=programme,
+                 meta={"programme_id": programme.pk})
+    return programme
+
+
+@transaction.atomic
+def unarchive(actor, programme):
+    """Back into the active list, still closed: reopening registration is a separate change."""
+    programme = IdProgramme.objects.select_for_update().get(pk=programme.pk)
+    if programme.archived_at is None:
+        return programme
+    programme.archived_at = None
+    programme.save(update_fields=["archived_at", "updated_at"])
+    audit.record(actor, "id_programme.unarchived", makerspace=programme.makerspace, target=programme,
+                 meta={"programme_id": programme.pk})
+    return programme

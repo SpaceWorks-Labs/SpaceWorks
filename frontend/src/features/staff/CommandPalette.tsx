@@ -1,24 +1,40 @@
-import { useEffect, useId, useState } from "react";
+import { t } from "@lingui/core/macro";
+import { consoleSessionHref } from "../../lib/api/sessionContext";
+import { useCallback, useEffect, useId, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useTransitionNavigate } from "../../lib/motion";
 
 import { Modal } from "../../components/ui";
 import { staffRequest } from "../../lib/api";
 import { useDebouncedValue } from "../../lib/useDebouncedValue";
 import { TAB_LABELS } from "./staffAccess";
 import { staffTabPath } from "./staffTabs";
+import { SIDEBAR_LABELS } from "./sidebarSections";
 import { quickCreateCommands } from "./quickCreate";
+import { reportCommands } from "./reportCommands";
+import { SearchField } from "../../components/ui/SearchField";
 
 type Hit = { entity: string; id: number; label: string; tab: string; query: Record<string, string> };
 type Command = { key: string; label: string; tab: string; query?: Record<string, string> };
+// Decision 242 (U6): the server adds machine jobs, shop orders, payments, incidents and guest passes, each only
+// for a role holding that area's action. A hit opens its area's page, so it is named by what it is.
+const ENTITY_LABELS = (): Record<string, string> => ({ jobs: t`Machine job`, shop: t`Shop order`, payments: t`Payment`,
+  incidents: t`Incident`, passes: t`Guest pass` });
+const hitCommand = (hit: Hit): Command => {
+  const link = { tab: hit.tab, filters: hit.query ?? {} };
+  const kind = ENTITY_LABELS()[hit.entity] ?? TAB_LABELS[link.tab] ?? hit.entity;
+  return { key: `${hit.entity}-${hit.id}`, label: hit.label.startsWith(kind) ? hit.label : `${kind}: ${hit.label}`, tab: link.tab, query: link.filters };
+};
 
-export function CommandPalette({ makerspaceId, makerspaceSlug, allowedTabs, guestOnly, singleTenantLocked, ownerName, actions = [], isSuperadmin = false }: {
+export function CommandPalette({ makerspaceId, makerspaceSlug, allowedTabs, guestOnly, singleTenantLocked, ownerName, actions = [], isSuperadmin = false, open: controlledOpen, onOpenChange }: {
   makerspaceId: number; makerspaceSlug: string; allowedTabs: readonly string[]; guestOnly: boolean; singleTenantLocked: boolean; ownerName: string;
-  actions?: readonly string[]; isSuperadmin?: boolean;
+  actions?: readonly string[]; isSuperadmin?: boolean; open?: boolean; onOpenChange?: (open: boolean) => void;
 }) {
-  const navigate = useNavigate();
+  const navigate = useTransitionNavigate();
   const id = useId();
-  const [open, setOpen] = useState(false);
+  const [localOpen, setLocalOpen] = useState(false);
+  const open = controlledOpen ?? localOpen;
+  const setOpen = useCallback((next: boolean) => { setLocalOpen(next); onOpenChange?.(next); }, [onOpenChange]);
   const [search, setSearch] = useState("");
   const [active, setActive] = useState(0);
   const term = useDebouncedValue(search, 250).trim();
@@ -28,10 +44,14 @@ export function CommandPalette({ makerspaceId, makerspaceSlug, allowedTabs, gues
     enabled: open && term.length >= 2,
     staleTime: 0,
   });
-  const commands: Command[] = allowedTabs.filter((tab) => (TAB_LABELS[tab] ?? tab).toLowerCase().includes(search.toLowerCase().trim()))
-    .map((tab) => ({ key: `tab-${tab}`, label: `Go to ${TAB_LABELS[tab] ?? tab}`, tab }));
+  // Match the old tab name and the sidebar's name ("Inbox", "Home", "Pickups (Handover)") so either finds the page.
+  const needle = search.toLowerCase().trim();
+  const commands: Command[] = allowedTabs.filter((tab) => [TAB_LABELS[tab] ?? tab, SIDEBAR_LABELS[tab]].some(name => name?.toLowerCase().includes(needle)))
+    .map((tab) => ({ key: `tab-${tab}`, label: t`Go to ${TAB_LABELS[tab] ?? tab}`, tab }));
   commands.push(...quickCreateCommands(actions, allowedTabs, isSuperadmin).filter(command => command.label.toLowerCase().includes(search.toLowerCase().trim())));
-  if (term === search.trim() && term.length >= 2) results.data?.results.filter((hit) => allowedTabs.includes(hit.tab)).forEach((hit) => commands.push({ key: `${hit.entity}-${hit.id}`, label: `${TAB_LABELS[hit.tab] ?? hit.entity}: ${hit.label}`, tab: hit.tab, query: hit.query }));
+  // Reports are listed only once something is typed, so the empty palette stays a short list of pages.
+  if (needle) commands.push(...reportCommands(actions, allowedTabs, isSuperadmin).filter(command => command.label.toLowerCase().includes(needle)));
+  if (term === search.trim() && term.length >= 2) results.data?.results.map(hitCommand).filter((command) => allowedTabs.includes(command.tab)).forEach((command) => commands.push(command));
   const current = Math.min(active, Math.max(0, commands.length - 1));
   useEffect(() => {
     if (open) document.getElementById(`${id}-option-${current}`)?.scrollIntoView?.({ block: "nearest" });
@@ -44,26 +64,27 @@ export function CommandPalette({ makerspaceId, makerspaceSlug, allowedTabs, gues
         event.preventDefault();
         // Keep the existing dialog stack intact when evidence/action dialogs own focus.
         if (!open && document.querySelector('[role="dialog"]')) return;
-        setOpen((value) => !value); setSearch(""); setActive(0);
+        setOpen(!open); setSearch(""); setActive(0);
       }
     };
     document.addEventListener("keydown", keydown);
     return () => document.removeEventListener("keydown", keydown);
-  }, [open]);
+  }, [open, setOpen]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- setOpen is deliberately omitted: the palette must close only when the space or owner changes, not when the parent passes a new onOpenChange
   useEffect(() => { setOpen(false); setSearch(""); setActive(0); }, [makerspaceId, ownerName]);
 
   const run = (command?: Command) => {
     if (!command) return;
-    const path = staffTabPath(command.tab, guestOnly, makerspaceSlug, singleTenantLocked);
+    const path = staffTabPath(command.tab, guestOnly, isSuperadmin ? undefined : makerspaceSlug, singleTenantLocked);
     const query = command.query ? new URLSearchParams(command.query).toString() : "";
     close();
-    navigate(path + (query ? `?${query}` : ""));
+    navigate(consoleSessionHref(path + (query ? `?${query}` : "")));
   };
   return <>
-    <button type="button" className="desk-button-ghost ml-5" onClick={() => setOpen(true)} aria-haspopup="dialog">Search and commands <kbd>Ctrl/⌘ K</kbd></button>
-    {open ? <Modal open onClose={close} title="Search and commands">
-      <label htmlFor={`${id}-input`} className="sr-only">Search staff console</label>
-      <input id={`${id}-input`} className="desk-input w-full" role="combobox" aria-autocomplete="list" aria-expanded="true" aria-controls={`${id}-list`} aria-activedescendant={commands.length ? `${id}-option-${current}` : undefined}
+    {controlledOpen === undefined ? <button type="button" className="desk-button-ghost ml-5" onClick={() => setOpen(true)} aria-haspopup="dialog">{t`Search and commands `}<kbd>{t`Ctrl/⌘ K`}</kbd></button> : null}
+    {open ? <Modal open onClose={close} title={t`Search and commands`}>
+      <label htmlFor={`${id}-input`} className="sr-only">{t`Search staff console`}</label>
+      <SearchField clearOnEscape={false} id={`${id}-input`} className="desk-input w-full" role="combobox" aria-autocomplete="list" aria-expanded="true" aria-controls={`${id}-list`} aria-activedescendant={commands.length ? `${id}-option-${current}` : undefined}
         value={search} maxLength={100} onChange={(event) => { setSearch(event.target.value); setActive(0); }}
         onKeyDown={(event) => {
           if (["ArrowDown", "ArrowUp", "Home", "End", "Enter"].includes(event.key)) event.preventDefault();
@@ -73,14 +94,14 @@ export function CommandPalette({ makerspaceId, makerspaceSlug, allowedTabs, gues
           if (event.key === "End") setActive(Math.max(0, commands.length - 1));
           if (event.key === "Enter") run(commands[current]);
         }} />
-      <div role="status" aria-live="polite" className="my-2 text-xs text-muted">{results.isFetching ? "Searching…" : `${commands.length} commands and results`}</div>
-      {results.error && term.length >= 2 ? <p role="alert" className="text-sm text-danger">Search unavailable: {results.error.message}</p> : null}
-      <ul id={`${id}-list`} role="listbox" aria-label="Commands and results" className="max-h-80 overflow-y-auto">
+      <div role="status" aria-live="polite" className="my-2 text-xs text-muted">{results.isFetching ? t`Searching…` : t`${commands.length} commands and results`}</div>
+      {results.error && term.length >= 2 ? <p role="alert" className="text-sm text-danger">{t`Search unavailable: ${results.error.message}`}</p> : null}
+      <ul id={`${id}-list`} role="listbox" aria-label={t`Commands and results`} className="max-h-80 overflow-y-auto">
         {commands.map((command, index) => <li key={command.key} id={`${id}-option-${index}`} role="option" aria-selected={index === current}
           className={`cursor-pointer rounded p-3 ${index === current ? "bg-surface font-semibold" : ""}`}
           onMouseDown={(event) => event.preventDefault()} onClick={() => run(command)}>{command.label}</li>)}
       </ul>
-      {!commands.length && !results.isFetching ? <p className="text-sm text-muted">No matching commands or results.</p> : null}
+      {!commands.length && !results.isFetching ? <p className="text-sm text-muted">{t`No matching commands or results.`}</p> : null}
     </Modal> : null}
   </>;
 }

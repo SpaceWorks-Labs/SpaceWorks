@@ -1,7 +1,10 @@
+import { t } from "@lingui/core/macro";
+import { SettingsEditorActions } from "./SettingsEditorActions";
+import { SettingsRow } from "../../components/ui";
 import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { Badge } from "../../components/ui";
+import { StatusPill as Badge } from "../../components/ui";
 import { staffRequest } from "../../lib/api";
 import type { Makerspace } from "./StaffPanels";
 
@@ -44,9 +47,9 @@ export function MakerspaceFilamentSettings({ makerspace, settings, loading }: Pr
     loading || updateThreshold.isPending || invalid || nextNumber === currentNumber;
 
   return (
-    <div className="min-w-0 rounded-md border border-line bg-bg p-4">
+    <SettingsRow label={t`Filament low-stock threshold`} helper={t`Auto-add a printing to-buy item when an active spool reaches this remaining weight. Set 0 to turn it off.`}><div className="@container grid min-w-0 gap-4">
       <form
-        className="grid min-w-0 gap-3 md:grid-cols-[minmax(0,1fr)_minmax(180px,240px)_auto] md:items-end"
+        className="grid min-w-0 gap-3  md:items-end"
         onSubmit={(event) => {
           event.preventDefault();
           if (!saveDisabled) {
@@ -56,22 +59,19 @@ export function MakerspaceFilamentSettings({ makerspace, settings, loading }: Pr
       >
         <div className="grid min-w-0 max-w-2xl gap-2 md:items-start">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-base font-semibold text-ink">Filament low-stock threshold</h3>
-            <Badge tone={currentNumber > 0 ? "success" : "neutral"}>
-              {currentNumber > 0 ? `${currentThreshold}g` : "Off"}
+
+            <Badge label="" tone={currentNumber > 0 ? "success" : "neutral"}>
+              {currentNumber > 0 ? `${currentThreshold}g` : t`Off`}
             </Badge>
           </div>
-          <p className="text-sm text-muted">
-            Auto-add a printing to-buy item when an active spool reaches this remaining weight. Set 0 to turn it off.
-          </p>
+
           {updateThreshold.error ? (
             <p className="text-sm text-danger">{updateThreshold.error.message}</p>
           ) : null}
-          {invalid ? <p className="text-sm text-danger">Enter zero or a positive gram value.</p> : null}
+          {invalid ? <p className="text-sm text-danger">{t`Enter zero or a positive gram value.`}</p> : null}
         </div>
         <label className="grid gap-1 text-sm font-semibold text-ink">
-          Threshold (g)
-          <input
+          {t`Threshold (g)`}<input
             className="desk-input"
             type="number"
             min={0}
@@ -81,14 +81,8 @@ export function MakerspaceFilamentSettings({ makerspace, settings, loading }: Pr
             onChange={(event) => setThresholdInput(event.target.value)}
           />
         </label>
-        <button
-          className="desk-button-primary w-full max-w-full justify-self-start sm:w-auto md:justify-self-end"
-          type="submit"
-          disabled={saveDisabled}
-        >
-          {updateThreshold.isPending ? "Saving..." : "Save threshold"}
-        </button>
+        <SettingsEditorActions dirty={nextNumber !== currentNumber} onDiscard={() => setThresholdInput(String(currentThreshold))} pending={updateThreshold.isPending} disabled={saveDisabled} />
       </form>
-    </div>
+    </div></SettingsRow>
   );
 }

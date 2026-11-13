@@ -1,5 +1,6 @@
 """Revocable private ICS capabilities; tokens and contact fields never enter the feed."""
 
+from django.utils.translation import gettext
 import hmac
 import re
 import secrets
@@ -55,11 +56,18 @@ def _feeds(space):
     return rbac.scope_notification_policy(BookingCalendarFeed.objects.all(), makerspace_id=space.pk)
 
 
+def _require_switch(space):
+    """Release 2 L18: `bookings.calendar_feed` (on by default) switches the private feed off."""
+    from apps.makerspaces.platform import feature_enabled
+    if not feature_enabled(space, 'bookings.calendar_feed'):
+        raise NotFound({'detail': gettext('The booking calendar feed is turned off here.'), 'code': 'feature_disabled'})
+
+
 def _require_owner(user, space):
+    _require_switch(space)
     require_active_account(user, space)
-    if (user.is_tenant_dump_stub or rbac.personal_notification_membership_refused(user, space.pk)
-            or rbac.superadmin_hidden_block_applies(user, space.pk)):
-        raise PermissionDenied('An active account in good standing is required.')
+    if user.is_tenant_dump_stub or rbac.personal_notification_membership_refused(user, space.pk):
+        raise PermissionDenied(gettext('An active account in good standing is required.'))
 
 
 class BookingFeedSettingsView(APIView):
@@ -124,12 +132,15 @@ class PublicBookingFeedView(APIView):
     permission_classes = [AllowAny]
 
     @extend_schema(tags=['Member bookings'], auth=[], responses={
-        (200, 'text/calendar'): OpenApiResponse({'type': 'string'}, description='Own reservations as RFC 5545 ICS.'),
+        (200, 'text/calendar'): OpenApiResponse({'type': 'string'}, description=(
+            'Own reservations as RFC 5545 ICS, plus opaque `Unavailable` / `Space closed` blocks only where '
+            'a room outage, machine repair or closure overlaps one of the owner\'s upcoming bookings.')),
         **errors(400, 403, 404, 429),
     })
     def get(self, request, makerspace_slug, raw_token):
         space = get_public_makerspace(makerspace_slug)
         require_module_for_servable(space, 'bookings')
+        _require_switch(space)
         if not re.fullmatch(r'[A-Za-z0-9_-]{43}', raw_token or ''):
             raise NotFound()
         hashed = digest(raw_token)
@@ -139,13 +150,12 @@ class PublicBookingFeedView(APIView):
         require_active_account(row.user, space)
         if rbac.personal_notification_membership_refused(row.user, space.pk):
             raise NotFound()
-        from icalendar import Calendar, Event
-        calendar = Calendar()
-        calendar.add('prodid', '-//SpaceWorks//Bookings//EN')
-        calendar.add('version', '2.0')
+        from .busy_overlay_ics import busy_components
+        from .calendar_render import booking_calendar
         rows = rbac.scope_personal_bookings(row.user, Booking.objects.select_related('space').filter(
             member=row.user, space__makerspace=space,
         ), makerspace_id=space.pk)
+        busy = busy_components(rows)  # only where unavailable time meets the owner's own bookings
         # Bound the response without letting years of old reservations crowd out
         # upcoming ones. Fill spare slots with the most recent history.
         now = timezone.now()
@@ -153,19 +163,7 @@ class PublicBookingFeedView(APIView):
             history=Case(When(ends_at__lt=now, then=Value(1)), default=Value(0), output_field=IntegerField()),
             upcoming_start=Case(When(ends_at__gte=now, then=F('starts_at')), output_field=DateTimeField()),
         ).order_by('history', 'upcoming_start', '-starts_at', 'pk')
-        for booking in rows[:1000]:
-            event = Event()
-            event.add('uid', f'booking-{booking.public_token}@spaceworks')
-            event.add('dtstamp', booking.calendar_updated_at)
-            event.add('last-modified', booking.calendar_updated_at)
-            event.add('sequence', booking.calendar_sequence)
-            event.add('dtstart', booking.starts_at)
-            event.add('dtend', booking.ends_at)
-            event.add('summary', booking.space.name)
-            event.add('status', 'CANCELLED' if booking.status in (Booking.Status.CANCELLED, Booking.Status.REJECTED) else
-                      'TENTATIVE' if booking.status == Booking.Status.PENDING else 'CONFIRMED')
-            calendar.add_component(event)
-        response = HttpResponse(calendar.to_ical(), content_type='text/calendar; charset=utf-8')
+        response = HttpResponse(booking_calendar(rows[:1000], busy), content_type='text/calendar; charset=utf-8')
         response['Cache-Control'] = 'private, no-store'
         response['Referrer-Policy'] = 'no-referrer'
         return response

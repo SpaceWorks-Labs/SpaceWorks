@@ -1,0 +1,60 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+{% block content %}
+<p><a href="{% url 'admin:makerspaces_makerspace_change' space.pk %}">{% blocktranslate trimmed with name=space.name %}Back to {{ name }}{% endblocktranslate %}</a></p>
+<p>{% translate "Changes here need a recent identity check and are recorded in this space's audit log, which its managers can read. A platform lock is a floor: the space can tighten the setting but not loosen it, and only a superadmin removes the lock." %}</p>
+
+<h2>{% translate "Security settings" %}</h2>
+<table>
+  <thead><tr><th scope="col">{% translate "Setting" %}</th><th scope="col">{% translate "Value" %}</th><th scope="col">{% translate "Platform lock" %}</th><th scope="col">{% translate "Change" %}</th></tr></thead>
+  <tbody>
+  {% for row in settings %}
+    <tr>
+      <td><strong>{{ row.label }}</strong><br><small>{{ row.description }}</small></td>
+      <td>{% if row.kind == "bool" %}{% if row.value %}{% translate "On" %}{% else %}{% translate "Off" %}{% endif %}{% elif row.kind == "list" %}{{ row.value|join:", "|default:"(empty: any)" }}{% else %}{{ row.value }}{% endif %}</td>
+      <td>{% if row.lock %}{% translate "Locked at" %} {% if row.kind == "list" %}{{ row.lock.floor|join:", "|default:"(empty)" }}{% else %}{{ row.lock.floor }}{% endif %}{% if row.lock.note %}: {{ row.lock.note }}{% endif %}{% else %}{% translate "Not locked" %}{% endif %}</td>
+      <td>
+        <form method="post">{% csrf_token %}
+          <input type="hidden" name="action" value="set"><input type="hidden" name="key" value="{{ row.key }}">
+          {% if row.kind == "bool" %}
+          {% if not row.value %}<input type="hidden" name="enabled" value="on">{% endif %}
+          <button type="submit">{% if row.value %}{% translate "Turn off" %}{% else %}{% translate "Turn on" %}{% endif %}</button>
+          {% else %}
+          <label>{% if row.kind == "choice" %}{% blocktranslate trimmed with choices=row.choices|join:", " %}One of {{ choices }}{% endblocktranslate %}{% elif row.kind == "list" %}{% translate "Comma-separated networks" %}{% else %}{% translate "Number" %}{% endif %}
+            <input type="text" name="value" value="{% if row.kind == "list" %}{{ row.value|join:", " }}{% else %}{{ row.value }}{% endif %}"></label>
+          <button type="submit">{% translate "Save" %}</button>
+          {% endif %}
+        </form>
+        {% if row.lock %}
+        <form method="post">{% csrf_token %}
+          <input type="hidden" name="action" value="unlock"><input type="hidden" name="key" value="{{ row.key }}">
+          <button type="submit">{% translate "Remove lock" %}</button>
+        </form>
+        {% else %}
+        <form method="post">{% csrf_token %}
+          <input type="hidden" name="action" value="lock"><input type="hidden" name="key" value="{{ row.key }}">
+          {% if row.kind != "bool" %}<label>{% translate "Lock at" %} <input type="text" name="value"></label>{% endif %}
+          <label>{% translate "Note for the space" %} <input type="text" name="note" maxlength="200"></label>
+          <button type="submit">{% if row.kind == "bool" %}{% translate "Lock" %}{% if row.strict_value %} {% translate "on" %}{% else %} {% translate "off" %}{% endif %}{% else %}{% translate "Lock" %}{% endif %}</button>
+        </form>
+        {% endif %}
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+<h2>{% translate "Personal data in this space" %}</h2>
+{% if own_window %}
+  <p>{% blocktranslate trimmed with expires_at=own_window.expires_at reason=own_window.reason %}Your PII access window is open until {{ expires_at }}. Reason: {{ reason }}{% endblocktranslate %}</p>
+  <form method="post">{% csrf_token %}<input type="hidden" name="action" value="close_pii"><button type="submit">{% translate "Close it now" %}</button></form>
+{% else %}
+  <p>{% translate "Members' personal details are masked for you in this space. Opening a 30-minute window needs a reason and is recorded in the space's audit log." %}</p>
+  <form method="post">{% csrf_token %}
+    <input type="hidden" name="action" value="open_pii">
+    <label for="pii-reason">{% translate "Reason (10 to 300 characters)" %}</label><br>
+    <textarea id="pii-reason" name="reason" rows="2" cols="60" minlength="10" maxlength="300" required></textarea><br>
+    <button type="submit">{% translate "Open PII access for 30 minutes" %}</button>
+  </form>
+{% endif %}
+{% endblock %}

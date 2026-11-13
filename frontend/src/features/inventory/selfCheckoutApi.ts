@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { tenantPublicRequest } from "../../lib/api";
 import type { KitCount } from "./KitChecklist";
 
@@ -14,6 +15,17 @@ export type PublicEvidenceUploadResponse = {
   object_key: string;
   method?: string;
   headers?: Record<string, string>;
+  // Account-less upload only (#91): send it back with the checkout or return.
+  evidence_grant?: string;
+};
+
+/** Present only where the makerspace has no member accounts (#91). */
+export type ContactHandover = {
+  contact_name?: string;
+  contact_phone?: string;
+  contact_email?: string;
+  email_code?: string;
+  evidence_grant?: string;
 };
 
 export function requestPublicEvidenceUpload(
@@ -22,6 +34,7 @@ export function requestPublicEvidenceUpload(
     evidence_type: "issue" | "return";
     content_type: string;
     size_bytes?: number;
+    contact_email?: string;
   },
 ) {
   return tenantPublicRequest<PublicEvidenceUploadResponse>(
@@ -44,7 +57,7 @@ export async function uploadPublicEvidenceFile(
       body: file,
       headers: presigned.headers,
     });
-    if (!upload.ok) throw new Error(`Storage upload failed (${upload.status})`);
+    if (!upload.ok) throw new Error(t`Storage upload failed (${upload.status})`);
     return;
   }
 
@@ -52,7 +65,7 @@ export async function uploadPublicEvidenceFile(
   Object.entries(presigned.fields).forEach(([key, value]) => formData.append(key, value));
   formData.append("file", file);
   const upload = await fetch(presigned.upload_url, { method: "POST", body: formData });
-  if (!upload.ok) throw new Error(`Storage upload failed (${upload.status})`);
+  if (!upload.ok) throw new Error(t`Storage upload failed (${upload.status})`);
 }
 
 export function checkoutTool(
@@ -62,7 +75,7 @@ export function checkoutTool(
     evidence_id: number;
     remark?: string;
     kit_checklist?: KitCount[];
-  },
+  } & ContactHandover,
 ) {
   return tenantPublicRequest<PublicToolLoanResult>(
     slug,
@@ -81,7 +94,7 @@ export function returnTool(
     evidence_id: number;
     remark: string;
     kit_checklist?: KitCount[];
-  },
+  } & ContactHandover,
 ) {
   return tenantPublicRequest<PublicToolLoanResult>(
     slug,

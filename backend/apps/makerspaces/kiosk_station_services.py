@@ -7,6 +7,7 @@ lifecycle records the staff User, PIN failure/session start record ``actor=None`
 carry the Station identity in metadata.
 """
 
+from django.utils.translation import gettext, gettext_lazy
 from datetime import timedelta
 from uuid import UUID, uuid4
 
@@ -33,7 +34,7 @@ from apps.makerspaces.station_sessions import resolve_session as resolve_shared,
 
 KIOSK_FEATURE = "inventory.kiosk"
 KIOSK_KINDS = (Station.Kind.SCANNER, Station.Kind.HANDOVER)
-STATION_REFUSAL = "Invalid station request."
+STATION_REFUSAL = gettext_lazy("Invalid station request.")
 COOKIE_NAME = "sw_kiosk_station"
 COOKIE_SALT = "spaceworks.kiosk.station-cookie.v1"
 
@@ -63,10 +64,12 @@ def _material_for(station):
 @transaction.atomic
 def create_station(makerspace, *, actor, name, kind):
     if kind not in KIOSK_KINDS:
-        raise ValidationError({"kind": "Only scanner and handover Stations are managed here."})
+        raise ValidationError({"kind": gettext("Only scanner and handover Stations are managed here.")})
     locked = require_feature_locked(makerspace.pk, KIOSK_FEATURE)
     if Station.objects.filter(makerspace=locked, kind=kind, name=name).exists():
-        raise ValidationError({"name": "A Station of this kind already has that name."})
+        raise ValidationError({"name": gettext("A Station of this kind already has that name.")})
+    from apps.managed_hosting.extra_quotas import check_extra_quota
+    check_extra_quota(locked, "kiosk_stations")  # decision 284: typed 409 kiosk_stations_quota_reached
     station = Station.objects.create(makerspace=locked, kind=kind, name=name, created_by=actor)
     credential, pin = rotate_credential(station, material_for=_material_for(station))
     audit.record(
@@ -80,7 +83,7 @@ def _locked_kiosk_station(station):
     require_feature_locked(station.makerspace_id, KIOSK_FEATURE)
     locked = Station.objects.select_for_update().get(pk=station.pk)
     if locked.kind not in KIOSK_KINDS:
-        raise ValidationError({"station": "Not a kiosk Station."})
+        raise ValidationError({"station": gettext("Not a kiosk Station.")})
     return locked
 
 
@@ -111,7 +114,7 @@ def reveal(station, *, actor, current_password):
 def disable(station, *, actor):
     locked = Station.objects.select_for_update().get(pk=station.pk)
     if locked.kind not in KIOSK_KINDS:
-        raise ValidationError({"station": "Not a kiosk Station."})
+        raise ValidationError({"station": gettext("Not a kiosk Station.")})
     credential = disable_credential(locked)
     _revoke_station_leases(locked)
     if credential is not None:
@@ -193,7 +196,13 @@ def resolve_session(public_token, cookie_value):
 
 @transaction.atomic
 def end_session(station, *, session_id, expires_at):
-    StationSessionRevocation.objects.get_or_create(
+    _revocation, created = StationSessionRevocation.objects.get_or_create(
         session_id=session_id, defaults={"station": station, "expires_at": expires_at},
     )
-    return _revoke_station_leases(station, session_id=session_id)
+    revoked = _revoke_station_leases(station, session_id=session_id)
+    if created:  # The start is audited, so the end is too; a repeated end changes nothing.
+        audit.record(
+            None, "kiosk.station_session_ended", makerspace=station.makerspace, target=station,
+            meta={"station_id": station.pk, "station_session_id": str(session_id), "leases_revoked": revoked},
+        )
+    return revoked

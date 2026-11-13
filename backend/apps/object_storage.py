@@ -1,109 +1,48 @@
-"""Shared deletion primitives for versioned S3-compatible object stores."""
+"""Shared capability-aware deletion, preserving the existing import surface."""
 
-import logging
-
-from botocore.exceptions import BotoCoreError, ClientError
-
-
-logger = logging.getLogger(__name__)
-
-UNSUPPORTED_LIST_OBJECT_VERSIONS_ERROR_CODES = frozenset(
-    {
-        "InvalidRequest",
-        "MethodNotAllowed",
-        "NotImplemented",
-        "UnsupportedOperation",
-        "XNotImplemented",
-    }
+from apps.storage_capabilities import CapabilityError, capabilities_for
+from apps.storage_capabilities.deletion import (
+    DeletionEvidence, assert_exact_absent, delete_exact_key, delete_owned_prefix,
 )
 
+# Kept for consumers importing the historical constant. It is never a fallback.
+UNSUPPORTED_LIST_OBJECT_VERSIONS_ERROR_CODES = frozenset({
+    "InvalidRequest", "MethodNotAllowed", "NotImplemented", "UnsupportedOperation",
+    "XNotImplemented",
+})
 
-def delete_all_versions(client, *, bucket, key, require_version_listing=False):
-    """Delete every retained version and delete marker for one exact key.
 
-    Some S3-compatible providers do not implement ``ListObjectVersions``. In that
-    case a normal delete remains the only available operation, so callers stay
-    runnable instead of turning a tenant purge into a permanent failure.
+def deletion_contract(client, bucket):
+    contract = capabilities_for(client, bucket)
+    if contract is not None and contract.versioning == "never_versioned":
+        return True
+    if contract is not None and contract.list_delete_versions is not True:
+        raise CapabilityError("storage_history_listing_required")
+    return False
+
+
+def delete_all_versions(client, *, bucket, key, require_version_listing=False, operation_key=None):
+    """Confirm absence before callers free quota or mark expiry terminal.
+
+    ``require_version_listing`` remains accepted for old callers. The verified
+    never-versioned contract is equivalent proof of no history; every other
+    bucket always requires enumeration, including suspended/unknown buckets.
     """
-    params = {"Bucket": bucket, "Prefix": key}
-    try:
-        first_page = client.list_object_versions(**params)
-    except ClientError as exc:
-        code = exc.response.get("Error", {}).get("Code")
-        if (
-            code in UNSUPPORTED_LIST_OBJECT_VERSIONS_ERROR_CODES
-            and not require_version_listing
-        ):
-            logger.warning(
-                "object_version_listing_failed_falling_back",
-                extra={"bucket": bucket, "object_key": key, "error_code": code},
-                exc_info=True,
-            )
-            client.delete_object(Bucket=bucket, Key=key)
-            return
-        _log_listing_failure(bucket=bucket, key=key)
-        raise
-    except BotoCoreError:
-        _log_listing_failure(bucket=bucket, key=key)
-        raise
-
-    try:
-        objects = _listed_versions(
-            client, bucket=bucket, key=key, first_page=first_page
-        )
-    except (BotoCoreError, ClientError):
-        _log_listing_failure(bucket=bucket, key=key)
-        raise
-
-    if not objects:
-        client.delete_object(Bucket=bucket, Key=key)
-        return
-
-    for start in range(0, len(objects), 1000):
-        response = client.delete_objects(
-            Bucket=bucket,
-            Delete={"Objects": objects[start : start + 1000], "Quiet": True},
-        )
-        errors = (response or {}).get("Errors", ())
-        if errors:
-            first = errors[0]
-            raise ClientError(
-                {
-                    "Error": {
-                        "Code": first.get("Code", "DeleteObjectsError"),
-                        "Message": first.get("Message", "Object version deletion failed."),
-                    }
-                },
-                "DeleteObjects",
-            )
-
-
-def _listed_versions(client, *, bucket, key, first_page):
-    objects = []
-    page = first_page
-    while True:
-        objects.extend(
-            {"Key": item["Key"], "VersionId": item["VersionId"]}
-            for group in (page.get("Versions", ()), page.get("DeleteMarkers", ()))
-            for item in group
-            if item.get("Key") == key
-        )
-        if not page.get("IsTruncated"):
-            return objects
-        params = {
-            "Bucket": bucket,
-            "Prefix": key,
-            "KeyMarker": page.get("NextKeyMarker"),
-            "VersionIdMarker": page.get("NextVersionIdMarker"),
-        }
-        page = client.list_object_versions(
-            **{name: value for name, value in params.items() if value is not None}
-        )
-
-
-def _log_listing_failure(*, bucket, key):
-    logger.error(
-        "object_version_listing_failed_propagating",
-        extra={"bucket": bucket, "object_key": key},
-        exc_info=True,
+    from django.utils import timezone
+    started_at = timezone.now() if operation_key is not None else None
+    result = delete_exact_key(
+        client, bucket=bucket, key=key,
+        never_versioned=deletion_contract(client, bucket),
     )
+    # The domain's permanent receipt supplies the idempotency identity. A generic
+    # re-delete has no authority to credit the same historical bytes twice.
+    if operation_key is not None:
+        from apps.operations.cloud_quotas.storage import confirmed_delete
+        confirmed_delete(client, bucket=bucket, key=key, result=result, operation_key=operation_key, started_at=started_at)
+    return result
+
+
+__all__ = [
+    "CapabilityError", "DeletionEvidence", "assert_exact_absent", "delete_all_versions",
+    "delete_owned_prefix", "deletion_contract",
+]

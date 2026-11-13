@@ -5,6 +5,55 @@
 Forward migrations remain applied; the dump is never restored automatically. Restoring a database
 loses database changes made since the dump. The dump contains no uploaded object bytes.
 
+The updater downloads the selected repository's exact release commit archive over HTTPS,
+checks the tag's commit suffix, archive paths, release version and complete runtime manifest,
+then runs that bundle's updater against the existing installation. It keeps the configured
+repository and requested version. Host files are replaced only after the active-database backup;
+changed website/API edges and Caddy are recreated so their bind mounts load the new files.
+Image rollback also recreates those edges; it retains the new host bundle and forward schema.
+Older or conflicting release run numbers are refused, including with `--force`; use the explicit
+recovery procedure below when restoring an earlier release.
+
+Before Compose can run migrations, the updater stops **backend, worker, beat and live**.
+This is done on every release replacement, so pending data migrations run with local writers stopped.
+Operators must also fence external clients, schedulers and other writers; the updater cannot stop
+processes outside its Compose installation. If migration fails, image rollback keeps the forward
+schema; irreversible conversions still require the reviewed backup/recovery procedure below.
+
+## Fixed-role upgrade (2026-10-16)
+
+The fixed-role data migration (`makerspaces/0092_fixed_roles_data`) is **irreversible**. It replaces
+editable roles with seven built-ins and moves Machine Manager type assignments to each person.
+Plan this as a stopped-writer upgrade, before invoking any updater that automatically runs migrations.
+
+1. Suspend automatic deployments. Take and verify a database backup, retain the old image/version,
+   encryption keys and deployment configuration, and preserve uploaded objects through the normal backup
+   procedure. An application-image rollback cannot undo this data conversion.
+2. Stop every application writer: web/API, workers, scheduled jobs, live processes and external clients.
+   Keep the database available. Use a one-off management process from the **new image**, against the
+   still-unmigrated database; do not start its web/worker processes or automatic migration entrypoint.
+3. Run `python manage.py preview_fixed_roles` in that new-image management process **before `migrate`**.
+   It reads the old schema without writes. `--json` and `--makerspace ID` are available for inspection;
+   review an unfiltered preview before upgrading the deployment. Check each membership's mapped role
+   set, dropped actions, E1/E2 gains, revoked invitations, pruned schedules and machine reach.
+4. Resolve every **“must fix before upgrading”** notification rule. A `NotificationRecipient` with
+   `kind=role` referencing an obsolete/custom role makes migration refuse and roll back. Repoint it
+   to a surviving built-in or named users, or remove it using the old console. If the console is
+   needed, reopen the old image briefly for those controlled edits, then stop all writers again,
+   take a fresh backup and rerun the preview. There is no automatic role-to-user conversion.
+5. With a clean, reviewed preview and writers still stopped, run `python manage.py migrate` using
+   the new image and the installation's normal management/migration authority. Start the new release
+   through its existing readiness gates. Verify role sets, notifications and per-person machine types
+   in Users/Members before reopening access or resuming scheduled jobs and automatic deployments.
+
+Mapping normally only narrows raw grants. E1 restores the canonical grants of a narrowed Space Manager;
+E2 turns the legacy six handout actions into Handover, adding direct job collection. Preview reports
+these exceptions. Machine links are dropped, never widened to whole types. A nonempty machine-only
+scope loses Machine Manager to avoid widening notification fallback. Former exempt managers mapped
+to Machine Manager receive only the types present at migration time; future types need assignment.
+Space Manager remains exempt. Reversing the conversion requires a coordinated database restore and
+old image, with the data-loss and object-continuity limits described below.
+
 ## Inspect a failed deployment
 
 As the install owner, inspect logs before restarting anything:
@@ -14,8 +63,8 @@ bash scripts/spaceworks-compose.sh bundled ps -a
 bash scripts/spaceworks-compose.sh bundled logs orchestration-init migrate orchestration-ready backend
 ```
 
-Use the installation's recorded layer through the wrapper; single-box logs use `app` instead of
-`backend`. Failed run-once containers remain for inspection. A successful application-image rollback
+Use the installation's recorded layer through the wrapper. Failed run-once containers remain for
+inspection. A successful application-image rollback
 leaves `.spaceworks-version` at the previous immutable release. If the previous release is healthy,
 no database restoration is normally needed.
 
@@ -23,7 +72,28 @@ If an installer upgrade stopped while replacing its host runtime bundle or refre
 records, the error names a `backups/host-config-*` directory. Keep application writers stopped; as the
 install owner, restore the saved runtime files to their original relative paths, then run
 `bash scripts/init-host-orchestration.sh` with the installed version's backend image tag to recreate
-matching configuration proofs. This is host configuration recovery and does not restore the database.
+matching configuration proofs. Then recreate the configured proxy edges with the wrapper's
+`up -d --no-deps --force-recreate`: `frontend` for a website or `api-edge` for API-only, plus `caddy`
+for TLS/SaaS layers. Atomic file replacement requires new bind mounts, even when Compose YAML
+has not changed. This is host configuration recovery and does not restore the database.
+
+## Moving off a single-box install
+
+The single-box shape and its all-in-one image are no longer available. Before updating, run these
+commands from the install directory using the **CURRENTLY INSTALLED scripts**:
+
+```bash
+bash scripts/spaceworks-compose.sh bundled stop app
+bash scripts/spaceworks-compose.sh bundled rm -f app
+printf 'none\n' > .spaceworks-layer
+bash scripts/spaceworks-compose.sh bundled up -d
+```
+
+Then re-run the update. Data in the database and storage volumes is unchanged.
+
+An older updater on a single-box host takes the database backup and refreshes host topology records,
+then fails pulling the no-longer-published all-in-one image before replacing any container. Nothing
+was deployed — follow the switch steps above, then retry.
 
 ## Restore a pre-update SQL dump
 
@@ -40,8 +110,12 @@ and a verified archive, not a SQL dump.
 3. Confirm the database name and server from the **active host database pointer**, and confirm that
    identity is the database captured by the selected dump. H1 recovery can change that pointer:
    `POSTGRES_DB` is not proof of the live application's database. A database owner must review this
-   identity before any drop, create or restore command. Managed/external databases need their provider's
-   restore procedure and pointer/CAS adapter; the bundled-container procedure does not apply to them.
+   identity before any drop, create or restore command. A bundled database restores from `backups/pre-update-<timestamp>.sql.gz`
+   with the bundled-container procedure below. An outside database (`SPACEWORKS_DATABASE=external`) has a
+   `backups/pre-update-<timestamp>.dump` (custom format, taken with the version-matched `pg_dump`): restore it with
+   the same-major `pg_restore --clean --if-exists --no-owner --no-acl` as the owner login on the direct connection,
+   or use your provider's own point-in-time restore and then re-run the grants step. See
+   [Backup and restore](backup-and-restore.md#roll-back-an-upgrade).
 4. Stop the whole application stack, including web front, live streams, workers and
    schedulers. Keep only the database container running. Confirm all writers are disconnected. Check
    the dump's integrity with `gzip -t backups/pre-update-<timestamp>.sql.gz`.
@@ -77,6 +151,15 @@ readiness/recovery state. Follow any restore-diff decision in the backup console
 restore enters quarantine: run the existing superadmin recovery workflow and acknowledge residual risk
 before allowing normal writes. Interrupted destructive work uses its durable rollback journal.
 
+Before any control-state change, snapshot, restore or interrupted rollback, `restore.sh` queries
+the active application's database name, OID and deployment UUID through the committed wrapper,
+and compares them with a direct query of the bootstrap database (the bundled `db` container, or the outside
+database through the owner login when `SPACEWORKS_DATABASE=external`) while holding the host
+operation lock. The complete identities must match. A pointer that names a different database (a sibling cutover)
+is refused **before any restore effect**; use the supported cutover recovery coordinator instead.
+Every snapshot, replacement, rollback and grant reprovisioning uses that explicitly proven database
+name. Do not reset the pointer to make the check pass.
+
 `restore.sh` is the legacy path and refuses compound envelopes, including envelopes without sovereign
-slices, and unsupported single-box restore. Compound archives require their supported host coordinator;
+slices. Compound archives require their supported host coordinator;
 do not force them through the legacy supervisor or treat a verified offsite copy as a proven restore.

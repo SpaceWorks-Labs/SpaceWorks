@@ -1,3 +1,4 @@
+import type { BadgeReceipt } from "./eventBadges/deskBadgeApi";
 import type { OfflineRoster, QueuedCheckIn, SyncOutcome } from "./eventCheckInOfflineApi";
 import { openEncryptedDatabase, requestValue, transactionDone, keyFor, encryptBytes, decryptBytes, expired as isExpired, deleteScopes } from "../../lib/encryptedIndexedDb";
 
@@ -18,6 +19,8 @@ export type OfflineCheckInState = {
   operations: QueuedCheckIn[];
   conflicts: SyncOutcome[];
   lastSyncedAt: string | null;
+  /** Badge prints made offline, sent with the next sync (idempotent by operation_id). */
+  badgeReceipts?: BadgeReceipt[];
 };
 
 function openDatabase() {
@@ -81,11 +84,21 @@ export async function queueOfflineCheckIn(scope: string, operation: QueuedCheckI
   return state;
 }
 
-export async function applySyncResults(scope: string, outcomes: SyncOutcome[], recordedAt: string) {
+export async function queueBadgeReceipt(scope: string, receipt: BadgeReceipt) {
+  const state = await loadOfflineState(scope);
+  if (!state) throw new Error("The offline roster expired. Download it again.");
+  state.badgeReceipts = [...(state.badgeReceipts ?? []), receipt];
+  await write(scope, state);
+  return state;
+}
+
+export async function applySyncResults(scope: string, outcomes: SyncOutcome[], recordedAt: string, sentReceipts: BadgeReceipt[] = []) {
   const state = await loadOfflineState(scope);
   if (!state) return null;
   const completed = new Set(outcomes.map((item) => item.operation_id));
   state.operations = state.operations.filter((item) => !completed.has(item.operation_id));
+  const sent = new Set(sentReceipts.map((item) => item.operation_id));
+  state.badgeReceipts = (state.badgeReceipts ?? []).filter((item) => !sent.has(item.operation_id));
   state.conflicts = outcomes.filter((item) => !["applied", "duplicate_operation"].includes(item.outcome));
   state.lastSyncedAt = recordedAt;
   await write(scope, state);

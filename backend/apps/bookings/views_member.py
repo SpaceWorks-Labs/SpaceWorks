@@ -11,9 +11,9 @@ from rest_framework.views import APIView
 from apps.accounts import rbac
 from apps.apiclients.throttling import MemberPrincipalRateThrottle
 from apps.bookings.models import Booking
-from apps.bookings.serializers_admin import EmptyActionSerializer
 from apps.bookings.serializers_member import (
-    MemberBookingFilterSerializer, MemberBookingListSerializer, MemberBookingSerializer,
+    MemberBookingCancelSerializer, MemberBookingFilterSerializer, MemberBookingListSerializer,
+    MemberBookingSerializer,
 )
 from apps.bookings.serializers_reschedule import BookingRescheduleSerializer
 from apps.bookings.services_bookings import cancel_booking
@@ -76,16 +76,19 @@ class MemberBookingCancelView(APIView):
     throttle_scope = 'booking_submit'
 
     @extend_schema(tags=['Member bookings'],
-                   request={'type': 'object', 'properties': {}, 'additionalProperties': False},
+                   request=MemberBookingCancelSerializer,
                    responses={200: MemberBookingSerializer, **ERRORS,
                               423: OpenApiResponse(ErrorSerializer, description='Tenant frozen for migration.'),
                               503: OpenApiResponse(ErrorSerializer, description='Tenant write gate unavailable.'),
-                              409: OpenApiResponse(ErrorSerializer, description='Cancellation cutoff or state conflict.')})
+                              409: OpenApiResponse(ErrorSerializer, description='Cancellation cutoff or state conflict, '
+                                                   'or `booking_hosts_event`: the room is held for an event and the '
+                                                   'cancel was not confirmed.')})
     def post(self, request, makerspace_slug, public_token):
         booking = get_object_or_404(own_bookings(request, makerspace_slug), public_token=public_token)
-        body = EmptyActionSerializer(data=request.data)
+        body = MemberBookingCancelSerializer(data=request.data)
         body.is_valid(raise_exception=True)
-        cancelled = cancel_booking(booking, actor=request.user, member_cancel=True)
+        cancelled = cancel_booking(booking, actor=request.user, member_cancel=True,
+                                   confirm_event_room=body.validated_data['confirm_event_room'])
         return Response(MemberBookingSerializer(cancelled).data)
 
 

@@ -14,6 +14,9 @@ def membership_makerspace_entry(
     is_machine_only,
 ):
     """Serialize one real membership while preserving its identity semantics."""
+    from apps.accounts.rbac_roles import membership_roles
+
+    roles = membership_roles(membership)
     assigned_role = membership.assigned_role
     role_name = (
         assigned_role.name
@@ -30,6 +33,9 @@ def membership_makerspace_entry(
         "slug": membership.makerspace.slug,
         "role": membership.role,
         "role_id": membership.assigned_role_id,
+        "role_ids": [role.pk for role in roles],
+        "role_slugs": [role.slug for role in roles],
+        "role_names": [role.name for role in roles],
         "role_name": role_name,
         "role_slug": role_slug,
         "actions": actions,
@@ -104,6 +110,9 @@ def organization_makerspace_entries(user, *, makerspace_ids=None):
                 "slug": slug,
                 "role": None,
                 "role_id": None,
+                "role_ids": [],
+                "role_slugs": [],
+                "role_names": [],
                 "role_name": name,
                 "role_slug": None,
                 "actions": set(),

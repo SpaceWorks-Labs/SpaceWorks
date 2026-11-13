@@ -61,8 +61,23 @@ def resolve_subject_labels(payments):
         Payment.SubjectType.MAKERSPACE_MEMBERSHIP: "Membership dues",
         Payment.SubjectType.MEMBERSHIP_TERM: "Membership renewal",
         Payment.SubjectType.MEMBERSHIP_REQUEST: "Membership admission",
+        Payment.SubjectType.MEMBERSHIP_TERM_START: "Membership term",
+        Payment.SubjectType.GUEST_PASS: "Day pass",
         Payment.SubjectType.LOAN_DEPOSIT: "Loan deposit",
         Payment.SubjectType.LOAN_LATE_FEE: "Late return fee",
+        Payment.SubjectType.LOAN_RENTAL: "Loan rental",
+        Payment.SubjectType.LOAN_DAMAGE: "Damage charge",
+        Payment.SubjectType.LOAN_LOST: "Lost item charge",
+        Payment.SubjectType.MACHINE_SESSION: "Machine session",
+        Payment.SubjectType.EVENT_ORDER: "Event tickets",
+        Payment.SubjectType.EVENT_VENUE_FEE: "Venue fee",
+        Payment.SubjectType.DONATION: "Donation",
+        Payment.SubjectType.SPONSORSHIP: "Sponsorship",
+        # Lane L21b (appended after L6).
+        Payment.SubjectType.SUBMISSION_FEE: "Project entry fee",
+        Payment.SubjectType.TEAM_REGISTRATION: "Team registration",
+        Payment.SubjectType.EVENT_DEPOSIT: "Event deposit",  # hack-money G10
+        Payment.SubjectType.SHOP_ORDER: "Shop order",
     }
     for payment in rows:
         label = fixed_labels.get(payment.subject_type)

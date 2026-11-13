@@ -1,7 +1,7 @@
 name: Checks
 
-# CHECKS ONLY (owner decision #108). The pytest and vitest suites are deliberately
-# local-only and gitignored; nothing here runs them.
+# CHECKS ONLY (owner decision #108): fast checks, no test suites. The committed pytest and vitest
+# suites run in tests.yml (decision 244).
 #
 # Required status checks on main. These job ids and names are what branch protection
 # matches, so keep them stable:
@@ -9,6 +9,7 @@ name: Checks
 #   - backend
 #   - contracts
 #   - rules
+#   - version-bump   (runs on pull requests into main only; mark it required in branch protection)
 
 on:
   pull_request:
@@ -57,13 +58,23 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Type-check
-        run: npx tsc -b
+      # Type-check and lint share no state, so they run side by side; both must pass.
+      # frontend/eslint.config.js; warnings (react-hooks/exhaustive-deps) do not fail the job.
+      - name: Type-check and lint
+        shell: bash
+        run: |
+          set -uo pipefail
+          npx tsc -b > "$RUNNER_TEMP/tsc.log" 2>&1 & tsc=$!
+          npm run lint > "$RUNNER_TEMP/lint.log" 2>&1 & lint=$!
+          wait "$tsc"; tsc_status=$?
+          wait "$lint"; lint_status=$?
+          echo "::group::tsc -b (exit $tsc_status)"; cat "$RUNNER_TEMP/tsc.log"; echo "::endgroup::"
+          echo "::group::eslint (exit $lint_status)"; cat "$RUNNER_TEMP/lint.log"; echo "::endgroup::"
+          ((tsc_status == 0 && lint_status == 0))
 
-      # No ESLint configuration is committed, so there is no lint step yet.
-
+      # `npm run build` is `tsc -b` + this; the types were checked in the step above.
       - name: Build (includes the PWA verify script)
-        run: npm run build
+        run: npm run build:bundle
 
   backend:
     name: backend
@@ -75,14 +86,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-          cache: pip
-          cache-dependency-path: backend/requirements.txt
+      - uses: ./.github/actions/backend-python
 
-      - name: Install dependencies
-        run: pip install -r requirements.txt
+      # Syntax errors, undefined names, redefinitions, repeated dict keys (~2 s).
+      - name: Error lint (ruff)
+        run: bash ../scripts/ci/lint_backend.sh
 
       - name: Generate throwaway keys
         run: python ../scripts/ci/throwaway_keys.py >> "$GITHUB_ENV"
@@ -100,18 +108,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-          cache: pip
-          cache-dependency-path: backend/requirements.txt
+      - uses: ./.github/actions/backend-python
 
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-
-      - name: Install backend dependencies
-        run: pip install -r backend/requirements.txt
 
       - name: Generate throwaway keys
         run: python scripts/ci/throwaway_keys.py >> "$GITHUB_ENV"
@@ -124,6 +125,10 @@ jobs:
             echo "::error file=frontend/openapi-schema.json::OpenAPI snapshot is stale. Regenerate it: cd backend && python manage.py spectacular --format openapi-json --file ../frontend/openapi-schema.json"
             exit 1
           fi
+
+      - name: OpenAPI contract is complete (tags, security, bodies, errors)
+        working-directory: backend
+        run: python manage.py openapi_contract_check
 
       - name: Generated API client matches the snapshot
         working-directory: frontend
@@ -152,3 +157,30 @@ jobs:
 
       - name: 300-line ceiling and CLAUDE.md/AGENTS.md twins
         run: python scripts/ci/check_rules.py
+
+  # Every merge to main must bump VERSION. Only meaningful for PRs whose base is main;
+  # for other events the job is skipped, which branch protection treats as passing.
+  version-bump:
+    name: version-bump
+    if: github.event_name == 'pull_request' && github.base_ref == 'main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: VERSION is strictly higher than main and everywhere consistent
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          git fetch --no-tags origin "${BASE_REF}"
+          git show "origin/${BASE_REF}:VERSION" > "${RUNNER_TEMP}/base-version"
+          git ls-remote --tags origin 'v*' | sed 's#.*refs/tags/##; s#\^{}$##' | sort -u > "${RUNNER_TEMP}/tags"
+          python scripts/ci/check_version_bump.py \
+            --base-file "${RUNNER_TEMP}/base-version" \
+            --existing-tags "${RUNNER_TEMP}/tags"

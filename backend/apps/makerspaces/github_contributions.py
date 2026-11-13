@@ -12,6 +12,8 @@ Three rules, all of which exist because a profile must never depend on GitHub be
   GitHub's GraphQL API, which requires a token. With `GITHUB_API_TOKEN` unset nothing is
   fetched, the count stays None and the surface omits the section entirely.
 """
+from apps.operations.cloud_jobs import bounded
+
 
 import json
 import logging
@@ -47,6 +49,10 @@ def is_configured():
 def due_for_sync(profile, now=None):
     if not profile.github_username or not is_configured():
         return False
+    from .profile_github import linked_github_sub
+
+    if not linked_github_sub(profile.user_id):
+        return False  # decision 338: no linked GitHub sign-in, no shared-token spend
     if profile.github_synced_at is None:
         return True
     return (now or timezone.now()) - profile.github_synced_at >= SYNC_INTERVAL
@@ -54,10 +60,12 @@ def due_for_sync(profile, now=None):
 
 def refresh(profile):
     """Update one profile's count. Returns True when a fresh number was stored."""
-    from apps.makerspaces.models import MemberProfile
+    from apps.makerspaces.models import AccountProfile
 
     login = profile.github_username
+    bounded.check()
     total = fetch_total(login)
+    bounded.check()
     fields = {"github_synced_at": timezone.now()}
     if total is not None:
         fields["github_contributions"] = total
@@ -70,7 +78,7 @@ def refresh(profile):
     # total straight back onto it. A count under the wrong name is a false claim, not
     # stale data, so the write is dropped rather than applied.
     with transaction.atomic():
-        updated = MemberProfile.objects.filter(
+        updated = AccountProfile.objects.filter(
             pk=profile.pk, github_username=login
         ).update(**fields)
     return bool(updated and total is not None)

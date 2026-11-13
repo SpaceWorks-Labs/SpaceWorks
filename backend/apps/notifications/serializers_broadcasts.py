@@ -8,7 +8,7 @@ class BroadcastInputSerializer(serializers.Serializer):
     body = serializers.CharField(max_length=12000)
     plan_id = serializers.IntegerField(min_value=1, required=False)
     status = serializers.ChoiceField(choices=('active', 'lapsed'), required=False)
-    certification_id = serializers.IntegerField(min_value=1, required=False)
+    machine_type_id = serializers.IntegerField(min_value=1, required=False)
 
 
 class BroadcastSerializer(serializers.ModelSerializer):
@@ -30,4 +30,4 @@ class SegmentChoiceSerializer(serializers.Serializer):
 
 class BroadcastOptionsSerializer(serializers.Serializer):
     plans = SegmentChoiceSerializer(many=True)
-    certifications = SegmentChoiceSerializer(many=True)
+    machine_types = SegmentChoiceSerializer(many=True)

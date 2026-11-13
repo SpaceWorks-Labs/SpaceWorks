@@ -15,8 +15,6 @@ permissions:
   packages: write
 
 jobs:
-  # The test suite is kept out of the public repository and runs locally
-  # (./scripts/dev.sh test) before main is pushed; this workflow no longer gates on it.
   prepare:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
@@ -50,8 +48,8 @@ jobs:
           registry_owner="$(printf '%s' "${GITHUB_REPOSITORY_OWNER}" | tr '[:upper:]' '[:lower:]')"
           version="${base}-main.${GITHUB_RUN_NUMBER}.${short_sha}"
 
-          # A GitHub Release is cut only when VERSION changed in this push (or on a
-          # manual run). Every other push still builds and promotes images.
+          # A push to main must have changed VERSION (enforced below), so every push cuts a
+          # release; a manual run (workflow_dispatch) re-runs the current VERSION.
           release=false
           if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
             release=true
@@ -59,9 +57,29 @@ jobs:
             before="${{ github.event.before }}"
             previous=""
             if [[ ! "$before" =~ ^0+$ ]]; then
-              previous="$(gh api "repos/${GITHUB_REPOSITORY}/contents/VERSION?ref=${before}" --jq .content 2>/dev/null | base64 -d | tr -d '[:space:]' || true)"
+              if ! previous="$(
+                gh api "repos/${GITHUB_REPOSITORY}/contents/VERSION?ref=${before}" \
+                  --jq '.content // empty' 2>/dev/null | base64 -d | tr -d '[:space:]'
+              )" || [[ -z "$previous" ]]; then
+                echo "::error file=VERSION::Could not read VERSION at ${before}. Retry the workflow once the previous revision is available."
+                exit 1
+              fi
             fi
-            [[ "$previous" != "$base" ]] && release=true
+            if [[ "$previous" == "$base" ]]; then
+              echo "::error file=VERSION::VERSION is still ${base}, the same as the previous main commit. Every push to main must bump VERSION (strictly higher semver) - see docs/project/release-process.md. Use workflow_dispatch to re-run an existing version."
+              exit 1
+            fi
+            release=true
+          fi
+
+          # A release for this VERSION must not already exist (a manual re-run of the
+          # same version via workflow_dispatch is the one deliberate exception).
+          if [[ "${GITHUB_EVENT_NAME}" != "workflow_dispatch" ]]; then
+            existing="$(gh api --paginate "repos/${GITHUB_REPOSITORY}/git/matching-refs/tags/v${base}" --jq '.[].ref' 2>/dev/null || true)"
+            if grep -Eq "^refs/tags/v${base//./\.}(-main\..*)?$" <<<"$existing"; then
+              echo "::error file=VERSION::A release/tag for ${base} already exists. Bump VERSION to a new version - see docs/project/release-process.md."
+              exit 1
+            fi
           fi
 
           echo "release=$release" >> "$GITHUB_OUTPUT"
@@ -72,7 +90,6 @@ jobs:
           echo "short_sha=$short_sha" >> "$GITHUB_OUTPUT"
           echo "registry_owner=$registry_owner" >> "$GITHUB_OUTPUT"
           echo "Preparing $version"
-
   publish:
     needs: prepare
     runs-on: ubuntu-latest
@@ -81,19 +98,25 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # Exactly two published images (owner decision #75a). The one backend image
+          # runs every deployment profile, selected at start-up by
+          # SPACEWORKS_DEPLOYMENT_MODE / SPACEWORKS_DEPLOYMENT_PROFILE.
           - context: backend
             dockerfile: backend/Dockerfile
             image: spaceworks-backend
+            target: release
           - context: frontend
             dockerfile: frontend/Dockerfile
             image: spaceworks-frontend
-          # The single-box image (Dockerfile.allinone) builds from the repo root because it
-          # needs both trees.
-          - context: .
-            dockerfile: Dockerfile.allinone
-            image: spaceworks-allinone
     steps:
       - uses: actions/checkout@v4
+
+      # The frontend image's build context is ./frontend; /docs reads docs/ through this copy.
+      - name: Snapshot docs into the frontend build context
+        if: matrix.image == 'spaceworks-frontend'
+        run: node frontend/scripts/docs-snapshot.mjs
+
+      - uses: docker/setup-qemu-action@v3
 
       - uses: docker/setup-buildx-action@v3
 
@@ -116,22 +139,108 @@ jobs:
         with:
           context: ./${{ matrix.context }}
           file: ./${{ matrix.dockerfile }}
+          target: ${{ matrix.target }}
+          build-contexts: cloud_tooling=.
+          build-args: |
+            POSTGRESQL_CLIENT_MAJOR=17
+            POSTGRESQL_LOCAL_SERVER_MAJOR=16
+            BUILD_GIT_SHA=${{ github.sha }}
+            BUILD_GIT_DESCRIBE=${{ needs.prepare.outputs.version }}
+          platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=${{ matrix.image }}
           cache-to: type=gha,mode=max,scope=${{ matrix.image }}
 
+      - name: Verify the published backend image and architecture metadata
+        if: matrix.context == 'backend'
+        shell: bash
+        env:
+          IMAGE: ghcr.io/${{ needs.prepare.outputs.registry_owner }}/${{ matrix.image }}:${{ needs.prepare.outputs.version }}
+        run: |
+          set -euo pipefail
+          docker buildx imagetools inspect "$IMAGE" --raw > image-index.json
+          python3 - <<'PY'
+          import json
+          index = json.load(open('image-index.json'))
+          platforms = {(item['platform']['os'], item['platform']['architecture'])
+                       for item in index.get('manifests', []) if 'platform' in item}
+          assert {('linux', 'amd64'), ('linux', 'arm64')} <= platforms
+          PY
+          for platform in linux/amd64 linux/arm64; do
+          docker pull --platform "$platform" "$IMAGE"
+          docker run --rm --platform "$platform" --entrypoint python "$IMAGE" -c '
+          import json, os, shutil
+          from pathlib import Path
+          import django, rest_framework, anymail, psycopg2, celery, reportlab, PIL
+          assert Path("/app/SPACEWORKS_IMAGE_PROFILE").read_text().strip() == "full"
+          assert json.loads(Path("/app/BUILD_INFO.json").read_text())["image_profile"] == "full"
+          assert Path("/app/staticfiles/staticfiles.json").is_file()
+          assert os.getuid() == 10001
+          assert shutil.which("ffprobe") and shutil.which("pg_dump")
+          for major in (16, 17):
+              assert Path(f"/usr/lib/postgresql/{major}/bin/pg_dump").is_file()
+          # Managed full/free run from this same image, so its cloud tooling must be present.
+          assert Path("/app/scripts/cloud_setup/secret_files.py").is_file()
+          assert Path("/app/scripts/init-cloud-environment.py").is_file()
+          assert Path("/app/deploy/cloud").is_dir()
+          '
+          done
+
+  # Installer assets (decision 232): install.sh, the deploy bundle, SHA256SUMS and a keyless
+  # cosign signature of SHA256SUMS (GitHub OIDC; no secret or repository setting is needed).
+  assets:
+    needs: prepare
+    if: needs.prepare.outputs.release == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: sigstore/cosign-installer@v3.7.0
+        with:
+          cosign-release: v2.4.1
+
+      - name: Build and sign the installer assets
+        shell: bash
+        env:
+          VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+          set -euo pipefail
+          bash scripts/release-assets.sh "$VERSION" "$GITHUB_SHA" release-assets
+          cd release-assets
+          cosign sign-blob --yes --output-signature SHA256SUMS.sig --output-certificate SHA256SUMS.pem SHA256SUMS
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-assets
+          path: release-assets/*
+          if-no-files-found: error
+
   github-release:
     needs:
       - prepare
       - publish
+      - assets
+    # `assets` is skipped (not failed) on pushes that cut no release.
+    if: ${{ !cancelled() && needs.prepare.result == 'success' && needs.publish.result == 'success' && (needs.assets.result == 'success' || needs.assets.result == 'skipped') }}
     runs-on: ubuntu-latest
     steps:
+      - name: Download installer assets
+        if: needs.prepare.outputs.release == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: release-assets
+          path: release-assets
+
       - name: Create GitHub Release
         if: needs.prepare.outputs.release == 'true'
         uses: softprops/action-gh-release@v3
         with:
+          files: release-assets/*
           tag_name: ${{ needs.prepare.outputs.tag }}
           target_commitish: ${{ github.sha }}
           # Product name then version, e.g. "SpaceWorks 0.7.5". The immutable `tag_name`
@@ -144,10 +253,8 @@ jobs:
             Continuous release from `main` at `${{ github.sha }}`.
 
             Docker images:
-
             - `ghcr.io/${{ needs.prepare.outputs.registry_owner }}/spaceworks-backend:${{ needs.prepare.outputs.version }}`
             - `ghcr.io/${{ needs.prepare.outputs.registry_owner }}/spaceworks-frontend:${{ needs.prepare.outputs.version }}`
-            - `ghcr.io/${{ needs.prepare.outputs.registry_owner }}/spaceworks-allinone:${{ needs.prepare.outputs.version }}` (single-box)
 
   promote-latest:
     needs:
@@ -155,6 +262,8 @@ jobs:
       - publish
       - github-release
     runs-on: ubuntu-latest
+    outputs:
+      eligible: ${{ steps.head.outputs.current }}
     concurrency:
       group: main-release-promotion
       cancel-in-progress: false
@@ -195,7 +304,7 @@ jobs:
           SERIES: ${{ needs.prepare.outputs.series }}
         run: |
           set -euo pipefail
-          for package in spaceworks-backend spaceworks-frontend spaceworks-allinone; do
+          for package in spaceworks-backend spaceworks-frontend; do
             image="ghcr.io/${OWNER}/${package}"
             docker buildx imagetools create \
               --tag "${image}:${SERIES}" \
@@ -266,7 +375,6 @@ jobs:
             --owner "$OWNER" \
             --package spaceworks-backend \
             --package spaceworks-frontend \
-            --package spaceworks-allinone \
             --version "$VERSION" \
             --sha-tag "sha-${SHORT_SHA}" \
             --series "$SERIES" \
@@ -301,7 +409,7 @@ jobs:
   # SPACEWORKS_DEPLOY is opt-in so repos without a runner never queue this job.
   deploy:
     needs: [prepare, publish, github-release, promote-latest]
-    if: github.ref == 'refs/heads/main' && vars.SPACEWORKS_DEPLOY == 'true'
+    if: github.ref == 'refs/heads/main' && vars.SPACEWORKS_DEPLOY == 'true' && needs.promote-latest.outputs.eligible == 'true'
     runs-on: [self-hosted, spaceworks-prod]
     environment: production
     concurrency: { group: spaceworks-prod-deploy, cancel-in-progress: false }
@@ -314,4 +422,12 @@ jobs:
           VERSION: ${{ needs.prepare.outputs.version }}
         run: |
           set -euo pipefail
+          # Recheck after the runner/environment queue: promotion eligibility can age.
+          head_json="$(curl --fail --silent --show-error --location --connect-timeout 10 --max-time 30 \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/commits/main")"
+          [[ "$head_json" =~ \"sha\"[[:space:]]*:[[:space:]]*\"([0-9a-f]{40})\" ]] || exit 1
+          if [[ "${BASH_REMATCH[1]}" != "$GITHUB_SHA" ]]; then
+            echo 'A newer main commit exists; skipping superseded deployment.'
+            exit 0
+          fi
           bash "${SPACEWORKS_DIR:-/opt/spaceworks}/scripts/update.sh" --force --no-module-changes --version "$VERSION"

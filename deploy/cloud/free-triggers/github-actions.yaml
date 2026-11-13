@@ -1,0 +1,37 @@
+# OPTIONAL EXAMPLE ONLY: not enabled in .github/workflows.
+# 4464 runs/31 days at ten minutes can exceed private-repo included minutes.
+# Schedules may be delayed/dropped; public schedules disable after 60 inactive days.
+# Prefer daily external backup/export; verify billing and permitted use before enabling.
+name: External Space Works free tick
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '*/10 * * * *'
+permissions: {}
+concurrency:
+  group: spaceworks-free-tick
+  cancel-in-progress: false
+jobs:
+  tick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Call fixed backend tick
+        shell: bash
+        env:
+          TICK_URL: ${{ vars.SPACEWORKS_TICK_URL }}
+          FREE_TICK_SECRET: ${{ secrets.SPACEWORKS_FREE_TICK_SECRET }}
+        run: |
+          set -euo pipefail
+          # Generated URL-safe secret only: prevent curl config/header injection.
+          [[ "$FREE_TICK_SECRET" =~ ^[A-Za-z0-9_-]{32,}={0,2}$ ]]
+          [[ "$TICK_URL" =~ ^https://[a-zA-Z0-9.-]+/api/v1/internal/free/tick$ ]]
+          umask 077
+          config_file=$(mktemp)
+          trap 'rm -f -- "$config_file"' EXIT
+          printf 'header = "X-Cron-Secret: %s"\n' "$FREE_TICK_SECRET" > "$config_file"
+          # No -v, xtrace, redirect following or response output. Header never in argv.
+          curl --config "$config_file" --request POST --data '{}' \
+            --header 'Content-Type: application/json' --fail --silent \
+            --connect-timeout 10 --max-time 180 --retry 2 --retry-delay 10 \
+            --retry-max-time 300 --output /dev/null "$TICK_URL"

@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.conf import settings
 from rest_framework import serializers
 
@@ -11,7 +12,7 @@ class EvidenceUrlRequestSerializer(serializers.Serializer):
 
     def validate_content_type(self, value):
         if value not in settings.EVIDENCE_ALLOWED_MIME:
-            raise serializers.ValidationError("Unsupported evidence content type.")
+            raise serializers.ValidationError(gettext("Unsupported evidence content type."))
         return value
 
 
@@ -68,13 +69,13 @@ class EvidenceRetentionPatchSerializer(serializers.Serializer):
         # Checked against the CURRENT presign TTL, so a stale value can never be saved.
         if value is not None and value * 86400 <= settings.EVIDENCE_URL_TTL_SECONDS:
             raise serializers.ValidationError(
-                "Abandoned-upload age must be longer than the evidence upload URL lifetime."
+                gettext("Abandoned-upload age must be longer than the evidence upload URL lifetime.")
             )
         return value
 
     def validate(self, attrs):
         if not attrs:
-            raise serializers.ValidationError("Provide at least one policy field.")
+            raise serializers.ValidationError(gettext("Provide at least one policy field."))
         return attrs
 
 

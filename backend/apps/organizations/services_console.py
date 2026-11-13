@@ -1,4 +1,5 @@
 """Superadmin organization setup, with tenant roots locked before changing reach."""
+from django.utils.translation import gettext
 from django.db import IntegrityError, transaction
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import APIException, PermissionDenied
@@ -27,10 +28,8 @@ def require_superadmin(actor):
 
 
 def visible_spaces(actor):
-    # Even a local membership must not let a platform actor grant authority by
-    # proxy into a space that explicitly opted out of platform access.
     return rbac.scope_by_action(actor, rbac.Action.MANAGE_MAKERSPACE,
-                                servable_queryset(), field="pk").filter(superadmin_access_enabled=True)
+                                servable_queryset(), field="pk")
 
 
 @transaction.atomic
@@ -40,7 +39,7 @@ def create_organization(actor, **values):
         with transaction.atomic():
             row = Organization.objects.create(created_by=actor, **values)
     except IntegrityError as exc:
-        raise OrganizationConflict("An organization with this slug already exists.") from exc
+        raise OrganizationConflict(gettext("An organization with this slug already exists.")) from exc
     audit.record(actor, "organization.created", target=row, meta={"fields": sorted(values)})
     return row
 
@@ -48,7 +47,7 @@ def create_organization(actor, **values):
 @transaction.atomic
 def change_link(actor, organization_id, makerspace_id, *, relationship=None):
     require_superadmin(actor)
-    # Resolve visibility before returning a gate error for a hidden tenant. Take
+    # Resolve visibility before returning a gate error for an unservable tenant. Take
     # the shared freeze lock before the makerspace root lock, as other services do.
     get_object_or_404(visible_spaces(actor), pk=makerspace_id)
     assert_write_allowed(makerspace_id)
@@ -62,10 +61,15 @@ def change_link(actor, organization_id, makerspace_id, *, relationship=None):
         row.delete()
         return None
     if not organization.is_active:
-        raise OrganizationConflict("Reactivate the organization before linking a makerspace.")
+        raise OrganizationConflict(gettext("Reactivate the organization before linking a makerspace."))
+    if organization.review_status != "approved":
+        raise OrganizationConflict(gettext("This organization is not approved yet."))
     if relationship not in OrganizationMakerspace.Relationship.values:
         from rest_framework.exceptions import ValidationError
-        raise ValidationError({"relationship": "Unknown relationship."})
+        raise ValidationError({"relationship": gettext("Unknown relationship.")})
+    if not links.exists():  # a NEW link only; changing the relationship of an existing one adds nothing
+        from apps.managed_hosting.extra_quotas import check_extra_quota
+        check_extra_quota(space, "organizations_linked")  # decision 284: typed 409
     try:
         with transaction.atomic():
             row, created = links.get_or_create(
@@ -77,7 +81,7 @@ def change_link(actor, organization_id, makerspace_id, *, relationship=None):
                 row.relationship = relationship
                 row.save(update_fields=["relationship", "updated_at"])
     except IntegrityError as exc:
-        raise OrganizationConflict("This makerspace already has an owner organization.") from exc
+        raise OrganizationConflict(gettext("This makerspace already has an owner organization.")) from exc
     if created or changed:
         audit.record(actor, "organization.link_created" if created else "organization.link_updated",
                      makerspace=space, target=row,

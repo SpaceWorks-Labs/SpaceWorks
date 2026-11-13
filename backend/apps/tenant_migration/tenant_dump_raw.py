@@ -3,6 +3,7 @@
 from collections.abc import Callable, Mapping
 from copy import deepcopy
 from dataclasses import dataclass
+from datetime import datetime, time
 import hashlib
 import json
 
@@ -109,7 +110,8 @@ def sanitize_record(
         )
         if disposition in {AuthorityDisposition.RESET, AuthorityDisposition.DROP}:
             value = _reset_value(model, field, source)
-        values[field.column] = deepcopy(value)
+        # psycopg returns bytea as memoryview, which cannot be copied; keep its exact bytes.
+        values[field.column] = value.tobytes() if isinstance(value, memoryview) else deepcopy(value)
     return SanitizedRow(
         model=model,
         source_pk=source[model._meta.pk.attname],
@@ -122,6 +124,10 @@ def _selected_disposition(model, field, source, rule, selector):
         return AuthorityDisposition.PRESERVE
     if len(rule.dispositions) == 1:
         return rule.dispositions[0]
+    if (model._meta.label == "makerspaces.MakerspaceMembership"
+            and field.name in {"role", "assigned_role", "receives_notifications"}):
+        return (AuthorityDisposition.PRESERVE if source.get("_staff_account")
+                else AuthorityDisposition.RESET)
     if selector is not None:
         selected = selector(model._meta.label, field.name, source, rule)
         if selected not in rule.dispositions:
@@ -145,25 +151,34 @@ def _selected_disposition(model, field, source, rule, selector):
 
 
 def _reset_value(model, field, source):
+    if (model._meta.label, field.name) == ("events.EventAttendanceCertificate", "layout_snapshot"):
+        snapshot = deepcopy(source[field.attname])
+        if isinstance(snapshot, dict) and snapshot.get("artwork_object_key"):
+            snapshot["artwork_version_id"] = ""
+        return snapshot
     from .target_projection import TARGET_FIELD_PROJECTION
 
     target = TARGET_FIELD_PROJECTION.get((model._meta.label, field.name))
     if target is not None and condition_matches(target.condition, source):
         return target.resolved_value(model._meta.label, field.name)
     explicit = {
+        ("accounts.User", "password"): "!tenant-import-staff",
+        ("accounts.User", "must_change_password"): True,
         ("accounts.User", "is_superuser"): False,
         ("accounts.User", "is_staff"): False,
         ("accounts.User", "role"): "requester",
         ("accounts.User", "telegram_user_id"): "",
-        ("accounts.User", "external_checkin_user_id"): "",
         ("makerspaces.Makerspace", "lifecycle_state"): "importing",
         ("makerspaces.Makerspace", "archived_by"): None,
         ("makerspaces.Makerspace", "cors_allowed_origins"): [],
         ("makerspaces.Makerspace", "smtp_password"): "",
+        ("makerspaces.Makerspace", "email_provider"): "inherit",
+        ("makerspaces.Makerspace", "email_provider_config"): "",
         ("makerspaces.Makerspace", "telegram_bot_token"): "",
         ("makerspaces.Makerspace", "slack_webhook_url"): "",
         ("makerspaces.Makerspace", "mattermost_webhook_url"): "",
         ("makerspaces.Makerspace", "discord_webhook_url"): "",
+        ("makerspaces.Makerspace", "booking_requester_notifications_enabled"): False,
         ("audit.AuditLog", "event_uuid"): None,
         ("audit.AuditLog", "row_mac"): None,
     }
@@ -195,7 +210,7 @@ def mapped_raw_digest(rows_by_label):
                 value = row[model._meta.get_field(item.field_name).attname]
                 payload = json.dumps(
                     value,
-                    cls=DjangoJSONEncoder,
+                    cls=_RawDigestEncoder,
                     ensure_ascii=False,
                     sort_keys=True,
                     separators=(",", ":"),
@@ -208,6 +223,10 @@ def mapped_raw_digest(rows_by_label):
 
 class _RawDigestEncoder(DjangoJSONEncoder):
     def default(self, value):
+        # Distinct physical timestamps must have distinct reconstruction digests.
+        # Retain the existing encoding for values already exact to milliseconds.
+        if isinstance(value, (datetime, time)) and value.microsecond % 1000:
+            return value.isoformat()
         if isinstance(value, (bytes, bytearray, memoryview)):
             return {"__bytes__": bytes(value).hex()}
         return super().default(value)

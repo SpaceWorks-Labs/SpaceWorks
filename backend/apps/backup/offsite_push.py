@@ -6,6 +6,8 @@ outage is recorded on the journal row and retried with a bounded backoff. Nothin
 changes `BackupRun` or `BackupArchive` state, so a destination failure can never fail a
 backup run.
 """
+from apps.operations.cloud_jobs import bounded
+
 
 import logging
 import uuid
@@ -41,7 +43,7 @@ CLAIM_SECONDS = 6 * 3600
 
 def push_due_uploads(limit=10):
     pushed = 0
-    for upload_id in _due_ids(limit):
+    for upload_id in bounded.items(_due_ids(bounded.limit(limit))):
         holder = _claim(upload_id)
         if holder is None:
             continue

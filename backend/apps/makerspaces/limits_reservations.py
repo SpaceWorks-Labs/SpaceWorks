@@ -7,11 +7,34 @@ from django.utils import timezone
 logger = logging.getLogger(__name__)
 
 
+def _platform_limit_reached(makerspace, channel) -> bool:
+    """Only the platform-credential path counts: native push always is; SMS/WhatsApp when the sender resolves
+    to the platform row. Fail-open on any error (a limit check never drops a notification)."""
+    try:
+        from apps.managed_hosting.platform_limits import CHANNEL_KEYS, channel_refusal, platform_limit
+        key = CHANNEL_KEYS.get(channel)
+        if key is None or key == "platform_email_monthly" or platform_limit(makerspace, key) is None:
+            return False
+        if channel in ("sms", "whatsapp"):
+            from apps.integrations.messaging.resolver import resolve_sender
+            sender = resolve_sender(makerspace, channel)
+            if sender is None or sender.provider_source != "platform":
+                return False
+        return channel_refusal(makerspace, channel, queued=channel in ("sms", "whatsapp", "native_push")) is not None
+    except Exception:
+        return False
+
+
 def reserve_notification_quota(makerspace, channel) -> bool:
     from apps.makerspaces import limits
 
+    if _platform_limit_reached(makerspace, channel):
+        return False  # owner 2026-11-11: platform-credential allowance used up (every space; null = unlimited)
     if limits.is_self_host():
         return True
+    from apps.managed_hosting.enforcement import monthly_refusal
+    if channel in ("sms", "whatsapp") and monthly_refusal(makerspace, f"{channel}_monthly"):
+        return False  # #187A: the plan's monthly allowance is used up (no-op with plans off)
     try:
         # Inside the try: a malformed override makes the lookup itself raise, and that
         # must fail open like every other quota failure here rather than drop the fan-out.
@@ -38,9 +61,9 @@ def reserve_notification_quota(makerspace, channel) -> bool:
 
 def reserve_platform_otp_quota() -> bool:
     """Reserve one globally capped platform OTP email in managed mode."""
-    from apps.makerspaces import limits
+    from apps.makerspaces import domain_verification
 
-    if limits.is_self_host():
+    if domain_verification.is_self_host():
         return True
     limit = settings.MANAGED_RESOURCE_LIMITS.get("otp_email")
     if limit is None:
@@ -74,10 +97,10 @@ def reserve_platform_otp_sms_quota() -> bool:
 
     Managed mode may tighten it further via MANAGED_RESOURCE_LIMITS["otp_sms"].
     """
-    from apps.makerspaces import limits
+    from apps.makerspaces import domain_verification
 
     limit = getattr(settings, "OTP_SMS_DAILY_CAP", None)
-    if not limits.is_self_host():
+    if not domain_verification.is_self_host():
         managed = settings.MANAGED_RESOURCE_LIMITS.get("otp_sms")
         if managed is not None:
             limit = managed if limit is None else min(limit, managed)

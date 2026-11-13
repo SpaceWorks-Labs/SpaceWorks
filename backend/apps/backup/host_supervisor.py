@@ -74,7 +74,7 @@ class HostMarkerTransition:
             operation=operation,
         ))
 
-    def transition_bound(self, state, database, operation, *, readiness=None):
+    def transition_bound(self, state, database, operation):
         """Advance a proven bound candidate without ever accepting an intent."""
         state = MarkerState(state)
         current = read_marker(
@@ -102,10 +102,10 @@ class HostMarkerTransition:
             and state in {MarkerState.NORMAL, MarkerState.ACKNOWLEDGED_NORMAL}
             and current.operation is None
         ):
-            payload = marker_payload(state, database, readiness=readiness)
+            payload = marker_payload(state, database)
             if current != parse_marker(payload):
                 raise MarkerError(
-                    "Completed normal marker readiness facts changed on resume."
+                    "Completed normal marker facts changed on resume."
                 )
             return payload
         payload = marker_payload(
@@ -120,7 +120,6 @@ class HostMarkerTransition:
                 }
                 else None
             ),
-            readiness=readiness,
         )
         if current.state == state:
             if current != parse_marker(payload):

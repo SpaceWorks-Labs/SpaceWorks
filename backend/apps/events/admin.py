@@ -1,9 +1,8 @@
 from django.contrib import admin
 from unfold.admin import ModelAdmin
 
-from apps.accounts import rbac
 from apps.events import services_series_organizers
-from apps.events.models import Event, EventOrganizer, EventSeries, EventSeriesOrganizer
+from apps.events.models import EventOrganizer, EventSeriesOrganizer
 from apps.separability.tombstones import app_is_tombstoned
 from config.admin_access import SuperuserOnlyModelAdmin
 
@@ -34,13 +33,6 @@ class EventOrganizerAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
     def resolve_hidden_lookup(self):
         return "event__makerspace_id"
 
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        if db_field.name == "event":
-            kwargs["queryset"] = Event.objects.exclude(
-                makerspace_id__in=rbac.superadmin_hidden_makerspace_ids()
-            )
-        return super().formfield_for_foreignkey(db_field, request, **kwargs)
-
 
 # NOTE: the events side also re-added save_model/delete_model to EventOrganizerAdmin.
 # They are dropped here: phase 7 turned that admin read-only on purpose, so those
@@ -57,13 +49,6 @@ class EventSeriesOrganizerAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
     def get_readonly_fields(self, request, obj=None):
         fields = super().get_readonly_fields(request, obj)
         return (*fields, "series", "organization") if obj else fields
-
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        if db_field.name == "series":
-            kwargs["queryset"] = EventSeries.objects.exclude(
-                makerspace_id__in=rbac.superadmin_hidden_makerspace_ids()
-            )
-        return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
     # Superadmin operations route through services, never the ORM: the service takes the
     # series row lock and the events module lock, checks authority, projects the organizer
@@ -84,3 +69,14 @@ class EventSeriesOrganizerAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
 if not app_is_tombstoned("events"):
     admin.site.register(EventOrganizer, EventOrganizerAdmin)
     admin.site.register(EventSeriesOrganizer, EventSeriesOrganizerAdmin)
+    # Read-only record lists (0.12.0, /control/ Events); writes stay in the web console.
+    from apps.events import admin_records as records
+    from apps.events.models_event import Event
+    from apps.events.models_orders import EventOrder
+    from apps.events.models_registration import EventRegistration
+    from apps.events.models_series import EventSeries
+
+    admin.site.register(Event, records.EventRecordAdmin)
+    admin.site.register(EventSeries, records.EventSeriesRecordAdmin)
+    admin.site.register(EventRegistration, records.EventRegistrationRecordAdmin)
+    admin.site.register(EventOrder, records.EventOrderRecordAdmin)

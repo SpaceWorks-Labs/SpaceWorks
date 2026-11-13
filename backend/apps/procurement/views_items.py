@@ -9,20 +9,21 @@ from rest_framework.exceptions import PermissionDenied
 from apps.accounts import rbac
 from apps.admin_api.permissions import IsActiveStaff
 from apps.audit import services as audit
-from apps.makerspaces.guards import require_module
 from apps.makerspaces.models import Makerspace
 from apps.procurement.serializers import ToBuyItemSerializer
 from apps.procurement import access
 from apps.procurement.models import ToBuyItem
 from apps.procurement.views_common import (
     KIND_PARAM,
-    MODULE_KEY,
     PROCUREMENT_ERROR_RESPONSES,
     STATUS_PARAM,
     apply_status_filter,
     list_limit,
     receipt_queryset_related,
+    require_item_switch,
+    require_tobuy,
 )
+from apps.makerspaces.folded_capabilities import require_capability, tobuy_key, tobuy_kinds_on
 
 
 def _procurement_scope(actor):
@@ -62,7 +63,7 @@ class ToBuyListCreateView(generics.ListCreateAPIView):
             # The list contract is an empty result outside procurement authority.
             # No foreign makerspace or item is queried to produce that answer.
             return ToBuyItem.objects.none()
-        require_module(_scoped_makerspace(self.request.user, makerspace_id), MODULE_KEY)
+        require_tobuy(_scoped_makerspace(self.request.user, makerspace_id))
         limit = list_limit(self.request)
         queryset = access.scope_items(_scoped_items(self.request.user), self.request.user, makerspace_id)
         queryset = apply_status_filter(queryset, self.request)
@@ -82,15 +83,18 @@ class ToBuyListCreateView(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         makerspace_id = self.kwargs["makerspace_id"]
-        makerspace = _scoped_makerspace(self.request.user, makerspace_id)
-        require_module(makerspace, MODULE_KEY)
+        makerspace = require_tobuy(_scoped_makerspace(self.request.user, makerspace_id))
         if not access.can_use(self.request.user, makerspace_id):
             raise PermissionDenied()
+        # An admin naming no stream lands on a stream whose switch is on.
+        on = tobuy_kinds_on(makerspace)
         kind = access.derive_kind(
             self.request.user,
             makerspace_id,
-            self.request.query_params.get("kind"),
+            self.request.query_params.get("kind") or (on[-1] if on else None),
         )
+        # A parent whose switch is off takes no new rows (#97, C-9).
+        require_capability(makerspace, tobuy_key(kind))
         machine_type = serializer.validated_data.get("machine_type")
         access.validate_machine_type(
             self.request.user,
@@ -132,7 +136,7 @@ class ToBuyDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def get_object(self):
         obj = super().get_object()
-        require_module(obj.makerspace, MODULE_KEY)
+        require_item_switch(obj)
         return get_object_or_404(
             access.scope_items(
                 receipt_queryset_related(_scoped_items(self.request.user)),
@@ -171,7 +175,7 @@ class ToBuyDetailView(generics.RetrieveUpdateDestroyAPIView):
         get_object_or_404(access.scope_items(
             _scoped_items(self.request.user), self.request.user, serializer.instance.makerspace_id,
         ), pk=serializer.instance.pk)
-        require_module(serializer.instance.makerspace, MODULE_KEY)
+        require_item_switch(serializer.instance)
         self._assert_can_manage(serializer.instance)
         machine_type = serializer.validated_data.get(
             "machine_type", serializer.instance.machine_type
@@ -222,7 +226,6 @@ class ToBuyDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 __all__ = [
     "KIND_PARAM",
-    "MODULE_KEY",
     "PROCUREMENT_ERROR_RESPONSES",
     "STATUS_PARAM",
     "ToBuyDetailView",

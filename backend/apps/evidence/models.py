@@ -1,3 +1,4 @@
+from django.utils.translation import gettext_noop
 from django.conf import settings
 from django.db import models
 from django.db.models import Q
@@ -18,10 +19,13 @@ class EvidencePhoto(models.Model):
     class EvidenceType(models.TextChoices):
         ISSUE = "issue", "Issue"
         RETURN = "return", "Return"
+        # A bill or receipt photo attached to a finance ledger entry (lane L5). Consumed
+        # only by `payments.ledger_api`; never accepted as handover evidence.
+        RECEIPT = "receipt", "Receipt"
 
     class ConsumptionState(models.TextChoices):
         # Every pre-migration and imported row: never a cleanup candidate.
-        LEGACY_UNKNOWN = "legacy_unknown", "Legacy (unknown)"
+        LEGACY_UNKNOWN = "legacy_unknown", gettext_noop("Legacy (unknown)")
         # Only the two production presign views create this.
         UNCONSUMED = "unconsumed", "Unconsumed"
         CONSUMED = "consumed", "Consumed"

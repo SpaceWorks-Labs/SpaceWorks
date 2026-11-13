@@ -1,13 +1,14 @@
 """Relational guards for inert system principals stored in ``accounts.User``."""
 
+from django.utils.translation import gettext_lazy
 from rest_framework.exceptions import PermissionDenied
 
 
 ANONYMOUS_REQUESTER_CREDENTIAL_ERROR = (
-    "This is an anonymous-request system principal, not an account."
+    gettext_lazy("This is an anonymous-request system principal, not an account.")
 )
 ANONYMOUS_REQUESTER_ACCESS_ERROR = (
-    "An anonymous-request system principal's access status cannot be changed."
+    gettext_lazy("An anonymous-request system principal's access status cannot be changed.")
 )
 
 

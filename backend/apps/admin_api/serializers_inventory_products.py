@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.db import transaction
 from django.utils.text import slugify
 from drf_spectacular.utils import extend_schema_field
@@ -59,8 +60,9 @@ class InventoryProductAdminSerializer(serializers.ModelSerializer):
             "category",
             "name",
             "manufacturer", "model", "sku", "barcode", "supplier",
-            "reorder_point", "reorder_quantity", "kit_components",
+            "reorder_point", "reorder_quantity", "is_consumable", "public_show_expected_back", "event_only", "kit_components",
             "description",
+            "unit_cost", "cost_currency", "cost_unit",
             "borrowing_terms",
             "image_key",
             "image_url",
@@ -102,14 +104,24 @@ class InventoryProductAdminSerializer(serializers.ModelSerializer):
     def get_image_url(self, obj):
         return public_image_storage.public_url(obj.image_key) or None
 
+    def validate_price(self, attrs):
+        from apps.inventory.cost_basis import validate_price
+        values = {name: attrs.get(name, getattr(self.instance, name, default))
+                  for name, default in (("unit_cost", None), ("cost_currency", ""), ("cost_unit", ""))}
+        validate_price(values["unit_cost"], values["cost_currency"], values["cost_unit"], "count")
+        consumable = attrs.get("is_consumable", getattr(self.instance, "is_consumable", False))
+        mode = attrs.get("tracking_mode", getattr(self.instance, "tracking_mode", TrackingMode.QUANTITY))
+        if consumable and mode != TrackingMode.QUANTITY:
+            raise serializers.ValidationError({"is_consumable": gettext("Only quantity-tracked items can be consumables.")})
+
     def validate_tracking_mode(self, value):
         if value not in TrackingMode.values:
-            raise serializers.ValidationError("Invalid tracking mode.")
+            raise serializers.ValidationError(gettext("Invalid tracking mode."))
         return value
 
     def validate_public_availability_mode(self, value):
         if value not in PublicAvailabilityMode.values:
-            raise serializers.ValidationError("Invalid public availability mode.")
+            raise serializers.ValidationError(gettext("Invalid public availability mode."))
         return value
 
 
@@ -128,11 +140,12 @@ class InventoryProductAdminCreateSerializer(InventoryProductAdminSerializer):
         }
         if rejected:
             raise serializers.ValidationError(rejected)
+        self.validate_price(attrs)
         total = attrs.get("total_quantity", 0)
         available = attrs.get("available_quantity", 0)
         if available > total:
             raise serializers.ValidationError(
-                {"available_quantity": "Available quantity cannot exceed total quantity."}
+                {"available_quantity": gettext("Available quantity cannot exceed total quantity.")}
             )
         return attrs
 
@@ -147,6 +160,8 @@ class InventoryProductAdminCreateSerializer(InventoryProductAdminSerializer):
             makerspace = require_module_locked(makerspace, "staff_admin")
             if validated_data.get("kit_components"):
                 require_feature(makerspace, "loans.kit_checklist")
+            if validated_data.get("is_consumable"):
+                require_feature(makerspace, "inventory.consumables")
             limits.check_quota(makerspace, "products", adding=1)
             return super().create(validated_data)
 
@@ -166,6 +181,7 @@ class InventoryProductAdminUpdateSerializer(InventoryProductAdminSerializer):
         }
         if rejected:
             raise serializers.ValidationError(rejected)
+        self.validate_price(attrs)
         return attrs
 
     def update(self, instance, validated_data):
@@ -174,6 +190,8 @@ class InventoryProductAdminUpdateSerializer(InventoryProductAdminSerializer):
             instance = InventoryProduct.objects.select_for_update().get(pk=instance.pk)
             if "kit_components" in validated_data:
                 require_feature(space, "loans.kit_checklist")
+            if "is_consumable" in validated_data and validated_data["is_consumable"] != instance.is_consumable:
+                require_feature(space, "inventory.consumables")
             if validated_data.get("is_archived") is False and instance.is_archived:
                 limits.check_quota(instance.makerspace, "products", adding=1)
             return super().update(instance, validated_data)
@@ -222,7 +240,7 @@ class CategoryAdminSerializer(serializers.ModelSerializer):
             slug = slugify(name or "")
         if not slug:
             raise serializers.ValidationError(
-                {"slug": "Provide a name that yields a valid slug."}
+                {"slug": gettext("Provide a name that yields a valid slug.")}
             )
         duplicate = (
             Category.objects.filter(makerspace_id=makerspace_id, slug=slug)
@@ -232,7 +250,7 @@ class CategoryAdminSerializer(serializers.ModelSerializer):
         if duplicate:
             raise serializers.ValidationError(
                 {
-                    "slug": "A category with this slug already exists in this makerspace."
+                    "slug": gettext("A category with this slug already exists in this makerspace.")
                 }
             )
         attrs["slug"] = slug

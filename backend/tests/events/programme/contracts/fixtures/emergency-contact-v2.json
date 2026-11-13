@@ -1,0 +1,238 @@
+{
+  "contract_version": 3,
+  "question": {
+    "id": "emergency",
+    "type": "emergency_contact",
+    "label": "Emergency contact",
+    "required": false,
+    "profile_field_key": "emergency_contact",
+    "disclosure": {
+      "organizer": true,
+      "reviewer": false,
+      "judge": false
+    }
+  },
+  "answers": {
+    "emergency": {
+      "name": "Fixture Contact",
+      "relationship": "Friend",
+      "phone": "+919876543210"
+    }
+  },
+  "save_choices": {
+    "emergency_contact": false
+  },
+  "schema": {
+    "schema_version": 2,
+    "form_id": "hackathon-application",
+    "revision": 3,
+    "questions": [
+      {
+        "id": "emergency",
+        "type": "emergency_contact",
+        "label": "Emergency contact",
+        "required": false,
+        "profile_field_key": "emergency_contact",
+        "disclosure": {
+          "organizer": true,
+          "reviewer": false,
+          "judge": false
+        }
+      }
+    ],
+    "event_context": {
+      "event_id": 42,
+      "event_date_revision": 7,
+      "timezone_name": "Asia/Kolkata",
+      "as_of_date": "2026-12-01"
+    }
+  },
+  "raw": {
+    "emergency": {
+      "name": "Fixture Contact",
+      "relationship": "Friend",
+      "phone": "+919876543210"
+    }
+  },
+  "canonical": {
+    "id": "emergency",
+    "label": "Emergency contact",
+    "type": "emergency_contact",
+    "value": {
+      "name": "Fixture Contact",
+      "relationship": "Friend",
+      "phone": "+919876543210"
+    }
+  },
+  "false_save": {
+    "save_choices": {
+      "emergency_contact": false
+    },
+    "saved_detail_versions": {},
+    "save_intent": null
+  },
+  "true_save": {
+    "save_choices": {
+      "emergency_contact": true
+    },
+    "saved_detail_versions": {
+      "emergency_contact": 0
+    },
+    "requires_prepared_intent": true
+  },
+  "prefill_round_trip": {
+    "values": {
+      "emergency_contact": {
+        "name": "Fixture Contact",
+        "relationship": "Friend",
+        "phone": "+919876543210"
+      }
+    },
+    "saved_detail_versions": {
+      "emergency_contact": 2
+    },
+    "save_defaults": {
+      "emergency_contact": false
+    }
+  },
+  "bounds": {
+    "name": 200,
+    "relationship": 100,
+    "phone": 32
+  },
+  "exact_keys": [
+    "name",
+    "relationship",
+    "phone"
+  ],
+  "relationship_may_be_blank": true,
+  "blank_compound": "omit",
+  "null_optional": "unanswered",
+  "hidden": "drop_before_validation_mapping_or_saving",
+  "invalid": [
+    {
+      "case": "string",
+      "answers": {
+        "emergency": "Fixture Contact"
+      },
+      "status": 400,
+      "error": {
+        "code": "invalid_answer",
+        "detail": "Invalid answer.",
+        "fields": {
+          "emergency": {
+            "name": [
+              "Expected an object."
+            ]
+          }
+        }
+      }
+    },
+    {
+      "case": "array",
+      "answers": {
+        "emergency": []
+      },
+      "status": 400,
+      "error": {
+        "code": "invalid_answer",
+        "detail": "Invalid answer.",
+        "fields": {
+          "emergency": {
+            "name": [
+              "Expected an object."
+            ]
+          }
+        }
+      }
+    },
+    {
+      "case": "extra_field",
+      "answers": {
+        "emergency": {
+          "name": "Fixture Contact",
+          "relationship": "Friend",
+          "phone": "+919876543210",
+          "email": "x@example.test"
+        }
+      },
+      "status": 400,
+      "error": {
+        "code": "invalid_answer",
+        "detail": "Invalid answer.",
+        "fields": {
+          "emergency": {
+            "email": [
+              "Unknown field."
+            ]
+          }
+        }
+      }
+    },
+    {
+      "case": "missing_phone",
+      "answers": {
+        "emergency": {
+          "name": "Fixture Contact",
+          "relationship": "Friend"
+        }
+      },
+      "status": 400,
+      "error": {
+        "code": "invalid_answer",
+        "detail": "Invalid answer.",
+        "fields": {
+          "emergency": {
+            "phone": [
+              "This field is required."
+            ]
+          }
+        }
+      }
+    },
+    {
+      "case": "invalid_phone",
+      "answers": {
+        "emergency": {
+          "name": "Fixture Contact",
+          "relationship": "Friend",
+          "phone": "not a phone"
+        }
+      },
+      "status": 400,
+      "error": {
+        "code": "invalid_answer",
+        "detail": "Invalid answer.",
+        "fields": {
+          "emergency": {
+            "phone": [
+              "Enter a valid phone."
+            ]
+          }
+        }
+      }
+    },
+    {
+      "case": "oversize",
+      "answers": {
+        "emergency": {
+          "name": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "relationship": "Friend",
+          "phone": "+919876543210"
+        }
+      },
+      "status": 400,
+      "error": {
+        "code": "invalid_answer",
+        "detail": "Invalid answer.",
+        "fields": {
+          "emergency": {
+            "name": [
+              "Use at most 200 characters."
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

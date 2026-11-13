@@ -1,5 +1,6 @@
 """Model validation for makerspace control forms."""
 
+from django.utils.translation import gettext
 from django.core.exceptions import ValidationError
 
 from apps.makerspaces.capabilities import prune_features, validate_capabilities
@@ -34,15 +35,7 @@ def clean_makerspace(self):
         self.enabled_features or [], self.enabled_modules or []
     )
     self.enabled_modules, self.enabled_features = validate_capabilities(
-        self.enabled_modules or [], kept
+        self.enabled_modules or [], kept, dormant_defaults=kept
     )
-    if self.hidden_from_central_directory and not self.frontend_domain:
-        raise ValidationError(
-            {
-                "hidden_from_central_directory": (
-                    "A frontend domain is required to hide a makerspace from the central directory."
-                )
-            }
-        )
     if self.geofence_enabled and not self.geofence_effective:
-        raise ValidationError({"geofence_enabled": "Set both latitude and longitude before enabling the geofence."})
+        raise ValidationError({"geofence_enabled": gettext("Set both latitude and longitude before enabling the geofence.")})

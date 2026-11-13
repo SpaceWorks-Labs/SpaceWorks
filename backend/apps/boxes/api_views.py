@@ -5,6 +5,7 @@ from .api_views_eligibility import (
     _product_checkout_eligible,
     _qr_checkout_eligible,
 )
+from .api_views_external import ExternalQrAssignView
 from .api_views_qr import (
     CreateBoxQrView,
     CreateToolQrView,

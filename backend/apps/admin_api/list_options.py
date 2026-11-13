@@ -1,5 +1,6 @@
 """Bounded pagination and allowlisted, stable ordering for staff lists."""
 
+from django.utils.translation import gettext
 from drf_spectacular.utils import OpenApiParameter
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
@@ -39,7 +40,7 @@ class StableOrderingFilter(OrderingFilter):
         raw = request.query_params.get(self.ordering_param, "")
         valid = {name for name, _label in self.get_valid_fields(queryset, view, {"request": request})}
         if raw and any(field.strip().removeprefix("-") not in valid for field in raw.split(",")):
-            raise ValidationError({"ordering": "Unsupported sort field."})
+            raise ValidationError({"ordering": gettext("Unsupported sort field.")})
         ordering = self.get_ordering(request, queryset, view)
         if ordering:
             return queryset.order_by(*ordering, "pk")
@@ -57,12 +58,12 @@ ORDER_PAGE_PARAMETERS = LIST_PARAMETERS[:2]
 def order_list(queryset, params, allowed, default):
     ordering = params.get("ordering", "") or default
     if ordering.removeprefix("-") not in allowed:
-        raise ValidationError({"ordering": "Unsupported sort field."})
+        raise ValidationError({"ordering": gettext("Unsupported sort field.")})
     return queryset.order_by(ordering, "pk")
 
 
 def choice_filter(params, name, choices):
     value = params.get(name, "")
     if value and value not in choices:
-        raise ValidationError({name: "Unsupported filter value."})
+        raise ValidationError({name: gettext("Unsupported filter value.")})
     return value

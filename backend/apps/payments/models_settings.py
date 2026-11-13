@@ -1,9 +1,11 @@
+from django.utils.translation import gettext, gettext_noop
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, RegexValidator
 from django.db import models
 from django.utils import timezone
 
 from apps.makerspaces.secrets import decrypt_value, encrypt_value
+from apps.payments.money_model import MoneyDecimalField
 
 
 currency_validator = RegexValidator(
@@ -18,9 +20,9 @@ connect_account_validator = RegexValidator(
 
 class MakerspacePaymentSettings(models.Model):
     class LoanDepositMode(models.TextChoices):
-        NONE = "none", "No deposit"
-        FIXED = "fixed", "Fixed amount per loan"
-        PER_PRODUCT = "per_product", "Sum of product deposits"
+        NONE = "none", gettext_noop("No deposit")
+        FIXED = "fixed", gettext_noop("Fixed amount per loan")
+        PER_PRODUCT = "per_product", gettext_noop("Sum of product deposits")
 
     class ConnectStatus(models.TextChoices):
         UNCONNECTED = "unconnected", "Unconnected"
@@ -72,9 +74,9 @@ class MakerspacePaymentSettings(models.Model):
     loan_deposit_mode = models.CharField(
         max_length=16, choices=LoanDepositMode.choices, default=LoanDepositMode.NONE
     )
-    loan_deposit_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    loan_late_fee_per_day = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    loan_late_fee_cap = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    loan_deposit_amount = MoneyDecimalField(max_digits=13, decimal_places=3, default=0)
+    loan_late_fee_per_day = MoneyDecimalField(max_digits=13, decimal_places=3, default=0)
+    loan_late_fee_cap = MoneyDecimalField(max_digits=13, decimal_places=3, default=0)
     loan_grace_days = models.PositiveSmallIntegerField(default=0)
     # Off by default: a deposit is RAISED at issue and payable afterwards. On, the
     # handover refuses until the deposit is settled -- and that gate runs before the
@@ -152,7 +154,7 @@ class MakerspacePaymentSettings(models.Model):
             currency_validator(self.default_currency)
         except ValidationError:
             raise ValidationError(
-                {"default_currency": "Enter a three-letter lowercase currency code."}
+                {"default_currency": gettext("Enter a three-letter lowercase currency code.")}
             )
         negative = {
             name: "Loan amounts cannot be negative."
@@ -216,6 +218,11 @@ class MakerspacePaymentSettings(models.Model):
 
 
 class PlatformStripeConnectSettings(models.Model):
+    class Meta:
+        # #188: plain-language admin name (the default plural was broken English).
+        verbose_name = "Stripe Connect settings"
+        verbose_name_plural = "Stripe Connect settings"
+
     id = models.PositiveSmallIntegerField(primary_key=True, default=1, editable=False)
     stripe_publishable_key = models.CharField(max_length=255, blank=True, default="")
     stripe_secret_key = models.TextField(blank=True, default="")

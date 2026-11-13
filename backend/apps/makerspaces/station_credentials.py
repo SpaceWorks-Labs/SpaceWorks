@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.db import transaction
 from django.utils import timezone
 from rest_framework.exceptions import APIException, PermissionDenied
@@ -66,12 +67,12 @@ def reveal(station, *, actor, current_password):
         is_enabled=True,
     ).first()
     if credential is None:
-        raise PasswordStepUpUnavailable("Rotate a station PIN before revealing it.")
+        raise PasswordStepUpUnavailable(gettext("Rotate a station PIN before revealing it."))
     principal = User.objects.select_for_update().get(pk=actor.pk)
     if not principal.has_usable_password():
         raise PasswordStepUpUnavailable()
     if not principal.check_password(current_password):
-        raise PermissionDenied("Current password is incorrect.")
+        raise PermissionDenied(gettext("Current password is incorrect."))
     return credential, decrypt_pin(credential.pin_ciphertext)
 
 

@@ -2,6 +2,10 @@
 
 from dataclasses import dataclass
 from enum import Enum
+from .report_fields_hi import (
+    COMMUNICATION_FIELDS, COMMUNICATION_GROUPS, MOBILE_AUTH_FIELDS, MOBILE_AUTH_GROUPS,
+    MOBILE_DEVICE_FIELDS, MOBILE_DEVICE_GROUPS,
+)
 
 
 class AggregationKind(str, Enum):
@@ -50,6 +54,61 @@ def _strategy(kind, groups, totals, *, breakdown=(), ordering=(), limit=None, te
 
 
 STRATEGIES = {
+    "communications-health": _strategy(
+        AggregationKind.WEIGHTED_RATE, COMMUNICATION_GROUPS,
+        tuple(field for field in COMMUNICATION_FIELDS if field != "consented_member_count"),
+        breakdown=("consented_member_count",),
+        ordering=COMMUNICATION_GROUPS, text=(
+            ("success_rate_percent", "summed sent over summed delivery cohorts"),
+            ("read_rate_percent", "summed read over summed created cohorts"),
+            ("delivery_rate", "summed delivered over summed accepted"),
+            ("read_rate", "summed read over summed delivered"),
+            ("consented_member_count", "current distinct-person snapshot; excluded from organization totals"),
+            ("last_activity_at", "latest value survives"),
+        ),
+    ),
+    "mobile-devices": _strategy(
+        AggregationKind.GROUP_SUM, MOBILE_DEVICE_GROUPS, MOBILE_DEVICE_FIELDS,
+        ordering=MOBILE_DEVICE_GROUPS,
+        text=(("count", "sum tenant-attributed observations; sessions may overlap across tenants"),),
+    ),
+    "mobile-auth": _strategy(
+        AggregationKind.GROUP_SUM, MOBILE_AUTH_GROUPS, MOBILE_AUTH_FIELDS, ordering=MOBILE_AUTH_GROUPS,
+    ),
+    "membership-growth": _strategy(
+        AggregationKind.GROUP_SUM, ("period",),
+        ("period", "new_members", "activated_members", "revoked_members", "active_members"), ordering=("period",),
+        text=(("period", "local calendar label; counts are memberships, not distinct people"),),
+    ),
+    "member-retention": _strategy(
+        AggregationKind.WEIGHTED_RATE, ("cohort_month", "months_after_join"),
+        ("cohort_month", "months_after_join", "cohort_members", "eligible_members", "retained_members", "retention_percent", "churned_members", "reactivated_members"),
+        ordering=("cohort_month", "months_after_join"), text=(("retention_percent", "summed retained / summed eligible memberships"),),
+    ),
+    "membership-revenue": _strategy(
+        AggregationKind.WEIGHTED_RATE, ("period", "currency", "plan_id", "plan_name"),
+        ("period", "currency", "plan_id", "plan_name", "recurring_members", "mrr", "arr", "arpu", "churned_members", "reactivated_members"),
+        ordering=("period", "currency", "plan_id"), text=(("arpu", "summed MRR / summed recurring memberships"), ("plan_id", "distinct plans never merge by label")),
+    ),
+    "revenue-over-time": _strategy(
+        AggregationKind.GROUP_SUM, ("period", "currency", "subject_type", "rail"),
+        ("period", "currency", "subject_type", "rail", "collected_amount", "owed_amount", "refunded_amount", "waived_amount", "net_amount"),
+        ordering=("period", "currency", "subject_type", "rail"), text=(("period", "local calendar label"), ("currency", "group and carry"), ("rail", "group and carry")),
+    ),
+    "cash-book": _strategy(
+        AggregationKind.GROUP_SUM, ("period", "currency", "method"),
+        ("period", "currency", "method", "collected_amount", "refunded_amount", "net_amount"),
+        ordering=("period", "currency", "method"), text=(("currency", "group and carry"), ("method", "group and carry")),
+    ),
+    "payments-ageing": _strategy(
+        AggregationKind.GROUP_SUM, ("currency", "age_bucket"),
+        ("currency", "age_bucket", "payment_count", "outstanding_amount"), ordering=("currency", "age_bucket"),
+        text=(("currency", "group and carry"), ("age_bucket", "0-30, 31-60, 61-90, over 90 local days")),
+    ),
+    "device-health": _strategy(AggregationKind.WEIGHTED_RATE, ("period", "device_id"), ("period", "device_id", "online_seconds", "offline_seconds", "unknown_seconds", "uptime_percent", "offline_incidents", "commands", "commands_acknowledged", "commands_failed", "command_success_percent", "label_prints", "labels_printed", "label_failures"), text=(("period", "group and carry"), ("device_id", "group and carry")), ordering=("period", "device_id")),
+    "presence-activity": _strategy(AggregationKind.WEIGHTED_RATE, ("period",), ("period", "visits", "unique_visitors", "declared_presence_seconds", "average_declared_presence_seconds"), text=(("period", "group and carry; union visitor IDs privately"),), ordering=("period",)),
+    "audit-activity": _strategy(AggregationKind.GROUP_SUM, ("period", "action"), ("period", "action", "count"), text=(("period", "group and carry"), ("action", "group and carry")), ordering=("-count", "period", "action")),
+    "organization-membership": _strategy(AggregationKind.WEIGHTED_RATE, ("period", "organization_id"), ("period", "organization_id", "invitations", "redeemed", "revoked", "expired", "open_invitations", "memberships", "active_memberships", "suspended_memberships", "redemption_percent"), text=(("period", "UTC cohort"), ("organization_id", "deduplicate repeated owner projections before rate calculation")), ordering=("period", "organization_id")),
     "payment-cash-book": _strategy(
         AggregationKind.GROUP_SUM, ("currency", "method"),
         ("currency", "method", "collected_amount", "refunded_amount", "net_amount"),
@@ -59,16 +118,6 @@ STRATEGIES = {
     "taken-items": _strategy(
         AggregationKind.GROUP_SUM, ("product_id",), ("product", "issued_quantity"),
         ordering=("-issued_quantity", "product"), text=(("product", "carry display label; distinct products are never merged by name"),),
-    ),
-    "active-loans": _strategy(
-        AggregationKind.GROUP_SUM, ("request_id",), ("id", "requester", "status", "issued_at"),
-        ordering=("-issued_at", "id"),
-        text=(("requester", "carry"), ("status", "carry"), ("issued_at", "carry and order descending")),
-    ),
-    "returns": _strategy(
-        AggregationKind.GROUP_SUM, ("request_id",), ("id", "requester", "status", "closed_at"),
-        ordering=("-closed_at", "id"),
-        text=(("requester", "carry"), ("status", "carry"), ("closed_at", "carry and order descending")),
     ),
     "damaged-missing": _strategy(
         AggregationKind.GROUP_SUM, ("product_id",), ("product", "damaged_quantity", "missing_quantity"),
@@ -116,11 +165,6 @@ STRATEGIES = {
         ordering=("-times_lent", "-total_quantity_lent", "product_name"),
         limit=LimitSemantics.PER_SPACE_THEN_GLOBAL,
         text=(("product_name", "carry; products remain distinct even when labels match"),),
-    ),
-    "top-borrowers": _strategy(
-        AggregationKind.GLOBAL_RANK, ("requester_id",), ("holder", "requests", "items_borrowed"),
-        ordering=("-requests", "-items_borrowed", "requester_id"),
-        text=(("holder", "label from newest qualifying request after global regrouping"),),
     ),
     "member-activity": _strategy(
         AggregationKind.DISTINCT_PERSON, ("user_id",),
@@ -180,9 +224,54 @@ STRATEGIES = {
     ),
 }
 
+# Area C owns its schemas; append these overrides without rewriting other lanes.
+from .org_machine_report_schemas import MACHINE_ORG_FIELDS, MACHINE_ORG_GROUPS
+STRATEGIES.update({
+    key: _strategy(
+        AggregationKind.WEIGHTED_RATE if key in {"machine-service", "maintenance-activity"}
+        else (AggregationKind.ROW_UNION if key == "warranty-expiry" else AggregationKind.GROUP_SUM),
+        MACHINE_ORG_GROUPS[key], fields,
+    )
+    for key, fields in MACHINE_ORG_FIELDS.items()
+})
+
+
+STRATEGIES.update({
+    "booking-utilization": _strategy(
+        AggregationKind.WEIGHTED_RATE, ("period",),
+        ("period", "booked", "completed", "no_show", "cancelled", "upcoming", "reserved_hours", "completed_hours",
+         "window_hours", "reservation_utilization_percent", "no_show_rate_percent", "cancellation_rate_percent",
+         "reservations", "terminal_reservations"),
+        breakdown=("space_id", "space_name", "kind", "is_active"), ordering=("period",),
+    ),
+    "event-signups": _strategy(
+        AggregationKind.GROUP_SUM, ("period",), ("period", "registrations", "cumulative_registrations"),
+        breakdown=("event_id", "title"), ordering=("period",),
+    ),
+    "event-revenue": _strategy(
+        AggregationKind.GROUP_SUM, ("period", "currency"),
+        ("period", "currency", "charge_count", "charged_amount", "promo_discount_amount", "collected_amount",
+         "refunded_amount", "outstanding_amount", "net_amount"), breakdown=("event_id", "title"), ordering=("period", "currency"),
+    ),
+    "event-funnel": _strategy(
+        AggregationKind.WEIGHTED_RATE, ("period",),
+        ("period", "registrations", "confirmed", "attended", "confirmation_rate_percent", "attendance_rate_percent"),
+        breakdown=("event_id", "title"), ordering=("period",),
+    ),
+    "event-feedback-scores": _strategy(
+        AggregationKind.WEIGHTED_RATE, ("event_id", "period", "question_id"),
+        ("event_id", "title", "period", "question_id", "score_count", "score_total", "average_score"),
+        ordering=("event_id", "period", "question_id"),
+    ),
+})
+
 
 def organization_strategy(report_key: str) -> OrganizationAggregationStrategy:
     try:
         return STRATEGIES[report_key]
     except KeyError as exc:
         raise ValueError(f"Report {report_key!r} has no organization aggregation strategy.") from exc
+
+
+from apps.operations.org_report_ab import install_strategies
+install_strategies(STRATEGIES, _strategy, AggregationKind)

@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from apps.payments.money_model import MoneyDecimalField
 
 
 class ToBuyItem(models.Model):
@@ -44,16 +45,16 @@ class ToBuyItem(models.Model):
         choices=Status.choices,
         default=Status.REQUESTED,
     )
-    estimated_unit_cost = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
+    estimated_unit_cost = MoneyDecimalField(
+        max_digits=11,
+        decimal_places=3,
         null=True,
         blank=True,
     )
     vendor_name = models.CharField(max_length=200, blank=True)
-    actual_unit_cost = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
+    actual_unit_cost = MoneyDecimalField(
+        max_digits=11,
+        decimal_places=3,
         null=True,
         blank=True,
     )
@@ -99,6 +100,21 @@ class ToBuyItem(models.Model):
         "inventory.InventoryProduct", null=True, blank=True,
         on_delete=models.SET_NULL, related_name="reorder_drafts",
     )
+    # A per-machine grams consumable whose low threshold raised this item; a received
+    # item refills that same consumable exactly once (moved_to_inventory_at).
+    source_consumable = models.ForeignKey(
+        "machines.MachineConsumable", null=True, blank=True,
+        on_delete=models.SET_NULL, related_name="low_stock_to_buy_items",
+    )
+    # Release 2 L22: a shop variant whose reorder point raised this item; marking it bought
+    # restocks that variant once, through the availability module (moved_to_inventory_at).
+    source_shop_variant = models.ForeignKey(
+        "shop.ShopVariant", null=True, blank=True, on_delete=models.SET_NULL, related_name="reorder_drafts",
+    )
+    # The saved supplier (L12 vendor records); `vendor_name` stays the free-text label.
+    vendor = models.ForeignKey(
+        "procurement.Vendor", null=True, blank=True, on_delete=models.SET_NULL, related_name="to_buy_items",
+    )
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         null=True,
@@ -140,3 +156,6 @@ class ToBuyReceipt(models.Model):
 
     def __str__(self):
         return f"Receipt for {self.to_buy_item}"
+
+
+from .models_vendors import Vendor  # noqa: E402,F401

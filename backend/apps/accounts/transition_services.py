@@ -7,6 +7,7 @@ from django.db import connection, transaction
 from django.utils import timezone
 
 from apps.accounts.models import User
+from apps.accounts.staff_identity import is_person
 from apps.accounts.services_tokens import blacklist_outstanding_tokens
 from apps.audit import services as audit
 
@@ -47,6 +48,7 @@ def transition_walk_in_to_account(
     *,
     actor: User | None,
     credential_writer: CredentialWriter | None = None,
+    handle: str | None = None,
 ) -> User:
     """Atomically transition ``user`` and revoke every pre-transition bearer.
 
@@ -61,7 +63,7 @@ def transition_walk_in_to_account(
     hooks = tuple(_REVOCATION_HOOKS.values())
     with transaction.atomic():
         locked = User.objects.select_for_update().get(pk=user.pk)
-        if not locked.is_walk_in:
+        if not is_person(locked) or not locked.is_walk_in:
             raise WalkInTransitionError("This user is not a walk-in record.")
 
         with connection.cursor() as cursor:
@@ -77,5 +79,9 @@ def transition_walk_in_to_account(
         if credential_writer is not None:
             credential_writer(locked)
 
+        # Decision 308: the new account gets a username with the upgrade; a chosen one is validated
+        # here (a refusal rolls the whole transition back), otherwise the best suggestion.
+        from apps.makerspaces.public_profile_handles import claim_for_signup
+        claim_for_signup(locked, handle)
         audit.record(actor, "member.walk_in_transitioned", target=locked)
         return locked

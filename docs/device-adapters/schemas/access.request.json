@@ -1,0 +1,50 @@
+{
+  "$id": "https://spaceworks.invalid/schemas/device-adapter/v1/access.request.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "binding_id": {
+      "format": "uuid",
+      "maxLength": 36,
+      "minLength": 36,
+      "type": "string"
+    },
+    "credential": {
+      "additionalProperties": false,
+      "properties": {
+        "member_number": {
+          "maxLength": 40,
+          "type": "string"
+        },
+        "pin": {
+          "maxLength": 12,
+          "minLength": 1,
+          "type": "string"
+        },
+        "type": {
+          "enum": [
+            "card_qr",
+            "nfc",
+            "pin"
+          ],
+          "type": "string"
+        },
+        "value": {
+          "maxLength": 256,
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "value"
+      ],
+      "type": "object"
+    }
+  },
+  "required": [
+    "binding_id",
+    "credential"
+  ],
+  "type": "object"
+}

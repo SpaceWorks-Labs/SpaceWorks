@@ -1,8 +1,10 @@
-# Member and finance delegation (F6)
+# Member and finance delegation
 
-Roles remain editable, local to one makerspace, and action based. The four protected
-defaults are unchanged. Presets in the custom-role editor only prefill a name and grants;
-staff must save the role and assign it before anyone receives authority.
+Membership roles are fixed and local to one makerspace: Space Manager, Inventory Manager, Machine
+Manager, Event Manager, Booking Manager, Handover, Technician, Shop Manager, Fundraising and Member (ten built-ins). Space
+Manager and Member stand alone; the other six combine freely. There is no custom-role editor or editable grant list. The action
+checks below remain the authorization contract, including organization-derived grants. See
+[roles and access](README-HOSTING.md#roles--access) for assignment and machine-type scope.
 
 | Action | Grants |
 | --- | --- |
@@ -10,19 +12,43 @@ staff must save the role and assign it before anyone receives authority.
 | `view_finance` | Full payment ledger, settlement receipts, payment reconciliation report and exports. Does not grant cash recording, waivers or refunds. |
 | `record_payment` | Offline settlements, receipt corrections, and offline refund receipts across the makerspace's charge subjects. Does not grant settings, debt waivers or online refunds. |
 
-Membership Coordinator holds `manage_members`. Treasurer holds `view_finance` and
-`record_payment`. Front-desk cashier holds `record_payment` and the handout actions,
-including collection of completed machine-service jobs. It retains the narrow handover
-console with a Payments tab.
+Space Manager includes `manage_members`, `view_finance` and `record_payment`. There are no separate
+Membership Coordinator, Treasurer or front-desk cashier built-ins; roles that were custom before the upgrade are mapped at upgrade by
+migration 0089's raw-grant subset rules and can lose authority that no built-in represents.
+Handover includes job collection and evidence but does not independently grant cash recording.
+Technician holds only `work_repairs`, `run_maintenance` and `set_service_state`: the
+repair jobs assigned to them, plus maintenance and service state within the machine types, items and
+rooms their in-house technician entry covers. It never records money; payouts need finance authority
+in the area (see [Repairs and technicians](INVARIANTS.md#repairs-and-technicians)).
 
-Membership Coordinators may assign only action-less community roles and cannot remove or
-replace a staff member's grants. Staff role creation, staff account provisioning,
-makerspace settings, membership plan definitions/prices and waiver publishing remain
-`manage_makerspace` operations. Coordinators can read plans and assign their terms.
-Membership-only roster responses do not include payment summaries.
-Coordinators cannot approve or cancel an existing staff invitation by substituting a
-community role. Verification and term controls remain available on staff roster rows;
-changing or revoking the staff role still requires makerspace administration.
+Shop Manager holds only `manage_shop`, `sell_shop` and `view_shop`: the shop's
+catalogue, stock, prices, orders, front desk, cash-ups, returns and its own settings, plus the shop's
+money in the ledger (domain `shop`). It records cash only for shop sales and shop refunds, never other
+money; the Space Manager reaches the shop through `manage_makerspace`. See
+[Shop](INVARIANTS.md#shop-release-2-l22-128-c-7-129-135-137).
+
+`view_analytics` opens the space's embedded Metabase dashboards. The Space
+Manager holds it through `manage_makerspace`; it is also organization-grantable. Creating, rotating
+or revoking the analytics database login and pasting the Metabase secret stay with the space's own
+Space Manager and the superadmin (`rbac.is_space_manager_identity`), never a delegated grant.
+Machine Manager reach is assigned per person by type; combining roles unions actions without
+widening that machine reach.
+
+Actors holding only `manage_members` (for example via organization authority) may assign only Member
+and cannot replace staff grants. Granting, changing and revoking staff roles, makerspace
+settings, membership plan definitions/prices and waiver publishing require `manage_makerspace`.
+Membership-only roster responses do not include payment summaries. Community-only actors cannot
+approve or cancel staff invitations by substituting a community role. Verification and term controls
+remain available on staff roster rows; changing/revoking staff roles requires makerspace administration.
+
+**Who may grant a staff role (one account per person, U-B).** A staff role is a row on the person's
+own account. In a makerspace, its Space Manager grants, changes, revokes and restores every staff role
+except the Space Manager role; only the platform superadmin grants, changes or revokes the Space
+Manager role or a Space Manager's row, in every space. A role is granted to an active community member
+of the space, or by an email invitation the invitee accepts signed in to the account with that
+address (after a fresh emailed code). Nobody changes their own staff row, and the last active Space
+Manager stays. Organization authority and resource grants never grant staff roles. Disabling a whole
+account is a superadmin `/control/` action.
 
 The roster uses `view_finance` for money visibility, `record_payment` for cash recording,
 and the existing membership-subject authority for waiving a debt. A read-only finance
@@ -39,15 +65,22 @@ Existing charge-domain staff retain their scoped cash recording paths. Debt waiv
 online refunds retain their existing subject authority and machine scoping. Finance
 authority never implies machine lifecycle authority.
 
-Migration `makerspaces.0078_member_finance_actions` adds all three new actions to every
-stored role containing `manage_makerspace`, including custom roles.
-Organization memberships holding that action receive the same additive backfill, without
-changing link reach, membership identity or hidden-space exclusions. New Space Manager
-defaults and the legacy null-role fallback include them. Inventory Manager and Member
-receive no new grants. `manage_makerspace` has no new dynamic implication: administrators
-can edit the actions independently after the backfill. The additive migration has a
-no-op reverse to avoid removing later administrator grants.
+Refund cases follow the same split. The queue shows every case to `view_finance` holders,
+read-only, and otherwise only cases whose charge subject the actor manages (events,
+bookings, machine jobs within role scope, membership money, loan charges). Approving or
+declining re-checks that subject authority per case; recording a cash refund additionally
+requires `record_payment`. Editing a refund policy requires `manage_makerspace`. No new
+action was added.
+
+Historically `makerspaces.0078_member_finance_actions` backfilled the three actions onto roles and
+organization memberships holding `manage_makerspace`. Fixed-role migration 0089 replaces editable
+local grants with the canonical catalogue; organization reach, hidden-space fences and the legacy
+null-primary fallback remain unchanged. `manage_makerspace` does not dynamically imply those actions.
+The old additive migration has a no-op reverse; the fixed-role data migration is irreversible.
+Operators must back up, stop writers and run `python manage.py preview_fixed_roles` with the new
+image before `migrate`; resolve every “must fix before upgrading” notification rule first. See
+[upgrade recovery](update-recovery.md#fixed-role-upgrade-2026-10-16).
 
 All routes continue to use the central RBAC makerspace scope, active-account checks,
-tenant-origin restrictions and superadmin-hidden fences. Cash and membership mutations
+and tenant-origin restrictions. Cash and membership mutations
 retain their transaction and audit services. No model, module or feature key was added.

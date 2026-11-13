@@ -1,23 +1,76 @@
 from rest_framework import serializers
 from apps.events.models import EventRegistration
 from apps.admin_api.serializers_payment_summary import PaymentSummaryMixin
+from django.utils import timezone
+from drf_spectacular.utils import extend_schema_field
+from apps.operations.cancellation_restore import restore_deadline
+
+
+class AttendanceReplySummarySerializer(serializers.Serializer):
+    answer = serializers.CharField(allow_null=True)
+    note = serializers.CharField()
+    replied_at = serializers.DateTimeField(allow_null=True)
+    effect = serializers.CharField()
 
 
 class EventRegistrationAdminSerializer(PaymentSummaryMixin, serializers.ModelSerializer):
+    custom_answers = serializers.JSONField(read_only=True, allow_null=True)
     event_id = serializers.IntegerField(read_only=True)
     ticket_type_id = serializers.IntegerField(read_only=True, allow_null=True)
+    ticket_type_name = serializers.SerializerMethodField(help_text="Decision 248: the ticket's name, so the list shows it without a second call.")
+    no_longer_eligible = serializers.BooleanField(read_only=True, default=False)
     payment = serializers.SerializerMethodField()
+    restore_until = serializers.SerializerMethodField()
+    # Lane L21a: the crew flag and the "still coming?" reply (X43), in the guest list and at the desk.
+    is_crew = serializers.BooleanField(read_only=True)
+    attendance_reply = serializers.SerializerMethodField()
 
     class Meta:
         model = EventRegistration
         fields = (
-            'id', 'event_id', 'name', 'email', 'phone', 'custom_answers',
-            'status', 'created_at', 'payment', 'ticket_type_id', 'quoted_amount', 'discount_amount',
+            'no_longer_eligible', 'id', 'event_id', 'name', 'email', 'phone', 'custom_answers',
+            'status', 'created_at', 'payment', 'ticket_type_id', 'ticket_type_name', 'quoted_amount', 'discount_amount',
+            'cancelled_at', 'status_before_cancel', 'restore_until', 'is_crew', 'attendance_reply',
+            'pay_by',  # Parity E-B5/E-F3: the end of an open pay window, shown beside the guest.
         )
         read_only_fields = fields
 
+    @extend_schema_field(serializers.CharField(allow_null=True))
+    def get_ticket_type_name(self, obj):
+        return obj.ticket_type.name if obj.ticket_type_id else None
 
-class EventStaffRegistrationSerializer(serializers.Serializer):
+    @extend_schema_field(AttendanceReplySummarySerializer(allow_null=True))
+    def get_attendance_reply(self, obj):
+        reply = getattr(obj, "attendance_reply", None) if hasattr(obj, "attendance_reply") else None
+        if reply is None:
+            return None
+        return {"answer": reply.answer or None, "note": reply.note, "replied_at": reply.replied_at,
+                "effect": reply.effect}
+
+    @extend_schema_field(serializers.DateTimeField(allow_null=True))
+    def get_restore_until(self, obj):
+        from apps.events.services_registration_tools import has_registration_consumption
+        deadline = restore_deadline(obj)
+        if (obj.status == "cancelled" and obj.status_before_cancel in
+                ("registered", "waitlisted", "pending_approval") and deadline
+                and timezone.now() < deadline and obj.event.registration_audience != "invite"
+                and not has_registration_consumption(obj)):
+            from apps.payments.models import Payment
+            has_charge = getattr(obj, "restore_has_charge", None)
+            if has_charge is None:
+                has_charge = Payment.objects.filter(
+                    subject_type=Payment.SubjectType.EVENT_REGISTRATION,
+                    subject_id=obj.pk, makerspace_id=obj.event.makerspace_id,
+                ).exists()
+            if not has_charge:
+                return deadline
+        return None
+
+
+from .serializers_registration_form import RegistrationFormInput
+
+
+class EventStaffRegistrationSerializer(RegistrationFormInput):
     """Staff registering an identified account under the event's audience rules.
 
     `member_id` only. Contact details are copied off the account by the registration

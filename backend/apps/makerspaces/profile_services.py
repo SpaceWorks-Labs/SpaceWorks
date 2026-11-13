@@ -1,268 +1,109 @@
-"""Reading and writing a member's own profile, and the member-visible directory."""
+"""Legacy-shaped profile reads/writes for the deprecated per-space routes, backed by the account profile.
+
+The real implementation is `account_profile` (writes) and `account_profile_read` (reads). This
+module only translates the OLD request/response shape (one profile "in" a membership) to and from
+the account profile, so shipped clients keep working. The activity-graph family switches and the GitHub
+username are account-level too (decision 304c) and read/write the account profile.
+"""
 
 from django.db import transaction
 
-from apps.audit import services as audit
+from apps.accounts.account_kind_guards import require_member_account
 from apps.inventory import public_image_storage
-from apps.makerspaces.models import MakerspaceMembership, MemberProfile, MemberProject
+
+from . import account_profile
+from .account_profile import display_name_for_user
+from .public_profile_handles import PublicHandle
 
 RECENT_ATTENDED_EVENTS_LIMIT = 20
-
-
-def profile_for(membership):
-    """The membership's profile row, created on demand.
-
-    Created rather than returned as defaults so every later write has a row to lock and
-    a stable id to hang project rows and image keys off. It is empty and invisible, so
-    creating one publishes nothing.
-    """
-    profile, _ = MemberProfile.objects.get_or_create(membership=membership)
-    return profile
+LEGACY_PUBLICATION_FLAGS = ("show_activity_graph", "show_speaking", "show_machine_activity",
+                            "show_bookings", "show_loans")
 
 
 def display_name_for(membership):
-    user = membership.user
-    return user.display_name or user.get_full_name().strip() or user.username
+    return display_name_for_user(membership.user)
 
 
-def _published_certifications(membership, profile):
-    """Live certification names, only once the member has opted in (consent, not config)."""
-    if not profile.show_certifications:
-        return []
-    from apps.machines.certifications import live_certification_names
-
-    return list(live_certification_names(membership))
-
-
-def read_profile(membership, *, include_activity=True, local_activity_only=False):
-    # Reads must not call the write-side ``profile_for`` helper. An unsaved model
-    # instance gives serializers the model defaults without publishing a row merely
-    # because somebody opened the page.
-    profile = MemberProfile.objects.filter(membership=membership).first()
-    projects = profile.projects.all() if profile is not None else ()
-    profile = profile or MemberProfile(membership=membership)
-    payload = {
-        "membership_id": membership.pk,
-        "display_name": display_name_for(membership),
-        "is_visible": profile.is_visible,
-        "show_attended_events": profile.show_attended_events,
-        "show_certifications": profile.show_certifications,
-        "certifications": _published_certifications(membership, profile),
-        "headline": profile.headline,
-        "institution": profile.institution,
-        "bio": profile.bio,
-        "avatar_url": public_image_storage.public_url(profile.avatar_key) or None,
-        "interests": profile.interests or [],
-        "languages": profile.languages or [],
-        "education": profile.education or [],
-        "github_username": profile.github_username,
-        "github_contributions": profile.github_contributions,
-        "projects": [
-            {
-                "id": project.pk,
-                "title": project.title,
-                "description": project.description,
-                "links": project.links or [],
-                "image_url": public_image_storage.public_url(project.image_key) or None,
-            }
-            for project in projects
-        ],
-        "activity": profile_activity(
-            membership, local_only=local_activity_only
-        ) if include_activity else {},
-    }
-    return payload
+def profile_for(membership):
+    """The account profile of the membership's user (legacy name kept for callers)."""
+    require_member_account(membership.user)
+    return account_profile.account_profile_for(membership.user)
 
 
 def profile_activity(membership, *, local_only=False):
-    """Counts of what this member has done in THIS space.
-
-    Derived, never stored: a stored counter drifts the moment a registration is
-    cancelled. Each section is omitted when its module is off rather than reported as
-    zero -- a zero says "attended nothing", an absent key says "this space does not run
-    events", and they are not the same statement.
-    """
+    """Counts of what this member has done; module-disabled sections stay absent, not zero."""
     from apps.makerspaces.platform import module_enabled
 
+    from .account_profile_activity import attended_events
+
     activity = {}
-    makerspace = membership.makerspace
-    if module_enabled(makerspace, "events"):
+    if module_enabled(membership.makerspace, "events"):
         from apps.events.member_history import registrations_for_space
         from apps.events.models import EventRegistration
 
-        registrations = registrations_for_space(makerspace, membership.user)
-        if local_only or getattr(membership.user, "_claim_audit_context", None) is not None:
-            registrations = registrations.filter(event__makerspace=makerspace)
-        activity["events_attended"] = registrations.filter(
-            status=EventRegistration.Status.ATTENDED
-        ).count()
-        # Cancellations are excluded: "registered for 40 events" is not a truthful
-        # summary of someone who cancelled thirty of them.
-        activity["events_registered"] = registrations.exclude(
-            status=EventRegistration.Status.CANCELLED
-        ).count()
-        # Read the consent flag straight from the row, deliberately NOT through
-        # `membership.profile` or `profile_for`. `get_or_create(membership=...)` populates
-        # the reverse one-to-one cache on the membership instance, and `save_profile`
-        # re-reads the row through a *separate* instance -- so anything saving twice on one
-        # membership object would then gate publication on a stale copy of the flag. A
-        # privacy gate must not depend on which instance happened to warm a cache. This
-        # also stops a read path from creating a row, which `profile_for` would.
-        show_attended_events = MemberProfile.objects.filter(
-            membership=membership
-        ).values_list("show_attended_events", flat=True).first()
-        if show_attended_events:
-            recent = (
-                registrations.filter(status=EventRegistration.Status.ATTENDED)
-                .select_related("event")
-                .only("event__id", "event__title", "event__starts_at")
-                # `-id` is a tiebreaker, not decoration: two events can share a
-                # `starts_at`, and without it the cap could include a different subset
-                # on each request. `member_activity_service` orders the same way.
-                .order_by("-event__starts_at", "-id")[:RECENT_ATTENDED_EVENTS_LIMIT]
-            )
+        registrations = registrations_for_space(membership.makerspace, membership.user)
+        activity["events_attended"] = registrations.filter(status=EventRegistration.Status.ATTENDED).count()
+        activity["events_registered"] = registrations.exclude(status=EventRegistration.Status.CANCELLED).count()
+        if account_profile.AccountProfile.objects.filter(user=membership.user, show_events=True).exists():
+            only = membership.makerspace_id if (
+                local_only or getattr(membership.user, "_claim_audit_context", None) is not None) else None
             activity["recent_attended_events"] = [
-                {
-                    "id": registration.event.id,
-                    "title": registration.event.title,
-                    "starts_at": registration.event.starts_at,
-                }
-                for registration in recent
-            ]
+                {"id": row["id"], "title": row["title"], "starts_at": row["starts_at"]}
+                for row in attended_events(membership.user, only)["recent"]]
     return activity
+
+
+def read_profile(membership, *, include_activity=True, local_activity_only=False):
+    """The account profile in the legacy per-membership shape. Reads never create a row."""
+    from .models_account_profile import AccountProfile
+
+    user = membership.user
+    profile = AccountProfile.objects.filter(user=user).first() or AccountProfile(user=user)
+    projects = profile.projects.all() if profile.pk else ()
+    handle = PublicHandle.objects.filter(user_id=user.pk).values_list("handle", flat=True).first()
+    certifications = []
+    if profile.show_certifications:
+        from apps.machines.certifications import live_certification_names
+        certifications = list(live_certification_names(membership))
+    from .profile_github import github_verified as _verified
+
+    github_verified = bool(profile.pk and _verified(profile))
+    payload = {
+        "verified": membership.verified_at is not None, "membership_id": membership.pk,
+        "display_name": display_name_for(membership), "is_visible": profile.is_visible,
+        "show_attended_events": profile.show_events, "show_certifications": profile.show_certifications,
+        "certifications": certifications, "headline": profile.headline, "institution": profile.institution,
+        "bio": profile.bio, "avatar_url": public_image_storage.public_url(profile.avatar_key) or None,
+        "interests": profile.interests or [], "languages": profile.languages or [],
+        "education": profile.education or [],
+        "github_username": profile.github_username,
+        "github_contributions": profile.github_contributions if github_verified else None,
+        "github_verified": github_verified,
+        "projects": [{"id": p.pk, "title": p.title, "subtitle": p.subtitle, "tags": p.tags,
+                      "public_visible": p.public_visible, "description": p.description,
+                      "links": p.links or [], "image_url": public_image_storage.public_url(p.image_key) or None,
+                      "imported": p.source_submission_id is not None} for p in projects],
+        "activity": profile_activity(membership, local_only=local_activity_only) if include_activity else {},
+        "public_visible": profile.public_visible, "public_consented_at": profile.public_consented_at,
+        "show_events": profile.show_events, "show_projects": profile.show_projects,
+        "domains": profile.domains or [], "skills": profile.skills or [], "links": profile.links or [],
+        "handle": handle,
+    }
+    payload.update({flag: getattr(profile, flag) for flag in LEGACY_PUBLICATION_FLAGS})
+    return payload
 
 
 @transaction.atomic
 def save_profile(membership, data):
-    """Apply a partial profile update, replacing the project list when one is sent."""
-    profile = MemberProfile.objects.select_for_update().filter(
-        membership=membership
-    ).first() or profile_for(membership)
-    was_visible = profile.is_visible
-    attended_events_were_shown = profile.show_attended_events
-    project_count_before = profile.projects.count()
-    fields = []
-    for field in (
-        "is_visible", "show_attended_events", "show_certifications", "headline",
-        "institution", "bio", "interests", "languages", "education",
-    ):
-        if field in data:
-            setattr(profile, field, data[field])
-            fields.append(field)
-    if "github_username" in data:
-        username = (data["github_username"] or "").strip()
-        if username != profile.github_username:
-            # A new handle invalidates the cached count outright rather than leaving the
-            # previous account's total showing under someone else's name until the next
-            # sync — which would be a false claim, not merely stale data.
-            profile.github_username = username
-            profile.github_contributions = None
-            profile.github_synced_at = None
-            fields += ["github_username", "github_contributions", "github_synced_at"]
-    if fields:
-        profile.save(update_fields=[*fields, "updated_at"])
-    if "projects" in data:
-        save_projects(profile, data["projects"])
-    _audit_profile_saved(
-        membership,
-        profile,
-        was_visible,
-        attended_events_were_shown,
-        project_count_before,
-        fields,
-    )
-    return profile
+    """Translate the old write shape onto the account profile and save it there."""
+    require_member_account(membership.user)
+    mapped = {key: value for key, value in data.items() if key != "show_attended_events"}
+    if "show_attended_events" in data:
+        mapped["show_events"] = data["show_attended_events"]
+    return account_profile.save_profile(membership.user, mapped, makerspace=membership.makerspace)
 
 
-def _audit_profile_saved(
-    membership,
-    profile,
-    was_visible,
-    attended_events_were_shown,
-    project_count_before,
-    fields,
-):
-    """Record that the profile changed, without copying its contents into the log.
+from .profile_directory import directory, visible_profile  # noqa: E402,F401
 
-    The audit log is append-only and makerspace-scoped, so it must say *what changed*
-    and by whom — but writing profile contents or derived event details into it would
-    copy member PII into a store that is deliberately impossible to edit or delete. The
-    meta therefore names the fields touched and the boolean publication transitions.
-    """
-    profile.refresh_from_db(fields=["is_visible", "show_attended_events", "show_certifications"])
-    audit.record(
-        membership.user,
-        "member.profile_updated",
-        makerspace=membership.makerspace,
-        target=membership,
-        meta={
-            "fields": sorted(fields),
-            "visibility_changed": was_visible != profile.is_visible,
-            "is_visible": profile.is_visible,
-            "attended_events_shown": profile.show_attended_events,
-            "certifications_shown": profile.show_certifications,
-            "attended_events_changed": (
-                attended_events_were_shown != profile.show_attended_events
-            ),
-            "projects_before": project_count_before,
-            "projects_after": profile.projects.count(),
-        },
-    )
-
-
-def save_projects(profile, rows):
-    """Replace the project list.
-
-    Replace rather than merge, matching every other list-shaped save in this codebase
-    (role scopes, notification recipients, chat rooms): with a merge there is no way to
-    express deleting one, so the member could add projects forever and remove none.
-
-    An id the caller does not own is a **400, not a silent drop** — a save that quietly
-    discards part of the submission leaves the member believing it was stored.
-    """
-    from rest_framework.exceptions import ValidationError
-
-    existing = {project.pk: project for project in profile.projects.all()}
-    seen = set()
-    for position, row in enumerate(rows):
-        project_id = row.get("id")
-        if project_id is not None:
-            project = existing.get(project_id)
-            if project is None:
-                raise ValidationError({"projects": f"Unknown project id {project_id}."})
-            project.title = row["title"]
-            project.description = row.get("description", "")
-            project.links = row.get("links", [])
-            project.position = position
-            project.save(
-                update_fields=["title", "description", "links", "position", "updated_at"]
-            )
-            seen.add(project_id)
-            continue
-        MemberProject.objects.create(
-            profile=profile,
-            title=row["title"],
-            description=row.get("description", ""),
-            links=row.get("links", []),
-            position=position,
-        )
-    removed = [project for pk, project in existing.items() if pk not in seen]
-    for project in removed:
-        # Freed and deleted through the image service so the storage counter and the
-        # bucket stay in step with the row disappearing.
-        from apps.makerspaces import profile_images
-
-        profile_images.clear_project_image(profile, project)
-    MemberProject.objects.filter(
-        pk__in=[project.pk for project in removed]
-    ).delete()
-
-
-# The member-visible directory lives in its own module (file-size ceiling); re-exported so
-# `profile_services.directory` / `.visible_profile` keep resolving for views and tests.
-from apps.makerspaces.profile_directory import directory, visible_profile  # noqa: E402
-
-__all__ = [
-    "directory", "display_name_for", "profile_activity", "profile_for", "read_profile",
-    "save_profile", "save_projects", "visible_profile",
-]
+__all__ = ["directory", "display_name_for", "profile_activity", "profile_for", "read_profile",
+           "save_profile", "visible_profile"]

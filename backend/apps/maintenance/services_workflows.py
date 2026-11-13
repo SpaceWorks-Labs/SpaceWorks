@@ -22,12 +22,14 @@ from apps.maintenance.services_shared import (
 )
 
 
-def _append_log(machine, actor, values):
+def _append_log(machine, actor, values, ledger=None):
     log = MaintenanceLog.objects.create(
         machine=machine,
         performed_by=actor,
         **values,
     )
+    from .ledger import post_machine_log
+    post_machine_log(actor, log, **(ledger or {}))  # its own `ledger.expense_recorded` audit
     metadata = {"machine_id": machine.pk}
     if values["cost"] is not None:
         metadata["cost"] = str(values["cost"])
@@ -44,16 +46,16 @@ def _append_log(machine, actor, values):
 @transaction.atomic
 def log_maintenance(
     machine, *, actor, summary, performed_at=None, cost=None,
-    parts_note="", set_idle=False,
+    parts_note="", set_idle=False, cost_method=None, cost_currency=None,
 ):
     machine = lock_machine(machine, actor)
-    prepare_machine(machine, actor, manage=False)
+    prepare_machine(machine, actor, manage=False, technician=True)
     ensure_idle_transition(machine, set_idle)
     values = validate_log_values(
         summary=summary, performed_at=performed_at, cost=cost,
         parts_note=parts_note,
     )
-    log = _append_log(machine, actor, values)
+    log = _append_log(machine, actor, values, {"method": cost_method, "currency": cost_currency})
     if set_idle:
         apply_idle_transition(machine, actor)
     notify_maintenance_lifecycle(log, "logged")
@@ -61,14 +63,14 @@ def log_maintenance(
 
 
 @transaction.atomic
-def create_schedule(machine, *, actor, description, interval_days, next_due, anchor="completion", trigger="days", usage_hours=None, job_count=None):
+def create_schedule(machine, *, actor, description, interval_days, next_due, anchor="completion", trigger="days", usage_hours=None, job_count=None, blocks_use=False):
     machine = lock_machine(machine, actor)
     prepare_machine(machine, actor, manage=True)
     schedule = MaintenanceSchedule(
         machine=machine,
         description=clean_text(description, "description"),
         anchor=clean_anchor(anchor),
-        trigger=trigger, usage_hours=usage_hours, job_count=job_count,
+        trigger=trigger, usage_hours=usage_hours, job_count=job_count, blocks_use=bool(blocks_use),
         interval_days=clean_interval(interval_days),
         next_due=_schedule_date(next_due),
         created_by=actor,
@@ -99,7 +101,8 @@ def update_schedule(schedule, *, actor, **changes):
     ).get(
         pk=schedule.pk, machine=machine,
     )
-    allowed = {"description", "interval_days", "next_due", "anchor", "trigger", "usage_hours", "job_count"}
+    allowed = {"description", "interval_days", "next_due", "anchor", "trigger", "usage_hours", "job_count",
+               "blocks_use"}
     unknown = sorted(set(changes) - allowed)
     if unknown:
         raise ValidationError({name: "This field cannot be changed." for name in unknown})
@@ -114,7 +117,7 @@ def update_schedule(schedule, *, actor, **changes):
     if "next_due" in changes:
         schedule.next_due = _schedule_date(changes["next_due"])
     from .meters import validate_meter
-    for field in ("trigger", "usage_hours", "job_count"):
+    for field in ("trigger", "usage_hours", "job_count", "blocks_use"):
         if field in changes:
             setattr(schedule, field, changes[field])
     validate_meter(schedule)
@@ -159,10 +162,10 @@ def deactivate_schedule(schedule, *, actor):
 @transaction.atomic
 def complete_due(
     schedule, *, actor, summary, performed_at=None, cost=None,
-    parts_note="", set_idle=False,
+    parts_note="", set_idle=False, cost_method=None, cost_currency=None,
 ):
     machine = lock_machine(schedule.machine, actor)
-    prepare_machine(machine, actor, manage=True)
+    prepare_machine(machine, actor, manage=True, technician=True)
     schedule = rbac.scope_by_makerspace(
         actor, MaintenanceSchedule.objects.select_for_update(), makerspace_field="machine__makerspace_id",
     ).get(
@@ -176,7 +179,7 @@ def complete_due(
         parts_note=parts_note,
     )
     old_due = schedule.next_due
-    log = _append_log(machine, actor, values)
+    log = _append_log(machine, actor, values, {"method": cost_method, "currency": cost_currency})
     schedule.next_due = next_due_after_completion(schedule, log.performed_at)
     from .meters import completed_meter
     completed_meter(schedule, log.performed_at)
@@ -200,9 +203,12 @@ def complete_due(
     return log
 
 
-def overdue_schedules(queryset=None, *, today=None):
+def overdue_schedules(queryset=None, *, today=None, makerspace=None):
     queryset = queryset if queryset is not None else MaintenanceSchedule.objects.all()
-    today = timezone.localdate() if today is None else today
+    if today is None:
+        # The space's own calendar day, not the server's (decision 220(d)).
+        from apps.makerspaces.local_time import to_local
+        today = to_local(makerspace, timezone.now()).date() if makerspace is not None else timezone.localdate()
     from .meters import due_queryset
     return due_queryset(queryset.filter(is_active=True), today).order_by(
         "next_due", "id",

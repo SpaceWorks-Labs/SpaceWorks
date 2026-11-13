@@ -14,17 +14,35 @@ def _same(label, names, disposition, reason):
 
 
 SUPPLEMENTAL_AUTHORITY_ENTRIES = (
+    *_same("makerspaces.Makerspace", "email_provider email_provider_config", D.RESET,
+           "Target transport is reconfigured; source account credentials never travel."),
+    *_same("integrations.NotificationMediaGrant", "id delivery document certificate storage_makerspace source_revision "
+           "recipient_id_snapshot integration_generation integration_identity token_digest expires_at consumed_at", D.DROP,
+           "Single-use source-local document disclosure authority never travels."),
+    *_same("accounts.User", "account_restored_at", D.RESET,
+           "Source legacy-session denial marker is irrelevant to target-issued sessions."),
+    *_same("accounts.User", "purge_started_at", (D.PRESERVE, D.RESET),
+           "Full archived identities retain the irreversible purge fence; shared inert stubs reset it."),
+    *_same("accounts.User", "account_purged_at", (D.PRESERVE, D.RESET),
+           "Full identities retain erasure; shared inert stubs reset lifecycle timestamps."),
+    *_same("accounts.User", "deletion_email_ciphertext deletion_username", D.RESET,
+           "Source erasure coordination snapshots are never portable."),
+    *_same("accounts.User", "deletion_requested_at deletion_purge_after", (D.PRESERVE, D.RESET),
+           "Full identities preserve account deletion; inert shared-user stubs reset its timestamps."),
+    *_same("integrations.EmailLog", "source_kind source_id source_metadata", D.DROP, "Source delivery identity is omitted telemetry."),
     *_same('bookings.BookableSpace',
-           'buffer_before_minutes buffer_after_minutes cancellation_cutoff_hours', D.PRESERVE,
+           'buffer_before_minutes buffer_after_minutes cancellation_cutoff_hours pass_template', D.PRESERVE,
            'Tenant booking windows and member cancellation policy travel under target module gates.'),
     *_same('events.Event', 'cancellation_cutoff_hours', D.PRESERVE,
            'The event cancellation deadline is a portable scheduling policy.'),
+    *_same('events.Event', 'equipment_return_hours', D.PRESERVE,
+           'The event equipment return window is a portable lending policy (decision 221b).'),
     *_same('events.EventSeries', 'cancellation_cutoff_hours', D.PRESERVE,
            'The recurring event cancellation deadline is a portable scheduling policy.'),
     *_same('makerspaces.Makerspace', 'event_reminder_lead_hours booking_reminder_lead_hours', D.PRESERVE,
            'Tenant reminder timing travels; target channel and recipient gates still apply.'),
-    *_same("notifications.MemberNotificationPreference", "makerspace user feature channel enabled", D.DROP,
-           "Source personal delivery policy never becomes target disclosure authority."),
+    *_same("notifications.MemberNotificationPreference", "makerspace user feature channel enabled", D.PRESERVE,
+           "Only carried tenant staff preferences travel; endpoints and channel credentials never do."),
     *_same("notifications.NotificationInboxRow", "makerspace user feature event event_key title summary link read_at", D.DROP,
            "Personal inbox delivery text and read telemetry are omitted from portable artifacts."),
     *_same("integrations.EmailSuppression", "makerspace address_hash reason created_by", D.DROP,
@@ -44,15 +62,15 @@ SUPPLEMENTAL_AUTHORITY_ENTRIES = (
            "Renewal timing is inert policy until target staff enable automation."),
     *_same("makerspaces.MembershipTerm", "renewal_attempts renewal_retry_at", D.RESET,
            "Checkout retries are source-local delivery coordination."),
-    *_same("makerspaces.MembershipTerm", "grace_until", D.PRESERVE,
+    *_same("makerspaces.MembershipTerm", "grace_until renewal_covered_at", D.PRESERVE,
            "The source member's promised grace boundary travels as historical coverage."),
     *_same("makerspaces.MakerspaceMembership", "renewal_cancelled_at", D.PRESERVE,
            "A member's decision not to renew must survive migration."),
     *_same("payments.PaymentDocument", "id makerspace payment settlement refund reverses issued_by", D.PRESERVE,
            "Core financial document relations follow the imported ledger identities."),
-    *_same("payments.PaymentDocument", "sequence number kind issuer payer_label payer_type lines amount currency settlement_method settlement_reference money_at issued_at tax_breakdown", D.PRESERVE,
+    *_same("payments.PaymentDocument", "sequence number kind issuer payer_label payer_type lines amount currency settlement_method settlement_reference money_at issued_at tax_breakdown branding_logo_key branding_logo_sha256", D.PRESERVE,
            "Issued snapshots are immutable financial history."),
-    *_same("payments.MakerspaceBillingSettings", "number_prefix legal_name address tax_id footer account_codes next_document_number", D.PRESERVE,
+    *_same("payments.MakerspaceBillingSettings", "number_prefix legal_name address tax_id footer account_codes next_document_number bill_prefix next_bill_number payment_instructions", D.PRESERVE,
            "The numbering counter and billing presentation travel with issued documents; mail permissions do not."),
     *_same("operations.SavedView", "shared state", D.RESET,
            "Target publication and filter identifiers must be authorized anew."),
@@ -194,6 +212,29 @@ SUPPLEMENTAL_AUTHORITY_ENTRIES = (
         "Provider refund handles cannot authorize target operations.",
     ),
     *_same(
+        "payments.RefundCase",
+        "kind area reason_code due_amount policy_snapshot status refund approved_amount decision_note decided_at",
+        D.PRESERVE,
+        "A refund entitlement travels with the ledger it explains; approving one still needs live "
+        "target authority, and an online refund cannot reach a provider whose handles were reset.",
+    ),
+    *_same(
+        "makerspaces.ModuleSettingsGrant", "module granted_at revoked_at", D.PRESERVE,
+        "A settings grant confers nothing alone: it needs the module's manager action in the "
+        "target, which an import never carries (imported staff are reduced to Member).",
+    ),
+    *_same(
+        "makerspaces.ModuleSettingLock", "setting_key note created_at released_at", D.PRESERVE,
+        "A Space Manager lock only narrows delegated edits; it is inert configuration.",
+    ),
+    *_same(
+        "payments.RefundPolicy",
+        "area plan full_before_minutes partial_before_minutes partial_percent full_within_days partial_mode "
+        "cancellation_fee",
+        D.PRESERVE,
+        "Cancellation policy is inert configuration: it only computes an entitlement staff decide.",
+    ),
+    *_same(
         "makerspaces.MemberCard",
         "printed_name photo_object_key photo_content_type photo_size_bytes photo_consent_at "
         "photo_consent_version",
@@ -248,3 +289,6 @@ SUPPLEMENTAL_AUTHORITY_ENTRIES = (
     *DEVICE_AUTHORITY_ENTRIES,
     *LABEL_AUTHORITY_ENTRIES,
 )
+# Release-2 lanes compose their authority entries in `tenant_dump_authority_r2.py`.
+from .tenant_dump_authority_r2 import lane_entries as _r2_lane_entries  # noqa: E402
+SUPPLEMENTAL_AUTHORITY_ENTRIES += _r2_lane_entries(authority, D)

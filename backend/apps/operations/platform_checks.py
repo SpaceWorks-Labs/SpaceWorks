@@ -48,7 +48,7 @@ def scheduler_check(data, now):
             for row in data]
 
 
-def _tenant_result(data, key, status, message, tab="settings"):
+def _tenant_result(data, key, status, message, tab="settings/health"):
     space = data["space"]
     return [result(key, status, f"{space.name}: {message}",
                    f"/m/{space.slug}/admin/{tab}", space.pk)]
@@ -69,7 +69,7 @@ def email_check(data, now):
     else:
         status, message = "ok", "email delivery is healthy."
     return _tenant_result(data, "email", status, message,
-                          "email-log" if email.get("failed") else "settings")
+                          "email-log" if email.get("failed") else "settings/integrations")
 
 
 def telegram_check(data, now):
@@ -123,7 +123,7 @@ def domain_check(data, now):
         "ok": "custom domain is verified or not configured.",
         "warn": "custom domain verification is pending.",
         "error": "custom domain verification failed.",
-    }[status])
+    }[status], "settings/branding")
 
 
 @dataclass(frozen=True)

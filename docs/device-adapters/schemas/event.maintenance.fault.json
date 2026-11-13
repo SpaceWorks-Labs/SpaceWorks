@@ -1,0 +1,29 @@
+{
+  "$id": "https://spaceworks.invalid/schemas/device-adapter/v1/event.maintenance.fault.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "code": {
+      "format": "code",
+      "maxLength": 48,
+      "type": "string"
+    },
+    "detail": {
+      "maxLength": 300,
+      "type": "string"
+    },
+    "severity": {
+      "enum": [
+        "info",
+        "warning",
+        "fault"
+      ],
+      "type": "string"
+    }
+  },
+  "required": [
+    "code",
+    "severity"
+  ],
+  "type": "object"
+}

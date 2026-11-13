@@ -12,6 +12,9 @@ class TenantMigrationConfig(AppConfig):
 
         register_separable_app("tenant_migration")
         from apps.tenant_migration import signals  # noqa: F401
+        from .selfhost_move_notifications import register as register_selfhost_move_source
+
+        register_selfhost_move_source()
 
         # Startup cleanup is deliberately conservative: only resources carrying Lane
         # D's ownership marker and older than the configured age are eligible.

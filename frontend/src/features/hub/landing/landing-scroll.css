@@ -1,0 +1,71 @@
+/* The landing page's scroll story: the pinned hero sequence (useScrollSequence), the handover steps
+   beside a pinned record (HandoverScrolly) and reveal-on-scroll (useRevealOnScroll). Tokens only.
+   Motion is transform and opacity; will-change is set only while the sequence moves ([data-moving]).
+   The default rules are the static page: it is what reduced motion, phones, short screens and
+   browsers without JavaScript get, and it reads top to bottom in DOM order. */
+
+.sw-hub { --sw-hub-bar: 89px; } /* the hub header: 72px bar + 16px padding + hairline */
+.sw-hub section[tabindex="-1"]:focus { outline: none; }
+.sw-hub section[id] { scroll-margin-top: var(--sw-hub-bar); }
+
+/* ── Hero sequence, static ─────────────────────────────────────────────────────────────── */
+.sw-hub-seq { position: relative; }
+.sw-hub-seq-backdrop { display: none; }
+.sw-hub-seq-copy { padding-block: 56px 48px; }
+@media (min-width: 768px) { .sw-hub-seq-copy { padding-block: 104px 80px; } }
+.sw-hub-seq-stage { padding-top: 40px; background: linear-gradient(rgb(var(--color-bg)) 0 40%, rgb(var(--color-surface)) 40% 100%); }
+@media (min-width: 768px) { .sw-hub-seq-stage { padding-top: 0; } }
+.sw-hub-seq-reveal { background: rgb(var(--color-surface)); border-bottom: 1px solid rgb(var(--color-line)); }
+
+/* ── Hero sequence, pinned (set by the hook only when it fits) ─────────────────────────── */
+.sw-hub-seq[data-animated] { height: calc(300svh - var(--sw-hub-header-h, 89px)); }
+.sw-hub-seq[data-animated] .sw-hub-seq-scene { position: sticky; top: var(--sw-hub-header-h, 89px); overflow: clip;
+  height: calc(100svh - var(--sw-hub-header-h, 89px)); }
+.sw-hub-seq[data-animated] .sw-hub-seq-backdrop { display: block; position: absolute; inset: 0; opacity: 0; pointer-events: none;
+  background: rgb(var(--color-surface)); }
+.sw-hub-seq[data-animated] .sw-hub-seq-copy { position: absolute; inset-inline: 0; top: var(--sw-seq-copy-top, 0px); padding: 0; }
+.sw-hub-seq[data-animated] .sw-hub-seq-stage { position: absolute; top: 0; left: 0; width: 100%; padding: 0; background: none;
+  transform: translate3d(0, var(--sw-seq-start, 100%), 0); }
+.sw-hub-seq[data-animated] .sw-hub-seq-frame { transform-origin: 50% 50%; }
+.sw-hub-seq[data-animated] .sw-hub-seq-reveal { position: absolute; inset: 0; z-index: 1; display: grid; align-content: center;
+  border: 0; background: none; opacity: 0; transform-origin: 50% 40%; }
+.sw-hub-seq[data-animated] .sw-hub-intro { padding-block: 32px; }
+.sw-hub-seq[data-moving] :is(.sw-hub-seq-copy, .sw-hub-seq-stage, .sw-hub-seq-frame, .sw-hub-seq-reveal) { will-change: transform, opacity; }
+
+/* ── Handover steps beside the pinned record ───────────────────────────────────────────── */
+.sw-hub-scrolly { display: grid; gap: 48px; margin-top: 48px; }
+.sw-hub-scrolly-steps { display: grid; gap: 32px; }
+.sw-hub-scrolly-step { display: grid; align-content: start; gap: 8px; padding-left: 20px; border-left: 2px solid rgb(var(--color-line)); }
+.sw-hub-scrolly-index { font-family: "Gilroy", "Outfit", sans-serif; font-weight: 300; font-size: 1.125rem; line-height: 1;
+  font-variant-numeric: tabular-nums; color: rgb(var(--color-muted)); }
+.sw-hub-scrolly-state { font-size: 0.8125rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: rgb(var(--color-accent-ink)); }
+.sw-hub-scrolly-title { font-size: 1.5rem; line-height: 1.2; letter-spacing: -0.015em; color: rgb(var(--color-ink)); text-wrap: balance; }
+.sw-hub-scrolly-body { max-width: 30rem; line-height: 1.7; color: rgb(var(--color-muted)); text-wrap: pretty; }
+@media (min-width: 1024px) and (min-height: 640px) {
+  .sw-hub-scrolly { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 96px; margin-top: 0; }
+  .sw-hub-scrolly-steps { gap: 0; padding-block: 8svh 22svh; }
+  .sw-hub-scrolly-step { min-height: 62svh; align-content: center; padding-left: 28px; transition: border-color 240ms ease-out; }
+  .sw-hub-scrolly-step :is(.sw-hub-scrolly-title, .sw-hub-scrolly-index) { transition: color 240ms ease-out; }
+  .sw-hub-scrolly-step:not([aria-current]) .sw-hub-scrolly-title { color: rgb(var(--color-muted)); }
+  .sw-hub-scrolly-step[aria-current] { border-left-color: rgb(var(--color-accent-ink)); }
+  .sw-hub-scrolly-step[aria-current] .sw-hub-scrolly-index { color: rgb(var(--color-accent-ink)); }
+  .sw-hub-scrolly-title { font-size: 2rem; }
+  .sw-hub-scrolly-pin { position: sticky; top: var(--sw-hub-bar); display: grid; align-content: center;
+    height: calc(100svh - var(--sw-hub-bar)); }
+}
+
+/* ── Reveal on scroll: once, only after the hook marks the page ready ──────────────────── */
+@media (prefers-reduced-motion: no-preference) {
+  [data-reveal-ready] [data-reveal] { transition: opacity 640ms cubic-bezier(0.2, 0.7, 0.2, 1), transform 640ms cubic-bezier(0.2, 0.7, 0.2, 1); }
+  [data-reveal-ready] [data-reveal]:not([data-revealed]) { opacity: 0; transform: translate3d(0, 24px, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sw-hub-scrolly-step, .sw-hub-scrolly-step * { transition: none !important; }
+}
+
+@media print {
+  [data-reveal] { opacity: 1 !important; transform: none !important; }
+  .sw-hub-seq[data-animated] { height: auto; }
+  .sw-hub-seq[data-animated] :is(.sw-hub-seq-scene, .sw-hub-seq-copy, .sw-hub-seq-stage, .sw-hub-seq-reveal) { position: static; height: auto;
+    opacity: 1 !important; transform: none !important; }
+}

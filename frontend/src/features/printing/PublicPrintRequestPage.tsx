@@ -1,21 +1,24 @@
+import { t } from "@lingui/core/macro";
+import { useParams } from "react-router-dom";
+import { PublicDetailLayout, PublicLayout } from "../../components/layouts";
+import { Callout, EmptyState } from "../../components/ui";
+import { publicPageChrome } from "../inventory/PublicPageChrome";
 import { tenantPublicRequest } from "../../lib/api";
 import type { TypeIntake } from "../inventory/MachineIntakeForm";
-import { SiteFooter } from "../../components/SiteFooter";
 import { useTenantBranding } from "../../lib/useTenantBranding";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
-import { Link, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { MakerspaceBrand } from "../../components/MakerspaceBrand";
-import { SpaceWorksBadge } from "../../components/SpaceWorksLogo";
 import { useTenant, useTenantPath } from "../../lib/tenant";
 import { formatSlug } from "../inventory/PublicInventoryParts";
 import { useTenantBootstrap } from "../inventory/usePublicInventory";
 import { PrintDetailsForm, initialForm, optional, type FormState } from "./PublicPrintRequestForm";
 import { fetchPrintQueues, fetchPublicConsumablePools, fetchPrintStatus, presignPrintUpload, submitPrintRequest, uploadToStorage } from "./publicApi";
-import { PrintAccessErrorPanel, PrintAccessLoadingPanel, PrintStatusPanel, PrintUnavailablePanel } from "./PublicPrintRequestPanels";
+import { PrintStatusPanel } from "./PublicPrintRequestPanels";
 import { uploadPrintFilesBounded } from "./PublicPrintUploads";
-import { SkipLink } from "../../components/SkipLink";
+import { machineIntakeAvailable } from "../inventory/machineIntakeAvailability";
+import { statusRefetchInterval } from "../machine-service/types";
+import { PricePreview } from "../payments/PricePreview";
 
 export function PublicPrintRequestPage() {
   const queryClient = useQueryClient();
@@ -31,31 +34,54 @@ export function PublicPrintRequestPage() {
   const [activeStatusToken, setActiveStatusToken] = useState("");
   const [website, setWebsite] = useState("");
   const statusLinkHandledRef = useRef(false);
+  const trackerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => { if (submitted) trackerRef.current?.scrollIntoView?.({ behavior: "smooth", block: "center" }); }, [submitted]);
   const bootstrapQuery = useTenantBootstrap(makerspaceSlug, tenant.mode === "central");
   const bootstrap = tenant.mode === "single" ? tenant.bootstrap : bootstrapQuery.data;
+  // The print queue is a machine type inside Machine service (decision 340b folded the `printing` module in).
+  const printingAvailable = bootstrap?.makerspace.slug === makerspaceSlug && Boolean(bootstrap?.modules.includes("machine_service"));
+  const intakeAvailable = machineIntakeAvailable(bootstrap, makerspaceSlug) && printingAvailable;
+  const currentIntake = useRef({ available: intakeAvailable, slug: makerspaceSlug }); currentIntake.current = { available: intakeAvailable, slug: makerspaceSlug };
   const brandStyle = useTenantBranding(bootstrap);
   const modules = useMemo(() => tenant.mode === "single" ? tenant.modules : new Set(bootstrap?.modules ?? []), [bootstrap?.modules, tenant]);
-  const moduleEnabled = modules.has("machine_service");
+  const moduleEnabled = modules.has("machine_service") && intakeAvailable;
   const queuesQuery = useQuery({ queryKey: ["public-printer-queues", makerspaceSlug], queryFn: () => fetchPrintQueues(makerspaceSlug), enabled: Boolean(makerspaceSlug) && moduleEnabled });
   const poolsQuery = useQuery({ queryKey: ["public-printer-consumable-pools", makerspaceSlug], queryFn: () => fetchPublicConsumablePools(makerspaceSlug), enabled: Boolean(makerspaceSlug) && moduleEnabled });
-  const catalogueQuery = useQuery({ queryKey: ["print-materials", makerspaceSlug, queuesQuery.data?.[0]?.machine_type_id], queryFn: () => tenantPublicRequest<TypeIntake>(makerspaceSlug, `/public/${encodeURIComponent(makerspaceSlug)}/machine-types/${queuesQuery.data?.[0]?.machine_type_id}/intake`), enabled: Boolean(queuesQuery.data?.[0]?.machine_type_id) && Boolean(bootstrap?.features.includes("machines.material_catalogue")) });
+  const catalogueQuery = useQuery({ queryKey: ["print-materials", makerspaceSlug, queuesQuery.data?.[0]?.machine_type_id], queryFn: () => tenantPublicRequest<TypeIntake>(makerspaceSlug, `/public/${encodeURIComponent(makerspaceSlug)}/machine-types/${queuesQuery.data?.[0]?.machine_type_id}/intake`), enabled: intakeAvailable && Boolean(queuesQuery.data?.[0]?.machine_type_id) && Boolean(bootstrap?.features.includes("machines.material_catalogue")) });
   const printerAvailable = Boolean(queuesQuery.data?.length);
   const enabled = moduleEnabled && printerAvailable;
-  const statusQuery = useQuery({ queryKey: ["public-printer-status", activeStatusToken], queryFn: () => fetchPrintStatus(activeStatusToken), enabled: Boolean(activeStatusToken), refetchInterval: (query) => {
-    const status = query.state.data?.status;
-    return status === "in_progress" ? 30_000 : status === "pending" || status === "accepted" ? 90_000 : false;
-  }});
+  const statusQuery = useQuery({ queryKey: ["public-printer-status", activeStatusToken], queryFn: () => fetchPrintStatus(activeStatusToken), enabled: Boolean(activeStatusToken) && printingAvailable, refetchInterval: (query) => statusRefetchInterval(query.state.data?.status) });
   const statusStorageKey = makerspaceSlug ? `tinkerspace.printStatus.${makerspaceSlug}` : "";
   useEffect(() => { if (statusLinkHandledRef.current) return; statusLinkHandledRef.current = true; const token = new URLSearchParams(window.location.search).get("token")?.trim(); const stored = statusStorageKey ? window.localStorage.getItem(statusStorageKey)?.trim() : ""; if (token || stored) setActiveStatusToken(token || stored || ""); }, [statusStorageKey]);
   useEffect(() => { if (statusStorageKey && activeStatusToken) window.localStorage.setItem(statusStorageKey, activeStatusToken); }, [activeStatusToken, statusStorageKey]);
   function updateField<K extends keyof FormState>(key: K, value: FormState[K]) { setForm((current) => ({ ...current, [key]: value })); }
   const submitMutation = useMutation({ mutationFn: async () => {
+    const allowed = () => currentIntake.current.available && currentIntake.current.slug === makerspaceSlug;
+    if (!allowed()) throw new Error(t`Online machine requests aren't available here. Ask space staff for help.`);
     const files = [...modelFiles.map((file) => ({ file, kind: "stl" as const })), ...screenshotFiles.map((file) => ({ file, kind: "screenshot" as const }))];
-    const fileIds = await uploadPrintFilesBounded(files, async (item) => { const presigned = await presignPrintUpload(makerspaceSlug, { kind: item.kind, filename: item.file.name, content_type: item.kind === "stl" ? item.file.type || "application/octet-stream" : item.file.type }); await uploadToStorage(presigned.upload, item.file); return presigned.file_id; }, setUploadProgress);
+    const fileIds = await uploadPrintFilesBounded(files, async (item) => { if (!allowed()) throw new Error(t`Online machine requests aren't available here. Ask space staff for help.`); const presigned = await presignPrintUpload(makerspaceSlug, { kind: item.kind, filename: item.file.name, content_type: item.kind === "stl" ? item.file.type || "application/octet-stream" : item.file.type }); if (!allowed()) throw new Error(t`Online machine requests aren't available here. Ask space staff for help.`); await uploadToStorage(presigned.upload, item.file); return presigned.file_id; }, setUploadProgress);
     const chosenPool = poolsQuery.data?.find((pool) => String(pool.id) === form.consumablePoolId);
+    if (!allowed()) throw new Error(t`Online machine requests aren't available here. Ask space staff for help.`);
     return submitPrintRequest(makerspaceSlug, { website, queue_id: queuesQuery.data?.[0]?.id ?? null, title: form.title.trim(), project_brief: optional(form.projectBrief), preferred_settings: optional(form.preferredSettings), material: chosenPool?.material || optional(form.material), color: chosenPool?.color || optional(form.color), consumable_pool_id: form.consumablePoolId ? Number(form.consumablePoolId) : null, estimated_filament_grams: form.estimatedFilamentGrams.trim() || null, quantity: form.quantity, source_link: optional(form.sourceLink), file_ids: fileIds });
   }, onSuccess: (response) => { queryClient.invalidateQueries({ queryKey: ["public-printer-consumable-pools", makerspaceSlug] }); setUploadProgress(""); setSubmitted(true); setActiveStatusToken(response.public_token); }, onError: () => setUploadProgress("") });
   const displayName = bootstrap?.branding.display_name || bootstrap?.makerspace.name || formatSlug(makerspaceSlug) || "Makerspace";
-  return <main style={brandStyle} className="desk-shell">
-    <SkipLink /><header className="border-b border-line bg-panel"><div className="mx-auto flex max-w-screen-xl flex-col gap-4 px-5 py-6 sm:px-8"><p className="eyebrow text-secondary-ink">Public 3D Print Request</p><div className="flex flex-wrap items-end justify-between gap-3"><div><h1 className="title-page"><MakerspaceBrand name={displayName} logoUrl={bootstrap?.makerspace.logo_url} size="lg" /></h1><p className="mt-2 text-sm text-muted">Submit print files and keep your private token link to check progress.</p></div><div className="flex gap-2"><SpaceWorksBadge /><Link className="desk-button" to={tenantPath()}>Back to inventory</Link></div></div></div></header><div id="main-content" tabIndex={-1}>{bootstrapQuery.isLoading || (moduleEnabled && queuesQuery.isLoading) ? <PrintAccessLoadingPanel /> : null}{bootstrapQuery.isError || queuesQuery.isError ? <PrintAccessErrorPanel /> : null}{!bootstrapQuery.isLoading && !queuesQuery.isLoading && !bootstrapQuery.isError && !queuesQuery.isError && !enabled ? <PrintUnavailablePanel catalogPath={tenantPath()} tokenStatus={statusQuery.data} tokenStatusPending={Boolean(activeStatusToken) && statusQuery.isPending} tokenStatusError={statusQuery.error} /> : null}{enabled ? <section className="mx-auto grid max-w-screen-xl grid-cols-1 gap-5 px-5 py-6 sm:px-8 lg:grid-cols-[minmax(0,1fr)_360px]"><PrintDetailsForm catalogue={catalogueQuery.data} form={form} updateField={updateField} poolsQuery={poolsQuery} modelFiles={modelFiles} setModelFiles={setModelFiles} screenshotFiles={screenshotFiles} setScreenshotFiles={setScreenshotFiles} submitPending={submitMutation.isPending} submitError={submitMutation.error} uploadProgress={uploadProgress} website={website} onWebsiteChange={setWebsite} onSubmit={(event: FormEvent<HTMLFormElement>) => { event.preventDefault(); if (form.title.trim()) submitMutation.mutate(); }} /><aside><PrintStatusPanel submitted={submitted} tokenStatus={statusQuery.data} tokenStatusPending={Boolean(activeStatusToken) && statusQuery.isPending} tokenStatusError={statusQuery.error} /></aside></section> : null}</div><SiteFooter branding={bootstrap?.branding} /></main>;
+  const trackingUrl = new URL(window.location.href);
+  if (activeStatusToken) trackingUrl.searchParams.set("token", activeStatusToken);
+  const loading = bootstrapQuery.isLoading || (moduleEnabled && queuesQuery.isLoading);
+  const failed = bootstrapQuery.isError || queuesQuery.isError;
+  const state = loading ? { status: "loading" as const } : failed ? { status: "error" as const, error: t`Couldn't reach the print service. Try again.`, onRetry: () => { void bootstrapQuery.refetch(); void queuesQuery.refetch(); } } : { status: "ready" as const };
+  return <div style={brandStyle}><PublicLayout {...publicPageChrome(makerspaceSlug, displayName, tenantPath, bootstrap)} state={state}>
+    <PublicDetailLayout state={state} title={t`Send a print job to ${displayName}`}
+      chips={[{ label: t`3D printing`, tone: "accent" }]} sections={[{ id: "your-print", label: t`Your print`, content:
+        submitted ? <Callout size="panel" tone="success" lead="Request sent." body={t`We'll update this page as it moves.`} action={{ label: t`Send another request`, onClick: () => setSubmitted(false) }} />
+          : enabled ? <><PrintDetailsForm catalogue={catalogueQuery.data} form={form} updateField={updateField} poolsQuery={poolsQuery}
+            modelFiles={modelFiles} setModelFiles={setModelFiles} screenshotFiles={screenshotFiles} setScreenshotFiles={setScreenshotFiles}
+            submitPending={submitMutation.isPending} submitError={submitMutation.error} uploadProgress={uploadProgress} website={website} onWebsiteChange={setWebsite}
+            onSubmit={(event: FormEvent<HTMLFormElement>) => { event.preventDefault(); if (form.title.trim()) submitMutation.mutate(); }} />
+            <PricePreview className="mt-4" makerspaceSlug={makerspaceSlug} request={{ domain: "machines", machine_type_id: queuesQuery.data?.[0]?.machine_type_id, pool_id: form.consumablePoolId ? Number(form.consumablePoolId) : undefined, quantity: Number(form.estimatedFilamentGrams) > 0 ? form.estimatedFilamentGrams.trim() : undefined }} /></>
+          : <EmptyState message={intakeAvailable ? t`3D printing isn't open for requests right now.` : t`Online machine requests aren't available here. Ask space staff for help.`} action={{ label: t`Back to home`, href: tenantPath() }} /> } ]}
+      actionCard={{ title: t`Track your job`, state: "open", summary: !activeStatusToken ? t`After you send it, you'll get a private link to follow progress here.` : undefined,
+        form: <div ref={trackerRef} id="print-tracker">{printingAvailable ? <PrintStatusPanel submitted={submitted} tokenStatus={statusQuery.data} tokenStatusPending={Boolean(activeStatusToken) && statusQuery.isPending} tokenStatusError={statusQuery.error} trackingHref={activeStatusToken ? trackingUrl.href : undefined} onRetry={() => { void statusQuery.refetch(); }} publicToken={activeStatusToken || undefined} makerspaceSlug={makerspaceSlug} /> : <p>{t`Print tracking isn’t available here right now. Ask space staff for help.`}</p>}</div>,
+        mobileBar: { summary: submitted ? t`Request sent` : t`Follow your print`, label: t`Track your job` } }} />
+  </PublicLayout></div>;
 }

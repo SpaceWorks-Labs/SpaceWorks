@@ -86,7 +86,7 @@ def module_dependencies():
 def with_dependencies(keys):
     """Expand keys to include everything they transitively require.
 
-    Installing `printing` must pull in `machine_service`, or the install immediately
+    Installing `event_reimbursements` must pull in `events`, or the install immediately
     fails the very dependency rule the registry declares.
     """
     resolved, queue = set(), list(keys)
@@ -123,9 +123,10 @@ def module_available(key):
     `is_frontend_exposed` keeps them: filtering them out would silently drop a
     capability the registry has not learned about yet.
     """
+    from apps.makerspaces.module_aliases import canonical_module_key
     from apps.separability.registry import runtime_active
 
-    definition = BY_KEY.get(key)
+    definition = BY_KEY.get(canonical_module_key(key))
     return True if definition is None else runtime_active(definition.app_label)
 
 

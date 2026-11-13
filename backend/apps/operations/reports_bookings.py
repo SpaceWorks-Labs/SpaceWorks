@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from datetime import timedelta
 from decimal import Decimal, ROUND_HALF_UP
 
@@ -6,7 +7,7 @@ from django.db.models.functions import Greatest, Least
 from django.utils import timezone
 
 from apps.bookings.models import BookableSpace, Booking
-from apps.operations.report_registry import ReportResult
+from apps.operations.report_types import ReportResult
 from apps.operations.report_scope import scoped_ids
 
 
@@ -23,7 +24,14 @@ NON_CANCELLED = (
 CENT = Decimal("0.01")
 
 
-def build_booking_utilization(makerspace_id, *, limit=None, date_range=None):
+def build_booking_utilization(makerspace_id, *, limit=None, date_range=None, subject_kind=None, subject_id=None, grain=None):
+    if grain is not None and subject_kind is None and subject_id is None:
+        from .reports_booking_trends import build_utilization_trend
+        return build_utilization_trend(makerspace_id, limit=limit, date_range=date_range, grain=grain)
+    if subject_kind is not None or subject_id is not None:
+        from rest_framework.exceptions import ValidationError
+        if makerspace_id is None or subject_kind != "bookable_space" or subject_id is None:
+            raise ValidationError(gettext("Resource utilization requires a tenant-local bookable_space subject."))
     aggregate = makerspace_id is None
     now = timezone.now()
     overlap = Q()
@@ -39,7 +47,10 @@ def build_booking_utilization(makerspace_id, *, limit=None, date_range=None):
     duration = ExpressionWrapper(clipped_end - clipped_start, output_field=DurationField())
     qs = BookableSpace.objects.filter(
         makerspace_id__in=scoped_ids(makerspace_id, "bookings")
-    ).values("id", "makerspace_id", "name", "kind", "is_active").annotate(
+    )
+    if subject_id is not None:
+        qs = qs.filter(pk=subject_id)
+    qs = qs.values("id", "makerspace_id", "name", "kind", "is_active").annotate(
         booked_count=Count("bookings", filter=overlap & Q(bookings__status=Booking.Status.CONFIRMED)),
         completed_count=Count("bookings", filter=overlap & Q(bookings__status=Booking.Status.COMPLETED)),
         no_show_count=Count("bookings", filter=overlap & Q(bookings__status=Booking.Status.NO_SHOW)),

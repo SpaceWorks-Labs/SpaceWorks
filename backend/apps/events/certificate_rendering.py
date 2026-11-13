@@ -1,56 +1,76 @@
+"""Deterministic rendering exclusively from the immutable issuance snapshot."""
+
 from io import BytesIO
-from pathlib import Path
+
+from apps.events.certificate_rendering_legacy import render_legacy_certificate_pdf
+from apps.operations.printable_pdf import text_box
 
 
-def _register_fonts():
-    import reportlab
-    from reportlab.pdfbase import pdfmetrics
-    from reportlab.pdfbase.ttfonts import TTFont
-
-    fonts = Path(reportlab.__file__).parent / "fonts"
-    pdfmetrics.registerFont(TTFont("CertificateVera", fonts / "Vera.ttf"))
-    pdfmetrics.registerFont(TTFont("CertificateVeraBold", fonts / "VeraBd.ttf"))
-
-def render_certificate_pdf(certificate):
-    """Render snapshots with ReportLab's bundled, permissively licensed Vera font."""
-    from reportlab.lib.pagesizes import A4, landscape
-    from reportlab.lib.units import mm
+def validate_certificate_layout(certificate):
+    """Fit issuance text before freezing it, without storage I/O under DB locks."""
     from reportlab.pdfgen.canvas import Canvas
 
-    _register_fonts()
+    if certificate.layout_snapshot:
+        if certificate.layout_snapshot.get("version") in (2, 3):
+            from .certificates.rendering import render_layers
+            render_layers(Canvas(BytesIO()), certificate, preflight=True)
+            return
+        _draw_text(Canvas(BytesIO()), certificate)
+
+
+def render_certificate_pdf(certificate):
+    # Migration leaves historical snapshots empty. Their immutable PDF keys may
+    # already be promoted, so retries must reproduce the original Vera bytes.
+    if not certificate.layout_snapshot:
+        return render_legacy_certificate_pdf(certificate)
+
+    from reportlab.lib.units import mm
+    from reportlab.lib.utils import ImageReader
+    from reportlab.pdfgen.canvas import Canvas
+    from apps.events.certificate_artwork_storage import read_artwork
+
+    snapshot = certificate.layout_snapshot
+    width, height = snapshot["page_width_mm"], snapshot["page_height_mm"]
     output = BytesIO()
-    width, height = landscape(A4)
-    # ``invariant`` removes volatile timestamps/IDs so a retry can prove that an
-    # already-promoted final object contains the exact intended immutable PDF.
-    canvas = Canvas(
-        output,
-        pagesize=(width, height),
-        pageCompression=1,
-        invariant=1,
-    )
-    canvas.setTitle(f"Attendance certificate {certificate.serial}")
-    canvas.setLineWidth(1.5)
-    canvas.rect(12 * mm, 12 * mm, width - 24 * mm, height - 24 * mm)
-    canvas.setFont("CertificateVeraBold", 28)
-    canvas.drawCentredString(width / 2, height - 48 * mm, "Certificate of Attendance")
-    canvas.setFont("CertificateVera", 14)
-    canvas.drawCentredString(width / 2, height - 70 * mm, "This certifies that")
-    canvas.setFont("CertificateVeraBold", 24)
-    canvas.drawCentredString(width / 2, height - 91 * mm, certificate.recipient_name)
-    canvas.setFont("CertificateVera", 14)
-    canvas.drawCentredString(width / 2, height - 111 * mm, "attended")
-    canvas.setFont("CertificateVeraBold", 20)
-    canvas.drawCentredString(width / 2, height - 130 * mm, certificate.event_title)
-    date_label = certificate.event_starts_at.strftime("%d %B %Y")
-    canvas.setFont("CertificateVera", 13)
-    canvas.drawCentredString(width / 2, height - 149 * mm, date_label)
-    canvas.drawString(22 * mm, 24 * mm, certificate.issuer_name)
-    canvas.setFont("CertificateVera", 8)
-    canvas.drawRightString(
-        width - 22 * mm,
-        24 * mm,
-        f"Serial {certificate.serial} · Revision {certificate.revision}",
-    )
+    canvas = Canvas(output, pagesize=(width * mm, height * mm), pageCompression=1, invariant=1)
+    from .certificates.merge import document_title
+    canvas.setTitle(document_title(certificate))
+    if snapshot.get("version") in (2, 3):
+        from .certificates.rendering import render_layers
+        if snapshot["version"] == 3:  # Studio certificate: document properties for the print/archive copy
+            from .certificates.shared_render import describe
+            describe(canvas, certificate)
+        render_layers(canvas, certificate)
+        canvas.showPage()
+        canvas.save()
+        return output.getvalue()
+    key = snapshot.get("artwork_object_key")
+    if key:
+        payload = read_artwork(key, snapshot.get("artwork_version_id", ""), snapshot["artwork_sha256"])
+        canvas.drawImage(ImageReader(BytesIO(payload)), 0, 0, width=width * mm, height=height * mm)
+    else:
+        canvas.rect(12 * mm, 12 * mm, (width - 24) * mm, (height - 24) * mm)
+    _draw_text(canvas, certificate)
     canvas.showPage()
     canvas.save()
     return output.getvalue()
+
+
+def _draw_text(canvas, certificate):
+    # Preflight and PDF rendering must fit exactly the same frozen text/boxes.
+    snapshot = certificate.layout_snapshot
+    width, height = snapshot["page_width_mm"], snapshot["page_height_mm"]
+    if not snapshot.get("artwork_object_key"):
+        labels = (("Certificate of Attendance", 34, 28, True),
+                  ("This certifies that", 57, 14, False),
+                  ("attended", 101, 14, False), (certificate.event_title, 117, 20, True),
+                  (certificate.event_starts_at.strftime("%d %B %Y"), 138, 13, False),
+                  (certificate.issuer_name, 167, 12, False),
+                  (f"Serial {certificate.serial} / Revision {certificate.revision}", 181, 8, False))
+        for value, y, size, bold in labels:
+            element = {"field": "label", "x_mm": width * 0.075, "y_mm": y * height / 210,
+                       "width_mm": width * 0.85, "height_mm": height * 0.07,
+                       "font": "sans", "font_size_pt": size, "bold": bold,
+                       "align": "center", "colour": "#0F172A"}
+            text_box(canvas, value, element, area_height_mm=height)
+    text_box(canvas, certificate.recipient_name, snapshot["name_box"], area_height_mm=height)

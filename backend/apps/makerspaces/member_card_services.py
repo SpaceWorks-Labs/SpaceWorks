@@ -4,6 +4,9 @@ Every mutation is audited and every lookup writes an immutable `QrScanEvent` wit
 `member_lookup` context. Authority is by ACTION (`MANAGE_MEMBER_CARDS` / `SCAN_MEMBER_CARDS`),
 never by role name, and a card never resolves through the generic inventory scanner.
 """
+
+from django.utils.translation import gettext
+from apps.accounts.account_kind_guards import require_member_account
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.db.models import Max
@@ -35,6 +38,27 @@ def active_qr(card):
     ).first()
 
 
+def _number_text(membership):
+    """The printed number from the space's numbering scheme (switch `membership.card_numbering`), or ""."""
+    from apps.card_designs import numbering
+    from apps.card_designs.switches import CARD_NUMBERING
+    from apps.makerspaces.membership_titles import primary_title
+    from apps.makerspaces.platform import feature_enabled
+    if not feature_enabled(membership.makerspace, CARD_NUMBERING):
+        return ""
+    title = primary_title(membership)
+    scheme = numbering.scheme_for(membership.makerspace_id, title.pk if title else None)
+    return numbering.next_number(membership, scheme) if scheme else ""
+
+
+def _show_name_default(makerspace_id):
+    """Decision 290: the card starts with the holder's name on the public check page; the holder may hide it."""
+    from apps.makerspaces.models import MemberCardSettings
+    value = MemberCardSettings.objects.filter(makerspace_id=makerspace_id).values_list(
+        "verify_show_name", flat=True).first()
+    return bool(value)
+
+
 def _next_card_number(makerspace_id):
     current = MemberCard.objects.filter(makerspace_id=makerspace_id).aggregate(
         top=Max("card_number")
@@ -44,19 +68,28 @@ def _next_card_number(makerspace_id):
 
 @transaction.atomic
 def issue_card(actor, membership, *, printed_name=""):
+    require_member_account(membership.user)
     _require(actor, rbac.Action.MANAGE_MEMBER_CARDS, membership.makerspace_id)
     require_module_locked(membership.makerspace_id, "membership")
-    membership = MakerspaceMembership.objects.select_for_update().get(pk=membership.pk)
+    membership = MakerspaceMembership.objects.select_for_update().select_related("makerspace").get(pk=membership.pk)
+    from apps.managed_hosting.extra_quotas import check_extra_quota
+    check_extra_quota(membership.makerspace, "member_cards_issued_monthly")  # decision 284: typed 409 on manual issue
     if membership.status != "active":
-        raise PermissionDenied("Only an active membership can hold a card.")
+        raise PermissionDenied(gettext("Only an active membership can hold a card."))
     # Only a LIVE card blocks a new one: after a revocation the member gets a fresh card
     # (new number, new QR), and the revoked one stays as the redacted record.
     if MemberCard.objects.filter(membership=membership, revoked_at__isnull=True).exists():
-        raise PermissionDenied("This membership already holds a card; reissue it instead.")
+        raise PermissionDenied(gettext("This membership already holds a card; reissue it instead."))
+    return _issue_locked(actor, membership, printed_name)
+
+
+def _issue_locked(actor, membership, printed_name, *, automatic=False):
     card = MemberCard.objects.create(
         makerspace_id=membership.makerspace_id,
         membership=membership,
         card_number=_next_card_number(membership.makerspace_id),
+        number_text=_number_text(membership),
+        verify_show_name=_show_name_default(membership.makerspace_id),
         printed_name=printed_name or "",
     )
     QrCode.objects.create(
@@ -65,20 +98,63 @@ def issue_card(actor, membership, *, printed_name=""):
         target_id=card.pk,
         created_by=actor,
     )
+    from apps.card_designs.lifecycle import on_issue
+    on_issue("member_card", card)
+    from apps.makerspaces.membership_join_fields import apply_join_photo
+    transaction.on_commit(lambda: apply_join_photo(card), robust=True)  # parity O-B2: a photo from the join form
     audit.record(actor, "member_card.created", makerspace=membership.makerspace, target=card, meta={"card_id": card.pk, "card_number": card.card_number})
-    audit.record(actor, "member_card.issued", makerspace=membership.makerspace, target=card, meta={"card_id": card.pk, "card_number": card.card_number})
+    if automatic:
+        audit.record(actor, "member_card.auto_issued", makerspace=membership.makerspace, target=card, meta={"card_id": card.pk, "card_number": card.card_number})
+    else:
+        audit.record(actor, "member_card.issued", makerspace=membership.makerspace, target=card, meta={"card_id": card.pk, "card_number": card.card_number})
+    return card
+
+
+@transaction.atomic
+def auto_issue(membership_id):
+    """Release 2 L3: issue on activation when the space turned auto-issue on (idempotent).
+
+    Renewals and re-activations keep an existing live card and its QR. Runs after the
+    activation commits, as the system; a failure here never undoes the activation.
+    """
+    from apps.makerspaces.models import MemberCardSettings
+    from apps.makerspaces.platform import module_enabled
+    membership = MakerspaceMembership.objects.select_for_update().select_related("makerspace", "user").filter(
+        pk=membership_id).first()
+    if (membership is None or membership.status != "active" or not module_enabled(membership.makerspace, "membership")
+            or not MemberCardSettings.objects.filter(makerspace_id=membership.makerspace_id, auto_issue=True).exists()
+            or MemberCard.objects.filter(membership=membership, revoked_at__isnull=True).exists()):
+        return None
+    from apps.card_designs.numbering import CardNumberExhausted
+    from apps.managed_hosting.extra_quotas import ExtraQuotaReached, check_extra_quota
+    try:
+        # A card limit or an exhausted numbering scheme must never undo or block the activation.
+        check_extra_quota(membership.makerspace, "member_cards_issued_monthly")
+        card = _issue_locked(None, membership, "", automatic=True)
+    except (ExtraQuotaReached, CardNumberExhausted) as exc:
+        audit.record(None, "member_card.auto_issue_skipped", makerspace=membership.makerspace, target=membership,
+                     meta={"membership_id": membership.pk, "reason": getattr(exc, "default_code", None) or "quota"})
+        return None
+    from apps.card_designs.notifications import card_issued
+    transaction.on_commit(lambda: card_issued("member_card", card.pk), robust=True)
     return card
 
 
 @transaction.atomic
 def reissue_card(actor, card, *, reason):
     """Rotate the QR: the old payload keeps resolving as REVOKED and stays in scan history."""
+    require_member_account(card.membership.user)
     _require(actor, rbac.Action.MANAGE_MEMBER_CARDS, card.makerspace_id)
     if reason not in REISSUE_REASONS:
-        raise PermissionDenied("Unknown reissue reason.")
+        raise PermissionDenied(gettext("Unknown reissue reason."))
+    return reissue_locked(actor, card, reason=reason)
+
+
+def reissue_locked(actor, card, *, reason):
+    """Rotate the QR and verify token of a live card, keeping its number. `reason` is audit meta only."""
     card = MemberCard.objects.select_for_update().get(pk=card.pk)
     if not card.is_active:
-        raise PermissionDenied("A revoked card cannot be reissued; issue a new one.")
+        raise PermissionDenied(gettext("A revoked card cannot be reissued; issue a new one."))
     old = active_qr(card)
     if old is not None:
         revoke_qr_code(actor, old)
@@ -91,6 +167,8 @@ def reissue_card(actor, card, *, reason):
     card.template_version_at_issue += 1
     card.issued_at = timezone.now()
     card.save(update_fields=["template_version_at_issue", "issued_at", "updated_at"])
+    from apps.card_designs.lifecycle import on_reissue
+    on_reissue("member_card", card)
     audit.record(actor, "member_card.reissued", makerspace=card.makerspace, target=card, meta={"card_id": card.pk, "card_number": card.card_number, "reason": reason})
     return card
 
@@ -114,9 +192,9 @@ def redact(card):
 
 
 @transaction.atomic
-def revoke_card(actor, card, *, reason="revoked"):
+def revoke_card(actor, card, *, reason="revoked", note=""):
     _require(actor, rbac.Action.MANAGE_MEMBER_CARDS, card.makerspace_id)
-    return _revoke(actor, card, reason=reason)
+    return _revoke(actor, card, reason=reason, note=note)
 
 
 def revoke_for_membership(actor, membership):
@@ -131,7 +209,7 @@ def revoke_for_membership(actor, membership):
         _revoke(actor, card, reason="membership_revoked")
 
 
-def _revoke(actor, card, *, reason):
+def _revoke(actor, card, *, reason, note=""):
     card = MemberCard.objects.select_for_update().get(pk=card.pk)
     if card.revoked_at is not None:
         return card
@@ -140,8 +218,12 @@ def _revoke(actor, card, *, reason):
         revoke_qr_code(actor, qr)
     card.revoked_at = timezone.now()
     card.revoked_reason = reason[:32]
-    card.save(update_fields=["revoked_at", "revoked_reason", "updated_at"])
+    # The free-text reason is scoped PII on the row, never audit meta.
+    card.revoked_note = (note or "")[:500]
+    card.save(update_fields=["revoked_at", "revoked_reason", "revoked_note", "updated_at"])
     redact(card)
+    from apps.card_designs.lifecycle import on_revoke
+    on_revoke("member_card", card)
     audit.record(actor, "member_card.revoked", makerspace=card.makerspace, target=card, meta={"card_id": card.pk, "card_number": card.card_number, "reason": reason})
     return card
 
@@ -159,6 +241,10 @@ def record_print(actor, cards):
 def resolve(actor, makerspace, payload):
     """Identify a member from a scanned card. Records the lookup even when it is refused."""
     _require(actor, rbac.Action.SCAN_MEMBER_CARDS, makerspace.pk)
+    from apps.card_designs.scan import desk_payload_for
+    # Release 2 L3: a scanned check link resolves to the same card's desk QR, so a card that
+    # carries only a check QR still works at the desk. The public page never sees staff fields.
+    payload = desk_payload_for(makerspace, payload)
     qr = QrCode.objects.filter(
         payload=payload, makerspace=makerspace, target_type=QrCode.TargetType.MEMBER_CARD
     ).first()

@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.http import Http404
 from rest_framework import serializers
 from django.core.exceptions import ValidationError as ModelValidationError
@@ -80,6 +81,8 @@ class QrCodeSerializer(serializers.ModelSerializer):
             "id",
             "makerspace",
             "payload",
+            "source",
+            "external_value",
             "target_type",
             "target_id",
             "status",
@@ -87,7 +90,9 @@ class QrCodeSerializer(serializers.ModelSerializer):
             "updated_at",
             "revoked_at",
         ]
-        read_only_fields = ["id", "payload", "status", "created_at", "updated_at", "revoked_at"]
+        read_only_fields = [
+            "id", "payload", "source", "external_value", "status", "created_at", "updated_at", "revoked_at",
+        ]
 
 
 class CreateBoxQrSerializer(serializers.Serializer):
@@ -105,7 +110,7 @@ class CreateToolQrSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         if bool(attrs.get("product_id")) == bool(attrs.get("asset_id")):
-            raise serializers.ValidationError("Provide exactly one of product_id or asset_id.")
+            raise serializers.ValidationError(gettext("Provide exactly one of product_id or asset_id."))
         return attrs
 
 
@@ -117,6 +122,9 @@ class QrScanSerializer(serializers.Serializer):
         QrScanEvent.Context.INVENTORY_CHECK,
     ])
     request_id = serializers.IntegerField(required=False, allow_null=True)
+    makerspace_id = serializers.IntegerField(
+        required=False, help_text="Disambiguates an external label value held by several of your spaces.",
+    )
 
 
 class QrScanResultSerializer(serializers.Serializer):
@@ -127,6 +135,13 @@ class QrScanResultSerializer(serializers.Serializer):
 
 class QrResolveSerializer(serializers.Serializer):
     payload = serializers.CharField()
+    makerspace_id = serializers.IntegerField(
+        required=False,
+        help_text=(
+            "The makerspace being scanned in. External label values are unique only per "
+            "makerspace, so a staff member with several spaces sends this to disambiguate."
+        ),
+    )
 
 
 class QrResolveResultSerializer(serializers.Serializer):

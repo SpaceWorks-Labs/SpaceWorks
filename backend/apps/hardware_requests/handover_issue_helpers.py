@@ -1,5 +1,6 @@
 from apps.audit import services as audit
 from apps.boxes.models import QrCode, QrScanEvent
+from apps.boxes.qr_lookup import by_scanned_key, normalize_scanned, scanned_in_q
 from apps.hardware_requests.models import HardwareRequestItemAsset
 from apps.hardware_requests.workflow_errors import InvalidTransition, RequestValidationError
 from apps.inventory.models import InventoryAsset, TrackingMode
@@ -43,19 +44,19 @@ def issue_individual_assets(actor, locked, asset_qr_payloads):
         raise RequestValidationError(INDIVIDUAL_HANDOUT_ERROR)
 
     seen_qr_ids = set()
-    qrs_by_payload = {
-        qr.payload: qr
-        for qr in QrCode.objects.select_for_update()
+    # Payload or external label value (`boxes.qr_lookup`).
+    qrs_by_payload = by_scanned_key(
+        QrCode.objects.select_for_update()
         .filter(
+            scanned_in_q(asset_qr_payloads),
             makerspace=locked.makerspace,
-            payload__in=asset_qr_payloads,
             target_type=QrCode.TargetType.ASSET,
         )
         .order_by("pk")
-    }
+    )
     qrs = []
     for payload in asset_qr_payloads:
-        qr = qrs_by_payload.get(payload)
+        qr = qrs_by_payload.get(normalize_scanned(payload))
         if qr is None:
             raise RequestValidationError(INDIVIDUAL_HANDOUT_ERROR)
         if qr.status != QrCode.Status.ACTIVE:

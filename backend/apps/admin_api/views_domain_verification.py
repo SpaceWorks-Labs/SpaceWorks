@@ -51,7 +51,7 @@ class MakerspaceVerifyDomainView(APIView):
             pk=makerspace_id,
         )
         require_action(request.user, rbac.Action.MANAGE_MAKERSPACE, makerspace.id)
-        status, verified_at, detail = verify_domain(makerspace)
+        status, verified_at, detail = verify_domain(makerspace, actor=request.user)
         audit.record(
             request.user,
             "makerspace.domain_verify_attempt",

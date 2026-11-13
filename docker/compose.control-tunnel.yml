@@ -1,0 +1,11 @@
+# scripts/compose-deployment.sh selects this only for TLS layers with CONTROL_PLANE_TUNNEL_PORT set.
+services:
+  caddy:
+    environment:
+      CONTROL_PLANE_TUNNEL: "on"
+    ports:
+      - "127.0.0.1:${CONTROL_PLANE_TUNNEL_PORT:?set CONTROL_PLANE_TUNNEL_PORT}:9443"
+  # Django believes the tunnel listener's stamp only while this overlay is selected (#189/#191).
+  backend:
+    environment:
+      CONTROL_PLANE_TUNNEL: "on"

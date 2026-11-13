@@ -15,7 +15,7 @@ from apps.backup.main_projection_registry import (
     boundary_rules,
     sovereign_q,
 )
-from apps.backup.recipient_selection import BackupBuildError
+from apps.backup.build_errors import BackupBuildError
 from apps.backup.raw_projection import concrete_record_payload, no_decrypt_guard
 
 
@@ -55,10 +55,21 @@ def build_expected_ledger(using, rules, makerspace_ids, *, sequence_facts):
         }
     sequences = _sequence_ledger(using)
     _apply_expected_sequence_high_water(sequences, sequence_facts)
-    return {"tables": tables, "sequences": sequences}
+    from .staff_shells import staff_fixture, shell_fixture
+    shells = []
+    for boundary in boundaries:
+        if boundary.disposition == BoundaryDisposition.INERT_SHELL_TO_SLICE:
+            model = boundary.source_model
+            for record in boundary_queryset(boundary, using, makerspace_ids).values(
+                *(field.attname for field in model._meta.concrete_fields)
+            ):
+                shells.append(shell_fixture(staff_fixture(model, record)))
+    return {"tables": tables, "sequences": sequences, "staff_shells": shells}
 
 
 def verify_readable_main(using, rules, makerspace_ids, expected):
+    from .public_page_verification import verify_public_pages
+    verify_public_pages(using=using)
     assert_catalog_matches(using, rules)
     for rule in rules:
         queryset = rule.model._base_manager.using(using).order_by(
@@ -90,6 +101,15 @@ def verify_readable_main(using, rules, makerspace_ids, expected):
             raise BackupBuildError(
                 f"Readable-main row verification failed for {rule.model._meta.db_table}."
             )
+    from .staff_shells import staff_fixture
+    from django.apps import apps
+    User = apps.get_model("accounts.User")
+    for shell in expected.get("staff_shells", ()):
+        row = User._base_manager.using(using).filter(pk=shell["pk"]).values(
+            *(field.attname for field in User._meta.concrete_fields)
+        ).get()
+        if staff_fixture(User, row) != shell:
+            raise BackupBuildError("The readable main contains a staff identity instead of its inert shell.")
     if _sequence_ledger(using) != expected["sequences"]:
         raise BackupBuildError("Readable-main sequence high-water verification failed.")
 

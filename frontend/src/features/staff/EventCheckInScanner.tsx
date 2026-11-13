@@ -1,7 +1,18 @@
-import { useState } from "react";
+import { t } from "@lingui/core/macro";
+import { collectFromList, DeskListSwitch } from "./eventCredentials/DeskListSwitcher";
+import { QuickBadgePrint } from "./eventCredentials/QuickBadgePrint";
+import { useReducedMotion } from "../../components/delight";
+import { opsStatusLabel } from "./opsPresentation";
+import { paymentStatusLabel } from "./paymentsApi";
+import { useContext, useEffect, useRef, useState } from "react";
+import { QueryClientContext } from "@tanstack/react-query";
 
-import QrScanner from "../../components/ui/QrScanner";
+import type { CheckInList } from "./eventParticipation/api";
+import { ScanWorkbench } from "../../components/ui";
 import { StructuredApiError } from "../../lib/api";
+import { EventAttendanceTools } from "./EventAttendanceTools";
+import { CardMatchList, cardMatchSummary, scanEventCard, type CardMatch, type CardScanRow } from "./eventCardScan";
+import { eventKeys } from "./eventsApiTypes";
 import {
   useMarkEventAttended,
   useResolveEventCheckIn,
@@ -26,32 +37,76 @@ export default function EventCheckInScanner({
   eventId: number;
   onClose: () => void;
 }) {
-  const [scanning, setScanning] = useState(true);
+  const [deskList, setDeskList] = useState<CheckInList | null>(null);
+  const [overrideFor, setOverrideFor] = useState<{ id: number; name: string } | null>(null);
+  const [quickPrint, setQuickPrint] = useState<{ id: number; name: string } | null>(null);
+  const reducedMotion = useReducedMotion();
   const [resolved, setResolved] = useState<EventCheckInResolution | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [confirmed, setConfirmed] = useState<string | null>(null);
+  const [attendedId, setAttendedId] = useState<number | null>(null);
+  const [cardMatch, setCardMatch] = useState<CardMatch | null>(null);
   const resolve = useResolveEventCheckIn(eventId);
+  const [cardPending, setCardPending] = useState(false);
+  const queryClient = useContext(QueryClientContext);
   const attend = useMarkEventAttended(makerspaceId, eventId, "qr");
+  // On a phone the workbench stacks the camera card and the code field ABOVE the result, so the
+  // guest's name and the Confirm button land below the fold after every scan. Bring the result
+  // panel into view whenever it changes; `nearest` leaves it alone when it is already visible.
+  const sectionRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (!resolved && !error && !confirmed) return;
+    sectionRef.current?.querySelector<HTMLElement>("section[aria-labelledby]")?.scrollIntoView?.({ block: "nearest", behavior: reducedMotion ? "auto" : "smooth" });
+  }, [resolved, error, confirmed, reducedMotion]);
 
   const handleScan = async (value: string) => {
-    setScanning(false);
     setError(null);
     setConfirmed(null);
+    setAttendedId(null);
     setResolved(null);
+    setCardMatch(null);
     try {
-      setResolved(await resolve.mutateAsync(value.trim()));
+      const found = await resolve.mutateAsync(value.trim());
+      if (deskList) { await handleListCollect(found.registration_id, found.name); return; }
+      setResolved(found);
     } catch (cause) {
+      if (cause instanceof StructuredApiError && cause.status === 404) {
+        // Not a ticket code: it may be a card (member card, this event's ID card, a programme card's check link).
+        try {
+          setCardPending(true);
+          const found = await scanEventCard(eventId, value.trim());
+          setCardMatch({ payload: value.trim(), rows: found.registrations });
+          return;
+        } catch (cardCause) {
+          if (!(cardCause instanceof StructuredApiError && cardCause.status === 404)) {
+            setError(cardCause instanceof Error ? cardCause.message : t`Could not read that card.`);
+            return;
+          }
+        } finally {
+          setCardPending(false);
+        }
+      }
       // A 404 covers unknown, malformed and wrong-event tokens alike -- the endpoint
       // answers them identically on purpose -- so say the one thing that is true of all
       // three rather than surfacing a bare "not found".
       setError(
         cause instanceof StructuredApiError && cause.status === 404
-          ? "That is not a check-in code for this event."
+          ? t`That is not a check-in code or a card for this event.`
           : cause instanceof Error
             ? cause.message
-            : "Could not read that code.",
+            : t`Could not read that code.`,
       );
     }
+  };
+
+  // List mode (D22): a scan collects from the chosen list instead of recording entry.
+  const handleListCollect = async (registrationId: number, name: string, override = false) => {
+    if (!deskList) return;
+    setOverrideFor(null);
+    const refused = await collectFromList(eventId, deskList, registrationId, name, override);
+    if (!refused) { setConfirmed(t`${name} collected from ${deskList.name}.`); return; }
+    if (refused.code === "waitlisted") setOverrideFor({ id: registrationId, name });
+    setError(refused.reason);
   };
 
   const handleConfirm = async () => {
@@ -60,6 +115,8 @@ export default function EventCheckInScanner({
     try {
       await attend.mutateAsync(resolved.registration_id);
       setConfirmed(`${resolved.name} checked in.`);
+      setAttendedId(resolved.registration_id);
+      setQuickPrint({ id: resolved.registration_id, name: resolved.name });
       setResolved(null);
     } catch (cause) {
       if (cause instanceof StructuredApiError && cause.status === 409) {
@@ -71,13 +128,37 @@ export default function EventCheckInScanner({
         // resolution with Confirm still enabled.
         setResolved(null);
         setError(
-          `${resolved.name} could not be checked in -- the registration changed. Scan again to see its current state.`,
+          t`${resolved.name} could not be checked in -- the registration changed. Scan again to see its current state.`,
         );
         return;
       }
-      setError(cause instanceof Error ? cause.message : "Could not confirm attendance.");
+      setError(cause instanceof Error ? cause.message : t`Could not confirm attendance.`);
     }
   };
+
+  const handleCardConfirm = async (row: CardScanRow) => {
+    if (!cardMatch) return;
+    setError(null);
+    try {
+      if (cardMatch.rows.length === 1) {
+        setCardPending(true);
+        const result = await scanEventCard(eventId, cardMatch.payload, true).finally(() => setCardPending(false));
+        if (result.checked_in === null) throw new Error(t`${row.name} could not be checked in. Scan the card again.`);
+        await queryClient?.invalidateQueries({ queryKey: eventKeys.registrations(eventId) });
+        await queryClient?.invalidateQueries({ queryKey: eventKeys.detail(eventId) });
+      } else {
+        await attend.mutateAsync(row.registration_id);
+      }
+      setConfirmed(`${row.name} checked in.`);
+      setAttendedId(row.registration_id);
+      setQuickPrint({ id: row.registration_id, name: row.name });
+      setCardMatch(null);
+    } catch (cause) {
+      setCardMatch(null);
+      setError(cause instanceof Error ? cause.message : t`Could not confirm attendance.`);
+    }
+  };
+  const cardSummary = cardMatch ? cardMatchSummary(cardMatch) : null;
 
   // Gate on "registered" rather than excluding "waitlisted": `mark-attended` refuses every
   // other status, so an allow-list keeps a cancelled or already-attended code from offering
@@ -96,87 +177,31 @@ export default function EventCheckInScanner({
             ? "This event was cancelled, so attendance cannot be confirmed."
             : `Attendance cannot be confirmed while this event is ${resolved.event_status}.`;
 
-  return (
-    <section
-      className="mt-3 rounded-lg border border-line bg-panel p-3"
-      aria-labelledby="event-checkin-title"
-    >
-      <div className="flex items-start justify-between gap-3">
-        <h4 id="event-checkin-title" className="font-semibold text-ink">
-          Check in by QR
-        </h4>
-        <button type="button" className={`desk-button ${FOCUS}`} onClick={onClose}>
-          Done
-        </button>
-      </div>
-
-      {resolved ? (
-        <div className="mt-3">
-          <p className="text-ink">
-            <span className="font-medium">{resolved.name}</span> · {resolved.status}
-          </p>
-          {resolved.payment_status ? (
-            // Information only. A payment problem must never stop the door: staff take
-            // cash and reconcile later, and a card outage is not a reason to refuse
-            // someone entry to an event they registered for.
-            <p className="mt-1 text-sm text-muted">Payment: {resolved.payment_status}</p>
-          ) : null}
-          {resolved.host_waiver_state === "missing" ? (
-            // Reported, not enforced. Someone standing at the door with nothing on file is
-            // exactly who the host wants to hand a waiver to; refusing them entry is not
-            // this screen's job, the same way payment state is shown without blocking.
-            <p className="mt-1 text-sm text-muted">
-              No host waiver on file — take one at the desk.
-            </p>
-          ) : null}
-          {blockedReason ? (
-            <p className="mt-2 text-sm text-danger">{blockedReason}</p>
-          ) : null}
-          <div className="mt-3 flex gap-2">
-            <button
-              type="button"
-              className={`desk-button-primary ${FOCUS}`}
-              disabled={!confirmable || attend.isPending}
-              onClick={handleConfirm}
-            >
-              Confirm attendance
-            </button>
-            <button
-              type="button"
-              className={`desk-button ${FOCUS}`}
-              onClick={() => {
-                setResolved(null);
-                setScanning(true);
-              }}
-            >
-              Scan another
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div className="mt-3">
-          {confirmed ? <p className="text-sm text-ink">{confirmed}</p> : null}
-          <button
-            type="button"
-            className={`desk-button mt-2 ${FOCUS}`}
-            disabled={resolve.isPending}
-            onClick={() => {
-              setError(null);
-              setScanning(true);
-            }}
-          >
-            {resolve.isPending ? "Reading…" : "Scan a code"}
-          </button>
-        </div>
-      )}
-
-      {error ? <p className="mt-3 text-sm text-danger">{error}</p> : null}
-
-      {/* Unmounted rather than hidden, so the camera stops and keyboard users cannot tab
-          into a scanner they cannot see. */}
-      {scanning ? (
-        <QrScanner onScan={handleScan} onClose={() => setScanning(false)} />
-      ) : null}
-    </section>
-  );
+  // Attendance tools (print the attended badge, correct a mistaken check-in) apply to the guest just
+  // confirmed and to a scanned code that was already checked in. They carry the correction, so the
+  // recent entry does not repeat it as a second, identical Undo.
+  const toolsId = attendedId ?? (resolved?.status === "attended" ? resolved.registration_id : null);
+  const attendanceTools = toolsId !== null ? <EventAttendanceTools eventId={eventId} makerspaceId={makerspaceId} registrationId={toolsId}
+    onCorrected={() => { setAttendedId(null); setConfirmed(null); setResolved(null); }} /> : null;
+  // `scroll-mb-*` keeps the scrolled-to result clear of the shell's bottom tabs and the home indicator.
+  return <section ref={sectionRef} aria-labelledby="event-checkin-title" className="grid gap-4 [&_section[aria-labelledby]]:scroll-mb-[calc(var(--shell-bottom-tabs,0px)+env(safe-area-inset-bottom)+1rem)]">
+    <div className="flex flex-wrap items-center justify-between gap-3"><h3 id="event-checkin-title" className="title-panel">{t`Check in by QR`}</h3><button className={`desk-button ${FOCUS}`} type="button" onClick={onClose}>{t`Done`}</button></div>
+    {queryClient ? <DeskListSwitch eventId={eventId} onActive={setDeskList} /> : null}
+    {overrideFor && deskList ? <button className="desk-button" type="button" onClick={() => void handleListCollect(overrideFor.id, overrideFor.name, true)}>{t`Let ${overrideFor.name} collect anyway`}</button> : null}
+    <ScanWorkbench onFind={handleScan} onScan={handleScan} searchLabel="Find a guest by check-in code" helper={t`Scan or paste the guest’s ticket code, or scan their member or event ID card. Confirm their name before recording attendance.`}
+      findPending={resolve.isPending || attend.isPending || cardPending}
+      result={resolved ? { title: resolved.name, tone: confirmable ? "success" : "warn", summary: <div className="grid gap-2"><p>{opsStatusLabel(resolved.status)}</p>{resolved.payment_status ? <p>{t`Payment: ${paymentStatusLabel(resolved.payment_status)}`}</p> : null}{resolved.host_waiver_state === "missing" ? <p>{t`No host waiver on file — take one at the desk.`}</p> : null}{blockedReason ? <p>{blockedReason}</p> : null}</div>,
+        next: { label: t`Confirm attendance`, onClick: handleConfirm, disabled: !confirmable || attend.isPending, disabledReason: blockedReason || (attend.isPending ? t`Attendance is being recorded.` : undefined) },
+      } : cardMatch && cardSummary ? { title: cardSummary.title, tone: cardSummary.confirmable ? "success" : "warn",
+        summary: <div className="grid gap-2"><p>{cardSummary.note}</p>
+          <CardMatchList match={cardMatch} pending={cardPending || attend.isPending} onPick={(row) => void handleCardConfirm(row)} /></div>,
+        next: cardMatch.rows.length === 1
+          ? { label: t`Confirm attendance`, onClick: () => void handleCardConfirm(cardMatch.rows[0]), disabled: !cardSummary.confirmable || cardPending,
+            disabledReason: cardSummary.confirmable ? undefined : cardSummary.note }
+          : { label: t`Scan another`, onClick: () => setCardMatch(null) },
+      } : error ? { title: t`Couldn’t check in`, tone: "danger", summary: error, next: { label: t`Scan another`, onClick: () => { setError(null); setResolved(null); } } } : confirmed ? { title: confirmed, tone: "success", next: { label: t`Scan another`, onClick: () => { setConfirmed(null); setAttendedId(null); } } } : undefined}
+      controls={resolved || attendanceTools ? <>{resolved ? <button className="desk-button" type="button" onClick={() => setResolved(null)}>{t`Scan another`}</button> : null}{attendanceTools}</> : undefined}
+      recent={confirmed ? [{ key: "latest", label: confirmed, tone: "success" }] : []} recentTitle="Recent check-ins" />
+    {quickPrint ? <QuickBadgePrint key={quickPrint.id} eventId={eventId} registrationId={quickPrint.id} name={quickPrint.name} onClose={() => setQuickPrint(null)} /> : null}
+  </section>;
 }

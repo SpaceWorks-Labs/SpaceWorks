@@ -24,41 +24,139 @@ FEATURE_EVENTS = {
         "submitted", "accepted", "rejected", "issued", "partially_returned",
         "returned", "closed_with_issue", "return_reminder",
         "deposit_raised", "late_fee_raised",
-        "overdue_escalated", "back_available",
+        # Lane L15: rental, damage and lost charges, and staff fee waivers.
+        "rental_raised", "damage_charged", "lost_charged", "fees_waived",
+        "overdue_escalated", "back_available", "problem_report.filed",
+        # Lane L12: withdrawn and expired requests, and a waitlist offer.
+        "cancelled", "expired", "waitlist_offer",
+        # Lane L16: an item problem reported, a repair quote awaiting approval.
+        "issue_reported", "repair_quote_pending",
     ),
     F.PRINTING: (
         "submitted", "accepted", "started", "rejected", "completed", "failed",
-        "collected", "reprinted",
+        "collected", "reprinted", "next", "cancelled",
+        # Lane L12, the uniform job flow (#141): review, quotes, re-queue, pickup.
+        "changes_requested", "resubmitted", "quoted", "quote_reminder", "quote_approved", "quote_declined",
+        "quote_expired", "requeued", "pickup_reminder", "uncollected", "no_show_flagged",
+        # Lane L23: a machine session stopped itself (max length, check-out, closing).
+        "session_auto_stopped",
     ),
     F.EVENTS: (
         "published", "cancelled", "completed", "registration_created",
         "registration_pending_approval", "registration_waitlisted",
         "registration_approved", "registration_rejected",
-        "registration_cancelled", "registration_promoted", "registration_attended",
+        "registration_cancelled", "registration_restored", "registration_promoted", "registration_attended",
         "series_published", "series_cancelled", "series_completed",
         "series_generation_failed",
         "reminder",
     ),
     F.BOOKINGS: (
-        "created", "confirmed", "rejected", "cancelled", "completed", "no_show",
+        "created", "confirmed", "rejected", "cancelled", "restored", "completed", "no_show",
         "reminder",
+        # Lane L16: a room problem reported, a repair quote awaiting approval.
+        "issue_reported", "repair_quote_pending",
     ),
     F.MAINTENANCE: (
         "schedule_created", "schedule_updated", "schedule_deactivated", "logged",
         "schedule_completed",
         "due_soon", "overdue",
+        # Lane L16: a machine problem reported, a repair quote awaiting approval, and the
+        # technician send (only its WhatsApp template binding reads this key).
+        "issue_reported", "repair_quote_pending", "repair_dispatched",
+        # Release 0.12.0 (decision 223): a safety incident or near miss reported to the register.
+        "incident_reported",
     ),
     # request_pending is the existing application-received event; keep its stable key.
     F.MEMBERS: ("request_pending", "member_joined", "approved", "declined",
                 "renewal_due", "lapsed", "renewal_failed", "awaiting_payment", "payment_due",
-                "renewed", "grace_started", "cancelled", "broadcast"),
-    F.API_ACCESS: ("api_key_request_resolved",),
-    F.DEVICES: ("offline", "recovered"),
+                "renewed", "grace_started", "cancelled", "broadcast", "joined", "verified", "invitation", "vouched",
+                # Parity O-B2: a join request sent back for changes (to the applicant) and resubmitted (to staff).
+                "changes_requested", "resubmitted"),
+    F.API_ACCESS: ("api_key_request_resolved", "subdomain_request_resolved", "email.failed", "scheduled_report",
+                   "space_restore_completed", "space_restore_failed"),
+    F.DEVICES: ("offline", "recovered",
+                # Decision 312: device-adapter notices (needs attention, runout, session ending, denied).
+                "adapter_attention", "adapter_runout", "adapter_session_ending", "adapter_access_denied",
+                "adapter_detection",
+                # NCA audit 0.12.0 (decision 312c): an adapter's terminal job report waits for staff review.
+                "adapter_job_review"),
     F.PAYMENTS: ("charge_raised", "payment_due_soon", "payment_due_today", "payment_overdue",
-                 "payment_received", "refund_issued", "payment_failed"),
-    F.STOCK: ("low_stock", "procurement_received"),
+                 "payment_received", "refund_issued", "payment_failed", "document_issued",
+                 "refund_due_opened", "refund_request_received", "refund_request_approved",
+                 "refund_request_declined", "refund_approval_failed", "paid_claim_received", "paid_claim_confirmed",
+                 "paid_claim_rejected", "settlement_awaiting_confirmation", "capture_flagged",
+                 "dispute_opened"),
+    F.STOCK: ("low_stock", "procurement_received", "scheduled", "completed", "to_buy_created"),
     F.CERTIFICATIONS: ("granted", "revoked", "expiring", "expired"),
 }
+from .notification_catalog_events_programme import PROGRAMME_EVENTS
+FEATURE_EVENTS[F.EVENTS] += PROGRAMME_EVENTS
+# Release 2 L2 (X37): staff-grant invitations offered on the invitee's own chat channels.
+FEATURE_EVENTS[F.EVENTS] += ("invitation",)
+FEATURE_EVENTS[F.BOOKINGS] += ("invitation",)
+# Release 2 L4 (X29): the member's per-space erasure decision.
+FEATURE_EVENTS[F.MEMBERS] += ("erasure_approved", "erasure_rejected")
+# Release 2 L8 (#120, C-26): an emergency re-key, told to the space's Space Managers.
+FEATURE_EVENTS[F.API_ACCESS] += ("emergency_rekey_started", "emergency_rekey_completed", "emergency_rekey_failed")
+# Release 2 L11: a self-host move's status, told to the space's Space Managers.
+FEATURE_EVENTS[F.API_ACCESS] += ("selfhost_move_status",)
+# Release 2 L3: cards issued (member, programme and event cards), a design awaiting approval,
+# a "photo needs update" request, a finished card job, and ID-programme decisions.
+FEATURE_EVENTS[F.MEMBERS] += ("card_issued", "card_design_pending", "card_photo_requested", "card_job_finished",
+                              "programme_card_decided", "event_card_issued")
+# Release 2 L6: ticket orders, seat claims, transfers, type changes, pass occurrences, venue fees.
+FEATURE_EVENTS[F.EVENTS] += ("order_confirmed", "order_payment_reminder", "order_abandoned", "ticket_type_changed",
+                             "pass_occurrence_cancelled", "ticket_claim_invite", "ticket_transfer_received",
+                             "registration_updated", "ticket_pay_link")
+# Parity E-B5: the 24-hour pay window for approved, promoted and re-accepted paid places.
+FEATURE_EVENTS[F.EVENTS] += ("pay_window_opened", "pay_window_expired")
+# Release 2 L18: the giver's receipt and pledge reminder, and sponsor perks coming due (staff).
+FEATURE_EVENTS[F.PAYMENTS] += ("donation_received", "pledge_due", "perk_due")
+# Release 2 L21a: stage advances, attendance confirmation and its replies, crew invites and decisions.
+FEATURE_EVENTS[F.EVENTS] += ("application_stage_advanced", "attendance_confirmation", "attendance_reminder",
+                             "attendance_replied", "crew_invited", "crew_decided")
+# Release 2 L21b: published finalists (a per-event switch) and a recorded prize payout to its winner.
+FEATURE_EVENTS[F.EVENTS] += ("finalists_announced", "prize_payout_recorded")
+# Decision 301 (prize review): the prize steps that told nobody.
+FEATURE_EVENTS[F.EVENTS] += ("prize_split_proposed", "prize_claim_verified", "prize_forfeited", "prize_recovery_opened")
+# r2-peoples-choice (#181): People's choice voting opened (a per-event switch, off by default).
+FEATURE_EVENTS[F.EVENTS] += ("peoples_choice_open",)
+# Release 2 L22: the shop buyer's order notices and the shop staff's alerts (payments matrix).
+FEATURE_EVENTS[F.PAYMENTS] += ("shop_order_placed", "shop_order_paid", "shop_order_ready", "shop_order_lapsed",
+                               "shop_order_pickup_moved_to_space", "shop_order_collected",
+                               "shop_order_cancelled", "shop_order_unfulfilled", "shop_order_reminder",
+                               "shop_order_receipt", "shop_order_new", "shop_low_stock")
+# Decision 221(h): shop order fulfilment status, for signed webhook destinations only (ids, no buyer).
+FEATURE_EVENTS[F.PAYMENTS] += ("shop_order_ready_for_pickup", "shop_order_picked_up", "shop_order_delivered", "shop_order_pickup_moved",)
+# Release 2 GAP2 M2: item maintenance reaches the Inventory Manager's family, rooms the Booking Manager's.
+FEATURE_EVENTS[F.HARDWARE_REQUESTS] += ("maintenance_due_soon", "maintenance_overdue")
+FEATURE_EVENTS[F.BOOKINGS] += ("maintenance_due_soon", "maintenance_overdue")
+# Release 2 r2-submit-content (#178/#179): stage deadline reminders and stage shortlist results (per-event switches).
+FEATURE_EVENTS[F.EVENTS] += ("stage_deadline_reminder", "stage_shortlisted", "stage_not_shortlisted",
+                             "stage_promoted", "judge_reminder")
+# Decision 216 (P1-1/P2-4): a linked event moved or was cancelled (its booking and loans are told,
+# never changed), a linked venue booking changed (its event's organizers are told), and a room
+# outage over existing bookings (bookers and booking staff).
+FEATURE_EVENTS[F.BOOKINGS] += ("linked_event_changed", "room_outage")
+FEATURE_EVENTS[F.HARDWARE_REQUESTS] += ("linked_event_changed",)
+# Decision 221(f): a renewed loan's new due date, and the accepted-but-uncollected pickup reminder.
+FEATURE_EVENTS[F.HARDWARE_REQUESTS] += ("renewed", "pickup_expiring")
+# Decision 223: guest passes (the holder's issue and expiry notices, and the sponsor's notice).
+FEATURE_EVENTS[F.MEMBERS] += ("guest_pass_issued", "guest_pass_expiring", "guest_pass_sponsor_notice")
+FEATURE_EVENTS[F.MEMBERS] += ("join_followup",)  # decision 223 (k): post-event join call to action
+# Decision 221(f): the reporter's "your problem was fixed" notice, per repair area's family.
+for _family in (F.HARDWARE_REQUESTS, F.BOOKINGS, F.MAINTENANCE):
+    FEATURE_EVENTS[_family] += ("repair_closed",)
+FEATURE_EVENTS[F.EVENTS] += ("linked_booking_changed",)
+# Interconnection 18: link changes, for signed webhook destinations only (ids, no names).
+FEATURE_EVENTS[F.EVENTS] += ("event_booking_linked", "event_loan_linked", "event_loan_unlinked")
+FEATURE_EVENTS[F.BOOKINGS] += ("booking_loan_linked", "booking_loan_unlinked")
+# Notifications audit 0.12.0: an organization's hours bank is running low or empty (booking staff).
+FEATURE_EVENTS[F.BOOKINGS] += ("hours_bank_low",)
+# Notifications audit 0.12.0: a named guardian account is asked to sign the guardian consent (personal only).
+FEATURE_EVENTS[F.MEMBERS] += ("guardian_consent_requested",)
+# Decision 303d: the one-time "your profile is now visible" notice (personal only).
+FEATURE_EVENTS[F.MEMBERS] += ("profile_opened",)
 
 # Exact default on/off per (feature, channel). Preserves today's behavior: hardware/printing
 # email + hardware Telegram on; bookings email (Part J seam) + bookings Telegram on; Slack/
@@ -82,7 +180,14 @@ DEFAULT_CHANNEL_STATE = {
 
 # Hardware/printing already emit directly; their matrix inbox is explicitly opt-in.
 for _feature, _channels in DEFAULT_CHANNEL_STATE.items():
+    _channels[C.SMS] = False
+    _channels[C.WHATSAPP] = False
     _channels[C.IN_APP] = _feature not in {F.HARDWARE_REQUESTS, F.PRINTING}
+    _channels[C.WHATSAPP] = False
+
+
+from .notification_catalog_p2_presence import register as register_presence
+register_presence(FEATURE_EVENTS, DEFAULT_CHANNEL_STATE)
 
 
 def default_state(feature, channel):

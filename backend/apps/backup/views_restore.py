@@ -1,5 +1,5 @@
 from django.shortcuts import get_object_or_404
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -24,8 +24,10 @@ class PlatformBackupSettingsView(APIView):
     def get(self, request):
         return Response(PlatformBackupSettingsSerializer(PlatformBackupSettings.load()).data)
 
-    @extend_schema(tags=["Backup"], summary="Update deployment backup settings", request=PlatformBackupSettingsSerializer, responses={200: PlatformBackupSettingsSerializer, 400: VALIDATION_ERROR, **AUTH_ERRORS})
+    @extend_schema(tags=["Backup"], summary="Update deployment backup settings", request=PlatformBackupSettingsSerializer, responses={200: PlatformBackupSettingsSerializer, 409: OpenApiResponse(description="Managed deployment schedules are unavailable."), 400: VALIDATION_ERROR, **AUTH_ERRORS})
     def patch(self, request):
+        from .cloud_operations import require_host
+        require_host("deployment_backup_requires_host_supervisor")
         row = PlatformBackupSettings.load()
         serializer = PlatformBackupSettingsSerializer(row, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
@@ -41,7 +43,7 @@ class RestoreOperationListCreateView(APIView):
     def get(self, request):
         return Response(RestoreOperationSerializer(RestoreOperation.objects.all()[:20], many=True).data)
 
-    @extend_schema(tags=["Backup"], summary="Record restore intent for the privileged host supervisor", request=RestoreCreateSerializer, responses={202: RestoreOperationSerializer, 400: VALIDATION_ERROR, **AUTH_ERRORS})
+    @extend_schema(tags=["Backup"], summary="Record restore intent for the privileged host supervisor", request=RestoreCreateSerializer, responses={202: RestoreOperationSerializer, 409: OpenApiResponse(description="Deployment restore requires a supervised host."), 400: VALIDATION_ERROR, **AUTH_ERRORS})
     def post(self, request):
         serializer = RestoreCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)

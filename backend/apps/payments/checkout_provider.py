@@ -2,7 +2,9 @@
 
 from decimal import Decimal, ROUND_HALF_UP
 
-from apps.payments.money import to_minor_units
+from apps.payments.money import (
+    AmountNotCapturable, minor_unit_exponent, to_minor_units, to_provider_minor_units,
+)
 
 
 def _create_checkout_via_provider(payment, source, label, member_url):
@@ -11,7 +13,12 @@ def _create_checkout_via_provider(payment, source, label, member_url):
     Called with the Payment row already locked by `_create_checkout_url_atomic`, so the
     lock ordering (platform settings -> makerspace settings -> Payment) is unchanged.
     """
-    from apps.payments.providers import CheckoutRequest, get_provider
+    from apps.payments.providers import CheckoutRequest, PaymentsUnavailable, get_provider
+
+    try:
+        amount_minor = to_provider_minor_units(payment.amount, payment.currency)
+    except AmountNotCapturable as exc:
+        raise PaymentsUnavailable("The charge amount is finer than the provider can capture.") from exc
 
     provider = get_provider(payment.provider)
     result = provider.create_checkout(
@@ -19,7 +26,7 @@ def _create_checkout_via_provider(payment, source, label, member_url):
         CheckoutRequest(
             # Integer minor units. A float here is a rounding bug that reconciles as a
             # real money difference.
-            amount_minor=to_minor_units(payment.amount, payment.currency),
+            amount_minor=amount_minor,
             currency=payment.currency,
             description=label,
             reference=str(payment.pk),
@@ -47,12 +54,18 @@ def _value(value, key):
 
 
 def _application_fee_amount(amount, basis_points, currency):
+    """The Connect platform fee in provider minor units, stamped once on a NEW charge.
+
+    Three-decimal currencies (KWD, BHD, OMR, JOD, TND) move in 10-fils steps at Stripe, so their
+    fee is rounded half-up to a multiple of 10 (PAY-REVIEW 0.12.0); a stray fils made Stripe
+    refuse the checkout. Existing charges keep the fee already stored on their row.
+    """
     minor_units = Decimal(to_minor_units(amount, currency))
-    return int(
-        (minor_units * Decimal(basis_points) / Decimal(10000)).quantize(
-            Decimal("1"), rounding=ROUND_HALF_UP
-        )
+    step = Decimal(10) if minor_unit_exponent(currency) == 3 else Decimal(1)
+    steps = (minor_units * Decimal(basis_points) / Decimal(10000) / step).quantize(
+        Decimal("1"), rounding=ROUND_HALF_UP
     )
+    return int(steps * step)
 
 
 def _checkout_idempotency_key(payment):

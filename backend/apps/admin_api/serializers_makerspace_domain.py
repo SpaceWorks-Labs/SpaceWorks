@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 import re
 
 from django.conf import settings
@@ -20,7 +21,7 @@ def validate_frontend_domain(serializer, attrs):
     attrs["frontend_domain"] = normalized_domain
     if normalized_domain is None and (raw_domain or "").strip():
         raise serializers.ValidationError(
-            {"frontend_domain": "Enter a valid domain, e.g. alphamakerspace.com."}
+            {"frontend_domain": gettext("Enter a valid domain, e.g. alphamakerspace.com.")}
         )
     if domain_verification.domain_change_cooldown_active(
         serializer.instance, normalized_domain
@@ -32,7 +33,7 @@ def validate_frontend_domain(serializer, attrs):
         return
     if not _HOSTNAME_RE.match(normalized_domain):
         raise serializers.ValidationError(
-            {"frontend_domain": "Enter a valid domain, e.g. alphamakerspace.com."}
+            {"frontend_domain": gettext("Enter a valid domain, e.g. alphamakerspace.com.")}
         )
 
     platform_suffix = str(settings.PLATFORM_DOMAIN_SUFFIX or "").strip().lower()
@@ -43,18 +44,8 @@ def validate_frontend_domain(serializer, attrs):
         else None
     )
     domain_is_changing = normalized_domain != current_domain
-    if domain_is_changing and domain_verification.is_self_host():
-        actor = serializer.context["request"].user
-        is_superadmin = actor.is_superuser or actor.role == User.Role.SUPERADMIN
-        if not is_superadmin:
-            raise serializers.ValidationError(
-                {
-                    "frontend_domain": (
-                        "Only a superadmin can set the custom domain on a "
-                        "self-hosted instance."
-                    )
-                }
-            )
+    # #192: on self-host a Space Manager may set the domain as well; it stays untrusted
+    # (PENDING) until the DNS TXT challenge passes (`domain_verification`).
     platform_apex = platform_suffix.lstrip(".")
     if (
         platform_suffix
@@ -65,7 +56,7 @@ def validate_frontend_domain(serializer, attrs):
         raise serializers.ValidationError(
             {
                 "frontend_domain": (
-                    "Platform subdomains are provisioned by staff, not set directly."
+                    gettext("Platform subdomains are provisioned by staff, not set directly.")
                 )
             }
         )
@@ -84,8 +75,8 @@ def validate_frontend_domain(serializer, attrs):
             raise serializers.ValidationError(
                 {
                     "frontend_domain": (
-                        "Custom domains aren't available on free managed hosting; "
-                        "self-host to use your own domain."
+                        gettext("Custom domains aren't available on free managed hosting; "
+                        "self-host to use your own domain.")
                     )
                 }
             )
@@ -96,7 +87,7 @@ def validate_frontend_domain(serializer, attrs):
         raise serializers.ValidationError(
             {
                 "frontend_domain": (
-                    "A makerspace with this frontend domain already exists."
+                    gettext("A makerspace with this frontend domain already exists.")
                 )
             }
         )

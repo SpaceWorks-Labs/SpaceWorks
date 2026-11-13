@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import generics, serializers
 
@@ -12,10 +13,36 @@ class PlatformSocialAuthSettingsSerializer(serializers.ModelSerializer):
         write_only=True, required=False, allow_blank=True
     )
     apple_private_key_set = serializers.BooleanField(read_only=True)
+    github_client_secret = serializers.CharField(
+        write_only=True, required=False, allow_blank=True, max_length=4096
+    )
+    github_client_secret_set = serializers.BooleanField(read_only=True)
+    clear_github_client_secret = serializers.BooleanField(write_only=True, required=False)
+
+    google_enabled = serializers.SerializerMethodField()
+    apple_enabled = serializers.SerializerMethodField()
+    github_enabled = serializers.SerializerMethodField()
+
+    def get_google_enabled(self, obj) -> bool:
+        return self._login_methods().google_enabled
+
+    def get_apple_enabled(self, obj) -> bool:
+        return self._login_methods().apple_enabled
+
+    def get_github_enabled(self, obj) -> bool:
+        return self._login_methods().github_enabled
+
+    def _login_methods(self):
+        from apps.accounts.models_login_methods import PlatformLoginMethods
+
+        if not hasattr(self, "_policy"):
+            self._policy = PlatformLoginMethods.load()
+        return self._policy
 
     class Meta:
         model = PlatformSocialAuthSettings
         fields = (
+            "google_enabled", "apple_enabled", "github_enabled",
             "google_web_client_id",
             "google_ios_client_id",
             "google_android_client_id",
@@ -25,32 +52,43 @@ class PlatformSocialAuthSettingsSerializer(serializers.ModelSerializer):
             "apple_key_id",
             "apple_private_key",
             "apple_private_key_set",
+            "github_client_id",
+            "github_client_secret",
+            "github_client_secret_set",
+            "clear_github_client_secret",
             "updated_at",
         )
-        read_only_fields = ("apple_private_key_set", "updated_at")
+        read_only_fields = ("apple_private_key_set", "github_client_secret_set", "updated_at")
 
     def validate_apple_native_app_ids(self, value):
         if not isinstance(value, list) or len(value) > 10:
-            raise serializers.ValidationError("Enter at most ten Apple app audiences.")
+            raise serializers.ValidationError(gettext("Enter at most ten Apple app audiences."))
         cleaned = []
         for item in value:
             if not isinstance(item, str) or not 3 <= len(item.strip()) <= 255:
-                raise serializers.ValidationError("Enter valid Apple app audiences.")
+                raise serializers.ValidationError(gettext("Enter valid Apple app audiences."))
             cleaned.append(item.strip())
         return list(dict.fromkeys(cleaned))
 
     def validate(self, attrs):
         # The same refusal the /control/ form applies (`social_lockout`): clearing a
         # provider through the API must not strand accounts the form would protect.
-        from apps.accounts.social_lockout import GOOGLE_FIELDS, disabling_lockout_message
+        from apps.accounts.social_lockout import CONFIG_FIELDS, disabling_lockout_message
 
         stored = self.instance
         incoming = PlatformSocialAuthSettings(
             **{
-                field: attrs.get(field, getattr(stored, field, "") if stored else "")
-                for field in (*GOOGLE_FIELDS, "apple_service_id", "apple_native_app_ids")
+                field: getattr(stored, field, "") if stored else ""
+                for field in CONFIG_FIELDS
             }
         )
+        for field in CONFIG_FIELDS:
+            if field != "github_client_secret" and field in attrs:
+                setattr(incoming, field, attrs[field])
+        if attrs.get("clear_github_client_secret"):
+            incoming.github_client_secret = ""
+        elif attrs.get("github_client_secret"):
+            incoming.set_github_client_secret(attrs["github_client_secret"])
         message = disabling_lockout_message(stored, incoming)
         if message:
             raise serializers.ValidationError(message)
@@ -58,6 +96,11 @@ class PlatformSocialAuthSettingsSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         private_key = validated_data.pop("apple_private_key", None)
+        github_secret = validated_data.pop("github_client_secret", "")
+        if validated_data.pop("clear_github_client_secret", False):
+            instance.set_github_client_secret("")
+        elif github_secret:
+            instance.set_github_client_secret(github_secret)
         if private_key is not None:
             instance.set_apple_private_key(private_key)
         for field, value in validated_data.items():
@@ -94,5 +137,6 @@ class PlatformSocialAuthSettingsView(generics.RetrieveUpdateAPIView):
                 "google_web_configured": bool(instance.google_web_client_id),
                 "apple_web_configured": bool(instance.apple_service_id),
                 "apple_private_key_set": instance.apple_private_key_set,
+                "github_configured": bool(instance.github_client_id and instance.github_client_secret_set),
             },
         )

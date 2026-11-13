@@ -52,6 +52,25 @@ def accountability_data(makerspace_id, *, limit=200):
     }
 
 
+def inventory_read_view(makerspace_id, *, limit=200):
+    """Decision 248 / IN8: the same overdue and repeat-damage rows for the Inventory Manager, read-only.
+
+    Restricted accounts and the reason text are the people page's (manage_members), so they are left out;
+    problem reports have their own inventory queue.
+    """
+    data = accountability_data(makerspace_id, limit=limit)
+    data["restrictions"], data["problem_reports"] = [], []
+    data["truncated"]["problem_reports"] = False
+    for row in data["repeat_offenders"]:
+        row.pop("restriction_reason", None)
+    return data
+
+
+def open_problem_reports(makerspace_id, *, limit=200):
+    """Unresolved problem reports, oldest first, plus whether the list was cut at ``limit``."""
+    return _problem_reports(makerspace_id, limit)
+
+
 def _problem_reports(makerspace_id, limit):
     rows = list(
         PublicProblemReport.objects.filter(

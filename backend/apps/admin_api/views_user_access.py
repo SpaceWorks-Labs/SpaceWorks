@@ -20,6 +20,7 @@ from apps.admin_api.serializers_users import (
 from apps.admin_api.services_user_access import reset_user_password
 from apps.audit import services as audit
 from apps.makerspaces import limits
+from apps.makerspaces.models import MakerspaceMembership
 from apps.openapi import RESTRICT_USER_EXAMPLE
 
 
@@ -48,7 +49,9 @@ class RestrictUserView(APIView):
             target=user,
             meta={"status": user.access_status, "reason": user.restriction_reason},
         )
-        return Response(UserSerializer(user).data)
+        from apps.card_designs.staff_card_hooks import after_user_access_changed  # O-B4: staff cards end with access
+        after_user_access_changed(request.user, user)
+        return Response(UserSerializer(user, context={"request": request}).data)
 
 
 class ResetUserPasswordView(APIView):
@@ -86,7 +89,7 @@ class RestoreUserAccessView(APIView):
             require_user_access_mutation(request.user, user)
             refuse_anonymous_requester_access_mutation(user)
             if user.access_status != User.AccessStatus.ACTIVE and user.is_active:
-                memberships = user.makerspace_memberships.select_related(
+                memberships = MakerspaceMembership.staff_tracks.filter(user=user).select_related(
                     "makerspace"
                 ).order_by("makerspace_id")
                 for membership in memberships:
@@ -97,4 +100,4 @@ class RestoreUserAccessView(APIView):
             user.restriction_reason = ""
             user.save(update_fields=["access_status", "restriction_reason"])
             audit.record(request.user, "user.access_restored", target=user)
-        return Response(UserSerializer(user).data)
+        return Response(UserSerializer(user, context={"request": request}).data)

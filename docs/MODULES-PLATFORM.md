@@ -12,18 +12,26 @@ stored credential**, so re-enabling needs no re-entry.
 ### notifications
 
 - **What it is** — the in-app notification inbox and the emitters that feed it.
-- **What it adds** — the inbox, unread state, and the emit path every other module notifies through.
-- **Without it** — no in-app notifications at all; outbound channels that are installed still deliver,
-  because they are gated separately.
-- **Data** — purgeable: in-app notification rows.
+- **What it adds** -- the inbox, unread state and its optional feature-cell preference editor.
+  Canonical personal intents live in core integrations; creating an inbox row never triggers push.
+- **Without it** -- no in-app notifications. Canonical SMS/WhatsApp and native push remain
+  independently gated; retained room/email paths keep their own rules. Other personal chat
+  providers still require the notifications module in the shared resolver. Removing this
+  inbox module differs from deployment-tombstoning its app.
+- **Data** -- purgeable: in-app notification rows. Per-device canonical delivery children keep
+  their envelope parent and optional SET_NULL inbox link; deleting inbox does not delete send history.
+  Disabling this module differs from tombstoning the whole notifications app, which owns the
+  registered push adapter.
 
 ### email
 
 - **What it is** — outbound email **for this makerspace**.
 - **What it adds** — tenant email delivery using the space's own SMTP credentials.
-- **Without it** — the space sends no tenant email. **Account recovery and email verification still
-  send**: those are platform mail (`makerspace=None`) and are deliberately exempt, or switching a module
-  off could lock people out of their own accounts.
+- **Without it** — the space sends no ordinary tenant email. **Some mail always sends**: password
+  reset and email verification (platform mail), sign-in security alerts and the unusual-sign-in code,
+  and overdue-loan return reminders (a duty-of-care message tied to accountability). The exempt list is
+  `EMAIL_MODULE_EXEMPT` in `backend/apps/integrations/dispatch_policy.py`; switching a module off must
+  not lock people out of their accounts or hide an overdue loan.
 - **Data** — `purge_module_data` reports it stores no data of its own to purge separately.
 
 ### telegram
@@ -121,8 +129,9 @@ cash needs none of this module and still keeps a full ledger of what members owe
   the charge, members see what they owe, and staff settle it in person and record how (cash, UPI,
   bank transfer, card machine, cheque) in the append-only manual-settlement ledger. What disappears
   is only the ability to pay by card online.
-- **Installed ≠ charging.** The module being on means the *surfaces* exist. No charge can be created
-  until a Space Manager turns on a `payments.<area>` feature **and** valid credentials resolve.
+- **Tracking and checkout are separate.** `charges.enabled` plus `charges.<domain>` records priced
+  debts without this module or gateway credentials. Online checkout additionally requires this module,
+  `payments.enabled`, the matching `payments.<domain>` feature and valid provider credentials.
 - **Data** — **payments are never purged by a module purge.** A charge is the record of money that really
   changed hands, so receipts stay readable and a pending charge stays payable, waivable and markable
   paid, keeping the description it was raised under. Only purging the whole makerspace removes them.
@@ -137,39 +146,53 @@ Requires `member_accounts`.
 
 - **What it is** — the native-app substrate: attested device sessions, native push and the in-app
   payment sheet.
-- **What it adds** — device registration and revocation, push delivery (feature `mobile.push`), and
-  PaymentSheet when `payments` is also on.
+- **What it adds** — device registration and revocation, push delivery (feature `mobile.push`),
+  watch-friendly push buttons (feature `mobile.watch_actions`, on by default: Open and Mark seen,
+  plus Snooze with inbox snooze; never money or evidence actions), and PaymentSheet when
+  `payments` is also on.
+  Canonical push uses per-device children beneath an envelope delivery, independently of inbox
+  creation or the inbox module. Current source-tied member/requester accounts qualify under
+  recipient policy; device registration still requires active native local selection. Staff
+  tools need a staff step-up grant on the person's own account (two-step sign-in, attestation, one
+  fixed space); event-role desks use an event grant; platform grants are forbidden. Matrix/personal policy and
+  current source/device checks apply. See [notification-inbox.md](notification-inbox.md).
 - **Without it** — native apps cannot hold a session for this space; the web app is unaffected.
 - **Data** — `purge_module_data` reports it stores no data of its own to purge separately.
 
 ---
 
-## Backup & custody
+## Backup (not a module)
 
-### backup
+Public-page history participates in existing backup ownership: makerspace and event content belongs
+to its tenant, while organization pages, assets, quota and creator attribution remain global.
+Organization content never travels merely because a tenant is linked to it. Portable tenant imports
+keep authored drafts/history and typed assets, reset publication and public disclosures, and recheck
+handle collisions. Deployment restores preserve publication and IDs, then verify pointers, reference
+completeness, effective schedule windows and retained-byte accounting before traffic.
 
-**On by default** (and backfilled onto every existing makerspace by `backup/0026`, because the key was
-placed in front of surfaces every makerspace already had).
+### backup (retired)
 
-- **What it is** — the makerspace-facing half of backup: a Space Manager's own archives and the keys
-  that decide who can open them.
-- **What it adds** — requesting, listing and downloading makerspace archives; enrolling, verifying,
-  revoking and reactivating archive-recipient `age` keys; and a read-only custody status (archive
-  custody and tenant-exit custody) at `makerspace/<id>/backup-custody`.
-- **Without it** — those routes answer **400** naming `backup`. What it does **not** switch off:
-  **marking a recipient compromised** (security response never waits on a module), and everything
-  deployment-level — the full deployment backup, its scheduled run (which still builds the per-tenant
-  archive of a superadmin-off makerspace), restores, recovery and offsite destinations all cover this
-  makerspace exactly as before.
-- **Coupled to superadmin access** — recipients are the only custody path for a makerspace whose
-  superadmin access is off, so `backup` **cannot be uninstalled while superadmin access is disabled**,
-  and superadmin access **cannot be disabled while `backup` is uninstalled**.
-- **Data** — `purge_module_data backup` deletes only the archives a Space Manager requested ad hoc
-  (finished ones, never one a restore references) and their stored bytes. It keeps archive
-  recipients and their reservations (sealed deployment slices are encrypted to them), custody state
-  and alarm history, run-produced tenant archives and offsite copies — those are the deployment's
-  backup of this makerspace. **Archives are outside the purge guarantee**: a copy someone already
+**Retired in P1b.** There is no `backup` module key any more; `backup/0032`
+strips it from every makerspace's `enabled_modules`. Backup is a platform duty: the superadmin is
+always on, every archive is encrypted to the platform key, and the superadmin backs up and restores.
+
+- **What a Space Manager has** — a read-only "Last backup" line on the dashboard and the Backup &
+  restore page (`GET makerspace/<id>/backup-status`: last covering archive and whether nightly backups
+  run). For their own copy of the space's data they use **data export**.
+- **What went away** — Space-Manager archive requests, listings and downloads; archive-recipient
+  `age` keys, their challenges, custody states and custody alarms; the `backup` uninstall block and
+  its purge plan. Makerspace archive listing, requests and downloads are superadmin-only.
+- **Data** — dropping the key deleted nothing a purge would have; recipient and custody tables were
+  dropped by `backup/0030`. **Archives are outside the purge guarantee**: a copy someone already
   downloaded, a deployment archive and an offsite copy are not deleted by any purge.
+- **Per-space backup and restore (P1b B2, not a module or capability)** — every live space gets a
+  nightly one-space archive off the platform "automatic backups" switch, plus the superadmin's "Back up
+  now"; the superadmin restores ONE space from its own restore points (preview, confirm with re-auth and
+  the space's slug, live progress; a safety backup first). It is a platform duty with no per-space
+  switch: a space cannot opt out of being backed up, and it never needs a module to be restored. The
+  space's managers are told by email and a console notice when a restore of their space completes or
+  fails, and every step is in their audit log. A restore keeps the live audit history, money records and
+  evidence photos; see **Per-space backup and restore** in `docs/INVARIANTS.md`.
 
 ## Connected devices
 
@@ -189,11 +212,13 @@ Opt-in, no dependencies; installed only by the `full`/`everything` profiles.
   current machine pricing, and failed jobs create no charge. Telemetry affects staff display only.
   Every mutation leaves typed device provenance and an audit row. The server wire contract is in
   [Printer protocol](device-printer-protocol.md).
-- **Without it** — device routes answer 400 and cannot enroll, authenticate or mutate. Printer routes
-  additionally require both machine modules and answer 400 when either is off. Tombstoning the devices
+- **Without it** — device module routes answer 404 module_disabled and cannot enroll, authenticate or mutate. Printer routes
+  additionally require both machine modules and answer 404 when either is off. The offline monitor
+  skips the space, including offline alerts and routine authentication-artifact cleanup. Tombstoning the devices
   app removes its routes with 404.
 - **Data** — `purge_module_data devices` deletes printer consumption claims, jobs, commands and
-  bindings, then replay nonces, enrollments, device events and identities. Machine workflows and the
+  bindings, Device Adapter API rows, then replay nonces, enrollments, device events and identities, and
+  last the per-machine-type integration bindings (`MachineTypeIntegration`). Machine workflows and the
   payment ledger survive. Purging a machine adapter nulls live printer links and retains history;
   missing targets cannot deliver or finish. Tenant moves retain applied reports and source snapshots,
   disable bindings and automatic application, cancel commands, clear delivery credentials and turn
@@ -202,6 +227,59 @@ Opt-in, no dependencies; installed only by the `full`/`everything` profiles.
 - **Monitoring** - both scheduler topologies check offline state once a minute. Offline/recovery
   history appears in module operational health. Device alerts have their own notification feature;
   every channel is opt-in and initially off. The Devices console exposes identity/status/enrollment
-  to device managers. Printer jobs and label delivery controls arrive with their adapter lanes.
+  to device managers. Printer jobs and label delivery controls arrive with their adapters.
 
 ---
+
+
+### sms
+
+Opt-in and default off, independently of OTP and the optional inbox. Canonical
+`ChannelConfiguration` and personal envelopes use Twilio SMS. Eligible member accounts
+have a non-revoked membership or an owned loan/request, booking, event registration,
+machine-service request or charge. Account-only owners qualify; revoked/restricted/deleting
+accounts are excluded. Staff delivery needs an active staff role in that space and source
+role authority. Current staff SMS diagnostics cannot acquire consent via member-only APIs.
+
+SMS consent binds the verified phone instance, sender and configuration generation; phone
+verification alone does not subscribe. Matrix/category/legacy opt-outs and physical STOP win.
+Own credentials take precedence, including incomplete configurations which refuse delivery.
+Platform notification sending needs operator and tenant opt-in, initially off. OTP uses its
+separate platform number/transport; tenants may use neither OTP AccountSid nor its number.
+Never share a Twilio Messaging Service between OTP and notification numbers.
+
+Uninstall stops delivery and retains history. Channel purge removes tenant configuration/
+private rows according to the purge plan after preserving retired verification. Global sender
+identity/history, physical suppression/alias/correlation and provider references survive to
+protect other accounts/tenants and late callbacks. Reinstall never restores old consent.
+Canonical ingress commits STOP before acknowledgement even for frozen/disabled tenants.
+START does not subscribe. Quotas count logical messages once; billed SMS segments remain
+separate from estimates. See [channel setup](messaging-channels.md).
+
+### whatsapp
+
+Opt-in, default off and personal-only, with canonical Twilio or Meta providers. The module
+key is registered, resolving the old Meta missing-module blocker. A current tenant-tied
+member/account-only owner or authorized staff person still needs their own signed
+matching inbound endpoint proof. SMS/phone login does not establish WhatsApp consent.
+Matrix/category opt-outs, source standing, physical STOP and installation generation apply.
+Platform sending needs explicit operator and tenant opt-in; broken own credentials never
+fall back. Existing operational installs require explicit conversion preserving enablement
+and opt-outs.
+
+Twilio uses approved Content SIDs; Meta uses WABA templates and a configured App ID, phone ID,
+access token, app secret and verify token. Provider refresh owns approval; imported templates
+remain needs_review. Reviewed feature/event/audience variables constrain lifecycle bodies;
+canonical document-media bindings retain private short-lived grants. Authenticated inbound
+opens a bounded 24-hour session window; outside it an approved template is required.
+
+The sender/phone BSUID barrier admits one probe before verified correlation, shared across
+tenants using the sender. Unmapped alias STOP blocks unknown-alias pairs; other sends defer
+and skip after 72 hours without confirmation. Unknown outcomes and expired addressed leases
+are held without blind resend. Explicit re-consent may reset blocked pairs; START cannot.
+
+Uninstall retains history. Purge removes tenant configuration/private data only after preserving
+retired verifiers; shared suppression/alias/correlation, sender history and provider references
+survive. Member consent/connection surfaces remain independent of inbox installation.
+Provisioning and exact callbacks: [channel guide](messaging-channels.md). Destructive integrations
+0043 retirement and sending activation remain held pending [replay sign-off](notification-reconciliation-rollout.md).

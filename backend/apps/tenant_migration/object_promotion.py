@@ -117,7 +117,8 @@ def _mark_promoted_and_charge(row_id, makerspace, *, claimed_at=None):
         raise ImportPromotionClaimLost(
             "The object promotion claim is no longer valid."
         )
-    limits.add_storage(makerspace, row.size)
+    from .event_asset_import import charge_bytes
+    charge_bytes(makerspace, row.size, key=row.target_key, digest=row.sha256, bucket_kind=row.bucket_kind)
     updated = TenantImportObject.objects.filter(
         pk=row_id,
         state=TenantImportObject.State.STAGED,

@@ -8,8 +8,198 @@ regenerating `frontend/openapi-schema.json` and `frontend/src/generated/api.ts`.
 
 Entries up to 0.2.0 below were generated automatically from conventional commits. That
 generation stopped afterwards, so **0.3.0 through 0.5.1 were never recorded here** — for that
-window see `git log` and the condensed changelog in `CLAUDE.md`, which also carries the design
-rule each change introduced.
+window see `git log` and the condensed changelog in `docs/PROJECT-HISTORY.md`, which also
+carries the design rule each change introduced.
+
+## Unreleased
+
+Nothing yet.
+
+## 0.12.0
+
+0.12.0 is the first published release after 0.9.3. The 0.11.0 candidate below was never published;
+its changes ship in 0.12.0 and its section is kept as history. Notes: [release](docs/release-0.12.0.md),
+[upgrade](docs/upgrade-to-0.12.0.md), [security verification](docs/security-summary-0.12.0.md).
+
+**Images.** 0.12.0 publishes exactly two images, `spaceworks-backend` and `spaceworks-frontend` (amd64 and arm64).
+The all-in-one image is retired and `ghcr.io/spaceworks-labs/spaceworks-allinone` has been removed from the
+registry (no installation used it). A single-box install must move to standard containers before updating —
+[switch steps](docs/update-recovery.md#moving-off-a-single-box-install); setup and update refuse the old choice.
+
+- **Printing folded into Machine service** — the separate `printing` module is retired; Machine service handles
+  service requests for every machine type and the 3D print queue is one of them. `makerspaces.0154` keeps Machine
+  service on wherever printing was on; a stored, restored or posted `printing` key reads as `machine_service`; the
+  `print` limit, printer reports and print notifications moved with it ([upgrade](docs/upgrade-to-0.12.0.md)).
+- **Machine consumable profiles and "Add a machine type"** — per-machine-type consumables with units, required flags,
+  estimate and record sources, per-unit prices through the machine charge seam, stock links with the existing low-stock
+  alerts, data templates for common machines, adapter `job.report` `profile_consumptions` and a `machine-consumables`
+  report. `machines.0041`/`0042` add the tables and seed profiles from existing consumables without changing any price;
+  `machines.0043` adds per-type booking defaults, training notes and private documents ([guide](docs/how-to/machine-consumables.md)).
+- **Machine use logged with an event** — an optional "This is for an event" on machine sessions and service requests (no
+  switch), set or cleared by the area manager, an event page section, two reports, a Metabase view and an organiser's
+  cost-to-event approval record ([guide](docs/how-to/machine-use-for-events.md)).
+- **Shelf pointer and adapter hardware guide** — "Show on shelf", guided stocktake and shelf checks for staff, and a
+  Raspberry Pi or ESP32 adapter guide over the Device Adapter API ([how-to](docs/how-to/shelf-pointer.md)).
+- **Anthias and display panels** — screens without a pairing code (secret in an `Authorization` header; the old path
+  route is deprecated and redacted from logs), a Space Manager's choice of panels, order and layout including inventory
+  highlights and a sponsors wall, and optional push of the pages to an Anthias server ([guide](docs/how-to/anthias.md)).
+- **Card Studio** — rulers, print-ready PDF with bleed and crop marks, seven barcode types, side-by-side version
+  compare, per-member background-eraser notice and opt-out, 8 MB card photos re-encoded without location data.
+- **Reports hub, module screens and colours** — reports grouped by module and role, grouped module and feature switch
+  screens with reasons, and per-space colour settings with contrast checks.
+- **Limits** — every module that creates something countable has its own limits, off by default, with a platform
+  default, per-space override, a warning at 80% and refusal of new items only at 100%.
+- **Look and feel** — one box-opening loading animation, page and side bar motion that respects reduced motion, and one
+  solid black dark theme.
+- **Front page changes** — the "Find a space near you" section is removed (the Spaces link and `/spaces` stay); native
+  Android and iOS apps are shown as released and download from GitHub Releases only; each module has a `/features/<module>` page.
+- **Security review fixes** — every finding of the independent reviews fixed: profile and directory privacy, minors,
+  pinned outbound transport, display secrets out of logs, adapter recording deletion, staging-key presigns, per-space
+  machine access grants, PIN budgets, `card_qr` needs the member PIN, append-only adapter logs (`devices.0013`),
+  deployment-wide rate limits (`THROTTLE_DEPLOYMENT_*`). See the [security summary](docs/security-summary-0.12.0.md).
+- **Redis** — Redis stays the default (bundled or external; "no Redis" cron mode remains an opt-in). The bundled image is pinned (`REDIS_IMAGE_TAG`), has
+  append-only persistence on a new `redis_data` volume (empty after upgrade) and a memory cap; the API survives a Redis
+  outage and single-use security checks fail closed. See [Redis](docs/architecture/redis.md).
+- **Sign-in methods guide** — all methods, switches and lockout guards in one page; last-credential removal is refused
+  ([guide](docs/guide/sign-in-methods.md)).
+- **Front page and Features page** — a scrolling product page at the front page (switch `HUB_LANDING_ENABLED`,
+  installer question, `apply-settings.sh --landing on|off`) and a `/features` page built from the app's own
+  catalogue, linking the main, Android and iOS repositories ([guide](docs/how-to/front-page-and-features.md)).
+- **Global member profile and required usernames** — one account-level profile visible to signed-in members by
+  default with a separate open-web consent, status, experience, education, achievements (verified and
+  self-reported), imported hackathon projects and activity graphs; every account has a username with a live
+  availability check, a sign-up field and a blocking choose-your-username step ([profile](docs/how-to/member-profile.md),
+  [usernames](docs/how-to/usernames.md)).
+- **Public space page and display screens** — Here now, Machines now and an events calendar, with paired TV
+  screens ([guide](docs/how-to/display-screens.md)).
+- **Machine printing foundation** — print requests, label printers and enrolled printers; vendor adapters are
+  built separately against the Device Adapter API ([guide](docs/how-to/machine-printing.md)).
+- **Contextual loans for events and bookings** — a loan can be ordinary, linked to an event, to one
+  exact booking, or both. Context explains the purpose only; it never approves, issues or changes the
+  borrower, and changing it rechecks authority on both records ([equipment contexts](docs/equipment-contexts.md)).
+- **Equipment kits** — versioned kits of equipment and consumables, published to eligible requesters.
+  Requesters may pick a kit and their own registration or booking; event and booking staff can propose
+  equipment. Kit consumables become an explicit plan and use no stock until recorded ([kits](docs/equipment-kits.md)).
+- **Event venue booking link** — an event can be linked to a room booking that owns the single room
+  charge; event and room charges stay independent (free/paid in every combination). Linking refuses
+  while an event venue fee is configured or has history. A rejected or cancelled booking can be
+  replaced once by a new booking, keeping the original's price, payment and audit.
+- **Staff price confirmation** — a staff booking preview binds room, member, window and charge mode;
+  a create carrying a stale confirmation is refused with `price_changed` before writing a booking or
+  debt (the field stays optional on the single-booking API).
+- **Booking readiness** — before submit, staff see what admission would refuse (outage, machine under
+  repair, certification) from the same admission checks, plus advisory warnings.
+- **Queue estimates respect maintenance lockout** — the queue ETA applies the authoritative
+  time/meter lockout rule, so a machine blocked by overdue maintenance no longer looks available.
+- **Damaged returns to repairs** — with repairs on, an area manager can open one repair issue from a
+  damaged return line and read a loan's repair context.
+- **Loan and activity reports** — loan-context reports and timelines count each request once in one
+  context; per-activity consumables read inventory-owned use receipts and never move stock
+  ([equipment reports](docs/equipment-reports.md)).
+- **Related facts and event linked finance** — read-only side-by-side registration, attendance,
+  arrival, presence and machine-session facts, and per-currency event finance sections (the
+  Booking-owned room charge counted once), each gated by its source module and authority.
+- **Shop** — an audited staff move of an order to makerspace pickup, recorded consumable costs for
+  sales linked to inventory consumables, and a cancellation fix.
+- **Notifications** — direct-room delivery fails closed when its lookup errors, without spending quota
+  or reaching a provider; independent email delivery stays eligible.
+- **Calendar feeds** — the private booking feed link is pinned to the signed-in owner, so a late
+  response cannot show another account's link.
+- **Clearer refusals** — member-eligibility and delegated-authority refusals explain what is wrong and
+  what to do (presentation only; server decisions unchanged).
+- **Event helper invites** — co-organizers can invite volunteers, mentors, judges and sponsor
+  representatives with that helper role's permissions.
+- **Security** — the web telemetry settings endpoint requires an active account; revoking a person's
+  authentication also ends their personal access tokens and disconnects OAuth app connections.
+- **Translations** — i18n catalogue and message fixes.
+- **Migrations** — new since the 0.11.0 candidate: see the [upgrade guide](docs/upgrade-to-0.12.0.md#new-migrations).
+  `audit.0011` builds an index concurrently in a non-atomic migration.
+
+## 0.11.0 (candidate, not published — folded into 0.12.0)
+
+- **Makerspace home and Inventory** — a separate overview and Inventory page, shared uploaded logo,
+  and the existing banner on both the home and directory card. Light mode is the default;
+  saved theme choices remain respected.
+- **Public stats controls** — area managers can configure their permitted figures and lists,
+  with server-enforced grants and locks, public privacy rules and matching TV output.
+- **Your history** — account-owned borrowing and returns, event and booking history, Shop pickup
+  progress, and permanent payment/receipt links without requiring the membership dashboard.
+- **Release 2 roles and operations** — Technician and Shop Manager extend the fixed role
+  catalogue to nine roles. Repair jobs, maintenance, inventory loans, stocktake and reports follow
+  their tenant, role and capability scope, including when a feature is switched off.
+- **Free, offline and online workflows** — chargeable domains can run free, record balances
+  for offline settlement or use an optional payment rail. Receipts, refunds and retained
+  obligations remain in the core ledger. Shop sales require charge tracking.
+- **Events and hackathons** — configurable submission stages, frozen submissions, judging,
+  pairwise results, people's choice, ticketing, applications, reimbursements and prize records.
+- **Member cards, certificates and the shop** — card and certificate design, verification
+  and revocation, desk sales, pickup, returns and cash-up use their own scoped workflows.
+- **Language and platform administration** — a language switcher, role-specific help,
+  platform overview and audit views, reversible space controls and hosting setup guides.
+- **API and deployment contracts** — personal API access and OAuth app connections, validated
+  API schemas, standard backend/frontend images and modular settings with compatible exports.
+
+- **Staff roles on people (one account per person, U-B)** — `admin/makerspaces/<id>/staff-roles/`
+  (list, grant to a community member, invite by email, change roles and machine scopes, revoke,
+  restore) replaces the staff-account routes. **Removed:** `admin/makerspaces/<id>/staff-accounts/`
+  and its `policy`, `<user>/`, `deactivate/`, `reactivate/`, `set-password/` and `resend-invite/`
+  routes, and the `POST admin/makerspaces/<id>/staff-invitations` writer. Staff invitations are
+  accepted signed in with a fresh emailed code; no response returns `accept_url` any more. The auth
+  payload drops `account_kind` (read `kind`) and refresh/logout accept only the `person` and `platform`
+  contexts. Disabling an account is a superadmin `/control/` action. The console uses the one person
+  sign-in; "Link your staff account" merges a second account from the member account page.
+- **Space Works design system** — brand v1 colours, approved Gilroy text and headings,
+  Unbounded accents and supplied logo masters; a sidebar shell and shared page layouts replace
+  the header/dock UI. The restoration pass restores existing workflow controls across consoles.
+- **Events and bookings programme** — resource-specific staff grants, answer editing and
+  cancellation undo, draft cloning, private ticket/booking confirmations and arrival tracking,
+  curated public websites, email campaigns, signed integration reads, printable credentials
+  and scoped reports. Shared mechanisms keep the two domains independently removable.
+- **Installer choices** — hosting, website, HTTPS and storage precede optional control-plane
+  proxy access, web/organization/makerspace identity, platform MFA and Google/Apple/GitHub
+  selection, then areas and follow-ups, admin, Stripe, repository and optional deploy runner.
+  Provider keys are configured later; Inventory, Machines and Reports default on.
+- **Platform sign-in** — GitHub browser OAuth with PKCE and verified email is member-only;
+  audited login-method settings and the host `set_login_methods` command prevent lockout.
+  Platform MFA can be paused without deleting credentials; superadmins enroll optionally.
+- **Optional control-plane access** — default-off `CONTROL_PLANE_PROXY`, a peer-IP allowlist
+  and an independent loopback HTTPS SSH-tunnel fallback on supported TLS installations.
+
+- **Owner organizations at setup** — the installer asks for the organization name as its own question,
+  before the makerspace name. New makerspaces created in the staff console, API or `/control/` require an existing
+  active owner organization or a new name; the console includes search and pagination. Creation and
+  owner assignment are atomic. Existing ownerless spaces remain usable; tenant import and `seed_e2e`
+  are exceptions to the creation requirement.
+- **Standard containers for every install** — the single-box shape is removed and the all-in-one image
+  is no longer built or published. Existing single-box installs must switch to standard containers before updating;
+  setup and update refuse the old choice and print [switch steps](docs/update-recovery.md#moving-off-a-single-box-install).
+- **Your own nginx** — HTTPS option 3 writes `spaceworks-proxy.nginx.conf` in the install directory and
+  prints the DNS, Certbot, installation and reload steps.
+- **API-only setup** — offers automatic HTTPS or your own reverse proxy and points you to the website
+  hosted elsewhere.
+- **Upload limits fixed** — the built-in web server no longer rejects bulk inventory imports over 1 MB
+  or tenant-migration archive uploads; API bodies allow 10 MB and the archive import route 20 GB.
+- **Tests run locally only** — run `./scripts/dev.sh test` and `./scripts/dev.sh e2e` (or
+  `./scripts/dev.sh affected`) before pushing. GitHub Actions runs basic checks only: frontend
+  type-check, lint and build; backend error lint, system checks and missing migrations; the OpenAPI,
+  generated-client and tenant-dump contracts; and the repository rules. `pip-audit` runs when
+  backend requirements change and weekly. Actions also builds/publishes backend/frontend images,
+  creates the GitHub Release, promotes rolling tags and optionally deploys through the self-hosted runner.
+
+- Seven fixed roles replace editable roles. Staff role sets combine except Space Manager and Member,
+  which stand alone; Machine Manager reach is assigned per person by machine type. The console now
+  provides role-set checkboxes, a read-only role reference and per-person type controls.
+- **Machine Manager scope is per machine type** (owner decision #75b). Staff who had per-machine
+  limits now cover **all machines of their types**, including machines added later. Review each
+  Machine Manager's types after upgrading if someone should reach fewer machines.
+- **Two published images** (owner decision #75a) — `spaceworks-backend` and `spaceworks-frontend`.
+  The one backend image runs host/full, managed/full and managed/free, chosen at start-up by
+  `SPACEWORKS_DEPLOYMENT_MODE` / `SPACEWORKS_DEPLOYMENT_PROFILE`; no `-managed`/`-free` images are published.
+- **Nightly backups keep 7 daily + 4 weekly archives**; on-demand archives keep the configured days.
+  Space Managers see their own archive status on the dashboard.
+- **Operator action required:** fixed-role migration is irreversible. Back up, stop writers, run the
+  new image's `python manage.py preview_fixed_roles` before `migrate`, and fix all “must fix before
+  upgrading” notification rules. Follow the [upgrade procedure](docs/update-recovery.md#fixed-role-upgrade-2026-10-16).
 
 ## 0.9.3 (2026-11-08)
 
@@ -91,21 +281,21 @@ The feature-research programme, Waves 1-6 plus the coverage-gap packages:
   accepts or declines, and the partner's members then discover and register through their own
   member area. Registration records durable provenance, so later edits to the collaborator list
   cannot erase a member's history or void a QR already issued
-  ([799804d](https://github.com/SpaceWorks-HQ/SpaceWorks/commit/799804d101a1ef74a17a20ef0a4332715bd675ba))
+  ([799804d](https://github.com/SpaceWorks-Labs/SpaceWorks/commit/799804d101a1ef74a17a20ef0a4332715bd675ba))
 * **events:** a visiting member accepts the host's waiver on the registration itself, rather than
   by manufacturing a membership at the host — which would corrupt the host's roster, quotas, dues
   and member reporting. Audited by waiver id and version, never by body
-  ([dab0354](https://github.com/SpaceWorks-HQ/SpaceWorks/commit/dab035456decbfb3315533354a345fa255761311))
+  ([dab0354](https://github.com/SpaceWorks-Labs/SpaceWorks/commit/dab035456decbfb3315533354a345fa255761311))
 * **events:** QR check-in for event registrations. Resolution is read-only and answers unknown,
   malformed and wrong-event tokens identically, so it cannot be used to tell them apart
-  ([d59f38d](https://github.com/SpaceWorks-HQ/SpaceWorks/commit/d59f38d6ded06592f8041517d24cc5c3af39d8bd))
+  ([d59f38d](https://github.com/SpaceWorks-Labs/SpaceWorks/commit/d59f38d6ded06592f8041517d24cc5c3af39d8bd))
 * **members:** opt-in publication of recently attended events on a maker profile, consent-gated
   separately from the rest of the profile because attendance is not something the member typed
-  ([9ed0fcb](https://github.com/SpaceWorks-HQ/SpaceWorks/commit/9ed0fcb5af38994f67180cd0746e26b34abe7873))
+  ([9ed0fcb](https://github.com/SpaceWorks-Labs/SpaceWorks/commit/9ed0fcb5af38994f67180cd0746e26b34abe7873))
 * **events:** registering no longer requires an active presence session — signing up is planning
   to attend, not attending. Presence is proven at the door by the staff-scanned QR, and the nine
   other presence-guarded surfaces are unchanged
-  ([f16896f](https://github.com/SpaceWorks-HQ/SpaceWorks/commit/f16896f5062010f44e6b3eca1aeb6252a93ef632))
+  ([f16896f](https://github.com/SpaceWorks-Labs/SpaceWorks/commit/f16896f5062010f44e6b3eca1aeb6252a93ef632))
 
 ### Bug Fixes
 

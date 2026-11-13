@@ -1,7 +1,11 @@
+import { plural, t } from "@lingui/core/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 
+import { StatusPill } from "../../../components/ui";
 import { staffRequest } from "../../../lib/api";
+import { LogoLoader } from "../../../components/LogoLoader";
+import { BoxArt } from "../../../components/BoxSpinner";
 
 type Coverage = {
   attempt: number;
@@ -37,7 +41,7 @@ export function verificationVerdict(run: VerificationRun): string {
     && !c.unattested_count && !c.mac_unavailable_count && !c.unbatched_count && !c.batch_unavailable_count
     && c.local_batch_verified_count === c.row_count && c.chain_status === "locally_verified"
     && c.anchor_status === "externally_anchored" && c.externally_anchored_count === c.row_count;
-  return full ? "All entries fully verified." : "No invalid entries found; verification coverage is incomplete.";
+  return full ? t`All entries fully verified.` : t`No invalid entries found; verification coverage is incomplete.`;
 }
 
 function gaps(c: Coverage): string[] {
@@ -88,32 +92,30 @@ export function AuditVerificationStatus({
     <div className="mb-3 rounded-md border border-line bg-bg p-3 text-sm">
       <div className="flex flex-wrap items-center gap-3">
         <button
-          className="desk-button-primary"
+          className="desk-button"
           type="button"
           disabled={!makerspaceId || start.isPending || (accepted !== null && !run?.terminal)}
           onClick={() => start.mutate()}
         >
-          Verify these entries
+          {start.isPending ? <><BoxArt size={16} mono />{t`Starting verification…`}</> : t`Verify these entries`}
         </button>
-        {!makerspaceId ? <span className="text-muted">Choose one makerspace to verify.</span> : null}
-        {accepted && !run ? <span className="text-muted">Loading verification status…</span> : null}
-        {run ? <span className="font-medium">{verificationVerdict(run)}</span> : null}
+        {!makerspaceId ? <span className="text-muted">{t`Choose one makerspace to verify.`}</span> : null}
+        {accepted && !run ? <LogoLoader label={t`Loading verification status…`} size={48} className="min-h-16 py-3" /> : null}
+        {run ? <StatusPill label={verificationVerdict(run)} tone={verificationVerdict(run).includes("problems") ? "danger" : verificationVerdict(run) === "All entries fully verified." ? "success" : "warn"} /> : null}
       </div>
       {start.error ? <p className="mt-2 text-danger">{start.error.message}</p> : null}
       {status.error ? (
         <p className="mt-2 text-danger">
           {status.error.message}{" "}
-          <button type="button" className="desk-button-ghost" onClick={() => void status.refetch()}>Retry status</button>
+          <button type="button" className="desk-button-ghost" onClick={() => void status.refetch()}>{t`Retry status`}</button>
         </p>
       ) : null}
       {run?.terminal && gaps(run.coverage).length ? (
-        <p className="mt-2 text-muted">Coverage gaps: {gaps(run.coverage).join(", ")}.</p>
+        <p className="mt-2 text-muted">{t`Coverage gaps: ${gaps(run.coverage).join(", ")}.`}</p>
       ) : null}
       {run?.terminal ? (
         <p className="mt-1 text-xs text-muted">
-          {run.coverage.row_count} rows · {run.coverage.mac_valid_count} MAC-valid ·{" "}
-          {run.coverage.local_batch_verified_count} in a verified batch · chain {run.coverage.chain_status} ·
-          anchor {run.coverage.anchor_status.replace("_", " ")}
+          {t`${plural(run.coverage.row_count, { one: "# row", other: "# rows" })} · ${run.coverage.mac_valid_count} MAC-valid ·${" "}${run.coverage.local_batch_verified_count} in a verified batch · chain ${run.coverage.chain_status} · anchor ${run.coverage.anchor_status.replace("_", " ")}`}
         </p>
       ) : null}
     </div>

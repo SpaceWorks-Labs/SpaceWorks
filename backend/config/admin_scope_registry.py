@@ -7,6 +7,7 @@ readable; both names are re-exported there, which is where every caller imports 
 # Models whose makerspace is reached via a nested relation (no direct `makerspace` FK).
 # Keyed by "app_label.model_name" (lowercase) -> ORM lookup ending in _id.
 NESTED_MAKERSPACE_LOOKUPS = {
+    "accounts.user": "staff_makerspace_id",
     "devices.printerjobconsumption": "job__makerspace_id",
     "accounts.memberclaimcode": "membership__makerspace_id",
     "audit.auditverificationrunevent": "run__makerspace_id",
@@ -45,19 +46,20 @@ NESTED_MAKERSPACE_LOOKUPS = {
 # Registered admin models that are intentionally NOT makerspace-scoped (account/global).
 GLOBAL_ADMIN_MODELS = {
     "makerspaces.spacepackprofile",
-    "accounts.user",
     "organizations.organization",
     "organizations.organizationmembership",
     "accounts.platformsocialauthsettings",
+    "accounts.platformattestationsettings",
     # The login-method switches govern credentials, and credentials resolve before a
     # makerspace is selected — the same reason social auth is platform-scoped.
     "accounts.platformloginmethods",
     "accounts.passwordresetenvelope",
     "accounts.socialidentity",
+    # Decision 305: the global profile belongs to the person, not to a space.
+    "makerspaces.accountprofile",
     # Platform-scoped for the same reason as the built-in providers: identity resolves
     # before a makerspace is selected, so an OIDC provider cannot belong to one.
     "accounts.oidcprovider",
-    "auth.group",
     # Deployment-wide scheduler bookkeeping: one row per task name, no tenant.
     "operations.periodictaskrun",
     "axes.accessattempt",
@@ -68,6 +70,7 @@ GLOBAL_ADMIN_MODELS = {
     # Platform-scoped for the same reason identity is: a sign-in code is sent before any
     # makerspace has been selected, so there is no tenant to own the credentials.
     "integrations.platformsmssettings",
+    "integrations.platformwhatsappsettings",
     "integrations.dailyotpsmscounter",
     "payments.platformstripeconnectsettings",
     "backup.platformbackupsettings",
@@ -77,24 +80,29 @@ GLOBAL_ADMIN_MODELS = {
     "backup.deploymentdatabaseidentity", "backup.backuplease",
     "backup.backuprun", "backup.backupruncoverage",
     "backup.restorerollbackobject",
-    # Fingerprint reservations are deliberately deployment-global and permanent:
-    # `makerspace_id_snapshot` is a plain integer, not an FK, so a reservation
-    # outlives its makerspace and cannot be reused. There is no Makerspace path.
-    "backup.archiverecipientreservation",
-    # Custody state is a deployment backup alarm, scoped like its siblings above
-    # (`backuparchive`, `restoreoperation`): an operator must be able to see that a
-    # makerspace is below its archive-recipient floor in order to act on it.
-    "backup.makerspacearchivecustodystate",
-    "backup.archivecustodyalarmdelivery",
-    "backup.makerspacetenantexitcustodystate",
-    "backup.tenantexitcustodyalarmdelivery",
     "tenant_migration.tenantdumpcapture",
-    "backup.b1activationstate", "backup.backupartifactledger",
-    "backup.backupartifactcomponent", "backup.backupcomponentrecipient",
-    "backup.b1restoreoperationstate", "backup.b1restorecomponentstate",
-    "backup.b1reservationentry", "backup.b1fencecontinuity",
+    "backup.backupartifactledger", "backup.backupartifactcomponent",
     "backup.backupdestination", "backup.backupdestinationupload",
     "encryption.piiglobalwritefence",
-    "token_blacklist.blacklistedtoken",
-    "token_blacklist.outstandingtoken",
+    # Platform-level hosting requests have no tenant (a nullable inviter makerspace is
+    # provenance, not ownership); the review admin is superadmin-only.
+    "hosting_requests.hostingrequest",
+    # Platform IP allow/deny rules and automatic blocks are global (#128 C-2; S-C).
+    "accounts.ipaccessrule", "accounts.ipautoblock",
 }
+
+# No tenant can inspect deployment claims, account totals, or bucket identities.
+GLOBAL_ADMIN_MODELS |= frozenset({
+    'backup.manageddeploymentstate',
+    'backup.managedcapturestate',
+    'backup.managedwriterboundary',
+    'operations.cloudtaskstate',
+    'operations.cloudtickrun',
+    'operations.cloudtickratewindow',
+    'operations.cloudemailbudgetaccount',
+    'operations.cloudemailreservation',
+    'operations.storagecapabilitystate',
+    'operations.cloudusagesample',
+    'operations.cloudobjectusagereceipt',
+    'integrations.emailproviderwebhookreceipt',
+})

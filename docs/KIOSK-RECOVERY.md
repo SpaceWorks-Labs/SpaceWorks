@@ -1,11 +1,11 @@
-# Failed kiosk replay recovery — phase 9e
+# Failed kiosk replay recovery
 
 Failed attempts remain failed. Review appends resolution code, human reviewer and
 time; the original fingerprint, state, evidence, failure and attempt timestamps
 stay unchanged. No recovery endpoint mutates inventory or request/loan state.
 
 The Requests panel lists retained failures under each operation's current RBAC
-action, including custom and organization roles. Origin scope, hidden spaces,
+action, including combined built-in roles and organization-derived grants. Origin scope,
 archival and restricted/suspended users keep their normal denial semantics.
 Historical review is independent of the kiosk feature and module switches:
 turning off a channel does not erase its outstanding review obligations. Any
@@ -29,8 +29,8 @@ damage/missing outcomes continue through the existing staff return workflow.
 
 Failed direct handouts have no retained borrower/items/subject identity, so automatic
 replacement compatibility cannot be verified and linking fails closed. Staff can
-inspect evidence and acknowledge only if they verified no physical change. A future
-owner-approved identity contract is required to extend replacement to this case.
+inspect evidence and acknowledge only if they verified no physical change. Extending
+replacement to this case would need a new, explicitly approved identity contract.
 Direct returns derive missing subject identity from the retained predecessor chain.
 
 Evidence IDs are operational references, not read authority. A server-calculated
@@ -49,7 +49,7 @@ resolution audit domain refs remap while replay/session/lease UUIDs stay source 
 
 Run the new hardware recovery/scope/concurrency/contracts tests plus existing replay,
 origin, data-export, catalog/reference and purge tests in the isolated Postgres runner.
-Regenerate OpenAPI schema and frontend client artifacts; the lane leaves these alone.
+Regenerate OpenAPI schema and frontend client artifacts; they are regenerated at release time.
 Run `scripts/dev.sh e2e`: it seeds separate immutable tenants, builds production assets
 and runs serial Playwright on a spare preview port (5173 by default), against the real
 Docker backend/Postgres/Redis/MinIO. Existing dev port 5000 remains untouched. Preview
@@ -60,5 +60,5 @@ The dev backend must already have a valid API_CLIENT_ENC_KEY and a minimum 32-by
 EVENT_STATION_PIN_PEPPER configured, just as live Station services require. Seeding
 does not manufacture different secrets for a process that cannot serve them. The
 Station PIN and public bearer token are written only to the ignored `.seed.json`,
-never seed stdout. Verify the backend mount is the coordinator's integrated tree
-before trusting Playwright. Backend/e2e tests were authored but not run in this lane.
+never seed stdout. Verify the backend mount is the tree you mean to test
+before trusting Playwright.

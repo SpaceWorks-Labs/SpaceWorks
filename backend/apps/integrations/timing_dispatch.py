@@ -24,7 +24,8 @@ def defer_log(log, *, kind, now=None):
         now = now or timezone.now()
         until = quiet_until(log.makerspace, 'email' if kind == 'email' else log.channel, now)
         digest = None
-        if kind == 'email' and log.event != 'daily_digest':
+        from .delivery_sources import digestible
+        if kind == 'email' and log.event != 'daily_digest' and digestible(log):
             from apps.integrations.digests import digest_due
             digest = digest_due(log.makerspace, log.recipient_id, log.feature, now)
             if digest:
@@ -45,5 +46,9 @@ def defer_log(log, *, kind, now=None):
             log.save(update_fields=['error', 'status', 'updated_at'])
         return True
     except Exception:
+        if getattr(log, 'source_kind', ''):
+            # Optional source-backed content must not escape quiet hours when
+            # its durable release claim could not be recorded.
+            raise
         logger.warning('notification_timing_failed_open', extra={'makerspace_id': log.makerspace_id})
         return False

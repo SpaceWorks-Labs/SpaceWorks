@@ -26,6 +26,10 @@ def project_subject_row(dataset, row, subject_id):
     result = {}
     for column in dataset.columns:
         source = column.sources[0]
+        if dataset.model in {"events.EventLoanContext", "bookings.BookingLoanContext"} and source in {"event", "participant_registration", "booking", "revision"}:
+            continue
+        if dataset.model == "events.EventBookingDecision" and source in {"event", "booking", "intent", "operation_id", "generation", "revision"}:
+            continue
         if "__" in source:
             # Derived other-actor names never enter a subject's global-user closure.
             continue
@@ -70,6 +74,8 @@ def build_subject_archive(job, *, monotonic=time.monotonic):
                 cursor.execute("SET LOCAL statement_timeout = %s", [max(1, int(remaining * 1000))])
                 cursor.execute("SET LOCAL lock_timeout = %s", [max(1, int(remaining * 1000))])
             snapshot = timezone.now()
+            from apps.operations.cloud_jobs.admission import assert_export
+            assert_export(job)
             for dataset in DATASETS.values():
                 if dataset.fidelity is not Fidelity.PORTABLE:
                     continue
@@ -91,6 +97,27 @@ def build_subject_archive(job, *, monotonic=time.monotonic):
                         count += 1
                     output.write(b"]")
                 counts[dataset.model] = count
+            from .subject_runtime import runtime_projections, runtime_record
+            for label, query in runtime_projections(job.requested_by, job.makerspace_id):
+                count = 0
+                with archive.open("runtime_activity/" + label + ".json", "w") as output:
+                    output.write(b"[")
+                    for row in query.iterator(chunk_size=settings.DATA_EXPORT_PAGE_SIZE):
+                        if monotonic() >= deadline:
+                            raise ExportDeadlineExceeded(label, sum(counts.values()) + count)
+                        if count:
+                            output.write(b",")
+                        value = runtime_record(label, row)
+                        output.write(json.dumps(value, cls=DjangoJSONEncoder).encode())
+                        count += 1
+                    output.write(b"]")
+                counts[label] = count
+            # M17: the account-level global profile is the person's own data too (decision 336f).
+            from .subject_account_profile import account_profile_records
+            for section, rows in account_profile_records(job.requested_by).items():
+                archive.writestr(f"account_profile/{section}.json", json.dumps(
+                    rows, cls=DjangoJSONEncoder, ensure_ascii=False))
+                counts[f"account_profile.{section}"] = len(rows)
             manifest = {
                 "kind": "subject_access", "registry_version": REGISTRY_VERSION,
                 "makerspace_id": job.makerspace_id, "subject_id": job.requested_by_id,

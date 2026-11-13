@@ -7,7 +7,6 @@ from pathlib import Path
 import subprocess
 import tarfile
 import tempfile
-import uuid
 
 from django.conf import settings
 
@@ -19,33 +18,49 @@ MAX_MEMBER_BYTES = 2 * 1024 * 1024 * 1024
 MAX_ARCHIVE_BYTES = 20 * 1024 * 1024 * 1024
 
 
-def stage_encrypted_upload(upload):
-    root = Path(settings.BACKUP_OPS_DIR, "tenant-imports")
+def seal_rows_sidecar(root, output_fd):
+    """Keep row-only request reads encrypted without copying the object payloads."""
+    recipient = settings.TENANT_MIGRATION_AGE_RECIPIENT
+    if not recipient:
+        raise ArchiveFormatError("The target age recipient is not configured.")
+    process = None
     try:
-        root.mkdir(parents=True, exist_ok=True, mode=0o700)
-    except OSError as exc:
-        raise ArchiveFormatError("The encrypted migration archive could not be staged.") from exc
-    path = root / f"{uuid.uuid4()}.tar.age"
-    total = 0
-    try:
-        with path.open("xb") as output:
-            for chunk in upload.chunks():
-                total += len(chunk)
-                if total > MAX_ARCHIVE_BYTES:
-                    raise ArchiveFormatError("The encrypted migration archive is too large.")
-                output.write(chunk)
-        path.chmod(0o600)
-        return path
-    except OSError as exc:
-        path.unlink(missing_ok=True)
-        raise ArchiveFormatError("The encrypted migration archive could not be staged.") from exc
-    except Exception:
-        path.unlink(missing_ok=True)
-        raise
+        _require_binary("age")
+        process = subprocess.Popen(
+            ["age", "-r", recipient], stdin=subprocess.PIPE,
+            stdout=output_fd, stderr=subprocess.DEVNULL,
+        )
+        if process.stdin is None:
+            raise OSError("age stdin pipe was not created")
+        with tarfile.open(fileobj=process.stdin, mode="w|") as archive:
+            for path in sorted(item for item in Path(root).rglob("*") if item.is_file()):
+                relative = path.relative_to(root)
+                if relative.parts[0] != "objects":
+                    archive.add(path, arcname=relative.as_posix(), recursive=False)
+        process.stdin.close()
+        if process.wait() != 0:
+            raise ArchiveFormatError("The encrypted rows archive could not be sealed.")
+    except (OSError, subprocess.SubprocessError, RuntimeError) as exc:
+        raise ArchiveFormatError("The encrypted rows archive could not be sealed.") from exc
+    finally:
+        if process is not None:
+            if process.poll() is None:
+                process.kill()
+                process.wait()
+            if process.stdin is not None:
+                process.stdin.close()
 
 
 @contextmanager
-def decrypted_archive(encrypted_path):
+def decrypted_archive(encrypted_path, *, require_carried_keys=True):
+    from apps.operations.cloud_jobs.admission import assert_ciphertext, assert_archive, free
+    assert_ciphertext(encrypted_path)
+    from apps.backup.managed.staging import is_locator, materialize
+    if is_locator(encrypted_path):
+        with materialize(encrypted_path) as local:
+            with decrypted_archive(local, require_carried_keys=require_carried_keys) as result:
+                yield result
+        return
     identity = settings.TENANT_MIGRATION_AGE_IDENTITY_FILE
     if not identity:
         raise ArchiveFormatError("The target age identity is not configured.")
@@ -81,10 +96,12 @@ def decrypted_archive(encrypted_path):
                 if key in seen:
                     raise ArchiveFormatError("The migration archive contains a duplicate path.")
                 seen.add(key)
+                if free() and (len(seen) > 512 or member.size > 2 * 1024 * 1024):
+                    raise ArchiveFormatError("This import exceeds the free archive limits; use an external full worker.")
                 if member.size > MAX_MEMBER_BYTES:
                     raise ArchiveFormatError("A migration archive member is too large.")
                 total_size += member.size
-                if total_size > MAX_ARCHIVE_BYTES:
+                if total_size > MAX_ARCHIVE_BYTES or (free() and total_size > 2 * 1024 * 1024):
                     raise ArchiveFormatError("The migration archive is too large.")
                 source = bundle.extractfile(member)
                 if source is None:
@@ -99,8 +116,9 @@ def decrypted_archive(encrypted_path):
                         output.write(chunk)
         if process.wait() != 0:
             raise ArchiveFormatError("The encrypted migration archive could not be decrypted.")
-        if carried is None:
+        if carried is None and require_carried_keys:
             raise ArchiveFormatError("The migration archive has no carried-key payload.")
+        assert_archive(root)
         yield root, carried
     except Exception:
         if process.poll() is None:
@@ -124,6 +142,9 @@ def _safe_relative_path(name):
 def _decode_keys(payload):
     try:
         values = json.loads(payload)["keys"]
+        from apps.operations.cloud_jobs.admission import free
+        if free() and len(values) > 8:
+            raise ArchiveFormatError("This import exceeds the free profile's eight-key limit; use an external full worker.")
         records = []
         for value in values:
             record = dict(value)

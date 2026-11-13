@@ -5,6 +5,7 @@ same MIME and size bounds (`EVIDENCE_ALLOWED_MIME`, `EVIDENCE_MAX_BYTES`). The f
 never client-writable: the browser only ever receives a presign for `staging/<key>`, and
 `finalize_photo` copies it into place, deletes the staging object and saves the row.
 """
+from django.utils.translation import gettext
 import uuid
 
 from django.conf import settings
@@ -25,9 +26,9 @@ def _final_key(makerspace_id):
 
 def presign_photo(card, content_type):
     if content_type not in settings.EVIDENCE_ALLOWED_MIME:
-        raise ValidationError({"content_type": "Unsupported image type."})
+        raise ValidationError({"content_type": gettext("Unsupported image type.")})
     final_key = _final_key(card.makerspace_id)
-    upload = storage.presigned_upload(final_key, content_type)
+    upload = storage.presigned_upload(final_key, content_type, max_bytes=photo_max_bytes())
     return {"object_key": final_key, "content_type": content_type, **upload}
 
 
@@ -35,30 +36,39 @@ def _validate_key(card, object_key):
     prefix = f"member-cards/{card.makerspace_id}/"
     if not object_key.startswith(prefix) or "/" in object_key[len(prefix):]:
         # The prefix test stops one makerspace attaching another's object.
-        raise ValidationError({"object_key": "Unknown upload."})
+        raise ValidationError({"object_key": gettext("Unknown upload.")})
 
 
 @transaction.atomic
 def finalize_photo(actor, card, *, object_key, content_type, consent):
     _validate_key(card, object_key)
     if not consent:
-        raise ValidationError({"consent": "A photo needs the member's consent to be stored."})
+        raise ValidationError({"consent": gettext("A photo needs the member's consent to be stored.")})
     staging = storage.staging_key(object_key)
     size = storage.object_size(staging)
     if not size:
-        raise ValidationError({"object_key": "Upload not found; upload the photo first."})
-    if size > settings.EVIDENCE_MAX_BYTES:
+        raise ValidationError({"object_key": gettext("Upload not found; upload the photo first.")})
+    if size > photo_max_bytes():
         storage.delete_object(staging)
-        raise ValidationError({"object_key": "Photo exceeds the size limit."})
+        raise ValidationError({"object_key": gettext("Photo exceeds the size limit.")})
     storage.validate_evidence_object(staging)
-    storage.copy_object(staging, object_key)
-    storage.delete_object(staging)
+    # Decision 345(a): re-encode like every other card photo. The camera's orientation is applied, then EXIF (GPS,
+    # device serials, timestamps) and every other metadata block are dropped; the long edge is capped at 1200 px and
+    # the stored type is what the server wrote, never the client's claim.
+    from apps.card_designs.images import normalise
+    data = _read_upload(staging)
+    if not data:
+        raise ValidationError({"object_key": gettext("Upload not found; upload the photo first.")})
+    png, _w, _h, _mean = normalise(data, max_edge=1200, keep_alpha=False)
     card = type(card).objects.select_for_update().get(pk=card.pk)
     old_key, old_size = card.photo_object_key, card.photo_size_bytes or 0
-    add_storage(card.makerspace, size)
+    add_storage(card.makerspace, len(png))  # charge before the write: a refused space leaves no orphan final object
+    _write_photo(object_key, png)
+    storage.delete_object(staging)
+    transaction.on_commit(lambda: _purge_stale_cutout(card))
     card.photo_object_key = object_key
-    card.photo_content_type = content_type
-    card.photo_size_bytes = size
+    card.photo_content_type = "image/png"
+    card.photo_size_bytes = len(png)
     card.photo_consent_at = timezone.now()
     card.photo_consent_version = PHOTO_CONSENT_VERSION
     card.save(
@@ -69,8 +79,63 @@ def finalize_photo(actor, card, *, object_key, content_type, consent):
     )
     if old_key:
         transaction.on_commit(lambda: _release(card.makerspace, old_key, old_size))
+    from apps.card_designs.photos import resolve_requests
+    resolve_requests("member_card", card)
     audit.record(actor, "member_card.photo_updated", makerspace=card.makerspace, target=card, meta={"card_id": card.pk})
     return card
+
+
+@transaction.atomic
+def replace_photo_bytes(actor, card, data):
+    """Release 2 L3: store a server-made photo (an accepted background clean-up).
+
+    The holder consented to the original; the clean-up keeps that consent version. The
+    original object is deleted once the replacement commits (Q-I3).
+    """
+    from apps.tenant_migration.gate_runtime import assert_write_allowed
+    assert_write_allowed(card.makerspace_id)
+    from apps.card_designs.images import normalise
+    from apps.card_designs.storage import put_bytes
+    png, _w, _h, _mean = normalise(data, max_edge=1200, keep_alpha=False)
+    key = _final_key(card.makerspace_id)
+    card = type(card).objects.select_for_update().get(pk=card.pk)
+    old_key, old_size = card.photo_object_key, card.photo_size_bytes or 0
+    add_storage(card.makerspace, len(png))  # charge first, then write (no orphan object at the storage cap)
+    put_bytes(key, png, "image/png")
+    transaction.on_commit(lambda: _purge_stale_cutout(card))
+    card.photo_object_key, card.photo_content_type, card.photo_size_bytes = key, "image/png", len(png)
+    card.photo_consent_at = card.photo_consent_at or timezone.now()
+    card.photo_consent_version = card.photo_consent_version or PHOTO_CONSENT_VERSION
+    card.save(update_fields=["photo_object_key", "photo_content_type", "photo_size_bytes",
+                             "photo_consent_at", "photo_consent_version", "updated_at"])
+    if old_key:
+        transaction.on_commit(lambda: _release(card.makerspace, old_key, old_size))
+    audit.record(actor, "member_card.photo_updated", makerspace=card.makerspace, target=card, meta={"card_id": card.pk})
+    return card
+
+
+def photo_max_bytes():
+    """Decision 345: the presign, the size check and the re-encoder agree (8 MB, never above the evidence ceiling),
+    so a too-large photo is refused before it is uploaded, not after."""
+    from apps.card_designs.images import MAX_UPLOAD_BYTES
+    return min(MAX_UPLOAD_BYTES, settings.EVIDENCE_MAX_BYTES)
+
+
+def _read_upload(staging_key):
+    """The staged upload's bytes (bounded by the evidence size limit), or None."""
+    from apps.card_designs.storage import get_bytes
+    return get_bytes(staging_key, photo_max_bytes() + 1)
+
+
+def _write_photo(object_key, data):
+    from apps.card_designs.storage import put_bytes
+    put_bytes(object_key, data, "image/png")
+
+
+def _purge_stale_cutout(card):
+    """A replaced photo makes its cut-out stale (it never prints again); drop it and its storage charge."""
+    from apps.card_designs.cutout_staleness import purge_if_stale
+    purge_if_stale("member_card", card)
 
 
 def _release(makerspace, object_key, size):
@@ -82,6 +147,8 @@ def _release(makerspace, object_key, size):
 def delete_photo(card):
     """Delete the bytes and free the quota; the caller blanks the row."""
     if card.photo_object_key:
+        from apps.card_designs.cutouts import purge_for_card
+        purge_for_card("member_card", card)  # D314c: the derived cut-out goes with its original
         _release(card.makerspace, card.photo_object_key, card.photo_size_bytes or 0)
 
 

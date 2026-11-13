@@ -1,14 +1,21 @@
+import { formatDate } from "../../lib/format";
+import { plural, t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 
+import { Callout, EmptyState, StatusPill, TicketCard, Icon } from "../../components/ui";
 import { StructuredApiError } from "../../lib/api";
 import { CardPhotoUpload } from "./memberCard/CardPhotoUpload";
 import { OfflineCardSave } from "./memberCard/OfflineCardSave";
+import { ScanQrView } from "./memberCard/ScanQrView";
 import { forgetOfflineCard } from "./memberCard/offlineCard";
 import { useCardPreview, useMyMemberCard, useRenameCard } from "./memberCard/api";
+import { LogoLoader } from "../../components/LogoLoader";
+import { BoxArt } from "../../components/BoxSpinner";
 
 /** The member's own ID card: the printed name they control, their photo, and a
  *  watermarked preview of what the front desk will print. */
-export function MemberCardPanel({ makerspaceId, spaceName = "Your makerspace" }: { makerspaceId: number; spaceName?: string }) {
+export function MemberCardPanel({ makerspaceId, spaceName: givenSpaceName, compact = false, cardHref = "/member/account-portal?section=card" }: { makerspaceId: number; spaceName?: string; compact?: boolean; cardHref?: string }) {
+  const spaceName = givenSpaceName ?? t`Your makerspace`; // ID-6: translated default
   const card = useMyMemberCard(makerspaceId);
   const rename = useRenameCard(makerspaceId);
   const preview = useCardPreview(makerspaceId);
@@ -27,13 +34,13 @@ export function MemberCardPanel({ makerspaceId, spaceName = "Your makerspace" }:
   }, [card.error]);
 
   if (card.isLoading) {
-    return <section className="desk-panel p-5 text-sm text-muted">Loading your card…</section>;
+    return <LogoLoader label={t`Loading your card…`} size={48} className="min-h-16 py-3" />;
   }
   if (notIssued) {
     return (
       <section className="desk-panel p-5">
-        <h2 className="title-panel">Your member card</h2>
-        <p className="mt-1 text-sm text-muted">No card issued yet — ask the front desk.</p>
+        <h2 className="title-panel">{t`Your member card`}</h2>
+        <EmptyState message={t`No card issued yet. Ask the front desk for your member card.`} />
       </section>
     );
   }
@@ -42,47 +49,53 @@ export function MemberCardPanel({ makerspaceId, spaceName = "Your makerspace" }:
   if (card.error || !card.data) {
     return (
       <section className="desk-panel p-5">
-        <h2 className="title-panel">Your member card</h2>
+        <h2 className="title-panel">{t`Your member card`}</h2>
         <p className="mt-1 text-sm text-danger" role="alert">
-          {card.error instanceof Error ? card.error.message : "Could not load your card."}
+          {card.error instanceof Error ? card.error.message : t`Could not load your card.`}
         </p>
       </section>
     );
   }
 
   const row = card.data;
+  const scannable = row.is_active && row.qr_active && row.qr_image ? row.qr_image : null;
 
   return (
     <section className="desk-panel p-5">
-      <h2 className="title-panel">Your member card</h2>
-      <p className="eyebrow mt-2">
-        <span className="font-mono">{row.card_number}</span> ·{" "}
-        {row.is_active ? "active" : "revoked"} · printed {row.print_count}{" "}
-        {row.print_count === 1 ? "time" : "times"}
-      </p>
-
-      <label className="mt-4 block text-sm font-medium text-ink" htmlFor="member-card-printed-name">
-        Name printed on the card
-      </label>
+      <div className="max-w-md"><TicketCard organisation={spaceName} title={row.printed_name} fields={[
+        { label: t`Card number`, value: <span className="tabular-nums">{row.card_number}</span> },
+        { label: t`Status`, value: <StatusPill label={row.is_active ? t`Active` : t`Revoked`} tone={row.is_active ? "success" : "danger"} /> },
+        { label: t`Printed`, value: plural(row.print_count, { one: "# time", other: "# times" }) },
+        { label: t`Issued`, value: formatDate(row.issued_at) },
+      ]} qr={scannable ? <img src={scannable} alt={t`Your member card QR code`} /> : <div className="flex h-full items-center justify-center rounded-xl bg-surface"><Icon name="User" className="h-16 w-16 text-muted" /></div>}
+        caption={row.is_active ? t`Your member card · ask the front desk to scan your printed card.` : t`This card is no longer valid.`} /></div>
+      {scannable || compact ? <div className="mt-4 flex flex-wrap gap-3">
+        {scannable ? <ScanQrView src={scannable} name={row.printed_name} /> : null}
+        {compact ? <a className="desk-button w-full sm:w-auto" href={cardHref}>{t`View your member card`}</a> : null}
+      </div> : null}
+      {!row.is_active ? <div className="mt-4"><Callout size="panel" tone="danger" lead={t`This card was revoked.`} body={t`Ask staff for a new one.`} /></div> : null}
+      {!compact ? <>
+      <label className="mt-6 block text-sm font-medium text-ink" htmlFor="member-card-printed-name">
+        {t`Name printed on the card`}</label>
       <input
         id="member-card-printed-name"
-        className="desk-input mt-1 w-full"
+        className="desk-input mt-1 w-full max-w-md"
         value={printedName}
         onChange={(event) => {
           setDirty(true);
           setPrintedName(event.target.value);
         }}
       />
-      <div className="desk-actions mt-3 flex flex-wrap gap-2">
+      <div className="desk-actions mt-3 flex flex-wrap gap-2 [&>button]:flex-1 sm:[&>button]:flex-none">
         <button
-          className="desk-button-secondary"
+          className="desk-button-brand"
           type="button"
           disabled={rename.isPending || !printedName.trim()}
           onClick={() =>
             rename.mutate(printedName.trim(), { onSuccess: () => setDirty(false) })
           }
         >
-          {rename.isPending ? "Saving…" : "Save name"}
+          {rename.isPending ? <><BoxArt size={16} mono />{t`Saving…`}</> : t`Save name`}
         </button>
         <button
           className="desk-button-ghost"
@@ -90,17 +103,17 @@ export function MemberCardPanel({ makerspaceId, spaceName = "Your makerspace" }:
           disabled={preview.isPending}
           onClick={() => preview.mutate()}
         >
-          {preview.isPending ? "Preparing…" : "Preview card (PDF)"}
+          {preview.isPending ? <><BoxArt size={16} mono />{t`Preparing…`}</> : t`Preview card (PDF)`}
         </button>
       </div>
       {rename.error ? (
         <p className="mt-2 text-sm text-danger" role="alert">
-          {rename.error instanceof Error ? rename.error.message : "Could not save that name."}
+          {rename.error instanceof Error ? rename.error.message : t`Could not save that name.`}
         </p>
       ) : null}
       {preview.error ? (
         <p className="mt-2 text-sm text-danger" role="alert">
-          {preview.error instanceof Error ? preview.error.message : "Could not open the preview."}
+          {preview.error instanceof Error ? preview.error.message : t`Could not open the preview.`}
         </p>
       ) : null}
 
@@ -110,6 +123,7 @@ export function MemberCardPanel({ makerspaceId, spaceName = "Your makerspace" }:
         consentAt={row.photo_consent_at}
       />
       <OfflineCardSave card={row} space={spaceName} checkedAt={card.dataUpdatedAt} />
+      </> : null}
     </section>
   );
 }

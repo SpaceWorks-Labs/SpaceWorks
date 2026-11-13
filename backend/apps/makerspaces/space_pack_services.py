@@ -1,4 +1,5 @@
 """Actor-scoped, transactional pack preview/apply and platform presets."""
+from django.utils.translation import gettext
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import PermissionDenied
@@ -6,6 +7,7 @@ from rest_framework.exceptions import PermissionDenied
 from apps.accounts import rbac
 from apps.admin_api.permissions import active_user
 from apps.audit import services as audit
+from .capability_audit import record_features_changed
 from .guards import require_feature
 from .models import SpacePackProfile
 from .role_authority import _superadmin
@@ -13,7 +15,7 @@ from .servability import servable_queryset
 from .space_pack_export import scoped_rows
 from .space_pack_format import PackConflict, PackError, open_pack
 from .space_pack_mutations import write_section
-from .space_pack_prepare import prepare, settings_serializer
+from .space_pack_prepare import keep_target_security, prepare, settings_serializer
 from .space_pack_validation import validate_configuration, validate_profile_references
 
 
@@ -37,13 +39,11 @@ def preview_pack(actor, makerspace, pack):
 
 @transaction.atomic
 def apply_pack(actor, makerspace, pack, *, base_checksum=None, creating=False):
-    # Match ordinary settings writers: root then recipient rows, before domain rows.
+    # Match ordinary settings writers: lock the makerspace row before domain rows.
     authorized_space(actor, makerspace.pk)
     from apps.tenant_migration.gate_runtime import assert_write_allowed
     assert_write_allowed(makerspace.pk)
-    from apps.backup.custody import with_makerspace_custody_lock
-    with with_makerspace_custody_lock(makerspace.pk):
-        return _apply_pack_locked(actor, makerspace, pack, base_checksum=base_checksum, creating=creating)
+    return _apply_pack_locked(actor, makerspace, pack, base_checksum=base_checksum, creating=creating)
 
 
 def _apply_pack_locked(actor, makerspace, pack, *, base_checksum, creating):
@@ -53,12 +53,12 @@ def _apply_pack_locked(actor, makerspace, pack, *, base_checksum, creating):
     else:
         require_feature(makerspace, "packs.import")
         if not base_checksum:
-            raise PackError("pack_preview_required", "Preview this pack before applying it.")
-    config = open_pack(pack)
+            raise PackError("pack_preview_required", gettext("Preview this pack before applying it."))
+    config = keep_target_security(makerspace, validate_configuration(open_pack(pack)))
     steps, preview = prepare(actor, makerspace, config)
     if not creating and preview["base_checksum"] != base_checksum:
-        raise PackConflict("stale_pack_preview", "Configuration changed. Preview the pack again.")
-    # The capability service owns dependency validation and the backup custody guard.
+        raise PackConflict("stale_pack_preview", gettext("Configuration changed. Preview the pack again."))
+    # The capability service owns module dependency validation.
     if set(makerspace.enabled_modules or []) != set(config["modules"]):
         from .module_install import ModuleInstallError, replace_modules
         try:
@@ -78,6 +78,7 @@ def _apply_pack_locked(actor, makerspace, pack, *, base_checksum, creating):
     serializer = settings_serializer(actor, makerspace, {
         **settings, "enabled_features": config["features"],
     })
+    features_before = list(makerspace.enabled_features or [])
     makerspace = serializer.save()
     audit.record(actor, "makerspace.updated", makerspace=makerspace, target=makerspace,
                  meta={"fields": sorted({key for change in preview["changes"]
@@ -89,8 +90,7 @@ def _apply_pack_locked(actor, makerspace, pack, *, base_checksum, creating):
         audit.record(actor, "makerspace.updated", makerspace=makerspace, target=makerspace,
                      meta={"fields": ["timezone", "opening_hours"]})
     if any(change["section"] == "features" for change in preview["changes"]):
-        audit.record(actor, "makerspace.features_changed", makerspace=makerspace, target=makerspace,
-                     meta={"fields": ["enabled_features"]})
+        record_features_changed(actor, makerspace, features_before, makerspace.enabled_features, via="space_pack")
     from apps.data_export.space_pack_configuration import SECTIONS
     for section, row, values in steps:
         # Names in the pack are references to the TARGET, never source IDs. Newly
@@ -111,9 +111,9 @@ def _apply_pack_locked(actor, makerspace, pack, *, base_checksum, creating):
     # explicit choices after the domain writer has synchronized its aliases.
     makerspace.refresh_from_db()
     if set(makerspace.enabled_features) != set(config["features"]):
-        settings_serializer(actor, makerspace, {"enabled_features": config["features"]}).save()
-        audit.record(actor, "makerspace.features_changed", makerspace=makerspace,
-                     target=makerspace, meta={"fields": ["enabled_features"]})
+        synced = list(makerspace.enabled_features or [])
+        restored = settings_serializer(actor, makerspace, {"enabled_features": config["features"]}).save()
+        record_features_changed(actor, restored, synced, restored.enabled_features, via="space_pack")
     audit.record(actor, "makerspace.space_pack_applied", makerspace=makerspace,
                  target=makerspace, meta={"checksum": pack["checksum"],
                      "sections": sorted({item["section"] for item in preview["changes"]})})
@@ -122,7 +122,7 @@ def _apply_pack_locked(actor, makerspace, pack, *, base_checksum, creating):
 
 def require_superadmin(actor):
     if not active_user(actor) or not _superadmin(actor):
-        raise PermissionDenied("Only a superadmin may manage platform install profiles.")
+        raise PermissionDenied(gettext("Only a superadmin may manage platform install profiles."))
 
 
 @transaction.atomic

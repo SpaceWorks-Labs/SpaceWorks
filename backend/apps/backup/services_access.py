@@ -1,4 +1,7 @@
 """Download-token and retained-byte lifecycle for completed archives."""
+from django.utils.translation import gettext
+from apps.operations.cloud_jobs import bounded
+
 
 import hashlib
 import hmac
@@ -28,7 +31,7 @@ def issue_download_token(archive, actor):
         or locked.expires_at is None
         or locked.expires_at <= timezone.now()
     ):
-        raise ValidationError("This backup archive is not available for download.")
+        raise ValidationError(gettext("This backup archive is not available for download."))
     raw = secrets.token_urlsafe(32)
     locked.download_token_digest = hashlib.sha256(raw.encode()).hexdigest()
     locked.download_token_expires_at = timezone.now() + timedelta(
@@ -68,6 +71,15 @@ def consume_download_token(archive_id, raw):
     return archive
 
 
+def invalidate_download_tokens_after_restore(*, using="default"):
+    """Restore hook: copied archive bearers must never be usable; the download is anonymous."""
+    return BackupArchive.objects.using(using).exclude(download_token_digest="").update(
+        download_token_digest="",
+        download_token_expires_at=None,
+        download_token_consumed_at=None,
+    )
+
+
 def purge_expired_archives(limit=100):
     """Delete managed bytes of archives past retention.
 
@@ -75,14 +87,14 @@ def purge_expired_archives(limit=100):
     re-selecting them every run let 100 of them starve every newer expired archive of
     pruning forever. Non-terminal rows are never pruned underneath a running build.
     """
-    archives = list(
+    archives = (
         BackupArchive.objects.filter(
             expires_at__lte=timezone.now(),
             status__in=(BackupArchive.Status.AVAILABLE, BackupArchive.Status.FAILED),
         ).order_by("expires_at", "pk")[:limit]
     )
     deleted = 0
-    for archive in archives:
+    for archive in bounded.page(archives, "expired-archives"):
         if not storage.delete_archive(archive.object_key):
             continue
         # Single archives use a per-attempt directory; compound artifacts use one

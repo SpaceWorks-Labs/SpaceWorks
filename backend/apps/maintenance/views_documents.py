@@ -52,6 +52,8 @@ class MaintenanceLogDocumentPresignView(APIView):
         object_key = storage.log_document_object_key(
             log.machine.makerspace_id, log.machine_id, ext,
         )
+        from apps.makerspaces.limits import check_upload_headroom
+        check_upload_headroom(log.machine.makerspace)  # #234: refuse before the upload when storage is full
         try:
             upload = storage.presigned_upload(object_key, data["content_type"])
         except StorageUnavailable:

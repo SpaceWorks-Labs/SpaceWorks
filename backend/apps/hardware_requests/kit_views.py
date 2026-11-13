@@ -1,7 +1,8 @@
+from django.utils.translation import gettext
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -9,6 +10,7 @@ from apps.accounts import rbac
 from apps.admin_api.permissions import IsActiveStaff, require_action
 from apps.boxes.models import Box, QrCode
 from apps.boxes.access import inventory_qr_codes
+from apps.boxes.qr_lookup import scanned_or_404
 from apps.hardware_requests.direct_loan_serializers import DirectLoanItemSerializer
 from apps.hardware_requests.exceptions import ErrorSerializer
 from apps.hardware_requests.kit_checklists import issue_expectations, return_expectations
@@ -19,8 +21,11 @@ from apps.hardware_requests.serializers import IssueRejectSerializer, ReturnItem
 from apps.inventory.kit_serializers import KitPreviewSerializer
 from apps.makerspaces.guards import require_feature, require_module
 from apps.makerspaces.models import Makerspace
+from apps.hardware_requests.kit_contact_preview import ContactKitPreviewInputSerializer, contact_kit_rows
+from apps.hardware_requests.self_checkout_contact import contact_mode
 from apps.hardware_requests.self_checkout_views import _public_tool_makerspace
-from apps.presence.guard import require_active_member_presence
+from apps.hardware_requests.throttles import AnonymousRequestIpBurstThrottle, AnonymousRequestIpHourThrottle
+from apps.presence.guest_guard import require_member_or_guest
 from apps.apiclients.throttling import MemberPrincipalRateThrottle
 from apps.openapi import PUBLIC_API_AUTH_PARAMETERS
 
@@ -40,15 +45,15 @@ class KitPreviewInputSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         if attrs.get("request_id") and attrs.get("loan_id"):
-            raise serializers.ValidationError("Provide one request or loan reference.")
+            raise serializers.ValidationError(gettext("Provide one request or loan reference."))
         if attrs.get("loan_id") and attrs["phase"] != "return":
-            raise serializers.ValidationError("A loan reference is for return previews.")
+            raise serializers.ValidationError(gettext("A loan reference is for return previews."))
         if attrs["phase"] == "return" and not (attrs.get("request_id") or attrs.get("loan_id")):
-            raise serializers.ValidationError("A return preview requires a request or loan reference.")
+            raise serializers.ValidationError(gettext("A return preview requires a request or loan reference."))
         for field in ("rejects", "resolutions"):
             ids = [row["item_id"] for row in attrs.get(field, [])]
             if len(ids) != len(set(ids)):
-                raise serializers.ValidationError({field: "Item references must be unique."})
+                raise serializers.ValidationError({field: gettext("Item references must be unique.")})
         return attrs
 
 
@@ -103,25 +108,34 @@ class MemberKitPreviewInputSerializer(serializers.Serializer):
 
 
 class MemberKitPreviewView(APIView):
-    permission_classes = [IsAuthenticated]
-    throttle_classes = [MemberPrincipalRateThrottle]
+    permission_classes = [AllowAny]
+    throttle_classes = [MemberPrincipalRateThrottle, AnonymousRequestIpBurstThrottle, AnonymousRequestIpHourThrottle]
     throttle_scope = "public_tool_checkout"
 
     @extend_schema(tags=["Public requests"], summary="Preview kit components for a scanned self-checkout tool",
+                   description=("Signed-in member where the makerspace has member accounts. Without them "
+                                "(`request_access: contact`) send `contact_email` and the `email_code`; the "
+                                "code is checked, not spent (#104)."),
+                   auth=[{"jwtAuth": []}, {}],
                    request=MemberKitPreviewInputSerializer, parameters=PUBLIC_API_AUTH_PARAMETERS,
                    responses={200: KitPreviewSerializer, **ERRORS})
     def post(self, request, makerspace_slug):
         space = _public_tool_makerspace(makerspace_slug)
         require_feature(space, "inventory.self_checkout")
-        require_active_member_presence(request.user, space)
+        if contact_mode(request, space, taking=str(request.data.get("phase", "")) == "issue"):
+            serializer = ContactKitPreviewInputSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            rows = contact_kit_rows(space, serializer.validated_data)
+            return Response(KitPreviewSerializer({"components": rows}).data)
+        require_member_or_guest(request.user, space)  # decision 223: a live guest pass is admitted too
         serializer = MemberKitPreviewInputSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
         if data["phase"] == "issue":
             rows = preview_targets(request.user, space, qr_payloads=[data["payload"]], public=True)
         else:
-            qr = get_object_or_404(rbac.scope_by_makerspace(request.user, inventory_qr_codes(QrCode.objects.all())),
-                                   payload=data["payload"], makerspace=space, status=QrCode.Status.ACTIVE)
+            qr = scanned_or_404(rbac.scope_by_makerspace(request.user, inventory_qr_codes(
+                QrCode.objects.filter(makerspace=space, status=QrCode.Status.ACTIVE))), data["payload"])
             loan = get_object_or_404(rbac.scope_by_makerspace(request.user, PublicToolLoan.objects.all()),
                                      qr_code=qr, makerspace=space, requester=request.user,
                                      source=PublicToolLoan.Source.PUBLIC_SELF_CHECKOUT, status=PublicToolLoan.Status.CHECKED_OUT)

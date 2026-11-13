@@ -1,7 +1,10 @@
+import { t } from "@lingui/core/macro";
+import { SettingsEditorActions } from "./SettingsEditorActions";
+import { SettingsRow } from "../../components/ui";
 import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { Badge } from "../../components/ui";
+import { StatusPill as Badge } from "../../components/ui";
 import { staffRequest } from "../../lib/api";
 import type { Makerspace } from "./StaffPanels";
 
@@ -50,7 +53,7 @@ export function MakerspaceLocationSettings({ makerspace, settings, loading }: Pr
   const savedMapUrl = currentMapUrl.trim();
 
   return (
-    <div className="min-w-0 rounded-md border border-line bg-bg p-4">
+    <SettingsRow label={t`Location`} helper={t`Public location label and optional Google Maps link shown on public pages.`}><div className="@container grid min-w-0 gap-4">
       <form
         className="grid min-w-0 gap-4"
         onSubmit={(event) => {
@@ -60,59 +63,54 @@ export function MakerspaceLocationSettings({ makerspace, settings, loading }: Pr
           }
         }}
       >
-        <div className="grid min-w-0 gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
+        <div className="grid min-w-0 gap-3 @md:grid-cols-[minmax(0,1fr)_auto] @md:items-start">
           <div className="grid min-w-0 max-w-2xl gap-2">
             <div className="flex flex-wrap items-center gap-2">
-              <h3 className="text-base font-semibold text-ink">Location</h3>
-              <Badge tone={savedMapUrl ? "success" : "neutral"}>
-                {savedMapUrl ? "Maps link set" : "Text only"}
+
+              <Badge label="" tone={savedMapUrl ? "success" : "neutral"}>
+                {savedMapUrl ? t`Maps link set` : t`Text only`}
               </Badge>
             </div>
-            <p className="text-sm text-muted">
-              Public location label and optional Google Maps link shown on public pages.
-            </p>
+
           </div>
-          <button className="desk-button-primary w-full max-w-full justify-self-start sm:w-auto sm:justify-self-end" type="submit" disabled={saveDisabled}>
-            {updateLocation.isPending ? "Saving..." : "Save location"}
-          </button>
+          <SettingsEditorActions dirty={changed} onDiscard={() => { setLocationInput(currentLocation); setMapUrlInput(currentMapUrl); }} pending={updateLocation.isPending} disabled={saveDisabled} />
         </div>
 
-        <div className="grid min-w-0 gap-3 xl:grid-cols-2">
+        <div className="grid min-w-0 gap-3 @xl:grid-cols-2">
           <label className="grid min-w-0 gap-2 text-sm font-semibold text-ink">
-            <span>Location label</span>
+            <span>{t`Location label`}</span>
             <input
               className="desk-input"
               value={locationInput}
               onChange={(event) => setLocationInput(event.target.value)}
-              placeholder="Main lab, downtown campus"
+              placeholder={t`Main lab, downtown campus`}
             />
           </label>
           <label className="grid min-w-0 gap-2 text-sm font-semibold text-ink">
-            <span>Google Maps link</span>
+            <span>{t`Google Maps link`}</span>
             <input
               className="desk-input"
               value={mapUrlInput}
               onChange={(event) => setMapUrlInput(event.target.value)}
               placeholder="https://maps.app.goo.gl/..."
             />
-            <span className="text-xs font-normal text-muted">Open Google Maps - Share - Copy link - paste here</span>
+            <span className="text-xs font-normal text-muted">{t`Open Google Maps → Share → Copy link → paste here`}</span>
           </label>
         </div>
 
         {savedMapUrl ? (
           <a
-            className="w-fit font-mono text-xs font-semibold uppercase text-secondary-ink hover:underline"
+            className="w-fit text-xs font-semibold uppercase text-accent-ink hover:underline"
             href={savedMapUrl}
             target="_blank"
             rel="noopener noreferrer"
           >
-            Open in Maps -&gt;
-          </a>
+            {t`Open in Maps ↗`}</a>
         ) : null}
         {updateLocation.error ? (
           <p className="text-sm text-danger">{updateLocation.error.message}</p>
         ) : null}
       </form>
-    </div>
+    </div></SettingsRow>
   );
 }

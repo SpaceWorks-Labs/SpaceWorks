@@ -31,14 +31,27 @@ services:
     user: "${DEV_UID:-1000}:${DEV_GID:-1000}"
     environment:
       DEBUG: "True"
+      # runserver opens a thread per request; with the production default of 60 seconds every thread
+      # kept its Postgres connection, 96 of them filled max_connections=100 during a Playwright run and
+      # every route answered 503. Close the connection at the end of each request in dev.
+      CONN_MAX_AGE: "0"
+      # runserver has one serving process and no Gunicorn directory lifecycle.
+      # Remove the variable entirely: even an empty value selects file storage.
+      PROMETHEUS_MULTIPROC_DIR: !reset null
       # Playwright signs in many times from one IP; keep this higher limit dev-only.
       THROTTLE_LOGIN: ${THROTTLE_LOGIN:-200/min}
       # Vite proxies with changeOrigin, so Django can see `Host: backend`.
       ALLOWED_HOSTS: localhost,127.0.0.1,backend
+      # Docker Desktop hands the container the bridge gateway, never loopback, so the
+      # dev stack opts in to the website route to keep /control/ on localhost:8000 (#191).
+      CONTROL_PLANE_PROXY: "true"
       # The browser Origin is the Vite dev server. It must be allowed or the
       # staff-console refresh/logout CSRF check 403s and a page reload drops the
       # session back to the login screen.
       CORS_ALLOWED_ORIGINS: http://localhost:5000,http://localhost:5173
+      # The same two dev origins are the platform/staff origins: without them the superadmin
+      # cannot sign in from Vite and origin-bound public displays (Now, kiosk) answer 403.
+      PLATFORM_STAFF_ORIGINS: ${PLATFORM_STAFF_ORIGINS:-http://localhost:5000,http://localhost:5173}
       # Kiosk and event check-in stations hash their PINs with this pepper; `dev.sh e2e`
       # seeds a kiosk station. A dev-only value: production must set its own secret.
       EVENT_STATION_PIN_PEPPER: ${EVENT_STATION_PIN_PEPPER:-dev-only-station-pepper-not-for-production}
@@ -86,6 +99,8 @@ services:
 
   candidate-backend:
     command: ["--role", "backend", "python", "manage.py", "runserver", "0.0.0.0:8000"]
+    environment:
+      PROMETHEUS_MULTIPROC_DIR: !reset null
     volumes:
       - ./backend:/app
 

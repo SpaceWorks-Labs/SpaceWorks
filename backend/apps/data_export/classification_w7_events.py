@@ -1,6 +1,6 @@
 """Literal WP1 event additions. No new User FKs; attribution uses AuditLog.actor."""
 EVENT_EXPORTED_FIELDS = {
-    "events.EventInvite": "id makerspace event code_digest email_digest max_uses uses expires_at revoked_at created_at",
+    "events.EventInvite": "id makerspace event series code_digest email_digest max_uses uses expires_at revoked_at created_at",
     "events.EventTicketType": "id makerspace event series name amount audience capacity sales_start_at sales_end_at is_active created_at",
     "events.EventPromoCode": "id makerspace event code_digest percent_off amount_off max_uses uses expires_at revoked_at created_at",
     "events.EventCategory": "id makerspace name slug",

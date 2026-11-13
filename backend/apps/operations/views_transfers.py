@@ -6,7 +6,8 @@ from rest_framework.response import Response
 
 from apps.accounts import rbac
 from apps.admin_api.permissions import IsActiveStaff, require_action
-from apps.makerspaces.guards import require_module
+from apps.makerspaces.guards import module_off, require_module
+from apps.makerspaces.platform import module_enabled
 from apps.makerspaces.models import Makerspace
 from apps.operations import services
 from apps.operations.models import StockTransfer
@@ -78,3 +79,17 @@ class StockTransferDetailView(generics.RetrieveAPIView):
         if not scope:
             return queryset.none()
         return queryset.filter(Q(source_makerspace_id__in=scope) | Q(destination_makerspace_id__in=scope))
+
+    def get_object(self):
+        transfer = super().get_object()
+        visible = rbac.makerspaces_for_action(self.request.user, rbac.Action.VIEW_INVENTORY)
+        endpoints = {transfer.source_makerspace_id, transfer.destination_makerspace_id} - {None}
+        # Historical rows may predate endpoint population; preserve owner visibility.
+        if not endpoints:
+            endpoints = {transfer.makerspace_id}
+        if visible is not rbac.ALL:
+            endpoints &= set(visible)
+        spaces = Makerspace.objects.filter(pk__in=endpoints)
+        if not any(module_enabled(space, "stock_transfers") for space in spaces):
+            raise module_off("stock_transfers")
+        return transfer

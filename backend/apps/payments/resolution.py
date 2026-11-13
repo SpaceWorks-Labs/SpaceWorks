@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from apps.makerspaces.domain_verification import is_self_host
+from apps.makerspaces.domain_verification import hosts_other_spaces
 from apps.payments.models_settings import (
     MakerspacePaymentSettings,
     PlatformStripeConnectSettings,
@@ -24,7 +24,7 @@ class PaymentSource:
     vendor: str = "stripe"
 
 
-def _razorpay_source(merchant) -> PaymentSource | None:
+def razorpay_source(merchant) -> PaymentSource | None:
     """Razorpay is self-host / own-account only, by owner decision.
 
     There is no Razorpay equivalent of Stripe Connect here, so there is no platform
@@ -33,7 +33,9 @@ def _razorpay_source(merchant) -> PaymentSource | None:
     space always pays into its own merchant account -- which is why this returns None
     rather than falling through to any platform credential.
     """
-    if not merchant.raw_credentials_configured:
+    # Existing collections still belong to this vendor after provider selection
+    # changes. Only new-checkout resolution checks the selected provider.
+    if not (merchant.razorpay_key_id and merchant.razorpay_key_secret and merchant.razorpay_webhook_secret):
         return None
     try:
         secret = merchant.get_razorpay_key_secret()
@@ -51,10 +53,20 @@ def _razorpay_source(merchant) -> PaymentSource | None:
     )
 
 
+def stripe_keys_retained(merchant) -> bool:
+    """Whether the row still HOLDS raw Stripe keys, whichever provider is selected now.
+
+    New checkouts go through `resolve_payment_source` (selection-aware). Existing Stripe
+    charges, and the per-space Stripe webhook that settles and refunds them, must keep
+    working after a switch to Razorpay for as long as the keys are kept.
+    """
+    return bool(merchant.stripe_secret_key and merchant.stripe_webhook_secret)
+
+
 def resolve_payment_source(makerspace) -> PaymentSource | None:
     merchant = MakerspacePaymentSettings.for_makerspace(makerspace)
     if merchant.provider == "razorpay":
-        return _razorpay_source(merchant)
+        return razorpay_source(merchant)
     if merchant.raw_credentials_configured:
         try:
             secret_key = merchant.get_stripe_secret_key()
@@ -69,7 +81,7 @@ def resolve_payment_source(makerspace) -> PaymentSource | None:
                 publishable_key=merchant.stripe_publishable_key,
             )
 
-    if is_self_host():
+    if not hosts_other_spaces():
         return None
     if not (
         merchant.connect_account_id
@@ -106,10 +118,16 @@ def source_for_payment(payment) -> PaymentSource | None:
     credentials simply resolves to None and is reconciled offline.
     """
     if payment.provider == payment.Provider.RAZORPAY:
-        return _razorpay_source(MakerspacePaymentSettings.for_makerspace(payment.makerspace))
+        return razorpay_source(MakerspacePaymentSettings.for_makerspace(payment.makerspace))
     if payment.stripe_provider == payment.StripeProvider.RAW:
         merchant = MakerspacePaymentSettings.for_makerspace(payment.makerspace)
-        if not merchant.raw_credentials_configured:
+        # PAY-REVIEW 0.12.0: the RETAINED Stripe keys, not `raw_credentials_configured`, which
+        # follows the selected provider. After a switch to Razorpay that property reads False,
+        # so a Stripe charge raised before the switch could no longer be refunded, have its
+        # native intent cancelled, or be polled -- the mirror of what `razorpay_source`
+        # already guarantees for Razorpay rows ("existing collections still belong to this
+        # vendor after provider selection changes").
+        if not stripe_keys_retained(merchant):
             return None
         try:
             return PaymentSource(
@@ -120,7 +138,11 @@ def source_for_payment(payment) -> PaymentSource | None:
             )
         except Exception:
             return None
-    if is_self_host() or not payment.stripe_connected_account_id:
+    # No `hosts_other_spaces()` clause for an EXISTING row (payments audit 0.12.0): that is a
+    # console switch now (#234), and turning it off must not strand refunds, expiry or
+    # settlement of Connect charges already raised. New charges stay gated in
+    # `resolve_payment_source` above.
+    if not payment.stripe_connected_account_id:
         return None
     platform = PlatformStripeConnectSettings.load()
     if not platform.is_configured:

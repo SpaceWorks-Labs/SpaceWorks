@@ -13,14 +13,15 @@ from apps.events.services_checkin_roster import issue_roster
 from apps.events.services_checkin_sync import synchronize, validated_lease
 from apps.events.throttles import EventOfflineRosterThrottle, EventOfflineSyncThrottle
 from apps.events.views_admin import _manageable_event
+from apps.events.event_permissions import CHECK_IN
 from apps.hardware_requests.exceptions import ErrorSerializer
 
 
 ERRORS = {
-    400: OpenApiResponse(ErrorSerializer, description="Feature disabled or invalid batch."),
+    400: OpenApiResponse(ErrorSerializer, description="Invalid batch."),
     401: OpenApiResponse(ErrorSerializer, description="Authentication or lease failed."),
     403: OpenApiResponse(ErrorSerializer, description="Event authority changed."),
-    404: OpenApiResponse(ErrorSerializer, description="Event not found."),
+    404: OpenApiResponse(ErrorSerializer, description="Event not found, or the feature is turned off."),
     409: OpenApiResponse(ErrorSerializer, description="Roster window closed."),
     410: OpenApiResponse(ErrorSerializer, description="Synchronization deadline passed."),
     413: OpenApiResponse(ErrorSerializer, description="Roster exceeds the offline limit."),
@@ -40,7 +41,7 @@ class EventOfflineRosterView(APIView):
     )
     def get(self, request, pk, *args, **kwargs):
         payload = issue_roster(
-            _manageable_event(request.user, pk),
+            _manageable_event(request.user, pk, CHECK_IN),
             actor=request.user,
             kind="staff",
         )
@@ -60,7 +61,7 @@ class EventOfflineSyncView(APIView):
         responses={200: OfflineCheckInSyncResponseSerializer, **ERRORS},
     )
     def post(self, request, pk, *args, **kwargs):
-        event = _manageable_event(request.user, pk)
+        event = _manageable_event(request.user, pk, CHECK_IN)
         serializer = OfflineCheckInSyncRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         lease = validated_lease(
@@ -76,6 +77,7 @@ class EventOfflineSyncView(APIView):
             actor=request.user,
             source=EventCheckInEvent.Source.OFFLINE_SYNC,
             session_id=lease["lease_id"],
+            badge_receipts=serializer.validated_data.get("badge_receipts"),
         )
         response = Response(OfflineCheckInSyncResponseSerializer(payload).data)
         response["Cache-Control"] = "private, no-store"

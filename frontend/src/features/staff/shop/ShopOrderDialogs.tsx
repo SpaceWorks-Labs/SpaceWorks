@@ -1,0 +1,75 @@
+import { t } from "@lingui/core/macro";
+import { useState } from "react";
+
+import { Field, Modal, SegmentedControl } from "../../../components/ui";
+import { shopMoney } from "../../shop/shopApi";
+import { errorCode, staffShopError } from "./staffShopApi";
+import type { PayMethod, ShopStaffOrder } from "./staffShopOrdersApi";
+import { BoxArt } from "../../../components/BoxSpinner";
+
+type Base = { open: boolean; onClose: () => void; pending: boolean; error: unknown };
+
+function Footer({ onClose, pending, label, disabled, form }: { onClose: () => void; pending: boolean; label: string; disabled?: boolean; form: string }) {
+  return <div className="flex flex-wrap justify-end gap-2">
+    <button type="button" className="desk-button min-h-11" onClick={onClose} disabled={pending}>{t`Close`}</button>
+    <button type="submit" form={form} className="desk-button-primary min-h-11" disabled={pending || disabled}>{pending ? <><BoxArt size={16} mono />{t`Working…`}</> : label}</button>
+  </div>;
+}
+
+/** Handing over: the buyer reads their pickup code aloud or shows it; a wrong code is refused by the server.
+ * Decision 221(h): an interrupted event pickup is refused until the pickup is moved; `onMovePickup` offers that here. */
+export function CollectDialog({ open, onClose, pending, error, onSubmit, onMovePickup, movePending = false, moveError }: Base & {
+  onSubmit: (code: string) => void; onMovePickup?: () => void; movePending?: boolean; moveError?: unknown;
+}) {
+  const [code, setCode] = useState("");
+  return <Modal open={open} onClose={onClose} title={t`Hand over the order`}
+    footer={<Footer onClose={onClose} pending={pending} label={t`Hand over`} disabled={!code.trim()} form="shop-collect" />}>
+    <form id="shop-collect" className="grid gap-3" onSubmit={event => { event.preventDefault(); onSubmit(code.trim()); }}>
+      <Field label={t`Pickup code`} hint={t`Ask the buyer for the code from their order.`}><input className="desk-input min-h-11 code-text uppercase tracking-widest"
+        autoComplete="off" value={code} onChange={event => setCode(event.target.value.toUpperCase())} /></Field>
+      {error ? <p role="alert" className="text-sm text-danger">{staffShopError(error)}</p> : null}
+      {errorCode(error) === "pickup_interrupted" && onMovePickup ? <div className="grid gap-2 rounded-xl border border-line p-3">
+        <p className="text-sm text-muted">{t`Confirm the alternate arrangement with the buyer first. Payment, items and hold times stay the same.`}</p>
+        <button type="button" className="desk-button min-h-11 justify-self-start" disabled={movePending || pending} onClick={onMovePickup}>
+          {movePending ? <><BoxArt size={16} mono />{t`Moving pickup…`}</> : t`Move pickup to the makerspace`}</button>
+        {moveError ? <p role="alert" className="text-sm text-danger">{staffShopError(moveError)}</p> : null}
+      </div> : null}
+    </form>
+  </Modal>;
+}
+
+export const METHOD_OPTIONS = [{ value: "cash", label: t`Cash` }, { value: "upi", label: "UPI" }, { value: "card_machine", label: t`Card machine` }];
+
+/** Paying at the desk. Cash needs an open drawer when cash-up is on; UPI and card take the transaction reference. */
+export function PaymentDialog({ open, onClose, pending, error, order, onSubmit }: Base & {
+  order: ShopStaffOrder; onSubmit: (body: { method: PayMethod; reference: string; hand_over: boolean }) => void;
+}) {
+  const [method, setMethod] = useState<PayMethod>("cash");
+  const [reference, setReference] = useState("");
+  const [handOver, setHandOver] = useState(true);
+  const needsReference = method !== "cash";
+  return <Modal open={open} onClose={onClose} title={t`Take ${shopMoney(order.amount_due, order.currency)}`}
+    footer={<Footer onClose={onClose} pending={pending} label={t`Record payment`} disabled={needsReference && !reference.trim()} form="shop-pay" />}>
+    <form id="shop-pay" className="grid gap-4" onSubmit={event => { event.preventDefault(); onSubmit({ method, reference: reference.trim(), hand_over: handOver }); }}>
+      <SegmentedControl label={t`Payment method`} value={method} options={METHOD_OPTIONS} onChange={value => setMethod(value as PayMethod)} fullWidth />
+      <Field label={needsReference ? t`Transaction reference` : t`Reference (optional)`}>
+        <input className="desk-input min-h-11" value={reference} onChange={event => setReference(event.target.value)} /></Field>
+      <label className="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" checked={handOver} onChange={event => setHandOver(event.target.checked)} />
+        {t`Hand the items over now`}</label>
+      {error ? <p role="alert" className="text-sm text-danger">{staffShopError(error)}</p> : null}
+    </form>
+  </Modal>;
+}
+
+/** Cancelling a paid order opens a refund case; the money moves only when it is approved in Refunds. */
+export function CancelDialog({ open, onClose, pending, error, paid, onSubmit }: Base & { paid: boolean; onSubmit: (reason: string) => void }) {
+  const [reason, setReason] = useState("");
+  return <Modal open={open} onClose={onClose} title={t`Cancel this order`}
+    footer={<Footer onClose={onClose} pending={pending} label={t`Cancel order`} disabled={!reason.trim()} form="shop-cancel" />}>
+    <form id="shop-cancel" className="grid gap-3" onSubmit={event => { event.preventDefault(); onSubmit(reason.trim()); }}>
+      <p className="text-sm">{t`Held stock goes back on sale.`}{paid ? t` This order was paid, so a refund case opens for staff to approve in the Refunds tab.` : ""}</p>
+      <Field label={t`Reason`}><textarea className="desk-input" rows={3} value={reason} onChange={event => setReason(event.target.value)} /></Field>
+      {error ? <p role="alert" className="text-sm text-danger">{staffShopError(error)}</p> : null}
+    </form>
+  </Modal>;
+}

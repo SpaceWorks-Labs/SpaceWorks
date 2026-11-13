@@ -1,71 +1,31 @@
-export type FeatureDefinition = {
-  key: string;
-  // null => standalone feature with no parent-module prerequisite (always toggleable).
-  parent_module: string | null;
-  label: string;
-};
+import { INVENTORY_CHILD_FEATURES } from "./featureGates";
+import { RETIRED_FEATURES } from "./retiredFeatures";
+import { FEATURE_DEFINITIONS_1 } from "./featureDefinitions/part1";
+import { FEATURE_DEFINITIONS_2 } from "./featureDefinitions/part2";
+import { FEATURE_DEFINITIONS_3 } from "./featureDefinitions/part3";
+import { FEATURE_DEFINITIONS_4 } from "./featureDefinitions/part4";
+import { FEATURE_DEFINITIONS_5 } from "./featureDefinitions/part5";
+import type { FeatureDefinition } from "./featureDefinitions/types";
+export type { FeatureDefinition };
+export { featureEnabled, featureGroup, INVENTORY_CHILD_FEATURES, isSecurityFeature } from "./featureGates";
 
-// Mirrors `apps/makerspaces/capabilities.py::FEATURE_DEFINITIONS`. The backend test
-// `tests/test_capabilities.py::test_frontend_feature_definitions_match_the_backend`
-// parses this file and fails if the two drift, so keep the shape (one object literal
-// per line, keys in this order) that the guard reads.
+// Mirrors `capabilities.FEATURE_DEFINITIONS`; the literals live in `featureDefinitions/part*.ts` (backend drift guards parse that folder), concatenated here in registry order.
 export const FEATURE_DEFINITIONS: readonly FeatureDefinition[] = [
-  { key: "notifications.quiet_hours", parent_module: "notifications", label: "Quiet hours" },
-  { key: "notifications.digests", parent_module: "notifications", label: "Daily notification digests" },
-  { key: "membership.broadcasts", parent_module: "membership", label: "Member broadcasts" },
-  { key: "bookings.recurring", parent_module: "bookings", label: "Recurring bookings" },
-  { key: "loans.enabled", parent_module: "staff_admin", label: "Hardware loans" },
-  { key: "inventory.notify_when_back", parent_module: "public_inventory", label: "Notify when back" },
-  { key: "stocktake.discipline", parent_module: "stocktake", label: "Stocktake discipline" },
-  { key: "machines.public_detail", parent_module: "machines", label: "Public machine details" },
-  { key: "machines.material_catalogue", parent_module: "machines", label: "Local material catalogue" },
-  { key: "machines.structured_intake", parent_module: "machine_service", label: "Structured machine intake" },
-  { key: "maintenance.meters", parent_module: "maintenance", label: "Usage-based maintenance" },
-  { key: "maintenance.calendar_feed", parent_module: "maintenance", label: "Maintenance calendar feed" },
-  { key: "packs.import", parent_module: "staff_admin", label: "Space packs" },
-  { key: "membership.auto_renew", parent_module: "membership", label: "Automatic membership renewal" },
-  { key: "membership.lifecycle_mail", parent_module: "membership", label: "Membership lifecycle mail" },
-  { key: "membership.self_service", parent_module: "membership", label: "Member account self-service" },
-  { key: "membership.self_export", parent_module: "membership", label: "Member data export" },
-  { key: "reports.saved_views", parent_module: "reports", label: "Saved report views" },
-  { key: "billing.documents", parent_module: null, label: "Receipt documents" },
-  { key: "billing.reminders", parent_module: "notifications", label: "Payment reminders" },
-  { key: "loans.renewals", parent_module: "request_workflow", label: "Loan renewals" },
-  { key: "loans.limits", parent_module: "request_workflow", label: "Borrow limits" },
-  { key: "loans.kit_checklist", parent_module: "containers", label: "Kit checklists" },
-  { key: "staff.invitations", parent_module: null, label: "Staff invitations" },
-  { key: "security.staff_mfa_required", parent_module: null, label: "Require MFA for staff" },
-  { key: "membership.vouching", parent_module: "membership", label: "Membership vouching" },
-  { key: "membership.application_form", parent_module: "membership", label: "Membership application form" },
-  { key: "payments.machines", parent_module: "machines", label: "Machine payments" },
-  { key: "payments.bookings", parent_module: "bookings", label: "Booking payments" },
-  { key: "payments.events", parent_module: "events", label: "Event payments" },
-  { key: "payments.membership", parent_module: "membership", label: "Membership payments" },
-  { key: "payments.loans", parent_module: "payments", label: "Loan deposits and late fees" },
-  { key: "charges.enabled", parent_module: null, label: "Track money owed" },
-  { key: "charges.bookings", parent_module: "bookings", label: "Track booking charges" },
-  { key: "charges.events", parent_module: "events", label: "Track event charges" },
-  { key: "charges.machines", parent_module: "machines", label: "Track machine job charges" },
-  { key: "charges.membership", parent_module: "membership", label: "Track membership charges" },
-  { key: "charges.loans", parent_module: "request_workflow", label: "Track loan charges" },
-  { key: "inventory.self_checkout", parent_module: null, label: "Self checkout" },
-  { key: "payments.enabled", parent_module: "payments", label: "Payments" },
-  { key: "mobile.push", parent_module: "mobile", label: "Native push" },
-  { key: "presence.geofence", parent_module: null, label: "Presence geofence" },
-  { key: "notifications.delegated_recipients", parent_module: "notifications", label: "Delegated maintenance recipients" },
-  { key: "notifications.member_inbox", parent_module: "notifications", label: "Member inbox" },
-  { key: "notifications.member_preferences", parent_module: "notifications", label: "Member communication preferences" },
-  { key: "events.invites", parent_module: "events", label: "Event invitations" },
-  { key: "events.account_registration", parent_module: "events", label: "Account event registration" },
-  { key: "events.ticket_types", parent_module: "events", label: "Event ticket types" },
-  { key: "events.promo_codes", parent_module: "events", label: "Event promo codes" },
-  { key: "events.offline_checkin", parent_module: "events", label: "Offline & station check-in" },
-  { key: "machines.certification_reminders", parent_module: "machines", label: "Certification reminders" },
-  { key: "maintenance.reminders", parent_module: "maintenance", label: "Maintenance reminders" },
-  { key: "machines.certifications", parent_module: "machines", label: "Certification gating" },
-  { key: "inventory.kiosk", parent_module: null, label: "Kiosk" },
+  ...FEATURE_DEFINITIONS_1,
+  ...FEATURE_DEFINITIONS_2,
+  ...FEATURE_DEFINITIONS_3,
+  ...FEATURE_DEFINITIONS_4,
+  ...FEATURE_DEFINITIONS_5,
 ];
 
-export function featureEnabled(features: Iterable<string>, key: string) {
-  return new Set(features).has(key);
+// Effective switch as the console sees it: stored and parent installed (mirrors `configuration_feature_enabled`; the server still decides).
+export function capabilityOn(
+  makerspace: { enabled_modules?: string[]; enabled_features?: string[] } | undefined, key: string,
+) {
+  // Decision 319: a retired switch reads off however it is stored (twin of capability_definitions.RETIRED_FEATURES).
+  if (RETIRED_FEATURES.has(key) || !makerspace?.enabled_features?.includes(key)) return false;
+  // Decision 254: the Inventory switch is the master of its children (twin of loan_visibility.LOAN_FEATURES).
+  if (INVENTORY_CHILD_FEATURES.has(key) && !makerspace.enabled_features.includes("loans.enabled")) return false;
+  const parent = FEATURE_DEFINITIONS.find(feature => feature.key === key)?.parent_module;
+  return !parent || (makerspace.enabled_modules ?? []).includes(parent);
 }

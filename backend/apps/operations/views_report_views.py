@@ -1,10 +1,12 @@
 """A saved report preference never confers authority on its owner or its reader."""
 
+from django.utils.translation import gettext
 from django.db import transaction
 from django.db.models import Q
+from django.http import Http404
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiParameter, extend_schema
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import APIException, PermissionDenied
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -33,18 +35,31 @@ def space_for_views(actor, pk, *, lock=False):
 def authorize_view(actor, space, state):
     definition = REPORT_REGISTRY.get(state.get("report_key"))
     if definition is None:
-        raise PermissionDenied("The saved report is unavailable.")
-    require_action(actor, definition.required_action, space.pk)
+        raise PermissionDenied(gettext("The saved report is unavailable."))
+    from .report_subjects import require_report_action
+    require_report_action(actor, definition, space.pk, state.get("filters", {}))
+    from .report_sources import require_source
     for module in definition.required_modules:
-        require_module(space, module)
+        require_source(space, module)
+    from .report_subjects import authorize
+    authorize(actor, space, definition, state.get("filters", {}))
     return definition
+
+
+def _may_save(actor, definition, space):
+    from .report_subjects import report_action_allowed, subject_capable
+    return report_action_allowed(
+        actor, definition, space.pk,
+        {"subject_kind": True} if subject_capable(definition) else None,
+    )
 
 
 def accessible_report_views(actor, space):
     keys = [key for key, definition in REPORT_REGISTRY.items()
-            if definition.previewable and rbac.can(actor, definition.required_action, space.pk)]
+            if definition.previewable and _may_save(actor, definition, space)]
     rows = SavedView.objects.none()
-    for action in {definition.required_action for definition in REPORT_REGISTRY.values()}:
+    from .report_types import definition_actions
+    for action in {action for definition in REPORT_REGISTRY.values() for action in definition_actions(definition)}:
         rows = rows | rbac.scope_by_action(actor, action, SavedView.objects.all())
     return rows.filter(makerspace=space, entity="report", state__report_key__in=keys).filter(
         Q(owner=actor) | Q(shared=True),
@@ -52,9 +67,11 @@ def accessible_report_views(actor, space):
 
 
 def owner_authorized(row, space):
-    definition = REPORT_REGISTRY.get(row.state.get("report_key"))
-    return bool(definition and active_user(row.owner)
-                and rbac.can(row.owner, definition.required_action, space.pk))
+    try:
+        authorize_view(row.owner, space, row.state)
+    except (APIException, Http404):
+        return False
+    return active_user(row.owner)
 
 
 class SavedReportViewListCreateView(APIView):
@@ -66,10 +83,14 @@ class SavedReportViewListCreateView(APIView):
         space = space_for_views(request.user, makerspace_id)
         owners, rows = {}, []
         for row in accessible_report_views(request.user, space):
-            key = (row.owner_id, row.state.get("report_key"))
+            key = (row.owner_id, row.state.get("report_key"), str(row.state.get("filters", {})))
             if key not in owners:
                 owners[key] = owner_authorized(row, space)
             if owners[key]:
+                try:
+                    authorize_view(request.user, space, row.state)
+                except (APIException, Http404):
+                    continue
                 rows.append(row)
         pager = StaffListPagination()
         page = pager.paginate_queryset(rows, request, view=self)
@@ -101,7 +122,7 @@ class SavedReportViewDetailView(APIView):
         row = get_object_or_404(rows, pk=pk)
         authorize_view(request.user, space, row.state)
         if not owner_authorized(row, space):
-            raise PermissionDenied("The view owner can no longer open this report.")
+            raise PermissionDenied(gettext("The view owner can no longer open this report."))
         return row, space
 
     @extend_schema(tags=["Reports"], request=None, responses={200: SavedReportViewSerializer, **ERRORS})
@@ -114,7 +135,7 @@ class SavedReportViewDetailView(APIView):
     def patch(self, request, makerspace_id, pk):
         row, space = self.row(request, makerspace_id, pk, lock=True)
         if row.owner_id != request.user.pk:
-            raise PermissionDenied("Only the owner may edit this view.")
+            raise PermissionDenied(gettext("Only the owner may edit this view."))
         payload = SavedReportViewSerializer(row, data=request.data, partial=True)
         payload.is_valid(raise_exception=True)
         authorize_view(request.user, space, payload.validated_data.get("state", row.state))
@@ -131,7 +152,7 @@ class SavedReportViewDetailView(APIView):
     def delete(self, request, makerspace_id, pk):
         row, space = self.row(request, makerspace_id, pk, lock=True)
         if row.owner_id != request.user.pk:
-            raise PermissionDenied("Only the owner may delete this view.")
+            raise PermissionDenied(gettext("Only the owner may delete this view."))
         audit.record(request.user, "saved_view.deleted", makerspace=space, target=row)
         row.delete()
         return Response(status=204)

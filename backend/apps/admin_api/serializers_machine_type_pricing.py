@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from apps.payments.money_fields import MoneyField
 
 from apps.machines.models import MakerspaceMachineTypePricing
 
@@ -13,8 +14,8 @@ class MachineTypePricingSerializer(serializers.ModelSerializer):
 
 
 class MachineTypePricingSetSerializer(serializers.Serializer):
-    rate_per_unit = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=0)
-    flat_fee = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=0)
+    rate_per_unit = MoneyField(max_digits=13, decimal_places=3, min_value=0)
+    flat_fee = MoneyField(max_digits=13, decimal_places=3, min_value=0)
     payment_enabled = serializers.BooleanField()
 
 

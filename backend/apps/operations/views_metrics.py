@@ -57,7 +57,7 @@ def _celery_queue_lengths():
         return []
     queue = getattr(settings, "CELERY_TASK_DEFAULT_QUEUE", None) or "celery"
     try:
-        client = redis.Redis.from_url(settings.CELERY_BROKER_URL, socket_timeout=1)
+        client = redis.Redis.from_url(settings.CELERY_BROKER_URL, socket_timeout=1, socket_connect_timeout=1)
         return [({"queue": queue}, int(client.llen(queue)))]
     except Exception:  # broker unreachable: report nothing rather than fail the scrape
         return []
@@ -71,6 +71,8 @@ def _collect():
 
     since = timezone.now() - timedelta(hours=1)
     out = _Exposition()
+    from .metrics_push import push_outcome_samples
+    out.gauge("spaceworks_push_delivery_outcomes", "Current per-device push outcome counts by platform (both ledgers).", push_outcome_samples())
 
     out.gauge(
         "spaceworks_celery_queue_length",
@@ -172,4 +174,10 @@ class MetricsView(APIView):
             response = HttpResponse("unauthorized\n", status=401, content_type="text/plain")
             response["WWW-Authenticate"] = "Bearer"
             return response
-        return HttpResponse(_collect(), content_type=CONTENT_TYPE)
+        body = _collect()
+        if getattr(settings, "ROUTE_METRICS_ENABLED", False):
+            from apps.operations.route_metrics import exposition
+            body += exposition()
+        response = HttpResponse(body, content_type=CONTENT_TYPE)
+        response["Cache-Control"] = "private, no-store"
+        return response

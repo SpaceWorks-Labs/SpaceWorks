@@ -1,3 +1,4 @@
+from django.utils.translation import gettext, gettext_noop
 import uuid
 
 from django.conf import settings
@@ -41,6 +42,9 @@ class Box(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
+        # #188: plain-language admin name (the default plural was broken English).
+        verbose_name = "container"
+        verbose_name_plural = "containers"
         constraints = [
             models.UniqueConstraint(
                 fields=["makerspace", "label"],
@@ -55,14 +59,14 @@ class Box(models.Model):
         if self.parent_id:
             if self.parent.makerspace_id != self.makerspace_id:
                 raise ValidationError(
-                    {"parent": "Parent box must be in the same makerspace."}
+                    {"parent": gettext("Parent box must be in the same makerspace.")}
                 )
             seen = set()
             node = self.parent
             while node is not None:
                 if node.pk == self.pk or node.pk in seen:
                     raise ValidationError(
-                        {"parent": "A box cannot be its own ancestor."}
+                        {"parent": gettext("A box cannot be its own ancestor.")}
                     )
                 seen.add(node.pk)
                 node = node.parent
@@ -119,11 +123,18 @@ class QrCode(models.Model):
         ASSET = "asset", "Asset"
         # A member ID card (makerspaces.MemberCard). Resolved ONLY through the dedicated
         # member-card resolver, never the generic scanner path.
-        MEMBER_CARD = "member_card", "Member card"
+        MEMBER_CARD = "member_card", gettext_noop("Member card")
 
     class Status(models.TextChoices):
         ACTIVE = "active", "Active"
         REVOKED = "revoked", "Revoked"
+
+    class Source(models.TextChoices):
+        # SpaceWorks generated the payload and prints it. EXTERNAL: the label was printed
+        # elsewhere; `external_value` is what it encodes and `payload` stays a random,
+        # never-printed token so deployment-global payload uniqueness is untouched.
+        SPACEWORKS = "spaceworks", gettext_noop("SpaceWorks")
+        EXTERNAL = "external", gettext_noop("External")
 
     makerspace = models.ForeignKey(
         Makerspace,
@@ -131,6 +142,8 @@ class QrCode(models.Model):
         related_name="qr_codes",
     )
     payload = models.CharField(max_length=64, unique=True, default=generate_box_code)
+    source = models.CharField(max_length=20, choices=Source.choices, default=Source.SPACEWORKS)
+    external_value = models.CharField(max_length=64, blank=True, default="")
     target_type = models.CharField(max_length=20, choices=TargetType.choices)
     target_id = models.PositiveIntegerField()
     status = models.CharField(
@@ -156,6 +169,20 @@ class QrCode(models.Model):
                 condition=models.Q(status="active"),
                 name="uniq_active_qr_per_target",
             ),
+            # Per makerspace and across EVERY status: a revoked external label stays
+            # retired, exactly like a revoked SpaceWorks payload, and never re-links.
+            models.UniqueConstraint(
+                fields=["makerspace", "external_value"],
+                condition=models.Q(source="external"),
+                name="uniq_external_qr_value_per_makerspace",
+            ),
+            models.CheckConstraint(
+                condition=(
+                    models.Q(source="spaceworks", external_value="")
+                    | (models.Q(source="external") & ~models.Q(external_value=""))
+                ),
+                name="qr_external_value_matches_source",
+            ),
         ]
 
     def __str__(self):
@@ -168,10 +195,10 @@ class QrScanEvent(models.Model):
     class Context(models.TextChoices):
         ISSUE = "issue", "Issue"
         RETURN = "return", "Return"
-        INVENTORY_CHECK = "inventory_check", "Inventory Check"
+        INVENTORY_CHECK = "inventory_check", gettext_noop("Inventory Check")
         REASSIGNMENT = "reassignment", "Reassignment"
-        SCANNER_LOOKUP = "scanner_lookup", "Scanner Lookup"
-        MEMBER_LOOKUP = "member_lookup", "Member card lookup"
+        SCANNER_LOOKUP = "scanner_lookup", gettext_noop("Scanner Lookup")
+        MEMBER_LOOKUP = "member_lookup", gettext_noop("Member card lookup")
 
     makerspace = models.ForeignKey(
         Makerspace,

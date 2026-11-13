@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from rest_framework import serializers
 
 
@@ -13,7 +14,7 @@ class MemberCalendarFeedIssueSerializer(serializers.Serializer):
 
     def validate_confirm_bearer_risk(self, value):
         if value is not True:
-            raise serializers.ValidationError("Confirm that anyone with the URL can read the feed.")
+            raise serializers.ValidationError(gettext("Confirm that anyone with the URL can read the feed."))
         return value
 
 

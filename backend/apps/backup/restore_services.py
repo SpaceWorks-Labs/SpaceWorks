@@ -1,4 +1,4 @@
-import logging
+from django.utils.translation import gettext
 import uuid
 from datetime import timedelta
 
@@ -8,11 +8,9 @@ from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
 from apps.audit import services as audit
-from apps.backup.custody import validate_deployment_custody
 from apps.backup.digests import SUPPORTED_ARCHIVE_FORMATS
 from apps.backup.models import BackupArchive, DeploymentRecoveryState, RestoreOperation
 
-logger = logging.getLogger(__name__)
 
 
 ALLOWED_STAGE_TRANSITIONS = {
@@ -42,33 +40,35 @@ ALLOWED_STAGE_TRANSITIONS = {
 
 @transaction.atomic
 def request_restore(actor, archive, kind):
+    from .cloud_operations import require_host
+    require_host("deployment_restore_requires_host_supervisor")
     if archive.scope != BackupArchive.Scope.DEPLOYMENT:
-        raise ValidationError("Only full-deployment archives can be restored by Phase 5A.")
+        raise ValidationError(gettext("Only full-deployment archives can be restored by Phase 5A."))
     manifest = archive.manifest
     if (
         not isinstance(manifest, dict)
         or manifest.get("format") not in SUPPORTED_ARCHIVE_FORMATS
     ):
         raise ValidationError(
-            "Restore refused [format_unsupported]: "
-            "the deployment archive format is unsupported."
+            gettext("Restore refused [format_unsupported]: "
+            "the deployment archive format is unsupported.")
         )
     if (
         archive.status != BackupArchive.Status.AVAILABLE
         or archive.expires_at is None
         or archive.expires_at <= timezone.now()
     ):
-        raise ValidationError("The selected archive is not available.")
+        raise ValidationError(gettext("The selected archive is not available."))
     state = _locked_state()
     if state.mode != DeploymentRecoveryState.Mode.NORMAL:
-        raise ValidationError("A restore cannot be requested while recovery is already active.")
+        raise ValidationError(gettext("A restore cannot be requested while recovery is already active."))
     if RestoreOperation.objects.exclude(
         stage__in=(
             RestoreOperation.Stage.COMPLETED, RestoreOperation.Stage.RESTORED_QUARANTINED,
             RestoreOperation.Stage.FAILED, RestoreOperation.Stage.ABORTED,
         )
     ).exists():
-        raise ValidationError("Another restore is already active.")
+        raise ValidationError(gettext("Another restore is already active."))
     restore = RestoreOperation.objects.create(
         archive=archive,
         kind=kind,
@@ -128,28 +128,12 @@ def set_stage(restore_id, stage, *, error=""):
         allowed = {*allowed, RestoreOperation.Stage.FAILED}
     if stage not in allowed:
         raise ValidationError(
-            f"Restore stage cannot move from {restore.stage} to {stage}."
+            gettext('Restore stage cannot move from {stage} to {stage2}.').format(stage=restore.stage, stage2=stage)
         )
     returning_to_normal = (
         stage == RestoreOperation.Stage.COMPLETED
         and restore.kind == RestoreOperation.Kind.ROLLBACK_IN_PLACE
     )
-    if returning_to_normal:
-        # Persists every makerspace's custody state in deterministic order.
-        custody = validate_deployment_custody()
-        if custody.zero_recipient_off_makerspace_ids:
-            # Deliberately NOT fatal -- same reasoning as the validating-stage check in
-            # restore_control_records: zero recipients is an explicitly supported state
-            # after a compromise, so blocking the return to normal would strand the
-            # whole deployment with no repair path (quarantine exposes no recipient
-            # management). Fail closed on the BUILD side, where `selection_for` already
-            # refuses to encrypt to nobody -- never on recovery.
-            logger.error(
-                "restore_normal_with_zero_recipient_self_governed_makerspaces",
-                extra={
-                    "makerspace_ids": list(custody.zero_recipient_off_makerspace_ids)
-                },
-            )
     restore.stage = stage
     restore.supervisor_heartbeat_at = timezone.now()
     restore.error_detail = str(error)[:500]
@@ -165,7 +149,6 @@ def set_stage(restore_id, stage, *, error=""):
             restore.requested_by,
             "backup.restore_completed",
             target=restore,
-            meta={"archive_custody_below_floor": custody.below_floor_count},
         )
     return restore
 
@@ -174,7 +157,7 @@ def set_stage(restore_id, stage, *, error=""):
 def enter_quiescence(restore_id):
     restore = RestoreOperation.objects.select_for_update().get(pk=restore_id)
     if restore.stage != RestoreOperation.Stage.PREFLIGHT:
-        raise ValidationError("Only a preflighted restore can enter quiescence.")
+        raise ValidationError(gettext("Only a preflighted restore can enter quiescence."))
     restore.stage = RestoreOperation.Stage.QUIESCED
     restore.decision = RestoreOperation.Decision.PENDING
     restore.save()
@@ -190,7 +173,7 @@ def record_restore_diff(restore_id, report):
     restore = RestoreOperation.objects.select_for_update().get(pk=restore_id)
     state = _locked_state()
     if restore.stage != RestoreOperation.Stage.QUIESCED or state.mode != DeploymentRecoveryState.Mode.QUIESCED:
-        raise ValidationError("Restore diff can only be recorded while writers are quiesced.")
+        raise ValidationError(gettext("Restore diff can only be recorded while writers are quiesced."))
     restore.restore_diff = report
     restore.decision_deadline_at = timezone.now() + timedelta(
         seconds=settings.BACKUP_DECISION_SECONDS
@@ -205,7 +188,7 @@ def decide_restore(actor, restore_id, decision):
     state = _locked_state()
     now = timezone.now()
     if restore.stage != RestoreOperation.Stage.QUIESCED or state.mode != DeploymentRecoveryState.Mode.QUIESCED:
-        raise ValidationError("This restore is not awaiting a decision under quiescence.")
+        raise ValidationError(gettext("This restore is not awaiting a decision under quiescence."))
     if not restore.decision_deadline_at or restore.decision_deadline_at <= now:
         _abort_locked(restore, state, "The bounded decision window expired.")
         audit.record(
@@ -216,7 +199,7 @@ def decide_restore(actor, restore_id, decision):
         )
         return restore
     if decision not in {RestoreOperation.Decision.PROCEED, RestoreOperation.Decision.RESET, RestoreOperation.Decision.ABORT}:
-        raise ValidationError({"decision": "Choose proceed, reset, or abort."})
+        raise ValidationError({"decision": gettext("Choose proceed, reset, or abort.")})
     restore.decision = decision
     if decision == RestoreOperation.Decision.ABORT:
         _abort_locked(restore, state, "Aborted by the operator.")

@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.db import transaction
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
@@ -12,6 +13,7 @@ from apps.admin_api.permissions import IsActiveStaff
 from apps.admin_api.staff_list_scope import ENTITY_ACTIONS, require_entity, visible_space
 from apps.audit import services as audit
 from apps.hardware_requests.exceptions import ErrorSerializer
+from apps.operations import saved_view_events
 from apps.operations.models_saved_views import SavedView
 from apps.operations.serializers_saved_views import SavedViewListSerializer, SavedViewSerializer
 
@@ -30,21 +32,25 @@ def accessible_views(actor, space):
 
 def validate_share(actor, space, shared):
     if shared and not rbac.can(actor, rbac.Action.MANAGE_MAKERSPACE, space.pk):
-        raise PermissionDenied("Only makerspace managers may publish shared views.")
+        raise PermissionDenied(gettext("Only makerspace managers may publish shared views."))
 
 
 class SavedViewListCreateView(APIView):
     permission_classes = [IsActiveStaff]
 
-    @extend_schema(tags=["Staff lists"], request=None, parameters=[OpenApiParameter("entity", str, required=True, enum=list(ENTITY_ACTIONS)), OpenApiParameter("page", int)], responses={200: SavedViewListSerializer, **ERRORS})
+    @extend_schema(tags=["Staff lists"], request=None, parameters=[OpenApiParameter("entity", str, required=True, enum=list(ENTITY_ACTIONS)), OpenApiParameter("event", int, description="Only the views saved for this event's list (needs events.event_saved_views); without it, space-wide views only."), OpenApiParameter("page", int)], responses={200: SavedViewListSerializer, **ERRORS})
     def get(self, request, makerspace_id):
         space = visible_space(request.user, makerspace_id)
         entity = request.query_params.get("entity", "")
         if entity not in ENTITY_ACTIONS:
-            raise ValidationError({"entity": "Choose a staff list."})
+            raise ValidationError({"entity": gettext("Choose a staff list.")})
         require_entity(request.user, space, entity)
+        event_param = request.query_params.get("event", "")
+        if event_param:
+            saved_view_events.authorize(request.user, space, entity, {saved_view_events.KEY: event_param})
+        rows = saved_view_events.narrow(accessible_views(request.user, space).filter(entity=entity), event_param)
         pager = StaffListPagination()
-        page = pager.paginate_queryset(accessible_views(request.user, space).filter(entity=entity), request, view=self)
+        page = pager.paginate_queryset(rows, request, view=self)
         return pager.get_paginated_response(SavedViewSerializer(page, many=True).data)
 
     @extend_schema(tags=["Staff lists"], request=SavedViewSerializer, responses={201: SavedViewSerializer, **ERRORS})
@@ -55,6 +61,10 @@ class SavedViewListCreateView(APIView):
         payload.is_valid(raise_exception=True)
         require_entity(request.user, space, payload.validated_data["entity"])
         validate_share(request.user, space, payload.validated_data.get("shared", False))
+        event_id = saved_view_events.authorize(request.user, space, payload.validated_data["entity"],
+                                               payload.validated_data.get("state"))
+        if event_id:
+            saved_view_events.check_quota(space, request.user, payload.validated_data["entity"], event_id)
         view = payload.save(makerspace=space, owner=request.user)
         audit.record(request.user, "saved_view.created", makerspace=space, target=view)
         if view.shared:
@@ -84,16 +94,20 @@ class SavedViewDetailView(APIView):
     def patch(self, request, makerspace_id, pk):
         row, space = self.row(request, makerspace_id, pk, lock=True)
         if row.owner_id != request.user.pk:
-            raise PermissionDenied("Only the owner may edit this view.")
+            raise PermissionDenied(gettext("Only the owner may edit this view."))
         payload = SavedViewSerializer(row, data=request.data, partial=True)
         payload.is_valid(raise_exception=True)
         require_entity(request.user, space, payload.validated_data.get("entity", row.entity))
         shared = payload.validated_data.get("shared", row.shared)
         # Editing a published view is publishing too, even if shared wasn't sent.
         validate_share(request.user, space, shared)
-        was_shared = row.shared
+        was_shared, old_name = row.shared, row.name
+        saved_view_events.authorize(request.user, space, payload.validated_data.get("entity", row.entity),
+                                    payload.validated_data.get("state"))
         payload.save()
         audit.record(request.user, "saved_view.updated", makerspace=space, target=row)
+        if row.name != old_name:
+            audit.record(request.user, "saved_view.renamed", makerspace=space, target=row)
         if was_shared != row.shared:
             if row.shared:
                 audit.record(request.user, "saved_view.shared", makerspace=space, target=row)
@@ -106,7 +120,7 @@ class SavedViewDetailView(APIView):
     def delete(self, request, makerspace_id, pk):
         row, space = self.row(request, makerspace_id, pk, lock=True)
         if row.owner_id != request.user.pk:
-            raise PermissionDenied("Only the owner may delete this view.")
+            raise PermissionDenied(gettext("Only the owner may delete this view."))
         if row.shared:
             validate_share(request.user, space, True)
         audit.record(request.user, "saved_view.deleted", makerspace=space, target=row)

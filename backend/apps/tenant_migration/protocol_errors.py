@@ -39,5 +39,17 @@ class ImportStateError(TenantMigrationProtocolError):
     code = "import_state_conflict"
 
 
+class UploadOffsetMismatchError(ImportStateError):
+    code = "offset_mismatch"
+
+    def __init__(self, upload_received_bytes):
+        self.upload_received_bytes = upload_received_bytes
+        super().__init__("The upload offset does not match the bytes already received.")
+
+
+class UploadIncompleteError(ImportStateError):
+    code = "upload_incomplete"
+
+
 class MembershipDependencyError(TenantMigrationProtocolError):
     code = "membership_dependency_conflict"

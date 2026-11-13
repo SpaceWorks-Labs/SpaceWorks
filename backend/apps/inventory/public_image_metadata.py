@@ -1,5 +1,6 @@
 """Validation and cross-model ownership checks for public image keys."""
 
+from django.utils.translation import gettext
 from django.conf import settings
 from django.db.models import Q
 from rest_framework.exceptions import ValidationError
@@ -9,11 +10,14 @@ def public_image_key_in_use(
     makerspace_id, object_key, *, product_id=None, machine_id=None, event_id=None,
     series_id=None,
     profile_id=None, project_id=None, makerspace_field="",
+    account_profile_id=None, account_project_id=None,
 ):
     from apps.events.models import Event, EventSeries
     from apps.inventory.models import InventoryProduct
     from apps.machines.models import Machine
-    from apps.makerspaces.models import Makerspace, MemberProfile, MemberProject
+    from apps.makerspaces.models import (
+        AccountProfile, AccountProject, Makerspace, MemberProfile, MemberProject,
+    )
 
     products = InventoryProduct.objects.filter(
         makerspace_id=makerspace_id, image_key=object_key
@@ -44,6 +48,11 @@ def public_image_key_in_use(
     )
     if profile_id is not None:
         profiles = profiles.exclude(pk=profile_id)
+    if account_profile_id is not None:
+        # Per-membership pointer rows mirror their account's avatar (`mirror_avatar`); they are the
+        # same owner's copy of the key, never a second claimant.
+        profiles = profiles.exclude(
+            membership__user__in=AccountProfile.objects.filter(pk=account_profile_id).values("user"))
     if profiles.exists():
         return True
     projects = MemberProject.objects.filter(
@@ -52,6 +61,18 @@ def public_image_key_in_use(
     if project_id is not None:
         projects = projects.exclude(pk=project_id)
     if projects.exists():
+        return True
+    # Account-level profiles (decision 305) are not makerspace-scoped, but their keys carry the
+    # space id of the namespace they were uploaded into, so a key match is the whole test.
+    account_profiles = AccountProfile.objects.filter(avatar_key=object_key)
+    if account_profile_id is not None:
+        account_profiles = account_profiles.exclude(pk=account_profile_id)
+    if account_profiles.exists():
+        return True
+    account_projects = AccountProject.objects.filter(image_key=object_key)
+    if account_project_id is not None:
+        account_projects = account_projects.exclude(pk=account_project_id)
+    if account_projects.exists():
         return True
     makerspace_query = Makerspace.objects.filter(pk=makerspace_id)
     if makerspace_field == "logo_key":
@@ -77,11 +98,11 @@ def public_url(object_key):
 def ext_for(content_type, filename):
     allowed_exts = settings.PUBLIC_IMAGE_ALLOWED_MIME.get(content_type)
     if not allowed_exts:
-        raise ValidationError({"content_type": "Unsupported public image content type."})
+        raise ValidationError({"content_type": gettext("Unsupported public image content type.")})
     safe_name = (filename or "").replace("\\", "/").rsplit("/", 1)[-1]
     ext = f".{safe_name.rsplit('.', 1)[-1].lower()}" if "." in safe_name else ""
     if ext not in allowed_exts:
         raise ValidationError(
-            {"filename": "Filename extension does not match the content type."}
+            {"filename": gettext("Filename extension does not match the content type.")}
         )
     return ext

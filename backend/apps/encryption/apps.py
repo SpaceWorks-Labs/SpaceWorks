@@ -10,9 +10,12 @@ class EncryptionConfig(AppConfig):
         # check itself no-ops when PII_ENCRYPTION_ENABLED is False, so importing
         # it here never parses key material in a dormant install.
         from apps.encryption import checks  # noqa: F401
+        from apps.encryption import account_checks  # noqa: F401
         from apps.encryption import signals  # noqa: F401
 
         self._register_pii_fields()
+        from apps.encryption.key_notifications import register as register_key_notifications
+        register_key_notifications()
         # Celery workers do not use the HTTP readiness view.  The signal keeps an
         # enabled worker from accepting generation-bound tasks before its DB/key
         # preflight passes; disabled installs still do no key parsing or DB work.
@@ -23,10 +26,8 @@ class EncryptionConfig(AppConfig):
 
         @worker_process_init.connect(weak=False)
         def _pii_worker_readiness(**kwargs):
-            from django.conf import settings
-            if settings.PII_ENCRYPTION_ENABLED:
-                from apps.encryption.readiness import assert_ready
-                assert_ready()
+            from apps.encryption.readiness import assert_ready
+            assert_ready()
 
     def _register_pii_fields(self):
         """Publish the scoped-PII map into the separability registry.

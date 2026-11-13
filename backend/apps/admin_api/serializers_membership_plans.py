@@ -1,14 +1,21 @@
 """Serializers for the staff membership-plan, term and invitation-request surfaces."""
+from django.utils.translation import gettext
 import re
 
 from rest_framework import serializers
+from apps.payments.money_fields import MoneyField
 
+from apps.admin_api.serializers_membership_plan_rules import validate_plan_rules
+from apps.forms_schema.serializers import CustomFormSchemaField
 from apps.makerspaces.models import InvitationRequest, MembershipPlan, MembershipTerm
 
 _CURRENCY = re.compile(r"^[A-Za-z]{3}$")
 
 
 class MembershipPlanSerializer(serializers.ModelSerializer):
+    application_schema = CustomFormSchemaField(required=False, allow_null=True)
+    renewal_price = MoneyField(max_digits=13, decimal_places=3, read_only=True)
+
     class Meta:
         model = MembershipPlan
         fields = [
@@ -16,14 +23,38 @@ class MembershipPlanSerializer(serializers.ModelSerializer):
             "created_at", "updated_at", "loan_max_active", "loan_max_items",
             "auto_renew", "renewal_open_days", "renewal_grace_days", "renewal_retries",
             "reminder_days_before", "reminder_days_after",
+            # Release 2 (G16, X5, X6, X8, X9): type, prices, per-plan overrides, listing.
+            "plan_type", "fixed_end_date", "renewal_amount", "renewal_price", "joining_fee",
+            "rejoin_rule", "rejoin_after_days", "payment_timing", "join_mode", "application_schema",
+            "late_renewal", "slug", "description", "sort_order", "is_public", "archived_at",
+            # Decision 221(d): hours each term includes before the hourly booking price.
+            "included_booking_hours", "included_machine_hours",
+            # Parity O-B3 (`billing.plan_sac`): the plan's own SAC code; blank = the space-wide one.
+            "sac_code",
+            # Parity O-B2: what the join form collects (`membership.join_photo`, `membership.join_contact_fields`).
+            "join_photo", "join_phone", "join_state",
         ]
         # `makerspace` comes from the URL, never the body: accepting it would let a
         # manager in one space price memberships in another.
-        read_only_fields = ["id", "created_at", "updated_at"]
+        read_only_fields = ["id", "created_at", "updated_at", "archived_at"]
+
+    def validate_sac_code(self, value):
+        from apps.makerspaces.platform import feature_enabled
+        from apps.payments.tax.plan_sac import validate_plan_sac
+
+        try:
+            value = validate_plan_sac(value)
+        except ValueError as exc:
+            raise serializers.ValidationError(str(exc))
+        space = self.context.get("makerspace")
+        # Clearing the code is always allowed; setting one needs the switch (and so the GST policy behind it).
+        if value and space is not None and not feature_enabled(space, "billing.plan_sac"):
+            raise serializers.ValidationError(gettext("Turn on the per-plan SAC code setting first."))
+        return value
 
     def validate_currency(self, value):
         if not _CURRENCY.match(value or ""):
-            raise serializers.ValidationError("Use a three-letter ISO 4217 code.")
+            raise serializers.ValidationError(gettext("Use a three-letter ISO 4217 code."))
         return value.lower()
 
     def validate(self, attrs):
@@ -32,32 +63,42 @@ class MembershipPlanSerializer(serializers.ModelSerializer):
             if not isinstance(values, list) or len(values) > 10 or any(
                 type(day) is not int or not 1 <= day <= 365 for day in values
             ):
-                raise serializers.ValidationError({name: "Use up to ten day offsets between 1 and 365."})
+                raise serializers.ValidationError({name: gettext("Use up to ten day offsets between 1 and 365.")})
         interval = attrs.get("interval", getattr(self.instance, "interval", None))
         custom_days = attrs.get("custom_days", getattr(self.instance, "custom_days", None))
         if interval == MembershipPlan.Interval.CUSTOM_DAYS:
             if not custom_days:
                 raise serializers.ValidationError(
-                    {"custom_days": "Required for a custom-days interval."}
+                    {"custom_days": gettext("Required for a custom-days interval.")}
                 )
         elif custom_days is not None:
             # Silently normalising would hide a client bug; refusing keeps the row honest.
             raise serializers.ValidationError(
-                {"custom_days": "Only a custom-days interval takes a day count."}
+                {"custom_days": gettext("Only a custom-days interval takes a day count.")}
             )
-        return attrs
+        return validate_plan_rules(attrs, self.instance, self.context.get("makerspace"))
 
 
 class MembershipTermSerializer(serializers.ModelSerializer):
     plan_name = serializers.CharField(source="plan.name", read_only=True)
+    standing = serializers.SerializerMethodField()
+    is_lifetime = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = MembershipTerm
         fields = [
             "id", "membership", "plan", "plan_name", "starts_at", "ends_at", "status",
             "renewal_payment", "created_by", "created_at",
+            # Frozen at opening (X6) and the derived standing (X7).
+            "kind", "price", "joining_fee", "currency", "plan_type", "standing", "is_lifetime",
         ]
         read_only_fields = fields
+
+    def get_standing(self, obj) -> str:
+        from django.utils import timezone
+
+        from apps.makerspaces.membership_term_history import standing
+        return standing(obj, timezone.now())
 
 
 class MembershipTermCreateSerializer(serializers.Serializer):

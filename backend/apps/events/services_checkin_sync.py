@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from collections import Counter
 from uuid import UUID
 
@@ -15,6 +16,8 @@ from apps.events.exceptions import (
 )
 from apps.events.models import Event, EventCheckInEvent, EventRegistration
 from apps.events.services_checkin import mark_attended_with_event
+from apps.makerspaces.community_policy import CommunityError
+from apps.payments.event_payouts.errors import PayoutError
 
 
 def validated_lease(
@@ -29,7 +32,7 @@ def validated_lease(
     try:
         lease = read_lease(token)
     except (signing.BadSignature, TypeError, ValueError, KeyError):
-        raise AuthenticationFailed("Invalid check-in lease.") from None
+        raise AuthenticationFailed(gettext("Invalid check-in lease.")) from None
     expected = (
         lease.get("kind") == kind
         and lease.get("event_id") == event.pk
@@ -39,7 +42,7 @@ def validated_lease(
         and (session_id is None or lease.get("lease_id") == str(session_id))
     )
     if not expected:
-        raise PermissionDenied("Check-in lease authority changed.")
+        raise PermissionDenied(gettext("Check-in lease authority changed."))
     if not sync_is_open(lease):
         raise CheckInLeaseExpired()
     return lease
@@ -54,6 +57,7 @@ def synchronize(
     source,
     session_id,
     station_version=None,
+    badge_receipts=None,
 ):
     results = [
         _process(
@@ -82,7 +86,36 @@ def synchronize(
             "outcomes": dict(sorted(counts.items())),
         },
     )
-    return {"recorded_at": timezone.now(), "results": results}
+    payload = {"recorded_at": timezone.now(), "results": results}
+    if badge_receipts:
+        from .badge_prints import desk_print_on, record_receipts
+        if desk_print_on(event.makerspace):
+            # Offline prints are never blocked by the monthly limit; they count when they sync (E-B2).
+            recorded, duplicates = record_receipts(event, badge_receipts, actor=actor, method="offline")
+            payload["badge_receipts"] = {"recorded": recorded, "duplicates": duplicates}
+    return payload
+
+
+def _registration_for(event, raw):
+    """The registration a scanned code belongs to: a legacy UUID, or (badge desk print on) a live SWEC2 code."""
+    raw = str(raw or "")
+    if raw.startswith("SWEC2."):
+        from apps.events.badge_prints import desk_print_on
+        if not desk_print_on(event.makerspace):
+            return None
+        from apps.events.credentials.crypto import token_digest
+        from apps.events.credentials.models import EventRegistrationCredential
+        digest = token_digest(event.pk, raw)
+        credential = EventRegistrationCredential.objects.filter(
+            token_digest=digest, registration__event=event, registration__credential_mode="v2",
+            revoked_at__isnull=True, expires_at__gt=timezone.now(),
+        ).select_related("registration").first() if digest else None
+        return credential.registration if credential is not None else None
+    try:
+        token = UUID(raw)
+    except (TypeError, ValueError, AttributeError):
+        return None
+    return EventRegistration.objects.filter(event=event, checkin_token=token, credential_mode="legacy").first()
 
 
 def _process(event, item, *, lease, actor, source, session_id, station_version):
@@ -97,14 +130,7 @@ def _process(event, item, *, lease, actor, source, session_id, station_version):
         return {**base, "outcome": "event_unavailable"}
     if not reported_time_is_valid(item["reported_occurred_at"], lease):
         return {**base, "outcome": "outside_window"}
-    try:
-        token = UUID(str(item["checkin_token"]))
-    except (TypeError, ValueError, AttributeError):
-        return {**base, "outcome": "invalid_token"}
-    registration = EventRegistration.objects.filter(
-        event=event,
-        checkin_token=token,
-    ).first()
+    registration = _registration_for(event, item["checkin_token"])
     if registration is None:
         return {**base, "outcome": "invalid_token"}
     if registration.status == EventRegistration.Status.ATTENDED:
@@ -123,6 +149,13 @@ def _process(event, item, *, lease, actor, source, session_id, station_version):
         )
     except DuplicateCheckInOperation:
         return {**base, "outcome": "duplicate_operation"}
+    except PayoutError as exc:
+        if exc.detail.get("code") != "stage_incomplete":
+            raise
+        return {**base, "outcome": "stage_incomplete"}
+    except CommunityError as exc:
+        # EV-27: a minor's guardian consent is missing, expired or withdrawn; report the typed code.
+        return {**base, "outcome": exc.error_code}
     except IntegrityError:
         # With the event and registration locked, the remaining expected race is the
         # globally unique operation UUID. Do not query another tenant to prove that

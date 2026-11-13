@@ -1,0 +1,233 @@
+{
+  "contract_version": 3,
+  "schema_version": 2,
+  "owner": "E",
+  "data_owner": "ARTWORK",
+  "certificate_families": [
+    "foundry",
+    "contour",
+    "blueprint"
+  ],
+  "badge_families": [
+    "classic",
+    "bold",
+    "minimal"
+  ],
+  "themes": [
+    "light",
+    "dark"
+  ],
+  "stocks": {
+    "a6-portrait": [
+      105,
+      148
+    ],
+    "4x6": [
+      101.6,
+      152.4
+    ],
+    "3x4": [
+      76.2,
+      101.6
+    ],
+    "4x3": [
+      101.6,
+      76.2
+    ],
+    "cr80-portrait": [
+      53.98,
+      85.6
+    ],
+    "cr80-landscape": [
+      85.6,
+      53.98
+    ]
+  },
+  "layer_types": [
+    "text",
+    "image",
+    "logo",
+    "photo",
+    "certificate_id",
+    "certificate_qr",
+    "event_credential_qr"
+  ],
+  "max_layers": 20,
+  "units": "mm",
+  "font_family": [
+    "Gilroy",
+    "Unbounded"
+  ],
+  "font_weights": [
+    400,
+    500,
+    600,
+    700
+  ],
+  "min_font_size_pt": 6,
+  "text_tags": [
+    "name",
+    "event",
+    "eventDate",
+    "organisation",
+    "issueDate"
+  ],
+  "resource_slots": [
+    "logo",
+    "selected_member_photo",
+    "certificate_verification_qr",
+    "event_credential_qr"
+  ],
+  "external_resource_urls": false,
+  "seed": {
+    "seed_id": "certificate-foundry",
+    "seed_version": 1,
+    "theme": "light",
+    "document": {
+      "version": 2,
+      "page_width_mm": 297,
+      "page_height_mm": 210,
+      "layers": [
+        {
+          "id": "44444444-4444-4444-8444-444444444444",
+          "order": 0,
+          "type": "text",
+          "x_mm": 25,
+          "y_mm": 76,
+          "width_mm": 247,
+          "height_mm": 18,
+          "rotation": 0,
+          "text": "{{name}}",
+          "font_family": "Gilroy",
+          "font_weight": 700,
+          "font_size_pt": 24,
+          "align": "center",
+          "shrink_to_fit": true
+        },
+        {
+          "id": "55555555-5555-4555-8555-555555555555",
+          "order": 1,
+          "type": "logo",
+          "x_mm": 25,
+          "y_mm": 20,
+          "width_mm": 40,
+          "height_mm": 20,
+          "rotation": 0,
+          "resource_slot": "logo"
+        },
+        {
+          "id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+          "order": 2,
+          "type": "certificate_qr",
+          "x_mm": 247,
+          "y_mm": 160,
+          "width_mm": 25,
+          "height_mm": 25,
+          "rotation": 0,
+          "resource_slot": "certificate_verification_qr"
+        },
+        {
+          "id": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+          "order": 3,
+          "type": "certificate_id",
+          "x_mm": 180,
+          "y_mm": 190,
+          "width_mm": 80,
+          "height_mm": 7,
+          "rotation": 0
+        }
+      ]
+    },
+    "resources": []
+  },
+  "resource_schema": {
+    "id": "66666666-6666-4666-8666-666666666666",
+    "kind": "packaged_artwork",
+    "path": "artwork/certificate-foundry.light.svg",
+    "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "counts": {
+    "frontend_svg": 58,
+    "packaged_svg": 12,
+    "twin_pairs": 35,
+    "certificate_renders": 6,
+    "badge_stock_renders": 36
+  },
+  "install": {
+    "idempotency": [
+      "seed_id",
+      "seed_version",
+      "theme"
+    ],
+    "import_time_db_writes": false,
+    "overwrite_edited_template": false,
+    "copy_to_owned_immutable_revision": true
+  },
+  "geometry_owner": "ARTWORK",
+  "preview": "dummy_only_no_live_photo_or_QR",
+  "badge_seed": {
+    "seed_id": "badge-classic",
+    "seed_version": 1,
+    "theme": "light",
+    "stock": "cr80-landscape",
+    "document": {
+      "version": 2,
+      "page_width_mm": 85.6,
+      "page_height_mm": 53.98,
+      "layers": [
+        {
+          "id": "77777777-7777-4777-8777-777777777777",
+          "order": 0,
+          "type": "photo",
+          "x_mm": 4,
+          "y_mm": 12,
+          "width_mm": 20,
+          "height_mm": 24,
+          "rotation": 0,
+          "resource_slot": "selected_member_photo"
+        },
+        {
+          "id": "88888888-8888-4888-8888-888888888888",
+          "order": 1,
+          "type": "event_credential_qr",
+          "x_mm": 57,
+          "y_mm": 18,
+          "width_mm": 23,
+          "height_mm": 23,
+          "rotation": 0,
+          "resource_slot": "event_credential_qr"
+        },
+        {
+          "id": "99999999-9999-4999-8999-999999999999",
+          "order": 2,
+          "type": "logo",
+          "x_mm": 4,
+          "y_mm": 3,
+          "width_mm": 20,
+          "height_mm": 6,
+          "rotation": 0,
+          "resource_slot": "logo"
+        },
+        {
+          "id": "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+          "order": 3,
+          "type": "text",
+          "x_mm": 28,
+          "y_mm": 13,
+          "width_mm": 26,
+          "height_mm": 10,
+          "rotation": 0,
+          "text": "{{name}}",
+          "font_family": "Gilroy",
+          "font_weight": 700,
+          "font_size_pt": 10,
+          "align": "left",
+          "shrink_to_fit": true
+        }
+      ]
+    },
+    "resources": [],
+    "no_photo_fallback": "placeholder"
+  },
+  "schema_ref": "contract-schemas-v3.json#/$defs/TemplateDocumentV2"
+}

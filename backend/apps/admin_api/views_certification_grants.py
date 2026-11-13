@@ -1,5 +1,6 @@
 """Certification grant endpoints, split from type administration."""
 
+from django.utils.translation import gettext
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -9,6 +10,7 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.views import APIView
+from apps.machines.retired import RetiredCertificationView
 
 from apps.accounts import rbac
 from apps.admin_api.permissions import IsActiveStaff
@@ -34,7 +36,7 @@ def _scoped_grants(user):
         makerspace_field="certification_type__makerspace_id",
     )
 
-class CertificationGrantListCreateView(APIView):
+class CertificationGrantListCreateView(RetiredCertificationView, APIView):
     permission_classes = [IsActiveStaff]
 
     @extend_schema(
@@ -80,7 +82,7 @@ class CertificationGrantListCreateView(APIView):
         if membership is None:
             # A membership in another makerspace is "unknown" here, never a 403 that
             # confirms it exists elsewhere.
-            raise ValidationError({"membership_id": "Unknown membership."})
+            raise ValidationError({"membership_id": gettext("Unknown membership.")})
         grant = issue_grant(row, membership, actor=request.user,
                             expires_at=data.get("expires_at"), notes=data.get("notes", ""))
         return Response(
@@ -88,7 +90,7 @@ class CertificationGrantListCreateView(APIView):
         )
 
 
-class CertificationGrantRevokeView(APIView):
+class CertificationGrantRevokeView(RetiredCertificationView, APIView):
     permission_classes = [IsActiveStaff]
 
     @extend_schema(
@@ -122,7 +124,7 @@ class CertificationGrantRevokeView(APIView):
         ):
             raise PermissionDenied()
         if grant.revoked_at is not None:
-            raise ValidationError("This certification is already revoked.")
+            raise ValidationError(gettext("This certification is already revoked."))
         serializer = CertificationGrantRevokeSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         grant.revoked_at = timezone.now()
@@ -144,7 +146,7 @@ class CertificationGrantRevokeView(APIView):
         return Response(CertificationGrantSerializer(grant).data)
 
 
-class CertificationGrantRenewView(APIView):
+class CertificationGrantRenewView(RetiredCertificationView, APIView):
     permission_classes = [IsActiveStaff]
 
     @extend_schema(tags=["Admin machines"], summary="Renew training with a new grant",

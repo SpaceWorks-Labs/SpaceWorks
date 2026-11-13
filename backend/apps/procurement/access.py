@@ -4,6 +4,7 @@ No new permission action is introduced: a makerspace admin (MANAGE_MAKERSPACE,
 held by Space Manager + Superadmin) owns both streams; hardware staff
 (EDIT_INVENTORY) own the hardware stream; print managers (MANAGE_PRINTING) own
 the printing stream. Visibility and write authority are both keyed off these."""
+from django.utils.translation import gettext
 from django.db.models import Q
 from rest_framework.exceptions import ValidationError
 
@@ -25,6 +26,15 @@ def viewable_kinds(actor, makerspace_id):
     if rbac.can(actor, rbac.Action.MANAGE_PRINTING, makerspace_id):
         kinds.append(PRINTING)
     return kinds
+
+
+def switched_kinds(makerspace_id):
+    """Streams whose parent To-Buy switch is on in this makerspace."""
+    from apps.makerspaces.folded_capabilities import tobuy_kinds_on
+    from apps.makerspaces.models import Makerspace
+
+    space = Makerspace.objects.filter(pk=makerspace_id).first()
+    return tobuy_kinds_on(space) if space is not None else []
 
 
 def can_use(actor, makerspace_id):
@@ -93,9 +103,11 @@ def scope_items(queryset, actor, makerspace_id):
 
     Hardware access is unchanged. Printing access inherited by a scoped
     ``MANAGE_MACHINES`` role reaches linked types only; NULL and per-machine-only
-    authority deliberately reach no printing rows.
+    authority deliberately reach no printing rows. A stream whose parent switch is off
+    (`machines.tobuy` / `inventory.tobuy`, #97) is hidden; its rows are kept.
     """
-    kinds = viewable_kinds(actor, makerspace_id)
+    on = switched_kinds(makerspace_id)
+    kinds = [kind for kind in viewable_kinds(actor, makerspace_id) if kind in on]
     queryset = queryset.filter(makerspace_id=makerspace_id, kind__in=kinds)
     type_ids = machine_type_scope(actor, makerspace_id)
     if type_ids is None or PRINTING not in kinds:
@@ -125,6 +137,8 @@ def provenance_machine_type_id(item):
             return item.resulting_pool.machine_type_id
         if item.resulting_pool.machine_id is not None:
             return item.resulting_pool.machine.machine_type_id
+    if getattr(item, "source_consumable_id", None) is not None:
+        return item.source_consumable.machine.machine_type_id
     return None
 
 
@@ -151,8 +165,8 @@ def validate_machine_type_provenance(item, machine_type):
         raise ValidationError(
             {
                 "machine_type": (
-                    "This item is tied to a machine, so its machine type follows that "
-                    "machine and cannot be changed."
+                    gettext("This item is tied to a machine, so its machine type follows that "
+                    "machine and cannot be changed.")
                 )
             }
         )
@@ -175,7 +189,7 @@ def validate_machine_type(actor, makerspace_id, kind, machine_type):
     """Validate tenant ownership and scoped creation/update authority."""
     if machine_type is not None and machine_type.makerspace_id not in (None, makerspace_id):
         raise ValidationError(
-            {"machine_type": "Machine type must belong to this makerspace."}
+            {"machine_type": gettext("Machine type must belong to this makerspace.")}
         )
     if kind != PRINTING:
         return
@@ -184,11 +198,11 @@ def validate_machine_type(actor, makerspace_id, kind, machine_type):
         return
     if machine_type is None:
         raise ValidationError(
-            {"machine_type": "This field is required for your machine scope."}
+            {"machine_type": gettext("This field is required for your machine scope.")}
         )
     if machine_type.pk not in type_ids:
         raise ValidationError(
-            {"machine_type": "You cannot procure for this machine type."}
+            {"machine_type": gettext("You cannot procure for this machine type.")}
         )
 
 

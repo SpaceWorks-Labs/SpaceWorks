@@ -1,9 +1,10 @@
 """Shared staff scope and locked adapter validation, without snapshot-based authority."""
+from django.utils.translation import gettext
 from django.db.models import Q
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 
 from apps.accounts import rbac
-from apps.devices.models import Device, DeviceCommand, PrinterDeviceBinding, PrinterJob
+from apps.devices.models import AdapterBinding, Device, DeviceCommand, PrinterDeviceBinding, PrinterJob
 from apps.devices.services_locks import lock_tenant
 from apps.encryption.write_fence import assert_mapped_write_allowed
 from apps.tenant_migration.gate_runtime import assert_write_allowed
@@ -24,7 +25,7 @@ def authorize_staff(actor, makerspace_id, machine=None):
     if not rbac.can(actor, rbac.Action.MANAGE_DEVICES, makerspace_id):
         raise PermissionDenied()
     if machine is not None and not can_manage_machine(actor, machine):
-        raise PermissionDenied("Machine is outside your management scope.")
+        raise PermissionDenied(gettext("Machine is outside your management scope."))
 
 
 def scope_printers(actor, queryset):
@@ -45,7 +46,7 @@ def locked_device(principal):
     makerspace = lock_printer_tenant(principal.makerspace_id)
     device = Device.objects.select_for_update().filter(pk=principal.device_id, makerspace=makerspace).first()
     if device is None or device.status != Device.Status.ACTIVE or device.key_version != principal.key_version:
-        raise PermissionDenied("Device authorization is no longer active.")
+        raise PermissionDenied(gettext("Device authorization is no longer active."))
     return makerspace, device
 
 
@@ -54,29 +55,58 @@ def owned_command(device, command_id):
     if command is None:
         raise NotFound()
     if command.device_key_version != device.key_version:
-        raise PermissionDenied("Command belongs to a previous device key.")
+        raise PermissionDenied(gettext("Command belongs to a previous device key."))
     return command
+
+
+JOB_KINDS = (Device.Kind.PRINTER, Device.Kind.ADAPTER)
+
+
+def target_binding(device, machine):
+    """The device's enabled binding on ``machine``: a printer binding, or an adapter binding serving ``job.dispatch``.
+
+    An adapter binding never auto-applies a terminal report (it has no ``auto_apply_terminal``): its reports always
+    wait for staff approval through the same ``approve_report`` path a printer uses.
+    """
+    if machine is None:
+        return None
+    if device.kind == Device.Kind.ADAPTER:
+        binding = AdapterBinding.objects.select_for_update().filter(
+            device=device, machine=machine, target_type="machine", makerspace_id=device.makerspace_id,
+            enabled=True).first()
+        return binding if binding is not None and "job.dispatch" in binding.capabilities else None
+    return PrinterDeviceBinding.objects.select_for_update().filter(
+        device=device, machine=machine, makerspace_id=device.makerspace_id, enabled=True).first()
+
+
+def auto_applies(binding):
+    """A printer binding's flag, or an adapter binding's own ``config.auto_apply_terminal`` (off unless staff set it)."""
+    if isinstance(binding, AdapterBinding):
+        return bool((binding.config or {}).get("auto_apply_terminal") is True)
+    return bool(getattr(binding, "auto_apply_terminal", False))
 
 
 def live_target(job, device, *, require_running=True):
     """Caller owns tenant/device/command locks; acquire request then machine locks."""
     require_adapter(device.makerspace_id)
-    if device.kind != Device.Kind.PRINTER or job.device_id != device.pk or job.makerspace_id != device.makerspace_id:
-        raise ValidationError("Invalid printer job ownership.")
-    request = MachineServiceRequest.objects.select_for_update().filter(pk=job.service_request_id, makerspace_id=device.makerspace_id).first()
-    machine = Machine.objects.select_for_update().filter(pk=job.machine_id, makerspace_id=device.makerspace_id, is_active=True).first()
-    binding = PrinterDeviceBinding.objects.select_for_update().filter(device=device, machine=machine, makerspace_id=device.makerspace_id, enabled=True).first() if machine else None
+    if device.kind not in JOB_KINDS or job.device_id != device.pk or job.makerspace_id != device.makerspace_id:
+        raise ValidationError(gettext("Invalid printer job ownership."))
+    # NO KEY UPDATE, like the machine-service workflow: these rows are referenced by rows
+    # other transactions commit (FOR KEY SHARE at COMMIT), which must not wait on us.
+    request = MachineServiceRequest.objects.select_for_update(no_key=True).filter(pk=job.service_request_id, makerspace_id=device.makerspace_id).first()
+    machine = Machine.objects.select_for_update(no_key=True).filter(pk=job.machine_id, makerspace_id=device.makerspace_id, is_active=True).first()
+    binding = target_binding(device, machine)
     if request is None or machine is None or binding is None or request.assigned_machine_id != machine.pk:
-        raise ValidationError("Printer target is no longer available.")
+        raise ValidationError(gettext("Printer target is no longer available."))
     if require_running and request.status != MachineServiceRequest.Status.IN_PROGRESS:
-        raise ValidationError("Printer request must be in progress.")
+        raise ValidationError(gettext("Printer request must be in progress."))
     return request, machine, binding
 
 
 def owned_job(device, job_id):
     require_adapter(device.makerspace_id)
-    if device.kind != Device.Kind.PRINTER:
-        raise PermissionDenied("A printer device is required.")
+    if device.kind not in JOB_KINDS:
+        raise PermissionDenied(gettext("A printer or adapter device is required."))
     # Resolve identity first, then use the same command -> job lock order as delivery.
     identity = PrinterJob.objects.filter(pk=job_id, device=device, makerspace_id=device.makerspace_id).values("command_id").first()
     if identity is None:

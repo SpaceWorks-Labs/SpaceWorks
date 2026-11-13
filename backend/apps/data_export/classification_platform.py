@@ -7,7 +7,7 @@ from .types import GlobalReference
 
 GLOBAL_MODELS = {
     "accounts.User": GlobalReference(
-        "Only the user closure is projected; the platform-global table is never tenant-owned."
+        "The shared table is closure-projected; staff context belongs to its tenant, while credentials remain deployment-local."
     ),
     "organizations.Organization": GlobalReference(
         "Platform-level organizations are referenced by tenant links but are never tenant-owned."
@@ -15,7 +15,15 @@ GLOBAL_MODELS = {
 }
 
 OMITTED_MODELS = {
+    "accounts.AccountRestoreIntent": "Deployment-local single-use account recovery proof; never portable authority.",
+    "accounts.AccountPurgeProgress": "Source-deployment erasure progress; target resumes from User deletion timestamps.",
+    "accounts.AccountPurgeObject": "Source object deletion and quota journal; source keys never authorize target cleanup.",
+    "accounts.AppleRefreshCredential": "Encrypted platform Apple refresh credential; never portable.",
+    "accounts.AppleRevocation": "Source Apple credential revocation work; never target authority.",
+    "accounts.PlatformAttestationSettings": "Platform attestation credentials; never tenant data.",
+    "accounts.ReauthenticationSession": "Deployment-local browser step-up proof; never tenant authority.",
     "notifications.NotificationInboxRow": "Short-lived personal delivery text and read telemetry; target inbox starts empty.",
+    "notifications.MemberPushDelivery": "Per-device telemetry owned through envelope_delivery.makerspace and its envelope recipient; optional inbox linkage grants no authority and all push rows are omitted on the target.",
     "integrations.EmailSuppression": "Deployment-keyed address suppression must be re-established on the target.",
     "makerspaces.SpacePackProfile": "Deployment-global configuration preset, never tenant-owned or tenant authority.",
     "accounts.UserMFA": "Platform MFA credentials never become target authority.",
@@ -35,6 +43,10 @@ OMITTED_MODELS = {
         "Deployment-local bearer credential over member registration history; restored tenants must reissue it."
     ),
     "apiclients.ApiClientImportApproval": "Artifact-bound target authority approval is deployment-local coordination state.",
+    # #196: credentials that act as a person; bearer authority never leaves the deployment.
+    "apiclients.PersonalAccessToken": "Live personal bearer credential (stored as a digest); the person reissues it.",
+    "apiclients.OAuthConsent": "Live app-connection consent and its MFA proof; the person reconnects the app.",
+    "apiclients.OAuthAppRegistration": "Deployment-local OAuth client authority; a restored space registers apps again.",
     "accounts.DailyOtpEmailCounter": "Platform authentication telemetry.",
     "accounts.DeviceAttestationChallenge": "Transient authentication state.",
     "accounts.DeviceGrant": "Live bearer-session authority.",
@@ -54,8 +66,8 @@ OMITTED_MODELS = {
     # nobody, since anyone can create one by asking for a reset -- holding a live OTP
     # digest and a credential fingerprint. Transient authentication state, and global
     # rather than tenant data.
-    "accounts.PasswordResetEnvelope": "Transient authentication state.",
-    "accounts.PhoneVerificationChallenge": "Transient authentication state.",
+    "accounts.PasswordResetEnvelope": "Transient authentication state, including context, tenant, origin and credential generation; never portable.",
+    "accounts.PhoneVerificationChallenge": "Transient OTP and attestation binding; never portable authentication authority.",
     "accounts.PlatformLoginMethods": "Platform identity configuration.",
     "accounts.PlatformSocialAuthSettings": "Platform credentials and identity configuration.",
     "accounts.SocialIdentity": "Verified platform login identity.",
@@ -121,6 +133,10 @@ OMITTED_MODELS = {
         "It references a deployment-global organization that does not travel with "
         "a tenant export."
     ),
+    "events.EventAudienceOrganization": (
+        "It references a deployment-global organization that does not travel with "
+        "a tenant export; the audience is re-chosen on the target."
+    ),
     "events.EventSeriesOrganizer": (
         "It references a deployment-global organization that does not travel with "
         "a tenant export."
@@ -133,6 +149,12 @@ OMITTED_MODELS = {
     ),
     "organizations.OrganizationInvitation": (
         "Deployment-local bearer authorization state for a global organization."
+    ),
+    "organizations.OrganizationReview": (
+        "Platform review history of a deployment-global organization; never tenant data."
+    ),
+    "hosting_requests.HostingRequest": (
+        "Deployment-local platform hosting-request coordination; never tenant data."
     ),
     "tenant_migration.TenantImportJob": "Target-side tenant import coordination state.",
     "tenant_migration.TenantImportObject": (
@@ -162,36 +184,49 @@ OMITTED_MODELS = {
     # a tenant archive. Archives are explicitly outside the purge guarantee, so they must
     # not travel inside one either.
     "backup.BackupArchive": "Deployment archive lifecycle and download bearer state.",
-    "backup.ArchiveRecipientReservation": "Deployment-local key-namespace state.",
-    "backup.MakerspaceArchiveCustodyState": (
-        "Deployment-local archive-custody alarm state, recomputed from recipients."
-    ),
-    "backup.ArchiveCustodyAlarmDelivery": (
-        "Deployment-local custody-alarm delivery and retry state."
-    ),
-    "backup.MakerspaceTenantExitCustodyState": "Deployment-local Lane D custody state, independently recomputed from recipients.",
-    "backup.TenantExitCustodyAlarmDelivery": "Deployment-local Lane D custody alarm delivery and retry state.",
     "backup.BackupLease": "Deployment scheduler lease.",
     "backup.BackupRun": "Deployment backup coverage run state.",
     "backup.BackupRunCoverage": (
         "Deployment backup coverage proof; it names a makerspace but is "
         "deployment coordination state, not portable tenant data."
     ),
-    "backup.B1ActivationState": "Deployment-local Lane E activation state.",
     "backup.BackupArtifactLedger": "Durable deployment backup artifact operations.",
     "backup.BackupArtifactComponent": "Durable deployment backup component operations.",
-    "backup.BackupComponentRecipient": "Durable recipient-use custody history.",
     "backup.DeploymentDatabaseIdentity": "Deployment-local identity regenerated after restore.",
     "backup.DeploymentRecoveryState": "Deployment recovery and quarantine state.",
     "backup.PlatformBackupSettings": "Platform backup configuration and age recipient.",
     "backup.RestoreOperation": "Deployment restore lifecycle state.",
+    "backup.MakerspaceRestoreOperation": (
+        "Per-space restore journal; it names a makerspace but is deployment recovery "
+        "state, never portable tenant data."
+    ),
     "backup.RestoreRollbackObject": "Deployment restore object-rollback journal.",
-    "backup.B1RestoreOperationState": "Deployment-local compound-restore stage state.",
-    "backup.B1RestoreComponentState": "Deployment-local opaque-slice restore state.",
-    "backup.B1ReservationEntry": "Deployment-local restore reservation and fence facts.",
-    "backup.B1FenceContinuity": "Deployment-local fence-continuity proof journal.",
     "backup.BackupDestination": "Platform offsite destination with encrypted credentials.",
     "backup.BackupDestinationUpload": (
         "Deployment offsite upload journal; archives are outside the purge guarantee."
     ),
 }
+
+# Explicit cloud deployment coordination; no source claims travel into a tenant.
+OMITTED_MODELS.update({
+    'backup.ManagedDeploymentState': "Deployment-local cloud coordination or delivery telemetry.",
+    'backup.ManagedCaptureState': "Deployment-local cloud coordination or delivery telemetry.",
+    'backup.ManagedWriterBoundary': "Deployment-local cloud coordination or delivery telemetry.",
+    'operations.CloudTaskState': "Deployment-local cloud coordination or delivery telemetry.",
+    'operations.CloudTickRun': "Deployment-local cloud coordination or delivery telemetry.",
+    'operations.CloudTickRateWindow': "Deployment-local cloud coordination or delivery telemetry.",
+    'operations.CloudEmailBudgetAccount': "Deployment-local cloud coordination or delivery telemetry.",
+    'operations.CloudEmailReservation': "Deployment-local cloud coordination or delivery telemetry.",
+    'operations.StorageCapabilityState': "Deployment-local cloud coordination or delivery telemetry.",
+    'operations.CloudUsageSample': "Deployment-local cloud coordination or delivery telemetry.",
+    'operations.CloudObjectUsageReceipt': "Deployment-local cloud coordination or delivery telemetry.",
+    'integrations.EmailProviderWebhookReceipt': "Deployment-local cloud coordination or delivery telemetry.",
+})
+
+OMITTED_MODELS.update({
+    'backup.ManagedStagedObject': "Deployment-local immutable staging, accounting or migration receipt.",
+    'backup.ManagedPresignLease': "Deployment-local immutable staging, accounting or migration receipt.",
+    'operations.CloudObjectAccount': "Deployment-local immutable staging, accounting or migration receipt.",
+    'operations.CloudObjectReservation': "Deployment-local immutable staging, accounting or migration receipt.",
+    'operations.CloudStorageMigrationReceipt': "Deployment-local immutable staging, accounting or migration receipt.",
+})

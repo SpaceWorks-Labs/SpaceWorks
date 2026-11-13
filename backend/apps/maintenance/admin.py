@@ -8,6 +8,7 @@ from apps.maintenance.models import (
 )
 from apps.separability.tombstones import app_is_tombstoned
 from config.admin_access import SuperuserOnlyModelAdmin
+from django.utils.translation import gettext_lazy
 
 
 class _ReadOnlyMaintenanceAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
@@ -46,7 +47,7 @@ class MaintenanceLogDocumentAdmin(_ReadOnlyMaintenanceAdmin):
     )
     raw_id_fields = ("log", "uploaded_by")
 
-    @admin.display(description="Machine")
+    @admin.display(description=gettext_lazy("Machine"))
     def machine(self, obj):
         return obj.log.machine
 

@@ -1,0 +1,31 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+{% block content %}
+<p><a href="{% url 'admin:makerspaces_makerspace_change' space.pk %}">{% blocktranslate trimmed with name=space.name %}Back to {{ name }}{% endblocktranslate %}</a></p>
+<p>{% translate "Switching a capability off keeps its data, and switching it back on restores everything. Purging deletes that data for good. A capability must be switched off before it can be purged, each purge needs a recent identity check, and it is recorded in this space's audit log, which its managers can read." %}</p>
+
+<table>
+  <thead><tr><th scope="col">{% translate "Capability" %}</th><th scope="col">{% translate "What goes" %}</th><th scope="col">{% translate "Rows" %}</th><th scope="col">{% translate "Purge" %}</th></tr></thead>
+  <tbody>
+  {% for plan in plans %}
+    <tr>
+      <td><strong>{{ plan.key }}</strong><br><small>{% if plan.switched_on %}{% translate "Switched on" %}{% else %}{% translate "Switched off" %}{% endif %}</small></td>
+      <td>{{ plan.summary }}</td>
+      <td><ul>{% for name, count in plan.counts.items %}<li>{{ name }}: {{ count }}</li>{% endfor %}</ul></td>
+      <td>
+        {% if plan.switched_on %}
+          <p>{% translate "Switch it off first." %}</p>
+        {% else %}
+        <form method="post">{% csrf_token %}
+          <input type="hidden" name="key" value="{{ plan.key }}">
+          <label for="confirm-{{ forloop.counter }}">{% translate "Type" %} <code>{{ plan.key }}</code> {% translate "to confirm" %}</label><br>
+          <input id="confirm-{{ forloop.counter }}" type="text" name="confirm" autocomplete="off" required>
+          <button type="submit">{% translate "Purge this data permanently" %}</button>
+        </form>
+        {% endif %}
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

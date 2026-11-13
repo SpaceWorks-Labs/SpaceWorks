@@ -1,0 +1,41 @@
+import { t } from "@lingui/core/macro";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { staffRequest } from "../../../lib/api";
+import { communicationKeys } from "../eventCommunicationsApi";
+import { isProtectedDenial } from "./sessionScope";
+export const BROADCAST_DESIGNS = ["classic", "bold", "minimal", "accent_band", "photo_header", "letter"] as const;
+export type BroadcastDesign = typeof BROADCAST_DESIGNS[number];
+export type BroadcastCta = { kind: "https"; label: string; url: string } | { kind: "navigation"; label: string; target: "event" | "ticket" };
+export type BroadcastDraft = { subject: string; body: string; statuses: string[]; attendance: string; render_schema_version: 2; design: BroadcastDesign; ctas: BroadcastCta[] };
+export type BroadcastCampaign = Omit<BroadcastDraft, "render_schema_version"> & { render_schema_version: 1 | 2; id: number; version: number; status: string; available_at: string | null; undo_hold?: boolean };
+export type BroadcastTemplate = { key: string; label: string; description: string; subject: string; body: string; statuses: string[]; attendance: string; design: BroadcastDesign };
+export type BroadcastTallies = { campaign_id: number; status: string; total: number; delivered: number; waiting: number; failed: number; skipped: number };
+export type BroadcastPreview = { preview_id: number; revision: string; recipient_count: number; desktop_html: string; mobile_html: string; subject: string; text: string };
+export function useBroadcastCreate(tenant: number, event: number) {
+  const client = useQueryClient();
+  return useMutation({ mutationFn: ({ operation_id, draft }: { operation_id: string; draft: BroadcastDraft }) => staffRequest<BroadcastCampaign>(`/admin/events/${event}/broadcasts/`, { method: "POST", headers: { "Idempotency-Key": operation_id }, body: JSON.stringify(draft) }), onSuccess: () => client.invalidateQueries({ queryKey: communicationKeys.campaigns(tenant, event) }), onError: error => { if (isProtectedDenial(error)) void client.invalidateQueries({ queryKey: communicationKeys.campaigns(tenant, event) }); } });
+}
+export function useBroadcastCommand<T>(tenant: number, event: number, campaign: number, action: "preview" | "test" | "schedule" | "send" | "cancel") {
+  const client = useQueryClient();
+  return useMutation({ mutationFn: (body: Record<string, unknown> & { operation_id?: string }) => staffRequest<T>(`/admin/events/${event}/broadcasts/${campaign}/${action}/`, { method: "POST", ...(body.operation_id ? { headers: { "Idempotency-Key": body.operation_id } } : {}), body: JSON.stringify(body) }),
+    onSuccess: () => client.invalidateQueries({ queryKey: communicationKeys.campaigns(tenant, event) }), onError: error => { if (isProtectedDenial(error)) void client.invalidateQueries({ queryKey: communicationKeys.campaigns(tenant, event) }); } });
+}
+export function useBroadcastTemplates(tenant: number, event: number) {
+  return useQuery({ queryKey: ["broadcast-templates", tenant, event], queryFn: () => staffRequest<BroadcastTemplate[]>(`/admin/events/${event}/broadcast-templates/`), staleTime: Infinity, retry: false });
+}
+export function useBroadcastTallies(tenant: number, event: number, campaign: number, live: boolean) {
+  return useQuery({ queryKey: [...communicationKeys.campaigns(tenant, event), "tallies", campaign], queryFn: () => staffRequest<BroadcastTallies>(`/admin/events/${event}/broadcasts/${campaign}/tallies/`), refetchInterval: live ? 5000 : false });
+}
+
+/** Translated wording for a broadcast campaign `status`. */
+export function broadcastStatusLabel(status: string): string {
+  switch (status) {
+    case "draft": return t`Draft`;
+    case "queued": return t`Queued`;
+    case "sending": return t`Sending`;
+    case "sent": return t`Sent`;
+    case "cancelled": return t`Cancelled`;
+    case "failed": return t`Failed`;
+    default: return status.replace(/_/g, " ");
+  }
+}

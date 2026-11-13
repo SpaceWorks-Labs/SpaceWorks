@@ -1,7 +1,12 @@
+import { t } from "@lingui/core/macro";
+import { machineStatusLabel } from "./machineStatusLabel";
+import { ListRow, RelativeTime, StatusPill } from "../../../../components/ui";
+import { MachineTabContent } from "./MachineTabContent";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { addMachineErrorLog, collectionResults, getMachineErrorLogs, machineKeys } from "../../machinesApi";
+import { BoxArt } from "../../../../components/BoxSpinner";
 
 export function ErrorsTab({ machineId, canOperate }: { machineId: number; canOperate: boolean }) {
   const queryClient = useQueryClient();
@@ -25,48 +30,32 @@ export function ErrorsTab({ machineId, canOperate }: { machineId: number; canOpe
 
   return (
     <section>
-      <h3 className="title-section mb-3">Error logs</h3>
-      {logs.isLoading ? <p className="text-sm text-muted">Loading error logs...</p> : null}
-      {logs.error instanceof Error ? <p className="text-sm text-danger">{logs.error.message}</p> : null}
-      {!logs.isLoading && !logs.error && !items.length ? (
-        <p className="text-sm text-muted">No errors logged.</p>
-      ) : null}
+      <h3 className="title-section mb-3">{t`Error logs`}</h3>
+      <MachineTabContent query={logs} resource={t`error logs`} empty={!items.length} message={t`No errors logged. Add a log when something needs attention.`}>
       <div className="grid gap-2">
         {items.map((entry) => (
-          <div key={entry.id} className="rounded-md border border-line bg-bg p-2 text-sm">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <strong className="text-ink">{entry.severity}</strong>
-              <span className="font-mono text-xs text-muted">{formatDate(entry.created_at)}</span>
-            </div>
-            <p className="mt-1 whitespace-pre-wrap break-words text-muted">{entry.message}</p>
-            {entry.logged_by_username ? (
-              <p className="mt-1 text-xs text-muted">Logged by {entry.logged_by_username}</p>
-            ) : null}
-          </div>
+          <ListRow key={entry.id} title={entry.message} meta={<>{entry.logged_by_username ? t`Logged by ${entry.logged_by_username} · ` : ""}<RelativeTime date={entry.created_at} exact /></>}
+            right={<StatusPill label={machineStatusLabel(entry.severity)} tone={entry.severity === "warning" ? "warn" : entry.severity === "info" ? "info" : "danger"} />} />
         ))}
       </div>
+      </MachineTabContent>
       {canOperate ? (
         <form className="mt-3 grid gap-2" onSubmit={(event) => { event.preventDefault(); add.mutate(); }}>
-          <label className="eyebrow grid gap-1">Severity
-            <input className="desk-input" maxLength={16} value={severity}
-              onChange={(event) => setSeverity(event.target.value)} required />
+          <label className="eyebrow grid gap-1">{t`Severity`}<select className="desk-input" value={severity}
+              onChange={(event) => setSeverity(event.target.value)} required>
+            <option value="error">{t`Error`}</option><option value="warning">{t`Warning`}</option><option value="info">{t`Info`}</option>
+          </select>
           </label>
-          <label className="eyebrow grid gap-1">Message
-            <textarea className="desk-input min-h-20" value={message}
+          <label className="eyebrow grid gap-1">{t`Message`}<textarea className="desk-input min-h-20" value={message}
               onChange={(event) => setMessage(event.target.value)} required />
           </label>
           <button className="desk-button-primary justify-self-start" type="submit"
             disabled={add.isPending || !severity.trim() || !message.trim()}>
-            {add.isPending ? "Logging..." : "Add error log"}
+            {add.isPending ? <><BoxArt size={16} mono />{t`Logging...`}</> : t`Add error log`}
           </button>
         </form>
       ) : null}
-      {add.error instanceof Error ? <p className="mt-2 text-sm text-danger">{add.error.message}</p> : null}
+      {add.error instanceof Error ? <p role="alert" className="mt-2 text-sm text-danger">{add.error.message}</p> : null}
     </section>
   );
-}
-
-function formatDate(value: string) {
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
 }

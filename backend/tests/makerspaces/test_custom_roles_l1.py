@@ -1,9 +1,9 @@
 from importlib import import_module
+from types import SimpleNamespace
 
 import pytest
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, connection, transaction
-from django.db.migrations.executor import MigrationExecutor
 from django.db.models.deletion import ProtectedError
 
 from tests.accounts.account_factories import make_staff
@@ -67,109 +67,98 @@ def test_ensure_default_roles_is_idempotent():
     assert_default_roles(makerspace)
 
 
-@pytest.mark.django_db(transaction=True)
-def test_seed_and_backfill_migration_round_trip(monkeypatch):
-    from_target = [("makerspaces", "0037_makerspace_mattermost_webhook_url_and_more")]
-    schema_target = [("makerspaces", "0038_makerspace_roles")]
-    target = [("makerspaces", "0039_seed_and_backfill_roles")]
-    executor = MigrationExecutor(connection)
-    from django.db import migrations
-    operation = executor.loader.disk_migrations[("makerspaces", "0092_fixed_roles_data")].operations[0]
-    monkeypatch.setattr(operation, "reverse_code", migrations.RunPython.noop)
-    makerspace_id = None
+class _Rows:
+    """The few queryset calls migration 0039 makes, over plain dicts (one table)."""
 
-    # Build the users BEFORE rewinding. Rewinding makerspaces to 0037 cascade-unapplies
-    # 107 migrations, taking accounts back to 0017, so the CURRENT User model cannot be
-    # inserted afterwards -- and the historical model cannot either without supplying
-    # every column that later migrations made nullable. This passed for as long as
-    # accounts 0018-0021 only added new TABLES; accounts/0022 added a User COLUMN and
-    # broke it. Creating the rows first is immune to any future column addition.
-    users = [make_user(f"migration-role-{index}") for index in range(len(HISTORICAL_ROLE_VALUES))]
+    def __init__(self):
+        self.rows, self.next_id = [], 1
+        self.objects = self
 
-    try:
-        executor.migrate(from_target)
-        old_apps = executor.loader.project_state(from_target).apps
-        OldMakerspace = old_apps.get_model("makerspaces", "Makerspace")
-        OldMembership = old_apps.get_model("makerspaces", "MakerspaceMembership")
-        makerspace = OldMakerspace.objects.create(
-            name="Migrated roles", slug="migrated-roles"
-        )
-        makerspace_id = makerspace.id
-        memberships = {}
-        for index, legacy_role in enumerate(HISTORICAL_ROLE_VALUES):
-            user = users[index]
-            membership = OldMembership.objects.create(
-                makerspace_id=makerspace.id,
-                user_id=user.id,
-                role=legacy_role,
-            )
-            memberships[legacy_role] = membership.id
+    def all(self):
+        return self
 
-        executor = MigrationExecutor(connection)
-        executor.migrate(target)
-        new_apps = executor.loader.project_state(target).apps
-        NewMakerspaceRole = new_apps.get_model("makerspaces", "MakerspaceRole")
-        NewMembership = new_apps.get_model("makerspaces", "MakerspaceMembership")
-        seeded = {
-            role.legacy_role: role
-            for role in NewMakerspaceRole.objects.filter(makerspace_id=makerspace.id)
-        }
-        assert set(seeded) == set(HISTORICAL_ROLE_VALUES)
-        assert seeded[MakerspaceMembership.Role.PRINT_MANAGER].granted_actions == ["manage_printing"]
-        # 0039 seeds ITS OWN frozen action lists; actions added to a protected default later
-        # arrive through additive backfills (0069 `manage_member_cards`), never by editing
-        # the historical seed.
-        seed_module = import_module("apps.makerspaces.migrations.0039_seed_and_backfill_roles")
-        for legacy_role, name, granted_actions in seed_module.DEFAULT_ROLE_DEFINITIONS:
-            role = seeded[legacy_role]
-            assert role.name == name
-            assert role.slug == legacy_role
-            assert role.granted_actions == sorted(granted_actions)
-            assert role.is_default is True
-            assert role.is_protected is True
-            membership = NewMembership.objects.get(id=memberships[legacy_role])
-            assert membership.assigned_role_id == role.id
-        # Compare only the backfills replayed here. F6's member/finance backfill
-        # needs its later organization schema and has separate migration coverage.
-        import_module("apps.makerspaces.migrations.0069_member_card_actions").forwards(new_apps, None)
-        import_module("apps.makerspaces.migrations.0074_manage_devices_action").forwards(new_apps, None)
-        executor = MigrationExecutor(connection)
-        executor.migrate(schema_target)
-        schema_apps = executor.loader.project_state(schema_target).apps
-        SchemaMakerspaceRole = schema_apps.get_model("makerspaces", "MakerspaceRole")
-        SchemaMembership = schema_apps.get_model("makerspaces", "MakerspaceMembership")
-        assert not SchemaMakerspaceRole.objects.filter(makerspace_id=makerspace.id).exists()
-        for legacy_role, membership_id in memberships.items():
-            membership = SchemaMembership.objects.get(id=membership_id)
-            assert membership.assigned_role_id is None
-            assert membership.role == legacy_role
-    finally:
-        # Restore the FULL migration graph forward, not just makerspaces/0039.
-        # Rewinding makerspaces to 0037 cascade-unapplies migrations in other apps
-        # that depend on makerspaces/0039 (e.g. encryption/0001), and migrating only
-        # makerspaces forward would leave those dropped tables missing for every
-        # later test in the process.
-        #
-        # Remove this historical fixture first: printing/0022 is fail-closed and
-        # correctly rejects any unflipped makerspace while retiring its legacy
-        # tables. Raw SQL avoids loading current related models whose tables are
-        # intentionally absent at `schema_target`.
-        if makerspace_id is not None:
-            with connection.cursor() as cursor:
-                cursor.execute(
-                    "DELETE FROM makerspaces_makerspacemembership WHERE makerspace_id = %s",
-                    [makerspace_id],
-                )
-                cursor.execute(
-                    "DELETE FROM makerspaces_makerspacerole WHERE makerspace_id = %s",
-                    [makerspace_id],
-                )
-                cursor.execute(
-                    "DELETE FROM makerspaces_makerspace WHERE id = %s",
-                    [makerspace_id],
-                )
-        restore = MigrationExecutor(connection)
-        restore.migrate(restore.loader.graph.leaf_nodes())
+    def iterator(self):
+        return iter(list(self.rows))
+
+    def create(self, **values):
+        row = SimpleNamespace(id=self.next_id, **values)
+        self.next_id += 1
+        self.rows.append(row)
+        return row
+
+    def update_or_create(self, defaults=None, **keys):
+        for row in self.rows:
+            if all(getattr(row, k) == v for k, v in keys.items()):
+                for k, v in (defaults or {}).items():
+                    setattr(row, k, v)
+                return row, False
+        return self.create(**keys, **(defaults or {})), True
+
+    def filter(self, **conditions):
+        rows = self.rows
+        for key, value in conditions.items():
+            if key == "assigned_role__is_default":
+                rows = [r for r in rows if r.assigned_role_id is not None and value]
+            else:
+                rows = [r for r in rows if getattr(r, key) == value]
+        return _Selection(self, rows)
+
+
+class _Selection:
+    def __init__(self, table, rows):
+        self.table, self.rows = table, rows
+
+    def update(self, **values):
+        for row in self.rows:
+            for key, value in values.items():
+                setattr(row, key, value)
+
+    def delete(self):
+        self.table.rows[:] = [r for r in self.table.rows if r not in self.rows]
+
+
+def test_seed_and_backfill_migration_round_trip():
+    """Replay 0039's own data functions over the historical shape.
+
+    Rewinding the real database to 0037 unapplies ~107 migrations and Django's state rebuild is
+    superlinear in time and memory (it once wedged the shared test runner), and the current
+    `MakerspaceRole` table refuses the retired `guest_admin`/`print_manager` rows 0039 seeds
+    (`makerspacerole_fixed_catalogue`). The functions only use a handful of queryset calls, so they
+    run against an in-memory registry; every assertion on what is seeded, backfilled and undone stays.
+    """
+    seed_module = import_module("apps.makerspaces.migrations.0039_seed_and_backfill_roles")
+    spaces, role_table, memberships = _Rows(), _Rows(), _Rows()
+    space = spaces.create(slug="migrated-roles")
+    registry = SimpleNamespace(get_model=lambda _app, name: {
+        "Makerspace": spaces, "MakerspaceRole": role_table, "MakerspaceMembership": memberships}[name])
+    ids = {}
+    for legacy_role in HISTORICAL_ROLE_VALUES:
+        ids[legacy_role] = memberships.create(makerspace_id=space.id, role=legacy_role, assigned_role_id=None).id
+
+    seed_module.forwards(registry, None)
+    seeded = {role.legacy_role: role for role in role_table.rows if role.makerspace_id == space.id}
+    assert set(seeded) == set(HISTORICAL_ROLE_VALUES)
+    assert seeded["print_manager"].granted_actions == ["manage_printing"]
+    # 0039 seeds ITS OWN frozen action lists; actions added to a protected default later arrive
+    # through additive backfills (0069 `manage_member_cards`), never by editing the historical seed.
+    for legacy_role, name, granted_actions in seed_module.DEFAULT_ROLE_DEFINITIONS:
+        role = seeded[legacy_role]
+        assert role.name == name
+        assert role.slug == legacy_role
+        assert role.granted_actions == sorted(granted_actions)
+        assert role.is_default is True
+        assert role.is_protected is True
+        membership = next(m for m in memberships.rows if m.id == ids[legacy_role])
+        assert membership.assigned_role_id == role.id
+    seed_module.forwards(registry, None)  # replay is idempotent
+    assert len(role_table.rows) == len(HISTORICAL_ROLE_VALUES)
+
+    seed_module.backwards(registry, None)
+    assert not role_table.rows
+    for legacy_role, membership_id in ids.items():
+        membership = next(m for m in memberships.rows if m.id == membership_id)
+        assert membership.assigned_role_id is None
+        assert membership.role == legacy_role
 
 
 @pytest.mark.django_db(transaction=True)

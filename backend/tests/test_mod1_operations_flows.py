@@ -58,7 +58,7 @@ def test_container_roles_and_tenancy():
     assert APIClient().get(url).status_code == 401
     requester = authenticated_client(make_user("m1-box-requester", access_status=User.AccessStatus.ACTIVE))
     assert requester.get(url).status_code == 404
-    assert requester.post(f"/api/v1/admin/makerspace/{space.id}/containers", {"label": "x"}, format="json").status_code == 403
+    assert requester.post(f"/api/v1/admin/makerspace/{space.id}/containers", {"label": "x"}, format="json").status_code == 404  # 481(1)
     foreign = _manager("m1-box-foreign-mgr", other)
     assert foreign.get(url).status_code == 404  # existence is not leaked across tenants
     assert foreign.get(f"{url}/contents").status_code == 404

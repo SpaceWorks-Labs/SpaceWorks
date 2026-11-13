@@ -204,7 +204,7 @@ def test_refund_needs_the_subject_authority_and_the_right_makerspace(monkeypatch
     payment = paid_deposit(makerspace, staff)
     outsider = make_user("refund-outsider")
 
-    assert authenticated_client(outsider).post(refund_url(payment), {"amount": "1.00"}, format="json").status_code == 403
+    assert authenticated_client(outsider).post(refund_url(payment), {"amount": "1.00"}, format="json").status_code == 404  # 481(1)
     other = make_space("refund-other-space")
     wrong_space = reverse("payment-reconciliation-refund", args=[other.pk, payment.pk])
     assert authenticated_client(staff).post(wrong_space, {"amount": "1.00"}, format="json").status_code == 404

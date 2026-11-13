@@ -71,7 +71,7 @@ def test_import_is_tenant_and_role_scoped():
     assert foreign.post(_url(space, "apply"), {"rows": [_row()]}, format="json").status_code == 404  # 481(1)
     assert APIClient().post(_url(space, "apply"), {"rows": [_row()]}, format="json").status_code == 401
     requester = authenticated_client(make_user("m1-imp-req", access_status=User.AccessStatus.ACTIVE))
-    assert requester.post(_url(space, "apply"), {"rows": [_row()]}, format="json").status_code == 403
+    assert requester.post(_url(space, "apply"), {"rows": [_row()]}, format="json").status_code == 404  # 481(1): no standing
     assert not InventoryProduct.objects.filter(makerspace=space).exists()
 
 

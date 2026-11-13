@@ -10,7 +10,8 @@
     "src/features/staff/staffAccess.ts",
     "src/features/staff/consoleAccess.ts",
     "src/features/staff/staffBottomNav.ts",
-    "src/features/staff/paymentAccess.ts"
+    "src/features/staff/paymentAccess.ts",
+    "src/features/staff/staffTabs.ts"
   ],
   "coverageAnalysis": "perTest",
   "reporters": [

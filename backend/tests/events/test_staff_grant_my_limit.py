@@ -37,7 +37,12 @@ def test_non_delegating_helper_has_no_limit():
 def test_tracks_endpoint_is_readable_by_a_limited_co_organizer_but_scoped_to_their_tracks():
     from rest_framework.test import APIClient
     from apps.events.judging.models_definitions import HackathonTrack
+    from apps.events.hackathons.admission_models import HackathonConfig
     space, _manager, user, event, _grant = _limited_co_organizer(track_ids=[])
+    # Tracks belong to the hackathon programme, which is opt-in per space and per event.
+    space.enabled_features = sorted({*space.enabled_features, "events.hackathons"})
+    space.save(update_fields=["enabled_features"])
+    HackathonConfig.objects.create(event=event, enabled=True)
     mine = HackathonTrack.objects.create(event=event, name="Mine")
     other = HackathonTrack.objects.create(event=event, name="Other")
     EventGrantEntitlement.objects.filter(grant=_grant).update(track_ids=[mine.pk])

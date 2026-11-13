@@ -107,6 +107,10 @@ def test_retired_key_is_explicitly_rejected_for_n_plus_one():
         seal_scope(space.pk, old_key)
 
 
+# transaction=True: a failed external publish discards the retained PostgreSQL session by design (cloud_scope /
+# config.cloud_database.session), so the next query must be free to open a fresh connection. Inside the default
+# test transaction Django marks that closed connection unusable ("connection already closed").
+@pytest.mark.django_db(transaction=True)
 def test_anchor_publish_failure_leaves_resumable_gate_and_old_key_active():
     actor = make_user("audit-rotation-resume")
     space = make_space("audit-rotation-resume")

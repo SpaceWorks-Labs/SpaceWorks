@@ -67,7 +67,15 @@ def create_payment(
         amount, tax_snapshot = freeze_for_charge(makerspace, amount, currency, member)
         from apps.payments.tax.plan_sac import with_plan_sac  # parity O-B3: the plan's own SAC, frozen here
         tax_snapshot = with_plan_sac(makerspace, subject_type, subject_id, tax_snapshot)
-    source = resolve_payment_source(makerspace)
+    # `payments` is opt-in and buys the online rail ALONE: a charge is stamped with a vendor only while the
+    # rail is genuinely on for its domain (module, master switch, domain feature AND credentials). Saved
+    # credentials under an uninstalled module or a switched-off domain stamp nothing, so the debt is raised
+    # `unclaimed` and the first checkout that reaches a provider claims it once. Existing charges keep their
+    # stamp and the webhook still settles them: this decides only how a NEW row is born.
+    from apps.payments.availability import SUBJECT_DOMAINS, online_payments_enabled
+    domain = SUBJECT_DOMAINS.get(subject_type)
+    rail_on = domain is not None and online_payments_enabled(makerspace, domain)
+    source = resolve_payment_source(makerspace) if rail_on else None
     if source is None:
         vendor = Payment.Provider.UNCLAIMED
         provider = Payment.StripeProvider.RAW

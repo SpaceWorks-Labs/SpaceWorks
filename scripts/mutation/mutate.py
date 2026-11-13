@@ -378,7 +378,7 @@ class Engine:
         self.dump()
         print(f"[mutation] FINAL {self.tally()}", flush=True)
         for m in self.results:
-            if m.status in ("survived", "no_cover", "unpatchable", "uncompilable"):
+            if m.status in ("survived", "no_cover", "unpatchable", "uncompilable", "unstable"):
                 print(f"SURVIVOR [{m.status}] {m.key}", flush=True)
 
     def tally(self):
@@ -396,6 +396,20 @@ class Engine:
         ))
 
     def evaluate(self, m, tree, abspath, live_cache, first):
+        self._evaluate(m, tree, abspath, live_cache, first)
+        if m.status == "killed" and "(timeout)" not in m.killed_by:
+            # A kill only counts if the killing test passes again once the mutant is removed (not a setup/ordering artefact).
+            self.mutating = True
+            try:
+                other = next(i.nodeid for i in self.items if i.nodeid != m.killed_by)
+                self.reset_state(other)
+                failed, timed_out = self.run_one(m.killed_by, other)
+            finally:
+                self.mutating = False
+            if failed or timed_out:
+                m.status = "unstable"
+
+    def _evaluate(self, m, tree, abspath, live_cache, first):
         lines = self.line_tests.get(abspath, {})
         covering = {t for ln in range(m.stmt_line, m.stmt_end + 1) for t in lines.get(ln, [])}
         tests = [t for t in covering if t not in self.baseline_failed and t in self.by_id]
@@ -436,21 +450,14 @@ class Engine:
                 return
             self.mutating = True
             try:
-                for nodeid in tests:
-                    item = self.by_id[nodeid]
-                    budget = min(self.args.max_timeout, max(self.args.min_timeout, 8 * min(self.durations.get(nodeid, 1), 30)))
-                    self._mut_failed = None
-                    signal.signal(signal.SIGALRM, self._alarm)
-                    signal.setitimer(signal.ITIMER_REAL, budget)
-                    timed_out = False
-                    try:
-                        item.ihook.pytest_runtest_protocol(item=item, nextitem=first)
-                    except MutantTimeout:
-                        timed_out = True
-                    finally:
-                        signal.setitimer(signal.ITIMER_REAL, 0)
-                    self.clean_leaks(item.config)
-                    if timed_out or self._mut_failed:
+                self.reset_state(tests[0])
+                for idx, nodeid in enumerate(tests):
+                    # The last item hands over to the first so the session-scoped fixtures (the database) stay up.
+                    nextid = tests[idx + 1] if idx + 1 < len(tests) else tests[0]
+                    failed, timed_out = self.run_one(nodeid, nextid if nextid != nodeid else None)
+                    if timed_out:
+                        self.reset_state()
+                    if failed or timed_out:
                         m.status, m.killed_by = "killed", nodeid + (" (timeout)" if timed_out else "")
                         return
                 m.status = "survived"
@@ -460,6 +467,34 @@ class Engine:
                     f.__code__ = c
         finally:
             apply_edit(m.edit, False)
+
+    def run_one(self, nodeid, nextid):
+        """Run one item through the full protocol; nextitem keeps pytest's setup stack consistent (None tears everything down)."""
+        item = self.by_id[nodeid]
+        nxt = self.by_id[nextid] if nextid else None
+        budget = min(self.args.max_timeout, max(self.args.min_timeout, 8 * min(self.durations.get(nodeid, 1), 30)))
+        self._mut_failed = None
+        signal.signal(signal.SIGALRM, self._alarm)
+        signal.setitimer(signal.ITIMER_REAL, budget)
+        timed_out = False
+        try:
+            item.ihook.pytest_runtest_protocol(item=item, nextitem=nxt)
+        except MutantTimeout:
+            timed_out = True
+        finally:
+            signal.setitimer(signal.ITIMER_REAL, 0)
+        self.clean_leaks(item.config)
+        return bool(self._mut_failed), timed_out
+
+    def reset_state(self, target=None):
+        """Pop everything the next item does not need off pytest's setup stack ("previous item was not torn down properly").
+
+        With a target, the session-scoped fixtures (the database) are kept; without one, everything is torn down.
+        """
+        try:
+            self.items[0].session._setupstate.teardown_exact(self.by_id[target] if target else None)
+        except BaseException:  # noqa: BLE001
+            pass
 
     @staticmethod
     def _alarm(signum, frame):

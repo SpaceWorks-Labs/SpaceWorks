@@ -42,12 +42,39 @@ jobs:
         run: |
           set -euo pipefail
           cd backend
+          # Tests that drive MigrationExecutor rewind the schema across dozens of migrations (Django rebuilds
+          # the project state per step: minutes and gigabytes each), so they run in their own job below.
+          grep -rl --include='test_*.py' MigrationExecutor tests | LC_ALL=C sort > .ci-deep-tests.txt
           find tests -name 'test_*.py' -not -path '*/__pycache__/*' -not -path 'tests/tombstone/*' | LC_ALL=C sort \
+            | grep -v -x -F -f .ci-deep-tests.txt \
             | awk -v shard=${{ matrix.shard }} -v total=8 '(NR - 1) % total == shard - 1' > .ci-shard-tests.txt
           echo "Shard ${{ matrix.shard }}: $(wc -l < .ci-shard-tests.txt) test files"
 
       - name: Run the shard in the isolated test runner
         run: bash scripts/dev.sh test -q @.ci-shard-tests.txt
+
+  backend-migrations:
+    name: backend tests (migration rewinds ${{ matrix.slice }}/4)
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    strategy:
+      fail-fast: false
+      matrix:
+        slice: [1, 2, 3, 4]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Pick this slice's migration-rewind test files
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd backend
+          grep -rl --include='test_*.py' MigrationExecutor tests | LC_ALL=C sort \
+            | awk -v slice=${{ matrix.slice }} -v total=4 '(NR - 1) % total == slice - 1' > .ci-deep-slice.txt
+          echo "Slice ${{ matrix.slice }}: $(wc -l < .ci-deep-slice.txt) test files"
+
+      - name: Run the slice in the isolated test runner
+        run: bash scripts/dev.sh test -q @.ci-deep-slice.txt
 
   backend-tombstone:
     name: backend tests (tombstone profile)

@@ -9,6 +9,10 @@
 @import "./styles/motionRoute.css";
 @import "./styles/motionOverlay.css";
 @import "./styles/fonts.css";
+/* Component CSS that opens a layer must be imported here, after "tailwindcss" declares theme/base/components/
+   utilities. Imported from a component module it can load first and put `components` below `base`, so the base
+   reset wins and every desk-button loses its padding and colours (cssLayerOrder.test.ts guards this). */
+@import "./components/ui/SearchField.css";
 @config "../tailwind.config.ts";
 @layer base {
   :root {

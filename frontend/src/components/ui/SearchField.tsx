@@ -2,7 +2,7 @@ import { t } from "@lingui/core/macro";
 import { Search, X } from "lucide-react";
 import { forwardRef, useCallback, useRef, useState, type CSSProperties, type InputHTMLAttributes, type KeyboardEvent, type Ref } from "react";
 import { BoxSpinner } from "../BoxSpinner";
-import "./SearchField.css";
+// Styles: SearchField.css is imported from src/index.css (after Tailwind fixes the layer order) — never from here.
 
 export type SearchFieldProps = Omit<InputHTMLAttributes<HTMLInputElement>, "type" | "size"> & {
   /** A query is in flight: the magnifier crossfades to the box-open spinner and back. */

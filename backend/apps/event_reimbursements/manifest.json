@@ -2090,6 +2090,14 @@
           "classification": "canonical_metadata",
           "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
         },
+        "kind": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=12, default=\"participant\", choices=[(v, v) for v in ('participant', 'crew', 'staff')])",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
         "need_statement": {
           "type": "TextField",
           "declaration": "models.TextField(blank=True)",

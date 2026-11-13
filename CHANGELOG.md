@@ -13,7 +13,7 @@ carries the design rule each change introduced.
 
 ## Unreleased
 
-Nothing yet.
+- Tooling: `@playwright/test` 1.65.0 and `@axe-core/playwright` 4.14.0 are pinned devDependencies again, and `./scripts/dev.sh e2e` installs the matching Chromium build before it runs.
 
 ## 0.12.0
 

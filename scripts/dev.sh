@@ -188,6 +188,9 @@ e2e() {
 e2e_preview() {
   local port="${E2E_PREVIEW_PORT:-5173}" api="${E2E_API_URL:-http://localhost:8000}" preview_pid deadline
   cd "$ROOT/frontend"
+  # Playwright is a pinned devDependency; fetch the Chromium build that exact version expects (no-op once present).
+  [[ -x ./node_modules/.bin/playwright || -x ./node_modules/.bin/playwright.cmd ]] || npm ci
+  npx playwright install chromium
   VITE_API_URL="http://localhost:$port/api" npm run build
   VITE_DEV_PROXY_TARGET="$api" node ./node_modules/vite/bin/vite.js preview     --host localhost --port "$port" --strictPort &
   preview_pid=$!

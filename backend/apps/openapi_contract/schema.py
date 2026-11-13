@@ -18,6 +18,10 @@ from .tags import fallback_tag
 #: The three API-client credential shapes (docs/api-client-protocol.md), as alternatives.
 CLIENT_SCHEMES = ({"ServerHMAC": []}, {"BrowserClient": []}, {"PublishableKey": []})
 _WRITE_METHODS = frozenset({"POST", "PUT", "PATCH"})
+#: Read-only markers a serializer adds only when they apply. drf-spectacular lists every
+#: read-only field as required; these are absent from an unmasked row by design
+#: (tests/accounts/test_pii_presentation.py), so a generated client must treat them as optional.
+OPTIONAL_READ_ONLY_FIELDS = frozenset({"pii_masked"})
 
 
 def protected_path(path):
@@ -35,6 +39,15 @@ class SpaceWorksAutoSchema(AutoSchema):
     def get_tags(self):
         tag = fallback_tag(self.path)
         return [tag] if tag else super().get_tags()
+
+    def _map_basic_serializer(self, serializer, direction):
+        schema = super()._map_basic_serializer(serializer, direction)
+        required = [name for name in schema.get("required", ()) if name not in OPTIONAL_READ_ONLY_FIELDS]
+        if required:
+            schema["required"] = required
+        else:
+            schema.pop("required", None)
+        return schema
 
     def get_operation(self, path, path_regex, path_prefix, method, registry):
         operation = super().get_operation(path, path_regex, path_prefix, method, registry)

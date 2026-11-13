@@ -111,11 +111,6 @@ def _inline(node, components, seen=()):
         name = node["$ref"].rsplit("/", 1)[1]
         return {} if name in seen else _inline(components[name], components, seen + (name,))
     out = {key: _inline(value, components, seen) for key, value in node.items() if key != "nullable"}
-    if isinstance(out.get("required"), list):
-        # `pii_masked` is a read-only marker that is deliberately ABSENT unless a row is masked
-        # (tests/accounts/test_pii_presentation.py asserts the absence), though the schema generator lists every
-        # read-only field as required.
-        out["required"] = [name for name in out["required"] if name != "pii_masked"]
     if node.get("nullable"):
         if isinstance(out.get("enum"), list) and None not in out["enum"]:
             out["enum"] = [*out["enum"], None]

@@ -94,6 +94,15 @@ def test_real_responses_conform_to_the_documented_schema(world):
     assert not failures, "\n".join(failures)
 
 
+def test_pii_masked_is_documented_as_optional_wherever_it_appears():
+    """It is present only on a masked row (tests/accounts/test_pii_presentation.py), so a generated client
+    that treated it as required would fail on every unmasked one."""
+    schemas = live_schema()["components"]["schemas"]
+    carrying = sorted(name for name, schema in schemas.items() if "pii_masked" in schema.get("properties", {}))
+    assert {"StaffInvitation", "StaffRole", "User"} <= set(carrying)
+    assert [name for name in carrying if "pii_masked" in schemas[name].get("required", [])] == []
+
+
 def test_a_refusal_conforms_too(world):
     """The error a client must parse (anonymous on a staff route) matches the documented 401/403 body."""
     url, template = f"/api/v1/admin/makerspace/{world['space'].pk}/inventory", "/api/v1/admin/makerspace/{makerspace_id}/inventory"

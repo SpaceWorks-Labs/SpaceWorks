@@ -39,11 +39,24 @@ def _scope(target):
             "series" if event_authority._is_series(target) else "event": target}
 
 
+def _can_within_limit(actor, target, permission):
+    """`event_authority.can`, asked about the invite's tracks when a limit is in play (221i).
+
+    A track-limited co-organizer holds no unscoped authority, so the lifecycle's revalidation
+    of a delegated permission must ask about the very tracks the invitation covers.
+    """
+    from . import staff_grant_limits as limits
+    limit = limits.current_limit()
+    if limit and limit[0]:
+        return all(event_authority.can(actor, target, permission, track_id=t) for t in limit[0])
+    return event_authority.can(actor, target, permission)
+
+
 ADAPTER = lifecycle.GrantAdapter(
     grant_model=EventStaffGrant, invite_model=EventStaffGrantInvite,
     permissions=PERMISSIONS, namespace="events", audit_prefix="event.staff_grant",
     target=_target, lock_target=_locked_target, scope=_scope,
-    can_manage=event_authority.can_manage_grants, can=event_authority.can,
+    can_manage=event_authority.can_manage_grants, can=_can_within_limit,
     active=event_authority._active,
     lock_authority=lock_authority,
     label_field="role_label",

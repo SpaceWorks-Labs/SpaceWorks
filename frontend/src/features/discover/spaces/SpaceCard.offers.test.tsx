@@ -18,7 +18,7 @@ describe("SpaceCard (decision 275 change)", () => {
     unmount();
     const fallback = mount(base).container.querySelector(".sw-space-field")!;
     expect(fallback).toHaveAttribute("data-tile");
-    expect(fallback).toHaveTextContent("RQBG");
+    expect(fallback.querySelector(".sw-space-stencil")).toHaveAttribute("data-text", "RQBG");
   });
 
   it("lists what the space offers as translated chips in the server's order and skips unknown keys", () => {

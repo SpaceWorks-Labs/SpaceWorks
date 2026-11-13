@@ -18,7 +18,7 @@ const initial = (name: string) => (Array.from(name.trim())[0] ?? "?").toLocaleUp
 export function OrganizationCard({ row }: { row: DirectoryOrganization }) {
   const tone = spaceTone(row.slug);
   return <article className="sw-space-card" data-tone={tone}>
-    <div className="sw-space-field" data-tile={tone}><span className="sw-space-stencil" aria-hidden="true">{initial(row.name)}</span></div>
+    <div className="sw-space-field" data-tile={tone}><span className="sw-space-stencil" aria-hidden="true" data-text={initial(row.name)} /></div>
     <div className="sw-space-body">
       <span className={`sw-space-mark${row.logo_url ? " sw-space-mark-logo" : ""}`} aria-hidden="true">
         {row.logo_url ? <img src={row.logo_url} alt="" loading="lazy" className="h-full w-full object-contain" /> : initial(row.name)}

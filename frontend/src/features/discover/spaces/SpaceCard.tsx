@@ -37,7 +37,7 @@ export function SpaceCard({ space, layout = "grid", headingLevel = 3 }: {
   return <article className={`sw-space-card${layout === "feature" ? " sw-space-card-feature" : ""}`} data-tone={tone}>
     <div className="sw-space-field" data-tile={cover ? undefined : tone} data-cover={cover ? "" : undefined}>
       {cover ? <img src={cover} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
-        : <span className="sw-space-stencil" aria-hidden="true">{space.public_code || initial(space.name)}</span>}
+        : <span className="sw-space-stencil" aria-hidden="true" data-text={space.public_code || initial(space.name)} />}
     </div>
     <div className="sw-space-body">
       <span className={`sw-space-mark${space.logo_url ? " sw-space-mark-logo" : ""}`} aria-hidden="true">

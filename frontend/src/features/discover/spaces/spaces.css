@@ -61,6 +61,8 @@
 .sw-space-stencil { position: absolute; right: 5cqi; bottom: -0.26em; font-family: "Gilroy", "Outfit", ui-sans-serif, system-ui, sans-serif;
   font-weight: 800; font-size: 112px; font-size: min(34cqi, 168px); line-height: 1; letter-spacing: -0.03em; white-space: nowrap; user-select: none;
   color: rgb(var(--sw-stencil)); transition: color 120ms ease; }
+/* Painted from data-text, not from text in the tree: the tone-on-tone letters are decoration, so a contrast checker must not read them as copy. */
+.sw-space-stencil::before { content: attr(data-text); }
 .sw-space-card:hover .sw-space-stencil, .sw-space-card:has(.sw-space-link:focus-visible) .sw-space-stencil { color: rgb(var(--sw-stencil-hover)); }
 
 .sw-space-body { position: relative; display: flex; flex: 1; flex-direction: column; gap: 8px; min-width: 0; padding: 0 20px 20px; }

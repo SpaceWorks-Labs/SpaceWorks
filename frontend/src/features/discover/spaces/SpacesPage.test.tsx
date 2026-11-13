@@ -59,7 +59,7 @@ describe("SpacesPage", () => {
     const { container } = renderPage({ data: spaces });
     const tiles = [...container.querySelectorAll("[data-tile]")];
     expect(tiles.map(tile => tile.getAttribute("data-tile"))).toEqual([spaceTone("alpha-lab"), spaceTone("beta-wood")]);
-    expect(tiles[0]).toHaveTextContent("RQBG");
+    expect(tiles[0].querySelector(".sw-space-stencil")).toHaveAttribute("data-text", "RQBG");
   });
 
   it("searches, filters by place, sorts and clears", () => {

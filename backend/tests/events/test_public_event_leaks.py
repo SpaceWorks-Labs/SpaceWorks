@@ -200,6 +200,18 @@ def test_public_event_exact_allowlist_and_recursive_sentinel_leak_sweep():
     assert_no_public_leak(registration_response.data, sentinels)
 
 
+CLIENT_CREDENTIAL_SCHEMES = {'ServerHMAC', 'BrowserClient', 'PublishableKey'}
+
+
+def _anonymous_with_client_credentials_only(operation):
+    """Owner decision 496: a public route stays anonymous (`{}` present) and may offer ONLY the API-client
+    credential schemes the schema adds on HMAC-protected prefixes, never a user sign-in scheme
+    (jwtAuth, personalAccessToken, oauth2). Same shape as test_public_routes_offer_client_credentials."""
+    security = operation.get('security', [])
+    offered = {scheme for requirement in security for scheme in requirement}
+    return {} in security and offered <= CLIENT_CREDENTIAL_SCHEMES
+
+
 def test_openapi_has_exact_public_contracts_and_documented_errors():
     schema = SchemaGenerator().get_schema(request=None, public=True)
     components = schema['components']['schemas']
@@ -245,7 +257,7 @@ def test_openapi_has_exact_public_contracts_and_documented_errors():
     register_operation = schema['paths'][
         '/api/v1/public/{makerspace_slug}/events/{public_token}/register/'
     ]['post']
-    assert list_operation.get('security', []) == []
+    assert _anonymous_with_client_credentials_only(list_operation)
     assert register_operation.get('security')
     assert {'201', '400', '401', '403', '404', '409', '429'} <= set(
         register_operation['responses']
@@ -266,7 +278,7 @@ def test_openapi_has_exact_public_contracts_and_documented_errors():
     detail_operation = schema['paths'][
         '/api/v1/public/{makerspace_slug}/events/{public_token}/'
     ]['get']
-    assert detail_operation.get('security', []) == []
+    assert _anonymous_with_client_credentials_only(detail_operation)
     assert {'200', '400', '404', '429'} <= set(detail_operation['responses'])
     assert detail_operation['responses']['200']['content']['application/json']['schema'][
         '$ref'

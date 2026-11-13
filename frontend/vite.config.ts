@@ -74,6 +74,6 @@ export default defineConfig({
     onConsoleLog: (log) => (log.includes("Not implemented: navigation to another Document") ? false : undefined),
     // scripts/*.test.mjs are node:test suites (`node --test`), not vitest files.
     // legacy-worktree-imports/ holds skipped tests kept for reference (see the header of each file).
-    exclude: [...configDefaults.exclude, "scripts/**/*.test.mjs", "e2e/**", "legacy-worktree-imports/**"],
+    exclude: [...configDefaults.exclude, "scripts/**/*.test.mjs", "e2e/**", "legacy-worktree-imports/**", ".stryker-tmp/**"],
   },
 });

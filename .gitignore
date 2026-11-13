@@ -142,3 +142,7 @@ backend/tests/idcards_best/*-PARTS.md
 
 # Docs copied into the frontend Docker build context by frontend/scripts/docs-snapshot.mjs (release workflow).
 frontend/docs-snapshot/
+# mutation-testing sandboxes and reports (Stryker, mutmut)
+.stryker-tmp/
+reports/mutation/
+mutants/

@@ -100,7 +100,7 @@ def test_staff_bookings_list_is_flat(space):
                                              starts_at=start + timedelta(hours=2 * i),
                                              ends_at=start + timedelta(hours=2 * i + 1),
                                              status=Booking.Status.CONFIRMED) for i in range(a, b)])
-    _flat(manager, f"/api/v1/admin/makerspaces/{space.pk}/bookings/", grow)
+    _flat(manager, f"/api/v1/admin/spaces/{room.pk}/bookings/", grow)
 
 
 def test_member_activity_is_flat(space):
@@ -131,7 +131,8 @@ def test_public_booking_availability_is_flat(space):
     room = BookableSpace.objects.create(makerspace=space, name="Studio", is_public=True, is_active=True,
                                         show_public_availability=True)
     start = timezone.now() + timedelta(days=2)
-    frm, to = (timezone.now() + timedelta(days=1)).isoformat(), (timezone.now() + timedelta(days=30)).isoformat()
+    frm = (timezone.now() + timedelta(days=1)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    to = (timezone.now() + timedelta(days=30)).strftime("%Y-%m-%dT%H:%M:%SZ")
 
     def grow(a, b):
         Booking.objects.bulk_create([Booking(space=room, name=f"B{i}", email=f"b{i}@example.test", phone="1",

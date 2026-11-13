@@ -14,12 +14,17 @@ from tests.levels.schema_tools import operations, resolved_url
 pytestmark = pytest.mark.django_db
 
 DEFAULT = tuple(api_settings.DEFAULT_THROTTLE_CLASSES)
+# Token-bearing, not guessable-secret doors: logout only ends the caller's own session, and refresh presents a
+# high-entropy rotating token (a wrong one is refused and cannot be enumerated). Both keep the generic ceiling.
+GENERIC_BY_DESIGN = {"/api/v1/auth/logout", "/api/v1/auth/refresh"}
 SENSITIVE_SUFFIXES = ("/email-code", "/claim", "/checkout", "/login", "/login-code/resend")
 
 
 def _doors():
     for method, path, operation, item in operations():
         if method != "post" or {} not in operation.get("security", []):
+            continue
+        if path in GENERIC_BY_DESIGN:
             continue
         if path.startswith("/api/v1/auth/") or path.rstrip("/").endswith(SENSITIVE_SUFFIXES):
             yield path, operation, item

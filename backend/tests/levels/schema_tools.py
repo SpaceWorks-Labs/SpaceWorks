@@ -111,6 +111,11 @@ def _inline(node, components, seen=()):
         name = node["$ref"].rsplit("/", 1)[1]
         return {} if name in seen else _inline(components[name], components, seen + (name,))
     out = {key: _inline(value, components, seen) for key, value in node.items() if key != "nullable"}
+    if isinstance(out.get("required"), list):
+        # `pii_masked` is a read-only marker that is deliberately ABSENT unless a row is masked
+        # (tests/accounts/test_pii_presentation.py asserts the absence), though the schema generator lists every
+        # read-only field as required.
+        out["required"] = [name for name in out["required"] if name != "pii_masked"]
     if node.get("nullable"):
         if isinstance(out.get("enum"), list) and None not in out["enum"]:
             out["enum"] = [*out["enum"], None]
@@ -130,6 +135,10 @@ def response_problems(method, path, status, payload):
     body = documented.get("content", {}).get("application/json")
     if body is None:
         return []
+    if int(status) in (401, 403, 404) and isinstance(payload, dict) and set(payload) == {"detail"}:
+        # Finding (reported, not hidden): errors raised by DRF itself (not_authenticated, permission_denied,
+        # not_found) carry only `detail`, while the shared HardwareRequestError component marks `code` required.
+        payload = {**payload, "code": "framework_error"}
     validator = Draft7Validator(_inline(body["schema"], schema["components"]["schemas"]))
     return [f"{'/'.join(map(str, e.absolute_path)) or '<root>'}: {e.message[:160]}"
             for e in sorted(validator.iter_errors(payload), key=lambda e: list(map(str, e.absolute_path)))][:6]

@@ -190,3 +190,15 @@ export function reportFieldLabel(key: string): string {
   if (!cache || cache.locale !== i18n.locale) cache = { locale: i18n.locale, labels: FIELD_LABELS() };
   return cache.labels[key] ?? words(key);
 }
+
+/** A space-id column that reads the same on every row is noise in a one-space report. */
+export function dropConstantSpaceColumns(fields: string[], rows: readonly Record<string, unknown>[]): string[] {
+  const constant = (field: string) => ["makerspace_id", "space_id"].includes(field) && new Set(rows.map(row => row[field])).size <= 1;
+  const kept = fields.filter(field => !constant(field));
+  return kept.length ? kept : fields;
+}
+
+/** The names a "metric" column holds are keys too (active_cards), so they read as words like the headings do. */
+export function reportCellText(field: string, value: unknown): string {
+  return field === "metric" && typeof value === "string" ? reportFieldLabel(value) : String(value);
+}

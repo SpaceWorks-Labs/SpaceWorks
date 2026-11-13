@@ -11,6 +11,7 @@ import type { ReportChartSpec } from "../analyticsApi";
 import { funnelInput, reportAlternative, wireChartSpec } from "./wireChartSpec";
 import { rankedTimeSeries } from "./rankedTimeSeries";
 import { ReportTable } from "../OperationsReportTable";
+import { dropConstantSpaceColumns, reportCellText } from "../reportFieldLabels";
 import { LogoLoader } from "../../../../components/LogoLoader";
 
 function Chart({ spec, ...props }: ChartProps & { spec: ChartSpec }) {
@@ -47,10 +48,10 @@ export function CatalogChartPanel({ spec: inputSpec, hint, rows, title, loading 
   // Detail specs deliberately have no measures: render the projected rows without
   // converting record identifiers into numbers to sum on a chart.
   if ("values" in inputSpec && inputSpec.values.length === 0) {
-    const headers = [...new Set(rows.flatMap(row => Object.keys(row)))];
+    const headers = dropConstantSpaceColumns([...new Set(rows.flatMap(row => Object.keys(row)))], rows);
     const cells = rows.map(row => headers.map(field => {
       const value = row[field];
-      return value == null ? null : typeof value === "object" ? JSON.stringify(value) : String(value);
+      return value == null ? null : typeof value === "object" ? JSON.stringify(value) : reportCellText(field, value);
     }));
     return <DataState loading={loading} error={error} onRetry={onRetry} empty={!rows.length}>
       <ReportTable data={{ rows: [headers, ...cells] }} />

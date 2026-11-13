@@ -25,6 +25,14 @@ def activate(case, target):
     cutover.activate_target(pairing=pairing, import_job=case.job, receipt_envelope=envelope, actor=actor)
     target.refresh_from_db()
     assert target.lifecycle_state == Makerspace.LifecycleState.ACTIVE
+    # Materialization closes the target's PII write fence; the operator reopens it after activation
+    # (docs/scoped-pii-encryption.md, open_pii_write_fence). Receipts are mandatory-encrypted rows,
+    # so the authorised replay below is a mapped write.
+    from apps.encryption.models import PiiMakerspaceWriteFence
+    from apps.encryption.write_fence import reopen
+    fence = PiiMakerspaceWriteFence.objects.get(makerspace=target)
+    if fence.state == PiiMakerspaceWriteFence.State.CLOSED:
+        reopen(fence.operation_id, actor.pk)
     target.public_site_enabled = True
     target.public_inventory_enabled = True
     target.enabled_features = sorted(set(target.enabled_features or []) | {"loans.enabled"})

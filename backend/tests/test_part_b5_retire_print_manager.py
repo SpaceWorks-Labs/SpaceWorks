@@ -62,10 +62,12 @@ def test_retirement_migration_moves_legacy_labels_without_reviving_invalid_autho
     migration = import_module("apps.makerspaces.migrations.0046_retire_print_manager")
     # A data migration runs on HISTORICAL models, whose default manager sees every membership row.
     # Under the real models `.objects` is the member track only (U-A1), which would hide the staff
-    # rows this test seeds, so hand the migration the app registry as it stood before 0046.
+    # rows this test seeds, so hand the migration a historical (plain-manager) app registry. It must match
+    # the live tables: the registry as of 0045 still lists columns later migrations dropped (for example
+    # makerspace.superadmin_access_enabled), so the migration's own queries would select them and fail.
     from django.db.migrations.loader import MigrationLoader
-    historical = MigrationLoader(connection).project_state(
-        ("makerspaces", "0045_membership_join_policy_referrals")).apps
+    loader = MigrationLoader(connection)
+    historical = loader.project_state(loader.graph.leaf_nodes("makerspaces")).apps
     with pytest.raises(IntegrityError), transaction.atomic():
         MakerspaceMembership.staff_tracks.filter(pk=unassigned.pk).update(assigned_role=None, role="print_manager")
         migration.migrate_print_manager_memberships(historical, None)

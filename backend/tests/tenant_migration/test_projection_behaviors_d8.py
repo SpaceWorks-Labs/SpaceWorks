@@ -205,6 +205,9 @@ def test_profile_and_attendance_publication_use_post_projection_consents():
         title="Projected attended event",
         starts_at=starts,
         ends_at=starts + timedelta(hours=1),
+        # Attendance is published only for a live, listed, public event (account_profile_activity).
+        is_public=True,
+        status=Event.Status.COMPLETED,
     )
     EventRegistration.objects.create(
         event=event,

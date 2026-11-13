@@ -40,13 +40,18 @@ def test_monitoring_gets_and_scheduled_checks_never_create_integration_settings(
     for model in models:
         model.objects.all().delete()
     client = authenticated_client(operator())
-    before = AuditLog.objects.count()
+    # A platform read is itself audited as a sampled cross-space capability use (apps/tenant_rls/capabilities.py,
+    # first use per window), which is an access trail, not a write by the monitoring paths under test.
+    def written():
+        return AuditLog.objects.exclude(action="rls.capability_used").count()
+
+    before = written()
     try:
         assert client.get(DASHBOARD).status_code == 200
         assert client.get(PROBLEMS).status_code == 200
         run_platform_problem_checks_task()
         assert all(not model.objects.exists() for model in models)
-        assert AuditLog.objects.count() == before, list(AuditLog.objects.values_list("action", "target_type", "meta"))
+        assert written() == before, list(AuditLog.objects.exclude(action="rls.capability_used").values_list("action", "target_type", "meta"))
     finally:
         cache.delete(PROBLEM_RUN_CACHE_KEY)
 

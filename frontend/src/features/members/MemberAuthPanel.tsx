@@ -36,7 +36,8 @@ export function MemberAuthPanel({
   context,
   footer,
 }: {
-  onAuthenticated: () => void;
+  /** Runs once the tokens are stored (the host loads who just signed in); the panel waits for it instead of flashing the form again. */
+  onAuthenticated: () => void | Promise<void>;
   makerspaceSlug?: string;
   tenantBrand?: { name: string; logo?: string };
   /** true inside another page (an action card, a ticket panel): no logo, no brand panel, no h1. */
@@ -65,18 +66,27 @@ export function MemberAuthPanel({
   const [errorCode, setErrorCode] = useState<string>();
   const [notice, setNotice] = useState("");
   const [verificationOnly, setVerificationOnly] = useState(false);
+  const [finishing, setFinishing] = useState(false);
   const [verificationCode, setVerificationCode] = useState("");
   const { selfServeAccounts, passwordLogin, passkeysEnabled, turnstileSiteKey } = usePublicSignInConfig();
+  // Between "the code was right" and "the host knows who signed in" the form must not come back:
+  // that round trip can take seconds on a slow link and looked like the sign-in had been refused.
+  const finish = async () => {
+    setFinishing(true);
+    try { await onAuthenticated(); }
+    catch (failure) { setError(authErrorMessage(failure, "Unable to finish signing in. Try again.")); }
+    finally { setFinishing(false); }
+  };
   const signedIn = (result: PasswordLoginResponse) => {
     setAccessToken(result.access, "person");
     if (result.surface === "verification_only") {
       setVerificationOnly(true);
       setNotice(t`Enter the verification code sent to your email.`);
     } else {
-      onAuthenticated();
+      void finish();
     }
   };
-  const passkey = usePasskeySignIn({ enabled: passkeysEnabled && mode === "login" && !mfaChallenge && !verificationOnly, onSignedIn: signedIn });
+  const passkey = usePasskeySignIn({ enabled: passkeysEnabled && mode === "login" && !mfaChallenge && !verificationOnly && !finishing, onSignedIn: signedIn });
   // A sign-in or sign-up the server answered with captcha_required: show the check, resend with its token.
   const captcha = useTurnstileGate(turnstileSiteKey, (token) => { void submit(token); });
   useEffect(() => {
@@ -126,7 +136,7 @@ export function MemberAuthPanel({
         method: "POST",
         body: JSON.stringify({ code: verificationCode }),
       });
-      onAuthenticated();
+      void finish();
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : t`Unable to verify email.`);
     } finally {
@@ -145,8 +155,11 @@ export function MemberAuthPanel({
       setPending(false);
     }
   };
+  if (finishing) return <AuthStepCard embedded={embedded} eyebrow={eyebrow} state={{ status: "ready" }}
+    media={{ icon: "ShieldCheck", tone: "accent" }} title={t`Signing you in`} body={t`Loading your account.`}
+    primary={{ label: t`Signing you in…`, pending: true, pendingLabel: t`Signing you in…`, onClick: () => undefined }} />;
   if (mfaChallenge) return <MfaFlow embedded={embedded} eyebrow={eyebrow} extra={footer} challenge={mfaChallenge} turnstileSiteKey={turnstileSiteKey} onCancel={() => setMfaChallenge(undefined)}
-    onComplete={(result) => { setAccessToken(result.access, "person"); setMfaChallenge(undefined); if (result.surface === "verification_only") setVerificationOnly(true); else onAuthenticated(); }} />;
+    onComplete={(result) => { setAccessToken(result.access, "person"); setMfaChallenge(undefined); if (result.surface === "verification_only") setVerificationOnly(true); else void finish(); }} />;
   if (verificationOnly) return <AuthStepCard embedded={embedded} eyebrow={eyebrow} footer={footer} state={{ status: "ready" }}
     media={{ icon: "Info", tone: "accent" }} title={t`Verify your email`}
     body={<p>{t`Enter the verification code sent to your email. This session can only verify the address until email ownership is confirmed.`}</p>}
@@ -167,7 +180,7 @@ export function MemberAuthPanel({
   const passkeyButton = passkey.supported ? <PasskeySignInButton pending={passkey.pending} error={passkey.error} onClick={passkey.signIn} /> : null;
   const social = <>{passkeyButton}<SocialSignInButtons surface="member" onMfaChallenge={setMfaChallenge} email={email} makerspaceSlug={makerspaceSlug} onSuccess={(result) => {
     if (isMfaChallenge(result)) { setPassword(""); setMfaChallenge(result); return; }
-    setAccessToken(result.access, "person"); onAuthenticated();
+    setAccessToken(result.access, "person"); void finish();
   }} /></>;
   const legal = selfServeAccounts ? t`One account works at every makerspace you join.` : t`This space does not run self sign-up. Ask a staff member to add you.`;
   const form = <form className="grid gap-4" onSubmit={(event) => { event.preventDefault(); if (!pending) void submit(); }}>

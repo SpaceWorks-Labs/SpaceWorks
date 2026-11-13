@@ -53,7 +53,10 @@ export function useConsoleSession(guestOnly: boolean) {
   const setTab = useCallback((value: string) => { persistStaffTab(value, context); }, [context]);
   useEffect(() => { routeSlugRef.current = routeMakerspaceSlug; }, [routeMakerspaceSlug]);
 
+  // Bumped whenever a sign-in lands, so a session restore that started earlier cannot undo it.
+  const signInEpoch = useRef(0);
   const hydrateUser = useCallback((next: StaffAuthUser) => {
+    signInEpoch.current += 1;
     setUser(next);
     if (tenant.mode === "single" && tenant.makerspaceId !== null) { setSelected(tenant.makerspaceId); return; }
     const saved = readStoredMakerspace(context);
@@ -80,9 +83,14 @@ export function useConsoleSession(guestOnly: boolean) {
     // Finish a pending provider sign-in before consulting any previous cookie.
     if (oidcCallback) { setUser(null); setRestoring(false); return; }
     void (async () => {
+      const startedAt = signInEpoch.current;
       const refreshed = await refreshAccessToken(context);
       let next: StaffAuthUser | null = null;
       if (refreshed) next = await fetchMe(context).catch(() => null);
+      // This restore may have been asked before the person typed their password (the tenant resolving
+      // re-runs it). If a sign-in landed while it waited, its answer is stale: clearing the token or the
+      // user now would drop a correct sign-in back to the form.
+      if (!next && signInEpoch.current !== startedAt) { if (active) setRestoring(false); return; }
       if (!next) clearAccessToken(context);
       if (!active) return;
       if (next) hydrateUser(next); else setUser(null);

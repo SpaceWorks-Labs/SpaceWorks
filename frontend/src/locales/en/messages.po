@@ -29675,6 +29675,9 @@ msgstr "Loading who can change settings…"
 msgid "Loading work orders…"
 msgstr "Loading work orders…"
 
+msgid "Loading your account."
+msgstr "Loading your account."
+
 msgid "Loading your activity..."
 msgstr "Loading your activity..."
 
@@ -52533,6 +52536,12 @@ msgstr "Signing out…"
 msgid "Signing secret"
 msgstr "Signing secret"
 
+msgid "Signing you in"
+msgstr "Signing you in"
+
+msgid "Signing you in…"
+msgstr "Signing you in…"
+
 msgid "Signing…"
 msgstr "Signing…"
 
@@ -63145,6 +63154,10 @@ msgstr "We can't estimate a time yet."
 
 msgid "We can't find this programme"
 msgstr "We can't find this programme"
+
+#. js-lingui-explicit-id
+msgid "api.error.not_found"
+msgstr "We could not find that. It may have been removed, or it belongs to a space you have not joined."
 
 #. placeholder {0}: list.values.id || list.values.request
 msgid "We couldn't find request #{0} in your queues."

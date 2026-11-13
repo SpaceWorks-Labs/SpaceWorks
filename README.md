@@ -14,7 +14,7 @@
 
 <p>
   <a href="docs/README.md"><b>Documentation</b></a> ·
-  <a href="https://github.com/SpaceWorks-Labs/SpaceWorks-Design"><b>Design system</b></a> ·
+  <a href="https://spaceworks-labs.github.io/SpaceWorks-Design-System/"><b>Design system</b></a> ·
   <a href="#quickstart"><b>Get started</b></a>
 </p>
 

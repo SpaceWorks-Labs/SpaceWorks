@@ -224,7 +224,13 @@ single `h1` and loading/error/empty switching, and contain no gating. Shared pri
 `SettingsRow`, `DangerZone`, `ActivityRail`, `TicketCard`, `ScanWorkbench`, …) are exported, with
 their prop types, from `components/ui/index.ts`. Design source of truth: `docs/brand/` (brand
 guidelines v1 + logo masters); the same assets ship in the
-`SpaceWorks-Labs/SpaceWorks-Design` repository for use as a submodule.
+`SpaceWorks-Labs/SpaceWorks-Design-System` repository for use as a submodule.
+
+**`design-system/`** is that repository as a git submodule, pinned to a release tag (never a moving branch;
+decision 415). Clone with `git clone --recurse-submodules`, or run `git submodule update --init` in an existing
+clone. It is reference material for contributors (tokens, motion templates, rules, brand assets): no build, test or
+Docker image reads it, so a checkout without it still builds and runs. Bump it by checking out the new tag inside
+`design-system/` and committing the changed pointer.
 
 `features/staff/sidebarSections.ts` owns the 42-key sidebar presentation map;
 `StaffShell.tsx` adapts the existing permission/module-filtered tabs, shared Inbox unread

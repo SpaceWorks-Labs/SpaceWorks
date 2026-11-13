@@ -10,6 +10,7 @@ from tests.accounts.account_factories import make_staff
 
 from apps.accounts.models import User
 from apps.makerspaces import roles
+from apps.makerspaces.role_catalog import ROLE_CATALOG
 from apps.makerspaces.models import Makerspace, MakerspaceMembership, MakerspaceRole
 
 
@@ -61,8 +62,8 @@ def test_ensure_default_roles_is_idempotent():
     roles.ensure_default_roles(makerspace)
     roles.ensure_default_roles(makerspace)
 
-    # The seven protected defaults include the current built-in Handover.
-    assert MakerspaceRole.objects.filter(makerspace=makerspace).count() == 8
+    # Every catalogue role (decided set: ROLE_CATALOG, 9 staff roles) plus the Member role.
+    assert MakerspaceRole.objects.filter(makerspace=makerspace).count() == len(ROLE_CATALOG)
     assert_default_roles(makerspace)
 
 
@@ -191,7 +192,7 @@ def test_seeded_defaults_match_frozen_rbac_mapping():
 def test_assigned_builtin_is_protected_and_database_refuses_null_legacy_membership():
     makerspace = Makerspace.objects.create(name="Role constraints", slug="role-constraints")
     actor = make_staff(makerspace, username="protected-role-user", role_slug="event_manager")
-    membership = MakerspaceMembership.objects.get(user=actor, makerspace=makerspace)
+    membership = MakerspaceMembership.staff_tracks.get(user=actor, makerspace=makerspace)
     role = membership.assigned_role
     with pytest.raises(ProtectedError):
         role.delete()

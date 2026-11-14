@@ -19,6 +19,7 @@ from apps.audit import services as audit
 from apps.inventory import public_image_storage
 from apps.evidence.responses import storage_unavailable_response
 from apps.evidence.storage import StorageUnavailable
+from apps.hardware_requests.exceptions import ErrorSerializer
 from apps.inventory.models import InventoryProduct
 from apps.makerspaces.guards import require_module
 from apps.makerspaces.limits import charge_upload
@@ -46,7 +47,8 @@ class InventoryProductImageView(APIView):
         request=PublicImageUploadRequestSerializer,
         responses={
             201: PublicImageUploadResponseSerializer,
-            400: OpenApiResponse(description="Invalid image upload request."),
+            400: OpenApiResponse(ErrorSerializer, description="Invalid upload; upload_size_required (declare size in bytes on PUT-only storage), upload_limit (file/headroom) or limit_reached (combined storage)."),
+            409: OpenApiResponse(ErrorSerializer, description="storage_public_images_bytes_quota_reached."),
             503: OpenApiResponse(description="Public image storage is unavailable."),
         },
     )
@@ -67,7 +69,7 @@ class InventoryProductImageView(APIView):
         from apps.makerspaces.limits import check_upload_headroom
         check_upload_headroom(product.makerspace)  # #234: refuse before the upload when storage is full
         try:
-            upload = public_image_storage.presigned_upload(object_key, content_type)
+            upload = public_image_storage.presigned_upload(object_key, content_type, **({"exact_bytes": serializer.validated_data.get("size")} if serializer.validated_data.get("size") is not None else {}))
         except StorageUnavailable:
             return storage_unavailable_response()
         return Response(
@@ -81,7 +83,8 @@ class InventoryProductImageView(APIView):
         request=PublicImageAttachRequestSerializer,
         responses={
             200: InventoryProductAdminSerializer,
-            400: OpenApiResponse(description="Invalid image object key or size."),
+            400: OpenApiResponse(ErrorSerializer, description="Invalid upload; upload_size_required (declare size in bytes on PUT-only storage), upload_limit (file/headroom) or limit_reached (combined storage)."),
+            409: OpenApiResponse(ErrorSerializer, description="storage_public_images_bytes_quota_reached."),
             503: OpenApiResponse(description="Public image storage is unavailable."),
         },
     )
@@ -136,7 +139,7 @@ class InventoryProductImageView(APIView):
             raise ValidationError({"object_key": gettext("This image is already in use.")})
         old_key = product.image_key
         if object_key != old_key:
-            charge_upload(product.makerspace, result.size)
+            charge_upload(product.makerspace, result.size, object_key=object_key)
         if old_key and old_key != object_key:
             public_image_storage.release_public_image_on_commit(
                 product.makerspace, old_key

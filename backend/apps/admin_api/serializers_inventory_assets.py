@@ -24,6 +24,8 @@ class InventoryQuantityAdjustmentSerializer(serializers.Serializer):
 
 
 class PublicImageUploadRequestSerializer(serializers.Serializer):
+    """Declare size in bytes; PUT-only storage requires it (400 upload_size_required)."""
+    size = serializers.IntegerField(required=False, min_value=1)
     content_type = serializers.CharField(allow_blank=False)
     filename = serializers.CharField(allow_blank=False, max_length=255)
 

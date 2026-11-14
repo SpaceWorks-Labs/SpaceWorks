@@ -19,6 +19,7 @@ OMITTED_MODELS = {label: "Source-local notification credentials, proof, policy o
                   for label in FIELD_NAMES if label != "notifications.NotificationPreference"}
 USER_FIELDS = frozenset({
     ("integrations.NotificationEnvelope", "recipient"),
+    ("integrations.DocumentEmailIntent", "recipient"),  # Omitted dispatch state adds no export user closure.
     ("integrations.NotificationEndpoint", "user"),
     ("integrations.NotificationEndpointChallenge", "user"),
     ("notifications.NotificationPreference", "user"),

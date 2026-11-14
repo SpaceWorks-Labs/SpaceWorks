@@ -87,7 +87,7 @@ def test_the_pages_section_shows_items_only_when_the_online_shop_is_on():
 
 
 @pytest.mark.parametrize("key", ["charges.shop", "charges.enabled"])
-def test_untracked_shop_browses_without_prices_and_cannot_quote(key):
+def test_untracked_shop_browses_without_prices_and_refuses_quotes(key):
     from apps.shop.public import page_cards
 
     space = shop_space("onoff-prices", "shop.online")
@@ -104,13 +104,14 @@ def test_untracked_shop_browses_without_prices_and_cannot_quote(key):
     assert listing.status_code == detail.status_code == 200
     for public_row in (listing.json()["results"][0], detail.json()):
         assert public_row["name"] == row.name
-        assert public_row["price_from"] is public_row["price_to"] is None
+        assert public_row["price_from"] is None and public_row["price_to"] is None
         assert public_row["variants"][0]["price"] is None
     assert page_cards(space)[0]["price_from"] is None
 
     for response in (client().post(f"{base}quote/", body, format="json"),
                      client(seller).post(f"{staff_base}pos/quote/", body, format="json")):
-        assert response.status_code == 404 and response.json()["code"] == "charges_off"
+        assert response.status_code == 404
+        assert response.json()["code"] == "charges_off"
 
     staff_product = client(seller).get(f"{staff_base}products/").json()["results"][0]
     assert staff_product["variants"][0]["price"] == "100.00"

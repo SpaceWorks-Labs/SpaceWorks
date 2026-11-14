@@ -23,11 +23,17 @@ from apps.audit import services as audit
 from apps.evidence.responses import storage_unavailable_response
 from apps.evidence.storage import StorageUnavailable
 from apps.inventory import public_image_storage as images
-from apps.makerspaces.limits import add_storage
+from apps.makerspaces.limits import charge_upload, check_upload_headroom
+from apps.hardware_requests.exceptions import ErrorSerializer
 
 from .models import Sponsor
 from .serializers_sponsors import SponsorSerializer
 from .views_sponsors import ERRORS, TAG, _row
+
+UPLOAD_ERRORS = {
+    400: OpenApiResponse(ErrorSerializer, description="Invalid upload; upload_size_required (declare size in bytes on PUT-only storage), upload_limit (file/headroom) or limit_reached (combined storage)."),
+    409: OpenApiResponse(ErrorSerializer, description="storage_public_images_bytes_quota_reached."),
+}
 
 
 def _discard(key):
@@ -39,7 +45,7 @@ class SponsorLogoView(APIView):
     permission_classes = [IsActiveStaff]
 
     @extend_schema(tags=TAG, summary="Create a sponsor logo upload URL", request=PublicImageUploadRequestSerializer,
-                   responses={201: PublicImageUploadResponseSerializer, 503: OpenApiResponse(), **ERRORS})
+                   responses={201: PublicImageUploadResponseSerializer, 503: OpenApiResponse(), **ERRORS, **UPLOAD_ERRORS})
     def post(self, request, makerspace_id, pk):
         sponsor = _row(request, Sponsor, makerspace_id, pk, record=True)
         payload = PublicImageUploadRequestSerializer(data=request.data)
@@ -47,8 +53,9 @@ class SponsorLogoView(APIView):
         content_type = payload.validated_data["content_type"]
         key = images.build_object_key("sponsor", sponsor.makerspace_id,
                                       images.ext_for(content_type, payload.validated_data["filename"]))
+        check_upload_headroom(sponsor.makerspace)
         try:
-            upload = images.presigned_upload(key, content_type)
+            upload = images.presigned_upload(key, content_type, **({"exact_bytes": payload.validated_data.get("size")} if payload.validated_data.get("size") is not None else {}))
         except StorageUnavailable:
             return storage_unavailable_response()
         return Response(PublicImageUploadResponseSerializer({"object_key": key, **upload}).data,
@@ -56,7 +63,7 @@ class SponsorLogoView(APIView):
 
     @extend_schema(tags=TAG, summary="Attach an uploaded logo to a sponsor", description="Audited `sponsor.logo_updated`.",
                    request=PublicImageAttachRequestSerializer,
-                   responses={200: SponsorSerializer, 503: OpenApiResponse(), **ERRORS})
+                   responses={200: SponsorSerializer, 503: OpenApiResponse(), **ERRORS, **UPLOAD_ERRORS})
     @transaction.atomic
     def put(self, request, makerspace_id, pk):
         sponsor = _row(request, Sponsor, makerspace_id, pk, record=True)
@@ -80,7 +87,7 @@ class SponsorLogoView(APIView):
             return storage_unavailable_response()
         sponsor = Sponsor.objects.select_for_update().select_related("makerspace").get(pk=sponsor.pk)
         if key != sponsor.logo_key:
-            add_storage(sponsor.makerspace, result.size)
+            charge_upload(sponsor.makerspace, result.size, object_key=key)
             if sponsor.logo_key:
                 images.release_public_image_on_commit(sponsor.makerspace, sponsor.logo_key)
         sponsor.logo_key = key

@@ -4,7 +4,7 @@ Member-card photos keep `member/makerspaces/<id>/member-card/photo`; the clean-u
 wallet routes serve all three kinds.
 """
 from django.utils.translation import gettext
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import serializers, status
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.permissions import IsAuthenticated
@@ -15,6 +15,8 @@ from rest_framework.views import APIView
 from apps.evidence.responses import storage_unavailable_response
 from apps.evidence.storage import StorageUnavailable
 from apps.openapi_errors import errors
+from apps.hardware_requests.exceptions import ErrorSerializer
+
 from .serializers_openapi import PhotoDecisionResultSerializer, PhotoSetSerializer, PhotoUploadSerializer
 
 from . import jobs, photo_cleanup, photos
@@ -22,11 +24,18 @@ from .holder_access import own_card
 from .models import CardJob
 from .serializers import CardJobLinkSerializer, CardJobSerializer
 
+UPLOAD_ERRORS = {
+    400: OpenApiResponse(ErrorSerializer, description="Invalid upload; upload_size_required (declare size in bytes on PUT-only storage), upload_limit (file/headroom) or limit_reached (combined storage)."),
+    409: OpenApiResponse(ErrorSerializer, description="storage_public_images_bytes_quota_reached."),
+}
+
 TAGS = ["My cards"]
 PHOTO_ACTIONS = {"programme_card": "id_programme.card_photo_updated", "event_card": "event_card.photo_updated"}
 
 
 class PhotoPresignSerializer(serializers.Serializer):
+    """Declare size in bytes; PUT-only storage requires it (400 upload_size_required)."""
+    size = serializers.IntegerField(required=False, min_value=1)
     content_type = serializers.ChoiceField(choices=("image/png", "image/jpeg", "image/webp"))
 
 
@@ -55,18 +64,18 @@ class MyCardPhotoView(APIView):
         return own_card(request.user, kind, card_id)[1]
 
     @extend_schema(tags=TAGS, summary="Start a card photo upload (staging presign only)",
-                   request=PhotoPresignSerializer, responses={201: PhotoUploadSerializer, **errors(400, 401, 404, 503)})
+                   request=PhotoPresignSerializer, responses={201: PhotoUploadSerializer, **errors(401, 404, 503), **UPLOAD_ERRORS})
     def post(self, request, kind, card_id):
         card = self._card(request, kind, card_id)
         data = PhotoPresignSerializer(data=request.data)
         data.is_valid(raise_exception=True)
         try:
-            return Response(photos.presign(card, data.validated_data["content_type"]), status=status.HTTP_201_CREATED)
+            return Response(photos.presign(card, data.validated_data["content_type"], **({"size": data.validated_data.get("size")} if data.validated_data.get("size") is not None else {})), status=status.HTTP_201_CREATED)
         except StorageUnavailable:
             return storage_unavailable_response()
 
     @extend_schema(tags=TAGS, summary="Attach the uploaded photo (needs consent; re-encoded, metadata stripped)",
-                   request=PhotoFinalizeSerializer, responses={200: PhotoSetSerializer, **errors(400, 401, 404, 503)})
+                   request=PhotoFinalizeSerializer, responses={200: PhotoSetSerializer, **errors(401, 404, 503), **UPLOAD_ERRORS})
     def put(self, request, kind, card_id):
         card = self._card(request, kind, card_id)
         data = PhotoFinalizeSerializer(data=request.data)
@@ -129,7 +138,8 @@ class MyCardWalletView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(tags=TAGS, summary="Add my card to Apple or Google Wallet (a job; poll it)", request=None,
-                   responses={201: CardJobSerializer, **errors(400, 401, 404)})
+                   responses={201: CardJobSerializer, **errors(400, 401, 404),
+                              409: OpenApiResponse(ErrorSerializer, description="wallet_passes_quota_reached.")})
     def post(self, request, kind, card_id, platform):
         from .wallet.service import request_pass
         spec, card = own_card(request.user, kind, card_id, staff_ok=True)
@@ -152,7 +162,7 @@ class MyCardJobResultView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(tags=TAGS, summary="A short-lived link to my job's file (cleaned photo or pass)", request=None,
-                   responses={200: CardJobLinkSerializer, **errors(400, 401, 404, 503)})
+                   responses={200: CardJobLinkSerializer, **errors(401, 404, 503), **UPLOAD_ERRORS})
     def get(self, request, pk):
         job = jobs.get_any(request.user, pk)
         try:

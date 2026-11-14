@@ -197,16 +197,18 @@ def test_managed_makerspace_email_daily_cap_blocks_delivery(mailoutbox):
     PLATFORM_DOMAIN_SUFFIX="",
     EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
 )
-def test_self_host_makerspace_email_is_never_capped(mailoutbox):
+def test_self_host_makerspace_email_honors_an_explicit_cap(mailoutbox):
     makerspace = make_space("limits-email-self-host")
     makerspace.resource_limit_overrides = {"email": 1}
     makerspace.save(update_fields=["resource_limit_overrides"])
 
     logs = [_dispatch(makerspace, subject=f"Self-host {index}") for index in range(2)]
 
-    assert [log.status for log in logs] == [EmailLog.Status.SENT] * 2
-    assert len(mailoutbox) == 2
-    assert not DailyEmailCounter.objects.filter(makerspace=makerspace).exists()
+    # Decision 281: explicit overrides apply on self-host too.
+    assert [log.status for log in logs] == [EmailLog.Status.SENT, EmailLog.Status.FAILED]
+    assert logs[1].error == "Daily email limit reached for this space."
+    assert len(mailoutbox) == 1
+    assert DailyEmailCounter.objects.get(makerspace=makerspace).count == 1
 
 
 @override_settings(

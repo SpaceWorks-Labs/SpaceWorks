@@ -87,33 +87,15 @@ def ext_for(content_type, filename):
     return ext
 
 
-def presigned_upload(object_key, content_type):
+from apps.makerspaces.storage_reservations import reserved_presign
+
+
+@reserved_presign("MACHINE_DOC_MAX_BYTES", public=False)
+def presigned_upload(object_key, content_type, *, exact_bytes=None):
+    from apps.private_uploads import presign as shared_presign
+    import sys
     try:
-        if getattr(settings, "STORAGE_CAPABILITIES_FILE", ""):
-            import sys
-            from apps.private_uploads import presign
-            return presign(sys.modules[__name__], object_key, content_type, settings.MACHINE_DOC_MAX_BYTES)
-        if settings.STORAGE_PRESIGN_METHOD == "put":
-            url = _public_client().generate_presigned_url(
-                "put_object",
-                Params={
-                    "Bucket": settings.AWS_STORAGE_BUCKET_NAME,
-                    "Key": staging_key(object_key),
-                    "ContentType": content_type,
-                },
-                ExpiresIn=settings.EVIDENCE_URL_TTL_SECONDS,
-            )
-            return {"url": url, "method": "PUT", "headers": {"Content-Type": content_type}}
-        return _public_client().generate_presigned_post(
-            Bucket=settings.AWS_STORAGE_BUCKET_NAME,
-            Key=object_key,
-            Fields={"Content-Type": content_type},
-            Conditions=[
-                {"Content-Type": content_type},
-                ["content-length-range", 1, settings.MACHINE_DOC_MAX_BYTES],
-            ],
-            ExpiresIn=settings.EVIDENCE_URL_TTL_SECONDS,
-        )
+        return shared_presign(sys.modules[__name__], object_key, content_type, settings.MACHINE_DOC_MAX_BYTES, exact_bytes=exact_bytes)
     except (BotoCoreError, ClientError) as exc:
         raise StorageUnavailable from exc
 
@@ -160,9 +142,6 @@ def finalize_upload(object_key, max_bytes):
         import sys
         from apps.private_uploads import finalize
         return finalize(sys.modules[__name__], object_key, max_bytes)
-    if settings.STORAGE_PRESIGN_METHOD != "put":
-        return object_size(object_key)
-
     final_size = object_size(object_key)
     if final_size is not None:
         delete_object(staging_key(object_key))
@@ -175,7 +154,9 @@ def finalize_upload(object_key, max_bytes):
     if not (1 <= size <= max_bytes):
         return size
 
-    copy_object(upload_staging_key, object_key)
+    import sys
+    from apps.private_uploads import legacy_promote
+    legacy_promote(sys.modules[__name__], upload_staging_key, object_key, max_bytes)
     delete_object(upload_staging_key)
     final_size = object_size(object_key)
     if final_size is None or not (1 <= final_size <= max_bytes):

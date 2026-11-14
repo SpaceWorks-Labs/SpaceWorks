@@ -61,7 +61,7 @@ def accept(actor, kind, card, job):
         replace_photo_bytes(actor, card, data)
     else:
         from .photos import attach_bytes
-        attach_bytes(actor, kind, card, data, consent=True)
+        attach_bytes(actor, kind, card, data, consent=True, is_upload=False)
     audit.record(actor, "card.photo_cleanup_accepted", makerspace=card.makerspace, target=card,
                  meta={"card_id": card.pk, "job_id": job.pk})
     CardJob.objects.filter(pk=job.pk).update(result_key="", result_size=0)

@@ -10,6 +10,7 @@
   settlement and the space's own gateway are never touched.
 """
 from datetime import UTC, datetime
+from decimal import Decimal
 
 from apps.makerspaces.limits_core import PLATFORM_CREDENTIAL_LIMIT_KEYS
 
@@ -83,14 +84,14 @@ def platform_used(makerspace, key, currency=None):
                                                    created_at__gte=start).exclude(status="skipped").count()
         return pipeline + staff
     if key == "platform_wallet_monthly":
-        # Only passes SIGNED with the platform certificates: `wallet_pass.issued` stamps `source` at issue time
-        # (a space's own certificates are never counted). Unit: NEW passes issued this month; a re-issue of a
-        # pass from an earlier month is not a new pass. Queued, not-yet-signed passes count once they issue.
+        # First successful issuance owns the slot and month, regardless of when
+        # the job was queued. Later reissues never consume another slot.
         from apps.audit.models import AuditLog
-        from apps.card_designs.models_wallet import WalletPass
-        ids = AuditLog.objects.filter(action="wallet_pass.issued", makerspace=makerspace, created_at__gte=start,
-                                      meta__source="platform").values_list("meta__pass_id", flat=True)
-        return WalletPass.objects.filter(pk__in={i for i in ids if i is not None}, created_at__gte=start).count()
+        from django.db.models import Min, Subquery
+        issued = AuditLog.objects.filter(action="wallet_pass.issued", makerspace=makerspace,
+                                         meta__pass_id__isnull=False)
+        first_ids = issued.order_by().values("meta__pass_id").annotate(first_id=Min("pk")).values("first_id")
+        return issued.filter(pk__in=Subquery(first_ids), created_at__gte=start, meta__source="platform").count()
     from django.db.models import Sum
 
     from apps.payments.models import Payment
@@ -100,7 +101,7 @@ def platform_used(makerspace, key, currency=None):
         return rows.count()
     if currency:
         rows = rows.filter(currency=currency.lower())
-    return int(rows.aggregate(t=Sum("amount"))["t"] or 0)
+    return rows.aggregate(t=Sum("amount"))["t"] or Decimal("0")
 
 
 def platform_refusal(makerspace, key, adding=1, *, currency=None):
@@ -175,7 +176,7 @@ def _charge_beyond_limit(makerspace, payment, key):
     if key == "platform_payments_monthly_count":
         before = earlier.count()
     else:
-        before = int(earlier.filter(currency=payment.currency.lower()).aggregate(t=Sum("amount"))["t"] or 0)
+        before = earlier.filter(currency=payment.currency.lower()).aggregate(t=Sum("amount"))["t"] or Decimal("0")
     if before >= limit:
         return f"This space has used the {LABELS[key]} allowed by the platform ({limit})."
     return None

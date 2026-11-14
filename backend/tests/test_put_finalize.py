@@ -5,7 +5,7 @@ from unittest.mock import Mock
 import pytest
 from botocore.exceptions import ClientError
 from django.contrib.auth import get_user_model
-from django.db import close_old_connections, connection
+from django.db import close_old_connections, connection, connections
 
 from apps.evidence import storage as evidence_storage
 from apps.evidence.finalization import charge_storage_once
@@ -136,22 +136,29 @@ def test_concurrent_post_finalization_promotes_exactly_once(monkeypatch, setting
     def run():
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             current = EvidencePhoto.objects.get(pk=photo.pk)
             results.append(evidence_storage.finalize_upload(current, max_bytes=500))
         except Exception as exc:  # pragma: no cover - asserted below
             errors.append(exc)
         finally:
-            close_old_connections()
+            connections.close_all()
 
     owner = threading.Thread(target=run, name="owner")
     contender = threading.Thread(target=run, name="contender")
     owner.start()
-    assert copy_started.wait(timeout=2)
-    contender.start()
-    assert contender_checked.wait(timeout=2)
-    release_copy.set()
-    owner.join(timeout=3)
-    contender.join(timeout=3)
+    try:
+        assert copy_started.wait(timeout=2)
+        contender.start()
+        assert contender_checked.wait(timeout=2)
+    finally:
+        release_copy.set()
+        owner.join(timeout=10)
+        if contender.ident is not None:
+            contender.join(timeout=10)
+    assert not owner.is_alive() and not contender.is_alive()
 
     assert errors == []
     assert len(results) == 2
@@ -255,6 +262,7 @@ def test_evidence_presigned_upload_put_mode_signs_staging_key(monkeypatch, setti
                 "Bucket": settings.AWS_STORAGE_BUCKET_NAME,
                 "Key": "staging/evidence/1/issue/x",
                 "ContentType": "image/jpeg",
+                "ContentLength": 123,
             }
             assert ExpiresIn == settings.EVIDENCE_URL_TTL_SECONDS
             return "http://minio/evidence-put"
@@ -264,12 +272,12 @@ def test_evidence_presigned_upload_put_mode_signs_staging_key(monkeypatch, setti
         lambda: FakePublicClient(),
     )
 
-    upload = evidence_storage.presigned_upload("evidence/1/issue/x", "image/jpeg")
+    upload = evidence_storage.presigned_upload("evidence/1/issue/x", "image/jpeg", exact_bytes=123)
 
     assert upload == {
         "url": "http://minio/evidence-put",
         "method": "PUT",
-        "headers": {"Content-Type": "image/jpeg"},
+        "headers": {"Content-Type": "image/jpeg", "Content-Length": "123"},
     }
 
 def _block_object_exists(monkeypatch, module):

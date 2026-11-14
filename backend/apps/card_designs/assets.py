@@ -12,6 +12,7 @@ from django.db import transaction
 from rest_framework.exceptions import NotFound, ValidationError
 
 from apps.audit import services as audit
+from apps.makerspaces.limits import charge_upload, check_upload_headroom, check_upload_size
 
 from .images import ALLOWED, normalise
 from .models import CardDesignAsset
@@ -21,20 +22,21 @@ LIMITS = {"background": 8 * 1024 * 1024, "image": 8 * 1024 * 1024, "watermark": 
 EDGES = {"background": 2400, "image": 2400, "watermark": 1200}
 
 
-def presign(actor, makerspace, kind, content_type):
+@transaction.atomic
+def presign(actor, makerspace, kind, content_type, size=None):
     if kind not in LIMITS or content_type not in ALLOWED:
         raise ValidationError({"content_type": gettext("Upload a PNG, JPEG or WebP image.")})
+    check_upload_headroom(makerspace)
     asset_id = uuid.uuid4()
     row = CardDesignAsset.objects.create(asset_id=asset_id, makerspace=makerspace, kind=kind,
                                          object_key=f"card-assets/{makerspace.pk}/{asset_id.hex}",
                                          content_type=content_type, uploaded_by=actor)
-    return {"asset_id": str(asset_id), **presign_staging(row.object_key, content_type, LIMITS[kind])}
+    return {"asset_id": str(asset_id), **presign_staging(row.object_key, content_type, LIMITS[kind], **({"exact_bytes": size} if size is not None else {}))}
 
 
 def finalize(actor, makerspace, asset_id):
     from apps.tenant_migration.gate_runtime import assert_write_allowed
     assert_write_allowed(makerspace.pk)
-    from apps.makerspaces.limits_usage import add_storage
     row = CardDesignAsset.objects.filter(makerspace=makerspace, asset_id=asset_id).first()
     if row is None:
         raise NotFound()
@@ -43,10 +45,11 @@ def finalize(actor, makerspace, asset_id):
     data = take_staging(row.object_key, LIMITS[row.kind])
     if data is None:
         raise ValidationError({"asset_id": gettext("Upload not found; upload the image first.")})
+    check_upload_size(makerspace, len(data))
     png, width, height, mean = normalise(data, max_edge=EDGES[row.kind])
     with transaction.atomic():
         row = CardDesignAsset.objects.select_for_update().get(pk=row.pk)
-        add_storage(makerspace, len(png))  # charge before the write: a space at its cap leaves no orphan object
+        charge_upload(makerspace, len(png), object_key=row.object_key)
         put_bytes(row.object_key, png, "image/png")
         row.content_type, row.size_bytes, row.sha256 = "image/png", len(png), hashlib.sha256(png).hexdigest()
         row.width_px, row.height_px, row.mean_colour, row.ready = width, height, mean, True

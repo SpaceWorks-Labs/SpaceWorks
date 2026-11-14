@@ -10,6 +10,8 @@ from apps.audit import services as audit
 from apps.card_designs.serializers_openapi import PhotoUploadSerializer
 from apps.evidence.responses import storage_unavailable_response
 from apps.evidence.storage import StorageUnavailable
+from apps.hardware_requests.exceptions import ErrorSerializer
+
 from apps.makerspaces import member_card_storage
 from apps.makerspaces.member_card_serializers import (
     MemberCardOwnUpdateSerializer,
@@ -21,6 +23,11 @@ from apps.makerspaces.models import MemberCard
 from apps.makerspaces.profile_views import MemberProfileBaseView
 from apps.makerspaces.throttles import MemberImagePresignThrottle
 from apps.makerspaces.member_card_own_serializer import OwnMemberCardSerializer
+
+UPLOAD_ERRORS = {
+    400: OpenApiResponse(ErrorSerializer, description="Invalid upload; upload_size_required (declare size in bytes on PUT-only storage), upload_limit (file/headroom) or limit_reached (combined storage)."),
+    409: OpenApiResponse(ErrorSerializer, description="storage_public_images_bytes_quota_reached."),
+}
 
 ERRORS = {
     400: OpenApiResponse(description="Invalid input."),
@@ -67,20 +74,21 @@ class MemberCardPhotoView(OwnMemberCardMixin):
     throttle_classes = [MemberImagePresignThrottle]
 
     @extend_schema(tags=["Member profile"], summary="Create a card photo upload URL (staging only)",
-                   request=MemberCardPhotoPresignSerializer, responses={201: PhotoUploadSerializer, **ERRORS,
+                   request=MemberCardPhotoPresignSerializer, responses={201: PhotoUploadSerializer, **ERRORS, **UPLOAD_ERRORS,
                    503: OpenApiResponse(description="Storage unavailable.")})
     def post(self, request, makerspace_id):
         card = self.card(request, makerspace_id)
         serializer = MemberCardPhotoPresignSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         try:
-            payload = member_card_storage.presign_photo(card, serializer.validated_data["content_type"])
+            payload = member_card_storage.presign_photo(card, serializer.validated_data["content_type"], **({"size": serializer.validated_data.get("size")} if serializer.validated_data.get("size") is not None else {}))
         except StorageUnavailable:
             return storage_unavailable_response()
         return Response(payload, status=status.HTTP_201_CREATED)
 
     @extend_schema(tags=["Member profile"], summary="Attach an uploaded card photo (requires consent)",
-                   request=MemberCardPhotoFinalizeSerializer, responses={200: MemberCardSerializer, **ERRORS})
+                   request=MemberCardPhotoFinalizeSerializer, responses={200: MemberCardSerializer, **ERRORS, **UPLOAD_ERRORS,
+                   503: OpenApiResponse(description="Storage unavailable.")})
     def put(self, request, makerspace_id):
         card = self.card(request, makerspace_id)
         serializer = MemberCardPhotoFinalizeSerializer(data=request.data)

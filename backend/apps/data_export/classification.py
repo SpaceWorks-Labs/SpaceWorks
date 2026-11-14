@@ -134,6 +134,10 @@ from apps.tenant_migration.catalog_public_pages import EXPORTED_FIELDS as PAGE_F
 EXPORTED_MODEL_FIELDS.update(PAGE_FIELDS)
 OMITTED_MODELS.update(PAGE_OMITTED)
 EXPORTED_MODELS = frozenset(EXPORTED_MODEL_FIELDS)
+
+OMITTED_MODELS["integrations.DocumentEmailIntent"] = (
+    "Deployment-local document email reservation state; never portable dispatch permission."
+)
 from apps.tenant_migration.catalog_events_programme import (
     EXPORTED_FIELDS as PROGRAMME_FIELDS, EXTRA_FIELDS as PROGRAMME_EXTRA,
     OMITTED_MODELS as PROGRAMME_OMITTED,

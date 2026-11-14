@@ -64,6 +64,8 @@ def _duplicate_fenced(event, actor, attach_series, assets, prepared):
     # Standalone copies inherit neither scoped grants nor organizers. Only
     # tenant managers retain authority over the resulting draft.
     event_authority.require_tenant(actor, source.makerspace)
+    from apps.managed_hosting.space_quotas import check_space_quota
+    check_space_quota(source.makerspace, "events_monthly", adding=1)
     assets.watch("source_event", source)
     assets.watch("source_series", series)
     assets.watch("source_tickets", bounded_children(source.ticket_types.order_by("pk").values()))

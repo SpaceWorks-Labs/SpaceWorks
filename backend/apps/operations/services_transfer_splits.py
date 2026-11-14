@@ -1,8 +1,10 @@
 from django.utils.translation import gettext
+from django.db import transaction
 from rest_framework.exceptions import ValidationError
 
 from apps.inventory import availability
 from apps.inventory.models import InventoryProduct, TrackingMode
+from apps.makerspaces import limits
 
 
 def move_quantity_stock(source_product, destination_container, quantity):
@@ -63,7 +65,11 @@ def _destination_product(source_product, destination_container):
     return queryset.exclude(pk=source_product.pk).first()
 
 
+@transaction.atomic
 def _create_destination_product(source_product, destination_container):
+    # A split consumes a product slot just like an API create. Keep the shared
+    # makerspace lock through the insert, including direct calls to this helper.
+    limits.check_quota(source_product.makerspace, "products", adding=1)
     return InventoryProduct.objects.create(
         makerspace=source_product.makerspace,
         box=destination_container,

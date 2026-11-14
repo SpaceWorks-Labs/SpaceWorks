@@ -1,12 +1,15 @@
 from django import forms
 from django.conf import settings
 from django.contrib import admin, messages
+from django.db import transaction
 from django.utils.safestring import mark_safe
 from rest_framework.exceptions import ValidationError as DRFValidationError
 
 from apps.audit import services as audit
 from apps.evidence.storage import StorageUnavailable
 from apps.inventory import public_image_storage
+from apps.makerspaces.admin_upload_limits import validate_admin_uploads
+from apps.makerspaces.limits_uploads import charge_upload
 from django.utils.translation import gettext_lazy
 from django.utils.translation import gettext
 
@@ -37,6 +40,7 @@ class PublicImageAdminForm(forms.ModelForm):
                 )
             except DRFValidationError as exc:
                 raise forms.ValidationError(str(exc.detail)) from exc
+            validate_admin_uploads(cleaned.get("makerspace") or self.instance.makerspace, [upload])
         return cleaned
 
 
@@ -58,9 +62,11 @@ class PublicImageAdminMixin:
 
     def save_model(self, request, obj, form, change):
         old_key = ""
+        old_owner = obj if self.image_kind == "makerspace" else obj.makerspace
         if change and obj.pk:
             old = type(obj).objects.only(self.image_field).get(pk=obj.pk)
             old_key = getattr(old, self.image_field)
+            old_owner = old if self.image_kind == "makerspace" else old.makerspace
 
         upload = form.cleaned_data.get("image_upload")
         clear = form.cleaned_data.get("clear_image")
@@ -73,7 +79,9 @@ class PublicImageAdminMixin:
             )
             data = upload.read()
             try:
-                public_image_storage.put_bytes(key, data, upload.content_type)
+                with transaction.atomic():
+                    charge_upload(obj.makerspace, len(data))
+                    public_image_storage.put_bytes(key, data, upload.content_type)
             except StorageUnavailable:
                 # Django admin does not convert save_model() exceptions into form
                 # errors, so raising here would 500. Persist the object's other
@@ -88,8 +96,8 @@ class PublicImageAdminMixin:
             setattr(obj, self.image_field, key)
             super().save_model(request, obj, form, change)
             if old_key and old_key != key:
-                public_image_storage.delete_public_image_on_commit(
-                    obj if self.image_kind == "makerspace" else obj.makerspace,
+                public_image_storage.release_public_image_on_commit(
+                    old_owner,
                     old_key,
                 )
             audit.record(
@@ -104,8 +112,8 @@ class PublicImageAdminMixin:
             setattr(obj, self.image_field, "")
             super().save_model(request, obj, form, change)
             if old_key:
-                public_image_storage.delete_public_image_on_commit(
-                    obj if self.image_kind == "makerspace" else obj.makerspace,
+                public_image_storage.release_public_image_on_commit(
+                    old_owner,
                     old_key,
                 )
             audit.record(

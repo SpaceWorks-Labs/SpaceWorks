@@ -105,9 +105,9 @@ class CampaignListView(APIView):
         space = staff_space(request.user, makerspace_id, DONATIONS, record=True)
         payload = s.CampaignSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
-        from apps.managed_hosting.extra_quotas import check_extra_quota
+        from apps.managed_hosting.extra_quotas import check_extra_quota_locked
         with tenant_write(space.pk):
-            check_extra_quota(space, "donation_campaigns")  # decision 284: typed 409; gifts to existing ones never read it
+            check_extra_quota_locked(space, "donation_campaigns")  # decision 284: typed 409; gifts to existing ones never read it
             row = payload.save(makerspace=space, currency=space_currency(space), created_by=request.user)
             audit.record(request.user, "donation.campaign_created", makerspace=space, target=row,
                          meta={"campaign_id": row.pk, "kind": row.kind})
@@ -127,6 +127,13 @@ class CampaignDetailView(APIView):
         payload = s.CampaignSerializer(row, data=request.data, partial=True)
         payload.is_valid(raise_exception=True)
         with tenant_write(space.pk):
+            from apps.makerspaces.guards import require_feature_locked
+            from apps.managed_hosting.extra_quotas import check_extra_quota
+            space = require_feature_locked(space, DONATIONS)
+            row = scoped(request.user, DonationCampaign, makerspace_id).select_for_update().get(pk=pk)
+            if not row.is_active and payload.validated_data.get("is_active", False):
+                check_extra_quota(space, "donation_campaigns")
+            payload.instance = row
             row = payload.save()
             audit.record(request.user, "donation.campaign_updated", makerspace=space, target=row,
                          meta={"campaign_id": row.pk, "fields": sorted(payload.validated_data)})

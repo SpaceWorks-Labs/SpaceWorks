@@ -16,6 +16,9 @@ from .catalog_website import FIELD_NAMES as WEBSITE_FIELDS
 FIRST_PARTY_FIELD_NAMES.update(WEBSITE_FIELDS)
 FIRST_PARTY_FIELD_NAMES["makerspaces.Makerspace"] |= {"website_embed_origins"}
 FIRST_PARTY_FIELD_NAMES["integrations.EmailLog"] |= {"source_kind", "source_id", "source_metadata"}
+FIRST_PARTY_FIELD_NAMES["integrations.DocumentEmailIntent"] = frozenset(
+    "id makerspace document recipient intent_key state generation reason owner_kind owner_id email_log".split()
+)
 
 from .catalog_7c import LABEL_FIELD_NAMES
 
@@ -273,6 +276,8 @@ FIRST_PARTY_FIELD_NAMES["makerspaces.Makerspace"] |= {"loan_context_generations"
 
 from .catalog_booking_decision import FIELD_NAMES as BOOKING_DECISION_FIELDS
 FIRST_PARTY_FIELD_NAMES.update(BOOKING_DECISION_FIELDS)
+FIRST_PARTY_FIELD_NAMES["makerspaces.StorageQuotaReservation"] = frozenset(
+    "id makerspace object_key final_key staging_key bucket final_bucket storage_endpoint kind size_bytes converted cleaning released expires_at created_at".split())
 from .catalog_account_profile import FIELD_NAMES as ACCOUNT_PROFILE_FIELDS, EXTRA_FIELDS as ACCOUNT_PROFILE_EXTRA  # noqa: E402
 FIRST_PARTY_FIELD_NAMES.update(ACCOUNT_PROFILE_FIELDS)
 for _label, _names in ACCOUNT_PROFILE_EXTRA.items():

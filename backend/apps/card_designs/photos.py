@@ -14,6 +14,7 @@ from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
 from apps.audit import services as audit
+from apps.makerspaces.limits import charge_upload, check_upload_headroom, check_upload_size
 
 from .images import MAX_UPLOAD_BYTES, normalise
 from .models import CardPhotoRequest
@@ -33,28 +34,40 @@ def _valid_key(card, key):
         raise ValidationError({"object_key": gettext("Unknown upload.")})
 
 
-def presign(card, content_type):
+def presign(card, content_type, size=None):
     from .images import ALLOWED
     if content_type not in ALLOWED:
         raise ValidationError({"content_type": gettext("Upload a PNG, JPEG or WebP photo.")})
+    check_upload_headroom(card.makerspace)
     key = final_key(card)
-    return {"object_key": key, "content_type": content_type, **presign_staging(key, content_type, MAX_UPLOAD_BYTES)}
+    return {"object_key": key, "content_type": content_type, **presign_staging(key, content_type, MAX_UPLOAD_BYTES, **({"exact_bytes": size} if size is not None else {}))}
 
 
-def attach_bytes(actor, kind, card, data, *, consent):
+def attach_bytes(actor, kind, card, data, *, consent, is_upload=True, upload_key=None):
     """Store already-validated bytes as the card's photo; frees the old object."""
     from apps.tenant_migration.gate_runtime import assert_write_allowed
     assert_write_allowed(card.makerspace_id)
     from apps.makerspaces.limits_usage import add_storage, free_storage
     if not consent:
         raise ValidationError({"consent": gettext("A photo needs the holder's consent to be stored.")})
+    if is_upload:
+        check_upload_size(card.makerspace, len(data))
     png, _w, _h, _mean = normalise(data, max_edge=1200, keep_alpha=False)
     key = final_key(card)
+    if upload_key:
+        from apps.makerspaces.storage_reservations import record_final_key
+        key = record_final_key(upload_key, key) or key
+        if upload_key.startswith("card-photo-batches/"):
+            from .photo_batch import consume_file
+            consume_file(upload_key)
     with transaction.atomic():
         row = type(card).objects.select_for_update().get(pk=card.pk)
         old_key, old_size = row.photo_object_key, row.photo_size_bytes or 0
         # Charge first: a space at its storage cap is refused before any bytes reach the bucket (no orphan object).
-        add_storage(row.makerspace, len(png))
+        if is_upload:
+            charge_upload(row.makerspace, len(png), object_key=upload_key, final_key=key)
+        else:
+            add_storage(row.makerspace, len(png))
         put_bytes(key, png, "image/png")
         transaction.on_commit(lambda: _purge_stale_cutout(kind, row))
         row.photo_object_key, row.photo_content_type, row.photo_size_bytes = key, "image/png", len(png)
@@ -84,7 +97,7 @@ def finalize(actor, kind, card, *, object_key, consent):
     data = take_staging(object_key, MAX_UPLOAD_BYTES)
     if data is None:
         raise ValidationError({"object_key": gettext("Upload not found; upload the photo first.")})
-    return attach_bytes(actor, kind, card, data, consent=consent)
+    return attach_bytes(actor, kind, card, data, consent=consent, upload_key=object_key)
 
 
 def remove(actor, kind, card):

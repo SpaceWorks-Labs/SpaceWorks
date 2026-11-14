@@ -4,8 +4,9 @@ Two seams, both no-ops when the space has no limit (nothing set; own and self-ho
 
 * ``check_upload_headroom`` at PRESIGN: refuse before the browser uploads anything when the
   storage budget is already spent, or when a declared size is over the per-file cap.
-* ``charge_upload`` at FINALIZE: the real object size must fit the per-file cap, then the bytes
-  are charged through ``add_storage`` (which keeps the locked storage-budget check).
+  The storage presigner also acquires durable debt through ``storage_reservations``.
+* ``charge_upload`` at FINALIZE: convert the key's reservation in the attachment transaction;
+  the real object size must fit both class and combined budgets before ``add_storage``.
 
 Only member/staff UPLOADS use these. Server-made objects (exports, restores, rendered cards,
 certificate reservations) keep calling ``add_storage`` directly: a per-file cap is about what a
@@ -13,6 +14,7 @@ person may upload, not about what the platform writes for them.
 """
 
 from django.utils.translation import gettext
+from django.db import transaction
 from rest_framework import serializers
 
 
@@ -21,7 +23,7 @@ def _mib(size_bytes):
 
 
 def _refuse(message):
-    raise serializers.ValidationError({"limit": message, "code": "upload_limit"}, code="limit_reached")
+    raise serializers.ValidationError({"limit": message, "detail": message, "code": "upload_limit"}, code="limit_reached")
 
 
 def upload_cap(makerspace):
@@ -59,7 +61,8 @@ def check_upload_headroom(makerspace, size_bytes=None):
 STORAGE_CLASS_KEYS = {"evidence": "storage_evidence_bytes", "public_image": "storage_public_images_bytes"}
 
 
-def charge_upload(makerspace, size_bytes, kind="public_image"):
+@transaction.atomic
+def charge_upload(makerspace, size_bytes, kind="public_image", *, object_key=None, final_key=None):
     """Finalize-time: per-file cap, then the storage class's own limit, then the locked storage charge.
 
     ``kind`` picks the split byte limit (decision 284 addendum): ``evidence`` for evidence photos,
@@ -70,8 +73,15 @@ def charge_upload(makerspace, size_bytes, kind="public_image"):
     every test that replaces ``apps.makerspaces.limits.add_storage``) keeps working.
     """
     from apps.makerspaces import limits
+    from apps.makerspaces.models import Makerspace
 
+    # Refresh usage under the creators' shared lock before checking either class.
+    # A caller can finalize multiple uploads using the same stale space instance.
+    makerspace = Makerspace.objects.select_for_update(no_key=True).get(pk=makerspace.pk)
     check_upload_size(makerspace, size_bytes)
+    if object_key:
+        from .storage_reservations import convert
+        convert(makerspace, object_key, size_bytes, kind, final_key)
     from apps.managed_hosting.extra_quotas import check_storage_class
     check_storage_class(makerspace, STORAGE_CLASS_KEYS[kind], size_bytes)
     limits.add_storage(makerspace, size_bytes)

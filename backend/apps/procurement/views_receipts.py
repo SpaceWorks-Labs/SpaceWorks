@@ -12,6 +12,8 @@ from apps.admin_api.permissions import IsActiveStaff
 from apps.audit import services as audit
 from apps.evidence.responses import storage_unavailable_response
 from apps.evidence.storage import StorageUnavailable
+from apps.makerspaces import limits
+from apps.hardware_requests.exceptions import ErrorSerializer
 from apps.procurement import access, storage
 from apps.procurement.models import ToBuyItem, ToBuyReceipt
 from apps.procurement.serializers import (
@@ -22,6 +24,12 @@ from apps.procurement.serializers import (
     ToBuyReceiptUrlSerializer,
 )
 from apps.procurement.views_common import PROCUREMENT_ERROR_RESPONSES, require_item_switch
+
+UPLOAD_ERRORS = {
+    **PROCUREMENT_ERROR_RESPONSES,
+    400: OpenApiResponse(ErrorSerializer, description="Invalid upload; upload_size_required (declare size in bytes on PUT-only storage), upload_limit (file/headroom) or limit_reached (combined storage)."),
+    409: OpenApiResponse(ErrorSerializer, description="storage_public_images_bytes_quota_reached."),
+}
 
 
 def resolve_item(user, pk):
@@ -75,7 +83,7 @@ class ToBuyReceiptPresignView(APIView):
             201: ToBuyReceiptUploadResponseSerializer,
             400: OpenApiResponse(description="Invalid receipt upload request."),
             503: OpenApiResponse(description="Receipt storage is unavailable."),
-            **PROCUREMENT_ERROR_RESPONSES,
+            **UPLOAD_ERRORS,
         },
     )
     def post(self, request, pk, *args, **kwargs):
@@ -86,8 +94,9 @@ class ToBuyReceiptPresignView(APIView):
         data = serializer.validated_data
         ext = storage.ext_for(data["content_type"], data["filename"])
         object_key = storage.receipt_object_key(item.makerspace_id, ext)
+        limits.check_upload_headroom(item.makerspace)
         try:
-            upload = storage.presigned_upload(object_key, data["content_type"])
+            upload = storage.presigned_upload(object_key, data["content_type"], **({"exact_bytes": serializer.validated_data.get("size")} if serializer.validated_data.get("size") is not None else {}))
         except StorageUnavailable:
             return storage_unavailable_response()
         return Response(
@@ -116,7 +125,7 @@ class ToBuyReceiptListCreateView(APIView):
             201: ToBuyReceiptSerializer,
             400: OpenApiResponse(description="Invalid or duplicate procurement receipt."),
             503: OpenApiResponse(description="Receipt storage is unavailable."),
-            **PROCUREMENT_ERROR_RESPONSES,
+            **UPLOAD_ERRORS,
         },
     )
     def post(self, request, pk, *args, **kwargs):
@@ -128,24 +137,23 @@ class ToBuyReceiptListCreateView(APIView):
         if ToBuyReceipt.objects.filter(object_key=object_key).exists():
             raise ValidationError({"object_key": gettext("This receipt is already attached.")})
         try:
-            storage.finalize_receipt_upload(item, object_key)
+            result = storage.finalize_receipt_upload(item, object_key)
         except StorageUnavailable:
             return storage_unavailable_response()
         try:
             with transaction.atomic():
+                limits.charge_upload(item.makerspace, result.size, object_key=object_key)
                 receipt = ToBuyReceipt.objects.create(
                     to_buy_item=item,
                     object_key=object_key,
                     uploaded_by=request.user,
                 )
+                audit.record(
+                    request.user, "procurement.receipt_added",
+                    makerspace=item.makerspace, target=receipt,
+                )
         except IntegrityError as exc:
             raise ValidationError({"object_key": gettext("This receipt is already attached.")}) from exc
-        audit.record(
-            request.user,
-            "procurement.receipt_added",
-            makerspace=item.makerspace,
-            target=receipt,
-        )
         return Response(
             ToBuyReceiptSerializer(receipt).data,
             status=status.HTTP_201_CREATED,

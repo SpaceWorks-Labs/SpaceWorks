@@ -16,8 +16,8 @@ from apps.audit import services as audit
 
 from . import cutouts, photo_batch_holders as roster
 from .models_cutout import CardPhotoBatch, CardPhotoBatchItem
-from .photo_batch import ATTACH
-from .storage import delete_quietly, get_bytes
+from .photo_batch import ATTACH, _drop_objects, discard_file
+from .storage import get_bytes
 
 logger = logging.getLogger(__name__)
 CHUNK = 10
@@ -26,22 +26,26 @@ CHUNK = 10
 def _member_card_for(kind, card):
     if kind != "staff_card":
         return card
+    if card.membership_id is None:
+        return None
     from apps.makerspaces.models import MemberCard
-    return MemberCard.objects.filter(membership_id=card.membership_id, makerspace_id=card.makerspace_id,
+    # A staff card references the staff track; MemberCard references the same
+    # person's community track. Membership ids can never be equal after U-A1.
+    return MemberCard.objects.filter(membership__user_id=card.membership.user_id, makerspace_id=card.makerspace_id,
                                      revoked_at__isnull=True).first()
 
 
-def _attach(actor, kind, card, data):
+def _attach(actor, kind, card, data, upload_key):
     """-> the card kind and row that now hold the photo."""
     from . import photos
     if kind == "event_card":
-        photos.attach_bytes(actor, "event_card", card, data, consent=True)
+        photos.attach_bytes(actor, "event_card", card, data, consent=True, upload_key=upload_key)
         return kind, card
     from apps.makerspaces.member_card_storage import replace_photo_bytes
     member = _member_card_for(kind, card)
     if member is None:
         raise LookupError("no_member_card")
-    replace_photo_bytes(actor, member, data)
+    replace_photo_bytes(actor, member, data, upload_key=upload_key)
     photos.resolve_requests("member_card", member)
     return "member_card", member
 
@@ -54,7 +58,7 @@ def _apply_item(batch, space, event, item):
     if not data:
         return "photo_missing"
     try:
-        okind, ocard = _attach(batch.created_by, batch.kind, card, data)
+        okind, ocard = _attach(batch.created_by, batch.kind, card, data, item.file_key)
     except LookupError as exc:
         return str(exc)
     audit.record(batch.created_by, "card_photo_batch.item_applied", makerspace=space, target=batch,
@@ -83,9 +87,7 @@ def _finish(batch):
     batch.skipped_count = items.filter(state="skipped").count()
     batch.state, batch.applied_at = CardPhotoBatch.State.DONE, timezone.now()
     batch.save()
-    for item in items.exclude(file_key=""):
-        delete_quietly(item.file_key)
-    items.exclude(file_key="").update(file_key="")
+    _drop_objects(batch)
     audit.record(batch.created_by, "card_photo_batch.finished", makerspace=batch.makerspace, target=batch,
                  meta={"batch_id": batch.pk, "holder_kind": batch.kind, "applied": batch.applied_count,
                        "skipped": batch.skipped_count, "failed": batch.failed_count})
@@ -120,8 +122,7 @@ def apply_chunk(batch_id):
         item.state = CardPhotoBatchItem.State.APPLIED if applied else CardPhotoBatchItem.State.FAILED
         item.error_code = problem
         item.save(update_fields=["state", "error_code"])
-        if item.file_key and applied:
-            delete_quietly(item.file_key)
+        if item.file_key and applied and discard_file(item.file_key):
             item.file_key = ""
             item.save(update_fields=["file_key"])
     more = batch.items.filter(state="pending").exists()

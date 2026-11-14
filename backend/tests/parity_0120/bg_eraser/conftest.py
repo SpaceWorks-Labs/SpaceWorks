@@ -56,7 +56,17 @@ def card_test_host(settings):
 def store(monkeypatch):
     """In-memory private storage for every module that touches card objects."""
     objects = {}
+    from types import SimpleNamespace
     from apps.card_designs import cutouts, photo_batch, photo_batch_apply, storage
+    from apps.evidence import storage as evidence_storage
+
+    def delete_versions(client, *, bucket, key):
+        assert bucket == evidence_storage.settings.AWS_STORAGE_BUCKET_NAME
+        objects.pop(key, None)
+        return SimpleNamespace(absence_confirmed=True)
+
+    monkeypatch.setattr(evidence_storage, "_client", lambda: object())
+    monkeypatch.setattr("apps.object_storage.delete_all_versions", delete_versions)
 
     def put(key, data, content_type):
         objects[key] = data

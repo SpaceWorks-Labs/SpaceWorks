@@ -84,7 +84,7 @@ def test_managed_notification_cap_blocks_transport_and_preserves_counter(
 
 
 @pytest.mark.parametrize("channel", CHANNELS)
-def test_self_host_notification_delivery_does_not_consume_managed_quota(
+def test_self_host_notification_delivery_honors_explicit_quota(
     settings, transports, channel,
 ):
     settings.PLATFORM_DOMAIN_SUFFIX = ""
@@ -92,9 +92,11 @@ def test_self_host_notification_delivery_does_not_consume_managed_quota(
 
     logs = [dispatch(space, channel)[0] for _ in range(2)]
 
-    assert [log.status for log in logs] == [NotificationDeliveryStatus.SENT] * 2
-    assert transports == [channel, channel]
-    assert not DailyNotificationCounter.objects.filter(makerspace=space).exists()
+    # Decision 281: explicit overrides apply on self-host too.
+    assert [log.status for log in logs] == [NotificationDeliveryStatus.SENT, NotificationDeliveryStatus.FAILED]
+    assert logs[1].error == f"Daily {channel} notification limit reached for this space."
+    assert transports == [channel]
+    assert DailyNotificationCounter.objects.get(makerspace=space, channel=channel).count == 1
 
 
 @pytest.mark.parametrize("channel", CHANNELS)

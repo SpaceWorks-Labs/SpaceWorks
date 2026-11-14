@@ -60,9 +60,13 @@ def build(space, reminder, now, local_tz):
 def dispatch(space, reminder, message, now, local_tz):
     from .models import StocktakeSession
     from apps.notifications.emit import emit_notification
+    from apps.makerspaces.models import Makerspace
+    from apps.managed_hosting.extra_quotas import check_extra_quota
+    space = Makerspace.objects.select_for_update(no_key=True).get(pk=space.pk)
     row = current(space, reminder, lock=True)
     if row is None:
         return None
+    check_extra_quota(space, "stocktake_sessions_monthly")
     values = session_policy(space, {"blind": row.blind})
     session = StocktakeSession.objects.create(makerspace=space, container=row.container,
                                               notes=row.name, **values)

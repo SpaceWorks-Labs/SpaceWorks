@@ -12,6 +12,7 @@ What a quota may and may not do (docs/INVARIANTS.md, "Quotas never block settlin
   rail, or offline), refunds, or recording a debt in the ledger (``payments.create_payment`` is not gated).
 """
 from datetime import UTC, datetime
+from decimal import Decimal
 
 from django.utils.translation import gettext
 from rest_framework.exceptions import APIException
@@ -96,7 +97,7 @@ def quota_used(makerspace, key, currency=None):
         return rows.count()
     if currency:
         rows = rows.filter(currency=currency.lower())
-    return int(rows.aggregate(t=Sum("amount"))["t"] or 0)
+    return rows.aggregate(t=Sum("amount"))["t"] or Decimal("0")
 
 
 def check_space_quota(makerspace, key, *, adding=1, currency=None):
@@ -115,7 +116,7 @@ def require_payment_capacity(makerspace, amount, currency):
     if makerspace is None or not ((makerspace.resource_limit_overrides or {}) or plans_enabled() or any_default()):
         return
     check_space_quota(makerspace, "payments_monthly_count")
-    check_space_quota(makerspace, "payments_monthly_amount", adding=int(-(-amount // 1)) if amount else 0,
+    check_space_quota(makerspace, "payments_monthly_amount", adding=Decimal(str(amount or 0)),
                       currency=currency)
 
 

@@ -18,7 +18,7 @@ from apps.audit import services as audit
 from apps.makerspaces.platform import feature_enabled
 
 from .errors import ShopRefused, out_of_stock
-from .gates import require_charges, write_allowed
+from .gates import require_selling, write_allowed
 from .models import ShopCashSession, ShopOrder
 
 DESK_METHODS = ("cash", "upi", "card_machine")
@@ -75,7 +75,7 @@ def pos_sale(space, *, actor, lines, member=None, method="cash", reference="", r
     with transaction.atomic():
         space = require_module_locked(space, "shop")
         write_allowed(space)
-        require_charges(space)
+        require_selling(space)
         basket = priced_basket(space, lines, person=member, public=False, lock=True)
         verify_digest(basket.quote, digest or None)
         session = _session_for(space, method)

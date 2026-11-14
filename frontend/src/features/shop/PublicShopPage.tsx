@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import { PublicLayout } from "../../components/layouts";
 import { PageMetadata } from "../../components/PageMetadata";
 import { Pagination, type QueryState } from "../../components/ui";
-import { chargesOn } from "../../lib/charges";
 import { ShopCartDrawer } from "./ShopCartDrawer";
 import { fetchProducts, fetchShop, shopErrorMessage, shopKeys } from "./shopApi";
 import { ShopProductCard } from "./ShopProductCard";
@@ -18,8 +17,7 @@ const PAGE_SIZE = 24;
 export function PublicShopPage() {
   const space = useShopSpace();
   const cart = useShopCart(space.slug);
-  // #184: with shop charges off the server sells nothing, so no prices, basket or checkout show.
-  const selling = chargesOn(space.bootstrap, "shop");
+  const selling = space.bootstrap?.charges_tracked?.shop !== false;
   const [category, setCategory] = useState("");
   const [page, setPage] = useState(1);
   const [open, setOpen] = useState(false);
@@ -60,6 +58,6 @@ export function PublicShopPage() {
           pageSize={PAGE_SIZE} onChange={setPage} disabled={products.isFetching} />
       </div>
     </PublicLayout>
-    {shop.data && selling ? <ShopCartDrawer open={open} onClose={() => setOpen(false)} slug={space.slug} shop={shop.data} cart={cart} path={space.path} /> : null}
+    {selling && shop.data ? <ShopCartDrawer open={open} onClose={() => setOpen(false)} slug={space.slug} shop={shop.data} cart={cart} path={space.path} /> : null}
   </div>;
 }

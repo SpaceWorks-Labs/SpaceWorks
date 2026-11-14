@@ -6,12 +6,14 @@ from apps.boxes.models import QrCode
 from apps.boxes.qr_lookup import label_value
 from apps.boxes.qr_render import render_qr_label_svg
 from apps.inventory.models import InventoryAsset
+from apps.makerspaces.admin_limits import CapacityAdminMixin
 from config.admin_access import SuperuserOnlyModelAdmin
 from django.utils.translation import gettext_lazy
 
 
 @admin.register(InventoryAsset)
-class InventoryAssetAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
+class InventoryAssetAdmin(CapacityAdminMixin, SuperuserOnlyModelAdmin, ModelAdmin):
+    quota_key = "assets"
     list_display = ("asset_tag", "product", "makerspace", "box", "status", "updated_at")
     list_filter = ("makerspace", "status")
     search_fields = ("asset_tag", "serial_number", "product__name")

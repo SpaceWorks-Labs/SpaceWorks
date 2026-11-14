@@ -124,11 +124,14 @@ def test_inventory_image_post_supports_put_presign_mode(monkeypatch, settings):
     product = make_product(makerspace)
 
     class FakePublicClient:
+        from types import SimpleNamespace
+        meta = SimpleNamespace(endpoint_url="http://minio")
         def generate_presigned_url(self, operation, Params, ExpiresIn):
             assert operation == "put_object"
             assert Params["Bucket"] == "catalog-public"
             assert Params["Key"].startswith(f"staging/items/{makerspace.id}/")
             assert Params["ContentType"] == "image/jpeg"
+            assert Params["ContentLength"] == 5
             assert ExpiresIn == 99
             return "http://minio/public-put"
 
@@ -136,13 +139,13 @@ def test_inventory_image_post_supports_put_presign_mode(monkeypatch, settings):
 
     response = authenticated_client(user).post(
         image_url(product),
-        {"content_type": "image/jpeg", "filename": "photo.jpeg"},
+        {"content_type": "image/jpeg", "filename": "photo.jpeg", "size": 5},
         format="json",
     )
 
     assert response.status_code == 201
     assert response.data["method"] == "PUT"
-    assert response.data["headers"] == {"Content-Type": "image/jpeg"}
+    assert response.data["headers"] == {"Content-Type": "image/jpeg", "Content-Length": "5"}
     assert response.data["url"] == "http://minio/public-put"
 
 

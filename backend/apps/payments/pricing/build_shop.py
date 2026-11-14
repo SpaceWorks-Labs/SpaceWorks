@@ -19,7 +19,8 @@ def label_for(variant):
 
 def shop_lines(card, lines):
     item = component("shop", "item")
-    return [line(item, currency=card.currency, quantity=quantity, unit_amount=variant.price, rate_source="item",
+    return [line(item, currency=card.currency, quantity=quantity,
+                 unit_amount=variant.price, rate_source="item",
                  target={"type": "shop_variant", "id": variant.pk, "label": label_for(variant)},
                  detail={"product_id": variant.product_id, "sku": variant.sku})
             for variant, quantity in lines]

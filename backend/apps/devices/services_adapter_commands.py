@@ -43,6 +43,11 @@ def enqueue(actor, binding_id, capability, command, params):
         device = Device.objects.select_for_update().get(pk=binding.device_id)
         if device.status != Device.Status.ACTIVE:
             raise AdapterError("adapter_unavailable", "The adapter is not active.", status_code=409)
+        if command == "snapshot":
+            # Generic command enqueue is also a snapshot creator, independent of
+            # the camera convenience endpoint. Both share the tenant fence.
+            from apps.managed_hosting.extra_quotas import check_extra_quota
+            check_extra_quota(makerspace, "adapter_snapshots")
         now = timezone.now()
         row = AdapterCommand.objects.create(
             makerspace=makerspace, device=device, binding=binding, device_key_version=device.key_version,

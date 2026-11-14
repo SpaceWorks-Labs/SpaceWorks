@@ -46,13 +46,16 @@ def _check_platform_allowance(kind, card, platform):
 def request_pass(actor, kind, card, platform):
     from ..jobs import enqueue
     from ..switches import wallet_on
-    if platform not in configured_platforms(card.makerspace_id) or not wallet_on(kind, card.makerspace):
-        raise ValidationError({"platform": gettext("Wallet passes are not available here.")})
-    _check_platform_allowance(kind, card, platform)
-    if not WalletPass.objects.filter(**{kind: card}, platform=platform).exists():
-        from apps.managed_hosting.extra_quotas import check_extra_quota
-        check_extra_quota(card.makerspace, "wallet_passes")  # decision 284: only a NEW pass counts
+    from apps.makerspaces.models import Makerspace
     with transaction.atomic():
+        space = Makerspace.objects.select_for_update(no_key=True).get(pk=card.makerspace_id)
+        card.makerspace = space
+        if platform not in configured_platforms(space.pk) or not wallet_on(kind, space):
+            raise ValidationError({"platform": gettext("Wallet passes are not available here.")})
+        _check_platform_allowance(kind, card, platform)
+        if not WalletPass.objects.filter(**{kind: card}, platform=platform).exists():
+            from apps.managed_hosting.extra_quotas import check_extra_quota
+            check_extra_quota(space, "wallet_passes")  # decision 284: only a NEW pass counts
         row, created = WalletPass.objects.get_or_create(
             **{kind: card}, platform=platform,
             defaults={"makerspace_id": card.makerspace_id, "serial": secrets.token_hex(16), "auth_token_digest": ""})
@@ -61,25 +64,44 @@ def request_pass(actor, kind, card, platform):
             creds = apple_for(card.makerspace_id) if platform == "apple" else None
             row.pass_type_id = creds.pass_type_id if creds else ""
             row.save(update_fields=["auth_token_digest", "pass_type_id"])
-        job, _ = enqueue(actor, card.makerspace, CardJob.Kind.WALLET_ISSUE, scope=SCOPES[kind], targets=[card.pk],
+        job, _ = enqueue(actor, space, CardJob.Kind.WALLET_ISSUE, scope=SCOPES[kind], targets=[card.pk],
                          params={}, revision=f"{platform}:{row.serial}:{row.generation}")
-        CardJob.objects.filter(pk=job.pk).update(params={"platform": platform, "pass_id": row.pk})
+        job.params = {"platform": platform, "pass_id": row.pk}
+        CardJob.objects.filter(pk=job.pk).update(params=job.params)
     return row, job
 
 
+@transaction.atomic
 def issue_from_job(job):
     from apps.tenant_migration.gate_runtime import assert_write_allowed
     assert_write_allowed(job.makerspace_id)
+    from apps.makerspaces.models import Makerspace
+    space = Makerspace.objects.select_for_update(no_key=True).get(pk=job.makerspace_id)
     from ..jobs import holder_kind
     from ..storage import put_bytes
-    row = WalletPass.objects.filter(pk=(job.params or {}).get("pass_id")).first()
+    row = WalletPass.objects.select_for_update().filter(pk=(job.params or {}).get("pass_id"), makerspace=space).first()
     if row is None:
         return False
     kind = holder_kind(job)
     card = getattr(row, kind)
+    card.makerspace = space
     from ..switches import wallet_on
     if not wallet_on(kind, card.makerspace):
         return False  # decision 329: switched off after the request, so no new pass is built
+    from .credentials import google_for
+    creds = apple_for(space.pk) if row.platform == "apple" else google_for(space.pk)
+    if getattr(creds, "source", "") == "platform":
+        from apps.audit.models import AuditLog
+        from apps.managed_hosting.platform_limits import platform_refusal
+        # A queued row has never consumed signing capacity. Only a durable
+        # successful issuance (with either credential source) earns reissue status.
+        already_issued = AuditLog.objects.filter(makerspace=space, action="wallet_pass.issued",
+            meta__pass_id=row.pk).exists()
+        if not already_issued:
+            refusal = platform_refusal(space, "platform_wallet_monthly")
+            if refusal:
+                raise ValidationError({"platform": refusal, "code": "platform_wallet_limit_reached"},
+                                      code="platform_wallet_limit_reached")
     content = pass_content(kind, card)
     if row.platform == "apple":
         from .apple import build_pkpass
@@ -91,8 +113,6 @@ def issue_from_job(job):
         job.params = {**job.params, "save_url": save_link(row, content)}
         CardJob.objects.filter(pk=job.pk).update(params=job.params)
     WalletPass.objects.filter(pk=row.pk).update(last_updated_at=timezone.now(), content_digest=content_digest(content))
-    from .credentials import google_for
-    creds = apple_for(job.makerspace_id) if row.platform == "apple" else google_for(job.makerspace_id)
     # `source` ("platform" when signed with the operator's certificates) is what `platform_wallet_monthly`
     # counts: only platform-signed passes, never a space's own certificates.
     audit.record(job.requested_by, "wallet_pass.issued", makerspace=job.makerspace, target=row,

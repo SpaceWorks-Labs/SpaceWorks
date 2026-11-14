@@ -2,10 +2,12 @@
 
 from django.utils.translation import gettext
 from django.shortcuts import get_object_or_404
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import serializers, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
+from apps.hardware_requests.exceptions import ErrorSerializer
 
 from apps.admin_api.permissions import IsActiveStaff
 from apps.evidence.storage import StorageUnavailable
@@ -36,7 +38,16 @@ class MachineTypeDocumentSerializer(serializers.ModelSerializer):
         fields = ["id", "title", "original_filename", "content_type", "size_bytes", "member_visible", "created_at"]
 
 
+UPLOAD_ERRORS = {
+    400: OpenApiResponse(ErrorSerializer, description="Invalid upload; upload_size_required (declare size in bytes on PUT-only storage), upload_limit (file/headroom) or limit_reached (combined storage)."),
+    409: OpenApiResponse(ErrorSerializer, description="storage_public_images_bytes_quota_reached."),
+    503: OpenApiResponse(ErrorSerializer, description="Machine document storage is unavailable."),
+}
+
+
 class TypeDocumentPresignSerializer(serializers.Serializer):
+    """Declare size in bytes; PUT-only storage requires it (400 upload_size_required)."""
+    size = serializers.IntegerField(required=False, min_value=1)
     filename = serializers.CharField(max_length=255)
     content_type = serializers.CharField(max_length=100)
 
@@ -102,7 +113,7 @@ class TypeDocumentsView(APIView):
         return Response(MachineTypeDocumentSerializer(rows, many=True).data)
 
     @extend_schema(tags=TAGS, summary="Attach an uploaded document to a machine type (counts against storage)",
-                   request=TypeDocumentAttachSerializer, responses={201: MachineTypeDocumentSerializer, **ERRORS})
+                   request=TypeDocumentAttachSerializer, responses={201: MachineTypeDocumentSerializer, **ERRORS, **UPLOAD_ERRORS})
     def post(self, request, makerspace_id, type_id):
         space, machine_type = space_and_type(request.user, makerspace_id, type_id, write=True)
         payload = TypeDocumentAttachSerializer(data=request.data)
@@ -118,14 +129,14 @@ class TypeDocumentPresignView(APIView):
     permission_classes = [IsActiveStaff]
 
     @extend_schema(tags=TAGS, summary="Presign a private upload for a machine type document",
-                   request=TypeDocumentPresignSerializer, responses={201: TypeDocumentPresignResultSerializer, **ERRORS})
+                   request=TypeDocumentPresignSerializer, responses={201: TypeDocumentPresignResultSerializer, **ERRORS, **UPLOAD_ERRORS})
     def post(self, request, makerspace_id, type_id):
         space, _machine_type = space_and_type(request.user, makerspace_id, type_id, write=True)
         payload = TypeDocumentPresignSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
         try:
             object_key, upload = type_documents.presign(space, payload.validated_data["content_type"],
-                                                        payload.validated_data["filename"])
+                                                        payload.validated_data["filename"], **({"size": payload.validated_data.get("size")} if payload.validated_data.get("size") is not None else {}))
         except StorageUnavailable:
             return _unavailable()
         return Response({"object_key": object_key, "upload": upload}, status=status.HTTP_201_CREATED)

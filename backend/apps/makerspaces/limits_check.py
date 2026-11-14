@@ -54,5 +54,5 @@ def check_quota(makerspace, key, *, adding=1, count_monthly=True, monthly_adding
             "ask the operator to raise it or self-host."
         ) % {"resource": resource}
         raise serializers.ValidationError(
-            {"limit": message}, code="limit_reached"
+            {"limit": message, "detail": message, "code": "limit_reached"}, code="limit_reached"
         )

@@ -21,7 +21,6 @@ from apps.admin_api.serializers_notification_destinations import (
     NotificationDestinationWriteSerializer,
 )
 from apps.audit import services as audit
-from apps.integrations.dispatch_channels import channel_module_blocks
 from apps.admin_api.notification_scope import ScopeTargetError, apply_scope
 from apps.integrations.models_destinations import NotificationDestination
 from apps.integrations.webhook_secrets import clear_previous, rotate_signing_secret
@@ -65,6 +64,7 @@ class NotificationDestinationListView(APIView):
         responses={
             201: NotificationDestinationSerializer,
             400: OpenApiResponse(description="Invalid destination."),
+            **errors(401, 403, 404, 409),
         },
     )
     def post(self, request, makerspace_id, *args, **kwargs):
@@ -75,11 +75,11 @@ class NotificationDestinationListView(APIView):
 
         # A room on a channel whose module is uninstalled would accept the credential and
         # then SKIP every send — the same reason the matrix omits that column entirely.
-        if channel_module_blocks(makerspace, data["channel"]):
-            return Response(
-                {"detail": gettext('The {value} module is not installed.').format(value=data['channel'])},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        from apps.integrations.models import CHANNEL_MODULE_KEYS
+        from apps.makerspaces.guards import require_module
+        channel_key = CHANNEL_MODULE_KEYS.get(data["channel"])
+        if channel_key:
+            require_module(makerspace, channel_key)
 
         with transaction.atomic():
             if data["channel"] == ChatNotificationChannel.WEBHOOK:

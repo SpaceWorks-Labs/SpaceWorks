@@ -12,7 +12,7 @@ from django.utils import timezone
 from .models_page_cleanup import PublicPageObjectCleanup as Cleanup
 
 
-def reserve(page, key, size, copies):
+def reserve(page, key, size, copies, *, upload=False):
     """Persist quota debt under the venue lock, without charging the counter yet.
 
     The random final key is the write claim token. Cleanup increments attempts
@@ -29,7 +29,10 @@ def reserve(page, key, size, copies):
     # Reuse the limit policy, but leave the counter unchanged. Independently
     # committed unaccounted intents are the reservation until domain finalize.
     with transaction.atomic():
-        limits.add_storage(page.makerspace, size)
+        if upload:
+            limits.charge_upload(page.makerspace, size)
+        else:
+            limits.add_storage(page.makerspace, size)
         transaction.set_rollback(True)
     alias = router.db_for_write(Cleanup)
     source = connections[alias]
@@ -73,7 +76,10 @@ def finalize(plan):
     # this flag and the actual charge roll back if any graph finalization fails.
     job.storage_accounted = True
     job.save(update_fields=["storage_accounted"])
-    limits.add_storage(plan["page"].makerspace, job.size_bytes)
+    if "data" in plan:
+        limits.charge_upload(plan["page"].makerspace, job.size_bytes)
+    else:
+        limits.add_storage(plan["page"].makerspace, job.size_bytes)
     if _event_cover(job):
         # The legacy public-image lifecycle owns quota release after attachment.
         # Keep a late-write repair receipt, but never credit that counter again.

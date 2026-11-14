@@ -23,7 +23,7 @@ from apps.boxes.serializers_external import (
 from apps.inventory import availability
 from apps.inventory.models import InventoryAsset, InventoryProduct, TrackingMode
 from apps.makerspaces import limits
-from apps.makerspaces.guards import require_module
+from apps.makerspaces.guards import require_module, require_module_locked
 from apps.openapi_errors import errors
 
 
@@ -65,6 +65,7 @@ class ExternalQrAssignView(APIView):
         if data.get("asset_id") or data.get("create_asset"):
             require_module(makerspace, "asset_units")  # unit labels are an asset_units surface
         with transaction.atomic():
+            makerspace = require_module_locked(makerspace, "qr_management")
             if data.get("create_product"):
                 target_type, target = QrCode.TargetType.PRODUCT, _create_product(request, makerspace, data["create_product"])
             elif data.get("create_asset"):

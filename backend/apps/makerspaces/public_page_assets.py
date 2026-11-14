@@ -24,7 +24,7 @@ def prefix(kind, owner_id, page_id):
 
 def charge_storage(kind, owner, size):
     if kind == "makerspace":
-        limits.add_storage(owner, size)
+        limits.charge_upload(owner, size)
         return
     from apps.organizations.models_public_pages import OrganizationPublicPageStorage as Storage
     usage, _ = Storage.objects.get_or_create(organization=owner)
@@ -41,11 +41,13 @@ def upload(kind, owner_id, *, actor, version, file, alt_text):
     # Refuse unauthorized callers before reading or decoding any bytes; the locked
     # reservation below still rechecks authority and the tenant write fence.
     from .public_page_adapters import adapter
-    adapter(kind).read_owner(owner_id, actor)
+    owner, _ = adapter(kind).read_owner(owner_id, actor)
     raw = file.read(website_assets.MAX_BYTES + 1)
     if len(raw) > website_assets.MAX_BYTES:
         from .public_page_errors import PagePayloadTooLarge
         raise PagePayloadTooLarge()
+    if kind == "makerspace":
+        limits.check_upload_size(owner, len(raw))
     converted = website_assets.webp(raw)
     # Independent durable reservation survives storage errors and process death.
     with transaction.atomic(durable=True):

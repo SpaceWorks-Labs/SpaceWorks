@@ -177,6 +177,12 @@ class ReportScheduleRunNowView(APIView):
         if definition is None:
             raise ValidationError({"report_key": [gettext("Report is unavailable on this deployment.")]})
         require_action(request.user, definition.required_action, schedule.makerspace_id)
+        from apps.makerspaces.guards import require_feature
+        from .report_sources import require_source
+        if definition.required_feature:
+            require_feature(schedule.makerspace, definition.required_feature)
+        for source in definition.required_modules:
+            require_source(schedule.makerspace, source)
         if is_payout_report(definition):
             require_full_session(request)  # 224(c)
         delivery = run_schedule(schedule.pk, force=True, actor=request.user)

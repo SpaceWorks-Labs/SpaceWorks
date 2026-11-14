@@ -193,7 +193,12 @@ class InventoryProductAdminUpdateSerializer(InventoryProductAdminSerializer):
             if "is_consumable" in validated_data and validated_data["is_consumable"] != instance.is_consumable:
                 require_feature(space, "inventory.consumables")
             if validated_data.get("is_archived") is False and instance.is_archived:
-                limits.check_quota(instance.makerspace, "products", adding=1)
+                limits.check_quota(space, "products", adding=1)
+                # Restoring a product also restores its assets to the counter.
+                # The same tenant lock covers both checks and the update.
+                assets = instance.assets.filter(makerspace=space).count()
+                if assets:
+                    limits.check_quota(space, "assets", adding=assets)
             return super().update(instance, validated_data)
 
 

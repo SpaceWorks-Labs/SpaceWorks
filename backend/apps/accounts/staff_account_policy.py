@@ -142,10 +142,10 @@ def staff_write(space_id):
         raise StaffRoleRefused(TENANT_GATED, gettext("This makerspace is temporarily read-only.")) from None
 
 
-def check_staff_quota(space):
+def check_staff_quota(space, *, adding=1):
     from apps.makerspaces import limits
 
     try:
-        limits.check_quota(space, "staff", adding=1)
+        limits.check_quota(space, "staff", adding=adding)
     except ValidationError as exc:
         raise StaffRoleRefused(QUOTA_EXCEEDED, gettext("This makerspace has reached its staff limit.")) from exc

@@ -4,60 +4,66 @@ Companion to the [feature inventory](LANDING-PAGE-FEATURES.md).
 
 ## Optional modules: landing-page comparison source
 
-This table contains the **29 non-core modules counted from the registry**. “Default-on” still means optional:
-an operator can disable it. Every other row is opt-in. The six core modules are omitted because there is no
-supported installation without them.
+This table lists the **30 optional modules** in the current registry: member accounts is on by
+default, and the other 29 are opt-in. The six core inventory/workflow/QR/evidence/staff keys remain
+available. Maintenance, warranty, repairs and To-Buy are capabilities under their parent areas;
+printing is part of machine service. They are not separate installable modules.
 
-| Optional module | What it adds | What you lose without it |
+| Module key / area | What it adds | Free / paid |
 | --- | --- | --- |
-| Asset units | Individually QR-tracked units and per-unit status | Quantity loans still work, but the exact physical unit and its label are unknown |
-| Containers | Nested boxes, shelves and rooms, plus container moves | No editable location hierarchy or container selection during direct handout |
-| Bulk import | Spreadsheet upload, column mapping, preview and commit | Products must be created individually or through the API |
-| Stock transfers | Recorded movement within and between makerspaces | No supported cross-tenant stock movement workflow |
-| QR print batches | Printable sheets and downloadable ZIP batches | QR codes print only one at a time |
-| Guest handover | Narrow front-desk issue, direct-handout and return console | Handovers remain possible in the full staff console |
-| Procurement | To-buy list, receipts and conversion of purchases into stock | Purchasing is tracked outside SpaceWorks |
-| Stocktake | Scan-first count sessions, variance and ledger adjustment | Counts are corrected directly, without a stocktake session or variance report |
-| Machines | Machine registry, operators, documents, usage, warranty and consumables | The machine side of the product disappears |
-| Machine service | Member job requests, staff queue, files, consumption and usage | Machines remain records, but SpaceWorks does not manage work on them |
-| Printing | Print-specific request intake, files and queue views | 3D printers can use the generic service queue, without print-specific handling |
-| Maintenance | Preventive schedules, completed-maintenance logs and files | No in-app maintenance schedule or history |
-| Events | Public events, registration, staff registration, QR check-in and collaboration | No event listing, registration, attendance history or event payments |
-| Bookings | Resources, booking rules, staff booking and public self-booking | No time-slot reservation workflow or booking payments |
-| Membership | Join requests, waivers, referrals, profiles, directory and activity | People can still borrow, but enrolment and community features disappear |
-| Notifications | In-app inbox and unread state | No in-app alerts; separately installed outbound channels can still send |
-| Email | Makerspace email through its SMTP account | No tenant email; platform recovery and verification mail still sends |
-| Telegram | Group alerts and test delivery | No Telegram alerts |
-| Slack | Slack incoming-webhook destination | No Slack notification surface |
-| Mattermost | Mattermost incoming-webhook destination | No Mattermost notification surface |
-| Discord | Discord incoming-webhook destination | No Discord notification surface |
-| Signed webhooks | HMAC-signed outbound event deliveries to an operator-chosen URL | Integrations must poll the API instead of receiving events |
-| Reports | Dashboards, ledger, registered reports and CSV/XLSX export | No analytics or report-export screens |
-| Payments | Stripe/Razorpay checkout, charges, receipts and reconciliation | Money is handled outside SpaceWorks |
-| Member accounts | Self-sign-up, member area, password, Google/Apple and phone login | Staff sign-in and external OIDC remain; members become staff-created walk-ins |
-| Mobile apps | Attested device sessions, native push and PaymentSheet support | The web app works, but native clients cannot hold a session for the space |
-| Connected devices | Printers and label printers enrolled with an Ed25519 key; signed heartbeats, key rotation/revocation, printer jobs, label commands and offline alerts | No device enrollment or device-signed requests |
+| `guest_handover` / Guest handover | Front-desk issue and return of accepted requests. | Works free; no member fee. Online payments optional. |
+| `telegram` / Telegram | Per-makerspace Telegram group alerts (outbound only). | Works free; no member fee. External providers can charge the operator; online payments optional. |
+| `bulk_import` / Bulk import | Spreadsheet import of inventory rows. | Works free; no member fee. Online payments optional. |
+| `containers` / Containers | Physical container hierarchy and moves. | Works free; no member fee. Online payments optional. |
+| `stock_transfers` / Stock transfers | Intra- and cross-makerspace stock movement. | Works free; no member fee. Online payments optional. |
+| `stocktake` / Stocktake | Scan-first stocktake sessions and variance. | Works free; no member fee. Online payments optional. |
+| `reports` / Reports | Analytics, report registry and CSV/XLSX exports. | Works free; no member fee. Online payments optional. |
+| `qr_print_batches` / QR print batches | Batched QR label ZIP generation. | Works free; no member fee. Online payments optional. |
+| `asset_units` / Asset units | Individually QR-tracked asset units. | Works free; no member fee. Online payments optional. |
+| `machines` / Machines | Machine registry, operators, usage and documents. | Works free; optional jobs/material/session fees: `charges.machines`. Online payments optional. |
+| `machine_service` / Machine service | Service requests for every machine type (3D printers, lasers, CNC, cutters) and their consoles. | Works free; optional jobs/material/session fees: `charges.machines`. Online payments optional. |
+| `events` / Events | Event scheduling and registrations. | Works free; optional tickets/teams/entry/deposits/venue fees: `charges.events`. Online payments optional. |
+| `event_reimbursements` / Event reimbursements | Optional event support requests, finite budgets, awards and expense claims. | Works free; no member fee. Online payments optional. |
+| `bookings` / Bookings | Resource booking and public self-booking. | Works free; optional resource/time fees: `charges.bookings`. Online payments optional. |
+| `membership` / Membership | Join requests, referrals, verification, profiles, directory and member activity. | Works free; optional dues/admission/guest passes: `charges.membership`. Online payments optional. |
+| `notifications` / Notifications | In-app notification inbox and emitters. | Works free; no member fee. Online payments optional. |
+| `email` / Email | Outbound email delivery for this makerspace. | Works free; no member fee. External providers can charge the operator; online payments optional. |
+| `sms` / SMS | Consented member and staff SMS notifications; OTP is independent. | Works free; no member fee. External providers can charge the operator; online payments optional. |
+| `whatsapp` / WhatsApp | Consented member and staff approved-template WhatsApp notifications. | Works free; no member fee. External providers can charge the operator; online payments optional. |
+| `slack` / Slack | Per-makerspace Slack incoming-webhook alerts. | Works free; no member fee. External providers can charge the operator; online payments optional. |
+| `mattermost` / Mattermost | Per-makerspace Mattermost incoming-webhook alerts. | Works free; no member fee. External providers can charge the operator; online payments optional. |
+| `discord` / Discord | Per-makerspace Discord incoming-webhook alerts. | Works free; no member fee. External providers can charge the operator; online payments optional. |
+| `webhook` / Signed webhooks | Per-makerspace signed JSON webhooks to your own systems. | Works free; no member fee. External providers can charge the operator; online payments optional. |
+| `payments` / Payments | Online card payment (Stripe/Razorpay). Money owed is tracked without it. | Works free; adds only the optional online rail. Debt and offline receipts remain core. |
+| `member_accounts` / Member accounts | Member self-service enrolment and built-in password, social and phone login. Staff sign-in, external identity and member-domain APIs are unaffected. | Works free; no member fee. Online payments optional. |
+| `mobile` / Mobile apps | Attested device sessions, native push and the in-app payment sheet. | Works free; no member fee. External providers can charge the operator; online payments optional. |
+| `devices` / Connected devices | Enrolled printers and label printers that authenticate with an Ed25519 key. | Works free; no member fee. Online payments optional. |
+| `presence` / Presence | Time-limited member and guest check-in, with a privacy-controlled current-presence display. | Works free; no member fee. Online payments optional. |
+| `shop` / Shop | A per-space shop: catalogue, stock, front-desk sales and online orders for pickup, every sale in the finance ledger. | Catalogue and stock work free; selling requires `charges.shop` and `charges.enabled`. Offline cash with a receipt works; online payments optional. |
+| `analytics` / Analytics (Metabase, Grafana) | A read-only database login over curated, versioned analytics views and the space's Metabase dashboards embedded in the staff console. | Works free; no member fee. Online payments optional. |
 
-Two dependency rules also come directly from the registry: Printing requires Machine service, and Mobile
-apps requires Member accounts. Installing a dependent module pulls in its requirement; a required module
-cannot be removed while its dependent remains installed.
+Switching a module off hides its surfaces and keeps its data. Optional links are active only while
+both areas are on. The registry requires member accounts for membership and mobile sessions, and
+events for event reimbursements; dependency validation controls installation/removal. Turning off the
+payments module keeps debts, receipts, reconciliation and member payment history available.
 
 ## Customer-controlled feature switches
 
-Modules are whole product areas controlled by a superadmin. Space Managers also have narrower switches:
+Modules control whole areas. Settings authority determines who may change an area's narrower
+capabilities: the Space Manager, or a specifically delegated area manager where supported.
 
-| Feature switch | What it controls | Default |
-| --- | --- | --- |
-| Payments master | Whether any online payment area can operate | On |
-| Machine payments | Charges for machine jobs | Off |
-| Booking payments | Charges for bookings | Off |
-| Event payments | Charges for event registration | Off |
-| Membership payments | Membership dues | Off |
-| Native push | Push delivery to connected native clients | On |
-| Inventory self-checkout | Member self-checkout and staff direct handouts | On |
-| Presence geofence | Advisory location check at check-in | On |
+- `charges.enabled` controls whether any new charge is recorded. Each of `charges.loans`,
+  `charges.machines`, `charges.bookings`, `charges.events`, `charges.membership`, `charges.shop` and
+  `charges.donations` can be chosen separately. A fully free space switches the master off.
+- `payments` is opt-in and adds the online rail alone. Its master/area switches and valid Stripe or
+  Razorpay credentials must also be present. Without it, staff record offline payment with a receipt.
+- Member self-checkout, contact self-checkout, notifications, public displays and other capabilities
+  keep their own gates. Self check-in requires a configured geofence and an in-range reading; staff
+  check-in supplies the alternative. There is no paid security tier.
 
-An “on” switch is still inert when its parent module or required provider credential is missing.
+Defaults and change authority are in [Limits](LIMITS.md), the module registry and the per-space
+capability screens; [Features](FEATURES.md) and [Free and paid](../README.md#free-and-paid) describe the
+same behavior. A provider can charge the operator for delivery or hosting without creating a member fee.
 
 ## Who it is for
 
@@ -118,17 +124,13 @@ tier is suitable for demos or pilots, not dependable production.
 - **Open source and self-hostable.** SpaceWorks is licensed AGPL-3.0-or-later and can run on infrastructure
   controlled by the community using it.
 
-## Not yet shipped
+## Product boundaries
 
-These items must not appear as current capabilities in landing-page copy:
+Native Android and iOS applications are available from the release links shown on the hub. Connected
+devices have signed identities and configured adapters; these do not grant staff authority or imply
+support for every vendor's hardware. Doors are not opened by a public card scan. External cloud and
+managed-hosting recipes have provider limits and operating requirements of their own.
 
-- **Direct hardware integration:** SpaceWorks does not yet read live job state from printers or CNC
-  controllers, drive label printers, or control doors and access hardware. Machine queues are operated by
-  people. Only the server side of a device protocol ships (enrolment, signed heartbeats, job reports),
-  off by default; no device agent or vendor adapter ships.
-- **Invitation requests:** a prospective member cannot yet ask to receive an invitation. Staff invitation
-  and membership-application paths are separate existing flows.
-- **First-party native applications:** the server-side device-session, push and payment-sheet substrate
-  exists, but native app clients themselves remain out of scope.
-- **Google Sheets OAuth publishing:** this is out of scope; CSV/XLSX report export is the shipped
-  spreadsheet path.
+Google Sheets report publishing through OAuth is not claimed here; CSV/XLSX export and supported
+read-only Sheet import flows remain separate. The feature inventory describes the concrete shipped
+surfaces, and the limits reference records the ceilings rather than promising an unlimited provider.

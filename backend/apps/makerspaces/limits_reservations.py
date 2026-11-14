@@ -30,8 +30,7 @@ def reserve_notification_quota(makerspace, channel) -> bool:
 
     if _platform_limit_reached(makerspace, channel):
         return False  # owner 2026-11-11: platform-credential allowance used up (every space; null = unlimited)
-    if limits.is_self_host():
-        return True
+    # Decision 281: an explicit space/default cap also applies on self-host.
     from apps.managed_hosting.enforcement import monthly_refusal
     if channel in ("sms", "whatsapp") and monthly_refusal(makerspace, f"{channel}_monthly"):
         return False  # #187A: the plan's monthly allowance is used up (no-op with plans off)

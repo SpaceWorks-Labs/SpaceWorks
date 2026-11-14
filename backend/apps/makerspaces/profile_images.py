@@ -81,7 +81,7 @@ def _swap(profile, holder, field, object_key, *, project=None):
     ):
         raise ValidationError({"object_key": gettext("This image is already in use.")})
     if object_key and space is not None:
-        limits.add_storage(space, new_size or 0)
+        limits.charge_upload(space, new_size or 0, object_key=object_key)
     if old_key:
         _release(old_key)
     setattr(holder, field, object_key)

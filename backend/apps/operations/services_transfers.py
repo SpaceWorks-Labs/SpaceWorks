@@ -1,12 +1,14 @@
 from django.utils.translation import gettext
 from django.db import transaction
 from django.utils import timezone
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import NotFound, ValidationError
 
+from apps.accounts import rbac
 from apps.audit import services as audit
 from apps.boxes.models import Box
 from apps.inventory import availability
 from apps.inventory.models import InventoryAsset, InventoryProduct, TrackingMode
+from apps.makerspaces import limits
 from apps.makerspaces.models import Makerspace
 from apps.operations.models import InventoryAdjustment, StockTransfer, StockTransferLine
 from apps.operations.services_shared import _container
@@ -15,9 +17,20 @@ from apps.operations.services_transfer_splits import move_quantity_stock
 
 def apply_stock_transfer(actor, makerspace, data):
     with transaction.atomic():
+        destination_makerspace_id = data.get("destination_makerspace_id") or makerspace.id
+        # Fence both tenants before any product locks; opposite-direction moves
+        # acquire the same ordered locks and serialize with API product creators.
+        action = (rbac.Action.TRANSFER_STOCK if destination_makerspace_id != makerspace.pk
+                  else rbac.Action.EDIT_INVENTORY)
+        spaces = list(rbac.scope_by_action(actor, action, Makerspace.objects.all(), field="id").select_for_update().filter(
+            pk__in={makerspace.pk, destination_makerspace_id},
+        ).order_by("pk"))
+        locked_spaces = {space.pk: space for space in spaces}
+        if {makerspace.pk, destination_makerspace_id} - locked_spaces.keys():
+            raise NotFound()
+        makerspace = locked_spaces[makerspace.pk]
         from apps.managed_hosting.extra_quotas import check_extra_quota_locked
         check_extra_quota_locked(makerspace, "stock_transfers_monthly")  # decision 328a: refuses only a NEW transfer
-        destination_makerspace_id = data.get("destination_makerspace_id") or makerspace.id
         is_cross = destination_makerspace_id != makerspace.id
         source = _transfer_container(data.get("source_container_id"), makerspace.id, "source_container_id")
         # For a cross-makerspace move the destination container lives in the
@@ -172,6 +185,8 @@ def _apply_cross_makerspace_line(
             {"product_id": gettext("Destination already has an individual-tracked product with this name.")}
         )
     if dest is None:
+        destination_space = Makerspace.objects.get(pk=dest_makerspace_id)
+        limits.check_quota(destination_space, "products", adding=1)
         dest = InventoryProduct.objects.create(
             makerspace_id=dest_makerspace_id,
             name=src.name,

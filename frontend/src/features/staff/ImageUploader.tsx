@@ -56,6 +56,7 @@ export async function uploadPublicImage(
       content_type: file.type || "application/octet-stream",
       filename: file.name,
       ...extraBody,
+      size: file.size,
     }),
   });
 
@@ -199,7 +200,7 @@ export function ImageUploader({
             />
           ) : (
             <div className="bg-surface grid h-full w-full place-items-center text-[10px] uppercase text-muted">
-              none
+              {t`none`}
             </div>
           )}
         </div>

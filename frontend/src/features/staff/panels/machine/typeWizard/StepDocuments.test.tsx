@@ -37,7 +37,7 @@ describe("StepDocuments", () => {
     fireEvent.click(screen.getByLabelText("Members can open this before they use the machine"));
     fireEvent.click(screen.getByRole("button", { name: "Upload" }));
     await waitFor(() => expect(order).toEqual(["presign", "PUT https://storage.test/put", "attach"]));
-    expect(JSON.parse(calls("POST", "/documents/presign")[0][1].body)).toEqual({ filename: "guide.pdf", content_type: "application/pdf" });
+    expect(JSON.parse(calls("POST", "/documents/presign")[0][1].body)).toEqual({ filename: "guide.pdf", content_type: "application/pdf", size: 4 });
     expect(JSON.parse(calls("POST", "/documents")[0][1].body)).toEqual({ object_key: "type-docs/1/9/abc.pdf", title: "guide.pdf", original_filename: "guide.pdf", member_visible: false });
   });
 

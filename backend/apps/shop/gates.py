@@ -73,12 +73,13 @@ def write_allowed(space):
     return space
 
 
-def require_charges(space):
-    """Every sale is recorded (#94): with shop charge tracking off the shop cannot sell."""
+def require_selling(space):
+    """Decision 509: charges off keeps the catalogue, but refuses new sales."""
     from apps.payments.availability import charge_tracking_enabled
 
+    require_shop(space)
     if not charge_tracking_enabled(space, "shop"):
-        raise ShopRefused("charges_off", gettext("Shop sales are not being recorded here; turn on shop charges first."))
+        raise ShopRefused("charges_off", gettext("This shop is not taking orders right now."))
     return space
 
 

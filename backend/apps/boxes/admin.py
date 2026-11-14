@@ -17,6 +17,7 @@ from apps.boxes.services import revoke_qr_code
 from apps.inventory.models import InventoryAsset, InventoryProduct
 from apps.makerspaces.models import Makerspace
 from apps.makerspaces.servability import servable_queryset
+from apps.makerspaces.admin_limits import CapacityAdminMixin
 from config.admin_access import SuperuserOnlyModelAdmin
 from apps.encryption.admin_search import ScopedPiiAdminSearchMixin
 from django.utils.translation import gettext_lazy
@@ -94,7 +95,8 @@ class QrRebindAdminForm(forms.Form):
 
 
 @admin.register(Box)
-class BoxAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
+class BoxAdmin(CapacityAdminMixin, SuperuserOnlyModelAdmin, ModelAdmin):
+    quota_key = "boxes"
     list_display = ("label", "makerspace", "parent", "code", "is_active", "updated_at")
     list_filter = ("makerspace", "is_active")
     search_fields = ("label", "code", "location")

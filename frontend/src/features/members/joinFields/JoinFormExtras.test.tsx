@@ -62,7 +62,7 @@ describe("join form extras (parity O-B2)", () => {
     fireEvent.submit(screen.getByRole("button", { name: "Request to join" }).closest("form")!);
     await waitFor(() => expect(join).toHaveBeenCalledWith({}, { join_fields: {
       phone: "+919876543210", state_code: "32", photo: { object_key: "member-cards/7/abc.jpg", content_type: "image/jpeg", consent: true } } }));
-    expect(memberRequest).toHaveBeenCalledWith("/member/makerspaces/7/admission/photo", { method: "POST", body: JSON.stringify({ content_type: "image/jpeg", plan_id: 3 }) });
+    expect(memberRequest).toHaveBeenCalledWith("/member/makerspaces/7/admission/photo", { method: "POST", body: JSON.stringify({ content_type: "image/jpeg", size: photo.size, plan_id: 3 }) });
     expect(upload).toHaveBeenCalledWith("https://storage.test/put", expect.objectContaining({ method: "PUT", body: photo }));
   });
 });

@@ -13,6 +13,7 @@ RAW_USER_REFERENCE_FIELDS = frozenset(  # Raw integers are not discoverable as F
 )
 # Every forward relation to accounts.User in the internal model graph, including M2M.
 # MakerspaceLoanPolicy has no accounts.User FKs; its sole relation is makerspace.
+# StorageQuotaReservation has no User FK: object debt has tenant ownership only.
 # SpacePackProfile has no accounts.User FKs; platform attribution lives in AuditLog.
 RELATIONAL_USER_FIELDS = frozenset(
     {

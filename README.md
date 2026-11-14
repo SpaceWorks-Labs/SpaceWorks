@@ -349,6 +349,45 @@ A section appears only while the module behind it is on (presence, events, machi
 [Public space page and display screens](docs/how-to/display-screens.md) and
 [Anthias players](docs/how-to/anthias.md).
 
+## Free and paid
+
+Every module can run free. Turn off `charges.enabled` for a fully free space, or enable it and
+choose which areas may charge. Prices stay saved when their switch is off; no new charge is raised.
+Donations and sponsor recognition can be managed for free; accepting actual money needs its switch.
+
+| Area | What it can charge | Switch (also needs `charges.enabled`) | Works free? |
+| --- | --- | --- | --- |
+| Inventory and loans | Rental, deposits, late, damage and lost fees | `charges.loans` | Yes |
+| Machines and printing | Jobs, materials and metered sessions | `charges.machines` | Yes |
+| Bookings | Resources and booked time after included hours | `charges.bookings` | Yes |
+| Events and hackathons | Tickets, add-ons, venue fees, team entry and refundable deposits | `charges.events` | Yes |
+| Membership | Dues, admission, terms, renewals and guest passes | `charges.membership` | Yes |
+| Shop | Sales of consumables, kits and merch | `charges.shop` | Catalogue and stock; selling requires charges on. Offline cash with a receipt works; online payments optional |
+| Donations and sponsors | Gifts, recurring pledges and sponsorship money | `charges.donations` | Yes; campaigns and recognition need no payment |
+
+Money owed is recorded in one ledger. **Online card payments are optional:** the opt-in `payments`
+module adds Stripe or Razorpay, with its own master/area switches and configured credentials.
+Without that rail a charge is recorded as `unclaimed`; staff can record offline payment with an
+append-only receipt (method, reference and received date). Turning off a charge switch does not erase
+an existing debt, receipt or refund case. Accounts, evidence, cards, reports, notifications, public
+pages, presence, security, backups and integrations have no separate member fee. Hosting and external
+providers may have their own operating costs. [Full feature list](docs/FEATURES.md).
+
+## Limits
+
+Fresh managed and self-hosted spaces have no resource quotas until the superadmin sets them.
+The superadmin can set platform defaults, hosted-plan allowances and per-space overrides in the
+platform limits screens and `/control/`; Space Managers can see their scoped usage. An explicit zero
+stops new usage; `null` or `-1` removes that quota. Fixed validation and security bounds still apply.
+
+Common bounds include 24 results per default page, inventory imports of at most 5,000 rows / 5 MiB,
+shop baskets of at most 50 lines and 999 units per variant, and evidence retention overrides of
+30-3,650 days (365 by default). Upload size/MIME checks, request throttles and per-module quotas are
+listed with their defaults, errors and source references in [Limits](docs/LIMITS.md).
+Existing records stay available; resource and payment quotas preserve existing workflows, debt
+settlement and privacy requests. Required issue/return evidence must still fit the configured upload
+and storage allowances; when they are exhausted, the operator must raise them before handover can finish.
+
 ## Install options
 
 ### The one-line installer

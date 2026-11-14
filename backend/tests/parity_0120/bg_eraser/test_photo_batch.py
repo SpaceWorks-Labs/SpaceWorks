@@ -50,8 +50,12 @@ def _add(api, space, batch_id, *files):
 @pytest.fixture
 def applied(monkeypatch):
     calls = []
-    monkeypatch.setattr("apps.makerspaces.member_card_storage.replace_photo_bytes",
-                        lambda actor, card, data: calls.append((actor, card.pk, len(data))) or card)
+    def attach(actor, card, data, *, upload_key):
+        assert CardPhotoBatchItem.objects.get(file_key=upload_key).holder_id == card.pk
+        assert upload_key.startswith("card-photo-batches/")
+        calls.append((actor, card.pk, len(data)))
+        return card
+    monkeypatch.setattr("apps.makerspaces.member_card_storage.replace_photo_bytes", attach)
     return calls
 
 
@@ -165,12 +169,16 @@ def test_rbac_and_tenant_scoping(store):
     other_space, other_sm, _ = _space("pb-rbac-other")
     batch_id = _create(client(sm), space).json()["id"]
     member_user, _m = member(space, "plain")
-    assert client(member_user).post(_url(space), {"kind": "member_card", "holders_consented": True},
-                                    format="json").status_code in (403, 404)
-    assert client(other_sm).get(_url(space, "admin-card-photo-batch", batch_id)).status_code in (403, 404)
-    assert client(other_sm).get(_url(other_space, "admin-card-photo-batch", batch_id)).status_code == 404
-    assert client(other_sm).post(_url(space), {"kind": "member_card", "holders_consented": True},
-                                 format="json").status_code in (403, 404)
+    response = client(member_user).post(_url(space), {"kind": "member_card", "holders_consented": True},
+                                        format="json")
+    assert (response.status_code, response.json()["code"]) == (403, "permission_denied")
+    response = client(other_sm).get(_url(space, "admin-card-photo-batch", batch_id))
+    assert (response.status_code, response.json()["code"]) == (404, "not_found")
+    response = client(other_sm).get(_url(other_space, "admin-card-photo-batch", batch_id))
+    assert (response.status_code, response.json()["code"]) == (404, "not_found")
+    response = client(other_sm).post(_url(space), {"kind": "member_card", "holders_consented": True},
+                                     format="json")
+    assert (response.status_code, response.json()["code"]) == (404, "not_found")
 
 
 def test_cancel_deletes_the_uploaded_files(store):

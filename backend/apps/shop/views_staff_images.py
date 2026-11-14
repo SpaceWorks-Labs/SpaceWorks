@@ -7,7 +7,7 @@ storage, and the old object released when replaced. Keys live under `shop/<space
 
 from django.utils.translation import gettext
 from django.db import transaction
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
@@ -21,6 +21,9 @@ from apps.audit import services as audit
 from apps.evidence.responses import storage_unavailable_response
 from apps.evidence.storage import StorageUnavailable
 from apps.inventory import public_image_storage
+from apps.makerspaces.limits import charge_upload, check_upload_headroom
+
+from apps.hardware_requests.exceptions import ErrorSerializer
 
 from .gates import MANAGE
 from .serializers_public import ShopErrorSerializer
@@ -28,7 +31,11 @@ from .serializers_staff import ShopProductSerializer
 from .views_staff_catalogue import product_for
 
 TAGS = ["Admin shop"]
-ERRORS = {code: ShopErrorSerializer for code in (400, 403, 404, 503)}
+ERRORS = {
+    **{code: ShopErrorSerializer for code in (403, 404, 503)},
+    400: OpenApiResponse(ErrorSerializer, description="Invalid upload; upload_size_required (declare size in bytes on PUT-only storage), upload_limit (file/headroom) or limit_reached (combined storage)."),
+    409: OpenApiResponse(ErrorSerializer, description="storage_public_images_bytes_quota_reached."),
+}
 
 
 def _reject(object_key, message):
@@ -48,8 +55,9 @@ class ShopProductImageView(APIView):
         body.is_valid(raise_exception=True)
         ext = public_image_storage.ext_for(body.validated_data["content_type"], body.validated_data["filename"])
         object_key = public_image_storage.build_object_key("shop", product.makerspace_id, ext)
+        check_upload_headroom(product.makerspace)
         try:
-            upload = public_image_storage.presigned_upload(object_key, body.validated_data["content_type"])
+            upload = public_image_storage.presigned_upload(object_key, body.validated_data["content_type"], **({"exact_bytes": body.validated_data.get("size")} if body.validated_data.get("size") is not None else {}))
         except StorageUnavailable:
             return storage_unavailable_response()
         return Response(PublicImageUploadResponseSerializer({"object_key": object_key, **upload}).data,
@@ -58,7 +66,6 @@ class ShopProductImageView(APIView):
     @extend_schema(tags=TAGS, request=PublicImageAttachRequestSerializer, responses={200: ShopProductSerializer, **ERRORS})
     @transaction.atomic
     def put(self, request, pk):
-        from apps.makerspaces.limits import add_storage
         product = product_for(request, pk, MANAGE)
         body = PublicImageAttachRequestSerializer(data=request.data)
         body.is_valid(raise_exception=True)
@@ -79,7 +86,7 @@ class ShopProductImageView(APIView):
             return storage_unavailable_response()
         old_key = product.image_key
         if object_key != old_key:
-            add_storage(product.makerspace, result.size)
+            charge_upload(product.makerspace, result.size, object_key=object_key)
         product.image_key = object_key
         product.save(update_fields=["image_key", "updated_at"])
         if old_key and old_key != object_key:

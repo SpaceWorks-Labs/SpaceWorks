@@ -214,6 +214,7 @@ def attach_document(machine, actor, object_key, doc_type, original_filename):
 
     storage.finalize_upload(object_key, settings.MACHINE_DOC_MAX_BYTES)
     result = storage.validate_machine_object(object_key)
+    limits.charge_upload(machine.makerspace, result.size, object_key=object_key)
     doc = MachineDocument.objects.create(
         machine=machine,
         doc_type=doc_type,

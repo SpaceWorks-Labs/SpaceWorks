@@ -16,6 +16,7 @@ from rest_framework.exceptions import ValidationError
 from apps.audit import services as audit
 from apps.evidence import storage
 from apps.makerspaces.limits_usage import add_storage, free_storage
+from apps.makerspaces.limits import charge_upload, check_upload_headroom, check_upload_size
 
 PHOTO_CONSENT_VERSION = "2026-09"
 
@@ -24,11 +25,12 @@ def _final_key(makerspace_id):
     return f"member-cards/{makerspace_id}/{uuid.uuid4().hex}"
 
 
-def presign_photo(card, content_type):
+def presign_photo(card, content_type, size=None):
     if content_type not in settings.EVIDENCE_ALLOWED_MIME:
         raise ValidationError({"content_type": gettext("Unsupported image type.")})
+    check_upload_headroom(card.makerspace)
     final_key = _final_key(card.makerspace_id)
-    upload = storage.presigned_upload(final_key, content_type, max_bytes=photo_max_bytes())
+    upload = storage.presigned_upload(final_key, content_type, max_bytes=photo_max_bytes(), **({"exact_bytes": size} if size is not None else {}))
     return {"object_key": final_key, "content_type": content_type, **upload}
 
 
@@ -48,6 +50,7 @@ def finalize_photo(actor, card, *, object_key, content_type, consent):
     size = storage.object_size(staging)
     if not size:
         raise ValidationError({"object_key": gettext("Upload not found; upload the photo first.")})
+    check_upload_size(card.makerspace, size)
     if size > photo_max_bytes():
         storage.delete_object(staging)
         raise ValidationError({"object_key": gettext("Photo exceeds the size limit.")})
@@ -62,7 +65,7 @@ def finalize_photo(actor, card, *, object_key, content_type, consent):
     png, _w, _h, _mean = normalise(data, max_edge=1200, keep_alpha=False)
     card = type(card).objects.select_for_update().get(pk=card.pk)
     old_key, old_size = card.photo_object_key, card.photo_size_bytes or 0
-    add_storage(card.makerspace, len(png))  # charge before the write: a refused space leaves no orphan final object
+    charge_upload(card.makerspace, len(png), object_key=object_key)
     _write_photo(object_key, png)
     storage.delete_object(staging)
     transaction.on_commit(lambda: _purge_stale_cutout(card))
@@ -85,8 +88,7 @@ def finalize_photo(actor, card, *, object_key, content_type, consent):
     return card
 
 
-@transaction.atomic
-def replace_photo_bytes(actor, card, data):
+def replace_photo_bytes(actor, card, data, *, upload_key=None):
     """Release 2 L3: store a server-made photo (an accepted background clean-up).
 
     The holder consented to the original; the clean-up keeps that consent version. The
@@ -98,20 +100,30 @@ def replace_photo_bytes(actor, card, data):
     from apps.card_designs.storage import put_bytes
     png, _w, _h, _mean = normalise(data, max_edge=1200, keep_alpha=False)
     key = _final_key(card.makerspace_id)
-    card = type(card).objects.select_for_update().get(pk=card.pk)
-    old_key, old_size = card.photo_object_key, card.photo_size_bytes or 0
-    add_storage(card.makerspace, len(png))  # charge first, then write (no orphan object at the storage cap)
-    put_bytes(key, png, "image/png")
-    transaction.on_commit(lambda: _purge_stale_cutout(card))
-    card.photo_object_key, card.photo_content_type, card.photo_size_bytes = key, "image/png", len(png)
-    card.photo_consent_at = card.photo_consent_at or timezone.now()
-    card.photo_consent_version = card.photo_consent_version or PHOTO_CONSENT_VERSION
-    card.save(update_fields=["photo_object_key", "photo_content_type", "photo_size_bytes",
-                             "photo_consent_at", "photo_consent_version", "updated_at"])
-    if old_key:
-        transaction.on_commit(lambda: _release(card.makerspace, old_key, old_size))
-    audit.record(actor, "member_card.photo_updated", makerspace=card.makerspace, target=card, meta={"card_id": card.pk})
-    return card
+    if upload_key:
+        check_upload_size(card.makerspace, len(data))
+        from .storage_reservations import record_final_key
+        key = record_final_key(upload_key, key) or key
+        from apps.card_designs.photo_batch import consume_file
+        consume_file(upload_key)
+    with transaction.atomic():
+        card = type(card).objects.select_for_update().get(pk=card.pk)
+        old_key, old_size = card.photo_object_key, card.photo_size_bytes or 0
+        if upload_key:
+            charge_upload(card.makerspace, len(png), object_key=upload_key, final_key=key)
+        else:
+            add_storage(card.makerspace, len(png))
+        put_bytes(key, png, "image/png")
+        transaction.on_commit(lambda: _purge_stale_cutout(card))
+        card.photo_object_key, card.photo_content_type, card.photo_size_bytes = key, "image/png", len(png)
+        card.photo_consent_at = card.photo_consent_at or timezone.now()
+        card.photo_consent_version = card.photo_consent_version or PHOTO_CONSENT_VERSION
+        card.save(update_fields=["photo_object_key", "photo_content_type", "photo_size_bytes",
+                                 "photo_consent_at", "photo_consent_version", "updated_at"])
+        if old_key:
+            transaction.on_commit(lambda: _release(card.makerspace, old_key, old_size))
+        audit.record(actor, "member_card.photo_updated", makerspace=card.makerspace, target=card, meta={"card_id": card.pk})
+        return card
 
 
 def photo_max_bytes():

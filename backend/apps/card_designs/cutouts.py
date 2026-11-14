@@ -34,7 +34,7 @@ def owner(kind, card):
     if kind != "staff_card":
         return kind, card
     from apps.makerspaces.models import MemberCard
-    member = MemberCard.objects.filter(membership_id=card.membership_id, makerspace_id=card.makerspace_id,
+    member = MemberCard.objects.filter(membership__user_id=card.membership.user_id, makerspace_id=card.makerspace_id,
                                        revoked_at__isnull=True).exclude(photo_object_key="").first()
     return ("member_card", member) if member else None
 
@@ -118,13 +118,12 @@ def request(actor, kind, card, *, by_holder=False, consent=False):
     transaction.on_commit(lambda: dispatch_cutout(row.pk))
     return row
 
-
 def _claim(cutout_id):
     """Take a queued (or abandoned running) row for one attempt; None when there is nothing to do."""
     from datetime import timedelta
     with transaction.atomic():
         row = CardPhotoCutout.objects.select_for_update().filter(pk=cutout_id).first()
-        if row is None:
+        if row is None or not cutout_on(row.makerspace, row.holder_kind):
             return None
         abandoned = row.state == "running" and row.updated_at < timezone.now() - timedelta(seconds=STALE_AFTER_SECONDS)
         if row.state != "queued" and not abandoned:
@@ -168,6 +167,9 @@ def run(cutout_id):
     """One attempt. -> seconds to wait before the next attempt, or None when finished (done or failed)."""
     from apps.makerspaces.limits_usage import add_storage, free_storage
     from apps.tenant_migration.gate_runtime import assert_write_allowed
+    pending = CardPhotoCutout.objects.filter(pk=cutout_id).first()
+    if pending is None or not cutout_on(pending.makerspace, pending.holder_kind):
+        return None
     row = _claim(cutout_id)
     if row is None:
         return None
@@ -175,8 +177,6 @@ def run(cutout_id):
     card = getattr(row, kind)
     space = row.makerspace
     assert_write_allowed(space.pk)
-    if not cutout_on(space, kind):
-        return _fail(row, "not_configured")
     data = spec_for(kind).photo_bytes(card) if row.source_key == _current_key(kind, card) else None
     config = provider.resolve(space)
     if not data or config is None or not _mime(data):
@@ -230,6 +230,7 @@ def set_use(actor, kind, card, use):
 
 def discard(actor, kind, card):
     """Remove the cut-out (object and row); the original photo is untouched."""
+    _require_on(card.makerspace, kind)
     own = owner(kind, card)
     row = row_for(*own) if own else None
     if row is None:

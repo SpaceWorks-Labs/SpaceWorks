@@ -14,7 +14,8 @@ from apps.hardware_requests.self_checkout_workflow import qr_has_active_loan
 from apps.inventory import availability
 from apps.inventory.availability import InsufficientStock
 from apps.inventory.models import InventoryAsset, InventoryProduct, TrackingMode
-from apps.makerspaces.guards import require_module
+from apps.makerspaces import limits
+from apps.makerspaces.guards import require_module_locked
 
 
 OUTSTANDING_REQUEST_STATUSES = (
@@ -31,14 +32,15 @@ def move_asset_across_makerspaces(
     if request_target_id is not None and int(request_target_id) != qr.target_id:
         raise ValidationError(gettext("target_id must match the scanned asset."))
 
-    asset = InventoryAsset.objects.select_for_update().get(pk=qr.target_id)
     source_makerspace_id = qr.makerspace_id
     _require_transfer_permission(user, source_makerspace_id, dest_makerspace_id)
     if int(dest_makerspace_id) == source_makerspace_id:
         raise ValidationError(gettext("Destination makerspace must be different."))
 
-    dest_makerspace = require_module(dest_makerspace_id, "qr_management")
+    dest_makerspace = require_module_locked(dest_makerspace_id, "qr_management")
+    asset = InventoryAsset.objects.select_for_update().get(pk=qr.target_id)
     _guard_asset_is_movable(asset, qr)
+    limits.check_quota(dest_makerspace, "assets", adding=1)
 
     source_product_id = asset.product_id
     candidate_ids = _destination_candidate_ids(
@@ -197,6 +199,7 @@ def _resolve_destination_product(
     )
     if individual is not None:
         return individual
+    limits.check_quota(dest_makerspace, "products", adding=1)
     return InventoryProduct.objects.create(
         makerspace=dest_makerspace,
         name=source_product.name,

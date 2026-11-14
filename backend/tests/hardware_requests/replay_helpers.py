@@ -40,7 +40,9 @@ def replay_env(settings, monkeypatch):
     product.reserved_quantity += 1
     product.save(update_fields=["available_quantity", "reserved_quantity", "updated_at"])
     box = make_box(space)
-    def presign(key, mime):
+    def presign(key, mime, *, max_bytes, exact_bytes=None):
+        assert type(max_bytes) is int and max_bytes > 0
+        assert exact_bytes is None or (type(exact_bytes) is int and 1 <= exact_bytes <= max_bytes)
         return {"url": "http://storage.test/upload", "fields": {"key": f"staging/{key}", "Content-Type": mime}}
     monkeypatch.setattr("apps.evidence.services_upload.presigned_upload", presign)
     monkeypatch.setattr("apps.hardware_requests.replay_prepare.presigned_upload", presign)

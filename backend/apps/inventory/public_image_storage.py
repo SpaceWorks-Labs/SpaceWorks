@@ -247,37 +247,15 @@ def finalize_error_message(result):
     return ""
 
 
-def presigned_upload(object_key, content_type):
+from apps.makerspaces.storage_reservations import reserved_presign
+
+
+@reserved_presign("PUBLIC_IMAGE_MAX_BYTES", public=True)
+def presigned_upload(object_key, content_type, *, exact_bytes=None):
+    from apps.inventory.public_image_cloud import presign
+    import sys
     try:
-        if getattr(settings, "STORAGE_CAPABILITIES_FILE", ""):
-            from .public_image_cloud import presign
-            return presign(sys.modules[__name__], object_key, content_type)
-        if settings.STORAGE_PRESIGN_METHOD == "put":
-            # Presigned PUT cannot enforce content-length at upload time; finalize HEADs staging.
-            url = _public_client().generate_presigned_url(
-                "put_object",
-                Params={
-                    "Bucket": settings.PUBLIC_IMAGE_BUCKET,
-                    "Key": staging_key(object_key),
-                    "ContentType": content_type,
-                },
-                ExpiresIn=settings.PUBLIC_IMAGE_URL_TTL_SECONDS,
-            )
-            return {
-                "url": url,
-                "method": "PUT",
-                "headers": {"Content-Type": content_type},
-            }
-        return _public_client().generate_presigned_post(
-            Bucket=settings.PUBLIC_IMAGE_BUCKET,
-            Key=staging_key(object_key),
-            Fields={"Content-Type": content_type},
-            Conditions=[
-                {"Content-Type": content_type},
-                ["content-length-range", 1, settings.PUBLIC_IMAGE_MAX_BYTES],
-            ],
-            ExpiresIn=settings.PUBLIC_IMAGE_URL_TTL_SECONDS,
-        )
+        return presign(sys.modules[__name__], object_key, content_type, exact_bytes=exact_bytes)
     except (BotoCoreError, ClientError) as exc:
         raise StorageUnavailable from exc
 

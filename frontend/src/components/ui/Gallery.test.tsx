@@ -89,7 +89,7 @@ describe("uploadGalleryPhoto", () => {
     const attach = vi.fn().mockResolvedValue({ id: 9 });
     const file = new File(["x"], "a.png", { type: "image/png" });
     await expect(uploadGalleryPhoto(file, { presign, attach, transport })).resolves.toEqual({ id: 9 });
-    expect(presign).toHaveBeenCalledWith({ filename: "a.png", content_type: "image/png" });
+    expect(presign).toHaveBeenCalledWith({ filename: "a.png", content_type: "image/png", size: file.size });
     expect(transport).toHaveBeenCalledWith("https://s3.test/x", expect.objectContaining({ method: "PUT", body: file }));
     expect(attach).toHaveBeenCalledWith("spaces/1/2/images/a.png");
   });

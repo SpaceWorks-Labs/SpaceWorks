@@ -49,8 +49,13 @@ def _body(event, **extra):
 @pytest.fixture
 def attached(monkeypatch):
     calls = []
-    monkeypatch.setattr("apps.card_designs.photos.attach_bytes",
-                        lambda actor, kind, card, data, *, consent: calls.append((kind, card.pk, consent)) or card)
+    def attach(actor, kind, card, data, *, consent, upload_key):
+        from apps.card_designs.models import CardPhotoBatchItem
+        assert CardPhotoBatchItem.objects.get(file_key=upload_key).holder_id == card.pk
+        assert upload_key.startswith("card-photo-batches/")
+        calls.append((kind, card.pk, consent))
+        return card
+    monkeypatch.setattr("apps.card_designs.photos.attach_bytes", attach)
     return calls
 
 
@@ -76,11 +81,14 @@ def test_an_event_batch_needs_the_event_and_the_organiser_authority(store):
     space, event, sm, _cards = _event("pbe-rbac")
     assert client(sm).post(_urls(space), {"kind": "event_card", "holders_consented": True}, format="json").status_code == 400
     door = custom_staff(space, ["handover"], "door")  # staff without event authority
-    assert client(door).post(_urls(space), _body(event), format="json").status_code in (403, 404)
+    response = client(door).post(_urls(space), _body(event), format="json")
+    assert (response.status_code, response.json()["code"]) == (403, "permission_denied")
     other_space, other_event, other_sm, _ = _event("pbe-rbac-other")
-    assert client(other_sm).post(_urls(space), _body(event), format="json").status_code in (403, 404)
+    response = client(other_sm).post(_urls(space), _body(event), format="json")
+    assert (response.status_code, response.json()["code"]) == (404, "not_found")
     # An event of another space is never reachable through this space's route.
-    assert client(sm).post(_urls(space), _body(other_event), format="json").status_code in (403, 404)
+    response = client(sm).post(_urls(space), _body(other_event), format="json")
+    assert (response.status_code, response.json()["code"]) == (404, "not_found")
     assert not CardPhotoBatch.objects.exists()
     assert other_space.pk != space.pk
 

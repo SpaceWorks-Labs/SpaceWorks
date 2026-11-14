@@ -38,7 +38,7 @@ from apps.boxes.serializers import (
 from apps.boxes.rebind import rebind_qr_target
 from apps.boxes.services import revoke_qr_code
 from apps.inventory.models import InventoryAsset, InventoryProduct, TrackingMode
-from apps.makerspaces.guards import require_module
+from apps.makerspaces.guards import require_module, require_module_locked
 from apps.openapi import (
     QR_BOX_EXAMPLE,
     QR_RESOLVE_REQUEST_EXAMPLE,
@@ -61,18 +61,18 @@ class QrPermissionMixin:
 
 class CreateBoxQrView(QrPermissionMixin, APIView):
     @extend_schema(
-        tags=["QR assets"],
-        summary="Create a QR-coded box",
-        request=CreateBoxQrSerializer,
-        responses={201: BoxSerializer},
-        examples=[QR_BOX_EXAMPLE],
+        tags=["QR assets"], summary="Create a QR-coded box",
+        request=CreateBoxQrSerializer, examples=[QR_BOX_EXAMPLE],
+        responses={201: BoxSerializer, 409: OpenApiResponse(description="boxes_quota_reached: QR box allowance reached.")},
     )
+    @transaction.atomic
     def post(self, request, *args, **kwargs):
         serializer = CreateBoxQrSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
         makerspace = makerspace_for_action(request.user, rbac.Action.MANAGE_QR, data["makerspace_id"])
         self._require_qr(request.user, makerspace.id)
+        makerspace = require_module_locked(makerspace, "qr_management")
         parent = None
         if data.get("parent_id"):
             parent = get_object_or_404(Box, pk=data["parent_id"], makerspace=makerspace)

@@ -241,6 +241,8 @@ def restore_unit(actor, unit):
         if unit.archived_at is not None:
             if unit.parent_id and unit.parent.archived_at is not None:
                 raise UnitError("member_unit_archived", gettext("Restore its parent unit first."))
+            from apps.managed_hosting.extra_quotas import check_extra_quota
+            check_extra_quota(space, "member_units")
             unit.archived_at = None
             unit.save(update_fields=["archived_at", "updated_at"])
             audit.record(actor, "member_unit.restored", makerspace=space, target=unit, meta={"unit_id": unit.pk})

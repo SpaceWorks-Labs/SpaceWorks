@@ -5,7 +5,7 @@ from contextvars import ContextVar
 from datetime import timedelta
 
 from django.conf import settings
-from django.db import transaction
+from django.db import connection
 from django.db.models import Sum
 from django.utils import timezone
 
@@ -49,23 +49,34 @@ def object_digest(identity, key):
     return hashlib.sha256(f"{identity}\0{key}".encode()).hexdigest()
 
 
-def reserve_upload(client, *, bucket, key, max_bytes, ttl, makerspace_id=None, server_owned=False):
+def reserve_upload(client, *, bucket, key, max_bytes, ttl, makerspace_id=None, server_owned=False, renew=False):
     if not enabled():
         return None
     if type(max_bytes) is not int or max_bytes < 1 or type(ttl) is not int or ttl < 1:
+        raise CapabilityError("storage_reservation_invalid")
+    if renew and (server_owned or not connection.in_atomic_block):
         raise CapabilityError("storage_reservation_invalid")
     from apps.operations.models import CloudObjectAccount, CloudObjectReservation
     identity = identity_for(client, bucket)
     pending = pending_key(identity, key) if server_owned else None
     digest = pending or (uuid.uuid4().hex + uuid.uuid4().hex if server_owned else object_digest(identity, key))
-    now = timezone.now()
     with accounting_transaction():
         # One deployment lock serializes admission across every configured bucket.
         CloudObjectAccount.objects.get_or_create(identity="deployment")
         CloudObjectAccount.objects.select_for_update().get(pk="deployment")
         account, _ = CloudObjectAccount.objects.get_or_create(identity=identity)
-        existing = CloudObjectReservation.objects.filter(pk=digest).first()
-        if existing:
+        # Settlement and supervised reconciliation lock account before receipt.
+        account = CloudObjectAccount.objects.select_for_update().get(pk=account.pk)
+        existing = CloudObjectReservation.objects.select_for_update().filter(pk=digest).first()
+        now = timezone.now()
+        if renew:
+            # Only a domain-authorized retry may renew the SAME live byte debt.
+            # Caller retains these locks through signing and expiry coverage.
+            if (existing is None or existing.server_owned or existing.account_id != identity
+                    or existing.state != "reserved" or existing.bytes != max_bytes
+                    or existing.expires_at <= now):
+                raise CapabilityError("storage_reservation_reconciliation_required")
+        elif existing:
             # Replaying an already issued URL cannot acquire a second allowance,
             # but a new URL must not extend its original late-write horizon.
             if server_owned and existing.server_owned and existing.state == "reserved" and existing.bytes >= max_bytes:
@@ -85,15 +96,30 @@ def reserve_upload(client, *, bucket, key, max_bytes, ttl, makerspace_id=None, s
             raise CapabilityError("storage_usage_refresh_required")
         pending = CloudObjectReservation.objects.filter(state__in=["reserved", "writing", "uncertain"]).aggregate(n=Sum("bytes"))["n"] or 0
         cap = getattr(settings, "FREE_OBJECT_CAP_BYTES", None)
-        if cap is None or sum(a.used for a in accounts) + pending + max_bytes > cap:
+        if cap is None or sum(a.used for a in accounts) + pending + (0 if renew else max_bytes) > cap:
             raise CapabilityError("storage_account_cap_reached")
-        CloudObjectReservation.objects.create(key=digest, account=account, bytes=max_bytes,
-                                             expires_at=now + timedelta(seconds=ttl), server_owned=server_owned)
+        if not renew:
+            CloudObjectReservation.objects.create(key=digest, account=account, bytes=max_bytes,
+                                                 expires_at=now + timedelta(seconds=ttl), server_owned=server_owned)
     if server_owned:
         values = dict(_pending.get() or {})
         values[(identity, key)] = (digest, _owner_tag())
         _pending.set(values)
     return digest
+
+
+def cover_upload_authorization(reservation_id, *, ttl):
+    """After local signing, cover its full TTL before the admission transaction commits."""
+    if not connection.in_atomic_block or type(ttl) is not int or not 1 <= ttl <= 604800:
+        raise CapabilityError("storage_reservation_invalid")
+    from apps.operations.models import CloudObjectReservation
+    row = CloudObjectReservation.objects.select_for_update().filter(pk=reservation_id).first()
+    if row is None or row.server_owned or row.state != "reserved":
+        raise CapabilityError("storage_reservation_reconciliation_required")
+    # The admission lock forbids reconciliation while signing; elapsed signing
+    # time may cross the old expiry without resurrecting a reconciled receipt.
+    row.expires_at = max(row.expires_at, timezone.now() + timedelta(seconds=ttl))
+    row.save(update_fields=["expires_at"])
 
 
 def finalized_upload(client, *, bucket, key, size, operation_key, keep_pending=False, reservation_id=None):

@@ -102,7 +102,12 @@ class TenantDumpCatalogError(AssertionError):
 # 0.12.0 pins (216 events/bookings/maintenance, P2-1 workshop machines, 220(d)2, 221(b), then the
 # 221-223 release lanes): each lane's migration additions are folded in; re-pinned at consolidation.
 # R2-final: accounts WebSessionActivityDay/ChannelUsageDay models and DeviceGrant login_method "passkey"; re-pinned.
-CATALOG_SCHEMA_SHA256 = "79bc0d27f5b4d847745cfb717a76ebe9d82b012ecc8515267aba6e47b73026cf"
+# CX10 pass 8: integrations/0056 DocumentEmailIntent; all 11 fields inherit DROP
+# from data_export. No source dispatch approval travels or resumes on import.
+# Reconstructed the 805-row graph and reproduced its existing pin before editing;
+# added only this model/field row, then hashed catalog_schema() canonical JSON.
+# Orchestrator must verify schema_digest() against the live model graph.
+CATALOG_SCHEMA_SHA256 = "ae2b7d76ec56d241e10477636dc9edd2522046964c096b485afacf6b5d41ed57"
 
 
 def catalog_models(apps_registry=apps):

@@ -37,6 +37,13 @@ from apps.machines.service_workflow_helpers import (
 )
 
 
+def _check_printer_capacity(makerspace, machine_type):
+    from apps.machines.printer_capabilities import is_printer_type
+    if is_printer_type(machine_type):
+        # 527.3: the permanent counter now includes pooled and per-machine jobs.
+        limits.check_quota(makerspace, "print", adding=1)
+
+
 def submit(bucket_or_machine, requester, *, requester_name, contact_email, contact_phone, title, description="", source_link="", actor=None, member=None, capability_payload=None, certification_override_reason=""):
     """Create a pending legacy bucket request or unassigned pooled request."""
     require_member_account(requester)
@@ -64,6 +71,7 @@ def submit(bucket_or_machine, requester, *, requester_name, contact_email, conta
             requester = owner
         limits.check_quota(makerspace, "machine_service_open", adding=1)
         limits.check_quota(makerspace, "machine_service_submit", adding=1)
+        _check_printer_capacity(makerspace, machine_type)
         from apps.managed_hosting.extra_quotas import check_extra_quota
         check_extra_quota(makerspace, "machine_jobs_monthly")  # decision 284: typed 409; a job already queued is never read
         if isinstance(target, ServiceQueue):
@@ -235,6 +243,12 @@ def create_reprint(service_request, actor):
         lock_obligation_owner(original.member if original.member_id else original.requester)
         if original.status not in {MachineServiceRequest.Status.FAILED, MachineServiceRequest.Status.COMPLETED, MachineServiceRequest.Status.COLLECTED}:
             raise ServiceInvalidTransition("Only terminal service requests can be reprinted.")
+        limits.check_quota(original.makerspace, "machine_service_open", adding=1)
+        limits.check_quota(original.makerspace, "machine_service_submit", adding=1)
+        from apps.managed_hosting.extra_quotas import check_extra_quota
+        check_extra_quota(original.makerspace, "machine_jobs_monthly")
+        machine_type = original.queue.machine_type if original.queue_id else original.bucket.machine.machine_type
+        _check_printer_capacity(original.makerspace, machine_type)
         root = original.reprint_of or original
         _lock_scope(original)
         child = MachineServiceRequest.objects.create(

@@ -17,6 +17,9 @@ from apps.operations.models import (
     StocktakeLine,
     StocktakeSession,
 )
+from apps.makerspaces.admin_limits import CapacityAdminMixin
+from apps.makerspaces.admin_limits import form_limit_error
+from apps.managed_hosting.extra_quotas import ExtraQuotaReached
 from config.admin_access import SuperuserOnlyModelAdmin
 
 # Imported for its `@admin.register` side effect (the split pattern from CLAUDE.md).
@@ -93,7 +96,16 @@ class StockTransferAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
                     makerspace,
                     form.service_payload(),
                 )
-            except (DRFValidationError, DjangoValidationError, SurfaceOff) as exc:
+            except ExtraQuotaReached as exc:
+                form.add_error(None, form_limit_error(exc))
+            except DRFValidationError as exc:
+                if isinstance(exc.detail, dict) and str(exc.detail.get("code")) in {
+                    "limit_reached", "plan_limit_reached",
+                }:
+                    form.add_error(None, form_limit_error(exc))
+                else:
+                    form.add_error(None, exc)
+            except (DjangoValidationError, SurfaceOff) as exc:
                 form.add_error(None, exc)
             else:
                 self.message_user(
@@ -143,7 +155,8 @@ class StocktakeLineInline(TabularInline):
 
 
 @admin.register(StocktakeSession)
-class StocktakeSessionAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
+class StocktakeSessionAdmin(CapacityAdminMixin, SuperuserOnlyModelAdmin, ModelAdmin):
+    quota_key = "stocktake_sessions_monthly"
     actions = ["complete_selected", "approve_selected", "apply_adjustments_selected"]
     list_display = ("id", "makerspace", "container", "status", "started_at", "approved_at")
     list_filter = ("status", "makerspace")

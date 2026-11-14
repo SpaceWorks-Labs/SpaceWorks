@@ -1,6 +1,7 @@
 from apps.integrations.notification_cutover import guarded
 import logging
 
+from django.db import transaction
 from django.utils import timezone
 
 from apps.integrations.models_push import PlatformPushSettings, PushDevice
@@ -11,6 +12,23 @@ from apps.integrations.models_tracking import PushDeliveryAttempt
 from apps.notifications.member_push_leases import claim, complete
 
 logger = logging.getLogger(__name__)
+
+
+@transaction.atomic
+def _reserve_staff_attempt(log, device):
+    from apps.makerspaces.models import Makerspace
+    from apps.managed_hosting.platform_limits import channel_refusal
+    space = Makerspace.objects.select_for_update(no_key=True).get(pk=log.makerspace_id)
+    existing = PushDeliveryAttempt.objects.filter(delivery_log=log, push_device=device).first()
+    if existing is not None:
+        return existing
+    refusal = channel_refusal(space, "native_push")
+    return PushDeliveryAttempt.objects.create(
+        delivery_log=log, push_device=device, recipient_id=device.user_id,
+        platform=device.device_grant.registration.platform, provider_source="platform",
+        status="skipped" if refusal else "pending",
+        last_error="platform_credential_limit_reached" if refusal else "",
+    )
 
 
 @guarded(sending=True)
@@ -87,10 +105,7 @@ def deliver_native_push(log):
     transient_failure = False
     for device in devices:
         check()
-        attempt, _ = PushDeliveryAttempt.objects.get_or_create(
-            delivery_log=log, push_device=device,
-            defaults={"recipient_id": device.user_id, "platform": device.device_grant.registration.platform, "provider_source": "platform"},
-        )
+        attempt = _reserve_staff_attempt(log, device)
         target = PushDeliveryAttempt.objects.filter(pk=attempt.pk, delivery_log_id=log.pk)
         lease = claim(target)
         if lease is None:

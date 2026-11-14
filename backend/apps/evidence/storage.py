@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from contextlib import nullcontext
 import logging
 import uuid
 
@@ -6,6 +7,7 @@ import boto3
 from botocore.client import Config
 from botocore.exceptions import BotoCoreError, ClientError
 from django.conf import settings
+from django.db import transaction
 
 from apps.evidence.image_validation import allowed_mime_for_key, detect_mime_for_key
 from apps.object_storage import delete_all_versions
@@ -133,17 +135,34 @@ def finalize_upload(evidence, max_bytes):
         raise StorageUnavailable from exc
 
 
-def presigned_upload(object_key, content_type, max_bytes=None):
-    """`max_bytes` may only LOWER the evidence ceiling (member-card photos: the card-photo normaliser's 8 MB)."""
-    try:
-        return presign_upload(
-            _public_client(), backend_client=_client(),
-            bucket=settings.AWS_STORAGE_BUCKET_NAME, key=staging_key(object_key),
-            content_type=content_type, max_bytes=min(max_bytes or settings.EVIDENCE_MAX_BYTES, settings.EVIDENCE_MAX_BYTES),
-            ttl=settings.EVIDENCE_URL_TTL_SECONDS, requested=settings.STORAGE_PRESIGN_METHOD,
-        )
-    except (BotoCoreError, ClientError, CapabilityError) as exc:
-        raise StorageUnavailable from exc
+def presigned_upload(object_key, content_type, max_bytes=None, *, exact_bytes=None):
+    """Presign staging, reserving card-photo capacity at its domain ceiling."""
+    maximum = min(max_bytes or settings.EVIDENCE_MAX_BYTES, settings.EVIDENCE_MAX_BYTES)
+    if exact_bytes is not None:
+        if type(exact_bytes) is not int or not 1 <= exact_bytes <= maximum:
+            from django.utils.translation import gettext
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError({"code": "upload_limit", "detail": gettext("Upload exceeds the size limit.")})
+        maximum = exact_bytes
+    # Evidence's owning service already holds its reservation transaction. Keep
+    # this low-level signing path database-free for pre-existing evidence keys.
+    with transaction.atomic() if not object_key.startswith("evidence/") else nullcontext():
+        if not object_key.startswith("evidence/"):
+            from apps.makerspaces.storage_reservations import presign_reservation, cover_authorization
+            presign_reservation(object_key, maximum,
+                bucket=settings.AWS_STORAGE_BUCKET_NAME, staged=staging_key(object_key), ttl=settings.EVIDENCE_URL_TTL_SECONDS)
+        try:
+            upload = presign_upload(
+                _public_client(), backend_client=_client(),
+                bucket=settings.AWS_STORAGE_BUCKET_NAME, key=staging_key(object_key),
+                content_type=content_type, max_bytes=maximum,
+                ttl=settings.EVIDENCE_URL_TTL_SECONDS, requested=settings.STORAGE_PRESIGN_METHOD, exact_bytes=exact_bytes,
+            )
+            if not object_key.startswith("evidence/"):
+                cover_authorization(object_key, settings.EVIDENCE_URL_TTL_SECONDS)
+            return upload
+        except (BotoCoreError, ClientError, CapabilityError) as exc:
+            raise StorageUnavailable from exc
 
 
 def uses_put_uploads():

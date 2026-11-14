@@ -54,13 +54,17 @@ describe("public shop page", () => {
     expect(add).toHaveAccessibleName(/^Add to basket Pen$/);
   });
 
-  it("keeps browsing and hides the basket when charge tracking is known to be off", async () => {
+  it("keeps catalogue browsing and hides sale actions when charges are off (decision 509)", async () => {
     mocks.selling = false;
+    const catalogue = product(1, "Pen", [variant(11, { price: null })], { price_from: null, price_to: null });
+    mocks.tenant.mockImplementation((_slug: string, path: string) => Promise.resolve(path.endsWith("/shop/") ? shop
+      : { count: 1, next: null, previous: null, results: [catalogue] }));
     show();
     expect(await screen.findByRole("link", { name: "Pen" })).toBeVisible();
-    expect(screen.getByText("In stock · 5 left")).toBeVisible();
-    expect(screen.queryByRole("button", { name: /basket/i })).not.toBeInTheDocument();
-    expect(screen.queryByText(/₹10/)).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Basket" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Add to basket Pen" })).not.toBeInTheDocument();
+    expect(screen.getAllByRole("link", { name: "View item" })).toHaveLength(1);
+    expect(screen.queryByText(/10/)).not.toBeInTheDocument();
   });
 
   it("does not offer to add a variant whose public price has been removed", async () => {

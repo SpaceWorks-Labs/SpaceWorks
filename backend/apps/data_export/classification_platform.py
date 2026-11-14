@@ -15,6 +15,7 @@ GLOBAL_MODELS = {
 }
 
 OMITTED_MODELS = {
+    "makerspaces.StorageQuotaReservation": "Deployment-local staged-object quota and cleanup debt; never portable upload authority.",
     "accounts.AccountRestoreIntent": "Deployment-local single-use account recovery proof; never portable authority.",
     "accounts.AccountPurgeProgress": "Source-deployment erasure progress; target resumes from User deletion timestamps.",
     "accounts.AccountPurgeObject": "Source object deletion and quota journal; source keys never authorize target cleanup.",

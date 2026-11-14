@@ -1,6 +1,7 @@
 from django import forms
 from django.conf import settings
 from django.contrib import admin, messages
+from django.db import transaction
 from django.utils.safestring import mark_safe
 from rest_framework.exceptions import ValidationError as DRFValidationError
 
@@ -8,6 +9,8 @@ from apps.audit import services as audit
 from apps.evidence.storage import StorageUnavailable
 from apps.inventory import public_image_storage
 from apps.makerspaces.models import Makerspace
+from apps.makerspaces.admin_upload_limits import validate_admin_uploads
+from apps.makerspaces.limits_uploads import charge_upload
 from django.utils.translation import gettext_lazy
 from django.utils.translation import gettext
 
@@ -43,6 +46,7 @@ class MakerspaceAdminForm(forms.ModelForm):
                 )
             except DRFValidationError as exc:
                 raise forms.ValidationError(str(exc.detail)) from exc
+        validate_admin_uploads(self.instance, [cleaned.get("logo_upload"), cleaned.get("cover_upload")])
         return cleaned
 
 
@@ -72,6 +76,10 @@ class MakerspaceImageAdminMixin:
 
         uploads = self._upload_public_images(request, obj, form)
         clears = self._clear_public_images(obj, form, old_logo, old_cover)
+        if obj.pk and uploads:
+            # charge_upload uses an F update; a stale ModelForm instance must
+            # not overwrite the newly charged bytes when Django saves it.
+            obj.storage_bytes_used = Makerspace.objects.values_list("storage_bytes_used", flat=True).get(pk=obj.pk)
         super().save_model(request, obj, form, change)
         self._finish_image_uploads(request, obj, uploads, old_logo, old_cover)
         self._finish_image_clears(request, obj, clears)
@@ -88,7 +96,10 @@ class MakerspaceImageAdminMixin:
                 form.cleaned_data[f"_{name}_ext"],
             )
             try:
-                public_image_storage.put_bytes(key, upload.read(), upload.content_type)
+                data = upload.read()
+                with transaction.atomic():
+                    charge_upload(obj, len(data))
+                    public_image_storage.put_bytes(key, data, upload.content_type)
             except StorageUnavailable:
                 # Raising from save_model() would 500 (Django admin does not turn it
                 # into a form error). Skip this image, keep other edits, warn the user.
@@ -116,7 +127,7 @@ class MakerspaceImageAdminMixin:
         for name, field, key in uploads:
             old_key = old_logo if field == "logo_key" else old_cover
             if old_key and old_key != key:
-                public_image_storage.delete_public_image_on_commit(obj, old_key)
+                public_image_storage.release_public_image_on_commit(obj, old_key)
             audit.record(
                 request.user,
                 f"makerspace.{name if name == 'logo' else 'cover'}_attached",
@@ -127,7 +138,7 @@ class MakerspaceImageAdminMixin:
     def _finish_image_clears(self, request, obj, clears):
         for name, old_key in clears:
             if old_key:
-                public_image_storage.delete_public_image_on_commit(obj, old_key)
+                public_image_storage.release_public_image_on_commit(obj, old_key)
             audit.record(
                 request.user,
                 f"makerspace.{name if name == 'logo' else 'cover'}_cleared",

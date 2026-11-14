@@ -53,7 +53,7 @@ def product_payload(space, product, *, detail=False):
     bundles = feature_enabled(space, "shop.bundles")
     selling = charge_tracking_enabled(space, "shop")
     variants = _variants(space, product, labels=labels, bundles=bundles, selling=selling)
-    prices = [row["price"] for row in variants] if selling else []
+    prices = [row["price"] for row in variants if row["price"] is not None]
     payload = {
         "id": product.pk, "slug": product.slug, "name": product.name, "kind": product.kind,
         "category": product.category, "unit": product.unit,

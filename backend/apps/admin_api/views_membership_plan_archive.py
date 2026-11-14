@@ -33,6 +33,9 @@ def _set_archived(actor, plan, archived):
         makerspace = require_module_locked(plan.makerspace_id, "membership")
         plan = MembershipPlan.objects.select_for_update().get(pk=plan.pk)
         if (plan.archived_at is not None) != archived:
+            if not archived:
+                from apps.managed_hosting.extra_quotas import check_extra_quota
+                check_extra_quota(makerspace, "membership_plans")
             plan.archived_at = timezone.now() if archived else None
             plan.save(update_fields=["archived_at", "updated_at"])
             if archived:

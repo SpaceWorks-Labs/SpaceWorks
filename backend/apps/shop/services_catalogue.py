@@ -107,7 +107,9 @@ def _components(space, product, rows, actor):
 @transaction.atomic
 def save_product(space, data, *, actor, product=None):
     """Create or update a product, its variants (by id) and its bundle parts."""
+    from apps.makerspaces.guards import require_module_locked
     from .gates import write_allowed
+    space = require_module_locked(space, "shop")
     write_allowed(space)
     values = {name: data[name] for name in PRODUCT_FIELDS if name in data}
     _check_product(space, {**({"kind": product.kind} if product else {}), **values})

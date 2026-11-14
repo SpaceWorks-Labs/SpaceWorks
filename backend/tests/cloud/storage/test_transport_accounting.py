@@ -71,6 +71,7 @@ def test_oversize_raw_put_and_presign_generation_have_no_effect(calls):
     assert calls == []
 
 
+@pytest.mark.django_db
 def test_free_signed_put_is_create_only_and_versioned_post_is_refused(settings, monkeypatch):
     from apps.storage_capabilities import presigning
     settings.SPACEWORKS_DEPLOYMENT_PROFILE = "free"
@@ -86,7 +87,7 @@ def test_free_signed_put_is_create_only_and_versioned_post_is_refused(settings, 
     client = SimpleNamespace(meta=SimpleNamespace(endpoint_url="https://storage.example.org"),
         generate_presigned_url=lambda *args, **kwargs: signed.append(kwargs) or "https://signed.example.org")
     kwargs = {"backend_client": None, "bucket": "private", "key": "staging/one", "content_type": "image/png",
-              "max_bytes": 100, "ttl": 60}
+              "max_bytes": 100, "exact_bytes": 100, "ttl": 60}
     result = presigning.presign_upload(client, requested="put", **kwargs)
     assert signed[0]["Params"]["IfNoneMatch"] == "*" and result["headers"]["If-None-Match"] == "*"
     with pytest.raises(CapabilityError, match="replayable_post_refused"):

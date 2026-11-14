@@ -2,8 +2,10 @@ from django import forms
 from django.shortcuts import redirect
 from django.template.response import TemplateResponse
 from django.urls import reverse
+from rest_framework.exceptions import APIException
 
 from apps.admin_api import bulk_import
+from apps.makerspaces.admin_limits import form_limit_error
 from apps.makerspaces.guards import SurfaceOff, require_module
 from apps.makerspaces.models import Makerspace
 from apps.makerspaces.servability import servable_queryset
@@ -44,12 +46,18 @@ def bulk_import_view(model_admin, request):
                     form.add_error(None, exc.message)
                     result = None
                 else:
-                    result = bulk_import.apply_import(
-                        request.user,
-                        makerspace,
-                        stored["rows"],
-                        stored["mapping"],
-                    )
+                    try:
+                        result = bulk_import.apply_import(
+                            request.user,
+                            makerspace,
+                            stored["rows"],
+                            stored["mapping"],
+                        )
+                    except APIException as exc:
+                        if not isinstance(exc.detail, dict) or "code" not in exc.detail:
+                            raise
+                        form.add_error(None, form_limit_error(exc))
+                        result = None
                 if result is None:
                     preview = None
                     return _render(model_admin, request, form, preview, stored)

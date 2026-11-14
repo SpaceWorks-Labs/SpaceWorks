@@ -13,7 +13,7 @@ from dataclasses import dataclass, field
 
 from apps.makerspaces.platform import feature_enabled
 
-from .errors import ShopQuoteChargesOff, ShopRefused
+from .errors import ShopRefused
 from .models import ShopVariant
 
 MAX_LINES = 50
@@ -47,6 +47,8 @@ def _merged(raw_lines):
         if quantity < 1 or quantity > MAX_QUANTITY:
             raise ShopRefused("variant_invalid", gettext("Choose a quantity between 1 and 999."))
         merged[variant_id] = merged.get(variant_id, 0) + quantity
+        if merged[variant_id] > MAX_QUANTITY:
+            raise ShopRefused("variant_invalid", gettext("Choose a quantity between 1 and 999."))
     if not merged:
         raise ShopRefused("order_empty", gettext("Add at least one item."))
     if len(merged) > MAX_LINES:
@@ -99,13 +101,13 @@ def check_rules(space, items, member):
 def priced_basket(space, raw_lines, *, person=None, public=True, lock=False):
     """Validate and quote a basket. `person` is the signed-in buyer (or the member at the desk)."""
     from apps.payments import pricing
-    from apps.payments.availability import charge_tracking_enabled
     from apps.payments.pricing.build_shop import label_for
     from .gates import require_feature, stock_source_enabled
+    from apps.payments.availability import charge_tracking_enabled
+    from .errors import ShopQuoteChargesOff
 
     if not charge_tracking_enabled(space, "shop"):
         raise ShopQuoteChargesOff("shop")
-
     items = resolve_items(space, raw_lines, public=public, lock=lock)
     bundles = feature_enabled(space, "shop.bundles")
     if any(not stock_source_enabled(space, variant, bundles=bundles) for variant, _quantity in items):

@@ -62,6 +62,7 @@ def submit_job(makerspace, member, data):
         # Same lock order as `submit`: the makerspace first, so the limit count is stable.
         makerspace = Makerspace.objects.select_for_update(no_key=True).get(pk=makerspace.pk)
         require_member_job_gate(makerspace, member, queue.machine_type)
+        event_use.require_named_event(makerspace, data.get("event_id"))
         require_open_job_limit(makerspace, member, queue.machine_type)
         if payload is not None and "requested_material" in payload:
             from apps.makerspaces import limits

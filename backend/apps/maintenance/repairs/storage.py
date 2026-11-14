@@ -51,22 +51,15 @@ def owns_key(object_key, makerspace_id):
     return str(object_key or "").startswith(prefix) and rest and "/" not in rest
 
 
-def presign(object_key, content_type):
+from apps.makerspaces.storage_reservations import reserved_presign
+
+
+@reserved_presign("EVIDENCE_MAX_BYTES")
+def presign(object_key, content_type, *, exact_bytes=None):
+    from apps.private_uploads import presign as shared_presign
+    import sys
     try:
-        if getattr(settings, "STORAGE_CAPABILITIES_FILE", ""):
-            from apps.private_uploads import presign as capability_presign
-            return capability_presign(sys.modules[__name__], object_key, content_type, max_bytes())
-        if settings.STORAGE_PRESIGN_METHOD == "put":
-            url = _public_client().generate_presigned_url(
-                "put_object", ExpiresIn=settings.EVIDENCE_URL_TTL_SECONDS,
-                Params={"Bucket": settings.AWS_STORAGE_BUCKET_NAME, "Key": staging_key(object_key),
-                        "ContentType": content_type})
-            return {"url": url, "method": "PUT", "headers": {"Content-Type": content_type}}
-        return _public_client().generate_presigned_post(
-            Bucket=settings.AWS_STORAGE_BUCKET_NAME, Key=staging_key(object_key),
-            Fields={"Content-Type": content_type},
-            Conditions=[{"Content-Type": content_type}, ["content-length-range", 1, max_bytes()]],
-            ExpiresIn=settings.EVIDENCE_URL_TTL_SECONDS)
+        return shared_presign(sys.modules[__name__], object_key, content_type, max_bytes(), exact_bytes=exact_bytes)
     except (BotoCoreError, ClientError) as exc:
         raise StorageUnavailable from exc
 
@@ -83,13 +76,10 @@ def finalize(object_key):
     size = object_size(source)
     if size is None or not (1 <= size <= max_bytes()):
         return size
-    try:
-        _client().copy_object(Bucket=settings.AWS_STORAGE_BUCKET_NAME, Key=object_key,
-                              CopySource={"Bucket": settings.AWS_STORAGE_BUCKET_NAME, "Key": source})
-    except (BotoCoreError, ClientError) as exc:
-        raise StorageUnavailable from exc
+    from apps.private_uploads import legacy_promote
+    size = legacy_promote(sys.modules[__name__], source, object_key, max_bytes())
     shared.delete_object(source)
-    return object_size(object_key)
+    return size
 
 
 def validated_photo(object_key):

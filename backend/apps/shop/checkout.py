@@ -3,8 +3,9 @@
 Inside the space lock the basket is re-quoted, checked against the digest the buyer saw
 (409 `price_changed`) and frozen on the order. With `shop.holds` on its stock is held for
 the online window (Q-S4: 15 minutes) or, for a pay-at-desk order, for 48 hours; with it
-off the stock is only checked here and taken when payment lands. Every sale is a charge
-(`charges.shop`); the online card/UPI rail is put on top only with `payments.shop` and
+off the stock is only checked here and taken when payment lands. Positive priced orders
+raise a charge with `charges.shop` on; with charges off new sales are refused.
+The online card/UPI rail is put on top only with `payments.shop` and
 credentials. A free basket is paid at once. Pickup only (Q-S3): at the space, or at one
 of its events with `shop.event_pickup` on.
 """
@@ -21,7 +22,7 @@ from apps.audit import services as audit
 from apps.makerspaces.platform import feature_enabled
 
 from .errors import ShopRefused, out_of_stock
-from .gates import online_rail, require_charges, require_feature, write_allowed
+from .gates import online_rail, require_feature, require_selling, write_allowed
 from .models import ShopOrder, ShopSettings
 
 logger = logging.getLogger(__name__)
@@ -136,7 +137,7 @@ def _place_online_order(space, buyer, data, key):
         space = require_module_locked(space, "shop")
         write_allowed(space)
         require_feature(space, "shop.online")
-        require_charges(space)
+        require_selling(space)
         basket = priced_basket(space, data.get("lines"), person=buyer.account, public=True, lock=True)
         verify_digest(basket.quote, data.get("quote_digest") or None)
         pickup_at, event = pickup_choice(space, data)

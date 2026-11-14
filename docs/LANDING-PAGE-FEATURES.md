@@ -30,14 +30,16 @@ These counts were checked against the current sources rather than copied as mark
 | What was counted | Result | Source |
 | --- | --- | --- |
 | Module keys and customer-facing areas | **36 modules in 12 areas** | `backend/apps/makerspaces/module_registry_catalog.py`, `module_registry_definitions.py` (`GROUPS`) |
-| Module modes | **6 core, 1 on by default (member accounts), 30 opt-in; 31 non-core total** | `docs/MODULES.md` |
+| Module modes | **6 core, 1 on by default (member accounts), 29 opt-in; 30 non-core total** | `docs/MODULES.md` |
 | User-facing module entries | **36**, one per registry key | `docs/MODULES.md` |
-| Seeded default roles | **9**: Space Manager, Inventory Manager, Machine Manager, Event Manager, Booking Manager, Handover, Technician, Shop Manager and Member | `backend/apps/makerspaces/role_catalog.py` |
+| Seeded default roles | **10**: Space Manager, Inventory Manager, Machine Manager, Event Manager, Booking Manager, Handover, Technician, Shop Manager, Fundraising and Member | `backend/apps/makerspaces/role_catalog.py` |
 
 The six core keys counted in the registry are Public inventory, Request workflow, Staff admin, Evidence
 uploads, QR management and Scanner. The ten built-ins are fixed; eight staff roles combine, while Space Manager and Member each stand alone.
 
 ## Inventory: loans and returns
+
+**Free / paid:** Works free. Optional rental, deposits, late, damage and lost fees use `charges.loans`; online payments are optional.
 
 - Publish a public, makerspace-specific catalogue with categories and item detail pages.
 - Let authenticated members submit borrow requests and follow their status.
@@ -50,11 +52,13 @@ uploads, QR management and Scanner. The ten built-ins are fixed; eight staff rol
 - Track what is out, who has it and what is overdue; return reminders are available from the hardware
   request system.
 
-**Honest limits:** public request submission is not anonymous; it requires an authenticated member. The public
+**Honest limits:** with member accounts enabled, submission requires a signed-in person (and current membership checks where enabled). Without member accounts, borrowers provide name, phone and a verified email code. The public
 catalogue can be made effectively empty by marking every item private, but the core catalogue and loans
 workflow themselves cannot be uninstalled.
 
 ## Inventory and availability
+
+**Free / paid:** Works free. Stock, kits, transfers and stocktakes have no fee. Optional loan fees use `charges.loans`; online payments are optional.
 
 - Manage products, categories, quantities and individually tracked asset units.
 - Calculate available, reserved, issued, damaged and lost stock in one guarded availability service, with
@@ -74,6 +78,8 @@ than a documented count session.
 
 ## QR codes and evidence
 
+**Free / paid:** Works free. QR scans, evidence and audit history have no fee; online payments are optional.
+
 - Generate, print, revoke and rebind namespaced QR codes for boxes, products and individual assets.
 - Scan with the web camera scanner and resolve a code to its container or eligible tool.
 - Preserve an immutable scan history.
@@ -86,6 +92,8 @@ than a documented count session.
 printer directly.
 
 ## Members, identity and access
+
+**Free / paid:** Works free. Accounts and profiles have no fee; optional membership dues, admission and guest passes use `charges.membership`. Online payments are optional.
 
 - Give each person one account across every space; staff roles are added to that account.
 - Offer username/password sign-in out of the box, with passkeys and an authenticator for two-step sign-in.
@@ -114,6 +122,8 @@ the revocation path. The member sign-in screen has no "Forgot password?" link ye
 
 ## Staff roles and permissions
 
+**Free / paid:** Works free. Staff roles, scope and second factors have no paid upgrade; online payments are optional.
+
 - Scope staff access by makerspace and by action, not by a hard-coded role name.
 - Provide ten fixed built-in roles; assign combinable staff role sets within the acting manager’s action ceiling.
 - Give the Technician assigned repair jobs, scheduled maintenance and machine service state, with no inventory, money or settings.
@@ -131,6 +141,8 @@ Handover can combine with the other four operational manager roles; its own gran
 
 ## Machines, jobs and maintenance
 
+**Free / paid:** Works free. Optional jobs, materials and metered sessions use `charges.machines`; online payments are optional.
+
 - Maintain a machine registry with operators, images, documents, usage, warranty records and consumable pools.
 - Accept machine service requests, collect uploaded job files and manage a staff work queue.
 - Record which machine ran a job, who operated it, material consumption and the resulting usage entry.
@@ -147,6 +159,8 @@ only the server side of a device protocol ships (see `docs/machine-integrations/
 
 ## 3D printing and filament
 
+**Free / paid:** Works free. Optional print/material charges use `charges.machines`; online payments are optional.
+
 - Accept public print requests and files.
 - Manage printers and spools, track filament use and store slicer estimates.
 - Present print-specific intake and queue views on top of the general machine service workflow.
@@ -158,6 +172,8 @@ separate Printing module (retired in 0.12.0). Without Machine service a 3D print
 a machine, but no job queue, print form or print tracker is offered.
 
 ## Events and bookings
+
+**Free / paid:** Works free. Optional tickets, teams, entry fees, deposits and venue fees use `charges.events`; resource/time fees use `charges.bookings`. Online payments are optional.
 
 - Publish events, accept member registrations and let staff register a person from the console.
 - Check attendees in by QR code and retain attended-event history on opted-in maker profiles.
@@ -174,6 +190,8 @@ a machine, but no job queue, print form or print tracker is offered.
 listing and staff workflow, and makes its matching payment switch inert.
 
 ## Payments
+
+**Free / paid:** Works free. A fully free space turns `charges.enabled` off. Otherwise each `charges.<domain>` switch controls recording debt; `payments` adds only the optional Stripe/Razorpay rail. Offline settlement always records a receipt.
 
 - Take online payments through Stripe or Razorpay behind a common payment workflow.
 - Create charges and receipts for machine jobs, bookings, events and membership dues.
@@ -194,6 +212,8 @@ module-data purge because they record real money movements.
 
 ## Notifications and integrations
 
+**Free / paid:** Works free. No member fee; external delivery providers can charge the operator. Online payments are optional.
+
 - Provide an in-app inbox with read/unread state.
 - Send makerspace mail through that space's SMTP configuration; account recovery and verification use platform mail so disabling tenant email cannot lock users out.
 - Send alerts to Telegram, Slack, Mattermost and Discord. Each outbound channel is an independent module.
@@ -209,9 +229,11 @@ module-data purge because they record real money movements.
 
 **Honest limits:** enabling a channel does not configure it. Email needs SMTP credentials; Telegram needs a
 bot and chat; Slack, Mattermost and Discord need webhooks; push needs FCM or APNs. Native push and device-session
-support ship on the server, but a first-party native app does not.
+support ship on the server; Android and iOS clients are linked from the hub.
 
 ## Reporting and analytics
+
+**Free / paid:** Works free. Reports, charts, stats and exports have no member fee; online payments are optional.
 
 - Show operational dashboards and an inventory ledger.
 - Report what is issued, who holds it, overdue items and problem records.
@@ -226,6 +248,8 @@ support ship on the server, but a first-party native app does not.
 underlying operational records remain owned by their original modules.
 
 ## Multiple makerspaces and organization accounts
+
+**Free / paid:** Works free. Organization links, permissions and public profiles have no member fee; online payments are optional.
 
 - Host many makerspaces on one deployment. Each tenant owns its inventory, public URL, staff memberships, ten built-in role instances, integrations, QR namespace and audit scope.
 - Keep public and staff queries scoped to the selected makerspace.
@@ -243,6 +267,8 @@ object for an organization. Spaces that share a service enter the same credentia
 
 ## API access for integrators
 
+**Free / paid:** Works free. Scoped API access has no member fee; online payments are optional.
+
 - Expose documented REST APIs with OpenAPI schema, Swagger UI and ReDoc.
 - Issue API clients with encrypted HMAC secrets and versioned scopes.
 - Maintain a registry mapping each scope to the protected routes it may call, with deployment checks that reject newly protected routes that were not classified.
@@ -253,6 +279,8 @@ object for an organization. Spaces that share a service enter the same credentia
 registered for the exact protected route.
 
 ## Backup, export and data ownership
+
+**Free / paid:** Works free. No member fee for backup, export or portability; online payments are optional.
 
 - Back up and restore a whole deployment, including recovery controls that quarantine normal application
   traffic while restoration is in progress.
@@ -272,6 +300,8 @@ accurate record over a cosmetically empty database.
 
 ## Security and privacy
 
+**Free / paid:** Works free. No security upgrade is paid; online payments are optional.
+
 - Isolate each makerspace's records and scope staff permissions to both tenant and action.
 - Keep evidence in private object storage and serve it only through short-lived signed URLs to active,
   authorized staff.
@@ -289,6 +319,62 @@ accurate record over a cosmetically empty database.
 **Honest limits:** TLS is supported but disabled by default in the installer and must be enabled for a
 production deployment. Self-hosters remain responsible for host security, backups, provider credentials
 and operational monitoring.
+
+## Shop
+
+Products, variants, stock holds, kits, pickup, front-desk sales, receipts, returns and cash-ups use the
+same inventory and ledger services as other areas. Turning charges off refuses new sales
+without removing the stock, access or audit rules.
+
+**Free / paid:** Catalogue, stock, consumables and staff management work free. Selling requires
+`charges.enabled` plus `charges.shop`. Offline cash with a receipt works when they are on; online
+payments are optional. Charges off retains saved prices, existing debts and catalogue data.
+
+## Donations and sponsors
+
+Campaigns, sponsor tiers, recognition and a public sponsor wall work without collecting money. Gifts,
+pledges and sponsor charges are recorded once in the donations ledger, with optional tax-exempt receipts.
+
+**Free / paid:** Works free for campaigns and recognition. Accepting real money requires
+`charges.donations` and the master switch; online payments are optional and offline gifts get a receipt.
+
+## Presence and public TV
+
+Time-limited member/guest check-in, a location check for self check-in, a staff alternative and privacy
+controls feed paired workshop screens. Screens show only public data from the areas that are enabled.
+
+**Free / paid:** Works free. No presence or display fee; online payments are optional.
+
+## Mobile apps and connected devices
+
+Android and iOS sessions, per-device notifications and the optional payment sheet share the server's
+limits and charge decisions. Signed printer/label devices, adapters, telemetry and camera records use
+scoped device credentials, not staff accounts.
+
+**Free / paid:** Works free. Devices have no separate fee. Priced machine work uses `charges.machines`;
+the optional native payment rail uses the same area switches as the web.
+
+## Public pages, repairs and help
+
+Space, organization, event and booking website builders publish explicit drafts. Repair issue reports,
+work orders, technicians, preventive maintenance and To-Buy lists stay within their owning area. The help
+centre, public stats, schedule and Space Manager setup tools are also available without charging members.
+
+**Free / paid:** Works free. Publishing, repairs management and help have no fee. Borrower damage fees
+use `charges.loans` and priced machine jobs use `charges.machines`; online payments are optional.
+
+## Landing section coverage and limits
+
+The hub's existing six interactive area tabs are followed by **Every area can run free**. Its 19 entries
+cover the 12 registry groups plus shared product areas, each with a free/paid note. The list is in
+`frontend/src/features/hub/landing/FeatureCoverage.tsx`; the component is rendered by `AreasSection.tsx`.
+It inherits the landing typography and semantic ink/muted tokens, with no section border or background
+band, and has light/dark content regression tests in `FeatureCoverage.test.tsx`.
+
+[Limits](LIMITS.md) lists all registered quotas and the discovered input/upload bounds. [Features](FEATURES.md)
+and [Free and paid](../README.md#free-and-paid) carry the same seven charge switches. Source inventory
+is not a claim that every surface or condition has passed execution; test execution belongs to the
+orchestrator for this run.
 
 ## Modules and positioning
 

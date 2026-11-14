@@ -141,6 +141,11 @@ def _materialize_locked(series, *, actor, now):
     pending = [item for item in generated if item.key not in existing]
     if series.status == EventSeries.Status.PUBLISHED and pending:
         limits.check_quota(series.makerspace, "events", adding=len(pending))
+    elif pending:
+        # Draft occurrences consume the monthly creation allowance even though
+        # they do not yet consume the live/published events allowance.
+        from apps.managed_hosting.space_quotas import check_space_quota
+        check_space_quota(series.makerspace, "events_monthly", adding=len(pending))
     created = []
     for item in pending:
         event = Event.objects.create(**_event_values(series, item))

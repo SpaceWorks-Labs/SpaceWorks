@@ -18,11 +18,11 @@ from . import storage
 from .models_type_setup import MachineTypeDocument
 
 
-def presign(space, content_type, filename):
+def presign(space, content_type, filename, size=None):
     ext = storage.ext_for(content_type, filename)
     object_key = storage.machine_object_key(space.pk, ext)
     limits.check_upload_headroom(space)  # refuse before the upload when storage is full
-    return object_key, storage.presigned_upload(object_key, content_type)
+    return object_key, storage.presigned_upload(object_key, content_type, **({"exact_bytes": size} if size is not None else {}))
 
 
 @transaction.atomic
@@ -35,7 +35,7 @@ def attach(actor, space, machine_type, *, object_key, title, original_filename, 
         raise ValidationError({"title": gettext("Give the document a title.")})
     storage.finalize_upload(object_key, settings.MACHINE_DOC_MAX_BYTES)
     result = storage.validate_machine_object(object_key)
-    limits.add_storage(space, result.size)
+    limits.charge_upload(space, result.size, object_key=object_key)
     row = MachineTypeDocument.objects.create(
         makerspace=space, machine_type=machine_type, title=title, object_key=object_key,
         original_filename=str(original_filename or "")[:255], content_type=result.content_type,

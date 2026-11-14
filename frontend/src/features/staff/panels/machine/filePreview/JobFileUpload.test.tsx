@@ -22,7 +22,7 @@ describe("JobFileUpload", () => {
     pick();
     await waitFor(() => expect(onUploaded).toHaveBeenCalled());
     expect(staffRequest).toHaveBeenNthCalledWith(1, "/admin/machine-service/requests/90/files/presign",
-      { method: "POST", body: JSON.stringify({ filename: "part.stl", content_type: "model/stl" }) });
+      { method: "POST", body: JSON.stringify({ filename: "part.stl", content_type: "model/stl", size: 5 }) });
     expect(uploadToStorage).toHaveBeenCalledWith(upload, expect.any(File));
     expect(staffRequest).toHaveBeenNthCalledWith(2, "/admin/machine-service/requests/90/files/finalize",
       { method: "POST", body: JSON.stringify({ file_id: 31 }) });

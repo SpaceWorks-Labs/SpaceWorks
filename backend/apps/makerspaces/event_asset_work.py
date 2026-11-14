@@ -17,7 +17,7 @@ def _plan(copies, signature, page, key, size, **work):
     def reservation():
         if len(copies.plans) >= copies.maximum or copies.total_bytes + size > copies.max_total_bytes:
             raise ValidationError(gettext("The clone asset limit was exceeded."))
-        job_id = reserve(page, key, size, copies)
+        job_id = reserve(page, key, size, copies, upload=signature[0] == "upload")
         copies.total_bytes += size
         return dict(signature=signature, page=page, key=key, size=size,
                     job_id=job_id, ready=False, **work)
@@ -50,6 +50,8 @@ def plan_copy(copies, makerspace, image, *, storage, page, expected_size):
 def plan_upload(copies, file, page):
     if id(file) not in copies.uploads:
         data = file.read(website_assets.MAX_BYTES + 1)
+        from .limits import check_upload_size
+        check_upload_size(page.makerspace, len(data))
         copies.uploads[id(file)] = (data, website_assets.webp(data))
     data, converted = copies.uploads[id(file)]
     key = website_assets.prefix("events", page.makerspace_id, page.pk) + uuid4().hex + ".webp"

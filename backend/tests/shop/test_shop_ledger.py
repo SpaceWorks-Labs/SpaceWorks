@@ -97,7 +97,7 @@ def test_tax_classes_freeze_one_snapshot_from_the_lines():
     assert {row["hsn_code"] for row in receipt["lines"]} == {"1905", ""}
 
 
-def test_with_charge_tracking_off_the_shop_refuses_to_sell():
+def test_with_charge_tracking_off_the_shop_refuses_new_sales():
     from .helpers import switch
 
     space = shop_space("led-d")
@@ -106,7 +106,13 @@ def test_with_charge_tracking_off_the_shop_refuses_to_sell():
     switch(space, "charges.shop", on=False)
     response = client(seller).post(f"/api/v1/admin/makerspaces/{space.pk}/shop/pos/sale/",
                                    {"lines": [line(variant)], "method": "cash"}, format="json")
-    assert response.status_code == 409 and response.json()["code"] == "charges_off"
+    assert response.status_code == 409
+    assert response.json()["code"] == "charges_off"
+    from apps.shop.models import ShopOrder
+    assert ShopOrder.objects.filter(makerspace=space).count() == 0
+    assert Payment.objects.filter(makerspace=space).count() == 0
+    variant.refresh_from_db()
+    assert variant.on_hand == 10
 
 
 def test_a_free_item_raises_no_charge():

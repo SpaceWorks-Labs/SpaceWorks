@@ -44,6 +44,9 @@ FANOUT_GATE_PARTICIPANTS = {
     "apps.evidence.services_retention.sweep_evidence_retention": (
         "Evidence object expiry."
     ),
+    "apps.makerspaces.storage_reservation_cleanup.sweep": (
+        "Upload debt cleanup uses each live tenant's skip-and-count gate; retained exact-key receipts survive tenant purge."
+    ),
     "apps.hardware_requests.services_return_reminders._run_legacy_return_reminders": (
         "Overdue loan reminders."
     ),

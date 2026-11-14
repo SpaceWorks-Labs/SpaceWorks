@@ -15,6 +15,7 @@ from apps.integrations.webhook_validation import (
     UnsafeWebhookUrl,
     resolve_webhook_target,
 )
+from apps.makerspaces.admin_limits import CapacityAdminMixin
 from config.admin_access import SuperuserOnlyModelAdmin
 from django.utils.translation import gettext
 
@@ -97,7 +98,8 @@ class DestinationCategoryScopeInline(TabularInline):
 
 
 @admin.register(NotificationDestination)
-class NotificationDestinationAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
+class NotificationDestinationAdmin(CapacityAdminMixin, SuperuserOnlyModelAdmin, ModelAdmin):
+    quota_key = "webhook_endpoints"
     """A room a makerspace posts into. No scope links means space-wide."""
 
     form = NotificationDestinationAdminForm

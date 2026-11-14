@@ -10,9 +10,12 @@ describe("ImageUploader member sessions", () => {
     vi.mocked(memberRequest).mockResolvedValueOnce({ object_key: "profiles/3/image", url: "https://bucket.test", method: "PUT" }).mockResolvedValueOnce({});
     const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(null, { status: 200 }));
     try {
-      await uploadPublicImage("/member/makerspaces/3/profile/image", new File(["image"], "face.png", { type: "image/png" }), { project_id: 2 }, memberRequest);
+      await uploadPublicImage("/member/makerspaces/3/profile/image", new File(["image"], "face.png", { type: "image/png" }), { project_id: 2, size: 999 }, memberRequest);
       expect(memberRequest).toHaveBeenNthCalledWith(1, "/member/makerspaces/3/profile/image", expect.objectContaining({ method: "POST" }));
-      expect(memberRequest).toHaveBeenNthCalledWith(2, "/member/makerspaces/3/profile/image", { method: "PUT", body: JSON.stringify({ object_key: "profiles/3/image", project_id: 2 }) });
+      expect(memberRequest).toHaveBeenNthCalledWith(2, "/member/makerspaces/3/profile/image", { method: "PUT", body: JSON.stringify({ object_key: "profiles/3/image", project_id: 2, size: 999 }) });
+      expect(JSON.parse(String(vi.mocked(memberRequest).mock.calls[0][1]?.body))).toEqual({
+        content_type: "image/png", filename: "face.png", project_id: 2, size: 5,
+      });
       expect(staffRequest).not.toHaveBeenCalled();
     } finally { fetchMock.mockRestore(); }
   });

@@ -25,6 +25,7 @@ from apps.inventory.admin_image_uploads import PublicImageAdminForm, PublicImage
 from apps.inventory.models import Category, InventoryProduct
 from apps.operations import services as operations_services
 from apps.operations.serializers import AssetGenerateSerializer
+from apps.makerspaces.admin_limits import CapacityAdminMixin
 from config.admin_access import SuperuserOnlyModelAdmin
 from django.utils.translation import gettext_lazy
 
@@ -57,7 +58,8 @@ class CategoryAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
 
 
 @admin.register(InventoryProduct)
-class InventoryProductAdmin(PublicImageAdminMixin, SuperuserOnlyModelAdmin, ModelAdmin):
+class InventoryProductAdmin(CapacityAdminMixin, PublicImageAdminMixin, SuperuserOnlyModelAdmin, ModelAdmin):
+    quota_key = "products"
     form = InventoryProductAdminForm
     image_field = "image_key"
     image_kind = "items"

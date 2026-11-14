@@ -102,12 +102,13 @@ def upload(file, *, module, page, copies):
     if module == "events":
         return copies.upload(file, page)
     data = file.read(MAX_BYTES + 1)
+    limits.check_upload_size(page.makerspace, len(data))
     converted = webp(data)
     key = prefix(module, page.makerspace_id, page.pk) + uuid4().hex + ".webp"
     staged = "staging/" + key
     import sys
     this = sys.modules[__name__]
-    limits.add_storage(page.makerspace, len(converted))
+    limits.charge_upload(page.makerspace, len(converted))
     copies.created.extend(((this, staged), (this, key)))
     _put(staged, data, "application/octet-stream")
     _put(key, converted, "image/webp")

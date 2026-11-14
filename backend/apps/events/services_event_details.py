@@ -41,6 +41,8 @@ def create_event(
     locked_spaces = list(Makerspace.objects.select_for_update().filter(pk__in={makerspace.pk, *partner_ids}).order_by("pk"))
     locked_space = next(row for row in locked_spaces if row.pk == makerspace.pk)
     require_module_locked(locked_space, "events")
+    from apps.managed_hosting.space_quotas import check_space_quota
+    check_space_quota(locked_space, "events_monthly", adding=1)
     event = Event(
         makerspace=locked_space,
         registration_audience=registration_audience or locked_space.event_default_registration_audience, category_id=category_id, tags=tags or [],

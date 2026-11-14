@@ -22,6 +22,7 @@ from apps.admin_api.serializers_inventory import (
 )
 from apps.evidence.responses import storage_unavailable_response
 from apps.evidence.storage import StorageUnavailable
+from apps.hardware_requests.exceptions import ErrorSerializer
 from apps.inventory import public_image_storage
 from apps.makerspaces import profile_images
 from apps.makerspaces.models import MakerspaceMembership
@@ -63,9 +64,10 @@ class AccountProfileImageView(AccountOwnerView):
         request=ProfileImageUploadRequestSerializer,
         responses={
             201: PublicImageUploadResponseSerializer,
-            400: OpenApiResponse(description="Invalid image upload request."),
+            400: OpenApiResponse(ErrorSerializer, description="Invalid image upload request; upload_size_required (declare size in bytes on PUT-only storage), upload_limit (file/headroom) or limit_reached (combined storage)."),
+            409: OpenApiResponse(ErrorSerializer, description="storage_public_images_bytes_quota_reached."),
             429: OpenApiResponse(description="Too many image upload requests."),
-            503: OpenApiResponse(description="Public image storage is unavailable."),
+            503: OpenApiResponse(ErrorSerializer, description="Public image storage is unavailable."),
         },
     )
     def post(self, request, **kwargs):
@@ -84,8 +86,10 @@ class AccountProfileImageView(AccountOwnerView):
             )
         else:
             object_key = public_image_storage.build_object_key(IMAGE_KIND, space.pk, ext)
+            from apps.makerspaces.limits import check_upload_headroom
+            check_upload_headroom(space)
         try:
-            upload = public_image_storage.presigned_upload(object_key, content_type)
+            upload = public_image_storage.presigned_upload(object_key, content_type, **({"exact_bytes": serializer.validated_data.get("size")} if serializer.validated_data.get("size") is not None else {}))
         except StorageUnavailable:
             return storage_unavailable_response()
         return Response(
@@ -99,8 +103,9 @@ class AccountProfileImageView(AccountOwnerView):
         request=ProfileImageAttachRequestSerializer,
         responses={
             200: AccountProfileSerializer,
-            400: OpenApiResponse(description="Invalid image object key or size."),
-            503: OpenApiResponse(description="Public image storage is unavailable."),
+            400: OpenApiResponse(ErrorSerializer, description="Invalid image object key or size; upload_limit (file/headroom/reservation) or limit_reached (combined storage)."),
+            409: OpenApiResponse(ErrorSerializer, description="storage_public_images_bytes_quota_reached."),
+            503: OpenApiResponse(ErrorSerializer, description="Public image storage is unavailable."),
         },
     )
     def put(self, request, **kwargs):

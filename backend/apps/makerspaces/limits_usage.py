@@ -61,15 +61,12 @@ def _events(makerspace) -> int:
 
 
 def _staff(makerspace) -> int:
-    from apps.accounts.models import User
     from apps.makerspaces.models import MakerspaceMembership
 
-    # Staff quota counts staff-TRACK rows on people (one account per person).
+    # 527: every retained staff-TRACK row counts, including revoked/disabled people.
     return MakerspaceMembership.staff_tracks.filter(
         person_q("user__"),
         makerspace=makerspace,
-        user__is_active=True,
-        user__access_status=User.AccessStatus.ACTIVE,
     ).count()
 
 
@@ -125,8 +122,8 @@ def _print_requests(makerspace) -> int:
         return 0
 
     return MachineServiceRequest.objects.filter(
+        Q(queue__machine_type=printer_type) | Q(bucket__machine__machine_type=printer_type),
         makerspace=makerspace,
-        queue__machine_type=printer_type,
         created_at__gte=month_start,
         created_at__lt=next_month,
     ).count()
@@ -173,7 +170,9 @@ def _storage(makerspace) -> int:
     from .storage_events_programme import accounted_bytes
     # Dedicated event pools count toward provider usage but not the ordinary tenant
     # entitlement; pending page-asset deletions still hold their bytes until cleaned.
-    return max(0, makerspace.storage_bytes_used - accounted_bytes(makerspace)) + pending_bytes(makerspace.pk)
+    from .storage_reservations import reserved_bytes
+    return (max(0, makerspace.storage_bytes_used - accounted_bytes(makerspace))
+            + pending_bytes(makerspace.pk) + reserved_bytes(makerspace))
 
 
 def add_storage(makerspace, size_bytes) -> None:
@@ -199,10 +198,9 @@ def add_storage(makerspace, size_bytes) -> None:
     with transaction.atomic():
         locked = Makerspace.objects.select_for_update().get(pk=makerspace.pk)
         if limit is not None and _storage(locked) + size_bytes > limit:
+            message = gettext("You've reached the free storage limit for this space — ask the operator to raise it or self-host.")
             raise serializers.ValidationError(
-                {
-                    "limit": gettext("You've reached the free storage limit for this space — ask the operator to raise it or self-host.")
-                },
+                {"limit": message, "detail": message, "code": "limit_reached"},
                 code="limit_reached",
             )
         Makerspace.objects.filter(pk=makerspace.pk).update(

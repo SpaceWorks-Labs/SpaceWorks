@@ -19,7 +19,7 @@ it("uses the existing nested presign and POST-finalize protocol without changing
   vi.stubGlobal("fetch", storage);
   await uploadPublicImage("/admin/spaces/3/image/", new File(["fixture"], "room.png", { type: "image/png" }), {}, bookingImageRequest);
   expect(request).toHaveBeenCalledWith("/admin/spaces/3/image/presign/",
-    { method: "POST", body: JSON.stringify({ content_type: "image/png", filename: "room.png" }) }, undefined);
+    { method: "POST", body: JSON.stringify({ content_type: "image/png", filename: "room.png", size: 7 }) }, undefined);
   expect(storage).toHaveBeenCalledWith("https://storage.example/upload", expect.objectContaining({ method: "POST" }));
   expect(request).toHaveBeenCalledWith("/admin/spaces/3/image/finalize/",
     { method: "POST", body: JSON.stringify({ object_key: "spaces/7/3/test.png" }) }, undefined);

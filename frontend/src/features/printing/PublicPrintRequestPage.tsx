@@ -59,12 +59,12 @@ export function PublicPrintRequestPage() {
     const allowed = () => currentIntake.current.available && currentIntake.current.slug === makerspaceSlug;
     if (!allowed()) throw new Error(t`Online machine requests aren't available here. Ask space staff for help.`);
     const files = [...modelFiles.map((file) => ({ file, kind: "stl" as const })), ...screenshotFiles.map((file) => ({ file, kind: "screenshot" as const }))];
-    const fileIds = await uploadPrintFilesBounded(files, async (item) => { if (!allowed()) throw new Error(t`Online machine requests aren't available here. Ask space staff for help.`); const presigned = await presignPrintUpload(makerspaceSlug, { kind: item.kind, filename: item.file.name, content_type: item.kind === "stl" ? item.file.type || "application/octet-stream" : item.file.type }); if (!allowed()) throw new Error(t`Online machine requests aren't available here. Ask space staff for help.`); await uploadToStorage(presigned.upload, item.file); return presigned.file_id; }, setUploadProgress);
+    const fileIds = await uploadPrintFilesBounded(files, async (item) => { if (!allowed()) throw new Error(t`Online machine requests aren't available here. Ask space staff for help.`); const presigned = await presignPrintUpload(makerspaceSlug, { kind: item.kind, filename: item.file.name, size: item.file.size, content_type: item.kind === "stl" ? item.file.type || "application/octet-stream" : item.file.type }); if (!allowed()) throw new Error(t`Online machine requests aren't available here. Ask space staff for help.`); await uploadToStorage(presigned.upload, item.file); return presigned.file_id; }, setUploadProgress);
     const chosenPool = poolsQuery.data?.find((pool) => String(pool.id) === form.consumablePoolId);
     if (!allowed()) throw new Error(t`Online machine requests aren't available here. Ask space staff for help.`);
     return submitPrintRequest(makerspaceSlug, { website, queue_id: queuesQuery.data?.[0]?.id ?? null, title: form.title.trim(), project_brief: optional(form.projectBrief), preferred_settings: optional(form.preferredSettings), material: chosenPool?.material || optional(form.material), color: chosenPool?.color || optional(form.color), consumable_pool_id: form.consumablePoolId ? Number(form.consumablePoolId) : null, estimated_filament_grams: form.estimatedFilamentGrams.trim() || null, quantity: form.quantity, source_link: optional(form.sourceLink), file_ids: fileIds });
   }, onSuccess: (response) => { queryClient.invalidateQueries({ queryKey: ["public-printer-consumable-pools", makerspaceSlug] }); setUploadProgress(""); setSubmitted(true); setActiveStatusToken(response.public_token); }, onError: () => setUploadProgress("") });
-  const displayName = bootstrap?.branding.display_name || bootstrap?.makerspace.name || formatSlug(makerspaceSlug) || "Makerspace";
+  const displayName = bootstrap?.branding.display_name || bootstrap?.makerspace.name || formatSlug(makerspaceSlug) || t`Makerspace`;
   const trackingUrl = new URL(window.location.href);
   if (activeStatusToken) trackingUrl.searchParams.set("token", activeStatusToken);
   const loading = bootstrapQuery.isLoading || (moduleEnabled && queuesQuery.isLoading);
@@ -73,7 +73,7 @@ export function PublicPrintRequestPage() {
   return <div style={brandStyle}><PublicLayout {...publicPageChrome(makerspaceSlug, displayName, tenantPath, bootstrap)} state={state}>
     <PublicDetailLayout state={state} title={t`Send a print job to ${displayName}`}
       chips={[{ label: t`3D printing`, tone: "accent" }]} sections={[{ id: "your-print", label: t`Your print`, content:
-        submitted ? <Callout size="panel" tone="success" lead="Request sent." body={t`We'll update this page as it moves.`} action={{ label: t`Send another request`, onClick: () => setSubmitted(false) }} />
+        submitted ? <Callout size="panel" tone="success" lead={t`Request sent.`} body={t`We'll update this page as it moves.`} action={{ label: t`Send another request`, onClick: () => setSubmitted(false) }} />
           : enabled ? <><PrintDetailsForm catalogue={catalogueQuery.data} form={form} updateField={updateField} poolsQuery={poolsQuery}
             modelFiles={modelFiles} setModelFiles={setModelFiles} screenshotFiles={screenshotFiles} setScreenshotFiles={setScreenshotFiles}
             submitPending={submitMutation.isPending} submitError={submitMutation.error} uploadProgress={uploadProgress} website={website} onWebsiteChange={setWebsite}

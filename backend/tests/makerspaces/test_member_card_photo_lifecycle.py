@@ -67,7 +67,8 @@ def test_presign_binds_mime_and_only_allows_the_staging_key(photo_card, monkeypa
     client.generate_presigned_url.return_value = "https://storage.test"
     monkeypatch.setattr(storage, "_public_client", lambda: client)
     response = authenticated_client(card.membership.user).post(
-        reverse("member-card-photo", args=[card.makerspace_id]), {"content_type": "image/jpeg"}, format="json",
+        reverse("member-card-photo", args=[card.makerspace_id]),
+        {"content_type": "image/jpeg", **({"size": 123} if method == "put" else {})}, format="json",
     )
     assert response.status_code == 201
     final = response.data["object_key"]
@@ -80,7 +81,11 @@ def test_presign_binds_mime_and_only_allows_the_staging_key(photo_card, monkeypa
         assert ["content-length-range", 1, member_card_storage.photo_max_bytes()] in arguments["Conditions"]
         assert member_card_storage.photo_max_bytes() == min(8 * 1024 * 1024, settings.EVIDENCE_MAX_BYTES)
     else:
-        assert client.generate_presigned_url.call_args.kwargs["Params"]["Key"] == storage.staging_key(final)
+        assert client.generate_presigned_url.call_args.kwargs["Params"] == {
+            "Bucket": settings.AWS_STORAGE_BUCKET_NAME, "Key": storage.staging_key(final),
+            "ContentType": "image/jpeg", "ContentLength": 123,
+        }
+        assert response.data["headers"] == {"Content-Type": "image/jpeg", "Content-Length": "123"}
 
 
 def test_finalize_requires_consent_promotes_once_and_delete_releases_quota(photo_card, objects, monkeypatch):
@@ -90,7 +95,7 @@ def test_finalize_requires_consent_promotes_once_and_delete_releases_quota(photo
     upload = jpeg_with_exif()
     objects[storage.staging_key(final)] = upload
     added, freed = [], []
-    monkeypatch.setattr(member_card_storage, "add_storage", lambda ms, size: added.append(size))
+    monkeypatch.setattr("apps.makerspaces.limits.add_storage", lambda ms, size: added.append(size))
     monkeypatch.setattr(member_card_storage, "free_storage", lambda ms, size: freed.append(size))
     url = reverse("member-card-photo", args=[card.makerspace_id])
     body = {"object_key": final, "content_type": "image/jpeg", "consent": False}

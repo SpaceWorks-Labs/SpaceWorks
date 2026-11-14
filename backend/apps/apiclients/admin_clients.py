@@ -14,6 +14,7 @@ from apps.apiclients.scope_registry import LEGACY_SCOPE
 from apps.apiclients.services import sync_makerspace_origins
 from apps.audit import services as audit
 from apps.makerspaces import limits
+from apps.makerspaces.admin_limits import CapacityAdminMixin
 from config.admin_access import SuperuserOnlyModelAdmin
 
 
@@ -23,7 +24,8 @@ from django.utils.translation import gettext_lazy
 
 
 @admin.register(ApiClient)
-class ApiClientAdmin(RecentReauthenticationAdminMixin, SuperuserOnlyModelAdmin, ModelAdmin):
+class ApiClientAdmin(RecentReauthenticationAdminMixin, CapacityAdminMixin, SuperuserOnlyModelAdmin, ModelAdmin):
+    quota_key = "api_clients"
     form = ApiClientAdminForm
     search_fields = ("label", "client_id", "makerspace__name")
     list_display = (

@@ -24,6 +24,7 @@ from apps.machines.models import (
     ServiceRequestConsumption,
     ServiceRequestFile,
 )
+from apps.makerspaces.admin_limits import CapacityAdminMixin
 from config.admin_access import SuperuserOnlyModelAdmin
 from django.utils.translation import gettext_lazy
 
@@ -54,7 +55,8 @@ class MachineTypeAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
 
 
 @admin.register(Machine)
-class MachineAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
+class MachineAdmin(CapacityAdminMixin, SuperuserOnlyModelAdmin, ModelAdmin):
+    quota_key = "machines"
     list_display = (
         'name', 'makerspace', 'machine_type', 'status', 'is_public', 'is_active'
     )

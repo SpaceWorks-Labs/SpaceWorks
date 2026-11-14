@@ -18,10 +18,10 @@ def test_put_signature_binds_mime_and_private_staging(monkeypatch):
     s3 = Mock(meta=SimpleNamespace(endpoint_url="https://reachable.s3.example"))
     s3.generate_presigned_url.return_value = "https://reachable.s3.example/signed"
     result = presigning.presign_upload(s3, backend_client=Mock(), bucket="private",
-        key="staging/final", content_type="image/png", max_bytes=1024, ttl=60, requested="auto")
-    assert result == {"url": "https://reachable.s3.example/signed", "method": "PUT", "headers": {"Content-Type": "image/png"}}
+        key="staging/final", content_type="image/png", max_bytes=1024, exact_bytes=1024, ttl=60, requested="auto")
+    assert result == {"url": "https://reachable.s3.example/signed", "method": "PUT", "headers": {"Content-Type": "image/png", "Content-Length": "1024"}}
     assert s3.generate_presigned_url.call_args.kwargs["Params"] == {
-        "Bucket": "private", "Key": "staging/final", "ContentType": "image/png",
+        "Bucket": "private", "Key": "staging/final", "ContentType": "image/png", "ContentLength": 1024,
     }
 
 
@@ -56,3 +56,27 @@ def test_invalid_boundary_never_signs(maximum, ttl):
     with pytest.raises(CapabilityError):
         presigning.presign_upload(s3, backend_client=Mock(), bucket="private", key="staging/final",
             content_type="image/png", max_bytes=maximum, ttl=ttl, requested="put")
+
+
+def test_put_only_omitted_size_is_typed_before_the_provider_ceiling(monkeypatch):
+    from rest_framework.exceptions import ValidationError
+    monkeypatch.setattr(presigning, "capabilities_for", lambda *a, **kw: contract(max_object_bytes=2))
+    client = Mock(meta=SimpleNamespace(endpoint_url="https://api.example"))
+    with pytest.raises(ValidationError) as refused:
+        presigning.presign_upload(client, backend_client=client, bucket="private", key="staging/key",
+            content_type="image/png", max_bytes=4, ttl=60, requested="auto")
+    assert (refused.value.status_code, str(refused.value.detail["code"])) == (400, "upload_size_required")
+    client.generate_presigned_url.assert_not_called()
+    client.generate_presigned_post.assert_not_called()
+
+
+def test_omitted_size_post_respects_a_smaller_proven_provider_limit(monkeypatch):
+    value = contract(max_object_bytes=2, presign_methods=frozenset({"post"}))
+    monkeypatch.setattr(presigning, "capabilities_for", lambda *a, **kw: value)
+    client = Mock(meta=SimpleNamespace(endpoint_url="https://api.example"))
+    presigning.presign_upload(client, backend_client=client, bucket="private", key="staging/key",
+        content_type="image/png", max_bytes=4, ttl=60, requested="auto")
+    client.generate_presigned_post.assert_called_once_with(Bucket="private", Key="staging/key",
+        Fields={"Content-Type": "image/png"}, Conditions=[{"Content-Type": "image/png"},
+        ["content-length-range", 1, 2]], ExpiresIn=60)
+    client.generate_presigned_url.assert_not_called()

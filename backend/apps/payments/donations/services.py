@@ -94,6 +94,10 @@ def create_gift(space, donor, *, amount, campaign=None, note="", tax=(False, "",
     from apps.tenant_migration.gate_runtime import assert_write_allowed
 
     assert_write_allowed(space.pk)
+    from apps.makerspaces.models import Makerspace
+    # Different donors must share the check-and-insert reservation, not only
+    # their individual double-submit locks. Keep it through Payment creation.
+    space = Makerspace.objects.select_for_update(no_key=True).get(pk=space.pk)
     require_tracking(space)
     wants, pan, address = tax
     if source == Donation.Source.ONLINE and pledge is None and donor.account is not None:

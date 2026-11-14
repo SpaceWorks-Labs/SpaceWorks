@@ -23,7 +23,7 @@ from .models_cutout import CardPhotoBatch, CardPhotoBatchItem
 from . import photo_batch_intake
 from .photo_batch_intake import display_name, plan_uploads
 from .photo_names import HolderIndex
-from .storage import delete_quietly, put_bytes, signed_url
+from .storage import put_bytes, signed_url
 from .switches import cutout_on
 
 LIFETIME = timedelta(days=7)
@@ -92,16 +92,27 @@ def add_files(batch, space, event, uploads):
             row = CardPhotoBatchItem(batch=batch, position=position, filename=display_name(name))
             position += 1
             try:
-                png = normalise(load(), max_edge=1200, keep_alpha=False)[0]
+                data = load()
+                from apps.makerspaces.limits import check_upload_size
+                check_upload_size(space, len(data))
+                png = normalise(data, max_edge=1200, keep_alpha=False)[0]
             except ValidationError as refused:
-                if "files" in getattr(refused, "detail", {}):  # an intake guard, not an unreadable photo
+                if "files" in getattr(refused, "detail", {}) or "code" in getattr(refused, "detail", {}):  # an intake guard, not an unreadable photo
                     raise
                 row.state, row.error_code, row.decision = "failed", "unreadable_image", "skip"
                 rows.append(row)
                 continue
             row.file_key, row.size_bytes = _key(batch), len(png)
+            from django.conf import settings
+            from apps.makerspaces.storage_reservations import reserve, record_final_key
+            reserve(space.pk, row.file_key, len(png), bucket=settings.AWS_STORAGE_BUCKET_NAME,
+                    staging_key=row.file_key, ttl=max(1, int((batch.expires_at - timezone.now()).total_seconds())))
+            written.append(row.file_key)  # also compensate an ambiguous failed PUT
+            # Claim the eventual destination at intake, before a resumed worker's
+            # attachment savepoint can roll it back after writing remote bytes.
+            prefix = "card-photos" if batch.kind == "event_card" else "member-cards"
+            record_final_key(row.file_key, f"{prefix}/{space.pk}/{row.file_key.rsplit('/', 1)[-1]}")
             put_bytes(row.file_key, png, "image/png")
-            written.append(row.file_key)
             del png
             _match(row, index, by_id, taken, name)
             rows.append(row)
@@ -117,7 +128,7 @@ def add_files(batch, space, event, uploads):
             CardPhotoBatch.objects.filter(pk=batch.pk).update(file_count=batch.items.count())
     except Exception:
         for key in written:
-            delete_quietly(key)
+            discard_file(key)
         raise
     finally:
         intake.close()
@@ -236,13 +247,14 @@ def cancel(actor, batch, space):
 def release_item_file(instance, **_kwargs):
     """post_delete on CardPhotoBatchItem: a batch removed by a space purge must not leave its photos behind."""
     if instance.file_key:
-        transaction.on_commit(lambda: delete_quietly(instance.file_key))
+        transaction.on_commit(lambda: discard_file(instance.file_key))
 
 
 def _drop_objects(batch):
     for item in batch.items.exclude(file_key=""):
-        delete_quietly(item.file_key)
-    batch.items.exclude(file_key="").update(file_key="")
+        if discard_file(item.file_key):
+            item.file_key = ""
+            item.save(update_fields=["file_key"])
 
 
 def purge_expired_batches(limit=50):
@@ -254,3 +266,31 @@ def purge_expired_batches(limit=50):
         if batch.state == CardPhotoBatch.State.DRAFT:
             CardPhotoBatch.objects.filter(pk=batch.pk).update(state=CardPhotoBatch.State.CANCELLED)
     return 0
+
+
+def consume_file(key):
+    """Remove the temporary source before converting its debt into final bytes."""
+    from django.conf import settings
+    from apps.evidence import storage
+    from apps.object_storage import delete_all_versions
+    result = delete_all_versions(storage._client(), bucket=settings.AWS_STORAGE_BUCKET_NAME, key=key)
+    if not result.absence_confirmed:
+        raise storage.StorageUnavailable("Upload deletion was not confirmed.")
+
+
+def discard_file(key):
+    """Keep a permanent, promptly retryable receipt when deletion fails."""
+    from apps.makerspaces.models import StorageQuotaReservation
+    from apps.makerspaces.storage_reservation_cleanup import cleanup
+    receipt = StorageQuotaReservation.objects.filter(object_key=key).first()
+    if receipt is None:  # pre-reservation batches retain their existing cleanup
+        try:
+            consume_file(key)
+            return True
+        except Exception:
+            return False
+    try:
+        return cleanup(receipt.pk, cancel=True)
+    except Exception:
+        StorageQuotaReservation.objects.filter(pk=receipt.pk).update(expires_at=timezone.now())
+        return False

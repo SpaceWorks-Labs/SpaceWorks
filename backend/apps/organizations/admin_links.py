@@ -59,7 +59,8 @@ class OrganizationMakerspaceAdmin(RecentReauthenticationAdminMixin, SuperuserOnl
             # Django's POST transaction has rolled back before rendering the bound form.
             # A request-local error avoids another save and never leaks to other admins.
             detail = exc.detail.get("detail", exc.detail) if isinstance(exc.detail, dict) else exc.detail
-            request._organization_link_refusal = str(detail)
+            code = exc.detail.get("code", exc.default_code) if isinstance(exc.detail, dict) else exc.default_code
+            request._organization_link_refusal = forms.ValidationError(str(detail), code=str(code))
             try:
                 return super().changeform_view(request, object_id, form_url, extra_context)
             finally:

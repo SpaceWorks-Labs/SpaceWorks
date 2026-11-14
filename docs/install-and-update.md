@@ -5,6 +5,16 @@ its modules. For a plain-language walkthrough read [Setting up Space Works](setu
 for the production reference (environment, TLS, backups, the control plane) read the
 [self-hosting guide](self-hosting.md).
 
+Optional Mixpanel analytics is off by default. Set `WEB_TELEMETRY_MIXPANEL_TOKEN` to the **public project
+token** in the installation's `.env`; for EU projects also set `WEB_TELEMETRY_MIXPANEL_API_HOST=https://api-eu.mixpanel.com`.
+`WEB_TELEMETRY_MIXPANEL_SDK_HOST` optionally selects a cross-origin SDK mirror with anonymous CORS
+(default `https://cdn.mxpnl.com`); a mirror on the app's own origin is refused.
+Then run `bash scripts/apply-settings.sh` to recreate services with the running release and rebuild the
+website CSP. Other deployment methods must pass these settings to both backend and website and restart them;
+static websites must set the equivalent runtime config and exact CSP origins themselves.
+The shared policy lives in the [design-system product rules, rule 8.3](https://github.com/SpaceWorks-Labs/SpaceWorks-Design-System/blob/main/docs/product-rules.md)
+(decision 553); this app's [environment, CSP and payload details](web-telemetry-providers.md#mixpanel-product-setup) remain here.
+
 ## Install in one line
 
 On a 64-bit Linux server (Ubuntu 24.04 is the tested target) as a user with `sudo`, or on macOS with

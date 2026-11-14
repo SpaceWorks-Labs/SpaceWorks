@@ -1,6 +1,6 @@
 # Web telemetry providers
 
-Every provider below is **off** until two things are true: a Space Manager (or, for the central
+The per-space providers in the table below are **off** until two things are true: a Space Manager (or, for the central
 site, the platform superadmin) has configured it under **Reports -> Analytics -> Web telemetry**, and
 the visitor has agreed to that provider's purpose in the Privacy preferences box. Until then no script
 is loaded, no request is sent and no cookie or storage key is written for the provider. Browser push
@@ -27,10 +27,39 @@ config endpoint returns only these public values. Changes are audited as `analyt
 Backend Sentry is a deployment setting (`SENTRY_DSN`, optional `SENTRY_TRACES_SAMPLE_RATE`): it sends
 no default personal data, no request bodies, no local variables and runs a scrubber before every event.
 
+## Mixpanel product setup
+
+The canonical shared rule is [Space Works Design System, product rules 8.3: Mixpanel](https://github.com/SpaceWorks-Labs/SpaceWorks-Design-System/blob/main/docs/product-rules.md)
+(decision 553). This section covers the app and its landing page's implementation and deployment.
+
+For the product, set `WEB_TELEMETRY_MIXPANEL_TOKEN` on backend and website. The optional
+`WEB_TELEMETRY_MIXPANEL_API_HOST` defaults to `https://api.mixpanel.com`; EU projects use
+`https://api-eu.mixpanel.com`. The optional `WEB_TELEMETRY_MIXPANEL_SDK_HOST` defaults to
+`https://cdn.mxpnl.com` and must serve `/libs/mixpanel-2-latest.min.js`. Hosts must be bare HTTPS
+origins, with no wildcard, path, query, fragment or credentials. Only while the token is set does the
+existing CSP builder add the SDK origin to `script-src` and collection origin to `connect-src`.
+The SDK script sets anonymous CORS and `no-referrer` before its source URL and requires a CORS response
+allowing the app origin. Same-origin mirrors are refused: anonymous script CORS would still send app
+cookies there. The shell-generated config checks the actual browser origin, including custom tenant
+domains; the app validator and loader also refuse it. No package install is needed.
+
+The product emits only `page_view`, with exactly `token`, `distinct_id` (a random browser UUID) and
+`page` (an approved route template, such as `/m/:slug/items/:itemId`). All SDK-generated properties are
+discarded before transmission; requests omit cookies and referrers and use `ip=0`. Automatic capture,
+pageviews, replay, flags, attribution and vendor persistence are disabled. Browser transport still
+exposes an IP address to the destination; `ip=0` prevents Mixpanel using it for event geolocation.
+Mixpanel replaces the existing page-view provider while configured, preserving the one-provider rule;
+replay and diagnostics retain separate consent. A tenant also needs its `analytics` module enabled.
+Unknown, authenticated, private, query/hash and bearer pages remain excluded by the existing boundary.
+The central landing page uses the same consent controls. Changing token, hosts or tenant requires a new grant.
+
+These are operator settings, never per-space credentials. Existing telemetry records are read-only and
+hidden in `/control/`; configure the environment rather than adding a second settings authority there.
+
 ## Content Security Policy
 
 The web server's policy is built at start-up from the operator's `WEB_TELEMETRY_ALLOWED_ORIGINS` (comma
-separated HTTPS origins) and the Plausible-compatible variables. It cannot follow a per-space setting,
+separated HTTPS origins), the Plausible-compatible variables and the enabled operator Mixpanel hosts. It cannot follow a per-space setting,
 so a provider that loads a vendor script or reports to a vendor host works only when the operator has
 listed that vendor's origins; the setting alone never widens the policy. Leave the list empty to keep
 the strict default.

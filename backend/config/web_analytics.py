@@ -1,4 +1,4 @@
-"""Fail-closed settings for the one supported, manual Plausible protocol."""
+"""Fail-closed settings and CSP for manual Plausible and opt-in Mixpanel."""
 import re
 from urllib.parse import urlsplit
 
@@ -28,3 +28,21 @@ def analytics_settings(env, policy):
     directives["script-src"] = [*directives["script-src"], origins[0]]
     directives["connect-src"] = [*directives.get("connect-src", ["'self'"]), origins[1]]
     return script, collect, domain
+
+
+def mixpanel_settings(env, policy):
+    """Operator-only project and exact SDK/collection CSP origins (decision 551)."""
+    token = env("WEB_TELEMETRY_MIXPANEL_TOKEN", default="")
+    host = env("WEB_TELEMETRY_MIXPANEL_API_HOST", default="") or "https://api.mixpanel.com"
+    sdk_host = env("WEB_TELEMETRY_MIXPANEL_SDK_HOST", default="") or "https://cdn.mxpnl.com"
+    if not token:
+        return "", host, sdk_host
+    if not re.fullmatch(r"[A-Za-z0-9_-]{1,128}", token):
+        raise ImproperlyConfigured("Mixpanel requires a public project token.")
+    for origin in (host, sdk_host):
+        if not re.fullmatch(r"https://[A-Za-z0-9]+(?:[.-][A-Za-z0-9]+)*(?::[0-9]{1,5})?", origin):
+            raise ImproperlyConfigured("Mixpanel hosts must be bare HTTPS origins.")
+    directives = policy["DIRECTIVES"]
+    directives["connect-src"] = list(dict.fromkeys([*directives.get("connect-src", ["'self'"]), host]))
+    directives["script-src"] = list(dict.fromkeys([*directives["script-src"], sdk_host]))
+    return token, host, sdk_host

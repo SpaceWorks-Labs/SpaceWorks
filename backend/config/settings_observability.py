@@ -72,12 +72,14 @@ if not 1 <= MFA_MAX_ATTEMPTS <= 10:
     raise ImproperlyConfigured("MFA_MAX_ATTEMPTS must be between 1 and 10.")
 
 # Lane F infrastructure is always present, independent of separable domain apps.
-from config.web_analytics import analytics_settings
+from config.web_analytics import analytics_settings, mixpanel_settings
 # Explicit operator approval; this controls data destinations, not script loading or CSP.
 WEB_TELEMETRY_ALLOWED_ORIGINS = tuple(env.list("WEB_TELEMETRY_ALLOWED_ORIGINS", default=[]))
 WEB_ANALYTICS_SCRIPT_URL, WEB_ANALYTICS_COLLECT_URL, WEB_ANALYTICS_DOMAIN = analytics_settings(
     env, CONTENT_SECURITY_POLICY,
 )
+(WEB_TELEMETRY_MIXPANEL_TOKEN, WEB_TELEMETRY_MIXPANEL_API_HOST,
+ WEB_TELEMETRY_MIXPANEL_SDK_HOST) = mixpanel_settings(env, CONTENT_SECURITY_POLICY)
 ROUTE_METRICS_ENABLED = env.bool("ROUTE_METRICS_ENABLED", default=False)
 PROMETHEUS_MULTIPROC_DIR = env("PROMETHEUS_MULTIPROC_DIR", default="")
 MIDDLEWARE.insert(3, "apps.operations.route_metrics.RouteMetricsMiddleware")

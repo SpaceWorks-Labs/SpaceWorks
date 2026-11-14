@@ -101,6 +101,9 @@ The built-in fair-use defaults need `PLATFORM_DOMAIN_SUFFIX`; plans, limits and 
 | `THROTTLE_API_CLIENT_MANAGE` | `120/hour` | Rate for creating, rotating and revoking API clients in the console. |
 | `THROTTLE_MINOR_PERSON_LOOKUP` | `60/min` | Rate for the staff person lookup used when adding a minor or guardian (0.12.0). |
 | `WEB_TELEMETRY_ALLOWED_ORIGINS` | empty | Comma-separated HTTPS origins (no paths) a self-hosted page-analytics provider may send to. Empty = only the built-in destinations. Set the same value on the website container so its CSP matches ([providers](web-telemetry-providers.md)). |
+| `WEB_TELEMETRY_MIXPANEL_TOKEN` | empty | Public project token; pass all Mixpanel settings to backend and website. See [app setup](web-telemetry-providers.md#mixpanel-product-setup) and the canonical [design-system rule 8.3](https://github.com/SpaceWorks-Labs/SpaceWorks-Design-System/blob/main/docs/product-rules.md). |
+| `WEB_TELEMETRY_MIXPANEL_API_HOST` | `https://api.mixpanel.com` | Bare HTTPS collection origin; EU projects use `https://api-eu.mixpanel.com`. |
+| `WEB_TELEMETRY_MIXPANEL_SDK_HOST` | `https://cdn.mxpnl.com` | Bare HTTPS SDK origin, serving `/libs/mixpanel-2-latest.min.js` with anonymous CORS; optional cross-origin mirror. Same-origin mirrors are refused. |
 
 ## Database
 

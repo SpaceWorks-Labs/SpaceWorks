@@ -121,6 +121,9 @@ None is required. All are optional and have working defaults; the full list with
 | `ORGANIZATION_PUBLIC_DIRECTORY_ENABLED`, `ORGANIZATION_REVIEW_REQUIRED` | see reference | Organization directory and review. |
 | `PUBLIC_SPACE_REQUESTS_ENABLED` | off | Public request form for a space or organization workspace on a self-hosted install. |
 | `WEB_TELEMETRY_ALLOWED_ORIGINS` | empty | Origins a self-hosted page-analytics provider may use. |
+| `WEB_TELEMETRY_MIXPANEL_TOKEN` | empty (off) | Public Mixpanel project token. See [app setup](web-telemetry-providers.md#mixpanel-product-setup) and the canonical [design-system rule 8.3](https://github.com/SpaceWorks-Labs/SpaceWorks-Design-System/blob/main/docs/product-rules.md). |
+| `WEB_TELEMETRY_MIXPANEL_API_HOST` | `https://api.mixpanel.com` | Exact HTTPS collection origin; use `https://api-eu.mixpanel.com` for an EU project. |
+| `WEB_TELEMETRY_MIXPANEL_SDK_HOST` | `https://cdn.mxpnl.com` | Exact HTTPS SDK origin with anonymous CORS (or a cross-origin mirror). Same-origin mirrors are refused. Used only with a token. |
 | `REDIS_IMAGE_TAG`, `REDIS_MAXMEMORY` | `7.4.11-alpine`, `512mb` | Bundled Redis (host settings in `.env`). |
 
 Operators coming from 0.9.2 or 0.9.3 also have every variable added for the 0.11.0 candidate (see its upgrade guide).

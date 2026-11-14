@@ -6,6 +6,7 @@ import { safePage, type Consent } from "./policy";
 import { replayRoute } from "./replayRoutes";
 import { providerFactories } from "./providers";
 import type { WebTelemetryConfig } from "../../features/staff/analytics/telemetryApi";
+import type { MixpanelConfig } from "./mixpanelConfig";
 
 const controller = new TelemetryController();
 let everLoaded = false, generation = 0, currentBinding: string | null = null, currentNavigation: string | null = null, ready = false;
@@ -15,7 +16,7 @@ let pendingStart: Promise<void> | null = null, queued: { navigation: string; pat
 export function installWebTelemetryBoundary() {
   return installTelemetryBoundary(() => everLoaded, () => { generation++; controller.stop(); }, url => url.pathname.match(/^\/m\/([^/]+)/)?.[1] ?? "root", (previous, next) => replayRoute(replayPolicyProvider, safePage(previous)) !== replayRoute(replayPolicyProvider, safePage(next)));
 }
-export async function updateWebTelemetry(binding: string, config: WebTelemetryConfig, consent: Consent, url: URL, verifiedAnonymous: boolean, legacy = false) {
+export async function updateWebTelemetry(binding: string, config: WebTelemetryConfig, consent: Consent, url: URL, verifiedAnonymous: boolean, legacy = false, mixpanel: MixpanelConfig | null = null) {
   if (!verifiedAnonymous || browserIdentity() !== "anonymous") { stopWebTelemetry(); return; }
   const path = safePage(url);
   replayPolicyProvider = consent.replay ? config.replay.provider : "none";
@@ -26,9 +27,9 @@ export async function updateWebTelemetry(binding: string, config: WebTelemetryCo
   currentBinding = binding;
   if (!path) { controller.stop(); return; }
   currentNavigation = url.href; queued = null;
-  const configured = legacy ? [{ purpose: "analytics" as const, load: async () => {
+  const configured = legacy && !mixpanel ? [{ purpose: "analytics" as const, load: async () => {
     return { purpose: "analytics" as const, async start(signal: AbortSignal, admitted: () => boolean) { if (!signal.aborted && admitted()) sdk.pageView(url); }, pageView() { sdk.pageView(new URL(window.location.href)); }, stop() { sdk.removeAnalytics(); } };
-  } }] : providerFactories(config, consent, path);
+  } }] : providerFactories(config, consent, path, mixpanel);
   const factories = configured.map(factory => ({ ...factory, load: async () => {
     everLoaded = true; return factory.load();
   } }));

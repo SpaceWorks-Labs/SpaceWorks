@@ -2,6 +2,7 @@ import type { WebTelemetryConfig } from "../../features/staff/analytics/telemetr
 import type { AdapterFactory } from "./controller";
 import type { Consent } from "./policy";
 import { replayRoute } from "./replayRoutes";
+import type { MixpanelConfig } from "./mixpanelConfig";
 
 /** Defence in depth behind the server allowlist: a bare https origin, or nothing. */
 export function safeOrigin(value: string): string | undefined {
@@ -13,9 +14,11 @@ export function safeOrigin(value: string): string | undefined {
 }
 
 /** Import providers only after the controller has admitted the corresponding purpose. */
-export function providerFactories(config: WebTelemetryConfig, consent: Consent, path: string): AdapterFactory[] {
+export function providerFactories(config: WebTelemetryConfig, consent: Consent, path: string, mixpanel: MixpanelConfig | null = null): AdapterFactory[] {
   const result: AdapterFactory[] = [];
-  const p = config.pageview, r = config.replay, f = config.firebase;
+  // One page-view provider: an operator-selected Mixpanel project takes precedence.
+  const p = mixpanel ? { ...config.pageview, provider: "none" as const } : config.pageview, r = config.replay, f = config.firebase;
+  if (mixpanel) result.push({ purpose: "analytics", load: async () => (await import("./adapters/mixpanel")).mixpanel(mixpanel, path) });
   const firebase = { apiKey: f.api_key, authDomain: f.auth_domain, projectId: f.project_id, appId: f.app_id, measurementId: f.measurement_id };
   const pageOrigin = p.endpoint ? safeOrigin(p.endpoint) : undefined, replayOrigin = r.endpoint ? safeOrigin(r.endpoint) : undefined;
   const pageOriginOk = !p.endpoint || Boolean(pageOrigin), replayOriginOk = !r.endpoint || Boolean(replayOrigin);

@@ -32,6 +32,24 @@ for extra in $(printf '%s' "${WEB_TELEMETRY_ALLOWED_ORIGINS:-}" | tr ',' ' '); d
   [ "$validated" = "$extra" ] || fail
   telemetry_origins="$telemetry_origins $validated"
 done
+mixpanel_origin=''
+mixpanel_sdk_origin=''
+mixpanel_token="${WEB_TELEMETRY_MIXPANEL_TOKEN:-}"
+if [ -n "$mixpanel_token" ]; then
+  case "$mixpanel_token" in *[!A-Za-z0-9_-]*) fail ;; esac
+  printf '%s' "$mixpanel_token" | grep -Eq '^[A-Za-z0-9_-]{1,128}$' || fail
+  mixpanel_origin="${WEB_TELEMETRY_MIXPANEL_API_HOST:-https://api.mixpanel.com}"
+  mixpanel_sdk_origin="${WEB_TELEMETRY_MIXPANEL_SDK_HOST:-https://cdn.mxpnl.com}"
+  for host in "$mixpanel_origin" "$mixpanel_sdk_origin"; do
+    case "$host" in *[!A-Za-z0-9:/.-]*) fail ;; esac
+    printf '%s' "$host" | grep -Eq '^https://[A-Za-z0-9]+([.-][A-Za-z0-9]+)*(:[0-9]{1,5})?$' || fail
+  done
+  # The request origin is unknown at container startup (custom tenant domains).
+  # Refuse same-origin mirrors in the emitted config, before any SDK can load.
+  cat >> "${TENANT_CONFIG_PATH:-/usr/share/nginx/html/config.js}" <<EOF
+window.__MIXPANEL__ = new URL("$mixpanel_sdk_origin").origin === window.location.origin ? undefined : {token: "$mixpanel_token", apiHost: "$mixpanel_origin", sdkHost: "$mixpanel_sdk_origin"};
+EOF
+fi
 # Cloudflare Turnstile (sign-in CAPTCHA) is allowed only when the deployment configured it;
 # its widget frame needs no frame-src entry because this policy sets no frame-src at all.
 turnstile_origin=''
@@ -42,7 +60,7 @@ turnstile_origin=''
 # origins vary per deployment and are declared only by the opt-in policy below.
 script_sources="'self' 'wasm-unsafe-eval' https://accounts.google.com https://appleid.cdn-apple.com"
 baseline="object-src 'none'; base-uri 'self'"
-if [ -z "$script$collect$domain$telemetry_origins" ]; then
+if [ -z "$script$collect$domain$telemetry_origins$mixpanel_origin" ]; then
   printf '%s\n' "add_header Content-Security-Policy \"script-src $script_sources$turnstile_origin; $baseline\" always;" >> "$headers"
   exit 0
 fi
@@ -53,7 +71,7 @@ for extra in ${WEB_ANALYTICS_EXTRA_CONNECT_ORIGINS:-}; do
   extra_origins="$extra_origins $validated"
 done
 # Opt-in deployments declare external API/object-storage origins here explicitly.
-printf '%s\n' "add_header Content-Security-Policy \"script-src $script_sources $script_origin$telemetry_origins$turnstile_origin; connect-src 'self' https://accounts.google.com https://oauth2.googleapis.com https://appleid.apple.com $collect_origin$extra_origins$telemetry_origins$turnstile_origin; $baseline\" always;" >> "$headers"
+printf '%s\n' "add_header Content-Security-Policy \"script-src $script_sources $script_origin$telemetry_origins$turnstile_origin $mixpanel_sdk_origin; connect-src 'self' https://accounts.google.com https://oauth2.googleapis.com https://appleid.apple.com $collect_origin$extra_origins$telemetry_origins$turnstile_origin $mixpanel_origin; $baseline\" always;" >> "$headers"
 if [ -n "$script" ]; then
 cat >> "${TENANT_CONFIG_PATH:-/usr/share/nginx/html/config.js}" <<EOF
 window.__WEB_ANALYTICS__ = {scriptUrl: "$script", collectUrl: "$collect", domain: "$domain"};

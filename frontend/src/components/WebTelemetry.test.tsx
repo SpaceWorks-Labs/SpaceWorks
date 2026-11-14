@@ -21,13 +21,13 @@ it("does not request platform telemetry for an unresolved tenant", () => {
 it("uses the central legacy permission supplied by platform config", async () => {
   mocks.platform.mockResolvedValue({ platform_telemetry: config, platform_telemetry_legacy_allowed: true });
   mocks.bootstrap.mockReturnValue({ data: undefined }); window.__WEB_ANALYTICS__ = { scriptUrl: "https://metrics.test/manual.js", collectUrl: "https://metrics.test/custom/api", domain: "space.test" };
-  renderAt("/about"); await waitFor(() => expect(mocks.update).toHaveBeenCalledWith(expect.any(String), config, expect.any(Object), expect.any(URL), true, true));
+  renderAt("/about"); await waitFor(() => expect(mocks.update).toHaveBeenCalledWith(expect.any(String), config, expect.any(Object), expect.any(URL), true, true, null));
   delete window.__WEB_ANALYTICS__;
 });
 it("uses only the resolved tenant legacy permission on a tenant route", async () => {
   mocks.update.mockClear(); mocks.platform.mockClear();
   mocks.bootstrap.mockReturnValue({ data: { makerspace: { id: 7, slug: "lab" }, telemetry: config, telemetry_legacy_allowed: true } });
   window.__WEB_ANALYTICS__ = { scriptUrl: "https://metrics.test/manual.js", collectUrl: "https://metrics.test/custom/api", domain: "space.test" };
-  renderAt("/m/lab"); await waitFor(() => expect(mocks.update).toHaveBeenCalledWith(expect.any(String), config, expect.any(Object), expect.any(URL), true, true));
+  renderAt("/m/lab"); await waitFor(() => expect(mocks.update).toHaveBeenCalledWith(expect.any(String), config, expect.any(Object), expect.any(URL), true, true, null));
   expect(mocks.platform).not.toHaveBeenCalled(); delete window.__WEB_ANALYTICS__;
 });

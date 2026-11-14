@@ -47,12 +47,12 @@ def create_crew_pool(*, request, event_id, data):
     minor(data["initial_total_minor"], zero=True)
     with command(event_id=event_id, actor=request.user, request=request, data=data,
                  action="programme.crew_pool", finance=True) as ctx:
-        if ctx.replay:
-            return ctx.replay
         if not feature_enabled(ctx.event.makerspace, "events.crew_claims"):
             # #183B: the crew pool route exists only for crew claims, so off answers 404.
             from apps.makerspaces.guards import feature_off
             raise feature_off("events.crew_claims", "Crew claims are turned off for this makerspace.")
+        if ctx.replay:
+            return ctx.replay
         programme = ReimbursementProgramme.objects.select_for_update().filter(event=ctx.event).first()
         require(programme is not None, "programme_not_initialized")
         pools = lock_pools(programme)

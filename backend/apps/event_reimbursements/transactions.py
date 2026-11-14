@@ -22,11 +22,7 @@ from apps.tenant_migration.gate_runtime import boundary_tenant_write, assert_wri
 
 
 def require_reimbursement_locked(space):
-    from apps.makerspaces.guards import SurfaceOff
-    try:
-        return require_module_locked(space, "event_reimbursements")
-    except SurfaceOff:
-        require(False, "reimbursement_unavailable")
+    return require_module_locked(space, "event_reimbursements")
 
 
 def check_origin(request, event, *, owner=False):

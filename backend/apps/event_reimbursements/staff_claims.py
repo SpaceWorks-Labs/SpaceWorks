@@ -45,12 +45,12 @@ def file_claim(*, request, event_id, data):
     with command(event_id=event_id, actor=request.user, request=request, data=data, action="staff_claim.file",
                  permission="review_reimbursements", finance=finance,
                  account_ids=(seed_registration.member_id,)) as ctx:
-        if ctx.replay:
-            return ctx.replay
         from apps.makerspaces.platform import feature_enabled
         if not feature_enabled(ctx.event.makerspace, "events.staff_claims"):
             from apps.makerspaces.guards import feature_off
             raise feature_off("events.staff_claims", "Staff expense claims are turned off for this makerspace.")
+        if ctx.replay:
+            return ctx.replay
         programme = ReimbursementProgramme.objects.select_for_update().filter(event=ctx.event).first()
         require(programme is not None and programme.enabled and ctx.event.status != "cancelled",
                 "reimbursement_unavailable")

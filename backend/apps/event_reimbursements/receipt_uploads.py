@@ -5,9 +5,14 @@ from apps.payments.event_payouts.attachment_models import FinanceAttachment
 from .claim_models import ReimbursementClaim
 
 
-def require_claim(*, event, owner_id, claim_uuid):
+def owned_claim(*, event, owner_id, claim_uuid):
     row = ReimbursementClaim.objects.filter(uuid=claim_uuid, event=event, member_id=owner_id).first()
     require(row is not None, "not_found", status=404)
+    return row
+
+
+def require_claim(*, event, owner_id, claim_uuid):
+    row = owned_claim(event=event, owner_id=owner_id, claim_uuid=claim_uuid)
     due = row.info_due_at if row.state == "returned_for_info" else row.effective_due_at
     require(row.state in ("draft", "open", "returned_for_info") and due is not None
         and event.ends_at <= timezone.now() < due and event.status != "cancelled", "claim_closed")

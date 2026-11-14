@@ -7,6 +7,8 @@ from apps.accounts.models import User
 from apps.audit.models import AuditLog
 from apps.events.models import Event, EventCommandReceipt, EventRegistration, HackathonApplication
 from apps.events.services_registration import register
+from apps.event_reimbursements import award_workflow, request_workflow
+from apps.event_reimbursements.models import GrantAward, GrantRequest, ReimbursementClaim
 from apps.event_reimbursements.views_member import (
     AwardAcceptView, AwardDeclineView, ClaimAppealView, ClaimSubmitView, ClaimView,
     ReimbursementView, RequestSubmitView, RequestWithdrawView,
@@ -14,6 +16,7 @@ from apps.event_reimbursements.views_member import (
 from apps.makerspaces.models import Makerspace
 from tests.accounts.test_reauthentication import request as session_request
 from .conftest import cmd
+from .helpers import block
 
 pytestmark = pytest.mark.django_db(transaction=True)
 OWNER_OPERATIONS = (
@@ -111,6 +114,26 @@ def test_authorized_participant_gets_typed_off_and_retained_read_and_command_rep
     assert baseline.data["request"]["id"] == created.data["id"]
     assert baseline.data["request"]["state"] == "draft"
     assert registration.member_id == world.owner.pk
+    # Establish real owner standing before probing the award and claim gates.
+    request_workflow.submit(event_id=world.event.pk, actor=world.owner, request=world.member_session,
+        data=cmd(created.data["version"], reimbursement_request=block(world)))
+    grant = GrantRequest.objects.get(pk=created.data["id"])
+    world.pool.refresh_from_db()
+    award_workflow.decide(request=world.finance, event_id=world.event.pk, request_id=grant.pk,
+        data=cmd(grant.version, expected_award_version=None, expected_pool_version=world.pool.version,
+            outcome="award", amount_minor=10000, currency="INR", reason_code="need_based"))
+    award = GrantAward.objects.get(request=grant)
+    award_workflow.respond(event_id=world.event.pk, actor=world.owner, request=world.member_session,
+        data=cmd(award.version, award_revision=award.revisions.get().revision), accept=True)
+    claim = ReimbursementClaim.objects.create(award=award, event=world.event, member=world.owner,
+        effective_due_at=world.programme.claim_due_at)
+    baseline = call(world, world.owner, ReimbursementView, "GET")
+    assert (baseline.status_code, baseline.data.get("code")) == (200, None), baseline.data
+    assert baseline.data["award"]["id"] == award.pk
+    assert baseline.data["claim"]["id"] == claim.pk
+    claim_baseline = call(world, world.owner, ClaimView, "GET")
+    assert (claim_baseline.status_code, claim_baseline.data.get("code")) == (200, None), claim_baseline.data
+    assert claim_baseline.data["id"] == claim.pk
     original = list(world.space.enabled_modules)
     world.space.enabled_modules = [key for key in original if key != disabled]
     world.space.save(update_fields=["enabled_modules"])
@@ -127,9 +150,35 @@ def test_authorized_participant_gets_typed_off_and_retained_read_and_command_rep
     restored = call(world, world.owner, ReimbursementView, "GET")
     assert (restored.status_code, restored.data.get("code")) == (200, None), restored.data
     assert restored.data == baseline.data
+    restored_claim = call(world, world.owner, ClaimView, "GET")
+    assert (restored_claim.status_code, restored_claim.data.get("code")) == (200, None), restored_claim.data
+    assert restored_claim.data == claim_baseline.data
     replay = call(world, world.owner, ReimbursementView, "POST", data=data)
     assert (replay.status_code, replay.data.get("code")) == (201, None), replay.data
     assert replay.data == created.data
     assert domain_rows() == before
     assert AuditLog.objects.count() == audits
+
+
+@pytest.mark.parametrize("disabled", [None, "events", "event_reimbursements"])
+def test_participant_without_owned_award_or_claim_gets_not_found_in_every_switch_state(world, disabled):
+    private_participant(world)
+    created = call(world, world.owner, ReimbursementView, "POST")
+    assert (created.status_code, created.data.get("code")) == (201, None), created.data
+    assert not GrantAward.objects.filter(request__event=world.event, request__member=world.owner).exists()
+    assert not ReimbursementClaim.objects.filter(event=world.event, member=world.owner).exists()
+    if disabled:
+        world.space.enabled_modules = [key for key in world.space.enabled_modules if key != disabled]
+        world.space.save(update_fields=["enabled_modules"])
+    before, audits = domain_rows(), AuditLog.objects.count()
+    for view, method in (
+        (AwardAcceptView, "POST"), (AwardDeclineView, "POST"),
+        (ClaimView, "GET"), (ClaimView, "PUT"),
+        (ClaimSubmitView, "POST"), (ClaimAppealView, "POST"),
+    ):
+        response = call(world, world.owner, view, method)
+        assert (response.status_code, response.data["code"]) == (404, "not_found"), response.data
+        assert "module" not in response.data and "feature" not in response.data
+        assert domain_rows() == before
+        assert AuditLog.objects.count() == audits
 

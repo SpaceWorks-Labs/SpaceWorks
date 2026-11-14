@@ -39,12 +39,18 @@ def check_read(request, event, *, owner=False):
     return event
 
 
-def member_event(request, pk, makerspace_id):
+def member_event(request, pk, makerspace_id, *, asset_id=None, owner_lookup=None):
     event = Event.objects.select_related("makerspace").filter(pk=pk, makerspace_id=makerspace_id).first()
     # Match the authorization refusal's body as well as its status and error code.
     require(event is not None, "not_found", status=404)
     # Establish private-event participation and origin before revealing switch state.
     authorize(request.user, event, owner=True, request=request)
+    # Addressed subjects must belong to this caller before any switch is disclosed.
+    if owner_lookup is not None:
+        require(owner_lookup(event), "not_found", status=404)
+    if asset_id is not None:
+        from .receipt_uploads import owned_asset
+        owned_asset(event=event, owner_id=request.user.pk, asset_id=asset_id)
     check_read(request, event, owner=True)
     return event
 

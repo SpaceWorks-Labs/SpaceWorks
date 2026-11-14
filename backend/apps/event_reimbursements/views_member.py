@@ -10,6 +10,8 @@ from .api_schema import ERRORS, TAGS, IDEMPOTENCY
 from . import request_workflow, award_workflow, claim_workflow
 from .projections import member_summary, claim_detail
 from .claim_models import ReimbursementClaim
+from .request_models import GrantRequest
+from .award_models import GrantAward
 
 
 class ReimbursementView(PrivateView):
@@ -42,14 +44,16 @@ class RequestSubmitView(PrivateView):
 class RequestWithdrawView(PrivateView):
     @extend_schema(tags=TAGS, parameters=IDEMPOTENCY, request=s.Command, responses={200: s.CommandResult, **ERRORS})
     def post(self, request, makerspace_id, pk):
-        member_event(request, pk, makerspace_id)
+        member_event(request, pk, makerspace_id, owner_lookup=lambda event:
+            GrantRequest.objects.filter(event=event, member=request.user).exists())
         return Response(request_workflow.withdraw(event_id=pk, actor=request.user, request=request, data=body(request, s.Command)))
 
 
 class AwardAcceptView(PrivateView):
     @extend_schema(tags=TAGS, parameters=IDEMPOTENCY, request=s.AwardResponseCommand, responses={200: s.CommandResult, **ERRORS})
     def post(self, request, makerspace_id, pk):
-        member_event(request, pk, makerspace_id)
+        member_event(request, pk, makerspace_id, owner_lookup=lambda event:
+            GrantAward.objects.filter(request__event=event, request__member=request.user).exists())
         return Response(award_workflow.respond(event_id=pk, actor=request.user, request=request,
             data=body(request, s.AwardResponseCommand), accept=True))
 
@@ -57,7 +61,8 @@ class AwardAcceptView(PrivateView):
 class AwardDeclineView(PrivateView):
     @extend_schema(tags=TAGS, parameters=IDEMPOTENCY, request=s.AwardResponseCommand, responses={200: s.CommandResult, **ERRORS})
     def post(self, request, makerspace_id, pk):
-        member_event(request, pk, makerspace_id)
+        member_event(request, pk, makerspace_id, owner_lookup=lambda event:
+            GrantAward.objects.filter(request__event=event, request__member=request.user).exists())
         return Response(award_workflow.respond(event_id=pk, actor=request.user, request=request,
             data=body(request, s.AwardResponseCommand), accept=False))
 
@@ -65,13 +70,17 @@ class AwardDeclineView(PrivateView):
 class ClaimView(PrivateView):
     @extend_schema(tags=TAGS, responses={200: reads.ClaimFinanceDetail, **ERRORS})
     def get(self, request, makerspace_id, pk):
-        event = member_event(request, pk, makerspace_id)
+        event = member_event(request, pk, makerspace_id, owner_lookup=lambda event:
+            ReimbursementClaim.objects.filter(event=event, member=request.user).exists())
         row = get_object_or_404(ReimbursementClaim, event=event, member=request.user)
         return Response(claim_detail(row, owner=True))
 
     @extend_schema(tags=TAGS, parameters=IDEMPOTENCY, request=s.ClaimDraftCommand, responses={200: s.CommandResult, **ERRORS})
     def put(self, request, makerspace_id, pk):
-        member_event(request, pk, makerspace_id)
+        # PUT also creates the first draft; its owner standing then comes from the award.
+        member_event(request, pk, makerspace_id, owner_lookup=lambda event:
+            ReimbursementClaim.objects.filter(event=event, member=request.user).exists()
+            or GrantAward.objects.filter(request__event=event, request__member=request.user).exists())
         return Response(claim_workflow.save_draft(event_id=pk, actor=request.user, request=request,
             data=body(request, s.ClaimDraftCommand)))
 
@@ -79,7 +88,8 @@ class ClaimView(PrivateView):
 class ClaimSubmitView(PrivateView):
     @extend_schema(tags=TAGS, parameters=IDEMPOTENCY, request=s.ClaimSubmitCommand, responses={200: s.CommandResult, **ERRORS})
     def post(self, request, makerspace_id, pk):
-        member_event(request, pk, makerspace_id)
+        member_event(request, pk, makerspace_id, owner_lookup=lambda event:
+            ReimbursementClaim.objects.filter(event=event, member=request.user).exists())
         return Response(claim_workflow.submit(event_id=pk, actor=request.user, request=request,
             data=body(request, s.ClaimSubmitCommand)))
 
@@ -87,6 +97,7 @@ class ClaimSubmitView(PrivateView):
 class ClaimAppealView(PrivateView):
     @extend_schema(tags=TAGS, parameters=IDEMPOTENCY, request=s.ClaimAppealCommand, responses={200: s.CommandResult, **ERRORS})
     def post(self, request, makerspace_id, pk):
-        member_event(request, pk, makerspace_id)
+        member_event(request, pk, makerspace_id, owner_lookup=lambda event:
+            ReimbursementClaim.objects.filter(event=event, member=request.user).exists())
         return Response(claim_workflow.appeal(event_id=pk, actor=request.user, request=request,
             data=body(request, s.ClaimAppealCommand)))

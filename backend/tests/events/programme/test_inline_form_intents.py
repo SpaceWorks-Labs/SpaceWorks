@@ -3,14 +3,14 @@
 G/R must additionally run canonical registration/application rollback/replay tests
 after integrating their stage rows and outer EventCommandReceipt bridge.
 """
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from dataclasses import replace
 from datetime import timedelta
 from types import SimpleNamespace
 from uuid import uuid4, uuid5
 
 import pytest
-from django.db import close_old_connections, transaction
+from django.db import close_old_connections, transaction, connection, connections
 from django.utils import timezone
 
 from apps.accounts.saved_details import commands, intents, subject_binding
@@ -242,9 +242,12 @@ def test_concurrent_equal_child_saves_apply_once(owner, monkeypatch):
     def apply(pk):
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             intents.apply_intent(pk)
         finally:
-            close_old_connections()
+            connections.close_all()
 
     with ThreadPoolExecutor(max_workers=3) as pool:
         for future in [pool.submit(apply, pk) for pk in ids.values()]:

@@ -1,11 +1,11 @@
 """Real Stage A transactions serialize every new-obligation entry point."""
 
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from threading import Event
 from time import monotonic, sleep
 
 import pytest
-from django.db import close_old_connections, connection
+from django.db import close_old_connections, connection, connections
 
 from apps.accounts import account_deletion as deletion
 from apps.accounts.account_obligations import AccountDeletionPending
@@ -38,7 +38,7 @@ def connected(function, pids=None, ready=None, sql=None):
         with connection.execute_wrapper(capture):
             return function()
     finally:
-        close_old_connections()
+        connections.close_all()
 
 
 def wait_for_lock(pid, future):
@@ -51,7 +51,7 @@ def wait_for_lock(pid, future):
         if row and row[0] == "Lock":
             return
         if future.done():
-            future.result()  # Surface an unexpected writer exception directly.
+            future.result(timeout=30)  # Surface an unexpected writer exception directly.
             break
         sleep(0.01)
     pytest.fail("The competing transaction never waited for Stage A's locks")

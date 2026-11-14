@@ -1,9 +1,9 @@
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from decimal import Decimal
 from uuid import uuid4
 
 import pytest
-from django.db import close_old_connections, transaction
+from django.db import close_old_connections, transaction, connection, connections
 from django.test import override_settings
 
 from apps.audit.models import AuditLog
@@ -293,6 +293,9 @@ def test_contended_start_has_one_winner():
     def transition():
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             local = MachineServiceRequest.objects.get(pk=row.pk)
             local_actor = type(actor).objects.get(pk=actor.pk)
             start(
@@ -305,8 +308,8 @@ def test_contended_start_has_one_winner():
         except ServiceInvalidTransition:
             return "lost"
         finally:
-            close_old_connections()
+            connections.close_all()
 
     with ThreadPoolExecutor(max_workers=2) as pool:
-        outcomes = list(pool.map(lambda _: transition(), range(2)))
+        outcomes = list(pool.map(lambda _: transition(), range(2), timeout=30))
     assert sorted(outcomes) == ["lost", "won"]

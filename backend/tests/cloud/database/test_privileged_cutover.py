@@ -20,9 +20,11 @@ pytestmark = pytest.mark.django_db(transaction=True)
 def databases():
     parameters = django_database_spec().kwargs()
     owner = psycopg2.connect(**parameters)
-    owner.autocommit = True
     created = []
     try:
+        owner.autocommit = True
+        with owner.cursor() as cursor:
+            cursor.execute("SET lock_timeout = '5s'")
         for _ in range(2):
             name = "cloud_target_" + uuid.uuid4().hex[:20]
             with owner.cursor() as cursor:
@@ -32,16 +34,19 @@ def databases():
             try:
                 connection.autocommit = True
                 with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
                     cursor.execute("CREATE TABLE backup_deploymentdatabaseidentity (id integer PRIMARY KEY, database_uuid uuid, run_id uuid, artifact_sha256 text, capture_id uuid)")
                     cursor.execute("INSERT INTO backup_deploymentdatabaseidentity VALUES (1,%s,NULL,'',NULL)", [str(uuid.uuid4())])
             finally:
                 connection.close()
         yield parameters, created
     finally:
-        for name in created:
-            with owner.cursor() as cursor:
-                cursor.execute(sql.SQL("DROP DATABASE {} WITH (FORCE)").format(sql.Identifier(name)))
-        owner.close()
+        try:
+            for name in created:
+                with owner.cursor() as cursor:
+                    cursor.execute(sql.SQL("DROP DATABASE {} WITH (FORCE)").format(sql.Identifier(name)))
+        finally:
+            owner.close()
 
 
 def url(parameters, name):

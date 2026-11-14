@@ -1,9 +1,9 @@
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from threading import Barrier
 from uuid import uuid4
 
 import pytest
-from django.db import close_old_connections
+from django.db import close_old_connections, connection, connections
 
 from apps.accounts.models import User
 from apps.encryption.tenant_preparation import prepare_tenant_key
@@ -34,6 +34,9 @@ def test_concurrent_same_uuid_creates_one_canonical_adjustment():
     def send():
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             principal = User.objects.get(pk=actor.pk)
             barrier.wait(timeout=10)
             try:
@@ -42,13 +45,13 @@ def test_concurrent_same_uuid_creates_one_canonical_adjustment():
                 assert str(exc) == "lock_busy"
                 return "busy"
         finally:
-            close_old_connections()
+            connections.close_all()
 
     with enabled_encryption():
         with boundary_tenant_write(maker.pk):
             prepare_tenant_key(maker.pk)
         with ThreadPoolExecutor(max_workers=2) as pool:
-            results = list(pool.map(lambda _: send(), range(2)))
+            results = list(pool.map(lambda _: send(), range(2), timeout=30))
         if "busy" in results:
             assert linked_use(actor=User.objects.get(pk=actor.pk), **arguments)[2] is True
     product.refresh_from_db()

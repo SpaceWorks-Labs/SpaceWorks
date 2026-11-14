@@ -1,4 +1,5 @@
 """Single-use provider fetches revalidate every piece of live payer authority."""
+from django.db import connection, connections
 import hashlib
 import json
 from datetime import timedelta
@@ -201,7 +202,7 @@ def test_media_fetch_is_rate_limited_without_consuming_grant(media, monkeypatch)
 
 @pytest.mark.django_db(transaction=True)
 def test_concurrent_fetches_consume_grant_exactly_once(media):
-    from concurrent.futures import ThreadPoolExecutor
+    from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
     from threading import Barrier
     from django.db import close_old_connections
     from apps.integrations.notification_media import consume_grant
@@ -211,12 +212,15 @@ def test_concurrent_fetches_consume_grant_exactly_once(media):
     def consume():
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             barrier.wait(timeout=10)
             return consume_grant(token)
         finally:
-            close_old_connections()
+            connections.close_all()
 
     with ThreadPoolExecutor(max_workers=2) as pool:
-        results = list(pool.map(lambda _: consume(), range(2)))
+        results = list(pool.map(lambda _: consume(), range(2), timeout=30))
     assert sum(result is not None for result in results) == 1
     assert media.rendered == [media.document.pk]

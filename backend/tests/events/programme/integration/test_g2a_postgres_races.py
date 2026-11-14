@@ -1,10 +1,10 @@
 """Actual PostgreSQL locks: fence-before-Event, RSVP seats and erasure races."""
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from contextlib import contextmanager
 from threading import Barrier, Event as Signal
 
 import pytest
-from django.db import close_old_connections, connection, transaction
+from django.db import close_old_connections, connection, transaction, connections
 from django.test.utils import CaptureQueriesContext
 
 from apps.encryption.account_models import PiiAccountWriteFence
@@ -46,7 +46,7 @@ def edit_in_worker(world):
         return update_event(world.event, actor=world.manager, title="Must not commit",
                             starts_at=world.event.starts_at + timedelta(minutes=1))
     finally:
-        close_old_connections()
+        connections.close_all()
 
 
 def test_tenant_fence_blocks_before_any_event_lock(canonical_world, monkeypatch):
@@ -100,7 +100,7 @@ def test_two_real_rsvps_compete_for_one_hard_seat(canonical_world):
             except ProgrammeError as exc:
                 return exc.detail["code"]
         finally:
-            close_old_connections()
+            connections.close_all()
 
     with ThreadPoolExecutor(max_workers=2) as pool:
         tasks = [pool.submit(respond, w.owner, first), pool.submit(respond, w.other, second)]
@@ -147,9 +147,12 @@ def test_date_edit_wins_against_an_already_prepared_application(canonical_world,
     def submit():
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             return apply(w)
         finally:
-            close_old_connections()
+            connections.close_all()
     with ThreadPoolExecutor(max_workers=1) as pool:
         future = pool.submit(submit)
         try:
@@ -174,6 +177,9 @@ def test_event_cancellation_racing_rsvp_never_leaves_live_admission(canonical_wo
     def race(action):
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             barrier.wait(8)
             if action == "cancel":
                 cancel(w.event, actor=w.manager)
@@ -184,7 +190,7 @@ def test_event_cancellation_racing_rsvp_never_leaves_live_admission(canonical_wo
             except ProgrammeError as exc:
                 return exc.detail["code"]
         finally:
-            close_old_connections()
+            connections.close_all()
     with ThreadPoolExecutor(max_workers=2) as pool:
         futures = [pool.submit(race, action) for action in ("cancel", "rsvp")]
         results = [future.result(timeout=20) for future in futures]

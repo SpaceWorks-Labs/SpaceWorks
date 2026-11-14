@@ -1,10 +1,10 @@
 """Real DB worker races: one claim, no expiry resend, fenced provider completion."""
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from datetime import timedelta
 from threading import Barrier, Event
 
 import pytest
-from django.db import close_old_connections, connection
+from django.db import close_old_connections, connection, connections
 from django.utils import timezone
 
 from apps.notifications.envelope_push_leases import claim, complete
@@ -20,9 +20,12 @@ def worker(parent_id, rendered):
     from apps.integrations.models_contract import NotificationDelivery
     close_old_connections()
     try:
+        if connection.vendor == "postgresql":
+            with connection.cursor() as cursor:
+                cursor.execute("SET lock_timeout = '5s'")
         return send_envelope_push(NotificationDelivery.objects.get(pk=parent_id), rendered)
     finally:
-        close_old_connections()
+        connections.close_all()
 
 
 def child(case):
@@ -37,11 +40,14 @@ def test_simultaneous_claims_grant_one_token_and_increment_once(push_case):
     def compete():
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             start.wait(timeout=10)
             return claim(MemberPushDelivery.objects.filter(
                 pk=delivery.pk, envelope_delivery__makerspace_id=push_case.space.pk))
         finally:
-            close_old_connections()
+            connections.close_all()
 
     with ThreadPoolExecutor(max_workers=2) as pool:
         tokens = [f.result(timeout=10) for f in [pool.submit(compete), pool.submit(compete)]]

@@ -1,6 +1,6 @@
 """Real PostgreSQL preparation and affected-owner regressions (EV2-B)."""
 import time
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from queue import Queue
 
 import pytest
@@ -61,6 +61,9 @@ def test_all_affected_accounts_are_fenced_before_the_event_row():
 
     def command():
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             with connection.cursor() as cursor:
                 cursor.execute("SELECT pg_backend_pid()")
                 pids.put(cursor.fetchone()[0])

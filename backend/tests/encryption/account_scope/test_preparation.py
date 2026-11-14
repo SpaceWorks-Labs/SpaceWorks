@@ -1,11 +1,11 @@
 import threading
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from datetime import timedelta
 from uuid import uuid4
 
 import pytest
 from cryptography.fernet import Fernet
-from django.db import close_old_connections, connection, transaction
+from django.db import close_old_connections, connection, transaction, connections
 from django.utils import timezone
 
 from apps.accounts.models import User
@@ -57,9 +57,12 @@ def test_parallel_creator_observes_retryable_claim_and_winner_is_reusable(owner,
     def prepare():
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             return service.prepare_account_key(owner.pk)
         finally:
-            close_old_connections()
+            connections.close_all()
 
     monkeypatch.setattr(broker, "create_dek", wrap)
     monkeypatch.setattr(service, "get_broker", lambda *_: broker)

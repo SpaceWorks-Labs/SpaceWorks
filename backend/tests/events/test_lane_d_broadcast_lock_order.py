@@ -1,10 +1,10 @@
 """Cancellation can finish while a batch/completion worker waits for its tenant."""
 
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from threading import Event as ThreadEvent
 
 import pytest
-from django.db import close_old_connections, connection, transaction
+from django.db import close_old_connections, connection, transaction, connections
 
 from apps.audit.models import AuditLog
 from apps.events.services_broadcasts import change, compose
@@ -49,7 +49,7 @@ def test_cancellation_and_worker_use_tenant_before_campaign(monkeypatch, worker)
             with connection.execute_wrapper(observe_lock):
                 worker("event_broadcast", campaign.pk)
         finally:
-            connection.close()
+            connections.close_all()
 
     with ThreadPoolExecutor(max_workers=1) as pool:
         with transaction.atomic():
@@ -100,7 +100,7 @@ def test_manual_retry_and_reconciliation_use_tenant_before_campaign(monkeypatch,
             with connection.execute_wrapper(observe_lock):
                 retry(actor, log)
         finally:
-            connection.close()
+            connections.close_all()
 
     with ThreadPoolExecutor(max_workers=1) as pool:
         with transaction.atomic():

@@ -1,11 +1,11 @@
 from tests.account_split_g2_helpers import grant_organization_action
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from dataclasses import replace
 from datetime import timedelta
 from threading import Barrier, Event as ThreadEvent
 
 import pytest
-from django.db import close_old_connections, transaction
+from django.db import close_old_connections, transaction, connection, connections
 from django.urls import reverse
 from django.utils import timezone
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
@@ -191,6 +191,9 @@ def test_two_concurrent_redeemers_have_exactly_one_winner():
     def redeem(user_id):
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             actor = User.objects.get(pk=user_id)
             barrier.wait(timeout=10)
             try:
@@ -198,10 +201,10 @@ def test_two_concurrent_redeemers_have_exactly_one_winner():
             except NotFound:
                 return "lost", None
         finally:
-            close_old_connections()
+            connections.close_all()
 
     with ThreadPoolExecutor(max_workers=2) as pool:
-        outcomes = list(pool.map(redeem, [user.pk, other.pk]))
+        outcomes = list(pool.map(redeem, [user.pk, other.pk], timeout=30))
     assert sorted(result[0] for result in outcomes) == ["lost", "won"]
     assert EventStaffGrant.objects.count() == 1
     invite.refresh_from_db()
@@ -209,7 +212,7 @@ def test_two_concurrent_redeemers_have_exactly_one_winner():
 
 
 @pytest.mark.django_db(transaction=True)
-def test_redemption_waits_for_concurrent_creator_authority_revocation(monkeypatch):
+def test_redemption_waits_for_concurrent_creator_authority_revocation():
     from apps.accounts import rbac
     from apps.events.models import EventOrganizer
     from apps.organizations.models import Organization, OrganizationMembership
@@ -223,43 +226,49 @@ def test_redemption_waits_for_concurrent_creator_authority_revocation(monkeypatc
     EventOrganizer.objects.create(event=event, organization=organization)
     invite, token = services.create_invite(event, actor=creator, permissions=["check_in"])
     authority_locked, redemption_entered, commit_revoke = ThreadEvent(), ThreadEvent(), ThreadEvent()
-    # Redemption runs inside the shared write boundary, which takes the authority
-    # locks (organizations included) before the adapter runs; observe it there.
-    from apps.events import services_write_boundary as boundary
-    real_lock = boundary.lock_authority
 
-    def observed_lock(actor, target):
-        redemption_entered.set()
-        return real_lock(actor, target)
+    def observed_lock(execute, sql, params, many, context):
+        # The boundary locks all organizations before calling lock_authority.
+        # Observe the actual lock attempt without replacing or bypassing it.
+        if 'FROM "organizations_organization"' in sql and "FOR UPDATE" in sql:
+            redemption_entered.set()
+        return execute(sql, params, many, context)
 
-    monkeypatch.setattr(boundary, "lock_authority", observed_lock)
-
+    # Allow both 15-second rendezvous; the pool still bounds worker joins.
     def revoke_creator():
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '45s'")
             with transaction.atomic():
                 Organization.objects.select_for_update().get(pk=organization.pk)
                 row = OrganizationMembership.objects.select_for_update().get(pk=membership.pk)
                 row.granted_actions = []
                 row.save(update_fields=["granted_actions"])
                 authority_locked.set()
-                assert commit_revoke.wait(timeout=15)
+                assert commit_revoke.wait(timeout=30)
         finally:
-            close_old_connections()
+            connections.close_all()
 
     def redeem():
         close_old_connections()
         try:
-            with pytest.raises(PermissionDenied):
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '45s'")
+            with connection.execute_wrapper(observed_lock), pytest.raises(PermissionDenied) as caught:
                 services.redeem_invite(token, actor=User.objects.get(pk=user.pk))
+            assert caught.value.status_code == 403
+            assert caught.value.get_codes() == "permission_denied"
         finally:
-            close_old_connections()
+            connections.close_all()
 
     with ThreadPoolExecutor(max_workers=2) as pool:
         revoked = pool.submit(revoke_creator)
-        assert authority_locked.wait(timeout=15)
-        redeemed = pool.submit(redeem)
         try:
+            assert authority_locked.wait(timeout=15)
+            redeemed = pool.submit(redeem)
             assert redemption_entered.wait(timeout=15)
             assert not redeemed.done()
         finally:
@@ -295,11 +304,14 @@ def test_reciprocal_cross_tenant_redemption_does_not_deadlock_creator_user_fks(m
         token, user_id = values
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             return services.redeem_invite(token, actor=User.objects.get(pk=user_id)).user_id
         finally:
-            close_old_connections()
+            connections.close_all()
 
     with ThreadPoolExecutor(max_workers=2) as pool:
-        results = list(pool.map(redeem, [(token_a, creator_b.pk), (token_b, creator_a.pk)]))
+        results = list(pool.map(redeem, [(token_a, creator_b.pk), (token_b, creator_a.pk)], timeout=30))
     assert results == [creator_b.pk, creator_a.pk]
     assert EventStaffGrant.objects.count() == 2

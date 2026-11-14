@@ -1,8 +1,8 @@
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from threading import Barrier
 
 import pytest
-from django.db import close_old_connections
+from django.db import close_old_connections, connection, connections
 
 from apps.accounts.models import PasswordResetEnvelope, PasswordResetEnvelopeStatus, User
 from apps.accounts.services_password_reset import request_password_reset
@@ -24,16 +24,20 @@ def test_concurrent_first_requests_create_one_envelope_and_one_usable_code(monke
     def request_from_thread(spelling):
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             gate.wait(timeout=5)
             return request_password_reset(spelling).pk
         finally:
-            close_old_connections()
+            connections.close_all()
 
     with ThreadPoolExecutor(max_workers=2) as pool:
         ids = list(
             pool.map(
                 request_from_thread,
                 ["Concurrent-Reset@example.org", " concurrent-reset@EXAMPLE.ORG "],
+                timeout=30,
             )
         )
 

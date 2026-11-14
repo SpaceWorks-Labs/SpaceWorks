@@ -1,11 +1,11 @@
 """Refresh takes User before credential rows, matching Stage A revocation."""
 
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from threading import Barrier, Event
 from time import monotonic, sleep
 
 import pytest
-from django.db import close_old_connections, connection, transaction
+from django.db import close_old_connections, connection, transaction, connections
 from django.utils import timezone
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.exceptions import TokenError
@@ -60,6 +60,9 @@ def test_deletion_revokes_credentials_while_refresh_waits_without_deadlock(kind)
     def run():
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             with connection.cursor() as cursor:
                 cursor.execute("SELECT pg_backend_pid()")
                 pids.append(cursor.fetchone()[0])
@@ -70,7 +73,7 @@ def test_deletion_revokes_credentials_while_refresh_waits_without_deadlock(kind)
                 return "refused"
             return "rotated"
         finally:
-            close_old_connections()
+            connections.close_all()
     with ThreadPoolExecutor(max_workers=1) as pool:
         with transaction.atomic():
             locked = User.objects.select_for_update(no_key=True).get(pk=user.pk)
@@ -110,15 +113,18 @@ def test_duplicate_device_rotation_preserves_reuse_revocation(monkeypatch):
     def run(_index):
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             try:
                 rotate()
                 return "rotated"
             except AuthenticationFailed:
                 return "refused"
         finally:
-            close_old_connections()
+            connections.close_all()
     with ThreadPoolExecutor(max_workers=2) as pool:
-        results = list(pool.map(run, range(2)))
+        results = list(pool.map(run, range(2), timeout=30))
     assert sorted(results) == ["refused", "rotated"]
     family = DeviceRefreshFamily.objects.get(user=user)
     assert family.revoked_at and family.reuse_detected_at

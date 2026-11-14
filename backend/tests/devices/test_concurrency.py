@@ -3,7 +3,7 @@
 import threading
 
 import pytest
-from django.db import connection
+from django.db import connection, connections
 
 from apps.devices.models import DeviceEvent, DeviceRequestNonce
 from tests.devices.helpers import active_device, heartbeat, signed_headers
@@ -19,16 +19,20 @@ def test_one_nonce_raced_by_two_requests_commits_exactly_once():
 
     def fire():
         try:
-            barrier.wait()
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
+            barrier.wait(timeout=15)
             statuses.append(heartbeat(headers).status_code)
         finally:
-            connection.close()
+            connections.close_all()
 
     threads = [threading.Thread(target=fire) for _ in range(2)]
     for thread in threads:
         thread.start()
     for thread in threads:
         thread.join(timeout=60)
+    assert all(not thread.is_alive() for thread in threads)
 
     assert sorted(statuses) == [200, 401]
     assert DeviceRequestNonce.objects.filter(device_id=device_id).count() == 1

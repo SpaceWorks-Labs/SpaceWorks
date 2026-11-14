@@ -1,12 +1,12 @@
 """Real PostgreSQL lock races: neither side may deadlock or leave a live descendant."""
 
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from datetime import timedelta
 from threading import Event, current_thread
 from time import monotonic
 
 import pytest
-from django.db import close_old_connections, connection
+from django.db import close_old_connections, connection, connections
 from django.utils import timezone
 from rest_framework.exceptions import APIException
 from rest_framework_simplejwt.exceptions import TokenError
@@ -122,6 +122,9 @@ def test_refresh_and_credential_revocation_serialize(settings, monkeypatch, firs
     def run(name):
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             threads[name] = current_thread().ident
             with connection.cursor() as cursor:
                 cursor.execute("SET statement_timeout = '12s'")
@@ -145,7 +148,7 @@ def test_refresh_and_credential_revocation_serialize(settings, monkeypatch, firs
                 function = revocation.revoke_all_credentials if operation == "all" else revocation.revoke_sessions_only
                 function(User.objects.get(pk=user.pk), reason="s4c.race")
         finally:
-            connection.close()
+            connections.close_all()
 
     second = "revoke" if first == "refresh" else "refresh"
     with ThreadPoolExecutor(max_workers=2) as pool:

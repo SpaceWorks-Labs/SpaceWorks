@@ -1,5 +1,5 @@
 """Independent DB workers with deterministic lock observation and bounded waits."""
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from contextlib import contextmanager
 from threading import Event
 from time import monotonic, sleep
@@ -12,6 +12,9 @@ def database_worker(operation):
     def run():
         connections.close_all()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             with connection.cursor() as cursor:
                 cursor.execute("SET statement_timeout = '10s'")
                 cursor.execute("SELECT pg_backend_pid()")

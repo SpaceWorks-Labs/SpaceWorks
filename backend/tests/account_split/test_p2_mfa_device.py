@@ -1,5 +1,6 @@
 """Kind-bound first/second factors and the member-only native password door."""
 
+from django.db import connection, connections
 from types import SimpleNamespace
 
 import pytest
@@ -194,7 +195,7 @@ def test_control_password_backend_uses_platform_namespace_and_sessions_bind_kind
 
 @pytest.mark.django_db(transaction=True)
 def test_native_old_password_cannot_pass_a_concurrent_reset():
-    from concurrent.futures import ThreadPoolExecutor
+    from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
     from threading import Event
     from django.db import close_old_connections, transaction
     from apps.accounts.services_device_login import password_login, DevicePasswordRejected
@@ -206,6 +207,9 @@ def test_native_old_password_cannot_pass_a_concurrent_reset():
         close_old_connections()
         started.set()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             request = RequestFactory().post("/api/v1/auth/device/login")
             # Attestation has completed before this transactional password boundary.
             password_login(request, {"username": user.username, "password": PASSWORD, "context": "member",
@@ -216,7 +220,7 @@ def test_native_old_password_cannot_pass_a_concurrent_reset():
             return "refused"
         finally:
             completed.set()
-            close_old_connections()
+            connections.close_all()
 
     with ThreadPoolExecutor(max_workers=1) as pool:
         with transaction.atomic():

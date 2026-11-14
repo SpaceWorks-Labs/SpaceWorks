@@ -3,13 +3,13 @@
 Real PostgreSQL row locks, two threads released by one barrier; the loser must get a typed refusal and the shared
 quantity/slot must never go below zero or be double-booked.
 """
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone as dt_tz
 from threading import Barrier
 from zoneinfo import ZoneInfo
 
 import pytest
-from django.db import close_old_connections, connection
+from django.db import close_old_connections, connection, connections
 from django.utils import timezone
 
 from apps.bookings import services_bookings
@@ -37,13 +37,16 @@ def _race(*jobs):
     def run(job):
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             barrier.wait(timeout=15)
             try:
                 return ("ok", job())
             except Exception as exc:  # the loser's typed refusal is the thing under test
                 return ("err", exc)
         finally:
-            close_old_connections()
+            connections.close_all()
 
     with ThreadPoolExecutor(max_workers=len(jobs)) as pool:
         return [f.result(timeout=60) for f in [pool.submit(run, j) for j in jobs]]

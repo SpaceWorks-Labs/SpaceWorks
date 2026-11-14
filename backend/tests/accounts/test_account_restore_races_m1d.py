@@ -1,6 +1,6 @@
 """Separate Postgres connections prove the purge fence survives every commit gap."""
 
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from datetime import timedelta
 from threading import Event
 

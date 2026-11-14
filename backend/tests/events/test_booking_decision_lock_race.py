@@ -1,16 +1,18 @@
 """Real PostgreSQL maker/event inversion regression for admitted runtime."""
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from datetime import timedelta
+from threading import Event as ThreadEvent
 from uuid import uuid4
 
 import pytest
-from django.db import close_old_connections, transaction
+from django.db import close_old_connections, transaction, connection, connections
 from django.utils import timezone
 
 from apps.bookings.models import BookableSpace, Booking
 from apps.events import booking_decision_service as service
 from apps.events.models import Event
 from apps.events.models_booking_decision import EventBookingDecision
+from apps.encryption.preparation import prepare_tenants
 from apps.makerspaces.models import Makerspace
 from tests.encryption.conftest import enabled_encryption
 from tests.events.orders_helpers import l6_space, make_staff, verified
@@ -34,24 +36,39 @@ def test_maker_lock_conflict_unwinds_entire_decision_without_partial_write():
                   expected_events_epoch=maker.loan_context_generations["events"],
                   expected_bookings_epoch=maker.loan_context_generations["bookings"])
 
+    prepared, decide = ThreadEvent(), ThreadEvent()
+
     def writer():
         close_old_connections()
         try:
-            with pytest.raises(service.DecisionConflict) as error:
-                service.create_decision(staff, maker, event.pk, **kwargs)
-            return str(error.value.detail["code"])
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    # Exceed the 10-second rendezvous; the future and pool still bound completion.
+                    cursor.execute("SET lock_timeout = '20s'")
+            # Even an existing key takes a maker lock. Prepare in this worker's context
+            # before the holder locks it, so the real boundary reaches FOR UPDATE NOWAIT.
+            with prepare_tenants((maker.pk,)):
+                prepared.set()
+                assert decide.wait(timeout=10)
+                with pytest.raises(service.DecisionConflict) as error:
+                    service.create_decision(staff, maker, event.pk, **kwargs)
+                assert error.value.status_code == 409
+                assert error.value.detail == {
+                    "code": "lock_busy", "detail": "Booking decision cannot be applied.",
+                }
+                return str(error.value.detail["code"])
         finally:
-            close_old_connections()
+            connections.close_all()
 
     with enabled_encryption(), ThreadPoolExecutor(max_workers=1) as executor:
-        # First use of a tenant key locks the makerspace row to create it; mint it before this test holds that
-        # row, so the writer reaches the no-wait boundary lock instead of queueing behind key creation.
-        from apps.encryption.services import get_or_create_active_dek
-        get_or_create_active_dek(maker.pk)
-        with transaction.atomic():
-            # NO KEY UPDATE: still conflicts with the writer's FOR UPDATE NOWAIT, but not with the FK key-shares
-            # that fence and audit rows take on this makerspace while the writer prepares.
-            Makerspace.objects.select_for_update(no_key=True).get(pk=maker.pk)
-            future = executor.submit(writer)
-            assert future.result(timeout=10) == "lock_busy"
+        future = executor.submit(writer)
+        try:
+            assert prepared.wait(timeout=10)
+            with transaction.atomic():
+                # NO KEY UPDATE conflicts with FOR UPDATE NOWAIT but permits FK key-shares.
+                Makerspace.objects.select_for_update(no_key=True).get(pk=maker.pk)
+                decide.set()
+                assert future.result(timeout=10) == "lock_busy"
+        finally:
+            decide.set()
         assert not EventBookingDecision.objects.filter(makerspace=maker, operation_id=operation).exists()

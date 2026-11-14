@@ -1,6 +1,6 @@
 """Account-only ownership and newly arriving participation cannot escape Stage A."""
 
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from threading import Event
 
 import pytest

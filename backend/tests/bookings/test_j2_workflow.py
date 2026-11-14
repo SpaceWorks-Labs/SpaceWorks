@@ -1,10 +1,10 @@
 from tests.bookings.staff_grant_helpers import service_manager
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from datetime import timedelta
 from threading import Barrier
 
 import pytest
-from django.db import close_old_connections
+from django.db import close_old_connections, connection, connections
 from django.utils import timezone
 from rest_framework.serializers import ValidationError
 
@@ -12,6 +12,7 @@ from apps.audit.models import AuditLog
 from apps.bookings import notifications, services
 from apps.bookings.exceptions import BookingConflict, BookingInvalidTransition
 from apps.bookings.models import BookableSpace, Booking
+from apps.hardware_requests.exceptions import workflow_exception_handler
 from apps.makerspaces import limits
 from apps.makerspaces.models import Makerspace
 
@@ -205,7 +206,17 @@ def test_booking_quota_is_dormant_self_host_and_enforced_managed(monkeypatch, se
     before_audits = AuditLog.objects.filter(action='booking.created').count()
     with pytest.raises(ValidationError) as caught:
         book(second_space)
-    assert caught.value.get_codes() == {'limit': 'limit_reached'}
+    # Decision 514 keeps the legacy limit field beside the typed code and detail.
+    response = workflow_exception_handler(caught.value, {})
+    message = (
+        "You've reached the free active bookings limit for this space — "
+        "ask the operator to raise it or self-host."
+    )
+    assert response.status_code == 400
+    assert response.data == {"code": "limit_reached", "detail": message, "limit": message}
+    assert caught.value.get_codes() == {
+        "code": "limit_reached", "detail": "limit_reached", "limit": "limit_reached",
+    }
     assert Booking.objects.filter(space__makerspace=tenant).count() == 1
     assert AuditLog.objects.filter(
         action='booking.created'
@@ -251,8 +262,11 @@ def test_concurrent_overlapping_approvals_have_one_winner():
 
     def approve(row):
         close_old_connections()
-        gate.wait()
+        gate.wait(timeout=15)
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             services.approve_booking(
                 Booking.objects.get(pk=row.pk), actor=service_manager()
             )
@@ -260,10 +274,10 @@ def test_concurrent_overlapping_approvals_have_one_winner():
         except BookingConflict:
             return 'conflict'
         finally:
-            close_old_connections()
+            connections.close_all()
 
     with ThreadPoolExecutor(max_workers=2) as pool:
-        assert sorted(pool.map(approve, rows)) == ['approved', 'conflict']
+        assert sorted(pool.map(approve, rows, timeout=30)) == ['approved', 'conflict']
     assert Booking.objects.filter(
         pk__in=[row.pk for row in rows],
         status=Booking.Status.CONFIRMED,
@@ -283,15 +297,18 @@ def test_managed_quota_serializes_creates_across_spaces(monkeypatch, settings):
 
     def create(target):
         close_old_connections()
-        gate.wait()
+        gate.wait(timeout=15)
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             book(BookableSpace.objects.get(pk=target.pk))
             return 'created'
         except ValidationError:
             return 'limited'
         finally:
-            close_old_connections()
+            connections.close_all()
 
     with ThreadPoolExecutor(max_workers=2) as pool:
-        assert sorted(pool.map(create, spaces)) == ['created', 'limited']
+        assert sorted(pool.map(create, spaces, timeout=30)) == ['created', 'limited']
     assert Booking.objects.filter(space__makerspace=tenant).count() == 1

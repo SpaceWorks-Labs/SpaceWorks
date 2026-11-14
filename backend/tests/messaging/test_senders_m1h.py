@@ -1,8 +1,8 @@
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from datetime import timedelta
 
 import pytest
-from django.db import close_old_connections, transaction
+from django.db import close_old_connections, transaction, connection, connections
 from django.utils import timezone
 
 from apps.integrations.messaging.senders import (
@@ -43,6 +43,9 @@ def test_two_connections_cannot_claim_the_same_sender(space):
     def claim(tenant_id):
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             tenant = Makerspace.objects.get(pk=tenant_id)
             ready.wait(timeout=10)
             reserve_sender(sender_key="meta:shared:phone", channel="whatsapp", owner="makerspace",
@@ -51,10 +54,10 @@ def test_two_connections_cannot_claim_the_same_sender(space):
         except SenderInUse:
             return "sender_in_use"
         finally:
-            close_old_connections()
+            connections.close_all()
 
     with ThreadPoolExecutor(max_workers=2) as pool:
-        results = list(pool.map(claim, [space.pk, other.pk]))
+        results = list(pool.map(claim, [space.pk, other.pk], timeout=30))
     assert sorted(results) == ["claimed", "sender_in_use"]
 
 
@@ -67,23 +70,29 @@ def test_sender_advisory_lock_serializes_separate_connections():
     def first():
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             with transaction.atomic():
                 lock_whatsapp_sender("meta:sender:phone")
                 held.set()
                 assert release.wait(10)
         finally:
-            close_old_connections()
+            connections.close_all()
 
     def second():
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             assert held.wait(10)
             with transaction.atomic():
                 started.set()
                 lock_whatsapp_sender("meta:sender:phone")
                 acquired.set()
         finally:
-            close_old_connections()
+            connections.close_all()
 
     with ThreadPoolExecutor(max_workers=2) as pool:
         one, two = pool.submit(first), pool.submit(second)

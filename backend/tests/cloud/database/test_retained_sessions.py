@@ -16,7 +16,13 @@ pytestmark = pytest.mark.django_db(transaction=True)
 
 def competing_connection():
     result = psycopg2.connect(**django_database_spec().kwargs())
-    result.autocommit = True
+    try:
+        result.autocommit = True
+        with result.cursor() as cursor:
+            cursor.execute("SET lock_timeout = '5s'")
+    except BaseException:
+        result.close()
+        raise
     return result
 
 
@@ -67,12 +73,15 @@ def test_killed_session_cannot_reconnect_and_continue():
 
 def test_replacement_physical_connection_is_refused_and_discarded():
     replacement = competing_connection()
-    with pytest.raises(SessionLost):
-        with scope_session_lock(1936):
-            connection.connection = replacement
-            with connection.cursor() as cursor:
-                cursor.execute("SELECT 1")
-    assert replacement.closed
+    try:
+        with pytest.raises(SessionLost):
+            with scope_session_lock(1936):
+                connection.connection = replacement
+                with connection.cursor() as cursor:
+                    cursor.execute("SELECT 1")
+        assert replacement.closed
+    finally:
+        replacement.close()
 
 
 def test_orm_reconnect_is_forbidden_while_pinned():

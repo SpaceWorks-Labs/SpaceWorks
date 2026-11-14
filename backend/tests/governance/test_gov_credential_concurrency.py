@@ -7,11 +7,11 @@ import pytest as _pytest_stale
 _pytest_stale.skip("staff accounts retired by #63/#66 (d55545d7)", allow_module_level=True)
 
 
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from threading import Event
 
 import pytest
-from django.db import close_old_connections, connection, transaction
+from django.db import close_old_connections, connection, transaction, connections
 from rest_framework.exceptions import APIException
 
 from apps.accounts.credential_locks import lock_credentials
@@ -74,7 +74,7 @@ def race(user, first, second):
         except APIException:
             return "refused"
         finally:
-            close_old_connections()
+            connections.close_all()
 
     with ThreadPoolExecutor(max_workers=2) as pool:
         a = pool.submit(run, first, True)

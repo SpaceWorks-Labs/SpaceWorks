@@ -1,12 +1,12 @@
 from tests.account_split.sweep_g2_helpers import staff_user
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from datetime import date, datetime, time, timedelta, timezone as dt_timezone
 from threading import Barrier
 from types import SimpleNamespace
 
 import pytest
 from django.urls import reverse
-from django.db import close_old_connections
+from django.db import close_old_connections, connection, connections
 from django.utils import timezone
 from rest_framework import serializers
 from rest_framework.test import APIClient
@@ -262,17 +262,20 @@ def test_concurrent_extensions_materialize_each_occurrence_once(monkeypatch):
     def extend():
         close_old_connections()
         try:
-            barrier.wait()
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
+            barrier.wait(timeout=15)
             _series, created = services_series.extend_series(
                 EventSeries.objects.get(pk=series.pk),
                 actor=User.objects.get(pk=actor.pk),
             )
             return len(created)
         finally:
-            close_old_connections()
+            connections.close_all()
 
     with ThreadPoolExecutor(max_workers=2) as pool:
-        counts = list(pool.map(lambda _index: extend(), range(2)))
+        counts = list(pool.map(lambda _index: extend(), range(2), timeout=30))
 
     keys = Event.objects.filter(series=series).values_list("series_occurrence_key", flat=True)
     assert min(counts) == 0 < max(counts)

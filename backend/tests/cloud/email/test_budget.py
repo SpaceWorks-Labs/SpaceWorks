@@ -1,10 +1,10 @@
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from datetime import datetime, timezone
 from threading import Barrier
 
 import pytest
 from django.core.exceptions import ImproperlyConfigured
-from django.db import close_old_connections
+from django.db import close_old_connections, connection, connections
 
 from apps.integrations.mail_providers.budget import BudgetDeferred, models, reserve, reset_at, settle, usage
 from apps.integrations.mail_providers.budget_config import AccountBudget, account_budget, credential_fingerprint
@@ -117,6 +117,9 @@ def test_independent_connections_reserve_platform_and_tenant_mail_atomically(acc
     def attempt(log_id):
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             log = EmailLog.objects.get(pk=log_id)
             ready.wait(timeout=10)
             try:
@@ -125,9 +128,9 @@ def test_independent_connections_reserve_platform_and_tenant_mail_atomically(acc
             except BudgetDeferred:
                 return "deferred"
         finally:
-            close_old_connections()
+            connections.close_all()
 
     with ThreadPoolExecutor(max_workers=2) as pool:
-        results = list(pool.map(attempt, [log.pk for log in logs]))
+        results = list(pool.map(attempt, [log.pk for log in logs], timeout=30))
     assert sorted(results) == ["deferred", "reserved"]
     assert usage(account)["reserved"] == 2

@@ -1,3 +1,4 @@
+from django.db import connection, connections
 from pathlib import Path
 
 import pytest
@@ -102,6 +103,9 @@ def test_concurrent_photo_insert_cannot_take_a_key_a_receipt_is_reserving():
     def importer():
         receipt_inserted.wait(10)
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             with transaction.atomic():
                 EvidencePhoto.objects.create(
                     makerspace=makerspace, evidence_type="issue",
@@ -115,16 +119,20 @@ def test_concurrent_photo_insert_cannot_take_a_key_a_receipt_is_reserving():
 
     thread = threading.Thread(target=importer)
     thread.start()
-    with transaction.atomic():
-        EvidenceAbandonedUploadReceipt.objects.create(
-            source_makerspace_id_snapshot=makerspace.pk, evidence_id_snapshot=photo.pk,
-            object_key=photo.object_key, next_reconcile_at=timezone.now(),
-        )
+    try:
+        with transaction.atomic():
+            EvidenceAbandonedUploadReceipt.objects.create(
+                source_makerspace_id_snapshot=makerspace.pk, evidence_id_snapshot=photo.pk,
+                object_key=photo.object_key, next_reconcile_at=timezone.now(),
+            )
+            receipt_inserted.set()
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT pg_sleep(0.5)")
+                cursor.execute("SET LOCAL app.evidence_abandoned_delete_id = %s", [str(photo.pk)])
+            EvidencePhoto.objects.filter(pk=photo.pk).delete()
+    finally:
         receipt_inserted.set()
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT pg_sleep(0.5)")
-            cursor.execute("SET LOCAL app.evidence_abandoned_delete_id = %s", [str(photo.pk)])
-        EvidencePhoto.objects.filter(pk=photo.pk).delete()
-    thread.join(20)
+        thread.join(20)
+    assert not thread.is_alive()
     assert outcome["result"] != "inserted"
     assert not EvidencePhoto.objects.filter(object_key="evidence/race/k").exists()

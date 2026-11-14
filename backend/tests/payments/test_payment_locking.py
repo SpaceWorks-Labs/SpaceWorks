@@ -3,7 +3,7 @@ from decimal import Decimal
 from threading import Event, Thread
 
 import pytest
-from django.db import close_old_connections
+from django.db import close_old_connections, connection, connections
 from rest_framework.test import APIClient
 
 from apps.admin_api import serializers_payments
@@ -68,13 +68,19 @@ def test_raw_rotation_cannot_commit_between_session_check_and_persist(monkeypatc
     def checkout_worker():
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             results["checkout_url"] = create_checkout_url(payment.pk)
         finally:
-            close_old_connections()
+            connections.close_all()
 
     def rotation_worker():
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             client = APIClient()
             force_recent_authenticate(client, type(actor).objects.get(pk=actor.pk))
             response = client.patch(
@@ -86,18 +92,21 @@ def test_raw_rotation_cannot_commit_between_session_check_and_persist(monkeypatc
             results["rotation_data"] = response.data
         finally:
             rotation_finished.set()
-            close_old_connections()
+            connections.close_all()
 
     checkout_thread = Thread(target=checkout_worker)
     rotation_thread = Thread(target=rotation_worker)
     checkout_thread.start()
-    assert checkout_entered.wait(10)
-    rotation_thread.start()
-    assert rotation_entered.wait(10)
-    assert not rotation_finished.wait(0.25)
-    release_checkout.set()
-    checkout_thread.join(10)
-    rotation_thread.join(10)
+    try:
+        assert checkout_entered.wait(10)
+        rotation_thread.start()
+        assert rotation_entered.wait(10)
+        assert not rotation_finished.wait(0.25)
+    finally:
+        release_checkout.set()
+        checkout_thread.join(15)
+        if rotation_thread.ident is not None:
+            rotation_thread.join(15)
 
     assert not checkout_thread.is_alive()
     assert not rotation_thread.is_alive()
@@ -170,6 +179,9 @@ def test_connect_checkout_waits_for_platform_credential_commit(settings, monkeyp
     def rotation_worker():
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             client = APIClient()
             client.force_authenticate(type(superadmin).objects.get(pk=superadmin.pk))
             response = client.patch(
@@ -180,24 +192,30 @@ def test_connect_checkout_waits_for_platform_credential_commit(settings, monkeyp
             )
             results["rotation_status"] = response.status_code
         finally:
-            close_old_connections()
+            connections.close_all()
 
     def checkout_worker():
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             results["checkout_url"] = create_checkout_url(payment.pk)
         finally:
-            close_old_connections()
+            connections.close_all()
 
     rotation_thread = Thread(target=rotation_worker)
     checkout_thread = Thread(target=checkout_worker)
     rotation_thread.start()
-    assert validation_checked.wait(10)
-    checkout_thread.start()
-    assert not checkout_entered.wait(0.25)
-    release_rotation.set()
-    rotation_thread.join(10)
-    checkout_thread.join(10)
+    try:
+        assert validation_checked.wait(10)
+        checkout_thread.start()
+        assert not checkout_entered.wait(0.25)
+    finally:
+        release_rotation.set()
+        rotation_thread.join(15)
+        if checkout_thread.ident is not None:
+            checkout_thread.join(15)
 
     assert not rotation_thread.is_alive()
     assert not checkout_thread.is_alive()

@@ -1,7 +1,7 @@
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from threading import Barrier
 import pytest
-from django.db import close_old_connections
+from django.db import close_old_connections, connection, connections
 from apps.events.models import EventRegistration
 from apps.events.hackathons.admission_errors import ProgrammeError
 from apps.events.hackathons.admission_rsvp import rsvp
@@ -30,6 +30,9 @@ def test_two_simultaneous_rsvps_for_last_seat(world):
     def respond(actor, app):
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             barrier.wait(timeout=10)
             try:
                 rsvp(event_id=world.event.pk, actor=actor, data=cmd(app.version, decision="accept"))
@@ -37,7 +40,7 @@ def test_two_simultaneous_rsvps_for_last_seat(world):
             except ProgrammeError as exc:
                 return exc.detail["code"]
         finally:
-            close_old_connections()
+            connections.close_all()
     with ThreadPoolExecutor(max_workers=2) as pool:
         futures = [pool.submit(respond, world.owner, first), pool.submit(respond, world.other, second)]
         outcomes = sorted(f.result(timeout=20) for f in futures)

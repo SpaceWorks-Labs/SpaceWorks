@@ -1,9 +1,10 @@
 from tests.accounts.account_factories import make_staff as staff_account
-from concurrent.futures import ThreadPoolExecutor, TimeoutError
+from concurrent.futures import TimeoutError
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from threading import Event
 
 import pytest
-from django.db import close_old_connections
+from django.db import close_old_connections, connection, connections
 
 from apps.accounts.models import User
 from apps.admin_api.api_client_serializers import ApiClientSerializer
@@ -219,12 +220,15 @@ def test_concurrent_scope_changes_lock_and_serialize(monkeypatch):
     def patch(scopes):
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             return authenticated_client(User.objects.get(pk=manager.pk)).patch(
                 f"/api/v1/admin/api-clients/{api_client.pk}", {"scopes": scopes},
                 format="json",
             ).status_code
         finally:
-            close_old_connections()
+            connections.close_all()
 
     with ThreadPoolExecutor(max_workers=2) as pool:
         first = pool.submit(patch, ["public:write"])

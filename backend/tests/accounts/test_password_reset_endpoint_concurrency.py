@@ -1,10 +1,10 @@
 import queue
 import time
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 
 import pytest
 from django.contrib.auth.tokens import default_token_generator
-from django.db import close_old_connections, connection, transaction
+from django.db import close_old_connections, connection, transaction, connections
 from django.urls import reverse
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
@@ -97,6 +97,9 @@ def test_change_password_waiting_behind_otp_rechecks_current_password(monkeypatc
 def _thread_post(pid_queue, url, payload, *, access=None):
     close_old_connections()
     try:
+        if connection.vendor == "postgresql":
+            with connection.cursor() as cursor:
+                cursor.execute("SET lock_timeout = '5s'")
         connection.ensure_connection()
         with connection.cursor() as cursor:
             cursor.execute("SELECT pg_backend_pid()")
@@ -107,7 +110,7 @@ def _thread_post(pid_queue, url, payload, *, access=None):
         response = client.post(url, payload, format="json")
         return response.status_code, response.content
     finally:
-        close_old_connections()
+        connections.close_all()
 
 
 def _wait_until_lock_wait(pid):

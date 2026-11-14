@@ -1,9 +1,9 @@
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from datetime import timedelta
 from threading import Barrier
 
 import pytest
-from django.db import close_old_connections
+from django.db import close_old_connections, connection, connections
 from django.urls import reverse
 from django.utils import timezone
 from rest_framework.test import APIClient
@@ -200,8 +200,11 @@ def test_concurrent_redemption_consumes_token_and_applies_membership_once():
 
     def redeem():
         close_old_connections()
-        gate.wait()
+        gate.wait(timeout=15)
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             services_invitations.redeem_invitation(
                 token, actor=User.objects.get(pk=recipient.pk)
             )
@@ -209,10 +212,10 @@ def test_concurrent_redemption_consumes_token_and_applies_membership_once():
         except InvitationRedeemed:
             return "already-redeemed"
         finally:
-            close_old_connections()
+            connections.close_all()
 
     with ThreadPoolExecutor(max_workers=2) as pool:
-        outcomes = sorted(pool.map(lambda _item: redeem(), range(2)))
+        outcomes = sorted(pool.map(lambda _item: redeem(), range(2), timeout=30))
 
     invitation.refresh_from_db()
     assert outcomes == ["already-redeemed", "redeemed"]
@@ -237,8 +240,11 @@ def test_concurrent_revoke_and_redeem_have_one_coherent_winner():
 
     def revoke():
         close_old_connections()
-        gate.wait()
+        gate.wait(timeout=15)
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             services_invitations.revoke_invitation(
                 OrganizationInvitation.objects.get(pk=invitation.pk),
                 actor=User.objects.get(pk=actor.pk),
@@ -247,12 +253,15 @@ def test_concurrent_revoke_and_redeem_have_one_coherent_winner():
         except InvitationRedeemed:
             return "redeem-won"
         finally:
-            close_old_connections()
+            connections.close_all()
 
     def redeem():
         close_old_connections()
-        gate.wait()
+        gate.wait(timeout=15)
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             services_invitations.redeem_invitation(
                 token, actor=User.objects.get(pk=recipient.pk)
             )
@@ -260,11 +269,11 @@ def test_concurrent_revoke_and_redeem_have_one_coherent_winner():
         except InvitationRevoked:
             return "revoke-won"
         finally:
-            close_old_connections()
+            connections.close_all()
 
     with ThreadPoolExecutor(max_workers=2) as pool:
         futures = (pool.submit(revoke), pool.submit(redeem))
-        outcomes = {future.result() for future in futures}
+        outcomes = {future.result(timeout=30) for future in futures}
 
     invitation.refresh_from_db()
     membership_exists = OrganizationMembership.objects.filter(

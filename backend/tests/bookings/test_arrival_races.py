@@ -1,5 +1,5 @@
 """Every arrival/lifecycle race uses independent physical PG sessions."""
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from datetime import timedelta
 from threading import Barrier
 import pytest
@@ -22,6 +22,7 @@ def race(w, operations):
         close_old_connections()
         try:
             with connection.cursor() as cursor:
+                cursor.execute("SET lock_timeout = '5s'")
                 cursor.execute("SELECT pg_backend_pid()")
                 backend = cursor.fetchone()[0]
             booking = Booking.objects.get(pk=w.booking.pk)
@@ -40,7 +41,8 @@ def race(w, operations):
                 result = "ok"
             except (BookingInvalidTransition, NotFound): result = "refused"
             return backend, result
-        finally: connections["default"].close()
+        finally:
+            connections.close_all()
     with ThreadPoolExecutor(max_workers=2) as pool:
         futures = [pool.submit(worker, operation) for operation in operations]
         results = [future.result(timeout=40) for future in futures]

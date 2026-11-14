@@ -1,10 +1,10 @@
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from dataclasses import replace
 from datetime import timedelta
 from threading import Barrier
 
 import pytest
-from django.db import close_old_connections
+from django.db import close_old_connections, connection, connections
 from django.urls import reverse
 from django.utils import timezone
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
@@ -125,16 +125,19 @@ def test_two_redemptions_have_one_transactional_winner():
     def redeem():
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             barrier.wait(timeout=15)
             try:
                 return services.redeem_invite(token, actor=user).pk
             except NotFound:
                 return None
         finally:
-            close_old_connections()
+            connections.close_all()
 
     with ThreadPoolExecutor(max_workers=2) as pool:
-        results = list(pool.map(lambda _: redeem(), range(2)))
+        results = list(pool.map(lambda _: redeem(), range(2), timeout=30))
     assert sum(value is not None for value in results) == 1
     assert BookingSpaceStaffGrant.objects.count() == 1
 
@@ -156,6 +159,9 @@ def test_grantee_mutation_and_revocation_serialize_on_the_resource():
     def perform(kind):
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             barrier.wait(timeout=15)
             if kind == "revoke":
                 services.revoke_grant(grant, actor=manager)
@@ -166,10 +172,10 @@ def test_grantee_mutation_and_revocation_serialize_on_the_resource():
             except PermissionDenied:
                 return "refused"
         finally:
-            close_old_connections()
+            connections.close_all()
 
     with ThreadPoolExecutor(max_workers=2) as pool:
-        results = list(pool.map(perform, ["revoke", "edit"]))
+        results = list(pool.map(perform, ["revoke", "edit"], timeout=30))
     assert results[0] == "revoked" and results[1] in {"edited", "refused"}
     with pytest.raises(PermissionDenied):
         bookings.update_space(resource, actor=user, description="Never authorized after revocation")

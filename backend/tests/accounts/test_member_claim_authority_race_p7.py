@@ -1,8 +1,8 @@
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from threading import Event
 
 import pytest
-from django.db import close_old_connections
+from django.db import close_old_connections, connection, connections
 from rest_framework.test import APIClient
 
 from apps.accounts import services_claim
@@ -53,13 +53,16 @@ def test_issuer_change_after_request_authorization_but_before_lock_is_refused(
         # then the service must reload the actor under its lock after the competing write.
         client.force_authenticate(issuer)
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             return client.post(
                 f"/api/v1/admin/makerspaces/{makerspace.pk}/member-claim-codes",
                 {"membership_id": membership.pk},
                 format="json",
             )
         finally:
-            close_old_connections()
+            connections.close_all()
 
     with ThreadPoolExecutor(max_workers=1) as pool:
         future = pool.submit(request_issue)

@@ -11,7 +11,7 @@ import threading
 from decimal import Decimal
 
 import pytest
-from django.db import connection
+from django.db import connection, connections
 
 from apps.audit.models import AuditLog
 from apps.payments.models import MakerspacePaymentSettings, Payment
@@ -125,18 +125,22 @@ def test_parallel_double_submit_raises_one_debt():
 
     def give():
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             barrier.wait(timeout=10)
             results.append(create_gift(space, donor, amount=Decimal("20.00"))[0].pk)
         except Exception as exc:  # noqa: BLE001 - surfaced by the assertion below
             errors.append(exc)
         finally:
-            connection.close()
+            connections.close_all()
 
     threads = [threading.Thread(target=give) for _ in range(2)]
     for thread in threads:
         thread.start()
     for thread in threads:
         thread.join(timeout=30)
+    assert all(not thread.is_alive() for thread in threads)
     assert errors == []
     assert len(set(results)) == 1
     assert Payment.objects.filter(makerspace=space, subject_type="donation").count() == 1

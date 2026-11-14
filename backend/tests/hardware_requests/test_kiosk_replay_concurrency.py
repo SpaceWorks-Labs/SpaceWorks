@@ -1,10 +1,10 @@
 """These tests require real PostgreSQL connections; coordinator runs them."""
 
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from threading import Event
 
 import pytest
-from django.db import connections
+from django.db import connections, connection
 
 from apps.boxes.models import BoxScan
 from apps.evidence.models import EvidencePhoto
@@ -20,6 +20,9 @@ pytestmark = pytest.mark.django_db(transaction=True)
 def in_connection(fn, *args):
     connections.close_all()
     try:
+        if connection.vendor == "postgresql":
+            with connection.cursor() as cursor:
+                cursor.execute("SET lock_timeout = '5s'")
         return fn(*args)
     finally:
         connections.close_all()

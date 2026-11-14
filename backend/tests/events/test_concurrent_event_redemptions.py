@@ -1,8 +1,8 @@
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from threading import Barrier
 
 import pytest
-from django.db import close_old_connections
+from django.db import close_old_connections, connection, connections
 
 from apps.events.invites import create_invite
 from apps.events.promos import create_promo
@@ -31,13 +31,16 @@ def test_concurrent_last_code_use_has_one_winner_and_no_orphan_registration(kind
     def redeem(user):
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             barrier.wait(timeout=10)
             return signup(event, user, **data).status_code
         finally:
-            close_old_connections()
+            connections.close_all()
 
     with ThreadPoolExecutor(max_workers=2) as pool:
-        statuses = list(pool.map(redeem, users))
+        statuses = list(pool.map(redeem, users, timeout=30))
     assert sorted(statuses) == [201, 404]
     credential.refresh_from_db()
     assert credential.uses == 1 and event.registrations.count() == 1

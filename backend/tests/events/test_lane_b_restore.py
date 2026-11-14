@@ -1,12 +1,12 @@
 """Exact cancellation compensation, exercised through the real locked workflows."""
 
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from datetime import timedelta
 from decimal import Decimal
 from threading import Barrier
 
 import pytest
-from django.db import close_old_connections
+from django.db import close_old_connections, connection, connections
 from django.utils import timezone
 
 from apps.audit.models import AuditLog
@@ -183,12 +183,15 @@ def test_concurrent_promotion_and_restore_have_one_serializable_fifo_result():
     def transition(restore):
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             barrier.wait(timeout=10)
             if restore:
                 return restore_registration(EventRegistration.objects.get(pk=cancelled.pk), actor=staff).status
             return cancel(EventRegistration.objects.get(pk=incumbent.pk), staff).status
         finally:
-            close_old_connections()
+            connections.close_all()
 
     with ThreadPoolExecutor(max_workers=2) as pool:
         futures = [pool.submit(transition, restore) for restore in (False, True)]

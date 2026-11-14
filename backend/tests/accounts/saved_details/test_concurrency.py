@@ -1,8 +1,8 @@
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 import threading
 
 import pytest
-from django.db import close_old_connections, transaction
+from django.db import close_old_connections, transaction, connection, connections
 
 from apps.accounts.saved_details import intents
 from apps.accounts.saved_details.lifecycle import erase_account_vault
@@ -19,9 +19,12 @@ pytestmark = pytest.mark.django_db(transaction=True)
 def connected(run):
     close_old_connections()
     try:
+        if connection.vendor == "postgresql":
+            with connection.cursor() as cursor:
+                cursor.execute("SET lock_timeout = '5s'")
         return run()
     finally:
-        close_old_connections()
+        connections.close_all()
 
 
 def test_two_intents_with_same_base_apply_once_and_preserve_newer_value(owner, monkeypatch):

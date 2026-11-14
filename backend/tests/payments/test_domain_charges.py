@@ -1,9 +1,9 @@
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from datetime import timedelta
 
 import pytest
 from django.core.exceptions import ValidationError
-from django.db import close_old_connections
+from django.db import close_old_connections, connection, connections
 from django.utils import timezone
 
 from apps.accounts.models import User
@@ -254,15 +254,20 @@ def test_concurrent_booking_helper_is_idempotent(monkeypatch):
 
     def create():
         close_old_connections()
-        row = Booking.objects.select_related("space__makerspace", "member").get(
-            pk=booking.pk
-        )
-        result = booking_payments.create_for_confirmed_booking(row, actor)
-        close_old_connections()
-        return result.pk if result else None
+        try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
+            row = Booking.objects.select_related("space__makerspace", "member").get(
+                pk=booking.pk
+            )
+            result = booking_payments.create_for_confirmed_booking(row, actor)
+            return result.pk if result else None
+        finally:
+            connections.close_all()
 
     with ThreadPoolExecutor(max_workers=2) as pool:
-        list(pool.map(lambda _index: create(), range(2)))
+        list(pool.map(lambda _index: create(), range(2), timeout=30))
     assert Payment.objects.filter(
         subject_type=Payment.SubjectType.BOOKING,
         subject_id=booking.pk,

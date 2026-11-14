@@ -1,3 +1,4 @@
+from django.db import connections
 import pytest
 
 from apps.payments.models import MakerspacePaymentSettings
@@ -19,7 +20,7 @@ def profile():
 
 @pytest.mark.django_db(transaction=True)
 def test_profile_currency_and_payment_settings_edits_serialize_without_losing_fields(profile):
-    from concurrent.futures import ThreadPoolExecutor
+    from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
     from threading import Barrier
     from django.db import close_old_connections, connection
     lab, manager, _ = profile
@@ -34,7 +35,7 @@ def test_profile_currency_and_payment_settings_edits_serialize_without_losing_fi
             ready.wait(timeout=10)
             return authenticated_client(manager).patch(path, body, format="json").status_code
         finally:
-            connection.close()
+            connections.close_all()
 
     with ThreadPoolExecutor(max_workers=2) as pool:
         results = [pool.submit(patch, route(lab), {"default_currency": "eur", "country": "IN"}),
@@ -46,7 +47,7 @@ def test_profile_currency_and_payment_settings_edits_serialize_without_losing_fi
 
 
 def test_first_profile_currency_save_serializes_with_first_payment_settings_save(profile, monkeypatch):
-    from concurrent.futures import ThreadPoolExecutor
+    from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
     from threading import Barrier
     from django.db import close_old_connections, connection
     lab, manager, _ = profile
@@ -69,7 +70,7 @@ def test_first_profile_currency_save_serializes_with_first_payment_settings_save
                 cursor.execute("SET lock_timeout = '10s'")
             return authenticated_client(manager).patch(path, body, format="json").status_code
         finally:
-            connection.close()
+            connections.close_all()
 
     with ThreadPoolExecutor(max_workers=2) as pool:
         results = [pool.submit(patch, route(lab), {"default_currency": "eur"}),

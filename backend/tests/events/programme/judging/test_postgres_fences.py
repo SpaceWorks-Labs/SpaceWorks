@@ -4,13 +4,13 @@ Run with G's isolated PostgreSQL runner after programme migrations/registries.
 Each worker has its own connection; this is one pytest process/database.
 """
 
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from contextlib import contextmanager
 from threading import Event as Signal
 from uuid import uuid4
 
 import pytest
-from django.db import close_old_connections, connection, transaction
+from django.db import close_old_connections, connection, transaction, connections
 
 from apps.encryption.models import PiiMakerspaceWriteFence
 from apps.encryption.write_fence import (
@@ -47,7 +47,7 @@ def test_closed_tenant_fence_wins_before_event_row_is_acquired(monkeypatch):
                 cursor.execute("SET lock_timeout = '8s'")
             save_definition(event.pk, actor=manager, kind="tracks", data=data)
         finally:
-            close_old_connections()
+            connections.close_all()
     with ThreadPoolExecutor(max_workers=1) as executor:
         with transaction.atomic(), connection.cursor() as cursor:
             cursor.execute("SELECT pg_advisory_xact_lock_shared(%s, 0)", [GLOBAL_LOCK_NAMESPACE])

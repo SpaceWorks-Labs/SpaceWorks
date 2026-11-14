@@ -1,8 +1,8 @@
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from threading import Barrier
 
 import pytest
-from django.db import IntegrityError, close_old_connections, transaction
+from django.db import IntegrityError, close_old_connections, transaction, connection, connections
 from django.utils import timezone
 from rest_framework.exceptions import APIException
 
@@ -69,6 +69,9 @@ def test_concurrent_service_creates_have_one_typed_winner(monkeypatch):
     def create_one(index):
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             gate.wait(timeout=5)
             try:
                 archive_requests.create(
@@ -80,10 +83,10 @@ def test_concurrent_service_creates_have_one_typed_winner(monkeypatch):
             except APIException as exc:
                 return str(exc.detail["code"])
         finally:
-            close_old_connections()
+            connections.close_all()
 
     with ThreadPoolExecutor(max_workers=2) as pool:
-        outcomes = sorted(pool.map(create_one, range(2)))
+        outcomes = sorted(pool.map(create_one, range(2), timeout=30))
 
     assert outcomes == ["created", "pending_archive_request_exists"]
     assert MakerspaceArchiveRequest.objects.filter(makerspace=makerspace).count() == 1

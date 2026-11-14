@@ -1,6 +1,6 @@
 """A native heartbeat never holds Grant while waiting for credential revocation."""
 
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 
 import pytest
 from django.db import transaction

@@ -1,9 +1,9 @@
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from datetime import timedelta
 from threading import Barrier
 
 import pytest
-from django.db import close_old_connections
+from django.db import close_old_connections, connection, connections
 from django.test import override_settings
 from django.utils import timezone
 from rest_framework.serializers import ValidationError
@@ -147,7 +147,17 @@ def test_managed_limit_blocks_publish_and_self_host_ignores_cap():
     with override_settings(PLATFORM_DOMAIN_SUFFIX=".space-works.tech"):
         with pytest.raises(ValidationError) as caught:
             services.publish(make_event(space, status=Event.Status.DRAFT), actor=actor)
-        assert caught.value.get_codes() == {"limit": "limit_reached"}
+        # Decision 514 keeps the legacy limit field beside the typed code and detail.
+        response = workflow_exception_handler(caught.value, {})
+        message = (
+            "You've reached the free events limit for this space — "
+            "ask the operator to raise it or self-host."
+        )
+        assert response.status_code == 400
+        assert response.data == {"code": "limit_reached", "detail": message, "limit": message}
+        assert caught.value.get_codes() == {
+            "code": "limit_reached", "detail": "limit_reached", "limit": "limit_reached",
+        }
     with override_settings(PLATFORM_DOMAIN_SUFFIX=""):
         # Decision 281 addendum: a limit the superadmin SET applies to an own space too, so the
         # self-host "no cap" case is a space with no override (own spaces default to unlimited).
@@ -223,25 +233,31 @@ def test_concurrent_mutations_serialize_without_oversubscription_or_deadlock():
 
     barrier = Barrier(2)
     def concurrent_register(index):
-        close_old_connections(); barrier.wait()
+        close_old_connections(); barrier.wait(timeout=15)
         try:
             # The test's worker connections do not share its uncommitted setup
             # transaction, unlike production provisioning. Seed the required
             # persistent row on each worker before exercising registration.
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             PiiMakerspaceWriteFence.objects.get_or_create(makerspace_id=event.makerspace_id)
             return register(Event.objects.get(pk=event.pk), f"c{index}@x.test").status
         finally:
-            close_old_connections()
+            connections.close_all()
     with ThreadPoolExecutor(max_workers=2) as pool:
-        results = list(pool.map(concurrent_register, range(2)))
+        results = list(pool.map(concurrent_register, range(2), timeout=30))
     assert sorted(results) == ["registered", "waitlisted"]
     assert event.registrations.filter(status__in=services.CONFIRMED_STATUSES).count() == 1
 
     confirmed = event.registrations.get(status="registered")
     barrier = Barrier(2)
     def reconcile(operation):
-        close_old_connections(); barrier.wait()
+        close_old_connections(); barrier.wait(timeout=15)
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             if operation == "cancel":
                 services.cancel_registration(
                     EventRegistration.objects.get(pk=confirmed.pk), actor=actor
@@ -251,7 +267,7 @@ def test_concurrent_mutations_serialize_without_oversubscription_or_deadlock():
                     Event.objects.get(pk=event.pk), actor=actor, capacity=2
                 )
         finally:
-            close_old_connections()
+            connections.close_all()
     with ThreadPoolExecutor(max_workers=2) as pool:
         futures = [pool.submit(reconcile, op) for op in ("cancel", "capacity")]
         [future.result(timeout=10) for future in futures]
@@ -260,8 +276,11 @@ def test_concurrent_mutations_serialize_without_oversubscription_or_deadlock():
     attendee = event.registrations.get(status="registered")
     barrier = Barrier(2)
     def attend():
-        close_old_connections(); barrier.wait()
+        close_old_connections(); barrier.wait(timeout=15)
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             services.mark_attended(
                 EventRegistration.objects.get(pk=attendee.pk), actor=actor
             )
@@ -269,9 +288,9 @@ def test_concurrent_mutations_serialize_without_oversubscription_or_deadlock():
         except EventInvalidTransition:
             return "conflict"
         finally:
-            close_old_connections()
+            connections.close_all()
     with ThreadPoolExecutor(max_workers=2) as pool:
-        outcomes = list(pool.map(lambda _: attend(), range(2)))
+        outcomes = list(pool.map(lambda _: attend(), range(2), timeout=30))
     assert sorted(outcomes) == ["attended", "conflict"]
 
 

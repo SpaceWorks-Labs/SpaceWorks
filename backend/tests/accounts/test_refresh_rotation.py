@@ -1,8 +1,8 @@
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from threading import Barrier
 
 import pytest
-from django.db import close_old_connections
+from django.db import close_old_connections, connection, connections
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken
 
@@ -45,16 +45,19 @@ def test_concurrent_refresh_rotation_mints_one_usable_descendant(
         client = APIClient()
         client.cookies["refresh_token"] = original
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             return client.post(
                 REFRESH,
                 HTTP_X_REFRESH_CSRF="1",
                 HTTP_ORIGIN=ORIGIN,
             )
         finally:
-            close_old_connections()
+            connections.close_all()
 
     with ThreadPoolExecutor(max_workers=2) as pool:
-        responses = list(pool.map(lambda _index: rotate(), range(2)))
+        responses = list(pool.map(lambda _index: rotate(), range(2), timeout=30))
 
     assert sorted(response.status_code for response in responses) == [200, 401]
     loser = next(response for response in responses if response.status_code == 401)

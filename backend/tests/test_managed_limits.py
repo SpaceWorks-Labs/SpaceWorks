@@ -1,12 +1,12 @@
 from tests.account_split.sweep_helpers import (
     create_test_user as _create_test_user,
 )
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from threading import Barrier
 
 import pytest
 from django.conf import settings
-from django.db import close_old_connections, transaction
+from django.db import close_old_connections, transaction, connection, connections
 from django.test import override_settings
 from rest_framework.serializers import ValidationError
 from rest_framework.test import APIRequestFactory
@@ -147,6 +147,13 @@ def test_barrel_self_host_patch_controls_every_split_limit_module(
     assert limits.reserve_notification_quota(makerspace, "slack") is False
 
     monkeypatch.setattr(limits, "is_self_host", lambda: True)
+    # Decision 514: an explicit daily cap applies on self-host too.
+    assert limits.reserve_notification_quota(makerspace, "slack") is False
+
+    # With no cap resolved, reservations remain unlimited in either hosting mode.
+    monkeypatch.setattr(limits, "resource_limit", lambda _space, _channel: None)
+    assert limits.reserve_notification_quota(makerspace, "slack") is True
+    monkeypatch.setattr(limits, "is_self_host", lambda: False)
     assert limits.reserve_notification_quota(makerspace, "slack") is True
 
 
@@ -232,8 +239,11 @@ def test_concurrent_product_creates_are_serialized_at_quota_boundary(makerspace)
 
     def create_at_boundary(index):
         close_old_connections()
-        barrier.wait()
+        barrier.wait(timeout=15)
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             with transaction.atomic():
                 current_space = Makerspace.objects.get(pk=makerspace.pk)
                 limits.check_quota(current_space, "products", adding=1)
@@ -243,11 +253,11 @@ def test_concurrent_product_creates_are_serialized_at_quota_boundary(makerspace)
         else:
             result = "created"
         finally:
-            close_old_connections()
+            connections.close_all()
         return result
 
     with ThreadPoolExecutor(max_workers=2) as pool:
-        results = list(pool.map(create_at_boundary, range(2)))
+        results = list(pool.map(create_at_boundary, range(2), timeout=30))
 
     assert sorted(results) == ["created", "limited"]
     assert InventoryProduct.objects.filter(makerspace=makerspace).count() == 1

@@ -1,4 +1,5 @@
 """Real domain API contract tests; not run until the isolated slot is admitted."""
+from django.db import connections
 from datetime import timedelta
 import pytest
 from django.utils import timezone
@@ -75,7 +76,7 @@ def test_hidden_old_event_cannot_be_overwritten_or_used_as_revision_oracle(monke
 
 @pytest.mark.django_db(transaction=True)
 def test_event_lock_contention_rolls_back_without_context_write():
-    from concurrent.futures import ThreadPoolExecutor
+    from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
     from django.db import connection, transaction, close_old_connections
     space, req, product, event, api, url = setup_context()
     empty = api.get(url)
@@ -83,12 +84,12 @@ def test_event_lock_contention_rolls_back_without_context_write():
         "expected_generation": empty.data["generation"], "expected_revision": 0}
     def attempt():
         close_old_connections()
-        with connection.cursor() as cursor:
-            cursor.execute("SET lock_timeout = '2s'")
         try:
+            with connection.cursor() as cursor:
+                cursor.execute("SET lock_timeout = '2s'")
             return api.put(url, body, format="json").status_code
         finally:
-            close_old_connections()
+            connections.close_all()
     with transaction.atomic():
         Event.objects.select_for_update().get(pk=event.pk)
         with ThreadPoolExecutor(max_workers=1) as pool:

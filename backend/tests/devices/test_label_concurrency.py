@@ -4,7 +4,7 @@ import zipfile
 from uuid import uuid4
 
 import pytest
-from django.db import close_old_connections, connection
+from django.db import close_old_connections, connection, connections
 
 from apps.devices.models import LabelPrintCommand, LabelPrintResult
 from apps.devices.services_label_commands import create_label_command
@@ -22,12 +22,15 @@ def race(*operations):
     def run(operation):
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             barrier.wait(timeout=20)
             values.append(operation())
         except Exception as exc:
             errors.append(exc)
         finally:
-            connection.close()
+            connections.close_all()
 
     threads = [threading.Thread(target=run, args=(operation,)) for operation in operations]
     for thread in threads:

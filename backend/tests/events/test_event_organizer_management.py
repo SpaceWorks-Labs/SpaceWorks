@@ -1,10 +1,10 @@
 from tests.account_split.sweep_g2_helpers import staff_user
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from datetime import timedelta
 from threading import Barrier
 
 import pytest
-from django.db import close_old_connections
+from django.db import close_old_connections, connection, connections
 from django.urls import reverse
 from django.utils import timezone
 from rest_framework.test import APIClient
@@ -136,18 +136,21 @@ def test_concurrent_replacements_leave_one_complete_organizer_set():
 
     def replace(organization_id):
         close_old_connections()
-        gate.wait()
+        gate.wait(timeout=15)
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             replace_organizers(
                 Event.objects.get(pk=event.pk),
                 actor=User.objects.get(pk=actor.pk),
                 organization_ids=[organization_id],
             )
         finally:
-            close_old_connections()
+            connections.close_all()
 
     with ThreadPoolExecutor(max_workers=2) as pool:
-        list(pool.map(replace, [organization.pk for organization in organizations]))
+        list(pool.map(replace, [organization.pk for organization in organizations], timeout=30))
 
     final_ids = set(
         EventOrganizer.objects.filter(event=event).values_list("organization_id", flat=True)

@@ -1,12 +1,12 @@
 """An in-flight writer must observe departure after waiting on the owner lock."""
 
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from threading import Event
 from time import monotonic, sleep
 from types import SimpleNamespace
 
 import pytest
-from django.db import close_old_connections, connection, transaction
+from django.db import close_old_connections, connection, transaction, connections
 from django.utils import timezone
 
 from apps.accounts.account_obligations import AccountDeletionPending
@@ -70,6 +70,9 @@ def test_writer_waits_for_departure_and_refuses_stale_user(kind, monkeypatch):
     def run():
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             with connection.cursor() as cursor:
                 cursor.execute("SELECT pg_backend_pid()")
                 worker_pid.append(cursor.fetchone()[0])
@@ -80,7 +83,7 @@ def test_writer_waits_for_departure_and_refuses_stale_user(kind, monkeypatch):
                 return "refused"
             return "created"
         finally:
-            close_old_connections()
+            connections.close_all()
 
     with ThreadPoolExecutor(max_workers=1) as pool:
         with transaction.atomic():
@@ -99,7 +102,7 @@ def test_writer_waits_for_departure_and_refuses_stale_user(kind, monkeypatch):
                 if future.done():
                     break
                 sleep(0.01)
-            assert blocked, ("The obligation writer must wait on the locked account.", future.done() and (future.exception() or future.result()))
+            assert blocked, ("The obligation writer must wait on the locked account.", future.done() and (future.exception() or future.result(timeout=30)))
             locked.deletion_requested_at = timezone.now()
             locked.is_active = False
             locked.save(update_fields=["deletion_requested_at", "is_active"])

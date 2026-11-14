@@ -2,12 +2,12 @@
 
 C must install this module in its owned directory. W has not edited that path.
 """
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from datetime import timedelta
 from threading import Barrier
 
 import pytest
-from django.db import close_old_connections
+from django.db import close_old_connections, connection, connections
 from django.utils import timezone
 
 from apps.accounts.models import User
@@ -70,13 +70,16 @@ def test_two_renewal_writers_serialize_to_one_charge():
     def write():
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             seed = MembershipTerm.objects.select_related("membership__makerspace", "plan").get(pk=term.pk)
             barrier.wait(timeout=10)
             return raise_renewal(seed)
         finally:
-            close_old_connections()
+            connections.close_all()
     with ThreadPoolExecutor(max_workers=2) as pool:
-        results = list(pool.map(lambda _: write(), range(2)))
+        results = list(pool.map(lambda _: write(), range(2), timeout=30))
     assert sorted(results) == ["charged", "skipped"]
     assert Payment.objects.filter(makerspace=space, subject_type="membership_term", subject_id=term.pk).count() == 1
     assert AuditLog.objects.filter(action="membership.renewal_raised", target_id=str(term.pk)).count() == 1

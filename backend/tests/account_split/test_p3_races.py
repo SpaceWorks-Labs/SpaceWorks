@@ -1,9 +1,9 @@
 """Real PostgreSQL transactions serialize last-manager removal and concurrent grants."""
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from threading import Barrier
 
 import pytest
-from django.db import connection
+from django.db import connection, connections
 from rest_framework.exceptions import APIException
 
 from apps.accounts import staff_account_lifecycle as lifecycle, staff_account_services as service
@@ -19,13 +19,16 @@ def _threaded(*calls):
 
     def run(call):
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             barrier.wait(timeout=15)
             call()
             return "ok"
         except APIException:
             return "refused"
         finally:
-            connection.close()
+            connections.close_all()
     with ThreadPoolExecutor(max_workers=len(calls)) as pool:
         futures = [pool.submit(run, call) for call in calls]
         return [future.result(timeout=45) for future in futures]

@@ -1,8 +1,8 @@
 """Resolution races use independent real PostgreSQL connections."""
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 
 import pytest
-from django.db import connections
+from django.db import connections, connection
 
 from apps.audit.models import AuditLog
 from apps.hardware_requests.models import ReplayCommand
@@ -16,6 +16,9 @@ pytestmark = pytest.mark.django_db(transaction=True)
 def review(user, pk, code, replacement=None):
     connections.close_all()
     try:
+        if connection.vendor == "postgresql":
+            with connection.cursor() as cursor:
+                cursor.execute("SET lock_timeout = '5s'")
         return resolve_replay(user, pk, resolution_code=code, replacement_command_id=replacement).resolution_code
     except ResolutionConflict:
         return "conflict"

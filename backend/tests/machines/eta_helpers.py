@@ -2,12 +2,12 @@
 
 import threading
 import time
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone as dt_timezone
 from types import SimpleNamespace
 from uuid import uuid4
 
-from django.db import close_old_connections, transaction
+from django.db import close_old_connections, transaction, connection, connections
 
 from apps.machines import role_scope
 from apps.machines.models import Machine, MachineServiceRequest, MachineType, ServiceQueue
@@ -96,6 +96,9 @@ def interleave(first, second, *, pause=0.4):
     def run_first():
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             with transaction.atomic():
                 results["first"] = first()
                 started.set()
@@ -104,17 +107,20 @@ def interleave(first, second, *, pause=0.4):
             results["first"] = exc
         finally:
             started.set()
-            close_old_connections()
+            connections.close_all()
 
     def run_second():
         close_old_connections()
         started.wait(15)
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             results["second"] = second()
         except Exception as exc:  # noqa: BLE001
             results["second"] = exc
         finally:
-            close_old_connections()
+            connections.close_all()
 
     with ThreadPoolExecutor(max_workers=2) as pool:
         one, two = pool.submit(run_first), pool.submit(run_second)

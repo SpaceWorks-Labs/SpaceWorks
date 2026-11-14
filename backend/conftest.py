@@ -5,7 +5,9 @@ automatically. They rebuild Django's migration state, which is slow and memory-h
 shared local runners may deselect them with `-m "not migration"` (decision 487). CI runs everything; the tag
 never skips a test on its own.
 """
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from time import monotonic
 
 import pytest
 
@@ -13,6 +15,25 @@ from tests.areas import AREAS, areas_for_test, owners_for_app
 
 _MIGRATION_SIGNATURES = ("MigrationExecutor", "executor.migrate(", 'call_command("migrate"', "call_command('migrate'")
 _seen: dict[str, bool] = {}
+
+
+class _BoundedThreadPoolExecutor(ThreadPoolExecutor):
+    """Test workers must join within one deadline, including on assertion failure.
+
+    Future.result(timeout=...) alone still lets __exit__ wait forever. Python's
+    executor has no public timed join; inspect its worker set only in this harness.
+    """
+
+    def __exit__(self, exc_type, _exc, _traceback):
+        self.shutdown(wait=False, cancel_futures=exc_type is not None)
+        deadline = monotonic() + 30
+        for worker in self._threads:
+            worker.join(timeout=max(0, deadline - monotonic()))
+        alive = sorted(worker.name for worker in self._threads if worker.is_alive())
+        if alive:
+            pytest.fail(f"Connection hygiene failure: test workers did not join within 30s: {alive}",
+                        pytrace=False)
+        return False
 
 
 def _drives_migrations(path: Path) -> bool:
@@ -77,6 +98,53 @@ def pytest_terminal_summary(terminalreporter):
     })
     terminalreporter.write_sep("-", "selected test counts by area (overlap is intentional)")
     terminalreporter.write_line(", ".join(f"{name}={counts[name]}" for name in sorted(counts)))
+
+
+def _check_transaction_connection_hygiene(nodeid):
+    """Decision 543: release leaked transactions before TRUNCATE can deadlock."""
+    from django.db import connection, connections
+
+    if connection.vendor != "postgresql":
+        return
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT current_database()")
+        database = cursor.fetchone()[0]
+    if not database.startswith("test_"):
+        raise RuntimeError(f"Refusing connection cleanup outside a test_ database: {database}")
+    for extra in connections.all(initialized_only=True):
+        if extra.alias != connection.alias:
+            extra.close()
+    with connection.cursor() as cursor:
+        cursor.execute(
+            "SELECT pid, pg_terminate_backend(pid) FROM pg_stat_activity "
+            "WHERE datname = %s AND pid <> pg_backend_pid() "
+            "AND state IN ('idle in transaction', 'idle in transaction (aborted)')",
+            [database],
+        )
+        leaked = cursor.fetchall()
+    if leaked:
+        pytest.fail(f"Connection hygiene failure in {nodeid}: leaked idle-in-transaction "
+                    f"backends in {database} (pid, terminated): {leaked}. "
+                    "Close connections in each worker's finally block and join threads with a timeout.",
+                    pytrace=False)
+
+
+@pytest.fixture(autouse=True)
+def _transaction_connection_hygiene(request):
+    marker = request.node.get_closest_marker("django_db")
+    transactional = marker and any(marker.kwargs.get(key) for key in
+                                  ("transaction", "reset_sequences", "serialized_rollback"))
+    if not transactional and not set(request.fixturenames).intersection({
+        "transactional_db", "django_db_reset_sequences", "django_db_serialized_rollback",
+    }):
+        yield
+        return
+    # Acquiring the DB fixture first makes our finalizer run BEFORE its flush.
+    request.getfixturevalue("_django_db_helper")
+    try:
+        yield
+    finally:
+        _check_transaction_connection_hygiene(request.node.nodeid)
 
 
 def _drop_derived_objects(connection):

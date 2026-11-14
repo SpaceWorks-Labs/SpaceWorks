@@ -8,7 +8,7 @@ from decimal import Decimal
 import pytest
 from django.contrib.auth import get_user_model
 from django.core.management import call_command
-from django.db import DatabaseError, connection, models, transaction
+from django.db import DatabaseError, connection, connections, models, transaction
 from django.utils import timezone
 
 from apps.bookings.models import BookableSpace, Booking
@@ -250,17 +250,26 @@ def test_exclusive_close_waits_for_an_inflight_shared_writer():
     started, finished = threading.Event(), threading.Event()
 
     def close():
-        started.set()
-        close_makerspace(space.id, "decrypt_rollback", actor.id)
-        finished.set()
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute("SET lock_timeout = '5s'")
+            started.set()
+            close_makerspace(space.id, "decrypt_rollback", actor.id)
+            finished.set()
+        finally:
+            connections.close_all()
 
-    with transaction.atomic():
-        assert_mapped_write_allowed(space.id)
-        thread = threading.Thread(target=close)
-        thread.start()
-        assert started.wait(1)
-        assert not finished.wait(0.15)
-    thread.join(timeout=2)
+    thread = threading.Thread(target=close)
+    try:
+        with transaction.atomic():
+            assert_mapped_write_allowed(space.id)
+            thread.start()
+            assert started.wait(1)
+            assert not finished.wait(0.15)
+    finally:
+        if thread.ident is not None:
+            thread.join(timeout=10)
+    assert not thread.is_alive()
     assert finished.is_set()
     with transaction.atomic(), pytest.raises(PiiWriteFenced):
         assert_mapped_write_allowed(space.id)

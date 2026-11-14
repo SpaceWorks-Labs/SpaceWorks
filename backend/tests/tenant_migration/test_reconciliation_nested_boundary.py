@@ -32,7 +32,7 @@ def test_same_tenant_reuses_held_boundary_before_shared_lock_acquisition(monkeyp
 @pytest.mark.django_db(transaction=True)
 def test_nested_boundary_with_real_exclusive_waiter():
     import time
-    from concurrent.futures import ThreadPoolExecutor
+    from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
     from threading import Event
     from apps.tenant_migration.gate_locks import _new_lock_connection, SOURCE_GATE_LOCK_NAMESPACE
     from tests.return_helpers import make_space

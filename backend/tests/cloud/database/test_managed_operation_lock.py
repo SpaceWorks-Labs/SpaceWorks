@@ -45,9 +45,11 @@ def test_operation_guard_loss_aborts_before_further_effects(environment):
     params.pop("options", None)
     environment["DATABASE_URL"] = make_dsn(**params)
     other = psycopg2.connect(**params)
-    other.autocommit = True
     effects = []
     try:
+        other.autocommit = True
+        with other.cursor() as cursor:
+            cursor.execute("SET lock_timeout = '5s'")
         with pytest.raises(OperationLockUnavailable):
             with managed_operation_lock(environ=environment) as guard:
                 with other.cursor() as cursor:

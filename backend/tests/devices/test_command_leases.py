@@ -1,8 +1,8 @@
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from datetime import timedelta
 
 import pytest
-from django.db import close_old_connections
+from django.db import close_old_connections, connection, connections
 from django.test import override_settings
 from django.utils import timezone
 from rest_framework.exceptions import NotFound, PermissionDenied
@@ -91,10 +91,13 @@ def test_two_pollers_lease_one_command_exactly_once():
     def poll(_):
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             return lease_command(case["principal"])
         finally:
-            close_old_connections()
+            connections.close_all()
     with ThreadPoolExecutor(max_workers=2) as pool:
-        results = list(pool.map(poll, range(2)))
+        results = list(pool.map(poll, range(2), timeout=30))
     assert sum(result is not None for result in results) == 1
     assert DeviceCommand.objects.get(pk=case["job"].command_id).attempts == 1

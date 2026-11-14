@@ -1,5 +1,5 @@
 """Exercise actual confirmation attempts against the supported database cache."""
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from threading import Barrier
 from types import SimpleNamespace
 from uuid import uuid4
@@ -7,7 +7,7 @@ from uuid import uuid4
 import pytest
 from django.core.cache import caches
 from django.core.management import call_command
-from django.db import close_old_connections, connection
+from django.db import close_old_connections, connection, connections
 from django.test import override_settings
 from rest_framework.exceptions import Throttled, ValidationError
 
@@ -34,6 +34,9 @@ def test_five_confirm_attempts_are_atomic_on_database_cache(monkeypatch, request
     def attempt(_):
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             barrier.wait(timeout=10)
             try:
                 proof.confirm(actor=actor, space=space, project="test-project", fid="test-fid",
@@ -44,10 +47,10 @@ def test_five_confirm_attempts_are_atomic_on_database_cache(monkeypatch, request
                 return "invalid"
             return "unexpected-success"
         finally:
-            close_old_connections()
+            connections.close_all()
 
     with ThreadPoolExecutor(max_workers=12) as pool:
-        outcomes = list(pool.map(attempt, range(12)))
+        outcomes = list(pool.map(attempt, range(12), timeout=30))
     assert outcomes.count("invalid") == 5
     assert outcomes.count("throttled") == 7
     assert len(outcomes) == 12

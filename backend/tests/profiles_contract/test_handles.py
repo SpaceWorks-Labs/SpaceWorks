@@ -1,7 +1,7 @@
 from datetime import timedelta
 from pathlib import Path
 import pytest
-from django.db import IntegrityError, transaction
+from django.db import IntegrityError, transaction, connection, connections
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError, NotFound
 from apps.accounts.models import User
@@ -93,7 +93,7 @@ def test_retired_handle_is_unavailable_to_another_account(published):
 
 @pytest.mark.django_db(transaction=True)
 def test_concurrent_first_claims_have_one_winner(membership):
-    from concurrent.futures import ThreadPoolExecutor
+    from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
     from threading import Barrier
     from django.db import close_old_connections
     other = MakerspaceMembership.objects.create(
@@ -102,6 +102,9 @@ def test_concurrent_first_claims_have_one_winner(membership):
     def attempt(pk):
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             member = MakerspaceMembership.objects.select_related("user", "makerspace").get(pk=pk)
             barrier.wait(timeout=10)
             try:
@@ -110,8 +113,8 @@ def test_concurrent_first_claims_have_one_winner(membership):
             except ValidationError:
                 return "collision"
         finally:
-            close_old_connections()
+            connections.close_all()
     with ThreadPoolExecutor(max_workers=2) as pool:
-        results = list(pool.map(attempt, [membership.pk, other.pk]))
+        results = list(pool.map(attempt, [membership.pk, other.pk], timeout=30))
     assert sorted(results) == ["claimed", "collision"]
     assert PublicHandle.objects.filter(handle="concurrent.name").count() == 1

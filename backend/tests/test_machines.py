@@ -1,11 +1,11 @@
-﻿from concurrent.futures import ThreadPoolExecutor
+﻿from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from decimal import Decimal
 from threading import Barrier
 from types import SimpleNamespace
 from unittest.mock import Mock
 
 import pytest
-from django.db import IntegrityError, close_old_connections, connection, transaction
+from django.db import IntegrityError, close_old_connections, connection, connections, transaction
 from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils import timezone
@@ -1514,18 +1514,22 @@ def test_concurrent_count_consumption_never_overdraws():
 
     def consume():
         close_old_connections()
-        client = authenticated_client(manager)
-        barrier.wait()
-        response = client.post(
-            _consumption_url(machine, linked.data["id"]),
-            {"quantity": "4"},
-            format="json",
-        )
-        close_old_connections()
-        return response.status_code
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute("SET lock_timeout = '5s'")
+            client = authenticated_client(manager)
+            barrier.wait(timeout=15)
+            response = client.post(
+                _consumption_url(machine, linked.data["id"]),
+                {"quantity": "4"},
+                format="json",
+            )
+            return response.status_code
+        finally:
+            connections.close_all()
 
     with ThreadPoolExecutor(max_workers=2) as pool:
-        statuses = list(pool.map(lambda _: consume(), range(2)))
+        statuses = list(pool.map(lambda _: consume(), range(2), timeout=30))
 
     # adjust_quantities row-locks the product (select_for_update in an atomic block),
     # so the two consumptions are strictly serialized: one wins (5 -> 1), the other

@@ -1,9 +1,9 @@
 """Whole-cohort admission/reopening uses the real registration and money seams."""
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from threading import Barrier
 
 import pytest
-from django.db import close_old_connections
+from django.db import close_old_connections, connection, connections
 
 from apps.events import services
 from apps.events.credentials.models import EventRegistrationCredential
@@ -109,6 +109,9 @@ def test_two_real_team_accepts_cannot_take_the_last_slot_twice(canonical_world):
     def accept(member, token):
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             barrier.wait(8)
             try:
                 team_invitations.accept(event_id=w.event.pk, team_id=team.pk, actor=member,
@@ -117,7 +120,7 @@ def test_two_real_team_accepts_cannot_take_the_last_slot_twice(canonical_world):
             except ProgrammeError as exc:
                 return exc.detail["code"]
         finally:
-            close_old_connections()
+            connections.close_all()
     with ThreadPoolExecutor(max_workers=2) as pool:
         futures = [pool.submit(accept, w.other, first), pool.submit(accept, third, second)]
         results = [future.result(timeout=20) for future in futures]

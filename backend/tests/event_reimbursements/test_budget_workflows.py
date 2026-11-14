@@ -1,10 +1,10 @@
 """PostgreSQL serialization, replay and rollback of real budget mutations."""
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from datetime import timedelta
 from threading import Barrier
 from uuid import uuid4
 import pytest
-from django.db import close_old_connections, transaction
+from django.db import close_old_connections, transaction, connection, connections
 from django.utils import timezone
 from apps.accounts.models import User
 from apps.events.models import Event
@@ -47,6 +47,9 @@ def test_last_budget_cannot_be_reserved_twice(funded):
     def reserve(award_id):
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             barrier.wait(timeout=10)
             with transaction.atomic():
                 Event.objects.select_for_update().get(pk=event.pk)
@@ -57,10 +60,10 @@ def test_last_budget_cannot_be_reserved_twice(funded):
         except PayoutValidationError as exc:
             return exc.code
         finally:
-            close_old_connections()
+            connections.close_all()
 
     with ThreadPoolExecutor(max_workers=2) as executor:
-        results = list(executor.map(reserve, [row.pk for row in awards]))
+        results = list(executor.map(reserve, [row.pk for row in awards], timeout=30))
     assert sorted(results) == ["budget_exhausted", "reserved"]
     pool.refresh_from_db()
     assert pool.reserved_minor == 60

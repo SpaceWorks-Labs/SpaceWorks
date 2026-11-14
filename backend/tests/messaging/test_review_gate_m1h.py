@@ -1,11 +1,11 @@
 """A queued migration must drain delivery, never block its inner transactions."""
 import time
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from threading import Event
 from unittest.mock import patch
 
 import pytest
-from django.db import close_old_connections, connection, transaction
+from django.db import close_old_connections, connection, transaction, connections
 
 from apps.integrations.messaging import worker
 from apps.integrations.messaging.transport import SendResult
@@ -36,7 +36,7 @@ def test_delivery_finishes_while_migration_exclusive_is_queued(space, member, ph
                 acquire_exclusive(space.pk)
                 acquired.set()
         finally:
-            close_old_connections()
+            connections.close_all()
 
     with ThreadPoolExecutor(max_workers=1) as pool:
         future = None

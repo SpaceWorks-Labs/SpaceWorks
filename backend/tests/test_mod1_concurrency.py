@@ -3,11 +3,11 @@
 Each test starts two threads behind a barrier, each with its own DB connection, against the real
 service entry points (request_workflow, operations.services). PostgreSQL row locks are required.
 """
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from threading import Barrier
 
 import pytest
-from django.db import close_old_connections, connection
+from django.db import close_old_connections, connection, connections
 from rest_framework.exceptions import ValidationError
 
 from apps.accounts.models import User
@@ -33,13 +33,16 @@ def _race(work, *args_per_thread):
     def run(args):
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             start.wait(timeout=15)
             try:
                 return ("ok", work(*args))
             except Exception as exc:  # the loser's typed error is the assertion target
                 return ("err", exc)
         finally:
-            close_old_connections()
+            connections.close_all()
 
     with ThreadPoolExecutor(max_workers=len(args_per_thread)) as pool:
         return [f.result(timeout=60) for f in [pool.submit(run, a) for a in args_per_thread]]

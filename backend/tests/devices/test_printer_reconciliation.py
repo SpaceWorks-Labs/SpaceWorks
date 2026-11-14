@@ -1,8 +1,8 @@
 from decimal import Decimal
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 
 import pytest
-from django.db import close_old_connections
+from django.db import close_old_connections, connection, connections
 from rest_framework.exceptions import ValidationError
 
 from apps.devices.models import PrinterJob
@@ -42,11 +42,14 @@ def test_same_terminal_report_from_concurrent_workers_has_one_workflow_effect():
     def report(_):
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             return report_result(case["principal"], case["job"].pk, payload).state
         finally:
-            close_old_connections()
+            connections.close_all()
     with ThreadPoolExecutor(max_workers=2) as pool:
-        states = list(pool.map(report, range(2)))
+        states = list(pool.map(report, range(2), timeout=30))
     assert states == ["applied", "applied"]
     from apps.audit.models import AuditLog
     assert AuditLog.objects.filter(action="machine_service.completed", target_id=str(case["request"].pk)).count() == 1

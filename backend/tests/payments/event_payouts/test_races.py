@@ -4,12 +4,12 @@ Budget release and actual module-purge integration require the sibling R/G suite
 these tests prove the core host/obligation serialization and no Event back-lock.
 """
 from copy import deepcopy
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from threading import Barrier
 from types import SimpleNamespace
 from uuid import uuid4
 import pytest
-from django.db import close_old_connections, connection, transaction
+from django.db import close_old_connections, connection, transaction, connections
 from apps.events.models import Event
 from apps.makerspaces.models import Makerspace
 from apps.payments.event_payouts import coordination, obligation_workflow, payout_workflow
@@ -57,7 +57,7 @@ def race(left, right):
             except PayoutError as exc:
                 return ("conflict", str(exc.detail["code"]))
         finally:
-            close_old_connections()
+            connections.close_all()
     with ThreadPoolExecutor(max_workers=2) as executor:
         futures = [executor.submit(invoke, fn) for fn in (left, right)]
         return [future.result(timeout=20) for future in futures]

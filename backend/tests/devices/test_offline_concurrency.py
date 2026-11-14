@@ -4,7 +4,7 @@ from datetime import timedelta
 import threading
 
 import pytest
-from django.db import connection
+from django.db import connection, connections
 from django.utils import timezone
 
 from apps.devices.models import Device, DeviceEvent
@@ -21,12 +21,15 @@ def _race(function):
     failures = []
     def fire():
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             barrier.wait(timeout=30)
             function()
         except Exception as exc:
             failures.append(exc)
         finally:
-            connection.close()
+            connections.close_all()
     threads = [threading.Thread(target=fire) for _ in range(2)]
     for thread in threads:
         thread.start()

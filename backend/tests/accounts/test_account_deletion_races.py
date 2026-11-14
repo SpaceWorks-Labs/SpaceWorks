@@ -1,11 +1,11 @@
 """Real session proofs and parent locks protect concurrent platform departures."""
 
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from threading import Barrier, Event
 
 import pytest
 from cryptography.fernet import Fernet
-from django.db import close_old_connections, connection
+from django.db import close_old_connections, connection, connections
 
 from apps.accounts import account_deletion, reauthentication
 from apps.accounts.models import User
@@ -46,7 +46,7 @@ def connected(function):
             cursor.execute("SET statement_timeout = '8s'")
         return function()
     finally:
-        close_old_connections()
+        connections.close_all()
 
 
 def delete(req):

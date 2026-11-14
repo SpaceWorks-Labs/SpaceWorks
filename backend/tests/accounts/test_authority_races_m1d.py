@@ -1,6 +1,6 @@
 """Parent-first locks preserve the last managers/governors during departure."""
 
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from threading import Barrier, Event
 
 import pytest

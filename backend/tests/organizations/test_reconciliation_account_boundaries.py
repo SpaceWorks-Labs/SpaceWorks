@@ -1,5 +1,6 @@
 """Organization authority belongs to member browser accounts."""
 
+from django.db import connection, connections
 import pytest
 from django.utils import timezone
 from rest_framework.exceptions import PermissionDenied
@@ -76,7 +77,7 @@ def test_native_self_creation_cannot_mint_organization_governance(settings):
 
 @pytest.mark.django_db(transaction=True)
 def test_simultaneous_governor_departures_preserve_one_live_governor():
-    from concurrent.futures import ThreadPoolExecutor
+    from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
     from threading import Barrier
     from django.db import close_old_connections, connections
 
@@ -90,6 +91,9 @@ def test_simultaneous_governor_departures_preserve_one_live_governor():
     def depart(user_id):
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             user = User.objects.get(pk=user_id)
             barrier.wait(timeout=10)
             try:
@@ -101,6 +105,6 @@ def test_simultaneous_governor_departures_preserve_one_live_governor():
             connections.close_all()
 
     with ThreadPoolExecutor(max_workers=2) as pool:
-        outcomes = list(pool.map(depart, (first.pk, second.pk)))
+        outcomes = list(pool.map(depart, (first.pk, second.pk), timeout=30))
     assert sorted(outcomes) == ["departed", "refused"]
     assert OrganizationMembership.objects.filter(organization=org, status="active").count() == 1

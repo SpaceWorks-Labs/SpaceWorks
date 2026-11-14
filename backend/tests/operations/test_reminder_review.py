@@ -1,13 +1,13 @@
 """Review regressions: live gates, valid fixtures and concurrent full sweeps."""
 
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from dataclasses import replace
 from datetime import timedelta
 from threading import Barrier
 
 import pytest
 from django.core.exceptions import ValidationError
-from django.db import close_old_connections, connection
+from django.db import close_old_connections, connection, connections
 from django.utils import timezone
 
 from apps.accounts import rbac
@@ -170,12 +170,15 @@ def test_two_concurrent_sweeps_dispatch_the_same_subject_once(monkeypatch):
     def worker():
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             return reminder_sweeper.run_reminder_sweep(now=now)
         finally:
-            close_old_connections()
+            connections.close_all()
 
     with ThreadPoolExecutor(max_workers=2) as executor:
-        results = list(executor.map(lambda _: worker(), range(2)))
+        results = list(executor.map(lambda _: worker(), range(2), timeout=30))
     assert sum(result["dispatched"] for result in results) == 1
     assert sum(result["failed"] for result in results) == 0
     assert ReminderSchedule.objects.get(makerspace=space).state == ReminderSchedule.State.COMPLETED

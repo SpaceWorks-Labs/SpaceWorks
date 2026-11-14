@@ -8,7 +8,7 @@ lock `module_install` takes, which serializes creators against disablers.
 import threading
 
 import pytest
-from django.db import connection, transaction
+from django.db import connection, transaction, connections
 from django.utils import timezone
 
 from apps.accounts.models import User
@@ -80,6 +80,9 @@ def test_guard_blocks_until_a_concurrent_uninstall_commits():
 
     def uninstall_holding_the_lock():
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             with transaction.atomic():
                 disable_module(makerspace, "events")
                 holder_locked.set()  # The service has acquired and still holds the row lock.
@@ -88,10 +91,13 @@ def test_guard_blocks_until_a_concurrent_uninstall_commits():
         except Exception as exc:
             worker_errors["holder"] = exc
         finally:
-            connection.close()
+            connections.close_all()
 
     def run_guard():
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             with transaction.atomic():
                 guard_started.set()
                 require_module_locked(makerspace, "events")
@@ -102,7 +108,7 @@ def test_guard_blocks_until_a_concurrent_uninstall_commits():
             worker_errors["guard"] = exc
         finally:
             guard_finished.set()
-            connection.close()
+            connections.close_all()
 
     holder = threading.Thread(target=uninstall_holding_the_lock)
     guard = threading.Thread(target=run_guard)

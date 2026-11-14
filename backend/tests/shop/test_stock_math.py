@@ -4,7 +4,7 @@ import threading
 from datetime import timedelta
 
 import pytest
-from django.db import close_old_connections
+from django.db import close_old_connections, connection, connections
 from django.utils import timezone
 
 from apps.inventory.availability import (
@@ -127,18 +127,22 @@ def test_two_concurrent_checkouts_for_the_last_unit_sell_it_once():
 
     def attempt(person):
         close_old_connections()
-        barrier.wait()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
+            barrier.wait(timeout=15)
             place_online_order(space, Buyer(person, person.username, person.email, person), {"lines": [line(variant)]})
             results.append("ok")
         except ShopRefused as exc:
             results.append(exc.code)
         finally:
-            close_old_connections()
+            connections.close_all()
 
     threads = [threading.Thread(target=attempt, args=(person,)) for person in buyers]
     [thread.start() for thread in threads]
-    [thread.join() for thread in threads]
+    [thread.join(timeout=30) for thread in threads]
+    assert all(not thread.is_alive() for thread in threads)
     assert sorted(results) == ["ok", "out_of_stock"]
     variant.refresh_from_db()
     assert variant.held == 1 and variant.on_hand == 1

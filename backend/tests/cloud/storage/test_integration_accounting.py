@@ -1,4 +1,5 @@
 """Local-only I3 capacity and durable-inventory regression cases."""
+from django.db import connection, connections
 from datetime import timedelta
 from types import SimpleNamespace
 import time
@@ -81,22 +82,25 @@ def test_delete_started_before_latest_sample_cannot_double_credit(account):
 
 @pytest.mark.django_db(transaction=True)
 def test_concurrent_admission_shares_one_deployment_cap(account):
-    from concurrent.futures import ThreadPoolExecutor
+    from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
     from threading import Barrier
     from django.db import close_old_connections
     barrier = Barrier(2)
     def attempt(key):
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             barrier.wait(timeout=5)
             storage.reserve_upload(None, bucket="private", key=key, max_bytes=600, ttl=60)
             return "accepted"
         except CapabilityError as exc:
             return exc.code
         finally:
-            close_old_connections()
+            connections.close_all()
     with ThreadPoolExecutor(max_workers=2) as pool:
-        outcomes = list(pool.map(attempt, ["one", "two"]))
+        outcomes = list(pool.map(attempt, ["one", "two"], timeout=30))
     assert sorted(outcomes) == ["accepted", "storage_account_cap_reached"]
 
 

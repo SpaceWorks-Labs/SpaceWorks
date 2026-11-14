@@ -1,12 +1,12 @@
 """CX12: batch preparation precedes locks without changing decision atomicity."""
 import base64
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from contextlib import contextmanager, nullcontext
 from threading import Event as Signal
 from time import monotonic, sleep
 
 import pytest
-from django.db import close_old_connections, connection, transaction
+from django.db import close_old_connections, connection, transaction, connections
 from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 
@@ -132,7 +132,7 @@ def test_bulk_locks_later_event_before_overlapping_single_decision(monkeypatch, 
                     response = _post(client, "approve", rows)
                 return response.status_code, response.json()
             finally:
-                connection.close()
+                connections.close_all()
 
         with ThreadPoolExecutor(max_workers=2) as pool:
             single_future = pool.submit(worker, "single")

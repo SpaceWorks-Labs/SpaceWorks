@@ -1,8 +1,8 @@
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from threading import Barrier
 
 import pytest
-from django.db import close_old_connections
+from django.db import close_old_connections, connection, connections
 from django.urls import reverse
 from django.utils import timezone
 from rest_framework.exceptions import PermissionDenied
@@ -121,6 +121,9 @@ def test_concurrent_creation_serializes_daily_quota(settings):
     def attempt(index):
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             current = User.objects.get(pk=actor.pk)
             start.wait(timeout=10)
             try:
@@ -129,10 +132,10 @@ def test_concurrent_creation_serializes_daily_quota(settings):
             except OrganizationConflict:
                 return "limited"
         finally:
-            close_old_connections()
+            connections.close_all()
 
     with ThreadPoolExecutor(max_workers=2) as pool:
-        results = list(pool.map(attempt, [1, 2]))
+        results = list(pool.map(attempt, [1, 2], timeout=30))
     assert sorted(results) == ["created", "limited"]
     assert Organization.objects.filter(created_by=actor).count() == 1
 

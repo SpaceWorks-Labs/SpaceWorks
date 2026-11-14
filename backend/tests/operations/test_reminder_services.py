@@ -1,13 +1,13 @@
 """Coordination semantics; the coordinator must run against isolated Postgres."""
 
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone as utc
 from threading import Barrier, Event
 from uuid import uuid4
 
 import pytest
 from django.core.exceptions import ValidationError
-from django.db import close_old_connections, connection, transaction
+from django.db import close_old_connections, connection, transaction, connections
 from django.utils import timezone
 
 from apps.operations.models import ReminderSchedule
@@ -170,15 +170,18 @@ def test_two_workers_claim_distinct_rows():
     def worker():
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             ready.wait(timeout=15)
             return {row.pk for row in claim_reminders(
                 makerspace=space, source="test.booking", limit=2,
             )}
         finally:
-            close_old_connections()
+            connections.close_all()
 
     with ThreadPoolExecutor(max_workers=2) as executor:
-        results = list(executor.map(lambda _: worker(), range(2)))
+        results = list(executor.map(lambda _: worker(), range(2), timeout=30))
     assert len(results[0]) == len(results[1]) == 2
     assert results[0].isdisjoint(results[1])
     assert set.union(*results) == set(ReminderSchedule.objects.values_list("pk", flat=True))
@@ -193,12 +196,15 @@ def test_claim_skips_a_row_locked_by_another_worker():
     def holder():
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             with transaction.atomic():
                 ReminderSchedule.objects.select_for_update().get(pk=first.pk)
                 locked.set()
                 assert release.wait(timeout=15)
         finally:
-            close_old_connections()
+            connections.close_all()
 
     with ThreadPoolExecutor(max_workers=1) as executor:
         future = executor.submit(holder)

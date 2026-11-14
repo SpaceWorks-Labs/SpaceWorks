@@ -1,10 +1,10 @@
 """Capacity updates fence shared accounts before any promotion takes more locks."""
 
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from threading import Barrier, local
 
 import pytest
-from django.db import close_old_connections
+from django.db import close_old_connections, connection, connections
 
 from apps.events import organization_audience, services
 from apps.events.models import EventRegistration
@@ -54,10 +54,13 @@ def test_disjoint_audiences_promote_opposite_waiters_without_partial_account_fen
     def increase(pair):
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             event, manager = pair
             return services.update_event(event, actor=manager, capacity=2).capacity
         finally:
-            close_old_connections()
+            connections.close_all()
 
     with ThreadPoolExecutor(max_workers=2) as pool:
         futures = [pool.submit(increase, pair) for pair in (

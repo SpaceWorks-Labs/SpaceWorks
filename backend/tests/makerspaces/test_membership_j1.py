@@ -1,8 +1,8 @@
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from threading import Barrier
 
 import pytest
-from django.db import close_old_connections
+from django.db import close_old_connections, connection, connections
 from django.utils import timezone
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
@@ -173,14 +173,17 @@ def test_concurrent_open_join_is_idempotent_and_audits_once():
     def join():
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             gate.wait(timeout=5)
             return membership_services.request_membership(
                 User.objects.get(pk=applicant.pk), Makerspace.objects.get(pk=makerspace.pk)
             )["membership_id"]
         finally:
-            close_old_connections()
+            connections.close_all()
 
     with ThreadPoolExecutor(max_workers=2) as pool:
-        assert len(set(pool.map(lambda _: join(), range(2)))) == 1
+        assert len(set(pool.map(lambda _: join(), range(2), timeout=30))) == 1
     assert MakerspaceMembership.objects.filter(makerspace=makerspace, user=applicant, status="active").count() == 1
     assert AuditLog.objects.filter(makerspace=makerspace, action="membership.joined").count() == 1

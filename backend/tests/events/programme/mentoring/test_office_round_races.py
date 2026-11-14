@@ -1,8 +1,8 @@
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from datetime import timedelta
 from uuid import uuid4
 from django.apps import apps
-from django.db import close_old_connections
+from django.db import close_old_connections, connection, connections
 from django.utils import timezone
 import pytest
 from apps.events.contributions.models import EventRolePosting, EventShift
@@ -16,14 +16,17 @@ def concurrently(function):
     def call(index):
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             try:
                 return function(index)
             except ProgrammeError as exc:
                 return str(exc.detail["code"])
         finally:
-            close_old_connections()
+            connections.close_all()
     with ThreadPoolExecutor(max_workers=2) as pool:
-        return list(pool.map(call, [0, 1]))
+        return list(pool.map(call, [0, 1], timeout=30))
 
 
 @pytest.mark.django_db(transaction=True)

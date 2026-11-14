@@ -1,8 +1,8 @@
 """Real separate PostgreSQL connections serialize last-budget and offer races."""
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from threading import Barrier
 import pytest
-from django.db import close_old_connections, connection
+from django.db import close_old_connections, connection, connections
 from apps.accounts.models import User
 from apps.accounts import reauthentication
 from apps.event_reimbursements import award_workflow, request_workflow
@@ -28,6 +28,9 @@ def test_two_last_balance_awards_cannot_overdraw(make_world):
     def offer(request_id):
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             actor = User.objects.get(pk=world.manager.pk)
             request = session_request(actor)
             reauthentication.verify(request, password=PASSWORD)
@@ -40,9 +43,9 @@ def test_two_last_balance_awards_cannot_overdraw(make_world):
         except PayoutError as exc:
             return str(exc.detail["code"])
         finally:
-            close_old_connections()
+            connections.close_all()
     with ThreadPoolExecutor(max_workers=2) as executor:
-        outcomes = list(executor.map(offer, (one.pk, two.pk)))
+        outcomes = list(executor.map(offer, (one.pk, two.pk), timeout=30))
     assert outcomes.count("awarded") == 1
     assert set(outcomes) <= {"awarded", "stale_pool_version", "budget_exhausted"}
     world.pool.refresh_from_db()
@@ -61,6 +64,9 @@ def test_accept_and_cap_edit_have_one_winner_and_accepted_cap_is_immutable(world
     def run(edit):
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             actor = User.objects.get(pk=world.manager.pk if edit else world.owner.pk)
             req = session_request(actor, surface="member")
             if edit:
@@ -77,9 +83,9 @@ def test_accept_and_cap_edit_have_one_winner_and_accepted_cap_is_immutable(world
         except PayoutError as exc:
             return str(exc.detail["code"])
         finally:
-            close_old_connections()
+            connections.close_all()
     with ThreadPoolExecutor(max_workers=2) as executor:
-        outcomes = list(executor.map(run, (False, True)))
+        outcomes = list(executor.map(run, (False, True), timeout=30))
     assert outcomes.count("changed") == 1
     award.refresh_from_db(); world.pool.refresh_from_db()
     assert (award.state, award.amount_minor) in (("accepted", 8000), ("offered", 7000))

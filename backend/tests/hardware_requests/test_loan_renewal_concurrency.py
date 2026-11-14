@@ -1,8 +1,8 @@
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from threading import Barrier
 
 import pytest
-from django.db import close_old_connections, connection
+from django.db import close_old_connections, connection, connections
 from rest_framework.exceptions import ValidationError
 
 from apps.accounts.models import User
@@ -23,6 +23,9 @@ def test_concurrent_renewals_cannot_exceed_policy_or_emit_two_audits():
     def renew():
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             actor = User.objects.get(pk=member.pk)
             request = HardwareRequest.objects.get(pk=loan.pk)
             start.wait(timeout=15)
@@ -32,7 +35,7 @@ def test_concurrent_renewals_cannot_exceed_policy_or_emit_two_audits():
             except ValidationError as exc:
                 return str(exc.detail["code"])
         finally:
-            close_old_connections()
+            connections.close_all()
 
     with ThreadPoolExecutor(max_workers=2) as pool:
         futures = [pool.submit(renew) for _ in range(2)]

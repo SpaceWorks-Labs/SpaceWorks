@@ -1,12 +1,12 @@
 """Database and catalog protections for manual refund receipts."""
 
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from decimal import Decimal
 from threading import Barrier
 
 import pytest
 from django.core.exceptions import ValidationError
-from django.db import DatabaseError, close_old_connections, connections, transaction
+from django.db import DatabaseError, close_old_connections, connections, transaction, connection
 from django.utils import timezone
 
 from apps.backup.raw_projection import raw_records
@@ -91,6 +91,9 @@ def test_concurrent_releases_cannot_refund_the_same_deposit_twice():
     def release():
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             barrier.wait(timeout=10)
             record_offline_refund(payment, actor=staff, **payload("7.00"))
             return "recorded"
@@ -100,7 +103,7 @@ def test_concurrent_releases_cannot_refund_the_same_deposit_twice():
             connections.close_all()
 
     with ThreadPoolExecutor(max_workers=2) as pool:
-        results = list(pool.map(lambda _: release(), range(2)))
+        results = list(pool.map(lambda _: release(), range(2), timeout=30))
     assert sorted(results) == ["recorded", "refund_exceeds_balance"]
     assert Refund.counted_total(payment) == Decimal("7.00")
 

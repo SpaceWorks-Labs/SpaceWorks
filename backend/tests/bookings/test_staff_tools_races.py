@@ -1,6 +1,6 @@
 """Independent PostgreSQL connections contend at the shared resource lock."""
 
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from threading import Barrier
 
 import pytest
@@ -25,6 +25,7 @@ def race(w, operations):
             # Open the physical connection before the rendezvous, proving these are
             # competing sessions rather than two sequential calls on one connection.
             with connection.cursor() as cursor:
+                cursor.execute("SET lock_timeout = '5s'")
                 cursor.execute("SELECT pg_backend_pid()")
                 backend_id = cursor.fetchone()[0]
             row = Booking.objects.get(pk=w.row.pk)
@@ -46,7 +47,7 @@ def race(w, operations):
                 result = str(error.detail["code"])
             return backend_id, result
         finally:
-            connections["default"].close()
+            connections.close_all()
     with ThreadPoolExecutor(max_workers=2) as pool:
         futures = [pool.submit(worker, operation) for operation in operations]
         results = [future.result(timeout=40) for future in futures]

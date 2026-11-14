@@ -1,6 +1,6 @@
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from uuid import uuid4
-from django.db import close_old_connections
+from django.db import close_old_connections, connection, connections
 import pytest
 from apps.events.mentoring import help_workflow
 from apps.events.mentoring.models import EventHelpRequest
@@ -16,6 +16,9 @@ def test_two_mentors_racing_for_one_request_have_one_winner(settings):
     def claim(index):
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             try:
                 return help_workflow.command(actor=mentors[index], event_id=event.pk, help_id=row.pk,
                     payload={"operation_id": uuid4(), "expected_version": row.version}, action="claim").row.state
@@ -23,9 +26,9 @@ def test_two_mentors_racing_for_one_request_have_one_winner(settings):
                 assert exc.status_code == 409
                 return "conflict"
         finally:
-            close_old_connections()
+            connections.close_all()
 
     with ThreadPoolExecutor(max_workers=2) as pool:
-        results = list(pool.map(claim, [0, 1]))
+        results = list(pool.map(claim, [0, 1], timeout=30))
     assert sorted(results) == ["claimed", "conflict"]
     assert EventHelpRequest.objects.filter(state="claimed").count() == 1

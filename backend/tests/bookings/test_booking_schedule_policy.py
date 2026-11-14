@@ -1,10 +1,10 @@
 from tests.bookings.staff_grant_helpers import service_manager
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone as dt_timezone
 from threading import Barrier
 
 import pytest
-from django.db import close_old_connections
+from django.db import close_old_connections, connection, connections
 from django.urls import reverse
 from django.utils import timezone
 from rest_framework import serializers
@@ -133,6 +133,9 @@ def test_buffer_overlap_serializes_concurrent_reservations(operation, monkeypatc
     def reserve(index):
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             barrier.wait(timeout=10)
             if operation == 'approve':
                 services.approve_booking(Booking.objects.get(pk=rows[index].pk), actor=service_manager())
@@ -142,7 +145,7 @@ def test_buffer_overlap_serializes_concurrent_reservations(operation, monkeypatc
         except BookingConflict:
             return 'conflict'
         finally:
-            close_old_connections()
+            connections.close_all()
 
     with ThreadPoolExecutor(max_workers=2) as executor:
         futures = [executor.submit(reserve, index) for index in range(2)]

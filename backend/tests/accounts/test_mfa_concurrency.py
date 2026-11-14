@@ -1,9 +1,9 @@
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from threading import Barrier, Event
 
 import pytest
 from cryptography.fernet import Fernet
-from django.db import close_old_connections, transaction
+from django.db import close_old_connections, transaction, connection, connections
 from django.utils import timezone
 from rest_framework.test import APIClient
 from rest_framework.exceptions import AuthenticationFailed
@@ -34,13 +34,16 @@ def test_concurrent_challenges_cannot_consume_the_same_totp_step(settings):
     def verify(token):
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             barrier.wait(timeout=10)
             return APIClient().post("/api/v1/auth/mfa/verify", {"challenge": token, "code": code}, format="json")
         finally:
-            close_old_connections()
+            connections.close_all()
 
     with ThreadPoolExecutor(max_workers=2) as pool:
-        responses = list(pool.map(verify, raw))
+        responses = list(pool.map(verify, raw, timeout=30))
     assert sorted(response.status_code for response in responses) == [200, 401]
     assert UserMFA.objects.get(pk=row.pk).last_step >= 0
 
@@ -54,13 +57,16 @@ def test_token_minting_waits_for_enrollment_and_cannot_adopt_an_unproven_version
         close_old_connections()
         started.set()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             SpaceWorksRefreshToken.for_user(user)
             return "minted"
         except AuthenticationFailed:
             return "refused"
         finally:
             finished.set()
-            close_old_connections()
+            connections.close_all()
 
     with ThreadPoolExecutor(max_workers=1) as pool:
         with transaction.atomic():

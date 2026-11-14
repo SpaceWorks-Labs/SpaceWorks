@@ -8,7 +8,7 @@ from datetime import timedelta
 from decimal import Decimal
 
 import pytest
-from django.db import connection
+from django.db import connection, connections
 from django.urls import reverse
 from django.utils import timezone
 from rest_framework.test import APIClient
@@ -215,14 +215,18 @@ def test_concurrent_bookings_cannot_overdraw_the_term():
 
     def worker(day):
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             results.append(book(room, member, day=day, hours=2).pk)
         except Exception as exc:  # a loser may legitimately fail admission; none may overdraw
             errors.append(exc)
         finally:
-            connection.close()
+            connections.close_all()
 
     threads = [threading.Thread(target=worker, args=(day,)) for day in (1, 2, 3)]
     [thread.start() for thread in threads]
-    [thread.join() for thread in threads]
+    [thread.join(timeout=30) for thread in threads]
+    assert all(not thread.is_alive() for thread in threads)
     assert 0 <= used_minutes(term, "booking") <= 120
     assert Payment.objects.filter(makerspace=maker).count() >= len(results) - 1

@@ -1,13 +1,13 @@
 """A due-only scheduler claim prevents duplicate runs while work happens outside locks."""
 
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from datetime import timedelta
 from io import StringIO
 from threading import Event
 
 import pytest
 from django.core.management import call_command
-from django.db import close_old_connections
+from django.db import close_old_connections, connection, connections
 from django.utils import timezone
 
 from apps.operations.models import PeriodicTaskRun
@@ -32,11 +32,14 @@ def test_second_runner_skips_an_in_flight_claim(monkeypatch):
     def run():
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             output = StringIO()
             call_command("run_scheduled_tasks", "--task", "return-reminders", "--due-only", stdout=output)
             return output.getvalue()
         finally:
-            close_old_connections()
+            connections.close_all()
 
     with ThreadPoolExecutor(max_workers=2) as pool:
         first = pool.submit(run)

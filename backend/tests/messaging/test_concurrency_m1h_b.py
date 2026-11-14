@@ -4,11 +4,11 @@ The canonical WhatsApp probe barrier serializes on ``lock_whatsapp_sender`` befo
 any row lock: unmapped STOP, probe confirmation and probe claims (D1).
 """
 import threading
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from types import SimpleNamespace
 
 import pytest
-from django.db import close_old_connections, connection, transaction
+from django.db import close_old_connections, connection, transaction, connections
 
 from apps.integrations.messaging.correlation import confirm_canonical_probe
 from apps.integrations.messaging.locks import lock_whatsapp_sender
@@ -36,6 +36,9 @@ def test_sender_serialization_orders_unmapped_stop_and_probe_confirmation(space,
     def run(operation, owns_first_lock):
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             with transaction.atomic():
                 if owns_first_lock:
                     lock_whatsapp_sender(SENDER)
@@ -48,7 +51,7 @@ def test_sender_serialization_orders_unmapped_stop_and_probe_confirmation(space,
                     second_acquired.set()
                 operations[operation]()
         finally:
-            close_old_connections()
+            connections.close_all()
 
     other = "confirm" if first_operation == "stop" else "stop"
     with ThreadPoolExecutor(max_workers=2) as pool:
@@ -82,12 +85,15 @@ def test_two_tenants_cannot_submit_two_platform_probes_concurrently(space, membe
     def run(row):
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             ready.wait(timeout=10)
             return prepare_whatsapp(row)
         finally:
-            close_old_connections()
+            connections.close_all()
 
     with ThreadPoolExecutor(max_workers=2) as pool:
-        results = list(pool.map(run, rows))
+        results = list(pool.map(run, rows, timeout=30))
     assert sorted(results) == [False, True]
     assert MessagingRecipientCorrelation.objects.count() == 1

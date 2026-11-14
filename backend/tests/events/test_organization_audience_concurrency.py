@@ -1,10 +1,10 @@
 """Actual row writers race ordinary registration, including reciprocal venues."""
 
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from threading import Barrier, Event as Signal
 
 import pytest
-from django.db import close_old_connections, transaction
+from django.db import close_old_connections, transaction, connection, connections
 
 from apps.events import services
 from apps.events.organization_audience import OrganizationAudienceRefused
@@ -25,6 +25,9 @@ def test_registration_rereads_proof_after_concurrent_source_writer(mutation):
     def writer():
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             with transaction.atomic():
                 if mutation == "suspend":
                     OrganizationMembership.objects.filter(user=user).update(status="suspended")
@@ -38,15 +41,18 @@ def test_registration_rereads_proof_after_concurrent_source_writer(mutation):
                     MakerspaceMembership.objects.filter(user=user).update(status="revoked")
                 held.set(); assert release.wait(10)
         finally:
-            close_old_connections()
+            connections.close_all()
 
     def registration():
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             assert held.wait(10)
             return signup(event, user).status_code
         finally:
-            close_old_connections()
+            connections.close_all()
 
     with ThreadPoolExecutor(max_workers=2) as pool:
         writing = pool.submit(writer); assert held.wait(10)
@@ -70,10 +76,13 @@ def test_reciprocal_registration_uses_sorted_spaces_and_has_no_deadlock():
     def register(pair):
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             barrier.wait(timeout=10)
             return signup(*pair).status_code
         finally:
-            close_old_connections()
+            connections.close_all()
 
     with ThreadPoolExecutor(max_workers=2) as pool:
-        assert list(pool.map(register, [(event, users[0]), (other, users[1])])) == [201, 201]
+        assert list(pool.map(register, [(event, users[0]), (other, users[1])], timeout=30)) == [201, 201]

@@ -4,7 +4,7 @@ from threading import Event, Thread
 from types import SimpleNamespace
 
 import pytest
-from django.db import close_old_connections, transaction
+from django.db import close_old_connections, transaction, connection, connections
 
 from apps.makerspaces.models import Makerspace
 from apps.payments import reconciliation
@@ -48,6 +48,9 @@ def test_offline_settlement_leaves_joined_makerspace_unlocked(monkeypatch):
     def settle():
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             row = reconciliation.reconcile_payments(
                 actor=manager, makerspace_id=space.pk, payment_ids=[payment.pk],
                 target_status=Payment.Status.PAID_OFFLINE, settlement=settlement_details(),
@@ -56,7 +59,7 @@ def test_offline_settlement_leaves_joined_makerspace_unlocked(monkeypatch):
         except Exception as exc:
             results["error"] = exc
         finally:
-            close_old_connections()
+            connections.close_all()
 
     worker = Thread(target=settle)
     worker.start()

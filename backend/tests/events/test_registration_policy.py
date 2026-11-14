@@ -1,10 +1,10 @@
 from tests.account_split.sweep_g2_helpers import staff_user
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from datetime import timedelta
 from threading import Barrier
 
 import pytest
-from django.db import IntegrityError, close_old_connections, transaction
+from django.db import IntegrityError, close_old_connections, transaction, connection, connections
 from django.urls import resolve, reverse
 from django.utils import timezone
 from drf_spectacular.generators import SchemaGenerator
@@ -226,15 +226,18 @@ def test_two_approvals_for_last_place_serialize():
 
     def approve(registration_id):
         close_old_connections()
-        barrier.wait()
+        barrier.wait(timeout=15)
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             row = EventRegistration.objects.get(pk=registration_id)
             return services.approve_registration(row, actor=staff).status
         finally:
-            close_old_connections()
+            connections.close_all()
 
     with ThreadPoolExecutor(max_workers=2) as pool:
-        statuses = list(pool.map(approve, [row.pk for row in registrations]))
+        statuses = list(pool.map(approve, [row.pk for row in registrations], timeout=30))
     assert sorted(statuses) == ["registered", "waitlisted"]
 
 

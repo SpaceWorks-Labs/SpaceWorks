@@ -1,6 +1,6 @@
 """Logout-all and browser/native rotation serialize on the same account row."""
 
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 
 import pytest
 from django.db import transaction

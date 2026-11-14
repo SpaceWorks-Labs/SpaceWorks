@@ -1,4 +1,4 @@
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from dataclasses import replace
 from datetime import timedelta
 from threading import Event
@@ -94,6 +94,9 @@ def test_killed_guard_fences_old_effect_and_blocks_takeover(task, monkeypatch):
 
     def kill_and_take_over():
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             assert entered.wait(5)
             with connection.cursor() as cursor:
                 cursor.execute("SELECT pg_terminate_backend(%s)", [pid[0]])
@@ -124,6 +127,9 @@ def test_rate_limit_is_atomic_across_concurrent_connections(settings):
 
     def consume():
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             consume_rate(authenticated=True)
             return True
         except TickRateExceeded:
@@ -132,7 +138,7 @@ def test_rate_limit_is_atomic_across_concurrent_connections(settings):
             connections.close_all()
 
     with ThreadPoolExecutor(max_workers=8) as pool:
-        results = list(pool.map(lambda _: consume(), range(12)))
+        results = list(pool.map(lambda _: consume(), range(12), timeout=30))
     assert sum(results) == 6
 
 

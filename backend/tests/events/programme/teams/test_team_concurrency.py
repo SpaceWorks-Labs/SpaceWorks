@@ -1,7 +1,7 @@
 """Real PostgreSQL parent locking; G must run with the A model migration installed."""
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from threading import Barrier
-from django.db import close_old_connections
+from django.db import close_old_connections, connection, connections
 import pytest
 from apps.events.hackathons.admission_errors import ProgrammeError
 from apps.events.hackathons.team_invitations import invite, accept
@@ -29,6 +29,9 @@ def test_two_invite_accepts_cannot_take_the_same_last_team_place(world):
     def respond(actor, token):
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             barrier.wait(timeout=10)
             try:
                 accept(event_id=world.event.pk, team_id=team.pk, actor=actor,
@@ -37,7 +40,7 @@ def test_two_invite_accepts_cannot_take_the_same_last_team_place(world):
             except ProgrammeError as exc:
                 return str(exc.detail["code"])
         finally:
-            close_old_connections()
+            connections.close_all()
     with ThreadPoolExecutor(max_workers=2) as pool:
         futures = [pool.submit(respond, world.other, first), pool.submit(respond, third, second)]
         outcomes = [f.result(timeout=20) for f in futures]

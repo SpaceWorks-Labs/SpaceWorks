@@ -1,11 +1,11 @@
 """Loan waitlist holds (inventory D3/D14): FIFO offers, claims and lapses never oversell."""
 
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from datetime import timedelta
 from threading import Barrier
 
 import pytest
-from django.db import close_old_connections, connection
+from django.db import close_old_connections, connection, connections
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
@@ -113,14 +113,20 @@ def test_concurrent_offers_and_accepts_never_drive_stock_below_zero():
     def offer():
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             start.wait(timeout=15)
             return waitlist.offer_next(product.pk)
         finally:
-            close_old_connections()
+            connections.close_all()
 
     def accept():
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             start.wait(timeout=15)
             try:
                 workflow.accept_request(staff, pending)
@@ -128,7 +134,7 @@ def test_concurrent_offers_and_accepts_never_drive_stock_below_zero():
             except Exception as exc:  # InsufficientStock surfaces as a workflow error
                 return type(exc).__name__
         finally:
-            close_old_connections()
+            connections.close_all()
 
     with ThreadPoolExecutor(max_workers=2) as pool:
         results = [future.result(timeout=30) for future in (pool.submit(offer), pool.submit(accept))]

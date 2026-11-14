@@ -1,7 +1,7 @@
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from threading import Barrier
 import pytest
-from django.db import transaction, connections
+from django.db import transaction, connections, connection
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from apps.makerspaces import public_page_services as pages
 from apps.makerspaces.models import MakerspaceMembership
@@ -57,6 +57,9 @@ def test_organization_storage_reservations_serialize_at_fixed_global_cap():
     def reserve():
         connections.close_all()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             barrier.wait(timeout=5)
             with transaction.atomic():
                 owner = Organization.objects.select_for_update().get(pk=org.pk)

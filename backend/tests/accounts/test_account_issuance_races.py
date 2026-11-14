@@ -1,11 +1,11 @@
 """Real lock contention must serialize sign-in with departure and refresh."""
 
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from datetime import timedelta
 from threading import Event
 
 import pytest
-from django.db import close_old_connections, connection, transaction
+from django.db import close_old_connections, connection, transaction, connections
 from django.utils import timezone
 from rest_framework.exceptions import AuthenticationFailed, ValidationError
 from rest_framework.test import APIClient, APIRequestFactory
@@ -45,7 +45,7 @@ def waiting_worker(pool, operation):
             ready.set()
             return operation()
         finally:
-            close_old_connections()
+            connections.close_all()
 
     future = pool.submit(run)
     assert ready.wait(timeout=5)

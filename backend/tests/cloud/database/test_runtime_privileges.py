@@ -24,6 +24,7 @@ def test_runtime_role_can_use_app_rows_but_cannot_create_or_own_objects():
     table = "cloud_runtime_table_" + uuid.uuid4().hex[:12]
     try:
         with database.cursor() as cursor:
+            cursor.execute("SET LOCAL lock_timeout = '5s'")
             cursor.execute("SELECT current_database()")
             name = cursor.fetchone()[0]
             cursor.execute(sql.SQL("CREATE TABLE public.{} (id bigserial PRIMARY KEY, value text NOT NULL)").format(sql.Identifier(table)))
@@ -38,8 +39,10 @@ def test_runtime_role_can_use_app_rows_but_cannot_create_or_own_objects():
             cursor.execute("SELECT rolinherit, rolsuper, rolcreatedb, rolcreaterole, rolreplication, rolbypassrls FROM pg_roles WHERE rolname=current_user")
             assert cursor.fetchone() == (False,) * 6
     finally:
-        database.rollback()
-        database.close()
+        try:
+            database.rollback()
+        finally:
+            database.close()
 
 
 def test_unclassified_app_function_is_refused_before_any_grant():

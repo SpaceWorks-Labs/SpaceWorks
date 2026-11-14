@@ -1,10 +1,10 @@
 """L6 G28: two buyers racing for the last seats in two sessions never oversell."""
 
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from threading import Barrier
 
 import pytest
-from django.db import close_old_connections
+from django.db import close_old_connections, connection, connections
 
 from apps.events.models import EventCheckoutHold
 from tests.events.orders_helpers import place, ticketed_event, verified
@@ -20,12 +20,15 @@ def test_concurrent_holds_have_one_winner():
     def buy(user):
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             barrier.wait(timeout=10)
             return place(user, event, [{"ticket_type_id": ticket.pk, "quantity": 2}]).status_code
         finally:
-            close_old_connections()
+            connections.close_all()
 
     with ThreadPoolExecutor(max_workers=2) as pool:
-        statuses = list(pool.map(buy, buyers))
+        statuses = list(pool.map(buy, buyers, timeout=30))
     assert sorted(statuses) == [201, 409]
     assert sum(hold.seats for hold in EventCheckoutHold.objects.filter(event=event)) == 2

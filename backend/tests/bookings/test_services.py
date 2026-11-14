@@ -1,10 +1,10 @@
 from tests.account_split.sweep_g2_helpers import service_manager
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from datetime import timedelta
 from threading import Barrier
 
 import pytest
-from django.db import close_old_connections, connection
+from django.db import close_old_connections, connection, connections
 from django.utils import timezone
 from rest_framework.serializers import ValidationError
 
@@ -184,16 +184,19 @@ def test_postgres_concurrent_overlap_has_one_winner_and_spaces_are_independent(m
     start = timezone.now() + timedelta(hours=2)
     gate = Barrier(2)
     def race(target):
-        close_old_connections(); gate.wait()
+        close_old_connections(); gate.wait(timeout=15)
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             book(BookableSpace.objects.get(pk=target.pk), start)
             return 'created'
         except BookingConflict:
             return 'conflict'
         finally:
-            close_old_connections()
+            connections.close_all()
     with ThreadPoolExecutor(max_workers=2) as pool:
-        assert sorted(pool.map(race, (space, space))) == ['conflict', 'created']
+        assert sorted(pool.map(race, (space, space), timeout=30)) == ['conflict', 'created']
     assert Booking.objects.filter(space=space).count() == 1
 
     spaces = (make_space(make_makerspace('parallel-a')), make_space(make_makerspace('parallel-b')))
@@ -204,15 +207,19 @@ def test_postgres_concurrent_overlap_has_one_winner_and_spaces_are_independent(m
     monkeypatch.setattr(services.audit, 'record', synchronized_audit)
     gate = Barrier(2)
     with ThreadPoolExecutor(max_workers=2) as pool:
-        assert list(pool.map(race, spaces)) == ['created', 'created']
+        assert list(pool.map(race, spaces, timeout=30)) == ['created', 'created']
 
 @pytest.mark.django_db(transaction=True)
 def test_deactivation_and_create_serialize_on_the_space():
     space, actor, gate = make_space(), make_actor(), Barrier(2)
     def run(operation):
-        close_old_connections(); gate.wait()
-        target = BookableSpace.objects.get(pk=space.pk)
+        close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
+            gate.wait(timeout=15)
+            target = BookableSpace.objects.get(pk=space.pk)
             if operation == 'deactivate':
                 services.deactivate_space(target, actor=actor)
             else:
@@ -221,9 +228,9 @@ def test_deactivation_and_create_serialize_on_the_space():
         except BookingInvalidTransition:
             return 'inactive'
         finally:
-            close_old_connections()
+            connections.close_all()
     with ThreadPoolExecutor(max_workers=2) as pool:
-        outcomes = list(pool.map(run, ('deactivate', 'create')))
+        outcomes = list(pool.map(run, ('deactivate', 'create'), timeout=30))
     space.refresh_from_db()
     assert space.is_active is False
     assert outcomes in (['deactivated', 'inactive'], ['deactivated', 'created'])

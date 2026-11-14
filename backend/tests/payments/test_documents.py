@@ -1,13 +1,13 @@
 """Receipt numbering, immutable snapshots, refunds and authenticated custody."""
 
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from decimal import Decimal
 from threading import Barrier
 from unittest.mock import patch
 
 import pytest
 from django.core.exceptions import ValidationError
-from django.db import DatabaseError, close_old_connections, transaction
+from django.db import DatabaseError, close_old_connections, transaction, connection, connections
 from django.urls import reverse
 from django.utils import timezone
 
@@ -76,12 +76,15 @@ def test_gapless_numbers_under_concurrent_settlements():
     def run(payment):
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             barrier.wait(timeout=10)
             mark_offline(payment, staff, settlement_details())
         finally:
-            close_old_connections()
+            connections.close_all()
     with ThreadPoolExecutor(max_workers=4) as pool:
-        list(pool.map(run, payments))
+        list(pool.map(run, payments, timeout=30))
     assert list(PaymentDocument.objects.filter(makerspace=space).values_list("sequence", flat=True)) == [1, 2, 3, 4]
     assert MakerspaceBillingSettings.objects.get(makerspace=space).next_document_number == 5
 

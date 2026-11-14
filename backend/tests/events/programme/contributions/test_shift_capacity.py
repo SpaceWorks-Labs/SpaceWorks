@@ -1,6 +1,6 @@
-from concurrent.futures import ThreadPoolExecutor
+from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
 from uuid import uuid4
-from django.db import close_old_connections, connection
+from django.db import close_old_connections, connection, connections
 import pytest
 from apps.events.contributions import shift_workflow
 from apps.events.contributions.errors import ProgrammeError
@@ -15,14 +15,17 @@ def test_last_shift_place_is_serialized_and_fifo_waitlisted(settings):
     def apply(index):
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             return shift_workflow.apply(actor=users[index], event_id=event.pk, shift_id=shift.pk,
                 payload={"operation_id": uuid4(), "expected_version": shift.version,
                          "role_assignment_id": roles[index].pk}).row.state
         finally:
-            close_old_connections()
+            connections.close_all()
 
     with ThreadPoolExecutor(max_workers=2) as pool:
-        states = list(pool.map(apply, [0, 1]))
+        states = list(pool.map(apply, [0, 1], timeout=30))
     assert sorted(states) == ["approved", "waitlisted"]
     assert EventShiftSignup.objects.filter(shift=shift, state="approved").count() == 1
 

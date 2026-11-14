@@ -1,3 +1,4 @@
+from django.db import connection, connections
 from datetime import timedelta
 from uuid import uuid4
 import pytest
@@ -57,7 +58,7 @@ def test_renew_preserves_generation_and_terminal_expiry_never_reopens(settings):
 
 @pytest.mark.django_db(transaction=True)
 def test_expiry_racing_an_old_heartbeat_cannot_revive_the_claim(settings):
-    from concurrent.futures import ThreadPoolExecutor
+    from conftest import _BoundedThreadPoolExecutor as ThreadPoolExecutor
     from django.db import close_old_connections
     _, event, users, mentors, _, team, _ = setup_help(settings)
     row = claim(event, mentors, help_workflow.create(actor=users[0], event_id=event.pk, payload=help_payload(team.pk)).row)
@@ -66,6 +67,9 @@ def test_expiry_racing_an_old_heartbeat_cannot_revive_the_claim(settings):
     def attempt(index):
         close_old_connections()
         try:
+            if connection.vendor == "postgresql":
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
             if index == 0:
                 return help_expiry.expire(event_id=event.pk)
             try:
@@ -76,9 +80,9 @@ def test_expiry_racing_an_old_heartbeat_cannot_revive_the_claim(settings):
                 return str(error.detail["code"])
             return "renewed"
         finally:
-            close_old_connections()
+            connections.close_all()
     with ThreadPoolExecutor(max_workers=2) as pool:
-        outcomes = list(pool.map(attempt, (0, 1)))
+        outcomes = list(pool.map(attempt, (0, 1), timeout=30))
     assert outcomes[0] == 1 and outcomes[1] in ("stale_version", "lease_lost")
     row.refresh_from_db()
     assert row.state == "open" and row.claimed_by_id is None

@@ -2,6 +2,9 @@
 
 # label, canonical owner path; account/global/source profile rows are absent.
 PURGE_ORDER = (
+    # Lists PROTECT their add-ons; scans must go before lists and registrations.
+    ('events.EventCheckInListScan', 'makerspace'),
+    ('events.EventCheckInList', 'makerspace'),
     ('events.EventContributorRequirementCompletion', 'event__makerspace'),
     ('events.AdmissionWaitlistSweep', 'event__makerspace'),
     ('events.ApplicationDecision', 'batch__event__makerspace'),

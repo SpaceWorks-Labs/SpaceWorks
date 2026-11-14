@@ -10,17 +10,25 @@ from django.db import transaction
 from apps.tenant_migration.gate_runtime import boundary_tenant_write
 from .models import Event, EventSeries
 from .programme_locks import event_scopes, fences, lock_authority
+from .staff_grant_locks import authority_sources
 
 _held = ContextVar("event_service_write_boundary", default=None)
 SCOPE_RETRIES = 3
 
 
+def _authority_declaration(resources):
+    return {(resource._meta.label_lower, resource.pk): tuple(sorted(authority_sources(resource)[3]))
+            for resource in resources}
+
+
 @contextmanager
-def write_boundary(target, *, actor=None, account_ids=(), tenant_ids=(), nowait_makerspaces=False, additional_event_ids=()):
+def write_boundary(target, *, actor=None, account_ids=(), tenant_ids=(), nowait_makerspaces=False,
+                   additional_event_ids=(), allow_cross_tenant=False):
     """Discover without locks, then fence, lock resources, and revalidate scope.
 
     A series command declares every occurrence before taking the series lock.
     Nested service calls may reuse this declaration, never add an earlier class.
+    Cross-tenant batches must authorize every row before entering this boundary.
     """
     from apps.makerspaces.models import Makerspace
     from .programme.commands import ProgrammeConflict
@@ -33,18 +41,26 @@ def write_boundary(target, *, actor=None, account_ids=(), tenant_ids=(), nowait_
         if is_series:
             raise ProgrammeConflict("scope_changed", gettext("Write scope changed. Retry the whole command."))
         requested_ids = set(primary_ids) | set(additional_event_ids)
-        event_ids = tuple(Event.objects.filter(pk__in=requested_ids, makerspace_id=target.makerspace_id).order_by("pk").values_list("pk", flat=True))
+        requested = Event.objects.filter(pk__in=requested_ids)
+        if not allow_cross_tenant:
+            requested = requested.filter(makerspace_id=target.makerspace_id)
+        event_ids = tuple(requested.order_by("pk").values_list("pk", flat=True))
         if set(event_ids) != requested_ids:
             raise ProgrammeConflict("scope_changed", gettext("Write scope changed. Retry the whole command."))
     event_series = dict(Event.objects.filter(pk__in=event_ids).values_list("pk", "series_id")) if additional_event_ids else {}
     tenants, accounts = set(tenant_ids) | {target.makerspace_id}, set(account_ids)
+    event_tenants, event_accounts = {}, {}
     if actor is not None:
         accounts.add(actor.pk)
     for event_id in event_ids:
         ts, ac = event_scopes(event_id=event_id)
+        event_tenants[event_id] = set(ts)
+        event_accounts[event_id] = set(ac)
         tenants.update(ts)
         accounts.update(ac)
     declaration = (tuple(sorted(tenants)), tuple(sorted(accounts)))
+    resources = [target] if is_series else list(Event.objects.filter(pk__in=event_ids).order_by("pk"))
+    authority = _authority_declaration(resources)
     held = _held.get()
     if held is not None:
         if nowait_makerspaces:
@@ -54,15 +70,33 @@ def write_boundary(target, *, actor=None, account_ids=(), tenant_ids=(), nowait_
             raise ProgrammeConflict("scope_changed", gettext("Write scope changed. Retry the whole command."))
         yield
         return
+    # The declaration is reusable only inside its transaction AND fences.
+    # Clear it before either exits, including before Django runs on_commit.
     with ExitStack() as stack:
         from apps.encryption.preparation import prepare_tenants
-        stack.enter_context(prepare_tenants(declaration[0]))
+        from apps.encryption.crypto import PiiUnavailable
+        try:
+            stack.enter_context(prepare_tenants(declaration[0]))
+        except PiiUnavailable as exc:
+            tenant_id = getattr(exc, "preparation_tenant_id", None)
+            # Discovery may have found a new dependency since a batch preflight.
+            # Carry its event identity too, without exposing either in the API.
+            exc.preparation_event_id = next((pk for pk, ts in event_tenants.items() if tenant_id in ts), None)
+            raise
         from .credentials.preparation import prepare_event_credentials
         stack.enter_context(prepare_event_credentials(event_ids))
         for tenant_id in declaration[0]:
             stack.enter_context(boundary_tenant_write(tenant_id))
         stack.enter_context(transaction.atomic())
-        stack.enter_context(fences(tenant_ids=declaration[0], account_ids=declaration[1]))
+        from apps.encryption.write_fence import PiiWriteFenced
+        try:
+            stack.enter_context(fences(tenant_ids=declaration[0], account_ids=declaration[1]))
+        except PiiWriteFenced as exc:
+            tenant_id = getattr(exc, "fence_tenant_id", None)
+            account_id = getattr(exc, "fence_account_id", None)
+            exc.preparation_event_id = next((pk for pk in event_ids
+                if tenant_id in event_tenants[pk] or account_id in event_accounts[pk]), None)
+            raise
         if additional_event_ids:
             series_ids = sorted({value for value in event_series.values() if value is not None})
             locked_series = list(EventSeries.objects.select_for_update().filter(pk__in=series_ids).order_by("pk"))
@@ -84,7 +118,15 @@ def write_boundary(target, *, actor=None, account_ids=(), tenant_ids=(), nowait_
             ts, ac = event_scopes(event_id=event.pk)
             if not set(ts) <= tenants or not set(ac) <= accounts:
                 raise ProgrammeConflict("scope_changed", gettext("Event participants changed. Retry the command."))
-        for resource in ([target] if is_series else events):
+        resources = [target] if is_series else events
+        if _authority_declaration(resources) != authority:
+            raise ProgrammeConflict("scope_changed", gettext("Write scope changed. Retry the whole command."))
+        # All organization sources precede per-resource authority rows, including
+        # batches whose events list shared organizations in different orders.
+        from apps.organizations.models import Organization
+        organization_ids = {pk for ids in authority.values() for pk in ids}
+        list(Organization.objects.select_for_update().filter(pk__in=organization_ids).order_by("pk"))
+        for resource in resources:
             lock_authority(actor, resource)
         from .hackathons.admission_models import HackathonConfig
         from .hackathons.admission_transactions import lock_domain_parents
@@ -92,10 +134,8 @@ def write_boundary(target, *, actor=None, account_ids=(), tenant_ids=(), nowait_
             list(HackathonConfig.objects.select_for_update().filter(event=event).order_by("pk"))
             lock_domain_parents(event.pk)
         token = _held.set((set(event_ids), declaration))
-        try:
-            yield
-        finally:
-            _held.reset(token)
+        stack.callback(_held.reset, token)
+        yield
 
 
 def event_write(function=None, *, permission=False):

@@ -28,13 +28,15 @@ def _lock(namespace, key, *, exclusive=False):
         cursor.execute(f"SELECT {function}(%s, %s)", [namespace, key])
 
 
-def _assert_open(row, operation):
+def _assert_open(row, operation, *, tenant_id=None):
     allowed = {"enable_transition", "decrypt_rollback", "search_rotation", "tenant_import"}
     if row is None or (row.state != "open" and not (
         row.operation_id is not None and str(row.operation_id) == operation
         and row.operation_kind in allowed
     )):
-        raise PiiWriteFenced("Protected writes are temporarily unavailable.")
+        exc = PiiWriteFenced("Protected writes are temporarily unavailable.")
+        exc.fence_tenant_id = tenant_id  # Internal attribution, never response data.
+        raise exc
 
 
 @contextmanager
@@ -61,7 +63,7 @@ def account_fences(account_ids, tenant_ids=(), *, exclusive=False, allow_erased=
     for tenant_id in sorted(tenants):
         _lock(TENANT_LOCK_NAMESPACE, tenant_id)
         _assert_open(PiiMakerspaceWriteFence.objects.filter(makerspace_id=tenant_id).first(),
-                     operation)
+                     operation, tenant_id=tenant_id)
     for user_id in sorted(accounts):
         _lock(ACCOUNT_LOCK_NAMESPACE, user_id, exclusive=exclusive)
         state = PiiAccountWriteFence.objects.filter(user_id=user_id).values_list("state", flat=True).first()
@@ -72,7 +74,9 @@ def account_fences(account_ids, tenant_ids=(), *, exclusive=False, allow_erased=
                 continue
             raise AccountKeyChanged("Account key changed.")
         if state is not None and state != PiiAccountWriteFence.State.OPEN:
-            raise PiiWriteFenced("Protected writes are temporarily unavailable.")
+            exc = PiiWriteFenced("Protected writes are temporarily unavailable.")
+            exc.fence_account_id = user_id  # Keep the exception type and safe text.
+            raise exc
     token = _held.set((accounts, tenants, exclusive))
     try:
         yield

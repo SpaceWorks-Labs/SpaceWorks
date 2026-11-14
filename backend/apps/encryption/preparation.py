@@ -6,7 +6,7 @@ from functools import wraps
 from django.conf import settings
 from django.db import connection, transaction
 
-from .crypto import PiiKeyUnavailable
+from .crypto import PiiKeyUnavailable, PiiUnavailable
 from .models import MakerspaceEncryptionKey
 from apps.transaction_guards import in_domain_transaction
 
@@ -26,8 +26,11 @@ def prepare_tenants(tenant_ids):
         return
     held = _prepared.get()
     if held is not None:
-        if not set(tenants) <= held.keys():
-            raise PiiKeyUnavailable()
+        missing = set(tenants) - held.keys()
+        if missing:
+            exc = PiiKeyUnavailable()
+            exc.preparation_tenant_id = min(missing)
+            raise exc
         yield
         return
     if in_domain_transaction():
@@ -35,13 +38,18 @@ def prepare_tenants(tenant_ids):
     from .services import get_or_create_active_dek, unwrap_dek
     prepared = {}
     for tenant_id in tenants:
-        get_or_create_active_dek(tenant_id)
-        rows = list(MakerspaceEncryptionKey.objects.filter(makerspace_id=tenant_id).exclude(status="disabled"))
-        active = [row for row in rows if row.status == "active"]
-        if len(active) != 1:
-            raise PiiKeyUnavailable()
-        prepared[tenant_id] = (active[0], {row.version: unwrap_dek(row) for row in rows},
-                               tuple(_identity(row) for row in rows))
+        try:
+            get_or_create_active_dek(tenant_id)
+            rows = list(MakerspaceEncryptionKey.objects.filter(makerspace_id=tenant_id).exclude(status="disabled"))
+            active = [row for row in rows if row.status == "active"]
+            if len(active) != 1:
+                raise PiiKeyUnavailable()
+            prepared[tenant_id] = (active[0], {row.version: unwrap_dek(row) for row in rows},
+                                   tuple(_identity(row) for row in rows))
+        except PiiUnavailable as exc:
+            # Internal scope attribution only: never include broker/key material.
+            exc.preparation_tenant_id = tenant_id
+            raise
     token = _prepared.set(prepared)
     try:
         yield

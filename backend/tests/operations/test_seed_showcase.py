@@ -1,4 +1,5 @@
-"""Local checks for the `seed_showcase` management command (not committed)."""
+"""Checks for the showcase command's workflow evidence and exact ledger contents."""
+from collections import Counter
 from io import StringIO
 from datetime import timedelta
 
@@ -35,14 +36,18 @@ def _assert_showcase(space):
         "rejected", "closed_with_issue",
     }
     issued = HardwareRequest.objects.filter(makerspace=space, status="issued")
-    assert issued.count() >= 2 and all(r.issue_evidence_id for r in issued)
+    assert issued.count() == 3
+    assert set(issued.values_list("requester__username", flat=True)) == {
+        "meilin_chua", "kofi_mensah", "diego_ramos",
+    }
+    assert all(r.issue_evidence_id for r in issued)
     photos = EvidencePhoto.objects.filter(makerspace=space)
     assert photos.filter(evidence_type="issue").count() == 6
     assert photos.filter(evidence_type="return").count() == 3
     assert not photos.exclude(consumption_state="consumed").exists()
 
     products = InventoryProduct.objects.filter(makerspace=space)
-    assert products.count() >= 30
+    assert products.count() == 34  # 26 counted + seven tracked + one L12 consumable.
     assert set(products.values_list("public_availability_mode", flat=True)) == {
         "exact_count", "status_only", "hidden"}
     assert products.filter(tracking_mode="individual").count() == 7
@@ -56,10 +61,15 @@ def _assert_showcase(space):
     assert not machines.filter(is_public=False).exists()
 
     settled = Payment.objects.filter(makerspace=space, status="paid_offline")
-    # The six member dues the seed settles, plus offline payments other showcase sections record;
-    # every offline-paid row still carries its append-only receipt.
-    assert settled.count() >= 6
-    assert ManualSettlement.objects.filter(payment__in=settled).count() == settled.count()
+    # approve_request raises initial dues AND a term-start charge for each of the six
+    # members settled by settle_some_dues (12). seed_donations adds one desk gift;
+    # seed_shop adds one cash desk sale: 12 + 1 + 1 = 14, before and after --reset.
+    assert dict(Counter(settled.values_list("subject_type", flat=True))) == {
+        "makerspace_membership": 6, "membership_term_start": 6, "donation": 1, "shop_order": 1}
+    assert settled.count() == 14
+    receipts = ManualSettlement.objects.filter(payment__in=settled)
+    assert receipts.count() == 14
+    assert dict(Counter(receipts.values_list("payment_id", flat=True))) == {pk: 1 for pk in settled.values_list("pk", flat=True)}
     assert Payment.objects.filter(makerspace=space, status="pending", provider="unclaimed").exists()
     assert set(Booking.objects.filter(space__makerspace=space).values_list("status", flat=True)) == {
         "confirmed", "pending"}
@@ -114,7 +124,9 @@ def test_seed_showcase_builds_every_state_and_rebuilds_with_reset(settings, tmp_
     assert owned.status_code == 200 and owned.data["id"] == job.pk
     other = User.objects.get(username="noor_rahman")
     assert other.pk != job.member_id
-    assert client_for(other).get(member_detail).status_code == 404
+    refused = client_for(other).get(member_detail)
+    assert refused.status_code == 404
+    assert refused.data["code"] == "not_found"
     original_cards = list(MemberCard.objects.filter(makerspace=space).order_by("pk").values_list("pk", flat=True))
     manager = User.objects.get(username="tinker_manager")
     members = {user.username: user for user in User.objects.filter(username__in=[name for name, _ in data.MEMBERS])}

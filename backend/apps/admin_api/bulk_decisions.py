@@ -7,10 +7,14 @@ services emit their own audit entry per row, so the trail is one row per decisio
 ids per call; ids must be unique.
 """
 
+from contextlib import ExitStack, contextmanager, nullcontext
+
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
-from drf_spectacular.utils import OpenApiResponse, extend_schema
+from django.http import Http404
+from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_serializer
 from rest_framework import serializers
-from rest_framework.exceptions import APIException
+from rest_framework.exceptions import APIException, NotFound
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -18,8 +22,16 @@ from apps.admin_api.permissions import IsActiveStaff
 from apps.hardware_requests.exceptions import WORKFLOW_ERRORS, ErrorSerializer
 from django.utils.translation import gettext
 
+
+@extend_schema_serializer(component_name="BulkFailure")
+class BulkFailureSerializer(ErrorSerializer):
+    failed_id = serializers.IntegerField()
+    cause = serializers.JSONField()
+
+
 MAX_IDS = 50
 ERRORS = {code: OpenApiResponse(ErrorSerializer) for code in (400, 401, 403, 404, 409)}
+ERRORS[409] = OpenApiResponse(BulkFailureSerializer)
 
 
 class BulkFailed(APIException):
@@ -47,6 +59,19 @@ class BulkResultSerializer(serializers.Serializer):
     ids = serializers.ListField(child=serializers.IntegerField())
 
 
+@contextmanager
+def _bulk_row(pk):
+    """Use the same row-attributed refusal during preparation and decision."""
+    try:
+        yield
+    except (Http404, ObjectDoesNotExist) as exc:
+        raise BulkFailed(pk, "not_found") from exc
+    except (APIException, *WORKFLOW_ERRORS) as exc:
+        # Structured module/capability refusals keep their original typed cause.
+        cause = "not_found" if isinstance(exc, NotFound) and exc.get_codes() == "not_found" else exc
+        raise BulkFailed(pk, cause) from exc
+
+
 class _BulkView(APIView):
     permission_classes = [IsActiveStaff]
     decisions = ()
@@ -55,19 +80,19 @@ class _BulkView(APIView):
     def decide(self, actor, pk, decision, reason):  # pragma: no cover - overridden
         raise NotImplementedError
 
+    def prepare(self, actor, ids):
+        return nullcontext()
+
     def post(self, request, decision):
         payload = BulkIds(data=request.data)
         payload.is_valid(raise_exception=True)
         ids, reason = payload.validated_data["ids"], payload.validated_data["reason"]
         if decision in self.needs_reason and not reason.strip():
             raise serializers.ValidationError({"reason": gettext("A reason is required for this decision.")})
-        with transaction.atomic():
+        with self.prepare(request.user, ids), transaction.atomic():
             for pk in ids:
-                try:
-                    with transaction.atomic():
-                        self.decide(request.user, pk, decision, reason)
-                except (APIException, *WORKFLOW_ERRORS) as exc:
-                    raise BulkFailed(pk, exc) from exc
+                with _bulk_row(pk), transaction.atomic():
+                    self.decide(request.user, pk, decision, reason)
         return Response({"decided": len(ids), "ids": ids})
 
 
@@ -117,6 +142,46 @@ class BookingBulkDecideView(_BulkView):
 
 
 class RegistrationBulkDecideView(_BulkView):
+    @contextmanager
+    def prepare(self, actor, ids):
+        from apps.encryption.preparation import prepare_tenants
+        from apps.events.credentials.preparation import prepare_event_credentials
+        from apps.events.event_permissions import MANAGE_REGISTRATIONS
+        from apps.events.programme_locks import event_scopes
+        from apps.events.services_write_boundary import write_boundary
+        from apps.events.views_admin_event_detail import _manageable_registration
+
+        events, event_rows, tenant_rows, account_rows = {}, {}, {}, {}
+        for pk in ids:
+            with _bulk_row(pk):
+                # Scope and gate EVERY row before preparation can provision keys.
+                registration = _manageable_registration(actor, pk, MANAGE_REGISTRATIONS)
+                events.setdefault(registration.event_id, registration.event)
+                event_rows.setdefault(registration.event_id, pk)
+                tenants, accounts = event_scopes(event_id=registration.event_id)
+                for tenant_id in tenants:
+                    tenant_rows.setdefault(tenant_id, pk)
+                for account_id in (*accounts, actor.pk):
+                    account_rows.setdefault(account_id, pk)
+        # Prepare once, then lock the entire declared batch before deciding a row.
+        # The boundary remains active through the outer transaction's completion.
+        with ExitStack() as stack:
+            try:
+                stack.enter_context(prepare_tenants(tenant_rows))
+                stack.enter_context(prepare_event_credentials(events))
+                stack.enter_context(write_boundary(next(iter(events.values())), actor=actor,
+                    additional_event_ids=tuple(events), allow_cross_tenant=True))
+            except (Http404, ObjectDoesNotExist, APIException, *WORKFLOW_ERRORS) as exc:
+                # Shared failures use the first affected input, never an unrelated
+                # healthy registration. The internal scope is not response data.
+                affected_event = event_rows.get(getattr(exc, "preparation_event_id", None), ids[0])
+                affected_account = account_rows.get(getattr(exc, "fence_account_id", None), affected_event)
+                tenant_id = getattr(exc, "fence_tenant_id", None) or getattr(exc, "preparation_tenant_id", None)
+                failed_id = tenant_rows.get(tenant_id, affected_account)
+                with _bulk_row(failed_id):
+                    raise
+            yield
+
     @extend_schema(tags=["Admin events"], summary="Approve or reject many event registrations (all or nothing)",
                    description="`decision` in the path: approve | reject. Authority is each event's manage_registrations.",
                    request=BulkIds, responses={200: BulkResultSerializer, **ERRORS})

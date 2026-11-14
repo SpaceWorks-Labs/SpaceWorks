@@ -1,6 +1,8 @@
 from django.conf import settings
+from django.utils.translation import gettext
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework.permissions import AllowAny
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
@@ -96,6 +98,9 @@ class SocialLoginView(APIView):
         # `url_kwargs` is the OIDC route's `slug` (read from `self.kwargs` by `provider`); a handler that
         # took only `request` answered 500 to every OIDC sign-in.
         serializer = SocialLoginSerializer(data=request.data, context={"request": request})
+        if self.provider.startswith("oidc:") and not serializer.is_valid():
+            raise ValidationError({"detail": gettext("Invalid request."), "code": "invalid",
+                                   "fields": serializer.errors})
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
         # A member-surface login through a built-in consumer provider is part of the

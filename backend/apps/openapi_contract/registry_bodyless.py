@@ -50,8 +50,7 @@ BODYLESS_POSTS = {
     "apps.admin_api.views_user_access": ("RestoreUserAccessView",),
     "apps.admin_api.views_waiver_witness": ("AdminWitnessWaiverAcceptanceView",),
     "apps.analytics.api": (
-        "AnalyticsLoginRotateView", "AnalyticsLoginView", "PlatformAnalyticsLoginRotateView",
-        "PlatformAnalyticsLoginView",
+        "AnalyticsLoginRotateView", "PlatformAnalyticsLoginRotateView",
     ),
     "apps.analytics.grafana_api": ("GrafanaTestView", "PlatformGrafanaTestView"),
     "apps.backup.views_archives": (

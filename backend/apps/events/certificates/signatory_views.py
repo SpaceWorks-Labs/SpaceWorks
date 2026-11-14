@@ -67,12 +67,13 @@ class SignatoryListView(APIView):
 
 
 class SignatoryDetailView(SignatoryListView):
-    # Inherits the list view's helpers only. Its GET/POST take no `slot`, so exposing them on the
-    # `.../signatories/<slot>/` route answered 500 (TypeError); only DELETE belongs here.
-    http_method_names = ["delete", "options"]
+    # Collection GET/POST accept no slot. Never dispatch those inherited handlers here.
+    http_method_names = ["delete"]
 
-    @extend_schema(tags=TAGS, responses={200: CertificateSignatoryStateSerializer, **ERRORS},
-                   description="Remove a signatory. 409 signatory_in_use while a current design prints them.")
+    @extend_schema(tags=TAGS, responses={200: CertificateSignatoryStateSerializer, **ERRORS,
+                   405: OpenApiResponse(ERRORS[404], description="method_not_allowed; Allow: DELETE.")},
+                   description="Remove a signatory. 409 signatory_in_use while a current design prints them. "
+                               "DELETE only; other methods return typed 405 method_not_allowed with Allow: DELETE.")
     def delete(self, request, pk, slot):
         event = _event(request, pk)
         commands.remove_signatory(event, actor=request.user, slot=slot)

@@ -15,6 +15,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.hardware_requests.exceptions import ErrorSerializer
+from apps.makerspaces.guards import require_module
 from apps.payments import stripe_client
 from apps.payments.availability import online_payments_enabled_for
 from apps.payments.checkout_coordination import settlement_in_progress
@@ -47,7 +48,7 @@ class MemberPaymentCheckoutView(APIView):
         responses={
             200: CheckoutUrlSerializer,
             401: OpenApiResponse(ErrorSerializer, description="Authentication required."),
-            404: OpenApiResponse(ErrorSerializer, description="No pending charge of yours here."),
+            404: OpenApiResponse(ErrorSerializer, description="No pending charge of yours here, or module_disabled when the payments rail is off."),
             409: OpenApiResponse(ErrorSerializer, description="`payment_rail_conflict`: the charge uses the native rail; "
                                  "`payment_settlement_pending`: an offline payment awaits staff confirmation."),
             503: OpenApiResponse(ErrorSerializer, description="`payments_unavailable`: no live online rail for this charge."),
@@ -60,6 +61,7 @@ class MemberPaymentCheckoutView(APIView):
         ).first()
         if payment is None:
             raise NotFound()
+        require_module(payment.makerspace, "payments")
         # Checked before handing back an existing page too: a link minted before the
         # member said "I paid" would otherwise still take a second payment.
         if settlement_in_progress(payment):

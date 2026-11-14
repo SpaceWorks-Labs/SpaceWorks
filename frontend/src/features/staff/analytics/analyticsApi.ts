@@ -105,7 +105,9 @@ export function useAnalyticsLogin(scope: AnalyticsScope) {
   const invalidate = useInvalidate(scope);
   const base = analyticsBase(scope);
   const create = useMutation({
-    mutationFn: () => staffRequest<AnalyticsCredentials>(`${base}/login`, { method: "POST" }),
+    mutationFn: () => staffRequest<AnalyticsCredentials>(`${base}/login`, {
+      method: "POST", body: JSON.stringify({ confirm: true }),
+    }),
     onSuccess: invalidate,
   });
   const rotate = useMutation({

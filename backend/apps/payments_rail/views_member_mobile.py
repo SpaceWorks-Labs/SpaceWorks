@@ -7,6 +7,7 @@ from rest_framework.views import APIView
 
 from apps.accounts.views_device import IsDeviceAccessToken
 from apps.hardware_requests.exceptions import ErrorSerializer
+from apps.makerspaces.guards import require_module
 from apps.makerspaces.origin_scope_own_charges import require_native_charge_selection
 from apps.payments import stripe_client
 from apps.payments.availability import online_payments_enabled_for
@@ -29,7 +30,8 @@ class MemberMobilePaymentIntentView(APIView):
             'Requires an attested device token and ownership of a pending charge in the '
             'selected makerspace. Returns vendor=stripe PaymentSheet parameters or '
             'vendor=razorpay native Order parameters. An existing hosted checkout '
-            'returns payment_rail_conflict (409); unavailable payments return 503.'
+            'returns payment_rail_conflict (409); a disabled payments module returns 404 module_disabled; '
+            'an enabled but unavailable payment provider returns 503.'
         ),
         request=None,
         responses={
@@ -53,6 +55,7 @@ class MemberMobilePaymentIntentView(APIView):
         ).first()
         if payment is None:
             raise NotFound()
+        require_module(payment.makerspace, "payments")
         # Same rule as the web checkout: a debt with no live rail behind it is settled at
         # the desk, not by minting a native intent the space cannot capture.
         if not online_payments_enabled_for(payment):

@@ -34,16 +34,18 @@ def check_read(request, event, *, owner=False):
     require(claim_context(request.user) is None, "full_session_required", status=403)
     require_active_principal(request.user, event.makerspace)
     require_module(event.makerspace, "events")
-    from apps.makerspaces.platform import module_enabled
-    require(module_enabled(event.makerspace, "event_reimbursements"), "reimbursement_unavailable")
+    require_module(event.makerspace, "event_reimbursements")
     check_origin(request, event, owner=owner)
     return event
 
 
 def member_event(request, pk, makerspace_id):
-    event = get_object_or_404(Event.objects.select_related("makerspace"), pk=pk, makerspace_id=makerspace_id)
-    check_read(request, event, owner=True)
+    event = Event.objects.select_related("makerspace").filter(pk=pk, makerspace_id=makerspace_id).first()
+    # Match the authorization refusal's body as well as its status and error code.
+    require(event is not None, "not_found", status=404)
+    # Establish private-event participation and origin before revealing switch state.
     authorize(request.user, event, owner=True, request=request)
+    check_read(request, event, owner=True)
     return event
 
 

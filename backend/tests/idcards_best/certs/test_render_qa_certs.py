@@ -8,7 +8,12 @@ from uuid import uuid4
 import pytest
 from django.utils import timezone
 
-from tests.idcards_best.test_render_qa import NAMES, OUT, _montage, _save
+from tests.idcards_best.test_render_qa import NAMES, _montage, _save, render_output
+
+
+@pytest.fixture(autouse=True)
+def certificate_render_output(render_output):
+    return render_output
 
 
 def _text(order, text, box, size, *, weight=500, family="Gilroy", align="center", colour="ink"):
@@ -92,7 +97,7 @@ def test_render_certificate_kinds_signatures_and_pages():
 
 
 @pytest.mark.django_db
-def test_render_share_images():
+def test_render_share_images(render_output):
     from apps.events.certificates.outputs import share_image
     files = []
     for kind, name, show in (("winner", "short", True), ("attendance", "long", True), ("mentor_thanks", "malayalam", True),
@@ -106,4 +111,4 @@ def test_render_share_images():
         _save(fname, share_image(row))
         files.append(fname)
     _montage(files, "MONTAGE-share.png", columns=2, scale=0.6)
-    assert (OUT / files[0]).exists()
+    assert (render_output / files[0]).exists()

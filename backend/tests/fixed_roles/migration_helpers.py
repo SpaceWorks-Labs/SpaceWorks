@@ -3,89 +3,39 @@ from datetime import timedelta
 
 import pytest
 from django.db import connection
-from django.db.migrations.executor import MigrationExecutor
 from django.db.models import Q
 from django.utils import timezone
 
 from apps.makerspaces.role_migration_mapping import FROZEN_BY_SLUG, LEGACY_HANDOUT_ACTIONS
 
-PRE_TARGETS = [
-    ("makerspaces", "0090_website_embedding"),
-    ("machines", "0026_public_detail_materials_intake"),
-    ("accounts", "0031_platformloginmethods_provider_switches"),
-    ("integrations", "0032_email_source_identity"),
-    ("operations", "0013_stocktake_discipline"),
-    ("audit", "0009_audit_verification_runs"),
-]
 DATA_TARGET = [("makerspaces", "0092_fixed_roles_data")]
-
-
-_TEMPLATE_BUILT = set()  # template databases built (migrated forward) in this pytest process
 
 
 @pytest.fixture
 def old_database(transactional_db):
-    """A pre-fixed-roles database, built FORWARD in a scratch database.
+    from apps.makerspaces.migration_support.fixed_roles_snapshot import PRE_SCHEMA_FIELDS
+    from tests.account_split.test_p1_data_migration import historical_tables
 
-    The old fixture reversed the test database to ``PRE_TARGETS``. Since decision 63 the account
-    unification (accounts 0050) is irreversible, so that rollback raised mid-way and the forward
-    restore then spun. An upgrade is what these tests exercise, and a real upgrade starts from a
-    database that was only ever migrated forward: migrate a template database to ``PRE_TARGETS``
-    once per pytest process, clone it per test, point the default connection at the clone for
-    the test, then drop the clone. The shared test database is never migrated backwards.
-    """
-    from django.contrib.contenttypes.models import ContentType
-
-    main = connection.settings_dict["NAME"]
-    template, scratch = f"{main}_prefr_tpl"[:63], f"{main}_prefr"[:63]
-
-    def use(name):
-        connection.close()
-        connection.settings_dict["NAME"] = name
-
-    def admin(statement):
-        use(main)
-        with connection.cursor() as cursor:
-            cursor.execute(statement)
-
-    if template not in _TEMPLATE_BUILT:
-        admin(f'DROP DATABASE IF EXISTS "{template}" WITH (FORCE)')
-        admin(f'CREATE DATABASE "{template}"')
-        use(template)
-        try:
-            MigrationExecutor(connection).migrate(PRE_TARGETS)
-        finally:
-            use(main)
-        _TEMPLATE_BUILT.add(template)
-    admin(f'DROP DATABASE IF EXISTS "{scratch}" WITH (FORCE)')
-    admin(f'CREATE DATABASE "{scratch}" TEMPLATE "{template}"')
-    use(scratch)
-    ContentType.objects.clear_cache()
-    try:
-        yield MigrationExecutor(connection).loader.project_state(PRE_TARGETS).apps
-    finally:
-        ContentType.objects.clear_cache()
-        admin(f'DROP DATABASE IF EXISTS "{scratch}" WITH (FORCE)')
+    labels = [*PRE_SCHEMA_FIELDS, "accounts.User", "machines.RoleMachineScope",
+              "machines.RoleMachineTypeScope", "makerspaces.MembershipAdditionalRole",
+              "machines.MembershipMachineTypeScope", "audit.AuditLog", "audit.AuditMacKey"]
+    # 0092 has only a RunPython, so its schema is exactly the pre-data schema.
+    with historical_tables(DATA_TARGET, labels) as registry:
+        yield registry
 
 
-def upgrade():
-    executor = MigrationExecutor(connection)
-    executor.migrate(DATA_TARGET)
-    return executor.loader.project_state(DATA_TARGET).apps
+def upgrade(registry):
+    from importlib import import_module
+    from types import SimpleNamespace
+    migration = import_module("apps.makerspaces.migrations.0092_fixed_roles_data")
+    migration.forwards(registry, SimpleNamespace(connection=connection))
+    return registry
 
 
 def historical_world(apps):
     model = lambda label: apps.get_model(label)
     space = model("makerspaces.Makerspace").objects.create(name="Historical lab", slug="historical-fixed")
     other = model("makerspaces.Makerspace").objects.create(name="Other lab", slug="historical-other")
-    # Historical creates skip the post_save signal that seeds each makerspace's PII write
-    # fence, and the flushed test database may lack the global singleton; the PII triggers
-    # on membership requests refuse every write without both. The fence tables are
-    # unchanged across these migrations, so the live models are safe to use here.
-    from apps.encryption.models import PiiGlobalWriteFence, PiiMakerspaceWriteFence
-    PiiGlobalWriteFence.objects.get_or_create(pk=1)
-    for owner in (space, other):
-        PiiMakerspaceWriteFence.objects.get_or_create(makerspace_id=owner.pk)
     roles = {}
 
     def role(slug, grants, *, name=None, default=False, protected=False, owner=space, legacy=None):

@@ -3,6 +3,7 @@ degrades to "not available on this hosting" where the owner cannot create roles.
 
 import pytest
 from django.db import connection
+from django.test.utils import CaptureQueriesContext
 
 from apps.analytics import db_ddl, db_sync, provisioning
 from apps.analytics.catalogue.registry import installed_views
@@ -88,13 +89,18 @@ def test_availability_is_false_without_the_functions(monkeypatch):
     assert provisioning.availability() == (False, "not_available_on_hosting")
 
 
-def test_pre_migrate_drops_the_views_only_for_a_real_plan():
-    db_sync.pre_migrate_drop(sender=None, plan=[])
-    assert _views(SPACE_SCHEMA)
-    db_sync.pre_migrate_drop(sender=None, plan=[("migration", False)])
-    assert not _views(SPACE_SCHEMA)
-    db_sync.sync()
-    assert _views(SPACE_SCHEMA)
+def test_pre_migrate_retains_views_for_empty_and_real_plans():
+    before = {schema: _views(schema) for schema in (SPACE_SCHEMA, PLATFORM_SCHEMA)}
+    assert all(before.values())
+    with CaptureQueriesContext(connection) as queries:
+        db_sync.pre_migrate_drop(sender=None, plan=[])
+        assert {schema: _views(schema) for schema in before} == before
+        db_sync.pre_migrate_drop(sender=None, plan=[("migration", False)])
+    assert [row['sql'] for row in queries.captured_queries if row['sql'].lstrip().upper().startswith('DROP ')] == []
+    assert {schema: _views(schema) for schema in before} == before
+    result = db_sync.sync(force=True)
+    assert (result.state, result.reason, result.failed) == ("synced", "", {})
+    assert {schema: _views(schema) for schema in before} == before
 
 
 def test_role_names_are_tagged_per_database():

@@ -80,24 +80,29 @@ def pytest_terminal_summary(terminalreporter):
 
 
 def _drop_derived_objects(connection):
-    """What `manage.py migrate` does around a schema change, for a bare MigrationExecutor.
+    """Test-only suspension for historical schema rewinds, including RLS helper removal.
 
-    The analytics views (pre_migrate) and the generated tenant RLS policies are derived objects that
-    `migrate` rebuilds afterwards (post_migrate). While they exist they block dropping or retyping the
-    columns, and the helper function, they read, so a rewind through such a migration fails with
-    "cannot alter type / cannot drop ... because other objects depend on it".
+    Runtime pre_migrate deliberately retains views. Bare-executor tests instead capture
+    the complete analytics dependency closure and restore it after their schema returns.
+    RESTRICT and preflight refusal protect custom objects; no schema CASCADE is used.
     """
     if connection.vendor != "postgresql":
-        return
-    from apps.analytics import db_ddl
+        return []
+    from django.db import transaction
+    from apps.analytics.db_ddl import VIEW_SCHEMAS
+    from apps.analytics.migration_views import suspend
     from apps.tenant_rls.policies import FIXED_POLICY, TENANT_POLICY
 
-    with connection.cursor() as cursor:
-        db_ddl.drop_view_schemas(cursor)
+    with transaction.atomic(using=connection.alias), connection.cursor() as cursor:
+        cursor.execute("SELECT c.oid FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace "
+                       "WHERE n.nspname=ANY(%s) AND c.relkind IN ('v','m')", [list(VIEW_SCHEMAS)])
+        snapshot = suspend(connection, roots=[oid for (oid,) in cursor.fetchall()])
         cursor.execute("SELECT schemaname, tablename, policyname FROM pg_policies WHERE policyname IN (%s, %s)",
                        [TENANT_POLICY, FIXED_POLICY])
         for schema, table, policy in cursor.fetchall():
-            cursor.execute(f'DROP POLICY IF EXISTS "{policy}" ON "{schema}"."{table}"')
+            q = connection.ops.quote_name
+            cursor.execute(f'DROP POLICY IF EXISTS {q(policy)} ON {q(schema)}.{q(table)}')
+    return snapshot
 
 
 @pytest.fixture(autouse=True)
@@ -106,14 +111,14 @@ def _migration_tests_drop_derived_objects(request, monkeypatch):
     if request.node.get_closest_marker("migration") is None:
         yield
         return
-    from django.db import connection
+    from django.db import connection, transaction
     from django.db.migrations.executor import MigrationExecutor
 
-    original, flag = MigrationExecutor.migrate, {"dropped": False}
+    original, flag = MigrationExecutor.migrate, {"dropped": False, "snapshot": []}
 
     def migrate(self, targets, *args, **kwargs):
         if not flag["dropped"]:
-            _drop_derived_objects(self.connection)
+            flag["snapshot"] = _drop_derived_objects(self.connection)
             flag["dropped"] = True
         return original(self, targets, *args, **kwargs)
 
@@ -122,8 +127,11 @@ def _migration_tests_drop_derived_objects(request, monkeypatch):
     monkeypatch.undo()
     if flag["dropped"]:
         from apps.analytics.db_sync import sync as analytics_sync
+        from apps.analytics.migration_views import restore
         from apps.tenant_rls.sync import sync as rls_sync
 
         connection.ensure_connection()
         rls_sync()
+        with transaction.atomic(using=connection.alias):
+            restore(connection, flag["snapshot"])
         analytics_sync(force=True)

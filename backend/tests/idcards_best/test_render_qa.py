@@ -1,15 +1,20 @@
 """LOCAL render QA (never committed): renders every card template and certificate seed to
-PNG/PDF under $IDCARDS_QA_OUT (default: the system temp dir) so a human can look at them. Asserts only that
+PNG/PDF under pytest tmp_path so a human can look at them. Asserts only that
 rendering succeeds; the visual check is manual."""
-import os
-import tempfile
 from io import BytesIO
-from pathlib import Path
 
 import pytest
 
 # The test tree can be read-only (the CI runner mounts it for another user), so output goes to a temp dir.
-OUT = Path(os.environ.get("IDCARDS_QA_OUT") or Path(tempfile.gettempdir()) / "spaceworks-idcards-best-out")
+OUT = None
+
+
+@pytest.fixture(autouse=True)
+def render_output(tmp_path, monkeypatch):
+    monkeypatch.setattr("tests.idcards_best.test_render_qa.OUT", tmp_path)
+    return tmp_path
+
+
 NAMES = {
     "short": "Priya Raman",
     "long": "Alexandra Montgomery-Fitzgerald",
@@ -186,12 +191,19 @@ def test_render_certificate_seeds():
 @pytest.mark.django_db
 def test_render_badge_seeds():
     import hashlib
+    from PIL import Image
     from reportlab.lib.units import mm
     from reportlab.pdfgen.canvas import Canvas
     from apps.events.certificates.layer_rendering import ImageResource, QrResource, draw_document
     from apps.events.certificates.seed_artwork import render_packaged
     from apps.events.certificates.seeds import catalogue
     from apps.card_designs.raster import pdf_page_to_png
+    expected = {
+        f"badge-{theme}-{stock}-badge-{family}.png"
+        for theme in ("light", "dark")
+        for stock in ("cr80-landscape", "a6-portrait")
+        for family in ("classic", "bold", "minimal")
+    }
     files = []
     for theme in ("light", "dark"):
         for stock in ("cr80-landscape", "a6-portrait"):
@@ -208,17 +220,23 @@ def test_render_badge_seeds():
                     if layer["type"] in ("event_credential_qr", "certificate_qr"):
                         return QrResource("TICKET-" + "x" * 30)
                     return None
-                try:
-                    draw_document(canvas, document, {"name": NAMES["long"], "event": "Spring Build Night",
-                                                     "eventDate": "18 October 2026", "organisation": "Tinkerspace",
-                                                     "issueDate": "20 October 2026", "certificate_id": "X"}, resource)
-                except Exception as exc:  # noqa: BLE001
-                    (OUT / f"badge-{theme}-{stock}-{seed['seed_id']}.err").write_text(repr(exc))
-                    continue
+                draw_document(canvas, document, {"name": NAMES["long"], "event": "Spring Build Night",
+                                                 "eventDate": "18 October 2026", "organisation": "Tinkerspace",
+                                                 "issueDate": "20 October 2026", "certificate_id": "X"}, resource)
                 canvas.showPage()
                 canvas.save()
                 fname = f"badge-{theme}-{stock}-{seed['seed_id']}.png"
                 _save(fname, pdf_page_to_png(buffer.getvalue(), 0, dpi=150))
+                with Image.open(OUT / fname) as image:
+                    assert image.format == "PNG"
+                    image.verify()
+                with Image.open(OUT / fname) as image:
+                    image.load()
+                    assert image.mode == "RGB"
+                    assert image.size == (round(document["page_width_mm"] * 150 / 25.4),
+                                          round(document["page_height_mm"] * 150 / 25.4))
                 files.append(fname)
-    if files:
-        _montage(files, "MONTAGE-badges.png", columns=4, scale=0.5)
+    assert len(files) == 12
+    assert set(files) == expected
+    assert {path.name for path in OUT.glob("badge-*.png")} == expected
+    _montage(files, "MONTAGE-badges.png", columns=4, scale=0.5)

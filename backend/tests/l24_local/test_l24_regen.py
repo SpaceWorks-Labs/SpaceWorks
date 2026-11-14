@@ -1,7 +1,5 @@
 """Local helpers (never committed): migrations check and OpenAPI snapshot regeneration in the container."""
-import os
 from io import StringIO
-from pathlib import Path
 
 import pytest
 from django.core.management import call_command
@@ -23,9 +21,7 @@ def test_makemigrations_check(monkeypatch):
     assert "No changes detected" in out.getvalue()
 
 
-def test_regenerate_openapi_snapshot():
-    target = Path(__file__).resolve().parents[3] / "frontend" / "openapi-schema.json"
-    if not os.access(target, os.W_OK):  # CI mounts the checkout read-only; this is a local regeneration helper
-        pytest.skip("openapi snapshot is not writable here (read-only checkout)")
+def test_regenerate_openapi_snapshot(tmp_path):
+    target = tmp_path / "openapi-schema.json"
     call_command("spectacular", "--format", "openapi-json", "--file", str(target))
     assert target.stat().st_size > 1000

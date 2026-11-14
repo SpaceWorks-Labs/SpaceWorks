@@ -1,7 +1,7 @@
 """R4 production gate: `manage.py check --deploy` with the full-VPS (Caddy TLS) settings.
 
 Runs Django in a subprocess so the production values are read at settings import, exactly
-as a deployment reads them. The output lands next to this file for the report. Local only."""
+as a deployment reads them. The output lands in pytest temporary storage for the report."""
 
 import base64
 import os

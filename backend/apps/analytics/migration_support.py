@@ -1,16 +1,32 @@
-"""Shared migration step for ALTERs of columns the curated analytics views read.
+"""Database-only money ALTER brackets: preserve only the affected dependency closure.
 
-A view blocks ALTER TYPE on every column it selects. ``manage.py migrate`` drops the views
-first (``db_sync.pre_migrate_drop``, sent as the ``pre_migrate`` signal) and ``analytics_sync``
-rebuilds them afterwards, but a bare ``MigrationExecutor`` (tests, tooling) sends no signal, so
-a money-column alter - forward or in reverse - must not depend on it. Dropping is idempotent
-and the views are derived objects.
-
-This is a custom operation, not ``RunPython``: RunPython renders the whole project state
-(every model of every app) before it runs, which on late migrations costs minutes and
-gigabytes per use. This one touches only the database.
+Read frozen operations and ModelState without rendering the historical app registry.
+Schemas, default privileges and unaffected relations retain their identities.
 """
+from importlib import import_module
+
 from django.db import migrations
+
+from .migration_views import restore as _restore, suspend as _suspend
+
+MONEY_MIGRATIONS = {
+    "bookings": "0030", "events": "0092", "inventory": "0022", "machines": "0037",
+    "maintenance": "0012", "makerspaces": "0143", "payments": "0049",
+    "procurement": "0011", "shop": "0004",
+}
+
+
+def altered_columns(app_label, state):
+    """Find the actual ALTER columns without rendering state.apps."""
+    number = MONEY_MIGRATIONS[app_label]
+    module = import_module(f"apps.{app_label}.migrations.{number}_money_three_decimals")
+    result = []
+    for operation in module.Migration.operations:
+        if isinstance(operation, migrations.AlterField):
+            model = state.models[(app_label, operation.model_name)]
+            table = model.options.get("db_table", f"{app_label}_{operation.model_name}")
+            result.append((table, operation.field.db_column or operation.name))
+    return result
 
 
 class DropAnalyticsViews(migrations.operations.base.Operation):
@@ -18,26 +34,38 @@ class DropAnalyticsViews(migrations.operations.base.Operation):
     reduces_to_sql = False
     atomic = True
 
+    def __init__(self, *, restore=False):
+        self.restore = restore
+
     def state_forwards(self, app_label, state):
         pass
 
-    def _drop(self, schema_editor):
-        if schema_editor.connection.vendor != "postgresql":
+    def _apply(self, app_label, schema_editor, state, *, restore):
+        db = schema_editor.connection
+        if db.vendor != "postgresql":
             return
-        from apps.analytics import db_ddl
-
-        with schema_editor.connection.cursor() as cursor:
-            db_ddl.drop_view_schemas(cursor)
+        snapshots = getattr(db, "_analytics_migration_views", None)
+        if snapshots is None:
+            snapshots = db._analytics_migration_views = {}
+        if restore:
+            _restore(db, snapshots[app_label])
+            del snapshots[app_label]
+        else:
+            snapshots[app_label] = _suspend(db, altered_columns(app_label, state))
 
     def database_forwards(self, app_label, schema_editor, from_state, to_state):
-        self._drop(schema_editor)
+        self._apply(app_label, schema_editor, from_state, restore=self.restore)
 
     def database_backwards(self, app_label, schema_editor, from_state, to_state):
-        self._drop(schema_editor)
+        self._apply(app_label, schema_editor, from_state, restore=not self.restore)
 
     def describe(self):
-        return "Drop the derived analytics views (rebuilt by analytics_sync)"
+        return "Restore dependent views and ACLs" if self.restore else "Suspend dependent views for ALTER"
 
 
 def drop_views_operation():
     return DropAnalyticsViews()
+
+
+def restore_views_operation():
+    return DropAnalyticsViews(restore=True)

@@ -4,6 +4,9 @@ console must explain (not available here, could not create the login, not config
 typed 409/503 bodies, never a 500."""
 
 from drf_spectacular.utils import OpenApiResponse, extend_schema
+from django.utils.translation import gettext
+from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -78,12 +81,25 @@ class AnalyticsConnectionView(_Scoped):
         return _private(Response(MetabaseConnectionSerializer(body).data))
 
 
+class LoginCreateSerializer(serializers.Serializer):
+    confirm = serializers.BooleanField()
+
+    def validate(self, values):
+        if set(self.initial_data) != {"confirm"} or self.initial_data["confirm"] is not True:
+            raise ValidationError(gettext("Invalid request."))
+        return values
+
+
 class AnalyticsLoginView(_Scoped):
-    @extend_schema(tags=TAGS, summary="Create the read-only database login (password shown once)", request=None,
+    @extend_schema(tags=TAGS, summary="Create the read-only database login (password shown once)", request=LoginCreateSerializer,
+                   description="Send confirm=true to provision a database role. Authority and input are checked before DDL.",
                    responses={201: MetabaseCredentialsSerializer, 409: _CONFLICT, 503: _FAILED,
-                              **errors(401, 403, 404)})
+                              **errors(400, 401, 403, 404)})
     def post(self, request, **kwargs):
         scope = self.manager(request, kwargs)
+        data = LoginCreateSerializer(data=request.data)
+        if not data.is_valid():
+            raise ValidationError({"detail": gettext("Invalid request."), "code": "invalid", "fields": data.errors})
         try:
             body = services.create_login(scope, request.user)
         except services.AnalyticsError as exc:

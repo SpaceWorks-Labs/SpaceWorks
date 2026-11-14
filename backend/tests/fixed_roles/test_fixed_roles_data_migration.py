@@ -1,7 +1,9 @@
 """Upgrade real historical rows through schema, data, and constraint migrations."""
+from datetime import datetime, timezone as dt_timezone
+
 import pytest
 from django.db import connection
-from django.db.migrations.executor import MigrationExecutor
+from django.utils import timezone
 
 from apps.makerspaces.role_migration_mapping import FROZEN_CATALOG
 from tests.fixed_roles.migration_helpers import old_database, historical_world, upgrade
@@ -9,9 +11,16 @@ from tests.fixed_roles.migration_helpers import old_database, historical_world, 
 pytestmark = pytest.mark.django_db(transaction=True)
 
 
-def test_upgrade_maps_roles_references_scopes_and_collision_names(old_database):
+def test_upgrade_maps_roles_references_scopes_and_collision_names(old_database, monkeypatch):
+    now = datetime(2026, 11, 14, 12, 30, tzinfo=dt_timezone.utc)
+    monkeypatch.setattr(timezone, "now", lambda: now)
+    class FrozenDatetime(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return now if tz else now.replace(tzinfo=None)
+    monkeypatch.setattr("apps.makerspaces.migration_support.fixed_roles_audit.datetime", FrozenDatetime)
     world = historical_world(old_database)
-    new = upgrade()
+    new = upgrade(old_database)
     role_model = new.get_model("makerspaces", "MakerspaceRole")
     membership_model = new.get_model("makerspaces", "MakerspaceMembership")
     additional_model = new.get_model("makerspaces", "MembershipAdditionalRole")
@@ -61,8 +70,29 @@ def test_upgrade_maps_roles_references_scopes_and_collision_names(old_database):
     assert type_ids("machine-only") == set()
     assert role_set("empty") == {"machine_manager"}
     assert type_ids("empty") == set()
-    evidence = {row.meta["membership_id"]: row.meta for row in logs.filter(action="staff.roles_migrated")
-                if "membership_id" in row.meta}
+    expected_audits = [
+        ("staff.roles_migrated", "makerspaces.makerspacemembership", str(world["memberships"][label].pk))
+        for label in ("space_manager", "inventory_manager", "machine_manager", "event_manager",
+                      "handover", "print_manager", "inventory-events", "typed", "machine-only",
+                      "empty", "exempt", "foreign", "typed-peer")
+    ] + [
+        ("staff.roles_migrated", "makerspaces.membershiprequest", str(world["requests"][label].pk))
+        for label in ("requested", "invited", "awaiting_vouches", "awaiting_payment", "active", "revoked")
+    ] + [
+        ("staff.invitation_revoked_by_migration" if label in {"stale", "e2"} else "staff.roles_migrated",
+         "accounts.staffinvitation", str(world["invitations"][label].pk))
+        for label in ("valid", "stale", "e2", "closed")
+    ] + [
+        ("report_schedule.recipients_pruned_by_migration", "operations.reportschedule", str(row.pk))
+        for row in world["schedules"].values()
+    ]
+    # Compare the complete list BEFORE a dictionary can hide duplicate evidence.
+    assert logs.count() == 26
+    assert list(logs.order_by("pk").values_list("created_at", flat=True)) == [now] * 26
+    assert sorted(logs.values_list("action", "target_type", "target_id")) == sorted(expected_audits)
+    membership_logs = list(logs.filter(action="staff.roles_migrated", target_type="makerspaces.makerspacemembership"))
+    assert len(membership_logs) == 13
+    evidence = {row.meta["membership_id"]: row.meta for row in membership_logs}
     typed = evidence[world["memberships"]["typed"].pk]
     assert typed["machine_scope"]["to"] == {"types": [world["kind"].pk], "machines": []}
     assert typed["machine_scope"]["dropped_machine_ids"] == [world["machine"].pk]
@@ -90,13 +120,21 @@ def test_upgrade_maps_roles_references_scopes_and_collision_names(old_database):
     assert valid.token_digest == world["invitations"]["valid"].token_digest
     for label in ("stale", "e2"):
         row = invitation_model.objects.get(pk=world["invitations"][label].pk)
-        assert row.revoked_at is not None and row.role_id == catalogue["member"].pk
+        assert (row.revoked_at, row.role_id) == (now, catalogue["member"].pk)
         assert row.granted_actions == world["invitations"][label].granted_actions
         assert row.expires_at == world["invitations"][label].expires_at
         assert row.failed_attempts == 2
-        assert logs.filter(action="staff.invitation_revoked_by_migration", meta__invitation_id=row.pk).exists()
+        assert list(logs.filter(action="staff.invitation_revoked_by_migration", meta__invitation_id=row.pk)
+                    .values_list("target_type", "target_id", "meta")) == [(
+            "accounts.staffinvitation", str(row.pk), {
+                "invitation_id": row.pk, "old_role_id": world["invitations"][label].role_id,
+                "original_granted_actions": world["invitations"][label].granted_actions,
+                "to_roles": ["member"], "revoked": True,
+            },
+        )]
     closed = invitation_model.objects.get(pk=world["invitations"]["closed"].pk)
-    assert closed.accepted_at is not None and closed.revoked_at is None
+    assert closed.accepted_at == world["invitations"]["closed"].accepted_at
+    assert closed.revoked_at is None
     assert closed.role_id == catalogue["member"].pk
     schedule_model = new.get_model("operations", "ReportSchedule")
     for label, old in world["schedules"].items():
@@ -107,9 +145,16 @@ def test_upgrade_maps_roles_references_scopes_and_collision_names(old_database):
         assert audit.meta["before_roles"] == old.recipient_roles
         assert audit.meta["after_roles"] == row.recipient_roles
         assert audit.meta["deactivated"] is (label == "empty")
-    # The production finish installs the DB fence and drops the old role tables.
-    executor = MigrationExecutor(connection)
-    executor.migrate(executor.loader.graph.leaf_nodes())
+    # Apply only the actual catalogue constraint and obsolete-table removal, not all leaves.
+    from importlib import import_module
+    from django.db.migrations.state import ProjectState
+    state = ProjectState.from_apps(new)
+    for name in ("apps.makerspaces.migrations.0093_fixed_roles_constraint",
+                 "apps.machines.migrations.0028_drop_role_machine_scope"):
+        module = import_module(name)
+        step = module.Migration(name.rsplit(".", 1)[-1], name.split(".")[1])
+        with connection.schema_editor() as editor:
+            state = step.apply(state, editor)
     tables = connection.introspection.table_names()
     assert "machines_rolemachinescope" not in tables
     assert "machines_rolemachinetypescope" not in tables
@@ -130,7 +175,7 @@ def test_custom_role_recipient_refuses_before_any_data_changes(old_database):
     before = snapshot()
     try:
         with pytest.raises(RuntimeError, match="must fix before upgrading") as error:
-            upgrade()
+            upgrade(old_database)
         assert f"recipient={rule.pk}" in str(error.value)
         assert snapshot() == before
     finally:

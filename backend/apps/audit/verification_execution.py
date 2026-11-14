@@ -127,13 +127,14 @@ def execute_attempt(run_id):
 
 def fail_attempt(run_id, failure_code):
     """Close a RUNNING attempt after a soft time limit or an unexpected error."""
-    run = AuditVerificationRun.objects.filter(pk=run_id).first()
-    if run is None:
-        return None
-    latest = runs.latest_event(run)
-    if latest is None or latest.state not in AuditVerificationRunEvent.ACTIVE_STATES:
-        return latest
-    state = State.TIMED_OUT if failure_code == "soft_time_limit" else State.FAILED
-    if latest.state == State.QUEUED:
-        state = State.TIMED_OUT  # QUEUED may only time out
-    return runs.finish(run, state, latest.attempt, failure_code=failure_code)
+    with transaction.atomic():
+        run = AuditVerificationRun.objects.select_for_update().filter(pk=run_id).first()
+        if run is None:
+            return None
+        latest = runs.latest_event(run)
+        if latest is None or latest.state not in AuditVerificationRunEvent.ACTIVE_STATES:
+            return latest
+        state = State.TIMED_OUT if failure_code == "soft_time_limit" else State.FAILED
+        if latest.state in {State.QUEUED, State.RETRYING}:
+            state = State.TIMED_OUT  # neither waiting state may fail an unstarted attempt
+        return runs.finish(run, state, latest.attempt, failure_code=failure_code)

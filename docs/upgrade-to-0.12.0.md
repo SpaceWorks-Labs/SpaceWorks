@@ -133,6 +133,8 @@ Operators coming from 0.9.2 or 0.9.3 also have every variable added for the 0.11
 4. If you run your own reverse proxy, allow 25 MB (220 MB for a zip) on the bulk card photo route, set `TRUSTED_PROXY_COUNT` to the number of proxies, and check the new rate limits against your integrations.
 5. Review machine types, Anthias players and published printer queues as described above, then work through the checks below.
 
+**If you created your own reporting objects in the analytics schemas.** The 0.12.0 money migrations change the type of money columns, which rewrites those tables. Before the first change they lock every view and materialized view that depends on an affected column, and refuse by name to continue if any of your materialized views holds data. Drop or empty those first (`REFRESH MATERIALIZED VIEW ... WITH NO DATA`), and recreate or refresh them after the update. Do not run `REFRESH MATERIALIZED VIEW` on your own views while the update is migrating: a refresh that waited behind the rewrite can see the rewritten table as empty, and store an empty result. SpaceWorks itself never refreshes materialized views.
+
 ## Verify before reopening
 
 1. Check health/readiness, applied migrations (including a valid `audit_venue_fee_payment_idx`) and strict row-security status under the runtime login. Verify that the runtime role is neither superuser nor BYPASSRLS and owns no scoped tables.

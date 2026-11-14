@@ -39,7 +39,7 @@ def test_the_provisioning_functions_exist_on_the_test_database():
 def test_create_returns_the_password_once_and_stores_only_ciphertext():
     makerspace = space()
     client = client_for(manager(makerspace))
-    created = client.post(space_url("-login", makerspace))
+    created = client.post(space_url("-login", makerspace), {"confirm": True}, format="json")
     assert created.status_code == 201, created.data
     password, role = created.data["password"], created.data["role"]
     assert created["Cache-Control"] == "no-store"
@@ -60,15 +60,15 @@ def test_create_returns_the_password_once_and_stores_only_ciphertext():
 def test_create_twice_is_a_typed_conflict():
     makerspace = space()
     client = client_for(manager(makerspace))
-    assert client.post(space_url("-login", makerspace)).status_code == 201
-    second = client.post(space_url("-login", makerspace))
+    assert client.post(space_url("-login", makerspace), {"confirm": True}, format="json").status_code == 201
+    second = client.post(space_url("-login", makerspace), {"confirm": True}, format="json")
     assert (second.status_code, second.data["code"]) == (409, "analytics_login_exists")
 
 
 def test_rotate_changes_the_password_keeps_the_role_and_audits():
     makerspace = space()
     client = client_for(manager(makerspace))
-    first = client.post(space_url("-login", makerspace)).data
+    first = client.post(space_url("-login", makerspace), {"confirm": True}, format="json").data
     rotated = client.post(space_url("-login-rotate", makerspace))
     assert rotated.status_code == 200
     assert rotated.data["role"] == first["role"] and rotated.data["password"] != first["password"]
@@ -80,7 +80,7 @@ def test_rotate_changes_the_password_keeps_the_role_and_audits():
 def test_revoke_drops_the_role_and_the_fixed_scope_row():
     makerspace = space()
     client = client_for(manager(makerspace))
-    role = client.post(space_url("-login", makerspace)).data["role"]
+    role = client.post(space_url("-login", makerspace), {"confirm": True}, format="json").data["role"]
     assert client.delete(space_url("-login", makerspace)).status_code == 204
     assert not _role_exists(role)
     assert not FixedRoleScope.objects.filter(role_name=role).exists()
@@ -127,7 +127,7 @@ def test_a_short_embed_secret_is_refused():
 def test_not_available_on_this_hosting_is_a_typed_409(monkeypatch):
     makerspace = space()
     monkeypatch.setattr(provisioning, "availability", lambda using="default": (False, "not_available_on_hosting"))
-    response = client_for(manager(makerspace)).post(space_url("-login", makerspace))
+    response = client_for(manager(makerspace)).post(space_url("-login", makerspace), {"confirm": True}, format="json")
     assert (response.status_code, response.data["code"]) == (409, "analytics_not_available")
     # A refused attempt rolls its whole transaction back, including the lazily created connection row.
     assert not AnalyticsConnection.objects.filter(makerspace=makerspace).exclude(login_role="").exists()
@@ -141,7 +141,7 @@ def test_a_database_refusal_is_a_typed_503_and_changes_nothing(monkeypatch):
         raise provisioning.ProvisioningFailed()
 
     monkeypatch.setattr(provisioning, "ensure_login", refuse)
-    response = client_for(manager(makerspace)).post(space_url("-login", makerspace))
+    response = client_for(manager(makerspace)).post(space_url("-login", makerspace), {"confirm": True}, format="json")
     assert (response.status_code, response.data["code"]) == (503, "analytics_login_failed")
     assert not AnalyticsConnection.objects.filter(makerspace=makerspace).exclude(login_role="").exists()
 
@@ -163,7 +163,7 @@ def test_the_functions_refuse_another_spaces_or_a_foreign_role_name():
 
 def test_platform_login_lifecycle_is_audited_without_a_space():
     client = client_for(superadmin())
-    created = client.post(platform_url("-login"))
+    created = client.post(platform_url("-login"), {"confirm": True}, format="json")
     assert created.status_code == 201, created.data
     assert created.data["schema"] == "spaceworks_analytics_platform" and "_p_" in created.data["role"]
     assert not FixedRoleScope.objects.filter(role_name=created.data["role"]).exists()
@@ -173,7 +173,7 @@ def test_platform_login_lifecycle_is_audited_without_a_space():
 
 def test_deleting_the_connection_drops_the_login_after_commit(django_capture_on_commit_callbacks):
     makerspace = space()
-    role = client_for(manager(makerspace)).post(space_url("-login", makerspace)).data["role"]
+    role = client_for(manager(makerspace)).post(space_url("-login", makerspace), {"confirm": True}, format="json").data["role"]
     with django_capture_on_commit_callbacks(execute=True):
         AnalyticsConnection.objects.filter(makerspace=makerspace).delete()
     assert not _role_exists(role)

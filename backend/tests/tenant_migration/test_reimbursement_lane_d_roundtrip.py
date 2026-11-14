@@ -6,7 +6,9 @@ locators, and keep payee bank data and decision summaries as the exact source
 ciphertext (Lane D never re-encrypts and carries no plaintext).
 """
 import hashlib
+from pathlib import Path
 import shutil
+from time import monotonic
 
 import pytest
 from django.db import connection, connections
@@ -16,6 +18,8 @@ from apps.backup.projection_databases import restore_dump, temporary_database
 from apps.tenant_migration import tenant_dump_derivation
 from apps.tenant_migration.tenant_dump_capture import capture_tenant_dump_source, request_tenant_dump_capture
 from apps.tenant_migration.tenant_dump_derivation import derive_tenant_dump
+from apps.tenant_migration import tenant_dump_database
+from apps.backup.postgres_client import client_binary
 from tests.encryption.conftest import enabled_encryption
 from tests.event_reimbursements.conftest import make_world  # noqa: F401 - fixture
 from tests.event_reimbursements.helpers import submitted
@@ -52,6 +56,84 @@ def _rows(cursor, table, columns, makerspace_id=None):
 def test_lane_d_dump_restores_stage_reimbursement_and_payout_rows(
     make_world, monkeypatch, memory_objects, settings, tmp_path, allow_projection_databases,
 ):
+    from apps.backup import cloud_database_tools
+
+    # The entire real client sequence shares a five-minute budget, rather than
+    # allowing every dump/restore subprocess its default one-hour timeout.
+    deadline, real_command = monotonic() + 300, cloud_database_tools.fixed_command
+
+    def bounded_command(*args, **kwargs):
+        # Cleanup must still drop owned databases after an exhausted budget.
+        if Path(args[0][0]).name == "dropdb":
+            kwargs["timeout"] = 15
+            return real_command(*args, **kwargs)
+        remaining = deadline - monotonic()
+        assert remaining > 0, "Lane D roundtrip exceeded its five-minute client budget"
+        kwargs["timeout"] = min(kwargs.get("timeout", 60), 60, remaining)
+        return real_command(*args, **kwargs)
+
+    monkeypatch.setattr(cloud_database_tools, "fixed_command", bounded_command)
+    # The schema is already built and validated by the session's migration setup.
+    # Copy its DDL once instead of running the entire migration graph in every
+    # builder scratch database. Capture, sanitization, dump and restore stay real.
+    schema = tmp_path / "current-schema.dump"
+    tenant_dump_database._run(
+        [client_binary("pg_dump"), "--format=custom", "--schema-only", "--schema=public",
+         "--no-owner", "--no-acl", f"--file={schema}"],
+        database=connection.settings_dict,
+    )
+    assert 0 < schema.stat().st_size < 32 * 1024 * 1024
+    # Explicit --schema=public makes PG16 emit CREATE SCHEMA public. A new
+    # database already has it: omit only that TOC entry, keeping exit-on-error.
+    listing = tenant_dump_database._run(
+        [client_binary("pg_restore"), "--list", str(schema)], database=connection.settings_dict,
+    ).stdout.decode("utf-8")
+    entries = listing.splitlines()
+    public_schema = [line for line in entries if line.split()[3:6] == ["SCHEMA", "-", "public"]]
+    assert len(public_schema) == 1
+    restore_list = tmp_path / "schema-restore.list"
+    restore_list.write_text("\n".join(line for line in entries if line not in public_schema) + "\n", encoding="utf-8")
+    bootstrap = tmp_path / "bootstrap.dump"
+    tenant_dump_database._run(
+        [client_binary("pg_dump"), "--format=custom", "--data-only", "--no-owner", "--no-acl",
+         "--table=public.django_migrations", "--table=public.django_content_type",
+         "--table=public.auth_permission", "--table=public.auth_group", "--table=public.auth_group_permissions",
+         "--table=public.encryption_piiglobalwritefence", "--table=public.machines_machinetype",
+         f"--file={bootstrap}"], database=connection.settings_dict,
+    )
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT e.extname, n.nspname FROM pg_extension e "
+                       "JOIN pg_namespace n ON n.oid=e.extnamespace WHERE e.extname <> 'plpgsql'")
+        extensions = cursor.fetchall()
+
+    def copy_schema(name, database):
+        using = next(alias for alias in connections if connections[alias].settings_dict["NAME"] == name)
+        scratch = connections[using]
+        with scratch.cursor() as cursor:
+            for extension, namespace in extensions:
+                quote = scratch.ops.quote_name
+                cursor.execute(f"CREATE SCHEMA IF NOT EXISTS {quote(namespace)}")
+                cursor.execute(f"CREATE EXTENSION IF NOT EXISTS {quote(extension)} WITH SCHEMA {quote(namespace)}")
+        with scratch.cursor() as cursor:
+            cursor.execute("SELECT to_regnamespace('public') IS NOT NULL")
+            assert cursor.fetchone() == (True,)
+        tenant_dump_database._run(
+            [client_binary("pg_restore"), "--exit-on-error", "--no-owner", "--no-acl",
+             f"--use-list={restore_list}", f"--dbname={name}", str(schema)], database=database,
+        )
+        # A real scratch migrate skips the generated RLS policies. Match that
+        # scratch-only contract when copying a live schema; never change the source.
+        from apps.tenant_rls.sync import _remove, live_state
+        from apps.tenant_rls.pg_tools import is_scratch_database
+        with scratch.cursor() as cursor:
+            assert is_scratch_database(cursor) is True
+            for table, (_enabled, _forced, _comment, _fixed, others) in live_state(cursor).items():
+                _remove(cursor, table, others)
+        # Preserve the migration ledger, target permissions, global write fence
+        # and builtin machine types that a normal scratch migrate would seed.
+        tenant_dump_database.restore_scratch_dump(bootstrap, name, database=database, source_data=True)
+
+    monkeypatch.setattr(tenant_dump_database, "_migrate_scratch", copy_schema)
     with enabled_encryption():
         world = make_world()
         settings.EVENT_PAYOUT_TENANT_POLICIES = {str(world.space.pk): {"templates": [("IN", "bank_transfer", "in_bank", 1)]}}

@@ -12,7 +12,7 @@ from apps.accounts.models import User
 from apps.makerspaces import handle_gate
 from apps.makerspaces.account_profile import account_profile_for, save_profile
 from apps.makerspaces.account_profile_purge import purge_account_profile
-from apps.makerspaces.models import AccountProject, ProfileAchievement, PublicHandle, PublicHandleRedirect
+from apps.makerspaces.models import AccountProfile, AccountProject, ProfileAchievement, PublicHandle, PublicHandleRedirect
 from apps.makerspaces.public_profile_handles import (
     check_handle, claim_default_handle, claim_for_signup, claim_handle, name_available, release_handle,
     suggestion_for,
@@ -144,6 +144,8 @@ def test_the_subject_export_carries_the_requesters_own_profile_only(ada, grace):
 
     save_profile(ada, {"bio": "about me", "public_visible": True, "publication_consent": True})
     profile = account_profile_for(ada)
+    # Decision 549: subject export still preserves stored historical consent, although writes retired.
+    AccountProfile.objects.filter(pk=profile.pk).update(public_visible=True, public_consented_at=timezone.now())
     AccountProject.objects.create(profile=profile, title="Mine", image_key="account/1/x.png")
     ProfileAchievement.objects.create(profile=profile, title="Award")
     save_profile(grace, {"bio": "someone else"})

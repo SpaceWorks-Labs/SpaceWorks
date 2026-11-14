@@ -42,7 +42,8 @@ beforeEach(() => {
   });
 });
 
-describe("open-web re-confirmation after the profile merge (decision 335c)", () => {
+// Decision 549 removes open-web consent and its re-confirmation prompt; VisibilityPanel_cx13 proves their absence.
+describe.skip("retired in decision 549: open-web re-confirmation after the profile merge (335c)", () => {
   it("asks once, and publishing still needs the fresh consent tick", async () => {
     show();
     expect(await screen.findByText("Confirm the open web again.")).toBeVisible();

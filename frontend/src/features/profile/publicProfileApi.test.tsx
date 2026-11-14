@@ -22,53 +22,53 @@ function profile() {
 beforeEach(() => { clearAccessToken(); setAccessToken(expired); });
 afterEach(() => { clearAccessToken(); vi.unstubAllGlobals(); });
 
-it("refreshes an expired access token and retries the personalized profile", async () => {
+it("reads the always-on card anonymously without refreshing an expired session (549)", async () => {
   const fetcher = vi.fn(async (url: string, options?: RequestInit) => {
     if (url.endsWith("/auth/refresh")) return response({ access: fresh });
     const auth = new Headers(options?.headers).get("Authorization");
-    return auth === `Bearer ${fresh}` ? response({ handle: "maker", audience: "owner" }) : response({}, 401);
+    return auth ? response({}, 401) : response({ display_name: "Maker", avatar_url: null });
   });
   vi.stubGlobal("fetch", fetcher);
   const { result } = profile();
-  await waitFor(() => expect(result.current.data?.audience).toBe("owner"));
-  expect(fetcher.mock.calls.filter(([url]) => url.endsWith("/auth/refresh"))).toHaveLength(1);
+  await waitFor(() => expect(result.current.data).toEqual({ display_name: "Maker", avatar_url: null }));
+  expect(fetcher.mock.calls.filter(([url]) => url.endsWith("/auth/refresh"))).toHaveLength(0);
   const profileCalls = fetcher.mock.calls.filter(([url]) => url.endsWith("/public/profiles/maker/"));
   expect(profileCalls.map(([, options]) => new Headers(options?.headers).get("Authorization")))
-    .toEqual([`Bearer ${expired}`, `Bearer ${fresh}`]);
+    .toEqual([""]);
 });
 
-it.each(["refused", "offline", "invalid_refresh"])("falls back to anonymous viewing when refresh is %s", async failure => {
+it.each(["refused", "offline", "invalid_refresh"])("reads the public card even when refresh would be %s (549)", async failure => {
   const fetcher = vi.fn(async (url: string, options?: RequestInit) => {
     if (url.endsWith("/auth/refresh")) {
       if (failure === "offline") throw new TypeError("Network unavailable");
       return failure === "invalid_refresh" ? response({ access: fresh }) : response({}, 401);
     }
     return new Headers(options?.headers).get("Authorization")
-      ? response({}, 401) : response({ handle: "maker", audience: "public" });
+      ? response({}, 401) : response({ display_name: "Maker", avatar_url: null });
   });
   vi.stubGlobal("fetch", fetcher);
   const { result } = profile();
   await waitFor(() => expect(result.current.isSuccess).toBe(true));
-  expect(result.current.data?.audience).toBe("public");
+  expect(result.current.data).toEqual({ display_name: "Maker", avatar_url: null });
   expect(fetcher.mock.calls.some(([url, options]) => url.endsWith("/public/profiles/maker/")
     && !new Headers(options?.headers).get("Authorization"))).toBe(true);
-  expect(fetcher.mock.calls.filter(([url]) => url.endsWith("/auth/refresh"))).toHaveLength(1);
+  expect(fetcher.mock.calls.filter(([url]) => url.endsWith("/auth/refresh"))).toHaveLength(0);
 });
 
 
-it("retries a verification-only session anonymously without clearing the session", async () => {
+it("ignores a verification-only session without clearing it (549)", async () => {
   setAccessToken(fresh);
   const fetcher = vi.fn(async (_url: string, options?: RequestInit) =>
     new Headers(options?.headers).get("Authorization")
       ? response({ code: "email_verification_required" }, 403)
-      : response({ handle: "maker", audience: "public" }));
+      : response({ display_name: "Maker", avatar_url: null }));
   vi.stubGlobal("fetch", fetcher);
   const { result } = profile();
   await waitFor(() => expect(result.current.isSuccess).toBe(true));
-  expect(result.current.data?.audience).toBe("public");
+  expect(result.current.data).toEqual({ display_name: "Maker", avatar_url: null });
   expect(getAccessToken()).toBe(fresh);
   expect(fetcher.mock.calls.map(([, options]) => new Headers(options?.headers).get("Authorization")))
-    .toEqual([`Bearer ${fresh}`, ""]);
+    .toEqual([""]);
 });
 
 const publicReads = [
@@ -91,7 +91,7 @@ it.each(publicReads)("$name retries 403 anonymously and accepts the public conse
   await waitFor(() => expect(name === "github" ? result.current.isSuccess : result.current.isError).toBe(true));
   if (name === "github") expect(result.current.data).toBeNull();
   else expect(result.current.error).toMatchObject({ status: 404 });
-  expect(fetcher).toHaveBeenCalledTimes(2);
+  expect(fetcher).toHaveBeenCalledTimes(name === "profile" ? 1 : 2);
 });
 
 it("keeps a profile's own 404 authoritative without an anonymous retry", async () => {

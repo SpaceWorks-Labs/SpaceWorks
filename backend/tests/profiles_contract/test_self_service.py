@@ -17,14 +17,20 @@ def test_profile_patch_handle_and_timeline_crud(membership):
         "domains": ["Robotics"], "skills": [{"name": "Python", "level": 3}],
         "links": [{"kind": "github", "url": "https://github.com/example"}]}, format="json")
     assert response.status_code == 200, response.data
-    assert response.data["public_consented_at"]
+    # Decision 549: master consent fields are retired; content still round-trips exactly.
+    assert response.data["domains"] == ["Robotics"]
+    assert response.data["skills"] == [{"name": "Python", "level": 3}]
+    assert response.data["links"] == [{"kind": "github", "url": "https://github.com/example"}]
+    assert {"public_visible", "public_consented_at", "publication_consent", "is_visible"}.isdisjoint(response.data)
     assert client.post(base + "/handle", {"handle": "self.maker"}, format="json").status_code == 200
     created = client.post(base + "/timeline", {"kind": "experience", "title": "Maker",
         "organization": "Lab", "start": "2025-01-01"}, format="json")
     assert created.status_code == 201, created.data
     detail = base + f"/timeline/{created.data['id']}"
     assert client.get(detail).status_code == 200
-    assert client.patch(detail, {"end": "2024-01-01"}, format="json").status_code == 400
+    invalid = client.patch(detail, {"end": "2024-01-01"}, format="json")
+    assert invalid.status_code == 400
+    assert invalid.data["end"][0].code == "invalid"
     assert client.patch(detail, {"title": "Senior maker"}, format="json").status_code == 200
     assert client.get(base + "/timeline").data["count"] == 1
     assert client.delete(detail).status_code == 204
@@ -44,6 +50,6 @@ def test_timeline_is_scoped_to_authenticated_membership(membership):
     MakerspaceMembership.objects.create(user=other, makerspace=membership.makerspace, assigned_role=membership.makerspace.roles.get(slug="member"), role="custom")
     client = APIClient(); client.force_authenticate(user=other)
     path = f"/api/v1/member/makerspaces/{membership.makerspace_id}/profile/timeline/{entry.pk}"
-    assert client.get(path).status_code == 404
-    assert client.patch(path, {"title": "Stolen"}, format="json").status_code == 404
-    assert client.delete(path).status_code == 404
+    for response in (client.get(path), client.patch(path, {"title": "Stolen"}, format="json"), client.delete(path)):
+        assert response.status_code == 404
+        assert response.data["code"] == "not_found"

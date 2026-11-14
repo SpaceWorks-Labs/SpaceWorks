@@ -1,8 +1,17 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { memberRequest, publicV1Request as profileRequest, StructuredApiError } from "../../lib/api";
+import { publicAnonymousRequest } from "../../lib/api/requests";
 import { personalRecipientKey } from "../notifications/personalQueryKeys";
 import type { AccountProfile } from "./accountProfileTypes";
+
+export type PublicAccountCard = {
+  display_name: string; avatar_url: string | null;
+  handle?: string; bio?: string;
+  projects?: { title: string; subtitle: string; description: string; tags: string[];
+    image_url: string | null; links: { kind: string; url: string }[] }[];
+  memberships?: { slug: string; name: string; role_title: string | null; started_on: string }[];
+};
 
 export type {
   AccountProfile, Audience, ProfileLink, ProfileSkill, TimelineKind,
@@ -12,8 +21,9 @@ export type {
 export const HANDLE_PATTERN = /^[a-z0-9](?:[a-z0-9._-]{1,28}[a-z0-9])$/;
 
 export const publicProfileKeys = {
-  // The body is personalised by audience (owner / member / public); never reuse one viewer's response for another.
-  root: (handle: string) => ["public-profile", handle, "viewer", personalRecipientKey()] as const,
+  // Version the public card so a previously cached rich owner response cannot fill this query.
+  root: (handle: string) => ["public-profile", "card-549", handle] as const,
+  // The authenticated by-account reader retains viewer isolation.
   account: (accountId: string) => ["public-profile", "account", accountId, "viewer", personalRecipientKey()] as const,
 };
 
@@ -21,7 +31,7 @@ const notFound = (error: unknown) => error instanceof StructuredApiError && erro
 // A missing profile cannot be retried into existence; other failures retry once.
 const retryUnlessMissing = (count: number, error: unknown) => !notFound(error) && count < 1;
 
-/** Hidden, missing and restricted profiles are one identical 404; the UI never tells them apart. */
+/** Missing handles use the shared not-found page. */
 export function isProfileMissing(error: unknown) {
   return notFound(error);
 }
@@ -30,11 +40,11 @@ export function isSignedOutError(error: unknown) {
   return error instanceof StructuredApiError && error.status === 401;
 }
 
-/** GET /public/profiles/<handle>/ with an optional session. A retired handle answers 302 to the current one; fetch follows it. */
+/** Always-on anonymous card. Fetch follows retired-handle redirects. */
 export function usePublicProfile(handle: string, sessionReady = true) {
   return useQuery({
     queryKey: publicProfileKeys.root(handle),
-    queryFn: () => profileRequest<AccountProfile>(`/public/profiles/${encodeURIComponent(handle)}/`),
+    queryFn: () => publicAnonymousRequest<PublicAccountCard>(`/public/profiles/${encodeURIComponent(handle)}/`),
     enabled: sessionReady && HANDLE_PATTERN.test(handle),
     retry: retryUnlessMissing,
   });

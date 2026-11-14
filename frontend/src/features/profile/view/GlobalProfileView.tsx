@@ -25,13 +25,13 @@ export function asVisitor(profile: AccountProfile): AccountProfile {
   };
 }
 
-/** The open web means the profile is reachable by logged-out visitors: they are served only when `public_visible`. */
-export const isOpenWeb = (profile: AccountProfile) => profile.audience === "public" || profile.audience === "owner" && Boolean(profile.public_visible);
+/** A handle always has a public card (decision 549). */
+export const isOpenWeb = (profile: AccountProfile) => profile.audience === "public" || profile.audience === "owner";
 
 function ShareButton({ profile }: { profile: AccountProfile }) {
   const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
   const share = async () => {
-    const url = `${window.location.origin}/${profile.handle}`;
+    const url = `${window.location.origin}/@${profile.handle}`;
     try {
       if (typeof navigator.share === "function") await navigator.share({ title: profile.display_name, url });
       else { await navigator.clipboard.writeText(url); setState("copied"); }
@@ -52,7 +52,7 @@ export function GlobalProfileView({ profile, editHref, preview = false }: { prof
   const open = !preview && Boolean(profile.handle) && isOpenWeb(profile);
   const description = profile.headline || profile.bio.slice(0, 160) || t`Profile on Space Works`;
   return <article className="grid min-w-0 gap-6">
-    {open ? <PageMetadata title={profile.display_name} description={description} path={`/${profile.handle}`} image={profile.avatar_url} imageAlt={profile.display_name} /> : null}
+    {open ? <PageMetadata title={profile.display_name} description={description} path={`/@${profile.handle}`} image={profile.avatar_url} imageAlt={profile.display_name} /> : null}
     <header className="grid gap-4">
       <div className="flex flex-wrap items-start justify-between gap-4">
         {profile.avatar_url ? <img src={profile.avatar_url} alt="" className="h-24 w-24 rounded-full border border-line object-cover" />

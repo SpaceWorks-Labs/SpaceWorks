@@ -1,36 +1,27 @@
 ---
-title: Your profile
-summary: One profile for your whole account, visible to signed-in members by default, with a separate switch for the open web.
+title: Your public profile
+summary: Your always-on public card, published projects and public-space memberships.
 order: 110
-keywords: profile, handle, username, public page, maker profile, directory, projects, portfolio, experience, education, achievements, status, github
-modules: membership
+keywords: profile, handle, username, public page, maker profile, projects, portfolio
 ---
-You have **one profile for your whole account**, not one per space. It lives at `/<your-username>` and reads like a short CV. Signed-in members of every space can see it by default; people who are not signed in cannot unless you turn on the open web.
+You have **one public profile for your whole account** at `/@<your-handle>`. Anyone can open it without signing in. A profile with a handle is always public; there is no off switch.
 
-## Fill in and share your profile
+## Fill in your card
 
 1. Open **Account**, then **Profile**.
-2. Under **Visibility**, check your username (your profile address). **Show my profile on the platform** is on by default; switch it off to hide the whole profile everywhere.
-3. Fill in the sections: **Status** (a preset and a line of up to 120 characters), **About**, **Experience, education and volunteering**, **Achievements**, **Projects**, **Skills**, **Links** and **Interests and languages**. Links must start with `https://`.
-4. To appear to people who are not signed in, switch on **Also show it on the open web** and tick the consent box. Search engines may then list it. Switch it off to take it offline straight away.
-5. Press **Preview** to see it as another member would.
+2. Under **Public profile**, check or choose your handle.
+3. Upload your avatar and write a bio. **Show my bio** controls the bio section.
+4. Add projects and choose which ones to show. You can also hide the projects section. Links must start with `https://`.
+5. Save your changes and select **View public profile**.
 
-![Screenshot: the profile Visibility settings](screenshot:member-public-profile)
+You can change your handle once every 30 days. Old addresses redirect during the existing 30-day reservation period.
 
-## What fills itself in
+## Memberships
 
-- **Verified achievements** come from SpaceWorks records: placings and prizes from published hackathon results, roles such as judge, mentor or speaker, and events attended. Each says which space verified it.
-- **Self-reported achievements** are the ones you add yourself. They are always labelled "self-reported".
-- **Spaces and organizations**, **Events I attended** and **Certifications** build themselves from your activity. Each has its own switch.
-- **Vouched by** shows people who vouched for you, by name only when they also have a readable profile.
-- **Activity graph**: switch it on for daily counts across your spaces, and add a GitHub username to show your contribution calendar beside it. It shows counts, never what you did.
+Your card lists public spaces where you are an active member, with your role title and membership start date. Private, hidden, paused or archived spaces and memberships you no longer hold are left out. Memberships update automatically and have no publication switch.
 
-## Import a hackathon project
+## Minimal cards and privacy
 
-Under **Projects**, press **Import from my hackathon submissions** and import one of your own submissions. Its title, summary and links are copied and it stays linked to the submission.
+Minors and restricted or suspended accounts show only their **display name and avatar**. Their bio, projects and memberships are not shown.
 
-## What is never shown
-
-Attendance at private, invite-only or unlisted events, results that are not published, anything from a space where you are restricted, suspended or no longer a member, and your email address or phone number. Every section has its own switch, so you decide the rest.
-
-> **Who can do this:** anyone with an account. You can change your username once every 30 days.
+Public profiles never show email, phone, address, loans, payments, evidence, audit records or internal identifiers. Richer fields in your account editor are not part of the public card. Existing profile content is kept when upgrading, while the old profile visibility controls are removed.

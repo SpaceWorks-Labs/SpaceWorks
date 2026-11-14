@@ -13,7 +13,7 @@ const profile: AccountProfile = {
   audience: "owner", handle: "maker", account_id: 2, display_name: "Maker", avatar_url: null, headline: "", institution: "", shown, status: null, bio: "",
   timeline: [], education: [], skills: [], domains: [], links: [], interests: [], languages: [], projects: [],
   achievements: { verified: [], self_reported: [] }, events_attended: null, certifications: [], spaces: [], organizations: [],
-  is_visible: true, public_visible: false, public_consented_at: null, toggles: { is_visible: true, show_status: true, show_about: true, show_experience: true, show_education: true, show_achievements: true, show_projects: true, show_skills: true, show_links: true, show_interests: true, show_events: true, show_spaces: true, show_certifications: true },
+  toggles: { show_status: true, show_about: true, show_experience: true, show_education: true, show_achievements: true, show_projects: true, show_skills: true, show_links: true, show_interests: true, show_events: true, show_spaces: true, show_certifications: true },
 };
 function show() { render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><MemberProfilePanel /></QueryClientProvider>); }
 const serve = () => vi.mocked(memberRequest).mockImplementation(async (path: string) => path.startsWith("/member/profile/timeline") ? { count: 0, next: null, previous: null, results: [] }

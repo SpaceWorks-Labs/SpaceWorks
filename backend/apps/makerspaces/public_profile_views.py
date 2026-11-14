@@ -1,6 +1,7 @@
 """Anonymous profile endpoints: one resolution gate, no public response caching."""
 
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiResponse
+from rest_framework.exceptions import APIException
 from rest_framework.permissions import AllowAny
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
@@ -10,14 +11,26 @@ from apps.accounts.authentication import SpaceWorksJWTAuthentication
 from apps.hardware_requests.exceptions import ErrorSerializer
 from .account_profile_access import resolve_by_handle
 from .public_profile_access import resolve_public_profile
-from .account_profile_read import build_payload
-from .account_profile_serializers import AccountProfileSerializer
+from .public_profile_card import public_card, resolve_card_handle
 from .public_profile_projection import public_project
-from .throttles import PROFILE_LOOKUP_THROTTLES
 from .public_profile_serializers import (
-    PublicActivitySerializer, PublicEventSerializer,
+    PublicAccountCardSerializer, PublicActivitySerializer, PublicEventSerializer,
     PublicProjectSerializer, PublicProjectPageSerializer, PublicEventPageSerializer,
 )
+
+from .throttles import PROFILE_LOOKUP_THROTTLES
+
+
+class OptionalCardAuthentication(SpaceWorksJWTAuthentication):
+    """Identify verified sessions for abuse budgets, without gating public data."""
+
+    def authenticate(self, request):
+        try:
+            return super().authenticate(request)
+        except APIException:
+            # Expired/restricted sessions may still read the anonymous public card.
+            return None
+
 
 ERRORS = {404: OpenApiResponse(ErrorSerializer, description="Profile not found."),
           429: OpenApiResponse(description="Request rate exceeded.")}
@@ -51,29 +64,22 @@ class PublicProfileBase(APIView):
 
 
 class PublicProfileView(PublicProfileBase):
-    """Optional-JWT read of the GLOBAL profile by handle (decision 303).
+    """Always-on public card, identical for owners, signed-in viewers and visitors."""
 
-    Signed-in callers read any visible profile; logged-out callers additionally need the open-web
-    consent. Every refusal is the same 404.
-    """
-
-    authentication_classes = [SpaceWorksJWTAuthentication]
-    # Signed-in callers see the member audience, so they get a per-account budget (H5);
-    # anonymous callers keep `public_read` (PROFILE_LOOKUP_THROTTLES skip them).
+    authentication_classes = [OptionalCardAuthentication]
     throttle_classes = [ClientTierRateThrottle, *PROFILE_LOOKUP_THROTTLES]
 
-    @extend_schema(tags=["Public profiles"], responses={200: AccountProfileSerializer, 401: ErrorSerializer,
-                                                         **REDIRECT, **ERRORS})
+    @extend_schema(tags=["Public profiles"], auth=[], summary="Read the always-on public account card",
+                   description="Minors and restricted/suspended accounts expose only display_name and avatar_url. "
+                   "Other accounts also expose handle, bio, chosen public projects and active public memberships. "
+                   "No contact details or internal identifiers are returned. Responses are no-store.",
+                   responses={200: PublicAccountCardSerializer, **REDIRECT, **ERRORS})
     def get(self, request, handle):
         self.cache_headers()
-        profile, redirected = resolve_by_handle(handle, request.user, request)
+        claim, redirected = resolve_card_handle(handle, request)
         if redirected:
-            return Response(status=302, headers={"Location": f"/api/v1/public/profiles/{redirected}/"})
-        if request.user.is_authenticated and request.user.pk == profile.user_id:
-            audience = "owner"
-        else:
-            audience = "member" if request.user.is_authenticated else "public"
-        return Response(AccountProfileSerializer(build_payload(profile, audience, request.user)).data)
+            return Response(status=302, headers={"Location": f"/api/v1/public/profiles/{claim.handle}/"})
+        return Response(PublicAccountCardSerializer(public_card(claim)).data)
 
 
 class PublicProfileActivityView(PublicProfileBase):

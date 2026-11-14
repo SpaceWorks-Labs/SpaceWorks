@@ -6,7 +6,7 @@ from rest_framework.exceptions import NotFound
 from .models import Makerspace
 from .models_profiles import PublicHandle, PublicHandleRedirect
 from .public_page_adapters import adapter
-from .public_profile_access import _request_tenant_ids, resolve_public_profile
+from .public_profile_access import _request_tenant_ids
 from .servability import is_servable
 from .hosting import canonical_host
 
@@ -85,7 +85,8 @@ def resolve_handle(handle, request=None, viewer=None):
     if claim is None:
         raise NotFound()
     if claim.user_id:
-        resolve_public_profile(claim.handle, request, viewer)  # one 404 unless readable by this viewer
+        from .public_profile_card import resolve_card_handle
+        resolve_card_handle(claim.handle, request)
         from .public_profile_share import profile_url
         return claim, {"kind": "member", "handle": claim.handle, "canonical_url": profile_url(claim.handle),
                        "redirected": redirected, "content_url": f"/api/v1/public/profiles/{claim.handle}/"}

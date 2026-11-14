@@ -7,7 +7,7 @@ from apps.makerspaces.account_profile import account_profile_for, save_profile
 from apps.makerspaces.account_profile_spaces import organizations_for, spaces_for
 from apps.makerspaces.account_profile_vouches import vouches_for
 from apps.makerspaces.models import (
-    AccountProject, GuardianConsent, MakerspaceMembership, MembershipRequest, MembershipVouch, MinorProfile,
+    AccountProfile, AccountProject, GuardianConsent, MakerspaceMembership, MembershipRequest, MembershipVouch, MinorProfile,
     ProfileAchievement,
 )
 from apps.makerspaces.public_profile_handles import claim_for_signup
@@ -46,14 +46,14 @@ def test_directory_detail_honours_section_switches_and_hidden_projects(ada, grac
     assert [link["url"] for link in body["projects"][0]["links"]] == ["https://ok.test"]
     for owner_key in ("public_visible", "show_activity_graph", "show_speaking", "show_loans"):
         assert owner_key not in body
-    assert body["public_consented_at"] is None
+    assert "public_consented_at" not in body  # decision 549 removes retired consent from read schemas
 
 
 def test_directory_detail_still_shows_open_sections_and_closes_for_hidden_profiles(ada, grace, space_a):
     save_profile(ada, {"bio": "hello", "headline": "Welder"})
     body = directory_detail(grace, space_a, ada).data
     assert body["bio"] == "hello" and body["headline"] == "Welder"
-    save_profile(ada, {"is_visible": False})
+    AccountProfile.objects.filter(user=ada).update(is_visible=False)  # decision 549: historical directory gate
     assert directory_detail(grace, space_a, ada).status_code == 404
 
 
@@ -84,18 +84,33 @@ def test_a_minor_cannot_open_the_web_alone_and_a_guardian_consent_unlocks_it(gra
     child = make_person("child-web", space_a)
     claim_for_signup(child, "child-web")
     profile = mark_minor(child, space_a)
-    with pytest.raises(Exception):
-        save_profile(child, {"public_visible": True, "publication_consent": True})
-    assert account_profile_for(child).public_visible is False
+    # Decision 549: public cards are always minimal; richer satellites retain guardian consent.
+    account = account_profile_for(child)
+    assert account.public_visible is False
+    AccountProfile.objects.filter(pk=account.pk).update(public_visible=True, public_consented_at=timezone.now())
+    satellite = PUBLIC.format("child-web") + "projects"
+    denied = client_for().get(satellite)
+    assert denied.status_code == 404
+    assert denied.data["code"] == "not_found"
+    card = client_for().get(PUBLIC.format("child-web"))
+    assert card.status_code == 200
+    assert card.data == {"display_name": "Child-Web", "avatar_url": None}
     minors.publish_terms(grace, space_a, "I consent.", "v1")
     minors.sign_consent(grace, profile, "A Guardian", accepted=True, method=GuardianConsent.Method.STAFF_RECORDED)
-    save_profile(child, {"public_visible": True, "publication_consent": True})
-    assert client_for().get(PUBLIC.format("child-web")).status_code == 200
+    granted = client_for().get(satellite)
+    assert granted.status_code == 200
+    assert granted.data == {"count": 0, "next": None, "previous": None, "results": []}
     GuardianConsent.objects.filter(profile=profile).update(revoked_at=timezone.now())
-    assert client_for().get(PUBLIC.format("child-web")).status_code == 404  # consent lapsed: off the web
+    revoked = client_for().get(satellite)
+    assert revoked.status_code == 404
+    assert revoked.data["code"] == "not_found"
+    card = client_for().get(PUBLIC.format("child-web"))
+    assert card.status_code == 200
+    assert card.data == {"display_name": "Child-Web", "avatar_url": None}
 
 
-def test_a_minor_is_never_on_the_sitemap_or_a_share_card(space_a):
+def test_a_minor_is_never_on_the_sitemap_or_a_share_card(space_a, settings):
+    settings.PUBLIC_APP_BASE_URL = "http://testserver"
     from apps.makerspaces.public_profile_share import sitemap_profile_urls
     from rest_framework.test import APIRequestFactory
 
@@ -107,9 +122,10 @@ def test_a_minor_is_never_on_the_sitemap_or_a_share_card(space_a):
     save_profile(child, {"public_visible": True, "publication_consent": True})
     mark_minor(child, space_a)
     urls = list(sitemap_profile_urls(APIRequestFactory().get("/sitemap.xml"), spaces=[space_a]))
-    assert any(url.endswith("/adult-web") for url in urls)
-    assert not any(url.endswith("/child-card") for url in urls)
-    assert client_for().get("/share/profiles/child-card/").status_code == 404
+    assert set(urls) == {"http://testserver/@adult-web"}  # decision 549 canonical address
+    refusal = client_for().get("/share/profiles/child-card/")
+    assert refusal.status_code == 404
+    assert refusal.data["code"] == "not_found"
 
 
 # --- M13 / 336b: spaces, organisations, roles and vouches by audience -------------------------------
@@ -197,7 +213,9 @@ def test_account_merge_takes_the_stricter_switches(ada, grace):
     from apps.makerspaces.account_profile_account_merge import merge_profiles
 
     save_profile(ada, {"show_about": False, "bio": "private"})
-    save_profile(grace, {"public_visible": True, "publication_consent": True})
+    # Decision 549: seed historical consent to keep the stricter merge test meaningful.
+    AccountProfile.objects.filter(pk=account_profile_for(grace).pk).update(
+        public_visible=True, public_consented_at=timezone.now())
     assert merge_profiles(ada.pk, grace.pk) is True
     survivor = account_profile_for(grace)
     assert survivor.show_about is False and survivor.bio == "private"

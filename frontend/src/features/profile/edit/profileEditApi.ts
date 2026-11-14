@@ -45,7 +45,7 @@ export function useClaimHandle() {
   });
 }
 
-/** Also turns the open web off and clears the consent stamp (server side). */
+/** Releases the address; publication has no separate off switch (decision 549). */
 export function useReleaseHandle() {
   const client = useQueryClient();
   return useMutation({

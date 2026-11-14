@@ -13,9 +13,6 @@ from .public_profile_validation import HttpsLinkSerializer, SkillSerializer
 
 
 class AccountProfileWriteSerializer(serializers.Serializer):
-    is_visible = serializers.BooleanField(required=False)
-    public_visible = serializers.BooleanField(required=False)
-    publication_consent = serializers.BooleanField(required=False, write_only=True)
     headline = serializers.CharField(max_length=200, required=False, allow_blank=True)
     status = serializers.ChoiceField(choices=[*STATUS_KEYS, ""], required=False)
     status_note = serializers.CharField(max_length=120, required=False, allow_blank=True)
@@ -141,7 +138,7 @@ class TimelineRowSerializer(serializers.Serializer):
 class AccountProfileSerializer(serializers.Serializer):
     """The profile as one audience reads it. Owner-only keys are absent for other audiences."""
 
-    OWNER_ONLY = ("is_visible", "public_visible", "public_consented_at", "public_reconfirm_pending", "toggles")
+    OWNER_ONLY = ("toggles",)
 
     audience = serializers.ChoiceField(choices=["owner", "member", "public"])
     handle = serializers.CharField(allow_null=True)
@@ -172,11 +169,6 @@ class AccountProfileSerializer(serializers.Serializer):
     github_username = serializers.CharField(allow_blank=True)
     github_contributions = serializers.IntegerField(allow_null=True)
     github_verified = serializers.BooleanField()
-    is_visible = serializers.BooleanField(required=False)
-    public_visible = serializers.BooleanField(required=False)
-    public_consented_at = serializers.DateTimeField(allow_null=True, required=False)
-    # Decision 335c: the profile page asks the owner once to confirm open-web publishing again.
-    public_reconfirm_pending = serializers.BooleanField(required=False)
     toggles = serializers.DictField(child=serializers.BooleanField(), required=False)
 
     def to_representation(self, instance):

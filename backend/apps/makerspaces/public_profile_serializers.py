@@ -90,3 +90,21 @@ class PublicProjectPageSerializer(serializers.Serializer):
 
 class PublicEventPageSerializer(PublicProjectPageSerializer):
     results = PublicEventSerializer(many=True)
+
+
+class PublicMembershipSerializer(serializers.Serializer):
+    slug = serializers.CharField()
+    name = serializers.CharField()
+    role_title = serializers.CharField(allow_null=True)
+    started_on = serializers.DateField()
+
+
+class PublicAccountCardSerializer(serializers.Serializer):
+    """Optional fields are absent on the minimal card, rather than empty hints."""
+
+    display_name = serializers.CharField()
+    avatar_url = serializers.CharField(allow_null=True)
+    handle = serializers.CharField(required=False)
+    bio = serializers.CharField(required=False, allow_blank=True)
+    projects = PublicProjectSerializer(many=True, required=False)
+    memberships = PublicMembershipSerializer(many=True, required=False)

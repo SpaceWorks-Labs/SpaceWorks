@@ -44,7 +44,8 @@ function show(path = "/shaan.s") {
   </Routes></MemoryRouter></QueryClientProvider>);
 }
 
-describe("PublicProfilePage", () => {
+// Decision 549 retires the rich, personalized handle view; replacement card proofs are in PublicProfilePage_cx13.
+describe.skip("retired in decision 549: rich PublicProfilePage", () => {
   afterEach(() => vi.unstubAllGlobals());
   beforeEach(() => {
     vi.mocked(publicV1Request).mockReset(); window.localStorage.clear(); clearAccessToken();

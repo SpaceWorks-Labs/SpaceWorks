@@ -52,11 +52,10 @@ export type AccountProfile = {
   github_username?: string; github_contributions?: number | null;
   /** Decision 338: true only when the username matches the owner's linked GitHub sign-in; gates the badge and calendar. */
   github_verified?: boolean;
-  /** Owner only. */
-  is_visible?: boolean; public_visible?: boolean; public_consented_at?: string | null;
-  /** Owner only (decision 335c): profiles were merged, so open-web publishing waits for a fresh confirmation. */
-  public_reconfirm_pending?: boolean;
-  toggles?: { is_visible: boolean } & Record<`show_${SectionKey}`, boolean> & Partial<Record<`show_${ActivityFamily}`, boolean>>;
+  /** @deprecated Historical response fixtures only; absent from the API since decision 549. */
+  is_visible?: boolean; public_visible?: boolean; public_consented_at?: string | null; public_reconfirm_pending?: boolean;
+  /** Owner-only section choices. Profile publication itself has no toggle. */
+  toggles?: Record<`show_${SectionKey}`, boolean> & Partial<Record<`show_${ActivityFamily}`, boolean>>;
 };
 
 export const ACTIVITY_FAMILIES = ["activity_graph", "speaking", "machine_activity", "bookings", "loans"] as const;
@@ -64,7 +63,6 @@ export type ActivityFamily = typeof ACTIVITY_FAMILIES[number];
 
 /** Body of PATCH /member/profile: any subset. */
 export type ProfilePatch = Partial<{
-  is_visible: boolean; public_visible: boolean; publication_consent: boolean;
   headline: string; status: StatusPreset; status_note: string; institution: string; bio: string;
   domains: string[]; skills: ProfileSkill[]; links: ProfileLink[]; interests: string[]; languages: string[];
   projects: { id?: number; title: string; subtitle: string; tags: string[]; public_visible: boolean; description: string; links: { label: string; url: string }[] }[];

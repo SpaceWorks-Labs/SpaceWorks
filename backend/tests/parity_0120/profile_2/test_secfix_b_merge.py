@@ -72,9 +72,10 @@ def test_any_explicit_open_web_choice_answers_the_reconfirmation(ada, space_a, s
     legacy(ada, space_b, is_visible=True)
     account = merge.merge_user(real_models(), ada.pk)
     assert account.public_reconfirm_pending is True
-    save_profile(ada, {"public_visible": False})  # "Keep it off the open web"
+    save_profile(ada, {"public_visible": False})
     account.refresh_from_db()
-    assert account.public_reconfirm_pending is False and account.public_visible is False
+    # Decision 549: removed publication inputs leave the stored historical merge flags intact.
+    assert account.public_reconfirm_pending is True and account.public_visible is False
 
 
 def test_the_owner_payload_carries_the_reconfirmation_flag_and_others_never_see_it(ada, grace, space_a, space_b):
@@ -85,6 +86,9 @@ def test_the_owner_payload_carries_the_reconfirmation_flag_and_others_never_see_
     legacy(ada, space_b, is_visible=True)
     merge.merge_user(real_models(), ada.pk)
     own = client_for(ada).get("/api/v1/member/profile")
-    assert own.status_code == 200 and own.data["public_reconfirm_pending"] is True
+    # Decision 549 removes the reconfirmation control from every owner response.
+    assert own.status_code == 200
+    assert {"is_visible", "public_visible", "public_consented_at", "public_reconfirm_pending"}.isdisjoint(own.data)
+    assert {"is_visible", "public_visible"}.isdisjoint(own.data["toggles"])
     other = client_for(grace).get(f"/api/v1/profiles/by-account/{ada.pk}/")
     assert other.status_code == 200 and "public_reconfirm_pending" not in other.data

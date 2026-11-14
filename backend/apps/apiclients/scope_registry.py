@@ -97,7 +97,10 @@ def resolve_target(request, entry):
                 return None, False
             target = Makerspace.objects.filter(pk=next(iter(targets))).first()
             return target, target is not None
-        if view_name in {"public-profile", "public-profile-activity", "public-profile-events", "public-profile-projects", "public-profile-github"}:
+        if view_name == "public-profile":
+            from .scope_registry_public_pages import resolve_card_target
+            return resolve_card_target(request, kwargs.get("handle"))
+        if view_name in {"public-profile-activity", "public-profile-events", "public-profile-projects", "public-profile-github"}:
             # Decision 304: the profile is global, so the tenant a machine client is checked against is
             # the person's home space (newest active, servable membership); a client is always the
             # logged-out audience, so the open-web consent still applies.

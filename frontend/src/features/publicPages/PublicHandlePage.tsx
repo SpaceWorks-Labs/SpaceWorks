@@ -12,12 +12,14 @@ import { CanonicalPageRedirect } from "./CanonicalPageRedirect";
 
 export function PublicHandlePage() {
   const { handle = "" } = useParams();
-  const valid = HANDLE_PATTERN.test(handle.toLowerCase());
-  const query = usePageHandle(handle.toLowerCase(), valid);
+  const memberHandle = handle.startsWith("@");
+  const normalized = handle.replace(/^@/, "").toLowerCase();
+  const valid = HANDLE_PATTERN.test(normalized);
+  const query = usePageHandle(normalized, valid && !memberHandle);
   if (!valid) return <NotFoundPage />;
-  // The resolver answers for open-web profiles only (it resolves member handles as a logged-out reader). A signed-in
-  // member may read a profile that is not on the open web, so a 404 here falls through to the profile read, which
-  // applies the real audience rules and renders the one shared not-found page when the viewer may not read it.
+  if (memberHandle) return <PublicProfilePage />;
+  // The shared namespace also contains space and organization pages. Member cards
+  // have their own resolver and retain the legacy /<handle> entry point.
   if (query.data === null || query.error instanceof StructuredApiError && query.error.status === 404) return <PublicProfilePage />;
   // A failed refetch keeps the last resolution; the error state is only for a handle never resolved.
   if (query.error && !query.data) return <CenteredCardLayout state={{ status: "error", error: t`Couldn't load this public page.`, onRetry: () => { void query.refetch(); } }} title={t`Public page`} body="" primary={{ label: t`Try again`, onClick: () => { void query.refetch(); } }} />;

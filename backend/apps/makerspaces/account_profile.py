@@ -7,9 +7,6 @@ when it is available (305c addendum).
 """
 
 from django.db import transaction
-from django.utils import timezone
-from django.utils.translation import gettext
-from rest_framework.exceptions import ValidationError
 
 from apps.accounts.account_kind_guards import require_member_account
 from apps.audit import services as audit
@@ -20,7 +17,7 @@ CONTENT_FIELDS = (
     "headline", "status", "status_note", "institution", "bio", "domains", "skills", "links",
     "interests", "languages", "education",
 )
-SWITCH_FIELDS = ("is_visible", *SECTION_TOGGLES, *ACTIVITY_TOGGLES)
+SWITCH_FIELDS = (*SECTION_TOGGLES, *ACTIVITY_TOGGLES)
 
 
 def display_name_for_user(user):
@@ -78,29 +75,6 @@ def account_profile_for(user):
     return profile
 
 
-def _apply_open_web(profile, data, fields):
-    """`public_visible` is the open-web consent (303b): turning it on needs fresh consent."""
-    if "public_visible" not in data:
-        return
-    if data["public_visible"] and not profile.public_visible:
-        if data.get("publication_consent") is not True:
-            raise ValidationError({"publication_consent": gettext("Fresh consent is required to publish.")})
-        from .account_profile_minors import guardian_consented
-
-        # H4 / decision 336a: a minor cannot open their profile to the web alone; the guardian
-        # consent recorded through the space's guardian flow must be current.
-        if not guardian_consented(profile.user):
-            raise ValidationError({"public_visible": gettext(
-                "A guardian's consent is needed before this profile can be shown on the open web.")})
-        profile.public_consented_at = timezone.now()
-    if data["public_visible"] is False:
-        profile.public_consented_at = None
-    profile.public_visible = data["public_visible"]
-    # Any explicit open-web choice answers the merge's re-confirmation request (decision 335c).
-    profile.public_reconfirm_pending = False
-    fields += ["public_visible", "public_consented_at", "public_reconfirm_pending"]
-
-
 @transaction.atomic
 def save_profile(user, data, *, makerspace=None):
     """Apply a partial update; a `projects` list replaces the project list."""
@@ -108,14 +82,12 @@ def save_profile(user, data, *, makerspace=None):
     account_profile_for(user)
     profile = AccountProfile.objects.select_for_update().get(user=user)
     before = {name: getattr(profile, name) for name in SWITCH_FIELDS}
-    public_before = profile.public_visible
     project_count_before = profile.projects.count()
     fields = []
     for field in (*CONTENT_FIELDS, *SWITCH_FIELDS):
         if field in data:
             setattr(profile, field, data[field])
             fields.append(field)
-    _apply_open_web(profile, data, fields)
     if "github_username" in data and data["github_username"].strip() != profile.github_username:
         # A new username invalidates the cached count outright: leaving the previous account's total
         # under someone else's name would be a false claim, not stale data.
@@ -138,13 +110,10 @@ def save_profile(user, data, *, makerspace=None):
         user, "member.profile_updated", makerspace=makerspace, target=user,
         meta={
             "fields": sorted(set(fields)),
-            "visibility_changed": before["is_visible"] != profile.is_visible,
-            "is_visible": profile.is_visible,
             "sections_changed": sections,
             "attended_events_shown": profile.show_events,
             "attended_events_changed": "show_events" in sections,
             "certifications_shown": profile.show_certifications,
-            "open_web_changed": public_before != profile.public_visible,
             "projects_before": project_count_before,
             "projects_after": profile.projects.count(),
         },

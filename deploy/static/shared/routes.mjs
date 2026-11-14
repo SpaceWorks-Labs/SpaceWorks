@@ -27,6 +27,8 @@ export function route(path, userAgent = '') {
     if (event) return { kind: 'proxy', path: `/share/events/${event[1]}/` };
     const booking = path.match(new RegExp(`^/(?:m/[^/]+/)?bookings/(${UUID})/?$`));
     if (booking) return { kind: 'proxy', path: `/share/bookings/${booking[1]}/` };
+    const member = path.match(/^\/@([a-z0-9](?:[a-z0-9._-]{1,28}[a-z0-9]))\/?$/i);
+    if (member) return { kind: 'proxy', path: `/share/profiles/${member[1]}/` };
     const handle = path.match(/^\/([a-z0-9](?:[a-z0-9._-]{1,28}[a-z0-9]))\/?$/);
     if (handle && !RESERVED.has(handle[1])) return { kind: 'proxy', path: `/share/pages/${handle[1]}/` };
   }

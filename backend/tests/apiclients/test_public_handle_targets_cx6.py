@@ -1,4 +1,4 @@
-"""Handle resolution uses live public visibility and distinguishes global from tenant targets."""
+"""Handle resolution keeps organization publication and decision 549 personal-card targets."""
 from types import SimpleNamespace
 
 import pytest
@@ -45,7 +45,7 @@ def test_global_organization_target_is_tagged_and_its_tenantless_identity_is_exp
 
 
 @pytest.mark.parametrize("with_membership", [True, False])
-def test_live_person_target_uses_its_home_space_and_never_claims_to_be_global(public_request, with_membership):
+def test_live_person_target_uses_its_home_space_or_is_explicitly_global(public_request, with_membership):
     user = person("cx6-public-handle")
     space = Makerspace.objects.create(name="Handle home", slug="cx6-handle-home")
     if with_membership:
@@ -54,9 +54,14 @@ def test_live_person_target_uses_its_home_space_and_never_claims_to_be_global(pu
     PublicHandle.objects.create(user=user, handle="cx6.person", changed_at=timezone.now())
     match = SimpleNamespace(kwargs={"handle": "cx6.person"})
     target, resolved = resolve_handle_target(public_request, match)
-    assert (target.kind, target.pk, resolved, is_global_target(target)) == (
-        "tenant", space.pk if with_membership else None, True, False)
+    # Decision 549: every live personal handle resolves, including accounts without a home space.
+    expected = ("tenant", space.pk, True, False) if with_membership else ("global", None, True, True)
+    assert (target.kind, target.pk, resolved, is_global_target(target)) == expected
     AccountProfile.objects.filter(user=user).update(public_visible=False)
+    # Decision 549: a retained historical opt-out cannot hide the always-on public card.
+    target, resolved = resolve_handle_target(public_request, match)
+    assert (target.kind, target.pk, resolved, is_global_target(target)) == expected
+    match = SimpleNamespace(kwargs={"handle": "cx6.missing"})
     with pytest.raises(NotFound) as error:
         resolve_handle_target(public_request, match)
     assert (error.value.status_code, error.value.get_codes()) == (404, "not_found")

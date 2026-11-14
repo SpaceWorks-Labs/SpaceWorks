@@ -68,7 +68,6 @@ class ProjectWriteSerializer(serializers.Serializer):
 
 
 class ProfileWriteSerializer(PublicationWriteSerializer):
-    is_visible = serializers.BooleanField(required=False)
     show_attended_events = serializers.BooleanField(required=False)
     show_certifications = serializers.BooleanField(required=False)
     headline = serializers.CharField(max_length=200, required=False, allow_blank=True)
@@ -123,11 +122,9 @@ class ProfileActivitySerializer(serializers.Serializer):
 
 class ProfileReadSerializer(PublicationWriteSerializer):
     verified = serializers.BooleanField()
-    public_consented_at = serializers.DateTimeField(allow_null=True)
     handle = serializers.CharField(allow_null=True)
     membership_id = serializers.IntegerField()
     display_name = serializers.CharField()
-    is_visible = serializers.BooleanField()
     show_attended_events = serializers.BooleanField()
     show_certifications = serializers.BooleanField()
     certifications = serializers.ListField(child=serializers.CharField())

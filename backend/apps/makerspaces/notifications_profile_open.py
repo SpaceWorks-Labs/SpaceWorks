@@ -24,16 +24,13 @@ def _version(profile):
 
 @safe_adapter
 def notify_opened(profile, space):
-    reconfirm = profile.public_reconfirm_pending
-
     def own():  # built in the recipient's language by emit()
-        text = gettext("Member profiles are now open by default for signed-in users. You can hide your whole "
-                       "profile or any section in your profile settings.")
-        if reconfirm:
-            # Decision 335c: the merge switched the open web off; ask once to confirm it again.
-            text += " " + gettext("Your profiles from different spaces were combined into one, so publishing it "
-                                  "on the open web is off until you confirm it again in your profile settings.")
-        return {"subject": gettext("Your profile is now visible to other members"), "text": text,
+        # 549: historical reconfirmation flags no longer control the public card.
+        text = gettext("Your public profile is always available when you have a handle. It shows your name, "
+                       "avatar, chosen bio and published projects, and eligible public memberships. "
+                       "You can edit your bio and choose which projects to publish in your profile settings. "
+                       "Minors and restricted or suspended accounts show only their name and avatar.")
+        return {"subject": gettext("Your public profile is available"), "text": text,
                 "link": local_link(space, "member")}
     return fanout(space=space, feature="members", stream="membership", event=EVENT, kind=KIND,
                   source=profile.pk, version=_version(profile), subject=profile, owner=profile.user,

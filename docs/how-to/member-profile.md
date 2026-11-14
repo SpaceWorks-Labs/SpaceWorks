@@ -1,71 +1,42 @@
 ---
-title: The global member profile
+title: The public profile
 group: How-to guides
 order: 230
-summary: One profile per account that every signed-in member can see by default, what goes on it, who sees what, and how the old per-space profiles were merged.
+summary: Your always-on public account card, published projects and public-space memberships.
 ---
 
-# The global member profile
+# The public profile
 
-Every person has **one profile for their whole account**, not one per space. It is addressed by their username, for example `/ada`, and reads like a short CV: who they are, what they have done and what they have built. This page explains what is on it, who can see it and what is never shown. Members edit it under **Account, Profile**; the member's own steps are in the [member user guide](../user-guides/member.md).
+Every account with a handle has one public profile at `/@<handle>`, for example `/@ada`. Anyone can open it without signing in. The old `/ada` address continues to work. There is no switch to take the profile offline.
 
-## Who sees it
+## What visitors see
 
-| Viewer | What they see |
-| --- | --- |
-| The person | Everything, even sections switched off |
-| Any signed-in member, in any space | The profile and the sections that are switched on |
-| Someone who is not signed in | Nothing, unless the person turned on the **open web** switch |
+The public card shows your display name, avatar, bio and projects you chose to publish. It also lists each public space where you are an active member, with your role title and membership start date. Private or directory-hidden spaces, paused or archived spaces and revoked memberships are omitted, including when you view your own public page.
 
-- **Visible on the platform by default.** A profile is open to every signed-in user, like a username. The person can hide the whole profile, or any section.
-- **The open web is a separate choice.** Letting logged-out visitors, search engines and share cards see the profile is off until the person turns it on and gives fresh consent. Turning it off takes it offline straight away.
-- **A hidden profile looks like a missing one.** A hidden profile, one that does not exist and one belonging to a restricted or suspended account all give the same "not found", so nobody can tell them apart.
+Minors and restricted or suspended accounts show **only their display name and avatar**. Their bio, projects and memberships are absent.
 
-## What goes on a profile
+Contact details, internal account or row identifiers, loans, payments, evidence and audit records never appear.
 
-Each item has its own show switch, and all start on.
+## Edit your card
 
-- **Status.** A preset (Student, Working, Freelancing, Looking for work, Open to collaborate, Building a startup, Other) with an optional line of up to 120 characters.
-- **About.** Headline, institution and a short bio.
-- **Experience, education and volunteering.** Dated entries with a title, organisation, place and description. Volunteering follows the experience switch.
-- **Achievements.** Two kinds, always labelled so a reader can tell them apart:
-  - **Verified**: added by SpaceWorks from real records. These are placings and prizes from published hackathon results (including People's choice), roles such as judge, mentor or speaker, and events attended. Each says which space verified it.
-  - **Self-reported**: things the person types in themselves (title, who issued it, date, link, description), always marked "self-reported".
-- **Projects.** Projects the person types in, or a project imported from one of their own hackathon submissions, which copies the title, summary and links and stays linked back.
-- **Skills, domains, links, interests and languages.** Links must start with `https://`.
-- **Spaces and organizations.** Every space and organization the person is an active member of, with their role title when it is a standard one.
-- **Vouched by.** People who vouched for them, shown as names only when those people also have a readable profile. Everyone else is counted, not named.
-- **GitHub and the activity graph.** An optional daily-count graph of activity across the person's spaces (projects, events, and optionally speaking, machine jobs, bookings and loans), with a GitHub contribution calendar beside it when a GitHub username is entered. The graph shows counts only, never what happened.
-- **Events attended and certifications**, built from the person's records.
+1. Open **Account**, then **Profile**.
+2. Under **Public profile**, choose or check your handle. Select **View public profile** to open the public card.
+3. Upload an avatar and edit your bio. **Show my bio** controls the bio section.
+4. Add projects and choose which ones to show. The projects section switch also controls their publication. Project links must use HTTPS.
+5. Save your changes. Memberships update from your active membership records; they have no publication switch.
 
-## What is never shown
+Your account editor can hold richer profile information for authenticated features. Those fields are not added to the public card. A space's member directory remains a separate, scoped surface.
 
-Whatever the switches say, a profile never shows:
+## Existing data and operators
 
-- attendance at private, invite-only or unlisted events;
-- results that are unpublished or withdrawn (a corrected result follows the latest publication);
-- anything from a space where the person is restricted or suspended or their membership has been revoked, and a restricted or suspended account's profile is hidden entirely;
-- email address, phone number or any other contact detail;
-- spaces that the platform has hidden or archived (they are not named).
+Existing profile content, projects and historical visibility/consent values are kept. The old visibility values do not hide the public card and are no longer editable through profile APIs or the UI. No data migration is required.
 
-Roles and attendance from a space appear only when the viewer is allowed to see that space's information; published public hackathon results from any space may appear because they are already public.
+The public card is an account feature and works without a membership or enabled tenant module. A membership is listed only when that space's public site and membership module are enabled; turning either off hides the listing without deleting data. Restoring them restores eligible listings. Host and browser-origin tenant fences and public request limits still apply; responses use `Cache-Control: no-store` so privacy changes take effect on the next read.
 
-A space's **member directory** is separate. It lists only that space's own members and shows just a name, headline and picture.
-
-## Moving from per-space profiles
-
-Earlier releases kept a profile for each membership. On upgrade, SpaceWorks builds one global profile per account from the most recently updated old profile and merges in the experience, projects, skills and links from the others, removing duplicates. The old rows are kept, read-only, and nothing is deleted in this release. Existing usernames keep working.
-
-People whose profile had never been changed on purpose now get the new default (visible on the platform) and receive a one-time in-app notice that links to their profile settings. Anyone who had deliberately hidden their profile keeps it hidden.
-
-## For operators
-
-- The profile belongs to the **account**, not to a space. It travels with an account export and with the account if it is merged, and a space move carries only that space's directory entries.
-- Profiles are part of the Membership area (`membership` module), which lists them under join requests, referrals, profiles, directory and cards. See [Memberships](../modules/memberships.md#the-global-member-profile).
-- The profile address is the member's **username**; see [Usernames](usernames.md).
+Profiles remain account-owned, outside per-space PII encryption and tenant dumps. Contact and guardian details retain their existing private storage rules. A public profile grants no staff or tenant permissions.
 
 ## See also
 
 - [Usernames](usernames.md)
 - [Memberships](../modules/memberships.md)
-- [Let people check in by location](presence-check-in.md) for how profiles appear in "Here now"
+- [Let people check in by location](presence-check-in.md)

@@ -90,10 +90,11 @@ describe("handle claim", () => {
 });
 
 describe("publication", () => {
-  it("defaults the platform switch on, the open web off, and every section on", async () => {
+  it("always publishes the card without master switches, and keeps content choices", async () => {
     show();
-    expect(await screen.findByRole("switch", { name: "Show my profile on the platform" })).toBeChecked();
-    expect(screen.getByRole("switch", { name: /Also show it on the open web/ })).not.toBeChecked();
+    await screen.findByText("Public profile");
+    expect(screen.queryByRole("switch", { name: "Show my profile on the platform" })).toBeNull();
+    expect(screen.queryByRole("switch", { name: /Also show it on the open web/ })).toBeNull();
     for (const name of ["Show my status", "Show my bio", "Show my projects", "Show my skills", "Show my links", "Show my achievements", "Show education"]) expect(screen.getByRole("switch", { name })).toBeChecked();
   });
 
@@ -114,7 +115,7 @@ describe("publication", () => {
     await waitFor(() => expect(patches().at(-1)).toMatchObject({ github_username: "ada" }));
   });
 
-  it("saves the platform master switch on its own", async () => {
+  it.skip("retired in decision 549: saves the platform master switch on its own", async () => {
     show(); fireEvent.click(await screen.findByRole("switch", { name: "Show my profile on the platform" }));
     await waitFor(() => expect(patches()).toEqual([{ is_visible: false }]));
   });
@@ -124,14 +125,14 @@ describe("publication", () => {
     await waitFor(() => expect(patches()).toEqual([{ show_skills: false }]));
   });
 
-  it("cannot turn the open web on before a handle is chosen", async () => {
+  it.skip("retired in decision 549: cannot turn the open web on before a handle is chosen", async () => {
     current = { ...profile, handle: null };
     show();
     expect(await screen.findByRole("switch", { name: /Also show it on the open web/ })).toBeDisabled();
     expect(screen.getByText(/Choose your handle first/)).toBeVisible();
   });
 
-  it("requires a fresh, explicit consent tick and records it with the switch", async () => {
+  it.skip("retired in decision 549: requires a fresh, explicit consent tick and records it with the switch", async () => {
     show(); fireEvent.click(await screen.findByRole("switch", { name: /Also show it on the open web/ }));
     const dialog = within(await screen.findByRole("dialog"));
     const confirm = dialog.getByRole("button", { name: "Show on the open web" });
@@ -142,7 +143,7 @@ describe("publication", () => {
     await waitFor(() => expect(patches()).toEqual([{ public_visible: true, publication_consent: true }]));
   });
 
-  it("starts the consent box unticked every time", async () => {
+  it.skip("retired in decision 549: starts the consent box unticked every time", async () => {
     show(); fireEvent.click(await screen.findByRole("switch", { name: /Also show it on the open web/ }));
     fireEvent.click(within(await screen.findByRole("dialog")).getByRole("checkbox"));
     fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Cancel" }));
@@ -152,7 +153,7 @@ describe("publication", () => {
     expect(patches()).toEqual([]);
   });
 
-  it("turns the open web off after confirming, without sending consent", async () => {
+  it.skip("retired in decision 549: turns the open web off after confirming, without sending consent", async () => {
     current = { ...profile, public_visible: true, public_consented_at: "2026-10-01T00:00:00Z" };
     show(); fireEvent.click(await screen.findByRole("switch", { name: /Also show it on the open web/ }));
     fireEvent.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Turn off" }));

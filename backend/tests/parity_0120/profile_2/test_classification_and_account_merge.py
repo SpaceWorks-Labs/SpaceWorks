@@ -29,7 +29,8 @@ def test_user_fk_has_a_merge_disposition():
 def test_directory_lists_only_space_members_with_name_headline_avatar(ada, grace, space_a, stranger):
     account_profile_for(ada)
     save_profile(ada, {"headline": "Engines"})
-    save_profile(grace, {"is_visible": False})
+    # Decision 549: retained directory hiding is seeded as historical state, not a retired write.
+    AccountProfile.objects.filter(pk=account_profile_for(grace).pk).update(is_visible=False)
     result = directory(space_a)
     assert [m["display_name"] for m in result["members"]] == ["Ada"]
     assert set(result["members"][0]) == {"membership_id", "display_name", "headline", "avatar_url"}

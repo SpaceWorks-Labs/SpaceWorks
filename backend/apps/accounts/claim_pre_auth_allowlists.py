@@ -40,6 +40,12 @@ POLICY_OVERRIDE_ALLOWLIST = {
         "authenticate",
         "_authenticate_claim",
     },
+    # Decision 549: verified sessions identify abuse budgets; failed sessions fall back
+    # to the same anonymous card. Inherits the central claim hook, granting no tenant authority.
+    "apps.makerspaces.public_profile_views.OptionalCardAuthentication": {
+        "authenticate",
+        "_authenticate_claim",
+    },
     "apps.accounts.throttles.DeviceLoginThrottle": {"get_cache_key"},
     "apps.accounts.throttles.DeviceLoginUserThrottle": {"get_cache_key"},
     # Native social linking keys its budget only for device-grant POSTs.

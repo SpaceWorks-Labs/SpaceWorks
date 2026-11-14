@@ -7,7 +7,7 @@ import { asVisitor, GlobalProfileView } from "../view/GlobalProfileView";
 export function ProfilePreviewDialog({ open, onClose, profile }: { open: boolean; onClose: () => void; profile: AccountProfile }) {
   return <Modal open={open} onClose={onClose} size="xl" title={t`Preview: what other members see`}>
     <p className="mb-6 rounded-control bg-info-soft p-3 text-sm text-info-ink">
-      {t`Built from your saved profile. Save any edits first. Logged-out visitors see the same sections only if you turned on the open web.`}</p>
+      {t`Built from your saved profile. Save any edits first. Your public card shows only your name, avatar, bio, published projects and eligible memberships.`}</p>
     {open ? <GlobalProfileView profile={asVisitor(profile)} preview /> : null}
   </Modal>;
 }

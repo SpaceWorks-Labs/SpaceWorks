@@ -58,9 +58,11 @@ def test_vouches_are_named_only_for_readable_vouchers_and_open_web_needs_their_c
     assert vouches_for(ada, "member")["vouched_by"] == [
         {"handle": "voucher-v", "display_name": "Voucher-V", "space_name": space_a.name}]
     assert vouches_for(ada, "public")["vouched_by"] == []  # voucher has not opened to the open web
-    save_profile(voucher, {"public_visible": True, "publication_consent": True})
+    # Decision 549: explicit historical state for the narrower voucher consent predicate.
+    AccountProfile.objects.filter(pk=account_profile_for(voucher).pk).update(
+        public_visible=True, public_consented_at=timezone.now())
     assert len(vouches_for(ada, "public")["vouched_by"]) == 1
-    save_profile(voucher, {"is_visible": False})
+    AccountProfile.objects.filter(user=voucher).update(is_visible=False)  # 549: retained legacy gate
     assert vouches_for(ada, "member")["vouched_by"] == []
 
 

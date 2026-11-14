@@ -70,7 +70,7 @@ def read_profile(membership, *, include_activity=True, local_activity_only=False
     github_verified = bool(profile.pk and _verified(profile))
     payload = {
         "verified": membership.verified_at is not None, "membership_id": membership.pk,
-        "display_name": display_name_for(membership), "is_visible": profile.is_visible,
+        "display_name": display_name_for(membership),
         "show_attended_events": profile.show_events, "show_certifications": profile.show_certifications,
         "certifications": certifications, "headline": profile.headline, "institution": profile.institution,
         "bio": profile.bio, "avatar_url": public_image_storage.public_url(profile.avatar_key) or None,
@@ -84,7 +84,6 @@ def read_profile(membership, *, include_activity=True, local_activity_only=False
                       "links": p.links or [], "image_url": public_image_storage.public_url(p.image_key) or None,
                       "imported": p.source_submission_id is not None} for p in projects],
         "activity": profile_activity(membership, local_only=local_activity_only) if include_activity else {},
-        "public_visible": profile.public_visible, "public_consented_at": profile.public_consented_at,
         "show_events": profile.show_events, "show_projects": profile.show_projects,
         "domains": profile.domains or [], "skills": profile.skills or [], "links": profile.links or [],
         "handle": handle,

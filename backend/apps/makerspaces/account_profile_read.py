@@ -150,9 +150,6 @@ def build_payload(profile, audience, viewer=None):
             payload["account_id"] = None
     if owner:
         payload.update({
-            "is_visible": profile.is_visible, "public_visible": profile.public_visible,
-            "public_consented_at": profile.public_consented_at,
-            "public_reconfirm_pending": profile.public_reconfirm_pending,
             "toggles": {name: getattr(profile, name) for name in SWITCH_FIELDS},
         })
     return payload

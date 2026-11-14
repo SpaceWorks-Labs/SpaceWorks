@@ -23,8 +23,6 @@ class SkillSerializer(serializers.Serializer):
 
 
 class PublicationWriteSerializer(serializers.Serializer):
-    public_visible = serializers.BooleanField(required=False)
-    publication_consent = serializers.BooleanField(required=False, write_only=True)
     show_activity_graph = serializers.BooleanField(required=False)
     show_events = serializers.BooleanField(required=False)
     show_speaking = serializers.BooleanField(required=False)
@@ -53,20 +51,13 @@ class TimelineWriteSerializer(serializers.ModelSerializer):
 
 
 PUBLICATION_FIELDS = (
-    "public_visible", "show_activity_graph", "show_events", "show_speaking", "show_projects",
+    "show_activity_graph", "show_events", "show_speaking", "show_projects",
     "show_machine_activity", "show_bookings", "show_loans", "domains", "skills", "links",
 )
 
 
 def apply_publication(profile, data):
-    from django.utils import timezone
-    if data.get("public_visible") and not profile.public_visible:
-        if data.get("publication_consent") is not True:
-            raise serializers.ValidationError({"publication_consent": gettext("Fresh consent is required to publish.")})
-        profile.public_consented_at = timezone.now()
-    if data.get("public_visible") is False:
-        profile.public_consented_at = None
     for field in PUBLICATION_FIELDS:
         if field in data:
             setattr(profile, field, data[field])
-    profile.save(update_fields=[*PUBLICATION_FIELDS, "public_consented_at", "updated_at"])
+    profile.save(update_fields=[*PUBLICATION_FIELDS, "updated_at"])

@@ -26,12 +26,16 @@ def build_object_ownership_plan():
     rules_by_model = {rule.model._meta.label: rule for rule in table_rules()}
     references = []
     for rule in validate_object_reference_registry():
+        # Deployment-local cleanup locators cannot assert byte-retention state.
+        # Canonical domain references independently supply live bytes or tombstones.
+        if rule.model_label == "makerspaces.StorageQuotaReservation":
+            continue
         model = apps.get_model(rule.model_label)
         table_rule = rules_by_model[rule.model_label]
         owner_lookup = _owner_lookup(table_rule)
         query_fields = ["pk", rule.field_name]
         if rule.bucket == BucketRule.FROM_ROW:
-            query_fields.append("bucket_kind")
+            query_fields.append(rule.bucket_name_field or "bucket_kind")
         if owner_lookup and owner_lookup not in query_fields:
             query_fields.append(owner_lookup)
         if rule.coordination_path and rule.coordination_path not in query_fields:
@@ -55,7 +59,7 @@ def build_object_ownership_plan():
             key = str(raw_key)
             if not key:
                 continue
-            bucket = row["bucket_kind"] if rule.bucket == BucketRule.FROM_ROW else rule.bucket
+            bucket = rule.bucket_for(row)
             if bucket not in {"private", "public_image"}:
                 raise BackupBuildError("An object reference has an unsupported bucket kind.")
             owner_id = row.get(owner_lookup) if owner_lookup else None

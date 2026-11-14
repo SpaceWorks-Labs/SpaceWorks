@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from enum import StrEnum
 
 from django.apps import apps
+from django.conf import settings
 
 from apps.backup.archive_objects import OBJECT_FIELD_NAMES
 from apps.backup.build_errors import BackupBuildError
@@ -30,11 +31,43 @@ class FieldObjectRule:
     coordination_path: str | None = None
     coordination_reason: str = ""
     retention_aware: bool = False
+    # FROM_ROW normally stores a logical bucket_kind. Some cleanup receipts
+    # instead pin the physical bucket name separately for each key.
+    bucket_name_field: str | None = None
+
+    def bucket_filter(self, kind):
+        if self.bucket_name_field:
+            names = {BucketRule.PRIVATE: settings.AWS_STORAGE_BUCKET_NAME,
+                     BucketRule.PUBLIC_IMAGE: settings.PUBLIC_IMAGE_BUCKET}
+            return {self.bucket_name_field: names[kind]}
+        return {"bucket_kind": kind}
+
+    def bucket_for(self, row):
+        if self.bucket != BucketRule.FROM_ROW:
+            return self.bucket
+        if not self.bucket_name_field:
+            return row["bucket_kind"]
+        matches = [kind for kind in (BucketRule.PRIVATE, BucketRule.PUBLIC_IMAGE)
+                   if row[self.bucket_name_field] == self.bucket_filter(kind)[self.bucket_name_field]]
+        if len(matches) != 1:
+            raise BackupBuildError("An object reference has an unsupported or ambiguous physical bucket.")
+        return matches[0]
 
 
 # Literal, field-specific declarations are intentional. The equality guard below
 # makes adding an object-bearing concrete field a preflight failure.
 FIELD_OBJECT_RULES = (
+    # Deployment-local quota and cleanup debt, never portable upload authority.
+    # Original and normalized finals share final_bucket; staging may be separate.
+    FieldObjectRule("makerspaces.StorageQuotaReservation", "object_key", BucketRule.FROM_ROW,
+                    ReferencePolicy.COORDINATION_ONLY, coordination_path="makerspace_id",
+                    coordination_reason="staged_object_quota_cleanup_debt", bucket_name_field="final_bucket"),
+    FieldObjectRule("makerspaces.StorageQuotaReservation", "final_key", BucketRule.FROM_ROW,
+                    ReferencePolicy.COORDINATION_ONLY, coordination_path="makerspace_id",
+                    coordination_reason="staged_object_quota_cleanup_debt", bucket_name_field="final_bucket"),
+    FieldObjectRule("makerspaces.StorageQuotaReservation", "staging_key", BucketRule.FROM_ROW,
+                    ReferencePolicy.COORDINATION_ONLY, coordination_path="makerspace_id",
+                    coordination_reason="staged_object_quota_cleanup_debt", bucket_name_field="bucket"),
     FieldObjectRule("accounts.AccountPurgeObject", "object_key", BucketRule.PUBLIC_IMAGE,
                     ReferencePolicy.COORDINATION_ONLY,
                     coordination_path="makerspace_id",

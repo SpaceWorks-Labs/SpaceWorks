@@ -145,6 +145,7 @@ ENTRIES += (
     P('storage.bucket_binding_migrated', gettext_noop('Storage binding migrated'), ('receipt_id', 'inventory_sha256', 'role')),
     P('storage.bucket_handoff_resumed', gettext_noop('Storage handoff resumed'), ('receipt_id',)),
     P('storage.reservations_reconciled', gettext_noop('Storage reservations reconciled'), ('reservations', 'drain_generation')),
+    P('storage.upload_reservation_released', gettext_noop('Upload storage reservation released'), ('reserved_bytes', 'converted')),
     P('deployment.managed_adopted', gettext_noop('Deployment managed adopted'), ('profile',)),
     P('deployment.managed_initialized', gettext_noop('Deployment managed initialized'), ('profile',)),
     P('email.budget_deferred', gettext_noop('Email budget deferred'), ()),

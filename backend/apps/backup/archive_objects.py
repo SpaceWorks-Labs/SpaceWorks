@@ -13,7 +13,7 @@ OBJECT_FIELD_NAMES = frozenset({
     "logo_key",
     "photo_object_key",
     "branding_logo_key",
-    "staging_key", "verification_key",
+    "staging_key", "verification_key", "final_key",
 })
 
 NON_OBJECT_KEY_FIELDS = frozenset({
@@ -42,6 +42,8 @@ NON_OBJECT_KEY_FIELDS = frozenset({
     ("integrations.EmailProviderWebhookReceipt", "event_key"),
     # Notification intent and delivery-target identities, never bucket locators.
     ("integrations.NotificationEnvelope", "dedup_key"),
+    # Document dispatch identity, never an object-storage locator.
+    ("integrations.DocumentEmailIntent", "intent_key"),
     ("integrations.NotificationDelivery", "target_key"),
     # UUID identifying one inbox fan-out, never a bucket locator.
     ("notifications.NotificationInboxRow", "event_key"),

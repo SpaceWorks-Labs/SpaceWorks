@@ -106,7 +106,7 @@ def _assert_no_application_references(role):
         model = apps.get_model(rule.model_label)
         rows = model._base_manager.exclude(**{rule.field_name: ""}).exclude(**{rule.field_name: None})
         if rule.bucket == BucketRule.FROM_ROW:
-            rows = rows.filter(bucket_kind=role)
+            rows = rows.filter(**rule.bucket_filter(role))
         if rule.retention_aware:
             rows = rows.exclude(object_retention_state__status="expired",
                                 object_retention_state__object_expired_at__isnull=False)

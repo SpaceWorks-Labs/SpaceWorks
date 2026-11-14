@@ -12,6 +12,7 @@ from rest_framework.views import APIView
 from apps.accounts.authentication import SpaceWorksJWTAuthentication
 from apps.accounts import rbac
 from apps.admin_api.permissions import IsActiveStaff, require_action
+from apps.core.db import sqlstate
 from apps.inventory.equipment_kit_serializers import (
     KitArchiveInput, KitCreateInput, KitDetail, KitPublicationInput, KitSummary, KitSummaryPage, KitVersionInput,
 )
@@ -53,7 +54,7 @@ def _call(function, **kwargs):
     except DjangoValidationError as exc:
         raise ValidationError(gettext("Invalid kit.")) from exc
     except DatabaseError as exc:
-        if (getattr(exc.__cause__, "sqlstate", None) or getattr(exc.__cause__, "pgcode", None)) == "55P03":
+        if sqlstate(exc) == "55P03":
             raise RevisionConflict(gettext("Kit is busy; retry.")) from exc
         raise
 

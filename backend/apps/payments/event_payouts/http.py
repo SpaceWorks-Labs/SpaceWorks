@@ -12,6 +12,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.exceptions import NotFound
 from apps.makerspaces.private_upload_transport import PrivateTransportError
 from apps.encryption.crypto import PiiUnavailable
+from apps.core.db import sqlstate
 from .attachment_content import ContentError
 from django.db import IntegrityError
 
@@ -30,7 +31,7 @@ class PrivateView(APIView):
             exc = PayoutError(getattr(exc, "code", "finance_data_unavailable"), status=getattr(exc, "status_code", 503))
         elif isinstance(exc, IntegrityError):
             cause = exc.__cause__
-            if getattr(cause, "sqlstate", None) == "23505":
+            if sqlstate(exc) == "23505":
                 constraint = getattr(getattr(cause, "diag", None), "constraint_name", "") or ""
                 # A UUID collision across different locked hosts/obligations can
                 # reach the unique backstop. Never echo a constraint/SQL value.

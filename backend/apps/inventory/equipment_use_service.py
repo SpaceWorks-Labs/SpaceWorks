@@ -10,6 +10,7 @@ from apps.accounts import rbac
 from apps.accounts.models import User
 from apps.accounts.loan_context_identity import borrower_aliases
 from apps.admin_api.permissions import require_action
+from apps.core.db import sqlstate
 from apps.encryption.write_fence import assert_mapped_write_allowed
 from apps.encryption.tenant_preparation import prepare_tenant_key, tenant_key_context
 from apps.hardware_requests.loan_context_access import authorized_request_queryset
@@ -99,7 +100,7 @@ def linked_use(**kwargs):
                         raise
                     return _linked_use(**kwargs)
             except DatabaseError as exc:
-                if (getattr(exc.__cause__, "sqlstate", None) or getattr(exc.__cause__, "pgcode", None)) == "55P03":
+                if sqlstate(exc) == "55P03":
                     raise UseConflict("lock_busy") from exc
                 raise
 

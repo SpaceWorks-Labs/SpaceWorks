@@ -5,6 +5,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import APIException, NotFound
 from apps.accounts import rbac
 from apps.audit import services as audit
+from apps.core.db import sqlstate
 from apps.encryption.write_fence import assert_mapped_write_allowed
 from apps.hardware_requests.loan_context_access import require_request_actor, safe_id
 from apps.hardware_requests.models import HardwareRequest
@@ -175,6 +176,6 @@ def mutate(actor, req, payload, *, delete=False, intended=None):
             result["generation"] = _generation(space)
             return result
     except DatabaseError as exc:
-        if (getattr(exc.__cause__, "sqlstate", None) or getattr(exc.__cause__, "pgcode", None)) == "55P03":
+        if sqlstate(exc) == "55P03":
             raise LockBusy(gettext("Context is busy; retry after reloading.")) from exc
         raise

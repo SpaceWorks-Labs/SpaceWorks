@@ -5,6 +5,7 @@ from rest_framework.exceptions import APIException, NotFound
 
 from apps.accounts.loan_context_identity import borrower_aliases
 from apps.audit.services import record
+from apps.core.db import sqlstate
 from apps.makerspaces.guards import require_module_locked
 from apps.makerspaces.loan_context_generations import validate_generations
 from .booking_decision_access import authorized_booking, authorized_event
@@ -93,7 +94,7 @@ def create_decision(actor, maker, event_id, *, booking_id, operation_id, expecte
             if attempt:
                 raise DecisionConflict("lock_busy") from None
         except DatabaseError as exc:
-            if getattr(exc.__cause__, "sqlstate", None) in {"55P03", "40P01"}:
+            if sqlstate(exc) in {"55P03", "40P01"}:
                 raise DecisionConflict("lock_busy") from None
             raise
     raise DecisionConflict("lock_busy")

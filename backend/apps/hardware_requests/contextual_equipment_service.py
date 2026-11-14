@@ -9,6 +9,7 @@ from apps.accounts.account_obligations import lock_obligation_owner
 from apps.accounts.loan_context_identity import borrower_aliases, borrower_survivor
 from apps.accounts.models import User
 from apps.accounts.staff_identity import is_person, is_platform
+from apps.core.db import sqlstate
 from apps.encryption.write_fence import assert_mapped_write_allowed
 from apps.encryption.tenant_preparation import holds_tenant_key, prepare_tenant_key, tenant_key_context
 from apps.hardware_requests.request_submission_locked import submit_locked
@@ -128,6 +129,6 @@ def create_pending(**kwargs):
                         raise
                     return _create_pending(**kwargs)
             except DatabaseError as exc:
-                if (getattr(exc.__cause__, "sqlstate", None) or getattr(exc.__cause__, "pgcode", None)) == "55P03":
+                if sqlstate(exc) == "55P03":
                     raise ProposalConflict("lock_busy") from exc
                 raise

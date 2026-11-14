@@ -1,6 +1,7 @@
 """Persist in the caller's transaction; broker failure leaves a recoverable intent."""
 import json
 import logging
+from datetime import timedelta
 
 from django.db import transaction
 from django.utils import timezone
@@ -10,6 +11,35 @@ from .dispatch_policy import never_deferred
 from .models_contract import NotificationEnvelope
 
 logger = logging.getLogger(__name__)
+
+
+def mark_processed(envelope):
+    if envelope.source_kind != "payments.document" or envelope.event != "document_issued":
+        NotificationEnvelope.objects.filter(pk=envelope.pk).update(processed_at=timezone.now())
+        return
+    from .document_email_state import decide, envelope_identity
+    # Reservation already persisted its observed result, including disabled-without-owner.
+    # Never sample a switch at completion, and never acknowledge a newer generation.
+    decide(**envelope_identity(envelope), event="complete",
+        generation=getattr(envelope, "_document_dispatch_epoch", -1),
+        defer=lambda: NotificationEnvelope.objects.filter(pk=envelope.pk,
+            makerspace_id=envelope.makerspace_id, processed_at__isnull=True).update(
+                available_at=timezone.now() + timedelta(minutes=5)),
+        perform=lambda: NotificationEnvelope.objects.filter(pk=envelope.pk,
+            makerspace_id=envelope.makerspace_id, processed_at__isnull=True).update(processed_at=timezone.now()))
+
+
+def reemit_disabled(envelope):
+    if envelope.source_kind != "payments.document" or envelope.event != "document_issued":
+        return False
+    from .document_email_state import decide, envelope_identity, live_reason
+    from .notification_resolution import resolve
+    decision = decide(**envelope_identity(envelope), event="approve",
+        reason=lambda: live_reason(envelope.makerspace, envelope.recipient),
+        eligible=lambda: any(target.channel == "email" for target in resolve(envelope)),
+        perform=lambda: NotificationEnvelope.objects.filter(pk=envelope.pk,
+            makerspace_id=envelope.makerspace_id).update(processed_at=None))
+    return decision.allowed
 
 
 def enqueue(envelope_id):
@@ -25,7 +55,7 @@ def enqueue(envelope_id):
 
 def emit(*, makerspace, recipient, feature, stream, event, audience, dedup_key,
          source_kind, source_id, revision="1", subject=None, scope=None, context=None,
-         rendered=None, timing_policy="immediate", available_at=None):
+         rendered=None, timing_policy="immediate", available_at=None, document_initial=False):
     """Phase-2 adapter seam. Source registry is required, including account-only owners."""
     if audience not in {"staff", "requester", "member"} or recipient is None:
         raise ValueError("A personal envelope requires an explicit recipient and audience")
@@ -110,7 +140,8 @@ def emit(*, makerspace, recipient, feature, stream, event, audience, dedup_key,
         })
         if (envelope.makerspace_id, envelope.recipient_id, envelope.event) != (makerspace.pk, recipient.pk, event):
             raise ValueError("Notification dedup key belongs to another intent")
-        if created:
+        recovered = not document_initial and reemit_disabled(envelope)
+        if created or recovered:
             transaction.on_commit(lambda: enqueue(envelope.pk), robust=True)
     return envelope
 

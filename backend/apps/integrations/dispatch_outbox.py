@@ -7,15 +7,34 @@ from django.utils import timezone
 
 from apps.integrations.models import DailyEmailCounter, EmailLog
 from apps.integrations.smtp_validation import sanitize_email_error
-from apps.makerspaces import domain_verification, limits
+from apps.makerspaces import limits
 from .dispatch_policy import email_module_blocks
 
 logger = logging.getLogger(__name__)
 
-def _create_email_log(**values):
-    """Hold the shared fence across the mapped EmailLog insert."""
-    from apps.encryption.write_fence import assert_mapped_write_allowed
 
+DISABLED_EMAIL_REASONS = frozenset({
+    "Email is disabled for this makerspace.", "notification_source_disabled",
+})
+
+
+def email_skip_reason(makerspace, address, *, user_id=None, feature="", stream="", event=""):
+    from .email_preferences import blocked_reason
+    from apps.notifications.preferences import STREAM_FEATURES, personal_enabled
+    reason = blocked_reason(makerspace, address, user_id=user_id, feature=feature, stream=stream, event=event)
+    # A disabled source must not disguise a permanent opt-out as recoverable.
+    if reason == "notification_source_disabled" and makerspace is not None and user_id and not personal_enabled(
+        makerspace, user_id, feature or STREAM_FEATURES.get(stream, stream), "email", stream=stream, event=event,
+    ):
+        return "email_member_opted_out"
+    return reason or (
+        "Email is disabled for this makerspace." if email_module_blocks(makerspace, stream, event) else ""
+    )
+
+
+def _create_email_log(**values):
+    """Insert after admission, keeping the existing encryption write fence."""
+    from apps.encryption.write_fence import assert_mapped_write_allowed
     with transaction.atomic():
         makerspace = values.get("makerspace")
         assert_mapped_write_allowed(None if makerspace is None else makerspace.id)
@@ -36,6 +55,63 @@ def _create_platform_counted(makerspace, values):
         if refusal:
             return _create_email_log(**values, status=EmailLog.Status.SKIPPED, error=refusal)
         return _create_email_log(**values, provider_source="platform")
+
+
+def _reserve_email(values):
+    """Charge quotas only after document deduplication, before inserting its attempt."""
+    makerspace = values["makerspace"]
+    platform_path = False
+    if makerspace is not None and values["connection_kind"] == "makerspace":
+        # Decisions 240/281: a space without its own mail account uses the platform's ONLY while its
+        # Space Manager allows it; the monthly allowance is reserved below, when the row is created.
+        from apps.managed_hosting import platform_limits
+        from apps.managed_hosting.platform_switch import platform_allowed
+        platform_path = not platform_limits.uses_own_email(makerspace)
+        if platform_path and not platform_allowed(makerspace, "email"):
+            return _create_email_log(**values, status=EmailLog.Status.SKIPPED,
+                                     error="platform_email_disabled")
+    if (
+        makerspace is not None
+        and values["connection_kind"] == "makerspace"
+    ):
+        # Imported BEFORE the try: `except PiiWriteFenced` below names it, and a failure
+        # raised ahead of an in-try import (the quota lookup itself) would otherwise turn
+        # the intended logged fail-open into UnboundLocalError out of the mail path.
+        from apps.encryption.write_fence import (
+            PiiWriteFenced,
+            assert_mapped_write_allowed,
+        )
+
+        try:
+            limit = limits.resource_limit(makerspace, "email")
+            if limit is not None:
+                with transaction.atomic():
+                    assert_mapped_write_allowed(makerspace.id)
+                    counter, _ = DailyEmailCounter.objects.get_or_create(
+                        makerspace=makerspace,
+                        day=timezone.now().date(),
+                    )
+                    counter = DailyEmailCounter.objects.select_for_update().get(
+                        pk=counter.pk
+                    )
+                    if counter.count >= limit:
+                        return EmailLog.objects.create(**values, status=EmailLog.Status.FAILED,
+                                                       error="Daily email limit reached for this space.")
+                    counter.count = counter.count + 1
+                    counter.save(update_fields=["count"])
+        except PiiWriteFenced:
+            raise
+        except Exception:
+            logger.exception(
+                "daily_email_limit_check_failed",
+                extra={"makerspace_id": makerspace.pk},
+            )
+        from apps.managed_hosting.enforcement import monthly_refusal
+        refusal = monthly_refusal(makerspace, "email_monthly")  # #187A; None with plans off
+        if refusal:
+            return _create_email_log(**values, status=EmailLog.Status.FAILED, error=refusal)
+
+    return _create_platform_counted(makerspace, values) if platform_path else _create_email_log(**values)
 
 
 def dispatch_email(
@@ -68,108 +144,6 @@ def dispatch_email(
     if not persist_body and not sync:
         raise ValueError("persist_body=False requires sync=True")
 
-    from apps.integrations.email_preferences import blocked_reason
-    reason = blocked_reason(makerspace, to_email, user_id=recipient_id,
-                            feature=feature, stream=stream, event=event)
-    if reason or email_module_blocks(makerspace, stream, event):
-        # Recorded rather than dropped: the operator needs to see what their toggle
-        # suppressed. The body is stored only when the caller allowed persistence --
-        # a skipped row must not become the place a redacted body leaks into.
-        return _create_email_log(
-            makerspace=makerspace,
-            to_email="" if platform_minimized else to_email,
-            subject=gettext("Platform email") if platform_minimized else subject,
-            text_body=text_body if persist_body else "",
-            html_body=html_body if persist_body else "",
-            stream=stream,
-            event=event,
-            audience=audience,
-            connection_kind=connection,
-            recipient_id=recipient_id,
-            feature=feature,
-            source_kind=source_kind, source_id=source_id, source_metadata=source_metadata or {},
-            status=EmailLog.Status.SKIPPED,
-            error=reason or "Email is disabled for this makerspace.",
-        )
-
-    platform_path = False
-    if makerspace is not None and connection == "makerspace":
-        # Decisions 240/281: a space without its own mail account uses the platform's ONLY while its
-        # Space Manager allows it; the monthly allowance is reserved below, when the row is created.
-        from apps.managed_hosting import platform_limits
-        from apps.managed_hosting.platform_switch import platform_allowed
-        platform_path = not platform_limits.uses_own_email(makerspace)
-        if platform_path and not platform_allowed(makerspace, "email"):
-            return _create_email_log(
-                makerspace=makerspace, to_email=to_email, subject=subject,
-                text_body=text_body if persist_body else "", html_body=html_body if persist_body else "",
-                stream=stream, event=event, audience=audience, connection_kind=connection,
-                recipient_id=recipient_id, feature=feature, source_kind=source_kind, source_id=source_id,
-                source_metadata=source_metadata or {}, status=EmailLog.Status.SKIPPED,
-                error="platform_email_disabled",
-            )
-    if (
-        domain_verification.hosts_other_spaces()
-        and makerspace is not None
-        and connection == "makerspace"
-    ):
-        # Imported BEFORE the try: `except PiiWriteFenced` below names it, and a failure
-        # raised ahead of an in-try import (the quota lookup itself) would otherwise turn
-        # the intended logged fail-open into UnboundLocalError out of the mail path.
-        from apps.encryption.write_fence import (
-            PiiWriteFenced,
-            assert_mapped_write_allowed,
-        )
-
-        try:
-            limit = limits.resource_limit(makerspace, "email")
-            if limit is not None:
-                with transaction.atomic():
-                    assert_mapped_write_allowed(makerspace.id)
-                    counter, _ = DailyEmailCounter.objects.get_or_create(
-                        makerspace=makerspace,
-                        day=timezone.now().date(),
-                    )
-                    counter = DailyEmailCounter.objects.select_for_update().get(
-                        pk=counter.pk
-                    )
-                    if counter.count >= limit:
-                        return EmailLog.objects.create(
-                            makerspace=makerspace,
-                            to_email=to_email,
-                            subject=subject,
-                            text_body=text_body if persist_body else "",
-                            html_body=html_body if persist_body else "",
-                            stream=stream,
-                            event=event,
-                            audience=audience,
-                            connection_kind=connection,
-                            recipient_id=recipient_id,
-                            feature=feature,
-                            source_kind=source_kind, source_id=source_id, source_metadata=source_metadata or {},
-                            status=EmailLog.Status.FAILED,
-                            error="Daily email limit reached for this space.",
-                        )
-                    counter.count = counter.count + 1
-                    counter.save(update_fields=["count"])
-        except PiiWriteFenced:
-            raise
-        except Exception:
-            logger.exception(
-                "daily_email_limit_check_failed",
-                extra={"makerspace_id": makerspace.pk},
-            )
-        from apps.managed_hosting.enforcement import monthly_refusal
-        refusal = monthly_refusal(makerspace, "email_monthly")  # #187A; None with plans off
-        if refusal:
-            return _create_email_log(
-                makerspace=makerspace, to_email=to_email, subject=subject,
-                text_body=text_body if persist_body else "", html_body=html_body if persist_body else "",
-                stream=stream, event=event, audience=audience, connection_kind=connection,
-                recipient_id=recipient_id, feature=feature, source_kind=source_kind, source_id=source_id,
-                source_metadata=source_metadata or {}, status=EmailLog.Status.FAILED, error=refusal,
-            )
-
     # persist_body=False keeps the rendered body OUT of the stored row (e.g. password
     # reset emails embed a live recovery token in the body - persisting it would leave a
     # usable token in the DB + Django admin until expiry). We still deliver the real body:
@@ -188,7 +162,16 @@ def dispatch_email(
         feature=feature,
         source_kind=source_kind, source_id=source_id, source_metadata=source_metadata or {},
     )
-    log = _create_platform_counted(makerspace, log_values) if platform_path else _create_email_log(**log_values)
+    reason = email_skip_reason(makerspace, to_email, user_id=recipient_id,
+                               feature=feature, stream=stream, event=event)
+    from .document_email_dispatch import reserve_document_log
+    handled, log = reserve_document_log(log_values, reason=reason)
+    if not handled:
+        if reason:
+            return _create_email_log(**log_values, status=EmailLog.Status.SKIPPED, error=reason)
+        log = _reserve_email(log_values)
+    if log is None or getattr(log, "_deduplicated", False) or log.status in {EmailLog.Status.FAILED, EmailLog.Status.SKIPPED}:
+        return log
     if not persist_body:
         # In-memory only - _deliver's save(update_fields=...) excludes the body fields,
         # so the stored row stays redacted while delivery uses the real content.

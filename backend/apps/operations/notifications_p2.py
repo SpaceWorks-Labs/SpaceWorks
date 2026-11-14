@@ -94,7 +94,7 @@ def finish_reminder(space, reminder, now, result):
 
 def fanout(*, row, space, feature, stream, event, source_kind, revision,
            owner=None, owner_body=None, staff_body=None, context=None, scope=None,
-           staff=True, rooms=True, staff_context=None, staff_feature=None, staff_stream=None, owner_context=None):
+           staff=True, rooms=True, staff_context=None, staff_feature=None, staff_stream=None, owner_context=None, document_initial=False):
     """Call inside the domain transaction; repeat calls reserve the same intent."""
     from apps.integrations import recipients
     from apps.integrations.destinations import NotificationScope
@@ -127,7 +127,7 @@ def fanout(*, row, space, feature, stream, event, source_kind, revision,
         envelopes.append(emit(makerspace=space, recipient=owner, feature=feature,
             stream=stream, event=event, audience="requester", source_kind=source_kind,
             source_id=row.pk, subject=row, revision=revision, scope=scope,
-            dedup_key=f"p2:{key}:u:{owner.pk}", context=owner_values, rendered=owner_body))
+            dedup_key=f"p2:{key}:u:{owner.pk}", context=owner_values, rendered=owner_body, document_initial=document_initial))
     staff_ids = staff_user_ids_for_feature(space, staff_feature, event, scope) if staff else []
     for account in User.objects.filter(pk__in=staff_ids).order_by("pk"):
         if owner is not None and owner.pk == account.pk and envelopes:
@@ -159,12 +159,13 @@ def fanout(*, row, space, feature, stream, event, source_kind, revision,
 
 def direct_mail_unless_routed(*, space, source_kind, row, revision, event, owner, to_email,
                               subject, text, stream, audience, feature, sync=False, persist_body=True,
-                              address_owner=True, document_reference=None):
+                              address_owner=True, document_reference=None, document_initial=False):
     """Keep a pre-Phase-2 direct email (welcome, verification, invitation, payment
     document) that the members/payments matrix never governed and whose email cell
     defaults OFF. It is sent after commit unless the owner's own envelope will
     already email the same message, so there is never a second copy."""
     from apps.integrations.dispatch import dispatch_email
+    from apps.integrations.dispatch_outbox import DISABLED_EMAIL_REASONS, email_skip_reason
     from apps.integrations.models import EmailLog
     from apps.integrations.models_contract import NotificationEnvelope
     from apps.integrations.notification_resolution import resolve
@@ -172,8 +173,21 @@ def direct_mail_unless_routed(*, space, source_kind, row, revision, event, owner
         return None
     key = f"p2:{identity(space.pk, source_kind, row.pk, revision, event)}:u:{owner.pk if owner else '-'}"
     envelope = NotificationEnvelope.objects.filter(dedup_key=key).first() if owner else None
+    document_intent = event == "document_issued" and (source_kind == "payments.document" or bool(document_reference))
+    if envelope is not None:
+        document_intent = document_intent and envelope.source_kind == "payments.document" and envelope.event == event
     if envelope is not None and any(target.channel == "email" for target in resolve(envelope)):
         return None
+    document_generation = None
+    if document_intent:
+        from apps.integrations.document_email_state import decide, live_reason
+        from apps.integrations.document_email_dispatch import direct_eligible
+        intent_identity = dict(makerspace_id=space.pk, document_id=row.pk,
+                               recipient_id=owner.pk, intent_key=key)
+        decision = decide(**intent_identity, event="inspect" if document_initial else "approve",
+            reason=lambda: live_reason(space, owner),
+            eligible=lambda: direct_eligible(space.pk, owner.pk, document_reference, envelope))
+        document_generation = decision.intent.generation
 
     def send():
         from apps.integrations.notification_resolution import eligible
@@ -183,16 +197,25 @@ def direct_mail_unless_routed(*, space, source_kind, row, revision, event, owner
         # after commit so a now-eligible owner envelope owns the email leg.
         if envelope is not None and any(target.channel == "email" for target in resolve(envelope)):
             return
-        if scoped(EmailLog, space.pk).filter(source_metadata__p2_direct=key).exists():
+        previous = scoped(EmailLog, space.pk).filter(source_metadata__p2_direct=key)
+        if not document_intent and previous.exists():
             return
         if address_owner and owner:
             owner.refresh_from_db()
         address = owner.email if owner and address_owner else to_email
         if not address:
             return
+        space.refresh_from_db()
+        reason = email_skip_reason(space, address, user_id=owner.pk if owner and address_owner else None,
+                                   feature=feature, stream=stream, event=event)
+        if not document_intent and reason in DISABLED_EMAIL_REASONS and previous.filter(status="skipped", error=reason).exists():
+            return  # Re-emitting while still disabled keeps the original suppression record.
         metadata = {"p2_direct": key, "address_owner": address_owner}
         if document_reference:
             metadata["document"] = document_reference
+        if document_intent:
+            # This callback may reserve only the generation observed by its producer.
+            metadata["document_generation"] = document_generation
         dispatch_email(makerspace=space, to_email=address, subject=subject, text_body=text,
             stream=stream, event=event, audience=audience, feature=feature, sync=sync,
             persist_body=persist_body, recipient_id=owner.pk if owner and address_owner else None,

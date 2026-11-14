@@ -226,7 +226,9 @@ def test_a_room_cannot_be_created_for_an_uninstalled_channel():
         format="json",
     )
 
-    assert response.status_code == 400
+    # Decisions 481/494/517: a switched-off channel refuses before a write.
+    assert (response.status_code, response.data["code"]) == (404, "module_disabled")
+    assert NotificationDestination.objects.filter(makerspace=space).count() == 0
 
 
 def test_destinations_are_makerspace_scoped():

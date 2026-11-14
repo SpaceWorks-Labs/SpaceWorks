@@ -8,9 +8,33 @@ from django.utils import timezone
 
 from apps.integrations.models import EmailLog
 from apps.integrations.smtp_validation import sanitize_email_error
-from .dispatch_policy import email_module_blocks
 
 logger = logging.getLogger(__name__)
+
+
+def _disabled_document_reason(log):
+    """Classify switch-off only, using today's owner mailbox before preparation."""
+    if not log.makerspace_id or log.event != "document_issued" or not log.recipient_id:
+        return ""
+    from apps.accounts import rbac
+    from .models_contract import NotificationEnvelope
+    if log.source_kind in {"notification.direct", "notification.envelope"}:
+        if not rbac.scope_notification_policy(NotificationEnvelope.objects.all(), makerspace_id=log.makerspace_id).filter(
+                pk=log.source_id, recipient_id=log.recipient_id,
+                source_kind="payments.document", event="document_issued").exists():
+            return ""
+    elif log.source_kind != "payments.document":
+        return ""
+    from .dispatch_policy import email_module_blocks
+    from .notification_catalog_sources import event_live
+    if (not email_module_blocks(log.makerspace, log.stream, log.event)
+            and event_live(log.makerspace, "payments", log.event)):
+        return ""
+    from .dispatch_outbox import email_skip_reason
+    log.recipient.refresh_from_db()
+    return email_skip_reason(log.makerspace, log.recipient.email, user_id=log.recipient_id,
+                            feature=log.feature, stream=log.stream, event=log.event)
+
 
 @guarded()
 def _deliver(log):
@@ -32,6 +56,22 @@ def _deliver(log):
 
     from .delivery_sources import prepare, finished
     from .delivery_content import content, recipient_address
+    from .dispatch_outbox import email_skip_reason
+    if log.makerspace_id:
+        log.makerspace.refresh_from_db()
+    # Other families retain prepare-first behavior. Address refusals after prepare
+    # use the source's authorized current address, never a stale queued mailbox.
+    # Bootstrap while a legacy pending/sending reservation is still visible,
+    # before any early skip can erase that ownership evidence. The intent lock
+    # ends here; preparation, PDF rendering and transport remain outside it.
+    from .document_email_dispatch import allow_document_attempt
+    admitted = allow_document_attempt(log)
+    reason = _disabled_document_reason(log) if admitted else "delivery_source_no_longer_eligible"
+    if reason:
+        log.status, log.error = EmailLog.Status.SKIPPED, reason
+        log.save(update_fields=["status", "error", "updated_at"])
+        finished(log)
+        return log
     if not prepare(log):
         log.status, log.error = EmailLog.Status.SKIPPED, 'delivery_source_no_longer_eligible'
         log.save(update_fields=['status', 'error', 'updated_at'])
@@ -54,12 +94,14 @@ def _deliver(log):
     # Re-checked at delivery, not just at dispatch: a queued row can sit in Celery
     # across a module uninstall, and the retry path re-enters here too. Gating only
     # `dispatch_email` would let everything already in flight through.
-    from apps.integrations.email_preferences import blocked_reason, unsubscribe_headers, with_unsubscribe_footer
-    reason = blocked_reason(log.makerspace, recipient_address(log), user_id=log.recipient_id,
-                            feature=log.feature, stream=log.stream, event=log.event)
-    if reason or email_module_blocks(log.makerspace, log.stream, log.event):
+    from apps.integrations.email_preferences import unsubscribe_headers, with_unsubscribe_footer
+    if log.makerspace_id:
+        log.makerspace.refresh_from_db(fields=["enabled_modules", "enabled_features"])
+    reason = email_skip_reason(log.makerspace, recipient_address(log), user_id=log.recipient_id,
+                               feature=log.feature, stream=log.stream, event=log.event)
+    if reason:
         log.status = EmailLog.Status.SKIPPED
-        log.error = reason or "Email is disabled for this makerspace."
+        log.error = reason
         log.save(update_fields=["status", "error", "updated_at"])
         finished(log)
         return log

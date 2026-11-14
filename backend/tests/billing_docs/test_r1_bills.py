@@ -124,9 +124,12 @@ def test_document_lines_are_bounded_at_model_and_sql_boundary():
 def test_bills_use_existing_notice_path_and_disabled_feature_prevents_issuance(monkeypatch):
     space, _, payment = pending("r1-bill-notice")
     calls = []
-    monkeypatch.setattr("apps.payments.notifications_p2.notify_document", calls.append)
+    def notify(document, *, initial=False):
+        calls.append((document, initial))
+
+    monkeypatch.setattr("apps.payments.notifications_p2.notify_document", notify)
     bill = issue_bill(payment)
-    assert calls == [bill]
+    assert calls == [(bill, True)]
     space.enabled_features = [key for key in space.enabled_features if key != "billing.documents"]
     space.save(update_fields=["enabled_features"])
     other = paid_deposit(space, payment.created_by, status="pending", intent="pi_no_bill")

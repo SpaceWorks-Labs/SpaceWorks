@@ -2,7 +2,8 @@
 import logging
 
 from celery import shared_task
-from django.db.models import Exists, OuterRef, Q
+from django.db.models import CharField, Exists, OuterRef, Q
+from django.db.models.functions import Cast, Coalesce
 from django.utils import timezone
 
 from .models_contract import NotificationDelivery, NotificationEnvelope
@@ -18,7 +19,7 @@ logger = logging.getLogger(__name__)
 def deliver_envelope(envelope_id):
     bounded.check()
     from .notification_delivery import ensure_deliveries, fallback_if_exhausted, send
-    from .notification_outbox import ready
+    from .notification_outbox import mark_processed, ready
     envelope = NotificationEnvelope.objects.filter(pk=envelope_id).first()
     if envelope is None:
         return
@@ -44,7 +45,7 @@ def deliver_envelope(envelope_id):
         for row in bounded.items(envelope.deliveries.filter(channel="email", attempt_count=0)):
             send(row.pk)
         bounded.check()
-        NotificationEnvelope.objects.filter(pk=envelope.pk).update(processed_at=timezone.now())
+        mark_processed(envelope)
     except (BudgetExpired, GuardLost):
         raise
     except Exception:
@@ -78,13 +79,27 @@ def sweep_notification_outbox():
         logger.warning("notification_media_cleanup_unavailable", extra={"failure_type": type(exc).__name__})
     now = timezone.now()
     legs = NotificationDelivery.objects.filter(envelope_id=OuterRef("pk"))
+    from .models_document_email import DocumentEmailIntent
+    # Only persisted initial/approved permission admits held-only document work.
+    # This schedules a worker; reservation still enters the common locked decision.
+    pending_documents = DocumentEmailIntent.objects.filter(
+        makerspace_id=OuterRef("makerspace_id"), recipient_id=OuterRef("recipient_id"),
+        intent_key=OuterRef("dedup_key"), state__in=["initial_pending", "recovery_approved"],
+    ).annotate(document_source_id=Cast("document_id", CharField())).filter(
+        document_source_id=OuterRef("source_id"))
+    # Oldest due work wins even if a sweep runs after the retry delay elapsed.
     due = NotificationEnvelope.objects.filter(
         Q(available_at=None) | Q(available_at__lte=now),
     ).exclude(Q(source_kind="legacy.lifecycle", message_body="") & ~Q(context__has_key="fanout")).alias(
         has_legs=Exists(legs), has_unheld_legs=Exists(legs.exclude(state="held")),
         runnable=Exists(runnable_deliveries(legs)),
+        pending_document=Exists(pending_documents),
     ).filter(
-        Q(processed_at=None, has_legs=False) | Q(processed_at=None, has_unheld_legs=True) | Q(runnable=True),
-    ).order_by("pk").values_list("pk", flat=True)[:200]
-    for pk in due:
-        deliver_envelope.delay(pk)
+        Q(processed_at=None, has_legs=False) | Q(processed_at=None, has_unheld_legs=True) | Q(runnable=True)
+        | Q(processed_at=None, source_kind="payments.document", event="document_issued", pending_document=True),
+    ).order_by(Coalesce("available_at", "created_at"), "pk")[:200]
+    for envelope in due:
+        if envelope.source_kind == "payments.document" and envelope.event == "document_issued":
+            from .document_email_state import decide, envelope_identity
+            decide(**envelope_identity(envelope), event="inspect")
+        deliver_envelope.delay(envelope.pk)

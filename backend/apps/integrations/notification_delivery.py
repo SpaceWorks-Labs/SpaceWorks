@@ -22,17 +22,16 @@ RANK = {"held": 0, "retrying": 0, "accepted": 1, "sent": 2, "failed": 3, "skippe
 def ensure_deliveries(envelope, *, fallback=False):
     if cutover_state().route != "canonical":
         return envelope.deliveries.all()
-    from apps.tenant_migration.gate_runtime import tenant_write
-    with tenant_write(envelope.makerspace_id):
-        return _ensure_deliveries(envelope, fallback=fallback)
+    from .notification_direct_mail import reserve_deliveries
+    return reserve_deliveries(envelope, fallback=fallback)
 
 
-def _ensure_deliveries(envelope, *, fallback=False):
+def _ensure_deliveries(envelope, *, fallback=False, allow_email=True):
     if envelope.source_kind == "migration.history":
         return envelope.deliveries.all()
     targets = resolve(envelope, fallback=fallback)
     for target in targets:
-        if fallback and target.channel != "email":
+        if (fallback and target.channel != "email") or (target.channel == "email" and not allow_email):
             continue
         if envelope.deliveries.filter(channel=target.channel).exists():
             # Reconnecting installs a NEW personal identity. An old private intent

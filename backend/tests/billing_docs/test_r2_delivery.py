@@ -9,6 +9,7 @@ from django.utils import timezone
 from apps.integrations.models_contract import NotificationDelivery, NotificationEnvelope
 from apps.integrations.notification_delivery import ensure_deliveries, send
 from apps.integrations.notification_providers import PROVIDERS, ProviderResult
+from apps.notifications.models_preferences import NotificationPreference
 from apps.payments.notifications_p2 import notify_document
 
 pytestmark = pytest.mark.django_db
@@ -30,7 +31,11 @@ class DocumentProvider:
 
 
 @pytest.fixture
-def document_delivery(lane, document, document_mail):
+def document_delivery(lane, document, document_mail, settings):
+    settings.SPACEWORKS_DEPLOYMENT_PROFILE = "full"
+    # The shared issuance fixture consents to email; these tests exercise chat.
+    NotificationPreference.objects.filter(makerspace=lane.space, user=document.payment.member,
+        category="payments").update(channels=["telegram"], email_fallback=False)
     envelope = NotificationEnvelope.objects.get(source_kind="payments.document", source_id=str(document.pk))
     ensure_deliveries(envelope)
     return envelope.deliveries.get(channel="telegram")
@@ -126,16 +131,24 @@ def test_unknown_document_kind_stays_text_only(monkeypatch):
     assert attachment_references(SimpleNamespace(source_kind="payments.document", makerspace_id=1, source_id="1")) == ()
 
 
-def test_unknown_kind_compatibility_mail_remains_text_only(monkeypatch):
+def test_unknown_kind_compatibility_mail_remains_text_only(document, document_mail, monkeypatch):
     from apps.integrations.delivery_content import content
+    from apps.integrations.document_email_state import decide, document_identity, live_reason
+    from apps.integrations.models import EmailLog
     from apps.payments.document_delivery import prepare_document_email
-    document = SimpleNamespace(kind="future_kind", payment=SimpleNamespace(member=SimpleNamespace(email="payer@example.test")))
-    monkeypatch.setattr("apps.payments.document_delivery.authorized_document", lambda *args, **kwargs: document)
+    identity = document_identity(document)
+    log = EmailLog.objects.create(makerspace=document.makerspace, recipient=document.payment.member,
+        source_kind="payments.document", source_id=document.pk, event="document_issued",
+        source_metadata={"p2_direct": identity["intent_key"],
+                         "document": {"document_id": document.pk, "kind": "future_kind"}})
+    # Keep the real persisted-owner admission; only the future-kind source is a double.
+    decide(**identity, event="approve", reason=lambda: live_reason(document.makerspace, document.payment.member))
+    assert decide(**identity, event="reserve", owner_kind="direct", perform=lambda: log).allowed is True
+    future = SimpleNamespace(kind="future_kind", payment=document.payment)
+    monkeypatch.setattr("apps.payments.document_delivery.authorized_document", lambda *args, **kwargs: future)
     monkeypatch.setattr("apps.payments.notifications_p2.document_body", lambda row: {"subject": "Future document", "text": "Available"})
-    log = SimpleNamespace(source_metadata={"document": {"document_id": 1, "kind": "future_kind"}},
-                          source_id="1", event="document_issued", makerspace_id=1, recipient_id=1)
     assert prepare_document_email(log)
-    assert content(log).attachments == () and content(log).to_email == "payer@example.test"
+    assert content(log).attachments == () and content(log).to_email == document.payment.member.email
 
 
 def test_media_cleanup_failure_does_not_block_unrelated_outbox_work(document_delivery, monkeypatch):

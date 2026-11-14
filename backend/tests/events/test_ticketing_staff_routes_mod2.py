@@ -13,7 +13,7 @@ from tests.events.collab_helpers import client_for
 from tests.events.orders_helpers import l6_space, make_staff, place, ticketed_event, verified
 from tests.return_helpers import make_member, make_space
 
-from tests.refusal_helpers_mod2b import refused
+from tests.refusal_helpers_mod2b import field_error, refused
 
 pytestmark = pytest.mark.django_db
 
@@ -72,14 +72,15 @@ def test_unreferenced_addon_delete_removes_it_and_audits_once():
     assert client_for(staff).delete(_addon_url(addon)).status_code == 204
     assert not EventAddon.objects.filter(pk=addon.pk).exists()
     assert AuditLog.objects.filter(action="event.addon_deleted", target_id=str(addon.pk)).count() == 1
-    assert client_for(staff).delete(_addon_url(addon)).status_code == 404
+    refused(client_for(staff).delete(_addon_url(addon)), 404, "not_found")
 
 
-@pytest.mark.parametrize("body", [{"amount": "-1"}, {"stock": -1}, {"name": ""}, {"amount": "abc"}])
-def test_addon_patch_rejects_bad_input_with_400_and_changes_nothing(body):
+@pytest.mark.parametrize("body,field,code", [({"amount": "-1"}, "amount", "min_value"),
+    ({"stock": -1}, "stock", "min_value"), ({"name": ""}, "name", "blank"), ({"amount": "abc"}, "amount", "invalid")])
+def test_addon_patch_rejects_bad_input_with_400_and_changes_nothing(body, field, code):
     space, event, staff, ticket = ticketed_event(amount=10)
     addon = create_addon(event, actor=staff, name="Kit", kind="kit", amount=Decimal("4.000"), stock=2)
-    assert client_for(staff).patch(_addon_url(addon), body, format="json").status_code == 400
+    field_error(client_for(staff).patch(_addon_url(addon), body, format="json"), field, code)
     addon.refresh_from_db()
     assert (addon.name, addon.amount, addon.stock) == ("Kit", Decimal("4.000"), 2)
 
@@ -114,7 +115,8 @@ def test_sales_settings_get_defaults_put_saves_and_audits_the_sorted_field_names
 def test_sales_settings_boundaries_max_plus_one_refused_and_edge_accepted(field, bad, good):
     space, event, staff, ticket = ticketed_event(amount=10)
     client = client_for(staff)
-    assert client.put(_settings_url(event), {field: bad}, format="json").status_code == 400
+    field_error(client.put(_settings_url(event), {field: bad}, format="json"), field,
+                "max_value" if field == "booking_fee_bps" else "min_value")
     assert not EventSalesSettings.objects.filter(event=event).exists()
     assert client.put(_settings_url(event), {field: good}, format="json").status_code == 200
 
@@ -127,7 +129,7 @@ def test_sales_settings_off_with_the_orders_capability_and_for_other_tenants():
     space.save(update_fields=["enabled_features"])
     for call in (client_for(staff).get, lambda url: client_for(staff).put(url, {}, format="json")):
         response = call(_settings_url(event))
-        assert response.status_code == 404
+        refused(response, 404, "feature_disabled")
     assert not EventSalesSettings.objects.filter(event=event).exists()
 
 
@@ -146,4 +148,4 @@ def test_staff_order_list_and_detail_scope_by_event_and_tenant():
     refused(client_for(buyer).get(reverse("admin-event-order-detail", kwargs={"pk": order_id})), 404, "not_found")
     space.enabled_features = [k for k in space.enabled_features if k != "events.orders"]
     space.save(update_fields=["enabled_features"])
-    assert client_for(staff).get(reverse("admin-event-orders", kwargs={"pk": event.pk})).status_code == 404
+    refused(client_for(staff).get(reverse("admin-event-orders", kwargs={"pk": event.pk})), 404, "feature_disabled")

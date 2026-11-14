@@ -9,7 +9,7 @@ from apps.maintenance.models import MaintenanceLog, WorkOrder
 from tests.maintenance.l16_helpers import switch, world
 from tests.return_helpers import authenticated_client, make_member
 
-from tests.refusal_helpers_mod2b import refused
+from tests.refusal_helpers_mod2b import field_error, refused
 
 pytestmark = pytest.mark.django_db
 
@@ -55,7 +55,7 @@ def test_forbidden_edges_are_refused_with_no_audit_and_no_change(start, target):
     w = world("wo-bad")
     order = _order(w, status=start)
     response = _move(w.manager, order, target)
-    assert response.status_code == 400
+    field_error(response, "status", "invalid")
     order.refresh_from_db()
     assert order.status == start
     assert not AuditLog.objects.filter(target_id=str(order.pk), action__startswith="work_order.").exists()
@@ -64,17 +64,17 @@ def test_forbidden_edges_are_refused_with_no_audit_and_no_change(start, target):
 def test_open_is_not_a_target_and_unknown_status_is_rejected_at_the_boundary():
     w = world("wo-enum")
     order = _order(w)
-    assert _move(w.manager, order, "open").status_code == 400
-    assert _move(w.manager, order, "<script>alert(1)</script>").status_code == 400
-    assert authenticated_client(w.manager).post(
-        reverse("admin-work-order-status", args=[order.pk]), {}, format="json").status_code == 400
+    field_error(_move(w.manager, order, "open"), "status", "invalid_choice")
+    field_error(_move(w.manager, order, "<script>alert(1)</script>"), "status", "invalid_choice")
+    field_error(authenticated_client(w.manager).post(
+        reverse("admin-work-order-status", args=[order.pk]), {}, format="json"), "status", "required")
 
 
 def test_closing_twice_is_refused_and_writes_one_log_and_one_audit():
     w = world("wo-twice")
     order = _order(w, status="in_progress")
     assert _move(w.manager, order, "done", resolution="ok").status_code == 200
-    assert _move(w.manager, order, "done", resolution="ok").status_code == 400
+    field_error(_move(w.manager, order, "done", resolution="ok"), "status", "invalid")
     assert MaintenanceLog.objects.filter(machine=w.machine).count() == 1
     assert _audits(order, "work_order.closed") == 1
 
@@ -91,7 +91,7 @@ def test_resolution_is_truncated_to_4000_and_unicode_kept():
 def test_negative_cost_is_refused_and_zero_cost_is_accepted():
     w = world("wo-cost")
     order = _order(w, status="in_progress")
-    assert _move(w.manager, order, "done", cost="-1").status_code == 400
+    field_error(_move(w.manager, order, "done", cost="-1"), "cost", "min_value")
     order.refresh_from_db()
     assert order.status == "in_progress"
     assert _move(w.manager, order, "done", cost="0.000", resolution="free").status_code == 200
@@ -133,7 +133,7 @@ def test_signed_out_other_tenant_and_plain_member_are_refused(route):
 
     url = reverse("admin-work-order-status" if route == "move" else "admin-work-order-assign", args=[order.pk])
     refused(APIClient().post(url, {"status": "in_progress", "assignee_id": 1}, format="json"), 401, "not_authenticated")
-    assert call(outsider).status_code == 404  # never leaks that the id exists
+    refused(call(outsider), 404, "not_found")
     refused(call(plain), 404, "not_found")
     order.refresh_from_db()
     assert order.status == "open" and order.assignee_id is None
@@ -151,7 +151,7 @@ def test_machine_capability_off_refuses_then_on_restores_with_data_kept():
     w = world("wo-switch")
     order = _order(w)
     switch(w.space, off=("machines.maintenance",))
-    assert _move(w.manager, order, "in_progress").status_code == 404
+    refused(_move(w.manager, order, "in_progress"), 404, "not_found")
     order.refresh_from_db()
     assert order.status == "open"
     switch(w.space, on=("machines.maintenance",))
@@ -168,9 +168,9 @@ def test_assign_sets_clears_audits_and_refuses_non_staff_and_closed_orders():
     order.refresh_from_db()
     assert order.assignee_id is None
     assert _audits(order, "work_order.assigned") == 2
-    assert _assign(w.manager, order, 99999999).status_code == 400
-    assert _assign(w.manager, order, 0).status_code == 400
+    field_error(_assign(w.manager, order, 99999999), "assignee_id", "invalid")
+    field_error(_assign(w.manager, order, 0), "assignee_id", "min_value")
     bystander = make_member("wo-bystander", w.space, membership_role="member", role="requester")
-    assert _assign(w.manager, order, bystander.pk).status_code == 400
+    field_error(_assign(w.manager, order, bystander.pk), "assignee_id", "invalid")
     _move(w.manager, order, "cancelled")
-    assert _assign(w.manager, order, w.tech.pk).status_code == 400
+    field_error(_assign(w.manager, order, w.tech.pk), "status", "invalid")

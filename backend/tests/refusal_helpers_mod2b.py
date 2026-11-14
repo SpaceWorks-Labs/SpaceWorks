@@ -28,3 +28,14 @@ def module_off(response):
 
 def feature_off(response):
     return refused(response, 404, "feature_disabled")
+
+
+def field_error(response, field, code):
+    """DRF field errors retain their code on ErrorDetail, rather than a top-level code."""
+    assert response.status_code == 400, response.content
+    detail = response.data[field]
+    if isinstance(detail, list):
+        assert len(detail) == 1, response.data
+        detail = detail[0]
+    assert detail.code == code, response.data
+    return response

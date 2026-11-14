@@ -37,7 +37,7 @@ def test_lists_pools_for_the_type_and_shared_ones_but_not_other_types(lab):  # n
 
 
 def test_scope_refuses_a_manager_of_another_type_and_a_foreign_tenant(lab):  # noqa: F811
-    assert client_for(lab["laser_mgr"]).get(_url(lab["space"], lab["printer_type"])).status_code == 403
+    refused(client_for(lab["laser_mgr"]).get(_url(lab["space"], lab["printer_type"])), 403, "permission_denied")
     stranger_space = make_space("stock-stranger")
     stranger = make_member("stock-stranger-sm", stranger_space)
     refused(client_for(stranger).get(_url(lab["space"], lab["printer_type"])), 404, "not_found")
@@ -67,3 +67,9 @@ def test_machines_module_off_answers_404_and_signed_out_is_refused(lab):  # noqa
     disable_module(lab["space"], "machines")
     response = client_for(lab["printer_mgr"]).get(_url(lab["space"], lab["printer_type"]))
     assert response.status_code == 404 and response.json()["code"] == "module_disabled"
+
+    lab["space"].refresh_from_db()
+    lab["space"].enabled_modules = sorted({*lab["space"].enabled_modules, "machines"})
+    lab["space"].save(update_fields=["enabled_modules"])
+    restored = client_for(lab["printer_mgr"]).get(_url(lab["space"], lab["printer_type"]))
+    assert restored.status_code == 200, restored.content

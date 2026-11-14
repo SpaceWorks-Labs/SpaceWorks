@@ -9,7 +9,7 @@ from tests.parity_0120.adapter_api.adapter_case import adapter_case, plain_membe
 from tests.return_helpers import make_member, make_space
 from rest_framework.test import APIClient
 
-from tests.refusal_helpers_mod2b import refused
+from tests.refusal_helpers_mod2b import field_error, refused
 
 pytestmark = pytest.mark.django_db(transaction=True)
 URL = "https://hooks.example.com/spaceworks"
@@ -25,7 +25,7 @@ def _with_hook(slug):
     case = adapter_case(slug)
     put = case["client"].put(reverse("devices:admin-adapter-webhook", args=[case["device"].pk]), {"url": URL},
                              format="json")
-    assert put.status_code in (200, 201), put.content
+    assert put.status_code == 200, put.content
     return case
 
 
@@ -58,7 +58,7 @@ def test_rotate_returns_a_new_secret_once_and_bumps_the_version_with_one_audit_e
 
 def test_rotate_without_an_endpoint_is_404_and_audits_nothing():
     case = adapter_case("mod2-rot-none")
-    assert _rotate(case["client"], case).status_code == 404
+    refused(_rotate(case["client"], case), 404, "not_found")
     assert not AuditLog.objects.filter(action="devices.adapter_webhook_rotated").exists()
 
 
@@ -93,8 +93,8 @@ def test_switching_integrations_off_refuses_rotate_and_deliveries_and_on_restore
     space = case["space"]
     features = list(space.enabled_features)
     _feature_off(case)
-    assert _rotate(case["client"], case).status_code == 404
-    assert _deliveries(case["client"], case).status_code == 404
+    refused(_rotate(case["client"], case), 404, "not_found")
+    refused(_deliveries(case["client"], case), 404, "not_found")
     space.enabled_features = features
     space.save(update_fields=["enabled_features"])
     assert _rotate(case["client"], case).status_code == 200
@@ -119,10 +119,12 @@ def test_jog_queues_one_calibration_command_and_audits():
     assert command.params == {"dx": 1.5, "dy": -2}
 
 
-@pytest.mark.parametrize("body", [{"dx": 1001}, {"dx": -1001}, {"dy": "far"}, {"dx": 1, "extra": 1}, {"dx": None}])
-def test_jog_boundaries_and_unknown_fields_are_refused_and_queue_nothing(body):
+@pytest.mark.parametrize("body,field,code", [({"dx": 1001}, "dx", "max_value"),
+    ({"dx": -1001}, "dx", "min_value"), ({"dy": "far"}, "dy", "invalid"),
+    ({"dx": 1, "extra": 1}, "extra", "invalid"), ({"dx": None}, "dx", "null")])
+def test_jog_boundaries_and_unknown_fields_are_refused_and_queue_nothing(body, field, code):
     case = _jog_case("mod2-jog-bounds")
-    assert case["client"].post(reverse(JOG, args=[case["binding_id"]]), body, format="json").status_code == 400
+    field_error(case["client"].post(reverse(JOG, args=[case["binding_id"]]), body, format="json"), field, code)
     assert not AdapterCommand.objects.filter(binding_id=case["binding_id"], command="jog").exists()
 
 
@@ -143,7 +145,7 @@ def test_jog_is_refused_for_plain_members_other_tenants_and_when_off():
                              (APIClient(), (401, "not_authenticated"))):
         refused(client.post(url, {"dx": 1}, format="json"), *expected)
     _feature_off(case)
-    assert case["client"].post(url, {"dx": 1}, format="json").status_code == 404
+    refused(case["client"].post(url, {"dx": 1}, format="json"), 404, "not_found")
     assert not AdapterCommand.objects.filter(binding_id=case["binding_id"], command="jog").exists()
 
 
@@ -168,11 +170,15 @@ def test_shelf_coverage_limits_bad_input_roles_and_switch():
     url = reverse(COVERAGE, args=[case["space"].pk])
     one = {"target_type": "item", "target_id": "1"}
     assert case["client"].post(url, {"targets": [one] * 200}, format="json").status_code == 200
-    assert case["client"].post(url, {"targets": [one] * 201}, format="json").status_code == 400
-    assert case["client"].post(url, {"targets": [{"target_type": "wall", "target_id": "1"}]},
-                               format="json").status_code == 400
-    assert case["client"].post(url, {"targets": [{**one, "target_id": "x" * 65}]}, format="json").status_code == 400
-    assert case["client"].post(url, {"targets": [one], "extra": 1}, format="json").status_code == 400
+    too_many = case["client"].post(url, {"targets": [one] * 201}, format="json")
+    assert too_many.status_code == 400
+    assert too_many.data["targets"]["non_field_errors"][0].code == "max_length"
+    for target, field, code in [({"target_type": "wall", "target_id": "1"}, "target_type", "invalid_choice"),
+                                ({**one, "target_id": "x" * 65}, "target_id", "max_length")]:
+        invalid = case["client"].post(url, {"targets": [target]}, format="json")
+        assert invalid.status_code == 400
+        assert invalid.data["targets"][0][field][0].code == code
+    field_error(case["client"].post(url, {"targets": [one], "extra": 1}, format="json"), "extra", "invalid")
     member = APIClient()
     member.force_authenticate(plain_member("mod2-cov-plain", case["space"]))
     refused(member.post(url, {"targets": [one]}, format="json"), 403, "permission_denied")
@@ -182,4 +188,4 @@ def test_shelf_coverage_limits_bad_input_roles_and_switch():
     refused(stranger.post(url, {"targets": [one]}, format="json"), 404, "not_found")  # 481(1): another space
     refused(APIClient().post(url, {"targets": [one]}, format="json"), 401, "not_authenticated")
     _feature_off(case)
-    assert case["client"].post(url, {"targets": [one]}, format="json").status_code == 404
+    refused(case["client"].post(url, {"targets": [one]}, format="json"), 404, "not_found")

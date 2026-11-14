@@ -28,7 +28,7 @@ from apps.inventory.models import InventoryProduct, PublicAvailabilityMode, Trac
 from apps.makerspaces.models import Makerspace, MakerspaceMembership
 from apps.makerspaces.module_install import apply_profile
 from apps.makerspaces.module_profiles import RECOMMENDED
-from ._seed_e2e_discovery import seed_discovery
+from ._seed_e2e_discovery import seed_discovery, seed_machine_journey
 from apps.operations.e2e_kiosk_seed import seed_kiosk
 from apps.operations.seed_handles import claim_seeded_handles
 
@@ -123,9 +123,11 @@ class Command(BaseCommand):
         request_workflow.accept_request(manager, probe)
         discovery = seed_discovery(makerspace, superadmin, member)
         kiosk = seed_kiosk(makerspace, manager, member, token)
+        machine_journey = seed_machine_journey(makerspace, manager, member)
         return {
             **discovery,
             "kiosk": kiosk,
+            "machine_journey": machine_journey,
             "slug": slug,
             "makerspace_id": makerspace.pk,
             "makerspace_name": makerspace.name,

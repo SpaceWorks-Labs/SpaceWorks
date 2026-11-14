@@ -53,14 +53,14 @@ def test_withdraw_twice_is_a_404_and_does_not_add_audit_rows():
     _signup(event, member)
     assert _withdraw(event, member).status_code == 200
     before = AuditLog.objects.count()
-    assert _withdraw(event, member).status_code == 404
+    refused(_withdraw(event, member), 404, "not_found")
     assert AuditLog.objects.count() == before
 
 
 def test_a_member_with_no_crew_row_and_signed_out_cannot_withdraw():
     space, event = _world("crew-wd-none")
     outsider = make_member(space, "crew-wd-outsider")
-    assert _withdraw(event, outsider).status_code == 404
+    refused(_withdraw(event, outsider), 404, "not_found")
     refused(APIClient().post(reverse("events-programme-member-crew-withdraw", kwargs={"pk": event.pk})),
             401, "authentication_required")
 
@@ -70,8 +70,10 @@ def test_withdrawing_never_touches_another_members_crew_row():
     one, two = make_member(space, "crew-wd-one"), make_member(space, "crew-wd-two")
     _signup(event, one)
     _signup(event, two)
+    original = EventCrewMember.objects.get(event=event, member=two).state
+    assert original == "approved"
     assert _withdraw(event, one).status_code == 200
-    assert EventCrewMember.objects.get(event=event, member=two).state != "withdrawn"
+    assert EventCrewMember.objects.get(event=event, member=two).state == original
     assert EventCrewMember.objects.get(event=event, member=one).state == "withdrawn"
 
 
@@ -79,14 +81,21 @@ def test_withdraw_is_off_with_the_crew_capability_and_the_row_is_kept():
     space, event = _world("crew-wd-off")
     member = make_member(space, "crew-wd-off-m")
     _signup(event, member)
+    original = EventCrewMember.objects.get(event=event, member=member).state
+    assert original == "approved"
     space.enabled_features = []
     space.save(update_fields=["enabled_features"])
-    assert _withdraw(event, member).status_code == 404
-    assert EventCrewMember.objects.get(event=event, member=member).state != "withdrawn"
+    refused(_withdraw(event, member), 404, "not_found")
+    assert EventCrewMember.objects.get(event=event, member=member).state == original
+    space.enabled_features = ["events.crew"]
+    space.save(update_fields=["enabled_features"])
+    restored = _withdraw(event, member)
+    assert restored.status_code == 200, restored.content
+    assert EventCrewMember.objects.get(event=event, member=member).state == "withdrawn"
 
 
 def test_withdraw_on_another_tenants_event_is_404():
     space, event = _world("crew-wd-tenant")
     other_space = make_space("crew-wd-tenant-other")
     stranger = make_member(other_space, "crew-wd-stranger")
-    assert _withdraw(event, stranger).status_code == 404
+    refused(_withdraw(event, stranger), 404, "not_found")

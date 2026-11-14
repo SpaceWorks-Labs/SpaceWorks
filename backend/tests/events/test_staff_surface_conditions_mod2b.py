@@ -19,7 +19,7 @@ from apps.events.models import EventPassType, EventRegistration
 from apps.events.services_series_lifecycle import publish_series
 from tests.events.collab_helpers import client_for, make_member, make_staff
 from tests.events.ticketing_helpers import account, event_space, open_event
-from tests.refusal_helpers_mod2b import error_code, refused
+from tests.refusal_helpers_mod2b import field_error, refused
 
 pytestmark = pytest.mark.django_db
 API = "/api/v1/admin"
@@ -74,8 +74,8 @@ def routes(w):
         "embed-get": ("get", f"{API}/makerspaces/{m}/events/embed-policy/", None),
         "embed-put": ("put", f"{API}/makerspaces/{m}/events/embed-policy/", {"enabled": True, "allowed_origins": []}),
         "switches-get": ("get", f"{API}/makerspaces/{m}/events/report-switches/", None),
-        "switches-patch": ("patch", f"{API}/makerspaces/{m}/events/report-switches/", {"switches": {}}),
-        "answers": ("patch", f"{API}/event-registrations/{w.registration.pk}/answers/", {"answers": {}}),
+        "switches-patch": ("patch", f"{API}/makerspaces/{m}/events/report-switches/", {"switches": {"reports.event_pdf": False}}),
+        "answers": ("patch", f"{API}/event-registrations/{w.registration.pk}/answers/", {"custom_answers": {}}),
         "restore": ("post", f"{API}/event-registrations/{w.registration.pk}/restore/", {}),
         "series-collab-get": ("get", f"{API}/event-series/{s}/collaborators/", None),
         "series-collab-put": ("put", f"{API}/event-series/{s}/collaborators/", {"slugs": []}),
@@ -89,9 +89,8 @@ NAMES = ["speakers-list", "speakers-assign", "speakers-invite", "speakers-candid
 # The switch that answers for each route once the caller is authorised, and its typed code.
 GATE = {name: ("capability_disabled", "events.short_links") for name in NAMES if name.startswith("short-link")}
 GATE.update({name: ("feature_disabled", "events.website") for name in NAMES if name.startswith("website")})
-GATE.update({name: ("feature_disabled", "events.series_passes") for name in NAMES if name.startswith("pass-types-")
-             and name != "pass-types-patch"})
-GATE.update({"embed-get": ("capability_disabled", "events.embed")})
+GATE.update({name: ("feature_disabled", "events.series_passes") for name in NAMES if name.startswith("pass-types-")})
+GATE.update({name: ("capability_disabled", "events.embed") for name in ("embed-get", "embed-put")})
 
 
 def call(user, route):
@@ -109,6 +108,20 @@ def set_events_module(space, on):
     modules = set(space.enabled_modules)
     space.enabled_modules = sorted(modules | {"events"} if on else modules - {"events"})
     space.save(update_fields=["enabled_modules", "updated_at"])
+
+
+def assert_restored(w, name, route):
+    if name == "website-delay":
+        from tests.events.website_helpers import session
+        saved = client_for(w.staff).put(f"{API}/events/{w.event.pk}/website/",
+            {"revision": 0, "sections": [], "sessions": [session(w.event)]}, format="json")
+        assert saved.status_code == 200, saved.content
+    elif name == "restore":
+        services.cancel_registration(w.registration, actor=w.staff)
+    response = call(w.staff, route)
+    expected = 201 if name in {"speakers-assign", "speakers-invite", "pass-types-create", "short-link-create"} else 200
+    assert response.status_code == expected, response.content
+    assert EventPassType.objects.filter(pk=w.pass_type.pk, series=w.series).exists()
 
 
 @pytest.mark.parametrize("name", NAMES)
@@ -130,7 +143,7 @@ def test_events_module_off_is_a_typed_module_disabled_404_and_back_on_restores(n
     refused(call(w.staff, route), 404, "module_disabled")
     refused(call(w.outsider, route), *FOREIGN)
     set_events_module(w.space, True)
-    assert error_code(call(w.staff, route)) not in ("module_disabled", "capability_disabled", "feature_disabled")
+    assert_restored(w, name, route)
 
 
 @pytest.mark.parametrize("name", sorted(GATE))
@@ -143,7 +156,7 @@ def test_capability_off_is_a_typed_404_for_staff_and_back_on_restores(name):
     refused(call(w.outsider, route), *FOREIGN)
     refused(call(w.plain, route), *PLAIN_MEMBER)
     set_features(w.space, on=(key,))
-    assert error_code(call(w.staff, route)) not in ("module_disabled", "capability_disabled", "feature_disabled")
+    assert_restored(w, name, route)
 
 
 def test_speaker_assign_invite_remove_audit_once_and_the_digest_never_leaks():
@@ -164,9 +177,9 @@ def test_speaker_assign_invite_remove_audit_once_and_the_digest_never_leaks():
 def test_speaker_validation_missing_name_unknown_user_and_short_search():
     w = world("sf-speaker-input")
     api = client_for(w.staff)
-    assert api.post(f"{API}/events/{w.event.pk}/speakers/invite/", {}, format="json").status_code == 400
-    assert api.post(f"{API}/events/{w.event.pk}/speakers/", {"user_id": 99999999}, format="json").status_code == 400
-    assert api.post(f"{API}/events/{w.event.pk}/speakers/", {}, format="json").status_code == 400
+    field_error(api.post(f"{API}/events/{w.event.pk}/speakers/invite/", {}, format="json"), "display_name", "required")
+    field_error(api.post(f"{API}/events/{w.event.pk}/speakers/", {"user_id": 99999999}, format="json"), "user_id", "invalid")
+    field_error(api.post(f"{API}/events/{w.event.pk}/speakers/", {}, format="json"), "user_id", "required")
     short = api.get(f"{API}/events/{w.event.pk}/speaker-candidates/?search=a")
     assert short.status_code == 200 and short.json()["results"] == []
     assert not AuditLog.objects.filter(action__startswith="event.speaker").exists()
@@ -189,10 +202,10 @@ def test_pass_type_create_patch_validate_and_audit():
     created = api.post(f"{API}/event-series/{w.series.pk}/pass-types/", {"name": "Half", "amount": "10.000"}, format="json")
     assert created.status_code == 201, created.content
     assert EventPassType.objects.filter(series=w.series).count() == 2
-    assert api.post(f"{API}/event-series/{w.series.pk}/pass-types/", {"name": "", "amount": "1"},
-                    format="json").status_code == 400
-    assert api.post(f"{API}/event-series/{w.series.pk}/pass-types/", {"name": "Neg", "amount": "-1"},
-                    format="json").status_code == 400
+    field_error(api.post(f"{API}/event-series/{w.series.pk}/pass-types/", {"name": "", "amount": "1"},
+                         format="json"), "name", "blank")
+    field_error(api.post(f"{API}/event-series/{w.series.pk}/pass-types/", {"name": "Neg", "amount": "-1"},
+                         format="json"), "amount", "min_value")
     patched = api.patch(f"{API}/event-pass-types/{w.pass_type.pk}/", {"name": "Season 2", "capacity": 5}, format="json")
     assert patched.status_code == 200 and patched.json()["name"] == "Season 2" and patched.json()["capacity"] == 5
     listing = api.get(f"{API}/event-series/{w.series.pk}/pass-types/")
@@ -207,18 +220,26 @@ def test_website_get_returns_a_revision_and_a_stale_save_is_a_400_that_changes_n
     revision = got.json()["revision"]
     stale = api.put(f"{API}/events/{w.event.pk}/website/",
                     {"revision": revision + 7, "sections": [], "sessions": []}, format="json")
-    assert stale.status_code == 400 and "revision" in stale.json()
-    assert api.put(f"{API}/events/{w.event.pk}/website/", {"revision": revision}, format="json").status_code == 400
+    field_error(stale, "revision", "invalid")
+    incomplete = api.put(f"{API}/events/{w.event.pk}/website/", {"revision": revision}, format="json")
+    field_error(incomplete, "sections", "required")
+    field_error(incomplete, "sessions", "required")
 
 
-def test_session_delay_validates_range_and_an_unknown_session_is_a_400():
+def test_session_delay_validates_range_missing_page_and_unknown_session():
     w = world("sf-delay")
     api = client_for(w.staff)
     url = f"{API}/events/{w.event.pk}/website/sessions/talk/delay/"
-    assert api.post(url, {"delay_minutes": 1441}, format="json").status_code == 400
-    assert api.post(url, {"delay_minutes": -1}, format="json").status_code == 400
-    assert api.post(url, {}, format="json").status_code == 400
-    assert api.post(url, {"delay_minutes": 5}, format="json").status_code == 400  # no such session on this page
+    field_error(api.post(url, {"delay_minutes": 1441}, format="json"), "delay_minutes", "max_value")
+    field_error(api.post(url, {"delay_minutes": -1}, format="json"), "delay_minutes", "min_value")
+    field_error(api.post(url, {}, format="json"), "delay_minutes", "required")
+    missing_page = api.post(url, {"delay_minutes": 5}, format="json")
+    assert missing_page.status_code == 400, missing_page.content
+    assert len(missing_page.data) == 1 and missing_page.data[0].code == "invalid"
+    page = api.put(f"{API}/events/{w.event.pk}/website/",
+                   {"revision": 0, "sections": [], "sessions": []}, format="json")
+    assert page.status_code == 200, page.content
+    refused(api.post(url, {"delay_minutes": 5}, format="json"), 404, "not_found")
 
 
 def test_short_link_is_idempotent_regenerate_needs_confirm_and_each_change_audits_once():
@@ -230,8 +251,8 @@ def test_short_link_is_idempotent_regenerate_needs_confirm_and_each_change_audit
     again = api.post(url, format="json")
     assert again.status_code == 200 and again.json()["code"] == first.json()["code"]
     assert AuditLog.objects.filter(action="event.short_link.created").count() == 1
-    assert api.post(url + "regenerate/", {}, format="json").status_code == 400
-    assert api.post(url + "regenerate/", {"confirm": False}, format="json").status_code == 400
+    field_error(api.post(url + "regenerate/", {}, format="json"), "confirm", "required")
+    field_error(api.post(url + "regenerate/", {"confirm": False}, format="json"), "confirm", "invalid")
     assert AuditLog.objects.filter(action="event.short_link.regenerated").count() == 0
     new = api.post(url + "regenerate/", {"confirm": True}, format="json")
     assert new.status_code == 200 and new.json()["code"] != first.json()["code"]
@@ -242,8 +263,9 @@ def test_embed_policy_put_validates_origins_and_audits_once():
     w = world("sf-embed")
     api = client_for(w.staff)
     url = f"{API}/makerspaces/{w.space.pk}/events/embed-policy/"
-    for bad in (["http://insecure.test"], ["https://a.test/path"], ["https://*.a.test"], ["https://a.test"] * 21):
-        assert api.put(url, {"enabled": True, "allowed_origins": bad}, format="json").status_code == 400
+    for bad, code in [(["http://insecure.test"], "invalid"), (["https://a.test/path"], "invalid"),
+                      (["https://*.a.test"], "invalid"), (["https://a.test"] * 21, "max_length")]:
+        field_error(api.put(url, {"enabled": True, "allowed_origins": bad}, format="json"), "allowed_origins", code)
     assert not AuditLog.objects.filter(action="event.embed_policy_updated").exists()
     ok = api.put(url, {"enabled": True, "allowed_origins": ["https://a.test"]}, format="json")
     assert ok.status_code == 200 and ok.json()["allowed_origins"] == ["https://a.test"]
@@ -254,9 +276,11 @@ def test_report_switches_reject_unknown_keys_and_empty_bodies():
     w = world("sf-switches")
     api = client_for(w.staff)
     url = f"{API}/makerspaces/{w.space.pk}/events/report-switches/"
-    assert api.patch(url, {"switches": {"nonsense": True}}, format="json").status_code == 400
-    assert api.patch(url, {"switches": {}}, format="json").status_code == 400
-    assert api.patch(url, {"switches": {"nonsense": "yes"}}, format="json").status_code == 400
+    for value in (True, "yes"):
+        invalid = api.patch(url, {"switches": {"nonsense": value}}, format="json")
+        assert invalid.status_code == 400
+        assert invalid.data["switches"]["nonsense"].code == "invalid"
+    field_error(api.patch(url, {"switches": {}}, format="json"), "switches", "empty")
     assert api.get(url).status_code == 200
 
 
@@ -270,7 +294,8 @@ def test_cancel_restore_round_trip_audits_once_and_a_second_restore_is_refused()
     assert EventRegistration.objects.get(pk=w.registration.pk).status == "registered"
     assert AuditLog.objects.filter(action="event.registration_restored").count() == 1
     again = api.post(url, {}, format="json")
-    assert again.status_code >= 400 and AuditLog.objects.filter(action="event.registration_restored").count() == 1
+    refused(again, 409, "not_cancelled")
+    assert AuditLog.objects.filter(action="event.registration_restored").count() == 1
 
 
 def test_series_collaborators_unknown_slug_is_a_400_and_replace_with_nothing_is_an_empty_list():
@@ -279,5 +304,5 @@ def test_series_collaborators_unknown_slug_is_a_400_and_replace_with_nothing_is_
     url = f"{API}/event-series/{w.series.pk}/collaborators/"
     assert api.get(url).json() == []
     assert api.put(url, {"slugs": []}, format="json").json() == []
-    assert api.put(url, {"slugs": ["no-such-space"]}, format="json").status_code == 400
-    assert api.put(url, {}, format="json").status_code == 400
+    field_error(api.put(url, {"slugs": ["no-such-space"]}, format="json"), "slugs", "invalid")
+    field_error(api.put(url, {}, format="json"), "slugs", "required")

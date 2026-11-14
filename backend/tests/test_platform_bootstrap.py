@@ -220,7 +220,7 @@ def test_staff_origin_scope_filters_makerspace_list_and_blocks_cross_tenant_targ
     assert listed.status_code == 200
     assert [row["id"] for row in listed.data] == [space_a.id]
     assert own_list.status_code == 200
-    assert cross_list.status_code == 403
+    assert cross_list.status_code == 404  # 481(1): no standing in space_b, as if missing
     assert own_detail.status_code == 200
     assert cross_detail.status_code == 403
 

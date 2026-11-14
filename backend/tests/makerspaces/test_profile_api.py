@@ -113,7 +113,7 @@ def test_verified_tenant_origin_can_use_own_profile_but_cannot_cross_tenants(pro
     assert client.get(route(lab), **origin).status_code == 200
     assert client.patch(route(lab), {"country": "IN"}, format="json", **origin).status_code == 200
     assert client.get(route(other), **origin).status_code == 404  # 481(1): another space
-    assert client.patch(route(other), {"country": "US"}, format="json", **origin).status_code == 403
+    assert client.patch(route(other), {"country": "US"}, format="json", **origin).status_code == 404  # 481(1)
 
 
 def test_inventory_manager_has_no_profile_action(profile):

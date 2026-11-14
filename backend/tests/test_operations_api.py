@@ -315,7 +315,7 @@ def test_intra_makerspace_transfer_denied_for_other_makerspace_manager():
         format="json",
     )
 
-    assert response.status_code == 403
+    assert response.status_code == 404  # 481(1): another space answers like a missing one
     assert StockTransfer.objects.count() == 0
 
 

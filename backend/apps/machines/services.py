@@ -233,15 +233,38 @@ def attach_document(machine, actor, object_key, doc_type, original_filename):
     return doc
 
 
-@transaction.atomic
 def remove_document(machine, actor, document):
-    object_key = document.object_key
-    document_id = document.pk
-    document.delete()
-    storage.delete_object(object_key)
-    _audit(
-        machine,
-        actor,
-        "machine.document_removed",
-        {"document_id": document_id, "object_key": object_key},
-    )
+    from apps.makerspaces.models import Makerspace
+    from apps.makerspaces.storage_reservations import object_operation, deletion_claim, claimed_receipt
+
+    # Fetch the canonical key before taking the per-object fence.
+    found = MachineDocument.objects.filter(pk=document.pk, machine_id=machine.pk).first()
+    if found is None:
+        return
+    with object_operation(found.object_key):
+        with transaction.atomic():
+            space = Makerspace.objects.select_for_update().get(pk=machine.makerspace_id)
+            require_module_locked(space, "machines")
+            found = MachineDocument.objects.select_for_update().filter(pk=found.pk, machine_id=machine.pk).first()
+            if found is None:
+                return
+            receipt, version = deletion_claim(
+                space, found.object_key, found.size_bytes, charged=True, bounded_upload=True)
+        # No tenant or document row lock is held during provider enumeration/deletion.
+        if storage.delete_object(found.object_key) is not None:
+            raise storage.StorageUnavailable
+        with transaction.atomic():
+            space = Makerspace.objects.select_for_update().get(pk=machine.makerspace_id)
+            require_module_locked(space, "machines")
+            fresh = MachineDocument.objects.select_for_update().filter(pk=found.pk, machine_id=machine.pk).first()
+            receipt = claimed_receipt(receipt, version)
+            if (fresh is None or receipt is None or fresh.object_key != found.object_key
+                    or fresh.size_bytes != found.size_bytes):
+                return
+            limits.free_storage(space, fresh.size_bytes)
+            receipt.released, receipt.cleaning = True, False
+            receipt.save(update_fields=["released", "cleaning"])
+            document_id = fresh.pk
+            fresh.delete()
+            _audit(machine, actor, "machine.document_removed",
+                   {"document_id": document_id, "object_key": found.object_key})

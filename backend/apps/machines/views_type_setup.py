@@ -10,6 +10,7 @@ from rest_framework.views import APIView
 from apps.hardware_requests.exceptions import ErrorSerializer
 
 from apps.admin_api.permissions import IsActiveStaff
+from apps.evidence.responses import storage_unavailable_response
 from apps.evidence.storage import StorageUnavailable
 
 from . import type_documents, type_setup
@@ -41,7 +42,7 @@ class MachineTypeDocumentSerializer(serializers.ModelSerializer):
 UPLOAD_ERRORS = {
     400: OpenApiResponse(ErrorSerializer, description="Invalid upload; upload_size_required (declare size in bytes on PUT-only storage), upload_limit (file/headroom) or limit_reached (combined storage)."),
     409: OpenApiResponse(ErrorSerializer, description="storage_public_images_bytes_quota_reached."),
-    503: OpenApiResponse(ErrorSerializer, description="Machine document storage is unavailable."),
+    503: OpenApiResponse(ErrorSerializer, description="storage_unavailable: Machine document storage is unavailable."),
 }
 
 
@@ -69,7 +70,7 @@ class AppliedSpacesSerializer(serializers.Serializer):
 
 
 def _unavailable():
-    return Response({"detail": gettext("Machine document storage is unavailable.")}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+    return storage_unavailable_response(gettext("Machine document storage is unavailable."))
 
 
 class TypeSetupView(APIView):
@@ -150,7 +151,7 @@ class TypeDocumentDetailView(APIView):
     permission_classes = [IsActiveStaff]
 
     @extend_schema(tags=TAGS, summary="A short-lived signed link to a machine type document",
-                   responses={200: TypeDocumentUrlSerializer, **ERRORS})
+                   responses={200: TypeDocumentUrlSerializer, **ERRORS, 503: UPLOAD_ERRORS[503]})
     def get(self, request, makerspace_id, type_id, pk):
         space, machine_type = space_and_type(request.user, makerspace_id, type_id)
         row = get_object_or_404(MachineTypeDocument, makerspace=space, machine_type=machine_type, pk=pk)
@@ -160,9 +161,12 @@ class TypeDocumentDetailView(APIView):
             return _unavailable()
 
     @extend_schema(tags=TAGS, summary="Remove a machine type document (frees its storage)", request=None,
-                   responses={204: None, **ERRORS})
+                   responses={204: None, **ERRORS, 503: UPLOAD_ERRORS[503]})
     def delete(self, request, makerspace_id, type_id, pk):
         space, machine_type = space_and_type(request.user, makerspace_id, type_id, write=True)
-        type_documents.remove(request.user, get_object_or_404(
-            MachineTypeDocument, makerspace=space, machine_type=machine_type, pk=pk))
+        row = get_object_or_404(MachineTypeDocument, makerspace=space, machine_type=machine_type, pk=pk)
+        try:
+            type_documents.remove(request.user, row)
+        except StorageUnavailable:
+            return _unavailable()
         return Response(status=status.HTTP_204_NO_CONTENT)

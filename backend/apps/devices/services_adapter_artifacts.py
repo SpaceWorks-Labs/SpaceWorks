@@ -1,16 +1,4 @@
-"""artifact.upload: adapter-uploaded timelapses, job thumbnails/previews, failure snapshots, log bundles, audio clips.
-
-Privacy and storage rules (decision 321b, INVARIANTS on object storage):
-- every object is PRIVATE and uploaded through a presigned URL that lands on the STAGING key; ``complete`` promotes it
-  to the final key exactly once (``service_storage.finalize_upload``), so a still-valid presign cannot replace a ready file;
-- per-kind size cap and retention (``caps.artifact_upload.LIMITS``; days overridable with ``ADAPTER_ARTIFACT_RETENTION_DAYS``);
-- the limit key ``adapter_artifacts`` (default none) refuses only the START of a new artifact;
-- readable by staff in the machine scope and by the owner of the linked job (never audio or log bundles);
-- bytes are deleted at expiry (the row stays as a ``purged`` marker, set only once storage CONFIRMED both keys are
-  gone; a failure is logged and retried by the next sweep) and on module purge (``devices_private_keys``);
-- a job link must be a job assigned to the binding's own machine, so an adapter cannot attach media to another
-  machine's job (L-A2); every signed GET is a download with a fixed type (``presigned_download_url``).
-"""
+"""Private, staged adapter artifacts; durable admission, completion and confirmed retention deletion."""
 import logging
 import uuid
 from datetime import timedelta
@@ -28,6 +16,8 @@ from apps.devices.models import AdapterArtifact, AdapterCommand, AdapterWatch
 from apps.devices.services_adapter_core import AdapterError, audit_adapter, check
 from apps.devices.services_locks import lock_tenant
 from apps.managed_hosting.extra_quotas import check_extra_quota
+from apps.makerspaces import limits, storage_reservations as reservations
+from apps.makerspaces.storage_reservation_cleanup import purge_artifact as _purge_one
 
 CONTENT_TYPES = {
     "timelapse": {"video/mp4", "video/webm"},
@@ -41,11 +31,9 @@ PENDING_HOURS = 2
 OWNER_KINDS = ("thumbnail", "preview", "timelapse", "failure_snapshot")
 logger = logging.getLogger(__name__)
 
-
 def retention_days(kind):
     override = getattr(settings, "ADAPTER_ARTIFACT_RETENTION_DAYS", {}) or {}
     return int(override.get(kind, LIMITS[kind][1]))
-
 
 def _kind_gate(makerspace_id, kind):
     require_adapters(makerspace_id, ARTIFACTS_SWITCH)
@@ -54,13 +42,12 @@ def _kind_gate(makerspace_id, kind):
     if kind == "log_bundle":
         require_adapters(makerspace_id, DIAGNOSTICS_SWITCH)
 
-
-def _validate_links(device, binding, body):
+def _validate_links(device, binding, body, artifact_id=None):
     if body["kind"] == "log_bundle":
         command = AdapterCommand.objects.filter(
             pk=body.get("command_id"), binding=binding, capability="diagnostics", command="log_bundle",
             status__in=(AdapterCommand.Status.LEASED, AdapterCommand.Status.SUCCEEDED)).first()
-        if command is None or AdapterArtifact.objects.filter(command_id=command.pk).exists():
+        if command is None or AdapterArtifact.objects.filter(command_id=command.pk).exclude(pk=artifact_id).exists():
             raise AdapterError("log_bundle_not_requested", "No open log bundle request matches.", status_code=409)
     if body["kind"] == "audio_recording":
         watch = AdapterWatch.objects.filter(binding=binding, status=AdapterWatch.Status.ACTIVE, audio=True, record=True,
@@ -76,17 +63,16 @@ def _validate_links(device, binding, body):
                 pk=request_id, makerspace_id=device.makerspace_id, assigned_machine_id=binding.machine_id).exists():
             raise AdapterError("invalid_link", "That job is not assigned to this binding's machine.", status_code=404)
 
-
-def _upload(row):
+def _upload(row, *, replay=False):
     from apps.evidence.storage import StorageUnavailable
     from apps.machines.service_storage import presigned_upload
     try:
-        upload = presigned_upload(row.object_key, row.content_type, LIMITS[row.kind][0])
+        upload = presigned_upload(row.object_key, row.content_type, LIMITS[row.kind][0], exact_bytes=row.size_bytes,
+                                  **({"artifact_replay": row} if replay else {}))
     except StorageUnavailable as exc:
         raise AdapterError("storage_unavailable", "Storage is unavailable; retry.", status_code=503) from exc
     return {"artifact_id": str(row.pk), "object_key": row.object_key, "upload": upload,
             "expires_at": int(row.expires_at.timestamp())}
-
 
 def request_upload(principal, body):
     check(REQUEST, body, label="artifact request")
@@ -107,60 +93,105 @@ def request_upload(principal, body):
         if existing is not None:
             if existing.status != AdapterArtifact.Status.PENDING:
                 return {"artifact_id": str(existing.pk), "status": existing.status, "duplicate": True}
-            return {**_upload(existing), "duplicate": True}
-        _validate_links(device, binding, body)
-        makerspace = lock_tenant(device.makerspace_id)
-        check_extra_quota(makerspace, "adapter_artifacts")
-        check_extra_quota(makerspace, "adapter_media_bytes", adding=int(body["size_bytes"]))  # decision 328a
-        row = AdapterArtifact.objects.create(
-            makerspace=makerspace, binding=binding, operation_id=body["operation_id"], kind=kind,
-            content_type=body["content_type"], size_bytes=body["size_bytes"],
-            object_key=f"adapter-artifacts/{makerspace.pk}/{binding.pk}/{uuid.uuid4().hex}",
-            service_request_id=body.get("service_request_id"), session_id=body.get("session_id"),
-            command_id=body.get("command_id"), expires_at=now + timedelta(days=retention_days(kind)),
-            captured_at=now)
-        audit_adapter(makerspace, device, "devices.adapter_artifact_requested", meta={
-            "binding_id": str(binding.pk), "artifact_id": str(row.pk), "kind": kind, "size_bytes": row.size_bytes})
-        return _upload(row)
+            replay = existing
+        else:
+            return _new_upload(device, binding, body, now)
+    # Obtain the object fence BEFORE any tenant lock; a crashed claim is now recoverable.
+    from apps.evidence.storage import StorageUnavailable
+    try:
+        with reservations.object_operation(replay.object_key):
+            with transaction.atomic():
+                row, _device = _completion_row(principal, replay.pk, replay.object_key)
+                if row.status == "ready":
+                    return {"artifact_id": str(row.pk), "status": row.status, "duplicate": True}
+                return {**_upload(row, replay=True), "duplicate": True}
+    except StorageUnavailable as exc:
+        raise AdapterError("storage_unavailable", "Storage is unavailable; retry.", status_code=503) from exc
 
+def _new_upload(device, binding, body, now):
+    kind = body["kind"]
+    _validate_links(device, binding, body)
+    makerspace = lock_tenant(device.makerspace_id)
+    check_extra_quota(makerspace, "adapter_artifacts")
+    check_extra_quota(makerspace, "adapter_media_bytes", adding=int(body["size_bytes"]))  # decision 328a
+    row = AdapterArtifact.objects.create(
+        makerspace=makerspace, binding=binding, operation_id=body["operation_id"], kind=kind,
+        content_type=body["content_type"], size_bytes=body["size_bytes"],
+        object_key=f"adapter-artifacts/{makerspace.pk}/{binding.pk}/{uuid.uuid4().hex}",
+        service_request_id=body.get("service_request_id"), session_id=body.get("session_id"),
+        command_id=body.get("command_id"), expires_at=now + timedelta(days=retention_days(kind)),
+        captured_at=now)
+    audit_adapter(makerspace, device, "devices.adapter_artifact_requested", meta={
+        "binding_id": str(binding.pk), "artifact_id": str(row.pk), "kind": kind, "size_bytes": row.size_bytes})
+    return _upload(row)
+
+def _completion_row(principal, pk, key):
+    device = adapter_device(principal, lock=True)
+    row = AdapterArtifact.objects.select_for_update().filter(
+        pk=pk, object_key=key, makerspace_id=device.makerspace_id, binding__device=device).first()
+    if row is None:
+        raise NotFound()
+    _kind_gate(device.makerspace_id, row.kind)
+    binding = binding_for(device, row.binding_id, "artifact.upload")
+    if row.status != "ready":
+        if row.status != "pending" or row.expires_at <= timezone.now():
+            raise AdapterError("artifact_expired", "This artifact is no longer available.", status_code=410)
+        _validate_links(device, binding, {"kind": row.kind, "command_id": row.command_id,
+            "service_request_id": row.service_request_id}, row.pk)
+    return row, device
 
 def complete(principal, artifact_id):
     from apps.evidence.storage import StorageUnavailable
+    try:
+        return _complete(principal, artifact_id)
+    except StorageUnavailable as exc:
+        raise AdapterError("storage_unavailable", "Storage is unavailable; retry.", status_code=503) from exc
+
+def _complete(principal, artifact_id):
+    from apps.evidence.storage import StorageUnavailable
     from apps.machines import service_storage
-    with transaction.atomic():
-        device = adapter_device(principal, lock=True)
-        row = AdapterArtifact.objects.select_for_update().select_related("binding").filter(
-            pk=artifact_id, binding__device=device, makerspace_id=device.makerspace_id).first()
-        if row is None:
-            raise NotFound()
-        require_adapters(device.makerspace_id, ARTIFACTS_SWITCH)
-        if row.status == AdapterArtifact.Status.READY:
-            return {"artifact_id": str(row.pk), "status": row.status}
-        if row.status != AdapterArtifact.Status.PENDING:
-            raise AdapterError("artifact_expired", "This artifact is no longer available.", status_code=410)
+    from apps.makerspaces.storage_reservation_cleanup import release_artifact_claim
+    device = adapter_device(principal)
+    row = AdapterArtifact.objects.filter(pk=artifact_id, binding__device=device,
+                                        makerspace_id=device.makerspace_id).first()
+    if row is None:
+        raise NotFound()
+    with reservations.object_operation(row.object_key):
+        with transaction.atomic():
+            row, device = _completion_row(principal, row.pk, row.object_key)
+            if row.status == "ready":
+                return {"artifact_id": str(row.pk), "status": row.status}
+            receipt, version = reservations.completion_claim(device.makerspace, row)
+            identity = (row.binding_id, row.kind, row.content_type, row.size_bytes)
         try:
             size = service_storage.finalize_upload(row.object_key, LIMITS[row.kind][0])
-        except StorageUnavailable as exc:
-            raise AdapterError("storage_unavailable", "Storage is unavailable; retry.", status_code=503) from exc
-        if size is None:
-            raise AdapterError("upload_missing", "The file has not been uploaded yet.", status_code=409)
-        if size > LIMITS[row.kind][0]:
-            service_storage.cleanup_upload(row.object_key)
-            AdapterArtifact.objects.filter(pk=row.pk).update(status=AdapterArtifact.Status.PURGED,
-                                                             purged_at=timezone.now())
-            raise AdapterError("artifact_too_large", "The uploaded file is too large.", status_code=413)
-        AdapterArtifact.objects.filter(pk=row.pk).update(
-            status=AdapterArtifact.Status.READY, completed_at=timezone.now(), size_bytes=size)
-        audit_adapter(device.makerspace, device, "devices.adapter_artifact_stored", meta={
-            "binding_id": str(row.binding_id), "artifact_id": str(row.pk), "kind": row.kind, "size_bytes": size})
+            if size is None:
+                raise AdapterError("upload_missing", "The file has not been uploaded yet.", status_code=409)
+            if not 1 <= size <= LIMITS[row.kind][0] or size != row.size_bytes:
+                raise AdapterError("artifact_too_large", "The uploaded file is too large.", status_code=413)
+            with transaction.atomic():
+                row, device = _completion_row(principal, row.pk, row.object_key)
+                if (row.binding_id, row.kind, row.content_type, row.size_bytes) != identity:
+                    raise StorageUnavailable
+                claimed = reservations.claimed_receipt(receipt, version)
+                if (row.status != "pending" or claimed is None or claimed.released
+                        or claimed.converted or claimed.size_bytes != size):
+                    raise StorageUnavailable
+                claimed.cleaning = False
+                claimed.save(update_fields=["cleaning"])
+                limits.charge_upload(device.makerspace, size, object_key=row.object_key)
+                AdapterArtifact.objects.filter(pk=row.pk).update(status="ready", completed_at=timezone.now())
+                audit_adapter(device.makerspace, device, "devices.adapter_artifact_stored", meta={
+                    "binding_id": str(row.binding_id), "artifact_id": str(row.pk), "kind": row.kind, "size_bytes": size})
+        finally:
+            # Still fenced: only this exact, nonterminal claim may be cleared.
+            release_artifact_claim(row, receipt, version)
     return {"artifact_id": str(row.pk), "status": "ready"}
-
 
 def serialize(row):
     return {"id": str(row.pk), "binding_id": str(row.binding_id), "kind": row.kind, "content_type": row.content_type,
             "size_bytes": row.size_bytes, "status": row.status, "service_request_id": row.service_request_id,
             "session_id": row.session_id, "created_at": row.created_at, "expires_at": row.expires_at}
-
 
 def _hide_unswitched(queryset, makerspace_id):
     """Kinds whose child switch is off are not listed (audio and bundles have their own switches)."""
@@ -170,7 +201,6 @@ def _hide_unswitched(queryset, makerspace_id):
     if not adapters_enabled(makerspace_id, DIAGNOSTICS_SWITCH):
         queryset = queryset.exclude(kind="log_bundle")
     return queryset
-
 
 def staff_list(actor, binding, params):
     from apps.devices.adapter_access import scoped_binding
@@ -183,7 +213,6 @@ def staff_list(actor, binding, params):
         queryset = queryset.filter(service_request_id=int(params["service_request_id"]))
     return queryset
 
-
 def _signed(row):
     from apps.evidence.storage import StorageUnavailable
     from apps.machines.service_storage import presigned_download_url
@@ -192,7 +221,6 @@ def _signed(row):
                 "kind": row.kind}
     except StorageUnavailable as exc:
         raise AdapterError("storage_unavailable", "Storage is unavailable; retry.", status_code=503) from exc
-
 
 def staff_url(actor, artifact_id):
     from apps.devices.adapter_access import scoped_binding
@@ -208,7 +236,6 @@ def staff_url(actor, artifact_id):
                      meta={"device_id": str(row.binding.device_id), "artifact_id": str(row.pk), "kind": row.kind})
     return _signed(row)
 
-
 def _owned_request(actor, request_id):
     from apps.machines.models import MachineServiceRequest
     request = MachineServiceRequest.objects.filter(pk=request_id).first()
@@ -217,19 +244,15 @@ def _owned_request(actor, request_id):
     require_adapters(request.makerspace_id, ARTIFACTS_SWITCH)
     return request
 
-
 def _owner_rows(request):
-    """READY owner-visible artifacts of the job, captured on the job's own machine (a link made before L-A2 to
-    another machine's job is not served)."""
+    """READY owner-visible artifacts captured on this job's own assigned machine (L-A2)."""
     return AdapterArtifact.objects.filter(
         makerspace_id=request.makerspace_id, service_request_id=request.pk, kind__in=OWNER_KINDS,
         status=AdapterArtifact.Status.READY, binding__machine_id=request.assigned_machine_id)
 
-
 def owner_list(actor, request_id):
     """The job owner sees the artifacts of THEIR job (never audio, never log bundles)."""
     return _owner_rows(_owned_request(actor, request_id))
-
 
 def owner_url(actor, artifact_id):
     row = AdapterArtifact.objects.filter(pk=artifact_id, kind__in=OWNER_KINDS, status=AdapterArtifact.Status.READY,
@@ -238,19 +261,16 @@ def owner_url(actor, artifact_id):
         raise NotFound()
     return _signed(row)
 
-
 def _delete_bytes(row):
     """Both keys, every version, CONFIRMED; raises so the row is not marked purged over surviving bytes (L-A5)."""
     from apps.machines.service_storage import purge_upload
     purge_upload(row.object_key)
-
 
 def due_artifacts(now):
     from django.db.models import Q
     return AdapterArtifact.objects.exclude(status=AdapterArtifact.Status.PURGED).filter(
         Q(expires_at__lte=now) | Q(status=AdapterArtifact.Status.PENDING,
                                    created_at__lte=now - timedelta(hours=PENDING_HOURS)))
-
 
 def purge_expired(now=None, space_id=None):
     """Delete bytes past retention and abandoned uploads (idempotent). The row stays as a purged marker."""
@@ -260,15 +280,10 @@ def purge_expired(now=None, space_id=None):
     rows = scope.exclude(status=AdapterArtifact.Status.PURGED).filter(expires_at__lte=now)[:200]
     pending = scope.filter(status=AdapterArtifact.Status.PENDING, created_at__lte=stale)[:200]
     done = 0
-    for row in [*rows, *pending]:
+    due = {row.pk: row for row in [*rows, *pending]}
+    for row in due.values():
         try:
-            _delete_bytes(row)
+            done += _purge_one(row, now)
         except Exception:  # noqa: BLE001 - logged and left due: the next sweep retries
             logger.warning("adapter_artifact_purge_failed", extra={"artifact_id": str(row.pk)}, exc_info=True)
-            continue
-        AdapterArtifact.objects.filter(pk=row.pk).update(status=AdapterArtifact.Status.PURGED, purged_at=now)
-        audit.record(None, "devices.adapter_artifact_purged", makerspace=row.makerspace, target=row.binding,
-                     meta={"artifact_id": str(row.pk), "kind": row.kind})
-        done += 1
     return done
-

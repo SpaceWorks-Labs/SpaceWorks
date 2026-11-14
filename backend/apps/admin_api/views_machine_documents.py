@@ -4,6 +4,8 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.hardware_requests.exceptions import ErrorSerializer
+
 from apps.admin_api.machine_access import (
     resolve_machine,
     resolve_machine_document,
@@ -51,9 +53,10 @@ class MachineDocumentPresignView(APIView):
         request=DocumentPresignSerializer,
         responses={
             201: OpenApiResponse(DocumentUploadResponseSerializer, description='Machine document upload details.'),
-            400: OpenApiResponse(description='Invalid document upload request.'),
+            400: OpenApiResponse(ErrorSerializer, description="Invalid upload; upload_size_required (declare size in bytes on PUT-only storage), upload_limit (file/headroom) or limit_reached (combined storage)."),
+            409: OpenApiResponse(ErrorSerializer, description="storage_public_images_bytes_quota_reached."),
             503: OpenApiResponse(
-                description='Machine document storage is unavailable.'
+                ErrorSerializer, description='storage_unavailable: Machine document storage is unavailable.'
             ),
         },
     )
@@ -69,7 +72,7 @@ class MachineDocumentPresignView(APIView):
         from apps.makerspaces.limits import check_upload_headroom
         check_upload_headroom(machine.makerspace)  # #234: refuse before the upload when storage is full
         try:
-            upload = storage.presigned_upload(object_key, data['content_type'])
+            upload = storage.presigned_upload(object_key, data['content_type'], **({"exact_bytes": serializer.validated_data.get("size")} if serializer.validated_data.get("size") is not None else {}))
         except StorageUnavailable:
             return storage_unavailable_response()
         return Response(
@@ -101,9 +104,10 @@ class MachineDocumentsView(APIView):
         request=DocumentFinalizeSerializer,
         responses={
             201: MachineDocumentSerializer,
-            400: OpenApiResponse(description='Invalid machine document.'),
+            400: OpenApiResponse(ErrorSerializer, description="Invalid upload; upload_size_required (declare size in bytes on PUT-only storage), upload_limit (file/headroom) or limit_reached (combined storage)."),
+            409: OpenApiResponse(ErrorSerializer, description="storage_public_images_bytes_quota_reached."),
             503: OpenApiResponse(
-                description='Machine document storage is unavailable.'
+                ErrorSerializer, description='storage_unavailable: Machine document storage is unavailable.'
             ),
         },
     )
@@ -140,7 +144,7 @@ class MachineDocumentUrlView(APIView):
         responses={
             200: OpenApiResponse(SignedUrlSerializer, description='Signed machine document URL.'),
             503: OpenApiResponse(
-                description='Machine document storage is unavailable.'
+                ErrorSerializer, description='storage_unavailable: Machine document storage is unavailable.'
             ),
         },
     )
@@ -162,12 +166,18 @@ class MachineDocumentDeleteView(APIView):
         tags=['Admin machines'],
         summary='Delete a machine document',
         request=None,
-        responses={204: None},
+        responses={
+            204: None,
+            503: OpenApiResponse(ErrorSerializer, description='storage_unavailable: Machine document storage is unavailable.'),
+        },
     )
     def delete(self, request, pk, *args, **kwargs):
         document = _resolved_document(request.user, pk)
         machine = document.machine
         if not access.can_manage_machine(request.user, machine):
             raise PermissionDenied()
-        services.remove_document(machine, request.user, document)
+        try:
+            services.remove_document(machine, request.user, document)
+        except StorageUnavailable:
+            return storage_unavailable_response()
         return Response(status=status.HTTP_204_NO_CONTENT)

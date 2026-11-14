@@ -101,12 +101,19 @@ def presigned_upload(object_key, content_type, *, exact_bytes=None):
 
 
 def delete_object(object_key):
+    """Return None for confirmed absence, False for a logged provider failure.
+
+    Keep the historical successful return for existing callers and upload cleanup;
+    callers releasing quota must distinguish it from the explicit failure result.
+    """
     try:
         delete_all_versions(
             _client(), bucket=settings.AWS_STORAGE_BUCKET_NAME, key=object_key
         )
     except (BotoCoreError, ClientError):
         logger.exception("Failed to delete machine document %s.", object_key)
+        return False
+    return None
 
 
 def copy_object(source_key, dest_key):

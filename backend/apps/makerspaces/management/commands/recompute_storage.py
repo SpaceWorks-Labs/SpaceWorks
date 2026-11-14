@@ -69,6 +69,7 @@ class Command(BaseCommand):
                 "event_print_obligations": accounted_print_bytes(makerspace),
                 "evidence": self._sum(
                     EvidencePhoto.objects.filter(makerspace=makerspace)
+                    .exclude(object_key__in=self._pending_upload_keys(makerspace))
                     .exclude(
                         object_retention_state__status=
                         EvidenceObjectRetentionState.Status.EXPIRED
@@ -77,10 +78,17 @@ class Command(BaseCommand):
                     evidence_storage.object_size,
                     True,
                 ),
-                "print_files": self._sum(ServiceRequestFile.objects.filter(makerspace=makerspace).values_list("object_key", "size_bytes"), machine_storage.object_size, True),
+                "print_files": self._sum(ServiceRequestFile.objects.filter(makerspace=makerspace).exclude(
+                    object_key__in=self._pending_upload_keys(makerspace)).values_list("object_key", "size_bytes"), machine_storage.object_size, True),
                 "public_images": self._sum(((key, None) for key in self._public_image_keys(makerspace)), public_image_storage.object_size),
-                "machine_documents": self._sum(((key, None) for key in MachineDocument.objects.filter(machine__makerspace=makerspace).values_list("object_key", flat=True)), machine_storage.object_size),
-                "machine_type_documents": self._sum(MachineTypeDocument.objects.filter(makerspace=makerspace).values_list("object_key", "size_bytes"), machine_storage.object_size, True),
+                # Retained rows own the charge until confirmed removal commits.
+                # An absent HEAD cannot prove all versions were deleted.
+                "machine_documents": sum(MachineDocument.objects.filter(
+                    machine__makerspace=makerspace,
+                ).values_list("size_bytes", flat=True)),
+                "machine_type_documents": sum(MachineTypeDocument.objects.filter(
+                    makerspace=makerspace,
+                ).values_list("size_bytes", flat=True)),
                 "warranty_documents": self._sum(((key, None) for key in WarrantyDocument.objects.filter(warranty__makerspace=makerspace).values_list("object_key", flat=True)), warranty_storage.object_size),
                 "procurement_receipts": self._sum(((key, None) for key in ToBuyReceipt.objects.filter(to_buy_item__makerspace=makerspace).values_list("object_key", flat=True)), procurement_storage.object_size),
                 # Charged on upload by `maintenance/services_documents.py` and collected by
@@ -138,6 +146,10 @@ class Command(BaseCommand):
         except StorageReadError as exc:
             self.stdout.write(self.style.WARNING(f"{makerspace.slug}: usage left unchanged due to storage read error for {exc}."))
             return
+        # Upgrade legacy READY provenance only when this same transaction can
+        # commit the authoritative counter. Retained orphan debt also counts.
+        from apps.makerspaces.module_purge_collectors_devices import reconcile_artifact_charges
+        values["adapter_artifacts"] = reconcile_artifact_charges(makerspace)
         total = sum(values.values())
         Makerspace.objects.filter(pk=makerspace.pk).update(storage_bytes_used=total)
         self.stdout.write(self.style.SUCCESS(f"{makerspace.slug}: total={total} bytes"))
@@ -159,6 +171,12 @@ class Command(BaseCommand):
                                       *EventIdCard.objects.filter(makerspace=makerspace).exclude(photo_object_key="")
                                       .values_list("photo_object_key", "photo_size_bytes")], storage.object_size, True),
         }
+
+    @staticmethod
+    def _pending_upload_keys(makerspace):
+        from apps.makerspaces.models_storage_reservations import StorageQuotaReservation
+        # Pending bytes are added by _storage, independently of this counter.
+        return StorageQuotaReservation.objects.filter(makerspace=makerspace, converted=False).values("object_key")
 
     @staticmethod
     def _sum(rows, object_size, fallback=False):

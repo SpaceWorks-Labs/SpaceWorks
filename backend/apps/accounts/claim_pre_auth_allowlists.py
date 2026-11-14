@@ -64,17 +64,21 @@ POLICY_OVERRIDE_ALLOWLIST = {
     "config.throttles.DeploymentDeviceRateThrottle": {"allow_request", "get_cache_key", "get_rate", "wait"},
     "config.throttles.DeploymentUserRateThrottle": {"allow_request", "get_cache_key", "get_rate", "wait"},
     "config.throttles.DeploymentAnonRateThrottle": {"allow_request", "get_cache_key", "get_rate", "wait"},
-    "apps.apiclients.throttling.ClientTierRateThrottle": {"_apply_space_limit", "_tier", "allow_request", "get_cache_key"},
-    "apps.apiclients.throttling.MemberPrincipalRateThrottle": {"_apply_space_limit", "_tier", "allow_request", "get_cache_key"},
+    "apps.apiclients.throttling.ClientTierRateThrottle": {
+        "_apply_space_limit", "_tier", "allow_request", "get_cache_key", "_consume_slot", "wait"
+    },
+    "apps.apiclients.throttling.MemberPrincipalRateThrottle": {
+        "_apply_space_limit", "_tier", "allow_request", "get_cache_key", "_consume_slot", "wait"
+    },
     "apps.events.throttles.CollaborativeRegistrationThrottle": {
-        "_apply_space_limit", "_tier", "allow_request", "get_cache_key"
+        "_apply_space_limit", "_tier", "allow_request", "get_cache_key", "_consume_slot", "wait"
     },
     # Public feedback reads and submissions take separate budgets. The scope is chosen in
     # `allow_request` rather than a view-level `get_throttles()` override precisely BECAUSE
     # this guard forbids a lifecycle-hook override on a pre-auth route; the override set is
     # therefore identical to its ClientTierRateThrottle base.
     "apps.events.throttles.PublicFeedbackRateThrottle": {
-        "_apply_space_limit", "_tier", "allow_request", "get_cache_key"
+        "_apply_space_limit", "_tier", "allow_request", "get_cache_key", "_consume_slot", "wait"
     },
     # The account-less borrow-request budgets (#80). Both override `get_cache_key` only, to
     # return None for an authenticated caller, so a makerspace behind one NAT never

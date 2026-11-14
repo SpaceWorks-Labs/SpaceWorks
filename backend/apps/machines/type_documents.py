@@ -13,6 +13,9 @@ from rest_framework.exceptions import ValidationError
 
 from apps.audit import services as audit
 from apps.makerspaces import limits
+from apps.makerspaces.guards import require_module_locked
+from apps.makerspaces.models import Makerspace
+from apps.makerspaces.storage_reservations import claimed_receipt, deletion_claim, object_operation
 
 from . import storage
 from .models_type_setup import MachineTypeDocument
@@ -45,13 +48,38 @@ def attach(actor, space, machine_type, *, object_key, title, original_filename, 
     return row
 
 
-@transaction.atomic
 def remove(actor, row):
-    space, machine_type, size, key, title = row.makerspace, row.machine_type, row.size_bytes, row.object_key, row.title
-    row.delete()
-    limits.free_storage(space, size)
-    transaction.on_commit(lambda: storage.delete_object(key))
-    audit.record(actor, "machine_type_document.removed", makerspace=space, target=machine_type, meta={"title": title})
+    identity = {"pk": row.pk, "makerspace_id": row.makerspace_id, "machine_type_id": row.machine_type_id}
+    found = MachineTypeDocument.objects.filter(**identity).first()
+    if found is None:
+        return
+    with object_operation(found.object_key):
+        with transaction.atomic():
+            space = Makerspace.objects.select_for_update().get(pk=row.makerspace_id)
+            require_module_locked(space, "machines")
+            found = MachineTypeDocument.objects.select_for_update().filter(**identity).first()
+            if found is None:
+                return
+            receipt, version = deletion_claim(
+                space, found.object_key, found.size_bytes, charged=True, bounded_upload=True)
+        # Provider work cannot hold a tenant or document row lock.
+        if storage.delete_object(found.object_key) is not None:
+            raise storage.StorageUnavailable
+        with transaction.atomic():
+            space = Makerspace.objects.select_for_update().get(pk=row.makerspace_id)
+            require_module_locked(space, "machines")
+            fresh = MachineTypeDocument.objects.select_for_update().filter(**identity).first()
+            receipt = claimed_receipt(receipt, version)
+            if (fresh is None or receipt is None or fresh.object_key != found.object_key
+                    or fresh.size_bytes != found.size_bytes):
+                return
+            limits.free_storage(space, fresh.size_bytes)
+            receipt.released, receipt.cleaning = True, False
+            receipt.save(update_fields=["released", "cleaning"])
+            machine_type, title = fresh.machine_type, fresh.title
+            fresh.delete()
+            audit.record(actor, "machine_type_document.removed", makerspace=space,
+                         target=machine_type, meta={"title": title})
 
 
 def member_documents(space, machine_type):

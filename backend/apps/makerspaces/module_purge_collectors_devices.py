@@ -19,6 +19,11 @@ def delete_adapter_rows(makerspace):
     from apps.devices import models as m
 
     counts, labels = {}, set()  # object bytes: devices_private_keys, deleted post-commit
+    from .storage_reservations import deletion_claim
+    # The purge's tenant lock makes the row -> durable debt transfer atomic.
+    # READY alone is not charge provenance for artifacts predating accounting.
+    for artifact in m.AdapterArtifact.objects.filter(makerspace=makerspace):
+        deletion_claim(makerspace, artifact.object_key, artifact.size_bytes, charged=False, claim=False)
     for key, model in (
         ("adapter_artifacts", m.AdapterArtifact), ("adapter_telemetry", m.AdapterTelemetryPoint), ("adapter_telemetry_drops", m.AdapterTelemetryDrop),
         ("adapter_config_versions", m.AdapterConfigVersion), ("adapter_access_caches", m.AdapterAccessCache),
@@ -32,6 +37,23 @@ def delete_adapter_rows(makerspace):
         counts[key], found = _delete(model.objects.filter(makerspace=makerspace))
         labels |= found
     return counts, labels
+
+
+def reconcile_artifact_charges(makerspace):
+    """Called only by recompute under its tenant lock and total-write transaction."""
+    from apps.devices.models import AdapterArtifact
+    from .models_storage_reservations import StorageQuotaReservation as Reservation
+    from .storage_reservations import deletion_claim
+    for artifact in AdapterArtifact.objects.filter(makerspace=makerspace, status="ready"):
+        receipt, _ = deletion_claim(makerspace, artifact.object_key, artifact.size_bytes, charged=False, claim=False)
+        if receipt.released:
+            raise ValueError("A READY artifact cannot have settled storage debt.")
+        if not receipt.converted:
+            receipt.converted = True
+            receipt.save(update_fields=["converted"])
+    # One receipt per object: live READY rows and purged-module debt never overlap.
+    return sum(Reservation.objects.filter(makerspace=makerspace, object_key__startswith="adapter-artifacts/",
+        converted=True, released=False).values_list("size_bytes", flat=True))
 
 
 def devices_private_keys(makerspace, add):

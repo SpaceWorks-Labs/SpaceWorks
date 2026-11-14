@@ -119,7 +119,7 @@ class MemberPaymentHistoryView(APIView):
     def get(self, request, makerspace_id):
         if not member_may_see_own_charges(request.user, makerspace_id):
             return Response(
-                {"detail": gettext("An active membership or an existing charge is required.")},
+                {"detail": gettext("An active membership or an existing charge is required."), "code": "permission_denied"},
                 status=403,
             )
         filters = PaymentListFilterSerializer(data=request.query_params)

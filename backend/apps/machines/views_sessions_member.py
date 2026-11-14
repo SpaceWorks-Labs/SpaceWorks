@@ -128,6 +128,7 @@ class MemberSessionStartView(_MemberView):
         payload = SessionStartSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
         with transaction.atomic():
+            event_use.require_named_event(machine.makerspace, payload.validated_data["event_id"])
             row = service.start(machine, user, actor=user, source=MachineSession.Source.MEMBER_QR,
                                 digest=payload.validated_data["digest"] or None)
             event_use.attach(row, payload.validated_data["event_id"], actor=user)

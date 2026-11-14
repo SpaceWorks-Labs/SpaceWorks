@@ -32,6 +32,12 @@ class InboxFilters(serializers.Serializer):
 class InboxBase(APIView):
     permission_classes = [IsAuthenticated]
 
+    def owned_row(self, request, makerspace_id, pk):
+        # Decision 525: an addressed row is private even when a switch is off.
+        return get_object_or_404(rbac.scope_personal_notifications(
+            request.user, NotificationInboxRow.objects.all(),
+        ), makerspace_id=makerspace_id, pk=pk)
+
     def rows(self, request, makerspace_id):
         space = personal_space(request.user, makerspace_id)
         return space, rbac.scope_personal_notifications(
@@ -90,6 +96,7 @@ class InboxReadView(InboxBase):
     @extend_schema(tags=["Personal notifications"], request=None,
                    responses={200: InboxSerializer, **WRITE_ERRORS})
     def post(self, request, makerspace_id, pk):
+        self.owned_row(request, makerspace_id, pk)
         space, rows = self.rows(request, makerspace_id)
         with tenant_write(space.pk):
             row = get_object_or_404(rows.select_for_update(), pk=pk)

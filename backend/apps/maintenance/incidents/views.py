@@ -78,9 +78,9 @@ def _staff_space(actor, makerspace_id):
 
 def _staff_incident(actor, pk, *, read_only=False):
     row = get_object_or_404(Incident.objects.select_related("makerspace", "reporter", "involved_user"), pk=pk)
-    scope.require_incidents(row.makerspace)
     if not (scope.can_read(actor, row) if read_only else scope.can_triage(actor, row)):
         raise NotFound()
+    scope.require_incidents(row.makerspace)
     return row
 
 

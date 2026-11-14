@@ -29,14 +29,22 @@ def _services(space):
     return machine_use_services
 
 
+def require_named_event(space, event_id):
+    """Admit the optional event dependency before creating its subject (517/534)."""
+    if event_id in (None, ""):
+        return None
+    services = _services(space)
+    if services is None:
+        raise ValidationError({"event_id": gettext("Events are not turned on in this makerspace."),
+                               "code": "events_off"})
+    return services
+
+
 def attach(subject, event_id, *, actor):
     """Requester path (service request, member or staff session start): optional, strict when given."""
     if event_id in (None, ""):
         return None
-    services = _services(_space(subject))
-    if services is None:
-        raise ValidationError({"event_id": gettext("Events are not turned on in this makerspace."),
-                               "code": "events_off"})
+    services = require_named_event(_space(subject), event_id)
     return services.attach(subject, event_id, actor=actor)
 
 

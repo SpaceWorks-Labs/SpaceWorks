@@ -19,11 +19,12 @@ from .services_claim import (
 )
 
 
-def _lock_account(user, space):
+def _lock_account(user, space, *, provision_settings=True):
     from apps.makerspaces.models import Makerspace
     context = claim_context(user)
     space = Makerspace.objects.select_for_update(no_key=True).get(pk=space.pk)
-    PresenceSettings.objects.get_or_create(makerspace=space)
+    if provision_settings:
+        PresenceSettings.objects.get_or_create(makerspace=space)
     user = get_user_model().objects.select_for_update(no_key=True).get(pk=user.pk)
     if context is not None:
         user._claim_audit_context = context
@@ -138,7 +139,8 @@ def _start(user, space, duration, *, actor, staff, latitude=None, longitude=None
     with tenant_write(space.pk):
         claim = _claim(user, space)
         context = claim_context(user)
-        user, space = _lock_account(user, space)
+        # Refusals must not even attempt lazy settings provisioning (decision 533).
+        user, space = _lock_account(user, space, provision_settings=False)
         if staff:
             require_staff(actor, space)
         membership = require_account(user, space)
@@ -161,6 +163,7 @@ def _start(user, space, duration, *, actor, staff, latitude=None, longitude=None
         if status not in {"working", "visiting", "guest"} or (guest != (status == "guest")):
             raise PresenceError("invalid_presence_status", gettext("Choose an eligible status; event attendance requires a live ticket check-in."))
         project = owned_project(user, space, project_id, status)
+        PresenceSettings.objects.get_or_create(makerspace=space)
         return _create(user, space, membership, duration, actor=actor, status=status,
                        project=project, hide_on_display=hide_on_display, claim=claim)
 

@@ -59,6 +59,7 @@ class _InboxRowAction(InboxBase):
     action = ""
 
     def change(self, request, makerspace_id, pk, **values):
+        self.owned_row(request, makerspace_id, pk)
         space, rows = self.rows(request, makerspace_id)
         if not feature_enabled(space, FEATURE):
             raise NotFound()

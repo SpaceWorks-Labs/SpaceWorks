@@ -72,11 +72,15 @@ def require_source(makerspace, key):
 def source_q(key, prefix=""):
     """SQL twin of `source_enabled` for stored configuration (servability is separate)."""
     from apps.makerspaces.capabilities import feature_required_modules
+    from apps.makerspaces.loan_visibility import INVENTORY_ONLY_MODULES
 
     combined = Q(pk__in=[])
     for part in parts(key):
         if not is_capability(part):
-            combined |= Q(**{f"{prefix}enabled_modules__contains": [part]})
+            term = Q(**{f"{prefix}enabled_modules__contains": [part]})
+            if part in INVENTORY_ONLY_MODULES:
+                term &= Q(**{f"{prefix}enabled_features__contains": ["loans.enabled"]})
+            combined |= term
             continue
         term = Q(**{f"{prefix}enabled_features__contains": [part]})
         for module in feature_required_modules(part):

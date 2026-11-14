@@ -185,3 +185,8 @@ TARGET_SET_LOOKUPS.update(_mobstaff.TARGET_SET_LOOKUPS)
 BODY_SCOPED_ROUTES |= _mobstaff.BODY_SCOPED_ROUTES
 QUERY_SCOPED_ROUTES |= _mobstaff.QUERY_SCOPED_ROUTES
 NATIVE_HEADER_GLOBAL_ROUTES |= _mobstaff.NATIVE_HEADER_GLOBAL_ROUTES
+# Decision 545: member machine routes also need authoritative native targets.
+from . import origin_scope_routes_members as _members  # noqa: E402
+MODEL_LOOKUPS.update(_members.MODEL_LOOKUPS)
+QUERY_MAKERSPACE_PARAMS = _members.QUERY_MAKERSPACE_PARAMS
+QUERY_SCOPED_ROUTES |= _members.QUERY_SCOPED_ROUTES

@@ -75,8 +75,11 @@ def _run_legacy_return_reminders(*, now=None, limit=200) -> dict:
 
 
 def _legacy_rows(now):
+    from apps.makerspaces.scheduled_scope import live_space_ids
+
     return rbac.scope_for_scheduled_work(HardwareRequest.objects.all()).filter(
         makerspace__loan_policy__isnull=True,
+        makerspace_id__in=live_space_ids(("request_workflow", "loans.enabled")),
         status__in=[HardwareRequest.Status.ISSUED, HardwareRequest.Status.PARTIALLY_RETURNED],
         return_due_at__lte=now, return_reminder_sent_at__isnull=True,
     )

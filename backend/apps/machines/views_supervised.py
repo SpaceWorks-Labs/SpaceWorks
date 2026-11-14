@@ -48,9 +48,9 @@ class _Base(APIView):
 def _session(request, pk):
     row = get_object_or_404(SupervisedSession.objects.select_related(
         "makerspace", "machine__machine_type", "instructor"), pk=pk)
-    supervised.require_supervised(row.makerspace)
     if row.instructor_id != request.user.pk and not access.can_manage_machine(request.user, row.machine):
         raise NotFound()
+    supervised.require_supervised(row.makerspace)
     return row
 
 

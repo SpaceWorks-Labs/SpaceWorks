@@ -21,7 +21,7 @@ QUALIFIED = re.compile(r"\b(spaceworks_analytics(?:_platform|_admin)?)\.([a-z_]+
 
 
 def _with_login(makerspace, client):
-    created = client.post(space_url("-login", makerspace))
+    created = client.post(space_url("-login", makerspace), {"confirm": True}, format="json")
     assert created.status_code == 201, created.data
     return created.data
 

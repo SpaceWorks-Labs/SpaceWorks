@@ -40,12 +40,12 @@ def issue(space, scopes=ALL):
                         client_type="server", allowed_origins=["https://integration.example"])
 
 
-def read(client, secret, path, method="GET"):
+def read(client, secret, path, method="GET", **headers):
     timestamp = str(int(time.time()))
     message = b"\n".join([method.encode(), path.encode(), timestamp.encode(), b""])
     signature = hmac.new(secret.encode(), message, hashlib.sha256).hexdigest()
     return APIClient().generic(method, path, HTTP_X_CLIENT_ID=client.client_id,
-                               HTTP_X_TIMESTAMP=timestamp, HTTP_X_SIGNATURE=signature)
+                               HTTP_X_TIMESTAMP=timestamp, HTTP_X_SIGNATURE=signature, **headers)
 
 
 def person(event, n=1, status="registered"):
@@ -99,19 +99,54 @@ def test_participants_need_explicit_scope_conjunction(setup, scopes):
 
 
 @pytest.mark.django_db
-def test_client_types_global_binding_wrong_tenant_and_missing_targets(setup):
+@pytest.mark.area_events
+@pytest.mark.parametrize("changes", [{"client_type": "browser"}, {"makerspace": None},
+                                    {"client_type": "peer"}], ids=["browser", "global", "peer"])
+def test_invalid_client_types_and_global_binding_stay_generic(setup, changes):
     space, event = setup
     client, secret = issue(space)
-    path = f"/api/v1/events/{event.pk}/"
-    for changes in ({"client_type": "browser"}, {"makerspace": None}):
-        Client.objects.filter(pk=client.pk).update(**changes)
-        assert read(client, secret, path).status_code == 401
-        Client.objects.filter(pk=client.pk).update(client_type="server", makerspace=space)
-    other = make_space("lane-f-api-other")
-    Client.objects.filter(pk=client.pk).update(makerspace=other)
-    assert read(client, secret, path).status_code == 401
-    assert read(client, secret, "/api/v1/events/99999999/").status_code == 401
-    assert read(client, secret, "/api/v1/events/unknown/").status_code == 401
+    Client.objects.filter(pk=client.pk).update(**changes)
+    for pk in (event.pk, 99999999):
+        response = read(client, secret, f"/api/v1/events/{pk}/", HTTP_ORIGIN="https://integration.example")
+        assert_target_refusal(response, 401, None)
+
+
+def assert_target_refusal(response, status, code, *, authenticated=False):
+    assert (response.status_code, response.json().get("code")) == (status, code)
+    assert response.json() == ({"detail": "Not found.", "code": "not_found"} if status == 404
+                               else {"detail": "Invalid client signature."})
+    assert hasattr(response.wsgi_request, "api_client") is authenticated
+    assert getattr(response.wsgi_request, "api_client_signature_verified", False) is authenticated
+    if status == 404:
+        assert response["Cache-Control"] == "private, no-store"
+        assert response["Referrer-Policy"] == "no-referrer"
+
+
+@pytest.mark.django_db
+@pytest.mark.area_events
+@pytest.mark.parametrize("target", ["foreign", "missing"])
+@pytest.mark.parametrize("suffix", ["", "participants/"])
+def test_verified_foreign_and_missing_event_targets_are_hidden(setup, target, suffix):
+    space, event = setup
+    client, secret = issue(space)
+    path = f"/api/v1/events/{event.pk}/{suffix}"
+    control = read(client, secret, path)
+    assert (control.status_code, control.json().get("code")) == (200, None)
+    if target == "foreign":
+        Client.objects.filter(pk=client.pk).update(makerspace=make_space("lane-f-api-other"))
+    else:
+        path = f"/api/v1/events/99999999/{suffix}"
+    # Decisions 520/534 apply to signed Events reads as well as Bookings reads.
+    assert_target_refusal(read(client, secret, path), 404, "not_found")
+
+
+@pytest.mark.django_db
+@pytest.mark.area_events
+@pytest.mark.parametrize("suffix", ["unknown/", "malformed/participants/", "unregistered/route/"])
+def test_unknown_and_malformed_event_routes_stay_generic(setup, suffix):
+    space, _ = setup
+    client, secret = issue(space)
+    assert_target_refusal(read(client, secret, "/api/v1/events/" + suffix), 401, None)
 
 
 @pytest.mark.django_db
@@ -128,7 +163,9 @@ def test_live_tenant_module_feature_and_client_revocation(setup, change):
     else:
         Client.objects.filter(pk=client.pk).update(is_active=False)
     space.save()
-    assert read(client, secret, f"/api/v1/events/{event.pk}/").status_code in (401, 403, 404)
+    assert_target_refusal(read(client, secret, f"/api/v1/events/{event.pk}/"),
+                          401 if change == "inactive" else 404, None if change == "inactive" else "not_found",
+                          authenticated=change in {"module", "feature"})
 
 
 @pytest.mark.django_db

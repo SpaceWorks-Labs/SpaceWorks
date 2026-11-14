@@ -33,10 +33,11 @@ def onboarding_available(space):
 
 
 def authority(actor, space, roles=None):
-    if not onboarding_available(space):
-        raise ValidationError({"detail": gettext("Email invitations are off for this makerspace. Grant the role to a "
-                                         "community member instead.")})
+    from apps.makerspaces.guards import require_feature, require_module
+
     require_authority(actor, space, roles=roles)
+    require_module(space, "email")
+    require_feature(space, "staff.invitations")
 
 
 def snapshot(roles, machine_type_ids, machine_ids=()):

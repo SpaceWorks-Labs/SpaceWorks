@@ -137,8 +137,8 @@ class MemberBookingCheckoutView(APIView):
     @extend_schema(tags=["Member bookings"], summary="Check out of my booking with a leave remark",
                    request=DepartureInputSerializer, responses={200: MemberBookingSerializer, **ERRORS})
     def post(self, request, makerspace_slug, public_token):
-        from .views_member import own_bookings
-        booking = get_object_or_404(own_bookings(request, makerspace_slug), public_token=public_token)
+        from .views_member import own_booking
+        booking = own_booking(request, makerspace_slug, public_token)
         body = DepartureInputSerializer(data=request.data)
         body.is_valid(raise_exception=True)
         booking = record_departure(booking, actor=request.user, source=DepartureSource.MEMBER, **body.validated_data)

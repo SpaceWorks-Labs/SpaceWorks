@@ -7,11 +7,13 @@ never see staff notes, technicians, quotes or who works the job -- only the stat
 
 from django.utils.translation import gettext
 from django.shortcuts import get_object_or_404
-from drf_spectacular.utils import OpenApiParameter, extend_schema
+from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework import serializers, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
+from apps.hardware_requests.exceptions import ErrorSerializer
 
 from apps.apiclients.throttling import MemberPrincipalRateThrottle
 from apps.evidence.responses import storage_unavailable_response
@@ -77,7 +79,14 @@ class MemberIssueListView(APIView):
             "makerspace", "machine", "product", "asset", "room"), relation="makerspace")
         if (space := request.query_params.get("makerspace")) and str(space).isdigit():
             rows = rows.filter(makerspace_id=int(space))
-        return Response(MemberIssueReportSerializer(rows.order_by("-created_at")[:100], many=True).data)
+        visible = []
+        # Filter streams before the cap so disabled history cannot crowd out live rows.
+        for row in rows.order_by("-created_at").iterator(chunk_size=100):
+            if areas.area_on(row.makerspace, row.area):
+                visible.append(row)
+                if len(visible) == 100:
+                    break
+        return Response(MemberIssueReportSerializer(visible, many=True).data)
 
     @extend_schema(tags=TAGS, summary="Report a problem with my loan, booking, machine job or machine session",
                    request=IssueReportCreateSerializer, responses={201: IssueReportCreatedSerializer, **ERRORS})
@@ -104,14 +113,17 @@ class MemberIssuePhotoUploadView(APIView):
     throttle_scope = "public_request_submit"
 
     @extend_schema(tags=TAGS, summary="Presign a private photo for my report (staging key)",
-                   request=MemberIssuePhotoSerializer, responses={201: IssuePhotoUploadResponseSerializer, **ERRORS})
+                   request=MemberIssuePhotoSerializer, responses={201: IssuePhotoUploadResponseSerializer, **ERRORS,
+                   400: OpenApiResponse(ErrorSerializer, description="Invalid upload; upload_size_required (declare size in bytes on PUT-only storage), upload_limit (file/headroom) or limit_reached (combined storage)."),
+                   409: OpenApiResponse(ErrorSerializer, description="storage_public_images_bytes_quota_reached."),
+                   503: OpenApiResponse(ErrorSerializer, description="Storage unavailable.")})
     def post(self, request):
         user = _require_owner_session(request)
         body = MemberIssuePhotoSerializer(data=request.data)
         body.is_valid(raise_exception=True)
         space = _space(body.validated_data.get("makerspace_id"), body.validated_data.get("makerspace_slug"))
         try:
-            data = photos.issue_upload(space, body.validated_data["content_type"], photos.owner_for_user(user))
+            data = photos.issue_upload(space, body.validated_data["content_type"], photos.owner_for_user(user), **({"size": body.validated_data.get("size")} if body.validated_data.get("size") is not None else {}))
         except StorageUnavailable:
             return storage_unavailable_response()
         return Response(data, status=status.HTTP_201_CREATED)

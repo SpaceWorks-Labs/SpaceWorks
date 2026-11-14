@@ -1,4 +1,9 @@
 """BK-H wire-level signature, tenant, scope and projection contracts."""
+import hashlib
+import hmac
+import time
+from uuid import uuid4
+
 import pytest
 from django.test import RequestFactory
 from rest_framework.test import APIClient
@@ -12,7 +17,7 @@ from apps.bookings.models import BookableSpace, Booking
 from apps.bookings.views_integration import IntegrationBookingListView
 from tests.bookings.integration_read_helpers import PREFIX, principal, read_world, signed
 
-pytestmark = pytest.mark.django_db
+pytestmark = [pytest.mark.django_db, pytest.mark.area_bookings]
 
 
 def paths(w):
@@ -63,12 +68,109 @@ def test_user_or_resource_authority_cannot_replace_signature(read_world):
         SignedServerReadPermission().has_permission(request, IntegrationBookingListView())
 
 
-def test_foreign_missing_and_unknown_targets_are_denied(read_world):
-    w = read_world
-    for suffix in [f"resources/{w.other.pk}/", f"resources/{w.other.pk}/bookings/",
-                   f"bookings/{w.foreign_booking.pk}/", "bookings/999999999/", "unknown/"]:
-        assert signed(w.client, PREFIX + suffix).status_code == 401
-    assert signed(w.client, PREFIX + "bookings/malformed/").status_code == 401
+def assert_target_refusal(response, status, code, *, authenticated=False):
+    assert (response.status_code, response.json().get("code")) == (status, code)
+    assert response.json() == ({"detail": "Not found.", "code": "not_found"} if status == 404
+                               else {"detail": "Invalid client signature."})
+    assert hasattr(response.wsgi_request, "api_client") is authenticated
+    assert getattr(response.wsgi_request, "api_client_signature_verified", False) is authenticated
+    if status == 404:
+        assert response["Cache-Control"] == "private, no-store"
+        assert response["Referrer-Policy"] == "no-referrer"
+
+
+def target_path(w, kind, target):
+    ids = ((w.booking.pk, w.foreign_booking.pk, 999999999) if kind == "booking"
+           else (w.resource.pk, w.other.pk, 999999999))
+    pk = ids[["local", "foreign", "missing"].index(target)]
+    suffix = f"bookings/{pk}/" if kind == "booking" else f"resources/{pk}/"
+    return PREFIX + suffix + ("bookings/" if kind == "reservations" else "")
+
+
+def target_headers(row, path, *, timestamp=None, nonce=None):
+    timestamp = str(int(time.time())) if timestamp is None else str(timestamp)
+    nonce = uuid4().hex if nonce is None else nonce
+    payload = "\n".join(["GET", path, timestamp, nonce, ""])
+    digest = hmac.new(row.get_secret().encode(), payload.encode(), hashlib.sha256).hexdigest()
+    return {"HTTP_X_CLIENT_ID": row.client_id, "HTTP_X_TIMESTAMP": timestamp,
+            "HTTP_X_NONCE": nonce, "HTTP_X_SIGNATURE": digest}
+
+
+@pytest.mark.parametrize("kind", ["resource", "reservations", "booking"])
+@pytest.mark.parametrize("target", ["foreign", "missing"])
+def test_verified_foreign_and_missing_targets_are_hidden(read_world, kind, target):
+    # Decisions 520/534: only an authenticated, fully entitled caller gets concealment.
+    response = signed(read_world.client, target_path(read_world, kind, target))
+    assert_target_refusal(response, 404, "not_found")
+
+
+@pytest.mark.parametrize("suffix", ["unknown/", "bookings/malformed/", "resources/malformed/",
+                                   "resources/malformed/bookings/"])
+def test_unknown_and_malformed_targets_keep_generic_authentication_refusal(read_world, suffix):
+    assert_target_refusal(signed(read_world.client, PREFIX + suffix), 401, None)
+
+
+@pytest.mark.parametrize("kind", ["resource", "reservations", "booking"])
+@pytest.mark.parametrize("target", ["local", "foreign", "missing"])
+@pytest.mark.parametrize("authority", ["missing_scope", "browser", "global", "peer"])
+def test_target_concealment_requires_scope_and_principal_authority(read_world, kind, target, authority):
+    row = principal(None if authority == "global" else read_world.tenant,
+                    scopes=["public:read"] if authority == "missing_scope" else None,
+                    client_type=authority if authority in {"browser", "peer"} else "server",
+                    allowed_origins=["https://integration.example.test"])
+    response = signed(row, target_path(read_world, kind, target),
+                      HTTP_ORIGIN="https://integration.example.test")
+    assert_target_refusal(response, 401, None)
+
+
+@pytest.mark.parametrize("kind", ["resource", "reservations", "booking"])
+@pytest.mark.parametrize("target", ["local", "foreign", "missing"])
+@pytest.mark.parametrize("failure", ["unsigned", "bad_signature", "missing_signature", "missing_nonce",
+                                    "malformed_nonce", "nonce_tampered", "path_tampered", "past", "future",
+                                    "bad_timestamp", "unknown_client", "inactive_client", "wrong_origin"])
+def test_invalid_credentials_never_become_target_concealment(read_world, settings, kind, target, failure):
+    settings.HMAC_MAX_CLOCK_SKEW_SECONDS = 300
+    path = target_path(read_world, kind, target)
+    headers = target_headers(read_world.client, path)
+    if failure == "unsigned":
+        headers = {}
+    elif failure == "bad_signature":
+        headers["HTTP_X_SIGNATURE"] = "0" * 64
+    elif failure in {"missing_signature", "missing_nonce"}:
+        headers.pop("HTTP_X_SIGNATURE" if failure == "missing_signature" else "HTTP_X_NONCE")
+    elif failure == "malformed_nonce":
+        headers = target_headers(read_world.client, path, nonce="bad:nonce")
+    elif failure == "nonce_tampered":
+        headers["HTTP_X_NONCE"] = uuid4().hex
+    elif failure == "path_tampered":
+        headers = target_headers(read_world.client, path + "?tampered=1")
+    elif failure in {"past", "future", "bad_timestamp"}:
+        stamp = "not-a-number" if failure == "bad_timestamp" else int(time.time()) + (
+            -10000 if failure == "past" else 10000)
+        headers = target_headers(read_world.client, path, timestamp=stamp)
+    elif failure == "unknown_client":
+        headers["HTTP_X_CLIENT_ID"] = "ck_unknown_" + uuid4().hex
+    elif failure == "inactive_client":
+        read_world.client.is_active = False
+        read_world.client.save(update_fields=["is_active"])
+    elif failure == "wrong_origin":
+        headers["HTTP_ORIGIN"] = "https://untrusted.example.test"
+    assert_target_refusal(APIClient().get(path, **headers), 401, None)
+
+
+@pytest.mark.parametrize("kind", ["resource", "reservations", "booking"])
+@pytest.mark.parametrize("target", ["local", "foreign", "missing"])
+def test_replay_stays_generic_after_success_or_target_concealment(read_world, kind, target):
+    path = target_path(read_world, kind, target)
+    headers = target_headers(read_world.client, path)
+    first = APIClient().get(path, **headers)
+    if target == "local":
+        assert (first.status_code, first.json().get("code")) == (200, None)
+        assert first.wsgi_request.api_client.pk == read_world.client.pk
+        assert first.wsgi_request.api_client_signature_verified is True
+    else:
+        assert_target_refusal(first, 404, "not_found")
+    assert_target_refusal(APIClient().get(path, **headers), 401, None)
 
 
 @pytest.mark.parametrize("gate", ["feature", "module", "archived", "inactive"])
@@ -85,7 +187,8 @@ def test_live_tenant_and_feature_revocation(read_world, gate):
         w.tenant.lifecycle_state = "migrated_out"
     w.tenant.save()
     for suffix in paths(w):
-        assert signed(w.client, PREFIX + suffix).status_code in (401, 404)
+        assert_target_refusal(signed(w.client, PREFIX + suffix), 404, "not_found",
+                              authenticated=gate in {"feature", "module"})
 
 
 def test_scope_separation_and_exact_field_allow_lists(read_world):

@@ -69,15 +69,16 @@ class ReservationPolicySerializer(serializers.ModelSerializer):
         fields = ["pickup_window_hours", "reservation_max_days_ahead", "waitlist_offer_hours"]
 
 
-def _member_space(request, makerspace_id):
+def _member_space(request, makerspace_id, *, gated=True):
     # Borrower scope, not membership scope: with `membership` off any active account may
     # request (`request_access.ACCOUNTS`), so its owner must also be able to withdraw that
     # request and use the waitlist. Every row below goes through `_own`, which admits only
     # a live, unrestricted owner; joining re-checks the request identity rule
     # (`waitlist.require_waitlist_member`).
     space = get_object_or_404(servable_queryset(Makerspace.objects.all()), pk=makerspace_id)
-    require_module(space, "request_workflow")
-    require_feature(space, "loans.enabled")
+    if gated:
+        require_module(space, "request_workflow")
+        require_feature(space, "loans.enabled")
     return space
 
 
@@ -98,11 +99,13 @@ class MemberRequestWithdrawView(APIView):
     @extend_schema(tags=["Loans"], summary="Withdraw my own request before it is handed over",
                    request=CancelRequestSerializer, responses={200: ClosedRequestSerializer, **ERRORS})
     def post(self, request, makerspace_id, pk):
-        space = _member_space(request, makerspace_id)
+        space = _member_space(request, makerspace_id, gated=False)
+        row = get_object_or_404(_own(request, HardwareRequest.objects.all(), space), pk=pk)
+        require_module(space, "request_workflow")
+        require_feature(space, "loans.enabled")
         require_feature(space, "loans.withdrawals")
         payload = CancelRequestSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
-        row = get_object_or_404(_own(request, HardwareRequest.objects.all(), space), pk=pk)
         row = workflow.cancel_request(request.user, row, by_owner=True, reason=payload.validated_data["reason"])
         return Response(ClosedRequestSerializer(row).data)
 
@@ -154,8 +157,12 @@ class MemberWaitlistLeaveView(APIView):
     @extend_schema(tags=["Loans"], summary="Leave a waitlist (an offer's held items go to the next in line)",
                    request=None, responses={200: WaitlistEntrySerializer, **ERRORS})
     def post(self, request, makerspace_id, pk):
-        space = _member_space(request, makerspace_id)
+        # Resolve ownership before the loan surface; waitlist/notification switches
+        # never prevent this owner's cleanup (537).
+        space = _member_space(request, makerspace_id, gated=False)
         entry = get_object_or_404(_own(request, LoanWaitlistEntry.objects.all(), space, "user"), pk=pk)
+        require_module(space, "request_workflow")
+        require_feature(space, "loans.enabled")
         return Response(WaitlistEntrySerializer(waitlist.leave(request.user, entry)).data)
 
 

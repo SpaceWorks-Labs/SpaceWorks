@@ -8,6 +8,7 @@ from urllib.parse import urlsplit
 from django.conf import settings
 from django.http import JsonResponse
 from django.utils import timezone
+from rest_framework.exceptions import NotFound
 from apps.apiclients import telemetry
 from apps.apiclients.read_prefixes import requires_signed_read
 from apps.apiclients.crypto import decrypt_secret
@@ -25,12 +26,9 @@ from apps.inventory.middleware_observability import (
     NO_CREDENTIALS,
     ORIGIN_DENIED,
     SKEW,
-    TARGET_UNRESOLVED,
-    TENANT_MISMATCH,
     UNKNOWN_CLIENT,
     WOULD_REJECT_EVENT as WOULD_REJECT_EVENT,
     log_would_reject,
-    scope_failure_reason,
     failure_reason,
     set_failure_reason,
 )
@@ -41,10 +39,11 @@ AMBIGUOUS_NONCE_BODY_EVENT = "api_client_nonce_ambiguous_body"
 
 
 from apps.inventory.middleware_publishable import PublishableKeyMixin
+from apps.inventory.middleware_hmac_scope import ClientScopeMixin
 from config.redis_cache import SharedCacheUnavailable
 
 
-class FrontendHMACMiddleware(PublishableKeyMixin):
+class FrontendHMACMiddleware(PublishableKeyMixin, ClientScopeMixin):
     """Validate signed client requests for protected API paths using the ApiClient registry."""
 
     def __init__(self, get_response):
@@ -57,6 +56,11 @@ class FrontendHMACMiddleware(PublishableKeyMixin):
             if not is_valid and not settings.API_CLIENT_AUTH_REQUIRED:
                 log_would_reject(request)
         if self._should_reject_invalid(request) and not is_valid:
+            if getattr(request, "_api_client_signed_target_hidden", False):
+                response = JsonResponse({"detail": str(NotFound().detail), "code": "not_found"}, status=404)
+                response["Cache-Control"] = "private, no-store"
+                response["Referrer-Policy"] = "no-referrer"
+                return response
             if failure_reason(request) == NONCE_STORE_UNAVAILABLE:
                 # The signature was good; the replay guard could not be consulted. Retryable,
                 # and never accepted unproven (decision 339).
@@ -102,6 +106,7 @@ class FrontendHMACMiddleware(PublishableKeyMixin):
         )
 
     def _is_valid(self, request):
+        request._api_client_signed_target_hidden = False
         set_failure_reason(request, NO_CREDENTIALS)
         # X-Nonce selects the signed protocol. It must never be accepted through the
         # publishable-key or browser-client paths, where it would be replay decoration
@@ -128,8 +133,6 @@ class FrontendHMACMiddleware(PublishableKeyMixin):
                 return False
             if not self._origin_ok(request, client):
                 set_failure_reason(request, ORIGIN_DENIED)
-                return False
-            if not self._scope_checks_ok(request, client):
                 return False
             try:
                 skew = abs(int(time.time()) - int(timestamp))
@@ -198,6 +201,10 @@ class FrontendHMACMiddleware(PublishableKeyMixin):
                     LEGACY_NONCE_WARNING_EVENT,
                     extra={"client_id": client_id},
                 )
+            # Only an authenticated, replay-checked caller may learn a target refusal.
+            if not self._scope_checks_ok(request, client):
+                request._api_client_signed_target_hidden = self._signed_target_hidden(request, client)
+                return False
             request.api_client = client
             request.api_client_signature_verified = True
             telemetry.record_signed_client_observation(request, client)
@@ -245,51 +252,3 @@ class FrontendHMACMiddleware(PublishableKeyMixin):
         except Exception:
             logger.exception("Frontend ApiClient validation failed")
             return False
-
-    def _client_scope_ok(self, request, client):
-        from apps.apiclients import scope_registry
-
-        entry = scope_registry.lookup(
-            scope_registry.resolve_view_name(request), request.method
-        )
-        if entry is None:
-            set_failure_reason(request, TARGET_UNRESOLVED)
-            return False
-        target, resolved = scope_registry.resolve_target_once(request, entry)
-        allowed = scope_registry.target_allows(entry, client, target, resolved)
-        if not allowed:
-            reason = TARGET_UNRESOLVED if not resolved else TENANT_MISMATCH
-            set_failure_reason(request, reason)
-        return allowed
-
-    def _makerspace_scope_ok(self, request, makerspace):
-        from apps.apiclients import scope_registry
-
-        entry = scope_registry.lookup(
-            scope_registry.resolve_view_name(request), request.method
-        )
-        if entry is None:
-            set_failure_reason(request, TARGET_UNRESOLVED)
-            return False
-        target, resolved = scope_registry.resolve_target_once(request, entry)
-        if entry.target_mode == scope_registry.TARGET_GLOBAL:
-            return True
-        if not resolved:
-            set_failure_reason(request, TARGET_UNRESOLVED)
-            return False
-        allowed = getattr(target, "pk", None) == makerspace.pk
-        if not allowed:
-            set_failure_reason(request, TENANT_MISMATCH)
-        return allowed
-
-    def _request_scope_ok(self, request, client):
-        from apps.apiclients import scope_registry
-
-        observation = scope_registry.classify(request, client)
-        if not observation.verdict:
-            set_failure_reason(request, scope_failure_reason(observation, client))
-        return observation.verdict
-
-    def _scope_checks_ok(self, request, client):
-        request_scope_ok = self._request_scope_ok(request, client)
-        return request_scope_ok and self._client_scope_ok(request, client)

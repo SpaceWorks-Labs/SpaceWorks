@@ -1,13 +1,6 @@
-"""Run due report schedules: build through the manual export path, store, deliver, record.
-
-Fail-safe per schedule: one broken schedule (bad filters, storage down, a dead webhook)
-records a FAILED delivery and lets the sweep carry on. The run is idempotent under a
-coarse cron because the claim advances `next_run_at` under a `skip_locked` row lock
-BEFORE any work happens; a second worker in the same minute finds nothing due.
-"""
+"""Check live sources before claiming; build, store and deliver admitted report schedules."""
 from django.utils.translation import gettext
 from apps.operations.cloud_jobs import bounded
-
 
 import logging
 from datetime import timedelta
@@ -22,13 +15,9 @@ from apps.audit import services as audit
 from apps.integrations.dispatch import dispatch_email
 from apps.integrations.dispatch_destination import deliver_text_to_destination
 from apps.integrations.models import EmailLog
-from apps.makerspaces.platform import module_enabled
+from apps.makerspaces.platform import feature_enabled, module_enabled
 from apps.operations import reports
-from apps.operations.models_report_schedules import (
-    ReportDelivery,
-    ReportSchedule,
-    advance_next_run,
-)
+from apps.operations.models_report_schedules import ReportDelivery, ReportSchedule, advance_next_run
 from apps.operations.report_delivery_storage import (
     delete_report_object,
     report_object_key,
@@ -40,6 +29,7 @@ from apps.operations.report_exports_provenance import build_provenance, export_f
 from apps.operations.report_registry import REPORT_REGISTRY
 from apps.operations.report_schedule_rules import condition_matches, recipient_emails, validate_condition
 from apps.operations.report_scope import eligible_makerspace_ids
+from apps.operations.report_sources import source_enabled
 from apps.operations.views_report_helpers import date_range_from_dates
 from apps.tenant_migration.gate_runtime import fanout_tenant_write
 from config.locale_resolution import override_for
@@ -80,7 +70,7 @@ def run_schedule(schedule_id, *, now=None, counts=None, force=False, actor=None)
     """Claim and run one schedule. `force` runs it now regardless of `next_run_at`."""
     now = now or timezone.now()
     counts = counts if counts is not None else {"delivered": 0, "failed": 0, "skipped": 0}
-    schedule = _claim(schedule_id, now, force)
+    schedule = _claim(schedule_id, now, force, counts)
     if schedule is None:
         return None
     _sweep_expired(schedule, now)
@@ -101,9 +91,9 @@ def run_schedule(schedule_id, *, now=None, counts=None, force=False, actor=None)
     return delivery
 
 
-def _claim(schedule_id, now, force):
+def _claim(schedule_id, now, force, counts):
     with transaction.atomic():
-        # Lock only the schedule; load nullable relations after the claim.
+        # Lock only the schedule; check live configuration before any coordinating write.
         queryset = (
             rbac.scope_for_scheduled_work(ReportSchedule.objects.all())
             .select_for_update(skip_locked=True, of=("self",))
@@ -113,6 +103,14 @@ def _claim(schedule_id, now, force):
             queryset = queryset.filter(next_run_at__lte=now)
         schedule = queryset.first()
         if schedule is None:
+            return None
+        definition = REPORT_REGISTRY.get(schedule.report_key)
+        if (not module_enabled(schedule.makerspace, "reports")
+                or definition is not None and (
+                    definition.required_feature and not feature_enabled(schedule.makerspace, definition.required_feature)
+                    or any(not source_enabled(schedule.makerspace, key) for key in definition.required_modules))
+                or schedule.makerspace_id not in eligible_makerspace_ids()):
+            counts["skipped"] += 1
             return None
         if schedule.next_run_at <= now:
             schedule.next_run_at = advance_next_run(schedule.next_run_at, schedule.cadence, now)
@@ -131,10 +129,8 @@ def _skip_reason(schedule, definition):
     if not module_enabled(schedule.makerspace, "reports"):
         return "module_disabled:reports"
     # A capability-gated report stops running while its switch is off (#95).
-    from apps.makerspaces.platform import feature_enabled
     if definition.required_feature and not feature_enabled(schedule.makerspace, definition.required_feature):
         return f"feature_disabled:{definition.required_feature}"
-    from .report_sources import source_enabled
     for module in definition.required_modules:
         if not source_enabled(schedule.makerspace, module):
             return f"module_disabled:{module}"

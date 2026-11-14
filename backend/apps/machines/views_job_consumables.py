@@ -17,6 +17,7 @@ from rest_framework.views import APIView
 
 from apps.admin_api.permissions import IsActiveStaff
 from apps.apiclients.throttling import MemberPrincipalRateThrottle
+from apps.makerspaces.guards import require_module
 
 from . import consumable_usage as usage
 from .models import MachineServiceRequest
@@ -88,6 +89,7 @@ class MemberJobConsumablesView(APIView):
         from .views_service_cancel import _owned, _require_owner_session
         user = _require_owner_session(request)
         row = _owned(user, Q(pk=pk))
+        require_module(row.makerspace, "machine_service")
         payload = ConsumableEntrySerializer(data=request.data, many=True)
         payload.is_valid(raise_exception=True)
         with transaction.atomic():

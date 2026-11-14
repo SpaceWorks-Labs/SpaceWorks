@@ -1,5 +1,5 @@
 from django.shortcuts import get_object_or_404
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import NotFound, PermissionDenied
 
 from apps.accounts import rbac
 from apps.accounts.models import User
@@ -26,7 +26,7 @@ def personal_space(user, makerspace_id, *, preferences=False):
         makerspace=space,
     ).exists()
     if membership is None and not owned and not rbac.effective_actions(user, space.pk):
-        raise PermissionDenied()
+        raise NotFound()
     require_module(space, "notifications")
     key = "notifications.member_preferences" if preferences else "notifications.member_inbox"
     # Staff can always reach their personal inbox. Member feature gates stay opt-in.

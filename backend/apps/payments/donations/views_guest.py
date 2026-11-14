@@ -8,6 +8,7 @@ their gift, pays it, downloads their 80G receipt, and manages their pledge -- no
 from django.utils.translation import gettext
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiResponse, extend_schema
+from rest_framework import serializers
 from rest_framework.exceptions import NotFound
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -52,6 +53,10 @@ class GuestGiftView(APIView):
         return Response(s.GiftStatusSerializer(s.gift_status(_gift(token), token=token)).data)
 
 
+class GiftCheckoutUnavailableSerializer(s.GiftStatusSerializer):
+    code = serializers.CharField()
+
+
 class GuestGiftCheckoutView(APIView):
     permission_classes = [AllowAny]
     authentication_classes = []
@@ -60,7 +65,7 @@ class GuestGiftCheckoutView(APIView):
     @extend_schema(tags=["Donations"], summary="Open the hosted checkout for a guest's gift", auth=[], request=None,
                    description="503 `payments_unavailable` when online payment is off or the provider failed; the "
                                "gift stays payable offline.",
-                   responses={200: s.GiftStatusSerializer, 503: OpenApiResponse(s.GiftStatusSerializer), **ERRORS})
+                   responses={200: s.GiftStatusSerializer, 503: OpenApiResponse(GiftCheckoutUnavailableSerializer), **ERRORS})
     def post(self, request, token):
         from .services import checkout_url
         from .tax_receipts import payment_for
@@ -70,6 +75,8 @@ class GuestGiftCheckoutView(APIView):
         with tenant_write(donation.makerspace_id):
             url = checkout_url(payment) if payment else ""
         body = s.GiftStatusSerializer(s.gift_status(donation, payment=payment, token=token, checkout=url)).data
+        if not url:
+            body["code"] = "payments_unavailable"
         return Response(body, status=200 if url else 503)
 
 

@@ -70,6 +70,8 @@ def execute(identity, envelope):
         try:
             station, lease, user = _live_command(command, identity, envelope)
         except ReplayFailure as exc:
+            if exc.code in {"module_disabled", "feature_disabled"}:
+                raise  # Keep the command pending until its live source is restored (537).
             if exc.code not in TRANSIENT and command.state == ReplayCommand.State.PREPARED:
                 fail_locked(command, exc, lease_snapshot(command))
             failure = exc
@@ -110,6 +112,8 @@ def execute(identity, envelope):
                 "replay_id": str(command.pk), "error_type": type(exc).__name__,
             })
             failure = ReplayFailure("server_unavailable")
+        if failure.code in {"module_disabled", "feature_disabled"}:
+            raise failure from None
         if failure.code in TRANSIENT:
             release(command.pk, token)
         else:

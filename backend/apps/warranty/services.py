@@ -83,6 +83,7 @@ def upsert_warranty(actor, *, data, asset=None, machine=None):
         raise ValueError("Exactly one warranty host is required.")
     kind, host = hosts[0]
     host = _locked_host(actor, kind, host)
+    vendor = _vendor(host.makerspace_id, data["vendor_id"]) if "vendor_id" in data else None
     warranty, created = Warranty.objects.get_or_create(
         **{kind: host}, defaults={"makerspace_id": host.makerspace_id},
     )
@@ -91,7 +92,7 @@ def upsert_warranty(actor, *, data, asset=None, machine=None):
         if field in data:
             setattr(warranty, field, data[field])
     if "vendor_id" in data:
-        warranty.vendor = _vendor(host.makerspace_id, data["vendor_id"])
+        warranty.vendor = vendor
     try:
         warranty.full_clean()
     except DjangoValidationError as exc:
@@ -110,7 +111,7 @@ def presign_document(actor, warranty, data):
     locked = _locked_warranty(actor, warranty.pk)
     ext = storage.ext_for(data["content_type"], data["filename"])
     object_key = storage.warranty_object_key(locked.makerspace_id, ext)
-    upload = storage.presigned_upload(object_key, data["content_type"])
+    upload = storage.presigned_upload(object_key, data["content_type"], **({"exact_bytes": data.get("size")} if data.get("size") is not None else {}))
     return {"object_key": object_key, "upload": upload}
 
 
@@ -123,6 +124,8 @@ def finalize_document(actor, warranty, data):
         raise ValidationError({"object_key": gettext("This warranty document is already attached.")})
     storage.finalize_upload(object_key, settings.WARRANTY_DOC_MAX_BYTES)
     result = storage.validate_warranty_object(object_key)
+    from apps.makerspaces.limits import charge_upload
+    charge_upload(locked.makerspace, result.size, object_key=object_key)
     document = WarrantyDocument.objects.create(
         warranty=locked,
         object_key=object_key,

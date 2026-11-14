@@ -29,7 +29,7 @@ def member_space(makerspace_id, key=DONATIONS):
     space = servable_queryset(Makerspace.objects.filter(pk=makerspace_id)).first()
     if space is None:
         raise NotFound(gettext("Makerspace not found."))
-    return require_feature(space, key)
+    return require_feature(space, key) if key else space
 
 
 class MemberDonationListView(APIView):
@@ -54,12 +54,17 @@ class MemberTaxReceiptView(APIView):
     def get(self, request, makerspace_id, pk):
         from .tax_receipt_pdf import pdf_response
 
-        space = require_feature(member_space(makerspace_id), TAX)
+        space = member_space(makerspace_id, key=None)
         from apps.accounts.staff_identity import actor_ids_for
 
         donation = Donation.objects.filter(makerspace=space, donor_id__in=actor_ids_for(request.user), pk=pk).first()
-        if donation is None or not donation.tax_receipt:
-            raise NotFound({"detail": gettext("No tax-exempt receipt was issued for this gift."), "code": "no_tax_receipt"})
+        missing = NotFound({"detail": gettext("No tax-exempt receipt was issued for this gift."), "code": "no_tax_receipt"})
+        if donation is None:
+            raise missing
+        require_feature(space, DONATIONS)
+        require_feature(space, TAX)
+        if not donation.tax_receipt:
+            raise missing
         return pdf_response(donation)
 
 
@@ -88,10 +93,11 @@ class MemberPledgeActionView(APIView):
         from .serializers_staff import pledge_status
         from .services import clean_amount
 
-        space = member_space(makerspace_id, PLEDGES)
+        space = member_space(makerspace_id, key=None)
         pledge = DonationPledge.objects.filter(makerspace=space, donor=request.user, pk=pk).first()
         if pledge is None:
             raise NotFound(gettext("Pledge not found."))
+        require_feature(space, PLEDGES)
         payload = s.PledgeActionSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
         data = payload.validated_data

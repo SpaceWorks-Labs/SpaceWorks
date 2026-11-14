@@ -115,11 +115,12 @@ class SavedReportViewDetailView(APIView):
     permission_classes = [IsActiveStaff]
 
     def row(self, request, makerspace_id, pk, *, lock=False):
-        space = space_for_views(request.user, makerspace_id, lock=lock)
+        space = _makerspace_for_catalog(request.user, makerspace_id)
         rows = accessible_report_views(request.user, space)
         if lock:
             rows = rows.select_for_update(of=("self",))
         row = get_object_or_404(rows, pk=pk)
+        space = space_for_views(request.user, makerspace_id, lock=lock)
         authorize_view(request.user, space, row.state)
         if not owner_authorized(row, space):
             raise PermissionDenied(gettext("The view owner can no longer open this report."))

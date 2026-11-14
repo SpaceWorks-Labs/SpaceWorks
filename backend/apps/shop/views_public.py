@@ -14,7 +14,7 @@ from rest_framework.views import APIView
 
 from apps.apiclients.throttling import ClientTierRateThrottle
 
-from .gates import public_space
+from .gates import public_space, require_selling
 from .serializers_public import (
     ShopBuyerOrderSerializer, ShopEmailCodeSerializer, ShopOrderCreateSerializer, ShopOrderPlacedSerializer, ShopPublicProductSerializer,
     ShopQuoteRequestSerializer, ShopErrorSerializer, ShopQuoteSerializer, ShopSummarySerializer,
@@ -105,6 +105,7 @@ class PublicShopOrderView(_Public):
         body = ShopOrderCreateSerializer(data=request.data)
         body.is_valid(raise_exception=True)
         data = body.validated_data
+        require_selling(space)
         buyer = buyer_for(request, space, data)
         order, payment = place_online_order(space, buyer, data,
                                             idempotency_key=request.headers.get("Idempotency-Key", ""))

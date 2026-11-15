@@ -14,7 +14,7 @@ from rest_framework.views import APIView
 from apps.admin_api.permissions import IsActiveStaff
 from apps.audit import services as audit
 from apps.hardware_requests.exceptions import ErrorSerializer
-from apps.tenant_migration.gate_runtime import tenant_write
+from .gates import donation_write as tenant_write
 
 from . import serializers_sponsors as s
 from . import sponsors
@@ -55,7 +55,7 @@ class SponsorListView(APIView):
         space = staff_space(request.user, makerspace_id, SPONSORS, record=True)
         payload = s.SponsorSerializer(data=request.data, context=_ctx(request))
         payload.is_valid(raise_exception=True)
-        with tenant_write(space.pk):
+        with tenant_write(space.pk, key=SPONSORS):
             row = sponsors.save_sponsor(space, actor=request.user, data=payload.validated_data)
         return Response(s.SponsorSerializer(row, context=_ctx(request)).data, status=201)
 
@@ -73,7 +73,7 @@ class SponsorDetailView(APIView):
         row = _row(request, Sponsor, makerspace_id, pk, record=True)
         payload = s.SponsorSerializer(row, data=request.data, partial=True, context=_ctx(request))
         payload.is_valid(raise_exception=True)
-        with tenant_write(row.makerspace_id):
+        with tenant_write(row.makerspace_id, key=SPONSORS):
             row = sponsors.save_sponsor(row.makerspace, actor=request.user, data=payload.validated_data, sponsor=row)
         return Response(s.SponsorSerializer(row, context=_ctx(request)).data)
 
@@ -87,7 +87,7 @@ class SponsorArchiveView(APIView):
                    responses={200: s.SponsorSerializer, **ERRORS})
     def post(self, request, makerspace_id, pk):
         row = _row(request, Sponsor, makerspace_id, pk, record=True)
-        with tenant_write(row.makerspace_id):
+        with tenant_write(row.makerspace_id, key=SPONSORS):
             row = sponsors.archive_sponsor(row, actor=request.user, archived=self.archived)
         return Response(s.SponsorSerializer(row, context=_ctx(request)).data)
 
@@ -108,7 +108,7 @@ class TierListView(APIView):
         space = staff_space(request.user, makerspace_id, SPONSORS, record=True)
         payload = s.TierSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
-        with tenant_write(space.pk):
+        with tenant_write(space.pk, key=SPONSORS):
             row = payload.save(makerspace=space, currency=space_currency(space))
             audit.record(request.user, "sponsor.tier_created", makerspace=space, target=row, meta={"tier_id": row.pk})
         return Response(s.TierSerializer(row).data, status=201)
@@ -123,7 +123,7 @@ class TierDetailView(APIView):
         row = _row(request, SponsorTier, makerspace_id, pk, record=True)
         payload = s.TierSerializer(row, data=request.data, partial=True)
         payload.is_valid(raise_exception=True)
-        with tenant_write(row.makerspace_id):
+        with tenant_write(row.makerspace_id, key=SPONSORS):
             row = payload.save()
             audit.record(request.user, "sponsor.tier_updated", makerspace=row.makerspace, target=row,
                          meta={"tier_id": row.pk, "fields": sorted(payload.validated_data)})
@@ -149,7 +149,7 @@ class PerkListView(APIView):
         space = staff_space(request.user, makerspace_id, SPONSORS, record=True)
         payload = s.PerkSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
-        with tenant_write(space.pk):
+        with tenant_write(space.pk, key=SPONSORS):
             row = sponsors.save_perk(space, actor=request.user, data=payload.validated_data)
             if row.tier_id:
                 for sponsor in Sponsor.objects.filter(tier_id=row.tier_id, archived_at__isnull=True):
@@ -167,7 +167,7 @@ class PerkFulfilView(APIView):
         row = _row(request, SponsorPerk, makerspace_id, pk, record=True, label="Perk not found.")
         payload = s.FulfilSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
-        with tenant_write(row.makerspace_id):
+        with tenant_write(row.makerspace_id, key=SPONSORS):
             row = sponsors.fulfil_perk(row, actor=request.user, **payload.validated_data)
         return Response(s.PerkSerializer(row).data)
 
@@ -189,7 +189,7 @@ class ChargeListView(APIView):
         sponsor = _row(request, Sponsor, makerspace_id, pk, record=True)
         payload = s.ChargeCreateSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
-        with tenant_write(sponsor.makerspace_id):
+        with tenant_write(sponsor.makerspace_id, key=SPONSORS):
             charge, _payment = sponsors.raise_charge(sponsor, actor=request.user, **payload.validated_data)
         return Response(s.ChargeSerializer(charge).data, status=201)
 
@@ -211,7 +211,7 @@ class ChargeReturnView(APIView):
 
         charge = _row(request, SponsorshipCharge, makerspace_id, pk, record=True, label="Charge not found.")
         payment = Payment.objects.get(makerspace_id=makerspace_id, subject_type="sponsorship", subject_id=charge.pk)
-        with tenant_write(charge.makerspace_id):
+        with tenant_write(charge.makerspace_id, key=SPONSORS):
             body = ChargeReturnSerializer(data=request.data)
             body.is_valid(raise_exception=True)
             open_return_case(payment, actor=request.user, reason=body.validated_data["reason"])
@@ -241,7 +241,7 @@ class EventLinkListView(APIView):
                                                     makerspace_id=makerspace_id).first()
         if event_sponsor is None:
             raise NotFound(gettext("Event sponsor not found."))
-        with tenant_write(sponsor.makerspace_id):
+        with tenant_write(sponsor.makerspace_id, key=SPONSORS):
             link = sponsors.link_event_sponsor(sponsor, event_sponsor, actor=request.user)
         return Response(s.EventLinkSerializer(link).data, status=201)
 
@@ -270,6 +270,6 @@ class EventLinkDetailView(APIView):
                    request=None, responses={204: None, **ERRORS})
     def delete(self, request, makerspace_id, pk):
         link = _row(request, SponsorEventLink, makerspace_id, pk, record=True, label="Link not found.")
-        with tenant_write(link.makerspace_id):
+        with tenant_write(link.makerspace_id, key=SPONSORS):
             sponsors.unlink_event_sponsor(link, actor=request.user)
         return Response(status=204)

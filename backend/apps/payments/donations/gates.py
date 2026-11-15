@@ -7,6 +7,8 @@ cancelling or opening a refund case needs `manage_donations` or `record_payment`
 manager holds either, so donation money never reaches an area's views.
 """
 
+from contextlib import contextmanager
+
 from django.utils.translation import gettext
 from rest_framework.exceptions import APIException, NotFound, PermissionDenied
 
@@ -28,7 +30,7 @@ class DonationRefused(APIException):
 
 class FeatureOff(NotFound):
     def __init__(self, key):
-        super().__init__({"detail": "This feature is turned off here.", "code": "feature_disabled", "key": key})
+        super().__init__({"detail": gettext("This feature is turned off here."), "code": "feature_disabled", "key": key})
 
 
 def tax_key(space, tax):
@@ -79,14 +81,57 @@ def may_record(actor, makerspace_id):
                for action in (rbac.Action.MANAGE_DONATIONS, rbac.Action.RECORD_PAYMENT))
 
 
+def require_fundraising_locked(space, key=DONATIONS, *, money=False, tax=None, tax_request=None, features=()):
+    """One fresh switch fence, inside an atomic block, before any side effect.
+
+    Lock order is makerspace before donor/pledge/payment. `key=None` only locks:
+    core settlement must finish even with fundraising off; optional receipt/rail
+    work then uses this fresh row to decide whether to skip its own effects.
+    Tax admission applies to NEW details, never a period reusing stored details.
+    """
+    from apps.makerspaces.guards import feature_off, require_feature_locked
+    from apps.makerspaces.models import Makerspace
+
+    if key is None:
+        space = Makerspace.objects.select_for_update(no_key=True).get(pk=getattr(space, "pk", space))
+    else:
+        space = require_feature_locked(space, DONATIONS)
+        if not feature_enabled(space, key):
+            raise feature_off(key)
+    for feature in features:
+        if not feature_enabled(space, feature):
+            raise feature_off(feature)
+    if money:
+        require_tracking(space)
+    if tax_request is not None or (tax and tax[0]):
+        from .tax_receipts import clean_request
+
+        clean_request(space, tax_request if tax_request is not None else {
+            "wants_tax_receipt": tax[0], "donor_pan": tax[1], "donor_address": tax[2]})
+    return space
+
+
+@contextmanager
+def donation_write(makerspace_id, key=DONATIONS, **requirements):
+    """Serialize fundraising writes against the Space Manager's switch changes."""
+    from apps.tenant_migration.gate_runtime import tenant_write
+
+    with tenant_write(makerspace_id):
+        yield require_fundraising_locked(makerspace_id, key, **requirements)
+
+
 def staff_space(actor, makerspace_id, key, *, record=False):
-    """The servable space when `actor` holds donations authority there, else 404."""
+    """Standing before switches: foreign space 404, local missing action 403."""
     from apps.makerspaces.models import Makerspace
     from apps.makerspaces.servability import servable_queryset
 
-    space = servable_queryset(Makerspace.objects.filter(pk=makerspace_id)).first()
-    if space is None or read_action(actor, makerspace_id) is None:
+    visible = rbac.scope_by_visibility_or_action(
+        actor, rbac.Action.MANAGE_DONATIONS, Makerspace.objects.filter(pk=makerspace_id), field="pk")
+    space = servable_queryset(visible).first()
+    if space is None:
         raise NotFound(gettext("Makerspace not found."))
+    if read_action(actor, makerspace_id) is None:
+        raise PermissionDenied()
     require_feature(space, key)
     if record and not may_record(actor, makerspace_id):
         raise PermissionDenied({"detail": gettext("Recording money needs manage_donations or record_payment."),

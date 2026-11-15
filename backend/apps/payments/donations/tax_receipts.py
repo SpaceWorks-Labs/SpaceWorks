@@ -13,11 +13,12 @@
 
 from django.utils.translation import gettext
 import re
+from django.db import transaction
 
 from django.utils import timezone
 
 from . import nonprofit
-from .gates import DonationRefused
+from .gates import DONATIONS, DonationRefused, require_fundraising_locked
 
 PAN_RE = re.compile(r"^[A-Z]{5}[0-9]{4}[A-Z]$")
 SECTION = "80G"
@@ -76,13 +77,26 @@ def payment_for(donation):
                                   subject_id=donation.pk).first()
 
 
+@transaction.atomic
 def freeze(donation):
     """Freeze the tax receipt on a received gift; returns it, or None when none is owed."""
-    from .models import DonationSettings
+    from .models import Donation, DonationSettings
 
-    if not donation.wants_tax_receipt or donation.tax_receipt is not None or donation.paid_at is None:
+    from apps.makerspaces.platform import feature_enabled
+
+    # Settlement is core: unavailable optional receipts are skipped, never
+    # allowed to strand an already received payment or erase a frozen receipt.
+    space = require_fundraising_locked(donation.makerspace_id, key=None)
+    # Reload INTO the caller's instance so a replay's response and notice also
+    # use the immutable first snapshot. Always lock makerspace before gift.
+    donation.refresh_from_db(from_queryset=Donation.objects.select_for_update().filter(
+        pk=donation.pk, makerspace_id=space.pk))
+    if donation.tax_receipt is not None:
         return donation.tax_receipt
-    space = donation.makerspace
+    if not donation.wants_tax_receipt or donation.status != Donation.Status.PAID or donation.paid_at is None:
+        return None
+    if not feature_enabled(space, DONATIONS):
+        return None
     settings = DonationSettings.for_makerspace(space)
     received_on = timezone.localdate(donation.paid_at)
     if not nonprofit.receipts_available(space, settings, received_on):

@@ -11,6 +11,7 @@ from django.db.models import Q, Sum
 from django.utils import timezone
 from django.utils.translation import gettext
 from drf_spectacular.utils import OpenApiResponse, extend_schema
+from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -21,7 +22,7 @@ from apps.makerspaces.platform import feature_enabled
 from apps.tenant_migration.gate_runtime import tenant_write
 
 from . import serializers_public as s
-from .gates import PLEDGES, SPONSORS, public_space, require_feature, tax_key
+from .gates import DONATIONS, PLEDGES, SPONSORS, donation_write, public_space, require_feature, tax_key
 from .identity import PLEDGE_SALT, STATUS_SALT, donor_for, link_token, send_code
 from .models import DonationCampaign, DonationSettings
 
@@ -41,6 +42,20 @@ class _Give:
 
     throttle_classes = [ClientTierRateThrottle]
     throttle_scope = "public_request_submit"
+
+
+def _locked_donor(request, space, data, key):
+    """Fence identity writes, committing enabled-path failed guesses before raising."""
+    verification_error = None
+    with donation_write(space.pk, key, money=True, tax_request=data) as space:
+        try:
+            donor = donor_for(request, space, data)
+        except ValidationError as exc:
+            # consume_code has recorded the failed attempt/audit in this transaction.
+            verification_error = exc
+    if verification_error is not None:
+        raise verification_error
+    return donor
 
 
 def open_campaigns(space):
@@ -109,7 +124,7 @@ class DonationEmailCodeView(_Give, APIView):
         space = public_space(makerspace_slug)
         payload = s.EmailCodeSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
-        with tenant_write(space.pk):
+        with donation_write(space.pk):
             send_code(space, payload.validated_data["donor_email"])
         return Response(status=202)
 
@@ -121,7 +136,7 @@ class DonationCreateView(_Give, APIView):
                    description="Signed in, the gift is yours; otherwise send donor_name, donor_email and the "
                                "email_code. Returns the hosted checkout URL when online payment is on, else the "
                                "offline instructions. 400 `donor_identity_required`, `amount_below_minimum`, "
-                               "`campaign_closed`, `tax_receipts_unavailable`, `pan_invalid`. Audited "
+                               "`campaign_closed`, `charges_off`, `tax_receipts_unavailable`, `pan_invalid`. Audited "
                                "`donation.created`.",
                    request=s.DonationCreateSerializer, responses={201: s.GiftStatusSerializer, **ERRORS})
     def post(self, request, makerspace_slug):
@@ -135,8 +150,7 @@ class DonationCreateView(_Give, APIView):
         amount = clean_amount(space, data["amount"])
         campaign = open_campaign(space, data["campaign"])
         tax = clean_request(space, data)
-        # Outside any transaction: a wrong code must burn its attempt even though the gift fails.
-        donor = donor_for(request, space, data)
+        donor = _locked_donor(request, space, data, DONATIONS)
         with tax_key(space, tax), tenant_write(space.pk):
             donation, payment = create_gift(space, donor, amount=amount, campaign=campaign, note=data["note"],
                                             tax=tax, recognize=data["recognize_publicly"])
@@ -153,7 +167,9 @@ class PledgeCreateView(_Give, APIView):
 
     @extend_schema(tags=["Donations"], summary="Pledge a gift every period",
                    description="Needs `finance.recurring_donations`. Each period raises one charge the giver pays; "
-                               "no card is stored. Guests get a signed manage link. Audited `pledge.created`.",
+                               "no card is stored. 400 `charges_off` before guest proof consumption; "
+                               "`tax_receipts_unavailable` before collecting new tax details. Guests get a signed "
+                               "manage link. Audited `pledge.created`.",
                    request=s.PledgeCreateSerializer, responses={201: s.PledgeStatusSerializer, **ERRORS})
     def post(self, request, makerspace_slug):
         from .pledges import create_pledge
@@ -168,7 +184,7 @@ class PledgeCreateView(_Give, APIView):
         amount = clean_amount(space, data["amount"])
         campaign = open_campaign(space, data["campaign"])
         tax = clean_request(space, data)
-        donor = donor_for(request, space, data)  # outside any transaction, like giving
+        donor = _locked_donor(request, space, data, PLEDGES)
         with tax_key(space, tax), tenant_write(space.pk):
             pledge = create_pledge(space, donor, amount=amount, interval=data["interval"],
                                    starts_on=data["starts_on"], campaign=campaign, tax=tax)
@@ -181,7 +197,7 @@ class SponsorWallView(_Read, APIView):
 
     @extend_schema(tags=["Donations"], summary="The space's public sponsor wall", auth=[],
                    description="Public fields only (name, tier, logo, website, blurb). 404 while "
-                               "`finance.sponsors` is off.", responses={200: s.SponsorWallSerializer, **ERRORS})
+                               "`finance.donations` or `finance.sponsors` is off.", responses={200: s.SponsorWallSerializer, **ERRORS})
     def get(self, request, makerspace_slug):
         from .wall import wall
 

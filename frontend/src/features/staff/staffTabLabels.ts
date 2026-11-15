@@ -60,7 +60,7 @@ export const TAB_LABELS: Record<string, string> = {
   backups: t`Backup & restore`,
   migration: t`Move a space`,
   shop: t`Shop`,
-  donations: t`Donations`,
+  donations: t`Fundraising`,
   analytics: t`Analytics`,
   "platform-analytics": t`Platform analytics`,
 };

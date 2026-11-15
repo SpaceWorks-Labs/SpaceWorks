@@ -9,14 +9,14 @@ settings, written through the settings authority (Space Manager only, never dele
 from django.utils.translation import gettext
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import NotFound, PermissionDenied
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.admin_api.permissions import IsActiveStaff
 from apps.audit import services as audit
 from apps.hardware_requests.exceptions import ErrorSerializer
-from apps.tenant_migration.gate_runtime import tenant_write
+from .gates import donation_write as tenant_write
 
 from . import serializers_staff as s
 from .gates import DONATIONS, PLEDGES, TAX, require_feature, scoped, staff_space, tax_key
@@ -61,10 +61,14 @@ def gift_or_404(request, makerspace_id, pk, *, record=False):
 class DonationSettingsView(APIView):
     permission_classes = [IsActiveStaff]
 
-    @extend_schema(tags=TAG, summary="Donation page text and the non-profit profile",
+    @extend_schema(tags=TAG, summary="Donation page text and the non-profit profile (Space Manager only)",
                    responses={200: s.DonationSettingsSerializer, **ERRORS})
     def get(self, request, makerspace_id):
+        from apps.accounts import rbac
+
         space = staff_space(request.user, makerspace_id, DONATIONS)
+        if not rbac.is_space_manager_identity(request.user, space.pk):
+            raise PermissionDenied()
         return Response(s.DonationSettingsSerializer(DonationSettings.for_makerspace(space)).data)
 
     @extend_schema(tags=TAG, summary="Change donation settings (Space Manager only)",
@@ -126,10 +130,8 @@ class CampaignDetailView(APIView):
             raise NotFound(gettext("Campaign not found."))
         payload = s.CampaignSerializer(row, data=request.data, partial=True)
         payload.is_valid(raise_exception=True)
-        with tenant_write(space.pk):
-            from apps.makerspaces.guards import require_feature_locked
+        with tenant_write(space.pk) as space:
             from apps.managed_hosting.extra_quotas import check_extra_quota
-            space = require_feature_locked(space, DONATIONS)
             row = scoped(request.user, DonationCampaign, makerspace_id).select_for_update().get(pk=pk)
             if not row.is_active and payload.validated_data.get("is_active", False):
                 check_extra_quota(space, "donation_campaigns")
@@ -161,7 +163,8 @@ class DonationListView(APIView):
 
     @extend_schema(tags=TAG, summary="Record a gift received in person",
                    description="Raises the gift's charge and settles it offline with the receipt in one go "
-                               "(maker-checker applies). Audited `donation.created` and `payment.paid_offline`.",
+                               "(maker-checker applies). 400 `charges_off` or `tax_receipts_unavailable` before "
+                               "creating the desk identity. Audited `donation.created` and `payment.paid_offline`.",
                    request=s.DeskGiftSerializer, responses={201: s.DonationSerializer, **ERRORS})
     def post(self, request, makerspace_id):
         from .identity import Donor
@@ -173,7 +176,7 @@ class DonationListView(APIView):
         payload.is_valid(raise_exception=True)
         data = payload.validated_data
         tax = clean_request(space, data)
-        with tax_key(space, tax), tenant_write(space.pk):
+        with tax_key(space, tax), tenant_write(space.pk, money=True, tax=tax) as space:
             from apps.makerspaces.anonymous_requesters import get_or_create_anonymous_requester
 
             donor = Donor(account=None, name=data["donor_name"].strip(), email=data["donor_email"].strip().lower(),
@@ -258,7 +261,7 @@ class PledgeActionView(APIView):
         payload = PledgeActionSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
         data = payload.validated_data
-        with tenant_write(pledge.makerspace_id):
+        with tenant_write(pledge.makerspace_id, key=PLEDGES):
             pledge = change_pledge(pledge, actor=request.user, action=data["action"], amount=data["amount"],
                                    interval=data["interval"])
         return Response(s.PledgeSerializer(pledge, context={"request": request}).data)

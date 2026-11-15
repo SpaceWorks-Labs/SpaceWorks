@@ -989,6 +989,30 @@ See [refund cases in payment billing](payment-billing.md#refund-cases-and-polici
 
 ### Donations and sponsors (`finance.*`)
 
+Owner decision 550 uses the existing standalone `finance.donations` capability as the
+**Donations and sponsors** master switch. It is OFF by default and the Space Manager
+turns it on in Areas & add-ons. Turning it off hides the whole Fundraising area,
+public donation and sponsor surfaces and scheduled work, and refuses new writes;
+all campaigns, gifts, pledges, sponsors and saved sponsor choices are retained.
+`finance.sponsors` is an additional sponsor choice and reads off while the master is off.
+
+**Fundraising** is a protected built-in default alongside Space Manager, Inventory Manager,
+Machine Manager and Member. These five named defaults belong to the existing fixed catalogue,
+which also retains Event Manager, Booking Manager, Handover, Technician and Shop Manager.
+It has exactly `manage_donations`: its standalone console opens only Fundraising, with
+campaigns, gifts, pledges, sponsors, donor receipt details and receipts. Settings and the
+non-profit profile remain Space-Manager-only. RBAC scopes its ledger rows and offline
+settlement to donation and sponsorship subjects in its own makerspace. New spaces receive
+the role from the catalogue; migration `0156_fundraising_role_550` repairs missing rows in
+existing spaces once. Its audited reverse preserves pre-existing roles and refuses to
+remove any seeded role in use.
+
+The master adds no dependency on the online rail: with charge tracking enabled and the
+rail absent, each gift or sponsorship raises one pending `Payment` with `provider=unclaimed`,
+settled offline with an append-only receipt. `charges.enabled` and `charges.donations`
+still decide whether real money can be recorded; campaigns and recognition remain free
+with charges off (479/509/519). Existing debts keep their ordinary settlement paths.
+
 No module key: four parentless capabilities on the core ledger, each off by default.
 `finance.donations` adds a public donation page per space (optional campaigns and funds with a goal
 and window), one-off gifts from anyone (signed in, or a guest confirmed by an emailed code), gifts
@@ -1226,10 +1250,10 @@ its parent module is off.
 | `events.transfers` | `events` (needs `events.orders`) | | Attendees hand a ticket to another account (credential rotated, card re-issued) or change ticket type (pay the difference, or a refund case for it), when the organiser allows | Transfers and type changes are refused |
 | `events.desk_collect` | `events` | | Check-in staff record a pending ticket payment at the desk (receipt) or open a pay-now checkout | Settlement stays in the payments console |
 | `events.refund_override` | `events` | | An event's own refund policy, shown before payment; after the first sale it may only become more generous | The space's events refund policy applies |
-| `finance.donations` | standalone core ledger | | The donation page, campaigns and funds, one-off gifts (signed in or a guest with an emailed code), desk gifts and receipts; every gift is `donations` income in the ledger | Page, giving and staff screens answer 404; gifts and their charges are kept |
+| `finance.donations` | standalone core ledger | | Donations and sponsors master (550), OFF by default; the donation page, campaigns, gifts and receipts | Fundraising, giving, sponsor surfaces and jobs are off; rows and sponsor choices are kept |
 | `finance.recurring_donations` | standalone core ledger (needs `finance.donations`) | | Pledges that raise one charge per month, quarter or year; the giver pays each like any charge, no card stored; missed periods are never back-charged | No new pledges and no period charges; pledges are kept |
 | `finance.tax_exempt_receipts` | standalone core ledger (needs `finance.donations`) | | India 80G receipts with the space's registration number and validity; the donor's PAN is asked only for an 80G receipt and is always stored encrypted | No 80G option; frozen receipts are kept |
-| `finance.sponsors` | standalone core ledger | | Sponsors with tiers, perk checklists (who ticked, when), sponsorship charges and the opt-in sponsor wall (Pages section and event page) | Sponsor screens, wall and perk reminders are gone; rows are kept |
+| `finance.sponsors` | standalone core ledger (effective only with `finance.donations`) | | Sponsors with tiers, perk checklists (who ticked, when), sponsorship charges and the opt-in sponsor wall (Pages section and event page) | Sponsor screens, wall and perk reminders are gone; rows are kept |
 | `charges.donations` | standalone core ledger | ● | Record every gift, pledge period and sponsor payment as a charge (with `charges.enabled`) | The space takes no donation or sponsor money: gifts, pledges and sponsor charges are refused, pledge periods are skipped (never back-charged), the donate page says so; past gifts are kept |
 | `payments.donations` | `payments` (needs `finance.donations`) | | Gifts and sponsor money can be paid online | Gifts are settled offline with a receipt |
 | `bookings.calendar_feed` | `bookings` | ● | A member's private calendar link for their own bookings | The link answers 404; links are kept and work again when turned back on |

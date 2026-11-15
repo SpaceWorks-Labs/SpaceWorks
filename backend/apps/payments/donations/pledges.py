@@ -12,7 +12,7 @@ import logging
 from dateutil.relativedelta import relativedelta
 from django.db import IntegrityError, transaction
 from django.utils import timezone
-from .gates import DonationRefused, require_tracking
+from .gates import PLEDGES, DonationRefused, require_fundraising_locked
 
 from apps.audit import services as audit
 
@@ -33,7 +33,7 @@ def create_pledge(space, donor, *, amount, interval, starts_on=None, campaign=No
     from .services import space_currency, tax_detail_for
 
     assert_write_allowed(space.pk)
-    require_tracking(space)
+    space = require_fundraising_locked(space, PLEDGES, money=True, tax=tax)
     if interval not in STEP:
         raise DonationRefused(gettext("Choose monthly, quarterly or yearly."), "interval_invalid", "interval")
     today = timezone.localdate()
@@ -54,6 +54,7 @@ def create_pledge(space, donor, *, amount, interval, starts_on=None, campaign=No
 @transaction.atomic
 def change_pledge(pledge, *, actor, action, amount=None, interval=None):
     """pause / resume / cancel / update (amount, interval) -- audited `pledge.<action>`."""
+    require_fundraising_locked(pledge.makerspace_id, PLEDGES)
     locked = DonationPledge.objects.select_for_update().get(pk=pledge.pk)
     if locked.status == DonationPledge.Status.CANCELLED:
         raise DonationRefused(gettext("This pledge is cancelled."), "pledge_cancelled")
@@ -104,6 +105,7 @@ def raise_period(pledge, today):
     from .services import create_gift
 
     with transaction.atomic():
+        require_fundraising_locked(pledge.makerspace_id, PLEDGES, money=True)
         locked = DonationPledge.objects.select_for_update().select_related("makerspace").get(pk=pledge.pk)
         if (locked.status != DonationPledge.Status.ACTIVE or locked.next_due_on > today
                 or (locked.ends_on and locked.next_due_on > locked.ends_on)):

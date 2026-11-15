@@ -44,7 +44,7 @@ const EXPECTED: Record<string, { landing: string; tabs: string[] }> = {
   // Decision 242(a): every charge owner (not the Technician) gets their own-area Payments queue.
   technician: { landing: "dashboard", tabs: ["dashboard", "reports", "repairs", "audit", "schedule"] },
   shop_manager: { landing: "dashboard", tabs: ["dashboard", "reports", "payments", "refunds", "finance", "shop", "audit"] },
-  fundraising: { landing: "donations", tabs: ["reports", "refunds", "donations", "audit"] },
+  fundraising: { landing: "donations", tabs: ["donations"] },
 };
 
 // #219(e-1): area roles open the Audit tab without view_audit (the server narrows rows to
@@ -55,7 +55,7 @@ const tabsFor = (role: string) => getStaffAccess(ROLE_ACTIONS[role], false, fals
 describe("decision 217: per-role console", () => {
   it.each(Object.keys(EXPECTED))("%s gets exactly its job's tabs and landing", role => {
     const access = tabsFor(role);
-    expect([...access.allowedTabs].sort()).toEqual([...EXPECTED[role].tabs, ...PERSONAL].sort());
+    expect([...access.allowedTabs].sort()).toEqual([...EXPECTED[role].tabs, ...(role === "fundraising" ? [] : PERSONAL)].sort());
     expect(access.defaultTab).toBe(EXPECTED[role].landing);
     expect(access.handoutOnly).toBe(false);
   });

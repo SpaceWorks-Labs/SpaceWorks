@@ -60,7 +60,9 @@ def test_no_area_manager_reaches_donations(role):
     space, manager, donor = setup(f"fr-area-{role[:6]}")
     other = staff(f"fr-area-{role[:6]}", space, role)
     for tail in ("", "/campaigns", "/donors", "/export.csv", "/settings"):
-        assert client(other).get(admin(space, tail)).status_code == 404, tail
+        refused = client(other).get(admin(space, tail))
+        assert refused.status_code == 403, tail
+        assert refused.json()["code"] == "permission_denied"
     view = finance_view(other, space.pk)
     assert not view.sees("donations") and not view.may_record("donations")
 

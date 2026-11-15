@@ -25,7 +25,7 @@ export const FEATURE_DEFINITIONS_4: readonly FeatureDefinition[] = [
   { key: "events.refund_override", parent_module: "events", label: t`Per-event refund policy` },
   { key: "events.venue_fees", parent_module: "events", label: t`Venue fees for hosting` },
   // L18 (#94, #96, #128 C-14): donations, sponsors and calendar sync.
-  { key: "finance.donations", parent_module: null, label: t`Donations` },
+  { key: "finance.donations", parent_module: null, label: t`Donations and sponsors` },
   { key: "finance.recurring_donations", parent_module: null, label: t`Recurring donations` },
   { key: "finance.sponsors", parent_module: null, label: t`Sponsors` },
   { key: "finance.tax_exempt_receipts", parent_module: null, label: t`Tax-exempt donation receipts` },

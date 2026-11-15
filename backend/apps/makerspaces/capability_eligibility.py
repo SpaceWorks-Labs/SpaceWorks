@@ -14,6 +14,9 @@ def configuration_feature_enabled(makerspace, key):
         return False
     if key in LOAN_FEATURES and not configuration_feature_enabled(makerspace, "loans.enabled"):
         return False
+    # Decision 550: donations is the master; the sponsor choice stays stored while off.
+    if key == "finance.sponsors" and not configuration_feature_enabled(makerspace, "finance.donations"):
+        return False
     definition = FEATURES.get(key)
     if definition is None or key not in set(makerspace.enabled_features or []):
         return False

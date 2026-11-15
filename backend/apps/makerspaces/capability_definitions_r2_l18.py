@@ -19,7 +19,7 @@ Switching any of them off keeps the data (#95, #128 C-8).
 
 def definitions(feature):
     return (
-        feature("finance.donations", None, "Donations",
+        feature("finance.donations", None, "Donations and sponsors",
                 "A donation page for the space, optional campaigns and funds, receipts, and gifts "
                 "recorded by staff. Every gift is income in the finance ledger."),
         feature("finance.recurring_donations", None, "Recurring donations",

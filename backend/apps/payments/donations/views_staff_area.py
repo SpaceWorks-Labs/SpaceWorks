@@ -22,7 +22,7 @@ from apps.accounts.pii_presentation import MASK, pii_visible, require_pii_access
 from apps.admin_api.permissions import IsActiveStaff
 from apps.audit import services as audit
 from apps.payments.serializers_l5 import StaffClaimSerializer
-from apps.tenant_migration.gate_runtime import tenant_write
+from .gates import donation_write as tenant_write
 
 from .gates import DONATIONS, DonationRefused, scoped, staff_space
 from .models import Donation
@@ -121,8 +121,9 @@ class DonationExportView(APIView):
             gift.donor_name, gift.donor_email, gift.donor_id is None, gift.pledge_id is not None,
             gift.recognize_publicly, (gift.tax_receipt or {}).get("number", ""),
             getattr(payments.get(gift.pk), "status", "")) for gift in rows]
-        audit.record(request.user, "donation.exported", makerspace=space, target=space, meta={
-            "rows": len(rows), "status": status, "campaign_id": int(campaign) if campaign.isdigit() else None})
+        with tenant_write(space.pk):
+            audit.record(request.user, "donation.exported", makerspace=space, target=space, meta={
+                "rows": len(rows), "status": status, "campaign_id": int(campaign) if campaign.isdigit() else None})
         return csv_response(table, f"donations-{space.slug}-{timezone.localdate().isoformat()}.csv")
 
 
@@ -145,7 +146,7 @@ class ReceiptReissueView(APIView):
             receipt = freeze(donation)
             audit.record(request.user, "donation.receipt_reissued", makerspace=donation.makerspace,
                          target=donation, meta={"donation_id": donation.pk, "tax_receipt": bool(receipt)})
-        notify_receipt(donation, marker=timezone.now().isoformat())
+            notify_receipt(donation, marker=timezone.now().isoformat())
         return Response(DonationSerializer(donation, context={"request": request,
                                                               "payments": payments_by_gift([donation])}).data)
 
@@ -174,9 +175,10 @@ class GiftClaimDecisionView(APIView):
             raise NotFound({"detail": gettext("This gift has no open paid claim."), "code": "no_open_claim"})
         payload = ClaimDecisionSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
-        if self.confirm:
-            claim = offline_claims.confirm_claim(actor=request.user, makerspace_id=makerspace_id, claim_id=claim.pk)
-        else:
-            claim = offline_claims.reject_claim(actor=request.user, makerspace_id=makerspace_id, claim_id=claim.pk,
-                                                note=payload.validated_data["note"])
+        with tenant_write(makerspace_id, features=("billing.offline_claims",)):
+            if self.confirm:
+                claim = offline_claims.confirm_claim(actor=request.user, makerspace_id=makerspace_id, claim_id=claim.pk)
+            else:
+                claim = offline_claims.reject_claim(actor=request.user, makerspace_id=makerspace_id, claim_id=claim.pk,
+                                                    note=payload.validated_data["note"])
         return Response(StaffClaimSerializer(claim).data)

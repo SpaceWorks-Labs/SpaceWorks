@@ -27,6 +27,7 @@ from apps.makerspaces.limits import charge_upload, check_upload_headroom
 from apps.hardware_requests.exceptions import ErrorSerializer
 
 from .models import Sponsor
+from .gates import SPONSORS, require_fundraising_locked
 from .serializers_sponsors import SponsorSerializer
 from .views_sponsors import ERRORS, TAG, _row
 
@@ -46,8 +47,10 @@ class SponsorLogoView(APIView):
 
     @extend_schema(tags=TAG, summary="Create a sponsor logo upload URL", request=PublicImageUploadRequestSerializer,
                    responses={201: PublicImageUploadResponseSerializer, 503: OpenApiResponse(), **ERRORS, **UPLOAD_ERRORS})
+    @transaction.atomic
     def post(self, request, makerspace_id, pk):
         sponsor = _row(request, Sponsor, makerspace_id, pk, record=True)
+        require_fundraising_locked(makerspace_id, SPONSORS)
         payload = PublicImageUploadRequestSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
         content_type = payload.validated_data["content_type"]
@@ -67,6 +70,7 @@ class SponsorLogoView(APIView):
     @transaction.atomic
     def put(self, request, makerspace_id, pk):
         sponsor = _row(request, Sponsor, makerspace_id, pk, record=True)
+        require_fundraising_locked(makerspace_id, SPONSORS)
         payload = PublicImageAttachRequestSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
         key = payload.validated_data["object_key"]
@@ -101,6 +105,7 @@ class SponsorLogoView(APIView):
     @transaction.atomic
     def delete(self, request, makerspace_id, pk):
         sponsor = _row(request, Sponsor, makerspace_id, pk, record=True)
+        require_fundraising_locked(makerspace_id, SPONSORS)
         sponsor = Sponsor.objects.select_for_update().select_related("makerspace").get(pk=sponsor.pk)
         if sponsor.logo_key:
             images.release_public_image_on_commit(sponsor.makerspace, sponsor.logo_key)

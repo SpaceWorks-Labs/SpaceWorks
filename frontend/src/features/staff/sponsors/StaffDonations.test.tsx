@@ -45,7 +45,7 @@ describe("Donations area (decision 242 m)", () => {
     wrap(<DonationsArea makerspace={space(["finance.donations", "finance.sponsors", "finance.recurring_donations"])}
       actions={["manage_donations"]} />);
     const sections = within(screen.getByRole("tablist", { name: "Donation sections" }));
-    for (const name of ["Overview", "Gifts", "Campaigns", "Pledges", "Donors", "Sponsors", "Non-profit and receipts"]) {
+    for (const name of ["Overview", "Gifts", "Campaigns", "Pledges", "Donors", "Sponsors"]) {
       expect(sections.getByRole("tab", { name })).toBeInTheDocument();
     }
     expect(await screen.findByText(/₹250.00 of ₹1,000.00/)).toBeInTheDocument();
@@ -56,7 +56,7 @@ describe("Donations area (decision 242 m)", () => {
   it("hides donation sections while the switch is off", () => {
     wrap(<DonationsArea makerspace={space(["finance.sponsors"])} actions={["manage_donations"]} />);
     expect(screen.queryByRole("tab", { name: "Gifts" })).not.toBeInTheDocument();
-    expect(screen.getAllByRole("tab", { name: "Sponsors" }).length).toBeGreaterThan(0);
+    expect(screen.queryByRole("tab", { name: "Sponsors" })).not.toBeInTheDocument();
   });
 
   it("lists donors without tax identity", async () => {

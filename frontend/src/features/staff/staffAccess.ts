@@ -95,7 +95,9 @@ export function getStaffAccess(
   const canCollectServiceRequests = has("collect_service_request") || canManageMachines;
   const printingOnly = canSeePrinting && !canEditInventory && !canManageMakerspace;
   // Audit IN11 (decision 248): the desk reads the Ledger ("who has what") read-only; no exports (224(d)).
-  const baseTabs = handoutOnly ? (["dashboard", "requests", "direct", "handover", "payments", "notifications", "channels", "ledger", "granted"] as const) : ALL_TABS;
+  // Decision 550: a standalone Fundraising assignment opens only its own area.
+  const fundraisingOnly = !isSuperadmin && actions.length === 1 && has("manage_donations");
+  const baseTabs = fundraisingOnly ? (["donations"] as const) : handoutOnly ? (["dashboard", "requests", "direct", "handover", "payments", "notifications", "channels", "ledger", "granted"] as const) : ALL_TABS;
   const grantOnly = !isSuperadmin && actions.length === 0 && hasGrants;
   // Central organization governance is independent of makerspace actions. An
   // event grant adds a workspace without replacing that existing global surface.

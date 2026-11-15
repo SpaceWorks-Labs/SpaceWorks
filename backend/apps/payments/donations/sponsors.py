@@ -8,7 +8,7 @@ the ledger's `donations` domain, settled offline with a receipt or paid through 
 from django.utils.translation import gettext
 from django.db import transaction
 from django.utils import timezone
-from .gates import DonationRefused, require_tracking
+from .gates import SPONSORS, DonationRefused, require_fundraising_locked
 
 from apps.audit import services as audit
 
@@ -21,6 +21,7 @@ def _changed(before, after):
 @transaction.atomic
 def save_sponsor(space, *, actor, data, sponsor=None):
     """Create or update. Contact fields are scoped PII and never enter the audit row."""
+    space = require_fundraising_locked(space, SPONSORS)
     tier = data.get("tier")
     if tier is not None and tier.makerspace_id != space.pk:
         raise DonationRefused(gettext("That tier is not in this space."), "tier_invalid", "tier")
@@ -44,6 +45,7 @@ def save_sponsor(space, *, actor, data, sponsor=None):
 
 @transaction.atomic
 def archive_sponsor(sponsor, *, actor, archived=True):
+    require_fundraising_locked(sponsor.makerspace_id, SPONSORS)
     sponsor.archived_at = timezone.now() if archived else None
     sponsor.save(update_fields=["archived_at", "updated_at"])
     if archived:
@@ -55,8 +57,10 @@ def archive_sponsor(sponsor, *, actor, archived=True):
     return sponsor
 
 
+@transaction.atomic
 def copy_tier_perks(sponsor, *, actor):
     """A tier's template perks become this sponsor's own checklist items, once each."""
+    require_fundraising_locked(sponsor.makerspace_id, SPONSORS)
     copied = 0
     for template in SponsorPerk.objects.filter(tier_id=sponsor.tier_id, sponsor__isnull=True):
         _row, created = SponsorPerk.objects.get_or_create(
@@ -72,6 +76,7 @@ def copy_tier_perks(sponsor, *, actor):
 
 @transaction.atomic
 def save_perk(space, *, actor, data, perk=None):
+    require_fundraising_locked(space, SPONSORS)
     owner = data.get("sponsor") or data.get("tier") or (perk.sponsor if perk else None) or (perk.tier if perk else None)
     if owner is None or owner.makerspace_id != space.pk:
         raise DonationRefused(gettext("A perk belongs to one sponsor or one tier in this space."), "perk_owner_invalid")
@@ -91,6 +96,7 @@ def save_perk(space, *, actor, data, perk=None):
 
 @transaction.atomic
 def fulfil_perk(perk, *, actor, fulfilled=True, note=""):
+    require_fundraising_locked(perk.makerspace_id, SPONSORS)
     if perk.sponsor_id is None:
         raise DonationRefused(gettext("Tier perks are templates; fulfil a sponsor's copy."), "perk_is_template")
     perk.fulfilled_at, perk.fulfilled_by = (timezone.now(), actor) if fulfilled else (None, None)
@@ -115,7 +121,7 @@ def raise_charge(sponsor, *, actor, amount, description="", event_id=None, earma
 
     from .services import space_currency
 
-    space = require_tracking(sponsor.makerspace)
+    space = require_fundraising_locked(sponsor.makerspace_id, SPONSORS, money=True)
     event = None
     if event_id is not None:
         event = Event.objects.filter(pk=event_id, makerspace_id=space.pk).first()
@@ -135,6 +141,7 @@ def raise_charge(sponsor, *, actor, amount, description="", event_id=None, earma
 
 @transaction.atomic
 def link_event_sponsor(sponsor, event_sponsor, *, actor):
+    require_fundraising_locked(sponsor.makerspace_id, SPONSORS)
     if event_sponsor.makerspace_id != sponsor.makerspace_id:
         raise DonationRefused(gettext("That event sponsor is not in this space."), "event_sponsor_invalid",
                               "event_sponsor")
@@ -153,6 +160,7 @@ def link_event_sponsor(sponsor, event_sponsor, *, actor):
 
 @transaction.atomic
 def unlink_event_sponsor(link, *, actor):
+    require_fundraising_locked(link.makerspace_id, SPONSORS)
     sponsor_id, event_sponsor_id, space = link.sponsor_id, link.event_sponsor_id, link.sponsor.makerspace
     link.delete()
     audit.record(actor, "sponsor.event_unlinked", makerspace=space, target=space,

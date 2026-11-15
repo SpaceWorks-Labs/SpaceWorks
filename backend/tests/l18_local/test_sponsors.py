@@ -32,7 +32,9 @@ def test_sponsors_are_off_by_default_and_finance_only():
     switch(space, "finance.sponsors")
     assert client(manager).get(url(space)).status_code == 200
     machine = staff("sp-off", space, "machine_manager")
-    assert client(machine).get(url(space)).status_code == 404
+    refused = client(machine).get(url(space))
+    assert refused.status_code == 403
+    assert refused.json()["code"] == "permission_denied"
 
 
 def test_tier_perks_become_each_sponsors_checklist_and_fulfilment_is_audited():

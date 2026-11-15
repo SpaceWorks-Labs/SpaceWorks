@@ -6,6 +6,9 @@ import { ConfirmDialog } from "../../../components/ui";
 import { formatMoney } from "../../../lib/money";
 import { financeError } from "../../finance/financeApi";
 import { useEvents } from "../eventsApi";
+import { SettlementDialog } from "../SettlementDialog";
+import type { Settlement } from "../paymentsApi";
+import { donationStaffApi } from "./staffDonationsApi";
 import { sponsorApi, sponsorPaymentStatusLabel, sponsorKeys, type ChargeInput } from "./staffSponsorsApi";
 
 /** Hack-money G8: the body for "record as owed"; a prize-pool earmark always names its event. */
@@ -24,6 +27,12 @@ export function SponsorCharges({ makerspaceId, sponsorId, canRecord }: { makersp
   const [eventId, setEventId] = useState("");
   const [prizePool, setPrizePool] = useState(false);
   const [returning, setReturning] = useState<number | null>(null);
+  const [settling, setSettling] = useState<number | null>(null);
+  const received = useMutation({
+    mutationFn: ({ payment, settlement }: { payment: number; settlement: Settlement }) =>
+      donationStaffApi.markReceived(makerspaceId, payment, settlement),
+    onSuccess: () => { setSettling(null); void client.invalidateQueries({ queryKey: key }); },
+  });
   const events = useEvents(makerspaceId);
   const titles = new Map((events.data?.results ?? []).map(row => [row.id, row.title]));
   const raise = useMutation({ mutationFn: () => sponsorApi.raiseCharge(makerspaceId, sponsorId, chargeBody(amount, description, eventId, prizePool)),
@@ -32,7 +41,7 @@ export function SponsorCharges({ makerspaceId, sponsorId, canRecord }: { makersp
     onSuccess: () => void client.invalidateQueries({ queryKey: key }) });
   return <section className="grid gap-3" aria-label={t`Sponsorship money`}>
     <h3 className="title-section">{t`Sponsorship money`}</h3>
-    <p className="text-sm text-muted">{t`Settle these under Payments (cash, UPI, bank) or send a pay link. A return opens a refund case that staff decide.`}</p>
+    <p className="text-sm text-muted">{t`How and when the money arrived. This is kept as a permanent receipt.`}</p>
     {charges.data?.length ? <ul className="grid gap-2">{charges.data.map(charge => <li key={charge.id}
       className="flex flex-wrap items-center gap-3 text-sm">
       <span className="font-semibold tabular-nums text-ink">{formatMoney(charge.amount, charge.currency)}</span>
@@ -40,10 +49,16 @@ export function SponsorCharges({ makerspaceId, sponsorId, canRecord }: { makersp
       {charge.event ? <span className="text-xs">{titles.get(charge.event) ?? t`Event #${charge.event}`}{charge.earmark === "prize_pool"
         ? t` · prize pool` : ""}</span> : null}
       <span className="ml-auto text-xs">{sponsorPaymentStatusLabel(charge.payment_status)}</span>
+      {canRecord && charge.payment_status === "pending" && charge.payment_id ? <button type="button"
+        className="desk-button" onClick={() => { received.reset(); setSettling(charge.payment_id); }}>
+        {t`Record payment`}</button> : null}
       {canRecord && ["paid_online", "paid_offline"].includes(charge.payment_status) ? <button type="button"
         className="desk-button-ghost" disabled={back.isPending}
         onClick={() => setReturning(charge.id)}>{t`Return…`}</button> : null}
     </li>)}</ul> : <p className="text-sm text-muted">{t`Nothing recorded yet.`}</p>}
+    {settling !== null ? <SettlementDialog count={1} pending={received.isPending}
+      onCancel={() => setSettling(null)} error={received.error ? financeError(received.error) : undefined}
+      onConfirm={settlement => received.mutate({ payment: settling, settlement })} /> : null}
     <ConfirmDialog open={returning !== null} title={t`Open a refund case?`} confirmLabel={t`Open refund case`}
       message={t`Open a refund case to return this payment?`} onCancel={() => setReturning(null)}
       onConfirm={() => { if (returning !== null) back.mutate(returning); setReturning(null); }} />

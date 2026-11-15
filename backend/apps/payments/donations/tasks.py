@@ -44,7 +44,7 @@ def due_perk_ids(limit, today):
 
 def remind_perk(perk_id, today):
     from apps.makerspaces.platform import feature_enabled
-    from apps.tenant_migration.gate_runtime import tenant_write
+    from .gates import SPONSORS, donation_write
 
     from .models import SponsorPerk
     from .notices import notify_perk_due
@@ -52,7 +52,7 @@ def remind_perk(perk_id, today):
     perk = SponsorPerk.objects.select_related("makerspace").get(pk=perk_id)
     if not feature_enabled(perk.makerspace, "finance.sponsors"):
         return False
-    with tenant_write(perk.makerspace_id):
+    with donation_write(perk.makerspace_id, SPONSORS):
         if not SponsorPerk.objects.filter(pk=perk.pk, reminded_on__isnull=True).update(reminded_on=today):
             return False
         notify_perk_due(perk)

@@ -13,7 +13,7 @@ from decimal import Decimal, InvalidOperation
 
 from django.db import transaction
 from django.utils import timezone
-from .gates import DonationRefused, require_tracking
+from .gates import DONATIONS, PLEDGES, DonationRefused, require_fundraising_locked
 
 from apps.audit import services as audit
 
@@ -94,11 +94,10 @@ def create_gift(space, donor, *, amount, campaign=None, note="", tax=(False, "",
     from apps.tenant_migration.gate_runtime import assert_write_allowed
 
     assert_write_allowed(space.pk)
-    from apps.makerspaces.models import Makerspace
     # Different donors must share the check-and-insert reservation, not only
     # their individual double-submit locks. Keep it through Payment creation.
-    space = Makerspace.objects.select_for_update(no_key=True).get(pk=space.pk)
-    require_tracking(space)
+    space = require_fundraising_locked(space, PLEDGES if pledge is not None else DONATIONS,
+                                       money=True, tax=tax if source != Donation.Source.PLEDGE or tax_detail is None else None)
     wants, pan, address = tax
     if source == Donation.Source.ONLINE and pledge is None and donor.account is not None:
         twin = _pending_twin(space, donor, amount, campaign, wants)
@@ -126,22 +125,26 @@ def create_gift(space, donor, *, amount, campaign=None, note="", tax=(False, "",
     return donation, payment
 
 
+@transaction.atomic
 def tax_detail_for(space, pan, address):
     """The giver's 80G identity. Its PAN is a mandatory encrypted field: the caller holds the tenant
     key, prepared outside any transaction (`gates.tax_key`)."""
     from .models import DonorTaxDetail
 
+    space = require_fundraising_locked(space, money=True, tax=(True, pan, address))
     row = DonorTaxDetail(makerspace=space, pan=pan, address=address)
     row.save()
     return row
 
 
+@transaction.atomic
 def checkout_url(payment):
     """A hosted checkout for the gift's charge, or "" when the rail is off or failed (debt kept)."""
     from apps.payments.availability import online_payments_enabled
     from apps.payments.services import create_checkout_url
 
-    if payment.status != "pending" or not online_payments_enabled(payment.makerspace, "donations"):
+    space = require_fundraising_locked(payment.makerspace_id, key=None)
+    if payment.status != "pending" or not online_payments_enabled(space, "donations"):
         return ""
     try:
         return create_checkout_url(payment.pk) or ""
@@ -157,6 +160,7 @@ def record_desk_gift(space, donor, *, actor, amount, settlement, campaign=None, 
     from apps.payments.reconciliation import reconcile_payments
 
     with transaction.atomic():
+        space = require_fundraising_locked(space, money=True, tax=tax)
         donation, payment = create_gift(space, donor, amount=amount, campaign=campaign, note=note, tax=tax,
                                         source=Donation.Source.DESK, actor=actor, recognize=recognize)
         reconcile_payments(actor=actor, makerspace_id=space.pk, payment_ids=[payment.pk],
@@ -170,6 +174,7 @@ def cancel_gift(donation, *, actor, reason=""):
     """Cancel a gift still waiting for payment. A received gift goes back only through a case."""
     from apps.payments.reconciliation import cancel_pending
 
+    require_fundraising_locked(donation.makerspace_id)
     locked = Donation.objects.select_for_update().get(pk=donation.pk)
     if locked.status != Donation.Status.PENDING:
         raise DonationRefused(gettext("Only a gift waiting for payment can be cancelled."), "donation_not_pending")

@@ -103,8 +103,10 @@ def test_staff_record_a_desk_gift_in_one_go_and_only_finance_staff_see_gifts():
     assert response.status_code == 201, response.content
     assert response.json()["payment_status"] == "paid_offline" and response.json()["source"] == "desk"
     inventory = staff("don-desk", space, "inventory_manager")
-    assert client(inventory).get(admin(space)).status_code == 404
-    assert client(donor).get(admin(space)).status_code in (403, 404)
+    for actor in (inventory, donor):
+        refused = client(actor).get(admin(space))
+        assert refused.status_code == 403
+        assert refused.json()["code"] == "permission_denied"
 
 
 @override_settings(PUBLIC_APP_BASE_URL="http://localhost:5000")

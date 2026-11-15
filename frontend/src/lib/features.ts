@@ -26,6 +26,8 @@ export function capabilityOn(
   if (RETIRED_FEATURES.has(key) || !makerspace?.enabled_features?.includes(key)) return false;
   // Decision 254: the Inventory switch is the master of its children (twin of loan_visibility.LOAN_FEATURES).
   if (INVENTORY_CHILD_FEATURES.has(key) && !makerspace.enabled_features.includes("loans.enabled")) return false;
+  // Decision 550: the Donations and sponsors master preserves the sponsor choice while off.
+  if (key === "finance.sponsors" && !makerspace.enabled_features.includes("finance.donations")) return false;
   const parent = FEATURE_DEFINITIONS.find(feature => feature.key === key)?.parent_module;
   return !parent || (makerspace.enabled_modules ?? []).includes(parent);
 }

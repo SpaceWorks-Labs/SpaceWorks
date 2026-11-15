@@ -7,6 +7,7 @@ import type { CalloutProps } from "../../../components/ui";
 import { DetailLayout } from "../../../components/layouts";
 import { inventoryQueryState } from "./inventoryPresentation";
 import { BoxArt } from "../../../components/BoxSpinner";
+import { isRetryable } from "../../../lib/api/errors";
 
 type Suggestion = { id: number; name: string; available_quantity: number; reorder_point: number; reorder_quantity: number; supplier: string; sku: string };
 
@@ -27,7 +28,7 @@ export function useReorderSuggestions({ makerspaceId, canProcure }: { makerspace
   const count = suggestions.data?.count ?? 0;
   const callout: CalloutProps | undefined = count ? { size: "banner", tone: "warn", lead: plural(count, { one: "# item is running low.", other: "# items are running low." }),
     body: t`Review their reorder points before your next project.`, action: { label: t`Review suggestions`, onClick: () => setOpen(true) } } : undefined;
-  const error = suggestions.error ? <ErrorText resource={t`reorder suggestions`} onRetry={() => { void suggestions.refetch(); }} message={t`Couldn't load reorder suggestions. Try again.`} /> : null;
+  const error = suggestions.error ? <ErrorText resource={t`reorder suggestions`} onRetry={isRetryable(suggestions.error) ? () => { void suggestions.refetch(); } : undefined} message={t`Couldn't load reorder suggestions. Try again.`} /> : null;
   const panel = open ? <DetailLayout presentation="drawer" open onClose={() => setOpen(false)} title={t`Reorder suggestions`}
       state={inventoryQueryState(suggestions, "reorder suggestions")} isEmpty={!suggestions.data?.results.length}
       empty={{ message: t`No products are at their reorder points. Check back as stock changes.` }}

@@ -6,6 +6,7 @@ import { ActionControl, Card, StatusPill } from '../../../components/ui'
 import { errorText, useProgrammeCommand, useProgrammeList } from './api'
 import type { EventScope, Posting, RoleApplication, Signup } from './types'
 import { contributionRoleLabel, contributionStateLabel, shiftActionLabel, shiftAttendanceLabel } from './labels'
+import { isRetryable } from "../../../lib/api/errors";
 
 export function ContributionsPage({ scope, onApply, onOpenApplication, onDesk }: {
   scope: EventScope; onApply: (posting: Posting) => void; onOpenApplication: (application: RoleApplication) => void
@@ -21,7 +22,7 @@ export function ContributionsPage({ scope, onApply, onOpenApplication, onDesk }:
   const rows = query.data?.results ?? []
   return <ListLayout header={{ eyebrow: t`Make it happen`, title: t`Contribute`,
     subtitle: t`Share your time or experience. Find a role and follow your application here.` }}
-    state={query.isPending ? { status: 'loading' } : query.isError ? { status: 'error', error: errorText(query.error), onRetry: () => { void query.refetch() } } : { status: 'ready' }}
+    state={query.isPending ? { status: 'loading' } : query.isError ? { status: 'error', error: errorText(query.error), onRetry: isRetryable(query.error) ? () => { void query.refetch() } : undefined } : { status: 'ready' }}
     tabs={[{ key: 'opportunities', label: t`Roles needed` }, { key: 'applications', label: t`My applications` }, { key: 'shifts', label: t`My shifts` }]}
     activeTab={tab} onTabChange={key => { setTab(key); setPage(1) }} isEmpty={!rows.length}
     empty={{ message: tab === 'opportunities' ? t`No open roles right now. Check back closer to the event.` : t`Your applications and shifts will appear here.` }}

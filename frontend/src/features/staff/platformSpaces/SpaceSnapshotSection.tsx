@@ -3,9 +3,10 @@ import { useQuery } from "@tanstack/react-query";
 import { ErrorText, KeyValueCard } from "../../../components/ui";
 import { openSpaceTab } from "../platformConsole/openSpaceTab";
 import { crossSpaceKeys, getSnapshot, metricLabel } from "../platformConsole/crossSpaceApi";
-import { usageAmount } from "../platformMonitoringApi";
+import { resourceUsed, usageAmount } from "../platformMonitoringApi";
 import { limitLabel } from "./limitCopy";
 import { LogoLoader } from "../../../components/LogoLoader";
+import { isRetryable } from "../../../lib/api/errors";
 
 /**
  * Decision 242(l) / U8: a read-only count snapshot of one space (no rows, no impersonation). Usage is
@@ -15,7 +16,7 @@ import { LogoLoader } from "../../../components/LogoLoader";
 export function SpaceSnapshotSection({ makerspaceId }: { makerspaceId: number }) {
   const snapshot = useQuery({ queryKey: crossSpaceKeys.snapshot(makerspaceId), queryFn: () => getSnapshot(makerspaceId) });
   if (snapshot.isLoading) return <LogoLoader label={t`Loading this space's snapshot`} size={48} className="min-h-24 py-3" />;
-  if (snapshot.isError || !snapshot.data) return <ErrorText resource={t`this space's snapshot`} onRetry={() => { void snapshot.refetch(); }} />;
+  if (snapshot.isError || !snapshot.data) return <ErrorText resource={t`this space's snapshot`} onRetry={isRetryable(snapshot.error) ? () => { void snapshot.refetch(); } : undefined} />;
   const data = snapshot.data;
   const counts = Object.entries(data.counts).filter(([, value]) => value > 0);
   const resources = data.usage.resources ?? [];
@@ -26,7 +27,7 @@ export function SpaceSnapshotSection({ makerspaceId }: { makerspaceId: number })
         : [{ label: t`Queues`, value: t`Nothing waiting` }]),
     ]} />
     <KeyValueCard title={t`Usage`} items={resources.length ? resources.map(row => ({ label: limitLabel(row.key ?? row.label, row.label),
-      value: `${usageAmount(row.used, row.unit ?? "count")}${row.limit !== null ? ` ${t`of`} ${usageAmount(row.limit, row.unit ?? "count")}` : ` · ${t`no limit`}`}` }))
+      value: `${resourceUsed(row)}${row.limit !== null ? ` ${t`of`} ${usageAmount(row.limit, row.unit ?? "count")}` : ` · ${t`no limit`}`}` }))
       : [{ label: t`Usage`, value: t`No usage recorded yet` }]} />
     <button type="button" className="desk-button min-h-11 w-fit" onClick={() => openSpaceTab(data.id, "/admin/dashboard")}>{t`Open this space's dashboard`}</button>
   </div>;

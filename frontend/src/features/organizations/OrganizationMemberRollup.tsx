@@ -4,6 +4,7 @@ import { ErrorText } from "../../components/ui";
 import { formatLocale } from "../../lib/format";
 import { staffRequest } from "../../lib/api";
 import { LogoLoader } from "../../components/LogoLoader";
+import { isRetryable } from "../../lib/api/errors";
 
 // O-B5 `member-rollup`; typed locally until the staging step regenerates `generated/api.ts`.
 export type MemberRollup = {
@@ -27,7 +28,7 @@ const count = (value: number) => value.toLocaleString(formatLocale());
 export function OrganizationMemberRollup({ organizationId }: { organizationId: number }) {
   const rollup = useMemberRollup(organizationId);
   if (rollup.isLoading) return <LogoLoader size={48} className="min-h-32 py-3" />;
-  if (rollup.isError || !rollup.data) return <ErrorText resource={t`member counts`} onRetry={() => { void rollup.refetch(); }} />;
+  if (rollup.isError || !rollup.data) return <ErrorText resource={t`member counts`} onRetry={isRetryable(rollup.error) ? () => { void rollup.refetch(); } : undefined} />;
   const { people, spaces } = rollup.data;
   const figures = [
     { label: t`People in total`, value: people.total, help: t`Each person counted once.` },

@@ -6,6 +6,7 @@ import { FlowLayout } from "../../components/layouts";
 import { Callout, ErrorText, StatusPill } from "../../components/ui";
 import { abortSpaceRestore, confirmSpaceRestore, getSpaceRestore, type SpaceRestore } from "./spaceRestoreApi";
 import { LogoLoader } from "../../components/LogoLoader";
+import { isRetryable } from "../../lib/api/errors";
 
 const STEP: Record<SpaceRestore["stage"], string> = {
   requested: "preview", staging: "preview", preview_ready: "confirm", applying: "progress",
@@ -36,7 +37,7 @@ export function SpaceRestoreFlow({ restoreId, onClose }: { restoreId: string; on
     : { label: t`Close`, onClick: onClose, disabled: false };
   return <FlowLayout presentation="dialog" open title={op ? t`Restore ${op.makerspace_name}` : t`Restore a space`}
     subject="Nothing changes until you confirm. A safety backup of the space as it is now is taken first."
-    state={query.isError ? { status: "error", error: t`Could not load this restore.`, onRetry: () => { void query.refetch(); } } : { status: op ? "ready" : "loading" }}
+    state={query.isError ? { status: "error", error: t`Could not load this restore.`, onRetry: isRetryable(query.error) ? () => { void query.refetch(); } : undefined } : { status: op ? "ready" : "loading" }}
     current={step} steps={steps} onCancel={onClose}
     work={op ? <RestoreWork op={op} slug={slug} onSlug={setSlug} /> : null}
     error={confirm.error || abort.error ? { size: "inline", tone: "danger", lead: "That did not work.", body: (confirm.error ?? abort.error)!.message } : undefined}

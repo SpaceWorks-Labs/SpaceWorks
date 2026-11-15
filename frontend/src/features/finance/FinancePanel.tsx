@@ -1,10 +1,10 @@
 import { t } from "@lingui/core/macro";
 import { useQuery } from "@tanstack/react-query";
 
-import { Tabs } from "../../components/ui";
+import { ErrorBlock, Tabs } from "../../components/ui";
 import { capabilityOn } from "../../lib/features";
 import { ScreenHelp } from "../help/HelpLink";
-import { StructuredApiError } from "../../lib/api";
+import { StructuredApiError, isSurfaceOff } from "../../lib/api";
 import { FinanceOverview } from "./FinanceOverview";
 import { LedgerEntriesSection } from "./LedgerEntriesSection";
 import { MoneyQueues } from "./MoneyQueues";
@@ -17,6 +17,7 @@ import { financeApi, financeKeys } from "./financeApi";
 import { useRoutedSubTab } from "../staff/useRoutedSubTab";
 import { AreaOverview } from "../staff/areaOverview/AreaOverview";
 import { LogoLoader } from "../../components/LogoLoader";
+import { isRetryable } from "../../lib/api/errors";
 
 type Space = { id: number; name?: string; enabled_modules?: string[]; enabled_features?: string[] };
 
@@ -51,14 +52,15 @@ export function FinancePanel({ makerspace, canViewFinance, canRecordPayment }: {
   // that appears only once the access check settles still opens from its link.
   const route = useRoutedSubTab();
   const active = sections.some(section => section.key === route.segment) ? route.segment : sections[0]?.key;
-  const denied = access.error instanceof StructuredApiError && access.error.status === 404;
+  const denied = access.error instanceof StructuredApiError && access.error.status === 404 && !isSurfaceOff(access.error);
   return <section className="grid min-w-0 gap-4" aria-labelledby="finance-heading">
     <header className="grid gap-1">
       <h2 id="finance-heading" className="title-page">{t`Finance`}</h2>
       <p className="text-sm text-muted">{t`Every amount `}{makerspace.name ?? t`your makerspace`} {t` took in or paid out, by month and area. Nothing here moves money by itself.`}</p>
     </header>
     {access.isLoading && ledgerOn ? <LogoLoader label={t`Loading finance…`} size={48} className="min-h-16 py-3" /> : null}
-    {!sections.length && !access.isLoading
+    {access.error && !denied ? <ErrorBlock error={access.error} onRetry={isRetryable(access.error) ? () => { void access.refetch(); } : undefined} /> : null}
+    {!sections.length && !access.isLoading && (!access.error || denied)
       ? <p className="rounded-lg border border-line bg-panel p-4 text-sm text-muted">{denied
         ? t`Finance shows the money for the areas you manage. You don't manage one in this space.`
         : t`No finance screens are switched on for this space. A Space Manager turns them on under Features.`}</p> : null}

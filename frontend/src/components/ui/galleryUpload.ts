@@ -29,14 +29,14 @@ export async function sendToStorage(presigned: GalleryPresign, file: File, trans
 
 /** presign -> storage -> attach, as one awaited step so the UI shows a single pending state. */
 export async function uploadGalleryPhoto(file: File, steps: {
-  presign: (input: { filename: string; content_type: string }) => Promise<GalleryPresign>;
+  presign: (input: { filename: string; content_type: string; size: number }) => Promise<GalleryPresign>;
   attach: (objectKey: string) => Promise<unknown>;
   transport?: typeof fetch;
 }) {
   if (!GALLERY_ACCEPT.split(",").includes(file.type)) {
     throw new Error(t`Use a JPEG, PNG or WebP photo.`);
   }
-  const presigned = await steps.presign({ filename: file.name, content_type: file.type });
+  const presigned = await steps.presign({ filename: file.name, content_type: file.type, size: file.size });
   await sendToStorage(presigned, file, steps.transport);
   return steps.attach(presigned.object_key);
 }

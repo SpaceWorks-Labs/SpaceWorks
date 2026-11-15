@@ -5,6 +5,7 @@ import { ErrorBlock } from "../../../components/ui";
 import { formatMoney } from "../paymentsApi";
 import { areaKeys, areaLabel, areaPaymentsApi, owedText, type AreaGroup } from "./areaPaymentsApi";
 import { LogoLoader } from "../../../components/LogoLoader";
+import { isRetryable } from "../../../lib/api/errors";
 
 /**
  * Decision 241/242: money waiting, one card per area, from `area-queue/summary`. Each card is a
@@ -16,7 +17,7 @@ export function AreaPaymentGroups({ makerspaceId, active, onSelect, pinned }: {
 }) {
   const summary = useQuery({ queryKey: areaKeys.summary(makerspaceId), queryFn: () => areaPaymentsApi.summary(makerspaceId) });
   if (summary.isLoading) return <LogoLoader label={t`Loading money by area`} size={48} className="min-h-20 py-3" />;
-  if (summary.error) return <ErrorBlock error={summary.error} resource={t`money by area`} onRetry={() => { void summary.refetch(); }} />;
+  if (summary.error) return <ErrorBlock error={summary.error} resource={t`money by area`} onRetry={isRetryable(summary.error) ? () => { void summary.refetch(); } : undefined} />;
   const groups = (summary.data?.groups ?? []).filter(group => !pinned || group.area === pinned);
   if (!groups.length) return <p className="text-sm text-muted">{t`Nothing waiting to be collected.`}</p>;
   return <section aria-label={t`Money waiting by area`} className="grid gap-2">

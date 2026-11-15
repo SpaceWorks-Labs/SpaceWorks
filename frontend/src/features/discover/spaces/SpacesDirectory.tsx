@@ -8,7 +8,7 @@ import { SpacesFilters, SpacesSearchBar } from "./SpacesToolbar";
 import { filterSpaces, pageOf, placesOf, type SpacesSort } from "./spacesFilter";
 
 export type SpacesQueryState = {
-  spaces?: Makerspace[]; loading: boolean; error: boolean; retrying?: boolean; onRetry: () => void; hosting: boolean;
+  spaces?: Makerspace[]; loading: boolean; error: boolean; retrying?: boolean; onRetry?: () => void; hosting: boolean;
 };
 
 /** One or two spaces get the wide feature card; three or more share the responsive grid. */

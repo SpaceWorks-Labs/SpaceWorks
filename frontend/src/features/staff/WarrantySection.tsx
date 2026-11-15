@@ -15,6 +15,7 @@ import {
   type WarrantyPayload,
 } from "./warrantyApi";
 import { LogoLoader } from "../../components/LogoLoader";
+import { isRetryable } from "../../lib/api/errors";
 
 type WarrantySectionProps = {
   hostKind: WarrantyHostKind;
@@ -109,7 +110,7 @@ export function WarrantySection({ hostKind, hostId, disabled = false }: Warranty
       </div>
 
       {warranty.isLoading ? <LogoLoader size={48} className="min-h-40 py-3" /> : null}
-      {warranty.error ? <ErrorBlock resource={t`warranty details`} error={warranty.error} onRetry={() => { void warranty.refetch(); }} /> : null}
+      {warranty.error ? <ErrorBlock resource={t`warranty details`} error={warranty.error} onRetry={isRetryable(warranty.error) ? () => { void warranty.refetch(); } : undefined} /> : null}
 
       <div className="mt-3 divide-y divide-line">
         <WarrantyInput

@@ -9,7 +9,8 @@ import { useParams } from "react-router-dom";
 import { CenteredCardLayout } from "../../../components/layouts";
 import { PhotoPicker } from "../../../components/photo-crop/PhotoPicker";
 import { ErrorText } from "../../../components/ui";
-import { getAccessToken, memberRequest, publicV1Request, refreshAccessToken } from "../../../lib/api";
+import { getAccessToken, memberRequest, publicV1Request, refreshAccessToken, StructuredApiError } from "../../../lib/api";
+import { isRetryable } from "../../../lib/api/errors";
 import { MemberAuthPanel } from "../../members/MemberAuthPanel";
 import { BoxArt } from "../../../components/BoxSpinner";
 
@@ -62,7 +63,7 @@ export function JoinPage() {
   const join = useMutation({ mutationFn: async () => {
     let photoKey = "";
     if (photo) {
-      const presign = await memberRequest<Presign>(`${base}/join/photo`, { method: "POST", body: JSON.stringify({ content_type: photo.type || "image/jpeg" }) });
+      const presign = await memberRequest<Presign>(`${base}/join/photo`, { method: "POST", body: JSON.stringify({ content_type: photo.type || "image/jpeg", size: photo.size }) });
       const form = new FormData();
       Object.entries(presign.fields ?? {}).forEach(([key, value]) => form.append(key, value));
       form.append("file", photo);
@@ -77,6 +78,13 @@ export function JoinPage() {
 
   const data = programme.data;
   if (!restoring && data?.state === "signed_out") return <MemberAuthPanel onAuthenticated={() => { void programme.refetch(); }} />;
+  // A missing or switched-off programme stays one enumeration-safe answer. An outage (5xx, 429, no response) is
+  // retryable; a refusal (403) keeps its explanation and the Home way out, without a Retry (decision 588).
+  const failed = programme.error && !(programme.error instanceof StructuredApiError && programme.error.status === 404) ? programme.error : null;
+  if (!restoring && failed) return isRetryable(failed)
+    ? <CenteredCardLayout state={{ status: "error", error: failed.message, onRetry: () => { void programme.refetch(); } }}
+      title={t`Programme sign-up`} body={null} primary={{ label: t`Home`, href: "/" }} />
+    : <CenteredCardLayout state={{ status: "ready" }} title={t`Programme sign-up`} body={failed.message} primary={{ label: t`Home`, href: "/" }} />;
   if (restoring || !data) return <CenteredCardLayout state={restoring || programme.isLoading ? { status: "loading" } : { status: "ready" }}
     title={t`We can't find this programme`} body={t`The link may be wrong, or the programme has closed.`} primary={{ label: t`Home`, href: "/" }} />;
   const done = STATE_COPY[data.state];

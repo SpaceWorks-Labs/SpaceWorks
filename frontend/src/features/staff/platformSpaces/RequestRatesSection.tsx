@@ -6,6 +6,7 @@ import { actionErrorText } from "./ActionDialog";
 import { rateHint, rateLabel } from "./limitCopy";
 import { useRequestRates, useSaveRequestRate, type RequestRate } from "./limitsApi";
 import { LogoLoader } from "../../../components/LogoLoader";
+import { isRetryable } from "../../../lib/api/errors";
 
 function RateRow({ row }: { row: RequestRate }) {
   const save = useSaveRequestRate();
@@ -32,6 +33,6 @@ function RateRow({ row }: { row: RequestRate }) {
 export function RequestRatesSection() {
   const rates = useRequestRates();
   if (rates.isLoading) return <LogoLoader size={48} className="min-h-24 py-3" />;
-  if (rates.isError || !Array.isArray(rates.data)) return <ErrorText resource={t`request rates`} onRetry={() => { void rates.refetch(); }} />;
+  if (rates.isError || !Array.isArray(rates.data)) return <ErrorText resource={t`request rates`} onRetry={isRetryable(rates.error) ? () => { void rates.refetch(); } : undefined} />;
   return <ul className="grid">{rates.data.map(row => <RateRow key={`${row.scope}:${row.rate}`} row={row} />)}</ul>;
 }

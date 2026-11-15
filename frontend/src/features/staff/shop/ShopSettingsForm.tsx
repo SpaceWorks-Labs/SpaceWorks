@@ -10,6 +10,7 @@ import { effectiveKey, useEffectiveAuthority } from "../settingsAuthorityApi";
 import { fetchSettings, saveSettings, staffShopError, staffShopKeys } from "./staffShopApi";
 import { SHOP_NUMBER_FIELDS, SHOP_SETTING_DEFAULTS, shopSettingsPatch, shopSettingsProblem, type ShopSettingValues } from "./shopSettingsFields";
 import { LogoLoader } from "../../../components/LogoLoader";
+import { isRetryable } from "../../../lib/api/errors";
 
 /** Shop policy and switches reuse the same per-key authority as every other module. */
 export function ShopSettingsForm({ makerspaceId }: { makerspaceId: number }) {
@@ -33,14 +34,14 @@ export function ShopSettingsForm({ makerspaceId }: { makerspaceId: number }) {
     settingKey={`shop_${key}`} label={label} locked={permissions.get(`shop_${key}`)?.locked ?? false} canLock={policy?.space_manager ?? false} />;
   const disabled = !policy || Boolean(authority.error) || !Object.keys(patch).length || Boolean(problem);
   return <FormPageLayout header={{ eyebrow: t`Shop`, title: t`Shop settings`, subtitle: t`Features, holds, reminders, returns and what buyers read before ordering.` }}
-    state={query.error ? { status: "error", error: staffShopError(query.error), onRetry: () => { void query.refetch(); } }
+    state={query.error ? { status: "error", error: staffShopError(query.error), onRetry: isRetryable(query.error) ? () => { void query.refetch(); } : undefined }
       : !values ? { status: "loading" } : { status: "ready" }}
     submit={{ label: t`Save settings`, pending: save.isPending, pendingLabel: t`Saving…`, onClick: () => { if (!disabled) save.mutate(); },
       disabled, disabledReason: problem || (!policy || authority.error ? t`Settings access could not be confirmed.` : t`No editable settings have changed.`) }}
     form={values ? <div className="grid gap-6">
       <SettingsSection title={t`Shop features`}><DomainSettingsSection makerspaceId={makerspaceId} domain="shop" /></SettingsSection>
       {authority.isPending ? <LogoLoader label={t`Checking settings access…`} size={48} className="min-h-16 py-3" /> : null}
-      {authority.error ? <ErrorBlock error={authority.error} onRetry={() => { void authority.refetch(); }} /> : null}
+      {authority.error ? <ErrorBlock error={authority.error} onRetry={isRetryable(authority.error) ? () => { void authority.refetch(); } : undefined} /> : null}
       {!authority.error && !policy ? <p role="status" className="text-sm text-muted">{t`Your role cannot change shop settings.`}</p> : null}
       {save.error ? <p role="alert" className="text-sm text-danger">{staffShopError(save.error)}</p> : null}
       {save.isSuccess ? <p role="status" className="text-sm text-muted">{t`Settings saved.`}</p> : null}

@@ -8,6 +8,7 @@ import { isProfileMissing, isSignedOutError, useAccountProfile } from "./publicP
 import { ProfileFrame } from "./PublicProfilePage";
 import { useProfileEditorHref } from "./useProfileEditorHref";
 import { GlobalProfileView } from "./view/GlobalProfileView";
+import { isRetryable } from "../../lib/api/errors";
 
 /** /profiles/by-account/:accountId: how a member without a handle is reached. Signed-in only; unreadable is the shared 404. */
 export function ProfileByAccountPage() {
@@ -21,7 +22,7 @@ export function ProfileByAccountPage() {
     body={t`This profile is only shown to signed-in members.`} primary={{ label: t`Sign in`, href: "/member" }} />;
   const failure = profile.error instanceof StructuredApiError && profile.error.detail ? profile.error.detail : t`Couldn't load this profile. Try again.`;
   return <ProfileFrame state={session === "checking" || profile.isLoading ? { status: "loading" }
-    : profile.error ? { status: "error", error: failure, onRetry: () => { void profile.refetch(); } } : { status: "ready" }}>
+    : profile.error ? { status: "error", error: failure, onRetry: isRetryable(profile.error) ? () => { void profile.refetch(); } : undefined } : { status: "ready" }}>
     {profile.data ? <GlobalProfileView key={profile.data.account_id} profile={profile.data} editHref={editor.href} /> : null}
   </ProfileFrame>;
 }

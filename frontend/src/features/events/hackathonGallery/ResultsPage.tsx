@@ -5,6 +5,7 @@ import { EmptyState, Field } from '../../../components/ui';
 import { usePublicResults } from './api';
 import { PublishedPeoplesChoice } from '../peoplesChoice/PeoplesChoiceAward';
 import { SearchField } from "../../../components/ui/SearchField";
+import { isRetryable } from "../../../lib/api/errors";
 
 export function ResultsPage({ makerspaceSlug, publicToken, eventTitle, peoplesChoice = false, projectHref }: { makerspaceSlug: string; publicToken: string; eventTitle: string;
   /** #181: show the published People's choice award, an extra award beside the judged ones. */
@@ -14,7 +15,7 @@ export function ResultsPage({ makerspaceSlug, publicToken, eventTitle, peoplesCh
   const finalists = query.data?.finalists ?? [];
   const searching = !!search.trim();
   return <DetailLayout title={`${eventTitle} results`} state={{ status: query.isLoading ? 'loading' : query.isError ? 'error' : 'ready',
-    error: query.error?.message, onRetry: () => void query.refetch() }} main={<div className="grid gap-4">
+    error: query.error?.message, onRetry: isRetryable(query.error) ? () => void query.refetch() : undefined }} main={<div className="grid gap-4">
       {/* D13: search the announced awards and finalists by project title or prize. */}
       <form role="search" className="flex flex-wrap items-end gap-2" onSubmit={event => { event.preventDefault(); setSearch(text); }}>
         <Field label={t`Search results`}><SearchField className="desk-input min-h-11" maxLength={100} value={text}

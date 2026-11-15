@@ -15,6 +15,7 @@ import { StaffListContext } from "../../StaffListContext";
 import { machineTypeSegment } from "../../staffTabs";
 import type { StaffJob } from "./machineJobsApi";
 import { LogoLoader } from "../../../../components/LogoLoader";
+import { isRetryable } from "../../../../lib/api/errors";
 
 /** `GET machine-bookings` row (decision 242, MC11), hand-typed until the client is regenerated. */
 type MachineBookingRow = { id: number; machine_id: number; machine_name: string; member_name: string; starts_at: string; ends_at: string; status: string };
@@ -76,7 +77,7 @@ export function MachineRelatedTab({ machine, makerspaceId, canManageMachines, ju
       <h3 className="title-section">{t`Recent jobs`}</h3>
       {jobs.isLoading ? <LogoLoader label={t`Loading jobs…`} size={48} className="min-h-16 py-3" />
         : jobs.isError ? <div role="alert" className="flex flex-wrap items-center gap-3 text-sm text-danger"><p>{t`Couldn't load jobs.`}</p>
-          <button type="button" className="desk-button" onClick={() => { void jobs.refetch(); }}>{t`Retry`}</button></div>
+          {isRetryable(jobs.error) ? <button type="button" className="desk-button" onClick={() => { void jobs.refetch(); }}>{t`Retry`}</button> : null}</div>
         : !jobRows.length ? <p className="text-sm text-muted">{t`No jobs on this machine yet.`}</p>
         : <div className="grid gap-2">{jobRows.slice(0, 5).map(job => <ListRow key={job.id} title={job.title || t`Job #${job.id}`}
           meta={[job.requester_name, formatDate(job.created_at)].filter(Boolean).join(" · ")}

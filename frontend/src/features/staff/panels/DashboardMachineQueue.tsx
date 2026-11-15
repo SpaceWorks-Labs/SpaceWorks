@@ -9,6 +9,7 @@ import { useUrlListState } from "../../../lib/useUrlListState";
 
 import { collectionResults, getMachineTypes, machineKeys } from "../machinesApi";
 import { machineTypeSegment, staffTabPath } from "../staffTabs";
+import { isRetryable } from "../../../lib/api/errors";
 
 
 const printStatuses: Record<string, string> = { pending_prints: "pending", active_prints: "in_progress", prints_awaiting_collection: "completed" };
@@ -37,7 +38,7 @@ export function DashboardMachineQueue({ makerspaceId, slug, single, guest, enabl
   const jobRows = enabled && !maintenance ? jobs.data : undefined;
   const loading = enabled && (types.isLoading || jobs.isLoading || schedules.isLoading);
   return <ListLayout header={{ title: labels()[queue], secondary: { label: t`All machines`, href } }}
-    state={loading ? { status: "loading" } : error ? { status: "error", error: t`Couldn't load work list. Try again.`, onRetry: () => { void types.refetch(); void jobs.refetch(); void schedules.refetch(); } } : { status: "ready" }}
+    state={loading ? { status: "loading" } : error ? { status: "error", error: t`Couldn't load work list. Try again.`, onRetry: [types.error, jobs.error, schedules.error].filter(Boolean).some(isRetryable) ? () => { void types.refetch(); void jobs.refetch(); void schedules.refetch(); } : undefined } : { status: "ready" }}
     isEmpty={enabled && (scheduleRows?.length === 0 || jobRows?.length === 0)}
     empty={{ message: t`No work in this queue. Open All machines to review your equipment.` }}
     body={{ kind: "rows", rows: <>

@@ -6,6 +6,7 @@ import { FormV2Fields } from "../../forms/FormV2Fields";
 import type { EventScope } from "../../events/stagedForms/privateQueries";
 import { useStaffStageResponse } from "./api";
 import { StageAnswerFiles } from "./StageAnswerFiles";
+import { isRetryable } from "../../../lib/api/errors";
 export function StageResponseDetail({ scope, responseId, finance = false, revisions = [] }: {
   scope: EventScope; responseId: number; finance?: boolean; revisions?: number[];
 }) {
@@ -13,7 +14,7 @@ export function StageResponseDetail({ scope, responseId, finance = false, revisi
   const query = useStaffStageResponse(scope, responseId, finance, revision);
   const row = query.data;
   return <DetailLayout title={finance ? t`Finance stage answers` : t`Disclosed stage answers`}
-    state={{ status: query.isPending ? "loading" : query.error ? "error" : "ready", error: t`These answers are unavailable for your access.`, onRetry: () => void query.refetch() }} main={<div className="grid gap-4">
+    state={{ status: query.isPending ? "loading" : query.error ? "error" : "ready", error: t`These answers are unavailable for your access.`, onRetry: isRetryable(query.error) ? () => void query.refetch() : undefined }} main={<div className="grid gap-4">
       <Field label={t`Submitted revision`}><select className="desk-input" value={revision ?? "current"} onChange={event => setRevision(event.target.value === "current" ? undefined : Number(event.target.value))}>
         <option value="current">{t`Current submitted revision`}</option>{revisions.map(item => <option key={item} value={item}>{t`Revision ${item}`}</option>)}</select></Field>
       <p className="text-sm text-muted">{finance ? t`This separate finance view contains only authorized sensitive answers.` : t`Only answers disclosed to organizers are included. Sensitive answers are omitted.`}</p>

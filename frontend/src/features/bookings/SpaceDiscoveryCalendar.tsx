@@ -7,6 +7,7 @@ import { MonthCalendar, type CalendarEntry } from "../discovery/MonthCalendar";
 import { monthWindow } from "../discovery/useDiscoveryState";
 import { dayStart } from "../discovery/calendarDates";
 import { usePublicAvailability, type PublicBookableSpace } from "./publicBookingsApi";
+import { isRetryable } from "../../lib/api/errors";
 
 /** Phones get the month as a day-grouped list: a seven-column grid there is either squeezed to
  * ~45px cells or scrolled sideways, and both hide the booked times people came to read. */
@@ -39,17 +40,18 @@ export function SpaceDiscoveryCalendar({ slug, space, month, timeZone = "UTC" }:
   if (!space.show_public_availability || availability.data?.availability === null || (split && remainder.data?.availability === null)) return <p className="mt-4 text-sm text-muted">{t`Availability is not published. Submit a time for the makerspace to check.`}</p>;
   if (!future) return <p className="mt-4 text-sm text-muted">{t`Choose the current month or a later month to check upcoming availability.`}</p>;
   if (availability.isLoading || (split && remainder.isLoading)) return <LogoLoader label={t`Loading published bookings...`} />;
-  if (availability.error || (split && remainder.error)) return <div role="alert" className="mt-4"><p className="text-sm text-danger">{t`Availability could not be checked. This does not mean the space is free.`}</p><button type="button" className="desk-button" onClick={() => { void availability.refetch(); if (split) void remainder.refetch(); }}>{t`Retry availability`}</button></div>;
+  if (availability.error || (split && remainder.error)) return <div role="alert" className="mt-4"><p className="text-sm text-danger">{t`Availability could not be checked. This does not mean the space is free.`}</p>{[availability.error, split ? remainder.error : null].filter(Boolean).some(isRetryable) ? <button type="button" className="desk-button" onClick={() => { void availability.refetch(); if (split) void remainder.refetch(); }}>{t`Retry availability`}</button> : null}</div>;
   if (!availability.data || (split && !remainder.data)) return null;
   const combined = [...(availability.data.availability ?? []), ...(split ? remainder.data?.availability ?? [] : [])];
   const intervals = [...new Map(combined.map((interval) => [`${interval.starts_at}-${interval.ends_at}`, interval])).values()];
-  const label = `${space.name} published bookings`;
+  const name = space.name;
+  const label = t`${name} published bookings`;
   const time = (at: string) => new Date(at).toLocaleTimeString(formatLocale(), { hour: "2-digit", minute: "2-digit", timeZone });
   const entries = intervals.map((interval, index) => {
     // A pending event hold is labelled "Tentative" and never carries a name (its booker_name is null).
-    const label = interval.tentative ? t`Tentative ${time(interval.starts_at)}–${time(interval.ends_at)}`
+    const entryLabel = interval.tentative ? t`Tentative ${time(interval.starts_at)}–${time(interval.ends_at)}`
       : t`Booked ${time(interval.starts_at)}–${time(interval.ends_at)}${space.show_public_booker_names && interval.booker_name ? ` · ${interval.booker_name}` : ""}`;
-    return { id: `${interval.starts_at}-${index}`, startsAt: interval.starts_at, endsAt: interval.ends_at, label };
+    return { id: `${interval.starts_at}-${index}`, startsAt: interval.starts_at, endsAt: interval.ends_at, label: entryLabel };
   });
   return <div className="mt-5">
     <p className="mb-3 text-sm text-muted">{t`Confirmed bookings only. Empty dates do not guarantee a bookable time; rules are checked when you submit.`}</p>

@@ -12,6 +12,7 @@ import { slackInstallKey, useCompleteSlackInstall } from "./SlackInstallation";
 import { SmsConsent } from "./SmsConsent";
 import { useSmsConsent } from "./smsConsentApi";
 import { LogoLoader } from "../../components/LogoLoader";
+import { isRetryable } from "../../lib/api/errors";
 
 /** Return parameters an OAuth provider sign-in (Slack, Discord, Mattermost) lands back with. */
 const RETURN_KEYS = ["notify_challenge", "code", "state", "error", "error_description"] as const;
@@ -47,7 +48,7 @@ export function MyNotificationSettings({ makerspaceId, member = false }: { maker
   }, [challengeId, isInstall, state, search, setSearch, verify, install, makerspaceId, member]);
   if (preferences.isLoading) return <LogoLoader label={t`Loading your notification settings…`} size={48} className="min-h-16 py-3" />;
   if (preferences.error || !preferences.data) return <ErrorBlock error={preferences.error ?? new Error(t`Couldn't load your notification settings.`)}
-    onRetry={() => { void preferences.refetch(); }} />;
+    onRetry={isRetryable(preferences.error) ? () => { void preferences.refetch(); } : undefined} />;
   const rows = preferences.data.preferences;
   const offered = new Set(rows.flatMap(row => row.available_channels ?? []));
   const chat = CONNECTABLE.filter(channel => offered.has(channel)

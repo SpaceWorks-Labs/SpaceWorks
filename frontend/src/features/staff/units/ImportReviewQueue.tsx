@@ -7,6 +7,7 @@ import { formatLocale } from "../../../lib/format";
 import { Panel } from "../panels/shared";
 import { unitErrorText, unitKeys, unitsApi, useMemberUnits } from "./unitsApi";
 import { LogoLoader } from "../../../components/LogoLoader";
+import { isRetryable } from "../../../lib/api/errors";
 
 /**
  * The unit lead's queue for imports run in verify mode: approve sends the normal invitation, reject
@@ -30,7 +31,7 @@ export function ImportReviewQueue({ makerspaceId }: { makerspaceId: number }) {
   return <Panel title={t`Import review`}>
     <p className="mb-3 text-sm text-muted">{t`Rows imported for a unit lead to check. Approving one sends that person the usual invitation; rejecting cancels it and sends nothing.`}</p>
     {rows.isPending ? <LogoLoader label={t`Loading rows…`} size={48} className="min-h-16 py-3" /> : null}
-    {rows.isError ? <ErrorText message={unitErrorText(rows.error)} onRetry={() => void rows.refetch()} /> : null}
+    {rows.isError ? <ErrorText message={unitErrorText(rows.error)} onRetry={isRetryable(rows.error) ? () => void rows.refetch() : undefined} /> : null}
     {rows.isSuccess && !rows.data.length ? <EmptyState message={t`Nothing waiting for review.`} /> : null}
     <div className="grid gap-2">{rows.data?.map(row => {
       const pending = decide.isPending && decide.variables?.id === row.id;

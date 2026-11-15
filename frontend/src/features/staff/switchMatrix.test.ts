@@ -71,7 +71,10 @@ describe("every gated capability tab", () => {
       const parent = FEATURE_DEFINITIONS.find((f) => f.key === key)?.parent_module;
       if (RETIRED_FEATURES.has(key) || (parent && !MODULES.includes(parent))) continue;
       const one = filterTabsByEnabledModules(STAFF_TAB_KEYS, { enabled_modules: MODULES, enabled_features: [...FEATURES.filter((k) => !keys.includes(k)), key, "loans.enabled"] });
-      if (STAFF_TAB_KEYS.includes(tab)) expect(one, `${tab} via ${key}`).toContain(tab);
+      if (!STAFF_TAB_KEYS.includes(tab)) continue;
+      // Decision 550: finance.sponsors counts only while its finance.donations master is on, so sponsors alone shows nothing.
+      if (key === "finance.sponsors") expect(one, `${tab} via ${key} alone`).not.toContain(tab);
+      else expect(one, `${tab} via ${key}`).toContain(tab);
     }
   });
 

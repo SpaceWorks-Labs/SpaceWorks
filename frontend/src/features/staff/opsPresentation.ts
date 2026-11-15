@@ -2,6 +2,7 @@ import { t } from "@lingui/core/macro";
 import type { MouseEvent } from "react";
 import { useSearchParams } from "react-router-dom";
 import type { QueryState, Tab } from "../../components/ui";
+import { isRetryable } from "../../lib/api/errors";
 
 /** The layout owns tab rendering; callers retain URL state and client navigation. */
 export function useOpsTabs(key: string, choices: { key: string; label: string; count?: number }[], fallback: string) {
@@ -32,9 +33,10 @@ export function useOpsTabs(key: string, choices: { key: string; label: string; c
 
 /** Use the same query status/error contract in each ops layout without moving its hooks. */
 export function opsQueryState(query: { isLoading: boolean; error: unknown; refetch: () => unknown }, resource: string): QueryState {
-  return query.isLoading ? { status: "loading" } : query.error
-    ? { status: "error", error: t`Couldn't load ${resource}. Try again.`, onRetry: () => { void query.refetch(); } }
-    : { status: "ready" };
+  // Decision 588: only an outage says "Try again" and offers Retry; a refusal shows its own explanation.
+  return query.isLoading ? { status: "loading" } : !query.error ? { status: "ready" }
+    : isRetryable(query.error) ? { status: "error", error: t`Couldn't load ${resource}. Try again.`, onRetry: () => { void query.refetch(); } }
+    : { status: "error", error: query.error instanceof Error ? query.error.message : t`You can't open ${resource} here.` };
 }
 
 

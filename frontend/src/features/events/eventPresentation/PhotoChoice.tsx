@@ -6,7 +6,9 @@ import { memberRequest } from "../../../lib/api";
 import type { ProfileOption as Option, Presentation } from '../../../generated/api';
 import { CommandSession } from '../hackathonAdmission/transport';
 import { sessionScope, useClearDeniedQuery } from '../../staff/eventProgramme/sessionScope';
+import { ErrorBlock } from "../../../components/ui";
 import { LogoLoader } from '../../../components/LogoLoader';
+import { isRetryable } from "../../../lib/api/errors";
 
 export function PhotoChoice({ makerspaceId, eventId, eventName, actorId = 0 }: { makerspaceId: number; eventId: number; eventName: string; actorId?: number }) {
   const base = `/member/makerspaces/${makerspaceId}/events/${eventId}`;
@@ -50,7 +52,9 @@ export function PhotoChoice({ makerspaceId, eventId, eventName, actorId = 0 }: {
       <button type="button" className="desk-button" disabled={!dirty} onClick={() => save.mutate()}>{t`Save photo choices`}</button>
       {save.isSuccess ? <p role="status" className="text-sm text-success-ink">{t`Photo choices saved.`}</p> : null}
     </fieldset>}
-    {error ? <p className="text-sm text-danger" role="alert">{error.message}</p> : null}
+    {current.error ? <ErrorBlock error={current.error} onRetry={isRetryable(current.error) ? () => { void current.refetch(); } : undefined} /> : null}
+    {options.error ? <ErrorBlock error={options.error} onRetry={isRetryable(options.error) ? () => { void options.refetch(); } : undefined} /> : null}
+    {save.error ? <ErrorBlock error={save.error} /> : null}
     </> : null}
   </details>;
 }

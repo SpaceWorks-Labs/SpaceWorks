@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { SettingsActions, SettingsRow, SettingsSection } from "../../../components/ui";
 import { guestErrorText, guestKeys, guestStaffApi, type GuestPassPolicy } from "../../guestPasses/api";
 import { LogoLoader } from "../../../components/LogoLoader";
+import { isRetryable } from "../../../lib/api/errors";
 
 type Waiver = Pick<GuestPassPolicy, "waiver_required_on_site" | "waiver_gate_without_passes">;
 const pick = (policy: GuestPassPolicy): Waiver =>
@@ -34,7 +35,7 @@ export function GuestWaiverSettings({ makerspaceId, passesOn }: { makerspaceId: 
     {policy.isLoading ? <LogoLoader label={t`Loading the waiver rule…`} size={48} className="min-h-16 py-3" /> : null}
     {policy.isError ? <div role="alert" className="flex flex-wrap items-center gap-3 py-4 text-sm text-danger">
       {guestErrorText(policy.error)}
-      <button type="button" className="desk-button" onClick={() => void policy.refetch()}>{t`Try again`}</button></div> : null}
+      {isRetryable(policy.error) ? <button type="button" className="desk-button" onClick={() => void policy.refetch()}>{t`Try again`}</button> : null}</div> : null}
     {draft ? <form onSubmit={(event) => { event.preventDefault(); save.mutate(draft); }}>
       <SettingsRow label={t`Waiver before a guest is on site`} helper={t`Guests accept the current waiver on their phone or at the desk before checking in.`}>
         <div className="grid gap-3">

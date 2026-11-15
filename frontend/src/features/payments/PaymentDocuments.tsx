@@ -6,6 +6,7 @@ import { QueryContent } from "../../components/layouts/LayoutFrame";
 
 import { memberRequest, memberRequestBlob, staffRequest, staffRequestBlob } from "../../lib/api";
 import { formatMoney } from "../../lib/money";
+import { isRetryable } from "../../lib/api/errors";
 
 const kindLabel = (kind: PaymentDocument["kind"]) =>
   kind === "receipt" ? t`Receipt` : kind === "credit_note" ? t`Credit note` : t`Bill`;
@@ -55,7 +56,7 @@ export function PaymentDocuments({ makerspaceId, audience, initiallyExpanded = f
         <option value="receipt">{t`Receipts`}</option><option value="credit_note">{t`Credit notes`}</option>
       </select>
     </label><QueryContent state={documents.isLoading ? { status: "loading" } : documents.error
-      ? { status: "error", error: t`Couldn't load documents. Try again.`, onRetry: () => { void documents.refetch(); } } : { status: "ready" }}
+      ? { status: "error", error: t`Couldn't load documents. Try again.`, onRetry: isRetryable(documents.error) ? () => { void documents.refetch(); } : undefined } : { status: "ready" }}
       isEmpty={documents.data?.count === 0} empty={{ message: t`No issued documents match this filter.` }}>
       <div className="grid gap-3">{documents.data?.results.map(document => <ListRow key={document.id}
         title={`${kindLabel(document.kind)} ${document.number}`}

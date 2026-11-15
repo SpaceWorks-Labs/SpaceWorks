@@ -5,6 +5,7 @@ import { Callout, ErrorText, SegmentedControl } from "../../../components/ui";
 import { TenantMigrationImports } from "../TenantMigrationImports";
 import { TenantMigrationPairings } from "../TenantMigrationPairings";
 import { listPairings, tenantMigrationKeys } from "../tenantMigrationApi";
+import { isRetryable } from "../../../lib/api/errors";
 
 type Step = "pairings" | "import" | "verify" | "cutover";
 
@@ -28,7 +29,7 @@ export function TenantImportSection() {
     <p className="text-sm text-muted">{t`Bring a space in from another server. The old server exports an encrypted archive for this server; the imported space stays in “importing” until you activate it with the old server's signed switch-over receipt.`}</p>
     <Callout size="inline" tone="warn" lead={t`Activation is one-way.`} body={t`The source space is archived once this target goes live.`} />
     <SegmentedControl label={t`Import step`} value={step} options={steps} onChange={value => setStep(value as Step)} />
-    {pairings.isError ? <ErrorText resource={t`deployment pairings`} onRetry={() => { void pairings.refetch(); }} /> : null}
+    {pairings.isError ? <ErrorText resource={t`deployment pairings`} onRetry={isRetryable(pairings.error) ? () => { void pairings.refetch(); } : undefined} /> : null}
     <TenantMigrationPairings pairings={pairings.data ?? []} active={step === "pairings"} />
     {step !== "pairings" ? <TenantMigrationImports pairings={pairings.data ?? []} phase={step} /> : null}
   </div>;

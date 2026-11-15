@@ -8,6 +8,7 @@ import { memberRequest } from '../../../lib/api'
 import { AdmissionArtwork } from './AdmissionArtwork'
 import { CommandSession } from './transport'
 import type { FinderCard, Page, ProgrammeContext } from './types'
+import { isRetryable } from "../../../lib/api/errors";
 
 type FinderProfile = { id: number | null; version: number; opted_in: boolean; intro: string; skills: string[] }
 export function TeamFinderPage({ context, accountId }: { context: ProgrammeContext; accountId: number }) {
@@ -25,7 +26,7 @@ export function TeamFinderPage({ context, accountId }: { context: ProgrammeConte
   const action = useMutation({ mutationFn: ({ suffix, body, method = 'POST' }: { suffix: string; body: Record<string, unknown>; method?: 'POST' | 'PATCH' }) =>
     commands.current.send(base + suffix, method, body), onSuccess: () => client.invalidateQueries({ queryKey: key }) })
   return <ListLayout header={{ title: t`Find your next teammate` }} state={cards.isLoading ? { status: 'loading' }
-    : cards.error ? { status: 'error', error: cards.error.message, onRetry: () => { void cards.refetch() } } : { status: 'ready' }}
+    : cards.error ? { status: 'error', error: cards.error.message, onRetry: isRetryable(cards.error) ? () => { void cards.refetch() } : undefined } : { status: 'ready' }}
     empty={{ message: t`No teams or participants match these skills.` }}
     pagination={{ page, pageSize: 24, count: cards.data?.count ?? 0, onChange: setPage }}
     body={{ kind: 'rows', rows: <>

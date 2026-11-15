@@ -6,6 +6,7 @@ import { staffTabPath } from "../staffTabs";
 import { consoleSessionHref } from "../../../lib/api/sessionContext";
 import type { Makerspace } from "./shared";
 import { LogoLoader } from "../../../components/LogoLoader";
+import { isRetryable } from "../../../lib/api/errors";
 
 const CONSOLES: Record<string, { modules: string[]; keys: string[] }> = {
   inventory: { modules: ["public_inventory"], keys: ["inventory-utilisation", "most-lent", "stock-health", "consumable-pools"] },
@@ -43,7 +44,7 @@ export function ModuleAnalytics({ makerspace, tab, singleTenantLocked = false, g
   if (catalog.isSuccess && !report) return null;
   return <section aria-label={t`Module analytics`} className="mt-6 min-w-0 rounded-xl border border-line bg-panel p-4">
     <h2 className="title-panel">{t`At a glance`}</h2>
-    {catalog.isLoading ? <LogoLoader label={t`Loading analytics…`} size={48} className="min-h-16 py-3" /> : catalog.isError ? <div role="alert"><p>{t`Couldn't load analytics.`}</p><button type="button" className="desk-button" onClick={() => void catalog.refetch()}>{t`Retry`}</button></div> : report ? <>
+    {catalog.isLoading ? <LogoLoader label={t`Loading analytics…`} size={48} className="min-h-16 py-3" /> : catalog.isError ? <div role="alert"><p>{t`Couldn't load analytics.`}</p>{isRetryable(catalog.error) ? <button type="button" className="desk-button" onClick={() => void catalog.refetch()}>{t`Retry`}</button> : null}</div> : report ? <>
       <label className="my-3 grid gap-2 text-sm">{t`Analytics report`}<select className="desk-input max-w-full" value={report.key} onChange={event => setSelected(event.target.value)}>
         {reports.map(entry => <option key={entry.key} value={entry.key}>{entry.title}</option>)}
       </select></label>

@@ -17,10 +17,11 @@ vi.mock("./eventConfirmation", async () => ({ ...await vi.importActual<typeof im
 
 const ticket = { registration_id: 4, status: "registered", ticket_png_available: true,
   event: { status: "published", title: "Workshop", description: "Public introduction", starts_at: "2026-11-01T10:00:00Z", ends_at: "2026-11-01T12:00:00Z", location: "Lab", public_token: "public-token", timezone_name: "UTC" } };
-function show() {
+function show(path = "/m/lab/member/events/4/ticket") {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
-  render(<QueryClientProvider client={client}><MemoryRouter initialEntries={["/m/lab/member/events/4/ticket"]}><TenantProvider><Routes>
+  render(<QueryClientProvider client={client}><MemoryRouter initialEntries={[path]}><TenantProvider><Routes>
     <Route path="/m/:slug/member/events/:registrationId/ticket" element={<MemberEventTicketPage />} />
+    <Route path="/member/events/:registrationId/ticket" element={<MemberEventTicketPage />} />
   </Routes></TenantProvider></MemoryRouter></QueryClientProvider>);
 }
 beforeEach(() => { vi.clearAllMocks(); mocks.request.mockImplementation((path) => Promise.resolve(path === "/auth/me" ? { id: 19 } : ticket)); mocks.blob.mockResolvedValue(new Blob(["png"], { type: "image/png" })); });
@@ -61,6 +62,14 @@ describe("member event ticket", () => {
       ...ticket, status: "attended", event: { ...ticket.event, status: "completed" },
     })); show();
     expect(await screen.findByRole("link", { name: "Add to Google Calendar" })).toBeVisible();
+  });
+  // Decision 598 follow-up: the central portal has no selected space, so it says where tickets live (sign-in can't help).
+  it("on the central portal with no space says where tickets live and never reads a ticket", async () => {
+    mocks.request.mockRejectedValue(new StructuredApiError(401, { detail: "Sign in." })); show("/member/events/4/ticket");
+    expect(await screen.findByText("Open your ticket from a makerspace's member area.")).toHaveAttribute("role", "alert");
+    expect(screen.queryByText("Ticket account sign in")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Retry" })).toBeNull();
+    expect(mocks.request.mock.calls.filter(([path]) => String(path).includes("event-registrations"))).toEqual([]);
   });
   it("shows sign in for an unauthenticated account", async () => {
     mocks.request.mockRejectedValue(new StructuredApiError(401, { detail: "Sign in." })); show();

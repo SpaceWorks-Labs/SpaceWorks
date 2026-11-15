@@ -7,6 +7,7 @@ import { useChannels, type Channel } from "./channelsApi";
 import { ChannelSetupForm } from "./ChannelSetupForm";
 import { ChannelTestSend } from "./ChannelTestSend";
 import { LogoLoader } from "../../components/LogoLoader";
+import { isRetryable } from "../../lib/api/errors";
 
 function summary(spec: ChannelSpec, row?: Channel): { label: string; tone: Tone } {
   // No settings row means today's behaviour: email sends and existing rooms post.
@@ -27,7 +28,7 @@ export function ChannelSetupPanel({ makerspaceId, enabledModules }: { makerspace
   const [open, setOpen] = useState<string | null>(null);
   if (channels.isLoading) return <LogoLoader label={t`Loading channels…`} size={48} className="min-h-16 py-3" />;
   if (channels.error) return <ErrorBlock error={new Error(t`Couldn't load channel settings (${channels.error.message}).`)}
-    onRetry={() => { void channels.refetch(); }} />;
+    onRetry={isRetryable(channels.error) ? () => { void channels.refetch(); } : undefined} />;
   const rows = new Map((channels.data?.results ?? []).map(row => [row.channel, row]));
   return <ul className="grid min-w-0 gap-3 py-4" aria-label={t`Notification channels`}>
     {/* #183B: a channel whose module is off is not offered at all. */}

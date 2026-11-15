@@ -14,6 +14,7 @@ import {
   archiveVariant, createProduct, fetchProduct, listAllProducts, productImageEndpoint, staffShopError, staffShopKeys, updateProduct,
   type ProductDraft, type ShopProduct,
 } from "./staffShopApi";
+import { isRetryable } from "../../../lib/api/errors";
 
 /** Create or edit one product: its fields, variants and options, kit parts and photo. */
 export function ShopProductForm({ makerspaceId, productId, access, onDone }: {
@@ -25,7 +26,7 @@ export function ShopProductForm({ makerspaceId, productId, access, onDone }: {
   return productId !== null && !query.data
     ? <FormPageLayout header={{ title: t`Product` }} back={{ label: t`Catalogue`, onClick: onDone }} form={null}
       submit={{ label: t`Save`, disabled: true, disabledReason: t`Loading the product.` }}
-      state={query.error ? { status: "error", error: staffShopError(query.error), onRetry: () => { void query.refetch(); } } : { status: "loading" }} />
+      state={query.error ? { status: "error", error: staffShopError(query.error), onRetry: isRetryable(query.error) ? () => { void query.refetch(); } : undefined } : { status: "loading" }} />
     : <ProductEditor key={productId ?? "new"} makerspaceId={makerspaceId} product={query.data} access={access} onDone={onDone}
       onSaved={saved => { client.setQueryData(staffShopKeys.product(makerspaceId, saved.id), saved); void client.invalidateQueries({ queryKey: staffShopKeys.all(makerspaceId) }); }} />;
 }

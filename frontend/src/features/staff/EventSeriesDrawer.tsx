@@ -26,6 +26,7 @@ import {
 import { eventErrorText } from "./eventUi";
 import { pageStickyActions } from "./stickyActions";
 import { LogoLoader } from "../../components/LogoLoader";
+import { isRetryable } from "../../lib/api/errors";
 
 type Action = "publish" | "cancel" | "complete" | "extend";
 
@@ -106,7 +107,7 @@ export function EventSeriesDrawer({ seriesId, makerspaceId, onClose, onSelectOcc
         {update.error || action.error ? <p className="text-sm text-danger" role="alert">{eventErrorText(update.error || action.error)}</p> : null}
         {tabs.active === "occurrences" ? <section><h2 className="title-panel">{t`Occurrences`}</h2><p className="mt-1 text-sm text-muted">{t`Choose a date to edit or cancel only that occurrence.`}</p>
           {occurrences.isLoading ? <LogoLoader size={48} className="min-h-24 py-3" /> : null}
-          {occurrences.error ? <ErrorText resource={t`occurrences`} onRetry={() => { void occurrences.refetch(); }} /> : null}
+          {occurrences.error ? <ErrorText resource={t`occurrences`} onRetry={isRetryable(occurrences.error) ? () => { void occurrences.refetch(); } : undefined} /> : null}
           {occurrences.data && !occurrences.data.results.length ? <EmptyState message={t`No occurrences on this page.`} /> : null}
           <div className="mt-3 grid gap-3">{occurrences.data?.results.map(row => <ListRow key={row.id} title={new Date(row.starts_at).toLocaleString(formatLocale())} identity={{ kind: "date", date: row.starts_at }} draft={row.status === "draft"} onClick={() => onSelectOccurrence(row.id)} right={<StatusBadge domain="event" status={row.status} label={opsStatusLabel(row.status)} />} />)}</div>
           {occurrences.data ? <Pagination page={occurrencePage} count={occurrences.data.count} pageSize={EVENT_SERIES_PAGE_SIZE} totalPages={Math.ceil(occurrences.data.count / EVENT_SERIES_PAGE_SIZE)} onChange={setOccurrencePage} disabled={occurrences.isFetching} /> : null}

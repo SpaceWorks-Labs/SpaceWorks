@@ -6,6 +6,7 @@ import type { OrganizationDetail } from "./organizationsApi";
 import { useUpdateOrganizationMember } from "../organizations/organizationSelfServiceApi";
 import { useOrganizationMemberships } from "./organizationsApi";
 import { LogoLoader } from "../../components/LogoLoader";
+import { isRetryable } from "../../lib/api/errors";
 
 /** Governance actions get plain names; makerspace action codes stay readable as a fallback. */
 const actionLabel = (action: string) => ({ manage_organization_profile: t`Manage organization profile`,
@@ -25,7 +26,7 @@ export function OrganizationMemberships({ organization }: { organization: Organi
       {memberships.isLoading ? <LogoLoader size={48} className="min-h-28 py-3" /> : null}
       {update.error ? <ErrorBlock className="mt-3" error={update.error} /> : null}
       <p className="mt-2 text-sm text-muted">{t`Invite another governor before removing the last governor. Changing authority requires recent identity verification.`}</p>
-      {memberships.error ? <ErrorText resource={t`organization members`} onRetry={() => { void memberships.refetch(); }} /> : null}
+      {memberships.error ? <ErrorText resource={t`organization members`} onRetry={isRetryable(memberships.error) ? () => { void memberships.refetch(); } : undefined} /> : null}
       {memberships.data && !memberships.data.results.length ? <EmptyState message={t`It's just you so far. Create an invitation to bring in your team.`} /> : null}
       {memberships.data?.results.length ? (
         <div className="mt-3 grid gap-3">{memberships.data.results.map(member => <ListRow key={member.id}

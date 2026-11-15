@@ -11,6 +11,7 @@ import { SaveIntentNotice } from '../../accountSavedDetails/RegistrationSavedDet
 import { FormV2Fields, memberFormInput, type FormState, type FieldErrors } from '../../forms'
 import { filledState, formSchema, ownerAnswers } from './formBridge'
 import { ErrorBlock } from '../../../components/ui'
+import { isRetryable } from "../../../lib/api/errors";
 
 export function ProgrammeRolePage({ scope, context, postingId, applicationId, base }: {
   scope: EventScope; context: ProgrammeContext; postingId?: number; applicationId?: number; base: string
@@ -52,7 +53,7 @@ export function ProgrammeRolePage({ scope, context, postingId, applicationId, ba
     savedDetailsStatus: intent => <SaveIntentNotice actorId={scope.accountId} operationId={intent.operation_id} />,
   }), [scope.accountId, scope.eventId, scope.makerspaceId, context, application.data?.form, posting.data])
   const error = application.error || posting.error
-  if (error) return <ErrorBlock error={error} onRetry={() => { void application.refetch(); void posting.refetch() }} />
+  if (error) return <ErrorBlock error={error} onRetry={[application.error, posting.error].filter(Boolean).some(isRetryable) ? () => { void application.refetch(); void posting.refetch() } : undefined} />
   if (!posting.data || (applicationId && !application.data)) return <LogoLoader label={t`Loading your role application…`} />
   return <RoleApplicationForm scope={scope} posting={posting.data} application={application.data ?? posting.data.application ?? null}
     bridge={bridge} completionReady onSaved={savedId => navigate(`${base}/role-applications/${savedId}`)} />

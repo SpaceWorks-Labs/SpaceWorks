@@ -2,6 +2,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import type { ApiPath } from "../../generated/api";
 import { StructuredApiError, tenantMemberRequest, tenantPublicRequest } from "../../lib/api";
+import { collectPublicPages } from "../../lib/collectPublicPages";
+import type { PaginatedResponse } from "../../types/inventory";
 import type { CustomAnswers, CustomFormSchema } from "../forms/customFormTypes";
 import type { GalleryPhoto } from "../../components/ui/Gallery";
 
@@ -68,7 +70,9 @@ export const publicBookingKeys = {
 export function usePublicSpaces(slug: string) {
   return useQuery({
     queryKey: publicBookingKeys.all(slug),
-    queryFn: () => tenantPublicRequest<PublicBookableSpace[]>(slug, pathFor(SPACES_PATH, slug)),
+    queryFn: ({ signal }) => collectPublicPages(page => tenantPublicRequest<PaginatedResponse<PublicBookableSpace>>(
+      slug, pathFor(SPACES_PATH, slug) + (page > 1 ? `?page=${page}` : ""), { signal },
+    )),
     enabled: Boolean(slug),
     retry: (count, error) => !(error instanceof StructuredApiError && error.status < 500) && count < 2,
   });

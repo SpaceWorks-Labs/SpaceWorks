@@ -19,6 +19,7 @@ import { staffTabPath } from "./staffTabs";
 import { DeploymentPanel } from "../deployment/DeploymentPanel";
 import type { TenantDeploymentSummary } from "../deployment/types";
 import { LogoLoader } from "../../components/LogoLoader";
+import { isRetryable } from "../../lib/api/errors";
 
 type HealthStatus = "ok" | "warn" | "error" | "unknown";
 
@@ -92,7 +93,7 @@ export function IntegrationHealthPanel({ makerspace, isSuperadmin = false }: { m
             <Badge label="" tone={statusTone(data?.status ?? "unknown")}>{statusLabel(data?.status)}</Badge>
           </div>
           {health.isLoading ? <LogoLoader label={t`Loading integration health…`} size={48} className="min-h-16 py-3" /> : null}
-          {health.error ? <ErrorBlock error={new Error(t`Couldn't load integration health. Try again.`)} onRetry={() => { void health.refetch(); }} /> : null}
+          {health.error ? <ErrorBlock error={new Error(t`Couldn't load integration health. Try again.`)} onRetry={isRetryable(health.error) ? () => { void health.refetch(); } : undefined} /> : null}
         </div>
         <div className="flex flex-wrap gap-2">
           <Link className="desk-button" to={consoleSessionHref(staffTabPath("email-logs", false, makerspace.slug))}>{t`Delivery log`}</Link>

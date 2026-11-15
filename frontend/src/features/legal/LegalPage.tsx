@@ -1,3 +1,4 @@
+import { EmptyState } from "../../components/ui";
 import { t } from "@lingui/core/macro";
 import { useParams } from "react-router-dom";
 import { PublicLayout } from "../../components/layouts";
@@ -9,6 +10,7 @@ import { LICENSE_URL, publicPageChrome } from "../inventory/PublicPageChrome";
 import { useTenantBootstrap } from "../inventory/usePublicInventory";
 import { LegalMarkdown, splitTitle } from "./LegalMarkdown";
 import { legalTitle, useLegalPage, type LegalSlug } from "./legalApi";
+import { isRetryable } from "../../lib/api/errors";
 
 /**
  * /privacy and /terms (parity A13): the space's own text on a space's pages, otherwise the operator's,
@@ -36,8 +38,9 @@ export function LegalPage({ slug }: { slug: LegalSlug }) {
     <PageMetadata title={spaceName ? `${title} · ${spaceName}` : title} description={legalTitle(slug)} path={space ? path(slug) : `/${slug}`} />
     <PublicLayout {...chrome} width="narrow"
       header={{ title, subtitle: updated, secondary: { label: legalTitle(other), href: space ? path(other) : `/${other}` } }}
-      state={page.isLoading ? { status: "loading" } : page.error ? { status: "error", error: t`This page could not be loaded. Try again.`, onRetry: () => { void page.refetch(); } } : { status: "ready" }}>
-      {page.data ? <article aria-label={title}><LegalMarkdown body={split.body} /></article> : null}
+      state={page.isLoading ? { status: "loading" } : page.error ? { status: "error", error: t`This page could not be loaded. Try again.`, onRetry: isRetryable(page.error) ? () => { void page.refetch(); } : undefined } : { status: "ready" }}>
+      {page.data ? split.body.trim() ? <article aria-label={title}><LegalMarkdown body={split.body} /></article>
+        : <EmptyState message={t`No content has been published for this page yet.`} /> : null}
     </PublicLayout>
   </>;
 }

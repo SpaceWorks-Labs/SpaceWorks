@@ -13,6 +13,7 @@ import { fetchServiceStatus, serviceKeys } from "./api";
 import { OwnerCancel, OwnerJobLink } from "./OwnerCancel";
 import { ServiceRequestEta } from "./ServiceRequestEta";
 import { normalizeServiceStatus, serviceStatusLabel, serviceStatusTone, statusRefetchInterval } from "./types";
+import { isRetryable } from "../../lib/api/errors";
 
 /** Accurate copy for a job that no longer has an estimate. */
 function terminalMessage(status: string): string {
@@ -44,7 +45,7 @@ export function PublicMachineServiceStatusPage() {
   const state = bootstrapQuery.isLoading || statusQuery.isPending
     ? { status: "loading" as const }
     : statusQuery.isError
-      ? { status: "error" as const, error: t`We couldn't find that job, or it isn't trackable any more.`, onRetry: () => { void statusQuery.refetch(); } }
+      ? { status: "error" as const, error: t`We couldn't find that job, or it isn't trackable any more.`, onRetry: isRetryable(statusQuery.error) ? () => { void statusQuery.refetch(); } : undefined }
       : { status: "ready" as const };
   const status = job ? normalizeServiceStatus(job.status) : "";
   return <div style={brandStyle}><PublicLayout {...publicPageChrome(makerspaceSlug, displayName, tenantPath, bootstrap)} state={state}>

@@ -15,6 +15,7 @@ import { BorrowingHistoryList } from "./BorrowingHistoryList";
 import { MemberWaitlist } from "./MemberWaitlist";
 import { useOwnBorrowingHistory, type BorrowingPeriod } from "./borrowingHistoryApi";
 import { RouteLink } from "../../components/ui/RouteLink";
+import { isRetryable } from "../../lib/api/errors";
 
 /** Account-only owner history, independent of the optional membership dashboard and payment rail. */
 export function MemberBorrowingHistoryPage() {
@@ -50,11 +51,11 @@ export function MemberBorrowingHistoryPage() {
     title={t`Your borrowing history`} body={unavailable ? t`Borrowing history is unavailable for this space.` : t`Your requests, handovers and returns in this space.`}
     state={busy ? { status: "loading" } : { status: "ready" }}
     content={<div className="grid min-w-0 gap-5">
-      {error ? <ErrorBlock error={error} onRetry={() => {
+      {error ? <ErrorBlock error={error} onRetry={[bootstrapQuery.error, identity.error, history.error].filter(Boolean).some(isRetryable) ? () => {
         if (bootstrapQuery.error) void bootstrapQuery.refetch();
         if (identity.error) void identity.refetch();
         if (history.error && available && identity.data?.id) void history.refetch();
-      }} /> : null}
+      } : undefined} /> : null}
       {available && !error ? <>
         <Field label={t`Borrowing view`}><select className="desk-input w-full" value={period} onChange={event => { setPeriod(event.target.value as BorrowingPeriod); setPage(1); }}>
           <option value="all">{t`All borrowing`}</option><option value="current">{t`Requests and current loans`}</option><option value="history">{t`Closed requests and returns`}</option>

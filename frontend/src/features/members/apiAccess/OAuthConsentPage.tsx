@@ -9,6 +9,7 @@ import { ErrorText } from "../../../components/ui";
 import { StructuredApiError } from "../../../lib/api";
 import { MemberAuthPanel } from "../MemberAuthPanel";
 import { decideConsent, previewConsent } from "./personalApiAccessApi";
+import { isRetryable } from "../../../lib/api/errors";
 
 export function OAuthConsentPage() {
   const query = useLocation().search.replace(/^\?/, "");
@@ -32,7 +33,7 @@ export function OAuthConsentPage() {
         <span className="text-xs text-muted">{scope.description}</span></li>)}</ul> : null}
       {app ? <p className="mt-3 text-xs text-muted [overflow-wrap:anywhere]">{t`You will return to ${app.redirect_uri}`}</p> : null}
       {preview.error && !(preview.error instanceof StructuredApiError && preview.error.status === 401)
-        ? <ErrorText message={preview.error.message} /> : null}
+        ? <ErrorText message={preview.error.message} onRetry={isRetryable(preview.error) ? () => { void preview.refetch(); } : undefined} /> : null}
       {decide.error ? <ErrorText message={decide.error.message} /> : null}
     </>}
     primary={{ label: t`Allow`, onClick: () => decide.mutate(true), pending: decide.isPending, pendingLabel: "Connecting…",

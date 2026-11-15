@@ -5,6 +5,7 @@ import { useDefinitions, useJudging } from './api';
 import { GalleryPublishPanel } from './GalleryPublishPanel';
 import { IntegrityFlag } from './IntegrityFlag';
 import type { Round, Scope } from './types';
+import { isRetryable } from "../../../lib/api/errors";
 
 type Award = { prize_id: number; snapshot_id: number; rank: number; public_requested: boolean; tie_reason: string };
 export function ResultsPanel({ scope, rounds, galleryEnabled = false }: { scope: Scope; rounds: Round[]; galleryEnabled?: boolean }) {
@@ -28,7 +29,7 @@ export function ResultsPanel({ scope, rounds, galleryEnabled = false }: { scope:
       onSuccess: response => { setConfirm(null); setPreview(action === 'preview' ? JSON.stringify(response.rounds, null, 2) : saved(action)); },
     });
   };
-  if (result.isError) return <ErrorBlock error={result.error} onRetry={() => void result.refetch()} />;
+  if (result.isError) return <ErrorBlock error={result.error} onRetry={isRetryable(result.error) ? () => void result.refetch() : undefined} />;
   return <section className="grid gap-4 border-t border-line pt-6" aria-label={t`Result publication`}>
     <div className="flex flex-wrap items-center gap-3"><h3 className="title-section">{t`Finalize and announce results`}</h3>
       <StatusPill label={current?.state ?? t`Draft`} /></div>

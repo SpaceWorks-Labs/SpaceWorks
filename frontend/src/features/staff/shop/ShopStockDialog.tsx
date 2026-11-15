@@ -23,8 +23,9 @@ export function ShopStockDialog({ target, mode, pending, error, onClose, onSubmi
   const valid = value.trim() !== "" && Number.isInteger(number) && (kind === "count" ? number >= 0 : number > 0);
   // Adjustments are a signed delta; a count is turned into the delta from what is on hand now.
   const quantity = kind === "restock" ? number : kind === "count" ? number - target.onHand : -number;
-  const label = kind === "restock" ? "How many arrived" : kind === "count" ? "Counted on the shelf" : "How many to take out";
-  return <Modal open onClose={onClose} title={`${mode === "restock" ? "Restock" : "Adjust"} ${target.label}`}
+  const itemLabel = target.label;
+  const label = kind === "restock" ? t`How many arrived` : kind === "count" ? t`Counted on the shelf` : t`How many to take out`;
+  return <Modal open onClose={onClose} title={mode === "restock" ? t`Restock ${itemLabel}` : t`Adjust ${itemLabel}`}
     footer={<div className="flex flex-wrap justify-end gap-2">
       <button type="button" className="desk-button min-h-11" onClick={onClose} disabled={pending}>{t`Close`}</button>
       <button type="submit" form="shop-stock" className="desk-button-primary min-h-11" disabled={pending || !valid || quantity === 0 || (kind !== "restock" && !reason.trim())}>

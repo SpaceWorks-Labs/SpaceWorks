@@ -6,18 +6,19 @@ import { Card, DataTable, ProgressBar, StatusPill } from "../../components/ui";
 import type { Makerspace } from "./panels/shared";
 import { adminQueryState } from "./adminPresentation";
 import { STICKY_FIRST_COLUMN } from "./matrixColumns";
-import { getTenantUsage, usageAmount, type TenantUsage } from "./platformMonitoringApi";
+import { getTenantUsage, resourceUsed, usageAmount, type TenantUsage } from "./platformMonitoringApi";
 import { useManagedPlans } from "./platformSpaces/plansApi";
 import { limitLabel } from "./platformSpaces/limitCopy";
 import { SpacePlanUsage } from "./hostingPlan/SpacePlanUsage";
 import { SpaceInvoices } from "./hostingPlan/SpaceInvoices";
 import { SpaceLimitsUsage } from "./hostingPlan/SpaceLimitsUsage";
+import { isRetryable } from "../../lib/api/errors";
 
 export function UsageTable({ data }: { data: TenantUsage }) {
   return <div role="region" aria-label={t`Resource usage against effective limits`}><DataTable data={data.resources} getRowId={row => row.key}
     columns={[
       { key: "label", header: t`Resource`, className: STICKY_FIRST_COLUMN, render: row => limitLabel(row.key, row.label) },
-      { key: "used", header: t`Used`, render: row => usageAmount(row.used, row.unit) },
+      { key: "used", header: t`Used`, render: row => resourceUsed(row) },
       { key: "limit", header: t`Limit`, render: row => row.limit === null ? t`Unlimited` : usageAmount(row.limit, row.unit) },
       { key: "percentage", header: t`Allowance used`, render: row => {
         const percentage = row.used !== null && row.limit !== null && row.limit > 0 ? row.used / row.limit * 100 : null;
@@ -39,7 +40,9 @@ export function TenantUsagePanel({ makerspace }: { makerspace: Makerspace }) {
   ];
   return <DashboardLayout header={{ title: t`Usage & limits`, eyebrow: makerspace.name,
     subtitle: t`Daily and monthly counters reset with their quota period.`,
-    secondary: { label: t`Refresh usage`, onClick: () => { void query.refetch(); }, disabled: query.isFetching, disabledReason: t`Usage is refreshing.` } }}
+    // Decision 588: a refused read (403, switched off) is answered the same way again, so it offers no refresh.
+    secondary: query.error && !isRetryable(query.error) ? undefined
+      : { label: t`Refresh usage`, onClick: () => { void query.refetch(); }, disabled: query.isFetching, disabledReason: t`Usage is refreshing.` } }}
     state={adminQueryState(query, "usage")} stats={[]}
     main={[...planSections, ...(query.data ? [{ title: t`Resource allowances`, empty: { message: t`No resource counters yet. Refresh usage to check again.` },
       isEmpty: !query.data.resources.length,
@@ -53,7 +56,7 @@ export function TenantUsagePanel({ makerspace }: { makerspace: Makerspace }) {
             return <Card key={row.key}><div className="grid gap-4">
               <div className="flex flex-wrap items-center justify-between gap-3"><h3 className="title-section">{limitLabel(row.key, row.label)}</h3>
                 {over ? <StatusPill label={t`Over limit`} tone="danger" /> : fraction !== null && fraction >= 0.8 ? <StatusPill label={t`Near limit`} tone="warn" /> : null}</div>
-              <p className="text-sm text-muted"><span className="font-display text-2xl text-ink">{usageAmount(row.used, row.unit)}</span>{" "}{t({ comment: "Between the used amount and the limit, as in \"3 GB of 10 GB\"", message: "of" })}{" "}<span>{row.limit === null ? t`Unlimited` : usageAmount(row.limit, row.unit)}</span></p>
+              <p className="text-sm text-muted"><span className="font-display text-2xl text-ink">{resourceUsed(row)}</span>{" "}{t({ comment: "Between the used amount and the limit, as in \"3 GB of 10 GB\"", message: "of" })}{" "}<span>{row.limit === null ? t`Unlimited` : usageAmount(row.limit, row.unit)}</span></p>
               {fraction !== null ? <><ProgressBar value={fraction} tone={fraction > 1 ? "danger" : fraction >= 0.8 ? "warn" : "accent"} label={t`${limitLabel(row.key, row.label)} allowance used`} /><p className="tabular-nums text-sm text-muted">{(fraction * 100).toFixed(1)}%</p></> : null}
             </div></Card>;
           })}

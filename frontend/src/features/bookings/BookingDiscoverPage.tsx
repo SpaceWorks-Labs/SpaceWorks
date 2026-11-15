@@ -8,6 +8,7 @@ import { publicV1Request } from "../../lib/api";
 import { LICENSE_URL } from "../inventory/PublicPageChrome";
 import { LogoLoader } from "../../components/LogoLoader";
 import { SearchField } from "../../components/ui/SearchField";
+import { isRetryable } from "../../lib/api/errors";
 
 type Results = { count: number; next: string | null; previous: string | null; results: {
   title: string; description: string; url: string; location: string; makerspace_name: string;
@@ -37,7 +38,7 @@ export function BookingDiscoverPage() {
         <button type="submit" className="desk-button-primary w-full sm:w-auto">{t`Search`}</button>
       </form>
       {query.isLoading ? <LogoLoader label={t`Loading resources`} size={48} className="min-h-20 py-3" /> : null}
-      {query.error ? <ErrorText message={t`Unable to discover resources.`} onRetry={() => { void query.refetch(); }} /> : null}
+      {query.error ? <ErrorText message={t`Unable to discover resources.`} onRetry={isRetryable(query.error) ? () => { void query.refetch(); } : undefined} /> : null}
       {!query.error && query.data ? <section aria-labelledby="discover-resources-results" className="grid gap-3">
         <h2 id="discover-resources-results" className="title-panel">{query.data.count} resources</h2>
         {query.data.results.map((row) => <ListRow key={row.url} href={row.url} title={row.title}

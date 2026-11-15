@@ -14,6 +14,7 @@ import {
 } from "../hosting/hostingApi";
 import { LogoLoader } from "../../components/LogoLoader";
 import { BoxArt } from "../../components/BoxSpinner";
+import { isRetryable } from "../../lib/api/errors";
 
 const PAGE_SIZE = 24;
 const EMPTY = { invitee_email: "", space_name: "", note: "" };
@@ -86,7 +87,7 @@ export function HostingInvitations({ scope }: { scope: HostingScope }) {
       </div> : null}
 
       {invitations.isLoading ? <LogoLoader size={48} className="min-h-24 py-3" /> : null}
-      {invitations.isError ? <ErrorText resource={t`hosting invitations`} onRetry={() => { void invitations.refetch(); }} /> : null}
+      {invitations.isError ? <ErrorText resource={t`hosting invitations`} onRetry={isRetryable(invitations.error) ? () => { void invitations.refetch(); } : undefined} /> : null}
       {cancel.error ? <ErrorText message={cancel.error.message} /> : null}
       {data && !data.results.length ? <EmptyState message={t`No hosting invitations yet.`} /> : null}
       {data?.results.length ? <div className="mt-5 grid gap-3">{data.results.map((invitation) => {

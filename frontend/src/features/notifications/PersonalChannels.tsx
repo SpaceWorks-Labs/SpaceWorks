@@ -7,6 +7,7 @@ import { channelLabel } from "./channelCatalog";
 import { useEndpoints, useRevokeEndpoint, type ChannelKey, type Endpoint } from "./channelsApi";
 import { ConnectChannel } from "./ConnectChannel";
 import { LogoLoader } from "../../components/LogoLoader";
+import { isRetryable } from "../../lib/api/errors";
 
 /** The person's own connections, one row per channel the space enabled for personal delivery. */
 export function PersonalChannels({ makerspaceId, channels, member = false }: {
@@ -16,7 +17,7 @@ export function PersonalChannels({ makerspaceId, channels, member = false }: {
   const revoke = useRevokeEndpoint(makerspaceId, member);
   const [connecting, setConnecting] = useState<ChannelKey | null>(null);
   if (endpoints.isLoading) return <LogoLoader label={t`Loading your channels…`} size={48} className="min-h-16 py-3" />;
-  if (endpoints.error) return <ErrorBlock error={endpoints.error} onRetry={() => { void endpoints.refetch(); }} />;
+  if (endpoints.error) return <ErrorBlock error={endpoints.error} onRetry={isRetryable(endpoints.error) ? () => { void endpoints.refetch(); } : undefined} />;
   if (!channels.length) return <p className="text-sm text-muted">{t`This space has not turned on any chat channels for personal messages yet.`}</p>;
   const live = new Map<ChannelKey, Endpoint>();
   for (const row of endpoints.data?.results ?? []) if (!row.revoked_at && row.verification_state === "verified" && !live.has(row.channel)) live.set(row.channel, row);

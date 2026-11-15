@@ -2,7 +2,7 @@ import { freezeBeforeAuthMutation } from "./authFreeze";
 import { t } from "@lingui/core/macro";
 import { currentSessionContext, type SessionContext } from "./sessionContext";
 import { API_URL, API_V1_URL, authHeaders, publicHeaders, staffFetch } from "./client";
-import { apiError, messageForStatus } from "./errors";
+import { apiError } from "./errors";
 import { withOptionalSession } from "./optionalSession";
 import type { StaffAuthUser } from "./types";
 
@@ -12,7 +12,7 @@ export async function fetchJson<T>(url: string): Promise<T> {
   });
 
   if (!response.ok) {
-    throw new Error(`${messageForStatus(response.status)} (${response.status})`);
+    throw apiError(response.status, await response.json().catch(() => ({})), response.headers);
   }
 
   return (await response.json()) as T;

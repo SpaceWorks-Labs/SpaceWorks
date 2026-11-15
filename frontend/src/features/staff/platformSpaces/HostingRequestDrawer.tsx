@@ -7,6 +7,7 @@ import { ApproveRequestDialog } from "./ApproveRequestDialog";
 import { CONSOLE_APPROVES_ORGANIZATIONS, controlRequestHref, hostingStatusLabels, requestedKind, useHostingDecision, useHostingRequest, type HostingRequestRow } from "./onboardingApi";
 import { spaceNounTitle } from "../../../lib/spaceNoun";
 import { LogoLoader } from "../../../components/LogoLoader";
+import { isRetryable } from "../../../lib/api/errors";
 
 function NoteDialog({ request, kind, onClose }: { request: HostingRequestRow; kind: "request-changes" | "reject"; onClose: () => void }) {
   const decision = useHostingDecision<HostingRequestRow>(request.id, kind);
@@ -31,7 +32,7 @@ export function HostingRequestDrawer({ id, onClose }: { id: number; onClose: () 
   // Until the console route creates organization workspaces, those are approved in /control/.
   const approveHere = !organization || CONSOLE_APPROVES_ORGANIZATIONS;
   return <DetailDrawer open title={data?.space_name ?? t`Hosting request`} onClose={onClose}>
-    {detail.isLoading ? <LogoLoader size={48} className="min-h-40 py-3" /> : detail.isError ? <ErrorText resource={t`this request`} onRetry={() => { void detail.refetch(); }} /> : data ? <div className="grid gap-6">
+    {detail.isLoading ? <LogoLoader size={48} className="min-h-40 py-3" /> : detail.isError ? <ErrorText resource={t`this request`} onRetry={isRetryable(detail.error) ? () => { void detail.refetch(); } : undefined} /> : data ? <div className="grid gap-6">
       <div className="flex flex-wrap items-center gap-2">
         <StatusPill label={hostingStatusLabels()[data.status] ?? data.status} tone={data.status === "rejected" ? "danger" : data.status === "accepted" ? "success" : "warn"} />
         {canApprove && approveHere ? <button type="button" className="desk-button-primary" onClick={() => setDialog("approve")}>{t`Approve…`}</button> : null}

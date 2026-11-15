@@ -8,11 +8,12 @@ import { OrganizationHoursLedgerTable, minutesToHours } from "./OrganizationHour
 import { useOwnOrganizationHours, useOwnOrganizationHoursLedger } from "./organizationHoursApi";
 import { ErrorText, PagePager } from "../../components/ui";
 import { StructuredApiError } from "../../lib/api";
+import { isRetryable } from "../../lib/api/errors";
 
 function LedgerPeek({ organizationId, makerspaceId }: { organizationId: number; makerspaceId: number }) {
   const [page, setPage] = useState(1);
   const ledger = useOwnOrganizationHoursLedger(organizationId, makerspaceId, page, true);
-  if (ledger.isError) return <ErrorText resource={t`the hours ledger`} onRetry={() => { void ledger.refetch(); }} />;
+  if (ledger.isError) return <ErrorText resource={t`the hours ledger`} onRetry={isRetryable(ledger.error) ? () => { void ledger.refetch(); } : undefined} />;
   if (!ledger.data) return <LogoLoader label={t`Loading the hours ledger…`} size={48} className="min-h-16 py-3" />;
   return <div className="mt-2 grid gap-2">
     <OrganizationHoursLedgerTable rows={ledger.data.results} showActor={false} />
@@ -30,7 +31,7 @@ export function OrganizationHoursBankBalance({ organizationId }: { organizationI
   if (banks.isLoading) return <LogoLoader label={t`Loading hours balance…`} size={48} className="min-h-16 py-3" />;
   if (banks.isError) {
     if (banks.error instanceof StructuredApiError && banks.error.status === 404) return null;
-    return <ErrorText resource={t`the hours balance`} onRetry={() => { void banks.refetch(); }} />;
+    return <ErrorText resource={t`the hours balance`} onRetry={isRetryable(banks.error) ? () => { void banks.refetch(); } : undefined} />;
   }
   if (!banks.data?.banks.length) return null;
   return <ul className="grid gap-3">{banks.data.banks.map(bank => {

@@ -7,6 +7,7 @@ import { useOpenHostingRequest, type HostingRequestStatus } from "./hostingApi";
 import { useState } from "react";
 import { HostingResubmitFlow } from "./HostingResubmitFlow";
 import { useFragmentToken, useTokenCall } from "./useFragmentToken";
+import { isRetryable } from "../../lib/api/errors";
 
 const STATUS: Record<HostingRequestStatus, { label: string; tone: Tone; copy: string }> = {
   submitted: { label: t`Waiting for review`, tone: "info", copy: "Your email is confirmed and your request is waiting for review." },
@@ -33,7 +34,7 @@ export function HostingRequestStatusPage() {
   const request = open.data;
   if (!request) {
     return <CenteredCardLayout width={480} title={t`Opening your request`} body="" primary={home}
-      state={open.error ? { status: "error", error: open.error instanceof Error ? open.error.message : t`Couldn't open this request. Try again.`, onRetry: open.retry } : { status: "loading" }} />;
+      state={open.error ? { status: "error", error: open.error instanceof Error ? open.error.message : t`Couldn't open this request. Try again.`, onRetry: isRetryable(open.error) ? open.retry : undefined } : { status: "loading" }} />;
   }
   const status = STATUS[request.status] ?? STATUS.invited;
   if (editing && token && request.editable) return <HostingResubmitFlow token={token} request={request} onDone={() => { setEditing(false); open.retry(); }} />;

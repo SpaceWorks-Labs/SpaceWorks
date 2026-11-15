@@ -15,6 +15,7 @@ import { GuestPassScan } from "./GuestPassScan";
 import { LogoLoader } from "../../../components/LogoLoader";
 import { BoxArt } from "../../../components/BoxSpinner";
 import { SearchField } from "../../../components/ui/SearchField";
+import { isRetryable } from "../../../lib/api/errors";
 
 const STATUSES = ["", "issued", "active", "expired", "revoked", "converted"];
 const KINDS = ["", "event", "sponsored", "day"];
@@ -64,7 +65,7 @@ export function GuestPassDesk({ makerspaceId, dayPassesOn }: { makerspaceId: num
     </div>
     {roster.isLoading ? <LogoLoader label={t`Loading guest passes…`} size={48} className="min-h-16 py-3" /> : null}
     {roster.isError ? <div role="alert" className="flex flex-wrap items-center gap-3 text-sm text-danger"><p>{guestErrorText(roster.error)}</p>
-      <button type="button" className="desk-button" onClick={() => void roster.refetch()}>{t`Try again`}</button></div> : null}
+      {isRetryable(roster.error) ? <button type="button" className="desk-button" onClick={() => void roster.refetch()}>{t`Try again`}</button> : null}</div> : null}
     {roster.isSuccess && !rows.length ? <EmptyState message={status || kind || q ? t`No passes match these filters.` : t`No guest passes yet. Issue one, or let members bring guests.`} /> : null}
     <ul className="grid gap-3">
       {rows.map((row) => <GuestPassRow key={row.id} row={row} stamping={stamp.isPending && stamp.variables === row.id}

@@ -7,6 +7,7 @@ import { ConfirmDialog, EmptyState, ErrorText, ListRow, RelativeTime } from "../
 import { staffRequest } from "../../lib/api";
 import { authErrorMessage } from "../../lib/api/authErrorCopy";
 import { LinkSignInProviders } from "./LinkSignInProviders";
+import { isRetryable } from "../../lib/api/errors";
 
 export type SocialIdentity = { provider: string; created_at: string; updated_at: string };
 
@@ -29,7 +30,7 @@ export function LinkedSignInList() {
     onSuccess: (_data, provider) => { setRemoving(undefined); setNotice(t`${name(provider)} is no longer linked.`); void client.invalidateQueries({ queryKey: key }); },
   });
   if (query.isLoading) return <LogoLoader label={t`Loading linked accounts…`} size={48} className="min-h-16 py-3" />;
-  if (query.error) return <ErrorText message={authErrorMessage(query.error, "Couldn't load your linked accounts. Try again.")} onRetry={() => void query.refetch()} />;
+  if (query.error) return <ErrorText message={authErrorMessage(query.error, "Couldn't load your linked accounts. Try again.")} onRetry={isRetryable(query.error) ? () => void query.refetch() : undefined} />;
   const rows = query.data ?? [];
   return <div className="grid gap-4">
     <p className="text-sm text-muted">{t`Accounts you can sign in with besides your email. Unlink any you no longer use.`}</p>

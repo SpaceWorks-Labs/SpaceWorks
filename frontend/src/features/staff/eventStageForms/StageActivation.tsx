@@ -6,6 +6,7 @@ import { commandError, type EventScope } from "../../events/stagedForms/privateQ
 import { utcInstant } from "../../events/stagedForms/formPayload";
 import { useUnsavedChanges } from "../../events/stagedForms/UnsavedChanges";
 import { stageAdminPath, useActivationCommand, useStageDefinition } from "./api";
+import { isRetryable } from "../../../lib/api/errors";
 
 export function parseParticipantIds(value: string) {
   const ids = value.split(",").map(part => Number(part.trim()));
@@ -32,7 +33,7 @@ export function StageActivation({ scope, stageFormId, onDirtyChange }: { scope: 
     } catch (failure) { setError(failure instanceof Error ? failure.message : t`Check your activation settings.`); }
   };
   return <FormPageLayout header={{ title: t`Activate stage assignments`, subtitle: query.data?.title }}
-    state={{ status: query.isPending ? "loading" : query.error ? "error" : "ready", error: t`The stage definition could not be loaded.`, onRetry: () => void query.refetch() }}
+    state={{ status: query.isPending ? "loading" : query.error ? "error" : "ready", error: t`The stage definition could not be loaded.`, onRetry: isRetryable(query.error) ? () => void query.refetch() : undefined }}
     submit={{ label: t`Confirm activation`, pending: mutation.isPending, disabled: !previewReady || !confirmed || !query.data?.allowed_actions?.includes("stage_activate") || mutation.data?.state === "pending",
       disabledReason: t`Preview the current selection and confirm the deadline first.`, onClick: () => run(false) }} form={<div className="grid gap-4">
       <Field label={t`Participant member IDs`} hint={t`Comma separated; up to 1000. Preview checks each participant's trigger eligibility.`}><textarea className="desk-input" required value={participants} onChange={event => { setParticipants(event.target.value); setConfirmed(false); }} /></Field>

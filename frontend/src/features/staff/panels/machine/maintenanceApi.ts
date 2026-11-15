@@ -185,6 +185,7 @@ export function usePresignMaintenanceDocument(logId: number) {
         method: "POST",
         body: JSON.stringify({
           filename: file.name,
+          size: file.size,
           content_type: file.type || "application/octet-stream",
         }),
       },

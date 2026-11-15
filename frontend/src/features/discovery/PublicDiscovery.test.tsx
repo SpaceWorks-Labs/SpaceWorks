@@ -26,6 +26,10 @@ function show(path: string) {
     </Routes><Location /></TenantProvider></MemoryRouter>
   </QueryClientProvider>) };
 }
+// Bookable spaces are a DRF page (publicBookingsApi collects every page): the paged envelope, not a bare array.
+function page(results: unknown[]) {
+  return { count: results.length, next: null, previous: null, results };
+}
 function event(title: string, amount = "0.00", month = "11") {
   return { public_token: title, title, description: "Workshop", location: "Lab", starts_at: `2026-${month}-01T10:00:00`, ends_at: `2026-${month}-01T12:00:00`,
     payment_amount: amount, currency: "inr", availability: "Available", capacity: 8, registration_open: true,
@@ -64,7 +68,7 @@ it("changing discovery filters updates the URL and Back restores prior results",
 });
 
 it("filters bookable spaces by name and kind and reuses the booking form", async () => {
-  request.mockResolvedValue([space("Bench A"), space("Meeting A", "meeting")]);
+  request.mockResolvedValue(page([space("Bench A"), space("Meeting A", "meeting")]));
   show("/m/lab/bookings?q=a&filter=meeting");
   expect(await screen.findByText("Meeting A", { selector: ".title-section" })).toBeVisible();
   expect(screen.queryByText("Bench A", { selector: ".title-section" })).toBeNull();
@@ -77,7 +81,7 @@ it("filters bookable spaces by name and kind and reuses the booking form", async
 });
 
 it("shows busy intervals without exposing disabled booker names or promising availability", async () => {
-  request.mockImplementation(async (_slug, path) => path.includes("availability") ? { availability: [{ starts_at: "2026-11-02T10:00:00", ends_at: "2026-11-02T12:00:00", booker_name: "Private person" }] } : [space("Bench A")]);
+  request.mockImplementation(async (_slug, path) => path.includes("availability") ? { availability: [{ starts_at: "2026-11-02T10:00:00", ends_at: "2026-11-02T12:00:00", booker_name: "Private person" }] } : page([space("Bench A")]));
   const view = show("/m/lab/bookings?view=calendar&month=2026-11");
   expect(await screen.findByRole("table")).toHaveAccessibleName(/Bench A published bookings/);
   expect(screen.getByText(/Booked/)).toBeVisible();
@@ -87,7 +91,7 @@ it("shows busy intervals without exposing disabled booker names or promising ava
 });
 
 it("does not query hidden availability, and explains the publication policy", async () => {
-  request.mockResolvedValue([space("Private calendar", "bench", false)]);
+  request.mockResolvedValue(page([space("Private calendar", "bench", false)]));
   show("/m/lab/bookings?view=calendar&month=2026-11");
   expect(await screen.findByText(/Availability is not published/)).toBeVisible();
   expect(request.mock.calls.some(([, path]) => path.includes("availability"))).toBe(false);
@@ -103,7 +107,7 @@ it("filters event months using the makerspace timezone from bootstrap", async ()
 });
 
 it.each(["events", "bookings"])("shows a %s refresh error without claiming there are no matches", async (surface) => {
-  request.mockResolvedValue(surface === "events" ? [event("Workshop")] : [space("Bench A")]);
+  request.mockResolvedValue(surface === "events" ? [event("Workshop")] : page([space("Bench A")]));
   const view = show(`/m/lab/${surface}`);
   await screen.findByText(surface === "events" ? "Workshop" : "Bench A", { selector: ".title-section" });
   const { StructuredApiError } = await import("../../lib/api");

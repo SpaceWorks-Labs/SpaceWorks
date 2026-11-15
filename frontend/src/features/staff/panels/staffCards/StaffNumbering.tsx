@@ -9,6 +9,7 @@ import { Callout, ErrorBlock } from "../../../../components/ui";
 import { useSaveStaffCardSettings, useStaffCardSettings } from "./api";
 import { LogoLoader } from "../../../../components/LogoLoader";
 import { BoxArt } from "../../../../components/BoxSpinner";
+import { isRetryable } from "../../../../lib/api/errors";
 
 export function StaffNumbering({ makerspaceId }: { makerspaceId: number }) {
   const settings = useStaffCardSettings(makerspaceId);
@@ -16,7 +17,7 @@ export function StaffNumbering({ makerspaceId }: { makerspaceId: number }) {
   const [draft, setDraft] = useState({ prefix: "", pattern: "" });
   useEffect(() => { if (settings.data) setDraft({ prefix: settings.data.prefix, pattern: settings.data.pattern }); }, [settings.data]);
   if (settings.isLoading) return <LogoLoader size={48} className="min-h-40 py-3" />;
-  if (settings.isError || !settings.data) return <ErrorBlock error={settings.error} resource={t`staff card numbering`} onRetry={() => void settings.refetch()} />;
+  if (settings.isError || !settings.data) return <ErrorBlock error={settings.error} resource={t`staff card numbering`} onRetry={isRetryable(settings.error) ? () => void settings.refetch() : undefined} />;
   const saved = settings.data;
   const changed = draft.prefix !== saved.prefix || draft.pattern !== saved.pattern;
   const invalid = Boolean(patternProblem(draft.prefix, draft.pattern, STAFF_TOKENS));

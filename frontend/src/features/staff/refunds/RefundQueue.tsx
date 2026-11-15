@@ -9,6 +9,7 @@ import { RefundDecisionDialog } from "./RefundDecisionDialog";
 import { RefundPolicyPanel } from "./RefundPolicyPanel";
 import { BulkDecisionBar } from "../bulk/BulkDecisionBar";
 import { formatMoney } from "../paymentsApi";
+import { isRetryable } from "../../../lib/api/errors";
 
 const DECIDABLE = new Set(["open", "approval_failed"]);
 
@@ -36,7 +37,7 @@ export function RefundQueue({ makerspaceId, makerspaceName, canDecide, canEditPo
     header={{ title: t`Refunds`, subtitle: makerspaceName ? t`What members may be owed by ${makerspaceName}. No money moves until someone approves it.` : t`What members may be owed by your makerspace. No money moves until someone approves it.`,
       secondary: { label: t`Refund policy`, onClick: () => setPolicyOpen(true) } }}
     state={cases.isLoading ? { status: "loading" } : cases.error && !cases.data
-      ? { status: "error", error: t`Couldn't load refunds. Try again.`, onRetry: () => { void cases.refetch(); } } : { status: "ready" }}
+      ? { status: "error", error: t`Couldn't load refunds. Try again.`, onRetry: isRetryable(cases.error) ? () => { void cases.refetch(); } : undefined } : { status: "ready" }}
     isEmpty={cases.data?.count === 0}
     empty={{ message: status === "open" ? t`Nothing to decide. New refund requests and cancellations that owe money appear here.` : t`No refunds in this view yet.` }}
     tabs={tabs} activeTab={status || "all"} onTabChange={(key) => { setStatus(key === "all" ? "" : key); setPage(1); }}

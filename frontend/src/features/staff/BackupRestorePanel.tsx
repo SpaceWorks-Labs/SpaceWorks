@@ -32,6 +32,7 @@ import { BackupScheduleView } from "./BackupScheduleView";
 import { getBackupSchedule } from "./spaceRestoreApi";
 import { DeploymentNotices } from "../deployment/DeploymentNotices";
 import { SelfHostMoveCard } from "./SelfHostMoveCard";
+import { isRetryable } from "../../lib/api/errors";
 
 /**
  * `makerspaceId` is the space whose console tab this is. The platform's Data & recovery page
@@ -63,7 +64,7 @@ export function BackupRestorePanel({ makerspaceId, isSuperadmin }: { makerspaceI
   return <>
     <SettingsLayout header={{ title: t`Backup & restore`, subtitle: t`Keep encrypted copies of your space and review every restore before it changes live data.`, primary }}
       state={{ status: "ready" }} sections={[
-        ...(isSuperadmin && runtime.isError ? [{ id: "deployment-status", title: t`Deployment information`, rows: <ErrorText resource={t`deployment information`} onRetry={() => { void runtime.refetch(); }} /> }] : []),
+        ...(isSuperadmin && runtime.isError ? [{ id: "deployment-status", title: t`Deployment information`, rows: <ErrorText resource={t`deployment information`} onRetry={isRetryable(runtime.error) ? () => { void runtime.refetch(); } : undefined} /> }] : []),
         // Managers no longer request or download archives (owner decision #111 Q2): the
         // superadmin backs up and restores; a manager reads the last backup and keeps their
         // own copy through data export.
@@ -87,8 +88,8 @@ export function BackupRestorePanel({ makerspaceId, isSuperadmin }: { makerspaceI
           <BackupQuery query={deployment} resource={t`deployment backups`}><BackupArchiveRows rows={deployment.data ?? []} onDownload={id => download.mutate(id)} downloading={download.isPending ? download.variables : undefined} /></BackupQuery>
           {createDeployment.error ? <ErrorText message={createDeployment.error.message} /> : null}
           {restoreDetail.data ? <RestoreDecision operation={restoreDetail.data} pending={decision.isPending} onDecide={value => decision.mutate({ id: restoreDetail.data!.id, value })} /> : null}
-          {restores.isError ? <ErrorText resource={t`restore operations`} onRetry={() => { void restores.refetch(); }} /> : null}
-          {restoreDetail.isError ? <ErrorText resource={t`restore report`} onRetry={() => { void restoreDetail.refetch(); }} /> : null}
+          {restores.isError ? <ErrorText resource={t`restore operations`} onRetry={isRetryable(restores.error) ? () => { void restores.refetch(); } : undefined} /> : null}
+          {restoreDetail.isError ? <ErrorText resource={t`restore report`} onRetry={isRetryable(restoreDetail.error) ? () => { void restoreDetail.refetch(); } : undefined} /> : null}
           {decision.error ? <ErrorText message={decision.error.message} /> : null}
         </div> }] : []),
         ...(download.error ? [{ id: "download-error", title: t`Download`, rows: <ErrorText message={download.error.message} /> }] : []),

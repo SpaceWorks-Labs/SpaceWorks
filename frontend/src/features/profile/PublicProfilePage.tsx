@@ -10,6 +10,7 @@ import { LICENSE_URL } from "../inventory/PublicPageChrome";
 import { NotFoundPage } from "../NotFoundPage";
 import { HANDLE_PATTERN, isProfileMissing, usePublicProfile } from "./publicProfileApi";
 import { PublicProfileCard } from "./view/PublicProfileCard";
+import { isRetryable } from "../../lib/api/errors";
 
 /** Chrome shared by the handle page and the by-account page. */
 export function ProfileFrame({ state, children }: { state: Parameters<typeof PublicLayout>[0]["state"]; children: React.ReactNode }) {
@@ -41,7 +42,7 @@ export function PublicProfilePage() {
   if (!HANDLE_PATTERN.test(handle) || isProfileMissing(profile.error)) return <NotFoundPage />;
   const failure = profile.error instanceof StructuredApiError && profile.error.detail ? profile.error.detail : t`Couldn't load this profile. Try again.`;
   return <ProfileFrame state={profile.isLoading ? { status: "loading" }
-    : profile.error ? { status: "error", error: failure, onRetry: () => { void profile.refetch(); } } : { status: "ready" }}>
+    : profile.error ? { status: "error", error: failure, onRetry: isRetryable(profile.error) ? () => { void profile.refetch(); } : undefined } : { status: "ready" }}>
     {profile.data ? <PublicProfileCard profile={profile.data} /> : null}
   </ProfileFrame>;
 }

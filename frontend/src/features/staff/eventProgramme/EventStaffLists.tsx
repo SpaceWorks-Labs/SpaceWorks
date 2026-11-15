@@ -11,6 +11,7 @@ import { useStaffQuery, type CheckInList } from '../eventParticipation/api';
 import { sessionScope } from './sessionScope';
 import { filterLabel, listLabel, optionLabel } from './staffListLabels';
 import { LogoLoader } from '../../../components/LogoLoader';
+import { isRetryable } from "../../../lib/api/errors";
 
 /** Each list: its saved-view entity and the filters the server allows (anything else answers 400). */
 export const LISTS = {
@@ -86,7 +87,7 @@ function StaffList({ eventId, makerspaceId, list, canSaveViews, features }: { ev
           <option value="">{t`Any`}</option>{options(key).map(option => <option key={option.value} value={option.value}>{option.label}</option>)}</select></Field>)}
         <button type="button" className="desk-button min-h-11" disabled={exportCsv.isPending} onClick={() => exportCsv.mutate()}>{t`Export these rows as CSV`}</button></>} />
     {guests && state.values.list && !state.values.collected ? <p className="text-sm text-muted">{t`Choose whether they collected from this list to filter by it.`}</p> : null}
-    <ErrorBlock error={rows.error || exportCsv.error} onRetry={() => void rows.refetch()} />
+    <ErrorBlock error={rows.error || exportCsv.error} onRetry={isRetryable(rows.error) ? () => void rows.refetch() : undefined} />
     {rows.isLoading ? <LogoLoader label={t`Loading ${label.toLowerCase()}…`} size={48} className="min-h-16 py-3" /> : null}
     {rows.data ? <div className="overflow-x-auto"><table className="w-full text-left text-sm"><caption className="sr-only">{label}</caption>
       <thead><tr>{columns.map(column => <th key={column} scope="col">{column.replace(/_/g, ' ')}</th>)}</tr></thead>

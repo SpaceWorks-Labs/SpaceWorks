@@ -45,7 +45,7 @@ export function AdmissionJoin({ settings, signedIn, pending, error, onJoin, onSi
   const plan = chosen ? { name: chosen.name, amount: chosen.amount, currency: chosen.currency } : settings.default_plan;
   const paid = showPrice && (Number(plan?.amount ?? 0) > 0 || Number(chosen?.joining_fee ?? settings.joining_fee) > 0);
   const payFirst = paid && settings.payment_timing === "before_activation";
-  const label = mode === "open" ? payFirst ? "Apply to join" : "Join instantly" : "Request to join";
+  const label = mode === "open" ? payFirst ? t`Apply to join` : t`Join instantly` : t`Request to join`;
   const join: JoinExtras = { ...(chosen ? { plan_id: chosen.id } : {}), ...(invited ? { invite_code: inviteCode } : {}) };
   // Parity O-B2: the chosen plan's photo / phone / state (an invite's plan, else the space's default plan).
   const asked = chosen?.join_fields ?? plans.find((item) => item.id === invite?.plan_id)?.join_fields ?? settings.join_fields ?? NO_EXTRAS;

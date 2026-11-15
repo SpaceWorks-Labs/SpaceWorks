@@ -7,6 +7,7 @@ import { staffRequest } from "../../lib/api";
 import { Card, EmptyState, ErrorBlock, ListRow, RelativeTime, StatusPill } from "../../components/ui";
 import { LogoLoader } from "../../components/LogoLoader";
 import { BoxArt } from "../../components/BoxSpinner";
+import { isRetryable } from "../../lib/api/errors";
 
 export type ClaimableMember = {
   /** Null for a live guest-pass holder (0.12.0), who borrows without a membership. */
@@ -139,7 +140,7 @@ export function MemberClaimCodes({
         {active.isLoading ? <LogoLoader label={t`Loading active claim codes…`} size={48} className="min-h-16 py-3" /> : null}
         {active.isSuccess && !active.data?.length ? <EmptyState message={t`No active claim codes.`} /> : null}
       </div>
-      {active.error ? <ErrorBlock error={active.error} resource={t`claim codes`} onRetry={() => void active.refetch()} /> : null}
+      {active.error ? <ErrorBlock error={active.error} resource={t`claim codes`} onRetry={isRetryable(active.error) ? () => void active.refetch() : undefined} /> : null}
       {error ? <p className="mt-3 text-sm text-danger" role="alert">{error.message}</p> : null}
     </Card>
   );

@@ -6,6 +6,7 @@ import { ACTIVE_RESTORE_STAGES, listSpaceBackups, listSpaceRestores, requestSpac
 import { SpaceRestoreFlow } from "./SpaceRestoreFlow";
 import { spaceRestoreStageLabel } from "./backupLabels";
 import { BoxArt } from "../../components/BoxSpinner";
+import { isRetryable } from "../../lib/api/errors";
 
 const TRIGGER = (): Record<string, string> => ({ nightly: t`Nightly`, on_demand: t`Back up now`, safety: t`Before a restore`,
   extracted: t`From a whole-platform backup` });
@@ -34,7 +35,7 @@ export function SpaceBackupSection({ makerspaceId }: { makerspaceId: number }) {
     {active ? <ListRow title={t`Restore in progress`} identity={{ kind: "date", date: active.created_at }}
       meta={<StatusPill label={spaceRestoreStageLabel(active.stage)} tone="warn" />}
       right={<button className="desk-button" type="button" onClick={() => setOpenRestore(active.id)}>{t`Open`}</button>} /> : null}
-    {backups.isError ? <ErrorText resource={t`restore points`} onRetry={() => { void backups.refetch(); }} /> : null}
+    {backups.isError ? <ErrorText resource={t`restore points`} onRetry={isRetryable(backups.error) ? () => { void backups.refetch(); } : undefined} /> : null}
     {backups.isSuccess && !points.length ? <EmptyState message={t`No restore points for this space yet. Back it up now, or wait for tonight's backup.`} /> : null}
     <ul className="grid gap-3" aria-label={t`Restore points`}>{points.map(row => <li key={row.id}><ListRow
       title={TRIGGER()[row.trigger] ?? t`Backup`} identity={{ kind: "date", date: row.completed_at ?? row.created_at }}

@@ -12,6 +12,7 @@ import { PlatformReportGroups } from "./PlatformReportGroups";
 import type { PlatformDashboard } from "./platformMonitoringApi";
 import type { ChartRecord } from "./panels/charts/chartSpec";
 import { LogoLoader } from "../../components/LogoLoader";
+import { isRetryable } from "../../lib/api/errors";
 
 /** Names each row's makerspace and keeps only the reported dimensions, never raw ids. */
 export function platformChartRows(rows: ChartRecord[], spaces: AnalyticsMakerspace[] = []): ChartRecord[] {
@@ -47,7 +48,7 @@ function PlatformReport({ reportKey, title, period }: {
     <p className="mb-3 text-sm text-muted">{reportKey === "platform-services"
       ? t`Platform service usage across every makerspace. Connect has no provider-attempt failure history.`
       : t`Business activity, module adoption, growth and app adoption across every makerspace. Money and consumption stay separated by currency and unit.`}</p>
-    {query.isLoading ? <LogoLoader label={t`Loading ${title.toLowerCase()}…`} size={48} className="min-h-16 py-3" /> : <DataState loading={false} error={query.error} empty={!rows.length} onRetry={() => void query.refetch()}>
+    {query.isLoading ? <LogoLoader label={t`Loading ${title.toLowerCase()}…`} size={48} className="min-h-16 py-3" /> : <DataState loading={false} error={query.error} empty={!rows.length} onRetry={isRetryable(query.error) ? () => void query.refetch() : undefined}>
       <AnalyticsData title={title} rows={rows} spec={spec}
         hint={reportKey === "platform-services" ? "stacked_bar" : "multi_line"} meta={query.data?.meta} />
     </DataState>}

@@ -7,6 +7,7 @@ import { ActionControl, Card, Field, StatusPill } from '../../../components/ui'
 import type { Aggregate, EventScope } from '../../events/contributions/types'
 import { errorText, useProgrammeCommand, useProgrammeDetail } from '../../events/contributions/api'
 import { clearRoundDrafts, readRoundDraft, saveRoundDraft } from './roundDrafts'
+import { isRetryable } from "../../../lib/api/errors";
 
 interface Lease extends Aggregate { lease_uuid: string; generation: number; expires_at: string; team_id: number }
 interface TeamVisit { team_id: number; team_alias: string; visit_state: string; lease: Lease | null; prior_notes: Array<{ round_id: number; notes: Record<string, unknown>; away: boolean }> }
@@ -67,7 +68,7 @@ export function MentorRoundsPanel({ scope, roundId, sessionId, renderForm }: {
   }
   const liveLease = lease && Date.parse(lease.expires_at) > Date.now() && row?.state === 'live'
   return <ListLayout header={{ title: row?.label ?? t`Mentor round`, subtitle: t`Use fresh eyes where possible. A saved draft still needs a live visit lease before submission.` }}
-    state={query.isPending ? { status: 'loading' } : query.isError ? { status: 'error', error: errorText(query.error), onRetry: () => { void query.refetch() } } : { status: 'ready' }}
+    state={query.isPending ? { status: 'loading' } : query.isError ? { status: 'error', error: errorText(query.error), onRetry: isRetryable(query.error) ? () => { void query.refetch() } : undefined } : { status: 'ready' }}
     empty={{ message: t`No teams are available in this round.` }} isEmpty={!row?.teams?.length}
     body={{ kind: 'rows', rows: <>
       {(command.error || draftError) ? <p role="alert" className="text-danger">{errorText(command.error ?? draftError)}</p> : null}

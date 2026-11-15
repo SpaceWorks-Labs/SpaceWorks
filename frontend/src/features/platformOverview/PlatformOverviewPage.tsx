@@ -14,6 +14,7 @@ import {
   isComputing, overviewReady, readyOverview, refreshOverview, usePlatformOverview,
   type OverviewQuery, type PlatformOverview,
 } from "./platformOverviewApi";
+import { isRetryable } from "../../lib/api/errors";
 
 const HEADLINE: [block: string, metric: string, label: string][] = [
   ["people", "members", "Active members"], ["lending", "loans_out", "Loans out now"],
@@ -76,7 +77,7 @@ export function PlatformOverviewPage() {
         excludedCount={data ? data.excluded_count : null} onRefresh={() => void refresh()} refreshing={refreshing} />
       {result.error && !data ? <div role="alert" className="flex flex-wrap items-center gap-3 text-sm text-ink">
         <span>{eventErrorText(result.error)}</span>
-        <button type="button" className="desk-button min-h-11" onClick={() => { void result.refetch(); }}>{t`Try again`}</button>
+        {isRetryable(result.error) ? <button type="button" className="desk-button min-h-11" onClick={() => { void result.refetch(); }}>{t`Try again`}</button> : null}
       </div> : null}
       <p role="status" className="text-sm text-muted">
         {!overviewReady(query) ? t`Choose a start and an end date to see a custom period.`

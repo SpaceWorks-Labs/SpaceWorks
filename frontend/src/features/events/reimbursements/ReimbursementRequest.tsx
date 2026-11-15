@@ -8,10 +8,15 @@ import { useUnsavedChanges } from "../stagedForms/UnsavedChanges";
 import { commandError } from "../stagedForms/privateQueries";
 import type { ReimbursementOverview, ReimbursementScope } from "./types";
 import { LogoLoader } from "../../../components/LogoLoader";
+import { isRetryable } from "../../../lib/api/errors";
 
-export function ReimbursementRequest({ scope, onDirtyChange }: { scope: ReimbursementScope; onDirtyChange?: (dirty: boolean) => void }) {
+export function ReimbursementRequest({ scope, onDirtyChange, backHref }: { scope: ReimbursementScope; onDirtyChange?: (dirty: boolean) => void; backHref?: string }) {
   const query = useReimbursement(scope);
-  if (!query.data) return query.error ? <p role="alert">{commandError(query.error)}</p> : <LogoLoader label={t`Loading support request…`} size={48} className="min-h-16 py-3" />;
+  // Decision 588: only an outage offers Retry; a refusal keeps its explanation and the way back to travel support.
+  if (!query.data) return query.error ? <div className="grid justify-items-start gap-2"><p role="alert">{commandError(query.error)}</p>
+    {isRetryable(query.error) ? <button type="button" className="desk-button" onClick={() => void query.refetch()}>{t`Retry`}</button>
+      : backHref ? <a className="desk-button" href={backHref}>{t`Back to travel support`}</a> : null}</div>
+    : <LogoLoader label={t`Loading support request…`} size={48} className="min-h-16 py-3" />;
   if (!query.data.available || !query.data.request_context) return <p role="status">{t`Travel support is unavailable for this event.`}</p>;
   return <RequestEditor key={query.data.request?.version ?? 0} scope={scope} overview={query.data} onDirtyChange={onDirtyChange} />;
 }

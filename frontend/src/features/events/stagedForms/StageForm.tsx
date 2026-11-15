@@ -15,13 +15,14 @@ import { commandError } from "./privateQueries";
 import { useFormUploads } from "./uploads";
 import { useNow } from "./useNow";
 import { LogoLoader } from "../../../components/LogoLoader";
+import { isRetryable } from "../../../lib/api/errors";
 
 export function StageForm({ scope, responseId, uploadFiles, onDirtyChange }: { scope: StageScope; responseId: number;
   uploadFiles?: UploadFormFiles; onDirtyChange?: (dirty: boolean) => void }) {
   const query = useStageResponse(scope, responseId);
   const [saved, setSaved] = useState<CommandResult | null>(null);
   if (!query.data) return <div>{query.error ? <p role="alert">{commandError(query.error)}</p> : <LogoLoader label={t`Loading form…`} size={48} className="min-h-16 py-3" />}
-    {query.error ? <button type="button" className="desk-button" onClick={() => void query.refetch()}>{t`Retry`}</button> : null}</div>;
+    {query.error ? (isRetryable(query.error) ? <button type="button" className="desk-button" onClick={() => void query.refetch()}>{t`Retry`}</button> : null) : null}</div>;
   return <><StageEditor key={`${query.data.id}:${query.data.version}`} scope={scope} response={query.data} uploadFiles={uploadFiles} onSaved={setSaved} onDirtyChange={onDirtyChange} />
     {saved?.form_save_intents ? <FormSaveIntentsNotice actorId={scope.actorId} intents={saved.form_save_intents} /> : saved?.save_operation_id ? <SaveIntentNotice actorId={scope.actorId} operationId={saved.save_operation_id} /> : null}</>;
 }

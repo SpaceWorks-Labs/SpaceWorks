@@ -98,6 +98,7 @@ async function uploadReceipt(itemId: number, file: File) {
     method: "POST",
     body: JSON.stringify({
       filename: file.name,
+      size: file.size,
       content_type: file.type || "application/octet-stream",
     }),
   });

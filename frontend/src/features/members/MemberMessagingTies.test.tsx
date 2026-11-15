@@ -53,7 +53,8 @@ beforeEach(() => {
 describe("account-only messaging admission", () => {
   it("shows Channels and permits sender-bound SMS consent with no membership or membership module", async () => {
     mount();
-    expect(await screen.findByRole("heading", { name: "SMS notifications" })).toBeInTheDocument();
+    // The first test pays the member shell's cold lazy-chunk load; under a full-suite run that exceeds the 1 s default.
+    expect(await screen.findByRole("heading", { name: "SMS notifications" }, { timeout: 5000 })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("checkbox", { name: "Allow SMS notifications" }));
     await waitFor(() => expect(memberRequest).toHaveBeenCalledWith("/me/messaging/consent", {
       method: "POST", body: JSON.stringify({ makerspace: 41, channel: "sms", action: "opted_in" }),

@@ -10,6 +10,7 @@ import { ShopReceiptDocument, type PaperFormat } from "./ShopReceiptDocument";
 import { staffShopError } from "./staffShopApi";
 import { emailReceipt, fetchReceipt } from "./staffShopOrdersApi";
 import { BoxArt } from "../../../components/BoxSpinner";
+import { isRetryable } from "../../../lib/api/errors";
 
 const FORMAT_KEY = "spaceworks.shop.receiptFormat";
 /** One explicit @page rule per format: a continuous 80 mm roll, or an A4 sheet with normal margins. */
@@ -28,7 +29,7 @@ export function ShopReceipt({ orderId, onBack }: { orderId: number; onBack: () =
   return <DetailLayout back={{ label: t`Back to the order`, onClick: onBack }} title={query.data?.document_title || t`Receipt`}
     meta={[`Order #${orderId}`]}
     state={query.isPending ? { status: "loading" } : query.error ? { status: "error", error: staffShopError(query.error),
-      onRetry: () => { void query.refetch(); } } : { status: "ready" }}
+      onRetry: isRetryable(query.error) ? () => { void query.refetch(); } : undefined } : { status: "ready" }}
     actions={{ primary: { label: format === "80mm" ? t`Print 80 mm receipt` : t`Print A4`, icon: "Printer", onClick: () => window.print() } }}
     main={query.data ? <div className="grid gap-5">
       <style data-receipt-page={format}>{PAGE_RULES[format]}</style>

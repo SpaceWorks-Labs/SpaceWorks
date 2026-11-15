@@ -15,6 +15,7 @@ import { spaceNounTitle, type SpaceKind } from "../../lib/spaceNoun";
 import { VerifyStaffPanel } from "./VerifyStaffPanel";
 import "./cardVerify.css";
 import { LogoLoader } from "../../components/LogoLoader";
+import { isRetryable } from "../../lib/api/errors";
 
 type Verification = {
   status: "valid" | "expired" | "revoked"; valid: boolean;
@@ -53,7 +54,7 @@ export function checkedLine(data: Pick<Verification, "checked_at" | "timezone">)
   } catch {
     time = new Date(data.checked_at).toLocaleString(formatLocale());
   }
-  return `Checked ${time} (${zone}).`;
+  return t`Checked ${time} (${zone}).`;
 }
 
 function Shell({ children }: { children: ReactNode }) {
@@ -71,15 +72,17 @@ export function CardVerifyPage() {
   const check = useQuery({ queryKey: ["card-verify", token], retry: false, staleTime: 0, gcTime: 0,
     queryFn: () => publicV1Request<Verification>(`/public/card-verifications/${encodeURIComponent(token)}`) });
   const limited = check.error instanceof StructuredApiError && check.error.status === 429;
+  const missing = check.error instanceof StructuredApiError && check.error.status === 404;
   const data = check.data;
 
   if (check.isLoading) return <Shell><LogoLoader label={t`Checking the card…`} size={48} className="min-h-16 py-3" /></Shell>;
   if (!data) return <Shell><section className="grid justify-items-center gap-3 rounded-card border border-line bg-panel p-8 text-center">
     <SearchX size={56} aria-hidden="true" className="text-muted" />
-    <h1 className="text-xl font-semibold">{limited ? t`Too many checks` : t`Card not found`}</h1>
+    <h1 className="text-xl font-semibold">{limited ? t`Too many checks` : missing ? t`Card not found` : t`Card check unavailable`}</h1>
     <p className="text-sm text-muted">{limited ? t`Too many checks. Try again in a minute.`
-      : t`We couldn't match this code to a card. Check the whole code was scanned, or ask to see the card again.`}</p>
-    <button type="button" className="desk-button min-h-11" onClick={() => void check.refetch()}>{t`Check again`}</button>
+      : missing ? t`We couldn't match this code to a card. Check the whole code was scanned, or ask to see the card again.`
+        : t`Couldn't load this page. Try again.`}</p>
+    {isRetryable(check.error) ? <button type="button" className="desk-button min-h-11" onClick={() => void check.refetch()}>{t`Check again`}</button> : null}
   </section></Shell>;
 
   const band = BANDS[data.status];

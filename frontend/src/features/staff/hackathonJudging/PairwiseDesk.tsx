@@ -3,12 +3,13 @@ import { ErrorBlock } from '../../../components/ui';
 import { usePairwise } from './pairwiseApi';
 import { PairwiseJudge } from './PairwiseJudge';
 import type { Scope } from './types';
+import { isRetryable } from "../../../lib/api/errors";
 
 /** Every open pairwise round for this judge. Hidden entirely when the space has the feature off. */
 export function PairwiseDesk({ scope, renderAssets }: { scope: Scope; renderAssets: (ids: number[]) => ReactNode }) {
   const { rounds, act, denied } = usePairwise(scope, true);
   if (denied) return null;
-  if (rounds.isError) return <ErrorBlock error={rounds.error} onRetry={() => void rounds.refetch()} />;
+  if (rounds.isError) return <ErrorBlock error={rounds.error} onRetry={isRetryable(rounds.error) ? () => void rounds.refetch() : undefined} />;
   const rows = rounds.data?.results ?? [];
   const active = rows.find(row => !row.finished)?.round_id;
   return rows.length ? <div className="grid gap-8">{rows.map(row => <PairwiseJudge key={row.round_id} state={row}

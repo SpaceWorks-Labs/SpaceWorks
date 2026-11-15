@@ -8,6 +8,7 @@ import type { ShopAccess } from "./shopAccess";
 import { ShopMovements } from "./ShopMovements";
 import { ShopStockDialog, type StockTarget } from "./ShopStockDialog";
 import { listAllProducts, moveStock, staffShopError, staffShopKeys, type StockMove } from "./staffShopApi";
+import { isRetryable } from "../../../lib/api/errors";
 
 type Row = StockTarget & { held: number; available: number; reorder: number; sku: string };
 
@@ -33,7 +34,7 @@ export function ShopStock({ makerspaceId, access }: { makerspaceId: number; acce
   return <>
     <ListLayout header={{ eyebrow: t`Shop`, title: t`Stock`, subtitle: t`Held stock is set aside for orders that are not collected yet.` }}
       state={query.isPending ? { status: "loading" } : query.error ? { status: "error", error: staffShopError(query.error),
-        onRetry: () => { void query.refetch(); } } : { status: "ready" }}
+        onRetry: isRetryable(query.error) ? () => { void query.refetch(); } : undefined } : { status: "ready" }}
       filters={{ search: { label: t`Find an item`, placeholder: t`Name or SKU`, value: search, onChange: setSearch },
         views: <button type="button" className={lowOnly ? "desk-button-primary" : "desk-button"} aria-pressed={lowOnly} onClick={() => setLowOnly(value => !value)}>{t`Low stock only`}</button> }}
       filtered={Boolean(term || lowOnly)} isEmpty={!shown.length} empty={{ message: t`No products to stock yet.` }} filteredEmpty={{ message: t`No item matches.` }}

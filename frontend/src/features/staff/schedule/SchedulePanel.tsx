@@ -8,6 +8,7 @@ import type { Makerspace } from "../panels/shared";
 import { layerLabel, useSchedule, type ScheduleLayer } from "./scheduleApi";
 import { daysBetween, stepAnchor, todayIn, viewWindow, type ScheduleView } from "./scheduleDates";
 import { AgendaList, CalendarGrid } from "./ScheduleViews";
+import { isRetryable } from "../../../lib/api/errors";
 
 type Props = { makerspace: Makerspace; allowedTabs?: readonly string[]; guestOnly: boolean; singleTenantLocked: boolean;
   /** The Space Manager's list groups by area first (decision 242(k)). */ groupByArea: boolean };
@@ -59,7 +60,7 @@ export function SchedulePanel({ makerspace, allowedTabs, guestOnly, singleTenant
       </label>)}
     </fieldset> : null}
     <QueryContent state={schedule.isLoading ? { status: "loading" } : schedule.error
-      ? { status: "error", error: t`Couldn't load the schedule. Try again.`, onRetry: () => { void schedule.refetch(); } } : { status: "ready" }}
+      ? { status: "error", error: t`Couldn't load the schedule. Try again.`, onRetry: isRetryable(schedule.error) ? () => { void schedule.refetch(); } : undefined } : { status: "ready" }}
       isEmpty={schedule.isSuccess && (!layers.length || !entries.length)}
       empty={{ message: !layers.length ? t`Nothing here is yours to schedule yet. Bookings, events, machine jobs and maintenance appear once you run one of those areas.`
         : t`Nothing scheduled for ${range}. Try another range or turn more layers on.` }}>

@@ -9,6 +9,7 @@ import { JudgeListFilters, type JudgeFilters } from './JudgeListFilters';
 import { PrivateProgrammeBoundary } from '../../events/hackathonGallery/PrivateProgrammeBoundary';
 import { StructuredApiError } from '../../../lib/api';
 import type { Assignment, Scope } from './types';
+import { isRetryable } from "../../../lib/api/errors";
 
 function JudgeConsoleContent({ scope, renderAssets, pairwiseEnabled = false }: { scope: Scope; renderAssets: (assetIds: number[]) => ReactNode; pairwiseEnabled?: boolean }) {
   const [page, setPage] = useState(1); const [filters, setFilters] = useState<JudgeFilters>({ state: '', q: '' });
@@ -19,7 +20,7 @@ function JudgeConsoleContent({ scope, renderAssets, pairwiseEnabled = false }: {
   const filtered = !!(filters.state || filters.q.trim());
   if (submit.error instanceof StructuredApiError && [401, 403, 404].includes(submit.error.status)) return <ErrorBlock error={submit.error} />;
   return <DetailLayout title={t`Your judging desk`} state={{ status: query.isLoading ? 'loading' : query.isError ? 'error' : 'ready',
-    error: query.error?.message, onRetry: () => void query.refetch() }} main={<div className="grid gap-6">
+    error: query.error?.message, onRetry: isRetryable(query.error) ? () => void query.refetch() : undefined }} main={<div className="grid gap-6">
       {pairwiseEnabled ? <PairwiseDesk scope={scope} renderAssets={renderAssets} /> : null}
       <ScoreNextBar scope={scope} assignments={query.data?.results ?? []} onOpen={setScoring}
         renderEditor={(row, afterSubmit) => <JudgeAssignmentEditor key={`next:${row.id}:${row.version}`} assignment={row}

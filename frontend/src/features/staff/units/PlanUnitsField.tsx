@@ -8,6 +8,7 @@ import { orderedUnits } from "./unitHierarchy";
 import { unitErrorText, unitKeys, unitsApi, useMemberUnits } from "./unitsApi";
 import { LogoLoader } from "../../../components/LogoLoader";
 import { BoxArt } from "../../../components/BoxSpinner";
+import { isRetryable } from "../../../lib/api/errors";
 
 /**
  * Which units a plan is offered in (`PUT membership-plans/<pid>/units`). Ticking a unit offers the plan
@@ -46,7 +47,7 @@ export function PlanUnitsField({ makerspaceId, planId, planName }: { makerspaceI
     <p className="text-sm text-muted">{chosen.size
       ? t`Offered only in the ticked units and the units beneath them.`
       : t`Offered in every unit. Tick units to limit it.`}</p>
-    {failure ? <ErrorText message={unitErrorText(failure)} onRetry={() => { void saved.refetch(); void units.refetch(); }} /> : null}
+    {failure ? <ErrorText message={unitErrorText(failure)} onRetry={[saved.error, units.error].filter(Boolean).some(isRetryable) ? () => { void saved.refetch(); void units.refetch(); } : undefined} /> : null}
     {saved.isPending || units.isPending ? <LogoLoader label={t`Loading units…`} size={48} className="min-h-16 py-3" /> : null}
     {units.isSuccess && !rows.length ? <p className="text-sm text-muted">{t`This space has no units yet.`}</p> : null}
     <ul className="grid gap-1">{rows.map(unit => {

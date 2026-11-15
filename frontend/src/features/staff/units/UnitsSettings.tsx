@@ -11,6 +11,7 @@ import { UnitMoveDialog } from "./UnitMoveDialog";
 import { UnitTree } from "./UnitTree";
 import { levelLabel } from "./unitHierarchy";
 import { unitErrorText, unitKeys, unitsApi, useMemberUnits, type MemberUnit } from "./unitsApi";
+import { isRetryable } from "../../../lib/api/errors";
 
 /**
  * Districts, chapters and branches inside one space (parity O-B1): name the levels, build the tree,
@@ -43,7 +44,7 @@ export function UnitsSettings({ makerspaceId, canManage }: { makerspaceId: numbe
     onMutate: () => setNotice(""), onSuccess: unit => done(t`${unit.name} restored.`) });
   if (isSurfaceOff(list.error)) return null;
   if (list.isPending) return <LogoLoader label={t`Loading units…`} size={48} className="min-h-16 py-3" />;
-  if (list.isError) return <ErrorText message={unitErrorText(list.error)} onRetry={() => void list.refetch()} />;
+  if (list.isError) return <ErrorText message={unitErrorText(list.error)} onRetry={isRetryable(list.error) ? () => void list.refetch() : undefined} />;
   const { units, levels, templates, limit, used, scoped } = list.data;
   const editable = canManage && !scoped;
   const full = limit !== null && used >= limit;

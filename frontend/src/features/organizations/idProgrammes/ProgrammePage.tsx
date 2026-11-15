@@ -13,6 +13,7 @@ import { ProgrammeSettings } from "./ProgrammeSettings";
 import { ApprovalLevelSelect } from "../../cards/ApprovalLevelSelect";
 import { programmeJobsPath, useProgramme, useProgrammeApproval, useProgrammeDesign } from "./api";
 import { LogoLoader } from "../../../components/LogoLoader";
+import { isRetryable } from "../../../lib/api/errors";
 
 type TabKey = "members" | "import" | "design" | "settings";
 
@@ -22,7 +23,7 @@ export function ProgrammePage({ programmeId, onBack, sheetImport = false }: {
   const programme = useProgramme(programmeId);
   const [tab, setTab] = useState<TabKey>("members");
   if (programme.isLoading) return <LogoLoader size={48} className="min-h-64 py-3" />;
-  if (programme.isError || !programme.data) return <ErrorBlock error={programme.error} resource={t`programme`} onRetry={() => void programme.refetch()} />;
+  if (programme.isError || !programme.data) return <ErrorBlock error={programme.error} resource={t`programme`} onRetry={isRetryable(programme.error) ? () => void programme.refetch() : undefined} />;
   const row = programme.data;
   const joinPath = `/o/${row.organization_slug}/ids/${row.slug}`;
   const tabs = [{ key: "members", label: t`Members`, count: row.counts.all }, ...(row.can_manage ? [{ key: "import", label: t`Import` }] : []),

@@ -5,8 +5,10 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
 
 import { CenteredCardLayout } from "../../../components/layouts";
+import { LayoutFrame } from "../../../components/layouts/LayoutFrame";
 import { ErrorText } from "../../../components/ui";
 import { getAccessToken, refreshAccessToken, StructuredApiError } from "../../../lib/api";
+import { isRetryable } from "../../../lib/api/errors";
 import { useChargesOn } from "../../../lib/charges";
 import { useTenantPath } from "../../../lib/tenant";
 import { MemberAuthPanel } from "../../members/MemberAuthPanel";
@@ -43,6 +45,9 @@ export function MemberSeriesPassPage() {
       else navigate(tenantPath(`member/orders/${result.order.id}`));
     } });
   const error = passes.error;
+  // The central portal's /member/series/:id/passes has no selected space: say where passes are sold.
+  if (!space.loading && !space.makerspaceSlug) return <LayoutFrame standalone width="narrow">
+    <p role="alert">{t`Buy series passes from a makerspace's events page.`}</p></LayoutFrame>;
   if (error instanceof StructuredApiError && error.status === 401) {
     return <MemberAuthPanel makerspaceSlug={space.makerspaceSlug} onAuthenticated={() => { void passes.refetch(); }} />;
   }
@@ -54,7 +59,9 @@ export function MemberSeriesPassPage() {
     body={offSale || (!error && passes.data && !rows.length) ? t`Passes for this series are not on sale.`
       : t`One pass gives you a place at every upcoming public date of this series.`}
     content={<div className="grid gap-3">
-      {error && !offSale ? <ErrorText message={errorMessage(error)} /> : null}
+      {error && !offSale ? <ErrorText message={errorMessage(error)} onRetry={isRetryable(error) ? () => { void passes.refetch(); } : undefined} /> : null}
+      {/* A scoped route whose space failed to load: its error, Retry only for an outage (decision 588). */}
+      {space.error ? <ErrorText message={errorMessage(space.error)} onRetry={isRetryable(space.error) ? () => { void space.refetch(); } : undefined} /> : null}
       {rows.length ? <fieldset className="grid gap-2"><legend className="mb-1 text-sm font-semibold text-ink">{t`Choose a pass`}</legend>
         {rows.map(row => <label key={row.id} className="flex min-h-11 items-start gap-3 rounded-card border border-line p-3 text-sm text-ink">
           <input type="radio" name="pass" value={row.id} checked={selected === row.id} onChange={() => setChoice(row.id)} />

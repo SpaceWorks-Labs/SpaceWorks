@@ -7,6 +7,7 @@ import { ThemeToggle } from "../../components/ThemeToggle";
 import { staffRequest } from "../../lib/api";
 import { currentSessionContext } from "../../lib/api/sessionContext";
 import { useStationConnection } from "./useStationConnection";
+import { isRetryable } from "../../lib/api/errors";
 
 type ResolveResult = { target: Record<string, string | number>; allowed_actions: string[] };
 const words = (value: string) => value.replace(/_/g, " ").replace(/^./, letter => letter.toUpperCase());
@@ -31,7 +32,9 @@ export function ScannerPage() {
     work={{ capture: <ScanWorkbench searchLabel={t`QR payload`} helper={t`Scan or paste QR payload. Only labels your staff role in this makerspace can see are resolved.`}
       onFind={payload => resolve.mutate(payload)} onScan={payload => resolve.mutate(payload)} findPending={resolve.isPending}
       result={resolve.isError ? { tone: "danger", title: t`Couldn't resolve this label`, summary: resolve.error.message,
-        next: { label: t`Try again`, onClick: () => { if (resolve.variables) resolve.mutate(resolve.variables); } } } : target ? {
+        // Decision 588: a refused label (403/404) is resolved the same way again, so it offers the next scan instead.
+        next: isRetryable(resolve.error) ? { label: t`Try again`, onClick: () => { if (resolve.variables) resolve.mutate(resolve.variables); } }
+          : { label: t`Next scan`, onClick: () => resolve.reset() } } : target ? {
           tone: "success", title, summary: t`${targetTypeLabel(String(target.type ?? "product"))} · Label resolved`,
           next: { label: t`Next scan`, onClick: () => resolve.reset() },
         } : undefined} />,

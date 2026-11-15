@@ -82,7 +82,7 @@ type Presign = { asset_id: string; url: string; fields?: Record<string, string>;
 /** Presign -> upload to object storage (no auth header) -> finalise (checked and re-encoded server-side). */
 export async function uploadAsset(id: number, kind: "background" | "watermark" | "image", file: File) {
   const presign = await staffRequest<Presign>(`${base(id)}/assets`, {
-    method: "POST", body: JSON.stringify({ kind, content_type: file.type || "application/octet-stream" }),
+    method: "POST", body: JSON.stringify({ kind, content_type: file.type || "application/octet-stream", size: file.size }),
   });
   if (presign.method === "PUT") {
     const upload = await fetch(presign.url, { method: "PUT", body: file, headers: presign.headers });

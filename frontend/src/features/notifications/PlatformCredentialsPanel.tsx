@@ -9,6 +9,7 @@ import { limitAmount } from "../staff/platformSpaces/LimitRowView";
 import { walletCredentialsApi, walletKeys } from "../walletCredentials/api";
 import { channelSpecs, defaultChannel } from "./channelCatalog";
 import { useChannels, type Channel, type ChannelKey } from "./channelsApi";
+import { isRetryable } from "../../lib/api/errors";
 
 type Row = { key: PlatformSwitch; label: string; usageKey: string; own: boolean | null; ownHint: string; section?: string };
 const USAGE_KEY: Record<PlatformSwitch, string> = { email: "platform_email_monthly", sms: "platform_sms_monthly",
@@ -76,7 +77,7 @@ export function PlatformCredentialsPanel({ makerspaceId, enabledModules, walletO
       <h3 id={`platform-credentials-${makerspaceId}`} className="title-section">{t`Platform credentials`}</h3>
       <p className="max-w-prose text-sm text-muted">{t`This space's own credentials always come first and are never limited. When it has none, the platform's can send for it, counted against the monthly allowance the platform operator sets. Turn that off and the channel is simply skipped; the inbox still delivers.`}</p>
     </div>
-    {usage.isError ? <ErrorText resource={t`platform credential settings`} onRetry={() => { void usage.refetch(); }} /> : null}
+    {usage.isError ? <ErrorText resource={t`platform credential settings`} onRetry={isRetryable(usage.error) ? () => { void usage.refetch(); } : undefined} /> : null}
     <ul className="grid gap-2">{all.map(row => {
       const usageRow = usage.data?.platform_resources?.find(item => item.key === row.usageKey);
       const on = switches[row.key] ?? true;

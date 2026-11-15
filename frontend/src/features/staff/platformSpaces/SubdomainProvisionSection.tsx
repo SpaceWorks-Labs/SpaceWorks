@@ -7,6 +7,7 @@ import { staffRequest, StructuredApiError } from "../../../lib/api";
 import type { Makerspace } from "../panels/shared";
 import { healthKey, post } from "./spacesApi";
 import { BoxArt } from "../../../components/BoxSpinner";
+import { isRetryable } from "../../../lib/api/errors";
 
 type SpaceDomain = Pick<Makerspace, "id" | "frontend_domain" | "frontend_domain_status" | "platform_hosting" | "is_platform_subdomain">;
 
@@ -36,7 +37,7 @@ export function SubdomainProvisionSection({ makerspaceId }: { makerspaceId: numb
   if (space.isLoading) return null;
   // A suspended or archived space is not servable: there is nothing to provision.
   if (space.error instanceof StructuredApiError && space.error.status === 404) return null;
-  if (space.isError) return <ErrorText resource={t`this space's web address`} onRetry={() => { void space.refetch(); }} />;
+  if (space.isError) return <ErrorText resource={t`this space's web address`} onRetry={isRetryable(space.error) ? () => { void space.refetch(); } : undefined} />;
   if (!space.data?.platform_hosting) return null;
   const domain = space.data.frontend_domain;
   // Provisioning REPLACES the space's address: say so when a custom domain is set.

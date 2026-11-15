@@ -9,6 +9,7 @@ import { ResumeVault } from "./ResumeVault";
 import { SavedDetailEditor } from "./SavedDetailEditor";
 import { SavedDetailsExport } from "./SavedDetailsExport";
 import { savedDetailsKey } from "./types";
+import { isRetryable } from "../../lib/api/errors";
 
 /** G mounts inside the existing member AppShell, independently of membership. */
 export function SavedDetailsPage({ actorId }: { actorId: number }) {
@@ -21,9 +22,9 @@ export function SavedDetailsPage({ actorId }: { actorId: number }) {
   useEffect(() => { if (denied) { setBlocked(true); client.removeQueries({ queryKey: savedDetailsKey(actorId) }); } }, [denied, client, actorId]);
   useEffect(() => { setBlocked(false); }, [actorId]);
   return <SettingsLayout header={{ title: t`Saved details`, subtitle: t`Private details for your next registration. You review every form before submitting.` }}
-    state={blocked ? { status: "error", error: t`Sign in with an active member account to view saved details.`, onRetry: () => setBlocked(false) } : details.isPending ? { status: "loading" } : details.error && (!details.data || denied) ? { status: "error", error: details.error.message, onRetry: () => void details.refetch() } : { status: "ready" }}
+    state={blocked ? { status: "error", error: t`Sign in with an active member account to view saved details.` } : details.isPending ? { status: "loading" } : details.error && (!details.data || denied) ? { status: "error", error: details.error.message, onRetry: isRetryable(details.error) ? () => void details.refetch() : undefined } : { status: "ready" }}
     sections={[
-      { id: "privacy", title: t`Your private account vault`, rows: <><p>{t`These details are separate from your sign-in methods and public profile. Organisers receive only answers you submit to their event. Sensitive details are saved only when you choose. Deleting a saved value does not remove an event’s submitted answers.`}</p>{details.error ? <p role="alert" className="text-danger">{t`Refresh failed. Your drafts are still here. `}<button className="desk-button" onClick={() => void details.refetch()}>{t`Try refresh again`}</button></p> : null}</> },
+      { id: "privacy", title: t`Your private account vault`, rows: <><p>{t`These details are separate from your sign-in methods and public profile. Organisers receive only answers you submit to their event. Sensitive details are saved only when you choose. Deleting a saved value does not remove an event’s submitted answers.`}</p>{details.error ? <p role="alert" className="text-danger">{t`Refresh failed. Your drafts are still here. `}{isRetryable(details.error) ? <button className="desk-button" onClick={() => void details.refetch()}>{t`Try refresh again`}</button> : null}</p> : null}</> },
       { id: "details", title: t`Personal details`, rows: <div className="grid gap-4">{fields.map(presentation => {
         const saved = records.find(row => row.field_key === presentation.key);
         return <SavedDetailEditor key={`${actorId}-${presentation.key}`} actorId={actorId} presentation={presentation} saved={saved} version={saved?.version || 0} />;

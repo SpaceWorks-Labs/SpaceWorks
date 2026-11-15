@@ -9,6 +9,7 @@ import { fieldError } from "./profileEditApi";
 import { SectionToggle } from "./SectionToggle";
 import { LogoLoader } from "../../../components/LogoLoader";
 import { BoxArt } from "../../../components/BoxSpinner";
+import { isRetryable } from "../../../lib/api/errors";
 
 const blank: AchievementDraft = { title: "", issuer: "", achieved_on: null, url: "", description: "", order: 0 };
 const today = () => new Date().toISOString().slice(0, 10);
@@ -65,7 +66,7 @@ export function AchievementsEditor({ profile }: { profile: AccountProfile }) {
     <SettingsRow label={t`Self-reported`} helper={t`Add anything you are proud of. Link to proof if you have it.`}>
       <div className="grid gap-3">
         {list.isLoading ? <LogoLoader size={48} className="min-h-16 py-3" /> : null}
-        {list.error ? <ErrorBlock error={new Error(t`Couldn't load your achievements. Try again.`)} onRetry={() => { void list.refetch(); }} /> : null}
+        {list.error ? <ErrorBlock error={new Error(t`Couldn't load your achievements. Try again.`)} onRetry={isRetryable(list.error) ? () => { void list.refetch(); } : undefined} /> : null}
         {own.length ? <ul className="grid gap-2">{own.map(row => <li key={row.id} className="flex items-start justify-between gap-3 rounded-control border border-line p-3">
           <div className="min-w-0"><p className="break-words font-semibold text-ink">{row.title}</p>
             <p className="text-sm text-muted">{[row.issuer, row.achieved_on].filter(Boolean).join(" · ")} <span className="chip">{t`Self-reported`}</span></p></div>

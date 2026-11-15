@@ -5,6 +5,7 @@ import { useGalleryConsent, type MemberScope } from './api';
 import { PrivateProgrammeBoundary } from './PrivateProgrammeBoundary';
 import { isAccessLoss } from './accessLoss';
 import { LogoLoader } from '../../../components/LogoLoader';
+import { isRetryable } from "../../../lib/api/errors";
 
 function GalleryPrivacyForm({ scope, teamId, snapshotId, leader, items }: {
   scope: MemberScope; teamId: number; snapshotId: number; leader: boolean;
@@ -21,7 +22,7 @@ function GalleryPrivacyForm({ scope, teamId, snapshotId, leader, items }: {
       : all ? { scope: 'all' } : { scope: 'items', asset_ids, link_ids },
   }, { onSuccess: () => { setMessage(action === 'withdraw' ? t`Your privacy change is effective now.` : t`Consent saved. Publishing still requires an organizer action.`); setConsent(false); } });
   if (isAccessLoss(mutate.error)) return <ErrorBlock error={mutate.error} />;
-  if (query.isError) return <ErrorBlock error={query.error} onRetry={() => void query.refetch()} />;
+  if (query.isError) return <ErrorBlock error={query.error} onRetry={isRetryable(query.error) ? () => void query.refetch() : undefined} />;
   return <section className="grid gap-4" aria-label={t`Team gallery privacy`}>
     <h2 className="title-section">{t`Your team’s public project`}</h2>
     <p className="text-sm text-muted">{t`Any active member of the frozen team can make the project or individual items private immediately. Publishing requires the team leader’s explicit choice and an organizer’s selection.`}</p>

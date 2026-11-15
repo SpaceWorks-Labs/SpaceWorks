@@ -6,6 +6,7 @@ import { Card } from "../../components/ui";
 import { StructuredApiError } from "../../lib/api";
 import { presenceApi, presenceKeys, type PresenceTVRow } from "./api";
 import { clockTime, STATUS_LABELS } from "./presenceCopy";
+import { isRetryable } from "../../lib/api/errors";
 
 /** The server caches the projection for at most 30 s, so polling faster buys nothing. */
 export const TV_REFRESH_MS = 30_000;
@@ -37,7 +38,7 @@ export function PresenceNowBoard({ slug, spaceName, enabled }: PresenceNowBoardP
   const rows = tv.data ?? [];
   const canFullscreen = typeof document !== "undefined" && typeof document.documentElement.requestFullscreen === "function";
   const state = missing ? { status: "ready" as const } : tv.isLoading ? { status: "loading" as const }
-    : tv.isError && !tv.data ? { status: "error" as const, error: t`Couldn't load who's in. Retrying automatically.`, onRetry: () => void tv.refetch() } : { status: "ready" as const };
+    : tv.isError && !tv.data ? { status: "error" as const, error: t`Couldn't load who's in. Retrying automatically.`, onRetry: isRetryable(tv.error) ? () => void tv.refetch() : undefined } : { status: "ready" as const };
   return <KioskLayout mode="work" state={state}
     isEmpty={missing || (tv.isSuccess && rows.length === 0)}
     empty={{ message: missing ? t`This display isn't available for this makerspace.` : t`No one is checked in right now.` }}

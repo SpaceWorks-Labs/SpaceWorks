@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ErrorBlock, StatusPill } from "../../components/ui";
 import { MemberPhoneVerification } from "../members/MemberPhoneVerification";
 import { useSaveSmsConsent, useSmsConsent } from "./smsConsentApi";
+import { isRetryable } from "../../lib/api/errors";
 
 export function SmsConsent({ makerspaceId, member = true }: { makerspaceId: number; member?: boolean }) {
   const settings = useSmsConsent(makerspaceId, true, member);
@@ -11,7 +12,7 @@ export function SmsConsent({ makerspaceId, member = true }: { makerspaceId: numb
   const [verify, setVerify] = useState(false);
   if (settings.isLoading) return <LogoLoader label={t`Loading SMS consent…`} size={48} className="min-h-16 py-3" />;
   if (settings.error || !settings.data) return <ErrorBlock error={settings.error ?? new Error(t`Couldn't load SMS consent.`)}
-    onRetry={() => void settings.refetch()} />;
+    onRetry={isRetryable(settings.error) ? () => void settings.refetch() : undefined} />;
   const sms = settings.data.sms;
   const phone = sms.phone_masked;
   return <section aria-label={t`SMS consent`} className="grid gap-3 rounded-lg border border-line p-3">

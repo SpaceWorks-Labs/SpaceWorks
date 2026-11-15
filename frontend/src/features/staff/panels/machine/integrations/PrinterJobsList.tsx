@@ -10,6 +10,7 @@ import type { Machine } from "../../../machinesApi";
 import { useJobBoard } from "../machineJobsApi";
 import { useJobMutation, usePrinterJob, usePrinterJobs, type PrinterBinding, type PrinterJob, type PrinterJobState } from "./printerApi";
 import { BoxArt } from "../../../../../components/BoxSpinner";
+import { isRetryable } from "../../../../../lib/api/errors";
 
 const STATE: Record<PrinterJobState, { label: string; tone: "neutral" | "accent" | "warn" | "success" | "danger" }> = {
   awaiting: { label: t`Sent, waiting for the printer`, tone: "accent" }, reported: { label: t`Result reported`, tone: "warn" },
@@ -30,7 +31,7 @@ export function PrinterJobsList({ makerspaceId, machineTypeId, machines, binding
     <h4 className="text-sm font-semibold text-ink">{t`Printer jobs`}</h4>
     <SendJob makerspaceId={makerspaceId} machineTypeId={machineTypeId} bindings={bindings.filter(row => row.enabled)}
       label={row => `${deviceName(row.device)} · ${machines.find(machine => machine.id === row.machine)?.name ?? ""}`} />
-    {jobs.error ? <ErrorBlock error={jobs.error} resource={t`printer jobs`} onRetry={() => void jobs.refetch()} /> : null}
+    {jobs.error ? <ErrorBlock error={jobs.error} resource={t`printer jobs`} onRetry={isRetryable(jobs.error) ? () => void jobs.refetch() : undefined} /> : null}
     {jobs.isSuccess && !rows.length ? <p className="text-sm text-muted">{t`No printer jobs yet.`}</p> : null}
     <ul className="grid gap-2" aria-label={t`Printer jobs`}>
       {rows.map(job => <li key={job.id} className="grid gap-2 rounded-control border border-line p-3">

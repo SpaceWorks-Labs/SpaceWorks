@@ -4,6 +4,7 @@ import { EmptyState, ErrorText, Field, ListRow, PagePager, RelativeTime, StatusP
 import { OrganizationReviewDrawer } from "./OrganizationReviewDrawer";
 import { REVIEW_STATUSES, reviewStatusLabels, reviewStatusTone, useReviewQueue, type ReviewQueueRow, type ReviewStatus } from "./reviewApi";
 import { LogoLoader } from "../../../components/LogoLoader";
+import { isRetryable } from "../../../lib/api/errors";
 
 const emptyCopy = (): Record<ReviewStatus, string> => ({
   pending_review: t`Nothing waiting. New organizations appear here when review is required before they go live.`,
@@ -27,7 +28,7 @@ export function OrganizationReviewQueue() {
       </select>
     </Field>
     {queue.isLoading ? <LogoLoader size={48} className="min-h-24 py-3" />
-      : queue.isError ? <ErrorText resource={t`organization reviews`} onRetry={() => { void queue.refetch(); }} />
+      : queue.isError ? <ErrorText resource={t`organization reviews`} onRetry={isRetryable(queue.error) ? () => { void queue.refetch(); } : undefined} />
       : !rows.length ? <EmptyState message={emptyCopy()[status]} />
       : <ul className="grid gap-3">{rows.map(row => <li key={row.id}><ListRow title={row.name} onClick={() => setOpen(row)}
         identity={{ kind: "avatar", name: row.name, seed: String(row.id) }}

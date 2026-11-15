@@ -6,6 +6,7 @@ import { StatusPill } from "../../../components/ui";
 import { staffRequest } from "../../../lib/api";
 import { LogoLoader } from "../../../components/LogoLoader";
 import { BoxArt } from "../../../components/BoxSpinner";
+import { isRetryable } from "../../../lib/api/errors";
 
 type Coverage = {
   attempt: number;
@@ -107,7 +108,7 @@ export function AuditVerificationStatus({
       {status.error ? (
         <p className="mt-2 text-danger">
           {status.error.message}{" "}
-          <button type="button" className="desk-button-ghost" onClick={() => void status.refetch()}>{t`Retry status`}</button>
+          {isRetryable(status.error) ? <button type="button" className="desk-button-ghost" onClick={() => void status.refetch()}>{t`Retry status`}</button> : null}
         </p>
       ) : null}
       {run?.terminal && gaps(run.coverage).length ? (

@@ -12,6 +12,7 @@ import {
   type PasswordLoginResponse,
   type StaffAuthUser,
 } from "../../lib/api";
+import { isRetryable } from "../../lib/api/errors";
 import { eligibilityMessage } from "../../lib/eligibilityCopy";
 
 type RedeemResponse = import("../../generated/api").OrganizationInvitationRedeemed;
@@ -65,7 +66,8 @@ export function OrganizationInvitationRedeemPage() {
     body={redeem.isSuccess ? t`Your organization access is active. Makerspace actions remain scoped to the organization's linked makerspaces.`
       : redeem.isError ? eligibilityMessage(redeem.error) ?? redeem.error.message : t`You've been invited to join. Sign in to bind this single-use invitation to your account. This link works once.`}
     primary={redeem.isSuccess ? { label: t`Open organizations`, href: "/admin/organizations" }
-      : redeem.isError ? { label: t`Return to directory`, href: "/" } : {
+      : redeem.isError ? isRetryable(redeem.error) ? { label: t`Retry`, onClick: () => redeem.mutate() }
+        : { label: t`Return to directory`, href: "/" } : {
         label: t`Sign in and continue`, pending: login.isPending,
         onClick: () => (document.getElementById("organization-invite-form") as HTMLFormElement)?.requestSubmit(),
       }}

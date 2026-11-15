@@ -6,6 +6,7 @@ import { PAGE_SIZE } from "./parityRequest";
 import { useDrillOverview, useDrillReports, type DrillReport } from "./restoreDrillsApi";
 import { RunDrillForm } from "./RunDrillForm";
 import { LogoLoader } from "../../../components/LogoLoader";
+import { isRetryable } from "../../../lib/api/errors";
 
 function checksText(report: DrillReport) {
   const parts: string[] = [];
@@ -22,7 +23,7 @@ function Reports() {
   return <section className="grid gap-3" aria-labelledby="drill-reports-heading">
     <h3 id="drill-reports-heading" className="title-section">{t`Drill reports`}</h3>
     {list.isLoading ? <LogoLoader size={48} className="min-h-24 py-3" />
-      : list.isError ? <ErrorText resource={t`drill reports`} onRetry={() => { void list.refetch(); }} />
+      : list.isError ? <ErrorText resource={t`drill reports`} onRetry={isRetryable(list.error) ? () => { void list.refetch(); } : undefined} />
       : !rows.length ? <EmptyState message={t`No drills have run yet.`} />
       : <div className="grid gap-3">{rows.map(report => <ListRow key={report.id}
         title={report.makerspace_name ?? t`Space #${report.makerspace_id} (deleted)`}
@@ -41,7 +42,7 @@ export function RestoreDrillsSection() {
   const data = overview.data;
   return <div className="grid gap-6">
     {overview.isLoading ? <LogoLoader size={48} className="min-h-32 py-3" />
-      : overview.isError || !data ? <ErrorText resource={t`drill settings`} onRetry={() => { void overview.refetch(); }} />
+      : overview.isError || !data ? <ErrorText resource={t`drill settings`} onRetry={isRetryable(overview.error) ? () => { void overview.refetch(); } : undefined} />
       : <>
         {data.configured ? null : <p role="note" className="rounded-control border border-line bg-surface px-3 py-2 text-sm text-ink">
           {t`Restore drills are not set up on this server yet, so none can run. Settings can still be saved.`}</p>}

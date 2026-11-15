@@ -10,6 +10,7 @@ import { OffsiteUploads } from "./OffsiteUploads";
 import { useDestinations, useProbeDestination, usePushNow, useRetireDestination, type Destination } from "./offsiteApi";
 import { LogoLoader } from "../../../../components/LogoLoader";
 import { BoxArt } from "../../../../components/BoxSpinner";
+import { isRetryable } from "../../../../lib/api/errors";
 
 function RetireDialog({ destination, onClose }: { destination: Destination; onClose: () => void }) {
   const retire = useRetireDestination();
@@ -66,7 +67,7 @@ export function OffsiteDestinationsSection() {
       <OffsiteDestinationForm key={String(adding)} onDone={() => setAdding(false)} />
     </CollapsibleSection>
     {list.isLoading ? <LogoLoader size={48} className="min-h-24 py-3" />
-      : list.isError ? <ErrorText resource={t`offsite destinations`} onRetry={() => { void list.refetch(); }} />
+      : list.isError ? <ErrorText resource={t`offsite destinations`} onRetry={isRetryable(list.error) ? () => { void list.refetch(); } : undefined} />
       : !rows.length ? <EmptyState message={t`No offsite destination yet. Add one so a lost server does not take its backups with it.`} />
       : <div className="grid gap-3">{rows.map(row => <DestinationRow key={row.id} destination={row} onRetire={() => setRetiring(row)} />)}</div>}
     <Pagination page={page} totalPages={Math.max(1, Math.ceil((list.data?.count ?? 0) / PAGE_SIZE))} onChange={setPage}

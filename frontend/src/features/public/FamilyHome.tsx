@@ -7,6 +7,7 @@ import { useTenant } from "../../lib/tenant";
 import { publicFamilies, publicHome } from "../../lib/publicHome";
 import { useTenantBootstrap } from "../inventory/usePublicInventory";
 import { MakerspacePage } from "./MakerspacePage";
+import { isRetryable } from "../../lib/api/errors";
 
 const PublicBookingsPage = lazy(() => import("../bookings/PublicBookingsPage").then(m => ({ default: m.PublicBookingsPage })));
 
@@ -20,7 +21,7 @@ export function FamilyHome() {
   const memberHref = tenant.mode === "single" ? "/member" : `/m/${slug}/member`;
   const [params] = useSearchParams();
   if (!bootstrap) {
-    if (bootstrapQuery.error) return <PublicLayout state={{ status: "error", error: t`Couldn't load this space. Try again.`, onRetry: () => void bootstrapQuery.refetch() }}
+    if (bootstrapQuery.error) return <PublicLayout state={{ status: "error", error: t`Couldn't load this space. Try again.`, onRetry: isRetryable(bootstrapQuery.error) ? () => void bootstrapQuery.refetch() : undefined }}
       makerspace={{ name: "Space Works", slug, homeHref }} headerAction={{ label: t`Sign in`, href: memberHref }} nav={[]} header={{ title: t`We couldn't load this space` }}
       footer={{ credit: "Powered by Space Works", links: [] }}><span /></PublicLayout>;
     return <RouteFallback />;

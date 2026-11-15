@@ -7,6 +7,7 @@ import { levelLabel } from "./unitHierarchy";
 import { unitErrorText, unitKeys, unitsApi, type MemberUnit, type MemberUnitDetail } from "./unitsApi";
 import { LogoLoader } from "../../../components/LogoLoader";
 import { BoxArt } from "../../../components/BoxSpinner";
+import { isRetryable } from "../../../lib/api/errors";
 
 export type UnitEditTarget = { kind: "create"; parent: MemberUnit | null } | { kind: "edit"; unit: MemberUnit };
 
@@ -22,7 +23,7 @@ export function UnitEditDialog({ makerspaceId, target, units, levels, onClose, o
     queryFn: () => unitsApi.detail(makerspaceId, editing!.id) });
   return editing && !detail.data
     ? <Modal open title={t`Edit ${editing.name}`} onClose={onClose}>
-      {detail.isError ? <ErrorText message={unitErrorText(detail.error)} onRetry={() => void detail.refetch()} />
+      {detail.isError ? <ErrorText message={unitErrorText(detail.error)} onRetry={isRetryable(detail.error) ? () => void detail.refetch() : undefined} />
         : <LogoLoader label={t`Loading the unit…`} size={48} className="min-h-16 py-3" />}
     </Modal>
     : <UnitForm makerspaceId={makerspaceId} target={target} detail={detail.data} units={units} levels={levels} onClose={onClose} onSaved={onSaved} />;

@@ -6,13 +6,14 @@ import { ProviderTestAction } from "./ProviderTestAction";
 import { useProviderSettings } from "./providersApi";
 import { PROVIDERS, type ProviderSpec } from "./providerSpecs";
 import { LogoLoader } from "../../../components/LogoLoader";
+import { isRetryable } from "../../../lib/api/errors";
 
 /** One provider's settings card: last change, the form, and its test when it has one. */
 export function Provider({ spec }: { spec: ProviderSpec }) {
   const settings = useProviderSettings(spec.key);
   const data = settings.data;
   if (settings.isLoading) return <LogoLoader size={48} className="min-h-64 py-3" />;
-  if (settings.isError || !data) return <ErrorText resource={`${spec.title} settings`} onRetry={() => { void settings.refetch(); }} />;
+  if (settings.isError || !data) return <ErrorText resource={`${spec.title} settings`} onRetry={isRetryable(settings.error) ? () => { void settings.refetch(); } : undefined} />;
   const info = Object.entries(data.info);
   return <div className="grid gap-4">
     <p className="text-sm text-muted">{spec.summary}</p>

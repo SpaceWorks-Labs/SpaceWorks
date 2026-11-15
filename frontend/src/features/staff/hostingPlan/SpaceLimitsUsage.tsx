@@ -5,11 +5,12 @@ import { LEVEL_PILL, LimitUsage } from "../platformSpaces/LimitRowView";
 import { groupLimits, type UnifiedLimit } from "../platformSpaces/limitsModel";
 import { useSpaceLimitsUsage, type SpaceLimitsUsageData } from "./spacePlanApi";
 import { LogoLoader } from "../../../components/LogoLoader";
+import { isRetryable } from "../../../lib/api/errors";
 
 /** The server's limited rows as the shared limit shape; `area` is the module group the row is shown under. */
 export function usageRows(data: SpaceLimitsUsageData): UnifiedLimit[] {
   return data.rows.map(row => ({ key: row.key, label: row.label, area: row.group || "other", unit: row.unit, limit: row.limit,
-    used: row.used, percent: row.percent, level: row.level, stored: undefined, source: row.source, editable: false }));
+    used: row.used, amounts: row.amounts, percent: row.percent, level: row.level, stored: undefined, source: row.source, editable: false }));
 }
 
 /**
@@ -21,7 +22,7 @@ export function usageRows(data: SpaceLimitsUsageData): UnifiedLimit[] {
 export function SpaceLimitsUsage({ makerspaceId }: { makerspaceId: number }) {
   const query = useSpaceLimitsUsage(makerspaceId);
   if (query.isLoading) return <LogoLoader size={48} className="min-h-32 py-3" />;
-  if (query.isError || !query.data) return <ErrorText resource={t`this space's limits`} onRetry={() => { void query.refetch(); }} />;
+  if (query.isError || !query.data) return <ErrorText resource={t`this space's limits`} onRetry={isRetryable(query.error) ? () => { void query.refetch(); } : undefined} />;
   const groups = groupLimits(usageRows(query.data), query.data.groups);
   if (!groups.length) return <p className="text-sm text-muted">{t`No limits are set for this space: everything is unlimited.`}</p>;
   return <div className="grid gap-6">

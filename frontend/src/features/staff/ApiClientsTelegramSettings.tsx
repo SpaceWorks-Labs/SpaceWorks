@@ -7,6 +7,7 @@ import { DELIVERY_SETTINGS_KEY } from "./MakerspaceWebhookSettings";
 import { type Makerspace, useStaffGet } from "./StaffPanels";
 import { LogoLoader } from "../../components/LogoLoader";
 import { BoxArt } from "../../components/BoxSpinner";
+import { isRetryable } from "../../lib/api/errors";
 type ApiSettings = {
   telegram_group_chat_id: string;
   telegram_bot_token_set: boolean;
@@ -114,7 +115,7 @@ export function ApiClientsTelegramSettings({ makerspace }: { makerspace: Makersp
         {testTelegram.isPending ? <><BoxArt size={16} mono />{t`Sending…`}</> : t`Send Telegram test alert`}
       </button>
       {settings.isLoading ? <LogoLoader size={48} className="min-h-24 py-3" /> : null}
-      {settings.error ? <ErrorBlock error={new Error(t`Couldn't load Telegram settings. Try again.`)} onRetry={() => { void settings.refetch(); }} /> : null}
+      {settings.error ? <ErrorBlock error={new Error(t`Couldn't load Telegram settings. Try again.`)} onRetry={isRetryable(settings.error) ? () => { void settings.refetch(); } : undefined} /> : null}
       {saveSettings.error ? <p className="mt-2 text-sm text-danger">{saveSettings.error.message}</p> : null}
       {clearTelegramToken.error ? <p className="mt-2 text-sm text-danger">{clearTelegramToken.error.message}</p> : null}
       {testTelegram.data ? (

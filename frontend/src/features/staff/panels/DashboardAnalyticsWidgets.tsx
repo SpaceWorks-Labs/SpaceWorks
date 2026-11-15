@@ -8,6 +8,7 @@ import { staffTabPath } from "../staffTabs";
 import { consoleSessionHref } from "../../../lib/api/sessionContext";
 import { wireChartSpec } from "./charts/wireChartSpec";
 import type { ChartRecord } from "./charts/chartSpec";
+import { isRetryable } from "../../../lib/api/errors";
 
 export function DashboardAnalyticsWidgets({ widgets, reportsHref, makerspaceId, analyticsBase }: {
   widgets: DashboardWidget[]; reportsHref?: string; makerspaceId: number; analyticsBase?: string;
@@ -37,7 +38,7 @@ function AnalyticsWidget({ widget, reportsHref, makerspaceId, analyticsBase }: {
     <h3 className="title-section">{widget.title}</h3>
     <p className="my-2 text-sm text-muted">{widget.kind === "queue" ? t`Operational queue` : widget.kind === "count" ? t`Current counts` : t`Last ${widget.default_period} calendar days`}</p>
     <DataState loading={deferred && query.isLoading} error={deferred ? query.error : undefined}
-      onRetry={() => void query.refetch()} empty={false}>
+      onRetry={isRetryable(query.error) ? () => void query.refetch() : undefined} empty={false}>
       {widget.kind === "count" && spec ? <div className="grid gap-3 sm:grid-cols-2">{rows.flatMap((row, index) => spec.value_fields.map(field =>
         <StatCard key={`${index}:${field.field}`} label={`${String(row[spec.x.field] ?? "")} ${field.label ?? field.field}`} value={`${row[field.field] ?? "Unknown"} ${field.unit_field ? row[field.unit_field] ?? "" : field.unit}`} />))}</div> : null}
       <AnalyticsData title={widget.title} rows={rows} spec={spec} meta={analyticsMeta(data)} />

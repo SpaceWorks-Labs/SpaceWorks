@@ -7,6 +7,7 @@ import { minutesLabel } from "../machine-service/ServiceRequestEta";
 import { fetchMyJobs, jobKeys } from "./api";
 import { MemberJobsShell, type MemberJobsContext } from "./MemberJobsShell";
 import { etaWhen, FINISHED_LABELS, jobLabel, type MemberJob } from "./types";
+import { isRetryable } from "../../lib/api/errors";
 
 /** One line under the title: where the job stands in words, server values only. */
 export function jobSummary(job: MemberJob, now = new Date()) {
@@ -32,7 +33,7 @@ function JobList({ context }: { context: MemberJobsContext }) {
   return <ListLayout header={{ eyebrow: t`Member area`, title: t`My machine jobs`, subtitle: t`Everything you've asked the space to make.`,
     primary: { label: t`Request a job`, href: context.path("machine-jobs/new") } }}
     state={context.bootstrapError || jobs.isError
-      ? { status: "error", error: t`Couldn't load your jobs. Try again.`, onRetry: () => { void jobs.refetch(); } }
+      ? { status: "error", error: t`Couldn't load your jobs. Try again.`, onRetry: isRetryable(jobs.error) ? () => { void jobs.refetch(); } : undefined }
       : !context.ready || jobs.isPending ? { status: "loading" } : { status: "ready" }}
     isEmpty={jobs.isSuccess && !rows.length}
     empty={{ message: t`No machine jobs yet. Send the space a file and it will show up here.`, action: { label: t`Request a job`, href: context.path("machine-jobs/new") } }}

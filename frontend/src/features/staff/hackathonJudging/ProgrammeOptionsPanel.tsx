@@ -6,6 +6,7 @@ import { useProgrammeOptions, type ProgrammeOptions } from './l21bApi';
 import { useStagePlan } from '../submissionStages/api';
 import { PrizeAndDepositFields } from './ProgrammeMoneyFields';
 import type { Scope } from './types';
+import { isRetryable } from "../../../lib/api/errors";
 
 const SWITCHES = [
   ['results_email', 'Email participants when results are announced'],
@@ -29,7 +30,7 @@ export function ProgrammeOptionsPanel({ scope, entryFees, paidTeams, deposits = 
   const { query, save, sendResults } = useProgrammeOptions(scope);
   const options = query.data; const resultVersion = options?.published_result_version;
   if (query.isLoading) return <LogoLoader label={t`Loading programme options…`} />;
-  if (!options) return <ErrorBlock error={query.error} onRetry={() => void query.refetch()} />;
+  if (!options) return <ErrorBlock error={query.error} onRetry={isRetryable(query.error) ? () => void query.refetch() : undefined} />;
   const toggle = (key: SwitchKey, label: string) => <label key={key} className="flex min-h-11 items-center gap-3">
     <input type="checkbox" checked={Boolean(options[key])}
       onChange={e => save.mutate({ version: options.version, fields: { [key]: e.target.checked } })} />{label}</label>;

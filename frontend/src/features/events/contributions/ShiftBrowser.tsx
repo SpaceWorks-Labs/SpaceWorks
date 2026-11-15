@@ -5,13 +5,14 @@ import { ListLayout } from '../../../components/layouts'
 import { ActionControl, Card } from '../../../components/ui'
 import { errorText, useProgrammeCommand, useProgrammeList } from './api'
 import type { EventScope, RoleApplication, Shift } from './types'
+import { isRetryable } from "../../../lib/api/errors";
 
 export function ShiftBrowser({ scope, assignments }: { scope: EventScope; assignments: RoleApplication[] }) {
   const [page, setPage] = useState(1)
   const query = useProgrammeList<Shift>(scope, 'member', '/shifts/', page)
   const command = useProgrammeCommand(scope, 'member')
   return <ListLayout header={{ title: t`Volunteer shifts`, subtitle: t`Choose a duty that fits your availability. Overlapping approved duties cannot be booked.` }}
-    state={query.isPending ? { status: 'loading' } : query.isError ? { status: 'error', error: errorText(query.error), onRetry: () => { void query.refetch() } } : { status: 'ready' }}
+    state={query.isPending ? { status: 'loading' } : query.isError ? { status: 'error', error: errorText(query.error), onRetry: isRetryable(query.error) ? () => { void query.refetch() } : undefined } : { status: 'ready' }}
     isEmpty={!query.data?.results.length} empty={{ message: t`No shifts are open yet.` }}
     pagination={{ page, pageSize: 24, count: query.data?.count ?? 0, onChange: setPage }}
     body={{ kind: 'rows', rows: <>{command.error ? <p role="alert" className="text-danger">{errorText(command.error)}</p> : null}

@@ -1,3 +1,4 @@
+import { LogoLoader } from "../../components/LogoLoader";
 import { t } from "@lingui/core/macro";
 import { consoleSessionHref } from "../../lib/api/sessionContext";
 import { useRef, useState, type ReactNode } from "react";
@@ -20,6 +21,7 @@ import { orderedSettingsSections, settingsGroups, settingsLanding, settingsLinkT
   settingsSectionForHash, settingsSectionFromSubPath } from "./settingsSections";
 import { staffPathState, staffTabPath } from "./staffTabs";
 import { nounOf, nounTitleOf } from "../../lib/spaceNoun";
+import { isRetryable } from "../../lib/api/errors";
 
 type Props = {
   makerspace: Makerspace;
@@ -91,7 +93,7 @@ export function MakerspaceSettingsPanel({ makerspace, isSuperadmin, canManageMak
         loads the rows fall back to the `makerspace` prop (and disable via `loading`), and a
         failure is reported here instead of hiding payments, notifications and the rest. */}
     <SettingsLayout header={{ title: t`${nounTitle} settings`, subtitle: t`Make this space work for your community.`,
-      meta: <>{settings.error ? <ErrorBlock className="w-full" onRetry={() => { void settings.refetch(); }}
+      meta: <>{settings.isLoading ? <LogoLoader label={t`Loading settings...`} size={48} className="min-h-16 py-3" /> : null}{settings.error ? <ErrorBlock className="w-full" onRetry={isRetryable(settings.error) ? () => { void settings.refetch(); } : undefined}
         error={new Error(t`Couldn't load the latest settings (${settings.error.message}). Showing the last known values.`)} /> : null}</>,
       primary: { label: t`View public site`, href: `/m/${makerspace.slug}` } }}
       state={{ status: "ready" }}

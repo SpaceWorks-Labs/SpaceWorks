@@ -22,7 +22,17 @@ it("shows loading followed by an empty money state", async () => {
   expect(await screen.findByText("Nothing to pay. You are all settled.")).toBeVisible();
 });
 
-it.each([403, 404, 503])("shows a retryable %i refusal without cached charges", async status => {
+// Decision 588: Retry only where a retry can succeed (5xx, 429, no response); a refusal is explained without it.
+it.each([403, 404])("shows a %i refusal without cached charges and without Retry", async status => {
+  vi.mocked(memberRequest).mockRejectedValueOnce(new StructuredApiError(status, { detail: "Charges unavailable" }));
+  show();
+  expect(await screen.findByRole("alert")).toHaveTextContent(status === 404
+    ? "This charge is no longer waiting for payment. Refresh to see its latest status." : "Charges unavailable");
+  expect(screen.queryByText("Own charges")).toBeNull();
+  expect(screen.queryByRole("button", { name: "Retry" })).toBeNull();
+});
+
+it.each([503])("shows a retryable %i failure without cached charges", async status => {
   vi.mocked(memberRequest).mockRejectedValueOnce(new StructuredApiError(status, { detail: "Charges unavailable" }))
     .mockResolvedValue([{ id: 1 }]);
   show();

@@ -6,6 +6,7 @@ import { useMemberCardSettings, useSaveMemberCardSettings } from "./apiCards";
 import { ApprovalLevels } from "./ApprovalLevels";
 import type { MemberCardSettings } from "./types";
 import { LogoLoader } from "../../../../components/LogoLoader";
+import { isRetryable } from "../../../../lib/api/errors";
 
 type Key = "auto_issue" | "email_on_issue" | "public_verify" | "verify_show_plan";
 
@@ -23,7 +24,7 @@ export function SettingsTab({ makerspaceId }: { makerspaceId: number }) {
   const settings = useMemberCardSettings(makerspaceId);
   const save = useSaveMemberCardSettings(makerspaceId);
   if (settings.isLoading) return <LogoLoader size={48} className="min-h-48 py-3" />;
-  if (settings.isError || !settings.data) return <ErrorBlock error={settings.error} resource={t`card settings`} onRetry={() => void settings.refetch()} />;
+  if (settings.isError || !settings.data) return <ErrorBlock error={settings.error} resource={t`card settings`} onRetry={isRetryable(settings.error) ? () => void settings.refetch() : undefined} />;
   const values: MemberCardSettings = settings.data;
   return <div className="grid max-w-2xl gap-3">
     {save.error ? <ErrorBlock error={save.error} /> : null}

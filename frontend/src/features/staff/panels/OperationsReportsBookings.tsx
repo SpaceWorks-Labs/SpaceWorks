@@ -3,6 +3,7 @@ import { SelectedReportPanel as Panel } from "./OperationsReportSelection";
 import { BarChart, DataState, ReportTable, StatCards } from "./OperationsReportsParts";
 
 import { groupReportByMakerspace, sum, useFablabReport, type BookingUtilizationRow, type FablabPanelProps, type ReportResponse } from "./operationsReportsFablabApi";
+import { isRetryable } from "../../../lib/api/errors";
 
 export function OperationsReportsBookings(props: FablabPanelProps) {
   const query = useFablabReport<BookingUtilizationRow>("booking-utilization", props);
@@ -12,7 +13,7 @@ export function OperationsReportsBookings(props: FablabPanelProps) {
   return (
     <Panel title={t`Bookable Space utilization`}>
       <p className="text-xs text-muted">{t`Utilization requires both date bounds and measures calendar reservation occupancy, not physical presence.`}</p>
-      <DataState loading={query.isLoading} error={query.error} onRetry={() => void query.refetch()} empty={!rows.length}>
+      <DataState loading={query.isLoading} error={query.error} onRetry={isRetryable(query.error) ? () => void query.refetch() : undefined} empty={!rows.length}>
         {props.aggregate ? <div className="mt-4 space-y-6">{groups.map((group) => (
           <section key={group.makerspaceId} className="rounded-md border border-line p-4">
             <h4 className="eyebrow">{props.makerspaceName(group.makerspaceId)}</h4>

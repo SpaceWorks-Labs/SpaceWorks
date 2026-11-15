@@ -5,6 +5,7 @@ import { toast } from "../../../components/ui/toastStore";
 import { ActionDialog, type ReasonSpec } from "../platformSpaces/ActionDialog";
 import { useAccountAction, useAccountLookup, type AccountAction, type PlatformAccount } from "./accountsApi";
 import { LogoLoader } from "../../../components/LogoLoader";
+import { isRetryable } from "../../../lib/api/errors";
 
 const getReason = (): ReasonSpec => ({ label: t`Reason`, min: 3, max: 300 });
 const accessCopy = (status: string): [string, Tone] => status === "active" ? [t`Access: active`, "success"]
@@ -74,7 +75,7 @@ export function AccountsSection() {
     </form>
     {!username ? null
       : lookup.isLoading ? <LogoLoader size={48} className="min-h-20 py-3" />
-      : lookup.isError ? <ErrorText resource={t`the account`} onRetry={() => { void lookup.refetch(); }} />
+      : lookup.isError ? <ErrorText resource={t`the account`} onRetry={isRetryable(lookup.error) ? () => { void lookup.refetch(); } : undefined} />
       : !found ? <EmptyState message={t`No account is called "${username}".`} />
       : <AccountCard account={found} onAction={action => setActing({ account: found, action })} />}
     {acting ? <AccountDialog account={acting.account} action={acting.action} onClose={() => setActing(null)} /> : null}

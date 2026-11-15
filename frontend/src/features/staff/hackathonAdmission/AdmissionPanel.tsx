@@ -6,6 +6,7 @@ import { AdmissionArtwork } from '../../events/hackathonAdmission/AdmissionArtwo
 import { DecisionBatchPanel } from './DecisionBatchPanel'
 import { useAdmissionAdmin } from './useAdmissionAdmin'
 import type { DecisionSelection, ReviewApplication } from './types'
+import { isRetryable } from "../../../lib/api/errors";
 
 export function AdmissionPanel({ eventId, configVersion, reviewers, onReview, onSelectApplication, canManage = false }: {
   eventId: number; configVersion: number; reviewers: Array<{ id: number; label: string }>
@@ -27,7 +28,7 @@ export function AdmissionPanel({ eventId, configVersion, reviewers, onReview, on
     setSelected(next)
   }
   return <ListLayout header={{ title: t`Hackathon applications` }} state={applications.isLoading ? { status: 'loading' } : applications.error
-    ? { status: 'error', error: applications.error.message, onRetry: () => { void applications.refetch() } } : { status: 'ready' }}
+    ? { status: 'error', error: applications.error.message, onRetry: isRetryable(applications.error) ? () => { void applications.refetch() } : undefined } : { status: 'ready' }}
     empty={{ message: t`No applications yet.` }} pagination={{ page, pageSize: 24, count: applications.data?.count ?? 0, onChange: setPage }}
     body={{ kind: 'rows', rows: <>
       {action.error ? <ErrorText message={action.error.message} /> : null}

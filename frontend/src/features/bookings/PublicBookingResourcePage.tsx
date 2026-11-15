@@ -19,6 +19,7 @@ import { BookingResourceWebsite } from "./BookingResourceWebsite";
 import { usePublicBookingResource } from "./bookingWebsiteApi";
 import { photosSection } from "./spacePhotosSection";
 import { LogoLoader } from "../../components/LogoLoader";
+import { isRetryable } from "../../lib/api/errors";
 
 export function PublicBookingResourcePage() {
   const { slug = "", resourceToken = "" } = useParams();
@@ -48,7 +49,7 @@ export function PublicBookingResourcePage() {
   // An unavailable resource never says whether it is private or gone; Retry only where a refetch can help.
   const state: QueryState = valid && query.isLoading ? { status: "loading" }
     : !valid || query.error ? { status: "error", error: t`Resource unavailable. This resource may be private or no longer available.`,
-      onRetry: valid ? () => { void query.refetch(); } : undefined }
+      onRetry: valid && isRetryable(query.error) ? () => { void query.refetch(); } : undefined }
     : { status: "ready" };
   const approval = resource?.approval_mode === "approve";
   return <div style={brandStyle}>

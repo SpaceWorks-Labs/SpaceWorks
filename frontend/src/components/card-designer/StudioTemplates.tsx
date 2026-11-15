@@ -19,6 +19,7 @@ import { exportTemplate, templateName, useApplyTemplate, useDeleteTemplate, useD
 import { useCardFonts } from "./useCardFonts";
 import { Toggle } from "./inspectorFields";
 import { LogoLoader } from "../LogoLoader";
+import { isRetryable } from "../../lib/api/errors";
 
 type Tab = "builtin" | "space";
 
@@ -114,7 +115,7 @@ export function StudioTemplates({ design, makerspaceId, values, flush, revision,
         {note ? <p role="status" className="text-sm text-muted">{note}</p> : null}
         {tab === "builtin" ? <>
           <p className="text-sm text-muted">{t`Shown with ${values.name}. Choosing one replaces the draft; every template stays fully editable.`}</p>
-          {builtins.isError ? <ErrorBlock error={builtins.error} resource={t`templates`} onRetry={() => void builtins.refetch()} /> : null}
+          {builtins.isError ? <ErrorBlock error={builtins.error} resource={t`templates`} onRetry={isRetryable(builtins.error) ? () => void builtins.refetch() : undefined} /> : null}
           <ul className="grid gap-3 sm:grid-cols-2" aria-label={t`Built-in templates`}>
             {shown.map((item) => {
               const { front, mono } = item.document;
@@ -141,7 +142,7 @@ export function StudioTemplates({ design, makerspaceId, values, flush, revision,
                 onChange={(event) => { const chosen = event.target.files?.[0]; event.target.value = ""; if (chosen) void importFile(chosen); }} />
             </div>
             {space.isLoading ? <LogoLoader size={48} className="min-h-40 py-3" /> : null}
-            {space.isError ? <ErrorBlock error={space.error} resource={t`templates`} onRetry={() => void space.refetch()} /> : null}
+            {space.isError ? <ErrorBlock error={space.error} resource={t`templates`} onRetry={isRetryable(space.error) ? () => void space.refetch() : undefined} /> : null}
             {space.data && !space.data.filter((item) => item.source === "space").length
               ? <p className="text-sm text-muted">{t`No templates saved for this space yet.`}</p> : null}
             <ul className="grid gap-3 sm:grid-cols-2" aria-label={t`This space's templates`}>

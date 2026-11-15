@@ -13,6 +13,7 @@ import { StageAnswerFields, StageChecklist, StageTracker } from "./StageTracker"
 import { parts, submissionErrorMessage } from "./stageRules";
 import type { Project, SubmissionScope, UploadSpec } from "./types";
 import { LogoLoader } from "../../../components/LogoLoader";
+import { isRetryable } from "../../../lib/api/errors";
 
 const blank: Project = { title: "", tagline: "", problem: "", description: "", challenges: "", tech_tags: [],
   ai_declaration: { used: false, details: "" }, reuse_declaration: { used: false, details: "" },
@@ -51,7 +52,7 @@ export function SubmissionEditor({ scope, uploadOrigins, formats, tracks = [], p
   }
   if (query.isLoading) return <LogoLoader label={t`Loading project…`} size={48} className="min-h-16 py-3" />;
   if (query.isError) return <Callout size="panel" tone="danger" lead="Could not load your project."
-    action={{ label: t`Retry`, onClick: () => void query.refetch() }} />;
+    action={isRetryable(query.error) ? { label: t`Retry`, onClick: () => void query.refetch() } : undefined} />;
   const requirements = query.data?.requirements;
   const stages = requirements?.stages ?? [];
   const show = parts(active); // #177: the active stage decides whether files, links or both are taken.

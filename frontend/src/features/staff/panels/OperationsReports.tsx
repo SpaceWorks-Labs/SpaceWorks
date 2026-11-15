@@ -17,6 +17,7 @@ import { filterReports } from "./reportGroups";
 import { usePinnedReports } from "./usePinnedReports";
 import type { ReportViewState } from "./reportViewsApi";
 import { PAYMENT_STATUSES, PAYMENT_SUBJECTS } from "../paymentsApi";
+import { isRetryable } from "../../../lib/api/errors";
 
 export function OperationsReports({
   makerspace,
@@ -112,7 +113,7 @@ export function OperationsReports({
     <DetailLayout title={t`Reports`} width="wide" asideSide="start"
       meta={[t`Operations reporting for ${scopeLabel}.`, selected?.title ?? t`Choose a report`]}
       state={{ status: catalog.isLoading ? "loading" : catalog.isError ? "error" : "ready",
-        error: t`Couldn't load reports. Try again.`, onRetry: () => void catalog.refetch() }}
+        error: t`Couldn't load reports. Try again.`, onRetry: isRetryable(catalog.error) ? () => void catalog.refetch() : undefined }}
       isEmpty={reportsEnabled && catalog.isSuccess && !catalogEntries.length}
       empty={{ message: t`No report is available to your role here. Reports appear when your role holds the action a report needs and its module is on.` }}
       actions={{ primary: { label: t`Export`, pending: exportReport.isPending, pendingLabel: t`Exporting…`,
@@ -168,7 +169,7 @@ export function OperationsReports({
         </div>
         {catalog.error ? <div role="alert" className="mt-3 flex flex-wrap items-center gap-3 text-sm text-danger">
           <p>{t`Couldn't load reports. Try again.${catalog.error instanceof Error && catalog.error.message ? ` ${catalog.error.message}` : ""}`}</p>
-          <button type="button" className="desk-button" onClick={() => void catalog.refetch()}>{t`Retry`}</button>
+          {isRetryable(catalog.error) ? <button type="button" className="desk-button" onClick={() => void catalog.refetch()}>{t`Retry`}</button> : null}
         </div> : null}
         {selectedReport === "member-retention" ? <label className="eyebrow grid gap-1 mt-3">{t`Retention months (blank: 3, 6, 12)`}<input className="desk-input" type="number" min={1} max={120} value={months} onChange={(event) => setMonths(event.target.value)} /></label> : null}
         {selectedReport === "payment-reconciliation" ? <div className="flex flex-wrap gap-2 mt-3">

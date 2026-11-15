@@ -15,6 +15,7 @@ import { staffShopError, staffShopKeys } from "./staffShopApi";
 import { BuyerLinks } from "./ShopBuyerLinks";
 import { useCrossLink } from "../crossLinks/staffHref";
 import { cancelOrder, CHANNEL_LABELS, collectOrder, fetchOrder, markReady, movePickupToSpace, returnItems, takePayment, type ShopStaffOrder } from "./staffShopOrdersApi";
+import { isRetryable } from "../../../lib/api/errors";
 
 type Dialog = "collect" | "pay" | "cancel" | "return" | null;
 const FINAL = ["collected", "cancelled", "unfulfilled", "refunded"];
@@ -70,7 +71,7 @@ export function ShopOrderDetail({ makerspaceId, orderId, access, onBack, onBuyer
       status={order ? <StatusPill label={label.label} tone={label.tone} /> : undefined}
       meta={order ? [buyer, CHANNEL_LABELS()[order.channel ?? ""] ?? order.channel ?? ""] : undefined}
       state={query.isPending ? { status: "loading" } : query.error ? { status: "error", error: staffShopError(query.error),
-        onRetry: () => { void query.refetch(); } } : { status: "ready" }}
+        onRetry: isRetryable(query.error) ? () => { void query.refetch(); } : undefined } : { status: "ready" }}
       actions={{ primary, overflow }}
       banner={error ? { size: "inline", tone: "danger", lead: staffShopError(error) } : undefined}
       main={order ? <div className="grid gap-6">

@@ -7,6 +7,7 @@ import { AnnouncementForm } from "./AnnouncementForm";
 import { severityLabels, useAnnouncements, useCancelAnnouncement, type Announcement } from "./announcementsApi";
 import { PAGE_SIZE } from "./spacesApi";
 import { LogoLoader } from "../../../components/LogoLoader";
+import { isRetryable } from "../../../lib/api/errors";
 
 const STATUS: Record<Announcement["status"], [string, Tone]> = {
   scheduled: ["Scheduled", "info"], live: ["Live", "success"], ended: ["Ended", "neutral"], cancelled: ["Cancelled", "neutral"],
@@ -34,7 +35,7 @@ export function AnnouncementsSection() {
   return <div className="grid gap-4">
     <CollapsibleSection title={t`New announcement`} open={composing} onToggle={() => setComposing(!composing)}><AnnouncementForm /></CollapsibleSection>
     {list.isLoading ? <LogoLoader size={48} className="min-h-24 py-3" />
-      : list.isError ? <ErrorText resource={t`announcements`} onRetry={() => { void list.refetch(); }} />
+      : list.isError ? <ErrorText resource={t`announcements`} onRetry={isRetryable(list.error) ? () => { void list.refetch(); } : undefined} />
       : !rows.length ? <EmptyState message={t`No announcements yet.`} />
       : <div className="grid gap-3">{rows.map(row => <ListRow key={row.id} title={row.title}
         meta={<>{t`${severityLabels()[row.severity] ?? row.severity} · ${audience(row)} · starts `}<RelativeTime date={row.starts_at} exact />

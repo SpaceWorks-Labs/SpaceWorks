@@ -7,6 +7,7 @@ import { DashboardLayout } from "../../../components/layouts";
 import { shopMoney } from "../../shop/shopApi";
 import { staffShopError, staffShopKeys } from "./staffShopApi";
 import { CHANNEL_LABELS, fetchReport, METHOD_LABELS } from "./staffShopOrdersApi";
+import { isRetryable } from "../../../lib/api/errors";
 
 const iso = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 const monthName = (month: string) => {
@@ -39,7 +40,7 @@ export function ShopReports({ makerspaceId }: { makerspaceId: number }) {
   return <DashboardLayout header={{ eyebrow: t`Shop`, title: t`Shop reports`, subtitle: t`Online orders and desk sales in the chosen period.` }}
     state={valid && query.isPending ? { status: "loading" } : { status: "ready" }}
     callout={!valid ? { size: "inline", tone: "warn", lead: "Choose a start date on or before the end date." }
-      : query.error ? { size: "inline", tone: "danger", lead: staffShopError(query.error), action: { label: t`Try again`, onClick: () => { void query.refetch(); } } } : undefined}
+      : query.error ? { size: "inline", tone: "danger", lead: staffShopError(query.error), action: isRetryable(query.error) ? { label: t`Try again`, onClick: () => { void query.refetch(); } } : undefined } : undefined}
     progress={<div className="flex flex-wrap items-end gap-3">
       <label className="grid gap-1 text-sm font-semibold">{t`From`}<input className="desk-input min-h-11 font-normal" type="date" value={from}
         onChange={event => setFrom(event.target.value)} /></label>

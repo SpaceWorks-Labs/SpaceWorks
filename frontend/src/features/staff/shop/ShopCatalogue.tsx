@@ -8,6 +8,7 @@ import { KIND_LABELS } from "./productDraft";
 import type { ShopAccess } from "./shopAccess";
 import { ShopProductForm } from "./ShopProductForm";
 import { archiveProduct, listProducts, staffShopError, staffShopKeys, type ShopProduct } from "./staffShopApi";
+import { isRetryable } from "../../../lib/api/errors";
 
 const priceText = (product: ShopProduct) => {
   const prices = (product.variants ?? []).filter(variant => !variant.archived_at).map(variant => Number(variant.price)).sort((a, b) => a - b);
@@ -35,7 +36,7 @@ export function ShopCatalogue({ makerspaceId, access }: { makerspaceId: number; 
     onTabChange={key => { setArchived(key === "archived"); setPage(1); }}
     callout={archive.error ? { size: "inline", tone: "danger", lead: staffShopError(archive.error) } : undefined}
     state={query.isPending ? { status: "loading" } : query.error ? { status: "error", error: staffShopError(query.error),
-      onRetry: () => { void query.refetch(); } } : { status: "ready" }}
+      onRetry: isRetryable(query.error) ? () => { void query.refetch(); } : undefined } : { status: "ready" }}
     isEmpty={!rows.length} empty={archived ? { message: t`No archived products.` }
       : { message: t`No products yet. Add the first thing you sell.`, action: { label: t`New product`, onClick: () => setEditing("new") } }}
     pagination={{ page, pageSize: 24, count: query.data?.count ?? 0, onChange: setPage }}

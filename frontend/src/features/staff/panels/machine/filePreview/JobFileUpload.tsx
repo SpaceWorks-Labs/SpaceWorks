@@ -13,7 +13,7 @@ const base = "/admin/machine-service";
 
 export async function uploadJobFile(requestId: number, file: File) {
   const staged = await staffRequest<{ file_id: number; upload: PrintUpload }>(`${base}/requests/${requestId}/files/presign`, {
-    method: "POST", body: JSON.stringify({ filename: file.name, content_type: file.type || "application/octet-stream" }) });
+    method: "POST", body: JSON.stringify({ filename: file.name, content_type: file.type || "application/octet-stream", size: file.size }) });
   try {
     await uploadToStorage({ ...staged.upload, fields: staged.upload.fields ?? {} }, file);
     return await staffRequest<{ file_id: number }>(`${base}/requests/${requestId}/files/finalize`, {

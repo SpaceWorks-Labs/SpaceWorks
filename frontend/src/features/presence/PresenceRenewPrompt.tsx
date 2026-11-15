@@ -12,8 +12,8 @@ export type PresenceRenewPromptProps = { session: PresenceSession; phase: RenewP
 export function PresenceRenewPrompt({ session, phase, now, presets, pending, onRenew }: PresenceRenewPromptProps) {
   if (phase !== "soon" && phase !== "expired") return null;
   const left = Math.max(1, minutesLeft(session, now));
-  const lead = phase === "soon" ? `Your check-in ends in ${left} min.` : `Your check-in ended at ${clockTime(session.expires_at)}.`;
-  const body = phase === "soon" ? "Still here? Renew from now." : `Still here? You can renew for ${RENEW_WINDOW_MINUTES} minutes after it ends.`;
+  const lead = phase === "soon" ? t`Your check-in ends in ${left} min.` : t`Your check-in ended at ${clockTime(session.expires_at)}.`;
+  const body = phase === "soon" ? t`Still here? Renew from now.` : t`Still here? You can renew for ${RENEW_WINDOW_MINUTES} minutes after it ends.`;
   return <div role="alert" className={`grid gap-3 rounded-xl border p-4 ${toneSurfaceClasses[phase === "soon" ? "warn" : "danger"]}`}>
     <p className="text-sm"><strong>{lead}</strong> {body}</p>
     <div className="flex flex-wrap gap-2" role="group" aria-label={t`Renew for`}>

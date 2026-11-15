@@ -7,6 +7,7 @@ import { ListLayout } from "../../../components/layouts";
 import { staffRequest } from "../../../lib/api";
 import { listAllProducts, staffShopError, staffShopKeys } from "./staffShopApi";
 import { BoxArt } from "../../../components/BoxSpinner";
+import { isRetryable } from "../../../lib/api/errors";
 
 /** Hand-typed until the client is regenerated (#135 Q-S18 follow-up). */
 export type ShopEventOfferRow = { id: number; title: string; starts_at: string; status: string; variant_ids: number[] };
@@ -44,7 +45,7 @@ export function ShopEventOffers({ makerspaceId }: { makerspaceId: number }) {
   return <ListLayout header={{ eyebrow: t`Shop`, title: t`Event merch`,
     subtitle: t`Show shop items on an event's page. Buyers order them separately and collect them at the event.` }}
     state={events.isPending || products.isPending ? { status: "loading" } : error ? { status: "error", error: staffShopError(error),
-      onRetry: () => { void events.refetch(); void products.refetch(); } } : { status: "ready" }}
+      onRetry: [events.error, products.error].filter(Boolean).some(isRetryable) ? () => { void events.refetch(); void products.refetch(); } : undefined } : { status: "ready" }}
     isEmpty={!events.data?.length} empty={{ message: t`No upcoming events. Event merch can be set once an event is scheduled.` }}
     body={{ kind: "rows", rows: [<div key="event-offers" className="grid gap-4">
       <label className="grid gap-1 text-sm font-semibold text-ink">{t`Event`}

@@ -8,6 +8,7 @@ import { SsoProviderForm } from "./SsoProviderForm";
 import { useOidcProviders, useUpdateOidcProvider, type OidcProvider } from "./ssoApi";
 import { LogoLoader } from "../../../components/LogoLoader";
 import { BoxArt } from "../../../components/BoxSpinner";
+import { isRetryable } from "../../../lib/api/errors";
 
 function ToggleDialog({ provider, onClose }: { provider: OidcProvider; onClose: () => void }) {
   const update = useUpdateOidcProvider(provider.id);
@@ -34,7 +35,7 @@ export function SsoSection() {
       {t`Providers cannot be deleted, because people's linked sign-ins depend on them. Turn one off instead.`}</p>
     <CollapsibleSection title={t`New provider`} open={adding} onToggle={() => setAdding(!adding)}><SsoProviderForm /></CollapsibleSection>
     {list.isLoading ? <LogoLoader size={48} className="min-h-24 py-3" />
-      : list.isError ? <ErrorText resource={t`sign-on providers`} onRetry={() => { void list.refetch(); }} />
+      : list.isError ? <ErrorText resource={t`sign-on providers`} onRetry={isRetryable(list.error) ? () => { void list.refetch(); } : undefined} />
       : !rows.length ? <EmptyState message={t`No single sign-on providers yet.`} />
       : <div className="grid gap-3">{rows.map(provider => <ListRow key={provider.id} title={provider.display_name}
         meta={<>{t`${provider.slug} · ${provider.issuer} · client ${provider.client_id}`}

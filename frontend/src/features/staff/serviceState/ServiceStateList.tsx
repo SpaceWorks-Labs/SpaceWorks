@@ -6,6 +6,7 @@ import { ErrorBlock, ListRow, StatusPill } from "../../../components/ui";
 import { staffRequest, StructuredApiError } from "../../../lib/api";
 import { useServiceState, type SubjectType } from "../repairs/repairsApi";
 import { LogoLoader } from "../../../components/LogoLoader";
+import { isRetryable } from "../../../lib/api/errors";
 
 /** One machine (or other subject) the viewer may switch, hand-typed from `GET service-state` (decision 242, MC6). */
 export type ServiceStateRow = {
@@ -33,7 +34,7 @@ export function ServiceStateList({ makerspaceId }: { makerspaceId: number }) {
     <div><h2 id="service-state-title" className="title-panel">{t`In service`}</h2>
       <p className="mt-1 text-sm text-muted">{t`Take a machine out of service while it is unsafe or being fixed. Bookings and jobs on it are held until it is back.`}</p></div>
     {rows.isLoading ? <LogoLoader label={t`Loading machines…`} size={48} className="min-h-16 py-3" /> : null}
-    {rows.isError ? <ErrorBlock error={rows.error} onRetry={() => { void rows.refetch(); }} /> : null}
+    {rows.isError ? <ErrorBlock error={rows.error} onRetry={isRetryable(rows.error) ? () => { void rows.refetch(); } : undefined} /> : null}
     {rows.isSuccess && !list.length ? <p className="text-sm text-muted">{t`Nothing here for you to switch. Machines in your coverage appear here.`}</p> : null}
     <div className="grid gap-2">{list.map(row => <div key={key(row)} className="grid gap-2">
       <ListRow title={row.name} meta={row.machine_type ?? undefined}

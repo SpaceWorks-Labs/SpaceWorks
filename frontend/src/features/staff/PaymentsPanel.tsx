@@ -32,6 +32,7 @@ import { AreaClaimsList } from "./areaPayments/AreaClaimsList";
 import {
   areaErrorText, areaKeys, areaLabel, areaPaymentsApi, ownedAreas, type AreaKey, type AreaQueueRow,
 } from "./areaPayments/areaPaymentsApi";
+import { isRetryable } from "../../lib/api/errors";
 
 type PaymentAction = "mark-offline" | "waive";
 
@@ -169,7 +170,7 @@ export function PaymentsPanel({ makerspaceId, makerspaceName, actorActions = [],
     callout={makerChecker ? { size: "inline", tone: "warn", lead: t`Two-person check is on.`,
       body: t`A payment you record waits until a second person who can record payments confirms it. You can't confirm your own. Online payment is paused for the member while it waits.` } : undefined}
     state={showClaims ? { status: "ready" } : payments.isLoading ? { status: "loading" } : payments.error && !payments.data
-      ? { status: "error", error: t`Couldn't load payments. Try again.`, onRetry: () => { void payments.refetch(); } } : { status: "ready" }}
+      ? { status: "error", error: t`Couldn't load payments. Try again.`, onRetry: isRetryable(payments.error) ? () => { void payments.refetch(); } : undefined } : { status: "ready" }}
     isEmpty={!showClaims && payments.data?.count === 0}
     empty={{ message: status === "pending" ? t`Nothing to collect. Every charge here is paid or waived.` : t`No payments yet. Charges appear here when someone books, registers or borrows.` }}
     filtered={Boolean(list.values.subject_type || dueState || list.values.area)} filteredEmpty={{ message: t`No matching payments. Try another filter.`, action: { label: t`Clear filters`, onClick: () => list.update({ subject_type: "", due_state: "", area: "" }) } }}

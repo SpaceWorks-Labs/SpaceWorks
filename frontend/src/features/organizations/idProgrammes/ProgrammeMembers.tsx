@@ -13,6 +13,7 @@ import { downloadProgrammeCard, programmeJobsPath, useAddProgrammeCard, useDecid
   type Programme, type ProgrammeCard, type ProgrammeCardStatus } from "./api";
 import { LogoLoader } from "../../../components/LogoLoader";
 import { SearchField } from "../../../components/ui/SearchField";
+import { isRetryable } from "../../../lib/api/errors";
 
 const STATUS: Record<ProgrammeCardStatus, { label: string; tone: "warn" | "success" | "danger" | "neutral" }> = {
   pending: { label: t`Waiting for approval`, tone: "warn" }, approved: { label: t`Approved`, tone: "success" },
@@ -74,7 +75,7 @@ export function ProgrammeMembers({ programme }: { programme: Programme }) {
       <button type="button" className="desk-button min-h-11" onClick={() => setPendingAction(null)}>{t`Cancel`}</button>
     </form> : null}
     {decide.error || startJob.error || remove.error ? <ErrorBlock error={decide.error ?? startJob.error ?? remove.error} /> : null}
-    {cards.isError ? <ErrorBlock error={cards.error} resource={t`programme cards`} onRetry={() => void cards.refetch()} /> : null}
+    {cards.isError ? <ErrorBlock error={cards.error} resource={t`programme cards`} onRetry={isRetryable(cards.error) ? () => void cards.refetch() : undefined} /> : null}
     <div className="overflow-x-auto rounded-card border border-line">
       <table className="w-full text-left text-sm">
         <thead className="bg-surface text-xs text-muted"><tr>

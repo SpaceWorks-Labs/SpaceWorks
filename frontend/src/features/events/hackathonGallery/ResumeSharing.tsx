@@ -5,6 +5,7 @@ import { useSharing, type MemberScope } from './api';
 import { PrivateProgrammeBoundary } from './PrivateProgrammeBoundary';
 import { isAccessLoss } from './accessLoss';
 import { LogoLoader } from '../../../components/LogoLoader';
+import { isRetryable } from "../../../lib/api/errors";
 
 function ResumeSharingForm({ scope, readyResumes }: { scope: MemberScope; readyResumes: { id: number; label: string }[] }) {
   const [page, setPage] = useState(1); const { consents, mutate } = useSharing(scope, true, page);
@@ -12,7 +13,7 @@ function ResumeSharingForm({ scope, readyResumes }: { scope: MemberScope; readyR
   const [consent, setConsent] = useState(false); const [message, setMessage] = useState('');
   const sponsor = consents.data?.sponsors.find(row => row.id === Number(sponsorId));
   if (isAccessLoss(mutate.error)) return <ErrorBlock error={mutate.error} />;
-  if (consents.isError) return <ErrorBlock error={consents.error} onRetry={() => void consents.refetch()} />;
+  if (consents.isError) return <ErrorBlock error={consents.error} onRetry={isRetryable(consents.error) ? () => void consents.refetch() : undefined} />;
   return <section className="grid gap-4" aria-label={t`Sponsor résumé sharing`}>
     <h2 className="title-section">{t`Choose who can read your résumé`}</h2>
     <p className="text-sm text-muted">{t`Sharing is optional and limited to recruiting by the sponsor you choose. Only that sponsor’s active track representatives can read it when your frozen project belongs to their track. A volunteer or mentor role alone does not qualify.`}</p>

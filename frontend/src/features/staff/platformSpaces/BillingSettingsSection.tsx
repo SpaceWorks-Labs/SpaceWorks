@@ -6,6 +6,7 @@ import { actionErrorText } from "./ActionDialog";
 import { useBillingSettings, useSaveBillingSettings, type BillingSettings } from "./plansApi";
 import { LogoLoader } from "../../../components/LogoLoader";
 import { BoxArt } from "../../../components/BoxSpinner";
+import { isRetryable } from "../../../lib/api/errors";
 
 const SECRETS = [
   ["stripe_secret_key", "Stripe secret key", "stripe"], ["stripe_webhook_secret", "Stripe webhook secret", "stripe"],
@@ -57,6 +58,6 @@ function BillingForm({ data }: { data: BillingSettings }) {
 export function BillingSettingsSection() {
   const settings = useBillingSettings();
   if (settings.isLoading) return <LogoLoader size={48} className="min-h-24 py-3" />;
-  if (settings.isError || !settings.data) return <ErrorText resource={t`billing settings`} onRetry={() => { void settings.refetch(); }} />;
+  if (settings.isError || !settings.data) return <ErrorText resource={t`billing settings`} onRetry={isRetryable(settings.error) ? () => { void settings.refetch(); } : undefined} />;
   return <BillingForm key={settings.data.updated_at} data={settings.data} />;
 }

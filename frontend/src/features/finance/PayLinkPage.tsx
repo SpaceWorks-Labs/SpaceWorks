@@ -8,6 +8,7 @@ import { formatMoney } from "../../lib/money";
 import { memberPaymentErrorText } from "../members/memberPaymentErrors";
 import { OfflinePayment, type OfflineCollection } from "../members/MemberPaymentOffline";
 import { payLinkRequest } from "./financeApi";
+import { isRetryable } from "../../lib/api/errors";
 
 type PayLink = OfflineCollection & {
   makerspace: string; label: string; amount: string; currency: string; status: string; expires_at: string;
@@ -50,7 +51,7 @@ export function PayLinkPage() {
   const settled = data?.status === "paid_online" || data?.status === "paid_offline";
   return <CenteredCardLayout eyebrow={data?.makerspace} title={data ? t`Pay ${formatMoney(data.amount, data.currency)}` : t`Payment`}
     state={link.isLoading ? { status: "loading" } : link.error ? { status: "error", error: t`Couldn't open this link.`,
-      onRetry: () => { void link.refetch(); } } : { status: "ready" }}
+      onRetry: isRetryable(link.error) ? () => { void link.refetch(); } : undefined } : { status: "ready" }}
     body={data ? <p>{settled ? t`This charge is already settled. Nothing more to pay.` : paid ? t`This charge no longer needs paying.` : t`For ${data.label}.`}</p> : null}
     content={data && !paid ? <OfflinePayment offline={data} onClaim={body => claim.mutate(body)} pending={claim.isPending}
       error={claim.error} /> : null}

@@ -9,6 +9,7 @@ import { staffRequest } from "../../../../lib/api";
 import { ChargeSettle } from "../../areaPayments/ChargeSettle";
 import { useStaffGet } from "../shared";
 import { HandoverCollectDialog } from "./HandoverCollectDialog";
+import { isRetryable } from "../../../../lib/api/errors";
 
 type Props = { makerspaceId: number; enabled: boolean };
 /** `job_policy.UNCOLLECTED_AFTER_DAYS`: from day 14 a finished job may be marked Not collected. */
@@ -40,7 +41,7 @@ export function HandoverConsole({ makerspaceId, enabled }: Props) {
   const now = Date.now();
   return <ListLayout standalone={false}
     header={{ title: t`Ready to collect`, subtitle: t`Finished jobs waiting for their owners.` }}
-    state={{ status: waiting.isLoading ? "loading" : waiting.isError ? "error" : "ready", error: t`Couldn't load finished jobs. Try again.`, onRetry: () => void waiting.refetch() }}
+    state={{ status: waiting.isLoading ? "loading" : waiting.isError ? "error" : "ready", error: t`Couldn't load finished jobs. Try again.`, onRetry: isRetryable(waiting.error) ? () => void waiting.refetch() : undefined }}
     stats={[{ label: t`Waiting`, value: rows.length }, { label: t`Unpaid`, value: rows.filter(row => paymentInfo(row.payment)?.paid === false).length }]}
     filters={{ search: { label: t`Search by requester`, value: search, onChange: setSearch } }}
     isEmpty={!shown.length} empty={{ message: t`Nothing waiting. Finished jobs show up here for handover.` }}

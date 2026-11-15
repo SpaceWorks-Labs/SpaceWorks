@@ -8,6 +8,7 @@ import { PeoplesChoiceBallots } from './PeoplesChoiceBallots';
 import { PeoplesChoicePayouts } from './PeoplesChoicePayouts';
 import { usePeoplesChoice, type PeoplesChoiceSettings } from './peoplesChoiceApi';
 import type { Scope } from './types';
+import { isRetryable } from "../../../lib/api/errors";
 
 const STATE_LABEL: Record<PeoplesChoiceSettings['state'], string> = {
   off: t`Off`, scheduled: t`Voting not open yet`, open: t`Voting open`, closed: t`Voting closed`, published: t`Published`,
@@ -25,7 +26,7 @@ export function PeoplesChoicePanel({ scope, payouts }: { scope: Scope; payouts: 
   const { settings, standings, save, publish } = usePeoplesChoice(scope);
   const row = settings.data;
   if (settings.isLoading) return <LogoLoader label={t`Loading People’s choice…`} />;
-  if (!row) return <ErrorBlock error={settings.error} onRetry={() => void settings.refetch()} />;
+  if (!row) return <ErrorBlock error={settings.error} onRetry={isRetryable(settings.error) ? () => void settings.refetch() : undefined} />;
   const final = row.state === 'published';
   return <section className="grid gap-4" aria-label={t`People's choice`}>
     <div className="flex items-start gap-3"><Heart className="mt-1 text-accent-ink" aria-hidden="true" /><div className="grid gap-1">

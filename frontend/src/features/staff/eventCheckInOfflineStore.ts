@@ -1,3 +1,4 @@
+import { i18n } from "../../lib/i18n";
 import type { BadgeReceipt } from "./eventBadges/deskBadgeApi";
 import type { OfflineRoster, QueuedCheckIn, SyncOutcome } from "./eventCheckInOfflineApi";
 import { openEncryptedDatabase, requestValue, transactionDone, keyFor, encryptBytes, decryptBytes, expired as isExpired, deleteScopes } from "../../lib/encryptedIndexedDb";
@@ -78,7 +79,7 @@ export async function loadOfflineState(scope: string): Promise<OfflineCheckInSta
 
 export async function queueOfflineCheckIn(scope: string, operation: QueuedCheckIn) {
   const state = await loadOfflineState(scope);
-  if (!state) throw new Error("The offline roster expired. Download it again.");
+  if (!state) throw new Error(i18n._({ id: "offline.dc24a771fe3d", message: "The offline roster expired. Download it again." }));
   state.operations.push(operation);
   await write(scope, state);
   return state;
@@ -86,7 +87,7 @@ export async function queueOfflineCheckIn(scope: string, operation: QueuedCheckI
 
 export async function queueBadgeReceipt(scope: string, receipt: BadgeReceipt) {
   const state = await loadOfflineState(scope);
-  if (!state) throw new Error("The offline roster expired. Download it again.");
+  if (!state) throw new Error(i18n._({ id: "offline.dc24a771fe3d", message: "The offline roster expired. Download it again." }));
   state.badgeReceipts = [...(state.badgeReceipts ?? []), receipt];
   await write(scope, state);
   return state;

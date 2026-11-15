@@ -5,6 +5,7 @@ import { ListLayout } from '../../../components/layouts'
 import { ActionControl, Card, StatusPill } from '../../../components/ui'
 import type { EventScope, HelpRequest } from './types'
 import { errorText, useProgrammeCommand, useProgrammeList, type Surface } from './api'
+import { isRetryable } from "../../../lib/api/errors";
 
 export function HelpQueue({ scope, surface = 'member', onOpen }: {
   scope: EventScope; surface?: Surface; onOpen: (request: HelpRequest) => void
@@ -14,7 +15,7 @@ export function HelpQueue({ scope, surface = 'member', onOpen }: {
   const command = useProgrammeCommand(scope, surface)
   return <ListLayout header={{ title: surface === 'member' ? t`Your team’s help` : t`Mentor Desk`,
     subtitle: surface === 'member' ? t`Track your requests, add a comment, or cancel when you have solved it.` : t`Pick up a request when you are ready. Release it if another mentor should take over.` }}
-    state={query.isPending ? { status: 'loading' } : query.isError ? { status: 'error', error: errorText(query.error), onRetry: () => { void query.refetch() } } : { status: 'ready' }}
+    state={query.isPending ? { status: 'loading' } : query.isError ? { status: 'error', error: errorText(query.error), onRetry: isRetryable(query.error) ? () => { void query.refetch() } : undefined } : { status: 'ready' }}
     isEmpty={!query.data?.results.length} empty={{ message: surface === 'member' ? t`No help requests yet.` : t`No requests need your attention right now.` }}
     pagination={{ page, pageSize: 24, count: query.data?.count ?? 0, onChange: setPage }}
     body={{ kind: 'rows', rows: <>

@@ -49,7 +49,8 @@ const space = { public_token: "room-a", name: "Room A", kind: "meeting", descrip
 function respond(events: unknown[] | Error = [], spaces: unknown[] = [space]) {
   tenantPublicRequest.mockImplementation((_slug: string, path: string) => {
     if (path.includes("/events/")) return events instanceof Error ? Promise.reject(events) : Promise.resolve(events);
-    if (path.includes("/spaces/")) return Promise.resolve(spaces);
+    // /spaces/ is a DRF page (collectPublicPages): the paged envelope, not a bare array.
+    if (path.includes("/spaces/")) return Promise.resolve({ count: spaces.length, next: null, previous: null, results: spaces });
     return Promise.reject(new Error(`unexpected ${path}`));
   });
 }
@@ -157,7 +158,7 @@ describe("makerspace page", () => {
     state.bootstrap = bootstrap(["public_inventory", "request_workflow", "events", "bookings"]);
     respond([], []);
     const { container } = show();
-    await waitFor(() => expect(tenantPublicRequest).toHaveBeenCalledWith("lab", expect.stringContaining("/spaces/")));
+    await waitFor(() => expect(tenantPublicRequest).toHaveBeenCalledWith("lab", expect.stringContaining("/spaces/"), { signal: expect.any(AbortSignal) }));
     await waitFor(() => expect(sections(container)).toEqual(["explore", "contact"]));
   });
 

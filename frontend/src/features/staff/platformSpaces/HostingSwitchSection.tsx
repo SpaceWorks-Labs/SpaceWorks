@@ -4,6 +4,7 @@ import { toast } from "../../../components/ui/toastStore";
 import { actionErrorText } from "./ActionDialog";
 import { useHostingSwitch, useSetHostingSwitch } from "./limitsApi";
 import { LogoLoader } from "../../../components/LogoLoader";
+import { isRetryable } from "../../../lib/api/errors";
 
 export const HOSTING_DOCS_URL = "https://github.com/SpaceWorks-Labs/SpaceWorks/blob/main/docs/self-hosting.md#plans-and-hosting-other-makerspaces-optional";
 
@@ -12,7 +13,7 @@ export function HostingSwitchSection() {
   const state = useHostingSwitch();
   const save = useSetHostingSwitch();
   if (state.isLoading) return <LogoLoader size={48} className="min-h-16 py-3" />;
-  if (state.isError || !state.data) return <ErrorText resource={t`the hosting switch`} onRetry={() => { void state.refetch(); }} />;
+  if (state.isError || !state.data) return <ErrorText resource={t`the hosting switch`} onRetry={isRetryable(state.error) ? () => { void state.refetch(); } : undefined} />;
   const { enabled, forced_by_environment: forced } = state.data;
   return <div className="grid gap-3">
     <label className="flex min-h-11 items-center gap-3 text-sm text-ink">

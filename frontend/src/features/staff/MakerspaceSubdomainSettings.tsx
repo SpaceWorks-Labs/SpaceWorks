@@ -10,6 +10,7 @@ import { staffRequest } from "../../lib/api";
 import { type Makerspace, useStaffGet } from "./StaffPanels";
 import { LogoLoader } from "../../components/LogoLoader";
 import { BoxArt } from "../../components/BoxSpinner";
+import { isRetryable } from "../../lib/api/errors";
 
 type Props = {
   makerspace: Makerspace;
@@ -109,7 +110,7 @@ export function MakerspaceSubdomainSettings({ makerspace, settings }: Props) {
         {submitRequest.error ? (
           <p className="text-sm text-danger">{submitRequest.error.message}</p>
         ) : null}
-        {requests.error ? <ErrorBlock error={new Error(t`Couldn't load subdomain. Try again.`)} onRetry={() => { void requests.refetch(); }} /> : null}
+        {requests.error ? <ErrorBlock error={new Error(t`Couldn't load subdomain. Try again.`)} onRetry={isRetryable(requests.error) ? () => { void requests.refetch(); } : undefined} /> : null}
 
         {requests.isLoading ? <LogoLoader label={t`Loading requests…`} size={48} className="min-h-16 py-3" /> : null}
         {history.length > 0 ? (

@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { ConfirmDialog, ErrorText, ListRow, StatusPill } from "../../components/ui";
 import { submitPublicRequest } from "../inventory/api";
+import { isRetryable } from "../../lib/api/errors";
 import { formatWhen, waitlistApi, waitlistKeys, type WaitlistEntry } from "../inventory/waitlistApi";
 import { BoxArt } from "../../components/BoxSpinner";
 
@@ -22,7 +23,9 @@ export function MemberWaitlist({ makerspaceId, makerspaceSlug }: { makerspaceId:
   if (query.isLoading || (!rows.length && !query.error)) return null;
   return <section aria-label={t`Waitlist`} className="grid gap-3">
     <h2 className="title-panel">{t`Waitlist`}</h2>
-    {query.error ? <ErrorText message={t`Couldn't load your waitlist places. Try again later.`} /> : rows.map(entry => <ListRow key={entry.id}
+    {/* Decision 588: a refusal (403, typed 404) would answer the same again, so only an outage offers Retry. */}
+    {query.error ? <ErrorText message={isRetryable(query.error) ? t`Couldn't load your waitlist places. Try again later.` : query.error.message}
+      onRetry={isRetryable(query.error) ? () => { void query.refetch(); } : undefined} /> : rows.map(entry => <ListRow key={entry.id}
       title={`${entry.product_name} ×${entry.quantity}`}
       identity={{ kind: "icon", icon: entry.status === "offered" ? "CheckCircle" : "Clock", tone: entry.status === "offered" ? "success" : "info" }}
       meta={entry.status === "offered" && entry.offer_expires_at ? t`Held for you until ${formatWhen(entry.offer_expires_at)}`

@@ -10,6 +10,7 @@ import { teamStateLabel } from './labels'
 import { commandErrorText } from '../programmeCommandErrors'
 import { useTeams } from './useTeams'
 import type { ProgrammeContext } from './types'
+import { isRetryable } from "../../../lib/api/errors";
 
 export function TeamPage({ context, accountId, inviteUrl }: { context: ProgrammeContext; accountId: number
   inviteUrl: (teamId: number, token: string, version: number) => string }) {
@@ -20,7 +21,7 @@ export function TeamPage({ context, accountId, inviteUrl }: { context: Programme
     suffix: '/teams/' + (team ? team.id + '/' : '') + suffix,
     body: { expected_version: team?.version ?? 0, ...body }, method }, { onSuccess: () => onDone?.() })
   return <DetailLayout title={team?.name ?? t`Your hackathon team`} state={teams.isLoading ? { status: 'loading' }
-    : teams.error ? { status: 'error', error: teams.error.message, onRetry: () => { void teams.refetch() } } : { status: 'ready' }}
+    : teams.error ? { status: 'error', error: teams.error.message, onRetry: isRetryable(teams.error) ? () => { void teams.refetch() } : undefined } : { status: 'ready' }}
     status={team ? <StatusBadge status={team.state} label={teamStateLabel(team.state)} /> : undefined}
     main={<div className="grid gap-5">
       {action.error ? <ErrorText message={commandErrorText(action.error)} /> : null}

@@ -9,7 +9,7 @@ import { e164, type JoinExtrasDraft } from "./joinFieldsModel";
  * here: the key travels with the join request, which the server checks and applies on activation.
  */
 export async function uploadJoinPhoto(makerspaceId: number, file: File, planId?: number | null) {
-  const presigned = await joinPhotoPresign(makerspaceId, file.type || "image/jpeg", planId);
+  const presigned = await joinPhotoPresign(makerspaceId, file.type || "image/jpeg", planId, file.size);
   const response = presigned.method === "PUT"
     ? await fetch(presigned.url, { method: "PUT", body: file, headers: presigned.headers })
     : await fetch(presigned.url, { method: "POST", body: (() => {

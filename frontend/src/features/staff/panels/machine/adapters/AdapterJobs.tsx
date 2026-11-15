@@ -9,6 +9,7 @@ import { useJobMutation } from "../integrations/printerApi";
 import { adapterErrorMessage } from "./adapterCopy";
 import { adapterKeys, adaptersApi, type Binding, type BindingJob } from "./adaptersApi";
 import { BoxArt } from "../../../../../components/BoxSpinner";
+import { isRetryable } from "../../../../../lib/api/errors";
 
 type State = BindingJob["state"];
 const STATE: Record<State, { label: string; tone: "neutral" | "accent" | "warn" | "success" | "danger" }> = {
@@ -45,7 +46,7 @@ export function AdapterJobs({ makerspaceId, binding, disabled }: { makerspaceId:
             <option value="">{t`All jobs`}</option>{(Object.keys(STATE) as State[]).map(key => <option key={key} value={key}>{STATE[key].label}</option>)}</select></label>
       </form>
       {send.isError ? <p role="alert" className="text-danger">{adapterErrorMessage(send.error)}</p> : null}
-      {jobs.error ? <ErrorBlock error={jobs.error} resource={t`jobs`} onRetry={() => void jobs.refetch()} /> : null}
+      {jobs.error ? <ErrorBlock error={jobs.error} resource={t`jobs`} onRetry={isRetryable(jobs.error) ? () => void jobs.refetch() : undefined} /> : null}
       {jobs.isSuccess && !rows.length ? <p className="text-muted">{t`No jobs match.`}</p> : null}
       <ul className="grid gap-2" aria-label={t`Adapter jobs`}>{rows.map(job => <li key={job.id} className="flex flex-wrap items-center gap-2 rounded-control border border-line p-3">
         <span className="min-w-0 flex-1"><strong className="block text-ink">{job.service_request_name}</strong>

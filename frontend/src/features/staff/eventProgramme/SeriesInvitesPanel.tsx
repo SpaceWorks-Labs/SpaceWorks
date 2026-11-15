@@ -7,6 +7,7 @@ import { formatDateTime } from "../../../lib/format";
 import type { Paginated } from "../eventsApiTypes";
 import { eventErrorText } from "../eventUi";
 import { BoxArt } from "../../../components/BoxSpinner";
+import { isRetryable } from "../../../lib/api/errors";
 
 type SeriesInvite = { id: number; expires_at: string | null; revoked_at: string | null; created_at: string };
 const MAX_BATCH = 200;
@@ -63,7 +64,7 @@ export function SeriesInvitesPanel({ seriesId, disabled = false }: { seriesId: n
       {result ? <p role="status" className="text-sm text-success-ink">{result}</p> : null}
       {add.error ? <p role="alert" className="text-sm text-danger">{eventErrorText(add.error)}</p> : null}
     </form></Card>
-    {rows.error ? <ErrorText message={eventErrorText(rows.error)} onRetry={() => { void rows.refetch(); }} /> : null}
+    {rows.error ? <ErrorText message={eventErrorText(rows.error)} onRetry={isRetryable(rows.error) ? () => { void rows.refetch(); } : undefined} /> : null}
     {rows.data && !rows.data.results.length ? <EmptyState message={t`Nobody is on the list yet.`} /> : null}
     {rows.data?.results.length ? <ul className="grid gap-2" aria-label={t`Allowlist entries`}>{rows.data.results.map(row => <li key={row.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-panel p-3">
       <div className="min-w-0 text-sm"><p className="font-semibold text-ink">{t`Entry ${row.id}`}</p>

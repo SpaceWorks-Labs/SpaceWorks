@@ -15,6 +15,7 @@ import { SpaceLimitsSection } from "./SpaceLimitsSection";
 import { getSpaceHealth, healthKey, listSpaceHealth, PAGE_SIZE, percentLevel, type HealthCard } from "./spacesApi";
 import { LogoLoader } from "../../../components/LogoLoader";
 import { SearchField } from "../../../components/ui/SearchField";
+import { isRetryable } from "../../../lib/api/errors";
 
 /** `/admin/platform-limits/<id>` is one space's limits page; the inbox notice's `/admin/platform/spaces/<id>/limits` lands there too. */
 export const spaceLimitsHref = (id: number) => consoleSessionHref(`/admin/platform-limits/${id}`, "platform");
@@ -59,7 +60,7 @@ function SpacesLimitsList() {
       onChange={event => { setSearch(event.target.value); setPage(1); }} /></Field>
     {rows.length ? <BulkLimitsApply spaces={rows} /> : null}
     {list.isLoading ? <LogoLoader size={48} className="min-h-40 py-3" />
-      : list.isError ? <ErrorText resource={t`spaces`} onRetry={() => { void list.refetch(); }} />
+      : list.isError ? <ErrorText resource={t`spaces`} onRetry={isRetryable(list.error) ? () => { void list.refetch(); } : undefined} />
       : !rows.length ? <EmptyState message={term ? t`No spaces match this search.` : t`No spaces yet.`} />
       : <ul className="grid" aria-label={t`Spaces and their limits`}>{rows.map(card => <SpaceLimitsRow key={card.id} card={card} />)}</ul>}
     <Pagination page={page} totalPages={Math.max(1, Math.ceil((list.data?.count ?? 0) / PAGE_SIZE))} onChange={setPage}

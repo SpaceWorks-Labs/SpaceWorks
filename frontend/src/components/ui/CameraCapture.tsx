@@ -218,7 +218,7 @@ function OpenCameraCapture({ onClose, onCapture, label }: Omit<CameraCaptureProp
     }
   };
 
-  const title = label ?? "Take photo";
+  const title = label ?? t`Take photo`;
   return createPortal(
     <div data-replay-block
       ref={layerRef}

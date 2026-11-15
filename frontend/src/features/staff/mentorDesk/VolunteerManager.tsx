@@ -7,6 +7,7 @@ import type { AdminSignup, EventScope, RoleApplication, Shift } from '../../even
 import { errorText, useProgrammeCommand, useProgrammeDetail, useProgrammeList } from '../../events/contributions/api'
 import { contributionRoleLabel, contributionStateLabel, shiftActionLabel, shiftAttendanceLabel } from '../../events/contributions/labels'
 import { LogoLoader } from '../../../components/LogoLoader'
+import { isRetryable } from "../../../lib/api/errors";
 
 interface AdminShift extends Shift { signups: AdminSignup[] }
 
@@ -44,7 +45,7 @@ export function VolunteerManager({ scope, setupTools, renderRoleTools }: {
   return <ListLayout header={{ title: t`Event contributors`, subtitle: t`Approve applications, manage shifts, and verify completed work.` }}
     tabs={[{ key: 'roles', label: t`Applications and roles` }, { key: 'shifts', label: t`Shifts and hours` }, ...(setupTools ? [{ key: 'setup', label: t`Setup` }] : [])]} activeTab={tab}
     onTabChange={key => { setTab(key); setPage(1); setSelectedShift(null) }}
-    state={tab === 'setup' ? { status: 'ready' } : query.isPending ? { status: 'loading' } : query.isError ? { status: 'error', error: errorText(query.error), onRetry: () => { void query.refetch() } } : { status: 'ready' }}
+    state={tab === 'setup' ? { status: 'ready' } : query.isPending ? { status: 'loading' } : query.isError ? { status: 'error', error: errorText(query.error), onRetry: isRetryable(query.error) ? () => { void query.refetch() } : undefined } : { status: 'ready' }}
     isEmpty={tab !== 'setup' && !query.data?.results.length} empty={{ message: t`No contributor records yet.` }}
     pagination={{ page, pageSize: 24, count: query.data?.count ?? 0, onChange: setPage }}
     body={{ kind: 'rows', rows: <>{command.error ? <p role="alert" className="text-danger">{errorText(command.error)}</p> : null}

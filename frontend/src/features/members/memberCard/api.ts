@@ -55,7 +55,7 @@ export async function uploadCardPhoto(makerspaceId: number, file: File) {
   if (file.size > MEMBER_PHOTO_MAX_BYTES) throw new Error(t`This photo is larger than 8 MB. Choose a smaller one or crop it first.`);
   const presigned = await memberRequest<PhotoPresign>(`${cardPath(makerspaceId)}/photo`, {
     method: "POST",
-    body: JSON.stringify({ content_type: file.type || "application/octet-stream" }),
+    body: JSON.stringify({ content_type: file.type || "application/octet-stream", size: file.size }),
   });
 
   if (presigned.method === "PUT") {

@@ -6,6 +6,7 @@ import type { MakerspaceForm } from "./types";
 import { spaceNoun } from "../../../../lib/spaceNoun";
 import { LogoLoader } from "../../../../components/LogoLoader";
 import { SearchField } from "../../../../components/ui/SearchField";
+import { isRetryable } from "../../../../lib/api/errors";
 
 export function organizationFieldErrors(error: unknown) {
   const body: Record<string, unknown> = error instanceof StructuredApiError ? error.body : {};
@@ -52,7 +53,7 @@ function OrganizationResults({ search, page, id, selected, errorId, onSelect }: 
   const [expanded, setExpanded] = useState(false);
   return <div className="grid gap-2">
     {organizations.isLoading ? <LogoLoader label={t`Loading organizations…`} size={48} className="min-h-16 py-3" /> : null}
-    {organizations.error ? <div role="alert" className="text-sm text-danger">{organizations.error.message} <button type="button" className="desk-button" onClick={() => organizations.refetch()}>{t`Retry`}</button></div> : null}
+    {organizations.error ? <div role="alert" className="text-sm text-danger">{organizations.error.message} {isRetryable(organizations.error) ? <button type="button" className="desk-button" onClick={() => organizations.refetch()}>{t`Retry`}</button> : null}</div> : null}
     {organizations.data?.results.length === 0 && page === 1 ? <p role="status" className="text-sm text-muted">{t`No active organizations found.`}</p> : null}
     {organizations.data?.results.map(organization => <label key={organization.id} htmlFor={`${id}-${organization.id}`} className="flex min-h-11 min-w-0 items-center gap-3 break-words text-sm text-ink">
       <input id={`${id}-${organization.id}`} className="h-5 w-5 shrink-0 accent-brand" type="radio" name={`${id}-organization`} checked={typeof selected === "object" && selected.id === organization.id} onChange={() => onSelect({ id: organization.id, name: organization.name })} aria-invalid={Boolean(errorId)} aria-describedby={errorId} />

@@ -10,6 +10,7 @@ import type { Page } from "./PersonalInbox";
 import { SuppressionAdmin } from "./SuppressionAdmin";
 import { LogoLoader } from "../../components/LogoLoader";
 import { BoxArt } from "../../components/BoxSpinner";
+import { isRetryable } from "../../lib/api/errors";
 
 type Delivery = {
   id: number; kind: "email" | "channel"; channel: string; feature: string; event: string;
@@ -79,7 +80,7 @@ function DeliveryLogContent({ makerspaceId, search, dialogs }: { makerspaceId: n
     <option value="">{t`Email to my account`}</option>{destinations.data?.filter(row => row.is_active).map(row => <option key={row.id} value={row.id}>{row.label} ({words(row.channel)})</option>)}
   </select></label>;
   const destinationState = <>{destinations.isLoading ? <LogoLoader size={48} className="min-h-11 py-3 max-w-48" /> : null}
-    {destinations.error ? <ErrorBlock error={new Error(t`Couldn't load delivery destinations. Try again.`)} onRetry={() => { void destinations.refetch(); }} /> : null}</>;
+    {destinations.error ? <ErrorBlock error={new Error(t`Couldn't load delivery destinations. Try again.`)} onRetry={isRetryable(destinations.error) ? () => { void destinations.refetch(); } : undefined} /> : null}</>;
   return <ListLayout header={{ title: t`Delivery log`, subtitle: t`Every email and alert this space sent, and whether it arrived.`,
       primary: suppressed ? { label: t`Suppress an address`, onClick: () => setSuppressOpen(true) } : {
         label: t`Send test`, pending: test.isPending, onClick: () => dialogs ? setTestOpen(true) : test.mutate() } }}
@@ -90,7 +91,7 @@ function DeliveryLogContent({ makerspaceId, search, dialogs }: { makerspaceId: n
       { key: "suppression", label: t`Suppressed addresses`, href: viewHref("suppression") }]}
     activeTab={suppressed ? "suppression" : "deliveries"}
     state={{ status: suppressed ? "ready" : logs.isLoading ? "loading" : logs.error ? "error" : "ready",
-      error: t`Couldn't load deliveries. Try again.`, onRetry: () => { void logs.refetch(); } }}
+      error: t`Couldn't load deliveries. Try again.`, onRetry: isRetryable(logs.error) ? () => { void logs.refetch(); } : undefined }}
     isEmpty={!suppressed && logs.data?.results.length === 0}
     empty={{ message: t`Nothing sent yet. Send a test to check your setup.` }}
     filtered={Object.values(filters).some(Boolean)} filteredEmpty={{ message: t`No deliveries match. Try another filter.`,

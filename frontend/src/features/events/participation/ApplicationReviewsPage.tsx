@@ -2,8 +2,11 @@ import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { memberRequest } from "../../../lib/api";
+import { isRetryable } from "../../../lib/api/errors";
+import { useParams } from "react-router-dom";
 import { Card, ErrorText, StatusBadge } from "../../../components/ui";
 import { PageHelp } from "../../help/PageHelp";
+import { LogoLoader } from "../../../components/LogoLoader";
 
 type Criterion = { key: string; label: string; guidance?: string };
 type ReviewStage = { id: number; event_id: number; event_title?: string; name: string; position: number; blind: boolean;
@@ -18,6 +21,7 @@ type Assignment = { id: number; state: string; application: { id: number; alias:
  * contract exists (#173).
  */
 export function ApplicationReviewsPage() {
+  const { slug } = useParams();
   const stages = useQuery({ queryKey: ["my-review-stages"], retry: false,
     queryFn: () => memberRequest<ReviewStage[]>("/admin/my-application-reviews/") });
   const [current, setCurrent] = useState<ReviewStage | null>(null);
@@ -26,7 +30,11 @@ export function ApplicationReviewsPage() {
       <h1 className="font-display text-2xl text-ink">{t`Application reviews`}</h1>
       <PageHelp article="member/event-participation" topic="reviewing applications" className="" />
     </div>
-    {stages.error ? <ErrorText message={stages.error.message} /> : null}
+    {stages.isLoading ? <LogoLoader label={t`Loading review stages…`} size={48} className="min-h-16 py-3" /> : null}
+    {/* Decision 588: Retry only for an outage; a refusal keeps its explanation and gets the way back instead. */}
+    {stages.error ? isRetryable(stages.error) ? <ErrorText message={stages.error.message} onRetry={() => { void stages.refetch(); }} />
+      : <div className="grid gap-3"><ErrorText message={stages.error.message} />
+        <a className="desk-button justify-self-start" href={slug ? `/m/${encodeURIComponent(slug)}/member` : "/member"}>{t`Back to your account`}</a></div> : null}
     {stages.data?.length === 0 ? <p className="text-muted">{t`You have no open review stages.`}</p> : null}
     {current ? <StageWorkspace stage={current} onBack={() => setCurrent(null)} /> : <ul className="grid gap-2">
       {stages.data?.map(stage => <li key={stage.id}><Card><div className="flex flex-wrap items-center justify-between gap-3">

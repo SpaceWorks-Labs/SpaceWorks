@@ -12,11 +12,12 @@ import { usePrivateRequest } from "./usePrivateRequest";
 import { collectedPayee, permits } from "./types";
 import type { CommandResult, PayeeContext, PayoutDetail } from "./types";
 import { BoxArt } from "../../../components/BoxSpinner";
+import { isRetryable } from "../../../lib/api/errors";
 
 export function PayeeCollection({ actorId, payout }: { actorId: number; payout: PayoutDetail }) {
   const query = usePayeeContext(actorId, payout.id);
   if (query.isPending) return <LogoLoader label={t`Loading enabled payment methods…`} />;
-  if (query.error) return <div role="alert">{t`Payment methods could not be loaded. `}<button className="desk-button min-h-11" onClick={() => { void query.refetch(); }}>{t`Retry payment methods`}</button></div>;
+  if (query.error) return <div role="alert">{t`Payment methods could not be loaded. `}{isRetryable(query.error) ? <button className="desk-button min-h-11" onClick={() => { void query.refetch(); }}>{t`Retry payment methods`}</button> : null}</div>;
   if (!query.data) return null;
   return <CollectionForm key={`${scopeIdentity(actorId)}:${payout.id}:${payout.version}:${JSON.stringify(query.data.templates)}:${query.data.allowed_actions?.join()}`}
     actorId={actorId} payout={payout} context={query.data} />;

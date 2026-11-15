@@ -7,6 +7,7 @@ import { PAGE_SIZE } from "./parityRequest";
 import { SelfhostMoveDialog } from "./SelfhostMoveDialog";
 import { moveStatusLabels, useMoveDownload, useSelfhostMoves, type MoveAction, type MoveStatus, type SelfhostMove } from "./selfhostMovesApi";
 import { LogoLoader } from "../../../components/LogoLoader";
+import { isRetryable } from "../../../lib/api/errors";
 
 const TONES: Record<MoveStatus, Tone> = {
   requested: "info", approved: "accent", exporting: "warn", exported: "success", rejected: "neutral", failed: "danger", cancelled: "neutral",
@@ -58,7 +59,7 @@ export function SelfhostMovesSection() {
       </select>
     </Field>
     {list.isLoading ? <LogoLoader size={48} className="min-h-24 py-3" />
-      : list.isError ? <ErrorText resource={t`move requests`} onRetry={() => { void list.refetch(); }} />
+      : list.isError ? <ErrorText resource={t`move requests`} onRetry={isRetryable(list.error) ? () => { void list.refetch(); } : undefined} />
       : !rows.length ? <EmptyState message={status ? t`No move requests with this status.` : t`No space has asked to move yet.`} />
       : <div className="grid gap-3">{rows.map(move => <ListRow key={move.id} title={move.makerspace_name} meta={<Meta move={move} />}
         right={<Buttons move={move} onAction={action => setActing({ move, action })} />} />)}</div>}

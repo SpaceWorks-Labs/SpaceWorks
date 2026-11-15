@@ -7,6 +7,7 @@ import { errorText, useProgrammeDetail, useProgrammeList } from '../../events/co
 import { PostingEditor, type PostingConfig, type RoleFormBuilder } from './PostingEditor'
 import { ShiftEditor, type ShiftConfig } from './ShiftEditor'
 import { LogoLoader } from '../../../components/LogoLoader'
+import { isRetryable } from "../../../lib/api/errors";
 
 export function ContributorSetupPanel({ scope, renderFormBuilder }: { scope: EventScope; renderFormBuilder: RoleFormBuilder }) {
   const [tab, setTab] = useState('postings')
@@ -21,7 +22,7 @@ export function ContributorSetupPanel({ scope, renderFormBuilder }: { scope: Eve
     primary: { label: tab === 'postings' ? t`New posting` : t`New shift`, onClick: () => setSelected('new') } }}
     tabs={[{ key: 'postings', label: t`Postings` }, { key: 'shifts', label: t`Shifts and office hours` }]} activeTab={tab}
     onTabChange={key => { setTab(key); setSelected(null); setPage(1) }}
-    state={query.isPending ? { status: 'loading' } : query.isError ? { status: 'error', error: errorText(query.error), onRetry: () => { void query.refetch() } } : { status: 'ready' }}
+    state={query.isPending ? { status: 'loading' } : query.isError ? { status: 'error', error: errorText(query.error), onRetry: isRetryable(query.error) ? () => { void query.refetch() } : undefined } : { status: 'ready' }}
     empty={{ message: t`Create a posting, then add its shifts.` }} isEmpty={selected === null && !query.data?.results.length}
     pagination={{ page, pageSize: 24, count: query.data?.count ?? 0, onChange: value => { setPage(value); setSelected(null) } }}
     body={{ kind: 'rows', rows: <>

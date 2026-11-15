@@ -10,6 +10,7 @@ import { NumberPatternFields } from "./NumberPatternFields";
 import { MEMBER_TOKENS, patternProblem } from "./numberPattern";
 import { LogoLoader } from "../LogoLoader";
 import { BoxArt } from "../BoxSpinner";
+import { isRetryable } from "../../lib/api/errors";
 
 type Scheme = { title_id: number | null; prefix: string; pattern: string; draft_prefix: string; draft_pattern: string;
   pending: boolean; published_at: string | null; preview: string[] };
@@ -31,7 +32,7 @@ export function NumberingPanel({ makerspaceId, titleId, canEdit }: { makerspaceI
     onSuccess: () => client.invalidateQueries({ queryKey: key(makerspaceId) }),
   });
   if (schemes.isLoading) return <LogoLoader size={48} className="min-h-32 py-3" />;
-  if (schemes.isError) return <ErrorBlock error={schemes.error} resource={t`card numbering`} onRetry={() => void schemes.refetch()} />;
+  if (schemes.isError) return <ErrorBlock error={schemes.error} resource={t`card numbering`} onRetry={isRetryable(schemes.error) ? () => void schemes.refetch() : undefined} />;
   const changed = draft.prefix !== (scheme?.draft_prefix ?? "") || draft.pattern !== (scheme?.draft_pattern ?? "");
   const invalid = Boolean(patternProblem(draft.prefix, draft.pattern, MEMBER_TOKENS));
 

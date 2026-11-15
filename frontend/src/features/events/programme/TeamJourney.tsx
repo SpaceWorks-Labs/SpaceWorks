@@ -19,6 +19,7 @@ import { EventResumePanel } from './EventResumePanel'
 import { makerFormats } from './makerFormats'
 
 import { uploadOrigins } from './uploadPolicy'
+import { isRetryable } from "../../../lib/api/errors";
 export function TeamJourney({ context, scope, section, base }: { context: ProgrammeContext; scope: EventScope; section: string; base: string }) {
   const { teams } = useTeams(context, scope.accountId)
   const team = teams.data?.results[0]
@@ -27,7 +28,7 @@ export function TeamJourney({ context, scope, section, base }: { context: Progra
   const categories = useQuery({ queryKey: ["member", scope.accountId, "help-topics", scope.makerspaceId, scope.eventId], gcTime: 0,
     queryFn: () => memberRequest<{ results: { key: string; label: string }[] }>(`/member/makerspaces/${scope.makerspaceId}/events/${scope.eventId}/help-topics/`),
     enabled: section === 'help' && context.programme.capabilities['events.mentoring'], retry: false })
-  if (teams.error) return <ErrorBlock error={teams.error} onRetry={() => void teams.refetch()} />
+  if (teams.error) return <ErrorBlock error={teams.error} onRetry={isRetryable(teams.error) ? () => void teams.refetch() : undefined} />
   if (teams.isPending) return <LogoLoader label={t`Loading your team…`} />
   if (!team) return <div className="grid gap-3"><p>{t`Your team must be ready before this step.`}</p><button className="desk-button" onClick={() => navigate(`${base}/team`)}>{t`Open your team`}</button></div>
   const submissionScope = { ...scope, teamId: team.id }
@@ -37,7 +38,7 @@ export function TeamJourney({ context, scope, section, base }: { context: Progra
   if (section === 'office-hours') return <OfficeHours scope={scope} teamId={team.id} />
   return helpId ? <HelpDetail scope={scope} helpId={helpId} onClose={() => setHelpId(null)} /> : <div className="grid gap-6">
     <HelpQueue scope={scope} surface="member" onOpen={row => setHelpId(row.id)} />
-    {categories.error ? <ErrorBlock error={categories.error} onRetry={() => void categories.refetch()} /> : categories.data?.results.length ? <HelpComposer scope={scope} surface="member" teams={[{ id: team.id, label: team.name }]} categories={categories.data.results} /> : <p className="text-sm text-muted">{t`No help topics are available for this event.`}</p>}
+    {categories.error ? <ErrorBlock error={categories.error} onRetry={isRetryable(categories.error) ? () => void categories.refetch() : undefined} /> : categories.data?.results.length ? <HelpComposer scope={scope} surface="member" teams={[{ id: team.id, label: team.name }]} categories={categories.data.results} /> : <p className="text-sm text-muted">{t`No help topics are available for this event.`}</p>}
   </div>
 }
 function TeamSharing({ scope, leader }: { scope: EventScope & { teamId: number }; leader: boolean }) {

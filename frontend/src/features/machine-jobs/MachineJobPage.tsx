@@ -20,6 +20,7 @@ import { JobTimeline } from "./JobTimeline";
 import { MemberJobsShell, type MemberJobsContext } from "./MemberJobsShell";
 import { failureText, jobLabel, jobRefetchInterval, type MemberJob } from "./types";
 import { ReportProblem } from "../repairs/ReportProblem";
+import { isRetryable } from "../../lib/api/errors";
 
 const day = (iso: string) => new Date(iso.length === 10 ? `${iso}T12:00:00` : iso).toLocaleDateString(formatLocale(), { weekday: "short", day: "numeric", month: "short" });
 
@@ -48,7 +49,7 @@ function JobDetail({ id, context }: { id: number; context: MemberJobsContext }) 
   return <DetailLayout back={{ label: t`My machine jobs`, href: context.path("member/machine-jobs") }}
     state={context.bootstrapError ? { status: "error", error: t`Couldn't load this makerspace. Try again.` }
       : !context.ready || query.isPending && id > 0 ? { status: "loading" } : query.isError && !missing
-      ? { status: "error", error: t`Couldn't load this job. Try again.`, onRetry: () => { void query.refetch(); } } : { status: "ready" }}
+      ? { status: "error", error: t`Couldn't load this job. Try again.`, onRetry: isRetryable(query.error) ? () => { void query.refetch(); } : undefined } : { status: "ready" }}
     isEmpty={missing || id <= 0} empty={{ message: t`We couldn't find that job in your account.`, action: { label: t`My machine jobs`, href: context.path("member/machine-jobs") } }}
     title={job?.title ?? t`Machine job`} identity={{ kind: "icon", icon: "Wrench", tone: "info" }}
     status={label ? <StatusPill label={label.text} tone={label.tone} /> : undefined}

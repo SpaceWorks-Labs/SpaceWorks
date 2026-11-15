@@ -18,6 +18,7 @@ import { BulkPlanAssign } from "./BulkPlanAssign";
 import { BulkLimitsApply } from "./BulkLimitsApply";
 import { LogoLoader } from "../../../components/LogoLoader";
 import { SearchField } from "../../../components/ui/SearchField";
+import { isRetryable } from "../../../lib/api/errors";
 
 function SpaceDialog({ card, kind, onClose }: { card: HealthCard; kind: DialogKind; onClose: () => void }) {
   if (kind === "transfer") return <TransferOwnershipDialog card={card} onClose={onClose} />;
@@ -59,7 +60,7 @@ export function HealthSection({ managedPlans }: { managedPlans: boolean }) {
       <BulkLimitsApply spaces={rows} />
     </div> : null}
     {list.isLoading ? <LogoLoader size={48} className="min-h-40 py-3" />
-      : list.isError ? <ErrorText resource={t`space health`} onRetry={() => { void list.refetch(); }} />
+      : list.isError ? <ErrorText resource={t`space health`} onRetry={isRetryable(list.error) ? () => { void list.refetch(); } : undefined} />
       : !rows.length ? <EmptyState message={term || state ? t`No spaces match these filters.` : t`No spaces yet.`} />
       : <div className="grid gap-4 xl:grid-cols-2">{rows.map(card => <HealthCardView key={card.id} card={card} managedPlans={managedPlans}
         onOpen={kind => setDialog({ card, kind })} onDetails={() => setDetails(card)} />)}</div>}

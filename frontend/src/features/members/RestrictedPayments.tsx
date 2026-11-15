@@ -7,6 +7,7 @@ import { LogoLoader } from "../../components/LogoLoader";
 import { logout, memberRequest, StructuredApiError } from "../../lib/api";
 import { MemberPaymentRows, type MemberPayment } from "./MemberPayments";
 import { memberPaymentErrorText } from "./memberPaymentErrors";
+import { isRetryable } from "../../lib/api/errors";
 
 export function isRestrictedAccount(error: unknown) {
   return error instanceof StructuredApiError && error.status === 401
@@ -42,7 +43,7 @@ export function RestrictedPayments({ makerspaceId, name }: { makerspaceId: numbe
       <button className="desk-button mt-3" onClick={() => window.location.reload()}>{t`Retry`}</button></div>
       : payments.isLoading ? <LogoLoader label={t`Loading payments...`} size={48} />
       : payments.error ? <div role="alert"><p>{memberPaymentErrorText(payments.error)}</p>
-        <button className="desk-button mt-3" onClick={() => void payments.refetch()}>{t`Retry`}</button></div>
+        {isRetryable(payments.error) ? <button className="desk-button mt-3" onClick={() => void payments.refetch()}>{t`Retry`}</button> : null}</div>
       : payments.data?.length ? <MemberPaymentRows makerspaceId={makerspaceId} payments={payments.data} refunds
         checkoutPaymentId={checkout.isPending ? checkout.variables : undefined} onCheckout={id => checkout.mutate(id)} />
       : <EmptyState message={t`Nothing to pay. You are all settled.`} />}

@@ -39,6 +39,7 @@ export function DotMeter({ value, noun = "available" }: { value: CountProjection
 export function EventTimeChip({ startsAt, endsAt, now }: { startsAt: string; endsAt: string; now: Date }) {
   const start = Date.parse(startsAt), end = Date.parse(endsAt), time = now.getTime();
   if (![start, end, time].every(Number.isFinite) || end < start) return null;
-  const label = time >= end ? "Ended" : time >= start ? "Happening now" : `Doors open in ${Math.ceil((start - time) / 3600000)} h`;
+  const hours = Math.ceil((start - time) / 3600000);
+  const label = time >= end ? t`Ended` : time >= start ? t`Happening now` : t`Doors open in ${hours} h`;
   return <span className="inline-flex rounded-full border border-line bg-panel px-3 py-1 text-sm text-ink">{label}</span>;
 }

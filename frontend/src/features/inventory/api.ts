@@ -1,4 +1,5 @@
 import { apiGet, tenantPublicRequest } from "../../lib/api";
+import { collectPublicPages } from "../../lib/collectPublicPages";
 import type { ContactHandover } from "./selfCheckoutApi";
 import type {
   Makerspace,
@@ -30,13 +31,17 @@ export const publicInventoryKey = (
   ] as const;
 
 export async function fetchPublicMakerspaces(): Promise<Makerspace[]> {
-  return apiGet<Makerspace[]>("/public/makerspaces/");
+  return collectPublicPages(page => apiGet<PaginatedResponse<Makerspace>>(
+    `/public/makerspaces/${page > 1 ? `?page=${page}` : ""}`,
+  ));
 }
 
 export async function fetchPublicCategories(
   slug: string,
 ): Promise<PublicCategory[]> {
-  return apiGet<PublicCategory[]>(`/public/${slug}/inventory/categories/`);
+  return collectPublicPages(page => apiGet<PaginatedResponse<PublicCategory>>(
+    `/public/${slug}/inventory/categories/${page > 1 ? `?page=${page}` : ""}`,
+  ));
 }
 
 export async function fetchPublicInventory(

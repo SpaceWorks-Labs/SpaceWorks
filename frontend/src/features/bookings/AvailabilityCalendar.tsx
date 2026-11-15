@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 
 import { usePublicAvailability } from "./publicBookingsApi";
 import { LogoLoader } from "../../components/LogoLoader";
+import { isRetryable } from "../../lib/api/errors";
 
 const WINDOW_DAYS = 14;
 
@@ -52,7 +53,7 @@ export function AvailabilityCalendar({ makerspaceSlug, publicToken }: {
       {availability.error ? (
         <div className="mt-3" role="alert">
           <p className="text-sm text-danger">{t`Availability could not be checked. This does not mean the space is free.`}</p>
-          <button className="desk-button-ghost mt-2" type="button" onClick={() => availability.refetch()}>{t`Retry`}</button>
+          {isRetryable(availability.error) ? <button className="desk-button-ghost mt-2" type="button" onClick={() => availability.refetch()}>{t`Retry`}</button> : null}
         </div>
       ) : null}
       {availability.data?.opening_intervals ? <div className="mt-3 text-sm text-muted">

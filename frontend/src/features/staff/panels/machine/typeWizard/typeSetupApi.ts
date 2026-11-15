@@ -39,7 +39,7 @@ export function useTypeDocuments(makerspaceId: number, typeId: number) {
 export async function uploadTypeDocument(makerspaceId: number, typeId: number, file: File, title: string, memberVisible: boolean) {
   const root = `${base(makerspaceId, typeId)}/documents`;
   const presigned = await staffRequest<{ object_key: string; upload: Upload }>(`${root}/presign`,
-    send("POST", { filename: file.name, content_type: file.type || "application/octet-stream" }));
+    send("POST", { filename: file.name, content_type: file.type || "application/octet-stream", size: file.size }));
   const { upload } = presigned;
   if (upload.method === "PUT") {
     const response = await fetch(upload.url, { method: "PUT", body: file, headers: upload.headers });

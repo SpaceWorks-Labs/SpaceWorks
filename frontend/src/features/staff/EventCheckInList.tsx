@@ -4,6 +4,7 @@ import { useState } from "react";
 import { EmptyState, ErrorBlock, ListRow, Pagination, RelativeTime } from "../../components/ui";
 import { useEventCheckIns, type EventCheckInRow } from "./eventPartnersApi";
 import { LogoLoader } from "../../components/LogoLoader";
+import { isRetryable } from "../../lib/api/errors";
 
 const sourceLabel = (): Record<EventCheckInRow["source"], string> => ({
   qr: t`QR scan`, manual: t`Manual`, offline: t`Offline sync`, station: t`Venue station`, legacy: t`Earlier record`,
@@ -18,7 +19,7 @@ export function EventCheckInList({ eventId, visible = true }: { eventId: number;
   return <section aria-labelledby="event-checked-in-title" className="grid min-w-0 content-start gap-3">
     <h4 id="event-checked-in-title" className="title-section mt-3">{t`Checked in${rows.data ? ` (${rows.data.count})` : ""}`}</h4>
     {rows.isLoading ? <LogoLoader size={48} className="min-h-20 py-3" /> : null}
-    {rows.error ? <ErrorBlock error={rows.error} resource={t`the check-in list`} onRetry={() => void rows.refetch()} /> : null}
+    {rows.error ? <ErrorBlock error={rows.error} resource={t`the check-in list`} onRetry={isRetryable(rows.error) ? () => void rows.refetch() : undefined} /> : null}
     {rows.data && !rows.data.count ? <EmptyState message={t`No one has checked in yet. Scanned attendees appear here.`} /> : null}
     {rows.data?.results.length ? <ul className="grid gap-2" aria-label={t`Checked-in attendees`}>
       {rows.data.results.map((row) => <li key={row.registration_id}>

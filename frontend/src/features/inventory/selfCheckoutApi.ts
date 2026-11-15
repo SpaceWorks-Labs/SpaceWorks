@@ -33,7 +33,7 @@ export function requestPublicEvidenceUpload(
   body: {
     evidence_type: "issue" | "return";
     content_type: string;
-    size_bytes?: number;
+    size?: number; size_bytes?: number;
     contact_email?: string;
   },
 ) {

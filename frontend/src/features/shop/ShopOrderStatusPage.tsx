@@ -4,10 +4,12 @@ import { useParams } from "react-router-dom";
 
 import { PublicLayout } from "../../components/layouts";
 import { PageMetadata } from "../../components/PageMetadata";
+import { isSurfaceOff } from "../../lib/api";
 import type { QueryState } from "../../components/ui";
 import { fetchOrderStatus, shopKeys } from "./shopApi";
 import { ShopBuyerOrderView } from "./ShopBuyerOrderView";
 import { useShopSpace } from "./useShopSpace";
+import { isRetryable } from "../../lib/api/errors";
 
 /** `/m/:slug/shop/order/:token`: a guest follows an order with the private link we emailed them. */
 export function ShopOrderStatusPage() {
@@ -15,8 +17,13 @@ export function ShopOrderStatusPage() {
   const space = useShopSpace();
   const query = useQuery({ queryKey: shopKeys.status(space.slug, token), queryFn: () => fetchOrderStatus(space.slug, token),
     enabled: Boolean(space.slug && token), retry: false, refetchInterval: 60_000 });
-  // A wrong token never says whether an order exists.
-  const state: QueryState = !space.slug || query.error ? { status: "error", error: t`This order link is not valid. Check the link in your email.` }
+  // A wrong token never says whether an order exists: every refusal (404, 403, ...) reads as the same generic
+  // link copy, never the server's sentence. Only a switched-off shop says so; only an outage offers Retry (588).
+  // `missing`: no space, or a link the server refuses (a not-found or other refusal) - one answer for both.
+  const missing = !space.slug || Boolean(query.error && !isRetryable(query.error) && !isSurfaceOff(query.error));
+  const state: QueryState = missing ? { status: "error", error: t`This order link is not valid. Check the link in your email.` }
+    : isSurfaceOff(query.error) ? { status: "error", error: t`This shop isn't open right now.` }
+    : query.error ? { status: "error", error: t`Couldn't load your order. Try again.`, onRetry: () => { void query.refetch(); } }
     : query.isPending ? { status: "loading" } : { status: "ready" };
   return <div style={space.brandStyle}>
     <PageMetadata title={t`Your order · ${space.name}`} description={t`Your shop order.`} path={space.path("shop")} noindex />

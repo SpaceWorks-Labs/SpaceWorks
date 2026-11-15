@@ -7,6 +7,7 @@ import { StructuredApiError } from "../../../lib/api";
 import { UnitPicker } from "./UnitPicker";
 import { unitErrorText, unitKeys, unitsApi } from "./unitsApi";
 import { BoxArt } from "../../../components/BoxSpinner";
+import { isRetryable } from "../../../lib/api/errors";
 
 /** Off switch, no `manage_member_units`, or a row outside the caller's reach: the server says 404/403. */
 const hidden = (error: unknown) => error instanceof StructuredApiError && [403, 404].includes(error.status);
@@ -34,7 +35,7 @@ export function StaffUnitScopeField({ makerspaceId, membershipId, name }: { make
       <h3 id={`unit-scope-${membershipId}`} className="title-section">{t`Unit limit`}</h3>
       <p className="text-sm text-muted">{t`Limit ${name} to one unit and everything beneath it. Their member lists, join requests, renewals and reports show only those members. Organization access is never limited.`}</p>
     </div>
-    {scope.isError ? <ErrorText message={unitErrorText(scope.error)} onRetry={() => void scope.refetch()} /> : <>
+    {scope.isError ? <ErrorText message={unitErrorText(scope.error)} onRetry={isRetryable(scope.error) ? () => void scope.refetch() : undefined} /> : <>
       <UnitPicker makerspaceId={makerspaceId} value={value} label={t`Limited to`} noneLabel={t`The whole space (no limit)`}
         disabled={save.isPending} onChange={next => { save.reset(); setChoice(next); }} />
       <div className="flex flex-wrap items-center gap-2">

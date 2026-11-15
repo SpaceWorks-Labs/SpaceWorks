@@ -3,6 +3,7 @@ import { SelectedReportPanel as Panel } from "./OperationsReportSelection";
 import { DataState, LineChart, PerMakerspaceTables, ReportTable, typedRows, type ReportRows } from "./OperationsReportsParts";
 import { reportGrain, type ReportCatalogItem } from "./operationsReportsConfig";
 import { useStaffGet } from "./shared";
+import { isRetryable } from "../../../lib/api/errors";
 
 const FINANCE_KEYS = new Set(["payments-ledger", "revenue-over-time", "cash-book", "accounting-journal"]);
 
@@ -25,7 +26,7 @@ function FinanceReport({ report, ...props }: Parameters<typeof OperationsReports
     `${props.analyticsBase}/${report.key}?${query}`, report.available !== false);
   const currencies = [...new Set(typedRows(result.data).map(row => String(row.currency)))];
   return <Panel title={report.title} reportKey={report.key}>
-    <DataState loading={result.isLoading} error={result.error} onRetry={() => void result.refetch()} empty={!typedRows(result.data).length}>
+    <DataState loading={result.isLoading} error={result.error} onRetry={isRetryable(result.error) ? () => void result.refetch() : undefined} empty={!typedRows(result.data).length}>
       {props.aggregate ? <PerMakerspaceTables data={result.data} nameOf={props.makerspaceName} /> : <>
         {report.key === "revenue-over-time" ? <>
           <p className="text-xs text-muted">{t`Collected and refunded use the money date. Owed is currently pending debt grouped by its creation date. All dates use the space's timezone.`}</p>

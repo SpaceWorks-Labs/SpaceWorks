@@ -6,6 +6,7 @@ import {
 } from "./OperationsReportsParts";
 import { reportGrain, type ReportCatalogItem } from "./operationsReportsConfig";
 import { useStaffGet } from "./shared";
+import { isRetryable } from "../../../lib/api/errors";
 
 const COVERAGE_KEYS = new Set([
   "loan-throughput", "inventory-control", "evidence-compliance", "import-quality",
@@ -55,7 +56,7 @@ function CoverageReport({ report, analyticsBase, scopeKey, startDate, endDate, g
   return (
     <Panel title={report.title} reportKey={report.key}>
       {!enabled ? <p className="text-sm text-muted">{report.unavailable_reason ?? t`Module disabled`}</p> : (
-        <DataState loading={result.isLoading} error={result.error} onRetry={() => void result.refetch()} empty={!reportRows(result.data).length}>
+        <DataState loading={result.isLoading} error={result.error} onRetry={isRetryable(result.error) ? () => void result.refetch() : undefined} empty={!reportRows(result.data).length}>
           {aggregate ? <PerMakerspaceTables data={result.data} nameOf={makerspaceName} /> : <>{stacked ? <StackedBarChart rows={stackedChartRows(result.data, ...stacked.slice(0, 3) as [string, string, string])} valueLabel={stacked[3]} /> : <Chart rows={chartRows(result.data, labelKey, valueKey)} valueLabel={valueLabel} />}<ReportTable data={result.data} /></>}
           {result.data?.meta ? <p className="mt-2 text-xs text-muted">{t`Source: ${result.data.meta.source ?? "live"} / ${result.data.meta.grain ?? effectiveGrain}`}</p> : null}
         </DataState>

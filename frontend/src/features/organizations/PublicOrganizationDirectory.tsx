@@ -10,6 +10,7 @@ import { SpaceCardSkeletons } from "../discover/spaces/SpaceCard";
 import { NotFoundPage } from "../NotFoundPage";
 import { DirectoryError, DirectoryState, OrganizationCard } from "./OrganizationDirectoryParts";
 import { isDirectoryOff, usePublicOrganizationDirectory } from "./publicDirectoryApi";
+import { isRetryable } from "../../lib/api/errors";
 
 /**
  * `/organizations` (PP1): the opt-in public directory. An organization is listed only when the
@@ -28,7 +29,7 @@ export function PublicOrganizationDirectory() {
   const turnPage = (next: number) => { setPage(next); top.current?.scrollIntoView?.({ block: "start" }); };
 
   let body;
-  if (list.isError && !list.data) body = <DirectoryError onRetry={() => { void list.refetch(); }} retrying={list.isFetching} />;
+  if (list.isError && !list.data) body = <DirectoryError onRetry={isRetryable(list.error) ? () => { void list.refetch(); } : undefined} retrying={list.isFetching} />;
   else if (list.isLoading) body = <SpaceCardSkeletons label={t`Loading organizations`} />;
   else if (!rows.length && search) body = <DirectoryState art="moods/empty" live="status" title={t`No organizations match “${search}”`}
     actions={<button type="button" className="desk-button" onClick={() => { setQuery(""); setPage(1); }}>{t`Clear search`}</button>}>

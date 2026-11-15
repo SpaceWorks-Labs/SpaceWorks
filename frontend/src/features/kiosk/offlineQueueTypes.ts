@@ -1,3 +1,4 @@
+import { i18n } from "../../lib/i18n";
 import type { KioskBootstrap, KioskLease, KioskWorkPackage } from "./kioskApi";
 import type { ReplayEnvelope, ReplayResult } from "./kioskReplayApi";
 
@@ -30,7 +31,7 @@ export type OfflineQueue = {
 };
 
 export function kioskScope(session: KioskBootstrap, lease: KioskLease) {
-  if (!lease.session_id || !lease.actor_id) throw new Error("Reconnect to obtain an offline-capable operator lease.");
+  if (!lease.session_id || !lease.actor_id) throw new Error(i18n._({ id: "offline.edd46381338f", message: "Reconnect to obtain an offline-capable operator lease." }));
   return `${session.makerspace.id}/${session.station.id}/${lease.session_id}/${lease.lease_id}/${lease.actor_id}`;
 }
 

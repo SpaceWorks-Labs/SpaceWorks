@@ -21,6 +21,7 @@ import { MemberLifecycleDetails } from "./membershipLifecycle/MemberLifecycleDet
 import { StaffIncludedHours } from "./memberActivity/StaffIncludedHours";
 import { LogoLoader } from "../../components/LogoLoader";
 import { BoxArt } from "../../components/BoxSpinner";
+import { isRetryable } from "../../lib/api/errors";
 
 /** Mount with `key={membershipId}`; the plan choice is per dialog, not per panel. */
 export function MemberTermsDialog({
@@ -66,7 +67,7 @@ export function MemberTermsDialog({
       open
       onClose={onClose}
       title={t`Membership terms for ${memberName}`}
-      state={{ status: terms.isLoading ? "loading" : terms.isError ? "error" : "ready", error: t`Couldn't load terms. Try again.`, onRetry: () => { void terms.refetch(); } }}
+      state={{ status: terms.isLoading ? "loading" : terms.isError ? "error" : "ready", error: t`Couldn't load terms. Try again.`, onRetry: isRetryable(terms.error) ? () => { void terms.refetch(); } : undefined }}
       footer={{ secondary: [{ label: t`Close`, onClick: onClose }] }} main={<>
       <form
         className="flex flex-wrap items-end gap-2"

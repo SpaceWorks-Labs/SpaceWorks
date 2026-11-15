@@ -20,6 +20,7 @@ import { WaitingOnMe } from "./dashboardAreas/WaitingOnMe";
 import { AreaSections } from "./dashboardAreas/AreaSections";
 import type { Attention } from "./dashboardAreas/attention";
 import { DashboardFailedAreas } from "./DashboardFailedAreas";
+import { isRetryable } from "../../../lib/api/errors";
 
 const NEW_242_TILES = new Set<string>(["due_today_loans", "due_soon_loans", "true_low_stock", "in_repair", "payments_to_record",
   "today_events", "today_check_ins", "today_bookings", "room_outages_week"]);
@@ -92,8 +93,8 @@ export function DashboardPanel({ makerspace, canManageMakerspace, allowedTabs, a
         header={{ title: t`Dashboard`, eyebrow: new Date().toLocaleDateString(formatLocale(), { weekday: "long", day: "numeric", month: "long" }),
           subtitle: t`What's happening at ${makerspace.name}.`, primary }}
         state={{ status: dashboard.isLoading ? "loading" : dashboard.error ? "error" : "ready",
-          error: t`Couldn't load dashboard. Try again.`, onRetry: () => { void dashboard.refetch(); } }}
-        progress={<><DashboardFailedAreas areas={dashboard.data?.failed_areas} onRetry={() => { void dashboard.refetch(); }} />{attention ? <WaitingOnMe attention={attention} routing={attentionRouting} onRetry={() => { void dashboard.refetch(); }} /> : null}
+          error: t`Couldn't load dashboard. Try again.`, onRetry: isRetryable(dashboard.error) ? () => { void dashboard.refetch(); } : undefined }}
+        progress={<><DashboardFailedAreas areas={dashboard.data?.failed_areas} onRetry={isRetryable(dashboard.error) ? () => { void dashboard.refetch(); } : undefined} />{attention ? <WaitingOnMe attention={attention} routing={attentionRouting} onRetry={isRetryable(dashboard.error) ? () => { void dashboard.refetch(); } : undefined} /> : null}
           <LateShiftLine />{progress}{dashboard.data?.next_up_events ? <NextUpEvents events={dashboard.data.next_up_events} /> : null}
           {attention ? <AreaSections attention={attention} routing={attentionRouting} /> : null}</>}
         stats={attention ? [] : ranked.map(stat)}

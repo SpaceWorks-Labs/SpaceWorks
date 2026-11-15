@@ -10,6 +10,7 @@ import { useSaveSpaceLimits, useSpaceLimits, type SpaceLimits } from "./limitsAp
 import { LogoLoader } from "../../../components/LogoLoader";
 import { BoxArt } from "../../../components/BoxSpinner";
 import { SearchField } from "../../../components/ui/SearchField";
+import { isRetryable } from "../../../lib/api/errors";
 
 /** Case-insensitive match on the limit's plain-language name or its key (the search box of both limit screens). */
 export const matchesSearch = (row: Pick<UnifiedLimit, "key" | "label">, search: string) => {
@@ -69,7 +70,7 @@ export function SpaceLimitsSection({ makerspaceId, headingLevel = 3 }: { makersp
   const limits = useSpaceLimits(makerspaceId);
   if (limits.isLoading) return <LogoLoader size={48} className="min-h-24 py-3" />;
   if (limits.isError || !limits.data || !Array.isArray(limits.data.rows)) {
-    return <ErrorText resource={t`limits`} onRetry={() => { void limits.refetch(); }} />;
+    return <ErrorText resource={t`limits`} onRetry={isRetryable(limits.error) ? () => { void limits.refetch(); } : undefined} />;
   }
   const data = limits.data;
   const Heading = headingLevel === 2 ? "h2" : "h3";

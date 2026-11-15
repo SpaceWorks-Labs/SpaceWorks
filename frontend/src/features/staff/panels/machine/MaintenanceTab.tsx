@@ -17,6 +17,7 @@ import {
 import { costBody, EMPTY_COST, MaintenanceCostInput, type CostValue } from "./MaintenanceCostInput";
 import { LogoLoader } from "../../../../components/LogoLoader";
 import { BoxArt } from "../../../../components/BoxSpinner";
+import { isRetryable } from "../../../../lib/api/errors";
 
 type MaintenanceTabProps = {
   metersEnabled?: boolean;
@@ -44,7 +45,7 @@ export function MaintenanceTab({
 
   const queryError = schedules.error ?? logs.error;
   if (queryError instanceof Error) {
-    return <ErrorBlock error={queryError} resource={t`maintenance`} onRetry={() => { void schedules.refetch(); void logs.refetch(); }} />;
+    return <ErrorBlock error={queryError} resource={t`maintenance`} onRetry={[schedules.error, logs.error].filter(Boolean).some(isRetryable) ? () => { void schedules.refetch(); void logs.refetch(); } : undefined} />;
   }
 
   const scheduleRows = schedules.data?.results ?? [];

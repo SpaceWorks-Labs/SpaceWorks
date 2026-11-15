@@ -4,6 +4,7 @@ import { EmptyState, ErrorText } from "../../../components/ui";
 import { staffRequest } from "../../../lib/api";
 import { formatDate, formatLocale } from "../../../lib/format";
 import { LogoLoader } from "../../../components/LogoLoader";
+import { isRetryable } from "../../../lib/api/errors";
 
 export type EventInsights = {
   window_days: number; k: number;
@@ -22,7 +23,7 @@ export const organizationInsightsPath = (organizationId: number) => `/admin/orga
 export function EventInsightsCard({ path, onOpenEvent }: { path: string; onOpenEvent?: (eventId: number) => void }) {
   const query = useQuery({ queryKey: ["event-insights", path], retry: false, queryFn: () => staffRequest<EventInsights>(path) });
   if (query.isLoading) return <LogoLoader size={48} className="min-h-40 py-3" />;
-  if (query.error || !query.data) return <ErrorText resource={t`event insights`} onRetry={() => { void query.refetch(); }} />;
+  if (query.error || !query.data) return <ErrorText resource={t`event insights`} onRetry={isRetryable(query.error) ? () => { void query.refetch(); } : undefined} />;
   const { top_events: top, returning, window_days: days, k } = query.data;
   const most = Math.max(1, ...top.map(row => row.attended));
   return <section className="grid gap-5" aria-label={t`Event insights`}>

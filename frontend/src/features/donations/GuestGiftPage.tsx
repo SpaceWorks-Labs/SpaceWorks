@@ -8,6 +8,7 @@ import { DonationShell } from "./DonationShell";
 import { donationKeys, donationsApi, giveError } from "./donationsApi";
 import { GiftStatusView } from "./GiftStatusView";
 import { GuestPaidClaim } from "./GuestPaidClaim";
+import { isRetryable } from "../../lib/api/errors";
 
 /** A guest's own gift, reached only by the signed link they were given (or emailed with the receipt). */
 export function GuestGiftPage() {
@@ -28,7 +29,7 @@ export function GuestGiftPage() {
     </DonationShell>;
   }
   const state = gift.isLoading ? { status: "loading" as const } : gift.error ? { status: "error" as const,
-    error: t`Couldn't load your gift.`, onRetry: () => { void gift.refetch(); } } : { status: "ready" as const };
+    error: t`Couldn't load your gift.`, onRetry: isRetryable(gift.error) ? () => { void gift.refetch(); } : undefined } : { status: "ready" as const };
   return <DonationShell title={t`Your gift`} state={state}>
     {gift.data ? <div className="grid gap-3">
       <GiftStatusView gift={gift.data} taxReceiptHref={donationsApi.taxReceiptUrl(token)} onPayOnline={() => pay.mutate()}

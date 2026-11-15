@@ -11,6 +11,7 @@ import { fetchProduct, fetchShop, priceRange, shopErrorMessage, shopKeys, shopMo
 import { ShopVariantPicker } from "./ShopVariantPicker";
 import { useShopCart } from "./useShopCart";
 import { useShopSpace } from "./useShopSpace";
+import { isRetryable } from "../../lib/api/errors";
 
 /** `/m/:slug/shop/:productSlug`: one product, its options and stock, and "Add to basket". */
 export function PublicShopProductPage() {
@@ -32,7 +33,7 @@ export function PublicShopProductPage() {
   const price = variant?.price;
   const error = !space.slug ? new Error(t`This shop is not available.`) : shop.error ?? query.error;
   const state: QueryState = error ? { status: "error", error: shopErrorMessage(error) || t`This item is not available.`,
-    onRetry: () => { void shop.refetch(); void query.refetch(); } }
+    onRetry: [shop.error, query.error].filter(Boolean).some(isRetryable) ? () => { void shop.refetch(); void query.refetch(); } : undefined }
     : shop.isLoading || query.isLoading ? { status: "loading" } : { status: "ready" };
   const stock = variant ? stockLabel(variant) : product?.sold_out ? { label: t`Sold out`, tone: "danger" as const } : null;
   const chips: StatusPillProps[] = [...(stock ? [stock] : []), ...(product?.members_only ? [{ label: t`Members only`, tone: "info" as const }] : [])];

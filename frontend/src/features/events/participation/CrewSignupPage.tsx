@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { memberRequest } from "../../../lib/api";
+import { isRetryable } from "../../../lib/api/errors";
 import { Card, ErrorText, StatusBadge } from "../../../components/ui";
 import { ownSavedDetails } from "../../accountSavedDetails/api";
 
@@ -16,8 +17,8 @@ const LABELS: Record<string, string> = { applied: t`Waiting for review`, approve
 
 /** The crew sign-up link (#128 C-36). A crew place is free; dietary needs stay private (#28). */
 export function CrewSignupPage() {
-  const { eventId } = useParams();
-  const url = `/events/${Number(eventId)}/crew-signup/`;
+  const { eventId, slug } = useParams();
+  const url = `/member/events/${Number(eventId)}/crew-signup/`;
   const client = useQueryClient();
   const state = useQuery({ queryKey: ["member-crew", eventId], retry: false, queryFn: () => memberRequest<State>(url) });
   const [role, setRole] = useState(""), [dietary, setDietary] = useState(""), [notes, setNotes] = useState("");
@@ -33,7 +34,11 @@ export function CrewSignupPage() {
   const signup = useMutation({ mutationFn: () => memberRequest<State>(url, { method: "POST",
     body: JSON.stringify({ crew_role: role, dietary, notes, show_publicly: shown }) }), onSuccess: save });
   const withdraw = useMutation({ mutationFn: () => memberRequest<State>(url + "withdraw/", { method: "POST", body: "{}" }), onSuccess: save });
-  if (state.error) return <div className="mx-auto max-w-xl p-4"><ErrorText message={t`This crew sign-up is not open.`} /></div>;
+  // Decision 588: only an outage is retried; a closed or refused sign-up gets the way out.
+  if (state.error) return <div className="mx-auto grid max-w-xl gap-3 p-4">{isRetryable(state.error)
+    ? <ErrorText message={t`Couldn't load this page. Try again.`} onRetry={() => { void state.refetch(); }} />
+    : <><ErrorText message={t`This crew sign-up is not open.`} />
+      <a className="desk-button justify-self-start" href={slug ? `/m/${encodeURIComponent(slug)}/member` : "/member"}>{t`Back to your account`}</a></>}</div>;
   if (!state.data) return <LogoLoader label={t`Loading…`} />;
   const data = state.data, live = data.crew && ["applied", "approved"].includes(data.crew.state);
   return <div className="mx-auto grid max-w-xl gap-4 p-4">

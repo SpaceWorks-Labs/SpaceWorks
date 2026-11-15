@@ -5,6 +5,7 @@ import { DetailLayout } from '../../../components/layouts'
 import { Card, ErrorText, StatusBadge } from '../../../components/ui'
 import { CommandSession, readStaff } from '../../events/hackathonAdmission/transport'
 import type { ReviewAssignment } from './types'
+import { isRetryable } from "../../../lib/api/errors";
 
 export function ReviewWorkbench({ eventId, reviewId }: { eventId: number; reviewId: number }) {
   const base = '/api/v1/admin/events/' + eventId + '/application-reviews/' + reviewId + '/'
@@ -22,7 +23,7 @@ export function ReviewWorkbench({ eventId, reviewId }: { eventId: number; review
     } })
   const current = review.data, editable = current?.allowed_actions.includes('submit')
   return <DetailLayout title={t`Review an application`} state={review.isLoading ? { status: 'loading' } : review.error
-    ? { status: 'error', error: review.error.message, onRetry: () => { void review.refetch() } } : { status: 'ready' }}
+    ? { status: 'error', error: review.error.message, onRetry: isRetryable(review.error) ? () => { void review.refetch() } : undefined } : { status: 'ready' }}
     status={current ? <StatusBadge status={current.state} label={current.state} /> : undefined}
     main={<div className="grid gap-5">
       {current?.state === 'recused' ? <p role="status" className="text-sm text-ink">{t`Your recusal is recorded. This application has been removed from your review.`}</p> : null}

@@ -72,5 +72,5 @@ export const vouchForAdmission = (id: number, requestId: number) => memberReques
 export const resubmitAdmission = (requestId: number, input: { application_answers?: CustomAnswers; join_fields?: JoinFieldsInput }) =>
   memberRequest<AdmissionRequest>(`/memberships/requests/${requestId}`, { method: "PATCH", body: JSON.stringify(input) });
 /** Parity O-B2: a staging-only upload URL for the join-form photo. */
-export const joinPhotoPresign = (id: number, contentType: string, planId?: number | null) =>
-  memberRequest<PhotoPresign>(`/member/makerspaces/${id}/admission/photo`, { method: "POST", body: JSON.stringify({ content_type: contentType, ...(planId ? { plan_id: planId } : {}) }) });
+export const joinPhotoPresign = (id: number, contentType: string, planId?: number | null, size?: number) =>
+  memberRequest<PhotoPresign>(`/member/makerspaces/${id}/admission/photo`, { method: "POST", body: JSON.stringify({ content_type: contentType, size, ...(planId ? { plan_id: planId } : {}) }) });

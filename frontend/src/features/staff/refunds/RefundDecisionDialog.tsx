@@ -61,8 +61,9 @@ export function RefundDecisionDialog({ makerspaceId, refundCase, onClose, cancel
     setProblem(found);
     if (!found) mutation.mutate();
   };
-  const label = mode === "decline" ? "Decline refund"
-    : offline ? `Record ${money(amount || "0")} returned` : `Refund ${money(amount || "0")}`;
+  const total = money(amount || "0");
+  const label = mode === "decline" ? t`Decline refund`
+    : offline ? t`Record ${total} returned` : t`Refund ${total}`;
   const error = problem ?? (mutation.error ? caseErrorMessage(mutation.error) : null);
 
   return <FlowLayout presentation="dialog" open onCancel={() => { if (!mutation.isPending) onClose(); }}

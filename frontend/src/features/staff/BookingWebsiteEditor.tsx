@@ -7,13 +7,14 @@ import { useBookingWebsite, useBookingWebsiteMutation } from "../bookings/bookin
 import { BookingWebsiteSectionCard } from "./BookingWebsiteSectionCard";
 import type { BookableSpace } from "./bookingsApi";
 import { LogoLoader } from "../../components/LogoLoader";
+import { isRetryable } from "../../lib/api/errors";
 
 export function BookingWebsiteEditor({ space }: { space: BookableSpace }) {
   const query = useBookingWebsite(space.makerspace_id, space.id);
   if (query.isLoading) return <LogoLoader label={t`Loading website…`} size={48} className="min-h-24 py-3" />;
   return <>
     {query.error ? <div role="alert" className="flex flex-wrap items-center gap-3 rounded-control border border-danger-line bg-panel px-3 py-2 text-sm text-danger">
-      <p>{query.error.message}</p><button className="desk-button ml-auto" type="button" onClick={() => query.refetch()}>{t`Retry website`}</button></div> : null}
+      <p>{query.error.message}</p>{isRetryable(query.error) ? <button className="desk-button ml-auto" type="button" onClick={() => query.refetch()}>{t`Retry website`}</button> : null}</div> : null}
     {query.data ? <WebsiteForm key={`${space.makerspace_id}:${space.id}`} space={space} saved={query.data} onReload={async () => {
       const result = await query.refetch();
       return result.isSuccess ? result.data : undefined;

@@ -8,6 +8,7 @@ import { tenantPath, useOptionalTenant } from "../../lib/tenant";
 import { membershipStatusLabel } from "./membershipLabels";
 import { LogoLoader } from "../../components/LogoLoader";
 import { SearchField } from "../../components/ui/SearchField";
+import { isRetryable } from "../../lib/api/errors";
 
 type SpaceRef = { makerspace: { slug: string } };
 
@@ -40,7 +41,7 @@ export function MakerspaceDiscovery({ currentSlug, memberships = [], requests = 
         <SearchField className="desk-input w-full" placeholder={t`Search by name or place`} value={query} onChange={event => setQuery(event.target.value)} /></label> : null}
     </div>
     {spaces.isLoading ? <LogoLoader label={t`Loading makerspaces…`} size={48} className="min-h-16 py-3" />
-      : spaces.isError ? <p role="alert" className="text-sm text-danger">{t`We couldn't load the makerspace list. `}<button type="button" className="inline-flex min-h-11 items-center underline" onClick={() => void spaces.refetch()}>{t`Try again`}</button></p>
+      : spaces.isError ? <p role="alert" className="text-sm text-danger">{t`We couldn't load the makerspace list. `}{isRetryable(spaces.error) ? <button type="button" className="inline-flex min-h-11 items-center underline" onClick={() => void spaces.refetch()}>{t`Try again`}</button> : null}</p>
       : !shown.length ? <EmptyState message={needle ? t`No makerspaces match that search.` : t`No other makerspaces are listed yet.`} />
       : <ul className="grid gap-3">{shown.map(space => {
         const badge = status(space.slug);

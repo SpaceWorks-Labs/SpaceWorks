@@ -7,6 +7,7 @@ import { publicV1Request, StructuredApiError } from "../../lib/api";
 import { NotFoundPage } from "../NotFoundPage";
 import { PublicEventDetailPage } from "../inventory/PublicEventDetailPage";
 import { hostScope, pageApiPath, publicOrMissing, publicPagePolicy } from "../publicPages/pageApi";
+import { isRetryable } from "../../lib/api/errors";
 
 
 export type PublicEventCode = import("../../generated/api").PublicEventCode;
@@ -29,7 +30,7 @@ export function PublicEventCodePage() {
     },
   });
   if (!(isUuid || isShort) || query.isSuccess && !query.data || query.error instanceof StructuredApiError && query.error.status === 404) return <NotFoundPage />;
-  if (query.error) return <CenteredCardLayout state={{ status: "error", error: t`Couldn't load this event.`, onRetry: () => { void query.refetch(); } }} title={t`Event`} body="" primary={{ label: t`Try again`, onClick: () => { void query.refetch(); } }} />;
+  if (query.error) return <CenteredCardLayout state={{ status: "error", error: t`Couldn't load this event.`, onRetry: isRetryable(query.error) ? () => { void query.refetch(); } : undefined }} title={t`Event`} body="" primary={isRetryable(query.error) ? { label: t`Try again`, onClick: () => { void query.refetch(); } } : { label: t`Home`, href: "/" }} />;
   if (!query.data) return <CenteredCardLayout state={{ status: "loading" }} title={t`Opening event…`} body="" primary={{ label: t`Loading`, disabled: true }} />;
   let match: RegExpExecArray | null;
   try { match = /^\/public\/([^/]+)\/events\/([^/]+)\/$/.exec(pageApiPath(query.data.content_url)); } catch { return <NotFoundPage />; }

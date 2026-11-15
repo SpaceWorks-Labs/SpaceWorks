@@ -7,6 +7,7 @@ import {
   AUTHORITY_MODULES, MODULE_MANAGER_LABELS, type AuthorityModule, useSettingsGrants, useUpdateGrants,
 } from "./settingsAuthorityApi";
 import { LogoLoader } from "../../components/LogoLoader";
+import { isRetryable } from "../../lib/api/errors";
 
 /**
  * "Who can change settings" (#101, #128 C-11): the Space Manager gives one person at a time
@@ -19,7 +20,7 @@ export function SettingsAuthorityCard({ makerspaceId }: { makerspaceId: number }
   const [adding, setAdding] = useState<Partial<Record<AuthorityModule, string>>>({});
   if (grants.isLoading) return <LogoLoader label={t`Loading who can change settings…`} size={48} className="min-h-16 py-3" />;
   if (!grants.data) return <ErrorBlock error={grants.error ?? new Error(t`Couldn't load settings access.`)}
-    onRetry={() => { void grants.refetch(); }} />;
+    onRetry={isRetryable(grants.error) ? () => { void grants.refetch(); } : undefined} />;
   const rows = grants.data.grants ?? [];
   const candidates = grants.data.candidates ?? {};
   const holders = (module: AuthorityModule) => rows.filter(row => row.module === module);

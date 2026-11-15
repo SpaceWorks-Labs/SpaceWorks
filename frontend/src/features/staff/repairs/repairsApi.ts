@@ -91,7 +91,7 @@ export function useOpenIssue(msId: number) {
 /** Presign a private photo (staging key), send the bytes, and return the token the step attaches. */
 export async function uploadIssuePhoto(msId: number, file: File) {
   const staged = await staffRequest<{ photo_token: string; upload: PrintUpload; max_bytes: number }>(
-    `/admin/makerspaces/${msId}/issues/photos`, { method: "POST", body: JSON.stringify({ content_type: file.type }) });
+    `/admin/makerspaces/${msId}/issues/photos`, { method: "POST", body: JSON.stringify({ content_type: file.type, size: file.size }) });
   if (file.size > staged.max_bytes) throw new Error(t`${file.name} is larger than ${Math.floor(staged.max_bytes / 1_048_576)} MB.`);
   await uploadToStorage({ ...staged.upload, fields: staged.upload.fields ?? {} }, file);
   return staged.photo_token;

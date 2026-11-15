@@ -16,7 +16,9 @@ export function useDonationSpace() {
   const space = tenant.mode === "single" ? tenant.slug : slug ?? "";
   const bootstrapQuery = useTenantBootstrap(space, tenant.mode === "central");
   const bootstrap = tenant.mode === "single" ? tenant.bootstrap : bootstrapQuery.data;
-  return { slug: space, bootstrap, path: useTenantPath(space) };
+  // A central `/m/:slug` bootstrap can fail; single mode resolved its bootstrap before any route (App.tsx).
+  return { slug: space, bootstrap, path: useTenantPath(space), error: tenant.mode === "central" ? bootstrapQuery.error : null,
+    refetch: bootstrapQuery.refetch };
 }
 
 /** Public chrome for every giving page: the space's brand, nav and footer, one narrow column. */

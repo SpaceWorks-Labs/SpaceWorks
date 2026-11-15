@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { EmptyState, ErrorText, ListRow, RelativeTime, StatusPill } from "../../../components/ui";
 import { staffRequest } from "../../../lib/api";
 import { LogoLoader } from "../../../components/LogoLoader";
+import { isRetryable } from "../../../lib/api/errors";
 
 // Open item C13. Hand-typed until the integrator regenerates the OpenAPI client
 // (admin_api/views_platform_defaults.py). Superadmin only, platform session.
@@ -18,7 +19,7 @@ const getAdmins = () => staffRequest<{ admins: PlatformAdmin[] }>("/admin/platfo
 export function ModuleDefaultsSection() {
   const query = useQuery({ queryKey: ["platform-module-defaults"], queryFn: getDefaults });
   if (query.isLoading) return <LogoLoader size={48} className="min-h-40 py-3" />;
-  if (query.isError) return <ErrorText resource={t`the feature defaults`} onRetry={() => { void query.refetch(); }} />;
+  if (query.isError) return <ErrorText resource={t`the feature defaults`} onRetry={isRetryable(query.error) ? () => { void query.refetch(); } : undefined} />;
   const data = query.data;
   if (!data?.modules.length) return <EmptyState message={t`No features to show.`} />;
   return <div className="grid gap-3">
@@ -39,7 +40,7 @@ export function ModuleDefaultsSection() {
 export function PlatformAdminsSection() {
   const query = useQuery({ queryKey: ["platform-admins"], queryFn: getAdmins });
   if (query.isLoading) return <LogoLoader size={48} className="min-h-24 py-3" />;
-  if (query.isError) return <ErrorText resource={t`the platform admins`} onRetry={() => { void query.refetch(); }} />;
+  if (query.isError) return <ErrorText resource={t`the platform admins`} onRetry={isRetryable(query.error) ? () => { void query.refetch(); } : undefined} />;
   const admins = query.data?.admins ?? [];
   if (!admins.length) return <EmptyState message={t`No platform admins found.`} />;
   return <ul className="grid gap-2" aria-label={t`Platform admins`}>

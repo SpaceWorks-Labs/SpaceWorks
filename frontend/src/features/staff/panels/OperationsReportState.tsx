@@ -4,6 +4,7 @@ import type React from "react";
 
 import { EmptyState, StatCard } from "../../../components/ui";
 import { LogoLoader } from "../../../components/LogoLoader";
+import { isRetryable } from "../../../lib/api/errors";
 
 export type ReportCell = string | number | boolean | null;
 export type TypedReportRow = Record<string, ReportCell | undefined>;
@@ -42,8 +43,9 @@ export function chartRows(data: ReportRows | undefined, labelKey: string, valueK
 export function DataState(props: { loading: boolean; error: unknown; empty: boolean; onRetry?: () => void; children: React.ReactNode }) {
   if (props.loading) return <ReportSkeleton />;
   if (props.error) return <div role="alert" className="mt-3 rounded-xl border border-danger-line bg-panel p-4 text-sm text-danger">
-    <p>{t`Couldn't load this report. Try again.`}</p>
-    {props.onRetry ? <button type="button" className="desk-button mt-3" onClick={props.onRetry}>{t`Retry`}</button> : null}
+    <p>{isRetryable(props.error) ? t`Couldn't load this report. Try again.`
+      : props.error instanceof Error ? props.error.message : t`You can't open this report here.`}</p>
+    {props.onRetry && isRetryable(props.error) ? <button type="button" className="desk-button mt-3" onClick={props.onRetry}>{t`Retry`}</button> : null}
   </div>;
   if (props.empty) return <EmptyState message={t`No activity in this period. Try a longer range.`} />;
   return <>{props.children}</>;

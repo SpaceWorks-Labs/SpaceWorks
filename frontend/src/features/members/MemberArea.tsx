@@ -17,6 +17,7 @@ import { Link, useParams, useSearchParams } from "react-router-dom";
 
 import type { ArchivedPaymentSummary, MembershipPolicyEnum } from "../../generated/api";
 import { bootstrapTenant, logout, memberRequest, refreshAccessToken, StructuredApiError } from "../../lib/api";
+import { isRetryable } from "../../lib/api/errors";
 import { MemberAuthPanel } from "./MemberAuthPanel";
 import { useMemberReturn } from "./useMemberReturn";
 import { hasPendingSocialCallback } from "../auth/socialSdk";
@@ -195,7 +196,7 @@ export function MemberArea() {
         onSignOut: () => { void logout("person").catch(() => undefined).finally(() => { forgetOfflineMemberData(); client.clear(); window.location.assign(slug ? `/m/${slug}/member` : "/member"); }); } }}>
     <MemberSectionNavigation><MemberScreenLayout tab={activeTab} section={section} hasPartnerEvents={hasPartnerEvents} accountSections={accountSections} accountSelfService={accountSelfService} canRefer={Boolean(membershipModuleOn && membership?.membership_status === "active" && membership.can_refer && membership.referrals_enabled)} member={membership?.membership_status === "active"} status={membership?.membership_status} requested={requested}
       name={bootstrap.data?.makerspace.name || "Space Works"} slug={resolvedSlug} modules={bootstrap.data?.modules ?? []}
-      activity={memberActivity} state={bootstrap.isLoading ? { status: "loading" } : bootstrapBlocked ? { status: "error", error: t`Couldn't load your makerspace. Try again.`, onRetry: () => void bootstrap.refetch() } : { status: "ready" }}
+      activity={memberActivity} state={bootstrap.isLoading ? { status: "loading" } : bootstrapBlocked ? { status: "error", error: t`Couldn't load your makerspace. Try again.`, onRetry: isRetryable(bootstrap.error) ? () => void bootstrap.refetch() : undefined } : { status: "ready" }}
       primary={presenceOn && activeTab === "overview" && presence.isSuccess && !presence.data.active ? { label: t`Check in`, onClick: () => setPresenceSheet(true) } : undefined}>
     {/* The install tip belongs on the home tab, not repeated above every screen's own content. */}
     {membershipModuleOn && activeTab === "overview" ? <MemberInstall name={bootstrap.data?.branding?.display_name || bootstrap.data?.makerspace.name || "Space Works member"} /> : null}
@@ -240,7 +241,7 @@ export function MemberArea() {
     {activeTab === "loans" && section !== "history" && memberAccess && makerspaceId >= 0 && bootstrap.data?.features?.includes("loans.waitlist") ? <MemberWaitlist key={makerspaceId} makerspaceId={makerspaceId} makerspaceSlug={resolvedSlug} /> : null}
     {activeTab === "account" && section === "channels" && messagingAllowed ? <MyNotificationSettings key={makerspaceId} makerspaceId={makerspaceId} member /> : null}
     {activeTab === "account" && messagingEnabled && messaging.isLoading ? <LogoLoader label={t`Checking notification access…`} size={48} className="min-h-16 py-3" /> : null}
-    {activeTab === "account" && messagingEnabled && messaging.error ? <div role="alert"><p>{message(messaging.error)}</p><button className="desk-button" onClick={() => void messaging.refetch()}>{t`Retry notification access`}</button></div> : null}
+    {activeTab === "account" && messagingEnabled && messaging.error ? <div role="alert"><p>{message(messaging.error)}</p>{isRetryable(messaging.error) ? <button className="desk-button" onClick={() => void messaging.refetch()}>{t`Retry notification access`}</button> : null}</div> : null}
     {activeTab === "account" && section === "phone" && (messagingAllowed || membership?.membership_status === "active") ? <MemberPhoneVerification /> : null}
     {activeTab === "overview" && memberships.data ? <MakerspaceDiscovery currentSlug={resolvedSlug} memberships={memberships.data.memberships} requests={memberships.data.requests} /> : null}
     {/* OUTSIDE the membership branch. A loan deposit is raised against a borrower, who
@@ -267,7 +268,7 @@ export function MemberArea() {
       claimSuccess={claim.data ? claim.data.outcome === "active" ? t`You are now an active member.` : claim.data.outcome === "awaiting_payment" ? t`Your invitation is awaiting payment before activation.` : claim.data.outcome === "awaiting_vouches" ? t`Your invitation is awaiting member vouches.` : t`Your invitation is waiting for manager approval.` : null}
     /> : null}
     {unauthenticated && !showSignIn && policy?.startsWith("invite") ? <p className="text-sm text-muted">{t`Sign in to view memberships or claim an invitation.`}</p> : null}
-    {error ? <p className="text-sm text-danger" role="alert">{message(error)}</p> : null}
+    {error ? <div className="grid justify-items-start gap-2"><p className="text-sm text-danger" role="alert">{message(error)}</p>{isRetryable(error) && [bootstrap, memberships, activity].some(query => query.error === error) ? <button type="button" className="desk-button" onClick={() => { for (const query of [bootstrap, memberships, activity]) if (query.error) void query.refetch(); }}>{t`Retry`}</button> : null}</div> : null}
     {memberships.isError && !unauthenticated ? <Link className="desk-button-brand inline-flex" to="/admin">{t`Sign in`}</Link> : null}
     {ownBookings ? <MyBookings slug={resolvedSlug} initialPeriod={search.get("period") === "past" ? "past" : "upcoming"} canReport={(bootstrap.data?.features ?? []).includes("bookings.issue_reporting")} canReportMachines={(bootstrap.data?.features ?? []).includes("machines.issue_reporting")} /> : null}
     {/* L22: a buyer reaches their shop orders from Payments; ordering needs an account, not a membership. */}
@@ -281,7 +282,7 @@ export function MemberArea() {
     {["loans", "bookings", "events", "inbox"].includes(activeTab) && activity.isLoading ? <LogoLoader label={t`Loading your activity...`} size={48} className="min-h-16 py-3" /> : null}
     {activeTab === "payments" && payments.isLoading ? <LogoLoader label={t`Loading payments...`} size={48} className="min-h-16 py-3" /> : null}
     {activeTab === "payments" && !unauthenticated && payments.isSuccess && !paymentRows?.length ? <EmptyState message={t`Nothing to pay. You are all settled.`} /> : null}
-    {activeTab === "payments" && payments.error ? <p role="alert" className="text-sm text-danger">{message(payments.error)}</p> : null}
+    {activeTab === "payments" && payments.error ? <div className="grid justify-items-start gap-2"><p role="alert" className="text-sm text-danger">{message(payments.error)}</p>{isRetryable(payments.error) ? <button type="button" className="desk-button" onClick={() => void payments.refetch()}>{t`Retry`}</button> : null}</div> : null}
     <SupportContact branding={bootstrap.data?.branding} />
     </MemberScreenLayout>
     {/* A failed bootstrap must not strand a signed-out visitor: sign-in and invitation-code claim stay reachable. */}

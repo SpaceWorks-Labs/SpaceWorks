@@ -21,6 +21,7 @@ import { PhotoChoice } from '../eventPresentation/PhotoChoice'
 import { EventResumePanel } from './EventResumePanel'
 import { TakeTeamInvitation } from './TakeTeamInvitation'
 import { useTenant } from '../../../lib/tenant'
+import { isRetryable } from "../../../lib/api/errors";
 
 export function EventProgrammePage() {
   const { publicToken = '', slug } = useParams()
@@ -30,7 +31,7 @@ export function EventProgrammePage() {
 function MemberContent({ publicToken, accountId }: { publicToken: string; accountId: number }) {
   const location = useLocation(), navigate = useNavigate()
   const { context, application } = useAdmission(publicToken, accountId)
-  if (context.error) return <ErrorBlock error={context.error} onRetry={() => void context.refetch()} />
+  if (context.error) return <ErrorBlock error={context.error} onRetry={isRetryable(context.error) ? () => void context.refetch() : undefined} />
   if (!context.data) return <LogoLoader label={t`Loading the current event requirements…`} />
   const current = context.data
   const base = programmeHref(publicToken, '', current.makerspace.slug).replace(/\/$/, '')

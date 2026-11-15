@@ -10,6 +10,7 @@ import { QuantityStepper } from "../QuantityStepper";
 import { LogoLoader } from "../../../components/LogoLoader";
 import { BoxArt } from "../../../components/BoxSpinner";
 import { StocktakeShelfGuide } from "../shelf/StocktakeShelfGuide";
+import { isRetryable } from "../../../lib/api/errors";
 
 type StocktakeRow = { id: number; status: string; notes: string; container: number | null };
 type StocktakeLine = {
@@ -113,7 +114,7 @@ export function CountSection({ makerspace, stocktakeId, readOnly = false }: { ma
 
   return (
     <div className="mt-3 rounded-md border border-line bg-bg p-3">
-      {detail.isLoading ? <LogoLoader size={48} className="min-h-32 py-3" /> : detail.error ? <ErrorBlock error={detail.error} resource={t`the count`} onRetry={() => { void detail.refetch(); }} /> : null}
+      {detail.isLoading ? <LogoLoader size={48} className="min-h-32 py-3" /> : detail.error ? <ErrorBlock error={detail.error} resource={t`the count`} onRetry={isRetryable(detail.error) ? () => { void detail.refetch(); } : undefined} /> : null}
       {editable && makerspace.enabled_features?.includes("machines.integrations") ? <StocktakeShelfGuide makerspaceId={makerspace.id} products={products.data?.results ?? []} counted={new Set(lines.map(line => line.product).filter((id): id is number => id !== null))} /> : null}
       {editable ? <ScanWorkbench searchLabel="QR payload" onFind={handleScan} onScan={handleScan}
         controls={<div className="@container grid gap-3">

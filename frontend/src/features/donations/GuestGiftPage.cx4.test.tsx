@@ -16,7 +16,7 @@ vi.mock("../members/MemberPaymentOffline", () => ({ useUpiQr: () => null }));
 vi.mock("./DonationShell", () => ({ DonationShell: ({ children, state }: { children: ReactNode;
   state: { status: string; error?: string; onRetry?: () => void } }) => <main>
   {state.status === "loading" ? <p role="status">Loading</p> : state.status === "error"
-    ? <div role="alert">{state.error}<button onClick={state.onRetry}>Retry</button></div> : children}
+    ? <div role="alert">{state.error}{state.onRetry ? <button onClick={state.onRetry}>Retry</button> : null}</div> : children}
 </main> }));
 
 const row: GiftStatus = { id: 7, amount: "750.00", currency: "inr", makerspace: "Lab", campaign: "",
@@ -41,8 +41,18 @@ describe("guest gift absent data, refusal and settlement refresh", () => {
     expect(screen.queryByRole("button", { name: "Pay online" })).not.toBeInTheDocument();
   });
 
-  it("an initial permission refusal can be retried without displaying gift details", async () => {
-    gift.mockRejectedValueOnce(new StructuredApiError(403, { code: "permission_denied", detail: "Private" }))
+  // Decision 588 (supersedes the earlier refusal retry): Retry only for 5xx, 429 or no response.
+  it("an initial permission refusal shows no gift details and no Retry", async () => {
+    gift.mockRejectedValueOnce(new StructuredApiError(403, { code: "permission_denied", detail: "Private" }));
+    show();
+    expect(await screen.findByRole("alert")).toHaveTextContent("Couldn't load your gift.");
+    expect(screen.queryByText("₹750.00")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Retry" })).not.toBeInTheDocument();
+    expect(gift).toHaveBeenCalledTimes(1);
+  });
+
+  it("an initial outage can be retried without displaying gift details first", async () => {
+    gift.mockRejectedValueOnce(new StructuredApiError(503, { code: "service_unavailable", detail: "Down" }))
       .mockResolvedValueOnce(row);
     show();
     expect(await screen.findByRole("alert")).toHaveTextContent("Couldn't load your gift.");
@@ -52,7 +62,7 @@ describe("guest gift absent data, refusal and settlement refresh", () => {
     expect(gift).toHaveBeenCalledTimes(2);
   });
 
-  it("a refused refetch hides retained gift details and payment actions until retry succeeds", async () => {
+  it("a refused refetch hides retained gift details and payment actions, with no Retry for the refusal", async () => {
     const refused = new StructuredApiError(403, { code: "permission_denied", detail: "Private" });
     gift.mockResolvedValueOnce(row).mockRejectedValueOnce(refused).mockResolvedValueOnce(row);
     const client = show();
@@ -65,11 +75,15 @@ describe("guest gift absent data, refusal and settlement refresh", () => {
     expect(screen.queryByText("₹750.00")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Pay online" })).not.toBeInTheDocument();
     expect(checkout).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+    expect(screen.queryByRole("button", { name: "Retry" })).not.toBeInTheDocument();
+    expect(gift).toHaveBeenCalledTimes(2);
+    for (const call of [1, 2]) expect(gift).toHaveBeenNthCalledWith(call, "signed");
+    // Recovery without the (withheld) Retry: a later successful read restores the details and an enabled "Pay online".
+    await act(async () => { await client.refetchQueries({ queryKey: donationKeys.gift("signed"), exact: true }); });
     expect(await screen.findByText("₹750.00")).toBeVisible();
     expect(screen.getByRole("button", { name: "Pay online" })).toBeEnabled();
     expect(gift).toHaveBeenCalledTimes(3);
-    for (const call of [1, 2, 3]) expect(gift).toHaveBeenNthCalledWith(call, "signed");
+    expect(gift).toHaveBeenNthCalledWith(3, "signed");
   });
 
   it("with the rail off the gift remains readable and no checkout action is offered", async () => {

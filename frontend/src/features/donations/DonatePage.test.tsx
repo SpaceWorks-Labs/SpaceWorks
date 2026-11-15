@@ -4,18 +4,24 @@ import type { ReactNode } from "react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import type { QueryState } from "../../components/ui";
+import { StructuredApiError } from "../../lib/api";
 import { DonatePage } from "./DonatePage";
 import type { DonationPage } from "./donationsApi";
 
-const { tenantPublicRequest, getAccessToken, memberRequest } = vi.hoisted(() => ({
+const { tenantPublicRequest, getAccessToken, memberRequest, space, refetchSpace } = vi.hoisted(() => ({
   tenantPublicRequest: vi.fn(), getAccessToken: vi.fn(() => null as string | null), memberRequest: vi.fn(),
+  space: { slug: "lab", error: null as Error | null }, refetchSpace: vi.fn(),
 }));
 vi.mock("../../lib/api", async () => ({
   ...await vi.importActual<typeof import("../../lib/api")>("../../lib/api"), tenantPublicRequest, getAccessToken, memberRequest,
 }));
 vi.mock("./DonationShell", () => ({
-  useDonationSpace: () => ({ slug: "lab", bootstrap: undefined, path: (part = "") => `/m/lab/${part}` }),
-  DonationShell: ({ title, children }: { title: string; children: ReactNode }) => <main><h1>{title}</h1>{children}</main>,
+  useDonationSpace: () => ({ slug: space.slug, bootstrap: undefined, path: (part = "") => `/m/lab/${part}`, error: space.error,
+    refetch: refetchSpace }),
+  DonationShell: ({ title, state, children }: { title: string; state: QueryState; children: ReactNode }) => <main><h1>{title}</h1>
+    {state.status === "error" ? <><p>{state.error}</p>{state.onRetry ? <button type="button" onClick={state.onRetry}>Retry</button> : null}</> : null}
+    {children}</main>,
 }));
 
 const page: DonationPage = {
@@ -39,9 +45,41 @@ beforeEach(() => {
   Object.defineProperty(window, "location", { configurable: true, value: { ...window.location, assign } });
   getAccessToken.mockReturnValue(null);
 });
-afterEach(() => { vi.unstubAllGlobals(); fetchMock.mockReset(); assign.mockReset(); tenantPublicRequest.mockReset(); });
+afterEach(() => { vi.unstubAllGlobals(); fetchMock.mockReset(); assign.mockReset(); tenantPublicRequest.mockReset(); refetchSpace.mockReset();
+  space.slug = "lab"; space.error = null; });
 
 describe("DonatePage", () => {
+  // Decision 598 follow-up: the central /donate has no selected space; it says where giving happens, never "not taking donations".
+  it("on the central portal with no space says where to give and requests nothing", async () => {
+    space.slug = "";
+    show();
+    expect(await screen.findByText("Give from a makerspace's own donation page.")).toHaveAttribute("role", "alert");
+    expect(screen.queryByText(/isn't taking donations/)).toBeNull();
+    expect(screen.queryByRole("button", { name: "Retry" })).toBeNull();
+    expect(tenantPublicRequest).not.toHaveBeenCalled();
+  });
+
+  // R9 review note A: a scoped page whose space bootstrap failed is an error state, never the fail-open form.
+  it("offers Retry for a bootstrap outage, and Retry refetches the space", async () => {
+    space.error = new StructuredApiError(503, { code: "service_unavailable", detail: "Down." });
+    show();
+    expect(await screen.findByText("Couldn't load this makerspace. Try again.")).toBeVisible();
+    expect(screen.queryByRole("form", { name: "Give to this space" })).toBeNull();
+    expect(screen.queryByText(/isn't taking donations/)).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+    expect(refetchSpace).toHaveBeenCalledTimes(1);
+  });
+
+  it("explains a refused bootstrap (404) with its message and no Retry", async () => {
+    space.error = new StructuredApiError(404, { code: "not_found", detail: "No such makerspace." });
+    show();
+    expect(await screen.findByText("No such makerspace.")).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Retry" })).toBeNull();
+    expect(screen.queryByRole("form", { name: "Give to this space" })).toBeNull();
+    expect(screen.queryByText(/isn't taking donations/)).toBeNull();
+    expect(refetchSpace).not.toHaveBeenCalled();
+  });
+
   it("lets a guest confirm their email with a code and sends it with the gift, then opens checkout", async () => {
     fetchMock.mockImplementation((url: string) => url.endsWith("/email-code") ? reply(202, null)
       : reply(201, { checkout_url: "https://pay.example/session", status_token: "tok" }));

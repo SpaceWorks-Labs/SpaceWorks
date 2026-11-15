@@ -2,7 +2,8 @@
 // path-bound, so the browser sends it with `credentials: "include"`; the operator lease
 // is sent as a header. The offline adapter encrypts a loaded lease/package; this
 // transport never persists cookies, normal login credentials or responses.
-import { API_V1_URL, staffRequest, StructuredApiError } from "../../lib/api";
+import { API_V1_URL, staffRequest } from "../../lib/api";
+import { apiError } from "../../lib/api/errors";
 import type { UploadResponse } from "../staff/panels/EvidenceUpload";
 import type { KitExpectation } from "../inventory/KitChecklist";
 import { currentSessionContext } from "../../lib/api/sessionContext";
@@ -59,7 +60,7 @@ export async function startKioskSession(token: string, pin: string, makerspaceSl
     headers: STATION_HEADERS,
     body: JSON.stringify(makerspaceSlug ? { pin, makerspace_slug: makerspaceSlug } : { pin }),
   });
-  if (!response.ok) throw new StructuredApiError(response.status, {});
+  if (!response.ok) throw apiError(response.status, await response.json().catch(() => ({})), response.headers);
   return (await response.json()) as KioskBootstrap;
 }
 

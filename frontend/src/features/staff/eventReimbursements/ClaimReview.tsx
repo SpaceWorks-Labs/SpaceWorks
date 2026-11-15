@@ -12,6 +12,7 @@ import { ClaimFinanceAction } from "./ClaimFinanceAction";
 import type { ClaimReviewDetail } from "./types";
 import { ReasonSelect, reasonLabel } from "./reasonCodes";
 import { BoxArt } from "../../../components/BoxSpinner";
+import { isRetryable } from "../../../lib/api/errors";
 
 export function ClaimReview({ scope, claimId, onReceipt, onDirtyChange }: { scope: EventScope; claimId: number;
   onReceipt: (assetId: number) => void; onDirtyChange?: (dirty: boolean) => void }) {
@@ -24,7 +25,7 @@ export function ClaimReview({ scope, claimId, onReceipt, onDirtyChange }: { scop
   useEffect(() => { onDirtyChange?.(Object.values(dirtySections).some(Boolean)); }, [dirtySections, onDirtyChange]);
   useEffect(() => () => onDirtyChange?.(false), [onDirtyChange]);
   const row = query.data;
-  return <DetailLayout title={t`Claim review`} state={{ status: query.isPending ? "loading" : query.error ? "error" : "ready", error: t`This claim is unavailable for your access.`, onRetry: () => void query.refetch() }}
+  return <DetailLayout title={t`Claim review`} state={{ status: query.isPending ? "loading" : query.error ? "error" : "ready", error: t`This claim is unavailable for your access.`, onRetry: isRetryable(query.error) ? () => void query.refetch() : undefined }}
     main={row ? <div className="grid gap-5"><section className="grid gap-3 rounded-2xl border border-line bg-panel p-5"><h2 className="title-section">{row.owner_label}</h2>
       <p>{t`${reimbursementStateLabel(row.state)} · claimed ${formatMinorMoney(row.claimed_minor, row.currency)} · accepted cap ${formatMinorMoney(row.accepted_cap_minor, row.currency)}`}</p>
       <p>{row.attendance_eligible ? t`Venue attendance evidence is on record.` : t`No venue attendance evidence is on record yet.`}</p>

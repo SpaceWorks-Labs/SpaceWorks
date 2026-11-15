@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ErrorText, StatusPill } from "../../../components/ui";
 import { staffRequest } from "../../../lib/api";
 import { LogoLoader } from "../../../components/LogoLoader";
+import { isRetryable } from "../../../lib/api/errors";
 
 type Check = { ready: boolean; hint: string };
 type Registration = { hint: string; production: boolean; login_ready: boolean; login: Record<string, Check>; optional: Record<string, Check> };
@@ -21,7 +22,7 @@ export function MobileReadinessPanel() {
   const query = useQuery({ queryKey: ["platform-mobile-readiness"],
     queryFn: () => staffRequest<MobileReadiness>("/admin/platform/mobile-readiness", {}, "platform") });
   if (query.isLoading) return <LogoLoader size={48} className="min-h-24 py-3" />;
-  if (query.isError || !query.data) return <ErrorText resource={t`mobile readiness`} onRetry={() => { void query.refetch(); }} />;
+  if (query.isError || !query.data) return <ErrorText resource={t`mobile readiness`} onRetry={isRetryable(query.error) ? () => { void query.refetch(); } : undefined} />;
   return <section className="grid gap-3" aria-label={t`Mobile readiness`}>
     <h3 className="title-section">{t`Readiness`}</h3>
     {Object.entries(query.data.platforms ?? {}).map(([key, platform]) => <div key={key} className="grid gap-2 rounded-xl border border-line bg-panel p-3">

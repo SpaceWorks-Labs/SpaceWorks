@@ -36,6 +36,7 @@ import { FinancialYearSetting } from "./membershipLifecycle/FinancialYearSetting
 import { assignableRoles, type MembershipRoles } from "./panels/roleSets";
 import type { StaffRole } from "./panels/rolesApi";
 import { LogoLoader } from "../../components/LogoLoader";
+import { isRetryable } from "../../lib/api/errors";
 
 type RosterMember = AdminMembership & MembershipRoles;
 type RosterResponse = Omit<MembershipListResponse, "results"> & { results: RosterMember[] };
@@ -131,7 +132,7 @@ export function MembersPanel({ makerspaceId, membershipEnabled, presenceEnabled 
       ...(canManageMakerspace ? [{ key: "waivers", label: t`Waivers`, href: "#waivers" }] : []),
       ...lifecycle,
     ];
-  return <ListLayout state={{ status: querySection && activeQuery.isLoading ? "loading" : querySection && activeQuery.isError ? "error" : "ready", error: tab === "requests" ? t`Couldn't load requests. Try again.` : t`Couldn't load members. Try again.`, onRetry: () => { void activeQuery.refetch(); } }}
+  return <ListLayout state={{ status: querySection && activeQuery.isLoading ? "loading" : querySection && activeQuery.isError ? "error" : "ready", error: tab === "requests" ? t`Couldn't load requests. Try again.` : t`Couldn't load members. Try again.`, onRetry: isRetryable(activeQuery.error) ? () => { void activeQuery.refetch(); } : undefined }}
     tabs={sectionTabs} activeTab={tab} onTabChange={setTab}
     header={{ title: t`Members`, subtitle: t`Membership, permissions and the people making things here.`, primary: { label: t`Invite member`, onClick: () => setInviteOpen(true) } }}
     stats={[{ label: t`Members`, value: roster.data?.count ?? 0 }, { label: membershipEnabled ? t`Membership requests` : t`Invitations`, value: requests.data?.count ?? 0 }, ...(presenceEnabled ? [{ label: t`Currently present`, value: presence.data?.count ?? 0 }] : [])]}
@@ -186,7 +187,7 @@ export function MembersPanel({ makerspaceId, membershipEnabled, presenceEnabled 
     {membershipEnabled && canManageMakerspace && tab === "plans" ? <><FinancialYearSetting makerspaceId={makerspaceId} canEdit={canManageMakerspace} /><MembershipPlansSection makerspaceId={makerspaceId} features={enabledFeatures} /></> : null}
     {presenceEnabled && tab === "presence" ? presencePolicy.isSuccess
       ? <PresenceRoster makerspaceId={makerspaceId} presets={configuredPresets?.length ? configuredPresets : DEFAULT_PRESETS} />
-      : presencePolicy.isError ? <p role="alert">{t`Couldn't load check-in durations. `}<button type="button" onClick={() => { void presencePolicy.refetch(); }}>{t`Try again`}</button></p>
+      : presencePolicy.isError ? <p role="alert">{t`Couldn't load check-in durations. `}{isRetryable(presencePolicy.error) ? <button type="button" onClick={() => { void presencePolicy.refetch(); }}>{t`Try again`}</button> : null}</p>
       : <LogoLoader label={t`Loading check-in durations…`} size={48} className="min-h-16 py-3" /> : null}
     {canManageMakerspace && tab === "waivers" ? <MembershipWaiverPanel makerspaceId={makerspaceId} /> : null}
     {communityMemberTabs(enabledFeatures, membershipEnabled).some((item) => item.key === tab) ? <CommunityMemberTab tab={tab} makerspaceId={makerspaceId} features={enabledFeatures} canManageMakerspace={canManageMakerspace} /> : null}

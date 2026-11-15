@@ -8,7 +8,7 @@ import "../docs/docs.css";
 
 /**
  * Operator- or space-written Markdown on /privacy and /terms, through the same renderer the docs use
- * (react-markdown + GFM, `sw-doc-prose`). Raw HTML is never rendered (react-markdown's default) and
+ * (react-markdown + GFM, `sw-doc-prose`). Raw HTML is omitted from the displayed body and
  * unsafe URL schemes are stripped by its URL transform. Links: a site path stays in the app, anything
  * else opens in a new tab.
  */
@@ -37,5 +37,5 @@ export function splitTitle(markdown: string): { title: string | null; body: stri
 }
 
 export function LegalMarkdown({ body }: { body: string }) {
-  return <div className="sw-doc-prose"><Markdown remarkPlugins={[remarkGfm]} components={components}>{body}</Markdown></div>;
+  return <div className="sw-doc-prose"><Markdown skipHtml remarkPlugins={[remarkGfm]} components={components}>{body}</Markdown></div>;
 }

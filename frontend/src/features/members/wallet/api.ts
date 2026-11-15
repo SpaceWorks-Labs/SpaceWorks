@@ -84,7 +84,7 @@ export async function uploadCardPhoto(card: MyCard, file: Blob) {
     return uploadMemberPhoto(card.makerspace_id, new File([file], "card-photo.jpg", { type: file.type || "image/jpeg" }));
   }
   const type = file.type || "image/jpeg";
-  const presign = await memberRequest<Presign>(`${cardPath(card)}/photo`, { method: "POST", body: JSON.stringify({ content_type: type }) });
+  const presign = await memberRequest<Presign>(`${cardPath(card)}/photo`, { method: "POST", body: JSON.stringify({ content_type: type, size: file.size }) });
   const upload = presign.method === "PUT"
     ? await fetch(presign.url, { method: "PUT", body: file, headers: presign.headers })
     : await fetch(presign.url, { method: "POST", body: (() => {

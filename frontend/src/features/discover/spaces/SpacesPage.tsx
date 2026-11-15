@@ -8,6 +8,7 @@ import { useHostingConfig } from "../../hosting/hostingApi";
 import { usePublicMakerspaces } from "../../inventory/usePublicInventory";
 import { SpacesDirectory } from "./SpacesDirectory";
 import { placesOf } from "./spacesFilter";
+import { isRetryable } from "../../../lib/api/errors";
 
 function SpacesHero({ total, places }: { total?: number; places: number }) {
   const summary = total ? places > 1
@@ -31,6 +32,6 @@ export function SpacesPage() {
   return <div className="sw-hub"><HubHeader /><main className="sw-layout sw-layout-wide py-8 md:py-12">
     <SpacesHero total={query.data?.length} places={places} />
     <SpacesDirectory spaces={query.data} loading={query.isLoading} error={query.isError} retrying={query.isFetching}
-      onRetry={() => { void query.refetch(); }} hosting={hosting} />
+      onRetry={isRetryable(query.error) ? () => { void query.refetch(); } : undefined} hosting={hosting} />
   </main><HubFooter /></div>;
 }

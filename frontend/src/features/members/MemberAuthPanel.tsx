@@ -173,7 +173,7 @@ export function MemberAuthPanel({
       {error ? <p className="text-sm text-danger" role="alert">{error}</p> : null}
     <button type="submit" disabled={pending} hidden aria-hidden="true" tabIndex={-1} />
     </form>} />;
-  const title = mode === "login" ? loginTitle ?? "Member sign in" : "Create a member account";
+  const title = mode === "login" ? loginTitle ?? t`Member sign in` : t`Create a member account`;
   const modeSwitch = selfServeAccounts ? { label: t`Account access`, value: mode,
     options: [{ value: "login", label: t`Sign in` }, { value: "signup", label: t`Create account` }],
     onChange: (next: string) => { setMode(next as "login" | "signup"); setError(""); captcha.reset(); } } : undefined;

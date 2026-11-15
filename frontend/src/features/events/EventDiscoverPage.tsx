@@ -11,6 +11,7 @@ import { LICENSE_URL } from "../inventory/PublicPageChrome";
 import { DiscoveryEventImage } from "./DiscoveryEventImage";
 import { LogoLoader } from "../../components/LogoLoader";
 import { SearchField } from "../../components/ui/SearchField";
+import { isRetryable } from "../../lib/api/errors";
 
 type Results = import("../../generated/api").Discovery;
 const field = "grid min-w-0 flex-1 basis-40 gap-1 text-sm font-semibold sm:flex-none";
@@ -70,7 +71,7 @@ export function EventDiscoverPage() {
       </form>
       <DiscoverChips filters={filters} organizers={organizers.data ?? []} onRemove={key => { const next = { ...filters, [key]: "" }; setPage(1); setFilters(next); setDraft(next); }} />
       {query.isLoading ? <LogoLoader label={t`Loading events`} size={48} className="min-h-20 py-3" /> : null}
-      {query.error ? <ErrorText message={t`Unable to discover events. Check your dates and try again.`} onRetry={() => { void query.refetch(); }} /> : null}
+      {query.error ? <ErrorText message={t`Unable to discover events. Check your dates and try again.`} onRetry={isRetryable(query.error) ? () => { void query.refetch(); } : undefined} /> : null}
       {!query.error && query.data ? <section aria-labelledby="discover-events-results" className="grid gap-3">
         <h2 id="discover-events-results" className="title-panel">{plural(query.data.count, { one: "# event", other: "# events" })}</h2>
         {query.data.results.map((row) => <ListRow key={row.url} href={row.url} title={row.title}

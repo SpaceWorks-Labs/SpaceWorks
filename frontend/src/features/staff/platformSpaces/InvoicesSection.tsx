@@ -6,6 +6,7 @@ import { CreateInvoiceDialog, RecordPaymentDialog, VoidInvoiceDialog } from "./I
 import { formatMoney, useInvoices, type HostingInvoice } from "./plansApi";
 import { PAGE_SIZE } from "./spacesApi";
 import { LogoLoader } from "../../../components/LogoLoader";
+import { isRetryable } from "../../../lib/api/errors";
 
 /** Hosting invoices across every space: raise one, record an offline payment, or void it. */
 export function InvoicesSection() {
@@ -24,7 +25,7 @@ export function InvoicesSection() {
       <button type="button" className="desk-button-primary" onClick={() => setDialog({ kind: "create" })}>{t`New invoice`}</button>
     </div>
     {list.isLoading ? <LogoLoader size={48} className="min-h-24 py-3" />
-      : list.isError ? <ErrorText resource={t`invoices`} onRetry={() => { void list.refetch(); }} />
+      : list.isError ? <ErrorText resource={t`invoices`} onRetry={isRetryable(list.error) ? () => { void list.refetch(); } : undefined} />
       : !rows.length ? <EmptyState message={t`No invoices with this status.`} />
       : <div className="grid gap-3">{rows.map(invoice => <ListRow key={invoice.id} title={`${invoice.number} · ${invoice.makerspace_name}`}
         meta={`${formatMoney(invoice.amount_minor, invoice.currency)} · due ${invoice.due_on}${invoice.description ? ` · ${invoice.description}` : ""}`}

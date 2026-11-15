@@ -14,6 +14,7 @@ import {
 } from "./api";
 import { IncidentDetail } from "./IncidentDetail";
 import { RecordIncidentDialog } from "./RecordIncidentDialog";
+import { isRetryable } from "../../lib/api/errors";
 
 const NO_FILTERS: IncidentFilters = { status: "", severity: "", area: "", kind: "" };
 const SUBJECT_LABELS: Record<(typeof SUBJECT_FILTERS)[number], string> = {
@@ -79,7 +80,7 @@ export function IncidentRegister({ makerspace }: { makerspace: Pick<Makerspace, 
         </p> : null}
       </div> }}
       state={query.isLoading ? { status: "loading" } : query.error
-        ? { status: "error", error: incidentErrorMessage(query.error), onRetry: () => { void query.refetch(); } } : { status: "ready" }}
+        ? { status: "error", error: incidentErrorMessage(query.error), onRetry: isRetryable(query.error) ? () => { void query.refetch(); } : undefined } : { status: "ready" }}
       isEmpty={!rows.length} filtered={filtered}
       empty={{ message: t`No incidents recorded. Reports from members and staff land here.` }}
       filteredEmpty={{ message: t`No incidents match these filters.`, action: { label: t`Clear filters`, onClick: () => { setFilters(NO_FILTERS); clearSubject(); } } }}

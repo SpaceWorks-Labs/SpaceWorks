@@ -9,6 +9,7 @@ import { fieldError, useTimeline, useTimelineMutations, type TimelineEntry } fro
 import { SectionToggle } from "./SectionToggle";
 import { TimelineEntryForm } from "./TimelineEntryForm";
 import { LogoLoader } from "../../../components/LogoLoader";
+import { isRetryable } from "../../../lib/api/errors";
 
 const KINDS: TimelineKind[] = ["experience", "education", "volunteering"];
 type Editing = { kind: TimelineKind; entry?: TimelineEntry } | null;
@@ -27,7 +28,7 @@ export function TimelineEditor() {
         <SectionToggle section="education" label={t`Show education`} /></div>
     </SettingsRow>
     {timeline.isLoading ? <LogoLoader size={48} className="min-h-24 py-3" /> : null}
-    {timeline.error ? <div className="py-4"><ErrorBlock error={new Error(t`Couldn't load your timeline. Try again.`)} onRetry={() => { void timeline.refetch(); }} /></div> : null}
+    {timeline.error ? <div className="py-4"><ErrorBlock error={new Error(t`Couldn't load your timeline. Try again.`)} onRetry={isRetryable(timeline.error) ? () => { void timeline.refetch(); } : undefined} /></div> : null}
     {!timeline.isLoading && !timeline.error ? KINDS.map(kind => {
       const copy = TIMELINE_COPY[kind];
       const entries = rows.filter(row => row.kind === kind);

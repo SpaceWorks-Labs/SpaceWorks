@@ -14,6 +14,7 @@ import { ArchivedDesigns, RemoveDesignButton } from "./DesignArchive";
 import { TitleCards } from "./TitleCards";
 import { LogoLoader } from "../../../../components/LogoLoader";
 import { BoxArt } from "../../../../components/BoxSpinner";
+import { isRetryable } from "../../../../lib/api/errors";
 
 export function DesignTab({ makerspaceId, numberingOn = false }: { makerspaceId: number; numberingOn?: boolean }) {
   const designs = useMemberCardDesigns(makerspaceId);
@@ -23,7 +24,7 @@ export function DesignTab({ makerspaceId, numberingOn = false }: { makerspaceId:
   const [chosen, setChosen] = useState<number | null>(null);
   const [target, setTarget] = useState("");
   if (designs.isLoading) return <LogoLoader size={48} className="min-h-64 py-3" />;
-  if (designs.isError || !designs.data) return <ErrorBlock error={designs.error} resource={t`card designs`} onRetry={() => void designs.refetch()} />;
+  if (designs.isError || !designs.data) return <ErrorBlock error={designs.error} resource={t`card designs`} onRetry={isRetryable(designs.error) ? () => void designs.refetch() : undefined} />;
   const rows = designs.data;
   const current = rows.find((row) => row.id === chosen) ?? rows.find((row) => !row.plan_id && !row.title_id) ?? rows[0];
   const taken = new Set(rows.map((row) => (row.plan_id ? `plan:${row.plan_id}` : row.title_id ? `title:${row.title_id}` : "")));

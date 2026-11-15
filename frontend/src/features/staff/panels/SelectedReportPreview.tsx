@@ -6,6 +6,7 @@ import type { ReportCatalogItem } from "./operationsReportsConfig";
 import type { ReportViewState } from "./reportViewsApi";
 import { CatalogChartPanel } from "./charts/CatalogChartPanel";
 import { ChannelUsagePanel } from "./ChannelUsagePanel";
+import { isRetryable } from "../../../lib/api/errors";
 
 export function SelectedReportPreview({ report, analyticsBase, scopeKey, start, end, grain, columns, months, filters }: {
   report?: ReportCatalogItem; analyticsBase: string; scopeKey: string | number;
@@ -31,11 +32,11 @@ export function SelectedReportPreview({ report, analyticsBase, scopeKey, start, 
   const chartRows = result.data?.typed_rows ?? rows.slice(1).map((row) => Object.fromEntries((rows[0] ?? []).map((header, index) => [String(header), row[index]])));
   if (report.key === "channel-usage") return <Panel title={report.title} reportKey={report.key} generic>
     <ChannelUsagePanel rows={chartRows} meta={result.data?.meta} loading={result.isLoading} error={result.error}
-      onRetry={() => void result.refetch()} spaceName={id => id == null ? t`Unattributed` : t`Space #${id}`} />
+      onRetry={isRetryable(result.error) ? () => void result.refetch() : undefined} spaceName={id => id == null ? t`Unattributed` : t`Space #${id}`} />
   </Panel>;
   return <><Panel title={`${report.title} preview`} reportKey={report.key} generic>
     {report.chart_spec ? <CatalogChartPanel title={report.title} spec={report.chart_spec} hint={report.chart_hint} rows={chartRows}
-      loading={result.isLoading} error={result.error} onRetry={() => void result.refetch()} /> : <DataState loading={result.isLoading} error={result.error} onRetry={() => void result.refetch()} empty={rows.length <= 1}>
+      loading={result.isLoading} error={result.error} onRetry={isRetryable(result.error) ? () => void result.refetch() : undefined} /> : <DataState loading={result.isLoading} error={result.error} onRetry={isRetryable(result.error) ? () => void result.refetch() : undefined} empty={rows.length <= 1}>
       <ReportTable data={visible} />
     </DataState>}</Panel>
     {result.data?.meta?.definition ? <p className="mt-2 text-xs text-muted">{result.data.meta.definition}</p> : null}

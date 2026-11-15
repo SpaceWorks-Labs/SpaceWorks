@@ -8,9 +8,11 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { useParams } from "react-router-dom";
 
 import { CenteredCardLayout } from "../../components/layouts";
+import { LayoutFrame } from "../../components/layouts/LayoutFrame";
 import { ErrorText, Icon, StatusBadge, TicketCard } from "../../components/ui";
 import { RouteLink } from "../../components/ui/RouteLink";
 import { getAccessToken, memberRequest, memberRequestBlob, refreshAccessToken, StructuredApiError } from "../../lib/api";
+import { isRetryable } from "../../lib/api/errors";
 import { chargesOn } from "../../lib/charges";
 import { useTenant, useTenantPath } from "../../lib/tenant";
 import { useTenantBootstrap } from "../inventory/usePublicInventory";
@@ -70,6 +72,9 @@ export function MemberEventTicketPage() {
   const authError = identity.error || ticket.error;
   const unauthenticated = authError instanceof StructuredApiError && authError.status === 401;
   const current = authError ? undefined : ticket.data;
+  // The central portal's /member/events/:id/ticket has no selected space: say where tickets live (signing in won't help).
+  if (!makerspaceSlug) return <LayoutFrame standalone width="narrow">
+    <p role="alert">{t`Open your ticket from a makerspace's member area.`}</p></LayoutFrame>;
   // The sign-in screen is a whole page of its own; nesting it would give this page two h1s.
   if (unauthenticated) return <MemberAuthPanel makerspaceSlug={makerspaceSlug}
     tenantBrand={space ? { name: spaceName, logo: space.branding?.logo_url || space.makerspace.logo_url || undefined } : undefined}
@@ -84,8 +89,9 @@ export function MemberEventTicketPage() {
     body={!current ? t`This ticket is not available right now.`
       : canDownload ? t`Download your ticket and bring it to event check-in.` : t`A ticket download is available once your registration is confirmed.`}
     content={<div className="grid gap-4">
-      {authError ? <ErrorText message={authError instanceof StructuredApiError && authError.status === 404 ? t`Ticket not found.` : authError.message} /> : null}
-      {bootstrap.error ? <ErrorText message={t`Unable to load this makerspace.`} /> : null}
+      {authError ? <ErrorText message={authError instanceof StructuredApiError && authError.status === 404 ? t`Ticket not found.` : authError.message} onRetry={isRetryable(authError) ? () => { void (identity.error ? identity.refetch() : ticket.refetch()); } : undefined} /> : null}
+      {/* Decision 588: Retry only for an outage; "Ticket not found." and other refusals keep the nav and All events way out. */}
+      {bootstrap.error ? <ErrorText message={t`Unable to load this makerspace.`} onRetry={isRetryable(bootstrap.error) ? () => { void bootstrap.refetch(); } : undefined} /> : null}
       {current ? <>
         <LiveTicketState status={current.status} attendedAt={current.attended_at} />
         <PayByNotice payBy={current.pay_by} audience="guest" />

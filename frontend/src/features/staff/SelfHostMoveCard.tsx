@@ -1,3 +1,4 @@
+import { LogoLoader } from "../../components/LogoLoader";
 import { t } from "@lingui/core/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -5,6 +6,7 @@ import { ErrorText, Field, KeyValueCard, RelativeTime, StatusPill } from "../../
 import type { Tone } from "../../components/ui/types";
 import { getSelfHostMove, requestSelfHostMove, type SelfHostMoveRequest } from "./selfHostMoveApi";
 import { BoxArt } from "../../components/BoxSpinner";
+import { isRetryable } from "../../lib/api/errors";
 
 const OPEN = new Set(["requested", "approved", "exporting"]);
 const TONES: Record<SelfHostMoveRequest["status"], Tone> = {
@@ -22,8 +24,8 @@ export function SelfHostMoveCard({ makerspaceId }: { makerspaceId: number }) {
     mutationFn: () => requestSelfHostMove(makerspaceId, note.trim()),
     onSuccess: (data) => { client.setQueryData(key, data); setNote(""); },
   });
-  if (status.isError) return <ErrorText resource={t`move request`} onRetry={() => { void status.refetch(); }} />;
-  if (!status.isSuccess) return null;
+  if (status.isError) return <ErrorText resource={t`move request`} onRetry={isRetryable(status.error) ? () => { void status.refetch(); } : undefined} />;
+  if (!status.isSuccess) return <LogoLoader label={t`Loading move request...`} size={48} className="min-h-16 py-3" />;
   const current = status.data.request;
   const open = current ? OPEN.has(current.status) : false;
   return <div className="grid gap-3">

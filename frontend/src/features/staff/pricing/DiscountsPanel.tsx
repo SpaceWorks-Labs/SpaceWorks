@@ -9,6 +9,7 @@ import { ActionControl, ListRow, StatusPill } from "../../../components/ui";
 import { DISCOUNT_RULES, DiscountEditor } from "./DiscountEditor";
 import { describeDiscount } from "./discountForm";
 import { pricingApi, pricingError, pricingKeys, type PriceDiscount, type PricingDomain } from "./pricingApi";
+import { isRetryable } from "../../../lib/api/errors";
 
 const when = (iso?: string | null) => (iso ? new Date(iso).toLocaleDateString(formatLocale()) : "");
 
@@ -41,7 +42,7 @@ export function DiscountsPanel({ makerspaceId, currency, domains, membershipOn, 
     header={{ title: t`Member discounts`, subtitle: DISCOUNT_RULES, headingLevel: 2,
       primary: canEdit ? { label: t`New discount`, onClick: () => setEditing("new") } : undefined }}
     state={rules.isLoading ? { status: "loading" } : rules.error
-      ? { status: "error", error: pricingError(rules.error), onRetry: () => { void rules.refetch(); } } : { status: "ready" }}
+      ? { status: "error", error: pricingError(rules.error), onRetry: isRetryable(rules.error) ? () => { void rules.refetch(); } : undefined } : { status: "ready" }}
     tabs={[{ key: "active", label: t`Active` }, { key: "archived", label: t`Archived` }]} activeTab={view}
     onTabChange={key => setView(key as typeof view)}
     isEmpty={!shown.length}

@@ -16,6 +16,7 @@ import { machineStatusLabel } from "./machineStatusLabel";
 import { useJobAction, useJobBoard, useJobInvalidation, type StaffJob } from "./machineJobsApi";
 import { poolUnits, unitLabels, usablePools } from "./servicePools";
 import { LogoLoader } from "../../../../components/LogoLoader";
+import { isRetryable } from "../../../../lib/api/errors";
 
 type Props = {
   makerspaceId: number; machineType: MachineType; machines: Machine[]; pools: PrinterPool[];
@@ -49,7 +50,7 @@ export function JobBoard({ makerspaceId, machineType, machines, pools, batchEnab
     onConsumables: setConsumablesOf,
   };
   if (board.isLoading) return <LogoLoader label={t`Loading queue board`} size={48} className="min-h-24 py-3" />;
-  if (board.error) return <ErrorBlock error={board.error} resource={t`queue board`} onRetry={() => { void board.refetch(); }} />;
+  if (board.error) return <ErrorBlock error={board.error} resource={t`queue board`} onRetry={isRetryable(board.error) ? () => { void board.refetch(); } : undefined} />;
   const data = board.data;
   if (!data) return null;
   const overdue = new Set(data.overdue_pickup_ids);

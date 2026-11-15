@@ -11,6 +11,7 @@ import { MemberAuthPanel } from "../MemberAuthPanel";
 import { CardHolderSettings } from "./CardHolderSettings";
 import { HolographicCard } from "./HolographicCard";
 import { downloadMyCard, useEmailMyCard, useMemberIdentity, useMyCards, useWalletPass, type MyCard } from "./api";
+import { isRetryable } from "../../../lib/api/errors";
 
 const STATUS = { valid: { label: t`Valid`, tone: "success" }, expired: { label: t`Expired`, tone: "warn" },
   revoked: { label: t`Revoked`, tone: "danger" } } as const;
@@ -27,7 +28,7 @@ export function WalletPage() {
     primary={{ label: t`Back to my account`, href: "/member/account" }}
     footer={<PageHelp article="member/member-card" topic="your cards" className="flex justify-center" />}
     content={<div className="grid gap-6">
-      {cards.error ? <ErrorText message={cards.error.message} onRetry={() => void cards.refetch()} /> : null}
+      {cards.error ? <ErrorText message={cards.error.message} onRetry={isRetryable(cards.error) ? () => void cards.refetch() : undefined} /> : null}
       {cards.data && !rows.length ? <EmptyState message={t`No cards yet. A card appears here once a space, programme or event issues one to you.`} /> : null}
       {rows.map((card) => <CardEntry key={`${card.kind}-${card.id}`} card={card} />)}
     </div>} />;

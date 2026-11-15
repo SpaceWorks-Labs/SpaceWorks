@@ -1,5 +1,6 @@
 import { t } from "@lingui/core/macro";
 import { Callout, ProgressBar, StatusPill } from "../../../components/ui";
+import { currencyUsageAmount } from "../platformSpaces/LimitRowView";
 import { limitLabel } from "../platformSpaces/limitCopy";
 import { amount, limitReachedText, useStaffAllowances, type AllowanceArea, type AllowanceRow } from "./allowancesApi";
 
@@ -10,6 +11,9 @@ const TAB_AREA: Record<string, AllowanceArea | "all"> = {
 };
 
 function usedText(row: AllowanceRow) {
+  if (row.unit === "amount" && row.amounts?.length) return row.amounts.map(
+    item => `${currencyUsageAmount(item.currency, item.used)} / ${currencyUsageAmount(item.currency, String(row.limit))}`,
+  ).join(" · ");
   if (row.used === null) return row.unit === "bytes" ? t`Up to ${amount(row.limit, row.unit)} per file` : t`Limit: ${amount(row.limit, row.unit)}`;
   return t`${amount(row.used, row.unit)} of ${amount(row.limit, row.unit)} used · ${amount(row.remaining ?? 0, row.unit)} left`;
 }

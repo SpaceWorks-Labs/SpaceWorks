@@ -4,6 +4,7 @@ import { ChannelUsagePanel } from "./panels/ChannelUsagePanel";
 import { analyticsMeta, analyticsRows, periodParams, useAnalyticsReport, type AnalyticsPeriod } from "./panels/analyticsApi";
 import { usePlatformAnalytics } from "./platformAnalyticsApi";
 import type { PlatformDashboard } from "./platformMonitoringApi";
+import { isRetryable } from "../../lib/api/errors";
 
 /** Superadmin "Web and app use": web versus iOS, Android and API-client activity, by space and by feature, with a per-space drill-down. */
 export function PlatformChannelUsage({ period, spaces = [] }: { period: AnalyticsPeriod; spaces?: PlatformDashboard["tenants"] }) {
@@ -32,6 +33,6 @@ export function PlatformChannelUsage({ period, spaces = [] }: { period: Analytic
         {present.map(id => <option key={id} value={id}>{spaceName(id)}</option>)}
       </select></label> : null}
     <ChannelUsagePanel rows={rows} meta={analyticsMeta(source.data) as { definition?: string; limitations?: string } | undefined}
-      loading={source.isLoading} error={source.error} onRetry={() => void source.refetch()} spaceName={selected ? undefined : spaceName} />
+      loading={source.isLoading} error={source.error} onRetry={isRetryable(source.error) ? () => void source.refetch() : undefined} spaceName={selected ? undefined : spaceName} />
   </section>;
 }

@@ -14,6 +14,7 @@ import { CardThumbnail } from "./CardThumbnail";
 import { useResetDesign, useTemplates } from "./designerApi";
 import { useCardFonts } from "./useCardFonts";
 import { LogoLoader } from "../LogoLoader";
+import { isRetryable } from "../../lib/api/errors";
 
 const WIDE = "(min-width: 640px)";
 function useWide() {
@@ -55,7 +56,7 @@ export function TemplateGallery({ design, values, onAdopt, onError }: {
             options={[{ value: "light", label: t`Light` }, { value: "dark", label: t`Dark` }]} />
         </div>
         {templates.isLoading ? <LogoLoader size={48} className="min-h-44 py-3" /> : null}
-        {templates.isError ? <ErrorBlock error={templates.error} resource={t`templates`} onRetry={() => void templates.refetch()} /> : null}
+        {templates.isError ? <ErrorBlock error={templates.error} resource={t`templates`} onRetry={isRetryable(templates.error) ? () => void templates.refetch() : undefined} /> : null}
         {templates.data && !shown.length ? <p className="text-sm text-muted">{t`No ${theme} templates are available.`}</p> : null}
         <ul className="grid gap-3 sm:grid-cols-2" aria-label={theme === "light" ? t`Light templates` : t`Dark templates`}>
           {shown.map((item) => {

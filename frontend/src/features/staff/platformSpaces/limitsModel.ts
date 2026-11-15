@@ -1,5 +1,5 @@
 import { t } from "@lingui/core/macro";
-import type { LimitArea, LimitLevel, LimitSource, SpaceLimits } from "./limitsApi";
+import type { CurrencyUsage, LimitArea, LimitLevel, LimitSource, SpaceLimits } from "./limitsApi";
 
 /**
  * One shape for every limit row the server sends (decisions 234, 281, 284): the fair-use `rows`
@@ -8,6 +8,7 @@ import type { LimitArea, LimitLevel, LimitSource, SpaceLimits } from "./limitsAp
  * later appears without a frontend change.
  */
 export type UnifiedLimit = {
+  amounts?: CurrencyUsage[] | null;
   /** `count`, `bytes`, `amount` (whole currency units, per currency), `per_minute` (a rate: no usage) or a later unit. */
   key: string; label: string; area: string; unit: string;
   /** What applies now; null = no limit. */
@@ -51,7 +52,7 @@ export function unifyLimits(data: SpaceLimits): UnifiedLimit[] {
     seen.add(row.key);
     const percent = row.percent ?? percentOf(row.used, row.limit);
     out.push({ key: row.key, label: row.label, area: row.group || row.area || "other", unit: row.unit, limit: row.limit, used: row.used,
-      percent, level: row.level ?? levelOf(percent), stored: row.limit === null ? undefined : row.limit, editable: true,
+      amounts: row.amounts, percent, level: row.level ?? levelOf(percent), stored: row.limit === null ? undefined : row.limit, editable: true,
       platformDefault: row.platform_default });
   }
   for (const row of data.rows ?? []) {

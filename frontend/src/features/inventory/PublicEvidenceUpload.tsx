@@ -54,7 +54,7 @@ export function PublicEvidenceUpload({
       const presigned = await requestPublicEvidenceUpload(slug, {
         evidence_type: evidenceType,
         content_type: file.type,
-        size_bytes: file.size,
+        size: file.size, size_bytes: file.size,
         ...(contactEmail !== undefined ? { contact_email: contactEmail } : {}),
       });
       await uploadPublicEvidenceFile(presigned, file);

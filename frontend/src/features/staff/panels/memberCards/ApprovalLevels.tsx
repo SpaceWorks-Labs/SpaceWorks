@@ -9,6 +9,7 @@ import { ErrorBlock } from "../../../../components/ui";
 import { staffRequest } from "../../../../lib/api";
 import { ApprovalLevelSelect, type ApprovalValue } from "../../../cards/ApprovalLevelSelect";
 import { LogoLoader } from "../../../../components/LogoLoader";
+import { isRetryable } from "../../../../lib/api/errors";
 
 type Group = "membership" | "event";
 type Levels = {
@@ -37,7 +38,7 @@ export function useApprovalLevels(makerspaceId: number) {
 export function ApprovalLevels({ makerspaceId }: { makerspaceId: number }) {
   const { query, save } = useApprovalLevels(makerspaceId);
   if (query.isLoading) return <LogoLoader size={48} className="min-h-32 py-3" />;
-  if (query.isError || !query.data) return <ErrorBlock error={query.error} resource={t`approval levels`} onRetry={() => void query.refetch()} />;
+  if (query.isError || !query.data) return <ErrorBlock error={query.error} resource={t`approval levels`} onRetry={isRetryable(query.error) ? () => void query.refetch() : undefined} />;
   const groups = query.data.groups.filter((row) => row.available);
   const spaceValue = (group: Group) => {
     const row = groups.find((item) => item.group === group)!;

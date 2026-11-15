@@ -10,6 +10,7 @@ import { LICENSE_URL } from "./inventory/PublicPageChrome";
 import { LandingHero } from "./landing/LandingHero";
 import { SpaceCard, SpaceCardSkeletons } from "./landing/SpaceCard";
 import { useHostingConfig } from "./hosting/hostingApi";
+import { isRetryable } from "../lib/api/errors";
 
 function normalizeSearch(value: string) { return value.trim().toLowerCase().replace(/\s+/g, " "); }
 function makerspaceSearchText(space: Makerspace) {
@@ -37,7 +38,7 @@ export function LandingPage() {
   const loading = makerspacesQuery.isLoading;
   return <div className="sw-landing"><PublicLayout makerspace={{ name: "Space Works", slug: "", homeHref: "/" }} chrome="canvas"
     nav={[{ label: t`About`, href: "/about" }, ...hostLink]} headerAction={{ label: t`Sign in`, href: "/member" }} liveStatus={<ThemeToggle variant="icon" />}
-    state={makerspacesQuery.isError ? { status: "error", error: t`Couldn't load spaces. Try again.`, onRetry: () => { void makerspacesQuery.refetch(); } } : { status: "ready" }}
+    state={makerspacesQuery.isError ? { status: "error", error: t`Couldn't load spaces. Try again.`, onRetry: isRetryable(makerspacesQuery.error) ? () => { void makerspacesQuery.refetch(); } : undefined } : { status: "ready" }}
     hero={<LandingHero search={searchInput} onSearch={setSearchInput} shown={filtered.length} total={total} />}
     isEmpty={!loading && !filtered.length} empty={{ message: emptyMessage, action: searchQuery ? { label: t`Clear search`, onClick: clear } : undefined }}
     footer={{ credit: "Space Works · Made for shared workshops", links: [{ label: t`About`, href: "/about" }, ...hostLink, { label: t`License`, href: LICENSE_URL, external: true }, { label: t`Platform sign-in`, href: "/admin" }] }}>

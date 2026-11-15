@@ -15,6 +15,7 @@ import { ManagerExtras } from './ManagerExtras';
 import type { Round, Scope } from './types';
 import { PrivateProgrammeBoundary } from '../../events/hackathonGallery/PrivateProgrammeBoundary';
 import { LogoLoader } from '../../../components/LogoLoader';
+import { isRetryable } from "../../../lib/api/errors";
 
 function methodText(round: Round) {
   const min = round.min_reviews;
@@ -54,7 +55,7 @@ function JudgingPanelContent({ scope, timezone = 'UTC', fullManager = false, gal
       <h2 className="title-panel">{t`Judging`}</h2><p className="text-sm text-muted">{t`Frozen submissions, fair coverage and a clear record of every result.`}</p></div></div>
       {fullManager && features.includes('events.scores_export') ? <ScoresExportButton scope={scope} rounds={query.data?.results ?? []} /> : null}</div>
     {query.isLoading ? <LogoLoader label={t`Loading judging rounds…`} size={48} className="min-h-16 py-3" /> : null}
-    <ErrorBlock error={query.error || (planChanged ? null : mutate.error)} onRetry={() => void query.refetch()} />
+    <ErrorBlock error={query.error || (planChanged ? null : mutate.error)} onRetry={isRetryable(query.error) ? () => void query.refetch() : undefined} />
     <details><summary className="min-h-11 cursor-pointer py-3 font-semibold">{t`Manage tracks, prizes and rubrics`}</summary><div className="mt-3"><DefinitionEditor scope={scope} pairwiseEnabled={pairwiseEnabled} /></div></details>
     <fieldset className="grid gap-3 rounded-xl border border-line p-4" disabled={mutate.isPending}>
       <legend className="px-1 font-semibold">{t`Assignment planning`}</legend>

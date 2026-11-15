@@ -7,6 +7,7 @@ import { ActionControl, Card, Field, StatusPill, Pagination } from '../../../com
 import type { EventScope, HelpComment, HelpRequest, Page } from './types'
 import { basePath, errorText, programmeKey, requestFor, useProgrammeCommand, useProgrammeDetail, type Surface } from './api'
 import { LogoLoader } from '../../../components/LogoLoader'
+import { isRetryable } from "../../../lib/api/errors";
 
 export function HelpDetail({ scope, helpId, surface = 'member', onClose }: {
   scope: EventScope; helpId: number; surface?: Surface; onClose: () => void
@@ -30,7 +31,7 @@ export function HelpDetail({ scope, helpId, surface = 'member', onClose }: {
   }
   return <DetailLayout title={row?.category ?? t`Help request`} back={{ label: t`Back to queue`, onClick: onClose }}
     status={row ? <StatusPill label={row.state} tone={row.state === 'resolved' ? 'success' : 'neutral'} /> : undefined}
-    state={query.isPending ? { status: 'loading' } : query.isError ? { status: 'error', error: errorText(query.error), onRetry: () => { void query.refetch() } } : { status: 'ready' }}
+    state={query.isPending ? { status: 'loading' } : query.isError ? { status: 'error', error: errorText(query.error), onRetry: isRetryable(query.error) ? () => { void query.refetch() } : undefined } : { status: 'ready' }}
     main={<div className="grid gap-4"><Card><p className="whitespace-pre-wrap break-words">{row?.summary}</p>
       <p className="mt-3 text-sm text-muted">{row?.team_alias}{row?.zone?.table ? t` · Table ${row.zone.table}` : ''}</p>
       {row?.claim_expires_at ? <p role="status" className="mt-3 text-sm text-muted">{t`Claim expires ${formatTime(row.claim_expires_at)}`}</p> : null}

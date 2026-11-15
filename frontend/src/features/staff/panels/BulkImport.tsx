@@ -21,6 +21,7 @@ import {
 import { type Makerspace } from "./shared";
 import { FlowLayout } from "../../../components/layouts";
 import { ImportSummary, ImportProgress } from "./BulkImportResults";
+import { isRetryable } from "../../../lib/api/errors";
 
 export function BulkImport({ makerspace }: { makerspace: Makerspace }) {
   const [advancedOpen, setAdvancedOpen] = useState(false);
@@ -133,7 +134,7 @@ export function BulkImport({ makerspace }: { makerspace: Makerspace }) {
         onChange={event => setMapping(current => ({ ...current, [field]: event.target.value || undefined }))}><option value="">{t`Do not import`}</option>{headers.map(header => <option key={header} value={header}>{header}</option>)}</select></Field>)}</div> : null}
       {pending || activeJob ? <ImportProgress job={activeJob} loading={pending} /> : null}
       {(step === "review" || step === "import") && result ? <ImportSummary result={result} /> : null}
-      <ErrorText message={failure} />{jobQuery.error ? <button className="desk-button" onClick={() => { void jobQuery.refetch(); }}>{t`Retry`}</button> : null}
+      <ErrorText message={failure} />{jobQuery.error ? (isRetryable(jobQuery.error) ? <button className="desk-button" onClick={() => { void jobQuery.refetch(); }}>{t`Retry`}</button> : null) : null}
     </div>} />;
 }
 function isRunning(job?: BulkImportJob) { return job?.status === "pending" || job?.status === "running"; }

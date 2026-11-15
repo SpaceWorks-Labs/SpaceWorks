@@ -23,6 +23,7 @@ import { JOB_STEPS, useJobRequest, type JobStep } from "./useJobRequest";
 import { useMemberIdentity } from "./useMemberIdentity";
 import { machineIntakeAvailable } from "../inventory/machineIntakeAvailability";
 import { LogoLoader } from "../../components/LogoLoader";
+import { isRetryable } from "../../lib/api/errors";
 
 const STEP_LABELS: Record<JobStep, string> = { type: t`Machine type`, files: t`Files`, details: t`Details`, confirm: t`Confirm and send` };
 
@@ -69,7 +70,7 @@ export function JobRequestPage() {
   const busy = submit.isPending;
   const closed = types.error instanceof StructuredApiError && types.error.status === 404;
   const state = bootstrapQuery.isLoading || member.loading || types.isPending ? { status: "loading" as const }
-    : types.isError && !closed ? { status: "error" as const, error: t`Couldn't load the machines taking jobs. Try again.`, onRetry: () => { void types.refetch(); } }
+    : types.isError && !closed ? { status: "error" as const, error: t`Couldn't load the machines taking jobs. Try again.`, onRetry: isRetryable(types.error) ? () => { void types.refetch(); } : undefined }
       : { status: "ready" as const };
   const steps: FlowStep[] = JOB_STEPS.map((key, position) => ({ key, label: STEP_LABELS[key], required: true,
     state: position < index ? "done" : position === index ? "current" : "todo",

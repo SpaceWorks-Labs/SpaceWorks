@@ -9,6 +9,7 @@ import { GrafanaViewer } from "./GrafanaViewer";
 import { WebTelemetrySettings } from "./WebTelemetrySettings";
 import { type AnalyticsScope, useAnalyticsEmbed, useAnalyticsSummary, usesGrafana, usesMetabase } from "./analyticsApi";
 import { LogoLoader } from "../../../components/LogoLoader";
+import { isRetryable } from "../../../lib/api/errors";
 
 const errorText = (error: unknown, fallback: string) =>
   error instanceof StructuredApiError ? error.detail ?? error.message : fallback;
@@ -26,12 +27,13 @@ export function AnalyticsPanel({ scope }: { scope: AnalyticsScope }) {
   }, [dashboards, selected]);
   const metabase = usesMetabase(summary.data?.provider);
   const embed = useAnalyticsEmbed(scope, summary.data?.configured && metabase ? selected : null);
-  const title = scope.kind === "platform" ? "Platform analytics" : "Analytics";
+  const title = scope.kind === "platform" ? t`Platform analytics` : t`Analytics`;
 
   if (summary.isLoading) return <section className="desk-panel p-5"><LogoLoader size={48} className="min-h-40 py-3" /></section>;
   if (summary.error || !summary.data) {
-    return <section className="desk-panel p-5"><Callout size="panel" tone="danger" lead="Analytics could not load."
-      body={errorText(summary.error, "Try again in a moment.")} />{scope.kind === "platform" ? <PublicFirebaseSettings /> : <p>{t`Ask a platform administrator to configure Firebase web notifications.`}</p>}</section>;
+    return <section className="desk-panel p-5"><Callout size="panel" tone="danger" lead={t`Analytics could not load.`}
+      body={errorText(summary.error, t`Try again in a moment.`)} />
+      {isRetryable(summary.error) ? <button type="button" className="desk-button" onClick={() => { void summary.refetch(); }}>{t`Retry`}</button> : null}{scope.kind === "platform" ? <PublicFirebaseSettings /> : <p>{t`Ask a platform administrator to configure Firebase web notifications.`}</p>}</section>;
   }
   const data = summary.data;
   return (
@@ -62,8 +64,9 @@ export function AnalyticsPanel({ scope }: { scope: AnalyticsScope }) {
             </div>
           ) : null}
           {embed.error ? (
-            <Callout size="inline" tone="danger" lead="This dashboard could not open."
-              body={errorText(embed.error, "Check the Metabase connection.")} />
+            <><Callout size="inline" tone="danger" lead={t`This dashboard could not open.`}
+              body={errorText(embed.error, t`Check the Metabase connection.`)} />
+              {isRetryable(embed.error) ? <button type="button" className="desk-button" onClick={() => { void embed.refetch(); }}>{t`Retry`}</button> : null}</>
           ) : !embed.data ? <LogoLoader size={48} className="min-h-96 py-3" /> : (
             <div className="grid gap-2">
               <iframe className="h-[70vh] min-h-96 w-full rounded-xl border border-line bg-bg" src={embed.data.url}

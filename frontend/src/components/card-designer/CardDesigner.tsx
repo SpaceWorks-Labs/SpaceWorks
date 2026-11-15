@@ -34,12 +34,13 @@ import { useDesignerKeys } from "./useDesignerKeys";
 import { LogoLoader } from "../LogoLoader";
 import { useLayoutMedia } from "../layouts/useLayoutMedia";
 import { BrandKitProvider } from "./brandKit";
+import { isRetryable } from "../../lib/api/errors";
 
 export function CardDesigner({ designId, canEdit, title, makerspaceId, initialPerson }: { designId: number; canEdit: boolean; title?: string; makerspaceId?: number;
   /** Who the preview starts as (the owner's sample, a long name...); defaults to the short sample. */ initialPerson?: PreviewPerson }) {
   const query = useCardDesignQuery(designId);
   if (query.isLoading) return <LogoLoader size={48} className="min-h-96 py-3" />;
-  if (query.isError || !query.data) return <ErrorBlock error={query.error} resource={t`card design`} onRetry={() => void query.refetch()} />;
+  if (query.isError || !query.data) return <ErrorBlock error={query.error} resource={t`card design`} onRetry={isRetryable(query.error) ? () => void query.refetch() : undefined} />;
   return <DesignerBody design={query.data} canEdit={canEdit} title={title} makerspaceId={makerspaceId ?? query.data.makerspace_id} initialPerson={initialPerson} />;
 }
 

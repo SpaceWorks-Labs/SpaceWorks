@@ -37,6 +37,7 @@ import { DamageChargeDialog, needsDamageCharges } from "../loanCharges/DamageCha
 import { RequestCancelDialog } from "./RequestCancelDialog";
 import { BulkDecisionBar } from "../bulk/BulkDecisionBar";
 import { BoxSpinner } from "../../../components/BoxSpinner";
+import { isRetryable } from "../../../lib/api/errors";
 
 export type RequestItem = {
   id: number;
@@ -200,7 +201,8 @@ export function Queues({ makerspace, guestOnly, canViewAudit = false, recovery, 
   const retry = () => { if (queues.probeError) queues.retry(); else involved.forEach(key => { if (queries[key].isError) void queries[key].refetch(); }); };
   const state = queues.finding || involved.some(key => queries[key].isLoading) ? { status: "loading" as const }
     : queues.probeError || involved.some(key => queries[key].isError) ? { status: "error" as const,
-      error: queues.probeError ? t`Couldn't open request #${list.values.id || list.values.request}. Try again.` : t`Couldn't load requests. Try again.`, onRetry: retry }
+      error: queues.probeError ? t`Couldn't open request #${list.values.id || list.values.request}. Try again.` : t`Couldn't load requests. Try again.`,
+      onRetry: Object.values(queries).map(query => query.error).filter(Boolean).some(isRetryable) ? retry : undefined }
     : { status: "ready" as const };
   return <div onClickCapture={event => {
     const anchor = (event.target as HTMLElement).closest('nav[aria-label="Page sections"] a');

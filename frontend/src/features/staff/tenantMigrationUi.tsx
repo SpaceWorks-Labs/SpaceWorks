@@ -20,7 +20,7 @@ export function migrationError(error: unknown, field?: string) {
   // Object.values(body). Boundary errors therefore have to be read from body[field].
   const fieldMessages = field ? flatten(error.body[field]) : [];
   const detail = typeof error.body.detail === "string" ? error.body.detail : error.detail;
-  const message = fieldMessages[0] ?? detail ?? flatten(error.body)[0] ?? "The request failed.";
+  const message = fieldMessages[0] ?? detail ?? flatten(error.body)[0] ?? t`The request failed.`;
   return error.code ? `${message} (${error.code})` : message;
 }
 

@@ -6,6 +6,7 @@ import { ErrorBlock, StatCard, StatusPill } from "../../../../components/ui";
 import { localInputValue, useMachineDowntime, useMachineLockout, useUpdateDowntime, type DowntimePeriod } from "./machineDowntimeApi";
 import { LogoLoader } from "../../../../components/LogoLoader";
 import { BoxArt } from "../../../../components/BoxSpinner";
+import { isRetryable } from "../../../../lib/api/errors";
 
 const when = (iso: string | null) => iso ? formatDateTime(iso) : "";
 
@@ -29,7 +30,7 @@ export function LockoutNotice({ machineId }: { machineId: number }) {
 /** Uptime, mean time to repair and the downtime periods (maintenance and offline), with the open period editable. */
 export function DowntimePanel({ machineId, canEdit }: { machineId: number; canEdit: boolean }) {
   const downtime = useMachineDowntime(machineId);
-  if (downtime.error) return <ErrorBlock error={downtime.error} resource={t`downtime`} onRetry={() => { void downtime.refetch(); }} />;
+  if (downtime.error) return <ErrorBlock error={downtime.error} resource={t`downtime`} onRetry={isRetryable(downtime.error) ? () => { void downtime.refetch(); } : undefined} />;
   if (!downtime.data) return downtime.isLoading ? <LogoLoader label={t`Loading downtime…`} size={48} className="min-h-16 py-3" /> : null;
   const { summary, periods } = downtime.data;
   return <section className="grid gap-3" aria-labelledby={`downtime-${machineId}`}>

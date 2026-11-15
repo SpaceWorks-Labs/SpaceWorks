@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 // A barcode layer on screen. The designer draws the SERVER's encoding of the previewed value (barcodes.ts), with the
 // same rectangles as print; a holder's own card uses the server's SVG of their real code. While the encoding loads,
 // or with no design to ask, a neutral stand-in is shown.
@@ -24,7 +25,7 @@ export function BarcodeView({ layer, values, image, designId = 0 }: { layer: Lay
   const encoding = useBarcodeEncoding(designId, symbology, previewValue(layer, values), !image);
   const showText = layer.show_text !== false && !matrix;
   const text = encoding.data?.kind === "linear" ? encoding.data.text : values.number ?? "";
-  const label = layer.source === "desk" ? "DESK CODE" : text;
+  const label = layer.source === "desk" ? t`DESK CODE` : text;
   const textMm = showText ? BARCODE_TEXT_MM : 0;
   if (encoding.data && !image) {
     const { w_mm: w, h_mm: h } = layer;

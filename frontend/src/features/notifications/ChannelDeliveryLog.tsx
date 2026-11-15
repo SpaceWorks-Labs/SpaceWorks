@@ -7,6 +7,7 @@ import { categoryLabel, channelLabel } from "./channelCatalog";
 import { useDeliveries, type Delivery } from "./channelsApi";
 import { notificationEventLabel } from "./notificationEventLabels";
 import { LogoLoader } from "../../components/LogoLoader";
+import { isRetryable } from "../../lib/api/errors";
 
 const STATE_TONES: Record<Delivery["state"], Tone> = { accepted: "info", sent: "success", delivered: "success", read: "success",
   held: "warn", retrying: "warn", failed: "danger", skipped: "neutral" };
@@ -26,7 +27,7 @@ export function ChannelDeliveryLog({ makerspaceId, member = false, title = t`Del
   return <section aria-label={title} className="grid min-w-0 gap-3">
     <h3 className="title-section">{title}</h3>
     {deliveries.isLoading ? <LogoLoader label={t`Loading deliveries…`} size={48} className="min-h-16 py-3" /> : null}
-    {deliveries.error ? <ErrorBlock error={deliveries.error} onRetry={() => { void deliveries.refetch(); }} /> : null}
+    {deliveries.error ? <ErrorBlock error={deliveries.error} onRetry={isRetryable(deliveries.error) ? () => { void deliveries.refetch(); } : undefined} /> : null}
     {!deliveries.error && deliveries.data && !rows.length ? <p className="text-sm text-muted">{t`Nothing has been sent through these channels yet.`}</p> : null}
     {rows.length ? <ul className="grid min-w-0 divide-y divide-line rounded-lg border border-line">
       {rows.map(row => <li key={row.id} className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2 text-sm">

@@ -15,6 +15,12 @@ export function limitAmount(row: Pick<UnifiedLimit, "unit">, value: number | nul
   return `${digits(value / 1024)} KB`;
 }
 
+/** Intl accepts decimal strings without passing through a lossy JavaScript Number. */
+export function currencyUsageAmount(currency: string, value: string) {
+  const format = new Intl.NumberFormat(formatLocale(), { maximumFractionDigits: 20 }).format as unknown as (value: string) => string;
+  return `${currency} ${format(value)}`;
+}
+
 export const LEVEL_PILL = (): Record<"warning" | "limit", { label: string; tone: "warn" | "danger" }> => ({
   warning: { label: t`Near limit`, tone: "warn" }, limit: { label: t`At limit`, tone: "danger" },
 });
@@ -23,6 +29,17 @@ export const LEVEL_PILL = (): Record<"warning" | "limit", { label: string; tone:
 export function LimitUsage({ row, showSource = false }: { row: UnifiedLimit; showSource?: boolean }) {
   const label = limitLabel(row.key, row.label);
   const source = showSource && row.source ? ` (${limitSource(row.source)})` : "";
+  if (row.unit === "amount" && row.amounts) return <>
+    {row.amounts.map(amount => <div key={amount.currency} className="grid gap-1">
+      <p className="text-xs tabular-nums text-muted">
+      {currencyUsageAmount(amount.currency, amount.used)}
+      {row.limit === null ? ` · ${t`No limit`}` : ` / ${currencyUsageAmount(amount.currency, String(row.limit))}`}
+      {source}</p>
+      {amount.percent !== null ? <ProgressBar value={amount.percent / 100} label={`${t`${label} used`} (${amount.currency})`}
+        tone={amount.percent >= 100 ? "danger" : amount.percent >= 80 ? "warn" : "accent"} /> : null}
+    </div>)}
+    {!row.amounts.length ? <p className="text-xs text-muted">{t`Limit: ${limitAmount(row, row.limit)}`}</p> : null}
+  </>;
   const text = row.used === null ? (row.limit === null ? t`No limit` : t`Limit: ${limitAmount(row, row.limit)}`)
     : row.limit === null ? t`Using ${limitAmount(row, row.used)} · no limit` : t`Using ${limitAmount(row, row.used)} of ${limitAmount(row, row.limit)}`;
   return <>

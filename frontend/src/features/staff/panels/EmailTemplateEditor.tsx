@@ -7,6 +7,7 @@ import { useSearchParams } from "react-router-dom";
 import { DefaultReference, MergeFields, PreviewPane, TemplateHeader } from "./EmailTemplateEditorParts";
 import { staffRequest } from "../../../lib/api";
 import { EmailTemplateTypeSelector, type MachineTypeOption } from "./EmailTemplateTypeSelector";
+import { isRetryable } from "../../../lib/api/errors";
 export type TemplateSummary = {
   stream: string;
   audience: string;
@@ -157,7 +158,7 @@ export function EmailTemplateEditor({
     <DetailLayout title={detail.data?.label ?? t`Email template`} back={onBack ? { label: t`All templates`, onClick: onBack } : undefined}
       status={<StatusPill label={detail.data?.is_overridden ? t`Edited` : t`Default`} tone={detail.data?.is_overridden ? "warn" : "neutral"} />}
       meta={[`${selected.stream} · to ${selected.audience}`]}
-      state={{ status: detail.isLoading ? "loading" : detail.error ? "error" : "ready", error: t`Couldn't load the template. Try again.`, onRetry: () => { void detail.refetch(); } }}
+      state={{ status: detail.isLoading ? "loading" : detail.error ? "error" : "ready", error: t`Couldn't load the template. Try again.`, onRetry: isRetryable(detail.error) ? () => { void detail.refetch(); } : undefined }}
       actions={{ primary: { label: t`Save`, pending: save.isPending, onClick: () => save.mutate(),
         // Never save before the template has loaded: an empty draft would overwrite it.
         disabled: !detail.data, disabledReason: !detail.data ? t`Wait for the template to load.` : undefined },
@@ -166,7 +167,7 @@ export function EmailTemplateEditor({
       tabs={["edit", "preview", "default"].map(value => { const next = new URLSearchParams(search); next.set("template_view", value); return { key: value, label: value[0].toUpperCase() + value.slice(1), href: `?${next}` }; })} activeTab={tab}
       main={<div className="grid gap-6">
         <EmailTemplateTypeSelector canEditSpaceDefault={selected.canEditSpaceDefault} types={selected.overridableTypes} selectedTypeId={selected.machineType?.id ?? null} onSelect={onSelectMachineType} />
-        {tab === "edit" ? edit : tab === "preview" ? <PreviewPane preview={preview.data} loading={preview.isFetching} error={preview.error} onRetry={() => { void preview.refetch(); }} /> : detail.data ? <DefaultReference detail={detail.data} typeOverride={Boolean(selected.machineType)} /> : null}
+        {tab === "edit" ? edit : tab === "preview" ? <PreviewPane preview={preview.data} loading={preview.isFetching} error={preview.error} onRetry={isRetryable(preview.error) ? () => { void preview.refetch(); } : undefined} /> : detail.data ? <DefaultReference detail={detail.data} typeOverride={Boolean(selected.machineType)} /> : null}
         {save.error || reset.error ? <p className="text-sm text-danger" role="alert">{(save.error ?? reset.error)?.message}</p> : null}
         {dirty && detail.data ? <><p className="text-sm text-muted">{t`Unsaved changes`}</p><SettingsActions pending={save.isPending} onSave={() => save.mutate()} onDiscard={() => { if (detail.data) setDraft(detailToDraft(detail.data)); }} /></> : null}
       </div>} aside={detail.data && tab === "edit" ? <MergeFields detail={detail.data} onInsert={insertField} /> : undefined} />

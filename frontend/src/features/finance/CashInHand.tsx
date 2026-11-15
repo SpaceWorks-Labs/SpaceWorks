@@ -10,6 +10,7 @@ import { analyticsRows, useAnalyticsCatalog, useAnalyticsReport } from "../staff
 import { CashHandoverDialog, type Holder } from "./CashHandoverDialog";
 import { localToday } from "./collectionSheetRows";
 import { invalidateFinance } from "./financeApi";
+import { isRetryable } from "../../lib/api/errors";
 
 const KEY = "cash-in-hand";
 const money = (row: Record<string, unknown>, field: string) => formatMoney(String(row[field] ?? 0), String(row.currency ?? ""));
@@ -43,7 +44,7 @@ export function CashInHand({ makerspaceId, canHandover }: { makerspaceId: number
       || t`This report needs the Reports area switched on and finance access in this space.`}</p> : null}
     {catalog.isError || query.isError ? <div role="alert" className="grid justify-items-start gap-2 text-sm text-danger">
       <p>{t`Couldn't load cash in hand.`}</p>
-      <button type="button" className="desk-button" onClick={() => void (catalog.isError ? catalog.refetch() : query.refetch())}>{t`Retry`}</button>
+      {[catalog.error, query.error].filter(Boolean).some(isRetryable) ? <button type="button" className="desk-button" onClick={() => void (catalog.isError ? catalog.refetch() : query.refetch())}>{t`Retry`}</button> : null}
     </div> : null}
     {query.isSuccess && !rows.length ? <EmptyState message={t`Nobody has recorded a cash payment in this space up to this date.`} /> : null}
     {rows.length ? <div role="region" aria-label={t`Cash in hand per collector`} tabIndex={0}

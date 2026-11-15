@@ -9,6 +9,7 @@ import { RubricEditor } from './RubricEditor'
 import { useHackathonConfig } from './useAdmissionAdmin'
 import { useStagePlan } from '../submissionStages/api'
 import type { Config } from './types'
+import { isRetryable } from "../../../lib/api/errors";
 
 export type ProgrammeFormEditor = ComponentType<{ value: unknown; onChange: (value: unknown) => void }>
 const defaults: Partial<Config> = { enabled: false, review_mode: 'rolling', review_count: 2, rsvp_days: 4,
@@ -35,7 +36,7 @@ export function HackathonConfigPanel({ eventId, FormEditor, mlhPresets }: { even
       ...(body !== query.data?.coc?.body ? { coc_body: body } : {}) }, true)
   }, onSuccess: () => { setDirty(false); void client.invalidateQueries({ queryKey: ['staff-event-admission', eventId] }) } })
   return <FormPageLayout header={{ title: t`Hackathon admission`, subtitle: t`Applications, review and teams stay inside this event.` }}
-    state={query.isLoading ? { status: 'loading' } : query.error ? { status: 'error', error: query.error.message, onRetry: () => { void query.refetch() } } : { status: 'ready' }}
+    state={query.isLoading ? { status: 'loading' } : query.error ? { status: 'error', error: query.error.message, onRetry: isRetryable(query.error) ? () => { void query.refetch() } : undefined } : { status: 'ready' }}
     submit={{ label: t`Save admission settings`, disabled: !dirty, pending: save.isPending, onClick: () => save.mutate() }}
     form={<div className="grid gap-6">
       {save.error ? <ErrorText message={save.error.message} /> : null}

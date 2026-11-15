@@ -19,6 +19,7 @@ import { LogoLoader } from "../../../components/LogoLoader";
 import { RefundCaseRow } from "../refunds/RefundCaseRow";
 import { RefundDecisionDialog } from "../refunds/RefundDecisionDialog";
 import { CASE_STATUS_TABS, type RefundCase } from "../refunds/refundsApi";
+import { isRetryable } from "../../../lib/api/errors";
 
 type Space = { id: number; name?: string; enabled_modules?: string[]; enabled_features?: string[] };
 
@@ -38,7 +39,7 @@ function FundraisingRefunds({ makerspaceId, canDecide }: { makerspaceId: number;
       activeKey={status || "all"} label={t`Refunds`}
       onChange={key => { setStatus(key === "all" ? "" : key); setPage(1); }} />
     {cases.isLoading ? <LogoLoader size={48} /> : null}
-    {cases.error ? <ErrorBlock error={cases.error} resource={t`Refunds`} onRetry={() => void cases.refetch()} /> : null}
+    {cases.error ? <ErrorBlock error={cases.error} resource={t`Refunds`} onRetry={isRetryable(cases.error) ? () => void cases.refetch() : undefined} /> : null}
     {cases.data?.count === 0 ? <EmptyState message={t`No refunds in this view yet.`} /> : null}
     {(cases.data?.results ?? []).filter(row => row.area === "donations"
       && ["donation", "sponsorship"].includes(row.payment.subject_type)).map(row =>
@@ -103,7 +104,7 @@ export function DonationsArea({ makerspace, actions, isSuperadmin = false }: {
     {!sections.length ? <p className="rounded-lg border border-line bg-panel p-4 text-sm text-muted">
       {t`Donations are switched off for this space. A Space Manager turns them on under Features.`}</p> : null}
     {sections.length ? <Tabs tabs={sections} activeKey={active ?? ""} label={t`Donation sections`} onChange={route.select} /> : null}
-    {needsCampaigns && campaigns.error ? <ErrorBlock error={campaigns.error} resource={t`campaigns`} onRetry={() => void campaigns.refetch()} /> : null}
+    {needsCampaigns && campaigns.error ? <ErrorBlock error={campaigns.error} resource={t`campaigns`} onRetry={isRetryable(campaigns.error) ? () => void campaigns.refetch() : undefined} /> : null}
     {needsCampaigns && campaigns.isLoading ? <LogoLoader size={48} className="min-h-16 py-3" /> : null}
     {active === "overview" && campaigns.isSuccess ? <CampaignProgress campaigns={rows} /> : null}
     {active === "gifts" && !campaigns.error ? <GiftsList makerspaceId={makerspace.id} campaigns={rows} canRecord={canRecord} taxOn={taxOn} /> : null}

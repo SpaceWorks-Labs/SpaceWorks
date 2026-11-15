@@ -15,6 +15,7 @@ import { WaiveFeesDialog } from "./WaiveFeesDialog";
 import { WaiverHistory } from "./WaiverHistory";
 import { ChargeSettle } from "../areaPayments/ChargeSettle";
 import { LogoLoader } from "../../../components/LogoLoader";
+import { isRetryable } from "../../../lib/api/errors";
 
 type LoanLike = { id: number; status: string; makerspace_id?: number };
 
@@ -75,7 +76,7 @@ function LoanChargesSection({ makerspaceId, requestId, inDisclosure = false }: {
   if (query.error) {
     if (isHiddenError(query.error)) return inDisclosure ? <p className="text-sm text-muted">{t`Charges are not available to you for this loan.`}</p> : null;
     return <p className="text-sm text-danger" role="alert">{t`Couldn't load this loan's charges.${" "}`}
-      <button className="desk-button-ghost underline" type="button" onClick={() => void query.refetch()}>{t`Try again`}</button></p>;
+      {isRetryable(query.error) ? <button className="desk-button-ghost underline" type="button" onClick={() => void query.refetch()}>{t`Try again`}</button> : null}</p>;
   }
   const data = query.data as LoanCharges | undefined;
   if (!data || !Array.isArray(data.charges)) return null;

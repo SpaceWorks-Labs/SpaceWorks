@@ -11,6 +11,7 @@ import { PlatformAnalyticsPanels } from "./PlatformAnalyticsPanels";
 import { PlatformQueuesTable } from "./platformConsole/PlatformQueuesTable";
 import { PlatformSearch } from "./platformConsole/PlatformSearch";
 import { limitLabel } from "./platformSpaces/limitCopy";
+import { isRetryable } from "../../lib/api/errors";
 
 const spaceStateStatLabel = (state: string) => ({ active: t`Active spaces`, importing: t`Spaces importing`,
   aborted: t`Aborted imports`, suspended: t`Paused spaces`, archived: t`Archived spaces`, read_only: t`Read-only spaces`,
@@ -40,7 +41,7 @@ export function PlatformDashboardPanel() {
   // Problems has its own query: a failed dashboard must not hide the checks that explain it.
   const state = dashboard.isLoading && problems.isLoading ? adminQueryState(dashboard, "platform dashboard") : { status: "ready" as const };
   const callout: CalloutProps | undefined = dashboard.isError
-    ? { size: "banner", tone: "danger", lead: t`Couldn't load the platform dashboard.`, body: dashboard.error.message, action: { label: t`Retry`, onClick: () => { void dashboard.refetch(); } } }
+    ? { size: "banner", tone: "danger", lead: t`Couldn't load the platform dashboard.`, body: dashboard.error.message, action: isRetryable(dashboard.error) ? { label: t`Retry`, onClick: () => { void dashboard.refetch(); } } : undefined }
     : attention ? { size: "banner", tone: "danger", lead: attention.message, body: t`Review this check before your next deployment change.`, action: { label: t`Open in control panel`, href: problemHref(attention) } } : undefined;
   return <DashboardLayout header={{ title: t`Platform overview`, eyebrow: t`Space Works`,
     subtitle: t`Usage totals cover every live makerspace.`,
@@ -55,7 +56,7 @@ export function PlatformDashboardPanel() {
     ] } : undefined}
     main={[
       { title: t`Problems`, empty: { message: t`All checks passed. Run checks again after a deployment change.` },
-        content: problems.isLoading ? <p role="status">{t`Running checks…`}</p> : problems.isError ? <EmptyState message={t`Couldn't load problems. Try again.`} action={{ label: t`Retry`, onClick: () => { void problems.refetch(); } }} />
+        content: problems.isLoading ? <p role="status">{t`Running checks…`}</p> : problems.isError ? <EmptyState message={t`Couldn't load problems. Try again.`} action={isRetryable(problems.error) ? { label: t`Retry`, onClick: () => { void problems.refetch(); } } : undefined} />
           : <div className="grid gap-3"><p className="text-sm text-muted">{problems.data ? <Trans>Checked <RelativeTime date={problems.data.checked_at} />.</Trans> : null}{" "}{t`Checks also run every 15 minutes through the platform scheduler.`}</p>
             {problems.data?.results.map((row, index) => <ListRow key={`${row.key}:${row.makerspace_id}:${index}`} title={row.message}
               meta={<StatusPill tone={row.status === "error" ? "danger" : row.status === "warn" ? "warn" : "success"} label={row.status === "ok" ? t`OK` : row.status === "warn" ? t`Warning` : t`Error`} />}

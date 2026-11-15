@@ -2,6 +2,7 @@ import { t } from "@lingui/core/macro";
 import { SelectedReportPanel as Panel } from "./OperationsReportSelection";
 import { BarChart, DataState, ReportTable, StatCards } from "./OperationsReportsParts";
 import { type Makerspace, useStaffGet } from "./shared";
+import { isRetryable } from "../../../lib/api/errors";
 
 type Scoped = { makerspace_id?: number };
 type Status = Scoped & { submitted: number; accepted: number; in_progress: number; completed: number; collected: number; rejected: number; failed: number; cancelled?: number };
@@ -31,7 +32,7 @@ export function OperationsReportsMachineService({ makerspace, aggregate, canMana
   const groups = aggregate ? groupsFor(report.data) : [];
   return (
     <Panel title={t`Machine service`}>
-      <DataState loading={report.isLoading} error={report.error} onRetry={() => void report.refetch()} empty={!hasRows}>
+      <DataState loading={report.isLoading} error={report.error} onRetry={isRetryable(report.error) ? () => void report.refetch() : undefined} empty={!hasRows}>
         {aggregate ? <div className="mt-4 space-y-6">{groups.map((group) => (
           <section key={group.id} className="rounded-md border border-line p-4">
             <h4 className="eyebrow">{makerspaceName(group.id)}</h4>

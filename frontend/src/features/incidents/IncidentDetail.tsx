@@ -11,6 +11,7 @@ import {
 } from "./api";
 import { IncidentFollowUps } from "./IncidentFollowUps";
 import { IncidentTriage } from "./IncidentTriage";
+import { isRetryable } from "../../lib/api/errors";
 
 const LINKS: [keyof Incident, string][] = [
   ["machine", t`Machine`], ["room", t`Room`], ["event", t`Event`], ["loan", t`Loan`], ["booking", t`Booking`],
@@ -51,7 +52,7 @@ export function IncidentDetail({ id, onBack }: { id: number; onBack: () => void 
     identity={{ kind: "icon", icon: incident?.kind === "near_miss" ? "ShieldAlert" : "TriangleAlert",
       tone: incident ? severityTone(incident.severity) : "neutral" }}
     state={query.isLoading ? { status: "loading" } : query.error
-      ? { status: "error", error: incidentErrorMessage(query.error), onRetry: () => { void query.refetch(); } } : { status: "ready" }}
+      ? { status: "error", error: incidentErrorMessage(query.error), onRetry: isRetryable(query.error) ? () => { void query.refetch(); } : undefined } : { status: "ready" }}
     status={incident ? <>
       <StatusPill tone={statusTone(incident.status)} label={STATUS_LABELS[incident.status]} />
       <StatusPill tone={severityTone(incident.severity)} label={SEVERITY_LABELS[incident.severity]} />

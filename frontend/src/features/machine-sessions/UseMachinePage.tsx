@@ -16,6 +16,7 @@ import { EventPurposePicker } from "../machine-event-use/EventPurposePicker";
 import { SessionTimerCard } from "./SessionTimerCard";
 import { duration, rateLine, when } from "./sessionFormat";
 import { BoxArt } from "../../components/BoxSpinner";
+import { isRetryable } from "../../lib/api/errors";
 
 /** The "Use this machine" sheet: what a session costs and its rules, then Start. */
 function StartSheet({ preview, onStart, starting, error, makerspaceId, eventId, onEvent }: {
@@ -63,7 +64,7 @@ function UseMachine({ machineId, context }: { machineId: number; context: Member
   return <DetailLayout back={{ label: t`My machine sessions`, href: history }}
     state={context.bootstrapError ? { status: "error", error: t`Couldn't load this makerspace. Try again.` }
       : !context.ready || (preview.isPending && machineId > 0) ? { status: "loading" }
-      : preview.isError && !missing ? { status: "error", error: t`Couldn't load this machine. Try again.`, onRetry: () => { void preview.refetch(); } }
+      : preview.isError && !missing ? { status: "error", error: t`Couldn't load this machine. Try again.`, onRetry: isRetryable(preview.error) ? () => { void preview.refetch(); } : undefined }
       : { status: "ready" }}
     isEmpty={missing || machineId <= 0}
     empty={{ message: t`This machine isn't available for sessions here. Ask staff if you think it should be.`, action: { label: t`My machine sessions`, href: history } }}

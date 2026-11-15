@@ -1,6 +1,7 @@
 import { t } from "@lingui/core/macro";
 import { useQuery } from "@tanstack/react-query";
 import { staffRequest } from "../../../lib/api";
+import type { CurrencyUsage } from "../platformSpaces/limitsApi";
 import { limitLabel } from "../platformSpaces/limitCopy";
 import { limitAmount } from "../platformSpaces/LimitRowView";
 
@@ -8,6 +9,7 @@ import { limitAmount } from "../platformSpaces/LimitRowView";
 export type AllowanceArea = "inventory" | "machines" | "events" | "bookings" | "members" | "shop" | "staff" | "qr" | "devices" | "donations" | (string & {});
 export type AllowanceLevel = "ok" | "warning" | "limit";
 export type AllowanceRow = {
+  amounts?: CurrencyUsage[] | null;
   key: string; label: string; unit: "bytes" | "count" | "amount" | "per_minute" | (string & {}); limit: number; used: number | null;
   remaining: number | null; percent: number | null; level: AllowanceLevel; areas: AllowanceArea[];
 };

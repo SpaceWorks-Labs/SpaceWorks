@@ -6,6 +6,7 @@ import { Modal } from "./Modal";
 import { useQuery } from "@tanstack/react-query";
 import { staffRequest } from "../../lib/api";
 import { dismissJob, jobRunning, jobStore, updateJob, type TrayJob } from "./jobStore";
+import { isRetryable } from "../../lib/api/errors";
 
 function useJobStatus(job: TrayJob, poll = true) {
   const query = useQuery({ queryKey: ["job-tray", job.session, job.key],
@@ -31,7 +32,7 @@ function JobStatus({ job, poll = true }: { job: TrayJob; poll?: boolean }) {
   const query = useJobStatus(job, poll);
   return <li className="flex flex-wrap items-center gap-3 border-t border-line p-3">
     <span>{job.label}</span><span className="text-sm text-muted">{jobStatusLabel(job.status)}</span>
-    {query.error ? <><span className="text-sm text-danger">{t`Could not check progress.`}</span><button className="desk-button" onClick={() => void query.refetch()}>{t`Retry status`}</button></> : null}
+    {query.error ? <><span className="text-sm text-danger">{t`Could not check progress.`}</span>{isRetryable(query.error) ? <button className="desk-button" onClick={() => void query.refetch()}>{t`Retry status`}</button> : null}</> : null}
     <button className="desk-button-ghost" aria-label={t`Dismiss ${job.label}`} onClick={() => dismissJob(job.key)}>{t`Dismiss`}</button>
   </li>;
 }

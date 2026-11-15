@@ -11,12 +11,13 @@ import { useBadgeDesigns, useStartRoleBadge, type BadgeDesigns, type BadgeRoleRo
 import { BadgeDesigner } from "./BadgeDesigner";
 import { roleLabels, type BadgeRole } from "./badgeLabels";
 import { LogoLoader } from "../../../components/LogoLoader";
+import { isRetryable } from "../../../lib/api/errors";
 
 export function RoleBadgeTabs({ eventId, makerspaceId }: { eventId: number; makerspaceId?: number }) {
   const info = useBadgeDesigns(eventId);
   const [role, setRole] = useState<BadgeRole>("attendee");
   if (info.isLoading) return <LogoLoader size={48} className="min-h-96 py-3" />;
-  if (info.isError || !info.data) return <ErrorBlock error={info.error} resource={t`badge designs`} onRetry={() => void info.refetch()} />;
+  if (info.isError || !info.data) return <ErrorBlock error={info.error} resource={t`badge designs`} onRetry={isRetryable(info.error) ? () => void info.refetch() : undefined} />;
   const labels = roleLabels();
   const rows = info.data.role_badges ? info.data.roles : info.data.roles.filter((row) => row.role === "attendee");
   const row = rows.find((item) => item.role === role) ?? rows[0];
@@ -67,7 +68,7 @@ function FreeCanvas({ designId, makerspaceId }: { designId: number; makerspaceId
 function BadgeDesignLoader({ eventId, designId, info, label }: { eventId: number; designId: number; info: BadgeDesigns; label: string }) {
   const design = useCardDesignQuery(designId);
   if (design.isLoading) return <LogoLoader size={48} className="min-h-96 py-3" />;
-  if (design.isError || !design.data) return <ErrorBlock error={design.error} resource={t`badge design`} onRetry={() => void design.refetch()} />;
+  if (design.isError || !design.data) return <ErrorBlock error={design.error} resource={t`badge design`} onRetry={isRetryable(design.error) ? () => void design.refetch() : undefined} />;
   return <BadgeDesigner key={designId} eventId={eventId} design={design.data} info={info} roleLabel={label}
     onConverted={() => void design.refetch()} />;
 }

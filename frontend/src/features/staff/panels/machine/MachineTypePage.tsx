@@ -29,7 +29,7 @@ import { TypeIntegrationSection } from "./integrations/TypeIntegrationSection";
 import { MachineTypeWizard } from "./typeWizard/MachineTypeWizard";
 
 type Props = {
-  detail?: ReactNode; indexHref?: string; settings?: ReactNode; statusFilter: string; onStatusFilter: (value: "all" | Machine["status"]) => void; onRetry: () => void; poolError?: string; onRetryPools: () => void;
+  detail?: ReactNode; indexHref?: string; settings?: ReactNode; statusFilter: string; onStatusFilter: (value: "all" | Machine["status"]) => void; onRetry?: () => void; poolError?: string; onRetryPools?: () => void;
   enabledFeatures?: string[];
   makerspaceId: number;
   canManage: boolean;
@@ -149,7 +149,7 @@ export function MachineTypePage({ enabledFeatures = [], makerspaceId, canManage,
         secondary: service && view.active === "queue" ? { label: t`Log usage`, onClick: () => setLogging(true) } : undefined,
         overflow: onWorkOrders || onSessions ? [...(onWorkOrders ? [{ label: t`Work orders`, onClick: onWorkOrders }] : []),
           ...(onSessions ? [{ label: t`Sessions`, onClick: onSessions }] : [])] : undefined }}
-      banner={poolError ? { size: "banner", tone: "warn", lead: "Couldn’t load consumable pools. Try again before starting work.", action: { label: t`Retry`, onClick: onRetryPools } } : undefined}
+      banner={poolError ? { size: "banner", tone: "warn", lead: onRetryPools ? t`Couldn’t load consumable pools. Try again before starting work.` : t`Couldn’t load consumable pools.`, action: onRetryPools ? { label: t`Retry`, onClick: onRetryPools } : undefined } : undefined}
       tabs={view.tabs} activeTab={view.active} main={main}
       state={view.active !== "machines" ? { status: "ready" } : machinesLoading ? { status: "loading" } : machinesFailed ? { status: "error", error: t`Couldn't load machines. Try again.`, onRetry } : { status: "ready" }} />
 

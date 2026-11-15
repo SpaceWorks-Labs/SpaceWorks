@@ -29,6 +29,7 @@ import { Modal } from "../../components/ui";
 import { ApiClientSecretReveal } from "./ApiClientSecretReveal";
 import { OAuthAppsSection } from "./OAuthAppsSection";
 import { type Makerspace, useStaffGet } from "./StaffPanels";
+import { isRetryable } from "../../lib/api/errors";
 
 export function ApiClientsPanel({
   makerspace,
@@ -176,7 +177,7 @@ export function ApiClientsPanel({
             clients={apiClients.data?.results}
             clientsLoading={apiClients.isLoading}
             clientsError={apiClients.error}
-            onRetry={() => { void (canManageMakerspace ? apiClients.refetch() : requests.refetch()); }}
+            onRetry={[apiClients.error, requests.error].filter(Boolean).some(isRetryable) ? () => { void (canManageMakerspace ? apiClients.refetch() : requests.refetch()); } : undefined}
             requests={requests.data?.results}
             requestsLoading={requests.isLoading}
             requestsError={requests.error}
@@ -198,6 +199,6 @@ export function ApiClientsPanel({
             onScopesUpdate={(clientId, nextScopes) => updateScopes.mutate({ clientId, nextScopes })}
           />
           </>) }, ...(canManageMakerspace ? [{ id: "oauth-apps", title: t`App connections (OAuth)`,
-            rows: <OAuthAppsSection makerspaceId={makerspace.id} /> }] : []), { id: "developer-reference", title: t`Developer reference`, rows: <ApiClientsAccessSummary makerspace={makerspace} isSuperadmin={isSuperadmin} settings={settings.data} loading={isSuperadmin && settings.isLoading} error={isSuperadmin ? settings.error : null} onRetry={() => { void settings.refetch(); }} /> }]} />
+            rows: <OAuthAppsSection makerspaceId={makerspace.id} /> }] : []), { id: "developer-reference", title: t`Developer reference`, rows: <ApiClientsAccessSummary makerspace={makerspace} isSuperadmin={isSuperadmin} settings={settings.data} loading={isSuperadmin && settings.isLoading} error={isSuperadmin ? settings.error : null} onRetry={isRetryable(settings.error) ? () => { void settings.refetch(); } : undefined} /> }]} />
   </>);
 }

@@ -8,6 +8,7 @@ import { AccountDeletionBlockers } from "./AccountDeletionBlockers";
 import { useDeleteAccount, useDeletionPreview, type DeletionBlocker, type DeletionResult } from "./accountDeletionApi";
 import { LogoLoader } from "../../components/LogoLoader";
 import { BoxArt } from "../../components/BoxSpinner";
+import { isRetryable } from "../../lib/api/errors";
 
 export function AccountDeletionReceipt({ result }: { result: DeletionResult }) {
   return <section aria-labelledby="deletion-result-heading" className="grid gap-3">
@@ -34,7 +35,7 @@ export function MemberAccountDeletion({ slug, onDeleted }: { slug: string; onDel
     <p className="text-sm text-muted">{t`If you used Apple, we will attempt to revoke its authorization. If no token is available or revocation fails, remove Space Works under Sign in with Apple in your Apple Account settings.`}</p>
     <a className="text-brand-ink underline" href="https://account.apple.com/account/manage">{t`Manage Sign in with Apple`}</a>
     {preview.isLoading ? <LogoLoader label={t`Checking account obligations…`} size={48} className="min-h-16 py-3" /> : null}
-    {preview.error ? <div><p role="alert" className="text-danger">{preview.error.message}</p><button type="button" className="desk-button" onClick={() => void preview.refetch()}>{t`Retry deletion check`}</button></div> : null}
+    {preview.error ? <div><p role="alert" className="text-danger">{preview.error.message}</p>{isRetryable(preview.error) ? <button type="button" className="desk-button" onClick={() => void preview.refetch()}>{t`Retry deletion check`}</button> : null}</div> : null}
     {blockers.length ? <><p role="status">{t`Resolve these items before deleting your account.`}</p><AccountDeletionBlockers blockers={blockers} slug={slug} /></> : null}
     {ready && preview.data ? <>
       <p role="status" className="text-sm text-muted">{preview.data.restorable ? t`Recovery during the archive window: ${preview.data.restore_reason}` : t`This account cannot be restored: ${preview.data.restore_reason}`}</p>

@@ -12,6 +12,7 @@ import { BulkIssueSummary } from "./BulkIssueSummary";
 import { useStaffCardActions } from "./StaffCardActions";
 import type { BulkIssueResult, StaffCardFilter, StaffCardHolder } from "./types";
 import { BoxArt } from "../../../../components/BoxSpinner";
+import { isRetryable } from "../../../../lib/api/errors";
 
 export function StaffCardsList({ makerspaceId, deskPrint }: { makerspaceId: number; deskPrint: boolean }) {
   const [q, setQ] = useState("");
@@ -61,7 +62,7 @@ export function StaffCardsList({ makerspaceId, deskPrint }: { makerspaceId: numb
         options={[{ value: "all", label: t`All staff` }, { value: "none", label: t`No card` }, { value: "live", label: t`Has a card` }]} />
     </FilterBar>
     {summary ? <BulkIssueSummary result={summary} names={rows} onDismiss={() => setSummary(null)} /> : null}
-    {list.isError ? <ErrorBlock error={list.error} resource={t`staff cards`} onRetry={() => void list.refetch()} /> : null}
+    {list.isError ? <ErrorBlock error={list.error} resource={t`staff cards`} onRetry={isRetryable(list.error) ? () => void list.refetch() : undefined} /> : null}
     {issue.error || bulk.error || job.error ? <ErrorBlock error={issue.error ?? bulk.error ?? job.error} /> : null}
     <DataTable columns={columns} data={rows} loading={list.isLoading} getRowId={(holder) => holder.membership_id}
       selectedIds={selected} onSelectionChange={(ids) => setSelected(ids.map(Number))} caption={t`Staff and their ID cards`}

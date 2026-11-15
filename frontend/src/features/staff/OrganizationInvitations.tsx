@@ -11,6 +11,7 @@ import {
 } from "./organizationsApi";
 import { LogoLoader } from "../../components/LogoLoader";
 import { BoxArt } from "../../components/BoxSpinner";
+import { isRetryable } from "../../lib/api/errors";
 
 function toggle(values: string[], value: string) {
   return values.includes(value) ? values.filter((item) => item !== value) : [...values, value];
@@ -58,7 +59,7 @@ export function OrganizationInvitations({ organization }: { organization: Organi
       {redeemUrl ? <div className="mt-4 rounded-xl border border-success bg-success-soft p-4 text-success-ink"><p className="font-semibold">{t`Copy this link now`}</p><p className="mt-1 break-all code-text text-xs">{redeemUrl}</p><button className="desk-button mt-3" type="button" onClick={() => navigator.clipboard.writeText(redeemUrl)}>{t`Copy link`}</button></div> : null}
 
       {invitations.isLoading ? <LogoLoader size={48} className="min-h-24 py-3" /> : null}
-      {invitations.isError ? <ErrorText resource={t`invitations`} onRetry={() => { void invitations.refetch(); }} /> : null}
+      {invitations.isError ? <ErrorText resource={t`invitations`} onRetry={isRetryable(invitations.error) ? () => { void invitations.refetch(); } : undefined} /> : null}
       {revoke.error ? <ErrorText message={revoke.error.message} /> : null}
       {invitations.data && !invitations.data.results.length ? <EmptyState message={t`No invitations yet. Create a link to bring in your team.`} /> : null}
       {invitations.data?.results.length ? <div className="mt-5 grid gap-3">{invitations.data.results.map(invitation => <ListRow key={invitation.id}

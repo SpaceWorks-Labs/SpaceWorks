@@ -13,6 +13,7 @@ import { staffRequest } from "../../lib/api";
 import { useStartCardJob } from "./cardJobs";
 import { LogoLoader } from "../../components/LogoLoader";
 import { BoxArt } from "../../components/BoxSpinner";
+import { isRetryable } from "../../lib/api/errors";
 
 export type SheetFilter = { status?: "active" | "all"; card_ids?: number[]; plan_id?: number; expiring_within_days?: number;
   /** Event cards only. */
@@ -67,7 +68,7 @@ export function SheetPreviewDialog({ open, onClose, previewPath, jobsPath, filte
       <p className="text-xs text-muted">{order === "duplex" ? t`For printers that print both sides: each back sheet follows its front sheet.`
         : t`For one-sided printers: all fronts first, then turn the stack over for the backs.`}</p>
       {preview.isLoading ? <LogoLoader size={48} className="min-h-72 py-3" /> : null}
-      {preview.isError ? <ErrorBlock error={preview.error} resource={t`sheet preview`} onRetry={() => void preview.refetch()} /> : null}
+      {preview.isError ? <ErrorBlock error={preview.error} resource={t`sheet preview`} onRetry={isRetryable(preview.error) ? () => void preview.refetch() : undefined} /> : null}
       {data ? <div className="grid gap-3" aria-busy={preview.isFetching}>
         <p role="status" className="text-sm font-semibold text-ink">{sheetSummary(data)}
           {data.total ? <span className="font-normal text-muted"> {t` Up to ${data.per_page} cards fit on each ${PAPER_LABEL[data.paper]} sheet.`}</span> : null}</p>

@@ -12,6 +12,7 @@ import {
 } from "./memberActivityApi";
 import { StaffIncludedHours } from "./StaffIncludedHours";
 import { LogoLoader } from "../../../components/LogoLoader";
+import { isRetryable } from "../../../lib/api/errors";
 
 /**
  * PE1 / decision 242(e): one member's footprint across every area. Every area shows its count
@@ -29,7 +30,7 @@ export function MemberActivitySection({ makerspaceId, userId }: { makerspaceId: 
     <h2 id={`member-activity-${userId}`} className="title-panel">{t`Activity across the space`}</h2>
     {activity.isLoading ? <LogoLoader label={t`Loading activity…`} size={48} className="min-h-16 py-3" /> : null}
     {activity.error ? <div role="alert" className="flex flex-wrap items-center gap-3 text-sm text-danger"><p>{t`Couldn't load this member's activity.`}</p>
-      <button className="desk-button" type="button" onClick={() => { void activity.refetch(); }}>{t`Retry`}</button></div> : null}
+      {isRetryable(activity.error) ? <button className="desk-button" type="button" onClick={() => { void activity.refetch(); }}>{t`Retry`}</button> : null}</div> : null}
     {activity.data ? <>
       <AccountFacts access={activity.data.access_status} member={activity.data.is_member} />
       <StaffIncludedHours makerspaceId={makerspaceId} userId={userId} />

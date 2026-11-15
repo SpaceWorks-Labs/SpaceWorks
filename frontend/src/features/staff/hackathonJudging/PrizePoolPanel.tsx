@@ -4,12 +4,13 @@ import { ErrorBlock, Metric } from '../../../components/ui';
 import { usePrizePool } from './hackmoneyApi';
 import type { Scope } from './types';
 import { formatMoney } from '../../../lib/money';
+import { isRetryable } from "../../../lib/api/errors";
 
 /** G8: prize money announced against sponsorship earmarked to this event's pool, and what was paid, taxed, owed and recovered. */
 export function PrizePoolPanel({ scope }: { scope: Scope }) {
   const pool = usePrizePool(scope, true);
   if (pool.isLoading) return <LogoLoader label={t`Loading prize pool…`} />;
-  if (!pool.data) return <ErrorBlock error={pool.error} onRetry={() => void pool.refetch()} />;
+  if (!pool.data) return <ErrorBlock error={pool.error} onRetry={isRetryable(pool.error) ? () => void pool.refetch() : undefined} />;
   const data = pool.data; const money = (value: string) => formatMoney(value, data.currency);
   return <section className="grid gap-3" aria-label={t`Prize pool`}>
     <h3 className="title-section">{t`Prize pool`}</h3>

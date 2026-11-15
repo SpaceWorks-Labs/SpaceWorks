@@ -14,6 +14,7 @@ import {
   listConnectedApps, personScopesKey, revokeAccessToken,
 } from "./personalApiAccessApi";
 import { BoxArt } from "../../../components/BoxSpinner";
+import { isRetryable } from "../../../lib/api/errors";
 
 export function PersonalApiAccessPage() {
   const queryClient = useQueryClient();
@@ -76,7 +77,7 @@ export function PersonalApiAccessPage() {
           {secret ? <ApiClientSecretReveal secret={secret} onDismiss={() => setSecret(null)} /> : null}
         </div> },
         { id: "tokens", title: t`My tokens`, rows: <div className="grid gap-2">
-          {tokens.error ? <ErrorBlock error={tokens.error} onRetry={() => { void tokens.refetch(); }} /> : null}
+          {tokens.error ? <ErrorBlock error={tokens.error} onRetry={isRetryable(tokens.error) ? () => { void tokens.refetch(); } : undefined} /> : null}
           {liveTokens.map((token) => <ListRow key={token.id} title={token.name}
             meta={<>{t`${token.scopes.join(", ")} · expires `}<RelativeTime inline date={token.expires_at} /> · {token.last_used_at
               ? <>{t`last used `}<RelativeTime date={token.last_used_at} /></> : t`never used`}</>}
@@ -84,7 +85,7 @@ export function PersonalApiAccessPage() {
           {!tokens.isLoading && !liveTokens.length ? <EmptyState message={t`No tokens. A token is shown once, right after you create it.`} /> : null}
         </div> },
         { id: "apps", title: t`Connected apps`, rows: <div className="grid gap-2">
-          {apps.error ? <ErrorBlock error={apps.error} onRetry={() => { void apps.refetch(); }} /> : null}
+          {apps.error ? <ErrorBlock error={apps.error} onRetry={isRetryable(apps.error) ? () => { void apps.refetch(); } : undefined} /> : null}
           {(apps.data ?? []).map((app) => <ListRow key={app.application_id} title={app.app_name}
             meta={<>{t`${app.space_name} · ${app.scopes.join(", ")} · connected `}<RelativeTime date={app.granted_at} /></>}
             right={<><StatusPill label={t`Connected`} tone="success" />

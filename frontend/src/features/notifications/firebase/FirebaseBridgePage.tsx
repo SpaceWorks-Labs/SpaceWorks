@@ -4,7 +4,9 @@ import { t } from "@lingui/core/macro";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { memberRequest } from "../../../lib/api";
+import { isRetryable } from "../../../lib/api/errors";
 import { beginFirebaseBridge, disableFirebaseForSpace } from "./firebaseBridge";
+import { ErrorBlock } from "../../../components/ui";
 import { BoxArt } from "../../../components/BoxSpinner";
 
 type PublicConfig = { api_key: string; auth_domain: string; project_id: string; app_id: string; messaging_sender_id: string; vapid_public_key: string };
@@ -45,7 +47,12 @@ export function FirebaseBridgePage() {
   }
   if (!id) return <p role="alert">{t`Choose a makerspace before enabling notifications.`}</p>;
   if (config.isPending) return <LogoLoader label={t`Loading notification settings…`} />;
-  if (config.error || !config.data?.configured) return <p role="alert">{t`Browser notifications are unavailable for this space.`}</p>;
+  // 403/404 means web push is off or not offered for this space: that is "unavailable", not an outage to retry.
+  // Any other refusal keeps its explanation without a Retry; only an outage is retried (decision 588).
+  const status = (config.error as { status?: unknown } | null)?.status;
+  const unavailable = status === 403 || status === 404;
+  if (config.error && !unavailable) return <ErrorBlock error={config.error} onRetry={isRetryable(config.error) ? () => { void config.refetch(); } : undefined} />;
+  if (unavailable || !config.data?.configured) return <p role="alert">{t`Browser notifications are unavailable for this space.`}</p>;
   return <main className="desk-panel grid gap-3 p-5"><h1>{t`Browser notifications`}</h1>
     <p>{t`Allow notifications to receive a generic notice when your inbox changes.`}</p>
     <button type="button" disabled={busy} onClick={() => void enable()}>{busy ? <><BoxArt size={16} mono />{t`Working…`}</> : t`Enable notifications`}</button>

@@ -30,6 +30,7 @@ import { NotFoundPage } from "../NotFoundPage";
 import { StructuredApiError } from "../../lib/api";
 import { ErrorBlock } from "../../components/ui";
 import { nounTitleOf, spaceKindOf } from "../../lib/spaceNoun";
+import { isRetryable } from "../../lib/api/errors";
 
 /**
  * The public makerspace overview keeps published content and enabled activities together.
@@ -87,7 +88,7 @@ export function MakerspacePage({ profileSlug, profileOnly = false }: { profileSl
 
   // Only the profile-only route depends on the page endpoint. The overview never
   // gives way to a transient page-endpoint error; it simply renders as unpublished.
-  if (profileOnly && !published && pageQuery.error) return <PublicLayout {...publicPageChrome(makerspaceSlug, name, path, bootstrap)} header={{ title: t`Public page` }} state={{ status: "ready" }}><ErrorBlock error={pageQuery.error} onRetry={() => { void pageQuery.refetch(); }} /></PublicLayout>;
+  if (profileOnly && !published && pageQuery.error) return <PublicLayout {...publicPageChrome(makerspaceSlug, name, path, bootstrap)} header={{ title: t`Public page` }} state={{ status: "ready" }}><ErrorBlock error={pageQuery.error} onRetry={isRetryable(pageQuery.error) ? () => { void pageQuery.refetch(); } : undefined} /></PublicLayout>;
   if (profileOnly && !published) return <PublicLayout {...publicPageChrome(makerspaceSlug, name, path, bootstrap)} header={{ title: name }} state={{ status: "loading" }}><span /></PublicLayout>;
   return <div style={published ? pageStyle : brandStyle}>
     <PageMetadata title={published?.title ?? name} description={published?.description ?? (bootstrap.branding.welcome_body || (spaceKindOf(bootstrap.makerspace) === "organization" ? t`Events, rooms and membership with ${name}.` : t`Events, tools and spaces at ${name}.`))} path={published?.canonical_url ?? path()}

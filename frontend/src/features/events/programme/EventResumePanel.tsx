@@ -10,6 +10,7 @@ import { uploadOrigins } from './uploadPolicy'
 import { ownSavedDetails } from '../../accountSavedDetails/api'
 import { savedDetailsKey } from '../../accountSavedDetails/types'
 import { LogoLoader } from '../../../components/LogoLoader'
+import { isRetryable } from "../../../lib/api/errors";
 
 export function EventResumePanel({ scope }: { scope: EventScope }) {
   const [page, setPage] = useState(1), [file, setFile] = useState<File | null>(null), [copy, setCopy] = useState(false)
@@ -57,7 +58,7 @@ export function EventResumePanel({ scope }: { scope: EventScope }) {
     <label className="flex min-h-11 items-center gap-3 text-sm"><input type="checkbox" checked={copy} onChange={event => setCopy(event.target.checked)} />{t`Choose a copy from my Saved details`}</label>
     {copy ? <button className="desk-button" disabled={!source || mutate.isPending} onClick={() => mutate.mutate(undefined)}>{t`Copy saved résumé to this event`}</button> : null}
     {copy && saved.isSuccess && !source ? <p>{t`No ready résumé is saved in your account.`}</p> : null}
-    <ErrorBlock error={rows.error || upload.error || mutate.error || saved.error} onRetry={() => void rows.refetch()} />
+    <ErrorBlock error={rows.error || upload.error || mutate.error || saved.error} onRetry={isRetryable(rows.error) ? () => void rows.refetch() : undefined} />
     {rows.isPending ? <LogoLoader label={t`Loading event résumés…`} size={48} className="min-h-16 py-3" /> : null}
     {rows.data?.results.map(row => <article key={row.asset_id} className="grid gap-3 rounded-xl border border-line bg-panel p-4">
       <p>{row.filename || t`Résumé ${row.asset_id}`} · <span role="status">{row.state}</span></p>

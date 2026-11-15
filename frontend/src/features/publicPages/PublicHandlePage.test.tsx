@@ -3,10 +3,13 @@ import { render, screen } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { publicV1Request, refreshAccessToken, StructuredApiError } from "../../lib/api";
+import { publicAnonymousRequest } from "../../lib/api/requests";
 import { useOptionalTenant } from "../../lib/tenant";
 import { PublicHandlePage } from "./PublicHandlePage";
 
 vi.mock("../../lib/api", async original => ({ ...(await original<typeof import("../../lib/api")>()), publicV1Request: vi.fn(), refreshAccessToken: vi.fn() }));
+// The handle resolver reads through publicV1Request; the profile read itself is anonymous (CX13, publicProfileApi).
+vi.mock("../../lib/api/requests", async original => ({ ...(await original<typeof import("../../lib/api/requests")>()), publicAnonymousRequest: vi.fn() }));
 vi.mock("../../lib/tenant", async original => ({ ...(await original<typeof import("../../lib/tenant")>()), useOptionalTenant: vi.fn() }));
 
 const shown = { status: true, about: true, experience: true, education: true, achievements: true, projects: true, skills: true, links: true, interests: true, events: true, spaces: true, certifications: true };
@@ -27,27 +30,31 @@ function show(path = "/ada") {
 describe("PublicHandlePage with global member handles", () => {
   beforeEach(() => {
     vi.mocked(publicV1Request).mockReset();
+    vi.mocked(publicAnonymousRequest).mockReset();
     vi.mocked(refreshAccessToken).mockReset().mockResolvedValue(false);
     vi.mocked(useOptionalTenant).mockReturnValue(null);
   });
 
   it("renders the global profile when the handle resolves to a member", async () => {
-    vi.mocked(publicV1Request).mockImplementation(async (path: string) => path.startsWith("/public/page-handles/") ? resolution : profile);
+    vi.mocked(publicV1Request).mockImplementation(async (path: string) => { if (path.startsWith("/public/page-handles/")) return resolution; throw new Error(`unexpected ${path}`); });
+    vi.mocked(publicAnonymousRequest).mockResolvedValue(profile);
     show();
     expect(await screen.findByRole("heading", { level: 1, name: "Ada Lovelace" })).toBeVisible();
     expect(screen.getByText("Writes programs for machines.")).toBeVisible();
     expect(publicV1Request).toHaveBeenCalledWith("/public/page-handles/ada/", expect.anything());
-    expect(publicV1Request).toHaveBeenCalledWith("/public/profiles/ada/");
+    expect(publicAnonymousRequest).toHaveBeenCalledWith("/public/profiles/ada/");
   });
 
   it("still reads the profile when the resolver refuses, so a signed-in member can open a profile that is not on the open web", async () => {
-    vi.mocked(publicV1Request).mockImplementation(async (path: string) => { if (path.startsWith("/public/page-handles/")) throw missing(); return { ...profile, audience: "member" }; });
+    vi.mocked(publicV1Request).mockImplementation(async () => { throw missing(); });
+    vi.mocked(publicAnonymousRequest).mockResolvedValue({ ...profile, audience: "member" });
     show();
     expect(await screen.findByRole("heading", { level: 1, name: "Ada Lovelace" })).toBeVisible();
   });
 
   it("shows the shared not-found page when neither the resolver nor the profile read finds the handle", async () => {
     vi.mocked(publicV1Request).mockImplementation(async () => { throw missing(); });
+    vi.mocked(publicAnonymousRequest).mockImplementation(async () => { throw missing(); });
     show("/nobody");
     expect(await screen.findByRole("heading", { name: "Loan slip not found" })).toBeVisible();
   });
@@ -56,5 +63,6 @@ describe("PublicHandlePage with global member handles", () => {
     show("/-bad-");
     expect(screen.getByRole("heading", { name: "Loan slip not found" })).toBeVisible();
     expect(publicV1Request).not.toHaveBeenCalled();
+    expect(publicAnonymousRequest).not.toHaveBeenCalled();
   });
 });

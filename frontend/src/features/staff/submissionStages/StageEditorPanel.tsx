@@ -9,6 +9,7 @@ import { StageFields } from "./StageFields";
 import { StageTools } from "./StageTools";
 import type { Preset, StageDraft, StagePlan } from "./types";
 import { BoxArt } from "../../../components/BoxSpinner";
+import { isRetryable } from "../../../lib/api/errors";
 
 const WARNINGS = (): Record<string, string> => ({ ambiguous_deadline_time: t`This deadline is at midnight or noon event time; pick 23:59 or a clearer time.` });
 
@@ -19,7 +20,7 @@ export function StageEditorPanel({ eventId }: { eventId: number }) {
   const [dirty, setDirty] = useState(false); const [pending, setPending] = useState<Preset | null>(null);
   useEffect(() => { if (plan.data && !dirty) setRows(fromSaved(plan.data.stages)); }, [plan.data, dirty]);
   if (plan.isLoading) return <LogoLoader label={t`Loading submission stages…`} />;
-  if (!plan.data) return plan.error ? <ErrorText message={stageErrorMessage(plan.error)} onRetry={() => void plan.refetch()} /> : null;
+  if (!plan.data) return plan.error ? <ErrorText message={stageErrorMessage(plan.error)} onRetry={isRetryable(plan.error) ? () => void plan.refetch() : undefined} /> : null;
   const data: StagePlan = plan.data;
   const change = (next: StageDraft[]) => { setRows(next); setDirty(true); };
   const saved = (id: number | null) => data.stages.find(stage => stage.id !== null && stage.id === id);

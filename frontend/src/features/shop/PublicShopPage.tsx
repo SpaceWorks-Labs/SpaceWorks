@@ -10,6 +10,7 @@ import { fetchProducts, fetchShop, shopErrorMessage, shopKeys } from "./shopApi"
 import { ShopProductCard } from "./ShopProductCard";
 import { useShopCart } from "./useShopCart";
 import { useShopSpace } from "./useShopSpace";
+import { isRetryable } from "../../lib/api/errors";
 
 const PAGE_SIZE = 24;
 
@@ -33,7 +34,7 @@ export function PublicShopPage() {
   }, [category, products.data]);
   const failed = !space.slug || shop.error || products.error;
   const state: QueryState = failed ? { status: "error", error: !space.slug ? t`This shop is not available.` : shopErrorMessage(shop.error ?? products.error),
-    onRetry: shop.error || products.error ? () => { void shop.refetch(); void products.refetch(); } : undefined }
+    onRetry: [shop.error, products.error].filter(Boolean).some(isRetryable) ? () => { void shop.refetch(); void products.refetch(); } : undefined }
     : shop.isPending || products.isPending ? { status: "loading" } : { status: "ready" };
   const rows = products.data?.results ?? [];
   const currency = shop.data?.currency ?? "inr";

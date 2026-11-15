@@ -51,7 +51,7 @@ export function EvidenceUpload({
     setFileName(file.name);
     onUploaded(null); // invalidate any prior upload until this one completes
     try {
-      const body = { evidence_type: evidenceType, content_type: file.type, size_bytes: file.size };
+      const body = { evidence_type: evidenceType, content_type: file.type, size: file.size, size_bytes: file.size };
       const presigned = presign
         ? await presign(body)
         : await staffRequest<UploadResponse>(

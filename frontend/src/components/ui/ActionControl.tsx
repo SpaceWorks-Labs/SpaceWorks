@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useId, useState } from "react";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { RouteLink } from "./RouteLink";
@@ -11,7 +12,7 @@ export function ActionControl({ action, primary = false, className = "" }: Actio
   const [confirming, setConfirming] = useState(false);
   const run = () => { if (action.confirm) setConfirming(true); else action.onClick?.(); };
   const blocked = Boolean(action.disabled || action.pending);
-  const label = action.pending ? action.pendingLabel ?? "Working…" : action.confirms && !action.label.endsWith("…")
+  const label = action.pending ? action.pendingLabel ?? t`Working…` : action.confirms && !action.label.endsWith("…")
     ? `${action.label}…` : action.label;
   const style = action.tone === "danger" ? "desk-button-danger-outline"
     : primary ? "desk-button-primary" : "desk-button";

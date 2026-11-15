@@ -4,6 +4,7 @@ import { EmptyState, ErrorText, ListRow, StatusPill } from "../../../components/
 import { PlanForm } from "./PlanForm";
 import { formatMoney, usePlans, type HostingPlan } from "./plansApi";
 import { LogoLoader } from "../../../components/LogoLoader";
+import { isRetryable } from "../../../lib/api/errors";
 
 function summary(plan: HostingPlan) {
   const amount = formatMoney(plan.price_minor, plan.currency);
@@ -21,7 +22,7 @@ export function PlansSection() {
   return <div className="grid gap-4">
     <button type="button" className="desk-button-primary w-full sm:w-fit" onClick={() => setEditing("new")}>{t`New plan`}</button>
     {plans.isLoading ? <LogoLoader size={48} className="min-h-24 py-3" />
-      : plans.isError ? <ErrorText resource={t`hosting plans`} onRetry={() => { void plans.refetch(); }} />
+      : plans.isError ? <ErrorText resource={t`hosting plans`} onRetry={isRetryable(plans.error) ? () => { void plans.refetch(); } : undefined} />
       : !plans.data?.length ? <EmptyState message={t`No plans yet. A plan bundles a price with limits such as members, storage and emails. Without a plan or a limit set by you, a space is unlimited.`} />
       : <div className="grid gap-3">{plans.data.map(plan => <ListRow key={plan.id} title={plan.name} meta={summary(plan)}
         right={<div className="flex flex-wrap items-center gap-2">

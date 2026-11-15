@@ -10,6 +10,7 @@ import { SubdomainProvisionSection } from "./SubdomainProvisionSection";
 import { SpaceSnapshotSection } from "./SpaceSnapshotSection";
 import { moduleList } from "../../../lib/moduleLabels";
 import { LogoLoader } from "../../../components/LogoLoader";
+import { isRetryable } from "../../../lib/api/errors";
 
 // A function, not a module constant: `t` must run after the locale is active.
 const STATUS = () => ({ ok: [t`OK`, "success"], warn: [t`Warning`, "warn"], error: [t`Error`, "danger"] }) as const;
@@ -19,7 +20,7 @@ export function SpaceDetailDrawer({ card, onClose }: { card: HealthCard; onClose
   const detail = useQuery({ queryKey: [...healthKey, "detail", card.id], queryFn: () => getSpaceHealth(card.id) });
   const data = detail.data;
   return <DetailDrawer open title={card.name} onClose={onClose}>
-    {detail.isLoading ? <LogoLoader size={48} className="min-h-40 py-3" /> : detail.isError ? <ErrorText resource={t`this space's health`} onRetry={() => { void detail.refetch(); }} /> : data ? <div className="grid gap-6">
+    {detail.isLoading ? <LogoLoader size={48} className="min-h-40 py-3" /> : detail.isError ? <ErrorText resource={t`this space's health`} onRetry={isRetryable(detail.error) ? () => { void detail.refetch(); } : undefined} /> : data ? <div className="grid gap-6">
       <KeyValueCard title={t`Space`} items={[
         { label: t`Web address`, value: `/m/${data.slug}` },
         { label: t`Created`, value: <RelativeTime date={data.created_at} exact /> },

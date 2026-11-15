@@ -31,6 +31,7 @@ import { useRequestDraft } from "./useRequestDraft";
 import { useInventoryCart } from "./publicInventory/useInventoryCart";
 import { usePublicCategories, usePublicInventory, useTenantBootstrap } from "./usePublicInventory";
 import { SearchField } from "../../components/ui/SearchField";
+import { isRetryable } from "../../lib/api/errors";
 
 const PAGE_SIZE = 24;
 
@@ -95,7 +96,7 @@ export function PublicInventoryPage({ embedded, resolvedSlug, inheritBranding = 
 
   // A catalogue refresh must not hide search or an already-composed request.
   const state = inventoryQuery.isLoading ? { status: "loading" as const } : inventoryQuery.isError
-    ? { status: "error" as const, error: t`Couldn't load inventory. Try again.`, onRetry: () => { void inventoryQuery.refetch(); } } : { status: "ready" as const };
+    ? { status: "error" as const, error: t`Couldn't load inventory. Try again.`, onRetry: isRetryable(inventoryQuery.error) ? () => { void inventoryQuery.refetch(); } : undefined } : { status: "ready" as const };
   const body = <div className="grid min-w-0 gap-6">
     <CatalogSidebar categories={categories} view={view} onSelect={selectView} />
     <Card><form className="flex flex-wrap items-end gap-3" onSubmit={submitSearch}>

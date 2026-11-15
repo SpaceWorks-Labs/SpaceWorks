@@ -5,6 +5,7 @@ import { Card, Field } from '../../../components/ui'
 import type { Aggregate, EventScope } from '../../events/contributions/types'
 import { errorText, useProgrammeCommand, useProgrammeDetail } from '../../events/contributions/api'
 import { SetupText, tags, iso, localDate, edited } from './setupFields'
+import { isRetryable } from "../../../lib/api/errors";
 
 interface Profile extends Aggregate { assignment_id: number; skills: string[]; availability: Array<{ starts_at: string; ends_at: string }>; affiliation: string; max_active_teams: number }
 function ProfileEditor({ scope, row }: { scope: EventScope; row: Profile }) {
@@ -38,7 +39,7 @@ function ProfileEditor({ scope, row }: { scope: EventScope; row: Profile }) {
 
 export function MentorSettingsPanel({ scope, assignmentId }: { scope: EventScope; assignmentId: number }) {
   const query = useProgrammeDetail<Profile>(scope, 'admin', `/mentor-profiles/${assignmentId}/`)
-  return <DetailLayout title={t`Mentor settings`} state={query.isPending ? { status: 'loading' } : query.isError ? { status: 'error', error: errorText(query.error), onRetry: () => { void query.refetch() } } : { status: 'ready' }}
+  return <DetailLayout title={t`Mentor settings`} state={query.isPending ? { status: 'loading' } : query.isError ? { status: 'error', error: errorText(query.error), onRetry: isRetryable(query.error) ? () => { void query.refetch() } : undefined } : { status: 'ready' }}
     main={<Card>{query.data ? <ProfileEditor key={query.data.id} scope={scope} row={query.data} /> : null}</Card>} />
 }
 

@@ -5,6 +5,7 @@ import { ListLayout } from '../../../components/layouts'
 import { ActionControl, Card } from '../../../components/ui'
 import type { Booking, EventScope, Shift } from './types'
 import { errorText, useProgrammeCommand, useProgrammeList } from './api'
+import { isRetryable } from "../../../lib/api/errors";
 
 /** Team bookings at a hackathon; without `teamId` a drop-in attendee books for themself (#128 C-36, E2-f). */
 export function OfficeHours({ scope, teamId }: { scope: EventScope; teamId?: number }) {
@@ -20,7 +21,7 @@ export function OfficeHours({ scope, teamId }: { scope: EventScope; teamId?: num
       : t`Book a place with a mentor for yourself. You can cancel it before the slot starts.` }}
     tabs={[{ key: 'slots', label: t`Available slots` }, { key: 'bookings', label: who === 'team' ? t`Team bookings` : t`My bookings` }]} activeTab={tab}
     onTabChange={key => { setTab(key); setPage(1) }}
-    state={query.isPending ? { status: 'loading' } : query.isError ? { status: 'error', error: errorText(query.error), onRetry: () => { void query.refetch() } } : { status: 'ready' }}
+    state={query.isPending ? { status: 'loading' } : query.isError ? { status: 'error', error: errorText(query.error), onRetry: isRetryable(query.error) ? () => { void query.refetch() } : undefined } : { status: 'ready' }}
     isEmpty={!query.data?.results.length} empty={{ message: tab === 'slots' ? t`No office hours are open yet.` : who === 'team' ? t`Your team has no bookings.` : t`You have no bookings.` }}
     pagination={{ page, pageSize: 24, count: query.data?.count ?? 0, onChange: setPage }}
     body={{ kind: 'rows', rows: <>{command.error ? <p role="alert" className="text-danger">{errorText(command.error)}</p> : null}

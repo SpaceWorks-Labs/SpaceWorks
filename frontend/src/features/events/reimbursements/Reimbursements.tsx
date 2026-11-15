@@ -10,6 +10,7 @@ import { commandError } from "../stagedForms/privateQueries";
 import { useNow } from "../stagedForms/useNow";
 import type { ReimbursementOverview, ReimbursementScope } from "./types";
 import { latestDecision, reimbursementStateLabel, travelCategoryLabel } from "./labels";
+import { isRetryable } from "../../../lib/api/errors";
 
 type Confirm = "award/accept" | "award/decline" | "request/withdraw";
 
@@ -37,7 +38,7 @@ export function Reimbursements({ scope, onRequest, onClaim, onAppeal, onPayout }
   const allowed = (action: string) => Boolean(row?.allowed_actions.includes(action));
   const claim = row?.claim ?? null;
   const decision = latestDecision(claim);
-  return <DetailLayout title={t`Travel support`} state={{ status: query.isPending ? "loading" : query.error ? "error" : "ready", error: t`Travel support could not be loaded.`, onRetry: () => void query.refetch() }} main={<div className="grid gap-5">
+  return <DetailLayout title={t`Travel support`} state={{ status: query.isPending ? "loading" : query.error ? "error" : "ready", error: t`Travel support could not be loaded.`, onRetry: isRetryable(query.error) ? () => void query.refetch() : undefined }} main={<div className="grid gap-5">
     <Wallet className="text-accent-ink" size={28} aria-hidden="true" />
     {!row?.available && !row?.request ? <p>{t`Travel support is unavailable for this event.`}</p> : row ? <>
       <p>{t`Support requests, award acceptance and expense claims each need your confirmation.`}</p>

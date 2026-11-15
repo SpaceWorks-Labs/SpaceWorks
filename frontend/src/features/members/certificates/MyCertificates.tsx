@@ -4,6 +4,7 @@ import { t } from "@lingui/core/macro";
 import { Award, BadgeCheck, Download, FileText, Image as ImageIcon, Share2 } from "lucide-react";
 import { EmptyState, StatusPill } from "../../../components/ui";
 import { linkedInUrl, useCertificateImage, useCertificatePdf, useHolderName, useMyCertificates, type HolderCertificate } from "./certificateApi";
+import { isRetryable } from "../../../lib/api/errors";
 
 const STATUS: Record<HolderCertificate["status"], { label: string; tone: "success" | "info" | "danger" | "neutral" }> = {
   active: { label: t`Ready`, tone: "success" }, pending: { label: t`Being prepared`, tone: "info" },
@@ -50,7 +51,7 @@ function CertificateCard({ row, makerspaceId }: { row: HolderCertificate; makers
 export function MyCertificates({ makerspaceId }: { makerspaceId: number }) {
   const query = useMyCertificates(makerspaceId);
   if (query.isLoading) return <LogoLoader label={t`Loading your certificates…`} />;
-  if (query.isError) return <p role="alert" className="text-sm text-danger">{t`Your certificates could not be loaded. `}<button type="button" className="desk-button-ghost" onClick={() => { void query.refetch(); }}>{t`Try again`}</button></p>;
+  if (query.isError) return <p role="alert" className="text-sm text-danger">{t`Your certificates could not be loaded. `}{isRetryable(query.error) ? <button type="button" className="desk-button-ghost" onClick={() => { void query.refetch(); }}>{t`Try again`}</button> : null}</p>;
   if (!query.data?.length) return <EmptyState message={t`No certificates yet. They appear here once organisers issue them.`} />;
   return <ul className="grid gap-3" aria-label={t`My certificates`}>{query.data.map((row) => <CertificateCard key={row.id} row={row} makerspaceId={makerspaceId} />)}</ul>;
 }

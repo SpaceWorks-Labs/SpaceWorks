@@ -88,11 +88,11 @@ function components(source: string, index: readonly DocEntry[]): Components {
   };
 }
 
-/** Repository Markdown as React elements. Raw HTML in a page is not rendered (react-markdown's default). */
+/** Repository Markdown as React elements, omitting raw HTML from the displayed body. */
 export function DocsMarkdown({ body, source, index, onRendered }: { body: string; source: string; index: readonly DocEntry[]; onRendered?: () => void }) {
   // Tell the page once the headings exist, so it can scroll to #anchor and start the TOC scroll-spy.
   useEffect(() => { onRendered?.(); }, [body, onRendered]);
   return <div className="sw-doc-prose">
-    <Markdown remarkPlugins={[remarkGfm, remarkDocs]} components={components(source, index)}>{body}</Markdown>
+    <Markdown skipHtml remarkPlugins={[remarkGfm, remarkDocs]} components={components(source, index)}>{body}</Markdown>
   </div>;
 }

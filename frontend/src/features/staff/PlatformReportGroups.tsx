@@ -5,6 +5,7 @@ import { consoleSessionHref } from "../../lib/api/sessionContext";
 import { groupReports } from "./panels/reportGroups";
 import { usePlatformReportCatalog } from "./platformAnalyticsApi";
 import { staffTabPath } from "./staffTabs";
+import { isRetryable } from "../../lib/api/errors";
 
 /** Superadmin roll-ups, grouped exactly like the module switches. Each opens the Reports hub in its all-makerspaces mode. */
 export function PlatformReportGroups() {
@@ -15,7 +16,7 @@ export function PlatformReportGroups() {
     <h3 className="title-section">{t`Reports by module`}</h3>
     <p className="text-sm text-muted">{t`Roll-ups across every makerspace, as totals per space. They never contain a person's details.`}</p>
     {catalog.isLoading ? <LogoLoader label={t`Loading reports…`} size={48} className="min-h-16 py-3" /> : catalog.isError ? <div role="alert">
-      <p>{t`Couldn't load the report list.`}</p><button type="button" className="desk-button" onClick={() => void catalog.refetch()}>{t`Retry`}</button></div>
+      <p>{t`Couldn't load the report list.`}</p>{isRetryable(catalog.error) ? <button type="button" className="desk-button" onClick={() => void catalog.refetch()}>{t`Retry`}</button> : null}</div>
       : !reports.length ? <p className="text-sm text-muted">{t`No roll-up reports are available.`}</p>
       : <div className="grid gap-4 sm:grid-cols-2">{groupReports(reports).map(group => <div key={group.key}>
         <h4 className="eyebrow mb-2">{group.label}</h4>

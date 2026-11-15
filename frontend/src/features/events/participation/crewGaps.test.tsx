@@ -44,7 +44,7 @@ describe("crew sign-up: catering prefill from Saved details (opt-in, #28)", () =
     expect(screen.queryByDisplayValue("98765 43210")).toBeNull();
     request.mockResolvedValue({ ...open, crew: { id: 1, version: 1, crew_role: "", state: "applied", show_publicly: false } });
     fireEvent.click(screen.getByRole("button", { name: "Sign up" }));
-    await waitFor(() => expect(request).toHaveBeenCalledWith("/events/4/crew-signup/", expect.objectContaining({ method: "POST" })));
+    await waitFor(() => expect(request).toHaveBeenCalledWith("/member/events/4/crew-signup/", expect.objectContaining({ method: "POST" })));
     const post = request.mock.calls.find(([, init]) => init?.method === "POST")!;
     expect(JSON.parse(post[1].body)).toMatchObject({ dietary: "Vegetarian, no nuts" });
   });

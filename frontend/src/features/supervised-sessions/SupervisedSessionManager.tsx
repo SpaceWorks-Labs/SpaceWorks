@@ -6,6 +6,7 @@ import { ConfirmDialog, StatusPill } from "../../components/ui";
 import { formatDateTime, formatTime } from "../../lib/format";
 import { supervisedErrorMessage, useSupervisedSession, useSupervisedSteps, type SupervisedSession } from "./api";
 import { SuperviseeAdd } from "./SuperviseeAdd";
+import { isRetryable } from "../../lib/api/errors";
 
 /** One supervised session: who is supervised, each person's use of the machine, and closing it.
  *  `picker` replaces the people search (the staff console passes its member picker). */
@@ -19,7 +20,7 @@ export function SupervisedSessionManager({ sessionId, picker }: {
   if (query.isLoading) return <LogoLoader label={t`Loading the session…`} />;
   if (query.error || !session) return <div role="alert" className="grid justify-items-start gap-2 text-sm text-danger">
     <p>{supervisedErrorMessage(query.error)}</p>
-    <button type="button" className="desk-button" onClick={() => void query.refetch()}>{t`Try again`}</button></div>;
+    {isRetryable(query.error) ? <button type="button" className="desk-button" onClick={() => void query.refetch()}>{t`Try again`}</button> : null}</div>;
   const error = [steps.add, steps.remove, steps.start, steps.end, steps.close].find(step => step.error)?.error;
   const busy = [steps.add, steps.remove, steps.start, steps.end, steps.close].some(step => step.isPending);
   const active = session.participants.filter(row => !row.removed_at);

@@ -7,6 +7,7 @@ import type { ReportCatalogItem } from "./operationsReportsConfig";
 import { groupReports } from "./reportGroups";
 import { ReportPinButton } from "./ReportPinButton";
 import { StructuredApiError } from "../../../lib/api";
+import { isRetryable } from "../../../lib/api/errors";
 
 export function ReportChartResult({ report, base, period, filters = {}, makerspaceId }: {
   report: ReportCatalogItem; base: string; period: AnalyticsPeriod; filters?: Record<string, string>;
@@ -20,7 +21,7 @@ export function ReportChartResult({ report, base, period, filters = {}, makerspa
   if (query.isLoading) return <LogoLoader label={t`Loading ${report.title}…`} size={48} className="min-h-16 py-3" />;
   if (query.error instanceof StructuredApiError && query.error.status === 403) return <p role="alert" className="text-danger">{t`Access to this makerspace's analytics is blocked. Your account needs authority for this report in this space.`}</p>;
   const rows = analyticsRows(query.data).map(row => makerspaceId !== undefined ? { makerspace_id: makerspaceId, ...row } : row);
-  return <DataState loading={false} error={query.error} empty={!rows.length} onRetry={() => void query.refetch()}>
+  return <DataState loading={false} error={query.error} empty={!rows.length} onRetry={isRetryable(query.error) ? () => void query.refetch() : undefined}>
     <button type="button" className="desk-button mb-3" disabled={query.isFetching} onClick={() => void query.refetch()}>{t`Refresh report`}</button>
     <AnalyticsData title={report.title} rows={rows} spec={report.chart_spec} hint={report.chart_hint} meta={analyticsMeta(query.data)} />
   </DataState>;

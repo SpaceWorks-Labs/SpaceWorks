@@ -9,6 +9,7 @@ import { reportFieldLabel } from "./panels/reportFieldLabels";
 import { usePlatformAnalytics } from "./platformAnalyticsApi";
 import type { PlatformDashboard } from "./platformMonitoringApi";
 import { LogoLoader } from "../../components/LogoLoader";
+import { isRetryable } from "../../lib/api/errors";
 
 type ComparisonSpace = Pick<PlatformDashboard["tenants"][number], "id" | "name" | "slug" | "reports_enabled">;
 type Row = { id: string; name: string; reportsSlug?: string; values: Record<string, number> };
@@ -55,7 +56,7 @@ export function PlatformSpaceComparison({ period, spaces }: { period: AnalyticsP
     <p className="mb-3 text-sm text-muted">{showReports
       ? t`Counted activity per space for the chosen period, with the total across every live space. Open a space's reports to see exactly what its Space Manager sees.`
       : t`Counted activity per space for the chosen period, with the total across every live space.`}</p>
-    {query.isLoading ? <LogoLoader label={t`Loading the comparison…`} size={48} className="min-h-16 py-3" /> : <DataState loading={false} error={query.error} empty={!rows.length} onRetry={() => void query.refetch()}>
+    {query.isLoading ? <LogoLoader label={t`Loading the comparison…`} size={48} className="min-h-16 py-3" /> : <DataState loading={false} error={query.error} empty={!rows.length} onRetry={isRetryable(query.error) ? () => void query.refetch() : undefined}>
       <DataTable caption={t`Activity per space`} data={rows} getRowId={row => row.id} columns={columns} />
     </DataState>}
   </section>;

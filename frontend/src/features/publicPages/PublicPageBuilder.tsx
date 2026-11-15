@@ -12,6 +12,7 @@ import { PageRevisionHistory } from "./PageRevisionHistory";
 import { PageSectionsEditor } from "./PageSectionsEditor";
 import { usePageEditor, usePageOperation, type PageOperation } from "./pageApi";
 import type { EditorState, PageDocument, PageOwner, PreviewProjection } from "./pageTypes";
+import { isRetryable } from "../../lib/api/errors";
 
 export function PublicPageBuilder({ owner }: { owner: PageOwner }) {
   return <Builder key={`${owner.kind}-${owner.id}`} owner={owner} />;
@@ -48,7 +49,7 @@ function Builder({ owner }: { owner: PageOwner }) {
   if (query.isLoading || !local && !query.error) return <LogoLoader label={t`Loading public page builder…`} />;
   if (query.error instanceof StructuredApiError && query.error.status === 403) return <p className="text-sm text-muted">{owner.kind === "makerspace"
     ? t`Only this makerspace's Space Manager can edit the public page.` : t`Only this organization's profile managers can edit the public page.`}</p>;
-  if (query.error) return <ErrorBlock error={query.error} onRetry={() => { void query.refetch(); }} />;
+  if (query.error) return <ErrorBlock error={query.error} onRetry={isRetryable(query.error) ? () => { void query.refetch(); } : undefined} />;
   if (!state || !local) return null;
   const document = local.document;
   const caps = state.capabilities;

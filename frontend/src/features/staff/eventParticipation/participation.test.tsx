@@ -73,6 +73,6 @@ describe("the private attendance reply page", () => {
     fireEvent.change(screen.getByLabelText(/A note for the organisers/), { target: { value: "away" } });
     fireEvent.click(screen.getByRole("button", { name: "No, I can't come" }));
     await waitFor(() => expect(screen.getByText(/released for someone on the waitlist/)).toBeTruthy());
-    expect(request).toHaveBeenLastCalledWith("/events/3/attendance/", expect.objectContaining({ method: "POST" }));
+    expect(request).toHaveBeenLastCalledWith("/member/events/3/attendance/", expect.objectContaining({ method: "POST" }));
   });
 });

@@ -8,6 +8,7 @@ import { useChatTemplates, useDeleteChatTemplate, type ChatTemplate, type ChatTe
 import { PAGE_SIZE } from "./parityRequest";
 import { SingleSpaceSelect, type PickedSpace } from "./SingleSpaceSelect";
 import { LogoLoader } from "../../../components/LogoLoader";
+import { isRetryable } from "../../../lib/api/errors";
 
 type Scope = { spaceId: number; surface: ChatTemplateSurface };
 
@@ -29,7 +30,7 @@ export function ChatTemplateList({ space, surface = "platform" }: { space: Picke
   return <div className="grid gap-3">
     <CollapsibleSection title={t`New template`} open={adding} onToggle={() => setAdding(!adding)}><ChatTemplateForm spaceId={space.id} surface={surface} /></CollapsibleSection>
     {list.isLoading ? <LogoLoader size={48} className="min-h-24 py-3" />
-      : list.isError ? <ErrorText resource={t`chat templates`} onRetry={() => { void list.refetch(); }} />
+      : list.isError ? <ErrorText resource={t`chat templates`} onRetry={isRetryable(list.error) ? () => { void list.refetch(); } : undefined} />
       : !rows.length ? <EmptyState message={`${space.name} uses the built-in text for every event.`} />
       : <div className="grid gap-3">{rows.map(row => <div key={row.id} className="grid gap-2">
         <ListRow title={`${row.feature} · ${row.event}`}

@@ -6,6 +6,7 @@ import { kioskOperationLabel } from "./replayRecoveryGuidance";
 import { KioskReplayResolution } from "./KioskReplayResolution";
 import { useKioskReplays, useReplayDetail } from "./useKioskReplays";
 import { LogoLoader } from "../../components/LogoLoader";
+import { isRetryable } from "../../lib/api/errors";
 
 /** `revealKey` changing (a callout's "Review failures") opens the section and scrolls it into view. */
 export function KioskReplayRecoveryPanel({ makerspaceId, revealKey = 0 }: { makerspaceId: number; revealKey?: number }) {
@@ -35,7 +36,7 @@ function RecoveryPanel({ makerspaceId, revealKey }: { makerspaceId: number; reve
         setResolution(event.target.value); setPage(1); setSelected(null); setExpanded(true);
       }}><option value="unresolved">{t`Unresolved`}</option><option value="resolved">{t`Resolved`}</option><option value="all">{t`All failures`}</option></select></Field>
       {list.isPending ? <LogoLoader label={t`Loading failed handovers…`} size={48} className="min-h-16 py-3" /> : list.isError
-        ? <ErrorBlock error={list.error} resource={t`failed handovers`} onRetry={() => { void list.refetch(); }} />
+        ? <ErrorBlock error={list.error} resource={t`failed handovers`} onRetry={isRetryable(list.error) ? () => { void list.refetch(); } : undefined} />
         : !list.data?.results.length ? <EmptyState message={t`No retained failures in this view.`} /> : <ul className="grid gap-3">
         {list.data.results.map((row) => <li key={row.id}>
           <ListRow title={`${kioskOperationLabel(row.operation_kind)} · ${row.station_name} · ${row.failure_code}`}

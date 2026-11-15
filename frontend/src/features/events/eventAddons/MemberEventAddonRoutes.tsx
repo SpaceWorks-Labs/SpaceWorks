@@ -1,4 +1,5 @@
 import { LogoLoader } from "../../../components/LogoLoader";
+import { LayoutFrame } from "../../../components/layouts/LayoutFrame";
 import { t } from "@lingui/core/macro";
 import { Route, Routes, useNavigate, useParams } from "react-router-dom";
 import { useTenant } from "../../../lib/tenant";
@@ -28,7 +29,7 @@ function EventAddonPage({ kind }: { kind: AddonKind }) {
   const space = useMakerspace();
   const eventId = Number(params.eventId);
   if (space.loading) return <LogoLoader label={t`Loading…`} />;
-  if (!space.makerspaceId || !Number.isSafeInteger(eventId)) return <p role="alert">{t`This event page is unavailable here.`}</p>;
+  if (!space.makerspaceId || !Number.isSafeInteger(eventId)) return <LayoutFrame standalone width="narrow"><p role="alert">{t`This event page is unavailable here.`}</p></LayoutFrame>;
   const makerspaceId = space.makerspaceId;
   const go = (suffix: string) => navigate(memberEventAddonHref(space.slug, eventId, suffix));
   const payouts = `${space.slug ? `/m/${encodeURIComponent(space.slug)}` : ""}/member/event-payouts`;
@@ -36,7 +37,7 @@ function EventAddonPage({ kind }: { kind: AddonKind }) {
     const scope = { actorId: user.id, makerspaceId, eventId };
     if (kind === "response") return <StageForm scope={scope} responseId={Number(params.responseId)} />;
     if (kind === "stages") return <StageForms scope={scope} onOpen={responseId => go(`stage-responses/${responseId}`)} />;
-    if (params.view === "request") return <ReimbursementRequest scope={scope} />;
+    if (params.view === "request") return <ReimbursementRequest scope={scope} backHref={memberEventAddonHref(space.slug, eventId, "reimbursement")} />;
     if (params.view === "claim") return <ReimbursementClaim scope={scope} />;
     if (params.view === "appeal") return <ReimbursementAppeal scope={scope} />;
     return <Reimbursements scope={scope} onRequest={() => go("reimbursement/request")} onClaim={() => go("reimbursement/claim")}
@@ -51,7 +52,7 @@ function EventPayoutPage() {
   const space = useMakerspace();
   const base = `${space.slug ? `/m/${encodeURIComponent(space.slug)}` : ""}/member/event-payouts`;
   return <ProgrammeAccess slug={space.slug}>{user => params.obligationId
-    ? <MemberPayoutDetail actorId={user.id} id={params.obligationId} />
+    ? <MemberPayoutDetail actorId={user.id} id={params.obligationId} backHref={base} />
     : <MemberPayoutHistory actorId={user.id} onOpen={id => navigate(`${base}/${id}`)} />}</ProgrammeAccess>;
 }
 
@@ -60,7 +61,7 @@ function PrizesPage() {
   const space = useMakerspace();
   if (space.loading) return <LogoLoader label={t`Loading…`} />;
   const makerspaceId = space.makerspaceId;
-  if (!makerspaceId) return <p role="alert">{t`Prizes are unavailable here.`}</p>;
+  if (!makerspaceId) return <LayoutFrame standalone width="narrow"><p role="alert">{t`Prizes are unavailable here.`}</p></LayoutFrame>;
   return <ProgrammeAccess slug={space.slug}>{user => <MyPrizes scope={{ makerspaceId, actorId: user.id }} />}</ProgrammeAccess>;
 }
 

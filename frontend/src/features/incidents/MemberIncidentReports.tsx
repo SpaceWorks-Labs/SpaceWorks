@@ -9,6 +9,7 @@ import {
 import { draftBody, emptyDraft, IncidentFields } from "./IncidentFields";
 import { LogoLoader } from "../../components/LogoLoader";
 import { BoxArt } from "../../components/BoxSpinner";
+import { isRetryable } from "../../lib/api/errors";
 
 /** The member's "Report a safety incident" form and their own reports (`safety.incidents`).
  *  The member reads only what they filed; staff triage notes stay on the staff side. */
@@ -43,7 +44,7 @@ export function MemberIncidentReports({ makerspaceId }: { makerspaceId: number }
     <h3 className="title-section">{t`Your reports`}</h3>
     {mine.isLoading ? <LogoLoader label={t`Loading your reports…`} size={48} className="min-h-16 py-3" />
       : mine.error ? <div role="alert" className="grid justify-items-start gap-2 text-sm text-danger"><p>{incidentErrorMessage(mine.error)}</p>
-        <button type="button" className="desk-button" onClick={() => void mine.refetch()}>{t`Try again`}</button></div>
+        {isRetryable(mine.error) ? <button type="button" className="desk-button" onClick={() => void mine.refetch()}>{t`Try again`}</button> : null}</div>
       : rows.length ? <div className="grid gap-3">{rows.map(row => <ListRow key={row.id} title={row.title}
         identity={{ kind: "icon", icon: row.kind === "near_miss" ? "ShieldAlert" : "TriangleAlert", tone: severityTone(row.severity) }}
         meta={[KIND_LABELS[row.kind], SEVERITY_LABELS[row.severity], formatDate(row.occurred_at)].join(" · ")}

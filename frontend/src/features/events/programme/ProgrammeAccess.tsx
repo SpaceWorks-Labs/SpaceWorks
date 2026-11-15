@@ -12,6 +12,7 @@ import { browserSessionIdentity } from '../../../lib/api/reauthentication'
 import type { AuthUserPayload as User } from '../../../generated/api'
 import { MemberAuthPanel } from '../../members/MemberAuthPanel'
 import { clearUploadSessions } from '../hackathonSubmissions/upload'
+import { isRetryable } from "../../../lib/api/errors";
 
 /** Personal programme pages never depend on a membership list. */
 export function ProgrammeAccess({ slug = '', children }: { slug?: string; children: (user: User) => ReactNode }) {
@@ -40,7 +41,7 @@ function AccountScreen({ slug, children, onAuthenticated }: { slug: string; chil
     {denied ? <MemberAuthPanel makerspaceSlug={slug} onAuthenticated={onAuthenticated} /> : account.isPending
       ? <BrandLoader label={t`Opening your event programme`} />
       : account.error || !account.data ? <CenteredCardLayout standalone={false} title={t`Account unavailable`} body={account.error?.message || t`Sign in to continue.`}
-        state={{ status: 'ready' }} primary={{ label: t`Try again`, onClick: () => void account.refetch() }} />
+        state={{ status: 'ready' }} primary={isRetryable(account.error) ? { label: t`Try again`, onClick: () => void account.refetch() } : { label: t`Back to events`, href: `${home}/events` }} />
         : children(account.data)}
   </AppShell>
 }

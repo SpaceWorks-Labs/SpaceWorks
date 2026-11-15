@@ -13,7 +13,7 @@ export function PasskeyRow({ passkey, busy, onRename, onRemove }: {
 }) {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(passkey.name);
-  const title = passkey.name || "Passkey";
+  const title = passkey.name || t`Passkey`;
   const meta = <>
     {t`Added ${date(passkey.created_at)} · `}{passkey.last_used_at ? <>{t`Last used `}<RelativeTime date={passkey.last_used_at} /></> : t`Not used yet`}
     {passkey.backed_up ? t` · Synced across your devices` : ""}

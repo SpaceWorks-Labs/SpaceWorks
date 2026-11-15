@@ -1,3 +1,4 @@
+import { i18n } from "../../../../../lib/i18n";
 /** Which machine-job files the browser previews (#142 OQ-12: safe formats only), by extension. */
 export type PreviewKind = "mesh" | "toolpath" | "drawing" | "image";
 
@@ -20,5 +21,8 @@ export function previewKind(extension: string): PreviewKind | null {
 }
 
 export const KIND_LABELS: Record<PreviewKind, string> = {
-  mesh: "3D model", toolpath: "Toolpath seen from above", drawing: "Drawing", image: "Image",
+  mesh: i18n._({ id: "file_preview.mesh", message: "3D model" }),
+  toolpath: i18n._({ id: "file_preview.toolpath", message: "Toolpath seen from above" }),
+  drawing: i18n._({ id: "file_preview.drawing", message: "Drawing" }),
+  image: i18n._({ id: "file_preview.image", message: "Image" }),
 };

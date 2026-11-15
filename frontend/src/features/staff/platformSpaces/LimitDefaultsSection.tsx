@@ -9,6 +9,7 @@ import { limitHint, limitLabel } from "./limitCopy";
 import { useLimitDefaults, useSaveLimitDefaults, type LimitDefaultRow, type LimitDefaults } from "./limitDefaultsApi";
 import { fromInput, groupLimits, toInput, validInput, type UnifiedLimit } from "./limitsModel";
 import { SearchField } from "../../../components/ui/SearchField";
+import { isRetryable } from "../../../lib/api/errors";
 
 const asLimit = (row: LimitDefaultRow): UnifiedLimit => ({
   key: row.key, label: row.label, area: row.group || "other", unit: row.unit, limit: row.default, used: null, percent: null,
@@ -72,7 +73,7 @@ export function LimitDefaultsSection() {
   const query = useLimitDefaults();
   if (query.isLoading) return <LogoLoader size={48} className="min-h-24 py-3" />;
   if (query.isError || !query.data || !Array.isArray(query.data.rows)) {
-    return <ErrorText resource={t`default limits`} onRetry={() => { void query.refetch(); }} />;
+    return <ErrorText resource={t`default limits`} onRetry={isRetryable(query.error) ? () => { void query.refetch(); } : undefined} />;
   }
   return <DefaultsEditor key={JSON.stringify(query.data.rows.map(row => row.default))} data={query.data} />;
 }

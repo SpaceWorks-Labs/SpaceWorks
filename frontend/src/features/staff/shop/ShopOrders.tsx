@@ -11,6 +11,7 @@ import type { ShopAccess } from "./shopAccess";
 import { ShopOrderDetail } from "./ShopOrderDetail";
 import { staffShopError, staffShopKeys } from "./staffShopApi";
 import { CHANNEL_LABELS, listOrders } from "./staffShopOrdersApi";
+import { isRetryable } from "../../../lib/api/errors";
 
 /** The order queue: newest first, filtered by status and channel, or found by the buyer's pickup code. */
 export function ShopOrders({ makerspaceId, access }: { makerspaceId: number; access: ShopAccess }) {
@@ -39,7 +40,7 @@ export function ShopOrders({ makerspaceId, access }: { makerspaceId: number; acc
   ];
   return <ListLayout header={{ eyebrow: t`Shop`, title: t`Orders`, subtitle: t`Online orders waiting at the desk, and every desk sale.` }}
     state={query.isPending ? { status: "loading" } : query.error ? { status: "error", error: staffShopError(query.error),
-      onRetry: () => { void query.refetch(); } } : { status: "ready" }}
+      onRetry: isRetryable(query.error) ? () => { void query.refetch(); } : undefined } : { status: "ready" }}
     filters={{ search: { label: t`Pickup code`, placeholder: t`Find by pickup code`, value: code, onChange: next => { setCode(next.toUpperCase()); setPage(1); } },
       chips, activeCount: chips.length, onClear: () => { setStatus(""); setChannel(""); setPage(1); dropParam("buyer", "product"); },
       controls: <div className="grid gap-3">

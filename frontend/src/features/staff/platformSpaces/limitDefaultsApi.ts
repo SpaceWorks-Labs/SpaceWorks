@@ -5,7 +5,7 @@ import type { LimitArea } from "./limitsApi";
 // Hand-written until the OpenAPI snapshot is regenerated (decision 328a).
 const PATH = "/admin/platform/limit-defaults";
 export type LimitDefaultRow = {
-  key: string; label: string; unit: "count" | "bytes"; module: string; group: string;
+  key: string; label: string; unit: "count" | "bytes" | "amount"; module: string; group: string;
   /** The platform default for this key; null = none (unlimited, the default). */
   default: number | null;
 };

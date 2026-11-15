@@ -32,6 +32,7 @@ import { AllJobsScreen } from "./machine/AllJobsScreen";
 import { AdaptersScreen } from "./machine/adapters/AdaptersScreen";
 import { MachineAccessScreen } from "../../machine-access/MachineAccessScreen";
 import { adapterSwitches } from "./machine/adapters/adaptersApi";
+import { isRetryable } from "../../../lib/api/errors";
 
 type StatusFilter = "all" | MachineStatus;
 /** The type page's tab views (MachineTypePage); `work-orders` and `sessions` stay `?view=` screens. */
@@ -256,14 +257,14 @@ function MachinesWorkspace({
       machinesLoading={machines.isLoading} machinesFailed={machines.isError} onSelectMachine={setSelectedId}
       draft={draftFor(shownType.id)} setDraft={update => setDraft(shownType.id, update)}
       detail={detail} indexHref={onTypePage ? indexHref : undefined} settings={settings} statusFilter={statusFilter}
-      onStatusFilter={setStatusFilter} onRetry={() => { void machines.refetch(); void machineTypes.refetch(); }}
-      poolError={poolQuery.error instanceof Error ? poolQuery.error.message : undefined} onRetryPools={() => { void poolQuery.refetch(); }}
+      onStatusFilter={setStatusFilter} onRetry={[machines.error, machineTypes.error].filter(Boolean).some(isRetryable) ? () => { void machines.refetch(); void machineTypes.refetch(); } : undefined}
+      poolError={poolQuery.error instanceof Error ? poolQuery.error.message : undefined} onRetryPools={isRetryable(poolQuery.error) ? () => { void poolQuery.refetch(); } : undefined}
       onWorkOrders={maintenanceEnabled ? openWorkOrders : undefined} onSessions={sessionsEnabled ? () => openSessions(shownType.id) : undefined} printerAdapter={printerAdapter}
       routedView={{ active: routedView, href: viewHref }} tabHref={tabHref} /> :
       <ListLayout header={{ title: t`Machines`, overflow: machinePayments.actions, subtitle: t`${plural(allMachines.length, { one: "# machine", other: "# machines" })} across ${plural(reachableTypes.length, { one: "# type", other: "# types" })}`,
         primary: canConfigureMachineTypes ? { label: t`Add machine type`, icon: "Plus", onClick: () => setWizardOpen(true) } : undefined, secondary: viewMenu.length > 1 ? { label: t`Views`, menu: viewMenu } : viewMenu[0] }} state={reachableTypes.length ? { status: "ready" } : opsQueryState(machines.isError ? machines : machineTypes, "machines")}
-        callout={machineTypes.isError || machines.isError ? { size: "banner", tone: "warn", lead: "Some machine information couldn’t be loaded.", action: { label: t`Retry`, onClick: () => { void machines.refetch(); void machineTypes.refetch(); } } }
-          : poolQuery.isError ? { size: "banner", tone: "warn", lead: "Couldn’t load consumable pools. Try again before starting work.", action: { label: t`Retry`, onClick: () => { void poolQuery.refetch(); } } } : undefined}
+        callout={machineTypes.isError || machines.isError ? { size: "banner", tone: "warn", lead: t`Some machine information couldn’t be loaded.`, action: [machines.error, machineTypes.error].filter(Boolean).some(isRetryable) ? { label: t`Retry`, onClick: () => { void machines.refetch(); void machineTypes.refetch(); } } : undefined }
+          : poolQuery.isError ? { size: "banner", tone: "warn", lead: isRetryable(poolQuery.error) ? t`Couldn’t load consumable pools. Try again before starting work.` : t`Couldn’t load consumable pools.`, action: isRetryable(poolQuery.error) ? { label: t`Retry`, onClick: () => { void poolQuery.refetch(); } } : undefined } : undefined}
         body={{ kind: "rows", rows: <><MachineTypeCards machineTypes={reachableTypes} machines={allMachines}
           machinesLoading={machines.isLoading} machinesFailed={machines.isError} typesLoading={machineTypes.isLoading}
           typesFailed={machineTypes.isError} hrefFor={hrefFor} />{settings}</> }}

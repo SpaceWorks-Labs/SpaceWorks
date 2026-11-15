@@ -16,6 +16,7 @@ import { ScopedEventDrawer } from "./ScopedEventDrawer";
 import { SpaceScope } from "./SpaceScope";
 import { EventRegistrationQueue } from "./EventRegistrationQueue";
 import { LogoLoader } from "../../components/LogoLoader";
+import { isRetryable } from "../../lib/api/errors";
 
 const permissionList = (permissions: string[] = []) => permissions.map(eventPermissionLabel).join(", ");
 
@@ -43,7 +44,7 @@ export function GrantedEventsPanel({ makerspaceId, grants = [], frame }: { maker
   const retry = () => { void events.refetch(); };
   // Series grants come from the signed-in account, so they stay usable while the event page loads or fails.
   const state: QueryState = series.length ? { status: "ready" } : events.isLoading ? { status: "loading" }
-    : events.error ? { status: "error", error: eventErrorText(events.error), onRetry: retry } : { status: "ready" };
+    : events.error ? { status: "error", error: eventErrorText(events.error), onRetry: isRetryable(events.error) ? retry : undefined } : { status: "ready" };
   const rows = events.data?.results ?? [];
   return <ListLayout {...frame} header={{ ...(frame?.header ?? { title: t`Assigned events`, subtitle: t`Open an event to use your assigned permissions.` }),
     overflow: queueSpaces.map(spaceId => ({ label: queueSpaces.length > 1 ? t`Registrations waiting (${slugFor(spaceId)})` : t`Registrations waiting`,
@@ -56,7 +57,7 @@ export function GrantedEventsPanel({ makerspaceId, grants = [], frame }: { maker
           meta={permissionList(grant.permissions)} onClick={() => setSelectedSeries({ id: grant.series_id!, makerspace_id: grant.makerspace_id })} />)}
       </section> : null}
       {series.length && events.isLoading ? <div role="status" className="grid gap-3"><span className="sr-only">{t`Loading assigned events…`}</span><LogoLoader size={48} className="min-h-20 py-3" /><LogoLoader size={48} className="min-h-20 py-3" /></div> : null}
-      {series.length && events.error ? <ErrorText message={eventErrorText(events.error)} onRetry={retry} /> : null}
+      {series.length && events.error ? <ErrorText message={eventErrorText(events.error)} onRetry={isRetryable(events.error) ? retry : undefined} /> : null}
       {rows.length ? <section className="grid gap-3" aria-label={t`Assigned events list`}>{series.length ? <h2 className="title-section">{t`Events`}</h2> : null}
         {rows.map((event) => <ListRow key={event.id} title={event.title} identity={{ kind: "date", date: event.starts_at }} draft={event.status === "draft"}
           onClick={() => setSelected(event)}

@@ -14,9 +14,11 @@ export type LimitRow = {
   group?: string; module?: string; platform_default?: number | null;
 };
 export type HostingType = "own" | "hosted";
+export type CurrencyUsage = { currency: string; used: string; remaining: string | null; percent: number | null };
 export type LimitLevel = "ok" | "warning" | "limit";
 /** Decisions 281/284: the monthly platform-credential and space-quota rows (`limit` null = no limit, the default). */
 export type UsageLimitRow = {
+  amounts?: CurrencyUsage[] | null;
   key: string; label: string; unit: "count" | "amount" | "bytes" | "per_minute" | (string & {}); limit: number | null; used: number | null;
   percent: number | null; level?: LimitLevel; area?: string; group?: string; module?: string; platform_default?: number | null;
 };

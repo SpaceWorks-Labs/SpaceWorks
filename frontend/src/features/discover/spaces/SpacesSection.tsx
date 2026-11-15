@@ -6,6 +6,7 @@ import { usePublicMakerspaces } from "../../inventory/usePublicInventory";
 import { SpaceCardSkeletons } from "./SpaceCard";
 import { SpacesCards } from "./SpacesDirectory";
 import { SpacesEmpty, SpacesError } from "./SpacesStates";
+import { isRetryable } from "../../../lib/api/errors";
 
 export type SpacesSectionProps = {
   /** How many cards to show before "See all spaces" (the API returns spaces A-Z). */
@@ -26,7 +27,7 @@ export function SpacesSection({ limit = 6, heading = t`Find a makerspace near yo
   const spaces = query.data ?? [];
   const shown = spaces.slice(0, Math.max(1, limit));
   let body;
-  if (query.isError && !spaces.length) body = <SpacesError onRetry={() => { void query.refetch(); }} retrying={query.isFetching} />;
+  if (query.isError && !spaces.length) body = <SpacesError onRetry={isRetryable(query.error) ? () => { void query.refetch(); } : undefined} retrying={query.isFetching} />;
   else if (query.isLoading) body = <SpaceCardSkeletons count={Math.min(Math.max(1, limit), 3)} />;
   else if (!spaces.length) body = <SpacesEmpty hosting={hosting} />;
   else body = <SpacesCards spaces={shown} />;

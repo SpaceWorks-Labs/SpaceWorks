@@ -11,6 +11,7 @@ import type { PublicEventDetail } from "./eventTicketTypes";
 
 import type { EventEligibility } from "../../generated/api";
 import { LogoLoader } from "../../components/LogoLoader";
+import { isRetryable } from "../../lib/api/errors";
 export type { EventEligibility } from "../../generated/api";
 
 export const organizationEligibilityKey = (slug: string, token: string, accountId?: number) =>
@@ -66,7 +67,7 @@ function OrganizationAdmissionCheck({ event, makerspaceSlug, organisation }: Adm
     void queryClient.invalidateQueries({ queryKey: ["public-events", makerspaceSlug] });
   }} />;
   if (account.error || eligibility.error) return <ErrorText message={t`Unable to check organization eligibility.`}
-    onRetry={() => { void account.refetch(); void eligibility.refetch(); }} />;
+    onRetry={[account.error, eligibility.error].filter(Boolean).some(isRetryable) ? () => { void account.refetch(); void eligibility.refetch(); } : undefined} />;
   if (repaired) return <div role="status"><Callout size="inline" tone="success" lead="Your registration consent has been updated." /></div>;
   if (eligibility.data?.consent_repair_required && eligibility.data.host_waiver) return <EventConsentRepairForm
     makerspaceSlug={makerspaceSlug} publicToken={event.public_token} waiver={eligibility.data.host_waiver}

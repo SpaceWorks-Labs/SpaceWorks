@@ -20,6 +20,7 @@ import { RoleLifecycleActions } from '../mentorDesk/RoleLifecycleActions'
 import { renderContributorBuilder, RoundAnswerFields } from './ProgrammeDraftForm'
 import { sessionScope } from './sessionScope'
 import { useProgrammeQuery, type Readiness } from './api'
+import { isRetryable } from "../../../lib/api/errors";
 
 type Round = Aggregate & { label: string }
 type Mapping = Aggregate & { team_id: number; mentor_assignment_id: number }
@@ -41,7 +42,7 @@ export function MentorWorkspace({ scope, manager, roundsEnabled, ownAssignmentId
   const mentors = (roles.data?.results ?? []).filter(row => row.role === 'mentor' && row.state === 'approved').map(row => ({ id: row.id, label: t`Mentor ${row.id}` }))
   const error = roles.error || assignments.error || categories.error || rounds.error || availableTeams.error || memberCategories.error
   return <div className="grid gap-5">
-    {error ? <ErrorBlock error={error} onRetry={() => { if (manager) { void roles.refetch(); void assignments.refetch() }; void categories.refetch(); if (roundsEnabled) void rounds.refetch() }} /> : null}
+    {error ? <ErrorBlock error={error} onRetry={[roles.error, assignments.error, categories.error, rounds.error].filter(Boolean).some(isRetryable) ? () => { if (manager) { void roles.refetch(); void assignments.refetch() }; void categories.refetch(); if (roundsEnabled) void rounds.refetch() } : undefined} /> : null}
     <MentorDeskPage scope={scope} teams={teams} categories={categories.data?.results ?? memberCategories.data?.results ?? []}
       rounds={roundsEnabled ? <div className="grid gap-5">
         {manager ? <MentorRoundSetup scope={scope} renderFormBuilder={renderContributorBuilder} /> : null}

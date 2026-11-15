@@ -14,7 +14,7 @@ type Presign = { object_key: string; url: string; fields?: Record<string, string
 /** Presign the staging upload, send the bytes to private storage, then attach with the holder's consent. */
 export async function uploadStaffCardPhoto(photoPath: string, photo: Blob) {
   const type = photo.type || "image/jpeg";
-  const presign = await staffRequest<Presign>(photoPath, { method: "POST", body: JSON.stringify({ content_type: type }) });
+  const presign = await staffRequest<Presign>(photoPath, { method: "POST", body: JSON.stringify({ content_type: type, size: photo.size }) });
   const upload = presign.method === "PUT"
     ? await fetch(presign.url, { method: "PUT", body: photo, headers: presign.headers })
     : await fetch(presign.url, { method: "POST", body: (() => {

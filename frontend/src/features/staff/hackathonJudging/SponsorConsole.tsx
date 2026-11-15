@@ -9,6 +9,7 @@ import { judgingKey, useJudging } from './api';
 import type { Scope } from './types';
 import { PrivateProgrammeBoundary } from '../../events/hackathonGallery/PrivateProgrammeBoundary';
 import { useClearOnAccessLoss } from '../../events/hackathonGallery/accessLoss';
+import { isRetryable } from "../../../lib/api/errors";
 
 type SponsorProject = { snapshot_id: number; title: string; description: string; track_ids: number[]; asset_ids: number[];
   resumes: { asset_id: number; download_url: string }[]; links: { kind: string; url: string }[] };
@@ -25,7 +26,7 @@ function SponsorConsoleContent({ scope, sponsorId, sponsorName, renderProjectFil
   const denied = useClearOnAccessLoss(judgingKey(scope), [query.error, mutate.error, downloadError]);
   if (denied) return <ErrorBlock error={query.error || mutate.error || downloadError} />;
   return <DetailLayout title={`${sponsorName} projects`} state={{ status: query.isLoading ? 'loading' : query.isError ? 'error' : 'ready',
-    error: query.error?.message, onRetry: () => void query.refetch() }} main={<div className="grid gap-5">
+    error: query.error?.message, onRetry: isRetryable(query.error) ? () => void query.refetch() : undefined }} main={<div className="grid gap-5">
       <p className="text-sm text-muted">{t`Only projects in your assigned sponsor tracks appear here. Résumés appear only with the participant’s current recruiting consent.`}</p>
       <Field label={t`Sponsor prize for a winner proposal`}><select className="desk-input min-h-11" value={prizeId} onChange={e => setPrizeId(e.target.value)}>
         <option value="">{t`Choose your prize`}</option>{prizeOptions.map(prize => <option key={prize.id} value={prize.id}>{prize.name}</option>)}</select></Field>

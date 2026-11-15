@@ -6,6 +6,7 @@ import { useState } from "react";
 
 import { ConfirmDialog, ErrorBlock, RelativeTime, StatusPill } from "../../../../../components/ui";
 import { useIntegrationMutation, useIntegrationStatus, useTypeIntegrations, type IntegrationStatus, type TypeIntegration } from "./printerApi";
+import { isRetryable } from "../../../../../lib/api/errors";
 
 export function TypeIntegrationSection({ makerspaceId, machineTypeId }: { makerspaceId: number; machineTypeId: number }) {
   const integrations = useTypeIntegrations(makerspaceId, machineTypeId);
@@ -18,7 +19,7 @@ export function TypeIntegrationSection({ makerspaceId, machineTypeId }: { makers
     <h3 className="title-panel">{t`Printer agent`}</h3>
     <p className="text-sm text-muted">{t`Lets connected printers of this type pull their approved jobs and report live status. It is created switched off.`}</p>
     {integrations.isLoading ? <LogoLoader label={t`Loading integrations…`} size={48} className="min-h-16 py-3" /> : null}
-    {integrations.error ? <ErrorBlock error={integrations.error} resource={t`integrations`} onRetry={() => void integrations.refetch()} /> : null}
+    {integrations.error ? <ErrorBlock error={integrations.error} resource={t`integrations`} onRetry={isRetryable(integrations.error) ? () => void integrations.refetch() : undefined} /> : null}
     {rows.map(row => <div key={row.id} className="flex flex-wrap items-center gap-3 rounded-control border border-line p-3">
       <span className="min-w-0 flex-1 text-sm font-semibold text-ink">{t`Printer agent`}</span>
       <StatusPill tone={row.enabled ? "success" : "neutral"} label={row.enabled ? t`On` : t`Off`} />

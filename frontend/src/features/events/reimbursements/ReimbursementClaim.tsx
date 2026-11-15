@@ -12,13 +12,14 @@ import { ClaimLineEditor, newClaimLine } from "./ClaimLineEditor";
 import { CATEGORIES, type Category, type ClaimSummary, type ReimbursementScope } from "./types";
 import { claimDraftLines } from "./claimPayload";
 import { LogoLoader } from "../../../components/LogoLoader";
+import { isRetryable } from "../../../lib/api/errors";
 
 export function ReimbursementClaim({ scope, onDirtyChange }: { scope: ReimbursementScope; onDirtyChange?: (dirty: boolean) => void }) {
   const query = useReimbursement(scope);
   const start = useApplicantCommand(scope);
   const row = query.data;
   if (!row) return <div>{query.error ? <p role="alert">{commandError(query.error)}</p> : <LogoLoader label={t`Loading claim…`} size={48} className="min-h-16 py-3" />}
-    {query.error ? <button type="button" className="desk-button" onClick={() => void query.refetch()}>{t`Retry`}</button> : null}</div>;
+    {query.error ? (isRetryable(query.error) ? <button type="button" className="desk-button" onClick={() => void query.refetch()}>{t`Retry`}</button> : null) : null}</div>;
   const categories: Category[] = row.programme.allowed_categories?.length ? row.programme.allowed_categories : CATEGORIES;
   const currency = row.award?.currency ?? row.programme.currency ?? "";
   if (!row.claim) {

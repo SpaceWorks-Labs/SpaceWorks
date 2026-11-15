@@ -16,6 +16,7 @@ import { GiftStatusView } from "./GiftStatusView";
 import { GuestIdentity, TaxReceiptFields } from "./GiverFieldsets";
 import { NonprofitNote } from "./NonprofitNote";
 import { BoxArt } from "../../components/BoxSpinner";
+import { isRetryable } from "../../lib/api/errors";
 
 type Frequency = "once" | Interval;
 
@@ -25,7 +26,7 @@ type Frequency = "once" | Interval;
  * gift waits for an offline payment the space records.
  */
 export function DonatePage() {
-  const { slug, path, bootstrap } = useDonationSpace();
+  const { slug, path, bootstrap, error: spaceError, refetch: refetchSpace } = useDonationSpace();
   // Decision 242(m): `/donate/campaign/<slug>` is one campaign's own page, its goal bar on top.
   const { campaign: campaignSlug } = useParams();
   // #184: with donation charges off the server refuses every gift, so the form never shows.
@@ -61,6 +62,18 @@ export function DonatePage() {
       setDone(result);
     },
   });
+  // The central portal's /donate has no selected space: say where giving happens, never "isn't taking donations".
+  if (!slug) {
+    return <DonationShell title={t`Support this space`} state={{ status: "ready" }}>
+      <Card><p role="alert" className="text-sm">{t`Give from a makerspace's own donation page.`}</p></Card>
+    </DonationShell>;
+  }
+  // A scoped page whose space failed to load is an error, never the fail-open form (decision 588: Retry only for an outage).
+  if (spaceError && !bootstrap) {
+    return <DonationShell title={t`Support this space`} state={isRetryable(spaceError)
+      ? { status: "error", error: t`Couldn't load this makerspace. Try again.`, onRetry: () => { void refetchSpace(); } }
+      : { status: "error", error: spaceError.message }}><span /></DonationShell>;
+  }
   const off = !giving || (page.error instanceof StructuredApiError && page.error.status === 404);
   if (off) {
     return <DonationShell title={t`Support this space`} state={{ status: "ready" }}>
@@ -69,7 +82,7 @@ export function DonatePage() {
   }
   const data = page.data;
   const state = page.isLoading ? { status: "loading" as const } : page.error ? { status: "error" as const,
-    error: t`Couldn't load the donation page.`, onRetry: () => { void page.refetch(); } } : { status: "ready" as const };
+    error: t`Couldn't load the donation page.`, onRetry: isRetryable(page.error) ? () => { void page.refetch(); } : undefined } : { status: "ready" as const };
   return <DonationShell title={data ? t`Support ${data.makerspace}` : t`Support this space`} subtitle={data?.intro || undefined}
     state={state}>
     {!done && featured ? <CampaignHero campaign={featured} /> : null}

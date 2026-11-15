@@ -7,6 +7,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { staffRequest } from "../../lib/api";
 import type { Page } from "./PersonalInbox";
 import { BoxArt } from "../../components/BoxSpinner";
+import { isRetryable } from "../../lib/api/errors";
 type Suppression = { id: number; address_hash: string; reason: string; created_at: string };
 
 export function SuppressionAdmin({ makerspaceId, embedded = false, dialogOpen, onDialogClose }: { makerspaceId: number; embedded?: boolean; dialogOpen?: boolean; onDialogClose?: () => void }) {
@@ -24,7 +25,7 @@ export function SuppressionAdmin({ makerspaceId, embedded = false, dialogOpen, o
   const remove = useMutation({ mutationFn: (id: number) => staffRequest(`${path}/${id}`, { method: "DELETE" }), onSuccess: refresh });
   const error = remove.error;
   const state = { status: rows.isLoading ? "loading" as const : rows.error ? "error" as const : "ready" as const,
-    error: t`Couldn't load suppressions. Try again.`, onRetry: () => { void rows.refetch(); } };
+    error: t`Couldn't load suppressions. Try again.`, onRetry: isRetryable(rows.error) ? () => { void rows.refetch(); } : undefined };
   const form = (<>
     <form className="my-3 flex flex-wrap items-end gap-3" onSubmit={(event) => { event.preventDefault(); add.mutate(); }}>
       <label className="grid gap-1 text-sm">{t`Email address`}<input className="desk-input" type="email" maxLength={254} required value={address} onChange={(e) => setAddress(e.target.value)} /></label>

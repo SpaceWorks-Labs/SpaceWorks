@@ -10,6 +10,7 @@ import { cancelMerge, confirmMerge, errorCode, fetchMergePreview, linkErrorCopy,
 import { ConfirmStep, ResultCounts, ReviewStep } from "./AccountLinkReview";
 import { proofReady, ProveStep, StartStep, type ProofFields } from "./AccountLinkSteps";
 import { isPasskeyCancelled, passkeysSupported } from "../../auth/passkeys/webauthn";
+import { isRetryable } from "../../../lib/api/errors";
 
 type Step = "start" | "prove" | "review" | "confirm";
 const ORDER: Step[] = ["start", "prove", "review", "confirm"];
@@ -67,7 +68,7 @@ export function AccountLinkFlow({ open, onClose }: { open: boolean; onClose: () 
 
   const reviewing = step === "review" || step === "confirm";
   const state = reviewing && preview.isPending ? { status: "loading" as const }
-    : reviewing && preview.isError ? { status: "error" as const, error: linkErrorCopy(preview.error), onRetry: () => void preview.refetch() }
+    : reviewing && preview.isError ? { status: "error" as const, error: linkErrorCopy(preview.error), onRetry: isRetryable(preview.error) ? () => void preview.refetch() : undefined }
     : { status: "ready" as const };
   const index = ORDER.indexOf(step);
   const steps = ORDER.map((key, i) => ({ key, label: LABELS[key], required: true,

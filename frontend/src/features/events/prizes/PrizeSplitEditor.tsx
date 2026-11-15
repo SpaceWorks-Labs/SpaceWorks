@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { ErrorBlock, Field } from '../../../components/ui';
 import { useLeaderTeam } from './api';
 import { formatMoney, milliToMoney, moneyToMilli } from '../../../lib/money';
+import { isRetryable } from "../../../lib/api/errors";
 
 /** The leader proposes how a cash prize is shared (G3). Each member then confirms their own share. */
 export function PrizeSplitEditor({ makerspaceId, eventId, actorId, pending, currency = '', onSubmit, onCancel }: {
@@ -13,7 +14,7 @@ export function PrizeSplitEditor({ makerspaceId, eventId, actorId, pending, curr
   const team = useLeaderTeam(makerspaceId, eventId, actorId, true);
   const [amounts, setAmounts] = useState<Record<number, string>>({});
   if (team.isLoading) return <LogoLoader label={t`Loading your team…`} />;
-  if (team.error) return <ErrorBlock error={team.error} onRetry={() => void team.refetch()} />;
+  if (team.error) return <ErrorBlock error={team.error} onRetry={isRetryable(team.error) ? () => void team.refetch() : undefined} />;
   const members = team.data?.members ?? [];
   if (!members.length) return <p className="text-sm text-muted" role="status">{t`Your team roster is not available here.`}</p>;
   const rows = members.map(member => ({ member_id: member.member_id, amount: (amounts[member.member_id] ?? '').trim() }))

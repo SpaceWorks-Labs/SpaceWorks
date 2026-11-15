@@ -12,6 +12,7 @@ import {
   getDisclosureClosure, listDisclosureApprovals, listImports, listMigrationExports, listPairings, tenantMigrationKeys,
   type ClosureApproval, type ImportJob, type MigrationExportJob, type Pairing,
 } from "./tenantMigrationApi";
+import { isRetryable } from "../../lib/api/errors";
 
 const getStages = () => [
   { key: "disclosure", label: t`Review what moves`, summary: t`Source · approve the exact list of people and records that move` },
@@ -63,8 +64,8 @@ export function TenantMigrationPanel({ makerspace }: { makerspace: Makerspace })
     work={<div className="@container grid gap-6">
       <Callout size="panel" tone="danger" lead={t`This is one-way.`} body={t`Switch-over archives the source space; it isn't deleted, and archives sit outside the purge guarantee.`} />
       {/* A failed list stays inline: the other stages keep working without it. */}
-      {pairings.isError ? <ErrorText resource={t`server links`} onRetry={() => { void pairings.refetch(); }} /> : null}
-      {closure.isError ? <ErrorText resource={t`the list of what moves`} onRetry={() => { void closure.refetch(); }} /> : null}
+      {pairings.isError ? <ErrorText resource={t`server links`} onRetry={isRetryable(pairings.error) ? () => { void pairings.refetch(); } : undefined} /> : null}
+      {closure.isError ? <ErrorText resource={t`the list of what moves`} onRetry={isRetryable(closure.error) ? () => { void closure.refetch(); } : undefined} /> : null}
       <TenantMigrationDisclosure makerspaceId={makerspace.id} active={current === 0} />
       <TenantMigrationPairings pairings={pairings.data ?? []} active={current === 1} />
       <TenantMigrationExports makerspaceId={makerspace.id} tenantName={makerspace.name} closureDigest={closure.data?.digest}

@@ -4,7 +4,8 @@ import { useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { CenteredCardLayout } from "../../components/layouts";
-import { publicV1Request } from "../../lib/api";
+import { publicV1Request, StructuredApiError, isSurfaceOff } from "../../lib/api";
+import { isRetryable } from "../../lib/api/errors";
 
 type OptIn = { makerspace_name: string; technician_name: string; has_phone: boolean; telegram_start: string;
   consent: { email: boolean; telegram: boolean; whatsapp: boolean; sms: boolean } };
@@ -25,10 +26,12 @@ export function TechnicianOptInPage() {
     onSuccess: data => client.setQueryData(["technician-opt-in", token], data),
   });
   const data = query.data;
+  const unavailable = query.error instanceof StructuredApiError && query.error.status === 404 && !isSurfaceOff(query.error);
   const agreed = data ? (["whatsapp", "sms"] as const).filter(channel => data.consent[channel]) : [];
   return <CenteredCardLayout media={{ icon: "HardHat", tone: "accent" }} eyebrow={data?.makerspace_name}
     title={data ? t`Repair requests for ${data.technician_name}` : t`Repair requests`}
-    state={query.isLoading ? { status: "loading" } : query.isError ? { status: "error", error: t`This link is invalid or has expired. Ask the space for a new one.` } : { status: "ready" }}
+    state={query.isLoading ? { status: "loading" } : query.isError ? { status: "error", error: unavailable ? t`This link is invalid or has expired. Ask the space for a new one.` : query.error.message,
+      onRetry: unavailable || !isRetryable(query.error) ? undefined : () => { void query.refetch(); } } : { status: "ready" }}
     body={data ? <>{t`${data.makerspace_name} would like to send you repair requests. Email always works. Choose the chat channels you agree to.`}</> : ""}
     content={data ? <div className="grid gap-3">
       {data.has_phone ? <fieldset className="grid gap-2"><legend className="eyebrow mb-1">{t`On the number the space has for you`}</legend>

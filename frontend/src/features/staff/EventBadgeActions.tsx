@@ -14,6 +14,7 @@ import { eventErrorText } from "./eventUi";
 import { DeskBadgeSwitch } from "./eventBadges/DeskBadgeSwitch";
 import { LogoLoader } from "../../components/LogoLoader";
 import { BoxArt } from "../../components/BoxSpinner";
+import { isRetryable } from "../../lib/api/errors";
 
 const BASE_FIELDS = [
   ["name", "Name"], ["event_title", "Event"], ["date_time", "Date and time"],
@@ -78,7 +79,7 @@ export function EventBadgeActions({ event, makerspaceId, selectedIds, includeAtt
     </div>
     {canPrint ? <label className="mt-3 flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" checked={includeAttended} onChange={(e) => onIncludeAttended(e.target.checked)} />{t`Allow attended registrations`}</label> : null}
     {canEdit && templateQuery.isLoading ? <LogoLoader label={t`Loading badge template…`} size={48} className="min-h-16 py-3" /> : null}
-    {canEdit && templateQuery.isError ? <button className="desk-button mt-2" type="button" onClick={() => { void templateQuery.refetch(); }}>{t`Retry badge template`}</button> : null}
+    {canEdit && templateQuery.isError && isRetryable(templateQuery.error) ? <button className="desk-button mt-2" type="button" onClick={() => { void templateQuery.refetch(); }}>{t`Retry badge template`}</button> : null}
     {canEdit && draft ? <details className="mt-3"><summary className="cursor-pointer font-semibold text-ink">{t`Badge template`}</summary>
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
         <label className="text-sm">{t`Paper`}<select className="desk-input mt-1 w-full" value={draft.paper_size} onChange={(e) => setDraft({ ...draft, paper_size: e.target.value as BadgeTemplate["paper_size"] })}><option value="A4">A4</option><option value="LETTER">{t`Letter`}</option></select></label>

@@ -5,6 +5,7 @@ import { staffRequest } from "../../../lib/api";
 import { money, ORDER_STATUS } from "../../events/ticketing/ticketingApi";
 import type { StaffOrder } from "./staffTicketingApi";
 import { LogoLoader } from "../../../components/LogoLoader";
+import { isRetryable } from "../../../lib/api/errors";
 
 const SEAT_LABEL: Record<string, string> = { unclaimed: t`Not claimed yet`, claimed: t`Claimed`, void: t`Void` };
 
@@ -15,7 +16,7 @@ export function EventOrderDetail({ orderId, onClose }: { orderId: number; onClos
   const row = order.data;
   return <Modal open onClose={onClose} title={t`Order #${orderId}`} size="xl">
     {order.isLoading ? <LogoLoader label={t`Loading order…`} size={48} className="min-h-16 py-3" /> : null}
-    {order.error ? <ErrorText message={order.error.message} onRetry={() => void order.refetch()} /> : null}
+    {order.error ? <ErrorText message={order.error.message} onRetry={isRetryable(order.error) ? () => void order.refetch() : undefined} /> : null}
     {row ? <div className="grid gap-4">
       <div className="flex flex-wrap gap-2">
         <StatusPill label={ORDER_STATUS[row.status].label} tone={ORDER_STATUS[row.status].tone} />

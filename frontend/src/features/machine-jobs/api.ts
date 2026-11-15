@@ -21,7 +21,7 @@ type StagedFile = { file_id: number; upload: PrintUpload; group: string; max_byt
 /** Stage one file against the type's formats, then send the bytes to storage (presigned POST or PUT). */
 export async function stageJobFile(slug: string, queueId: number, file: File, kind: "model" | "screenshot") {
   const staged = await tenantPublicRequest<StagedFile>(slug, `${space(slug)}/uploads`, { method: "POST",
-    body: JSON.stringify({ queue_id: queueId, filename: file.name, content_type: file.type || "application/octet-stream", kind }) });
+    body: JSON.stringify({ queue_id: queueId, filename: file.name, size: file.size, content_type: file.type || "application/octet-stream", kind }) });
   if (staged.max_bytes && file.size > staged.max_bytes) {
     throw new Error(t`${file.name} is larger than the ${Math.floor(staged.max_bytes / 1_048_576)} MB this machine accepts.`);
   }

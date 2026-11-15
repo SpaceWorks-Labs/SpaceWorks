@@ -14,6 +14,7 @@ import { WebsiteProgramme, WebsiteSectionCard, type WebsiteLinks } from "./Publi
 import { markdownMode, type PublicEventWebsiteData } from "./websiteTypes";
 import { markdownExcerpt } from "../../components/restrictedMarkdownTokens";
 import { surfaceOf } from "./publicSurface";
+import { isRetryable } from "../../lib/api/errors";
 
 /** Read the current gated projection rather than retaining a detached speaker/session snapshot. */
 export function PublicWebsiteDetailPage({ view }: { view: "schedule" | "session" | "speaker" }) {
@@ -44,13 +45,13 @@ export function PublicWebsiteDetailPage({ view }: { view: "schedule" | "session"
   const speaker = page?.sections.find((row) => row.kind === "speaker" && row.slug === speakerSlug && row.visibility === "published");
   const session = page?.sessions.find((row) => row.slug === sessionSlug && row.visibility === "published");
   const visible = allowed && page && page.section_enabled?.[view === "speaker" ? "SPEAKERS" : "SCHEDULE"] !== false && (view === "schedule" || (view === "speaker" ? speaker : session));
-  const title = view === "schedule" ? "Event schedule" : speaker?.title ?? session?.title ?? "Event website";
+  const title = view === "schedule" ? t`Event schedule` : speaker?.title ?? session?.title ?? t`Event website`;
   const image = (url: string, alt: string) => <PublicWebsiteImage makerspaceSlug={makerspaceSlug} url={url} alt={alt} />;
   const name = bootstrap?.branding.display_name || bootstrap?.makerspace.name || formatSlug(makerspaceSlug) || "Makerspace";
   const failed = !allowed || (page && !visible) || query.error;
   const state = query.isLoading && allowed ? { status: "loading" as const } : failed ? { status: "error" as const,
     error: query.error && !(query.error instanceof StructuredApiError && query.error.status === 404) ? t`Unable to load this event website.` : t`Page not found.`,
-    onRetry: query.error ? () => { void query.refetch(); } : undefined } : { status: "ready" as const };
+    onRetry: query.error && isRetryable(query.error) ? () => { void query.refetch(); } : undefined } : { status: "ready" as const };
   return <div style={brandStyle}>
     {visible && page ? <PageMetadata title={title} description={markdownExcerpt(speaker?.body ?? session?.body ?? "Event programme", markdownMode(speaker?.body_rendering ?? session?.body_rendering))} path={location.pathname} noindex={noindex} /> : null}
     <PublicLayout {...publicPageChrome(makerspaceSlug, name, path, bootstrap)} state={state} width="narrow"

@@ -4,6 +4,7 @@ import { ErrorText, Field } from "../../../components/ui";
 import { isSurfaceOff } from "../../../lib/api";
 import { orderedUnits } from "./unitHierarchy";
 import { unitErrorText, useMemberUnits, type MemberUnit } from "./unitsApi";
+import { isRetryable } from "../../../lib/api/errors";
 
 export type UnitPickerProps = {
   makerspaceId: number;
@@ -45,7 +46,7 @@ export function UnitPicker({ makerspaceId, value, onChange, label = t`Unit`, hin
         </option>)}
       </select>
     </Field>
-    {!units && query.isError ? <ErrorText message={unitErrorText(query.error)} onRetry={() => void query.refetch()} /> : null}
+    {!units && query.isError ? <ErrorText message={unitErrorText(query.error)} onRetry={isRetryable(query.error) ? () => void query.refetch() : undefined} /> : null}
     {!loading && !units && query.isSuccess && !rows.length ? <p className="text-sm text-muted">{t`No units yet. A Space Manager adds them under Settings › Member units.`}</p> : null}
   </div>;
 }

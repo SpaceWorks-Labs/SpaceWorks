@@ -7,6 +7,7 @@ import { AdmissionArtwork } from './AdmissionArtwork'
 import { useAdmission } from './useAdmission'
 import type { FormFields } from './types'
 import type { RsvpInput } from '../../../generated/api'
+import { isRetryable } from "../../../lib/api/errors";
 
 /** G mounts inside AppShell and supplies F's versioned form renderer. */
 export function HackathonApplicationPage({ publicToken, accountId, Fields, onSignIn, onOrdinaryRegister }: {
@@ -20,7 +21,7 @@ export function HackathonApplicationPage({ publicToken, accountId, Fields, onSig
   const current = context.data, row = application.data
   const error = context.error || application.error
   if (error || !current || (!row && current.routes.application)) return <CenteredCardLayout standalone={false} title={t`Event application`}
-    state={error ? { status: 'error', error: error.message, onRetry: () => { void context.refetch(); void application.refetch() } } : { status: 'loading' }}
+    state={error ? { status: 'error', error: error.message, onRetry: [context.error, application.error].filter(Boolean).some(isRetryable) ? () => { void context.refetch(); void application.refetch() } : undefined } : { status: 'loading' }}
     body={t`Load the event to review its current requirements.`} primary={{ label: t`Refresh event`, onClick: () => { void context.refetch() } }} content={<AdmissionArtwork kind="applications" />} />
   if (!current.eligibility.eligible) return <CenteredCardLayout standalone={false} title={t`Application requirements`}
     state={{ status: 'ready' }} body={t`This account does not currently meet the event's admission requirements.`} primary={{ label: t`Back to event`, onClick: () => window.history.back() }} />

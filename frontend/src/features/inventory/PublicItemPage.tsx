@@ -16,6 +16,7 @@ import { ExpectedBack } from "./ExpectedBack";
 import { publicFamilies } from "../../lib/publicHome";
 import { ItemRequestForm, useItemRequestDraft } from "./ItemRequestForm";
 import { WaitlistJoin } from "./WaitlistJoin";
+import { isRetryable } from "../../lib/api/errors";
 
 // The numeric identity is stable even if the optional readable suffix changes.
 export function publicItemId(value: string) {
@@ -43,13 +44,13 @@ export function PublicItemPage() {
   const name = bootstrap?.branding.display_name || bootstrap?.makerspace.name || "Makerspace";
   const disabled = isSurfaceOff(item.error);
   const missing = !id || (!disabled && item.error instanceof StructuredApiError && item.error.status === 404);
-  const title = missing ? "Item not found" : disabled ? "Inventory is not enabled" : product?.name ?? "Item details";
-  const description = product?.description || `Browse public tools and equipment at ${name}.`;
+  const title = missing ? t`Item not found` : disabled ? t`Inventory is not enabled` : product?.name ?? t`Item details`;
+  const description = product?.description || t`Browse public tools and equipment at ${name}.`;
   const modules = new Set(bootstrap?.modules ?? []);
   const requestEnabled = Boolean(bootstrap && publicFamilies(bootstrap).includes("inventory") && modules.has("request_workflow") && product && !product.event_only);
   const eventsOn = modules.has("events"); // decision 228a: no event route to point at while Events is off
-  const state = !bootstrap && bootstrapQuery.error ? { status: "error" as const, error: t`Couldn't load this space. Try again.`, onRetry: () => { void bootstrapQuery.refetch(); } } : !bootstrap || id && item.isLoading ? { status: "loading" as const } : item.error || missing
-    ? { status: "error" as const, error: missing ? t`This item isn't in the public catalogue.` : disabled ? t`This makerspace is not publishing inventory.` : t`Couldn't load this item. Try again.`, onRetry: () => { void item.refetch(); } }
+  const state = !bootstrap && bootstrapQuery.error ? { status: "error" as const, error: t`Couldn't load this space. Try again.`, onRetry: isRetryable(bootstrapQuery.error) ? () => { void bootstrapQuery.refetch(); } : undefined } : !bootstrap || id && item.isLoading ? { status: "loading" as const } : item.error || missing
+    ? { status: "error" as const, error: missing ? t`This item isn't in the public catalogue.` : disabled ? t`This makerspace is not publishing inventory.` : t`Couldn't load this item. Try again.`, onRetry: isRetryable(item.error) ? () => { void item.refetch(); } : undefined }
     : { status: "ready" as const };
   if (missing || disabled) return <div style={brandStyle}><PageMetadata title={`${title} · ${name}`} description={description} path={tenantPath(`items/${id ?? itemId}`)} image={bootstrap?.makerspace.logo_url} siteName={name} /><CenteredCardLayout state={{ status: "ready" }} title={title}
     body={missing ? t`This item isn't in the public catalogue.` : t`This makerspace is not publishing inventory.`}

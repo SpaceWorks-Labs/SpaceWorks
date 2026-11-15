@@ -6,6 +6,7 @@ import { hostingStatusLabels, isSelfHost, requestedKind, useHostingRequests, typ
 import { spaceNounTitle, type SpaceKind } from "../../../lib/spaceNoun";
 import { PAGE_SIZE } from "./spacesApi";
 import { LogoLoader } from "../../../components/LogoLoader";
+import { isRetryable } from "../../../lib/api/errors";
 
 export const SELF_HOST_NOTE = "Onboarding requests appear once this install hosts other makerspaces (set the platform domain).";
 
@@ -36,7 +37,7 @@ export function OnboardingSection() {
       </Field>
     </div>
     {list.isLoading ? <LogoLoader size={48} className="min-h-24 py-3" />
-      : list.isError ? <ErrorText resource={t`hosting requests`} onRetry={() => { void list.refetch(); }} />
+      : list.isError ? <ErrorText resource={t`hosting requests`} onRetry={isRetryable(list.error) ? () => { void list.refetch(); } : undefined} />
       : !rows.length ? <EmptyState message={t`No hosting requests with this status.`} />
       : <div className="grid gap-3">{rows.map(row => <ListRow key={row.id} title={row.space_name} onClick={() => setOpenId(row.id)}
         meta={<>{spaceNounTitle(requestedKind(row))} · {row.applicant_name}{row.location ? ` · ${row.location}` : ""}{row.expected_members ? t` · ${row.expected_members} expected members` : ""} · <RelativeTime date={row.created_at} /></>}

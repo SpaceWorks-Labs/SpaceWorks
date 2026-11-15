@@ -28,11 +28,22 @@ describe("incident register states", () => {
     expect(await screen.findByText(/No incidents recorded/)).toBeInTheDocument();
   });
 
+  // Decision 588: Retry only where a retry can succeed (5xx, 429 or no response).
   it.each([
     [new StructuredApiError(404, { code: "feature_disabled" }), /switched off for this space/],
     [new StructuredApiError(404, { detail: "x" }), /could not be found/],
     [new StructuredApiError(403, {}), /can't change this incident/],
+  ])("explains a refused load (%s) without offering Retry", async (error, copy) => {
+    api.staffRequest.mockImplementation((path?: string) => path?.includes("/incidents?") ? Promise.reject(error) : Promise.resolve(empty));
+    show();
+    expect(await screen.findByText(copy)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /retry|try again/i })).toBeNull();
+    expect(api.staffRequest.mock.calls.filter(([path]) => path?.includes("/incidents?"))).toHaveLength(1);
+  });
+
+  it.each([
     [new StructuredApiError(429, {}), /Too many reports/],
+    [new StructuredApiError(503, { detail: "Incidents are down." }), /Incidents are down/],
     [new Error("Network down"), /Network down/],
   ])("explains a failed load (%s) and retries on request", async (error, copy) => {
     // Path-aware: the register also asks for saved views, which must not consume the failure.

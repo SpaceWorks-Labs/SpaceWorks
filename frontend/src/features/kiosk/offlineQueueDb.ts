@@ -1,3 +1,4 @@
+import { i18n } from "../../lib/i18n";
 import {
   openEncryptedDatabase, requestValue, transactionDone, readKey,
   encryptBytes, decryptBytes, deleteScopes, expired,
@@ -12,12 +13,12 @@ export const openQueueDb = () => openEncryptedDatabase(KIOSK_DB, 1, [
 export const aad = (scope: string, kind: string, id: string) => JSON.stringify([KIOSK_DB, 1, scope, kind, id]);
 
 export async function withQueueLock<T>(task: () => Promise<T>): Promise<T> {
-  if (!navigator.locks) throw new Error("Offline storage is unavailable. Continue online on this browser.");
+  if (!navigator.locks) throw new Error(i18n._({ id: "offline.a2283dc52a9b", message: "Offline storage is unavailable. Continue online on this browser." }));
   return navigator.locks.request(`${KIOSK_DB}:storage`, task);
 }
 
 export function withReplayLock<T>(scope: string, task: () => Promise<T>): Promise<T> {
-  if (!navigator.locks) throw new Error("Offline replay is unavailable on this browser.");
+  if (!navigator.locks) throw new Error(i18n._({ id: "offline.8f17b4376e28", message: "Offline replay is unavailable on this browser." }));
   return navigator.locks.request(`${KIOSK_DB}:replay:${scope}`, task);
 }
 
@@ -27,7 +28,7 @@ export async function decodeQueue(db: IDBDatabase, row: StoredRecord): Promise<O
   const bytes = await decryptBytes(key, row, aad(row.scope, "queue", row.id));
   const state = JSON.parse(new TextDecoder().decode(bytes)) as OfflineQueue;
   if (state.version !== 1 || state.scope !== row.scope || row.id !== state.lease.lease_id
-      || row.expiresAt !== queueDeadline(state)) throw new Error("Offline queue integrity check failed.");
+      || row.expiresAt !== queueDeadline(state)) throw new Error(i18n._({ id: "offline.73b6c75a9ca8", message: "Offline queue integrity check failed." }));
   return state;
 }
 

@@ -7,6 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Badge, ErrorBlock } from "../../../../components/ui";
 import { staffRequest } from "../../../../lib/api";
 import { LogoLoader } from "../../../../components/LogoLoader";
+import { isRetryable } from "../../../../lib/api/errors";
 
 export type TitleCardRow = { title_id: number; title: string; design_id: number | null;
   status: "inherits" | "draft" | "published" | "changes"; number_pattern: string; live_cards: number };
@@ -22,7 +23,7 @@ export function TitleCards({ makerspaceId, canEdit, onOpen, onAdd, adding }: {
   const rows = useQuery({ queryKey: ["title-cards", makerspaceId],
     queryFn: () => staffRequest<TitleCardRow[]>(`/admin/makerspaces/${makerspaceId}/card-designs/titles`) });
   if (rows.isLoading) return <LogoLoader size={48} className="min-h-24 py-3" />;
-  if (rows.isError) return <ErrorBlock error={rows.error} resource={t`role cards`} onRetry={() => void rows.refetch()} />;
+  if (rows.isError) return <ErrorBlock error={rows.error} resource={t`role cards`} onRetry={isRetryable(rows.error) ? () => void rows.refetch() : undefined} />;
   if (!rows.data?.length) return null;
   const statuses = STATUS();
   return <section className="grid gap-2 rounded-card border border-line bg-panel p-4" aria-label={t`Role cards`}>

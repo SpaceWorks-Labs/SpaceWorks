@@ -8,6 +8,7 @@ import { useResolveHostingInvitation, useSubmitHostingInvitation, type HostingIn
 import { EMPTY_HOSTING_FORM, HOSTING_ACK, hostingErrorText, hostingFieldErrors, hostingRequestBody, type HostingFormKey } from "./hostingForm";
 import { HostingRequestFields } from "./HostingRequestFields";
 import { useFragmentToken, useTokenCall } from "./useFragmentToken";
+import { isRetryable } from "../../lib/api/errors";
 
 const EXPIRED = "This invitation link has expired or was already used.";
 const FORM_ID = "hosting-invite-form";
@@ -22,7 +23,7 @@ export function HostingInvitePage() {
   }
   if (!resolve.data) {
     return <CenteredCardLayout width={480} title={t`Opening your invitation`} body="" primary={home}
-      state={resolve.error ? { status: "error", error: errorMessage(resolve.error), onRetry: resolve.retry } : { status: "loading" }} />;
+      state={resolve.error ? { status: "error", error: errorMessage(resolve.error), onRetry: isRetryable(resolve.error) ? resolve.retry : undefined } : { status: "loading" }} />;
   }
   return <HostingInviteForm token={token} invite={resolve.data} />;
 }

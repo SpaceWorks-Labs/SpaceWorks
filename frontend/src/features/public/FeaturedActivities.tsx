@@ -11,6 +11,7 @@ import type { PublicEventDetail } from "../events/eventTicketTypes";
 import { eventActionLabel } from "../inventory/PublicEventCard";
 import { MakerspaceSection } from "./MakerspaceSection";
 import { deliveryLabel } from "../events/publicSurface";
+import { isRetryable } from "../../lib/api/errors";
 
 const PUBLIC_EVENTS_PATH: ApiPath = "/api/v1/public/{makerspace_slug}/events/";
 export const FEATURED_LIMIT = 6;
@@ -87,7 +88,7 @@ export function FeaturedActivities({ slug, path, timeZone }: Props) {
   const showPrice = useChargesOn("events", slug); // #184
   if (events.isLoading) return null;
   if (events.isError) return <MakerspaceSection id="featured" title={t`Featured activities`}>
-    <p role="alert" className="flex flex-wrap items-center gap-3 text-sm text-muted">{t`Couldn't load upcoming events.`}<button type="button" className="desk-button" onClick={() => void events.refetch()}>{t`Try again`}</button></p>
+    <p role="alert" className="flex flex-wrap items-center gap-3 text-sm text-muted">{t`Couldn't load upcoming events.`}{isRetryable(events.error) ? <button type="button" className="desk-button" onClick={() => void events.refetch()}>{t`Try again`}</button> : null}</p>
   </MakerspaceSection>;
   const now = Date.now();
   const upcoming = (events.data ?? []).filter((event) => Date.parse(event.ends_at) > now)

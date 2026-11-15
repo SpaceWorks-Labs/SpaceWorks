@@ -50,11 +50,12 @@ export function DirectoryState({ art, title, tone = "neutral", live, children, a
   </div>;
 }
 
-export function DirectoryError({ onRetry, retrying }: { onRetry: () => void; retrying?: boolean }) {
+export function DirectoryError({ onRetry, retrying }: { onRetry?: () => void; retrying?: boolean }) {
   return <DirectoryState art="moods/error" tone="error" live="alert" title={t`Couldn't load organizations`}
-    actions={<button type="button" className="desk-button-primary gap-2" onClick={onRetry} disabled={retrying}>
+    actions={onRetry ? <button type="button" className="desk-button-primary gap-2" onClick={onRetry} disabled={retrying}>
       {retrying ? <BoxArt size={18} mono /> : <RefreshCw aria-hidden="true" size={18} />}{retrying ? t`Retrying` : t`Retry`}
-    </button>}>
-    <p>{t`The list didn't arrive. Check your connection and try again.`}</p>
+    </button> : undefined}>
+    {/* Decision 588: with Retry withheld (a refusal) the copy never asks to try again. */}
+    <p>{onRetry ? t`The list didn't arrive. Check your connection and try again.` : t`The list isn't available.`}</p>
   </DirectoryState>;
 }

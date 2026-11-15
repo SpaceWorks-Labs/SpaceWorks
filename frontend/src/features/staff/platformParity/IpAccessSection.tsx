@@ -7,6 +7,7 @@ import { IpRuleForm } from "./IpRuleForm";
 import { useDeleteIpRule, useIpBlocks, useIpRules, useUnblock, type IpBlock, type IpRule } from "./ipAccessApi";
 import { PAGE_SIZE } from "./parityRequest";
 import { LogoLoader } from "../../../components/LogoLoader";
+import { isRetryable } from "../../../lib/api/errors";
 
 const pages = (count = 0) => Math.max(1, Math.ceil(count / PAGE_SIZE));
 
@@ -34,7 +35,7 @@ function RulesList() {
     <h3 id="ip-rules-heading" className="title-section">{t`Rules`}</h3>
     <CollapsibleSection title={t`New rule`} open={adding} onToggle={() => setAdding(!adding)}><IpRuleForm /></CollapsibleSection>
     {list.isLoading ? <LogoLoader size={48} className="min-h-24 py-3" />
-      : list.isError ? <ErrorText resource={t`IP rules`} onRetry={() => { void list.refetch(); }} />
+      : list.isError ? <ErrorText resource={t`IP rules`} onRetry={isRetryable(list.error) ? () => { void list.refetch(); } : undefined} />
       : !rows.length ? <EmptyState message={t`No rules. Every address is allowed unless it is blocked automatically.`} />
       : <div className="grid gap-3">{rows.map(rule => <ListRow key={rule.id} title={rule.cidr}
         meta={<>{rule.note ? `${rule.note} · ` : ""}{rule.expires_at ? <>expires <RelativeTime date={rule.expires_at} exact /></> : t`no expiry`}
@@ -59,7 +60,7 @@ function BlocksList() {
     <h3 id="ip-blocks-heading" className="title-section">{t`Automatic blocks`}</h3>
     <p className="text-sm text-muted">{t`Networks blocked after failed sign-ins against many different accounts. Each block lifts on its own when its time runs out.`}</p>
     {list.isLoading ? <LogoLoader size={48} className="min-h-24 py-3" />
-      : list.isError ? <ErrorText resource={t`automatic blocks`} onRetry={() => { void list.refetch(); }} />
+      : list.isError ? <ErrorText resource={t`automatic blocks`} onRetry={isRetryable(list.error) ? () => { void list.refetch(); } : undefined} />
       : !rows.length ? <EmptyState message={t`Nothing has been blocked.`} />
       : <div className="grid gap-3">{rows.map(block => <ListRow key={block.id} title={block.network}
         meta={<>{block.active ? t`blocked until ` : "ended "}<RelativeTime date={block.blocked_until} exact />

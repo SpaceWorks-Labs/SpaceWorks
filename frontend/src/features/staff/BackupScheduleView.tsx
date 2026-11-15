@@ -3,11 +3,12 @@ import { t } from "@lingui/core/macro";
 import { useQuery } from "@tanstack/react-query";
 import { ErrorText, RelativeTime } from "../../components/ui";
 import { getBackupSchedule } from "./spaceRestoreApi";
+import { isRetryable } from "../../lib/api/errors";
 
 /** One schedule view: the whole-platform nightly backup and every space's nightly backup. */
 export function BackupScheduleView({ onPickSpace }: { onPickSpace: (makerspaceId: number) => void }) {
   const schedule = useQuery({ queryKey: ["backup-schedule"], queryFn: getBackupSchedule });
-  if (schedule.isError) return <ErrorText resource={t`the backup schedule`} onRetry={() => { void schedule.refetch(); }} />;
+  if (schedule.isError) return <ErrorText resource={t`the backup schedule`} onRetry={isRetryable(schedule.error) ? () => { void schedule.refetch(); } : undefined} />;
   const data = schedule.data;
   if (!data) return <LogoLoader label={t`Loading the schedule…`} />;
   return <div className="grid gap-3 text-sm">

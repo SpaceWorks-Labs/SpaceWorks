@@ -3,12 +3,13 @@ import { Trans } from "@lingui/react/macro";
 import { Callout, ErrorText, RelativeTime } from "../../../components/ui";
 import { useSpacePlanUsage } from "./spacePlanApi";
 import { LogoLoader } from "../../../components/LogoLoader";
+import { isRetryable } from "../../../lib/api/errors";
 
 /** The Space Manager's view of the hosting plan: its name, trial, read-only state and warnings (the rows are in SpaceLimitsUsage). */
 export function SpacePlanUsage({ makerspaceId }: { makerspaceId: number }) {
   const query = useSpacePlanUsage(makerspaceId, true);
   if (query.isLoading) return <LogoLoader size={48} className="min-h-32 py-3" />;
-  if (query.isError || !query.data) return <ErrorText resource={t`your hosting plan`} onRetry={() => { void query.refetch(); }} />;
+  if (query.isError || !query.data) return <ErrorText resource={t`your hosting plan`} onRetry={isRetryable(query.error) ? () => { void query.refetch(); } : undefined} />;
   const data = query.data;
   if (data.hosted === false) return <section aria-labelledby="space-plan-title" className="grid gap-2 rounded-xl border border-line bg-panel p-4">
     <h3 id="space-plan-title" className="title-section">{t`Unlimited (own space)`}</h3>

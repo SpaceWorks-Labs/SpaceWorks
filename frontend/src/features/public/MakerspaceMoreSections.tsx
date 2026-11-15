@@ -4,6 +4,7 @@ import { ActionControl, ListRow } from "../../components/ui";
 import type { TenantBootstrap } from "../../lib/api";
 import { usePublicSpaces } from "../bookings/publicBookingsApi";
 import { MakerspaceSection } from "./MakerspaceSection";
+import { isRetryable } from "../../lib/api/errors";
 
 type Path = (part?: string) => string;
 export const SPACES_PREVIEW = 3;
@@ -13,7 +14,7 @@ export function SpacesSection({ slug, path }: { slug: string; path: Path }) {
   const spaces = usePublicSpaces(slug);
   if (spaces.isLoading) return null;
   if (spaces.isError) return <MakerspaceSection id="spaces" title={t`Book a space`}>
-    <p role="alert" className="flex flex-wrap items-center gap-3 text-sm text-muted">{t`Couldn't load bookable spaces.`}<button type="button" className="desk-button" onClick={() => void spaces.refetch()}>{t`Try again`}</button></p>
+    <p role="alert" className="flex flex-wrap items-center gap-3 text-sm text-muted">{t`Couldn't load bookable spaces.`}{isRetryable(spaces.error) ? <button type="button" className="desk-button" onClick={() => void spaces.refetch()}>{t`Try again`}</button> : null}</p>
   </MakerspaceSection>;
   const rows = spaces.data ?? [];
   if (!rows.length) return null;

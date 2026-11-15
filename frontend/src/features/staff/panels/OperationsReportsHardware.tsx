@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 
 import { BarChart, DataState, LineChart, PerMakerspaceTables, PieChart, ReportTable, StackedBarChart, chartRows, reportRows, type ReportRows } from "./OperationsReportsParts";
 import { useStaffGet } from "./shared";
+import { isRetryable } from "../../../lib/api/errors";
 
 function useHardwareReport(key: string, analyticsBase: string, scopeKey: string | number, startDate: string, endDate: string, enabled: boolean) {
   const dateQuery = [startDate && `start=${encodeURIComponent(startDate)}`, endDate && `end=${encodeURIComponent(endDate)}`].filter(Boolean).join("&");
@@ -34,8 +35,8 @@ export function OperationsReportsHardware({
   return (
     <>
       <div className="contents">
-        <Panel title={t`Most lent`}><DataState loading={mostLent.isLoading} error={mostLent.error} onRetry={() => void mostLent.refetch()} empty={!reportRows(mostLent.data).length}>{aggregate ? <PerMakerspaceTables data={mostLent.data} nameOf={makerspaceName} /> : <><BarChart rows={chartRows(mostLent.data, "product_name", "times_lent")} valueLabel="loans" /><ReportTable data={mostLent.data} /></>}</DataState></Panel>
-        <Panel title={t`Top borrowers`}><DataState loading={topBorrowers.isLoading} error={topBorrowers.error} onRetry={() => void topBorrowers.refetch()} empty={!reportRows(topBorrowers.data).length}>{aggregate ? <PerMakerspaceTables data={topBorrowers.data} nameOf={makerspaceName} /> : <><BarChart rows={chartRows(topBorrowers.data, "holder", "requests")} valueLabel="requests" /><ReportTable data={topBorrowers.data} /></>}</DataState></Panel>
+        <Panel title={t`Most lent`}><DataState loading={mostLent.isLoading} error={mostLent.error} onRetry={isRetryable(mostLent.error) ? () => void mostLent.refetch() : undefined} empty={!reportRows(mostLent.data).length}>{aggregate ? <PerMakerspaceTables data={mostLent.data} nameOf={makerspaceName} /> : <><BarChart rows={chartRows(mostLent.data, "product_name", "times_lent")} valueLabel="loans" /><ReportTable data={mostLent.data} /></>}</DataState></Panel>
+        <Panel title={t`Top borrowers`}><DataState loading={topBorrowers.isLoading} error={topBorrowers.error} onRetry={isRetryable(topBorrowers.error) ? () => void topBorrowers.refetch() : undefined} empty={!reportRows(topBorrowers.data).length}>{aggregate ? <PerMakerspaceTables data={topBorrowers.data} nameOf={makerspaceName} /> : <><BarChart rows={chartRows(topBorrowers.data, "holder", "requests")} valueLabel="requests" /><ReportTable data={topBorrowers.data} /></>}</DataState></Panel>
       </div>
       <div className="contents">
         <ReportPanel title={t`Damaged / missing`} query={damagedMissing} aggregate={aggregate} makerspaceName={makerspaceName} chart={(data) => <StackedBarChart rows={stackedRows(data, "product", [["Damaged", "damaged_quantity"], ["Missing", "missing_quantity"]])} valueLabel="units" />} />
@@ -54,7 +55,7 @@ function ReportPanel({ title, query, aggregate, makerspaceName, chart }: {
   title: string; query: { isLoading: boolean; error: unknown; refetch: () => unknown; data?: ReportRows };
   aggregate: boolean; makerspaceName: (id: number) => string; chart: (data?: ReportRows) => ReactNode;
 }) {
-  return <Panel title={title}><DataState loading={query.isLoading} error={query.error} onRetry={() => void query.refetch()} empty={!reportRows(query.data).length}>{aggregate ? <PerMakerspaceTables data={query.data} nameOf={makerspaceName} /> : <>{chart(query.data)}<ReportTable data={query.data} /></>}</DataState></Panel>;
+  return <Panel title={title}><DataState loading={query.isLoading} error={query.error} onRetry={isRetryable(query.error) ? () => void query.refetch() : undefined} empty={!reportRows(query.data).length}>{aggregate ? <PerMakerspaceTables data={query.data} nameOf={makerspaceName} /> : <>{chart(query.data)}<ReportTable data={query.data} /></>}</DataState></Panel>;
 }
 
 function valueAt(data: ReportRows | undefined, row: (string | number | boolean | null)[], key: string) {

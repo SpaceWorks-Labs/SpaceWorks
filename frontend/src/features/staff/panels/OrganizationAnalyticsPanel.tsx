@@ -11,6 +11,7 @@ import { AnalyticsPeriodControls } from "./AnalyticsPeriodControls";
 import type { AnalyticsPeriod } from "./analyticsApi";
 import type { Makerspace } from "./shared";
 import { LogoLoader } from "../../../components/LogoLoader";
+import { isRetryable } from "../../../lib/api/errors";
 
 export function OrganizationAnalyticsPanel({ makerspaces }: { makerspaces: Makerspace[] }) {
   const [organizationValue, setOrganizationValue] = useState("");
@@ -44,7 +45,7 @@ export function OrganizationAnalyticsPanel({ makerspaces }: { makerspaces: Maker
     </div>
       <AnalyticsPeriodControls value={period} onChange={setPeriod} grains={organizationReportGrains(reportKey)} />
       {organizations.isLoading ? <LogoLoader label={t`Loading organizations…`} size={48} className="min-h-16 py-3" /> : null}
-      {organizations.isError ? <ErrorText resource={t`organizations`} onRetry={() => void organizations.refetch()} /> : null}
+      {organizations.isError ? <ErrorText resource={t`organizations`} onRetry={isRetryable(organizations.error) ? () => void organizations.refetch() : undefined} /> : null}
       {organizations.isSuccess && !choices.length ? <p>{t`No organizations available.`}</p> : null}
       {organizations.data && (organizations.data.next || organizations.data.previous) ? <Pagination page={page} totalPages={Math.ceil(organizations.data.count / 24)} onChange={setPage} /> : null}
     </div> }}

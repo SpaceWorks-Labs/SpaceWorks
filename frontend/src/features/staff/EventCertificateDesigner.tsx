@@ -20,6 +20,7 @@ import { KindPicker, SampleName } from "./eventCredentials/designer/PageAndSampl
 import { SIGNATURE_SAMPLES, type CertificateKind } from "./eventCredentials/designer/samples";
 import { LogoLoader } from "../../components/LogoLoader";
 import { BoxArt } from "../../components/BoxSpinner";
+import { isRetryable } from "../../lib/api/errors";
 
 export function EventCertificateDesigner({ makerspaceId, eventId }: { makerspaceId: number; eventId: number }) {
   const [kind, setKind] = useState<CertificateKind | "">("");
@@ -70,7 +71,7 @@ export function EventCertificateDesigner({ makerspaceId, eventId }: { makerspace
     <KindPicker value={kind} onChange={(value) => { if (!dirty || window.confirm(t`Discard unsaved changes to this design?`)) setKind(value); }}
       ownDesigns={query.data?.own_designs ?? []} usesDefault={Boolean(query.data?.uses_default)} />
     {query.isLoading ? <div role="status"><span className="sr-only">{t`Loading the certificate design…`}</span><LogoLoader size={48} className="min-h-48 py-3" /></div> : null}
-    {query.isError ? <button className="desk-button" type="button" onClick={() => { void query.refetch(); }}>{t`Retry loading the design`}</button> : null}
+    {query.isError && isRetryable(query.error) ? <button className="desk-button" type="button" onClick={() => { void query.refetch(); }}>{t`Retry loading the design`}</button> : null}
     <SeedPicker eventId={eventId} version={query.data?.event_version} kind="certificate" onInstall={(value) => {
       setDraft({ parameters: compileCertificateV2(value.document), artwork_id: null }); setDirty(false);
       void client.invalidateQueries({ queryKey: ["events", "credentials", eventId] });

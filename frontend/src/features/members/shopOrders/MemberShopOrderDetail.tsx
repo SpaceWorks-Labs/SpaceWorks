@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { DetailLayout } from "../../../components/layouts";
 import { RouteLink } from "../../../components/ui/RouteLink";
+import { isRetryable } from "../../../lib/api/errors";
 import { cancelMemberShopOrder, eventPickupRefreshInterval, fetchMemberShopOrder, isUnpaid, shopErrorMessage, shopKeys } from "../../shop/shopApi";
 import { ShopBuyerOrderView } from "../../shop/ShopBuyerOrderView";
 
@@ -23,7 +24,7 @@ export function MemberShopOrderDetail({ orderId, backHref }: { orderId: number; 
   return <DetailLayout back={{ label: t`My shop orders`, href: backHref }} title={order ? t`Order #${order.id}` : t`Order`}
     meta={order ? [order.space_name] : undefined}
     state={query.isPending ? { status: "loading" } : query.error ? { status: "error", error: shopErrorMessage(query.error),
-      onRetry: () => { void query.refetch(); } } : { status: "ready" }}
+      onRetry: isRetryable(query.error) ? () => { void query.refetch(); } : undefined } : { status: "ready" }}
     actions={order && isUnpaid(order.status) ? { primary: { label: t`Cancel order`, tone: "danger", pending: cancel.isPending,
       pendingLabel: "Cancelling…", onClick: () => cancel.mutate(),
       confirm: { title: t`Cancel this order?`, message: t`The items go back on sale. You have not paid anything for this order.`, confirmLabel: t`Cancel order` } } } : undefined}

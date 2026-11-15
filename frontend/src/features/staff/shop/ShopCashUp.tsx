@@ -7,6 +7,7 @@ import { Field } from "../../../components/ui";
 import { shopMoney } from "../../shop/shopApi";
 import { staffShopError, staffShopKeys } from "./staffShopApi";
 import { closeCash, confirmCash, listCashSessions, openCash, type ShopCashSession } from "./staffShopOrdersApi";
+import { isRetryable } from "../../../lib/api/errors";
 
 const amount = (value: string) => /^\d+(\.\d{1,2})?$/.test(value.trim());
 function varianceText(session: ShopCashSession) {
@@ -67,7 +68,7 @@ export function ShopCashUp({ makerspaceId, canManage, onLeave }: { makerspaceId:
       : { label: t`Confirm the count`, onClick: () => confirm.mutate(), pending: confirm.isPending };
   return <FlowLayout standalone={false} title={t`Cash-up`} subject="The front-desk cash drawer for shop sales." steps={steps} current={step}
     state={query.isPending ? { status: "loading" } : query.error ? { status: "error", error: staffShopError(query.error),
-      onRetry: () => { void query.refetch(); } } : { status: "ready" }}
+      onRetry: isRetryable(query.error) ? () => { void query.refetch(); } : undefined } : { status: "ready" }}
     work={work} footer={{ next }} onCancel={onLeave}
     error={error ? { size: "inline", tone: "danger", lead: staffShopError(error) } : undefined}
     result={finished ? { tone: Number(finished.variance ?? 0) === 0 ? "success" : "warn", title: t`Drawer closed`,

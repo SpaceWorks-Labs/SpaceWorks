@@ -5,6 +5,7 @@ import { ConfirmDialog, ErrorBlock, Field } from '../../../components/ui';
 import { staffRequest } from '../../../lib/api';
 import { judgingKey, useJudging } from './api';
 import type { Scope } from './types';
+import { isRetryable } from "../../../lib/api/errors";
 
 type GalleryState = { id: number | null; version: number; result_revision_id: number | null;
   entries: { id: number; version: number; snapshot_id: number; title: string; hidden: boolean }[] };
@@ -17,7 +18,7 @@ export function GalleryPublishPanel({ scope, snapshots, resultRevisionId }: { sc
   const publication = query.data;
   const publish = () => mutate.mutate({ suffix: 'gallery/publish/', version: 0,
     fields: { snapshot_ids: selected, result_revision_id: resultRevisionId } }, { onSuccess: () => setConfirm(false) });
-  if (query.isError) return <ErrorBlock error={query.error} onRetry={() => void query.refetch()} />;
+  if (query.isError) return <ErrorBlock error={query.error} onRetry={isRetryable(query.error) ? () => void query.refetch() : undefined} />;
   return <section className="grid gap-4" aria-label={t`Gallery publication`}>
     <h3 className="title-section">{t`Project gallery`}</h3><p className="text-sm text-muted">{t`The initial selection is published once. Only team-approved metadata and individually approved files or links can appear.`}</p>
     {!publication?.id ? <><fieldset className="grid gap-2" disabled={mutate.isPending}><legend className="mb-2 text-sm font-semibold">{t`Frozen projects to publish`}</legend>

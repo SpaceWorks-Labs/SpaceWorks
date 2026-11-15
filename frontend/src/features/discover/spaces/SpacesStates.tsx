@@ -35,14 +35,16 @@ function StatePanel({ art, title, tone = "neutral", live, children, actions }: {
 }
 
 /** Replaces the grid when the directory cannot load; offline gets its own wording. */
-export function SpacesError({ onRetry, retrying }: { onRetry: () => void; retrying?: boolean }) {
+export function SpacesError({ onRetry, retrying }: { onRetry?: () => void; retrying?: boolean }) {
   const online = useSyncExternalStore(subscribeOnline, onlineNow, () => true);
   return <StatePanel art="moods/error" tone="error" live="alert"
     title={online ? t`Couldn't load spaces` : t`You're offline`}
-    actions={<button type="button" className="desk-button-primary gap-2" onClick={onRetry} disabled={retrying}>
+    actions={onRetry ? <button type="button" className="desk-button-primary gap-2" onClick={onRetry} disabled={retrying}>
       {retrying ? <BoxArt size={18} mono /> : <RefreshCw aria-hidden="true" size={18} />}{retrying ? t`Retrying` : t`Retry`}
-    </button>}>
-    <p>{online ? t`The list didn't arrive. Check your connection and try again.` : t`Spaces load again as soon as you're back online.`}</p>
+    </button> : undefined}>
+    {/* Decision 588: with Retry withheld (a refusal) the copy never asks to try again. */}
+    <p>{!online ? t`Spaces load again as soon as you're back online.` : onRetry ? t`The list didn't arrive. Check your connection and try again.`
+      : t`The list isn't available.`}</p>
   </StatePanel>;
 }
 

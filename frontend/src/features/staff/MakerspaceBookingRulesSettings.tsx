@@ -12,6 +12,7 @@ import type { Makerspace } from "./panels/shared";
 import { bookingKeys } from "./bookingsApi";
 import type { Paginated } from "./eventsApiTypes";
 import { LogoLoader } from "../../components/LogoLoader";
+import { isRetryable } from "../../lib/api/errors";
 
 type SpaceRules = {
   id: number;
@@ -78,7 +79,7 @@ export function MakerspaceBookingRulesSettings({ makerspace }: { makerspace: Pic
           ))}
         </div>
       ) : null}
-      {spaces.error ? <ErrorBlock error={new Error(t`Couldn't load booking rules. Try again.`)} onRetry={() => { void spaces.refetch(); }} /> : null}
+      {spaces.error ? <ErrorBlock error={new Error(t`Couldn't load booking rules. Try again.`)} onRetry={isRetryable(spaces.error) ? () => { void spaces.refetch(); } : undefined} /> : null}
       {spaces.data ? <Pagination page={page} count={spaces.data.count} pageSize={pageSize} totalPages={Math.ceil(spaces.data.count / pageSize)} onChange={setPage} disabled={spaces.isFetching} /> : null}
     </div></SettingsRow></SettingsQueryState>
   );

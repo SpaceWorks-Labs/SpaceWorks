@@ -7,6 +7,7 @@ import { useSearchParams } from "react-router-dom";
 import { staffRequest } from "../../../lib/api";
 import { EmailTemplateEditor, type SelectedTemplate, type TemplateSummary } from "./EmailTemplateEditor";
 import { type Makerspace } from "./shared";
+import { isRetryable } from "../../../lib/api/errors";
 type GroupedTemplates = {
   stream: string;
   audiences: { audience: string; templates: TemplateSummary[] }[];
@@ -68,7 +69,7 @@ export function EmailTemplatesPanel({ makerspace }: { makerspace: Makerspace }) 
     onSelectMachineType={machineType => setSelected({ ...selected, machineType })}
     onBack={() => { const next = new URLSearchParams(search); next.delete("template"); setSearch(next); }} />;
   return <ListLayout header={{ title: t`Email templates`, subtitle: t`What people receive from ${makerspace.name}, in your words.` }}
-    state={{ status: list.isLoading ? "loading" : list.error ? "error" : "ready", error: t`Couldn't load email templates. Try again.`, onRetry: () => { void list.refetch(); } }}
+    state={{ status: list.isLoading ? "loading" : list.error ? "error" : "ready", error: t`Couldn't load email templates. Try again.`, onRetry: isRetryable(list.error) ? () => { void list.refetch(); } : undefined }}
     isEmpty={!rows.length} empty={{ message: t`No editable templates here.` }}
     tabs={[{ key: "all", label: t`All templates`, href: href("all"), count: rows.length }, ...grouped.map(group => ({ key: group.stream, label: formatLabel(group.stream), href: href(group.stream), count: group.audiences.reduce((count, audience) => count + audience.templates.length, 0) }))]}
     activeTab={streamFilter} body={{ kind: "rows", rows: grouped.filter(group => streamFilter === "all" || group.stream === streamFilter).map(group =>

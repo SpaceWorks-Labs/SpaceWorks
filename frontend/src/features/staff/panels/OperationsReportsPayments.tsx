@@ -5,6 +5,7 @@ import { SelectedReportPanel as Panel } from "./OperationsReportSelection";
 import { BarChart, DataState, PieChart } from "./OperationsReportsParts";
 import { useStaffGet } from "./shared";
 import { formatMoney, paymentStatusLabel, paymentSubjectLabel, settlementMethodLabel } from "../paymentsApi";
+import { isRetryable } from "../../../lib/api/errors";
 
 type PaymentReportRow = {
   makerspace_id?: number;
@@ -37,7 +38,7 @@ export function OperationsReportsPayments({ analyticsBase, scopeKey, startDate, 
   return (
     <Panel title={t`Payment reconciliation`}>
       <p className="mb-3 text-xs text-muted">{t`Private totals are grouped by makerspace, currency, subject, and status. Pending payments remain visible across date ranges.`}</p>
-      <DataState loading={report.isLoading} error={report.error} onRetry={() => void report.refetch()} empty={!rows.length}>
+      <DataState loading={report.isLoading} error={report.error} onRetry={isRetryable(report.error) ? () => void report.refetch() : undefined} empty={!rows.length}>
         {scopeKey === "all" ? (
           <div className="space-y-5">
             {paymentGroups(rows).map(([makerspaceId, group]) => (

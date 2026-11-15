@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { memberRequest } from "../../lib/api";
 import { personalRecipientKey } from "./personalQueryKeys";
 import { LogoLoader } from "../../components/LogoLoader";
+import { isRetryable } from "../../lib/api/errors";
 
 type Page = { next: string | null; previous: string | null; results: { id: number; title: string; summary: string; created_at: string }[] };
 
@@ -15,7 +16,7 @@ export function AnnouncementFeed({ makerspaceId }: { makerspaceId: number }) {
   return <section className="desk-panel p-5" aria-label={t`Member announcements`}>
     <h2 className="title-panel">{t`Announcements`}</h2>
     {feed.isLoading ? <LogoLoader label={t`Loading announcements…`} size={48} className="min-h-16 py-3" /> : null}
-    {feed.error ? <ErrorBlock error={new Error(t`Couldn't load announcements. Try again.`)} onRetry={() => void feed.refetch()} /> : null}
+    {feed.error ? <ErrorBlock error={new Error(t`Couldn't load announcements. Try again.`)} onRetry={isRetryable(feed.error) ? () => void feed.refetch() : undefined} /> : null}
     {feed.data?.results.length === 0 ? <EmptyState message={t`No announcements yet.`} /> : null}
     <ul className="mt-3 grid gap-3">{feed.data?.results.map((row) => <li key={row.id}><ListRow title={row.title} meta={<><span className="block whitespace-pre-wrap break-words">{row.summary}</span><RelativeTime date={row.created_at} /></>} /></li>)}</ul>
     {feed.data ? <PagePager page={page} setPage={setPage} next={feed.data.next} disabled={feed.isFetching} /> : null}

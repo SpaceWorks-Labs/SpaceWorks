@@ -8,6 +8,7 @@ import { ListLayout } from '../../../components/layouts'
 import { ActionControl, Card, Field } from '../../../components/ui'
 import type { EventScope } from '../../events/contributions/types'
 import { basePath, programmeKey, requestFor, errorText, useProgrammeCommand } from '../../events/contributions/api'
+import { isRetryable } from "../../../lib/api/errors";
 
 const nudgeText = (reason: string, minutes: number) => reason === 'long_visit' ? t`Long visit · ${minutes} minutes`
   : reason === 'quiet' ? t`Quiet · ${minutes} minutes since the last check-in`
@@ -29,7 +30,7 @@ export function MentorAttentionPanel({ scope }: { scope: EventScope }) {
   const row = query.data
   return <ListLayout header={{ title: t`Mentor attention`, subtitle: t`Private follow-up signals. Practice data is excluded.` }}
     empty={{ message: t`No attention signals yet.` }}
-    state={query.isPending ? { status: 'loading' } : query.isError ? { status: 'error', error: errorText(query.error), onRetry: () => { void query.refetch() } } : { status: 'ready' }}
+    state={query.isPending ? { status: 'loading' } : query.isError ? { status: 'error', error: errorText(query.error), onRetry: isRetryable(query.error) ? () => { void query.refetch() } : undefined } : { status: 'ready' }}
     body={{ kind: 'rows', rows: row ? <>
       <Card><h2 className="title-section flex items-center gap-2"><BellOff size={20} aria-hidden />{t`Nudge preferences`}</h2>
         <Field label={t`Mute nudges`}><select className="desk-input min-h-11" value={minutes} onChange={event => setMinutes(event.target.value)}><option value="0">{t`Resume now`}</option><option value="10">{t`10 minutes`}</option><option value="30">{t`30 minutes`}</option><option value="60">{t`60 minutes`}</option><option value="120">{t`2 hours`}</option></select></Field>

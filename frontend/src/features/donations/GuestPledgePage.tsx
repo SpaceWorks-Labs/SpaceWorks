@@ -7,6 +7,7 @@ import { StructuredApiError } from "../../lib/api";
 import { DonationShell } from "./DonationShell";
 import { donationKeys, donationsApi, type PledgeAction } from "./donationsApi";
 import { PledgeCard } from "./PledgeCard";
+import { isRetryable } from "../../lib/api/errors";
 
 /** A guest's own pledge, managed from the signed link they were given. */
 export function GuestPledgePage() {
@@ -24,7 +25,7 @@ export function GuestPledgePage() {
     </DonationShell>;
   }
   const state = pledge.isLoading ? { status: "loading" as const } : pledge.error ? { status: "error" as const,
-    error: t`Couldn't load your pledge.`, onRetry: () => { void pledge.refetch(); } } : { status: "ready" as const };
+    error: t`Couldn't load your pledge.`, onRetry: isRetryable(pledge.error) ? () => { void pledge.refetch(); } : undefined } : { status: "ready" as const };
   return <DonationShell title={t`Your pledge`} state={state}>
     {pledge.data ? <div className="grid gap-3">
       <PledgeCard key={`${pledge.data.amount}-${pledge.data.interval}`} pledge={pledge.data}

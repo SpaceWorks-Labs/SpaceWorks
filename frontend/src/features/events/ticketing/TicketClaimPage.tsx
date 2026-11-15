@@ -10,6 +10,7 @@ import { getAccessToken, refreshAccessToken, StructuredApiError } from "../../..
 import { useTenant, useTenantPath } from "../../../lib/tenant";
 import { MemberAuthPanel } from "../../members/MemberAuthPanel";
 import { acceptClaim, previewClaim, ticketingKeys } from "./ticketingApi";
+import { isRetryable } from "../../../lib/api/errors";
 
 const COPY = {
   claim: { title: t`Claim your ticket`, verb: t`Claim my place`, done: t`Your place is confirmed.` },
@@ -48,7 +49,7 @@ export function TicketClaimPage({ kind }: { kind: "claim" | "transfer" }) {
     body={done ? copy.done : data ? <>{t`${data.from_name} has a ${data.ticket_type ? `${data.ticket_type} ` : ""}ticket for you to`}<strong className="text-ink"> {data.event_title}</strong> on {formatDateTime(data.starts_at)}.</>
       : t`This ticket link could not be opened.`}
     content={<div className="grid gap-3">
-      {preview.error ? <ErrorText message={errorText(preview.error)} /> : null}
+      {preview.error ? <ErrorText message={errorText(preview.error)} onRetry={isRetryable(preview.error) ? () => { void preview.refetch(); } : undefined} /> : null}
       {data && !data.email_matches && !done ? <ErrorText message={t`You are signed in with a different email address than the one this ticket was sent to.`} /> : null}
       {accept.error ? <ErrorText message={errorText(accept.error)} /> : null}
     </div>}

@@ -1,3 +1,4 @@
+import type { CurrencyUsage } from "../platformSpaces/limitsApi";
 import { t } from "@lingui/core/macro";
 import { staffRequest } from "../../../lib/api";
 
@@ -5,7 +6,7 @@ import { staffRequest } from "../../../lib/api";
 // regenerates the OpenAPI client (admin_api/views_platform_cross_space.py).
 export type QueueCounts = Record<string, number>;
 export type QueueRow = { id: number; name: string; slug: string; counts: QueueCounts; total: number };
-export type UsageResource = { key?: string; label: string; used: number | null; limit: number | null; unit?: "bytes" | "count" };
+export type UsageResource = { key?: string; label: string; amounts?: CurrencyUsage[] | null; used: number | null; limit: number | null; unit?: "bytes" | "count" | "amount" };
 export type SpaceSnapshot = { id: number; name: string; slug: string; hosted: boolean; counts: QueueCounts;
   usage: { resources?: UsageResource[] } & Record<string, unknown> };
 export type InboxRow = { id: number; name: string; personal_unread: number; notices_unread: number };

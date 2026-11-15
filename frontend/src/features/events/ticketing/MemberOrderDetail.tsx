@@ -6,6 +6,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { DetailLayout } from "../../../components/layouts";
 import { ErrorText, StatusPill } from "../../../components/ui";
 import { useTenantPath } from "../../../lib/tenant";
+import { isRetryable } from "../../../lib/api/errors";
 import { shopError } from "./EventTicketShop";
 import {
   assignAttendees, cancelOrder, chaseAttendees, claimOwnSeat, fetchOrder, money, ORDER_STATUS, ticketingKeys,
@@ -52,8 +53,10 @@ export function MemberOrderDetail({ makerspaceId, orderId, makerspaceSlug }: { m
   const current = order.data;
   const error = assign.error ?? chase.error ?? cancel.error ?? claim.error;
   const busy = assign.isPending || chase.isPending || cancel.isPending || claim.isPending;
-  return <DetailLayout back={{ label: t`My orders`, href: tenantPath("member/orders") }} title={current?.event_title ?? t`Order`}
-    state={order.isLoading ? { status: "loading" } : order.error ? { status: "error", error: shopError(order.error) } : { status: "ready" }}
+  return <DetailLayout standalone back={{ label: t`My orders`, href: tenantPath("member/orders") }} title={current?.event_title ?? t`Order`}
+    state={order.isLoading ? { status: "loading" } : order.error ? { status: "error", error: shopError(order.error),
+      // Decision 588: only an outage offers Retry; a refusal keeps the "My orders" way back.
+      onRetry: isRetryable(order.error) ? () => { void order.refetch(); } : undefined } : { status: "ready" }}
     status={current ? <StatusPill label={ORDER_STATUS[current.status].label} tone={ORDER_STATUS[current.status].tone} /> : null}
     meta={current ? [`Order #${current.id}`, money(current.total, current.currency)] : []}
     banner={current?.payment_disputed ? { size: "banner", tone: "warn", lead: "This payment is disputed with the card provider." } : undefined}

@@ -1,3 +1,4 @@
+import { StructuredApiError, type ApiErrorBody } from "../../lib/api/errors";
 import { useQuery } from "@tanstack/react-query";
 import { API_V1_URL, staffRequest, tenantPublicRequest } from "../../lib/api";
 
@@ -48,8 +49,8 @@ export type AdminDisplayList = { enabled: boolean; displays: AdminDisplay[] };
 export type DisplayConfigInput = Partial<{ name: string; panels: DisplayPanel[]; rotation_seconds: number; announcement: string;
   layout: DisplayLayout; theme: DisplayTheme; privacy: DisplayPrivacy; refresh_seconds: number; slide_seconds: Partial<Record<DisplayPanel, number>> }>;
 
-export class DisplayHttpError extends Error {
-  constructor(public status: number) { super(`display request failed (${status})`); }
+export class DisplayHttpError extends StructuredApiError {
+  constructor(status: number, body: ApiErrorBody = {}, headers?: Headers) { super(status, body, headers); }
 }
 
 /**
@@ -59,7 +60,11 @@ export class DisplayHttpError extends Error {
 async function screenRequest<T>(path: string, method: "GET" | "POST", token?: string, signal?: AbortSignal): Promise<T> {
   const response = await fetch(`${API_V1_URL}${path}`, { method, cache: "no-store", credentials: "omit", referrerPolicy: "no-referrer",
     headers: { Authorization: token ? `Display ${token}` : "" }, signal });
-  if (!response.ok) throw new DisplayHttpError(response.status);
+  if (!response.ok) {
+    const value: unknown = await response.json().catch(() => ({}));
+    const body = value && typeof value === "object" && !Array.isArray(value) ? value as ApiErrorBody : {};
+    throw new DisplayHttpError(response.status, body, response.headers);
+  }
   return (await response.json()) as T;
 }
 

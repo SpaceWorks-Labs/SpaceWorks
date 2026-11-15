@@ -109,6 +109,13 @@ export function isSurfaceOff(error: unknown): error is StructuredApiError {
   return error instanceof StructuredApiError && SURFACE_OFF_CODES.has(error.code ?? "");
 }
 
+/** Decision 588: a Retry can only help a server-side failure - a 5xx, a 429 or no response at all (a network
+ *  error never becomes a StructuredApiError). A refusal (400/401/403/404, typed module/feature 404, 409, 410,
+ *  423) answers the same way again, so the screen shows its explanation and a way out instead of Retry. */
+export function isRetryable(error: unknown): boolean {
+  return !(error instanceof StructuredApiError) || error.status >= 500 || error.status === 429;
+}
+
 export function apiError(status: number, value: unknown, headers?: Headers) {
   const body = value && typeof value === "object" && !Array.isArray(value)
     ? value as ApiErrorBody

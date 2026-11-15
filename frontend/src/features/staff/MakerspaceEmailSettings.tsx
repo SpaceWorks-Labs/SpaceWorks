@@ -11,6 +11,7 @@ import { EmailTransportFields } from "../deployment/EmailTransportFields";
 import { useEmailSettings } from "../deployment/useEmailSettings";
 import { SpaceEmailSender } from "./SpaceEmailSender";
 import { LogoLoader } from "../../components/LogoLoader";
+import { isRetryable } from "../../lib/api/errors";
 
 type NotificationRecipient = {
   id: number;
@@ -126,7 +127,7 @@ function MakerspaceEmailEditor({ makerspace }: { makerspace: Makerspace }) {
         {!recipients.isLoading && recipients.data?.length === 0 ? (
           <p className="mt-3 text-sm text-muted">{t`No managers to notify yet.`}</p>
         ) : null}
-        {recipients.error ? <ErrorBlock error={new Error(t`Couldn't load notification recipients. Try again.`)} onRetry={() => { void recipients.refetch(); }} /> : null}
+        {recipients.error ? <ErrorBlock error={new Error(t`Couldn't load notification recipients. Try again.`)} onRetry={isRetryable(recipients.error) ? () => { void recipients.refetch(); } : undefined} /> : null}
         {saveRecipients.error ? (
           <p className="mt-3 text-sm text-danger">{saveRecipients.error.message}</p>
         ) : null}

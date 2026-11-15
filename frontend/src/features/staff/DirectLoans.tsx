@@ -29,6 +29,7 @@ import {
   type QrResolveResponse,
   type ScannedPayload,
 } from "./DirectLoansTypes";
+import { isRetryable } from "../../lib/api/errors";
 
 export function DirectLoans({ makerspace }: { makerspace: Makerspace }) {
   const queryClient = useQueryClient();
@@ -192,7 +193,7 @@ export function DirectLoans({ makerspace }: { makerspace: Makerspace }) {
   const tabHref = (key: string) => { const next = new URLSearchParams(params); next.set("handout", key); return `?${next}`; };
   return <ListLayout standalone={false}
     header={{ title: t`Direct handout`, subtitle: t`Lend tools straight from the shelf, without a request.`, primary: { label: t`New handout`, icon: "Plus", onClick: () => setGuided(true) } }}
-    state={tab === "claim-codes" ? { status: "ready" } : { status: loans.isLoading || loans.isPlaceholderData ? "loading" : loans.isError ? "error" : "ready", error: t`Couldn't load direct handouts. Try again.`, onRetry: () => void loans.refetch() }}
+    state={tab === "claim-codes" ? { status: "ready" } : { status: loans.isLoading || loans.isPlaceholderData ? "loading" : loans.isError ? "error" : "ready", error: t`Couldn't load direct handouts. Try again.`, onRetry: isRetryable(loans.error) ? () => void loans.refetch() : undefined }}
     tabs={[{ key: "on-loan", label: t`On loan`, count: tab === "on-loan" ? loans.count : undefined, href: tabHref("on-loan") }, { key: "returned", label: t`Returned`, count: tab === "returned" ? loans.count : undefined, href: tabHref("returned") }, { key: "claim-codes", label: t`Claim codes`, href: tabHref("claim-codes") }]} activeTab={tab}
     isEmpty={tab !== "claim-codes" && !shown.length} filtered={Boolean(term || overdue)}
     filters={tab === "claim-codes" ? undefined : { search: { label: t`Search borrowers`, value: search, onChange: setSearch },

@@ -1,3 +1,4 @@
+import type { CurrencyUsage } from "./limitsApi";
 import { t } from "@lingui/core/macro";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { staffRequest } from "../../../lib/api";
@@ -5,7 +6,7 @@ import { staffRequest } from "../../../lib/api";
 // Hand-written until the coordinator regenerates the OpenAPI snapshot (lane r2-superadmin-controls).
 export type SpaceState = "active" | "read_only" | "suspended" | "archived" | "scheduled" | "importing" | "aborted";
 export type CheckStatus = "ok" | "warn" | "error";
-export type UsageResource = { key: string; label: string; used: number | null; limit: number | null; unit: "bytes" | "count"; percent: number | null };
+export type UsageResource = { key: string; label: string; amounts?: CurrencyUsage[] | null; used: number | null; limit: number | null; unit: "bytes" | "count" | "amount"; percent: number | null };
 export type SpaceManager = { membership_id: number; user_id: number; name: string; email: string };
 export type HealthCard = {
   id: number; name: string; slug: string; public_code: string; state: SpaceState; created_at: string;

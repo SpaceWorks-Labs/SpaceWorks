@@ -9,6 +9,7 @@ import { useHackathonConfig } from '../hackathonAdmission/useAdmissionAdmin'
 import { useEventStaffGrants } from '../eventStaffGrantsApi'
 import type { StaffEvent } from '../eventsApi'
 import { useSearchParams } from 'react-router-dom'
+import { isRetryable } from "../../../lib/api/errors";
 
 export function AdmissionWorkspace({ event, canManage }: { event: StaffEvent; canManage: boolean }) {
   const [page, setPage] = useState(1), [params, setParams] = useSearchParams()
@@ -18,13 +19,13 @@ export function AdmissionWorkspace({ event, canManage }: { event: StaffEvent; ca
   const review = Number(params.get('applicationReview'))
   const openReview = (id: number | null) => setParams(previous => { const next = new URLSearchParams(previous); if (id) next.set('applicationReview', String(id)); else next.delete('applicationReview'); return next })
   if (review > 0) return <div className="grid gap-4"><button className="desk-button" onClick={() => openReview(null)}>{t`Back to applications`}</button><ReviewWorkbench eventId={event.id} reviewId={review} /></div>
-  if (canManage && config.error) return <ErrorBlock error={config.error} onRetry={() => void config.refetch()} />
+  if (canManage && config.error) return <ErrorBlock error={config.error} onRetry={isRetryable(config.error) ? () => void config.refetch() : undefined} />
   if (canManage && !config.data) return <LogoLoader label={t`Loading admission settings…`} />
   return <div className="grid gap-5">
     <AdmissionPanel eventId={event.id} configVersion={config.data?.version ?? 0} canManage={canManage} reviewers={(grants.data?.results ?? [])
       .filter(row => row.permissions.includes('review_applications')).map(row => ({ id: row.user, label: t`Reviewer ${row.user}` }))} onReview={openReview}
       onSelectApplication={canManage ? setSubject : undefined} />
-    {grants.error ? <ErrorBlock error={grants.error} onRetry={() => void grants.refetch()} /> : null}
+    {grants.error ? <ErrorBlock error={grants.error} onRetry={isRetryable(grants.error) ? () => void grants.refetch() : undefined} /> : null}
     <Pagination page={page} count={grants.data?.count ?? 0} pageSize={24} totalPages={Math.ceil((grants.data?.count ?? 0) / 24)} onChange={setPage} />
     {subject ? <RsvpOverridePanel eventId={event.id} applicationId={subject.id} version={subject.version} /> : null}
   </div>

@@ -6,6 +6,7 @@ import type { HealthCard } from "../platformSpaces/spacesApi";
 import { useCapabilityPlans, usePurgeCapability, type CapabilityPlan } from "./spaceKeysApi";
 import { TypedConfirmDialog } from "./TypedConfirmDialog";
 import { LogoLoader } from "../../../components/LogoLoader";
+import { isRetryable } from "../../../lib/api/errors";
 
 const total = (plan: CapabilityPlan) => Object.values(plan.counts).reduce((sum, count) => sum + count, 0);
 // What a purge preview counts (backend makerspaces/capability_purge_plans*.py), as people read it.
@@ -33,7 +34,7 @@ export function CapabilityPurgeDrawer({ card, onClose }: { card: HealthCard; onC
     <div className="grid gap-4">
       <p className="text-sm text-muted">{t`Switching a feature off keeps its data, and switching it back on restores everything. Purging deletes that data for good. It is recorded in this space's audit log, which its managers can read.`}</p>
       {plans.isLoading ? <LogoLoader size={48} className="min-h-40 py-3" /> : plans.isError || !plans.data
-        ? <ErrorText resource={t`capability data`} onRetry={() => { void plans.refetch(); }} />
+        ? <ErrorText resource={t`capability data`} onRetry={isRetryable(plans.error) ? () => { void plans.refetch(); } : undefined} />
         : <div className="grid gap-2">{plans.data.map(plan => <ListRow key={plan.key} title={plan.key}
           meta={<>{plan.summary}<br />{counts(plan) || t`Nothing stored.`}</>}
           right={plan.switched_on ? <StatusPill label={t`Switched on`} tone="neutral" />

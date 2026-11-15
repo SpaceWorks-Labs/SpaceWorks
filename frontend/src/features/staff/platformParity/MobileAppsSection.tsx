@@ -6,6 +6,7 @@ import { NativeAppForm } from "./NativeAppForm";
 import { useNativeApps } from "./nativeAppsApi";
 import { PAGE_SIZE } from "./parityRequest";
 import { LogoLoader } from "../../../components/LogoLoader";
+import { isRetryable } from "../../../lib/api/errors";
 
 const TONES = { pending: "neutral", approved: "success", revoked: "danger" } as const;
 
@@ -20,7 +21,7 @@ export function MobileAppsSection() {
     <p className="text-sm text-muted">{t`Only one approved app per platform and environment serves the whole deployment. Revoking an app ends every device sign-in it issued; the record stays for the audit trail.`}</p>
     <CollapsibleSection title={t`Register an app`} open={adding} onToggle={() => setAdding(!adding)}><NativeAppForm /></CollapsibleSection>
     {list.isLoading ? <LogoLoader size={48} className="min-h-24 py-3" />
-      : list.isError ? <ErrorText resource={t`mobile apps`} onRetry={() => { void list.refetch(); }} />
+      : list.isError ? <ErrorText resource={t`mobile apps`} onRetry={isRetryable(list.error) ? () => { void list.refetch(); } : undefined} />
       : !rows.length ? <EmptyState message={t`No mobile app is registered yet.`} />
       : <div className="grid gap-3">{rows.map(row => <div key={row.id} className="grid gap-2">
         <ListRow title={row.app_id}

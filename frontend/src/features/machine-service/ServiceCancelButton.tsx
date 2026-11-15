@@ -27,8 +27,8 @@ export function ServiceCancelButton({ title, onCancel, invalidate, label = t`Can
     },
   });
   const message = staff
-    ? `Cancel "${title}"? Any reserved material goes back to its pool, nothing is charged, and the requester is told.`
-    : `Cancel "${title}"? Any reserved material goes back to its pool and nothing is charged. This can't be undone.`;
+    ? t`Cancel "${title}"? Any reserved material goes back to its pool, nothing is charged, and the requester is told.`
+    : t`Cancel "${title}"? Any reserved material goes back to its pool and nothing is charged. This can't be undone.`;
   return <div className="grid gap-1">
     <button className="desk-button-danger-outline" type="button" disabled={cancel.isPending || cancel.isSuccess}
       onClick={() => setOpen(true)}>

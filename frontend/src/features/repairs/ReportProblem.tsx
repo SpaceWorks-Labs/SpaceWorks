@@ -15,7 +15,7 @@ type LoanItem = { product_id: number; asset_id: number | null; name: string };
 async function uploadPhoto(source: ReportSource, file: File) {
   const space = { makerspace_id: source.makerspace_id, makerspace_slug: source.makerspace_slug };
   const staged = await memberRequest<{ photo_token: string; upload: PrintUpload; max_bytes: number }>("/member/issues/photos",
-    { method: "POST", body: JSON.stringify({ ...space, content_type: file.type }) });
+    { method: "POST", body: JSON.stringify({ ...space, content_type: file.type, size: file.size }) });
   if (file.size > staged.max_bytes) throw new Error(t`${file.name} is too large.`);
   await uploadToStorage({ ...staged.upload, fields: staged.upload.fields ?? {} }, file);
   return staged.photo_token;

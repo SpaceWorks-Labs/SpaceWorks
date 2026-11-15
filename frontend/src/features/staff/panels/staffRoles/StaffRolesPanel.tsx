@@ -17,6 +17,7 @@ import {
   deliveryText, invitationsKey, listSpaceRoles, listStaffInvitations, listStaffRoles, restoreStaffRole, revokeStaffRole,
   spaceRolesKey, staffRoleErrorText, staffRolesKey, type StaffRoleRow,
 } from "./staffRolesApi";
+import { isRetryable } from "../../../../lib/api/errors";
 
 /** Staff roles are rows on people's own accounts: one account per person, never a separate staff login. */
 export function StaffRolesPanel({ space, toolbar, onAuthRefresh, secondary, canManageRoles = false }: {
@@ -60,7 +61,7 @@ export function StaffRolesPanel({ space, toolbar, onAuthRefresh, secondary, canM
   const active = activeTab === "staff" ? list : activeTab === "invitations" ? invites : roles;
   const state: QueryState = active.isPending ? { status: "loading" }
     : active.isError && !(activeTab === "invitations" && invitesOff)
-      ? { status: "error", error: staffRoleErrorText(active.error), onRetry: () => void active.refetch() } : { status: "ready" };
+      ? { status: "error", error: staffRoleErrorText(active.error), onRetry: isRetryable(active.error) ? () => void active.refetch() : undefined } : { status: "ready" };
   const empty = activeTab === "invitations"
     ? { message: invitesOff ? t`Staff invitations are turned off for this makerspace.` : t`No staff invitations yet.` }
     : activeTab === "roles" ? { message: t`No roles to show.` }

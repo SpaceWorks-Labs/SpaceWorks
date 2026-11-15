@@ -14,12 +14,13 @@ import { DecisionHistory } from "./DecisionHistory";
 import { money, scopeIdentity } from "./format";
 import { collectedPayee, permits } from "./types";
 import type { FinanceScope, PayoutDetail as Detail, PayoutEntry } from "./types";
+import { isRetryable } from "../../../lib/api/errors";
 
 export function PayoutDetail({ scope, id, poolVersion }: { scope: FinanceScope; id: string; poolVersion?: number; canRecord?: boolean }) {
   const query = usePayout(scope, id);
   const row = query.data;
   return <DetailLayout title={row?.event_title ?? t`Payout obligation`} state={{ status: query.isPending ? "loading" : query.error ? "error" : "ready",
-    error: t`This obligation could not be loaded.`, onRetry: () => { void query.refetch(); } }}
+    error: t`This obligation could not be loaded.`, onRetry: isRetryable(query.error) ? () => { void query.refetch(); } : undefined }}
     status={row ? payoutStateLabel(row.state) : undefined} main={row ? <DetailContent key={`${scopeIdentity(scope.actorId, scope.makerspaceId)}:${id}:${row.version}:${row.allowed_actions?.join()}`}
       scope={scope} row={row} poolVersion={row.expected_pool_version ?? poolVersion} /> : null} />;
 }

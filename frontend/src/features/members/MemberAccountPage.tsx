@@ -25,6 +25,7 @@ import { useMergeSuggested } from "./accountLink/accountLinkApi";
 import { LanguageSwitcher } from "../../components/shell/LanguageSwitcher";
 import { ThemeChoice } from "../../components/ThemeChoice";
 import { memberRequest } from "../../lib/api/requests";
+import { isRetryable } from "../../lib/api/errors";
 
 export function MemberAccountPage() {
   const { slug = "" } = useParams();
@@ -74,7 +75,7 @@ export function MemberAccountPage() {
   return <MemberPortalTabs modules={data?.modules ?? []} features={data?.features} active="account" space={data ? { id: data.makerspace.id, slug } : undefined} user={{ name: t`Your account`, menu: [{ label: t`Member area`, href: home }], onSignOut: () => { void logout("person").catch(() => undefined).finally(() => { forgetOfflineMemberData(); client.clear(); setSignIn(true); }); } }}
     workspace={data ? { name: data.makerspace.name || "Space Works", subtitle: t`Your account`, avatar: data.branding?.logo_url || data.makerspace.logo_url ? { kind: "image", src: data.branding?.logo_url || data.makerspace.logo_url || "" } : { kind: "avatar", name: data.makerspace.name || "Space Works", seed: slug }, locked: true } : undefined}>
     <MemberSectionNavigation>{!restoring && !hasClaimSession() && data ? <MemberHistoryLinks slug={slug} modules={data.modules} features={data.features} /> : null}<nav aria-label={t`Personal account tools`} className="mb-5 flex flex-wrap gap-3"><a className="desk-button" href={`${home}/account/saved-details`}>{t`Saved details`}</a><a className="desk-button" href={`${home}/account/security-activity`}>{t`Security activity`}</a><a className="desk-button" href="/account/api-access">{t`API access & connected apps`}</a><a className="desk-button" href={`${home}/event-payouts`}>{t`Event reimbursements`}</a>{data?.features?.includes("events.prize_claims") ? <a className="desk-button" href={`${home}/prizes`}>{t`My prizes`}</a> : null}</nav><SettingsLayout header={{ title: t`Account`, subtitle: t`Your personal profile and sign-in security.`, secondary: { label: t`Profile & card →`, href: `${home}/account-portal` } }}
-      state={restoring || (bootstrap.isLoading && !["security", "deletion"].includes(section)) ? { status: "loading" } : bootstrap.error && !["security", "deletion"].includes(section) ? { status: "error", error: t`Couldn't load your account. Try again.`, onRetry: () => void bootstrap.refetch() } : { status: "ready" }}
+      state={restoring || (bootstrap.isLoading && !["security", "deletion"].includes(section)) ? { status: "loading" } : bootstrap.error && !["security", "deletion"].includes(section) ? { status: "error", error: t`Couldn't load your account. Try again.`, onRetry: isRetryable(bootstrap.error) ? () => void bootstrap.refetch() : undefined } : { status: "ready" }}
       tabs={tabs} activeTab={section} sections={[{ id: section, title: tabs.find(tab => tab.key === section)?.label || t`Account access`, rows: <>
         {left ? <p role="status">{t`You have left this makerspace. Your account remains available.`}</p> : null}
         {mergeSuggested && section === defaultSection ? <AccountLinkCard suggested /> : null}

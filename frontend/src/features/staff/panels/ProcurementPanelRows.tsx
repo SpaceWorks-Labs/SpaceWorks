@@ -55,7 +55,7 @@ export function groupProcurementRows(rows: ToBuyItem[]): ProcurementGroup[] {
   const groups = new Map<string, ProcurementGroup>();
   for (const item of rows) {
     const key = item.machine_type === null ? "unassigned" : `type-${item.machine_type}`;
-    const label = item.machine_type_name ?? "Unassigned";
+    const label = item.machine_type_name ?? t`Unassigned`;
     const group = groups.get(key) ?? { key, label, rows: [] };
     group.rows.push(item);
     groups.set(key, group);

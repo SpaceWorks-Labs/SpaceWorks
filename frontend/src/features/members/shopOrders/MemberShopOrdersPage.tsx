@@ -8,8 +8,10 @@ import { ListLayout } from "../../../components/layouts";
 import { StatusPill } from "../../../components/ui";
 import { RouteLink } from "../../../components/ui/RouteLink";
 import { StructuredApiError } from "../../../lib/api";
+import { isRetryable } from "../../../lib/api/errors";
 import { useTenantPath } from "../../../lib/tenant";
-import { useMemberSpace } from "../../events/ticketing/MemberOrdersPage";
+import { OrdersUnavailableHere, useMemberSpace } from "../../events/ticketing/MemberOrdersPage";
+import { memberSpaceFailure } from "../../events/ticketing/memberSpaceFailure";
 import { listMemberShopOrders, orderStatus, shopKeys, shopMoney } from "../../shop/shopApi";
 import { MemberAuthPanel } from "../MemberAuthPanel";
 import { MemberShopOrderDetail } from "./MemberShopOrderDetail";
@@ -26,12 +28,15 @@ export function MemberShopOrdersPage() {
     return <MemberAuthPanel makerspaceSlug={space.makerspaceSlug} onAuthenticated={() => { void orders.refetch(); }} />;
   }
   if (orderId && /^\d+$/.test(orderId)) return <MemberShopOrderDetail orderId={Number(orderId)} backHref={tenantPath("member/shop-orders")} />;
+  // The central list has no selected space (a detail opens by its account-owned ID above): never "no orders yet".
+  if (!space.loading && !space.makerspaceSlug) return <OrdersUnavailableHere />;
   const rows = orders.data?.results ?? [];
-  return <ListLayout header={{ eyebrow: t`Shop`, title: t`My shop orders`,
+  return <ListLayout standalone header={{ eyebrow: t`Shop`, title: t`My shop orders`,
     // A standalone page outside the member shell: give the way back and on to the shop.
     secondary: { label: t`Member area`, href: tenantPath("member") }, primary: { label: t`Visit the shop`, href: tenantPath("shop") } }}
-    state={space.loading || orders.isPending ? { status: "loading" } : orders.error ? { status: "error", error: orders.error.message,
-      onRetry: () => { void orders.refetch(); } } : { status: "ready" }}
+    state={memberSpaceFailure(space) ?? (space.loading || orders.isPending ? { status: "loading" } : orders.error ? { status: "error", error: orders.error.message,
+      // Decision 588: only an outage offers Retry; the header keeps the Member area and shop ways out.
+      onRetry: isRetryable(orders.error) ? () => { void orders.refetch(); } : undefined } : { status: "ready" })}
     isEmpty={!rows.length} empty={{ message: t`You have no shop orders yet.`, action: { label: t`Visit the shop`, href: tenantPath("shop") } }}
     pagination={{ page, pageSize: 24, count: orders.data?.count ?? 0, onChange: setPage }}
     body={{ kind: "rows", rows: rows.map(order => {

@@ -1,6 +1,6 @@
 import { t } from "@lingui/core/macro";
 import type { QueryState } from "../../components/ui/types";
-import { StructuredApiError, isSurfaceOff } from "../../lib/api";
+import { StructuredApiError, isRetryable, isSurfaceOff } from "../../lib/api/errors";
 
 type Surface = "bookings" | "events" | "machines" | "stats";
 type Copy = { surface: Surface; missing?: string };
@@ -26,5 +26,7 @@ export function publicErrorState(error: unknown, { surface, missing }: Copy, onR
   // A switched-off module answers a typed 404 (#183B): say so, not "not found".
   if (isSurfaceOff(error)) return { status: "error", error: copy.off };
   if (apiError?.status === 404) return { status: "error", error: missing ?? t`We couldn't find this makerspace. Check the link.` };
+  // A refusal (403 and the like) is answered the same way again: explain it, no Retry (decision 588).
+  if (!isRetryable(error)) return { status: "error", error: apiError?.detail || t`This page isn't available.` };
   return { status: "error", error: apiError?.detail || copy.failed, onRetry };
 }

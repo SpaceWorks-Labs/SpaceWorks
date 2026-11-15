@@ -8,6 +8,7 @@ import { eventAccess } from "./eventStaffPermissions";
 import { EventLinkedFinancePanel } from "./EventLinkedFinancePanel";
 import { useStaffChargesOn } from "./useStaffChargesOn";
 import { formatPrice } from "../../lib/money";
+import { isRetryable } from "../../lib/api/errors";
 
 /** The latest registrations. Mounted only for staff who may read the roster, so nobody else requests it. */
 function RegistrationsPreview({ eventId, onRegistrations }: { eventId: number; onRegistrations?: () => void }) {
@@ -15,7 +16,7 @@ function RegistrationsPreview({ eventId, onRegistrations }: { eventId: number; o
   const registrations = useEventRegistrations(eventId, 1);
   const previewRows = [...(registrations.data?.results ?? [])].sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at)).slice(0, 5);
   return <Card><div className="mb-4 flex flex-wrap items-center justify-between gap-3"><h2 className="title-panel">{t`Registrations`}</h2>{onRegistrations ? <button className="desk-button" type="button" onClick={onRegistrations}>{t`All registrations`}</button> : null}</div>
-    {registrations.error ? <EmptyState message={t`Couldn't load registrations. Try again.`} action={{ label: t`Retry`, onClick: () => { void registrations.refetch(); } }} /> : previewRows.length ? <div className="grid gap-3">{previewRows.map(row => <ListRow key={row.id} title={row.name} identity={{ kind: "avatar", name: row.name, seed: String(row.id) }} meta={<RelativeTime date={row.created_at} />} right={<StatusBadge status={row.status} label={opsStatusLabel(row.status)} />} />)}</div> : <p className="text-sm text-muted">{registrations.isLoading ? t`Loading registrations…` : t`No registrations yet. Add your first guest in Registrations.`}</p>}
+    {registrations.error ? <EmptyState message={t`Couldn't load registrations. Try again.`} action={isRetryable(registrations.error) ? { label: t`Retry`, onClick: () => { void registrations.refetch(); } } : undefined} /> : previewRows.length ? <div className="grid gap-3">{previewRows.map(row => <ListRow key={row.id} title={row.name} identity={{ kind: "avatar", name: row.name, seed: String(row.id) }} meta={<RelativeTime date={row.created_at} />} right={<StatusBadge status={row.status} label={opsStatusLabel(row.status)} />} />)}</div> : <p className="text-sm text-muted">{registrations.isLoading ? t`Loading registrations…` : t`No registrations yet. Add your first guest in Registrations.`}</p>}
   </Card>;
 }
 

@@ -19,6 +19,7 @@ import { uploadPrintFilesBounded } from "./PublicPrintUploads";
 import { machineIntakeAvailable } from "../inventory/machineIntakeAvailability";
 import { statusRefetchInterval } from "../machine-service/types";
 import { PricePreview } from "../payments/PricePreview";
+import { isRetryable } from "../../lib/api/errors";
 
 export function PublicPrintRequestPage() {
   const queryClient = useQueryClient();
@@ -69,7 +70,7 @@ export function PublicPrintRequestPage() {
   if (activeStatusToken) trackingUrl.searchParams.set("token", activeStatusToken);
   const loading = bootstrapQuery.isLoading || (moduleEnabled && queuesQuery.isLoading);
   const failed = bootstrapQuery.isError || queuesQuery.isError;
-  const state = loading ? { status: "loading" as const } : failed ? { status: "error" as const, error: t`Couldn't reach the print service. Try again.`, onRetry: () => { void bootstrapQuery.refetch(); void queuesQuery.refetch(); } } : { status: "ready" as const };
+  const state = loading ? { status: "loading" as const } : failed ? { status: "error" as const, error: t`Couldn't reach the print service. Try again.`, onRetry: [bootstrapQuery.error, queuesQuery.error].filter(Boolean).some(isRetryable) ? () => { void bootstrapQuery.refetch(); void queuesQuery.refetch(); } : undefined } : { status: "ready" as const };
   return <div style={brandStyle}><PublicLayout {...publicPageChrome(makerspaceSlug, displayName, tenantPath, bootstrap)} state={state}>
     <PublicDetailLayout state={state} title={t`Send a print job to ${displayName}`}
       chips={[{ label: t`3D printing`, tone: "accent" }]} sections={[{ id: "your-print", label: t`Your print`, content:
@@ -81,7 +82,7 @@ export function PublicPrintRequestPage() {
             <PricePreview className="mt-4" makerspaceSlug={makerspaceSlug} request={{ domain: "machines", machine_type_id: queuesQuery.data?.[0]?.machine_type_id, pool_id: form.consumablePoolId ? Number(form.consumablePoolId) : undefined, quantity: Number(form.estimatedFilamentGrams) > 0 ? form.estimatedFilamentGrams.trim() : undefined }} /></>
           : <EmptyState message={intakeAvailable ? t`3D printing isn't open for requests right now.` : t`Online machine requests aren't available here. Ask space staff for help.`} action={{ label: t`Back to home`, href: tenantPath() }} /> } ]}
       actionCard={{ title: t`Track your job`, state: "open", summary: !activeStatusToken ? t`After you send it, you'll get a private link to follow progress here.` : undefined,
-        form: <div ref={trackerRef} id="print-tracker">{printingAvailable ? <PrintStatusPanel submitted={submitted} tokenStatus={statusQuery.data} tokenStatusPending={Boolean(activeStatusToken) && statusQuery.isPending} tokenStatusError={statusQuery.error} trackingHref={activeStatusToken ? trackingUrl.href : undefined} onRetry={() => { void statusQuery.refetch(); }} publicToken={activeStatusToken || undefined} makerspaceSlug={makerspaceSlug} /> : <p>{t`Print tracking isn’t available here right now. Ask space staff for help.`}</p>}</div>,
+        form: <div ref={trackerRef} id="print-tracker">{printingAvailable ? <PrintStatusPanel submitted={submitted} tokenStatus={statusQuery.data} tokenStatusPending={Boolean(activeStatusToken) && statusQuery.isPending} tokenStatusError={statusQuery.error} trackingHref={activeStatusToken ? trackingUrl.href : undefined} onRetry={isRetryable(statusQuery.error) ? () => { void statusQuery.refetch(); } : undefined} publicToken={activeStatusToken || undefined} makerspaceSlug={makerspaceSlug} /> : <p>{t`Print tracking isn’t available here right now. Ask space staff for help.`}</p>}</div>,
         mobileBar: { summary: submitted ? t`Request sent` : t`Follow your print`, label: t`Track your job` } }} />
   </PublicLayout></div>;
 }

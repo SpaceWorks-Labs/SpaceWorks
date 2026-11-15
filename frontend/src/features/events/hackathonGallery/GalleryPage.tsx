@@ -6,6 +6,7 @@ import { isGallerySearching, usePublicGallery, type GallerySearch } from './api'
 import { GallerySearchBar } from './GallerySearchBar';
 import { PeoplesChoiceBanner, VoteButton, usePeoplesChoiceVoting, type PeoplesChoiceSpace } from '../peoplesChoice/PeoplesChoiceVoting';
 import type { GalleryAsset, GalleryEntry, GalleryFieldFilter, Page } from './types';
+import { isRetryable } from "../../../lib/api/errors";
 
 export function GalleryPage({ makerspaceSlug, publicToken, eventTitle, entryPublicId, onDownload, projectHref, renderMemberCard, peoplesChoice }: {
   makerspaceSlug: string; publicToken: string; eventTitle: string; entryPublicId?: string;
@@ -24,7 +25,7 @@ export function GalleryPage({ makerspaceSlug, publicToken, eventTitle, entryPubl
   const offered = query.data && 'filters' in query.data ? query.data.filters : null;
   if (offered && offered !== fieldFilters) setFieldFilters(offered);
   const state = { status: query.isLoading ? 'loading' as const : query.isError ? 'error' as const : 'ready' as const,
-    error: query.error?.message, onRetry: () => void query.refetch() };
+    error: query.error?.message, onRetry: isRetryable(query.error) ? () => void query.refetch() : undefined };
   if (entryPublicId) {
     const entry = query.data && 'public_id' in query.data ? query.data as GalleryEntry : null;
     return <PublicDetailLayout title={entry?.title ?? eventTitle} tagline="Made at the shared bench" state={state}

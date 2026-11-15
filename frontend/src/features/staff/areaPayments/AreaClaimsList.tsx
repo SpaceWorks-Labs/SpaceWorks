@@ -8,6 +8,7 @@ import { MAKER_CHECKER_NOTICE } from "../PaymentReconcileActions";
 import { formatMoney, invalidatePaymentViews, settlementMethodLabel } from "../paymentsApi";
 import { areaErrorText, areaKeys, areaPaymentsApi, type AreaClaim } from "./areaPaymentsApi";
 import { LogoLoader } from "../../../components/LogoLoader";
+import { isRetryable } from "../../../lib/api/errors";
 
 /**
  * Decision 242(b): members' "I paid" claims on the caller's own-area charges. Confirming writes the
@@ -30,7 +31,7 @@ export function AreaClaimsList({ makerspaceId, area }: { makerspaceId: number; a
     onError: () => { setMessage(""); void claims.refetch(); },
   });
   if (claims.isLoading) return <LogoLoader label={t`Loading claims`} size={48} className="min-h-24 py-3" />;
-  if (claims.error) return <ErrorBlock error={claims.error} resource={t`payment claims`} onRetry={() => { void claims.refetch(); }} />;
+  if (claims.error) return <ErrorBlock error={claims.error} resource={t`payment claims`} onRetry={isRetryable(claims.error) ? () => { void claims.refetch(); } : undefined} />;
   // Every claim on a charge the caller owns, in any of their areas (the server narrows the rows).
   const rows = claims.data?.results ?? [];
   return <section aria-labelledby="area-claims-heading" className="grid gap-3">

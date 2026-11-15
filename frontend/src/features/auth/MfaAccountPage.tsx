@@ -19,6 +19,7 @@ import { PasskeyList } from "./passkeys/PasskeyList";
 import { listPasskeys } from "./passkeys/passkeyApi";
 import { passkeysKey } from "./securityQueries";
 import { SignOutEverywhere } from "./SignOutEverywhere";
+import { isRetryable } from "../../lib/api/errors";
 
 const linkClass = "inline-flex min-h-11 items-center rounded-control font-semibold text-accent-ink underline underline-offset-4 hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus";
 
@@ -59,7 +60,7 @@ export function MfaAccountPage() {
     <Link to="/member" className={linkClass}>{t`Member sign-in`}</Link></div>;
   if (codes || !ready || status.error) {
     return <CenteredCardLayout title={codes ? t`Save your recovery codes` : t`Two-step sign-in`} media={{ icon: "ShieldCheck", tone: "accent" }}
-      state={status.error && ready ? { status: "error", error: t`Couldn't load authenticator settings. Try again.`, onRetry: () => { void status.refetch(); } } : { status: "ready" }}
+      state={status.error && ready ? { status: "error", error: t`Couldn't load authenticator settings. Try again.`, onRetry: isRetryable(status.error) ? () => { void status.refetch(); } : undefined } : { status: "ready" }}
       body={codes ? t`Each code works once. Save them somewhere secure before you continue.` : notice || t`Sign in to manage your authenticator.`}
       content={codes ? <MfaRecoveryCodes codes={codes} /> : undefined}
       primary={codes ? { label: t`I've saved my codes`, onClick: () => { setCodes(undefined); setNotice(ready ? "" : t`Your recovery codes are saved. Sign in again to continue.`); } }

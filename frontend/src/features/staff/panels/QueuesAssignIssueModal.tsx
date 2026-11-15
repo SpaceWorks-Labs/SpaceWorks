@@ -43,7 +43,7 @@ export function AssignIssueModal({ row, open, pending, error, onClose, onSubmit,
   const handleScan = async (payload: string) => {
     const clean = payload.trim();
     if (!clean || scanned.some((item) => item.payload === clean)) return;
-    let label = "Scanned QR";
+    let label = t`Scanned QR`;
     try {
       const result = await staffRequest<{ target: { type: string; product?: string; asset_tag?: string } }>("/admin/qr/resolve", {
         method: "POST",

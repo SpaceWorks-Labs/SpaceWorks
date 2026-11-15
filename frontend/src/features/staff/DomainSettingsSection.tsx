@@ -13,6 +13,7 @@ import {
   useUpdateDomainSettings,
 } from "./domainSettingsApi";
 import { LogoLoader } from "../../components/LogoLoader";
+import { isRetryable } from "../../lib/api/errors";
 
 type Props = { makerspaceId: number; domain: SettingsDomain };
 
@@ -38,7 +39,7 @@ export function DomainSettingsSection({ makerspaceId, domain }: Props) {
   if (query.isLoading) return <LogoLoader label={t`Loading settings…`} size={48} className="min-h-16 py-3" />;
   if (!query.data) {
     return <ErrorBlock error={query.error ?? new Error(t`Couldn't load these settings.`)}
-      onRetry={() => { void query.refetch(); }} />;
+      onRetry={isRetryable(query.error) ? () => { void query.refetch(); } : undefined} />;
   }
   const { editable, features, settings } = query.data;
   const permissions = query.data.setting_permissions ?? {};

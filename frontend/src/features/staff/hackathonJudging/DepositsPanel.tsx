@@ -7,6 +7,7 @@ import { useDeposits } from './hackmoneyApi';
 import { useProgrammeOptions } from './l21bApi';
 import type { Scope } from './types';
 import { formatMoney } from '../../../lib/money';
+import { isRetryable } from "../../../lib/api/errors";
 
 const OUTCOMES: Record<DepositRow['outcome'], [string, 'success' | 'warn' | 'neutral']> = {
   return: ['Refund case', 'success'], void: ['Not owed', 'neutral'], keep: ['Kept (no-show)', 'warn'], none: ['Already decided', 'neutral'],
@@ -17,7 +18,7 @@ export function DepositsPanel({ scope }: { scope: Scope }) {
   const { summary, settle } = useDeposits(scope, true);
   const options = useProgrammeOptions(scope).query.data;
   if (summary.isLoading) return <LogoLoader label={t`Loading deposits…`} />;
-  if (!summary.data) return <ErrorBlock error={summary.error} onRetry={() => void summary.refetch()} />;
+  if (!summary.data) return <ErrorBlock error={summary.error} onRetry={isRetryable(summary.error) ? () => void summary.refetch() : undefined} />;
   const data = summary.data;
   const count = (kind: DepositRow['outcome']) => data.rows.filter(row => row.outcome === kind).length;
   const blocked = !data.event_ended || Boolean(data.settled_at) || !options || !data.amount;

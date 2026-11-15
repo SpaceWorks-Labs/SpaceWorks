@@ -1,8 +1,10 @@
+import type { CurrencyUsage } from "./platformSpaces/limitsApi";
+import { currencyUsageAmount } from "./platformSpaces/LimitRowView";
 import { formatLocale } from "../../lib/format";
 import { staffRequest } from "../../lib/api";
 
 export type CheckStatus = "ok" | "warn" | "error";
-export type ResourceUsage = { key: string; label: string; used: number | null; limit: number | null; unit: "bytes" | "count" };
+export type ResourceUsage = { key: string; label: string; amounts?: CurrencyUsage[] | null; used: number | null; limit: number | null; unit: "bytes" | "count" | "amount" };
 export type TenantUsage = { makerspace_id: number; managed: boolean; resources: ResourceUsage[] };
 export type Problem = { key: string; status: CheckStatus; message: string; fix_url: string; makerspace_id: number | null };
 export type Problems = { checked_at: string; status: CheckStatus; results: Problem[] };
@@ -24,6 +26,11 @@ export type PlatformDashboard = {
 export const getPlatformDashboard = () => staffRequest<PlatformDashboard>("/admin/platform/dashboard");
 export const getPlatformProblems = () => staffRequest<Problems>("/admin/platform/problems");
 export const getTenantUsage = (id: number) => staffRequest<TenantUsage>(`/admin/makerspace/${id}/usage`);
+
+export function resourceUsed(row: { amounts?: CurrencyUsage[] | null; used: number | null; unit?: ResourceUsage["unit"] }) {
+  return row.amounts?.length ? row.amounts.map(item => currencyUsageAmount(item.currency, item.used)).join(" · ")
+    : usageAmount(row.used, row.unit ?? "count");
+}
 
 export function usageAmount(value: number | null, unit: ResourceUsage["unit"]) {
   if (value === null) return "Unavailable";

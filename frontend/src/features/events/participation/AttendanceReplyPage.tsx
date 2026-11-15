@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { memberRequest } from "../../../lib/api";
+import { isRetryable } from "../../../lib/api/errors";
 import { Card, ErrorText } from "../../../components/ui";
 
 type Own = { event_id: number; event_title: string; starts_at: string; registration_id: number;
@@ -18,15 +19,19 @@ const EFFECTS = (): Record<string, string> => ({
 
 /** The private "Are you still coming?" page: only the registered person sees and answers it. */
 export function AttendanceReplyPage() {
-  const { eventId } = useParams();
-  const url = `/events/${Number(eventId)}/attendance/`;
+  const { eventId, slug } = useParams();
+  const url = `/member/events/${Number(eventId)}/attendance/`;
   const client = useQueryClient();
   const own = useQuery({ queryKey: ["member-attendance", eventId], retry: false, queryFn: () => memberRequest<Own>(url) });
   const [note, setNote] = useState("");
   const reply = useMutation({ mutationFn: (answer: "yes" | "no") => memberRequest<Own>(url, {
     method: "POST", body: JSON.stringify({ answer, note }) }),
   onSuccess: data => client.setQueryData(["member-attendance", eventId], data) });
-  if (own.error) return <div className="mx-auto max-w-xl p-4"><ErrorText message={t`This page is not available.`} /></div>;
+  // Decision 588: only an outage is retried; a refusal (not registered, event gone, events off) gets the way out.
+  if (own.error) return <div className="mx-auto grid max-w-xl gap-3 p-4">{isRetryable(own.error)
+    ? <ErrorText message={t`Couldn't load this page. Try again.`} onRetry={() => { void own.refetch(); }} />
+    : <><ErrorText message={t`This page is not available.`} />
+      <a className="desk-button justify-self-start" href={slug ? `/m/${encodeURIComponent(slug)}/member` : "/member"}>{t`Back to your account`}</a></>}</div>;
   if (!own.data) return <LogoLoader label={t`Loading…`} />;
   const data = own.data, settled = data.effect !== "none";
   return <div className="mx-auto grid max-w-xl gap-4 p-4">

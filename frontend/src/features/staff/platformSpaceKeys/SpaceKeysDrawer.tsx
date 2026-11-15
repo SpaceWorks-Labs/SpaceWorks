@@ -9,6 +9,7 @@ import { useRotateKey, useSpaceKeys, type KeyAction } from "./spaceKeysApi";
 import { StaleArchivesList } from "./StaleArchivesList";
 import { TypedConfirmDialog } from "./TypedConfirmDialog";
 import { LogoLoader } from "../../../components/LogoLoader";
+import { isRetryable } from "../../../lib/api/errors";
 
 /** One space's encryption keys: versions, rotations with live progress, and its archives on a retired backup key (#190). */
 export function SpaceKeysDrawer({ card, onClose }: { card: HealthCard; onClose: () => void }) {
@@ -19,7 +20,7 @@ export function SpaceKeysDrawer({ card, onClose }: { card: HealthCard; onClose: 
   const chosen = keyActions().find(row => row.action === action);
   return <DetailDrawer open title={t`Keys of ${card.name}`} onClose={onClose}>
     {keys.isLoading ? <LogoLoader size={48} className="min-h-40 py-3" /> : keys.isError || !data
-      ? <ErrorText resource={t`this space's keys`} onRetry={() => { void keys.refetch(); }} /> : <div className="grid gap-6">
+      ? <ErrorText resource={t`this space's keys`} onRetry={isRetryable(keys.error) ? () => { void keys.refetch(); } : undefined} /> : <div className="grid gap-6">
       {data.rls_mode !== "enforce" ? <Callout size="inline" tone="warn" lead={`Row-level security is ${data.rls_mode}.`}
         body={t`The database does not yet stop a cross-space read on this deployment.`} /> : null}
       <KeyValueCard title={t`Keys`} items={[

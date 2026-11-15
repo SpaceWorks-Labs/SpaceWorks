@@ -16,6 +16,7 @@ import { websiteDraftPreview, type InheritedCover } from "../events/websiteDraft
 import { EventWebsiteEditorial } from "./EventWebsiteEditorial";
 import { LogoLoader } from "../../components/LogoLoader";
 import { BoxArt } from "../../components/BoxSpinner";
+import { isRetryable } from "../../lib/api/errors";
 
 type EditorProps = {
   target: WebsiteTarget; canEdit: boolean; canPublish: boolean; status: string;
@@ -68,7 +69,7 @@ function WebsiteDraftEditor({ target, canEdit, canPublish, status, inheritedImag
     </div>
     {query.isLoading ? <div role="status" className="grid gap-3"><span className="sr-only">{t`Loading website…`}</span><LogoLoader size={48} className="min-h-24 py-3" /><LogoLoader size={48} className="min-h-48 py-3" /></div> : null}
     {error ? <p role="alert" className="text-sm text-danger">{eventErrorText(error)}</p> : null}
-    {query.error ? <button className="desk-button justify-self-start" type="button" onClick={() => query.refetch()}>{t`Retry website`}</button> : null}
+    {query.error && isRetryable(query.error) ? <button className="desk-button justify-self-start" type="button" onClick={() => query.refetch()}>{t`Retry website`}</button> : null}
     {draft && !query.error ? <div className="grid min-w-0 gap-6">
       <p className="text-sm text-ink">{draft.released ? t`Website released` : t`Website unreleased`}{draft.inherited ? t` · Inherited from series; saving creates a private occurrence override.` : ""}</p>
       {draft.released && draft.draft_revision_id !== draft.published_revision_id ? <p role="status" className="text-sm text-warn-ink">{t`Saved draft changes are waiting for release.`}</p> : null}

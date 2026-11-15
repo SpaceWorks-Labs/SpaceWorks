@@ -8,6 +8,7 @@ import { MemberJobsShell, type MemberJobsContext } from "../machine-jobs/MemberJ
 import { ReportProblem } from "../repairs/ReportProblem";
 import { fetchMySessions, sessionKeys, type MemberSession } from "./api";
 import { CHARGE_LABELS, duration, STOP_REASONS, when } from "./sessionFormat";
+import { isRetryable } from "../../lib/api/errors";
 
 /** One line under the machine name: when, how long, why it stopped and what it cost. */
 export function sessionSummary(session: MemberSession) {
@@ -27,7 +28,7 @@ function SessionList({ context }: { context: MemberJobsContext }) {
   return <ListLayout header={{ eyebrow: t`Member area`, title: t`My machine sessions`,
     subtitle: t`Time you spent on the space's machines. Scan a machine's QR to start one.` }}
     state={context.bootstrapError || sessions.isError
-      ? { status: "error", error: t`Couldn't load your sessions. Try again.`, onRetry: () => { void sessions.refetch(); } }
+      ? { status: "error", error: t`Couldn't load your sessions. Try again.`, onRetry: isRetryable(sessions.error) ? () => { void sessions.refetch(); } : undefined }
       : !context.ready || sessions.isPending ? { status: "loading" } : { status: "ready" }}
     isEmpty={sessions.isSuccess && !rows.length}
     empty={{ message: t`No machine sessions yet. Scan the QR on a machine to start one.` }}

@@ -11,6 +11,7 @@ import { listPasskeys, registerPasskey, removePasskey, renamePasskey } from "./p
 import { PasskeyRow } from "./PasskeyRow";
 import { isPasskeyCancelled, passkeysSupported } from "./webauthn";
 import { BoxArt } from "../../../components/BoxSpinner";
+import { isRetryable } from "../../../lib/api/errors";
 
 /**
  * The person's passkeys (S-A): add (recent re-authentication, asked for by the shared client),
@@ -45,7 +46,7 @@ export function PasskeyList({ onRecoveryCodes, onSignedOut }: {
   const busy = add.isPending || rename.isPending || remove.isPending;
   const failure = add.error && !isPasskeyCancelled(add.error) ? add.error : rename.error ?? remove.error;
   if (query.isLoading) return <LogoLoader label={t`Loading passkeys…`} size={48} className="min-h-16 py-3" />;
-  if (query.error) return <ErrorText message={authErrorMessage(query.error, "Couldn't load your passkeys. Try again.")} onRetry={() => void query.refetch()} />;
+  if (query.error) return <ErrorText message={authErrorMessage(query.error, "Couldn't load your passkeys. Try again.")} onRetry={isRetryable(query.error) ? () => void query.refetch() : undefined} />;
   const rows = query.data?.passkeys ?? [];
   return <div className="grid gap-4">
     <p className="text-sm text-muted">{t`A passkey signs you in with your fingerprint, face or device PIN instead of a password. It never leaves your device, and it only works on this website.`}</p>

@@ -3,6 +3,7 @@ import { SelectedReportPanel as Panel } from "./OperationsReportSelection";
 import { BarChart, DataState, ReportTable, StatCards } from "./OperationsReportsParts";
 
 import { useMemberActivityReport, type MemberActivityReportProps, type MemberActivityRow } from "./operationsReportsMembersApi";
+import { isRetryable } from "../../../lib/api/errors";
 
 type Props = MemberActivityReportProps;
 
@@ -19,7 +20,7 @@ export function OperationsReportsMembers(props: Props) {
       <p className="mt-2 text-xs text-muted">
         {t`Current-state counts describe today's membership snapshot. Activations and revocations use current lifecycle timestamps in the selected date range.`}</p>
       <p className="mt-1 text-xs text-muted">{t`These are current lifecycle timestamps, not immutable event-history counts.`}</p>
-      <DataState loading={report.isLoading} error={report.error} onRetry={() => void report.refetch()} empty={!rows.length}>
+      <DataState loading={report.isLoading} error={report.error} onRetry={isRetryable(report.error) ? () => void report.refetch() : undefined} empty={!rows.length}>
         {props.aggregate ? (
           <div className="mt-4 space-y-4">
             {rows.map((row) => (

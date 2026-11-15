@@ -5,7 +5,7 @@ import { publicV1Request, tenantPublicRequest } from "../../lib/api";
 export type PrintQueue = PublicPrinterQueue & { machine_type_id?: number };
 export type PublicFilamentPool = PublicPrinterPool;
 export type PrintStatus = PublicPrinterStatus;
-export type PrintUploadBody = PublicPrinterUpload;
+export type PrintUploadBody = PublicPrinterUpload & { size?: number };
 export type PrintUpload = { url: string; fields: Record<string, string>; method?: string; headers?: Record<string, string> };
 export type PrintRequestPayload = PublicPrinterSubmit;
 

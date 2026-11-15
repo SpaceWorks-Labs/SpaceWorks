@@ -58,10 +58,18 @@ describe("loading and error states", () => {
     expect(await screen.findByText("Website unreleased")).toBeInTheDocument();
     expect(screen.getByText("Unreleased")).toBeInTheDocument();
   });
-  it("shows the typed API error with a retry that refetches", async () => {
+  // Decision 588 (supersedes the earlier refusal retry): a refusal keeps its typed explanation and gets no Retry.
+  it("shows a typed refusal with no retry", async () => {
     readError = new StructuredApiError(403, { detail: "Module disabled", code: "module_disabled" });
     show();
     expect(await screen.findByRole("alert")).toHaveTextContent("Module disabled (module_disabled)");
+    expect(screen.queryByRole("button", { name: "Preview draft sections" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Retry website" })).toBeNull();
+  });
+  it("shows an outage with a retry that refetches", async () => {
+    readError = new StructuredApiError(503, { detail: "Website service down", code: "service_unavailable" });
+    show();
+    expect(await screen.findByRole("alert")).toHaveTextContent("Website service down");
     expect(screen.queryByRole("button", { name: "Preview draft sections" })).toBeNull();
     readError = undefined;
     fireEvent.click(screen.getByRole("button", { name: "Retry website" }));

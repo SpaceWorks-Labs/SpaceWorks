@@ -13,6 +13,7 @@ import { useBindingMutation, usePrinterBindings, type PrinterBinding } from "./p
 import { PrinterJobsList } from "./PrinterJobsList";
 import { LogoLoader } from "../../../../../components/LogoLoader";
 import { BoxArt } from "../../../../../components/BoxSpinner";
+import { isRetryable } from "../../../../../lib/api/errors";
 
 export function PrinterBindingsSection({ makerspaceId, machineTypeId, machines }: {
   makerspaceId: number; machineTypeId: number; machines: Machine[];
@@ -30,7 +31,7 @@ export function PrinterBindingsSection({ makerspaceId, machineTypeId, machines }
     <h3 className="title-panel">{t`Printer connections`}</h3>
     <p className="text-sm text-muted">{t`Connect an enrolled printer device to a machine of this type. Add and enrol devices in the Devices tab.`}</p>
     {bindings.isLoading ? <LogoLoader label={t`Loading printer connections…`} size={48} className="min-h-16 py-3" /> : null}
-    {bindings.error ? <ErrorBlock error={bindings.error} resource={t`printer connections`} onRetry={() => void bindings.refetch()} /> : null}
+    {bindings.error ? <ErrorBlock error={bindings.error} resource={t`printer connections`} onRetry={isRetryable(bindings.error) ? () => void bindings.refetch() : undefined} /> : null}
     {bindings.isSuccess && !rows.length ? <p className="text-sm text-muted">{t`No printer is connected to these machines yet.`}</p> : null}
     <ul className="grid gap-2" aria-label={t`Connected printers`}>
       {rows.map(row => <li key={row.id} className="flex flex-wrap items-center gap-3 rounded-control border border-line p-3">

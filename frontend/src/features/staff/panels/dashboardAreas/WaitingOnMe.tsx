@@ -21,16 +21,16 @@ export function AttentionRow({ item, area, routing }: { item: AttentionItem; are
   return href ? <RouteLink href={href} className={`${classes} hover:bg-hover ${FOCUS}`}>{body}</RouteLink> : <div className={classes}>{body}</div>;
 }
 
-export function AreaErrors({ errors, onRetry }: { errors: string[]; onRetry: () => void }) {
+export function AreaErrors({ errors, onRetry }: { errors: string[]; onRetry?: () => void }) {
   if (!errors.length) return null;
   return <div role="alert" className="flex flex-wrap items-center gap-3 rounded-xl border border-line bg-panel px-4 py-3 text-sm">
     <span className="min-w-0 flex-1">{t`Couldn't load: ${errors.map(areaLabel).join(", ")}. These numbers are missing, not zero.`}</span>
-    <button type="button" className={`desk-button min-h-11 ${FOCUS}`} onClick={onRetry}>{t`Try again`}</button>
+    {onRetry ? <button type="button" className={`desk-button min-h-11 ${FOCUS}`} onClick={onRetry}>{t`Try again`}</button> : null}
   </div>;
 }
 
 /** Decision 242(j): what needs this person now, across the areas they run, largest first. */
-export function WaitingOnMe({ attention, routing, onRetry }: { attention: Attention; routing: AttentionRouting; onRetry: () => void }) {
+export function WaitingOnMe({ attention, routing, onRetry }: { attention: Attention; routing: AttentionRouting; onRetry?: () => void }) {
   return <section aria-labelledby="waiting-on-me" className="grid gap-3">
     <h2 id="waiting-on-me" className="title-panel">{t`Waiting on me`}</h2>
     <AreaErrors errors={attention.errors} onRetry={onRetry} />

@@ -7,6 +7,7 @@ import { authErrorMessage } from "../../lib/api/authErrorCopy";
 import { ConfirmDialog, EmptyState, ErrorText, ListRow, RelativeTime, StatusPill } from "../../components/ui";
 import { forgetKnownDevice, listKnownDevices, type KnownDevice } from "./knownDevicesApi";
 import { invalidateAccountSecurity, knownDevicesKey } from "./securityQueries";
+import { isRetryable } from "../../lib/api/errors";
 
 /**
  * Devices that passed the unusual-sign-in check (S-B). Forgetting one means its next sign-in
@@ -23,7 +24,7 @@ export function KnownDevicesList() {
     void invalidateAccountSecurity(client);
   } });
   if (query.isLoading) return <LogoLoader label={t`Loading devices…`} size={48} className="min-h-16 py-3" />;
-  if (query.error) return <ErrorText message={authErrorMessage(query.error, "Couldn't load your devices. Try again.")} onRetry={() => void query.refetch()} />;
+  if (query.error) return <ErrorText message={authErrorMessage(query.error, "Couldn't load your devices. Try again.")} onRetry={isRetryable(query.error) ? () => void query.refetch() : undefined} />;
   const devices = query.data?.devices ?? [];
   const days = query.data?.remembered_days;
   const label = (device: KnownDevice) => device.label || "Unknown device";

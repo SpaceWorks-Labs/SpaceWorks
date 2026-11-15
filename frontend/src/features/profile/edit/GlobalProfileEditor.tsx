@@ -16,6 +16,7 @@ import { StatusAboutFields } from "./StatusAboutFields";
 import { TimelineEditor } from "./TimelineEditor";
 import { VisibilityPanel } from "./VisibilityPanel";
 import { LogoLoader } from "../../../components/LogoLoader";
+import { isRetryable } from "../../../lib/api/errors";
 
 /** The text fields share one "Save changes" form; switches, handle, timeline and achievements save on their own. */
 function ProfileForm({ profile }: { profile: AccountProfile }) {
@@ -47,7 +48,7 @@ function ProfileForm({ profile }: { profile: AccountProfile }) {
 export function GlobalProfileEditor() {
   const profile = useOwnProfile();
   if (profile.isLoading) return <LogoLoader label={t`Loading your profile…`} size={48} className="min-h-48 py-3" />;
-  if (profile.error || !profile.data) return <ErrorBlock error={new Error(profile.error instanceof Error ? profile.error.message : t`Unable to load your profile.`)} onRetry={() => { void profile.refetch(); }} />;
+  if (profile.error || !profile.data) return <ErrorBlock error={new Error(profile.error instanceof Error ? profile.error.message : t`Unable to load your profile.`)} onRetry={isRetryable(profile.error) ? () => { void profile.refetch(); } : undefined} />;
   return <div className="grid gap-5">
     <VisibilityPanel profile={profile.data} />
     <ProfileForm profile={profile.data} />
